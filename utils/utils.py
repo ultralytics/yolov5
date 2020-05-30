@@ -473,6 +473,7 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, multi_label=T
     min_wh, max_wh = 2, 4096  # (pixels) minimum and maximum box width and height
     max_det = 300  # maximum number of detections per image
     time_limit = 10.0  # seconds to quit after
+    redundant = conf_thres == 0.001  # require redundant detections
 
     t = time.time()
     nc = prediction[0].shape[1] - 5  # number of classes
@@ -528,7 +529,8 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, multi_label=T
                 iou = box_iou(boxes[i], boxes) > iou_thres  # iou matrix
                 weights = iou * scores[None]  # box weights
                 x[i, :4] = torch.mm(weights, x[:, :4]).float() / weights.sum(1, keepdim=True)  # merged boxes
-                # i = i[iou.sum(1) > 1]  # require redundancy
+                if redundant:
+                    i = i[iou.sum(1) > 1]  # require redundancy
             except:  # possible CUDA error https://github.com/ultralytics/yolov3/issues/1139
                 print(x, i, x.shape, i.shape)
                 pass
