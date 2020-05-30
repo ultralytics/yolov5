@@ -39,11 +39,11 @@ COPY . /usr/src/app
 # Run bash for loop
 # sudo docker run --gpus all --ipc=host ultralytics/yolov5:latest while true; do python3 train.py --evolve; done
 
-# Bash in running container
+# Bash into running container
 # sudo docker container exec -it 97919ad657de /bin/bash
 
-# Bash last stopped container
-# python -c "from utils.utils import *; create_backbone('weights/best.pt')" && gsutil cp weights/backbone.pt gs://ult/coco/yolov5s.pt
+# Bash into stopped container
+# sudo docker commit 6d525e299258 user/test_image && sudo docker run -it --gpus all --ipc=host -v "$(pwd)"/coco:/usr/src/coco --entrypoint=sh user/test_image
 
 # Clean up
 # docker system prune -a --volumes
