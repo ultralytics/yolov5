@@ -4,8 +4,7 @@
 
 This repository represents Ultralytics open-source research into future object detection methods, and incorporates our lessons learned and best practices evolved over training thousands of models on custom client datasets with our previous YOLO repository https://github.com/ultralytics/yolov3. **All code and models are under active development, and are subject to modification or deletion without notice.** Use at your own risk.
 
-<img src="https://user-images.githubusercontent.com/26833433/83359175-63b6c680-a32d-11ea-970a-9f602e022468.png" width="1000">
-** GPU Latency measures end-to-end latency per image averaged over 5000 COCO val2017 images using a V100 GPU with batch size 16, and includes image preprocessing, FP32 inference, postprocessing and NMS.  
+<img src="https://user-images.githubusercontent.com/26833433/83359175-63b6c680-a32d-11ea-970a-9f602e022468.png" width="1000">** GPU Latency measures end-to-end latency per image averaged over 5000 COCO val2017 images using a V100 GPU with batch size 16, and includes image preprocessing, FP32 inference, postprocessing and NMS.
 
 - **May 27, 2020**: Public release of repo. yolov3-spp implementation (this repo) is SOTA at 45.5 mAP among all known yolo implementations, yolov5 family will be undergoing architecture research and development over Q2/Q3 2020 to increase performance. Updates may include [CSP](https://github.com/WongKinYiu/CrossStagePartialNetworks) bottlenecks from [yolov4](https://github.com/AlexeyAB/darknet), as well as PANet or BiFPN head features.
 - **May 24, 2020**: Training yolov5s/x and yolov3-spp. yolov5m/l suffered early overfitting and also code 137 early docker terminations, cause unknown. yolov5l underperforms yolov3-spp due to earlier overfitting, cause unknown.
