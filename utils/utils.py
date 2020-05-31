@@ -993,13 +993,14 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.utils import *; plot_st
 
         j = y[3].argmax() + 1
         ax[7].plot(y[6, :j], y[3, :j] * 1E2, '.-', linewidth=2, markersize=8, label=Path(f).stem)
-        ax[7].plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [33.5, 39.1, 42.5, 45.9, 49., 50.5],
-                   '.-', linewidth=2, markersize=8, label='EfficientDet')
-        ax[7].set_xlabel('Latency (ms)')
-        ax[7].set_ylabel('COCO AP val')
 
-    ax[7].legend()
+    ax[7].plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [33.5, 39.1, 42.5, 45.9, 49., 50.5],
+               '.-', linewidth=2, markersize=8, label='EfficientDet')
     ax[7].set_xlim(0)
+    ax[7].set_xlabel('Latency (ms)')
+    ax[7].set_ylabel('COCO AP val')
+    ax[7].legend()
+
     plt.savefig(f.replace('.txt', '.png'), dpi=200)
 
 
