@@ -983,7 +983,11 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.utils import *; plot_st
     fig, ax = plt.subplots(2, 4, figsize=(10, 6), tight_layout=True)
     ax = ax.ravel()
 
-    for f in glob.glob('study*.txt'):
+    fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
+    ax2.plot(1E3 / np.array([209, 140, 97, 58, 35, 18][:-1]), [33.5, 39.1, 42.5, 45.9, 49., 50.5][:-1],
+             '.-', linewidth=2, markersize=8, alpha=0.3, label='EfficientDet')
+
+    for f in sorted(glob.glob('study*.txt')):
         y = np.loadtxt(f, dtype=np.float32, usecols=[0, 1, 2, 3, 7, 8, 9], ndmin=2).T
         x = np.arange(y.shape[1]) if x is None else np.array(x)
         s = ['P', 'R', 'mAP@.5', 'mAP@.5:.95', 't_inference (ms/img)', 't_NMS (ms/img)', 't_total (ms/img)']
@@ -992,15 +996,16 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.utils import *; plot_st
             ax[i].set_title(s[i])
 
         j = y[3].argmax() + 1
-        ax[7].plot(y[6, :j], y[3, :j] * 1E2, '.-', linewidth=2, markersize=8, label=Path(f).stem)
+        ax2.plot(y[6, :j], y[3, :j] * 1E2, '.-', linewidth=2, markersize=8,
+                 label=Path(f).stem.replace('study_coco_', '').replace('yolo', 'YOLO'))
 
-    ax[7].plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [33.5, 39.1, 42.5, 45.9, 49., 50.5],
-               '.-', linewidth=2, markersize=8, label='EfficientDet')
-    ax[7].set_xlim(0)
-    ax[7].set_xlabel('Latency (ms)')
-    ax[7].set_ylabel('COCO AP val')
-    ax[7].legend()
-
+    ax2.set_xlim(0)
+    ax2.set_ylim(23, 50)
+    ax2.set_xlabel('GPU Latency (ms)')
+    ax2.set_ylabel('COCO AP val')
+    ax2.legend(loc='lower right')
+    ax2.grid()
+    plt.savefig('study_mAP_latency.png', dpi=300)
     plt.savefig(f.replace('.txt', '.png'), dpi=200)
 
 

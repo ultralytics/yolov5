@@ -3,6 +3,7 @@
 &nbsp
 
 This repository represents Ultralytics open-source research into future object detection methods, and incorporates our lessons learned and best practices evolved over training thousands of models on custom client datasets with our previous YOLO repository https://github.com/ultralytics/yolov3. **All code and models are under active development, and are subject to modification or deletion without notice.** Use at your own risk.
+
 <img src="https://user-images.githubusercontent.com/26833433/83359175-63b6c680-a32d-11ea-970a-9f602e022468.png" width="1000">
 ** GPU Latency measures end-to-end latency per image averaged over 5000 COCO val2017 images using a V100 GPU and includes image preprocessing, inference, postprocessing and NMS.
 

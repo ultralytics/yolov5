@@ -43,4 +43,3 @@ head:
 
    [[], 1, Detect, [nc, anchors]],  # Detect(P3, P4, P5)
   ]
-
