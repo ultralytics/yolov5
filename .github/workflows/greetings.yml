@@ -16,8 +16,8 @@ jobs:
           If this is a bug report, please provide screenshots and **minimum viable code to reproduce your issue**, otherwise we can not help you.
             
           If this is a custom model or data training question, please note that Ultralytics does **not** provide free personal support. As a leader in vision ML and AI, we do offer professional consulting, from simple expert advice up to delivery of fully customized, end-to-end production solutions for our clients, such as:
-          - **Cloud-based AI** surveillance systems operating on **hundreds of HD video streams in realtime.**
-          - **Edge AI** integrated into custom iOS and Android apps for realtime **30 FPS video inference.**
-          - **Custom data training**, hyperparameter evolution, and model exportation to any destination.
-
-          To discuss your business requirements in greater detail please visit us at https://www.ultralytics.com.
+          - **Cloud-based AI** surveillance systems operating on **hundreds of HD video streams in realtime.**  
+          - **Edge AI** integrated into custom iOS and Android apps for realtime **30 FPS video inference.**  
+          - **Custom data training**, hyperparameter evolution, and model exportation to any destination.  
+            
+          For more information please visit https://www.ultralytics.com.
