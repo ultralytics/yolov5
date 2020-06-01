@@ -4,10 +4,8 @@
 
 This repository represents Ultralytics open-source research into future object detection methods, and incorporates our lessons learned and best practices evolved over training thousands of models on custom client datasets with our previous YOLO repository https://github.com/ultralytics/yolov3. **All code and models are under active development, and are subject to modification or deletion without notice.** Use at your own risk.
 
-<img src="https://user-images.githubusercontent.com/26833433/83359175-63b6c680-a32d-11ea-970a-9f602e022468.png" width="1000">
-** GPU Latency measures end-to-end latency per image averaged over 5000 COCO val2017 images using a V100 GPU and includes image preprocessing, inference, postprocessing and NMS.
+<img src="https://user-images.githubusercontent.com/26833433/83359175-63b6c680-a32d-11ea-970a-9f602e022468.png" width="1000">** GPU Latency measures end-to-end latency per image averaged over 5000 COCO val2017 images using a V100 GPU with batch size 16, and includes image preprocessing, FP32 inference, postprocessing and NMS.
 
-Updates:
 - **May 27, 2020**: Public release of repo. yolov3-spp implementation (this repo) is SOTA at 45.5 mAP among all known yolo implementations, yolov5 family will be undergoing architecture research and development over Q2/Q3 2020 to increase performance. Updates may include [CSP](https://github.com/WongKinYiu/CrossStagePartialNetworks) bottlenecks from [yolov4](https://github.com/AlexeyAB/darknet), as well as PANet or BiFPN head features.
 - **May 24, 2020**: Training yolov5s/x and yolov3-spp. yolov5m/l suffered early overfitting and also code 137 early docker terminations, cause unknown. yolov5l underperforms yolov3-spp due to earlier overfitting, cause unknown.
 - **April 1, 2020**: Begin development of a 100% pytorch scaleable yolov3/4-based group of future models, in small, medium, large and extra large sizes, collectively known as yolov5. Models will be defined by new user-friendly yaml-based configuration files for ease of construction and modification. Datasets will likewise use yaml configuration files. New training platform will be simpler use, harder to break, and more robust to training a wider variety of custom dataset.
@@ -35,7 +33,7 @@ For business inquiries and professional support requests please visit us at http
 
 ** AP<sup>test</sup> denotes COCO [test-dev2017](http://cocodataset.org/#upload) server results, all other AP results in the table denote val2017 accuracy.  
 ** All accuracy numbers are for single-model single-scale without ensemble or test-time augmentation. Reproduce by  `python test.py --img-size 736 --conf_thres 0.001`  
-** Latency<sub>GPU</sub> measures end-to-end latency per image averaged over 5000 COCO val2017 images using a V100 GPU and includes image preprocessing, inference, postprocessing and NMS. Average NMS time included in this chart is 1.6ms/image.  Reproduce by `python test.py --img-size 640 --conf_thres 0.1 --batch-size 16`  
+** Latency<sub>GPU</sub> measures end-to-end latency per image averaged over 5000 COCO val2017 images using a V100 GPU with batch size 16, and includes image preprocessing, FP32 inference, postprocessing and NMS. Average NMS time included in this chart is 1.6ms/image.  Reproduce by `python test.py --img-size 640 --conf_thres 0.1 --batch-size 16`  
 ** All checkpoints are trained to 300 epochs with default settings and hyperparameters (no autoaugmentation). 
 
 
