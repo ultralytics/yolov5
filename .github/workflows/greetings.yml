@@ -10,7 +10,7 @@ jobs:
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         pr-message: 'Hello @${{ github.actor }}, thank you for submitting a PR! We will respond as soon as possible.'
-        issue-message: >
+        issue-message: |
           Hello @${{ github.actor }}, thank you for your interest in our work! Please visit our [Custom Training Tutorial](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data) to get started, and see our [Google Colab Notebook](https://github.com/ultralytics/yolov5/blob/master/tutorial.ipynb), [Docker Image](https://hub.docker.com/r/ultralytics/yolov5), and [GCP Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart) for example environments.
             
           If this is a bug report, please provide screenshots and **minimum viable code to reproduce your issue**, otherwise we can not help you.
