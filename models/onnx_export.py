@@ -1,3 +1,7 @@
+# Exports a pytorch *.pt model to *.onnx format. Example usage:
+# $ export PYTHONPATH="$PWD"
+# $ python models/onnx_export.py --weights ./weights/yolov5s.pt --img 640 --batch 1
+
 import argparse
 
 import onnx
@@ -6,7 +10,7 @@ from models.common import *
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', default='../weights/yolov5s.pt', help='model path RELATIVE to ./models/')
+    parser.add_argument('--weights', default='./weights/yolov5s.pt', help='model path RELATIVE to ./models/')
     parser.add_argument('--img-size', default=640, help='inference size (pixels)')
     parser.add_argument('--batch-size', default=1, help='batch size')
     opt = parser.parse_args()
