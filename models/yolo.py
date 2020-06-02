@@ -20,7 +20,6 @@ class Detect(nn.Module):
         self.export = False  # onnx export
 
     def forward(self, x):
-        x = x.copy()
         z = []  # inference output
         self.training |= self.export
         for i in range(self.nl):

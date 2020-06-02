@@ -322,7 +322,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 elif mini > 1:
                     shapes[i] = [1, 1 / mini]
 
-            self.batch_shapes = np.ceil(np.array(shapes) * img_size / 64.).astype(np.int) * 64
+            self.batch_shapes = np.round(np.array(shapes) * img_size / 32. + 1.).astype(np.int) * 32
 
         # Cache labels
         self.imgs = [None] * n

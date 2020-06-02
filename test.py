@@ -244,7 +244,7 @@ if __name__ == '__main__':
     print(opt)
 
     # task = 'val', 'test', 'study'
-    if opt.task == 'val':  # (default) run normally
+    if opt.task in ['val', 'test']:  # (default) run normally
         test(opt.data,
              opt.weights,
              opt.batch_size,
@@ -258,7 +258,7 @@ if __name__ == '__main__':
     elif opt.task == 'study':  # run over a range of settings and save/plot
         for weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov3-spp.pt']:
             f = 'study_%s_%s.txt' % (Path(opt.data).stem, Path(weights).stem)  # filename to save to
-            x = list(range(256, 1024, 32))  # x axis
+            x = list(range(256, 1024, 64))  # x axis
             y = []  # y axis
             for i in x:  # img-size
                 print('\nRunning %s point %s...' % (f, i))
