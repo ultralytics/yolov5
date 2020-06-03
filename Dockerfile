@@ -28,7 +28,7 @@ COPY . /usr/src/app
 # t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host $t bash
 
 # Pull and Run with local directory access
-# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host -v "$(pwd)"/coco:/usr/src/coco $t bash
+# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all -v "$(pwd)"/coco:/usr/src/coco $t bash
 
 # Kill all
 # sudo docker kill "$(sudo docker ps -q)"

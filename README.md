@@ -23,17 +23,17 @@ For business inquiries and professional support requests please visit us at http
 
 ## Pretrained Checkpoints
 
-|       Model    |  AP<sup>val</sup> | AP<sup>test</sup>    |  AP<sub>50</sub> | Latency<sub>GPU</sub> | FPS<sub>GPU</sub>  | | params | FLOPs |
-|----------     |------ |------ |------ | -------- | ------| ------ |------  |  :------: |
-|     YOLOv5-s ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | 33.1 | 33.0 | 53.3 | **3.3ms** | **303** | | 7.0M   | 14.0B
-|     YOLOv5-m ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | 41.5 | 41.5 | 61.5 | 5.5ms | 182 | | 25.2M  | 50.2B
-|     YOLOv5-l ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | 44.2 | 44.5 | 64.3 | 9.7ms | 103 | | 61.8M  | 123.1B
-|     YOLOv5-x ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | **47.1** | **47.2** | **66.7** | 15.8ms | 63 | | 123.1M | 245.7B
-|     YOLOv3-SPP ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))  | 45.5 | 45.4 | 65.2 | 8.9ms | 112 | | 63.0M  | 118.0B
+| Model | AP<sup>val</sup> | AP<sup>test</sup> | AP<sub>50</sub> | Latency<sub>GPU</sub> | FPS<sub>GPU</sub> || params | FLOPs |
+|---------- |------ |------ |------ | -------- | ------| ------ |------  |  :------: |
+| YOLOv5-s ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | 33.1     | 33.0     | 53.3     | **3.3ms** | **303** || 7.0M   | 14.0B
+| YOLOv5-m ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | 41.5     | 41.5     | 61.5     | 5.5ms     | 182     || 25.2M  | 50.2B
+| YOLOv5-l ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | 44.2     | 44.5     | 64.3     | 9.7ms     | 103     || 61.8M  | 123.1B
+| YOLOv5-x ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | **47.1** | **47.2** | **66.7** | 15.8ms    | 63      || 123.1M | 245.7B
+| YOLOv3-SPP ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))  | 45.5     | 45.4     | 65.2     | 8.9ms     | 112     || 63.0M  | 118.0B
 
 ** AP<sup>test</sup> denotes COCO [test-dev2017](http://cocodataset.org/#upload) server results, all other AP results in the table denote val2017 accuracy.  
-** All accuracy numbers are for single-model single-scale without ensemble or test-time augmentation. Reproduce by  `python test.py --img-size 736 --conf_thres 0.001`  
-** Latency<sub>GPU</sub> measures end-to-end latency per image averaged over 5000 COCO val2017 images using a V100 GPU with batch size 16, and includes image preprocessing, FP32 inference, postprocessing and NMS. Average NMS time included in this chart is 1.6ms/image.  Reproduce by `python test.py --img-size 640 --conf_thres 0.1 --batch-size 16`  
+** All AP numbers are for single-model single-scale without ensemble or test-time augmentation. Reproduce by  `python test.py --img-size 736 --conf_thres 0.001`  
+** Latency<sub>GPU</sub> measures end-to-end latency per image averaged over 5000 COCO val2017 images using a V100 GPU with batch size 16, and includes image preprocessing, FP32 inference, postprocessing and NMS. Average NMS time included in this chart is 1.6ms.  Reproduce by `python test.py --img-size 640 --conf_thres 0.1`  
 ** All checkpoints are trained to 300 epochs with default settings and hyperparameters (no autoaugmentation). 
 
 
