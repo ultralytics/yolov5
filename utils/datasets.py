@@ -257,7 +257,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=416, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-                 cache_images=False, single_cls=False):
+                 cache_images=False, single_cls=False, pad=0.0):
         try:
             path = str(Path(path))  # os-agnostic
             parent = str(Path(path).parent) + os.sep
@@ -322,7 +322,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 elif mini > 1:
                     shapes[i] = [1, 1 / mini]
 
-            self.batch_shapes = np.round(np.array(shapes) * img_size / 32. + 1.).astype(np.int) * 32
+            self.batch_shapes = np.ceil(np.array(shapes) * img_size / 32. + pad).astype(np.int) * 32
 
         # Cache labels
         self.imgs = [None] * n

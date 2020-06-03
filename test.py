@@ -56,8 +56,14 @@ def test(data,
 
     # Dataloader
     if dataloader is None:
+        fast |= conf_thres > 0.001  # enable fast mode
         path = data['test'] if opt.task == 'test' else data['val']  # path to val/test images
-        dataset = LoadImagesAndLabels(path, imgsz, batch_size, rect=True, single_cls=opt.single_cls)
+        dataset = LoadImagesAndLabels(path,
+                                      imgsz,
+                                      batch_size,
+                                      rect=True,  # rectangular inference
+                                      single_cls=opt.single_cls,  # single class mode
+                                      pad=0.0 if fast else 0.5)  # padding
         batch_size = min(batch_size, len(dataset))
         dataloader = DataLoader(dataset,
                                 batch_size=batch_size,
