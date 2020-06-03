@@ -40,7 +40,8 @@ COPY . /usr/src/app
 # sudo docker run --gpus all --ipc=host ultralytics/yolov5:latest while true; do python3 train.py --evolve; done
 
 # Bash into running container
-# sudo docker container exec -it 97919ad657de /bin/bash
+# sudo docker container exec -it ba65811811ab bash
+# python -c "from utils.utils import *; create_backbone('weights/last.pt')" && gsutil cp weights/backbone.pt gs://*
 
 # Bash into stopped container
 # sudo docker commit 6d525e299258 user/test_image && sudo docker run -it --gpus all --ipc=host -v "$(pwd)"/coco:/usr/src/coco --entrypoint=sh user/test_image
