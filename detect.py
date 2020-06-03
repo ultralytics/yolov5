@@ -76,7 +76,7 @@ def detect(save_img=False):
 
         # Apply NMS
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres,
-                                   multi_label=False, classes=opt.classes, agnostic=opt.agnostic_nms)
+                                   fast=True, classes=opt.classes, agnostic=opt.agnostic_nms)
 
         # Apply Classifier
         if classify:

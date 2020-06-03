@@ -293,13 +293,13 @@ def train(hyp):
         final_epoch = epoch + 1 == epochs
         if not opt.notest or final_epoch:  # Calculate mAP
             results, maps, times = test.test(opt.data,
-                                      batch_size=batch_size,
-                                      imgsz=imgsz_test,
-                                      save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
-                                      model=ema.ema,
-                                      single_cls=opt.single_cls,
-                                      dataloader=testloader,
-                                      multi_label=ni > n_burn)
+                                             batch_size=batch_size,
+                                             imgsz=imgsz_test,
+                                             save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
+                                             model=ema.ema,
+                                             single_cls=opt.single_cls,
+                                             dataloader=testloader,
+                                             fast=ni > n_burn)
 
         # Write
         with open(results_file, 'a') as f:
@@ -325,10 +325,10 @@ def train(hyp):
         if save:
             with open(results_file, 'r') as f:  # create checkpoint
                 ckpt = {'epoch': epoch,
-                         'best_fitness': best_fitness,
-                         'training_results': f.read(),
-                         'model': ema.ema.module if hasattr(model, 'module') else ema.ema,
-                         'optimizer': None if final_epoch else optimizer.state_dict()}
+                        'best_fitness': best_fitness,
+                        'training_results': f.read(),
+                        'model': ema.ema.module if hasattr(model, 'module') else ema.ema,
+                        'optimizer': None if final_epoch else optimizer.state_dict()}
 
             # Save last, best and delete
             torch.save(ckpt, last)

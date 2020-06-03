@@ -19,7 +19,7 @@ import torchvision
 from scipy.signal import butter, filtfilt
 from tqdm import tqdm
 
-from . import torch_utils, google_utils  # torch_utils, google_utils
+from . import torch_utils, google_utils  #  torch_utils, google_utils
 
 # Set printoptions
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -460,29 +460,33 @@ def build_targets(p, targets, model):
 
     return tcls, tbox, indices, anch
 
-
-def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, multi_label=True, classes=None, agnostic=False):
+def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, fast=False, classes=None, agnostic=False):
     """
     Performs  Non-Maximum Suppression on inference results
     Returns detections with shape:
         nx6 (x1, y1, x2, y2, conf, cls)
     """
+    nc = prediction[0].shape[1] - 5  # number of classes
 
     # Settings
-    merge = True  # merge for best mAP
     min_wh, max_wh = 2, 4096  # (pixels) minimum and maximum box width and height
     max_det = 300  # maximum number of detections per image
     time_limit = 10.0  # seconds to quit after
-    redundant = conf_thres == 0.001  # require redundant detections
+    redundant = True  # require redundant detections
+    fast |= conf_thres > 0.001  # fast mode
+    if fast:
+        merge = False
+        multi_label = False
+    else:
+        merge = True  # merge for best mAP (adds 0.5ms/img)
+        multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
 
     t = time.time()
-    nc = prediction[0].shape[1] - 5  # number of classes
-    multi_label &= nc > 1  # multiple labels per box
     output = [None] * prediction.shape[0]
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
+        # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
         x = x[x[:, 4] > conf_thres]  # confidence
-        # x = x[((x[:, 2:4] > min_wh) & (x[:, 2:4] < max_wh)).all(1)]  # width-height
 
         # If none remain process next image
         if not x.shape[0]:

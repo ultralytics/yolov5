@@ -19,7 +19,7 @@ def test(data,
          augment=False,
          model=None,
          dataloader=None,
-         multi_label=True,
+         fast=False,
          verbose=False):  # 0 fast, 1 accurate
     # Initialize/load model and set device
     if model is None:
@@ -92,7 +92,7 @@ def test(data,
 
             # Run NMS
             t = torch_utils.time_synchronized()
-            output = non_max_suppression(inf_out, conf_thres=conf_thres, iou_thres=iou_thres, multi_label=multi_label)
+            output = non_max_suppression(inf_out, conf_thres=conf_thres, iou_thres=iou_thres, fast=fast)
             t1 += torch_utils.time_synchronized() - t
 
         # Statistics per image
