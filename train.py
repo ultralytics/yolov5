@@ -299,7 +299,7 @@ def train(hyp):
                                              model=ema.ema,
                                              single_cls=opt.single_cls,
                                              dataloader=testloader,
-                                             fast=ni > n_burn)
+                                             fast=ni < n_burn)
 
         # Write
         with open(results_file, 'a') as f:
