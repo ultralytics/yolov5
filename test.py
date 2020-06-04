@@ -65,15 +65,17 @@ def test(data,
                                       single_cls=opt.single_cls,  # single class mode
                                       pad=0.0 if fast else 0.5)  # padding
         batch_size = min(batch_size, len(dataset))
+        nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
         dataloader = DataLoader(dataset,
                                 batch_size=batch_size,
-                                num_workers=min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8]),
+                                num_workers=nw,
                                 pin_memory=True,
                                 collate_fn=dataset.collate_fn)
 
     seen = 0
     model.eval()
     _ = model(torch.zeros((1, 3, imgsz, imgsz), device=device)) if device.type != 'cpu' else None  # run once
+    names = model.module.names if hasattr(model, 'module') else model.names
     coco91class = coco80_to_coco91_class()
     s = ('%20s' + '%12s' * 6) % ('Class', 'Images', 'Targets', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
     p, r, f1, mp, mr, map50, map, t0, t1 = 0., 0., 0., 0., 0., 0., 0., 0., 0.
@@ -168,9 +170,9 @@ def test(data,
         # Plot images
         if batch_i < 1:
             f = 'test_batch%g_gt.jpg' % batch_i  # filename
-            plot_images(imgs, targets, paths, f, model.names)  # ground truth
+            plot_images(imgs, targets, paths, f, names)  # ground truth
             f = 'test_batch%g_pred.jpg' % batch_i
-            plot_images(imgs, output_to_target(output, width, height), paths, f, model.names)  # predictions
+            plot_images(imgs, output_to_target(output, width, height), paths, f, names)  # predictions
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
@@ -189,7 +191,7 @@ def test(data,
     # Print results per class
     if verbose and nc > 1 and len(stats):
         for i, c in enumerate(ap_class):
-            print(pf % (model.names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
+            print(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
 
     # Print speeds
     t = tuple(x / seen * 1E3 for x in (t0, t1, t0 + t1)) + (imgsz, imgsz, batch_size)  # tuple
