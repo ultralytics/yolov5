@@ -76,6 +76,7 @@ def train(hyp):
 
     # Create model
     model = Model(opt.cfg).to(device)
+    assert model.md['nc'] == nc, '%s nc=%g classes but %s nc=%g classes' % (opt.data, nc, opt.cfg, model.md['nc'])
 
     # Image sizes
     gs = int(max(model.stride))  # grid size (max stride)
