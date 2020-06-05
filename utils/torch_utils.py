@@ -12,8 +12,11 @@ import torch.nn.functional as F
 def init_seeds(seed=0):
     torch.manual_seed(seed)
 
-    # Reduce randomness (may be slower on Tesla GPUs) # https://pytorch.org/docs/stable/notes/randomness.html
-    if seed == 0:
+    # Speed-reproducibility tradeoff https://pytorch.org/docs/stable/notes/randomness.html
+    if seed == 0:  # slower, more reproducible
+        cudnn.deterministic = True
+        cudnn.benchmark = False
+    else:  # faster, less reproducible
         cudnn.deterministic = False
         cudnn.benchmark = True
 

@@ -63,7 +63,7 @@ def train(hyp):
     weights = opt.weights  # initial training weights
 
     # Configure
-    init_seeds()
+    init_seeds(1)
     with open(opt.data) as f:
         data_dict = yaml.load(f, Loader=yaml.FullLoader)  # model dict
     train_path = data_dict['train']
