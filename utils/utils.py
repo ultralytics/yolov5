@@ -460,6 +460,7 @@ def build_targets(p, targets, model):
 
     return tcls, tbox, indices, anch
 
+
 def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, fast=False, classes=None, agnostic=False):
     """
     Performs  Non-Maximum Suppression on inference results
@@ -508,7 +509,7 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, fast=False, c
 
         # Filter by class
         if classes:
-            x = x[(j.view(-1, 1) == torch.tensor(classes, device=j.device)).any(1)]
+            x = x[(x[:, 5:6] == torch.tensor(classes, device=x.device)).any(1)]
 
         # Apply finite constraint
         # if not torch.isfinite(x).all():
