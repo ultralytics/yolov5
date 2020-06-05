@@ -241,9 +241,9 @@ def train(hyp):
                         x['momentum'] = np.interp(ni, xi, [0.9, hyp['momentum']])
 
             # Multi-scale
-            if True:
-                imgsz = random.randrange(640, 640 + gs) // gs * gs
-                sf = imgsz / max(imgs.shape[2:])  # scale factor
+            if opt.multi_scale:
+                sz = random.randrange(imgsz * 0.5, imgsz * 1.5 + gs) // gs * gs  # size
+                sf = sz / max(imgs.shape[2:])  # scale factor
                 if sf != 1:
                     ns = [math.ceil(x * sf / gs) * gs for x in imgs.shape[2:]]  # new shape (stretched to gs-multiple)
                     imgs = F.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
@@ -273,7 +273,8 @@ def train(hyp):
             # Print
             mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
             mem = '%.3gG' % (torch.cuda.memory_cached() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
-            s = ('%10s' * 2 + '%10.4g' * 6) % ('%g/%g' % (epoch, epochs - 1), mem, *mloss, targets.shape[0], imgsz)
+            s = ('%10s' * 2 + '%10.4g' * 6) % (
+                '%g/%g' % (epoch, epochs - 1), mem, *mloss, targets.shape[0], imgs.shape[-1])
             pbar.set_description(s)
 
             # Plot
@@ -377,6 +378,7 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--adam', action='store_true', help='use adam optimizer')
+    parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     opt = parser.parse_args()
     opt.weights = last if opt.resume else opt.weights
