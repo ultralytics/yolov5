@@ -247,7 +247,7 @@ if __name__ == '__main__':
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
     opt = parser.parse_args()
-    opt.save_json = opt.save_json or opt.data.endswith(os.sep + 'coco.yaml')
+    opt.save_json = opt.save_json or opt.data.endswith('coco.yaml')
     opt.data = glob.glob('./**/' + opt.data, recursive=True)[0]  # find file
     print(opt)
 
