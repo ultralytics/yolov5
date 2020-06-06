@@ -180,8 +180,8 @@ if __name__ == '__main__':
     model.train()
 
     # Profile
-    img = torch.rand(8 if torch.cuda.is_available() else 1, 3, 640, 640).to(device)
-    y = model(img, profile=True)
+    # img = torch.rand(8 if torch.cuda.is_available() else 1, 3, 640, 640).to(device)
+    # y = model(img, profile=True)
     # print([y[0].shape] + [x.shape for x in y[1]])
 
     # ONNX export
