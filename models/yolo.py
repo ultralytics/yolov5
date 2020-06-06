@@ -20,6 +20,7 @@ class Detect(nn.Module):
         self.export = False  # onnx export
 
     def forward(self, x):
+        x = x.copy() # for profiling
         z = []  # inference output
         self.training |= self.export
         for i in range(self.nl):
@@ -66,7 +67,7 @@ class Model(nn.Module):
         print('')
 
     def forward(self, x, augment=False, profile=False):
-        y, ts = [], 0  # outputs
+        y, dt = [], []  # outputs
         for m in self.model:
             if m.f != -1:  # if not from previous layer
                 x = y[m.f] if isinstance(m.f, int) else [x if j == -1 else y[j] for j in m.f]  # from earlier layers
@@ -77,15 +78,14 @@ class Model(nn.Module):
                 t = torch_utils.time_synchronized()
                 for _ in range(10):
                     _ = m(x)
-                dt = torch_utils.time_synchronized() - t
-                ts += dt
-                print('%10.1f%10.0f%10.1fms %-40s' % (o, m.np, dt * 100, m.type))
+                dt.append((torch_utils.time_synchronized() - t) * 100)
+                print('%10.1f%10.0f%10.1fms %-40s' % (o, m.np, dt[-1], m.type))
 
             x = m(x)  # run
             y.append(x if m.i in self.save else None)  # save output
 
         if profile:
-            print(ts * 100)
+            print('%.1fms total' % sum(dt))
         return x
 
     def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
@@ -180,8 +180,8 @@ if __name__ == '__main__':
     model.train()
 
     # Profile
-    # img = torch.rand(8 if torch.cuda.is_available() else 1, 3, 640, 640).to(device)
-    # y = model(img, profile=True)
+    img = torch.rand(8 if torch.cuda.is_available() else 1, 3, 640, 640).to(device)
+    y = model(img, profile=True)
     # print([y[0].shape] + [x.shape for x in y[1]])
 
     # ONNX export
