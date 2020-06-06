@@ -72,8 +72,8 @@ class Model(nn.Module):
             s = [0.83, 0.67]  # scales
             y = []
             for i, xi in enumerate((x,
-                                    torch_utils.scale_img(x.flip(3), s[0], same_shape=False),  # flip-lr and scale
-                                    torch_utils.scale_img(x, s[1], same_shape=False),  # scale
+                                    torch_utils.scale_img(x.flip(3), s[0]),  # flip-lr and scale
+                                    torch_utils.scale_img(x, s[1]),  # scale
                                     )):
                 # cv2.imwrite('img%g.jpg' % i, 255 * xi[0].numpy().transpose((1, 2, 0))[:, :, ::-1])
                 y.append(self.forward_once(xi)[0])

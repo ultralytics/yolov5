@@ -135,7 +135,7 @@ def load_classifier(name='resnet101', n=2):
     return model
 
 
-def scale_img(img, ratio=1.0, same_shape=True):  # img(16,3,256,416), r=ratio
+def scale_img(img, ratio=1.0, same_shape=False):  # img(16,3,256,416), r=ratio
     # scales img(bs,3,y,x) by ratio
     h, w = img.shape[2:]
     s = (int(h * ratio), int(w * ratio))  # new size
