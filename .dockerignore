@@ -8,8 +8,6 @@ coco
 storage.googleapis.com
 
 data/samples/*
-!data/samples/zidane.jpg
-!data/samples/bus.jpg
 **/results*.txt
 *.jpg
 
@@ -18,8 +16,6 @@ data/samples/*
 **/*.pt
 **/*.onnx
 **/*.mlmodel
-**/darknet53.conv.74
-**/yolov3-tiny.conv.15
 
 
 # Below Copied From .gitignore -----------------------------------------------------------------------------------------
