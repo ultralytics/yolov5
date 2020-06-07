@@ -33,8 +33,6 @@ def test(data,
         google_utils.attempt_download(weights)
         model = torch.load(weights, map_location=device)['model']
         torch_utils.model_info(model)
-
-        # Fuse
         # model.fuse()
         model.to(device)
 
