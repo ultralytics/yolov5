@@ -557,7 +557,11 @@ def strip_optimizer(f='weights/best.pt'):  # from utils.utils import *; strip_op
 
 def create_backbone(f='weights/best.pt', s='weights/backbone.pt'):  # from utils.utils import *; create_backbone()
     # create backbone 's' from 'f'
-    x = torch.load(f, map_location=torch.device('cpu'))
+    device = torch.device('cpu')
+    x = torch.load(f, map_location=device)
+    torch.save(x, s)  # update model if SourceChangeWarning
+    x = torch.load(s, map_location=device)
+
     x['optimizer'] = None
     x['training_results'] = None
     x['epoch'] = -1
