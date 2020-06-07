@@ -20,6 +20,9 @@ class Conv(nn.Module):  # standard convolution
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
 
+    def fuseforward(self, x):
+        return self.act(self.conv(x))
+
 
 class Bottleneck(nn.Module):
     def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, shortcut, groups, expansion

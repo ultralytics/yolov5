@@ -123,6 +123,15 @@ class Model(nn.Module):
             b = self.model[f].bias.detach().view(m.na, -1).T  # conv.bias(255) to (3,85)
             print(('%g Conv2d.bias:' + '%10.3g' * 6) % (f, *b[:5].mean(1).tolist(), b[5:].mean()))
 
+    def fuse(self):  # fuse model Conv2d() + BatchNorm2d() layers
+        print('Fusing layers...')
+        for m in self.model.modules():
+            if type(m) is Conv:
+                m.conv = torch_utils.fuse_conv_and_bn(m.conv, m.bn)  # update conv
+                m.bn = None  # remove batchnorm
+                m.forward = m.fuseforward  # update forward
+        torch_utils.model_info(self)
+
 
 def parse_model(md, ch):  # model_dict, input_channels(3)
     print('\n%3s%15s%3s%10s  %-40s%-30s' % ('', 'from', 'n', 'params', 'module', 'arguments'))
