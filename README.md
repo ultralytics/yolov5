@@ -4,11 +4,11 @@
 
 This repository represents Ultralytics open-source research into future object detection methods, and incorporates our lessons learned and best practices evolved over training thousands of models on custom client datasets with our previous YOLO repository https://github.com/ultralytics/yolov3. **All code and models are under active development, and are subject to modification or deletion without notice.** Use at your own risk.
 
-<img src="https://user-images.githubusercontent.com/26833433/83359175-63b6c680-a32d-11ea-970a-9f602e022468.png" width="1000">** GPU Latency measures end-to-end latency per image averaged over 5000 COCO val2017 images using a V100 GPU with batch size 16, and includes image preprocessing, FP32 inference, postprocessing and NMS.
+<img src="https://user-images.githubusercontent.com/26833433/84200349-729f2680-aa5b-11ea-8f9a-604c9e01a658.png" width="1000">** GPU Latency measures end-to-end latency per image averaged over 5000 COCO val2017 images using a V100 GPU with batch size 32, and includes image preprocessing, FP32 inference, postprocessing and NMS.
 
-- **May 27, 2020**: Public release of repo. yolov3-spp implementation (this repo) is SOTA at 45.5 mAP among all known yolo implementations, yolov5 family will be undergoing architecture research and development over Q2/Q3 2020 to increase performance. Updates may include [CSP](https://github.com/WongKinYiu/CrossStagePartialNetworks) bottlenecks from [yolov4](https://github.com/AlexeyAB/darknet), as well as PANet or BiFPN head features.
-- **May 24, 2020**: Training yolov5s/x and yolov3-spp. yolov5m/l suffered early overfitting and also code 137 early docker terminations, cause unknown. yolov5l underperforms yolov3-spp due to earlier overfitting, cause unknown.
-- **April 1, 2020**: Begin development of a 100% pytorch scaleable yolov3/4-based group of future models, in small, medium, large and extra large sizes, collectively known as yolov5. Models will be defined by new user-friendly yaml-based configuration files for ease of construction and modification. Datasets will likewise use yaml configuration files. New training platform will be simpler use, harder to break, and more robust to training a wider variety of custom dataset.
+- **June 9, 2020**: [CSP](https://github.com/WongKinYiu/CrossStagePartialNetworks) updates to all YOLOv5 models. New models are faster, smaller and more accurate. Credit to @WongKinYiu for his excellent work with CSP. 
+- **May 27, 2020**: Public release of repo. YOLOv5 models are SOTA among all known YOLO implementations, YOLOv5 family will be undergoing architecture research and development over Q2/Q3 2020 to increase performance. Updates may include [CSP](https://github.com/WongKinYiu/CrossStagePartialNetworks) bottlenecks, [YOLOv4](https://github.com/AlexeyAB/darknet) features, as well as PANet or BiFPN heads.
+- **April 1, 2020**: Begin development of a 100% PyTorch, scaleable YOLOv3/4-based group of future models, in a range of compound-scaled sizes, collectively known as YOLOv5. Models will be defined by new user-friendly *.yaml files. New training platform will be simpler use, harder to break, and more robust to training a wider variety of custom dataset.
 
 
 ## Ultralytics Professional Support
@@ -25,15 +25,15 @@ For business inquiries and professional support requests please visit us at http
 
 | Model | AP<sup>val</sup> | AP<sup>test</sup> | AP<sub>50</sub> | Latency<sub>GPU</sub> | FPS<sub>GPU</sub> || params | FLOPs |
 |---------- |------ |------ |------ | -------- | ------| ------ |------  |  :------: |
-| YOLOv5-s ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | 33.0     | 33.0     | 53.2     | **2.9ms** | **345** || 7.0M   | 14.0B
-| YOLOv5-m ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | 41.4     | 41.4     | 61.5     | 5.0ms     | 200     || 25.2M  | 50.2B
-| YOLOv5-l ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | 44.3     | 44.5     | 64.3     | 8.9ms     | 112     || 61.8M  | 123.1B
-| YOLOv5-x ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | **47.1** | **47.2** | **66.7** | 15.2ms    | 66      || 123.1M | 245.7B
-| YOLOv3-SPP ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))  | 45.6     | 45.5     | 65.2     | 8.3ms     | 120     || 63.0M  | 118.0B
+| YOLOv5-s ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | 35.5     | 35.5     | 55.0     | **2.5ms** | **400** || 7.1M   | 12.6B
+| YOLOv5-m ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | 42.7     | 42.7     | 62.4     | 4.4ms     | 227     || 22.0M  | 39.0B
+| YOLOv5-l ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | 45.7     | 45.9     | 65.1     | 6.8ms     | 147     || 50.3M  | 89.0B
+| YOLOv5-x ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))    | **47.2** | **47.3** | **66.6** | 11.7ms    | 85      || 95.9M | 170.3B
+| YOLOv3-SPP ([ckpt](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J))  | 45.6     | 45.5     | 65.2     | 7.9ms     | 127     || 63.0M  | 118.0B
 
 ** AP<sup>test</sup> denotes COCO [test-dev2017](http://cocodataset.org/#upload) server results, all other AP results in the table denote val2017 accuracy.  
 ** All AP numbers are for single-model single-scale without ensemble or test-time augmentation. Reproduce by `python test.py --img 736 --conf 0.001`  
-** Latency<sub>GPU</sub> measures end-to-end latency per image averaged over 5000 COCO val2017 images using a GCP [n1-standard-16](https://cloud.google.com/compute/docs/machine-types#n1_standard_machine_types) instance with one V100 GPU, and includes image preprocessing, pytorch FP32 inference at batch size 16, postprocessing and NMS. Average NMS time included in this chart is 1-2ms/img.  Reproduce by `python test.py --img 640 --conf 0.1`  
+** Latency<sub>GPU</sub> measures end-to-end latency per image averaged over 5000 COCO val2017 images using a GCP [n1-standard-16](https://cloud.google.com/compute/docs/machine-types#n1_standard_machine_types) instance with one V100 GPU, and includes image preprocessing, PyTorch FP32 inference at batch size 32, postprocessing and NMS. Average NMS time included in this chart is 1-2ms/img.  Reproduce by `python test.py --img 640 --conf 0.1`  
 ** All checkpoints are trained to 300 epochs with default settings and hyperparameters (no autoaugmentation). 
 
 
@@ -85,11 +85,11 @@ Results saved to /content/yolov5/inference/output
 
 ## Reproduce Our Training
 
-Run commands below. Training takes a few days for yolov5s, to a few weeks for yolov5x on a 2080Ti GPU.
+Run command below. Training times for yolov5s/m/l/x are 2/4/6/8 days on a single V100 (multi-GPU times faster).
 ```bash
-$ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 16 
+$ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 16                                      
 ```
-<img src="https://user-images.githubusercontent.com/26833433/82960433-5a191180-9f6f-11ea-85cc-c49dbd1555e1.png" width="900">
+<img src="https://user-images.githubusercontent.com/26833433/84186698-c4d54d00-aa45-11ea-9bde-c632c1230ccd.png" width="900">
 
 
 ## Reproduce Our Environment

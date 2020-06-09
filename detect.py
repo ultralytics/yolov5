@@ -3,8 +3,6 @@ import argparse
 from utils.datasets import *
 from utils.utils import *
 
-ONNX_EXPORT = False
-
 
 def detect(save_img=False):
     out, source, weights, half, view_img, save_txt, imgsz = \

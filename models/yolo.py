@@ -45,14 +45,17 @@ class Detect(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, model_yaml='yolov5s.yaml', ch=3, nc=None):  # model, input channels, number of classes
+    def __init__(self, model_cfg='yolov5s.yaml', ch=3, nc=None):  # model, input channels, number of classes
         super(Model, self).__init__()
-        with open(model_yaml) as f:
-            self.md = yaml.load(f, Loader=yaml.FullLoader)  # model dict
-            if nc:
-                self.md['nc'] = nc  # override yaml value
+        if type(model_cfg) is dict:
+            self.md = model_cfg  # model dict
+        else:  # is *.yaml
+            with open(model_cfg) as f:
+                self.md = yaml.load(f, Loader=yaml.FullLoader)  # model dict
 
         # Define model
+        if nc:
+            self.md['nc'] = nc  # override yaml value
         self.model, self.save, ch = parse_model(self.md, ch=[ch])  # model, savelist, ch_out
         # print([x.shape for x in self.forward(torch.zeros(1, 3, 64, 64))])
 

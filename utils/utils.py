@@ -994,10 +994,7 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.utils import *; plot_st
     ax = ax.ravel()
 
     fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
-    ax2.plot(1E3 / np.array([209, 140, 97, 58, 35, 18][:-1]), [33.5, 39.1, 42.5, 45.9, 49., 50.5][:-1],
-             '.-', linewidth=2, markersize=8, alpha=0.3, label='EfficientDet')
-
-    for f in sorted(glob.glob('study*.txt')):
+    for f in ['coco_study/study_coco_yolov5%s.txt' % x for x in ['s', 'm', 'l', 'x']]:
         y = np.loadtxt(f, dtype=np.float32, usecols=[0, 1, 2, 3, 7, 8, 9], ndmin=2).T
         x = np.arange(y.shape[1]) if x is None else np.array(x)
         s = ['P', 'R', 'mAP@.5', 'mAP@.5:.95', 't_inference (ms/img)', 't_NMS (ms/img)', 't_total (ms/img)']
@@ -1009,7 +1006,9 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.utils import *; plot_st
         ax2.plot(y[6, :j], y[3, :j] * 1E2, '.-', linewidth=2, markersize=8,
                  label=Path(f).stem.replace('study_coco_', '').replace('yolo', 'YOLO'))
 
-    ax2.set_xlim(0)
+    ax2.plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [33.5, 39.1, 42.5, 45.9, 49., 50.5],
+             'k.-', linewidth=2, markersize=8, alpha=.25, label='EfficientDet')
+    ax2.set_xlim(0, 30)
     ax2.set_ylim(23, 50)
     ax2.set_xlabel('GPU Latency (ms)')
     ax2.set_ylabel('COCO AP val')
@@ -1085,8 +1084,8 @@ def plot_results_overlay(start=0, stop=0):  # from utils.utils import *; plot_re
         fig.savefig(f.replace('.txt', '.png'), dpi=200)
 
 
-def plot_results(start=0, stop=0, bucket='', id=()):  # from utils.utils import *; plot_results()
-    # Plot training 'results*.txt' as seen in https://github.com/ultralytics/yolov3#training
+def plot_results(start=0, stop=0, bucket='', id=(), labels=()):  # from utils.utils import *; plot_results()
+    # Plot training 'results*.txt' as seen in https://github.com/ultralytics/yolov5#reproduce-our-training
     fig, ax = plt.subplots(2, 5, figsize=(12, 6))
     ax = ax.ravel()
     s = ['GIoU', 'Objectness', 'Classification', 'Precision', 'Recall',
@@ -1096,7 +1095,7 @@ def plot_results(start=0, stop=0, bucket='', id=()):  # from utils.utils import 
         files = ['https://storage.googleapis.com/%s/results%g.txt' % (bucket, x) for x in id]
     else:
         files = glob.glob('results*.txt') + glob.glob('../../Downloads/results*.txt')
-    for f in sorted(files):
+    for fi, f in enumerate(files):
         try:
             results = np.loadtxt(f, usecols=[2, 3, 4, 8, 9, 12, 13, 14, 10, 11], ndmin=2).T
             n = results.shape[1]  # number of rows
@@ -1106,7 +1105,8 @@ def plot_results(start=0, stop=0, bucket='', id=()):  # from utils.utils import 
                 if i in [0, 1, 2, 5, 6, 7]:
                     y[y == 0] = np.nan  # dont show zero loss values
                     # y /= y[0]  # normalize
-                ax[i].plot(x, y, marker='.', label=Path(f).stem, linewidth=2, markersize=8)
+                label = labels[fi] if len(labels) else Path(f).stem
+                ax[i].plot(x, y, marker='.', label=label, linewidth=2, markersize=8)
                 ax[i].set_title(s[i])
                 # if i in [5, 6, 7]:  # share train and val loss y axes
                 #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
