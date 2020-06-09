@@ -125,6 +125,11 @@ class Model(nn.Module):
             b = self.model[f].bias.detach().view(m.na, -1).T  # conv.bias(255) to (3,85)
             print(('%g Conv2d.bias:' + '%10.3g' * 6) % (f, *b[:5].mean(1).tolist(), b[5:].mean()))
 
+    # def _print_weights(self):
+    #     for m in self.model.modules():
+    #         if type(m) is Bottleneck:
+    #             print('%10.3g' % (m.w.detach().sigmoid() * 2))  # shortcut weights
+
     def fuse(self):  # fuse model Conv2d() + BatchNorm2d() layers
         print('Fusing layers...')
         for m in self.model.modules():
