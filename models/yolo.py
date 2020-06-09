@@ -176,9 +176,7 @@ def parse_model(md, ch):  # model_dict, input_channels(3)
         elif m is nn.BatchNorm2d:
             args = [ch[f]]
         elif m is Concat:
-            c2 = sum([ch[x] for x in f])
-        elif m is Origami:
-            c2 = ch[f] * 5
+            c2 = sum([ch[-1 if x == -1 else x + 1] for x in f])
         elif m is Detect:
             f = f or list(reversed([(-1 if j == i else j - 1) for j, x in enumerate(ch) if x == no]))
         else:

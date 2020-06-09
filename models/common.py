@@ -6,11 +6,13 @@ import torch.nn.functional as F
 from utils.utils import *
 
 
-def DWConv(c1, c2, k=1, s=1, act=True):  # depthwise convolution
+def DWConv(c1, c2, k=1, s=1, act=True):
+    # Depthwise convolution
     return Conv(c1, c2, k, s, g=math.gcd(c1, c2), act=act)
 
 
-class Conv(nn.Module):  # standard convolution
+class Conv(nn.Module):
+    # Standard convolution
     def __init__(self, c1, c2, k=1, s=1, g=1, act=True):  # ch_in, ch_out, kernel, stride, groups
         super(Conv, self).__init__()
         self.conv = nn.Conv2d(c1, c2, k, s, k // 2, groups=g, bias=False)
@@ -25,6 +27,7 @@ class Conv(nn.Module):  # standard convolution
 
 
 class Bottleneck(nn.Module):
+    # Standard bottleneck
     def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, shortcut, groups, expansion
         super(Bottleneck, self).__init__()
         c_ = int(c2 * e)  # hidden channels
@@ -36,21 +39,8 @@ class Bottleneck(nn.Module):
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
 
-class BottleneckLight(nn.Module):
-    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, shortcut, groups, expansion
-        super(BottleneckLight, self).__init__()
-        c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c_, 1, 1)
-        self.cv2 = nn.Conv2d(c_, c2, 3, 1, 3 // 2, groups=g, bias=False)
-        self.bn = nn.BatchNorm2d(c2)
-        self.act = nn.LeakyReLU(0.1, inplace=True)
-        self.add = shortcut and c1 == c2
-
-    def forward(self, x):
-        return self.act(self.bn(x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))))
-
-
 class BottleneckCSP(nn.Module):
+    # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
         super(BottleneckCSP, self).__init__()
         c_ = int(c2 * e)  # hidden channels
@@ -68,25 +58,8 @@ class BottleneckCSP(nn.Module):
         return self.cv4(self.act(self.bn(torch.cat((y1, y2), dim=1))))
 
 
-class Narrow(nn.Module):
-    def __init__(self, c1, c2, shortcut=True, g=1):  # ch_in, ch_out, shortcut, groups
-        super(Narrow, self).__init__()
-        c_ = c2 // 2  # hidden channels
-        self.cv1 = Conv(c1, c_, 1, 1)
-        self.cv2 = Conv(c_, c2, 3, 1, g=g)
-        self.add = shortcut and c1 == c2
-
-    def forward(self, x):
-        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
-
-
-class Origami(nn.Module):  # 5-side layering
-    def forward(self, x):
-        y = F.pad(x, [1, 1, 1, 1])
-        return torch.cat([x, y[..., :-2, 1:-1], y[..., 1:-1, :-2], y[..., 2:, 1:-1], y[..., 1:-1, 2:]], 1)
-
-
-class ConvPlus(nn.Module):  # standard convolution
+class ConvPlus(nn.Module):
+    # Plus-shaped convolution
     def __init__(self, c1, c2, k=3, s=1, g=1, bias=True):  # ch_in, ch_out, kernel, stride, groups
         super(ConvPlus, self).__init__()
         self.cv1 = nn.Conv2d(c1, c2, (k, 1), s, (k // 2, 0), groups=g, bias=bias)
@@ -96,7 +69,8 @@ class ConvPlus(nn.Module):  # standard convolution
         return self.cv1(x) + self.cv2(x)
 
 
-class SPP(nn.Module):  # Spatial pyramid pooling layer used in YOLOv3-SPP
+class SPP(nn.Module):
+    # Spatial pyramid pooling layer used in YOLOv3-SPP
     def __init__(self, c1, c2, k=(5, 9, 13)):
         super(SPP, self).__init__()
         c_ = c1 // 2  # hidden channels
