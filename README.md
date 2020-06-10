@@ -4,21 +4,11 @@
 
 This repository represents Ultralytics open-source research into future object detection methods, and incorporates our lessons learned and best practices evolved over training thousands of models on custom client datasets with our previous YOLO repository https://github.com/ultralytics/yolov3. **All code and models are under active development, and are subject to modification or deletion without notice.** Use at your own risk.
 
-<img src="https://user-images.githubusercontent.com/26833433/84200349-729f2680-aa5b-11ea-8f9a-604c9e01a658.png" width="1000">** GPU Latency measures end-to-end latency per image averaged over 5000 COCO val2017 images using a V100 GPU with batch size 32, and includes image preprocessing, FP32 inference, postprocessing and NMS.
+<img src="https://user-images.githubusercontent.com/26833433/84200349-729f2680-aa5b-11ea-8f9a-604c9e01a658.png" width="1000">** GPU Latency measures end-to-end latency per image averaged over 5000 COCO val2017 images using a V100 GPU with batch size 32, and includes image preprocessing, PyTorch FP32 inference, postprocessing and NMS.
 
 - **June 9, 2020**: [CSP](https://github.com/WongKinYiu/CrossStagePartialNetworks) updates to all YOLOv5 models. New models are faster, smaller and more accurate. Credit to @WongKinYiu for his excellent work with CSP. 
 - **May 27, 2020**: Public release of repo. YOLOv5 models are SOTA among all known YOLO implementations, YOLOv5 family will be undergoing architecture research and development over Q2/Q3 2020 to increase performance. Updates may include [CSP](https://github.com/WongKinYiu/CrossStagePartialNetworks) bottlenecks, [YOLOv4](https://github.com/AlexeyAB/darknet) features, as well as PANet or BiFPN heads.
 - **April 1, 2020**: Begin development of a 100% PyTorch, scaleable YOLOv3/4-based group of future models, in a range of compound-scaled sizes, collectively known as YOLOv5. Models will be defined by new user-friendly *.yaml files. New training platform will be simpler use, harder to break, and more robust to training a wider variety of custom dataset.
-
-
-## Ultralytics Professional Support
-
-Ultralytics is a U.S.-based particle physics and AI startup with over 6 years of expertise supporting government, academic and business clients. We offer a wide range of vision AI services, spanning from simple expert advice up to delivery of fully customized, end-to-end production solutions, including:
-- **Cloud-based AI** surveillance systems operating on **hundreds of HD video streams in realtime.**
-- **Edge AI** integrated into custom iOS and Android apps for realtime **30 FPS video inference.**
-- **Custom data training**, hyperparameter evolution, and model exportation to any destination.
-
-For business inquiries and professional support requests please visit us at https://www.ultralytics.com. 
 
 
 ## Pretrained Checkpoints
@@ -82,7 +72,6 @@ Results saved to /content/yolov5/inference/output
 
 <img src="https://user-images.githubusercontent.com/26833433/83082816-59e54880-a039-11ea-8abe-ab90cc1ec4b0.jpeg" width="500">  
 
-
 ## Reproduce Our Training
 
 Run command below. Training times for yolov5s/m/l/x are 2/4/6/8 days on a single V100 (multi-GPU times faster).
@@ -99,9 +88,21 @@ To access an up-to-date working environment (with all dependencies including CUD
 - **GCP** Deep Learning VM with $300 free credit offer: See our [GCP Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart) 
 - **Google Colab Notebook** with 12 hours of free GPU time. <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
 - **Docker Image** https://hub.docker.com/r/ultralytics/yolov5. See [Docker Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/Docker-Quickstart)
+
+
 ## Citation
 
 [![DOI](https://zenodo.org/badge/146165888.svg)](https://zenodo.org/badge/latestdoi/146165888)
+
+
+## About Us
+
+Ultralytics is a U.S.-based particle physics and AI startup with over 6 years of expertise supporting government, academic and business clients. We offer a wide range of vision AI services, spanning from simple expert advice up to delivery of fully customized, end-to-end production solutions, including:
+- **Cloud-based AI** surveillance systems operating on **hundreds of HD video streams in realtime.**
+- **Edge AI** integrated into custom iOS and Android apps for realtime **30 FPS video inference.**
+- **Custom data training**, hyperparameter evolution, and model exportation to any destination.
+
+For business inquiries and professional support requests please visit us at https://www.ultralytics.com. 
 
 
 ## Contact
