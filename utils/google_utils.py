@@ -10,7 +10,7 @@ from pathlib import Path
 def attempt_download(weights):
     # Attempt to download pretrained weights if not found locally
     weights = weights.strip()
-    msg = weights + ' missing, try downloading from https://drive.google.com/open?id=1LezFG5g3BCW6iYaV89B2i64cqEUZD7e0'
+    msg = weights + ' missing, try downloading from https://drive.google.com/drive/folders/1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J'
 
     r = 1
     if len(weights) > 0 and not os.path.isfile(weights):
