@@ -11,13 +11,13 @@ jobs:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         pr-message: 'Hello @${{ github.actor }}, thank you for submitting a PR! We will respond as soon as possible.'
         issue-message: |
-          Hello @${{ github.actor }}, thank you for your interest in our work! Please visit our [Custom Training Tutorial](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data) to get started, and see our [Google Colab Notebook](https://github.com/ultralytics/yolov5/blob/master/tutorial.ipynb), [Docker Image](https://hub.docker.com/r/ultralytics/yolov5), and [GCP Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart) for example environments.
+          Hello @${{ github.actor }}, thank you for your interest in our work! Please visit our [Custom Training Tutorial](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data) to get started, and see our [Jupyter Notebook](https://github.com/ultralytics/yolov5/blob/master/tutorial.ipynb) <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>, [Docker Image](https://hub.docker.com/r/ultralytics/yolov5), and [Google Cloud Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart) for example environments.
             
           If this is a bug report, please provide screenshots and **minimum viable code to reproduce your issue**, otherwise we can not help you.
             
           If this is a custom model or data training question, please note that Ultralytics does **not** provide free personal support. As a leader in vision ML and AI, we do offer professional consulting, from simple expert advice up to delivery of fully customized, end-to-end production solutions for our clients, such as:
-          - **Cloud-based AI** surveillance systems operating on **hundreds of HD video streams in realtime.**  
-          - **Edge AI** integrated into custom iOS and Android apps for realtime **30 FPS video inference.**  
-          - **Custom data training**, hyperparameter evolution, and model exportation to any destination.  
-            
+          - **Cloud-based AI** systems operating on **hundreds of HD video streams in realtime.**
+          - **Edge AI** integrated into custom iOS and Android apps for realtime **30 FPS video inference.**
+          - **Custom data training**, hyperparameter evolution, and model exportation to any destination.
+
           For more information please visit https://www.ultralytics.com.
