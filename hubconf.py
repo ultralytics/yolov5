@@ -5,7 +5,7 @@ Usage:
     model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True, channels=3, classes=80)
 """
 
-dependencies = ['torch', 'pyyaml']
+dependencies = ['torch', 'yaml']
 import torch
 
 from models.yolo import Model
