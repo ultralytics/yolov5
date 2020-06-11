@@ -2,7 +2,7 @@ import argparse
 
 import yaml
 
-from models.common import *
+from models.experimental import *
 
 
 class Detect(nn.Module):
@@ -56,12 +56,12 @@ class Model(nn.Module):
         # Define model
         if nc:
             self.md['nc'] = nc  # override yaml value
-        self.model, self.save, ch = parse_model(self.md, ch=[ch])  # model, savelist, ch_out
-        # print([x.shape for x in self.forward(torch.zeros(1, 3, 64, 64))])
+        self.model, self.save = parse_model(self.md, ch=[ch])  # model, savelist, ch_out
+        # print([x.shape for x in self.forward(torch.zeros(1, ch, 64, 64))])
 
         # Build strides, anchors
         m = self.model[-1]  # Detect()
-        m.stride = torch.tensor([64 / x.shape[-2] for x in self.forward(torch.zeros(1, 3, 64, 64))])  # forward
+        m.stride = torch.tensor([64 / x.shape[-2] for x in self.forward(torch.zeros(1, ch, 64, 64))])  # forward
         m.anchors /= m.stride.view(-1, 1, 1)
         self.stride = m.stride
 
@@ -200,7 +200,7 @@ def parse_model(md, ch):  # model_dict, input_channels(3)
         save.extend(x % i for x in ([f] if isinstance(f, int) else f) if x != -1)  # append to savelist
         layers.append(m_)
         ch.append(c2)
-    return nn.Sequential(*layers), sorted(save), ch
+    return nn.Sequential(*layers), sorted(save)
 
 
 if __name__ == '__main__':
