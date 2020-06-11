@@ -8,7 +8,7 @@ This repository represents Ultralytics open-source research into future object d
 
 - **June 9, 2020**: [CSP](https://github.com/WongKinYiu/CrossStagePartialNetworks) updates to all YOLOv5 models. New models are faster, smaller and more accurate. Credit to @WongKinYiu for his excellent work with CSP. 
 - **May 27, 2020**: Public release of repo. YOLOv5 models are SOTA among all known YOLO implementations, YOLOv5 family will be undergoing architecture research and development over Q2/Q3 2020 to increase performance. Updates may include [CSP](https://github.com/WongKinYiu/CrossStagePartialNetworks) bottlenecks, [YOLOv4](https://github.com/AlexeyAB/darknet) features, as well as PANet or BiFPN heads.
-- **April 1, 2020**: Begin development of a 100% PyTorch, scaleable YOLOv3/4-based group of future models, in a range of compound-scaled sizes, collectively known as YOLOv5. Models will be defined by new user-friendly *.yaml files. New training platform will be simpler use, harder to break, and more robust to training a wider variety of custom dataset.
+- **April 1, 2020**: Begin development of a 100% PyTorch, scaleable YOLOv3/4-based group of future models, in a range of compound-scaled sizes. Models will be defined by new user-friendly `*.yaml` files. New training methods will be simpler to start, faster to finish, and more robust to training a wider variety of custom dataset.
 
 
 ## Pretrained Checkpoints
