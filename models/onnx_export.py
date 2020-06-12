@@ -13,25 +13,27 @@ from models.common import *
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='./weights/yolov5s.pt', help='weights path')
-    parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
+    parser.add_argument('--weights', type=str, default='./yolov5s.pt', help='weights path')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     opt = parser.parse_args()
     print(opt)
 
     # Parameters
     f = opt.weights.replace('.pt', '.onnx')  # onnx filename
-    img = torch.zeros((opt.batch_size, 3, opt.img_size, opt.img_size))  # image size, (1, 3, 320, 192) iDetection
+    img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size, (1, 3, 320, 192) iDetection
 
     # Load pytorch model
     google_utils.attempt_download(opt.weights)
     model = torch.load(opt.weights)['model']
     model.eval()
-    # model.fuse()
+    model.fuse()
 
     # Export to onnx
     model.model[-1].export = True  # set Detect() layer export=True
-    torch.onnx.export(model, img, f, verbose=False, opset_version=11)
+    _ = model(img)  # dry run
+    torch.onnx.export(model, img, f, verbose=False, opset_version=11, input_names=['images'],
+                      output_names=['output'])  # output_names=['classes', 'boxes']
 
     # Check onnx model
     model = onnx.load(f)  # load onnx model

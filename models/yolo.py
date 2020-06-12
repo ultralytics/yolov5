@@ -20,7 +20,7 @@ class Detect(nn.Module):
         self.export = False  # onnx export
 
     def forward(self, x):
-        x = x.copy()  # for profiling
+        # x = x.copy()  # for profiling
         z = []  # inference output
         self.training |= self.export
         for i in range(self.nl):
@@ -37,6 +37,34 @@ class Detect(nn.Module):
                 z.append(y.view(bs, -1, self.no))
 
         return x if self.training else (torch.cat(z, 1), x)
+
+    def forward_(self, x):
+        if hasattr(self, 'nx'):
+            z = []  # inference output
+            for (y, gi, agi, si, nyi, nxi) in zip(x, self.grid, self.ag, self.stride, self.ny, self.nx):
+                m = self.na * nxi * nyi
+                y = y.view(1, self.na, self.no, nyi, nxi).permute(0, 1, 3, 4, 2).contiguous().view(m, self.no).sigmoid()
+
+                xy = (y[..., 0:2] * 2. - 0.5 + gi) * si  # xy
+                wh = (y[..., 2:4] * 2) ** 2 * agi  # wh
+                p_cls = y[:, 4:5] if self.nc == 1 else y[:, 5:self.no] * y[:, 4:5]  # conf
+                z.append([p_cls, xy, wh])
+
+            z = [torch.cat(x, 0) for x in zip(*z)]
+            return z[0], torch.cat(z[1:3], 1)  # scores, boxes: 3780x80, 3780x4
+
+        else:  # dry run
+            self.nx = [0] * self.nl
+            self.ny = [0] * self.nl
+            self.ag = [0] * self.nl
+            for i in range(self.nl):
+                bs, _, ny, nx = x[i].shape
+                m = self.na * nx * ny
+                self.grid[i] = self._make_grid(nx, ny).repeat(1, self.na, 1, 1, 1).view(m, 2) / torch.tensor([[nx, ny]])
+                self.ag[i] = self.anchor_grid[i].repeat(1, 1, nx, ny, 1).view(m, 2)
+                self.nx[i] = nx
+                self.ny[i] = ny
+            return None
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
