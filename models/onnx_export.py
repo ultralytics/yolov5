@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     # Load pytorch model
     google_utils.attempt_download(opt.weights)
-    model = torch.load(opt.weights)['model']
+    model = torch.load(opt.weights, map_location=torch.device('cpu'))['model']
     model.eval()
     model.fuse()
 
