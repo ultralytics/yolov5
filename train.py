@@ -20,6 +20,7 @@ except:
     mixed_precision = False  # not installed
 
 wdir = 'weights' + os.sep  # weights dir
+os.makedirs(wdir, exist_ok=True)
 last = wdir + 'last.pt'
 best = wdir + 'best.pt'
 results_file = 'results.txt'
