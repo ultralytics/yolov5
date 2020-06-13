@@ -37,11 +37,18 @@ def init_seeds(seed=0):
 
 
 def check_git_status():
+    # Suggest 'git pull' if repo is out of date
     if platform in ['linux', 'darwin']:
-        # Suggest 'git pull' if repo is out of date
         s = subprocess.check_output('if [ -d .git ]; then git fetch && git status -uno; fi', shell=True).decode('utf-8')
         if 'Your branch is behind' in s:
             print(s[s.find('Your branch is behind'):s.find('\n\n')] + '\n')
+
+
+def check_img_size(img_size, s=32):
+    # Verify img_size is a multiple of stride s
+    if img_size % s != 0:
+        print('WARNING: --img-size %g must be multiple of max stride %g' % (img_size, s))
+    return make_divisible(img_size, s)  # nearest gs-multiple
 
 
 def make_divisible(x, divisor):
