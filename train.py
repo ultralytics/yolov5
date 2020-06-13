@@ -191,13 +191,16 @@ def train(hyp):
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device)  # attach class weights
     model.names = data_dict['names']
 
-    # class frequency
+    # Class frequency
     labels = np.concatenate(dataset.labels, 0)
     c = torch.tensor(labels[:, 0])  # classes
     # cf = torch.bincount(c.long(), minlength=nc) + 1.
     # model._initialize_biases(cf.to(device))
     plot_labels(labels)
     tb_writer.add_histogram('classes', c, 0)
+
+    # Check anchors
+    check_best_possible_recall(dataset, anchors=model.model[-1].anchor_grid, thr=hyp['anchor_t'])
 
     # Exponential moving average
     ema = torch_utils.ModelEMA(model)
