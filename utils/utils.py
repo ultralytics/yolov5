@@ -53,8 +53,8 @@ def check_img_size(img_size, s=32):
 
 def check_best_possible_recall(dataset, anchors, thr):
     # Check best possible recall of dataset with current anchors
-    wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(dataset.shapes, dataset.labels)]))  # width-height
-    ratio = wh[:, None] / anchors.view(-1, 2)[None]  # ratio
+    wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(dataset.shapes, dataset.labels)])).float()  # wh
+    ratio = wh[:, None] / anchors.view(-1, 2).cpu()[None]  # ratio
     m = torch.max(ratio, 1. / ratio).max(2)[0]  # max ratio
     bpr = (m.min(1)[0] < thr).float().mean()  # best possible recall
     mr = (m < thr).float().mean()  # match ratio
