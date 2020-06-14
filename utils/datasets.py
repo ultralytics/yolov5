@@ -261,6 +261,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         try:
             path = str(Path(path))  # os-agnostic
             parent = str(Path(path).parent) + os.sep
+
+            joined_path = os.path.join(os.getcwd(), parent)
+            print('Parent folder override for loading image files: %s' % (os.path.abspath(joined_path)))
+
             if os.path.isfile(path):  # file
                 with open(path, 'r') as f:
                     f = f.read().splitlines()
@@ -274,7 +278,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             raise Exception('Error loading data from %s. See %s' % (path, help_url))
 
         n = len(self.img_files)
+        print('Loaded %g images' % (n))
         assert n > 0, 'No images found in %s. See %s' % (path, help_url)
+
+
         bi = np.floor(np.arange(n) / batch_size).astype(np.int)  # batch index
         nb = bi[-1] + 1  # number of batches
 
