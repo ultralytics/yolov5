@@ -6,6 +6,9 @@ Usage:
 """
 
 dependencies = ['torch', 'yaml']
+
+import os
+
 import torch
 
 from models.yolo import Model
@@ -24,7 +27,8 @@ def create(name, pretrained, channels, classes):
     Returns:
         pytorch model
     """
-    model = Model('models/%s.yaml' % name, channels, classes)
+    config = os.path.join(os.path.dirname(__file__), 'models', '%s.yaml' % name)
+    model = Model(config, channels, classes)
     if pretrained:
         ckpt = '%s.pt' % name  # checkpoint filename
         google_utils.attempt_download(ckpt)  # download if not found locally
