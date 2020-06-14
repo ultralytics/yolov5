@@ -1,4 +1,5 @@
 # pip install -U -r requirements.txt
+Cython
 numpy==1.17
 opencv-python
 torch >= 1.5
@@ -8,7 +9,8 @@ tqdm
 pillow
 tensorboard
 pyyaml
-
+torchvision
+scipy
 
 # Nvidia Apex (optional) for mixed precision training --------------------------
 # git clone https://github.com/NVIDIA/apex && cd apex && pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" . --user && cd .. && rm -rf apex
