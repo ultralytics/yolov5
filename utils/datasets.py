@@ -261,10 +261,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         try:
             path = str(Path(path))  # os-agnostic
             parent = str(Path(path).parent) + os.sep
-
-            joined_path = os.path.join(os.getcwd(), parent)
-            print('Parent folder override for loading image files: %s' % (os.path.abspath(joined_path)))
-
             if os.path.isfile(path):  # file
                 with open(path, 'r') as f:
                     f = f.read().splitlines()
@@ -278,10 +274,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             raise Exception('Error loading data from %s. See %s' % (path, help_url))
 
         n = len(self.img_files)
-        print('Loaded %g images' % (n))
         assert n > 0, 'No images found in %s. See %s' % (path, help_url)
-
-
         bi = np.floor(np.arange(n) / batch_size).astype(np.int)  # batch index
         nb = bi[-1] + 1  # number of batches
 
@@ -298,20 +291,22 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.label_files = [x.replace('images', 'labels').replace(os.path.splitext(x)[-1], '.txt')
                             for x in self.img_files]
 
+        # Read image shapes (wh)
+        sp = path.replace('.txt', '') + '.shapes'  # shapefile path
+        try:
+            with open(sp, 'r') as f:  # read existing shapefile
+                s = [x.split() for x in f.read().splitlines()]
+                assert len(s) == n, 'Shapefile out of sync'
+        except:
+            s = [exif_size(Image.open(f)) for f in tqdm(self.img_files, desc='Reading image shapes')]
+            np.savetxt(sp, s, fmt='%g')  # overwrites existing (if any)
+
+        self.shapes = np.array(s, dtype=np.float64)
+
         # Rectangular Training  https://github.com/ultralytics/yolov3/issues/232
         if self.rect:
-            # Read image shapes (wh)
-            sp = path.replace('.txt', '') + '.shapes'  # shapefile path
-            try:
-                with open(sp, 'r') as f:  # read existing shapefile
-                    s = [x.split() for x in f.read().splitlines()]
-                    assert len(s) == n, 'Shapefile out of sync'
-            except:
-                s = [exif_size(Image.open(f)) for f in tqdm(self.img_files, desc='Reading image shapes')]
-                np.savetxt(sp, s, fmt='%g')  # overwrites existing (if any)
-
             # Sort by aspect ratio
-            s = np.array(s, dtype=np.float64)
+            s = self.shapes  # wh
             ar = s[:, 1] / s[:, 0]  # aspect ratio
             irect = ar.argsort()
             self.img_files = [self.img_files[i] for i in irect]
