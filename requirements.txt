@@ -1,16 +1,16 @@
 # pip install -U -r requirements.txt
 Cython
-numpy==1.17
+numpy
 opencv-python
 torch >= 1.5
 matplotlib
-pycocotools
-tqdm
 pillow
 tensorboard
 pyyaml
 torchvision
 scipy
+tqdm
+'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
 
 # Nvidia Apex (optional) for mixed precision training --------------------------
 # git clone https://github.com/NVIDIA/apex && cd apex && pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" . --user && cd .. && rm -rf apex
