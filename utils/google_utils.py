@@ -25,10 +25,15 @@ def attempt_download(weights):
         if file in d:
             r = gdrive_download(id=d[file], name=weights)
 
-        # Error check
         if not (r == 0 and os.path.exists(weights) and os.path.getsize(weights) > 1E6):  # weights exist and > 1MB
-            os.system('rm ' + weights)  # remove partial downloads
-            raise Exception(msg)
+            os.remove(weights) if os.path.exists(weights) else None  # remove partial downloads
+            s = "curl -L -o %s 'https://storage.googleapis.com/ultralytics/yolov5/ckpt/%s'" % (weights, file)
+            r = os.system(s)  # execute, capture return values
+
+            # Error check
+            if not (r == 0 and os.path.exists(weights) and os.path.getsize(weights) > 1E6):  # weights exist and > 1MB
+                os.remove(weights) if os.path.exists(weights) else None  # remove partial downloads
+                raise Exception(msg)
 
 
 def gdrive_download(id='1HaXkef9z6y5l4vUnCYgdmEAj61c6bfWO', name='coco.zip'):
