@@ -13,15 +13,15 @@ def test(data,
          batch_size=16,
          imgsz=640,
          conf_thres=0.001,
-         iou_thres=0.6,  # for nms
+         iou_thres=0.6,  # for NMS
          save_json=False,
          single_cls=False,
          augment=False,
+         half=False,  # FP16
          model=None,
          dataloader=None,
          fast=False,
-         verbose=False,
-         half=False):  # FP16
+         verbose=False):
     # Initialize/load model and set device
     if model is None:
         device = torch_utils.select_device(opt.device, batch_size=batch_size)
@@ -268,7 +268,8 @@ if __name__ == '__main__':
              opt.iou_thres,
              opt.save_json,
              opt.single_cls,
-             opt.augment)
+             opt.augment,
+             opt.half)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         for weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
