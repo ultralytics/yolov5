@@ -32,8 +32,8 @@ def create(name, pretrained, channels, classes):
     if pretrained:
         ckpt = '%s.pt' % name  # checkpoint filename
         google_utils.attempt_download(ckpt)  # download if not found locally
-        state_dict = torch.load(ckpt, map_location=torch.device('cpu'))['model'].state_dict()
-        state_dict = {k: v for k, v in state_dict.items() if model.state_dict()[k].numel() == v.numel()}  # filter
+        state_dict = torch.load(ckpt, map_location=torch.device('cpu'))['model'].float().state_dict()  # to FP32
+        state_dict = {k: v for k, v in state_dict.items() if model.state_dict()[k].shape == v.shape}  # filter
         model.load_state_dict(state_dict, strict=False)  # load
     return model
 
