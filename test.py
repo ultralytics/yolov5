@@ -255,7 +255,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     opt.img_size = check_img_size(opt.img_size)
     opt.save_json = opt.save_json or opt.data.endswith('coco.yaml')
-    opt.data = glob.glob('./**/' + opt.data, recursive=True)[0]  # find file
+    opt.data = check_file(opt.data)  # check file
     print(opt)
 
     # task = 'val', 'test', 'study'

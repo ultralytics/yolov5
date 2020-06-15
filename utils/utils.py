@@ -64,6 +64,16 @@ def check_best_possible_recall(dataset, anchors, thr):
                       'Compute new anchors with utils.utils.kmeans_anchors() and update model before training.' % bpr
 
 
+def check_file(file):
+    # Searches for file if not found locally
+    if os.path.isfile(file):
+        return file
+    else:
+        files = glob.glob('./**/' + file, recursive=True)  # find file
+        assert len(files), 'File Not Found: %s' % file  # assert file was found
+        return files[0]  # return first file if multiple found
+
+
 def make_divisible(x, divisor):
     # Returns x evenly divisble by divisor
     return math.ceil(x / divisor) * divisor
