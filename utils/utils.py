@@ -528,7 +528,7 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, fast=False, c
     fast |= conf_thres > 0.001  # fast mode
     if fast:
         merge = False
-        multi_label = False
+        multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
     else:
         merge = True  # merge for best mAP (adds 0.5ms/img)
         multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)

@@ -35,7 +35,7 @@ def test(data,
         google_utils.attempt_download(weights)
         model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
         torch_utils.model_info(model)
-        # model.fuse()
+        model.fuse()
         model.to(device)
         if half:
             model.half()  # to FP16
@@ -71,7 +71,7 @@ def test(data,
                                       batch_size,
                                       rect=True,  # rectangular inference
                                       single_cls=opt.single_cls,  # single class mode
-                                      pad=0.0 if fast else 0.5)  # padding
+                                      pad=0.5)  # padding
         batch_size = min(batch_size, len(dataset))
         nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
         dataloader = DataLoader(dataset,
