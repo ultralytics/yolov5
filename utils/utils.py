@@ -504,6 +504,9 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, fast=False, c
     Returns detections with shape:
         nx6 (x1, y1, x2, y2, conf, cls)
     """
+    if prediction.dtype is torch.float16:
+        prediction = prediction.float()  # to FP32
+
     nc = prediction[0].shape[1] - 5  # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
 
@@ -902,7 +905,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
         return None
 
     if isinstance(images, torch.Tensor):
-        images = images.cpu().numpy()
+        images = images.cpu().float().numpy()
 
     if isinstance(targets, torch.Tensor):
         targets = targets.cpu().numpy()

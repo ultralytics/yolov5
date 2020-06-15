@@ -1,12 +1,12 @@
 # pip install -U -r requirements.txt
 Cython
-numpy
+numpy==1.17
 opencv-python
-torch >= 1.5
+torch>=1.5
 matplotlib
 pillow
 tensorboard
-pyyaml >= 5.3
+PyYAML>=5.3
 torchvision
 scipy
 tqdm
