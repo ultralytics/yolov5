@@ -17,7 +17,6 @@ def test(data,
          save_json=False,
          single_cls=False,
          augment=False,
-         half=False,  # FP16
          model=None,
          dataloader=None,
          fast=False,
@@ -25,7 +24,7 @@ def test(data,
     # Initialize/load model and set device
     if model is None:
         device = torch_utils.select_device(opt.device, batch_size=batch_size)
-        half &= device.type != 'cpu'  # half precision only supported on CUDA
+        half = device.type != 'cpu'  # half precision only supported on CUDA
 
         # Remove previous
         for f in glob.glob('test_batch*.jpg'):
@@ -48,7 +47,8 @@ def test(data,
         device = next(model.parameters()).device  # get model device
         training = True
 
-    # Configure run
+    # Configure
+    model.eval()
     with open(data) as f:
         data = yaml.load(f, Loader=yaml.FullLoader)  # model dict
     nc = 1 if single_cls else int(data['nc'])  # number of classes
@@ -57,7 +57,10 @@ def test(data,
     niou = iouv.numel()
 
     # Dataloader
-    if dataloader is None:
+    if dataloader is None:  # not training
+        img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
+        _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
+
         fast |= conf_thres > 0.001  # enable fast mode
         path = data['test'] if opt.task == 'test' else data['val']  # path to val/test images
         dataset = LoadImagesAndLabels(path,
@@ -75,9 +78,6 @@ def test(data,
                                 collate_fn=dataset.collate_fn)
 
     seen = 0
-    model.eval()
-    img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
-    _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
     names = model.names if hasattr(model, 'names') else model.module.names
     coco91class = coco80_to_coco91_class()
     s = ('%20s' + '%12s' * 6) % ('Class', 'Images', 'Targets', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
@@ -221,11 +221,11 @@ def test(data,
             cocoDt = cocoGt.loadRes(f)  # initialize COCO pred api
 
             cocoEval = COCOeval(cocoGt, cocoDt, 'bbox')
-            cocoEval.params.imgIds = imgIds  # [:32]  # only evaluate these images
+            cocoEval.params.imgIds = imgIds  # image IDs to evaluate
             cocoEval.evaluate()
             cocoEval.accumulate()
             cocoEval.summarize()
-            map, map50 = cocoEval.stats[:2]  # update to pycocotools results (mAP@0.5:0.95, mAP@0.5)
+            map, map50 = cocoEval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
         except:
             print('WARNING: pycocotools must be installed with numpy==1.17 to run correctly. '
                   'See https://github.com/cocodataset/cocoapi/issues/356')
@@ -248,7 +248,6 @@ if __name__ == '__main__':
     parser.add_argument('--save-json', action='store_true', help='save a cocoapi-compatible JSON results file')
     parser.add_argument('--task', default='val', help="'val', 'test', 'study'")
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--half', action='store_true', help='half precision FP16 inference')
     parser.add_argument('--single-cls', action='store_true', help='treat as single-class dataset')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
@@ -268,8 +267,7 @@ if __name__ == '__main__':
              opt.iou_thres,
              opt.save_json,
              opt.single_cls,
-             opt.augment,
-             opt.half)
+             opt.augment)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         for weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:

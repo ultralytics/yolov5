@@ -5,8 +5,8 @@ from utils.utils import *
 
 
 def detect(save_img=False):
-    out, source, weights, half, view_img, save_txt, imgsz = \
-        opt.output, opt.source, opt.weights, opt.half, opt.view_img, opt.save_txt, opt.img_size
+    out, source, weights, view_img, save_txt, imgsz = \
+        opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
 
     # Initialize
@@ -14,7 +14,7 @@ def detect(save_img=False):
     if os.path.exists(out):
         shutil.rmtree(out)  # delete output folder
     os.makedirs(out)  # make new output folder
-    half &= device.type != 'cpu'  # half precision only supported on CUDA
+    half = device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
     google_utils.attempt_download(weights)
@@ -142,7 +142,6 @@ if __name__ == '__main__':
     parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
     parser.add_argument('--fourcc', type=str, default='mp4v', help='output video codec (verify ffmpeg support)')
-    parser.add_argument('--half', action='store_true', help='half precision FP16 inference')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='display results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
