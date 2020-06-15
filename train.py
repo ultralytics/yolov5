@@ -112,8 +112,8 @@ def train(hyp):
 
         # load model
         try:
-            ckpt['model'] = \
-                {k: v for k, v in ckpt['model'].state_dict().items() if model.state_dict()[k].numel() == v.numel()}
+            ckpt['model'] = {k: v for k, v in ckpt['model'].float().state_dict().items()
+                             if model.state_dict()[k].shape == v.shape}  # to FP32, filter
             model.load_state_dict(ckpt['model'], strict=False)
         except KeyError as e:
             s = "%s is not compatible with %s. Specify --weights '' or specify a --cfg compatible with %s." \
