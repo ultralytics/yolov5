@@ -45,6 +45,7 @@ def test(data,
         training = False
     else:  # called by train.py
         device = next(model.parameters()).device  # get model device
+        half = False
         training = True
 
     # Configure
