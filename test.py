@@ -23,6 +23,7 @@ def test(data,
          verbose=False):
     # Initialize/load model and set device
     if model is None:
+        training = False
         device = torch_utils.select_device(opt.device, batch_size=batch_size)
         half = device.type != 'cpu'  # half precision only supported on CUDA
 
@@ -42,11 +43,12 @@ def test(data,
         if device.type != 'cpu' and torch.cuda.device_count() > 1:
             model = nn.DataParallel(model)
 
-        training = False
     else:  # called by train.py
-        device = next(model.parameters()).device  # get model device
-        half = False
         training = True
+        device = next(model.parameters()).device  # get model device
+        half = device.type != 'cpu'  # half precision only supported on CUDA
+        if half:
+            model.half()  # to FP16
 
     # Configure
     model.eval()
