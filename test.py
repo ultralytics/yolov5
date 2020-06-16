@@ -23,6 +23,7 @@ def test(data,
          verbose=False):
     # Initialize/load model and set device
     if model is None:
+        training = False
         device = torch_utils.select_device(opt.device, batch_size=batch_size)
         half = device.type != 'cpu'  # half precision only supported on CUDA
 
@@ -32,9 +33,9 @@ def test(data,
 
         # Load model
         google_utils.attempt_download(weights)
-        model = torch.load(weights, map_location=device)['model']
+        model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
         torch_utils.model_info(model)
-        # model.fuse()
+        model.fuse()
         model.to(device)
         if half:
             model.half()  # to FP16
@@ -42,11 +43,12 @@ def test(data,
         if device.type != 'cpu' and torch.cuda.device_count() > 1:
             model = nn.DataParallel(model)
 
-        training = False
     else:  # called by train.py
-        device = next(model.parameters()).device  # get model device
-        half = False
         training = True
+        device = next(model.parameters()).device  # get model device
+        half = device.type != 'cpu'  # half precision only supported on CUDA
+        if half:
+            model.half()  # to FP16
 
     # Configure
     model.eval()
@@ -69,7 +71,7 @@ def test(data,
                                       batch_size,
                                       rect=True,  # rectangular inference
                                       single_cls=opt.single_cls,  # single class mode
-                                      pad=0.0 if fast else 0.5)  # padding
+                                      pad=0.5)  # padding
         batch_size = min(batch_size, len(dataset))
         nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
         dataloader = DataLoader(dataset,
@@ -102,7 +104,7 @@ def test(data,
 
             # Compute loss
             if training:  # if model has loss hyperparameters
-                loss += compute_loss(train_out, targets, model)[1][:3]  # GIoU, obj, cls
+                loss += compute_loss([x.float() for x in train_out], targets, model)[1][:3]  # GIoU, obj, cls
 
             # Run NMS
             t = torch_utils.time_synchronized()
@@ -255,7 +257,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     opt.img_size = check_img_size(opt.img_size)
     opt.save_json = opt.save_json or opt.data.endswith('coco.yaml')
-    opt.data = glob.glob('./**/' + opt.data, recursive=True)[0]  # find file
+    opt.data = check_file(opt.data)  # check file
     print(opt)
 
     # task = 'val', 'test', 'study'

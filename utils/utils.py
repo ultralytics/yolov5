@@ -64,6 +64,16 @@ def check_best_possible_recall(dataset, anchors, thr):
                       'Compute new anchors with utils.utils.kmeans_anchors() and update model before training.' % bpr
 
 
+def check_file(file):
+    # Searches for file if not found locally
+    if os.path.isfile(file):
+        return file
+    else:
+        files = glob.glob('./**/' + file, recursive=True)  # find file
+        assert len(files), 'File Not Found: %s' % file  # assert file was found
+        return files[0]  # return first file if multiple found
+
+
 def make_divisible(x, divisor):
     # Returns x evenly divisble by divisor
     return math.ceil(x / divisor) * divisor
@@ -518,7 +528,7 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, fast=False, c
     fast |= conf_thres > 0.001  # fast mode
     if fast:
         merge = False
-        multi_label = False
+        multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
     else:
         merge = True  # merge for best mAP (adds 0.5ms/img)
         multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
