@@ -48,7 +48,6 @@ hyp = {'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
 #print(hyp)
 
 # Overwrite hyp with hyp*.txt (optional)
-f = glob.glob('hyp*.txt')
 if f:
     print('Using %s' % f[0])
     for k, v in zip(hyp.keys(), np.loadtxt(f[0])):
@@ -63,6 +62,9 @@ def train(hyp):
     epochs = opt.epochs  # 300
     batch_size = opt.batch_size  # 64
     weights = opt.weights  # initial training weights
+
+    #write all results to the tb log_dir, so all data from one run is together
+    log_dir = tb_writer.log_dir
 
     # Configure
     init_seeds(1)
@@ -192,6 +194,13 @@ def train(hyp):
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device)  # attach class weights
     model.names = data_dict['names']
 
+    #save hyperparamter and training options in run folder
+    with open(os.path.join(log_dir, 'hyp.yaml', 'w')) as f:
+        yaml.dump(hyp, f)
+
+    with open(os.path.join(log_dir, 'opt.yaml', 'w')) as f:
+        yaml.dump(opt, f)
+    
     # Class frequency
     labels = np.concatenate(dataset.labels, 0)
     c = torch.tensor(labels[:, 0])  # classes
