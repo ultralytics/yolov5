@@ -39,8 +39,6 @@ hyp = {'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
        'scale': 0.5,  # image scale (+/- gain)
        'shear': 0.0}  # image shear (+/- deg)
 
-# Don't need to be printing every time
-#print(hyp)
 
 def train(hyp):
     #write all results to the tb log_dir, so all data from one run is together
