@@ -53,18 +53,23 @@ def check_img_size(img_size, s=32):
 
 
 def check_anchors(dataset, model, thr=4.0, imgsz=640):
-    # Check best possible recall of dataset with current anchors
+    # Check anchor fit to data, recompute if necessary
+    print('\nAnalyzing anchors... ', end='')
     anchors = model.module.model[-1].anchor_grid if hasattr(model, 'module') else model.model[-1].anchor_grid
     shapes = imgsz * dataset.shapes / dataset.shapes.max(1, keepdims=True)
     wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(shapes, dataset.labels)])).float()  # wh
     ratio = wh[:, None] / anchors.view(-1, 2).cpu()[None]  # ratio
     m = torch.max(ratio, 1. / ratio).max(2)[0]  # max ratio
     bpr = (m.min(1)[0] < thr).float().mean()  # best possible recall
-    mr = (m < thr).float().mean()  # match ratio
-    print(('AutoAnchor labels:' + '%10s' * 6) % ('n', 'mean', 'min', 'max', 'matching', 'recall'))
-    print(('                  ' + '%10.4g' * 6) % (wh.shape[0], wh.mean(), wh.min(), wh.max(), mr, bpr))
-    assert bpr > 0.9, 'Best possible recall %.3g (BPR) below 0.9 threshold. Training cancelled. ' \
-                      'Compute new anchors with utils.utils.kmeans_anchors() and update model before training.' % bpr
+    # mr = (m < thr).float().mean()  # match ratio
+
+    print('Best Possible Recall (BPR) = %.3f' % bpr, end='')
+    if bpr < 0.99:  # threshold to recompute
+        print('. Generating new anchors for improved recall, please wait...' % bpr)
+        new_anchors = kmean_anchors(dataset, n=9, img_size=640, thr=4.0, gen=1000, verbose=False)
+        anchors[:] = torch.tensor(new_anchors).view_as(anchors).type_as(anchors)
+        print('New anchors saved to model. Update model *.yaml to use these anchors in the future.')
+    print('')  # newline
 
 
 def check_file(file):
@@ -689,14 +694,14 @@ def coco_single_class_labels(path='../coco/labels/train2014/', label_class=43):
             shutil.copyfile(src=img_file, dst='new/images/' + Path(file).name.replace('txt', 'jpg'))  # copy images
 
 
-def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=(640, 640), thr=0.20, gen=1000):
+def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=1000, verbose=True):
     """ Creates kmeans-evolved anchors from training dataset
 
         Arguments:
-            path: path to dataset *.yaml
+            path: path to dataset *.yaml, or a loaded dataset
             n: number of anchors
-            img_size: (min, max) image size used for multi-scale training (can be same values)
-            thr: IoU threshold hyperparameter used for training (0.0 - 1.0)
+            img_size: image size used for training
+            thr: anchor-label wh ratio threshold hyperparameter hyp['anchor_t'] used for training, default=4.0
             gen: generations to evolve anchors using genetic algorithm
 
         Return:
@@ -705,52 +710,41 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=(640, 640), thr=0.20
         Usage:
             from utils.utils import *; _ = kmean_anchors()
     """
+    thr = 1. / thr
 
-    from utils.datasets import LoadImagesAndLabels
+    def metric(k):  # compute metrics
+        r = wh[:, None] / k[None]
+        x = torch.min(r, 1. / r).min(2)[0]  # ratio metric
+        # x = wh_iou(wh, torch.tensor(k))  # iou metric
+        return x, x.max(1)[0]  # x, best_x
+
+    def fitness(k):  # mutation fitness
+        _, best = metric(k)
+        return (best * (best > thr).float()).mean()  # fitness
 
     def print_results(k):
         k = k[np.argsort(k.prod(1))]  # sort small to large
-        iou = wh_iou(wh, torch.Tensor(k))
-        max_iou = iou.max(1)[0]
-        bpr, aat = (max_iou > thr).float().mean(), (iou > thr).float().mean() * n  # best possible recall, anch > thr
-
-        # thr = 5.0
-        # r = wh[:, None] / k[None]
-        # ar = torch.max(r, 1. / r).max(2)[0]
-        # max_ar = ar.min(1)[0]
-        # bpr, aat = (max_ar < thr).float().mean(), (ar < thr).float().mean() * n  # best possible recall, anch > thr
-
-        print('%.2f iou_thr: %.3f best possible recall, %.2f anchors > thr' % (thr, bpr, aat))
-        print('n=%g, img_size=%s, IoU_all=%.3f/%.3f-mean/best, IoU>thr=%.3f-mean: ' %
-              (n, img_size, iou.mean(), max_iou.mean(), iou[iou > thr].mean()), end='')
+        x, best = metric(k)
+        bpr, aat = (best > thr).float().mean(), (x > thr).float().mean() * n  # best possible recall, anch > thr
+        print('thr=%.2f: %.3f best possible recall, %.2f anchors past thr' % (thr, bpr, aat))
+        print('n=%g, img_size=%s, metric_all=%.3f/%.3f-mean/best, past_thr=%.3f-mean: ' %
+              (n, img_size, x.mean(), best.mean(), x[x > thr].mean()), end='')
         for i, x in enumerate(k):
             print('%i,%i' % (round(x[0]), round(x[1])), end=',  ' if i < len(k) - 1 else '\n')  # use in *.cfg
         return k
 
-    def fitness(k):  # mutation fitness
-        iou = wh_iou(wh, torch.Tensor(k))  # iou
-        max_iou = iou.max(1)[0]
-        return (max_iou * (max_iou > thr).float()).mean()  # product
-
-    # def fitness_ratio(k):  # mutation fitness
-    #     # wh(5316,2), k(9,2)
-    #     r = wh[:, None] / k[None]
-    #     x = torch.max(r, 1. / r).max(2)[0]
-    #     m = x.min(1)[0]
-    #     return 1. / (m * (m < 5).float()).mean()  # product
+    if isinstance(path, str):  # *.yaml file
+        with open(path) as f:
+            data_dict = yaml.load(f, Loader=yaml.FullLoader)  # model dict
+        from utils.datasets import LoadImagesAndLabels
+        dataset = LoadImagesAndLabels(data_dict['train'], augment=True, rect=True)
+    else:
+        dataset = path  # dataset
 
     # Get label wh
-    wh = []
-    with open(path) as f:
-        data_dict = yaml.load(f, Loader=yaml.FullLoader)  # model dict
-    dataset = LoadImagesAndLabels(data_dict['train'], augment=True, rect=True)
-    nr = 1 if img_size[0] == img_size[1] else 3  # number augmentation repetitions
-    for s, l in zip(dataset.shapes, dataset.labels):
-        # wh.append(l[:, 3:5] * (s / s.max()))  # image normalized to letterbox normalized wh
-        wh.append(l[:, 3:5] * s)  # image normalized to pixels
-    wh = np.concatenate(wh, 0).repeat(nr, axis=0)  # augment 3x
-    # wh *= np.random.uniform(img_size[0], img_size[1], size=(wh.shape[0], 1))  # normalized to pixels (multi-scale)
-    wh = wh[(wh > 2.0).all(1)]  # remove below threshold boxes (< 2 pixels wh)
+    shapes = img_size * dataset.shapes / dataset.shapes.max(1, keepdims=True)
+    wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(shapes, dataset.labels)])).float()  # wh
+    wh = wh[(wh > 2.0).all(1)].numpy()  # filter > 2 pixels
 
     # Kmeans calculation
     from scipy.cluster.vq import kmeans
@@ -758,10 +752,10 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=(640, 640), thr=0.20
     s = wh.std(0)  # sigmas for whitening
     k, dist = kmeans(wh / s, n, iter=30)  # points, mean distance
     k *= s
-    wh = torch.Tensor(wh)
+    wh = torch.tensor(wh)
     k = print_results(k)
 
-    # # Plot
+    # Plot
     # k, d = [None] * 20, [None] * 20
     # for i in tqdm(range(1, 21)):
     #     k[i-1], d[i-1] = kmeans(wh / s, i)  # points, mean distance
@@ -777,7 +771,7 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=(640, 640), thr=0.20
     # Evolve
     npr = np.random
     f, sh, mp, s = fitness(k), k.shape, 0.9, 0.1  # fitness, generations, mutation prob, sigma
-    for _ in tqdm(range(gen), desc='Evolving anchors'):
+    for _ in tqdm(range(gen), desc='Evolving anchors with Genetic Algorithm:'):
         v = np.ones(sh)
         while (v == 1).all():  # mutate until a change occurs (prevent duplicates)
             v = ((npr.random(sh) < mp) * npr.random() * npr.randn(*sh) * s + 1).clip(0.3, 3.0)
@@ -785,7 +779,8 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=(640, 640), thr=0.20
         fg = fitness(kg)
         if fg > f:
             f, k = fg, kg.copy()
-            print_results(k)
+            if verbose:
+                print_results(k)
     k = print_results(k)
     return k
 
