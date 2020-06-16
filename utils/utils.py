@@ -52,15 +52,17 @@ def check_img_size(img_size, s=32):
     return make_divisible(img_size, s)  # nearest gs-multiple
 
 
-def check_best_possible_recall(dataset, anchors, thr):
+def check_best_possible_recall(dataset, anchors, thr=4.0, imgsz=640):
     # Check best possible recall of dataset with current anchors
-    wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(dataset.shapes, dataset.labels)])).float()  # wh
+    shapes = imgsz * dataset.shapes / dataset.shapes.max(1, keepdims=True)
+    wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(shapes, dataset.labels)])).float()  # wh
     ratio = wh[:, None] / anchors.view(-1, 2).cpu()[None]  # ratio
     m = torch.max(ratio, 1. / ratio).max(2)[0]  # max ratio
     bpr = (m.min(1)[0] < thr).float().mean()  # best possible recall
     mr = (m < thr).float().mean()  # match ratio
-    print(('Label width-height:' + '%10s' * 6) % ('n', 'mean', 'min', 'max', 'matching', 'recall'))
-    print(('                   ' + '%10.4g' * 6) % (wh.shape[0], wh.mean(), wh.min(), wh.max(), mr, bpr))
+    print(('AutoAnchor labels:' + '%10s' * 6) % ('n', 'mean', 'min', 'max', 'matching', 'recall'))
+    print(('                  ' + '%10.4g' * 6) % (wh.shape[0], wh.mean(), wh.min(), wh.max(), mr, bpr))
+
     assert bpr > 0.9, 'Best possible recall %.3g (BPR) below 0.9 threshold. Training cancelled. ' \
                       'Compute new anchors with utils.utils.kmeans_anchors() and update model before training.' % bpr
 
