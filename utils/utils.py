@@ -66,7 +66,7 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
         return (best > 1. / thr).float().mean()  #  best possible recall
 
     bpr = metric(anchors.clone().cpu().view(-1, 2))
-    print('Best Possible Recall (BPR) = %.3f' % bpr, end='')
+    print('Best Possible Recall (BPR) = %.4f' % bpr, end='')
     if bpr < 0.99:  # threshold to recompute
         print('. Attempting to generate improved anchors, please wait...' % bpr)
         new_anchors = kmean_anchors(dataset, n=9, img_size=640, thr=4.0, gen=1000, verbose=False)
@@ -733,7 +733,7 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
         k = k[np.argsort(k.prod(1))]  # sort small to large
         x, best = metric(k, wh0)
         bpr, aat = (best > thr).float().mean(), (x > thr).float().mean() * n  # best possible recall, anch > thr
-        print('thr=%.2f: %.3f best possible recall, %.2f anchors past thr' % (thr, bpr, aat))
+        print('thr=%.2f: %.4f best possible recall, %.2f anchors past thr' % (thr, bpr, aat))
         print('n=%g, img_size=%s, metric_all=%.3f/%.3f-mean/best, past_thr=%.3f-mean: ' %
               (n, img_size, x.mean(), best.mean(), x[x > thr].mean()), end='')
         for i, x in enumerate(k):
