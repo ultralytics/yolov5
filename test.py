@@ -17,10 +17,10 @@ def test(data,
          save_json=False,
          single_cls=False,
          augment=False,
+         verbose=False,
          model=None,
          dataloader=None,
-         fast=False,
-         verbose=False):
+         fast=False):
     # Initialize/load model and set device
     if model is None:
         training = False
@@ -270,7 +270,8 @@ if __name__ == '__main__':
              opt.iou_thres,
              opt.save_json,
              opt.single_cls,
-             opt.augment)
+             opt.augment,
+             opt.verbose)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         for weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
