@@ -52,8 +52,9 @@ def check_img_size(img_size, s=32):
     return make_divisible(img_size, s)  # nearest gs-multiple
 
 
-def check_best_possible_recall(dataset, anchors, thr=4.0, imgsz=640):
+def check_anchors(dataset, model, thr=4.0, imgsz=640):
     # Check best possible recall of dataset with current anchors
+    anchors = model.module.model[-1].anchor_grid if hasattr(model, 'module') else model.model[-1].anchor_grid
     shapes = imgsz * dataset.shapes / dataset.shapes.max(1, keepdims=True)
     wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(shapes, dataset.labels)])).float()  # wh
     ratio = wh[:, None] / anchors.view(-1, 2).cpu()[None]  # ratio
@@ -62,7 +63,6 @@ def check_best_possible_recall(dataset, anchors, thr=4.0, imgsz=640):
     mr = (m < thr).float().mean()  # match ratio
     print(('AutoAnchor labels:' + '%10s' * 6) % ('n', 'mean', 'min', 'max', 'matching', 'recall'))
     print(('                  ' + '%10.4g' * 6) % (wh.shape[0], wh.mean(), wh.min(), wh.max(), mr, bpr))
-
     assert bpr > 0.9, 'Best possible recall %.3g (BPR) below 0.9 threshold. Training cancelled. ' \
                       'Compute new anchors with utils.utils.kmeans_anchors() and update model before training.' % bpr
 
@@ -512,10 +512,10 @@ def build_targets(p, targets, model):
 
 
 def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, fast=False, classes=None, agnostic=False):
-    """
-    Performs  Non-Maximum Suppression on inference results
-    Returns detections with shape:
-        nx6 (x1, y1, x2, y2, conf, cls)
+    """Performs Non-Maximum Suppression (NMS) on inference results
+
+    Returns:
+         detections with shape: nx6 (x1, y1, x2, y2, conf, cls)
     """
     if prediction.dtype is torch.float16:
         prediction = prediction.float()  # to FP32

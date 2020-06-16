@@ -199,7 +199,7 @@ def train(hyp):
     tb_writer.add_histogram('classes', c, 0)
 
     # Check anchors
-    check_best_possible_recall(dataset, anchors=model.model[-1].anchor_grid, thr=hyp['anchor_t'], imgsz=imgsz)
+    check_anchors(dataset, anchors=model.model[-1].anchor_grid, thr=hyp['anchor_t'], imgsz=imgsz)
 
     # Exponential moving average
     ema = torch_utils.ModelEMA(model)
