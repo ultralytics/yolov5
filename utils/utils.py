@@ -58,17 +58,24 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
     anchors = model.module.model[-1].anchor_grid if hasattr(model, 'module') else model.model[-1].anchor_grid
     shapes = imgsz * dataset.shapes / dataset.shapes.max(1, keepdims=True)
     wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(shapes, dataset.labels)])).float()  # wh
-    ratio = wh[:, None] / anchors.view(-1, 2).cpu()[None]  # ratio
-    m = torch.max(ratio, 1. / ratio).max(2)[0]  # max ratio
-    bpr = (m.min(1)[0] < thr).float().mean()  # best possible recall
-    # mr = (m < thr).float().mean()  # match ratio
 
+    def metric(k):  # compute metric
+        r = wh[:, None] / k[None]
+        x = torch.min(r, 1. / r).min(2)[0]  # ratio metric
+        best = x.max(1)[0]  # best_x
+        return (best > 1. / thr).float().mean()  #  best possible recall
+
+    bpr = metric(anchors.clone().cpu().view(-1, 2))
     print('Best Possible Recall (BPR) = %.3f' % bpr, end='')
     if bpr < 0.99:  # threshold to recompute
-        print('. Generating new anchors for improved recall, please wait...' % bpr)
+        print('. Attempting to generate improved anchors, please wait...' % bpr)
         new_anchors = kmean_anchors(dataset, n=9, img_size=640, thr=4.0, gen=1000, verbose=False)
-        anchors[:] = torch.tensor(new_anchors).view_as(anchors).type_as(anchors)
-        print('New anchors saved to model. Update model *.yaml to use these anchors in the future.')
+        new_bpr = metric(new_anchors.reshape(-1, 2))
+        if new_bpr > bpr:
+            anchors[:] = torch.tensor(new_anchors).view_as(anchors).type_as(anchors)
+            print('New anchors saved to model. Update model *.yaml to use these anchors in the future.')
+        else:
+            print('Original anchors better than new anchors. Proceeding with original anchors.')
     print('')  # newline
 
 
@@ -712,19 +719,19 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
     """
     thr = 1. / thr
 
-    def metric(k):  # compute metrics
+    def metric(k, wh):  # compute metrics
         r = wh[:, None] / k[None]
         x = torch.min(r, 1. / r).min(2)[0]  # ratio metric
         # x = wh_iou(wh, torch.tensor(k))  # iou metric
         return x, x.max(1)[0]  # x, best_x
 
     def fitness(k):  # mutation fitness
-        _, best = metric(torch.tensor(k, dtype=torch.float32))
+        _, best = metric(torch.tensor(k, dtype=torch.float32), wh)
         return (best * (best > thr).float()).mean()  # fitness
 
     def print_results(k):
         k = k[np.argsort(k.prod(1))]  # sort small to large
-        x, best = metric(k)
+        x, best = metric(k, wh0)
         bpr, aat = (best > thr).float().mean(), (x > thr).float().mean() * n  # best possible recall, anch > thr
         print('thr=%.2f: %.3f best possible recall, %.2f anchors past thr' % (thr, bpr, aat))
         print('n=%g, img_size=%s, metric_all=%.3f/%.3f-mean/best, past_thr=%.3f-mean: ' %
@@ -743,8 +750,14 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
 
     # Get label wh
     shapes = img_size * dataset.shapes / dataset.shapes.max(1, keepdims=True)
-    wh = np.concatenate([l[:, 3:5] * s for s, l in zip(shapes, dataset.labels)])  # wh
-    wh = wh[(wh > 2.0).all(1)]  # filter > 2 pixels
+    wh0 = np.concatenate([l[:, 3:5] * s for s, l in zip(shapes, dataset.labels)])  # wh
+
+    # Filter
+    i = (wh0 < 4.0).any(1).sum()
+    if i:
+        print('WARNING: Extremely small objects found. '
+              '%g of %g labels are < 4 pixels in width or height.' % (i, len(wh0)))
+    wh = wh0[(wh0 >= 4.0).any(1)]  # filter > 2 pixels
 
     # Kmeans calculation
     from scipy.cluster.vq import kmeans
@@ -752,7 +765,8 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
     s = wh.std(0)  # sigmas for whitening
     k, dist = kmeans(wh / s, n, iter=30)  # points, mean distance
     k *= s
-    wh = torch.tensor(wh, dtype=torch.float32)
+    wh = torch.tensor(wh, dtype=torch.float32)  # filtered
+    wh0 = torch.tensor(wh0, dtype=torch.float32)  # unflitered
     k = print_results(k)
 
     # Plot
@@ -781,8 +795,8 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
             f, k = fg, kg.copy()
             if verbose:
                 print_results(k)
-    k = print_results(k)
-    return k
+
+    return print_results(k)
 
 
 def print_mutation(hyp, results, bucket=''):
@@ -1099,6 +1113,7 @@ def plot_labels(labels):
     ax[2].set_xlabel('width')
     ax[2].set_ylabel('height')
     plt.savefig('labels.png', dpi=200)
+    plt.close()
 
 
 def plot_evolution_results(hyp):  # from utils.utils import *; plot_evolution_results(hyp)
