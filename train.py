@@ -63,7 +63,7 @@ def train(hyp):
     os.makedirs(wdir, exist_ok=True)
     last = wdir + 'last.pt'
     best = wdir + 'best.pt'
-    results_file = 'results.txt'
+    results_file = wdir + 'results.txt'
 
     epochs = opt.epochs  # 300
     batch_size = opt.batch_size  # 64
@@ -360,7 +360,7 @@ def train(hyp):
     if len(n):
         n = '_' + n if not n.isnumeric() else n
         fresults, flast, fbest = 'results%s.txt' % n, wdir + 'last%s.pt' % n, wdir + 'best%s.pt' % n
-        for f1, f2 in zip([wdir + 'last.pt', wdir + 'best.pt', 'results.txt'], [flast, fbest, fresults]):
+        for f1, f2 in zip([wdir + 'last.pt', wdir + 'best.pt', wdir + 'results.txt'], [flast, fbest, fresults]):
             if os.path.exists(f1):
                 os.rename(f1, f2)  # rename
                 ispt = f2.endswith('.pt')  # is *.pt
@@ -382,10 +382,10 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--cfg', type=str, default='models/yolov5s.yaml', help='*.cfg path')
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='*.data path')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes. Assumes square imgs.')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', action='store_true', help='resume training from last.pt')
-    parser.add_argument('--resume_from_run', type=str, default='', 'resume training from last.pt in this dir')
+    parser.add_argument('--resume-from-run', type=str, default='', help='resume training from last.pt in this dir')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
@@ -397,18 +397,30 @@ if __name__ == '__main__':
     parser.add_argument('--adam', action='store_true', help='use adam optimizer')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
-    parser.add_argument('--hyp', type=str, default='', help ='path to hyp yaml file')
+    parser.add_argument('--hyp', type=str, default='', help ='path to hyp yaml file. Not needed with --resume.')
     opt = parser.parse_args()
 
-    if opt.resume and not opt.resume_from_run:
+    # logic to resume from latest run if either --resume or --resume-from-run is selected
+    # Note if neither --resume or --resume-from-run, last is set to empty string
+    if opt.resume_from_run:
+        opt.resume = True
+        last = opt.resume_from_run
+    elif opt.resume and not opt.resume_from_run:
         last = get_latest_run()
         print(f'WARNING: No run provided to resume from. Resuming from most recent run found at {last}')
     else:
-        last = opt.resume_from_run
+        last = ''
+        
+    # if resuming, check for hyp file
+    if last:
+        last_hyp = last.replace('last.pt', 'hyp.yaml')
+        if os.path.exists(last_hyp):
+            opt.hyp = last_hyp
+
     opt.weights = last if opt.resume else opt.weights
     opt.cfg = check_file(opt.cfg)  # check file
     opt.data = check_file(opt.data)  # check file
-    opt.hyp = check_file(opt.hyp) #check file
+    opt.hyp = check_file(opt.hyp) if opt.hyp else '' #check file
     print(opt)
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
     device = torch_utils.select_device(opt.device, apex=mixed_precision, batch_size=opt.batch_size)
