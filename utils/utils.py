@@ -69,7 +69,7 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
     print('Best Possible Recall (BPR) = %.4f' % bpr, end='')
     if bpr < 0.99:  # threshold to recompute
         print('. Attempting to generate improved anchors, please wait...' % bpr)
-        new_anchors = kmean_anchors(dataset, n=9, img_size=640, thr=4.0, gen=1000, verbose=False)
+        new_anchors = kmean_anchors(dataset, n=anchors.numel() // 2, img_size=imgsz, thr=thr, gen=1000, verbose=False)
         new_bpr = metric(new_anchors.reshape(-1, 2))
         if new_bpr > bpr:
             anchors[:] = torch.tensor(new_anchors).view_as(anchors).type_as(anchors)
