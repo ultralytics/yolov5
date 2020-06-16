@@ -303,7 +303,7 @@ def train(hyp):
                                              model=ema.ema,
                                              single_cls=opt.single_cls,
                                              dataloader=testloader,
-                                             fast=epoch > epochs / 2)
+                                             fast=epoch < epochs / 2)
 
         # Write
         with open(results_file, 'a') as f:
