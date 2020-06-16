@@ -1005,7 +1005,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
     return mosaic
 
 
-def plot_lr_scheduler(optimizer, scheduler, epochs=300):
+def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir='./'):
     # Plot LR simulating training for full epochs
     optimizer, scheduler = copy(optimizer), copy(scheduler)  # do not modify originals
     y = []

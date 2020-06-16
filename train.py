@@ -148,7 +148,7 @@ def train(hyp):
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     scheduler.last_epoch = start_epoch - 1  # do not move
     # https://discuss.pytorch.org/t/a-problem-occured-when-resuming-an-optimizer/28822
-    # plot_lr_scheduler(optimizer, scheduler, epochs)
+    plot_lr_scheduler(optimizer, scheduler, epochs, save_dir = log_dir)
 
     # Initialize distributed training
     if device.type != 'cpu' and torch.cuda.device_count() > 1 and torch.distributed.is_available():
