@@ -18,11 +18,6 @@ except:
     print('Apex recommended for faster mixed precision training: https://github.com/NVIDIA/apex')
     mixed_precision = False  # not installed
 
-wdir = 'weights' + os.sep  # weights dir
-os.makedirs(wdir, exist_ok=True)
-last = wdir + 'last.pt'
-best = wdir + 'best.pt'
-results_file = 'results.txt'
 
 # Hyperparameters
 hyp = {'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
@@ -59,12 +54,20 @@ if hyp['fl_gamma']:
 
 
 def train(hyp):
+    #write all results to the tb log_dir, so all data from one run is together
+    log_dir = tb_writer.log_dir
+
+    #weights dir unique to each experiment
+    wdir = os.path.join(log_dir, 'weights') + os.sep  # weights dir
+
+    os.makedirs(wdir, exist_ok=True)
+    last = wdir + 'last.pt'
+    best = wdir + 'best.pt'
+    results_file = 'results.txt'
+
     epochs = opt.epochs  # 300
     batch_size = opt.batch_size  # 64
     weights = opt.weights  # initial training weights
-
-    #write all results to the tb log_dir, so all data from one run is together
-    log_dir = tb_writer.log_dir
 
     # Configure
     init_seeds(1)
