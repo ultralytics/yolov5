@@ -408,6 +408,7 @@ if __name__ == '__main__':
     opt.cfg = check_file(opt.cfg)  # check file
     opt.data = check_file(opt.data)  # check file
     opt.hyp = check_file(opt.hyp) if opt.hyp else '' #check file
+
     print(opt)
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
     device = torch_utils.select_device(opt.device, apex=mixed_precision, batch_size=opt.batch_size)
@@ -419,7 +420,10 @@ if __name__ == '__main__':
         tb_writer = SummaryWriter(comment=opt.name)
         
         #updates hyp defaults from hyp.yaml
-        if opt.hyp: hyp.update(opt.hyp)
+        if opt.hyp:
+            with open(opt.hyp) as f:
+                updated_hyp = yaml.load(f, Loader=yaml.FullLoader)
+                hyp.update(updated_hyp)
 
         # Print focal loss if gamma > 0
         if hyp['fl_gamma']:
