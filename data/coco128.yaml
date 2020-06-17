@@ -8,8 +8,8 @@
 
 
 # train and val datasets (image directory or *.txt file with image paths)
-train: ../coco128/images/train2017/
-val: ../coco128/images/train2017/
+train: C:/Users/astoken/projects/yolov5/data/coco/images/train2017
+val: C:/Users/astoken/projects/yolov5/data/coco/images/train2017
 
 # number of classes
 nc: 80

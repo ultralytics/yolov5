@@ -196,7 +196,7 @@ def train(hyp):
     c = torch.tensor(labels[:, 0])  # classes
     # cf = torch.bincount(c.long(), minlength=nc) + 1.
     # model._initialize_biases(cf.to(device))
-    plot_labels(labels)
+    plot_labels(labels, save_dir=log_dir)
     tb_writer.add_histogram('classes', c, 0)
 
     # Check anchors

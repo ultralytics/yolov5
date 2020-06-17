@@ -1025,7 +1025,7 @@ def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir='./'):
     plt.xlim(0, epochs)
     plt.ylim(0)
     plt.tight_layout()
-    plt.savefig('LR.png', dpi=200)
+    plt.savefig(os.path.join(save_dir, 'LR.png'), dpi=200)
 
 
 def plot_test_txt():  # from utils.utils import *; plot_test()
@@ -1088,7 +1088,7 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.utils import *; plot_st
     plt.savefig(f.replace('.txt', '.png'), dpi=200)
 
 
-def plot_labels(labels):
+def plot_labels(labels, save_dir= '.'):
     # plot dataset labels
     c, b = labels[:, 0], labels[:, 1:].transpose()  # classees, boxes
 
@@ -1109,7 +1109,7 @@ def plot_labels(labels):
     ax[2].scatter(b[2], b[3], c=hist2d(b[2], b[3], 90), cmap='jet')
     ax[2].set_xlabel('width')
     ax[2].set_ylabel('height')
-    plt.savefig('labels.png', dpi=200)
+    plt.savefig(os.path.join(save_dir,'labels.png'), dpi=200)
 
 
 def plot_evolution_results(hyp):  # from utils.utils import *; plot_evolution_results(hyp)
