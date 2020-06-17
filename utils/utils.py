@@ -47,9 +47,10 @@ def check_git_status():
 
 def check_img_size(img_size, s=32):
     # Verify img_size is a multiple of stride s
-    if img_size % s != 0:
-        print('WARNING: --img-size %g must be multiple of max stride %g' % (img_size, s))
-    return make_divisible(img_size, s)  # nearest gs-multiple
+    new_size = make_divisible(img_size, s)  # ceil gs-multiple
+    if new_size != img_size:
+        print('WARNING: --img-size %g must be multiple of max stride %g, updating to %g' % (img_size, s, new_size))
+    return new_size
 
 
 def check_anchors(dataset, model, thr=4.0, imgsz=640):
