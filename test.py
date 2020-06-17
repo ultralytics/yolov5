@@ -20,7 +20,8 @@ def test(data,
          model=None,
          dataloader=None,
          fast=False,
-         verbose=False):
+         verbose=False,
+         save_dir='.'):
     # Initialize/load model and set device
     if model is None:
         training = False
@@ -28,7 +29,7 @@ def test(data,
         half = device.type != 'cpu'  # half precision only supported on CUDA
 
         # Remove previous
-        for f in glob.glob('test_batch*.jpg'):
+        for f in glob.glob(f'{save_dir}/test_batch*.jpg'):
             os.remove(f)
 
         # Load model
@@ -177,9 +178,9 @@ def test(data,
 
         # Plot images
         if batch_i < 1:
-            f = 'test_batch%g_gt.jpg' % batch_i  # filename
+            f = os.path.join(save_dir, 'test_batch%g_gt.jpg' % batch_i)  # filename
             plot_images(img, targets, paths, f, names)  # ground truth
-            f = 'test_batch%g_pred.jpg' % batch_i
+            f = os.path.join(save_dir,'test_batch%g_pred.jpg' % batch_i)
             plot_images(img, output_to_target(output, width, height), paths, f, names)  # predictions
 
     # Compute statistics
