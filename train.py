@@ -50,7 +50,7 @@ def train(hyp):
     os.makedirs(wdir, exist_ok=True)
     last = wdir + 'last.pt'
     best = wdir + 'best.pt'
-    results_file = wdir + 'results.txt'
+    results_file = log_dir + 'results.txt'
 
     epochs = opt.epochs  # 300
     batch_size = opt.batch_size  # 64
