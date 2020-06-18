@@ -332,7 +332,7 @@ def train(hyp):
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
                         'training_results': f.read(),
-                        'model': ema.ema.module.half() if hasattr(model, 'module') else ema.ema.half(),
+                        'model': ema.ema.module if hasattr(model, 'module') else ema.ema,
                         'optimizer': None if final_epoch else optimizer.state_dict()}
 
             # Save last, best and delete
