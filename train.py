@@ -200,7 +200,8 @@ def train(hyp):
         tb_writer.add_histogram('classes', c, 0)
 
     # Check anchors
-    check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
+    if not opt.noautoanchor:
+        check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
 
     # Exponential moving average
     ema = torch_utils.ModelEMA(model)
@@ -374,6 +375,7 @@ if __name__ == '__main__':
     parser.add_argument('--resume', action='store_true', help='resume training from last.pt')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
+    parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
