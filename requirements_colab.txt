@@ -1,7 +1,7 @@
 # pip install -U -r requirements.txt
 numpy==1.17
 opencv-python
-torch >= 1.6
+#torch >= 1.6
 matplotlib
 pycocotools
 tqdm
