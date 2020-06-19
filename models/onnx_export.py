@@ -1,7 +1,6 @@
 """Exports a pytorch *.pt model to *.onnx format
 
 Usage:
-    import torch
     $ export PYTHONPATH="$PWD" && python models/onnx_export.py --weights ./weights/yolov5s.pt --img 640 --batch 1
 """
 
