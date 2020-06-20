@@ -2,12 +2,12 @@
 Cython
 numpy==1.17
 opencv-python
-torch>=1.4
+torch==1.4
 matplotlib
 pillow
 tensorboard
 PyYAML>=5.3
-torchvision
+torchvision==0.5.0
 scipy
 tqdm
 git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI
