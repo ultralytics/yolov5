@@ -19,7 +19,7 @@ def test(data,
          verbose=False,
          model=None,
          dataloader=None,
-         fast=False):
+         merge=False):
     # Initialize/load model and set device
     if model is None:
         training = False
@@ -65,7 +65,7 @@ def test(data,
         img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
         _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
 
-        fast |= conf_thres > 0.001  # enable fast mode
+        merge = opt.merge  # use Merge NMS
         path = data['test'] if opt.task == 'test' else data['val']  # path to val/test images
         dataset = LoadImagesAndLabels(path,
                                       imgsz,
@@ -109,7 +109,7 @@ def test(data,
 
             # Run NMS
             t = torch_utils.time_synchronized()
-            output = non_max_suppression(inf_out, conf_thres=conf_thres, iou_thres=iou_thres, fast=fast)
+            output = non_max_suppression(inf_out, conf_thres=conf_thres, iou_thres=iou_thres, merge=merge)
             t1 += torch_utils.time_synchronized() - t
 
         # Statistics per image
@@ -254,6 +254,7 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--single-cls', action='store_true', help='treat as single-class dataset')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
+    parser.add_argument('--merge', action='store_true', help='use Merge NMS')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
     opt = parser.parse_args()
     opt.img_size = check_img_size(opt.img_size)

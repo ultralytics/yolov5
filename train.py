@@ -305,8 +305,7 @@ def train(hyp):
                                              save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
                                              model=ema.ema,
                                              single_cls=opt.single_cls,
-                                             dataloader=testloader,
-                                             fast=epoch < epochs / 2)
+                                             dataloader=testloader)
 
         # Write
         with open(results_file, 'a') as f:

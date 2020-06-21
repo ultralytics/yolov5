@@ -527,7 +527,7 @@ def build_targets(p, targets, model):
     return tcls, tbox, indices, anch
 
 
-def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, fast=False, classes=None, agnostic=False):
+def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, classes=None, agnostic=False):
     """Performs Non-Maximum Suppression (NMS) on inference results
 
     Returns:
@@ -544,12 +544,7 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, fast=False, c
     max_det = 300  # maximum number of detections per image
     time_limit = 10.0  # seconds to quit after
     redundant = True  # require redundant detections
-    fast |= conf_thres > 0.001  # fast mode
     multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
-    if fast:
-        merge = False
-    else:
-        merge = True  # merge for best mAP (adds 0.5ms/img)
 
     t = time.time()
     output = [None] * prediction.shape[0]
