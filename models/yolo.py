@@ -61,8 +61,9 @@ class Model(nn.Module):
 
         # Build strides, anchors
         m = self.model[-1]  # Detect()
-        m.stride = torch.tensor([64 / x.shape[-2] for x in self.forward(torch.zeros(1, ch, 64, 64))])  # forward
+        m.stride = torch.tensor([128 / x.shape[-2] for x in self.forward(torch.zeros(1, ch, 128, 128))])  # forward
         m.anchors /= m.stride.view(-1, 1, 1)
+        check_anchor_order(m)
         self.stride = m.stride
 
         # Init weights, biases
