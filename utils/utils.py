@@ -1094,12 +1094,14 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.utils import *; plot_st
 
     ax2.plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [33.5, 39.1, 42.5, 45.9, 49., 50.5],
              'k.-', linewidth=2, markersize=8, alpha=.25, label='EfficientDet')
+
+    ax2.grid()
     ax2.set_xlim(0, 30)
-    ax2.set_ylim(25, 50)
-    ax2.set_xlabel('GPU Latency (ms)')
+    ax2.set_ylim(28, 50)
+    ax2.set_yticks(np.arange(30, 55, 5))
+    ax2.set_xlabel('GPU Speed (ms/img)')
     ax2.set_ylabel('COCO AP val')
     ax2.legend(loc='lower right')
-    ax2.grid()
     plt.savefig('study_mAP_latency.png', dpi=300)
     plt.savefig(f.replace('.txt', '.png'), dpi=200)
 
