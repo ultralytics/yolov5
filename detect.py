@@ -64,8 +64,7 @@ def detect(save_img=False):
         pred = model(img, augment=opt.augment)[0]
 
         # Apply NMS
-        pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres,
-                                   fast=True, classes=opt.classes, agnostic=opt.agnostic_nms)
+        pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
         t2 = torch_utils.time_synchronized()
 
         # Apply Classifier
