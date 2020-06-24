@@ -193,7 +193,7 @@ def train(hyp):
         yaml.dump(hyp, f)
 
     with open(os.path.join(log_dir, 'opt.yaml'), 'w') as f:
-        yaml.dump(opt, f)
+        yaml.dump(vars(opt), f)
     
     # Class frequency
     labels = np.concatenate(dataset.labels, 0)
