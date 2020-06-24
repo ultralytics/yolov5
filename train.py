@@ -20,7 +20,7 @@ except:
 
 
 # Hyperparameters
-hyp = {'optimizer': 'adam' #if none, default is SGD
+hyp = {'optimizer': 'SGD', # ['adam, 'SGD', None] if none, default is SGD
        'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
        'momentum': 0.937,  # SGD momentum/Adam beta1
        'weight_decay': 5e-4,  # optimizer weight decay
