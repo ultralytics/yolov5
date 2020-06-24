@@ -368,8 +368,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16)
-    parser.add_argument('--cfg', type=str, default='models/yolov5s.yaml', help='*.cfg path')
-    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='*.data path')
+    parser.add_argument('--cfg', type=str, default='models/yolov5s.yaml', help='model cfg path[*.yaml]')
+    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data cfg path [*.yaml]')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes. Assumes square imgs.')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
@@ -383,7 +383,7 @@ if __name__ == '__main__':
     parser.add_argument('--adam', action='store_true', help='use adam optimizer')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
-    parser.add_argument('--hyp', type=str, default='', help ='path to hyp yaml file.')
+    parser.add_argument('--hyp', type=str, default='', help ='hyp cfg path [*.yaml].')
     opt = parser.parse_args()
 
     opt.cfg = check_file(opt.cfg)  # check file
