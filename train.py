@@ -372,8 +372,6 @@ if __name__ == '__main__':
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='*.data path')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes. Assumes square imgs.')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
-    parser.add_argument('--resume', action='store_true', help='resume training from last.pt')
-    parser.add_argument('--resume-from-run', type=str, default='', help='resume training from last.pt in this dir')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
@@ -385,27 +383,9 @@ if __name__ == '__main__':
     parser.add_argument('--adam', action='store_true', help='use adam optimizer')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
-    parser.add_argument('--hyp', type=str, default='', help ='path to hyp yaml file. Not needed with --resume.')
+    parser.add_argument('--hyp', type=str, default='', help ='path to hyp yaml file.')
     opt = parser.parse_args()
 
-    # logic to resume from latest run if either --resume or --resume-from-run is selected
-    # Note if neither --resume or --resume-from-run, last is set to empty string
-    if opt.resume_from_run:
-        opt.resume = True
-        last = opt.resume_from_run
-    elif opt.resume and not opt.resume_from_run:
-        last = get_latest_run()
-        print(f'WARNING: No run provided to resume from. Resuming from most recent run found at {last}')
-    else:
-        last = ''
-
-    # if resuming, check for hyp file
-    if last:
-        last_hyp = last.replace('last.pt', 'hyp.yaml')
-        if os.path.exists(last_hyp):
-            opt.hyp = last_hyp
-
-    opt.weights = last if opt.resume else opt.weights
     opt.cfg = check_file(opt.cfg)  # check file
     opt.data = check_file(opt.data)  # check file
     opt.hyp = check_file(opt.hyp) if opt.hyp else '' #check file
