@@ -73,6 +73,7 @@ def test(data,
                                       batch_size,
                                       rect=True,  # rectangular inference
                                       single_cls=opt.single_cls,  # single class mode
+                                      stride=int(max(model.stride)),  # model stride
                                       pad=0.5)  # padding
         batch_size = min(batch_size, len(dataset))
         nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
