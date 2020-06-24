@@ -96,8 +96,11 @@ class Model(nn.Module):
                 x = y[m.f] if isinstance(m.f, int) else [x if j == -1 else y[j] for j in m.f]  # from earlier layers
 
             if profile:
-                import thop
-                o = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2  # FLOPS
+                try:
+                    import thop
+                    o = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2  # FLOPS
+                except:
+                    o = 0
                 t = torch_utils.time_synchronized()
                 for _ in range(10):
                     _ = m(x)
@@ -217,11 +220,10 @@ if __name__ == '__main__':
     # Profile
     # img = torch.rand(8 if torch.cuda.is_available() else 1, 3, 640, 640).to(device)
     # y = model(img, profile=True)
-    # print([y[0].shape] + [x.shape for x in y[1]])
 
     # ONNX export
     # model.model[-1].export = True
-    # torch.onnx.export(model, img, f.replace('.yaml', '.onnx'), verbose=True, opset_version=11)
+    # torch.onnx.export(model, img, opt.cfg.replace('.yaml', '.onnx'), verbose=True, opset_version=11)
 
     # Tensorboard
     # from torch.utils.tensorboard import SummaryWriter
