@@ -79,6 +79,7 @@ def train(hyp):
     # Create model
     model = Model(opt.cfg).to(device)
     assert model.md['nc'] == nc, '%s nc=%g classes but %s nc=%g classes' % (opt.data, nc, opt.cfg, model.md['nc'])
+    model.names = data_dict['names']
 
     # Image sizes
     gs = int(max(model.stride))  # grid size (max stride)
@@ -193,7 +194,6 @@ def train(hyp):
     model.hyp = hyp  # attach hyperparameters to model
     model.gr = 1.0  # giou loss ratio (obj_loss = 1.0 or giou)
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device)  # attach class weights
-    model.names = data_dict['names']
 
     # Class frequency
     labels = np.concatenate(dataset.labels, 0)
