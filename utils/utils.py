@@ -632,8 +632,8 @@ def strip_optimizer(f='weights/best.pt'):  # from utils.utils import *; strip_op
     print('Optimizer stripped from %s' % f)
 
 
-def create_backbone(f='weights/best.pt', s='weights/backbone.pt'):  # from utils.utils import *; create_backbone()
-    # create backbone 's' from 'f'
+def create_pretrained(f='weights/best.pt', s='weights/pretrained.pt'):  # from utils.utils import *; create_pretrained()
+    # create pretrained checkpoint 's' from 'f' (create_pretrained(x, x) for x in glob.glob('./*.pt'))
     device = torch.device('cpu')
     x = torch.load(s, map_location=device)
 
@@ -644,7 +644,7 @@ def create_backbone(f='weights/best.pt', s='weights/backbone.pt'):  # from utils
     for p in x['model'].parameters():
         p.requires_grad = True
     torch.save(x, s)
-    print('%s modified for backbone use and saved as %s' % (f, s))
+    print('%s saved as pretrained checkpoint %s' % (f, s))
 
 
 def coco_class_count(path='../coco/labels/train2014/'):

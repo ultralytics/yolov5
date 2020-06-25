@@ -9,6 +9,7 @@ import argparse
 import onnx
 
 from models.common import *
+from utils import google_utils
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

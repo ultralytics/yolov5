@@ -46,7 +46,7 @@ def detect(save_img=False):
         dataset = LoadImages(source, img_size=imgsz)
 
     # Get names and colors
-    names = model.names if hasattr(model, 'names') else model.modules.names
+    names = model.module.names if hasattr(model, 'module') else model.names
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
 
     # Run inference
@@ -156,3 +156,8 @@ if __name__ == '__main__':
 
     with torch.no_grad():
         detect()
+
+        # Update all models
+        # for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov3-spp.pt']:
+        #    detect()
+        #    create_pretrained(opt.weights, opt.weights)

@@ -73,6 +73,7 @@ def test(data,
                                       batch_size,
                                       rect=True,  # rectangular inference
                                       single_cls=opt.single_cls,  # single class mode
+                                      stride=int(max(model.stride)),  # model stride
                                       pad=0.5)  # padding
         batch_size = min(batch_size, len(dataset))
         nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
@@ -245,7 +246,7 @@ def test(data,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='test.py')
     parser.add_argument('--weights', type=str, default='weights/yolov5s.pt', help='model.pt path')
-    parser.add_argument('--data', type=str, default='data/coco.yaml', help='*.data path')
+    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='*.data path')
     parser.add_argument('--batch-size', type=int, default=32, help='size of each image batch')
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='object confidence threshold')
