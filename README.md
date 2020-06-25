@@ -98,7 +98,7 @@ To access an up-to-date working environment (with all dependencies including CUD
 
 ## Citation
 
-[![DOI](https://zenodo.org/badge/146165888.svg)](https://zenodo.org/badge/latestdoi/146165888)
+[![DOI](https://zenodo.org/badge/264818686.svg)](https://zenodo.org/badge/latestdoi/264818686)
 
 
 ## About Us
