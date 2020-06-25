@@ -25,7 +25,6 @@ def test(data,
     if model is None:
         training = False
         device = torch_utils.select_device(opt.device, batch_size=batch_size)
-        half = device.type != 'cpu'  # half precision only supported on CUDA
 
         # Remove previous
         for f in glob.glob('test_batch*.jpg'):
@@ -37,20 +36,19 @@ def test(data,
         torch_utils.model_info(model)
         model.fuse()
         model.to(device)
-        if half:
-            model.half()  # to FP16
 
-        # Multi-GPU disabled, incompatible with .half()
+        # Multi-GPU disabled, incompatible with .half() https://github.com/ultralytics/yolov5/issues/99
         # if device.type != 'cpu' and torch.cuda.device_count() > 1:
         #     model = nn.DataParallel(model)
 
     else:  # called by train.py
         training = True
         device = next(model.parameters()).device  # get model device
-        # half disabled https://github.com/ultralytics/yolov5/issues/99
-        half = False  # device.type != 'cpu' and torch.cuda.device_count() == 1
-        if half:
-            model.half()  # to FP16
+
+    # Half
+    half = device.type != 'cpu' and torch.cuda.device_count() == 1  # half precision only supported on single-GPU
+    if half:
+        model.half()  # to FP16
 
     # Configure
     model.eval()
@@ -237,6 +235,7 @@ def test(data,
                   'See https://github.com/cocodataset/cocoapi/issues/356')
 
     # Return results
+    model.float()  # for training
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
