@@ -80,7 +80,7 @@ def detect(save_img=False):
                 p, s, im0 = path, '', im0s
 
             save_path = str(Path(out) / Path(p).name)
-            txt_path = save_path[:save_path.rfind('.')] + ('_%g' % dataset.frame if dataset.mode == 'video' else '')
+            txt_path = str(Path(out) / Path(p).stem) + ('_%g' % dataset.frame if dataset.mode == 'video' else '')
             s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  #  normalization gain whwh
             if det is not None and len(det):
