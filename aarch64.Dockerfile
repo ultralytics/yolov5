@@ -8,6 +8,14 @@ MAINTAINER russ.ferriday@gmail.com
 RUN apt-get update && apt-get install -y python-opencv python3-opencv
 
 
+# Similarly, tkinter.
+# To save a layer, we throw in curl -- needed for pulling weights --,
+# and other deps
+RUN apt-get install -y python3-tk \
+  curl \
+  python3-matplotlib
+
+
 # The base container contains an older pip3 version - let's confirm...
 RUN pip3 -V
 # It tells me 9.0.1 -- pretty old -- so, let's grab latest to 
@@ -21,8 +29,9 @@ RUN pip3 install \
   PyYAML>=5.3 \
   tqdm 
 
-# revert to pinned version of numpy due to cocodataset issue discussed here...
-#   https://github.com/cocodataset/cocoapi/issues/356
+# Revert to pinned version of numpy due to cocodataset issue discussed 
+#   here... 
+#      https://github.com/cocodataset/cocoapi/issues/356
 RUN pip3 install \
   numpy==1.17.5  
 
