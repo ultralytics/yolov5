@@ -41,6 +41,26 @@ def exif_size(img):
     return s
 
 
+def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False):
+    dataset = LoadImagesAndLabels(path, imgsz, batch_size,
+                                  augment=augment,  # augment images
+                                  hyp=hyp,  # augmentation hyperparameters
+                                  rect=rect,  # rectangular training
+                                  cache_images=cache,
+                                  single_cls=opt.single_cls,
+                                  stride=stride,
+                                  pad=pad)
+
+    batch_size = min(batch_size, len(dataset))
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 0])  # number of workers
+    dataloader = torch.utils.data.DataLoader(dataset,
+                                             batch_size=batch_size,
+                                             num_workers=nw,
+                                             pin_memory=True,
+                                             collate_fn=LoadImagesAndLabels.collate_fn)
+    return dataloader, dataset
+
+
 class LoadImages:  # for inference
     def __init__(self, path, img_size=416):
         path = str(Path(path))  # os-agnostic
@@ -712,7 +732,7 @@ def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10,
         area = w * h
         area0 = (targets[:, 3] - targets[:, 1]) * (targets[:, 4] - targets[:, 2])
         ar = np.maximum(w / (h + 1e-16), h / (w + 1e-16))  # aspect ratio
-        i = (w > 4) & (h > 4) & (area / (area0 * s + 1e-16) > 0.2) & (ar < 10)
+        i = (w > 2) & (h > 2) & (area / (area0 * s + 1e-16) > 0.2) & (ar < 20)
 
         targets = targets[i]
         targets[:, 1:5] = xy[i]

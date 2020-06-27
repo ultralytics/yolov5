@@ -1,8 +1,6 @@
 import argparse
 import json
 
-from torch.utils.data import DataLoader
-
 from utils import google_utils
 from utils.datasets import *
 from utils.utils import *
@@ -56,30 +54,16 @@ def test(data,
         data = yaml.load(f, Loader=yaml.FullLoader)  # model dict
     nc = 1 if single_cls else int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
-    # iouv = iouv[0].view(1)  # comment for mAP@0.5:0.95
     niou = iouv.numel()
 
     # Dataloader
     if dataloader is None:  # not training
+        merge = opt.merge  # use Merge NMS
         img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
         _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
-
-        merge = opt.merge  # use Merge NMS
         path = data['test'] if opt.task == 'test' else data['val']  # path to val/test images
-        dataset = LoadImagesAndLabels(path,
-                                      imgsz,
-                                      batch_size,
-                                      rect=True,  # rectangular inference
-                                      single_cls=opt.single_cls,  # single class mode
-                                      stride=int(max(model.stride)),  # model stride
-                                      pad=0.5)  # padding
-        batch_size = min(batch_size, len(dataset))
-        nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
-        dataloader = DataLoader(dataset,
-                                batch_size=batch_size,
-                                num_workers=nw,
-                                pin_memory=True,
-                                collate_fn=dataset.collate_fn)
+        dataloader = create_dataloader(path, imgsz, batch_size, int(max(model.stride)), opt,
+                                       hyp=None, augment=False, cache=False, pad=0.5, rect=True)[0]
 
     seen = 0
     names = model.names if hasattr(model, 'names') else model.module.names
