@@ -307,7 +307,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.image_weights = image_weights
         self.rect = False if image_weights else rect
         self.mosaic = self.augment and not self.rect  # load 4 images at a time into a mosaic (only during training)
-        self.mosaic_border = None
+        self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
 
 
@@ -588,8 +588,7 @@ def load_mosaic(self, index):
 
     labels4 = []
     s = self.img_size
-    border = [-s // 2, -s // 2]  # self.mosaic_border
-    yc, xc = [int(random.uniform(-x, 2 * s + x)) for x in border]  # mosaic center x, y
+    yc, xc = [int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border]  # mosaic center x, y
     indices = [index] + [random.randint(0, len(self.labels) - 1) for _ in range(3)]  # 3 additional image indices
     for i, index in enumerate(indices):
         # Load image
@@ -637,7 +636,7 @@ def load_mosaic(self, index):
                                   translate=self.hyp['translate'],
                                   scale=self.hyp['scale'],
                                   shear=self.hyp['shear'],
-                                  border=border)  # border to remove
+                                  border=self.mosaic_border)  # border to remove
 
     return img4, labels4
 
