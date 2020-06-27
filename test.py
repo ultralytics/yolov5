@@ -1,9 +1,7 @@
 import argparse
 import json
 
-import yaml
-from torch.utils.data import DataLoader
-
+from utils import google_utils
 from utils.datasets import *
 from utils.utils import *
 
@@ -17,16 +15,18 @@ def test(data,
          save_json=False,
          single_cls=False,
          augment=False,
+         verbose=False,
          model=None,
          dataloader=None,
          fast=False,
          verbose=False,
-         save_dir='.'):
+         save_dir='.',
+         merge=False):
+
     # Initialize/load model and set device
     if model is None:
         training = False
         device = torch_utils.select_device(opt.device, batch_size=batch_size)
-        half = device.type != 'cpu'  # half precision only supported on CUDA
 
         # Remove previous
         for f in glob.glob(f'{save_dir}/test_batch*.jpg'):
@@ -38,18 +38,19 @@ def test(data,
         torch_utils.model_info(model)
         model.fuse()
         model.to(device)
-        if half:
-            model.half()  # to FP16
 
-        if device.type != 'cpu' and torch.cuda.device_count() > 1:
-            model = nn.DataParallel(model)
+        # Multi-GPU disabled, incompatible with .half() https://github.com/ultralytics/yolov5/issues/99
+        # if device.type != 'cpu' and torch.cuda.device_count() > 1:
+        #     model = nn.DataParallel(model)
 
     else:  # called by train.py
         training = True
         device = next(model.parameters()).device  # get model device
-        half = device.type != 'cpu'  # half precision only supported on CUDA
-        if half:
-            model.half()  # to FP16
+
+    # Half
+    half = device.type != 'cpu' and torch.cuda.device_count() == 1  # half precision only supported on single-GPU
+    if half:
+        model.half()  # to FP16
 
     # Configure
     model.eval()
@@ -57,29 +58,16 @@ def test(data,
         data = yaml.load(f, Loader=yaml.FullLoader)  # model dict
     nc = 1 if single_cls else int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
-    # iouv = iouv[0].view(1)  # comment for mAP@0.5:0.95
     niou = iouv.numel()
 
     # Dataloader
     if dataloader is None:  # not training
+        merge = opt.merge  # use Merge NMS
         img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
         _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
-
-        fast |= conf_thres > 0.001  # enable fast mode
         path = data['test'] if opt.task == 'test' else data['val']  # path to val/test images
-        dataset = LoadImagesAndLabels(path,
-                                      imgsz,
-                                      batch_size,
-                                      rect=True,  # rectangular inference
-                                      single_cls=opt.single_cls,  # single class mode
-                                      pad=0.5)  # padding
-        batch_size = min(batch_size, len(dataset))
-        nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
-        dataloader = DataLoader(dataset,
-                                batch_size=batch_size,
-                                num_workers=nw,
-                                pin_memory=True,
-                                collate_fn=dataset.collate_fn)
+        dataloader = create_dataloader(path, imgsz, batch_size, int(max(model.stride)), opt,
+                                       hyp=None, augment=False, cache=False, pad=0.5, rect=True)[0]
 
     seen = 0
     names = model.names if hasattr(model, 'names') else model.module.names
@@ -109,7 +97,7 @@ def test(data,
 
             # Run NMS
             t = torch_utils.time_synchronized()
-            output = non_max_suppression(inf_out, conf_thres=conf_thres, iou_thres=iou_thres, fast=fast)
+            output = non_max_suppression(inf_out, conf_thres=conf_thres, iou_thres=iou_thres, merge=merge)
             t1 += torch_utils.time_synchronized() - t
 
         # Statistics per image
@@ -235,6 +223,7 @@ def test(data,
                   'See https://github.com/cocodataset/cocoapi/issues/356')
 
     # Return results
+    model.float()  # for training
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
@@ -244,7 +233,7 @@ def test(data,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='test.py')
     parser.add_argument('--weights', type=str, default='weights/yolov5s.pt', help='model.pt path')
-    parser.add_argument('--data', type=str, default='data/coco.yaml', help='*.data path')
+    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='*.data path')
     parser.add_argument('--batch-size', type=int, default=32, help='size of each image batch')
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='object confidence threshold')
@@ -254,6 +243,7 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--single-cls', action='store_true', help='treat as single-class dataset')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
+    parser.add_argument('--merge', action='store_true', help='use Merge NMS')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
     opt = parser.parse_args()
     opt.img_size = check_img_size(opt.img_size)
@@ -271,12 +261,13 @@ if __name__ == '__main__':
              opt.iou_thres,
              opt.save_json,
              opt.single_cls,
-             opt.augment)
+             opt.augment,
+             opt.verbose)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
-        for weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
+        for weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov3-spp.pt']:
             f = 'study_%s_%s.txt' % (Path(opt.data).stem, Path(weights).stem)  # filename to save to
-            x = list(range(288, 896, 64))  # x axis
+            x = list(range(352, 832, 64))  # x axis
             y = []  # y axis
             for i in x:  # img-size
                 print('\nRunning %s point %s...' % (f, i))

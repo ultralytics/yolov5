@@ -1,9 +1,6 @@
 # Start FROM Nvidia PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
 FROM nvcr.io/nvidia/pytorch:20.03-py3
-
-# Install dependencies (pip or conda)
 RUN pip install -U gsutil
-# RUN pip install -U -r requirements.txt
 
 # Create working directory
 RUN mkdir -p /usr/src/app
@@ -11,6 +8,9 @@ WORKDIR /usr/src/app
 
 # Copy contents
 COPY . /usr/src/app
+
+# Install dependencies (pip or conda)
+#RUN pip install -r requirements.txt
 
 # Copy weights
 #RUN python3 -c "from models import *; \
@@ -41,7 +41,7 @@ COPY . /usr/src/app
 
 # Bash into running container
 # sudo docker container exec -it ba65811811ab bash
-# python -c "from utils.utils import *; create_backbone('weights/last.pt')" && gsutil cp weights/backbone.pt gs://*
+# python -c "from utils.utils import *; create_pretrained('weights/last.pt')" && gsutil cp weights/pretrained.pt gs://*
 
 # Bash into stopped container
 # sudo docker commit 6d525e299258 user/test_image && sudo docker run -it --gpus all --ipc=host -v "$(pwd)"/coco:/usr/src/coco --entrypoint=sh user/test_image
