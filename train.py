@@ -1,4 +1,5 @@
 import argparse
+import json
 
 import torch.distributed as dist
 import torch.nn.functional as F
@@ -26,37 +27,37 @@ last = wdir + 'last.pt'
 best = wdir + 'best.pt'
 results_file = 'results.txt'
 
-# Hyperparameters
-hyp = {'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
-       'momentum': 0.937,  # SGD momentum
-       'weight_decay': 5e-4,  # optimizer weight decay
-       'giou': 0.05,  # giou loss gain
-       'cls': 0.58,  # cls loss gain
-       'cls_pw': 1.0,  # cls BCELoss positive_weight
-       'obj': 1.0,  # obj loss gain (*=img_size/320 if img_size != 320)
-       'obj_pw': 1.0,  # obj BCELoss positive_weight
-       'iou_t': 0.20,  # iou training threshold
-       'anchor_t': 4.0,  # anchor-multiple threshold
-       'fl_gamma': 0.0,  # focal loss gamma (efficientDet default is gamma=1.5)
-       'hsv_h': 0.014,  # image HSV-Hue augmentation (fraction)
-       'hsv_s': 0.68,  # image HSV-Saturation augmentation (fraction)
-       'hsv_v': 0.36,  # image HSV-Value augmentation (fraction)
-       'degrees': 0.0,  # image rotation (+/- deg)
-       'translate': 0.0,  # image translation (+/- fraction)
-       'scale': 0.5,  # image scale (+/- gain)
-       'shear': 0.0}  # image shear (+/- deg)
-print(hyp)
 
-# Overwrite hyp with hyp*.txt (optional)
-f = glob.glob('hyp*.txt')
-if f:
-    print('Using %s' % f[0])
-    for k, v in zip(hyp.keys(), np.loadtxt(f[0])):
-        hyp[k] = v
+def load_hyp(path):
+    # Hyperparameters
+    # 'lr0': initial learning rate (SGD=1E-2, Adam=1E-3)
+    # 'momentum': SGD momentum
+    # 'weight_decay': optimizer weight decay
+    # 'giou': giou loss gain
+    # 'cls': cls loss gain
+    # 'cls_pw': cls BCELoss positive_weight
+    # 'obj': obj loss gain (*=img_size/320 if img_size != 320)
+    # 'obj_pw': obj BCELoss positive_weight
+    # 'iou_t': iou training threshold
+    # 'anchor_t': anchor-multiple threshold
+    # 'fl_gamma': focal loss gamma (efficientDet default is gamma=1.5)
+    # 'hsv_h': image HSV-Hue augmentation (fraction)
+    # 'hsv_s': image HSV-Saturation augmentation (fraction)
+    # 'hsv_v': image HSV-Value augmentation (fraction)
+    # 'degrees': image rotation (+/- deg)
+    # 'translate': image translation (+/- fraction)
+    # 'scale': image scale (+/- gain)
+    # 'shear': image shear (+/- deg)
+    with open(path) as f:
+        hyp = json.load(f)
 
-# Print focal loss if gamma > 0
-if hyp['fl_gamma']:
-    print('Using FocalLoss(gamma=%g)' % hyp['fl_gamma'])
+    print('Using %s' % path)
+    print(hyp)
+    # Print focal loss if gamma > 0
+    if hyp['fl_gamma']:
+        print('Using FocalLoss(gamma=%g)' % hyp['fl_gamma'])
+
+    return hyp
 
 
 def train(hyp):
@@ -349,6 +350,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16)
+    parser.add_argument('--hyp', type=str, default='hyp_default.json', help='hyp*.json path')
     parser.add_argument('--cfg', type=str, default='models/yolov5s.yaml', help='*.cfg path')
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='*.data path')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
@@ -376,6 +378,7 @@ if __name__ == '__main__':
     if device.type == 'cpu':
         mixed_precision = False
 
+    hyp = load_hyp(opt.hyp)
     # Train
     if not opt.evolve:
         tb_writer = SummaryWriter(comment=opt.name)
