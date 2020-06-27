@@ -1,8 +1,6 @@
 import argparse
 import json
 
-from torch.utils.data import DataLoader
-
 from utils import google_utils
 from utils.datasets import *
 from utils.utils import *
@@ -25,7 +23,6 @@ def test(data,
     if model is None:
         training = False
         device = torch_utils.select_device(opt.device, batch_size=batch_size)
-        half = device.type != 'cpu'  # half precision only supported on CUDA
 
         # Remove previous
         for f in glob.glob('test_batch*.jpg'):
@@ -37,20 +34,19 @@ def test(data,
         torch_utils.model_info(model)
         model.fuse()
         model.to(device)
-        if half:
-            model.half()  # to FP16
 
-        # Multi-GPU disabled, incompatible with .half()
+        # Multi-GPU disabled, incompatible with .half() https://github.com/ultralytics/yolov5/issues/99
         # if device.type != 'cpu' and torch.cuda.device_count() > 1:
         #     model = nn.DataParallel(model)
 
     else:  # called by train.py
         training = True
         device = next(model.parameters()).device  # get model device
-        # half disabled https://github.com/ultralytics/yolov5/issues/99
-        half = False  # device.type != 'cpu' and torch.cuda.device_count() == 1
-        if half:
-            model.half()  # to FP16
+
+    # Half
+    half = device.type != 'cpu' and torch.cuda.device_count() == 1  # half precision only supported on single-GPU
+    if half:
+        model.half()  # to FP16
 
     # Configure
     model.eval()
@@ -58,30 +54,16 @@ def test(data,
         data = yaml.load(f, Loader=yaml.FullLoader)  # model dict
     nc = 1 if single_cls else int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
-    # iouv = iouv[0].view(1)  # comment for mAP@0.5:0.95
     niou = iouv.numel()
 
     # Dataloader
     if dataloader is None:  # not training
+        merge = opt.merge  # use Merge NMS
         img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
         _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
-
-        merge = opt.merge  # use Merge NMS
         path = data['test'] if opt.task == 'test' else data['val']  # path to val/test images
-        dataset = LoadImagesAndLabels(path,
-                                      imgsz,
-                                      batch_size,
-                                      rect=True,  # rectangular inference
-                                      single_cls=opt.single_cls,  # single class mode
-                                      stride=int(max(model.stride)),  # model stride
-                                      pad=0.5)  # padding
-        batch_size = min(batch_size, len(dataset))
-        nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
-        dataloader = DataLoader(dataset,
-                                batch_size=batch_size,
-                                num_workers=nw,
-                                pin_memory=True,
-                                collate_fn=dataset.collate_fn)
+        dataloader = create_dataloader(path, imgsz, batch_size, int(max(model.stride)), opt,
+                                       hyp=None, augment=False, cache=False, pad=0.5, rect=True)[0]
 
     seen = 0
     names = model.names if hasattr(model, 'names') else model.module.names
@@ -237,6 +219,7 @@ def test(data,
                   'See https://github.com/cocodataset/cocoapi/issues/356')
 
     # Return results
+    model.float()  # for training
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
