@@ -118,8 +118,9 @@ def train(hyp):
                              if model.state_dict()[k].shape == v.shape}  # to FP32, filter
             model.load_state_dict(ckpt['model'], strict=False)
         except KeyError as e:
-            s = "%s is not compatible with %s. Specify --weights '' or specify a --cfg compatible with %s." \
-                % (opt.weights, opt.cfg, opt.weights)
+            s = "%s is not compatible with %s. This may be due to model differences or %s may be out of date. " \
+                "Please delete or update %s and try again, or use --weights '' to train from scatch." \
+                % (opt.weights, opt.cfg, opt.weights, opt.weights)
             raise KeyError(s) from e
 
         # load optimizer
