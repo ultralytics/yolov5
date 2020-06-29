@@ -106,6 +106,11 @@ def detect(save_img=False):
             # Print time (inference + NMS)
             print('%sDone. (%.3fs)' % (s, t2 - t1))
 
+            # kludge
+            save_img = True
+            view_img = False
+            save_path += '%s.png' % str(t1)
+
             # Stream results
             if view_img:
                 cv2.imshow(p, im0)
