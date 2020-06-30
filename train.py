@@ -134,6 +134,8 @@ def train(hyp):
                 file.write(ckpt['training_results'])  # write results.txt
 
         start_epoch = ckpt['epoch'] + 1
+        assert opt.epochs > start_epoch, '%s has already trained %g epochs. --epochs must be greater than %g' % \
+                                         (opt.weights, ckpt['epoch'], ckpt['epoch'])
         del ckpt
 
     # Mixed precision training https://github.com/NVIDIA/apex
