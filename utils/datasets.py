@@ -310,7 +310,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
 
-
         # Define labels
         self.label_files = [x.replace('images', 'labels').replace(os.path.splitext(x)[-1], '.txt')
                             for x in self.img_files]
@@ -629,6 +628,9 @@ def load_mosaic(self, index):
         # np.clip(labels4[:, 1:] - s / 2, 0, s, out=labels4[:, 1:])  # use with center crop
         np.clip(labels4[:, 1:], 0, 2 * s, out=labels4[:, 1:])  # use with random_affine
 
+        # Replicate
+        # img4, labels4 = replicate(img4, labels4)
+
     # Augment
     # img4 = img4[s // 2: int(s * 1.5), s // 2:int(s * 1.5)]  # center crop (WARNING, requires box pruning)
     img4, labels4 = random_affine(img4, labels4,
@@ -639,6 +641,23 @@ def load_mosaic(self, index):
                                   border=self.mosaic_border)  # border to remove
 
     return img4, labels4
+
+
+def replicate(img, labels):
+    # Replicate labels
+    h, w = img.shape[:2]
+    boxes = labels[:, 1:].astype(int)
+    x1, y1, x2, y2 = boxes.T
+    s = ((x2 - x1) + (y2 - y1)) / 2  # side length (pixels)
+    for i in s.argsort()[:round(s.size * 0.5)]:  # smallest indices
+        x1b, y1b, x2b, y2b = boxes[i]
+        bh, bw = y2b - y1b, x2b - x1b
+        yc, xc = int(random.uniform(0, h - bh)), int(random.uniform(0, w - bw))  # offset x, y
+        x1a, y1a, x2a, y2a = [xc, yc, xc + bw, yc + bh]
+        img[y1a:y2a, x1a:x2a] = img[y1b:y2b, x1b:x2b]  # img4[ymin:ymax, xmin:xmax]
+        labels = np.append(labels, [[labels[i, 0], x1a, y1a, x2a, y2a]], axis=0)
+
+    return img, labels
 
 
 def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
@@ -765,6 +784,7 @@ def cutout(image, labels):
         box2_area = (b2_x2 - b2_x1) * (b2_y2 - b2_y1) + 1e-16
 
         # Intersection over box2 area
+
         return inter_area / box2_area
 
     # create random masks
