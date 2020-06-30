@@ -25,6 +25,7 @@ def detect(save_img=False):
     # torch.save(torch.load(weights, map_location=device), weights)  # update model if SourceChangeWarning
     # model.fuse()
     model.to(device).eval()
+    imgsz = check_img_size(imgsz, s=model.model[-1].stride.max())  # check img_size
     if half:
         model.half()  # to FP16
 
@@ -152,7 +153,6 @@ if __name__ == '__main__':
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     opt = parser.parse_args()
-    opt.img_size = check_img_size(opt.img_size)
     print(opt)
 
     with torch.no_grad():
