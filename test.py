@@ -34,6 +34,7 @@ def test(data,
         torch_utils.model_info(model)
         model.fuse()
         model.to(device)
+        imgsz = check_img_size(imgsz, s=model.model[-1].stride.max())  # check img_size
 
         # Multi-GPU disabled, incompatible with .half() https://github.com/ultralytics/yolov5/issues/99
         # if device.type != 'cpu' and torch.cuda.device_count() > 1:
@@ -242,7 +243,6 @@ if __name__ == '__main__':
     parser.add_argument('--merge', action='store_true', help='use Merge NMS')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
     opt = parser.parse_args()
-    opt.img_size = check_img_size(opt.img_size)
     opt.save_json = opt.save_json or opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
     print(opt)
