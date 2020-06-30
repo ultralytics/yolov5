@@ -133,9 +133,13 @@ def train(hyp):
             with open(results_file, 'w') as file:
                 file.write(ckpt['training_results'])  # write results.txt
 
+        # epochs
         start_epoch = ckpt['epoch'] + 1
-        assert opt.epochs > start_epoch, '%s has already trained %g epochs. --epochs must be greater than %g' % \
-                                         (opt.weights, ckpt['epoch'], ckpt['epoch'])
+        if epochs < start_epoch:
+            print('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
+                  (opt.weights, ckpt['epoch'], epochs))
+            epochs += ckpt['epoch']  # finetune additional epochs
+
         del ckpt
 
     # Mixed precision training https://github.com/NVIDIA/apex
@@ -166,7 +170,7 @@ def train(hyp):
 
     # Testloader
     testloader = create_dataloader(test_path, imgsz_test, batch_size, gs, opt,
-                                            hyp=hyp, augment=False, cache=opt.cache_images, rect=True)[0]
+                                   hyp=hyp, augment=False, cache=opt.cache_images, rect=True)[0]
 
     # Model parameters
     hyp['cls'] *= nc / 80.  # scale coco-tuned hyp['cls'] to current dataset
