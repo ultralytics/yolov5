@@ -185,7 +185,7 @@ class ModelEMA:
         self.updates += 1
         d = self.decay(self.updates)
         with torch.no_grad():
-            if type(model) in (nn.parallel.DataParallel, nn.parallel.DistributedDataParallel):
+            if type(model) in (nn.DataParallel, nn.parallel.DistributedDataParallel):
                 msd, esd = model.module.state_dict(), self.ema.module.state_dict()
             else:
                 msd, esd = model.state_dict(), self.ema.state_dict()
