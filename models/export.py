@@ -1,4 +1,4 @@
-"""Exports a YOLOv5 *.pt model to *.onnx and *.torchscript formats
+"""Exports a YOLOv5 *.pt model to ONNX and TorchScript formats
 
 Usage:
     $ export PYTHONPATH="$PWD" && python models/export.py --weights ./weights/yolov5s.pt --img 640 --batch 1
@@ -30,20 +30,20 @@ if __name__ == '__main__':
     model.model[-1].export = True  # set Detect() layer export=True
     _ = model(img)  # dry run
 
-    # Export to torchscript
+    # Export to TorchScript
     try:
         f = opt.weights.replace('.pt', '.torchscript')  # filename
         ts = torch.jit.trace(model, img)
         ts.save(f)
-        print('Torchscript export success, saved as %s' % f)
-    except:
-        print('Torchscript export failed.')
+        print('TorchScript export success, saved as %s' % f)
+    except Exception as e:
+        print('TorchScript export failed: %s' % e)
 
     # Export to ONNX
     try:
         f = opt.weights.replace('.pt', '.onnx')  # filename
         model.fuse()  # only for ONNX
-        torch.onnx.export(model, img, f, verbose=False, opset_version=11, input_names=['images'],
+        torch.onnx.export(model, img, f, verbose=False, opset_version=12, input_names=['images'],
                           output_names=['output'])  # output_names=['classes', 'boxes']
 
         # Checks
@@ -51,5 +51,5 @@ if __name__ == '__main__':
         onnx.checker.check_model(onnx_model)  # check onnx model
         print(onnx.helper.printable_graph(onnx_model.graph))  # print a human readable representation of the graph
         print('ONNX export success, saved as %s\nView with https://github.com/lutzroeder/netron' % f)
-    except:
-        print('ONNX export failed.')
+    except Exception as e:
+        print('ONNX export failed: %s' % e)
