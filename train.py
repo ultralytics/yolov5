@@ -67,7 +67,7 @@ def setup(opt, rank):
                             rank=rank)
     torch.cuda.set_device(rank)
 
-def train(rank, hyp, opt):
+def train(rank, hyp, opt, device):
     if opt.world_size > 1: setup(opt, rank)
 
     epochs = opt.epochs  # 300
@@ -364,9 +364,9 @@ def train(rank, hyp, opt):
     torch.cuda.empty_cache()
     return results
 
-def run(fn, hyp, opt):
+def run(fn, hyp, opt, device):
     mp.spawn(fn,
-             args=(hyp,opt,),
+             args=(hyp,opt,device,),
              nprocs=opt.world_size,
              join=True)
 
@@ -409,7 +409,7 @@ if __name__ == '__main__':
         tb_writer = SummaryWriter(comment=opt.name)
         print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
         # train(hyp)
-        run(train, hyp, opt)
+        run(train, hyp, opt, device)
 
     # Evolve hyperparameters (optional)
     else:
