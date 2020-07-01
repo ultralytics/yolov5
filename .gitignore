@@ -50,6 +50,7 @@ gcp_test*.sh
 *.pt
 *.onnx
 *.mlmodel
+*.torchscript
 darknet53.conv.74
 yolov3-tiny.conv.15
 
