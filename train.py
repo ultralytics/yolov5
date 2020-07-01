@@ -361,7 +361,7 @@ def train(rank, hyp):
 def run(fn, hyp):
     mp.spawn(fn,
              args=(hyp,),
-             nprocs=opt.world_size,
+             nprocs=int(opt.world_size),
              join=True)
 
 if __name__ == '__main__':
