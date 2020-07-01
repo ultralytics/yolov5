@@ -60,7 +60,7 @@ if f:
 if hyp['fl_gamma']:
     print('Using FocalLoss(gamma=%g)' % hyp['fl_gamma'])
 
-def train(rank, hyp):
+def train(rank, hyp, opt):
     epochs = opt.epochs  # 300
     batch_size = opt.batch_size  # 64
     weights = opt.weights  # initial training weights
@@ -358,9 +358,9 @@ def train(rank, hyp):
     torch.cuda.empty_cache()
     return results
 
-def run(fn, hyp):
+def run(fn, hyp, opt):
     mp.spawn(fn,
-             args=(hyp,),
+             args=(hyp,opt,),
              nprocs=int(opt.world_size),
              join=True)
 
@@ -403,7 +403,7 @@ if __name__ == '__main__':
         tb_writer = SummaryWriter(comment=opt.name)
         print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
         # train(hyp)
-        run(train, hyp)
+        run(train, hyp, opt)
 
     # Evolve hyperparameters (optional)
     else:
