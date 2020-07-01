@@ -108,7 +108,10 @@ def train(rank, hyp, opt):
     del pg0, pg1, pg2
 
     # Load Model
-    google_utils.attempt_download(weights)
+    if (rank == 0): #Let gpu 0 download
+        google_utils.attempt_download(weights)
+    dist.barrier() 
+
     start_epoch, best_fitness = 0, 0.0
     if weights.endswith('.pt'):  # pytorch format
         ckpt = torch.load(weights, map_location=rank)  # load checkpoint
