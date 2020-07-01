@@ -60,7 +60,16 @@ if f:
 if hyp['fl_gamma']:
     print('Using FocalLoss(gamma=%g)' % hyp['fl_gamma'])
 
+def setup(opt, rank):
+    dist.init_process_group(backend='nccl',  # distributed backend
+                            init_method='tcp://127.0.0.1:9999',  # init method
+                            world_size=opt.world_size,  # number of gpus
+                            rank=rank)
+    torch.cuda.set_device(rank)
+
 def train(rank, hyp, opt):
+    if opt.world_size > 1: setup()
+
     epochs = opt.epochs  # 300
     batch_size = opt.batch_size  # 64
     weights = opt.weights  # initial training weights
@@ -169,15 +178,7 @@ def train(rank, hyp, opt):
 
     # Initialize distributed training
     if device.type != 'cpu' and torch.cuda.device_count() > 1 and torch.distributed.is_available():
-        #DDP setup
-        dist.init_process_group(backend='nccl',  # distributed backend
-                                init_method='tcp://127.0.0.1:9999',  # init method
-                                world_size=opt.world_size,  # number of gpus
-                                rank=rank)
-        torch.cuda.set_device(rank)
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank])
-        # pip install torch==1.4.0+cu100 torchvision==0.5.0+cu100 -f https://download.pytorch.org/whl/torch_stable.html
-
 
     # Model parameters
     hyp['cls'] *= nc / 80.  # scale coco-tuned hyp['cls'] to current dataset
