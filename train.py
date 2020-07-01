@@ -84,8 +84,9 @@ def train(rank, hyp, opt, device):
     nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
 
     # Remove previous results
-    for f in glob.glob('*_batch*.jpg') + glob.glob(results_file):
-        os.remove(f)
+    if (rank == 0):
+        for f in glob.glob('*_batch*.jpg') + glob.glob(results_file):
+            os.remove(f)
 
     # Create model
     model = Model(opt.cfg).to(rank)
