@@ -372,7 +372,6 @@ def run(fn, hyp, opt, device):
              join=True)
 
 if __name__ == '__main__':
-    startup()
     check_git_status()
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=300)
