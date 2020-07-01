@@ -194,9 +194,9 @@ def train(rank, hyp, opt, device):
     c = torch.tensor(labels[:, 0])  # classes
     # cf = torch.bincount(c.long(), minlength=nc) + 1.
     # model._initialize_biases(cf.to(rank))
-    if tb_writer:
-        plot_labels(labels)
-        tb_writer.add_histogram('classes', c, 0)
+    # if tb_writer:
+    #     plot_labels(labels)
+    #     tb_writer.add_histogram('classes', c, 0)
 
     # Check anchors
     if not opt.noautoanchor:
@@ -287,8 +287,8 @@ def train(rank, hyp, opt, device):
             if ni < 3:
                 f = 'train_batch%g.jpg' % ni  # filename
                 result = plot_images(images=imgs, targets=targets, paths=paths, fname=f)
-                if tb_writer and result is not None:
-                    tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
+                # if tb_writer and result is not None:
+                #     tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
                     # tb_writer.add_graph(model, imgs)  # add model to tensorboard
 
             # end batch ------------------------------------------------------------------------------------------------
@@ -406,14 +406,14 @@ if __name__ == '__main__':
 
     # Train
     if not opt.evolve:
-        tb_writer = SummaryWriter(comment=opt.name)
-        print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
+        # tb_writer = SummaryWriter(comment=opt.name)
+        # print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
         # train(hyp)
         run(train, hyp, opt, device)
 
     # Evolve hyperparameters (optional)
     else:
-        tb_writer = None
+        # tb_writer = None
         opt.notest, opt.nosave = True, True  # only test/save final epoch
         if opt.bucket:
             os.system('gsutil cp gs://%s/evolve.txt .' % opt.bucket)  # download evolve.txt if exists
