@@ -349,7 +349,7 @@ def train(rank, hyp, opt, device):
     # end training
 
     n = opt.name
-    if len(n):
+    if len(n) and rank == 0:
         n = '_' + n if not n.isnumeric() else n
         fresults, flast, fbest = 'results%s.txt' % n, wdir + 'last%s.pt' % n, wdir + 'best%s.pt' % n
         for f1, f2 in zip([wdir + 'last.pt', wdir + 'best.pt', 'results.txt'], [flast, fbest, fresults]):
