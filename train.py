@@ -123,7 +123,8 @@ def train(rank, hyp, opt):
 
     start_epoch, best_fitness = 0, 0.0
     if weights.endswith('.pt'):  # pytorch format
-        ckpt = torch.load(weights, map_location=rank)  # load checkpoint
+        map_location = {'cuda:%d' % 0: 'cuda:%d' % rank} if (opt.world_size > 1) else device
+        ckpt = torch.load(weights, map_location=map_location)  # load checkpoint
 
         # load model
         try:
@@ -153,6 +154,7 @@ def train(rank, hyp, opt):
                   (opt.weights, ckpt['epoch'], epochs))
             epochs += ckpt['epoch']  # finetune additional epochs
 
+        dist.barrier()
         del ckpt
 
     # Mixed precision training https://github.com/NVIDIA/apex
