@@ -365,7 +365,7 @@ def train(rank, hyp, opt):
 def run(fn, hyp, opt):
     mp.spawn(fn,
              args=(hyp,opt,),
-             nprocs=int(opt.world_size),
+             nprocs=opt.world_size,
              join=True)
 
 if __name__ == '__main__':
@@ -390,7 +390,7 @@ if __name__ == '__main__':
     parser.add_argument('--adam', action='store_true', help='use adam optimizer')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
-    parser.add_argument('--world-size', default='1', help='# of devices')
+    parser.add_argument('--world-size', type=int, default='1', help='# of devices')
     opt = parser.parse_args()
     opt.weights = last if opt.resume else opt.weights
     opt.cfg = check_file(opt.cfg)  # check file
