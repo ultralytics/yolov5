@@ -156,9 +156,9 @@ if __name__ == '__main__':
     print(opt)
 
     with torch.no_grad():
-        # detect()
+        detect()
 
-        # Update all models
-        for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov3-spp.pt']:
-            detect()
-            create_pretrained(opt.weights, opt.weights)
+        # # Update all models
+        # for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov3-spp.pt']:
+        #     detect()
+        #     create_pretrained(opt.weights, opt.weights)
