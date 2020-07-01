@@ -30,7 +30,8 @@ def test(data,
 
         # Load model
         google_utils.attempt_download(weights)
-        model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
+        map_location = {'cuda:%d' % 0: 'cuda:%d' % device}
+        model = torch.load(weights, map_location=map_location)['model'].float()  # load to FP32
         torch_utils.model_info(model)
         model.fuse()
         model.to(device)
