@@ -6,8 +6,6 @@ Usage:
 
 import argparse
 
-import onnx
-
 from models.common import *
 from utils import google_utils
 
@@ -21,7 +19,7 @@ if __name__ == '__main__':
     print(opt)
 
     # Input
-    img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size, (1, 3, 320, 192) iDetection
+    img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size(1,3,320,192) iDetection
 
     # Load PyTorch model
     google_utils.attempt_download(opt.weights)
@@ -30,7 +28,7 @@ if __name__ == '__main__':
     model.model[-1].export = True  # set Detect() layer export=True
     _ = model(img)  # dry run
 
-    # Export to TorchScript
+    # TorchScript export
     try:
         f = opt.weights.replace('.pt', '.torchscript')  # filename
         ts = torch.jit.trace(model, img)
@@ -39,8 +37,10 @@ if __name__ == '__main__':
     except Exception as e:
         print('TorchScript export failed: %s' % e)
 
-    # Export to ONNX
+    # ONNX export
     try:
+        import onnx
+
         f = opt.weights.replace('.pt', '.onnx')  # filename
         model.fuse()  # only for ONNX
         torch.onnx.export(model, img, f, verbose=False, opset_version=12, input_names=['images'],
