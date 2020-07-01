@@ -68,7 +68,7 @@ def setup(opt, rank):
     torch.cuda.set_device(rank)
 
 def train(rank, hyp, opt):
-    if opt.world_size > 1: setup()
+    if opt.world_size > 1: setup(opt, rank)
 
     epochs = opt.epochs  # 300
     batch_size = opt.batch_size  # 64
