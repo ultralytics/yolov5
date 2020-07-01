@@ -111,7 +111,7 @@ def train(rank, hyp, opt):
     google_utils.attempt_download(weights)
     start_epoch, best_fitness = 0, 0.0
     if weights.endswith('.pt'):  # pytorch format
-        ckpt = torch.load(weights, map_location=device)  # load checkpoint
+        ckpt = torch.load(weights, map_location=rank)  # load checkpoint
 
         # load model
         try:
