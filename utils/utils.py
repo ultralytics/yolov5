@@ -47,7 +47,7 @@ def check_git_status():
 
 def check_img_size(img_size, s=32):
     # Verify img_size is a multiple of stride s
-    new_size = make_divisible(img_size, s)  # ceil gs-multiple
+    new_size = make_divisible(img_size, int(s))  # ceil gs-multiple
     if new_size != img_size:
         print('WARNING: --img-size %g must be multiple of max stride %g, updating to %g' % (img_size, s, new_size))
     return new_size
@@ -421,9 +421,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
     ft = torch.cuda.FloatTensor if p[0].is_cuda else torch.Tensor
     lcls, lbox, lobj = ft([0]), ft([0]), ft([0])
     tcls, tbox, indices, anchors = build_targets(p, targets, model)  # targets
-    h = model.module.hyp if hasattr(model, 'module') else model.hyp # hyperparameters
-    nc = model.module.nc if hasattr(model, 'module') else model.nc
-    gr = model.module.gr if hasattr(model, 'module') else model.gr
+    h = model.hyp  # hyperparameters
     red = 'mean'  # Loss reduction (sum or mean)
 
     # Define criteria
@@ -457,10 +455,10 @@ def compute_loss(p, targets, model):  # predictions, targets, model
             lbox += (1.0 - giou).sum() if red == 'sum' else (1.0 - giou).mean()  # giou loss
 
             # Obj
-            tobj[b, a, gj, gi] = (1.0 - gr) + gr * giou.detach().clamp(0).type(tobj.dtype)  # giou ratio
+            tobj[b, a, gj, gi] = (1.0 - model.gr) + model.gr * giou.detach().clamp(0).type(tobj.dtype)  # giou ratio
 
             # Class
-            if nc > 1:  # cls loss (only if multiple classes)
+            if model.nc > 1:  # cls loss (only if multiple classes)
                 t = torch.full_like(ps[:, 5:], cn)  # targets
                 t[range(nb), tcls[i]] = cp
                 lcls += BCEcls(ps[:, 5:], t)  # BCE
@@ -479,7 +477,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
         g = 3.0  # loss gain
         lobj *= g / bs
         if nt:
-            lcls *= g / nt / nc
+            lcls *= g / nt / model.nc
             lbox *= g / nt
 
     loss = lbox + lobj + lcls
@@ -490,8 +488,6 @@ def build_targets(p, targets, model):
     # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
     det = model.module.model[-1] if type(model) in (nn.parallel.DataParallel, nn.parallel.DistributedDataParallel) \
         else model.model[-1]  # Detect() module
-    hyp = model.module.hyp if hasattr(model, 'module') else model.hyp
-    
     na, nt = det.na, targets.shape[0]  # number of anchors, targets
     tcls, tbox, indices, anch = [], [], [], []
     gain = torch.ones(6, device=targets.device)  # normalized to gridspace gain
@@ -507,7 +503,7 @@ def build_targets(p, targets, model):
         a, t, offsets = [], targets * gain, 0
         if nt:
             r = t[None, :, 4:6] / anchors[:, None]  # wh ratio
-            j = torch.max(r, 1. / r).max(2)[0] < hyp['anchor_t']  # compare
+            j = torch.max(r, 1. / r).max(2)[0] < model.hyp['anchor_t']  # compare
             # j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n) = wh_iou(anchors(3,2), gwh(n,2))
             a, t = at[j], t.repeat(na, 1, 1)[j]  # filter
 
