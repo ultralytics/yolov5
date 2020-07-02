@@ -357,7 +357,7 @@ def train(rank, hyp, opt, device):
             if os.path.exists(f1):
                 os.rename(f1, f2)  # rename
                 ispt = f2.endswith('.pt')  # is *.pt
-                strip_optimizer(f2) if ispt else None  # strip optimizer
+                strip_optimizer(f2, map_location) if ispt else None  # strip optimizer
                 os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket and ispt else None  # upload
     dist.barrier()
     if not opt.evolve:
