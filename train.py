@@ -172,7 +172,7 @@ def train(rank, hyp, opt, device):
 
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
-                                            hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank)
+                                            hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank, split=True)
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
     assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Correct your labels or your model.' % (mlc, nc, opt.cfg)
 
