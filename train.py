@@ -216,6 +216,8 @@ def train(rank, hyp, opt, device):
     print('Image sizes %g train, %g test' % (imgsz, imgsz_test))
     print('Using %g dataloader workers' % dataloader.num_workers)
     print('Starting training for %g epochs...' % epochs)
+    
+    dist.barrier()#Add so all process start at same time. Cleaner output
     # torch.autograd.set_detect_anomaly(True)
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
