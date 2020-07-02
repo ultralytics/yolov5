@@ -332,7 +332,7 @@ def train(rank, hyp, opt, device):
 
         # Save model
         save = (not opt.nosave) or (final_epoch and not opt.evolve)
-        if save:
+        if save and rank == 0:
             with open(results_file, 'r') as f:  # create checkpoint
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
@@ -345,7 +345,7 @@ def train(rank, hyp, opt, device):
             if (best_fitness == fi) and not final_epoch:
                 torch.save(ckpt, best)
             del ckpt
-
+        dist.barrier()
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training
 
