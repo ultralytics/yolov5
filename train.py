@@ -221,6 +221,8 @@ def train(rank, hyp, opt, device):
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
 
+        dataloader.sampler.set_epoch(epoch)
+
         # Update image weights (optional)
         if dataset.image_weights:
             w = model.class_weights.cpu().numpy() * (1 - maps) ** 2  # class weights
