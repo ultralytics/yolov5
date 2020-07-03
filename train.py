@@ -61,6 +61,8 @@ if f:
 if hyp['fl_gamma']:
     print('Using FocalLoss(gamma=%g)' % hyp['fl_gamma'])
 
+print("Test output that global var are always called")
+
 def setup(opt, rank):
     dist.init_process_group(backend='nccl',  # distributed backend
                             init_method='tcp://127.0.0.1:9999',  # init method
