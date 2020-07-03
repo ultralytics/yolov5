@@ -125,7 +125,7 @@ def train(rank, hyp, opt, device):
 
     start_epoch, best_fitness = 0, 0.0
     if weights.endswith('.pt'):  # pytorch format
-        map_location = 'cuda:%d' % rank if (opt.world_size > 1) else device
+        map_location = torch.device(rank) if (opt.world_size > 1) else device
         ckpt = torch.load(weights, map_location=map_location)  # load checkpoint
 
         # load model
