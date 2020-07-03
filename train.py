@@ -286,7 +286,7 @@ def train(rank, hyp, opt, device):
             mem = '%.3gG' % (torch.cuda.memory_cached() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
             s = ('%10s' * 2 + '%10.4g' * 6) % (
                 '%g/%g' % (epoch, epochs - 1), mem, *mloss, targets.shape[0], imgs.shape[-1])
-            if (rank == 0): pbar.set_description(s)
+            pbar.set_description(s)
 
             # Plot
             if ni < 3:
@@ -304,7 +304,7 @@ def train(rank, hyp, opt, device):
         # mAP
         ema.update_attr(model)
         final_epoch = epoch + 1 == epochs
-        if not opt.notest or final_epoch:  # Calculate mAP
+        if (not opt.notest or final_epoch) and rank == 0:  # Calculate mAP
             results, maps, times = test.test(opt.data,
                                              batch_size=batch_size,
                                              imgsz=imgsz_test,
