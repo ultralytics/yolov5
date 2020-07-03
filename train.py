@@ -15,52 +15,6 @@ from utils import google_utils
 from utils.datasets import *
 from utils.utils import *
 
-mixed_precision = True
-try:  # Mixed precision training https://github.com/NVIDIA/apex
-    from apex import amp
-except:
-    print('Apex recommended for faster mixed precision training: https://github.com/NVIDIA/apex')
-    mixed_precision = False  # not installed
-
-wdir = 'weights' + os.sep  # weights dir
-os.makedirs(wdir, exist_ok=True)
-last = wdir + 'last.pt'
-best = wdir + 'best.pt'
-results_file = 'results.txt'
-
-# Hyperparameters
-hyp = {'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
-    'momentum': 0.937,  # SGD momentum
-    'weight_decay': 5e-4,  # optimizer weight decay
-    'giou': 0.05,  # giou loss gain
-    'cls': 0.58,  # cls loss gain
-    'cls_pw': 1.0,  # cls BCELoss positive_weight
-    'obj': 1.0,  # obj loss gain (*=img_size/320 if img_size != 320)
-    'obj_pw': 1.0,  # obj BCELoss positive_weight
-    'iou_t': 0.20,  # iou training threshold
-    'anchor_t': 4.0,  # anchor-multiple threshold
-    'fl_gamma': 0.0,  # focal loss gamma (efficientDet default is gamma=1.5)
-    'hsv_h': 0.014,  # image HSV-Hue augmentation (fraction)
-    'hsv_s': 0.68,  # image HSV-Saturation augmentation (fraction)
-    'hsv_v': 0.36,  # image HSV-Value augmentation (fraction)
-    'degrees': 0.0,  # image rotation (+/- deg)
-    'translate': 0.0,  # image translation (+/- fraction)
-    'scale': 0.5,  # image scale (+/- gain)
-    'shear': 0.0}  # image shear (+/- deg)
-#print(hyp)
-
-
-# Overwrite hyp with hyp*.txt (optional)
-f = glob.glob('hyp*.txt')
-if f:
-    print('Using %s' % f[0])
-    for k, v in zip(hyp.keys(), np.loadtxt(f[0])):
-        hyp[k] = v
-
-# Print focal loss if gamma > 0
-if hyp['fl_gamma']:
-    print('Using FocalLoss(gamma=%g)' % hyp['fl_gamma'])
-
 print("Test output that global var are always called")
 
 def setup(opt, rank):
@@ -70,7 +24,14 @@ def setup(opt, rank):
                             rank=rank)
     torch.cuda.set_device(rank)
 
-def train(rank, hyp, opt, device):
+def train(rank, hyp, opt, device, arguments):
+    hyp = arguments["hyp"]
+    mixed_precision = arguments["mixed_precision"]
+    wdir = arguments["wdir"]
+    last = arguments["last"]
+    best = arguments["best"]
+    results_file = arguments["results_file"]
+    
     if opt.world_size > 1: 
         setup(opt, rank)
         hyp["lr0"] /= opt.world_size #this was said to help
@@ -374,14 +335,68 @@ def train(rank, hyp, opt, device):
     torch.cuda.empty_cache()
     return results
 
-def run(fn, hyp, opt, device):
+def run(fn, hyp, opt, device, arguments):
     mp.spawn(fn,
-             args=(hyp,opt,device,),
+             args=(hyp,opt,device,arguments,),
              nprocs=opt.world_size,
              join=True)
 
 if __name__ == '__main__':
     check_git_status()
+
+    ###
+    mixed_precision = True
+    try:  # Mixed precision training https://github.com/NVIDIA/apex
+        from apex import amp
+    except:
+        print('Apex recommended for faster mixed precision training: https://github.com/NVIDIA/apex')
+        mixed_precision = False  # not installed
+
+    wdir = 'weights' + os.sep  # weights dir
+    os.makedirs(wdir, exist_ok=True)
+    last = wdir + 'last.pt'
+    best = wdir + 'best.pt'
+    results_file = 'results.txt'
+
+    # Hyperparameters
+    hyp = {'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
+        'momentum': 0.937,  # SGD momentum
+        'weight_decay': 5e-4,  # optimizer weight decay
+        'giou': 0.05,  # giou loss gain
+        'cls': 0.58,  # cls loss gain
+        'cls_pw': 1.0,  # cls BCELoss positive_weight
+        'obj': 1.0,  # obj loss gain (*=img_size/320 if img_size != 320)
+        'obj_pw': 1.0,  # obj BCELoss positive_weight
+        'iou_t': 0.20,  # iou training threshold
+        'anchor_t': 4.0,  # anchor-multiple threshold
+        'fl_gamma': 0.0,  # focal loss gamma (efficientDet default is gamma=1.5)
+        'hsv_h': 0.014,  # image HSV-Hue augmentation (fraction)
+        'hsv_s': 0.68,  # image HSV-Saturation augmentation (fraction)
+        'hsv_v': 0.36,  # image HSV-Value augmentation (fraction)
+        'degrees': 0.0,  # image rotation (+/- deg)
+        'translate': 0.0,  # image translation (+/- fraction)
+        'scale': 0.5,  # image scale (+/- gain)
+        'shear': 0.0}  # image shear (+/- deg)
+    #print(hyp)
+
+    # Overwrite hyp with hyp*.txt (optional)
+    f = glob.glob('hyp*.txt')
+    if f:
+        print('Using %s' % f[0])
+        for k, v in zip(hyp.keys(), np.loadtxt(f[0])):
+            hyp[k] = v
+
+    # Print focal loss if gamma > 0
+    if hyp['fl_gamma']:
+        print('Using FocalLoss(gamma=%g)' % hyp['fl_gamma'])
+
+    arguments = {"hyp": hyp, 
+                "mixed_precision": mixed_precision, 
+                "wdir": wdir, 
+                "last":last, 
+                "best":best,
+                "results_file": results_file }
+    ###
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16)
@@ -419,7 +434,7 @@ if __name__ == '__main__':
         # tb_writer = SummaryWriter(comment=opt.name)
         # print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
         # train(hyp)
-        run(train, hyp, opt, device)
+        run(train, hyp, opt, device, arguments)
 
     # Evolve hyperparameters (optional)
     else:
