@@ -15,7 +15,7 @@ from utils import google_utils
 from utils.datasets import *
 from utils.utils import *
 
-print("Test output that global var are always called")
+print("<<<<<<<<<<<<Test output that global var are always called>>>>>>>>>>>>>>")
 
 def setup(opt, rank):
     dist.init_process_group(backend='nccl',  # distributed backend
