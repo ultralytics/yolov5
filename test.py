@@ -18,11 +18,12 @@ def test(data,
          verbose=False,
          model=None,
          dataloader=None,
-         merge=False):
+         merge=False,
+         device=None):
     # Initialize/load model and set device
     if model is None:
         training = False
-        device = torch_utils.select_device(opt.device, batch_size=batch_size)
+        if (device == None): device = torch_utils.select_device(opt.device, batch_size=batch_size)
 
         # Remove previous
         for f in glob.glob('test_batch*.jpg'):

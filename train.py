@@ -313,7 +313,8 @@ def train(rank, hyp, opt, device):
                                              save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
                                              model=ema.ema.module if hasattr(model, 'module') else ema.ema,
                                              single_cls=opt.single_cls,
-                                             dataloader=testloader)
+                                             dataloader=testloader,
+                                             device=torch.device(rank))
 
         # Write
         with open(results_file, 'a') as f:
