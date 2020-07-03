@@ -62,6 +62,7 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
                                              batch_size=batch_size,
                                              num_workers=nw,
                                              pin_memory=True,
+                                             shuffle=True,
                                              collate_fn=LoadImagesAndLabels.collate_fn,
                                              sampler=datasampler)
     else:
