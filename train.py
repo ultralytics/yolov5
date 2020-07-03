@@ -294,7 +294,7 @@ def train(hyp):
                                              batch_size=batch_size,
                                              imgsz=imgsz_test,
                                              save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
-                                             model=ema.ema.module if hasattr(model, 'module') else ema.ema,
+                                             model=ema.ema,
                                              single_cls=opt.single_cls,
                                              dataloader=testloader)
 
@@ -324,7 +324,7 @@ def train(hyp):
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
                         'training_results': f.read(),
-                        'model': ema.ema.module if hasattr(model, 'module') else ema.ema,
+                        'model': ema.ema,
                         'optimizer': None if final_epoch else optimizer.state_dict()}
 
             # Save last, best and delete
