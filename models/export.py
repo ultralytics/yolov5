@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     # TorchScript export
     try:
-        print('\nStarting TorchScript export with torch %s...' % torch.__version)
+        print('\nStarting TorchScript export with torch %s...' % torch.__version__)
         f = opt.weights.replace('.pt', '.torchscript')  # filename
         ts = torch.jit.trace(model, img)
         ts.save(f)
@@ -52,6 +52,9 @@ if __name__ == '__main__':
         onnx_model = onnx.load(f)  # load onnx model
         onnx.checker.check_model(onnx_model)  # check onnx model
         print(onnx.helper.printable_graph(onnx_model.graph))  # print a human readable model
-        print('ONNX export success, saved as %s\nView with https://github.com/lutzroeder/netron' % f)
+        print('ONNX export success, saved as %s' % f)
     except Exception as e:
         print('ONNX export failed: %s' % e)
+
+    # Finish
+    print('\nExports complete. Visualize with https://github.com/lutzroeder/netron.')
