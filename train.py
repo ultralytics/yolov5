@@ -25,18 +25,15 @@ def setup(opt, rank):
     torch.cuda.set_device(rank)
 
 def train(rank, hyp, opt, device, arguments):
-    mixed_precision = True
-    try:  # Mixed precision training https://github.com/NVIDIA/apex
-        from apex import amp
-    except:
-        print('Apex recommended for faster mixed precision training: https://github.com/NVIDIA/apex')
-        mixed_precision = False  # not installed
-        
     hyp = arguments["hyp"]
+    mixed_precision = arguments["mixed_precision"]
     wdir = arguments["wdir"]
     last = arguments["last"]
     best = arguments["best"]
     results_file = arguments["results_file"]
+
+    if (mixed_precision):
+        import apex as amp
 
     if opt.world_size > 1: 
         setup(opt, rank)
@@ -351,6 +348,12 @@ if __name__ == '__main__':
     check_git_status()
 
     ###
+    mixed_precision = True
+    try:  # Mixed precision training https://github.com/NVIDIA/apex
+        from apex import amp
+    except:
+        print('Apex recommended for faster mixed precision training: https://github.com/NVIDIA/apex')
+        mixed_precision = False  # not installed
     wdir = 'weights' + os.sep  # weights dir
     os.makedirs(wdir, exist_ok=True)
     last = wdir + 'last.pt'
@@ -389,7 +392,8 @@ if __name__ == '__main__':
     if hyp['fl_gamma']:
         print('Using FocalLoss(gamma=%g)' % hyp['fl_gamma'])
 
-    arguments = {"hyp": hyp, 
+    arguments = {"hyp": hyp,
+                "mixed_precision":mixed_precision, 
                 "wdir": wdir, 
                 "last":last, 
                 "best":best,
