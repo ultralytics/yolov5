@@ -156,7 +156,6 @@ def train(rank, hyp, opt, device):
                   (opt.weights, ckpt['epoch'], epochs))
             epochs += ckpt['epoch']  # finetune additional epochs
 
-        dist.barrier()
         del ckpt
 
     # Mixed precision training https://github.com/NVIDIA/apex
