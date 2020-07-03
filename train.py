@@ -33,7 +33,7 @@ def train(rank, hyp, opt, device, arguments):
     results_file = arguments["results_file"]
 
     if (mixed_precision):
-        import apex as amp
+        from apex import amp
 
     if opt.world_size > 1: 
         setup(opt, rank)
