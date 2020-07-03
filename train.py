@@ -204,6 +204,10 @@ def train(rank, hyp, opt, device):
     if not opt.noautoanchor:
         check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
 
+    # Initialize distributed training
+    if device.type != 'cpu' and torch.cuda.device_count() > 1 and torch.distributed.is_available():
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank], output_device=rank)
+
     # Exponential moving average
     ema = torch_utils.ModelEMA(model)
 
