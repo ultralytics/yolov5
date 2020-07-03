@@ -182,7 +182,7 @@ def train(rank, hyp, opt, device):
 
     # Initialize distributed training
     if device.type != 'cpu' and torch.cuda.device_count() > 1 and torch.distributed.is_available():
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank])
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank], output_device=rank)
 
     # Model parameters
     hyp['cls'] *= nc / 80.  # scale coco-tuned hyp['cls'] to current dataset
