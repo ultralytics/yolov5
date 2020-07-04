@@ -294,7 +294,7 @@ def train(hyp):
                                              batch_size=batch_size,
                                              imgsz=imgsz_test,
                                              save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
-                                             model=ema.ema.module if hasattr(model, 'module') else ema.ema,
+                                             model=ema.ema,
                                              single_cls=opt.single_cls,
                                              dataloader=testloader)
 
@@ -324,7 +324,7 @@ def train(hyp):
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
                         'training_results': f.read(),
-                        'model': ema.ema.module if hasattr(model, 'module') else ema.ema,
+                        'model': ema.ema,
                         'optimizer': None if final_epoch else optimizer.state_dict()}
 
             # Save last, best and delete
@@ -336,17 +336,17 @@ def train(hyp):
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training
 
-    n = opt.name
-    if len(n):
-        n = '_' + n if not n.isnumeric() else n
-        fresults, flast, fbest = 'results%s.txt' % n, wdir + 'last%s.pt' % n, wdir + 'best%s.pt' % n
-        for f1, f2 in zip([wdir + 'last.pt', wdir + 'best.pt', 'results.txt'], [flast, fbest, fresults]):
-            if os.path.exists(f1):
-                os.rename(f1, f2)  # rename
-                ispt = f2.endswith('.pt')  # is *.pt
-                strip_optimizer(f2) if ispt else None  # strip optimizer
-                os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket and ispt else None  # upload
+    # Strip optimizers
+    n = ('_' if len(opt.name) and not opt.name.isnumeric() else '') + opt.name
+    fresults, flast, fbest = 'results%s.txt' % n, wdir + 'last%s.pt' % n, wdir + 'best%s.pt' % n
+    for f1, f2 in zip([wdir + 'last.pt', wdir + 'best.pt', 'results.txt'], [flast, fbest, fresults]):
+        if os.path.exists(f1):
+            os.rename(f1, f2)  # rename
+            ispt = f2.endswith('.pt')  # is *.pt
+            strip_optimizer(f2) if ispt else None  # strip optimizer
+            os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket and ispt else None  # upload
 
+    # Finish
     if not opt.evolve:
         plot_results()  # save as results.png
     print('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
