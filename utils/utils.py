@@ -624,9 +624,9 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, 
     return output
 
 
-def strip_optimizer(f='weights/best.pt'):  # from utils.utils import *; strip_optimizer()
+def strip_optimizer(f='weights/best.pt', map_location=torch.device('cpu')):  # from utils.utils import *; strip_optimizer()
     # Strip optimizer from *.pt files for lighter files (reduced by 1/2 size)
-    x = torch.load(f, map_location=torch.device('cpu'))
+    x = torch.load(f, map_location=map_location)
     x['optimizer'] = None
     x['model'].half()  # to FP16
     torch.save(x, f)
