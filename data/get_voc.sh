@@ -1,4 +1,3 @@
-
 start=`date +%s`
 
 # handle optional download dir
