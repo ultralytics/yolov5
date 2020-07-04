@@ -34,9 +34,9 @@ echo "Done downloading."
 
 # Extract data
 echo "Extracting trainval ..."
-tar -xvf VOCtrainval_06-Nov-2007.tar
+tar -xf VOCtrainval_06-Nov-2007.tar
 echo "Extracting test ..."
-tar -xvf VOCtest_06-Nov-2007.tar
+tar -xf VOCtest_06-Nov-2007.tar
 echo "removing tars ..."
 rm VOCtrainval_06-Nov-2007.tar
 rm VOCtest_06-Nov-2007.tar
@@ -73,7 +73,7 @@ echo "Done downloading."
 
 # Extract data
 echo "Extracting trainval ..."
-tar -xvf VOCtrainval_11-May-2012.tar
+tar -xf VOCtrainval_11-May-2012.tar
 echo "removing tar ..."
 rm VOCtrainval_11-May-2012.tar
 
