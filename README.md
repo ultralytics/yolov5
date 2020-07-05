@@ -41,9 +41,13 @@ $ pip install -U -r requirements.txt
 ## Tutorials
 
 * [Notebook](https://github.com/ultralytics/yolov5/blob/master/tutorial.ipynb) <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
+* [Kaggle](https://www.kaggle.com/ultralytics/yolov5-tutorial)
 * [Train Custom Data](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data)
-* [Google Cloud Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart)
-* [Docker Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/Docker-Quickstart) ![Docker Pulls](https://img.shields.io/docker/pulls/ultralytics/yolov5?logo=docker)
+* [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)
+* [ONNX and TorchScript Export](https://github.com/ultralytics/yolov5/issues/251)
+* [Test-Time Augmentation (TTA)](https://github.com/ultralytics/yolov5/issues/303)
+* [Google Cloud Quickstart](https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart)
+* [Docker Quickstart](https://github.com/ultralytics/yolov5/wiki/Docker-Quickstart) ![Docker Pulls](https://img.shields.io/docker/pulls/ultralytics/yolov5?logo=docker)
 
 
 ## Inference
