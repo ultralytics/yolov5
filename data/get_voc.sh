@@ -11,10 +11,10 @@ start=`date +%s`
 # handle optional download dir
 if [ -z "$1" ]
   then
-    # navigate to ~/data
-    echo "navigating to ../data/ ..." 
-    mkdir -p ../data
-    cd ../data/
+    # navigate to ~/tmp
+    echo "navigating to ../tmp/ ..."
+    mkdir -p ../tmp
+    cd ../tmp/
   else
     # check if is valid directory
     if [ ! -d $1 ]; then
@@ -51,10 +51,10 @@ start=`date +%s`
 # handle optional download dir
 if [ -z "$1" ]
   then
-    # navigate to ~/data
-    echo "navigating to ../data/ ..." 
-    mkdir -p ../data
-    cd ../data/
+    # navigate to ~/tmp
+    echo "navigating to ../tmp/ ..."
+    mkdir -p ../tmp
+    cd ../tmp/
   else
     # check if is valid directory
     if [ ! -d $1 ]; then
@@ -82,7 +82,7 @@ runtime=$((end-start))
 
 echo "Completed in" $runtime "seconds"
 
-cd ../data
+cd ../tmp
 echo "Spliting dataset..."
 python3 - "$@" <<END
 import xml.etree.ElementTree as ET
@@ -160,8 +160,8 @@ os.system('mkdir ../VOC/labels/train')
 os.system('mkdir ../VOC/labels/val')
 
 import os
-print(os.path.exists('../data/train.txt'))
-f = open('../data/train.txt', 'r')
+print(os.path.exists('../tmp/train.txt'))
+f = open('../tmp/train.txt', 'r')
 lines = f.readlines()
 
 for line in lines:
@@ -171,8 +171,8 @@ for line in lines:
     if (os.path.exists("../" + line[:-1])):
         os.system("cp ../"+ line[:-1] + " ../VOC/images/train")
         
-print(os.path.exists('../data/train.txt'))
-f = open('../data/train.txt', 'r')
+print(os.path.exists('../tmp/train.txt'))
+f = open('../tmp/train.txt', 'r')
 lines = f.readlines()
 
 for line in lines:
@@ -184,8 +184,8 @@ for line in lines:
     if (os.path.exists("../" + line[:-1])):
         os.system("cp ../"+ line[:-1] + " ../VOC/labels/train")
 
-print(os.path.exists('../data/2007_test.txt'))
-f = open('../data/2007_test.txt', 'r')
+print(os.path.exists('../tmp/2007_test.txt'))
+f = open('../tmp/2007_test.txt', 'r')
 lines = f.readlines()
 
 for line in lines:
@@ -195,8 +195,8 @@ for line in lines:
     if (os.path.exists("../" + line[:-1])):
         os.system("cp ../"+ line[:-1] + " ../VOC/images/val")
 
-print(os.path.exists('../data/2007_test.txt'))
-f = open('../data/2007_test.txt', 'r')
+print(os.path.exists('../tmp/2007_test.txt'))
+f = open('../tmp/2007_test.txt', 'r')
 lines = f.readlines()
 
 for line in lines:
@@ -210,4 +210,5 @@ for line in lines:
 
 END
 
-rm -rf ../data
+rm -rf ../tmp  # remove temporary directory
+echo "VOC download done."
