@@ -56,5 +56,17 @@ if __name__ == '__main__':
     except Exception as e:
         print('ONNX export failure: %s' % e)
 
+    # CoreML export
+    try:
+        import coremltools as ct
+
+        print('\nStarting CoreML export with coremltools %s...' % ct.__version__)
+        model = ct.convert(ts, inputs=[ct.ImageType(name='images', shape=img.shape)])  # convert
+        f = opt.weights.replace('.pt', '.mlmodel')  # filename
+        model.save(f)
+        print('CoreML export success, saved as %s' % f)
+    except Exception as e:
+        print('CoreML export failure: %s' % e)
+
     # Finish
     print('\nExport complete. Visualize with https://github.com/lutzroeder/netron.')
