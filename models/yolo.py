@@ -48,7 +48,7 @@ class Model(nn.Module):
         if type(model_cfg) is dict:
             self.md = model_cfg  # model dict
         else:  # is *.yaml
-            import yaml
+            import yaml  # for torch hub
             with open(model_cfg) as f:
                 self.md = yaml.load(f, Loader=yaml.FullLoader)  # model dict
 
