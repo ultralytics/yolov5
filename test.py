@@ -31,11 +31,8 @@ def test(data,
 
         # Load model
         google_utils.attempt_download(weights)
-        model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
-        torch_utils.model_info(model)
-        model.fuse()
-        model.to(device)
-        imgsz = check_img_size(imgsz, s=model.model[-1].stride.max())  # check img_size
+        model = torch.load(weights, map_location=device)['model'].float().fuse()  # load to FP32
+        imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
 
         # Multi-GPU disabled, incompatible with .half() https://github.com/ultralytics/yolov5/issues/99
         # if device.type != 'cpu' and torch.cuda.device_count() > 1:
