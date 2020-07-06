@@ -53,7 +53,7 @@ def check_git_status():
 
 def check_img_size(img_size, s=32):
     # Verify img_size is a multiple of stride s
-    new_size = make_divisible(img_size, s)  # ceil gs-multiple
+    new_size = make_divisible(img_size, int(s))  # ceil gs-multiple
     if new_size != img_size:
         print('WARNING: --img-size %g must be multiple of max stride %g, updating to %g' % (img_size, s, new_size))
     return new_size
@@ -443,7 +443,9 @@ def compute_loss(p, targets, model):  # predictions, targets, model
         BCEcls, BCEobj = FocalLoss(BCEcls, g), FocalLoss(BCEobj, g)
 
     # per output
-    nt = 0  # targets
+    nt = 0  # number of targets
+    np = len(p)  # number of outputs
+    balance = [1.0, 1.0, 1.0]
     for i, pi in enumerate(p):  # layer index, layer predictions
         b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
         tobj = torch.zeros_like(pi[..., 0])  # target obj
@@ -473,11 +475,12 @@ def compute_loss(p, targets, model):  # predictions, targets, model
             # with open('targets.txt', 'a') as file:
             #     [file.write('%11.5g ' * 4 % tuple(x) + '\n') for x in torch.cat((txy[i], twh[i]), 1)]
 
-        lobj += BCEobj(pi[..., 4], tobj)  # obj loss
+        lobj += BCEobj(pi[..., 4], tobj) * balance[i]  # obj loss
 
-    lbox *= h['giou']
-    lobj *= h['obj']
-    lcls *= h['cls']
+    s = 3 / np  # output count scaling
+    lbox *= h['giou'] * s
+    lobj *= h['obj'] * s
+    lcls *= h['cls'] * s
     bs = tobj.shape[0]  # batch size
     if red == 'sum':
         g = 3.0  # loss gain
@@ -514,16 +517,14 @@ def build_targets(p, targets, model):
             a, t = at[j], t.repeat(na, 1, 1)[j]  # filter
 
             # overlaps
+            g = 0.5  # offset
             gxy = t[:, 2:4]  # grid xy
             z = torch.zeros_like(gxy)
             if style == 'rect2':
-                g = 0.2  # offset
                 j, k = ((gxy % 1. < g) & (gxy > 1.)).T
                 a, t = torch.cat((a, a[j], a[k]), 0), torch.cat((t, t[j], t[k]), 0)
                 offsets = torch.cat((z, z[j] + off[0], z[k] + off[1]), 0) * g
-
             elif style == 'rect4':
-                g = 0.5  # offset
                 j, k = ((gxy % 1. < g) & (gxy > 1.)).T
                 l, m = ((gxy % 1. > (1 - g)) & (gxy < (gain[[2, 3]] - 1.))).T
                 a, t = torch.cat((a, a[j], a[k], a[l], a[m]), 0), torch.cat((t, t[j], t[k], t[l], t[m]), 0)
@@ -770,11 +771,11 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
     wh0 = np.concatenate([l[:, 3:5] * s for s, l in zip(shapes, dataset.labels)])  # wh
 
     # Filter
-    i = (wh0 < 4.0).any(1).sum()
+    i = (wh0 < 3.0).any(1).sum()
     if i:
         print('WARNING: Extremely small objects found. '
-              '%g of %g labels are < 4 pixels in width or height.' % (i, len(wh0)))
-    wh = wh0[(wh0 >= 4.0).any(1)]  # filter > 2 pixels
+              '%g of %g labels are < 3 pixels in width or height.' % (i, len(wh0)))
+    wh = wh0[(wh0 >= 2.0).any(1)]  # filter > 2 pixels
 
     # Kmeans calculation
     from scipy.cluster.vq import kmeans

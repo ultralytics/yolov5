@@ -54,6 +54,11 @@ def time_synchronized():
     return time.time()
 
 
+def is_parallel(model):
+    # is model is parallel with DP or DDP
+    return type(model) in (nn.parallel.DataParallel, nn.parallel.DistributedDataParallel)
+
+
 def initialize_weights(model):
     for m in model.modules():
         t = type(m)
@@ -71,16 +76,36 @@ def find_modules(model, mclass=nn.Conv2d):
     return [i for i, m in enumerate(model.module_list) if isinstance(m, mclass)]
 
 
+def sparsity(model):
+    # Return global model sparsity
+    a, b = 0., 0.
+    for p in model.parameters():
+        a += p.numel()
+        b += (p == 0).sum()
+    return b / a
+
+
+def prune(model, amount=0.3):
+    # Prune model to requested global sparsity
+    import torch.nn.utils.prune as prune
+    print('Pruning model... ', end='')
+    for name, m in model.named_modules():
+        if isinstance(m, nn.Conv2d):
+            prune.l1_unstructured(m, name='weight', amount=amount)  # prune
+            prune.remove(m, 'weight')  # make permanent
+    print(' %.3g global sparsity' % sparsity(model))
+
+
 def fuse_conv_and_bn(conv, bn):
     # https://tehnokv.com/posts/fusing-batchnorm-and-conv/
     with torch.no_grad():
         # init
-        fusedconv = torch.nn.Conv2d(conv.in_channels,
-                                    conv.out_channels,
-                                    kernel_size=conv.kernel_size,
-                                    stride=conv.stride,
-                                    padding=conv.padding,
-                                    bias=True)
+        fusedconv = nn.Conv2d(conv.in_channels,
+                              conv.out_channels,
+                              kernel_size=conv.kernel_size,
+                              stride=conv.stride,
+                              padding=conv.padding,
+                              bias=True).to(conv.weight.device)
 
         # prepare filters
         w_conv = conv.weight.clone().view(conv.out_channels, -1)
@@ -88,10 +113,7 @@ def fuse_conv_and_bn(conv, bn):
         fusedconv.weight.copy_(torch.mm(w_bn, w_conv).view(fusedconv.weight.size()))
 
         # prepare spatial bias
-        if conv.bias is not None:
-            b_conv = conv.bias
-        else:
-            b_conv = torch.zeros(conv.weight.size(0), device=conv.weight.device)
+        b_conv = torch.zeros(conv.weight.size(0), device=conv.weight.device) if conv.bias is None else conv.bias
         b_bn = bn.bias - bn.weight.mul(bn.running_mean).div(torch.sqrt(bn.running_var + bn.eps))
         fusedconv.bias.copy_(torch.mm(w_bn, b_conv.reshape(-1, 1)).reshape(-1) + b_bn)
 
@@ -111,8 +133,8 @@ def model_info(model, verbose=False):
 
     try:  # FLOPS
         from thop import profile
-        macs, _ = profile(model, inputs=(torch.zeros(1, 3, 480, 640),), verbose=False)
-        fs = ', %.1f GFLOPS' % (macs / 1E9 * 2)
+        flops = profile(deepcopy(model), inputs=(torch.zeros(1, 3, 64, 64),), verbose=False)[0] / 1E9 * 2
+        fs = ', %.1f GFLOPS' % (flops * 100)  # 640x640 FLOPS
     except:
         fs = ''
 
@@ -134,8 +156,8 @@ def load_classifier(name='resnet101', n=2):
 
     # Reshape output to n classes
     filters = model.fc.weight.shape[1]
-    model.fc.bias = torch.nn.Parameter(torch.zeros(n), requires_grad=True)
-    model.fc.weight = torch.nn.Parameter(torch.zeros(n, filters), requires_grad=True)
+    model.fc.bias = nn.Parameter(torch.zeros(n), requires_grad=True)
+    model.fc.weight = nn.Parameter(torch.zeros(n, filters), requires_grad=True)
     model.fc.out_features = n
     return model
 
@@ -170,33 +192,31 @@ class ModelEMA:
     """
 
     def __init__(self, model, decay=0.9999, device=''):
-        # make a copy of the model for accumulating moving average of weights
-        self.ema = deepcopy(model)
+        # Create EMA
+        self.ema = deepcopy(model.module if is_parallel(model) else model)  # FP32 EMA
         self.ema.eval()
         self.updates = 0  # number of EMA updates
         self.decay = lambda x: decay * (1 - math.exp(-x / 2000))  # decay exponential ramp (to help early epochs)
         self.device = device  # perform ema on different device from model if set
         if device:
-            self.ema.to(device=device)
+            self.ema.to(device)
         for p in self.ema.parameters():
             p.requires_grad_(False)
 
     def update(self, model):
-        self.updates += 1
-        d = self.decay(self.updates)
+        # Update EMA parameters
         with torch.no_grad():
-            if type(model) in (nn.parallel.DataParallel, nn.parallel.DistributedDataParallel):
-                msd, esd = model.module.state_dict(), self.ema.module.state_dict()
-            else:
-                msd, esd = model.state_dict(), self.ema.state_dict()
+            self.updates += 1
+            d = self.decay(self.updates)
 
-            for k, v in esd.items():
+            msd = model.module.state_dict() if is_parallel(model) else model.state_dict()  # model state_dict
+            for k, v in self.ema.state_dict().items():
                 if v.dtype.is_floating_point:
                     v *= d
                     v += (1. - d) * msd[k].detach()
 
     def update_attr(self, model):
-        # Assign attributes (which may change during training)
-        for k in model.__dict__.keys():
-            if not k.startswith('_'):
-                setattr(self.ema, k, getattr(model, k))
+        # Update EMA attributes
+        for k, v in model.__dict__.items():
+            if not k.startswith('_') and k not in ["process_group", "reducer"]:
+                setattr(self.ema, k, v)

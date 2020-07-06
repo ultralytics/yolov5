@@ -1,7 +1,11 @@
 #!/bin/bash
-# Zip coco folder
-# zip -r coco.zip coco
-# tar -czvf coco.tar.gz coco
+# COCO 2017 dataset http://cocodataset.org
+# Download command: bash yolov5/data/get_coco2017.sh
+# Train command: python train.py --data ./data/coco.yaml
+# Dataset should be placed next to yolov5 folder:
+#   /parent_folder
+#     /coco
+#     /yolov5
 
 # Download labels from Google Drive, accepting presented query
 filename="coco2017labels.zip"

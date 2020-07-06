@@ -62,7 +62,7 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
 
 
 class LoadImages:  # for inference
-    def __init__(self, path, img_size=416):
+    def __init__(self, path, img_size=640):
         path = str(Path(path))  # os-agnostic
         files = []
         if os.path.isdir(path):
@@ -139,7 +139,7 @@ class LoadImages:  # for inference
 
 
 class LoadWebcam:  # for inference
-    def __init__(self, pipe=0, img_size=416):
+    def __init__(self, pipe=0, img_size=640):
         self.img_size = img_size
 
         if pipe == '0':
@@ -204,7 +204,7 @@ class LoadWebcam:  # for inference
 
 
 class LoadStreams:  # multiple IP or RTSP cameras
-    def __init__(self, sources='streams.txt', img_size=416):
+    def __init__(self, sources='streams.txt', img_size=640):
         self.mode = 'images'
         self.img_size = img_size
 
@@ -277,7 +277,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
 
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
-    def __init__(self, path, img_size=416, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
+    def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
                  cache_images=False, single_cls=False, stride=32, pad=0.0):
         try:
             path = str(Path(path))  # os-agnostic
@@ -307,6 +307,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.image_weights = image_weights
         self.rect = False if image_weights else rect
         self.mosaic = self.augment and not self.rect  # load 4 images at a time into a mosaic (only during training)
+        self.mosaic_border = [-img_size // 2, -img_size // 2]
+        self.stride = stride
 
         # Define labels
         self.label_files = [x.replace('images', 'labels').replace(os.path.splitext(x)[-1], '.txt')
@@ -585,7 +587,7 @@ def load_mosaic(self, index):
 
     labels4 = []
     s = self.img_size
-    xc, yc = [int(random.uniform(s * 0.5, s * 1.5)) for _ in range(2)]  # mosaic center x, y
+    yc, xc = [int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border]  # mosaic center x, y
     indices = [index] + [random.randint(0, len(self.labels) - 1) for _ in range(3)]  # 3 additional image indices
     for i, index in enumerate(indices):
         # Load image
@@ -626,6 +628,9 @@ def load_mosaic(self, index):
         # np.clip(labels4[:, 1:] - s / 2, 0, s, out=labels4[:, 1:])  # use with center crop
         np.clip(labels4[:, 1:], 0, 2 * s, out=labels4[:, 1:])  # use with random_affine
 
+        # Replicate
+        # img4, labels4 = replicate(img4, labels4)
+
     # Augment
     # img4 = img4[s // 2: int(s * 1.5), s // 2:int(s * 1.5)]  # center crop (WARNING, requires box pruning)
     img4, labels4 = random_affine(img4, labels4,
@@ -633,12 +638,29 @@ def load_mosaic(self, index):
                                   translate=self.hyp['translate'],
                                   scale=self.hyp['scale'],
                                   shear=self.hyp['shear'],
-                                  border=-s // 2)  # border to remove
+                                  border=self.mosaic_border)  # border to remove
 
     return img4, labels4
 
 
-def letterbox(img, new_shape=(416, 416), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
+def replicate(img, labels):
+    # Replicate labels
+    h, w = img.shape[:2]
+    boxes = labels[:, 1:].astype(int)
+    x1, y1, x2, y2 = boxes.T
+    s = ((x2 - x1) + (y2 - y1)) / 2  # side length (pixels)
+    for i in s.argsort()[:round(s.size * 0.5)]:  # smallest indices
+        x1b, y1b, x2b, y2b = boxes[i]
+        bh, bw = y2b - y1b, x2b - x1b
+        yc, xc = int(random.uniform(0, h - bh)), int(random.uniform(0, w - bw))  # offset x, y
+        x1a, y1a, x2a, y2a = [xc, yc, xc + bw, yc + bh]
+        img[y1a:y2a, x1a:x2a] = img[y1b:y2b, x1b:x2b]  # img4[ymin:ymax, xmin:xmax]
+        labels = np.append(labels, [[labels[i, 0], x1a, y1a, x2a, y2a]], axis=0)
+
+    return img, labels
+
+
+def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
     # Resize image to a 32-pixel-multiple rectangle https://github.com/ultralytics/yolov3/issues/232
     shape = img.shape[:2]  # current shape [height, width]
     if isinstance(new_shape, int):
@@ -671,13 +693,13 @@ def letterbox(img, new_shape=(416, 416), color=(114, 114, 114), auto=True, scale
     return img, ratio, (dw, dh)
 
 
-def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10, border=0):
+def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10, border=(0, 0)):
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
     # https://medium.com/uruvideo/dataset-augmentation-with-random-homographies-a8f4b44830d4
     # targets = [cls, xyxy]
 
-    height = img.shape[0] + border * 2
-    width = img.shape[1] + border * 2
+    height = img.shape[0] + border[0] * 2  # shape(h,w,c)
+    width = img.shape[1] + border[1] * 2
 
     # Rotation and Scale
     R = np.eye(3)
@@ -689,8 +711,8 @@ def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10,
 
     # Translation
     T = np.eye(3)
-    T[0, 2] = random.uniform(-translate, translate) * img.shape[0] + border  # x translation (pixels)
-    T[1, 2] = random.uniform(-translate, translate) * img.shape[1] + border  # y translation (pixels)
+    T[0, 2] = random.uniform(-translate, translate) * img.shape[1] + border[1]  # x translation (pixels)
+    T[1, 2] = random.uniform(-translate, translate) * img.shape[0] + border[0]  # y translation (pixels)
 
     # Shear
     S = np.eye(3)
@@ -699,7 +721,7 @@ def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10,
 
     # Combined rotation matrix
     M = S @ T @ R  # ORDER IS IMPORTANT HERE!!
-    if (border != 0) or (M != np.eye(3)).any():  # image changed
+    if (border[0] != 0) or (border[1] != 0) or (M != np.eye(3)).any():  # image changed
         img = cv2.warpAffine(img, M[:2], dsize=(width, height), flags=cv2.INTER_LINEAR, borderValue=(114, 114, 114))
 
     # Transform label coordinates
@@ -762,6 +784,7 @@ def cutout(image, labels):
         box2_area = (b2_x2 - b2_x1) * (b2_y2 - b2_y1) + 1e-16
 
         # Intersection over box2 area
+
         return inter_area / box2_area
 
     # create random masks

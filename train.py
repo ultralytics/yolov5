@@ -72,9 +72,7 @@ def train(hyp):
         os.remove(f)
 
     # Create model
-    model = Model(opt.cfg).to(device)
-    assert model.md['nc'] == nc, '%s nc=%g classes but %s nc=%g classes' % (opt.data, nc, opt.cfg, model.md['nc'])
-    model.names = data_dict['names']
+    model = Model(opt.cfg, nc=data_dict['nc']).to(device)
 
     # Image sizes
     gs = int(max(model.stride))  # grid size (max stride)
@@ -101,6 +99,9 @@ def train(hyp):
 
     optimizer.add_param_group({'params': pg1, 'weight_decay': hyp['weight_decay']})  # add pg1 with weight_decay
     optimizer.add_param_group({'params': pg2})  # add pg2 (biases)
+    # Scheduler https://arxiv.org/pdf/1812.01187.pdf
+    lf = lambda x: (((1 + math.cos(x * math.pi / epochs)) / 2) ** 1.0) * 0.9 + 0.1  # cosine
+    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     print('Optimizer groups: %g .bias, %g conv.weight, %g other' % (len(pg2), len(pg1), len(pg0)))
     del pg0, pg1, pg2
 
@@ -116,8 +117,9 @@ def train(hyp):
                              if model.state_dict()[k].shape == v.shape}  # to FP32, filter
             model.load_state_dict(ckpt['model'], strict=False)
         except KeyError as e:
-            s = "%s is not compatible with %s. Specify --weights '' or specify a --cfg compatible with %s." \
-                % (opt.weights, opt.cfg, opt.weights)
+            s = "%s is not compatible with %s. This may be due to model differences or %s may be out of date. " \
+                "Please delete or update %s and try again, or use --weights '' to train from scratch." \
+                % (opt.weights, opt.cfg, opt.weights, opt.weights)
             raise KeyError(s) from e
 
         # load optimizer
@@ -130,16 +132,20 @@ def train(hyp):
             with open(results_file, 'w') as file:
                 file.write(ckpt['training_results'])  # write results.txt
 
+        # epochs
         start_epoch = ckpt['epoch'] + 1
+        if epochs < start_epoch:
+            print('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
+                  (opt.weights, ckpt['epoch'], epochs))
+            epochs += ckpt['epoch']  # finetune additional epochs
+
         del ckpt
 
     # Mixed precision training https://github.com/NVIDIA/apex
     if mixed_precision:
         model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
 
-    # Scheduler https://arxiv.org/pdf/1812.01187.pdf
-    lf = lambda x: (((1 + math.cos(x * math.pi / epochs)) / 2) ** 1.0) * 0.9 + 0.1  # cosine
-    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
+
     scheduler.last_epoch = start_epoch - 1  # do not move
     # https://discuss.pytorch.org/t/a-problem-occured-when-resuming-an-optimizer/28822
     plot_lr_scheduler(optimizer, scheduler, epochs, save_dir = log_dir)
@@ -161,7 +167,7 @@ def train(hyp):
 
     # Testloader
     testloader = create_dataloader(test_path, imgsz_test, batch_size, gs, opt,
-                                            hyp=hyp, augment=False, cache=opt.cache_images, rect=True)[0]
+                                   hyp=hyp, augment=False, cache=opt.cache_images, rect=True)[0]
 
     # Model parameters
     hyp['cls'] *= nc / 80.  # scale coco-tuned hyp['cls'] to current dataset
@@ -169,6 +175,7 @@ def train(hyp):
     model.hyp = hyp  # attach hyperparameters to model
     model.gr = 1.0  # giou loss ratio (obj_loss = 1.0 or giou)
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device)  # attach class weights
+    model.names = data_dict['names']
 
     #save hyperparamter and training options in run folder
     with open(os.path.join(log_dir, 'hyp.yaml'), 'w') as f:
@@ -215,6 +222,10 @@ def train(hyp):
             w = model.class_weights.cpu().numpy() * (1 - maps) ** 2  # class weights
             image_weights = labels_to_image_weights(dataset.labels, nc=nc, class_weights=w)
             dataset.indices = random.choices(range(dataset.n), weights=image_weights, k=dataset.n)  # rand weighted idx
+
+        # Update mosaic border
+        # b = int(random.uniform(0.25 * imgsz, 0.75 * imgsz + gs) // gs * gs)
+        # dataset.mosaic_border = [b - imgsz, -b]  # height, width borders
 
         mloss = torch.zeros(4, device=device)  # mean losses
         print(('\n' + '%10s' * 8) % ('Epoch', 'gpu_mem', 'GIoU', 'obj', 'cls', 'total', 'targets', 'img_size'))
@@ -323,7 +334,7 @@ def train(hyp):
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
                         'training_results': f.read(),
-                        'model': ema.ema.module if hasattr(model, 'module') else ema.ema,
+                        'model': ema.ema,
                         'optimizer': None if final_epoch else optimizer.state_dict()}
 
             # Save last, best and delete
@@ -335,17 +346,17 @@ def train(hyp):
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training
 
-    n = opt.name
-    if len(n):
-        n = '_' + n if not n.isnumeric() else n
-        fresults, flast, fbest = 'results%s.txt' % n, wdir + 'last%s.pt' % n, wdir + 'best%s.pt' % n
-        for f1, f2 in zip([wdir + 'last.pt', wdir + 'best.pt', wdir + 'results.txt'], [flast, fbest, fresults]):
-            if os.path.exists(f1):
-                os.rename(f1, f2)  # rename
-                ispt = f2.endswith('.pt')  # is *.pt
-                strip_optimizer(f2) if ispt else None  # strip optimizer
-                os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket and ispt else None  # upload
+    # Strip optimizers
+    n = ('_' if len(opt.name) and not opt.name.isnumeric() else '') + opt.name
+    fresults, flast, fbest = 'results%s.txt' % n, wdir + 'last%s.pt' % n, wdir + 'best%s.pt' % n
+    for f1, f2 in zip([wdir + 'last.pt', wdir + 'best.pt', 'results.txt'], [flast, fbest, fresults]):
+        if os.path.exists(f1):
+            os.rename(f1, f2)  # rename
+            ispt = f2.endswith('.pt')  # is *.pt
+            strip_optimizer(f2) if ispt else None  # strip optimizer
+            os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket and ispt else None  # upload
 
+    # Finish
     if not opt.evolve:
         plot_results(save_dir = log_dir)  # save as results.png
     print('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
@@ -364,6 +375,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes. Assumes square imgs.')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
+    parser.add_argument('--resume', action='store_true', help='resume training from last.pt')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
@@ -378,6 +390,7 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
 
+    opt.weights = last if opt.resume and not opt.weights else opt.weights
     opt.cfg = check_file(opt.cfg)  # check file
     opt.data = check_file(opt.data)  # check file
     opt.hyp = check_file(opt.hyp) if opt.hyp else '' #check file
