@@ -19,6 +19,7 @@
 *.avi
 *.data
 *.json
+camel/
 
 *.cfg
 !cfg/yolov3*.cfg
