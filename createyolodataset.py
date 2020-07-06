@@ -18,21 +18,21 @@ def clip(n):
 
 
 if __name__ == '__main__':
-    list_seqs = glob.glob('camel\\images\\*\\')
-    all_images = open('camel\\train.txt', 'w+')
+    list_seqs = glob.glob('camel/images/*/')
+    all_images = open('camel/train.txt', 'w+')
 
     for seq in list_seqs:
-        seq_name = seq.split('\\')[-2]
-        # os.mkdir('camel\\labels\\{}'.format(seq_name))
-        # os.mkdir('camel\\labels\\{}\\IR'.format(seq_name))
+        seq_name = seq.split('/')[-2]
+        # os.mkdir('camel/labels/{}'.format(seq_name))
+        # os.mkdir('camel/labels/{}/IR'.format(seq_name))
         try:
             with open('{}{}-IR.txt'.format(seq, seq_name)) as annotations:
                 lines = annotations.read().splitlines()
                 current_img = 1
-                current_output = open('camel\\labels\\{}\\IR\\{}.txt'.format(seq_name, str(current_img).zfill(6)), 'w+')
+                current_output = open('camel/labels/{}/IR/{}.txt'.format(seq_name, str(current_img).zfill(6)), 'w+')
 
                 try:
-                    open('camel\\images\\{}\\IR\\{}.jpg'.format(seq_name, str(current_img).zfill(6)))
+                    open('camel/images/{}/IR/{}.jpg'.format(seq_name, str(current_img).zfill(6)))
                     extension = 'jpg'
                 except FileNotFoundError:
                     extension = 'png'
@@ -52,11 +52,11 @@ if __name__ == '__main__':
                         x = 0
 
                     if current_img != img:
-                        all_images.write('camel\\images\\{}\\IR\\{}.{}\n'.format(seq_name, str(current_img).zfill(6),
+                        all_images.write('camel/images/{}/IR/{}.{}\n'.format(seq_name, str(current_img).zfill(6),
                                                                                  extension))
                         current_output.close()
                         current_img = img
-                        current_output = open('camel\\labels\\{}\\IR\\{}.txt'.format(seq_name,
+                        current_output = open('camel/labels/{}/IR/{}.txt'.format(seq_name,
                                                                                      str(current_img).zfill(6)), 'w+')
 
                     x_center = clip((x + w / 2) / 336)
