@@ -31,7 +31,7 @@ def test(data,
 
         # Load model
         google_utils.attempt_download(weights)
-        model = torch.load(weights, map_location=device)['model'].float().fuse()  # load to FP32
+        model = torch.load(weights, map_location=device)['model'].float().fuse().to(device)  # load to FP32
         imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
 
         # Multi-GPU disabled, incompatible with .half() https://github.com/ultralytics/yolov5/issues/99
