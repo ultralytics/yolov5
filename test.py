@@ -22,6 +22,7 @@ def test(data,
     # Initialize/load model and set device
     if model is None:
         training = False
+        merge = opt.merge  # use Merge NMS
         device = torch_utils.select_device(opt.device, batch_size=batch_size)
 
         # Remove previous
@@ -59,7 +60,6 @@ def test(data,
 
     # Dataloader
     if dataloader is None:  # not training
-        merge = opt.merge  # use Merge NMS
         img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
         _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
         path = data['test'] if opt.task == 'test' else data['val']  # path to val/test images

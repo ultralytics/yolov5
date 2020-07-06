@@ -21,13 +21,10 @@ def detect(save_img=False):
 
     # Load model
     google_utils.attempt_download(weights)
-    model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
-    # torch.save(torch.load(weights, map_location=device), weights)  # update model if SourceChangeWarning
-    # model.fuse()
-    model.to(device).eval()
-    imgsz = check_img_size(imgsz, s=model.model[-1].stride.max())  # check img_size
+    model = torch.load(weights, map_location=device)['model'].float().eval()  # load FP32 model
+    imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
     if half:
-        model.half()  # to FP16
+        model.float()  # to FP16
 
     # Second-stage classifier
     classify = False
