@@ -24,7 +24,7 @@ def detect(save_img=False):
     model = torch.load(weights, map_location=device)['model'].float().eval()  # load FP32 model
     imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
     if half:
-        model.float()  # to FP16
+        model.half()  # to FP16
 
     # Second-stage classifier
     classify = False
