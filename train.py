@@ -22,7 +22,7 @@ except:
 
 
 # Hyperparameters
-hyp = {'optimizer': 'SGD', # ['adam, 'SGD', None] if none, default is SGD
+hyp = {'optimizer': 'SGD', # ['adam', 'SGD', None] if none, default is SGD
        'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
        'momentum': 0.937,  # SGD momentum/Adam beta1
        'weight_decay': 5e-4,  # optimizer weight decay
@@ -375,7 +375,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes. Assumes square imgs.')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
-    parser.add_argument('--resume', action='store_true', help='resume training from last.pt')
+    parser.add_argument('--resume', nargs='?', const = 'get_last', default=False, help='resume training from given path/to/last.pt, or most recent run if blank.')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
@@ -390,7 +390,13 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
 
+    # use given path/to/last.pt or find most recent run if no path given
+    last = get_latest_run() if opt.resume == 'get_last' else opt.resume
+    if last and not opt.weights:
+        print(f'Resuming training from {last}')
     opt.weights = last if opt.resume and not opt.weights else opt.weights
+
+
     opt.cfg = check_file(opt.cfg)  # check file
     opt.data = check_file(opt.data)  # check file
     opt.hyp = check_file(opt.hyp) if opt.hyp else '' #check file
