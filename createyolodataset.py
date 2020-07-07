@@ -19,7 +19,9 @@ def clip(n):
 
 if __name__ == '__main__':
     list_seqs = glob.glob('camel/images/*/')
-    all_images = open('camel/train.txt', 'w+')
+    train_images = open('camel/train.txt', 'w+')
+    valid_images = open('camel/val.txt', 'w+')
+    test_images = open('camel/test.txt', 'w+')
 
     for seq in list_seqs:
         seq_name = seq.split('/')[-2]
@@ -52,8 +54,15 @@ if __name__ == '__main__':
                         x = 0
 
                     if current_img != img:
-                        all_images.write('camel/images/{}/IR/{}.{}\n'.format(seq_name, str(current_img).zfill(6),
-                                                                                 extension))
+                        if seq_name in ['Seq4', 'Seq5', 'Seq30']:
+                            test_images.write('camel/images/{}/IR/{}.{}\n'.format(seq_name, str(current_img).zfill(6),
+                                                                                  extension))
+                        elif seq_name == 'Seq29':
+                            valid_images.write('camel/images/{}/IR/{}.{}\n'.format(seq_name, str(current_img).zfill(6),
+                                                                                   extension))
+                        else:
+                            train_images.write('camel/images/{}/IR/{}.{}\n'.format(seq_name, str(current_img).zfill(6),
+                                                                                   extension))
                         current_output.close()
                         current_img = img
                         current_output = open('camel/labels/{}/IR/{}.txt'.format(seq_name,
@@ -71,4 +80,6 @@ if __name__ == '__main__':
         except FileNotFoundError:
             print("Sequenza senza annotazioni")
 
-    all_images.close()
+    train_images.close()
+    valid_images.close()
+    test_images.close()
