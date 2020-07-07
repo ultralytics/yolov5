@@ -19,7 +19,6 @@ def test(data,
          model=None,
          dataloader=None,
          fast=False,
-         verbose=False,
          save_dir='.',
          merge=False):
 
