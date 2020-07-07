@@ -1,9 +1,8 @@
 import argparse
 import json
 
-from utils import google_utils
+from models.experimental import *
 from utils.datasets import *
-from utils.utils import *
 
 
 def test(data,
@@ -20,27 +19,25 @@ def test(data,
          dataloader=None,
          merge=False):
     # Initialize/load model and set device
-    if model is None:
-        training = False
-        merge = opt.merge  # use Merge NMS
+    training = model is not None
+    if training:  # called by train.py
+        device = next(model.parameters()).device  # get model device
+
+    else:  # called directly
         device = torch_utils.select_device(opt.device, batch_size=batch_size)
+        merge = opt.merge  # use Merge NMS
 
         # Remove previous
         for f in glob.glob('test_batch*.jpg'):
             os.remove(f)
 
         # Load model
-        google_utils.attempt_download(weights)
-        model = torch.load(weights, map_location=device)['model'].float().fuse().to(device)  # load to FP32
+        model = attempt_load(weights, map_location=device)  # load FP32 model
         imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
 
         # Multi-GPU disabled, incompatible with .half() https://github.com/ultralytics/yolov5/issues/99
         # if device.type != 'cpu' and torch.cuda.device_count() > 1:
         #     model = nn.DataParallel(model)
-
-    else:  # called by train.py
-        training = True
-        device = next(model.parameters()).device  # get model device
 
     # Half
     half = device.type != 'cpu' and torch.cuda.device_count() == 1  # half precision only supported on single-GPU
@@ -56,11 +53,11 @@ def test(data,
     niou = iouv.numel()
 
     # Dataloader
-    if dataloader is None:  # not training
+    if not training:
         img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
         _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
         path = data['test'] if opt.task == 'test' else data['val']  # path to val/test images
-        dataloader = create_dataloader(path, imgsz, batch_size, int(max(model.stride)), opt,
+        dataloader = create_dataloader(path, imgsz, batch_size, model.stride.max(), opt,
                                        hyp=None, augment=False, cache=False, pad=0.5, rect=True)[0]
 
     seen = 0
@@ -193,7 +190,7 @@ def test(data,
     if save_json and map50 and len(jdict):
         imgIds = [int(Path(x).stem.split('_')[-1]) for x in dataloader.dataset.img_files]
         f = 'detections_val2017_%s_results.json' % \
-            (weights.split(os.sep)[-1].replace('.pt', '') if weights else '')  # filename
+            (weights.split(os.sep)[-1].replace('.pt', '') if isinstance(weights, str) else '')  # filename
         print('\nCOCO mAP with pycocotools... saving %s...' % f)
         with open(f, 'w') as file:
             json.dump(jdict, file)
@@ -226,7 +223,7 @@ def test(data,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='test.py')
-    parser.add_argument('--weights', type=str, default='weights/yolov5s.pt', help='model.pt path')
+    parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='*.data path')
     parser.add_argument('--batch-size', type=int, default=32, help='size of each image batch')
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')

@@ -48,7 +48,7 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
                                   rect=rect,  # rectangular training
                                   cache_images=cache,
                                   single_cls=opt.single_cls,
-                                  stride=stride,
+                                  stride=int(stride),
                                   pad=pad)
 
     batch_size = min(batch_size, len(dataset))
