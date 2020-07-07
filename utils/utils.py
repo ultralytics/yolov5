@@ -39,7 +39,7 @@ def init_seeds(seed=0):
 def get_latest_run(search_dir = './runs'):
     # get path to most recent 'last.pt' in run dirs
     # assumes most recently saved 'last.pt' is the desired weights to --resume from
-    last_list =  glob.glob(f'{search_dir}/**/last.pt', recursive=True)
+    last_list =  glob.glob(f'{search_dir}/**/last*.pt', recursive=True)
     latest = max(last_list, key = os.path.getctime)
     return latest
 
