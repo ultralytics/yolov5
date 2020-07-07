@@ -1,3 +1,4 @@
+optimizer: 'adam'
 anchor_t: 10.0
 cls: 0.58
 cls_pw: 1.0
