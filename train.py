@@ -44,11 +44,8 @@ hyp = {'optimizer': 'SGD', # ['adam', 'SGD', None] if none, default is SGD
 
 
 def train(hyp):
-    #write all results to the tb log_dir, so all data from one run is together
-    log_dir = tb_writer.log_dir
-
-    #weights dir unique to each experiment
-    wdir = os.path.join(log_dir, 'weights') + os.sep  # weights dir
+    log_dir = tb_writer.log_dir  # run directory
+    wdir = str(Path(log_dir) / 'weights') + os.sep  # weights directory
 
     os.makedirs(wdir, exist_ok=True)
     last = wdir + 'last.pt'
@@ -92,8 +89,8 @@ def train(hyp):
             else:
                 pg0.append(v)  # all else
 
-    if hyp['optimizer'] =='adam':
-        optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999)) #use default beta2, adjust beta1 for Adam momentum per momentum adjustments in https://pytorch.org/docs/stable/_modules/torch/optim/lr_scheduler.html#OneCycleLR
+    if hyp['optimizer'] == 'adam':  # https://pytorch.org/docs/stable/_modules/torch/optim/lr_scheduler.html#OneCycleLR
+        optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999)) # adjust beta1 to momentum
     else:
         optimizer = optim.SGD(pg0, lr=hyp['lr0'], momentum=hyp['momentum'], nesterov=True)
 
@@ -148,7 +145,7 @@ def train(hyp):
 
     scheduler.last_epoch = start_epoch - 1  # do not move
     # https://discuss.pytorch.org/t/a-problem-occured-when-resuming-an-optimizer/28822
-    plot_lr_scheduler(optimizer, scheduler, epochs, save_dir = log_dir)
+    plot_lr_scheduler(optimizer, scheduler, epochs, save_dir=log_dir)
 
     # Initialize distributed training
     if device.type != 'cpu' and torch.cuda.device_count() > 1 and torch.distributed.is_available():
@@ -177,11 +174,10 @@ def train(hyp):
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device)  # attach class weights
     model.names = data_dict['names']
 
-    #save hyperparamter and training options in run folder
-    with open(os.path.join(log_dir, 'hyp.yaml'), 'w') as f:
+    # Save run settings
+    with open(Path(log_dir) / 'hyp.yaml', 'w') as f:
         yaml.dump(hyp, f, sort_keys=False)
-
-    with open(os.path.join(log_dir, 'opt.yaml'), 'w') as f:
+    with open(Path(log_dir) / 'opt.yaml', 'w') as f:
         yaml.dump(vars(opt), f, sort_keys=False)
     
     # Class frequency
@@ -189,13 +185,9 @@ def train(hyp):
     c = torch.tensor(labels[:, 0])  # classes
     # cf = torch.bincount(c.long(), minlength=nc) + 1.
     # model._initialize_biases(cf.to(device))
-
-    #always plot labels to log_dir
     plot_labels(labels, save_dir=log_dir)
-
     if tb_writer:
         tb_writer.add_histogram('classes', c, 0)
-
 
     # Check anchors
     if not opt.noautoanchor:
@@ -284,7 +276,7 @@ def train(hyp):
 
             # Plot
             if ni < 3:
-                f = os.path.join(log_dir, 'train_batch%g.jpg' % ni)  # filename
+                f = str(Path(log_dir) / ('train_batch%g.jpg' % ni))  # filename
                 result = plot_images(images=imgs, targets=targets, paths=paths, fname=f)
                 if tb_writer and result is not None:
                     tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
@@ -358,7 +350,7 @@ def train(hyp):
 
     # Finish
     if not opt.evolve:
-        plot_results(save_dir = log_dir)  # save as results.png
+        plot_results(save_dir=log_dir)  # save as results.png
     print('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
     dist.destroy_process_group() if device.type != 'cpu' and torch.cuda.device_count() > 1 else None
     torch.cuda.empty_cache()
@@ -368,14 +360,14 @@ def train(hyp):
 if __name__ == '__main__':
     check_git_status()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default='models/yolov5s.yaml', help='model cfg path[*.yaml]')
-    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data cfg path [*.yaml]')
-    parser.add_argument('--hyp', type=str, default='',help='hyp cfg path [*.yaml].')
+    parser.add_argument('--cfg', type=str, default='models/yolov5s.yaml', help='model.yaml path')
+    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
+    parser.add_argument('--hyp', type=str, default='', help='hyp.yaml path (optional)')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16)
-    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes. Assumes square imgs.')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
-    parser.add_argument('--resume', nargs='?', const = 'get_last', default=False, help='resume training from given path/to/last.pt, or most recent run if blank.')
+    parser.add_argument('--resume', nargs='?', const = 'get_last', default=False, help='resume from given path/to/last.pt, or most recent run if blank.')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
@@ -387,20 +379,15 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
-
     opt = parser.parse_args()
-
-    # use given path/to/last.pt or find most recent run if no path given
-    last = get_latest_run() if opt.resume == 'get_last' else opt.resume
+    
+    last = get_latest_run() if opt.resume == 'get_last' else opt.resume  # resume from most recent run
     if last and not opt.weights:
         print(f'Resuming training from {last}')
     opt.weights = last if opt.resume and not opt.weights else opt.weights
-
-
     opt.cfg = check_file(opt.cfg)  # check file
     opt.data = check_file(opt.data)  # check file
-    opt.hyp = check_file(opt.hyp) if opt.hyp else '' #check file
-
+    opt.hyp = check_file(opt.hyp) if opt.hyp else '' # check file
     print(opt)
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
     device = torch_utils.select_device(opt.device, apex=mixed_precision, batch_size=opt.batch_size)
@@ -410,16 +397,10 @@ if __name__ == '__main__':
     # Train
     if not opt.evolve:
         tb_writer = SummaryWriter(comment=opt.name)
-        
-        #updates hyp defaults from hyp.yaml
-        if opt.hyp:
+        if opt.hyp:  # update hyps
             with open(opt.hyp) as f:
-                updated_hyp = yaml.load(f, Loader=yaml.FullLoader)
-                hyp.update(updated_hyp)
+                hyp.update(yaml.load(f, Loader=yaml.FullLoader))
 
-        # Print focal loss if gamma > 0
-        if hyp['fl_gamma']:
-            print('Using FocalLoss(gamma=%g)' % hyp['fl_gamma'])
         print(f'Beginning training with {hyp}\n\n')
         print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
         
