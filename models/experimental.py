@@ -119,7 +119,10 @@ class Ensemble(nn.ModuleList):
         y = []
         for module in self:
             y.append(module(x, augment)[0])
-        return torch.cat(y, 1), None  # ensembled inference output, train output
+        # y = torch.stack(y).max(0)[0]  # max ensemble
+        # y = torch.cat(y, 1)  # nms ensemble
+        y = torch.stack(y).mean(0)  # mean ensemble
+        return y, None  # inference, train output
 
 
 def attempt_load(weights, map_location=None):
