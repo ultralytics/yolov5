@@ -162,7 +162,6 @@ def test(data,
 
         # Plot images
         if batch_i < 1:
-            
             f = Path(save_dir) / ('test_batch%g_gt.jpg' % batch_i)  # filename
             plot_images(img, targets, paths, str(f), names)  # ground truth
             f = Path(save_dir) / ('test_batch%g_pred.jpg' % batch_i)
