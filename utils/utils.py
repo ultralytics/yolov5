@@ -36,12 +36,12 @@ def init_seeds(seed=0):
     np.random.seed(seed)
     torch_utils.init_seeds(seed=seed)
 
+
 def get_latest_run(search_dir = './runs'):
-    # get path to most recent 'last.pt' in run dirs
-    # assumes most recently saved 'last.pt' is the desired weights to --resume from
+    # Return path to most recent 'last.pt' in /runs (i.e. to --resume from)
     last_list =  glob.glob(f'{search_dir}/**/last*.pt', recursive=True)
-    latest = max(last_list, key = os.path.getctime)
-    return latest
+    return max(last_list, key = os.path.getctime)
+
 
 def check_git_status():
     # Suggest 'git pull' if repo is out of date
