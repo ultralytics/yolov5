@@ -280,19 +280,22 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
                  cache_images=False, single_cls=False, stride=32, pad=0.0):
         try:
-            path = str(Path(path))  # os-agnostic
-            parent = str(Path(path).parent) + os.sep
-            if os.path.isfile(path):  # file
-                with open(path, 'r') as f:
-                    f = f.read().splitlines()
-                    f = [x.replace('./', parent) if x.startswith('./') else x for x in f]  # local to global path
-            elif os.path.isdir(path):  # folder
-                f = glob.iglob(path + os.sep + '*.*')
-            else:
-                raise Exception('%s does not exist' % path)
+            f = []
+            for p in path if isinstance(path, list) else [path]:
+                p = str(Path(p))  # os-agnostic
+                parent = str(Path(p).parent) + os.sep
+                if os.path.isfile(p):  # file
+                    with open(p, 'r') as t:
+                        t = t.read().splitlines()
+                        f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
+                elif os.path.isdir(p):  # folder
+                    f += glob.iglob(p + os.sep + '*.*')
+                else:
+                    raise Exception('%s does not exist' % p)
+            path = p  # *.npy dir
             self.img_files = [x.replace('/', os.sep) for x in f if os.path.splitext(x)[-1].lower() in img_formats]
-        except:
-            raise Exception('Error loading data from %s. See %s' % (path, help_url))
+        except Exception as e:
+            raise Exception('Error loading data from %s: %s\nSee %s' % (path, e, help_url))
 
         n = len(self.img_files)
         assert n > 0, 'No images found in %s. See %s' % (path, help_url)
