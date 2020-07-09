@@ -191,15 +191,11 @@ class ModelEMA:
     I've tested with the sequence in my own train.py for torch.DataParallel, apex.DDP, and single-GPU.
     """
 
-    def __init__(self, model, decay=0.9999, device=''):
+    def __init__(self, model, decay=0.9999, updates=0):
         # Create EMA
-        self.ema = deepcopy(model.module if is_parallel(model) else model)  # FP32 EMA
-        self.ema.eval()
-        self.updates = 0  # number of EMA updates
+        self.ema = deepcopy(model.module if is_parallel(model) else model).eval()  # FP32 EMA
+        self.updates = updates  # number of EMA updates
         self.decay = lambda x: decay * (1 - math.exp(-x / 2000))  # decay exponential ramp (to help early epochs)
-        self.device = device  # perform ema on different device from model if set
-        if device:
-            self.ema.to(device)
         for p in self.ema.parameters():
             p.requires_grad_(False)
 
