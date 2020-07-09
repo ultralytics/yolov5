@@ -37,10 +37,10 @@ def init_seeds(seed=0):
     torch_utils.init_seeds(seed=seed)
 
 
-def get_latest_run(search_dir = './runs'):
+def get_latest_run(search_dir='./runs'):
     # Return path to most recent 'last.pt' in /runs (i.e. to --resume from)
-    last_list =  glob.glob(f'{search_dir}/**/last*.pt', recursive=True)
-    return max(last_list, key = os.path.getctime)
+    last_list = glob.glob(f'{search_dir}/**/last*.pt', recursive=True)
+    return max(last_list, key=os.path.getctime)
 
 
 def check_git_status():
@@ -1113,7 +1113,7 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.utils import *; plot_st
     plt.savefig(f.replace('.txt', '.png'), dpi=200)
 
 
-def plot_labels(labels, save_dir= ''):
+def plot_labels(labels, save_dir=''):
     # plot dataset labels
     c, b = labels[:, 0], labels[:, 1:].transpose()  # classees, boxes
 
@@ -1180,7 +1180,8 @@ def plot_results_overlay(start=0, stop=0):  # from utils.utils import *; plot_re
         fig.savefig(f.replace('.txt', '.png'), dpi=200)
 
 
-def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir= ''):  # from utils.utils import *; plot_results()
+def plot_results(start=0, stop=0, bucket='', id=(), labels=(),
+                 save_dir=''):  # from utils.utils import *; plot_results()
     # Plot training 'results*.txt' as seen in https://github.com/ultralytics/yolov5#reproduce-our-training
     fig, ax = plt.subplots(2, 5, figsize=(12, 6))
     ax = ax.ravel()

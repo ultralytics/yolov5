@@ -20,9 +20,8 @@ except:
     print('Apex recommended for faster mixed precision training: https://github.com/NVIDIA/apex')
     mixed_precision = False  # not installed
 
-
 # Hyperparameters
-hyp = {'optimizer': 'SGD', # ['adam', 'SGD', None] if none, default is SGD
+hyp = {'optimizer': 'SGD',  # ['adam', 'SGD', None] if none, default is SGD
        'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
        'momentum': 0.937,  # SGD momentum/Adam beta1
        'weight_decay': 5e-4,  # optimizer weight decay
@@ -44,6 +43,7 @@ hyp = {'optimizer': 'SGD', # ['adam', 'SGD', None] if none, default is SGD
 
 
 def train(hyp):
+    print(f'Hyperparameters {hyp}')
     log_dir = tb_writer.log_dir  # run directory
     wdir = str(Path(log_dir) / 'weights') + os.sep  # weights directory
 
@@ -90,7 +90,7 @@ def train(hyp):
                 pg0.append(v)  # all else
 
     if hyp['optimizer'] == 'adam':  # https://pytorch.org/docs/stable/_modules/torch/optim/lr_scheduler.html#OneCycleLR
-        optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999)) # adjust beta1 to momentum
+        optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
     else:
         optimizer = optim.SGD(pg0, lr=hyp['lr0'], momentum=hyp['momentum'], nesterov=True)
 
@@ -176,7 +176,7 @@ def train(hyp):
         yaml.dump(hyp, f, sort_keys=False)
     with open(Path(log_dir) / 'opt.yaml', 'w') as f:
         yaml.dump(vars(opt), f, sort_keys=False)
-    
+
     # Class frequency
     labels = np.concatenate(dataset.labels, 0)
     c = torch.tensor(labels[:, 0])  # classes
@@ -365,7 +365,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
-    parser.add_argument('--resume', nargs='?', const = 'get_last', default=False, help='resume from given path/to/last.pt, or most recent run if blank.')
+    parser.add_argument('--resume', nargs='?', const='get_last', default=False,
+                        help='resume from given path/to/last.pt, or most recent run if blank.')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
@@ -378,14 +379,14 @@ if __name__ == '__main__':
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     opt = parser.parse_args()
-    
+
     last = get_latest_run() if opt.resume == 'get_last' else opt.resume  # resume from most recent run
     if last and not opt.weights:
         print(f'Resuming training from {last}')
     opt.weights = last if opt.resume and not opt.weights else opt.weights
     opt.cfg = check_file(opt.cfg)  # check file
     opt.data = check_file(opt.data)  # check file
-    opt.hyp = check_file(opt.hyp) if opt.hyp else '' # check file
+    opt.hyp = check_file(opt.hyp) if opt.hyp else ''  # check file
     print(opt)
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
     device = torch_utils.select_device(opt.device, apex=mixed_precision, batch_size=opt.batch_size)
@@ -394,14 +395,12 @@ if __name__ == '__main__':
 
     # Train
     if not opt.evolve:
+        print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
         tb_writer = SummaryWriter(comment=opt.name)
         if opt.hyp:  # update hyps
             with open(opt.hyp) as f:
                 hyp.update(yaml.load(f, Loader=yaml.FullLoader))
 
-        print(f'Beginning training with {hyp}\n\n')
-        print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
-        
         train(hyp)
 
     # Evolve hyperparameters (optional)

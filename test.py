@@ -19,7 +19,6 @@ def test(data,
          dataloader=None,
          save_dir='',
          merge=False):
-
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
