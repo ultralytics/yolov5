@@ -108,7 +108,7 @@ def train(hyp):
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     lf = lambda x: (((1 + math.cos(x * math.pi / epochs)) / 2) ** 1.0) * 0.9 + 0.1  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
-    plot_lr_scheduler(optimizer, scheduler, epochs, save_dir=log_dir)
+    # plot_lr_scheduler(optimizer, scheduler, epochs, save_dir=log_dir)
 
     # Load Model
     google_utils.attempt_download(weights)
