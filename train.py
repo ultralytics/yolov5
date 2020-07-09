@@ -52,6 +52,12 @@ def train(hyp):
     best = wdir + 'best.pt'
     results_file = log_dir + os.sep + 'results.txt'
 
+    # Save run settings
+    with open(Path(log_dir) / 'hyp.yaml', 'w') as f:
+        yaml.dump(hyp, f, sort_keys=False)
+    with open(Path(log_dir) / 'opt.yaml', 'w') as f:
+        yaml.dump(vars(opt), f, sort_keys=False)
+        
     epochs = opt.epochs  # 300
     batch_size = opt.batch_size  # 64
     weights = opt.weights  # initial training weights
@@ -170,12 +176,6 @@ def train(hyp):
     model.gr = 1.0  # giou loss ratio (obj_loss = 1.0 or giou)
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device)  # attach class weights
     model.names = data_dict['names']
-
-    # Save run settings
-    with open(Path(log_dir) / 'hyp.yaml', 'w') as f:
-        yaml.dump(hyp, f, sort_keys=False)
-    with open(Path(log_dir) / 'opt.yaml', 'w') as f:
-        yaml.dump(vars(opt), f, sort_keys=False)
 
     # Class frequency
     labels = np.concatenate(dataset.labels, 0)
