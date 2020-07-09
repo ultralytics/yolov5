@@ -904,6 +904,16 @@ def output_to_target(output, width, height):
     return np.array(targets)
 
 
+def increment_dir(dir, comment=''):
+    # Increments a directory runs/exp1 --> runs/exp2_comment
+    n = 0  # number
+    d = sorted(glob.glob(dir + '*'))  # directories
+    if len(d):
+        d = d[-1].replace(dir, '')
+        n = int(d[:d.find('_')]) + 1  # increment
+    return dir + str(n) + ('_' + comment if comment else '')
+
+
 # Plotting functions ---------------------------------------------------------------------------------------------------
 def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
     # https://stackoverflow.com/questions/28536191/how-to-filter-smooth-with-scipy-numpy
