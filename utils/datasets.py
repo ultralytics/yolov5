@@ -295,15 +295,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 else:
                     raise Exception('%s does not exist' % subpath)
             self.img_files = [x.replace('/', os.sep) for x in f if os.path.splitext(x)[-1].lower() in img_formats]
+            path = subpath
         except:
             # Maybe avoid handling bare exceptions
             raise Exception('Error loading data from %s. See %s' % (path, help_url))
-
-        # Still need to do this for compatibility with the .npy and shape file saves
-        if isinstance(path, list):
-            path = str(Path(path[0]))
-        else:
-            path = str(Path(path))
 
         n = len(self.img_files)
         assert n > 0, 'No images found in %s. See %s' % (path, help_url)
