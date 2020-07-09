@@ -295,7 +295,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             path = p  # *.npy dir
             self.img_files = [x.replace('/', os.sep) for x in f if os.path.splitext(x)[-1].lower() in img_formats]
         except:
-            # Maybe avoid handling bare exceptions
             raise Exception('Error loading data from %s. See %s' % (path, help_url))
 
         n = len(self.img_files)
