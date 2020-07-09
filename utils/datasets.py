@@ -281,21 +281,19 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                  cache_images=False, single_cls=False, stride=32, pad=0.0):
         try:
             f = []
-            for subpath in path if isinstance(path, list) else [path]:
-                subpath = str(Path(subpath))  # os-agnostic
-                parent = str(Path(subpath).parent) + os.sep
-                if os.path.isfile(subpath):  # file
-                    with open(subpath, 'r') as t:
+            for p in path if isinstance(path, list) else [path]:
+                p = str(Path(p))  # os-agnostic
+                parent = str(Path(p).parent) + os.sep
+                if os.path.isfile(p):  # file
+                    with open(p, 'r') as t:
                         t = t.read().splitlines()
-                        t = [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
-                        f += t
-                elif os.path.isdir(subpath):  # folder
-                    f = glob.iglob(subpath + os.sep + '*.*')
-                    # Maybe change this to f += glob.glob, this should allow handling also multiple folders
+                        f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
+                elif os.path.isdir(p):  # folder
+                    f += glob.iglob(p + os.sep + '*.*')
                 else:
-                    raise Exception('%s does not exist' % subpath)
+                    raise Exception('%s does not exist' % p)
+            path = p  # *.npy dir
             self.img_files = [x.replace('/', os.sep) for x in f if os.path.splitext(x)[-1].lower() in img_formats]
-            path = subpath
         except:
             # Maybe avoid handling bare exceptions
             raise Exception('Error loading data from %s. See %s' % (path, help_url))
