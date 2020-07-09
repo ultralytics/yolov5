@@ -280,16 +280,28 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
                  cache_images=False, single_cls=False, stride=32, pad=0.0):
         try:
-            path = str(Path(path))  # os-agnostic
-            parent = str(Path(path).parent) + os.sep
-            if os.path.isfile(path):  # file
-                with open(path, 'r') as f:
-                    f = f.read().splitlines()
-                    f = [x.replace('./', parent) if x.startswith('./') else x for x in f]  # local to global path
-            elif os.path.isdir(path):  # folder
-                f = glob.iglob(path + os.sep + '*.*')
+            if type(path) is list:
+                # Multiple datasets handler
+                f = []
+                for subpath in path:
+                    with open(subpath, 'r') as t:
+                        subpath = str(Path(subpath))  # os-agnostic
+                        parent = str(Path(subpath).parent) + os.sep
+                        t = t.read().splitlines()
+                        t = [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
+                        f += t
+                path = str(Path(path[0]))  # from now on treat multiple datasets as single
             else:
-                raise Exception('%s does not exist' % path)
+                path = str(Path(path))  # os-agnostic
+                parent = str(Path(path).parent) + os.sep
+                if os.path.isfile(path):  # file
+                    with open(path, 'r') as f:
+                        f = f.read().splitlines()
+                        f = [x.replace('./', parent) if x.startswith('./') else x for x in f]  # local to global path
+                elif os.path.isdir(path):  # folder
+                    f = glob.iglob(path + os.sep + '*.*')
+                else:
+                    raise Exception('%s does not exist' % path)
             self.img_files = [x.replace('/', os.sep) for x in f if os.path.splitext(x)[-1].lower() in img_formats]
         except:
             raise Exception('Error loading data from %s. See %s' % (path, help_url))
