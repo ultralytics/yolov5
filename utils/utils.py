@@ -910,7 +910,7 @@ def increment_dir(dir, comment=''):
     d = sorted(glob.glob(dir + '*'))  # directories
     if len(d):
         d = d[-1].replace(dir, '')
-        n = int(d[:d.find('_')]) + 1  # increment
+        n = int(d[:d.find('_')] if '_' in d else d) + 1  # increment
     return dir + str(n) + ('_' + comment if comment else '')
 
 
