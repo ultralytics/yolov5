@@ -17,7 +17,9 @@ def test(data,
          verbose=False,
          model=None,
          dataloader=None,
+         save_dir='',
          merge=False):
+
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -28,7 +30,7 @@ def test(data,
         merge = opt.merge  # use Merge NMS
 
         # Remove previous
-        for f in glob.glob('test_batch*.jpg'):
+        for f in glob.glob(str(Path(save_dir) / 'test_batch*.jpg')):
             os.remove(f)
 
         # Load model
@@ -157,10 +159,10 @@ def test(data,
 
         # Plot images
         if batch_i < 1:
-            f = 'test_batch%g_gt.jpg' % batch_i  # filename
-            plot_images(img, targets, paths, f, names)  # ground truth
-            f = 'test_batch%g_pred.jpg' % batch_i
-            plot_images(img, output_to_target(output, width, height), paths, f, names)  # predictions
+            f = Path(save_dir) / ('test_batch%g_gt.jpg' % batch_i)  # filename
+            plot_images(img, targets, paths, str(f), names)  # ground truth
+            f = Path(save_dir) / ('test_batch%g_pred.jpg' % batch_i)
+            plot_images(img, output_to_target(output, width, height), paths, str(f), names)  # predictions
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
