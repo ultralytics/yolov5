@@ -641,9 +641,7 @@ def strip_optimizer(f='weights/best.pt'):  # from utils.utils import *; strip_op
 
 def create_pretrained(f='weights/best.pt', s='weights/pretrained.pt'):  # from utils.utils import *; create_pretrained()
     # create pretrained checkpoint 's' from 'f' (create_pretrained(x, x) for x in glob.glob('./*.pt'))
-    device = torch.device('cpu')
-    x = torch.load(s, map_location=device)
-
+    x = torch.load(f, map_location=torch.device('cpu'))
     x['optimizer'] = None
     x['training_results'] = None
     x['epoch'] = -1
