@@ -44,7 +44,7 @@ hyp = {'optimizer': 'SGD',  # ['adam', 'SGD', None] if none, default is SGD
 
 def train(hyp):
     print(f'Hyperparameters {hyp}')
-    log_dir = tb_writer.log_dir  # run directory
+    log_dir = tb_writer.log_dir if tb_writer else 'runs/evolution'  # run directory
     wdir = str(Path(log_dir) / 'weights') + os.sep  # weights directory
 
     os.makedirs(wdir, exist_ok=True)
@@ -387,7 +387,10 @@ if __name__ == '__main__':
     opt.weights = last if opt.resume and not opt.weights else opt.weights
     opt.cfg = check_file(opt.cfg)  # check file
     opt.data = check_file(opt.data)  # check file
-    opt.hyp = check_file(opt.hyp) if opt.hyp else ''  # check file
+    if opt.hyp:  # update hyps
+        opt.hyp = check_file(opt.hyp)  # check file
+        with open(opt.hyp) as f:
+            hyp.update(yaml.load(f, Loader=yaml.FullLoader))  # update hyps
     print(opt)
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
     device = torch_utils.select_device(opt.device, apex=mixed_precision, batch_size=opt.batch_size)
@@ -396,12 +399,8 @@ if __name__ == '__main__':
 
     # Train
     if not opt.evolve:
-        print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
         tb_writer = SummaryWriter(log_dir=increment_dir('runs/exp', opt.name))
-        if opt.hyp:  # update hyps
-            with open(opt.hyp) as f:
-                hyp.update(yaml.load(f, Loader=yaml.FullLoader))
-
+        print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
         train(hyp)
 
     # Evolve hyperparameters (optional)
