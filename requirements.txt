@@ -2,7 +2,7 @@
 Cython
 numpy==1.17
 opencv-python
-torch>=1.4
+torch>=1.5.1
 matplotlib
 pillow
 tensorboard
