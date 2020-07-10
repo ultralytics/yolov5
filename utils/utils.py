@@ -636,7 +636,7 @@ def strip_optimizer(f='weights/best.pt'):  # from utils.utils import *; strip_op
     x['optimizer'] = None
     x['model'].half()  # to FP16
     torch.save(x, f)
-    print('Optimizer stripped from %s' % f)
+    print('Optimizer stripped from %s, %.1fMB' % (f, os.path.getsize(f) / 1E6))
 
 
 def create_pretrained(f='weights/best.pt', s='weights/pretrained.pt'):  # from utils.utils import *; create_pretrained()
@@ -651,7 +651,7 @@ def create_pretrained(f='weights/best.pt', s='weights/pretrained.pt'):  # from u
     for p in x['model'].parameters():
         p.requires_grad = True
     torch.save(x, s)
-    print('%s saved as pretrained checkpoint %s' % (f, s))
+    print('%s saved as pretrained checkpoint %s, %.1fMB' % (f, s, os.path.getsize(s) / 1E6))
 
 
 def coco_class_count(path='../coco/labels/train2014/'):
