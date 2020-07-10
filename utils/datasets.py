@@ -28,7 +28,7 @@ for orientation in ExifTags.TAGS.keys():
 
 def get_hash(files):
     # Returns a single hash value of a list of files
-    return sum(os.path.getsize(f) for f in files)
+    return sum(os.path.getsize(f) for f in files if os.path.isfile(f))
 
 
 def exif_size(img):
