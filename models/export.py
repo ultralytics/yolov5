@@ -31,7 +31,7 @@ if __name__ == '__main__':
     # TorchScript export
     try:
         print('\nStarting TorchScript export with torch %s...' % torch.__version__)
-        f = opt.weights.replace('.pt', '.torchscript')  # filename
+        f = opt.weights.replace('.pt', '.torchscript.pt')  # filename
         ts = torch.jit.trace(model, img)
         ts.save(f)
         print('TorchScript export success, saved as %s' % f)
@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
         print('\nStarting CoreML export with coremltools %s...' % ct.__version__)
         # convert model from torchscript and apply pixel scaling as per detect.py
-        model = ct.convert(ts, inputs=[ct.ImageType(name='images', shape=img.shape, scale=1/255.0, bias=[0, 0, 0])])
+        model = ct.convert(ts, inputs=[ct.ImageType(name='images', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
         f = opt.weights.replace('.pt', '.mlmodel')  # filename
         model.save(f)
         print('CoreML export success, saved as %s' % f)
