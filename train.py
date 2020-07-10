@@ -397,7 +397,7 @@ if __name__ == '__main__':
     # Train
     if not opt.evolve:
         print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
-        tb_writer = SummaryWriter(log_dir=increment_dir('runs/exp', opt.name))
+        tb_writer = SummaryWriter(log_dir=increment_dir('runs' + os.sep + 'exp', opt.name))
         if opt.hyp:  # update hyps
             with open(opt.hyp) as f:
                 hyp.update(yaml.load(f, Loader=yaml.FullLoader))
