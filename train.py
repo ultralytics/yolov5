@@ -287,7 +287,7 @@ def train(hyp):
         scheduler.step()
 
         # mAP
-        ema.update_attr(model)
+        ema.update_attr(model, include=['md', 'nc', 'hyp', 'names', 'stride'])
         final_epoch = epoch + 1 == epochs
         if not opt.notest or final_epoch:  # Calculate mAP
             results, maps, times = test.test(opt.data,
