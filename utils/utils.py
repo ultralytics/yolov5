@@ -45,7 +45,7 @@ def get_latest_run(search_dir='./runs'):
 
 def check_git_status():
     # Suggest 'git pull' if repo is out of date
-    if platform in ['linux', 'darwin']:
+    if platform in ['linux', 'darwin'] and not os.path.isfile('/.dockerenv'):
         s = subprocess.check_output('if [ -d .git ]; then git fetch && git status -uno; fi', shell=True).decode('utf-8')
         if 'Your branch is behind' in s:
             print(s[s.find('Your branch is behind'):s.find('\n\n')] + '\n')
@@ -636,14 +636,12 @@ def strip_optimizer(f='weights/best.pt'):  # from utils.utils import *; strip_op
     x['optimizer'] = None
     x['model'].half()  # to FP16
     torch.save(x, f)
-    print('Optimizer stripped from %s' % f)
+    print('Optimizer stripped from %s, %.1fMB' % (f, os.path.getsize(f) / 1E6))
 
 
 def create_pretrained(f='weights/best.pt', s='weights/pretrained.pt'):  # from utils.utils import *; create_pretrained()
     # create pretrained checkpoint 's' from 'f' (create_pretrained(x, x) for x in glob.glob('./*.pt'))
-    device = torch.device('cpu')
-    x = torch.load(s, map_location=device)
-
+    x = torch.load(f, map_location=torch.device('cpu'))
     x['optimizer'] = None
     x['training_results'] = None
     x['epoch'] = -1
@@ -651,7 +649,7 @@ def create_pretrained(f='weights/best.pt', s='weights/pretrained.pt'):  # from u
     for p in x['model'].parameters():
         p.requires_grad = True
     torch.save(x, s)
-    print('%s saved as pretrained checkpoint %s' % (f, s))
+    print('%s saved as pretrained checkpoint %s, %.1fMB' % (f, s, os.path.getsize(s) / 1E6))
 
 
 def coco_class_count(path='../coco/labels/train2014/'):
