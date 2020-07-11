@@ -27,15 +27,19 @@ def create(name, pretrained, channels, classes):
     Returns:
         pytorch model
     """
-    config = os.path.join(os.path.dirname(__file__), 'models', '%s.yaml' % name)  # model.yaml path
-    model = Model(config, channels, classes)
-    if pretrained:
-        ckpt = '%s.pt' % name  # checkpoint filename
-        google_utils.attempt_download(ckpt)  # download if not found locally
-        state_dict = torch.load(ckpt, map_location=torch.device('cpu'))['model'].float().state_dict()  # to FP32
-        state_dict = {k: v for k, v in state_dict.items() if model.state_dict()[k].shape == v.shape}  # filter
-        model.load_state_dict(state_dict, strict=False)  # load
-    return model
+    try:
+        config = os.path.join(os.path.dirname(__file__), 'models', '%s.yaml' % name)  # model.yaml path
+        model = Model(config, channels, classes)
+        if pretrained:
+            ckpt = '%s.pt' % name  # checkpoint filename
+            google_utils.attempt_download(ckpt)  # download if not found locally
+            state_dict = torch.load(ckpt, map_location=torch.device('cpu'))['model'].float().state_dict()  # to FP32
+            state_dict = {k: v for k, v in state_dict.items() if model.state_dict()[k].shape == v.shape}  # filter
+            model.load_state_dict(state_dict, strict=False)  # load
+        return model
+    except Exception as e:
+        help_url = 'https://github.com/ultralytics/yolov5/issues/36'
+        print('%s\nCache is out of date. Delete cache and retry. See %s for help.' % (e, help_url))
 
 
 def yolov5s(pretrained=False, channels=3, classes=80):
