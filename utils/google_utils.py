@@ -9,10 +9,10 @@ from pathlib import Path
 
 def attempt_download(weights):
     # Attempt to download pretrained weights if not found locally
-    weights = weights.strip()
+    weights = weights.strip().replace("'", '')
     msg = weights + ' missing, try downloading from https://drive.google.com/drive/folders/1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J'
 
-    r = 1
+    r = 1  # return
     if len(weights) > 0 and not os.path.isfile(weights):
         d = {'yolov3-spp.pt': '1mM67oNw4fZoIOL1c8M3hHmj66d8e-ni_',  # yolov3-spp.yaml
              'yolov5s.pt': '1R5T6rIyy3lLwgFXNms8whc-387H0tMQO',  # yolov5s.yaml
@@ -27,7 +27,7 @@ def attempt_download(weights):
 
         if not (r == 0 and os.path.exists(weights) and os.path.getsize(weights) > 1E6):  # weights exist and > 1MB
             os.remove(weights) if os.path.exists(weights) else None  # remove partial downloads
-            s = "curl -L -o %s 'https://storage.googleapis.com/ultralytics/yolov5/ckpt/%s'" % (weights, file)
+            s = "curl -L -o %s 'storage.googleapis.com/ultralytics/yolov5/ckpt/%s'" % (weights, file)
             r = os.system(s)  # execute, capture return values
 
             # Error check
@@ -36,8 +36,7 @@ def attempt_download(weights):
                 raise Exception(msg)
 
 
-def gdrive_download(id='1HaXkef9z6y5l4vUnCYgdmEAj61c6bfWO', name='coco.zip'):
-    # https://gist.github.com/tanaikech/f0f2d122e05bf5f971611258c22c110f
+def gdrive_download(id='1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', name='coco128.zip'):
     # Downloads a file from Google Drive, accepting presented query
     # from utils.google_utils import *; gdrive_download()
     t = time.time()
@@ -70,6 +69,7 @@ def gdrive_download(id='1HaXkef9z6y5l4vUnCYgdmEAj61c6bfWO', name='coco.zip'):
 
     print('Done (%.1fs)' % (time.time() - t))
     return r
+
 
 # def upload_blob(bucket_name, source_file_name, destination_blob_name):
 #     # Uploads a file to a bucket
