@@ -436,6 +436,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 image.verify()  # PIL verify
                 # _ = io.imread(img)  # skimage verify (from skimage import io)
                 shape = exif_size(image)  # image size
+                assert (shape[0] > 9) & (shape[1] > 9), 'image size <10 pixels'
                 if os.path.isfile(label):
                     with open(label, 'r') as f:
                         l = np.array([x.split() for x in f.read().splitlines()], dtype=np.float32)  # labels
