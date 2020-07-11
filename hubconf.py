@@ -27,8 +27,8 @@ def create(name, pretrained, channels, classes):
     Returns:
         pytorch model
     """
+    config = os.path.join(os.path.dirname(__file__), 'models', '%s.yaml' % name)  # model.yaml path
     try:
-        config = os.path.join(os.path.dirname(__file__), 'models', '%s.yaml' % name)  # model.yaml path
         model = Model(config, channels, classes)
         if pretrained:
             ckpt = '%s.pt' % name  # checkpoint filename
@@ -39,7 +39,7 @@ def create(name, pretrained, channels, classes):
         return model
     except Exception as e:
         help_url = 'https://github.com/ultralytics/yolov5/issues/36'
-        print('%s\nCache is out of date. Delete cache and retry. See %s for help.' % (e, help_url))
+        print('%s\nCache maybe be out of date. Delete cache and retry. See %s for help.' % (e, help_url))
 
 
 def yolov5s(pretrained=False, channels=3, classes=80):
