@@ -70,10 +70,12 @@ class LoadImages:  # for inference
     def __init__(self, path, img_size=640):
         p = str(Path(path))  # os-agnostic
         p = os.path.abspath(p)  # absolute path
-        if os.path.isdir(p):
-            files = sorted(glob.glob(os.path.join(p, '*.*')))
+        if '*' in p:
+            files = sorted(glob.glob(p))  # glob
+        elif os.path.isdir(p):
+            files = sorted(glob.glob(os.path.join(p, '*.*')))  # dir
         elif os.path.isfile(p):
-            files = [p]
+            files = [p]  # files
         else:
             raise Exception('ERROR: %s does not exist' % p)
 
