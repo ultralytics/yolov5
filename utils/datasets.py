@@ -68,35 +68,39 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
 
 class LoadImages:  # for inference
     def __init__(self, path, img_size=640):
-        path = str(Path(path))  # os-agnostic
-        files = []
-        if os.path.isdir(path):
-            files = sorted(glob.glob(os.path.join(path, '*.*')))
-        elif os.path.isfile(path):
-            files = [path]
+        p = str(Path(path))  # os-agnostic
+        p = os.path.abspath(p)  # absolute path
+        if '*' in p:
+            files = sorted(glob.glob(p))  # glob
+        elif os.path.isdir(p):
+            files = sorted(glob.glob(os.path.join(p, '*.*')))  # dir
+        elif os.path.isfile(p):
+            files = [p]  # files
+        else:
+            raise Exception('ERROR: %s does not exist' % p)
 
         images = [x for x in files if os.path.splitext(x)[-1].lower() in img_formats]
         videos = [x for x in files if os.path.splitext(x)[-1].lower() in vid_formats]
-        nI, nV = len(images), len(videos)
+        ni, nv = len(images), len(videos)
 
         self.img_size = img_size
         self.files = images + videos
-        self.nF = nI + nV  # number of files
-        self.video_flag = [False] * nI + [True] * nV
+        self.nf = ni + nv  # number of files
+        self.video_flag = [False] * ni + [True] * nv
         self.mode = 'images'
         if any(videos):
             self.new_video(videos[0])  # new video
         else:
             self.cap = None
-        assert self.nF > 0, 'No images or videos found in %s. Supported formats are:\nimages: %s\nvideos: %s' % \
-                            (path, img_formats, vid_formats)
+        assert self.nf > 0, 'No images or videos found in %s. Supported formats are:\nimages: %s\nvideos: %s' % \
+                            (p, img_formats, vid_formats)
 
     def __iter__(self):
         self.count = 0
         return self
 
     def __next__(self):
-        if self.count == self.nF:
+        if self.count == self.nf:
             raise StopIteration
         path = self.files[self.count]
 
@@ -107,7 +111,7 @@ class LoadImages:  # for inference
             if not ret_val:
                 self.count += 1
                 self.cap.release()
-                if self.count == self.nF:  # last video
+                if self.count == self.nf:  # last video
                     raise StopIteration
                 else:
                     path = self.files[self.count]
@@ -115,14 +119,14 @@ class LoadImages:  # for inference
                     ret_val, img0 = self.cap.read()
 
             self.frame += 1
-            print('video %g/%g (%g/%g) %s: ' % (self.count + 1, self.nF, self.frame, self.nframes, path), end='')
+            print('video %g/%g (%g/%g) %s: ' % (self.count + 1, self.nf, self.frame, self.nframes, path), end='')
 
         else:
             # Read image
             self.count += 1
             img0 = cv2.imread(path)  # BGR
             assert img0 is not None, 'Image Not Found ' + path
-            print('image %g/%g %s: ' % (self.count, self.nF, path), end='')
+            print('image %g/%g %s: ' % (self.count, self.nf, path), end='')
 
         # Padded resize
         img = letterbox(img0, new_shape=self.img_size)[0]
@@ -140,7 +144,7 @@ class LoadImages:  # for inference
         self.nframes = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     def __len__(self):
-        return self.nF  # number of files
+        return self.nf  # number of files
 
 
 class LoadWebcam:  # for inference
@@ -469,6 +473,13 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             # Load mosaic
             img, labels = load_mosaic(self, index)
             shapes = None
+
+            # MixUp https://arxiv.org/pdf/1710.09412.pdf
+            # if random.random() < 0.5:
+            #     img2, labels2 = load_mosaic(self, random.randint(0, len(self.labels) - 1))
+            #     r = np.random.beta(0.3, 0.3)  # mixup ratio, alpha=beta=0.3
+            #     img = (img * r + img2 * (1 - r)).astype(np.uint8)
+            #     labels = np.concatenate((labels, labels2), 0)
 
         else:
             # Load image

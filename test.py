@@ -41,9 +41,9 @@ def test(data,
         #     model = nn.DataParallel(model)
 
     # Half
-    half = device.type != 'cpu' and torch.cuda.device_count() == 1  # half precision only supported on single-GPU
+    half = device.type != 'cpu'  # half precision only supported on CUDA
     if half:
-        model.half()  # to FP16
+        model.half()
 
     # Configure
     model.eval()
