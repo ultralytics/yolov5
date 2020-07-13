@@ -58,6 +58,14 @@ def train(hyp):
     with open(Path(log_dir) / 'opt.yaml', 'w') as f:
         yaml.dump(vars(opt), f, sort_keys=False)
 
+    # Log hyperparameters in tensorboard
+    if tb_writer:
+        tb_hparams_dict = hyp
+        tb_hparams_dict.update(vars(opt))
+        tb_hparams_dict['img_size_w'], tb_hparams_dict['img_size_h'] = tb_hparams_dict['img_size']
+        del tb_hparams_dict['img_size']
+        tb_writer.add_hparams(tb_hparams_dict, {})
+
     epochs = opt.epochs  # 300
     batch_size = opt.batch_size  # 64
     weights = opt.weights  # initial training weights
