@@ -25,10 +25,10 @@ COPY . /usr/src/app
 # t=ultralytics/yolov5:latest && sudo docker build -t $t . && sudo docker push $t
 
 # Pull and Run
-# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host $t bash
+# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host $t
 
 # Pull and Run with local directory access
-# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all -v "$(pwd)"/coco:/usr/src/coco $t bash
+# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all -v "$(pwd)"/coco:/usr/src/coco $t
 
 # Kill all
 # sudo docker kill "$(sudo docker ps -q)"
