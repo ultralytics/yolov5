@@ -74,8 +74,7 @@ class Model(nn.Module):
 
         # Init weights, biases
         torch_utils.initialize_weights(self)
-        self._initialize_biases()  # only run once
-        torch_utils.model_info(self)
+        self.info()
         print('')
 
     def forward(self, x, augment=False, profile=False):
