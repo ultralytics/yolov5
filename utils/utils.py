@@ -503,6 +503,7 @@ def build_targets(p, targets, model):
     off = torch.tensor([[1, 0], [0, 1], [-1, 0], [0, -1]], device=targets.device).float()  # overlap offsets
     at = torch.arange(na).view(na, 1).repeat(1, nt)  # anchor tensor, same as .repeat_interleave(nt)
 
+    g = 0.5  # offset
     style = 'rect4'
     for i in range(det.nl):
         anchors = det.anchors[i]
@@ -517,7 +518,6 @@ def build_targets(p, targets, model):
             a, t = at[j], t.repeat(na, 1, 1)[j]  # filter
 
             # overlaps
-            g = 0.5  # offset
             gxy = t[:, 2:4]  # grid xy
             z = torch.zeros_like(gxy)
             if style == 'rect2':
@@ -878,10 +878,7 @@ def fitness(x):
 
 
 def output_to_target(output, width, height):
-    """
-    Convert a YOLO model output to target format
-    [batch_id, class_id, x, y, w, h, conf]
-    """
+    # Convert model output to target format [batch_id, class_id, x, y, w, h, conf]
     if isinstance(output, torch.Tensor):
         output = output.cpu().numpy()
 

@@ -152,13 +152,13 @@ def train(hyp):
         model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
 
     # Distributed training
-    if device.type != 'cpu' and torch.cuda.device_count() > 1 and torch.distributed.is_available():
+    if device.type != 'cpu' and torch.cuda.device_count() > 1 and dist.is_available():
         dist.init_process_group(backend='nccl',  # distributed backend
                                 init_method='tcp://127.0.0.1:9999',  # init method
                                 world_size=1,  # number of nodes
                                 rank=0)  # node rank
+        # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)  # requires world_size > 1
         model = torch.nn.parallel.DistributedDataParallel(model)
-        # pip install torch==1.4.0+cu100 torchvision==0.5.0+cu100 -f https://download.pytorch.org/whl/torch_stable.html
 
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
