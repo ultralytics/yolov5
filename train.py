@@ -58,14 +58,6 @@ def train(hyp):
     with open(Path(log_dir) / 'opt.yaml', 'w') as f:
         yaml.dump(vars(opt), f, sort_keys=False)
 
-    # Log hyperparameters in tensorboard
-    if tb_writer:
-        tb_hparams_dict = hyp
-        tb_hparams_dict.update(vars(opt))
-        tb_hparams_dict['img_size_train'], tb_hparams_dict['img_size_test'] = tb_hparams_dict['img_size']
-        del tb_hparams_dict['img_size']
-        tb_writer.add_hparams(tb_hparams_dict, {})
-
     epochs = opt.epochs  # 300
     batch_size = opt.batch_size  # 64
     weights = opt.weights  # initial training weights
@@ -194,6 +186,7 @@ def train(hyp):
     # model._initialize_biases(cf.to(device))
     plot_labels(labels, save_dir=log_dir)
     if tb_writer:
+        tb_writer.add_hparams(hyp, {})
         tb_writer.add_histogram('classes', c, 0)
 
     # Check anchors
