@@ -62,7 +62,7 @@ def train(hyp):
     if tb_writer:
         tb_hparams_dict = hyp
         tb_hparams_dict.update(vars(opt))
-        tb_hparams_dict['img_size_w'], tb_hparams_dict['img_size_h'] = tb_hparams_dict['img_size']
+        tb_hparams_dict['img_size_train'], tb_hparams_dict['img_size_test'] = tb_hparams_dict['img_size']
         del tb_hparams_dict['img_size']
         tb_writer.add_hparams(tb_hparams_dict, {})
 
