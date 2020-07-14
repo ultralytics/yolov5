@@ -41,7 +41,7 @@ $ pip install -U -r requirements.txt
 ## Tutorials
 
 * [Notebook](https://github.com/ultralytics/yolov5/blob/master/tutorial.ipynb) <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
-* [Kaggle](https://www.kaggle.com/ultralytics/yolov5-tutorial)
+* [Kaggle](https://www.kaggle.com/ultralytics/yolov5)
 * [Train Custom Data](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data)
 * [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)
 * [ONNX and TorchScript Export](https://github.com/ultralytics/yolov5/issues/251)
