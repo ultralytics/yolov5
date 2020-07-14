@@ -193,7 +193,7 @@ def train(hyp):
         check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
 
     # Exponential moving average
-    ema = torch_utils.ModelEMA(model, updates=start_epoch * nb / accumulate)
+    ema = torch_utils.ModelEMA(model)
 
     # Start training
     t0 = time.time()
@@ -223,7 +223,7 @@ def train(hyp):
         pbar = tqdm(enumerate(dataloader), total=nb)  # progress bar
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
             ni = i + nb * epoch  # number integrated batches (since train start)
-            imgs = imgs.to(device).float() / 255.0  # uint8 to float32, 0 - 255 to 0.0 - 1.0
+            imgs = imgs.to(device, non_blocking=True).float() / 255.0  # uint8 to float32, 0 - 255 to 0.0 - 1.0
 
             # Warmup
             if ni <= nw:
