@@ -76,16 +76,36 @@ def find_modules(model, mclass=nn.Conv2d):
     return [i for i, m in enumerate(model.module_list) if isinstance(m, mclass)]
 
 
+def sparsity(model):
+    # Return global model sparsity
+    a, b = 0., 0.
+    for p in model.parameters():
+        a += p.numel()
+        b += (p == 0).sum()
+    return b / a
+
+
+def prune(model, amount=0.3):
+    # Prune model to requested global sparsity
+    import torch.nn.utils.prune as prune
+    print('Pruning model... ', end='')
+    for name, m in model.named_modules():
+        if isinstance(m, nn.Conv2d):
+            prune.l1_unstructured(m, name='weight', amount=amount)  # prune
+            prune.remove(m, 'weight')  # make permanent
+    print(' %.3g global sparsity' % sparsity(model))
+
+
 def fuse_conv_and_bn(conv, bn):
     # https://tehnokv.com/posts/fusing-batchnorm-and-conv/
     with torch.no_grad():
         # init
-        fusedconv = torch.nn.Conv2d(conv.in_channels,
-                                    conv.out_channels,
-                                    kernel_size=conv.kernel_size,
-                                    stride=conv.stride,
-                                    padding=conv.padding,
-                                    bias=True)
+        fusedconv = nn.Conv2d(conv.in_channels,
+                              conv.out_channels,
+                              kernel_size=conv.kernel_size,
+                              stride=conv.stride,
+                              padding=conv.padding,
+                              bias=True).to(conv.weight.device)
 
         # prepare filters
         w_conv = conv.weight.clone().view(conv.out_channels, -1)
@@ -93,10 +113,7 @@ def fuse_conv_and_bn(conv, bn):
         fusedconv.weight.copy_(torch.mm(w_bn, w_conv).view(fusedconv.weight.size()))
 
         # prepare spatial bias
-        if conv.bias is not None:
-            b_conv = conv.bias
-        else:
-            b_conv = torch.zeros(conv.weight.size(0), device=conv.weight.device)
+        b_conv = torch.zeros(conv.weight.size(0), device=conv.weight.device) if conv.bias is None else conv.bias
         b_bn = bn.bias - bn.weight.mul(bn.running_mean).div(torch.sqrt(bn.running_var + bn.eps))
         fusedconv.bias.copy_(torch.mm(w_bn, b_conv.reshape(-1, 1)).reshape(-1) + b_bn)
 
@@ -139,8 +156,8 @@ def load_classifier(name='resnet101', n=2):
 
     # Reshape output to n classes
     filters = model.fc.weight.shape[1]
-    model.fc.bias = torch.nn.Parameter(torch.zeros(n), requires_grad=True)
-    model.fc.weight = torch.nn.Parameter(torch.zeros(n, filters), requires_grad=True)
+    model.fc.bias = nn.Parameter(torch.zeros(n), requires_grad=True)
+    model.fc.weight = nn.Parameter(torch.zeros(n, filters), requires_grad=True)
     model.fc.out_features = n
     return model
 
@@ -156,33 +173,32 @@ def scale_img(img, ratio=1.0, same_shape=False):  # img(16,3,256,416), r=ratio
     return F.pad(img, [0, w - s[1], 0, h - s[0]], value=0.447)  # value = imagenet mean
 
 
+def copy_attr(a, b, include=(), exclude=()):
+    # Copy attributes from b to a, options to only include [...] and to exclude [...]
+    for k, v in b.__dict__.items():
+        if (len(include) and k not in include) or k.startswith('_') or k in exclude:
+            continue
+        else:
+            setattr(a, k, v)
+
+
 class ModelEMA:
     """ Model Exponential Moving Average from https://github.com/rwightman/pytorch-image-models
     Keep a moving average of everything in the model state_dict (parameters and buffers).
     This is intended to allow functionality like
     https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage
     A smoothed version of the weights is necessary for some training schemes to perform well.
-    E.g. Google's hyper-params for training MNASNet, MobileNet-V3, EfficientNet, etc that use
-    RMSprop with a short 2.4-3 epoch decay period and slow LR decay rate of .96-.99 requires EMA
-    smoothing of weights to match results. Pay attention to the decay constant you are using
-    relative to your update count per epoch.
-    To keep EMA from using GPU resources, set device='cpu'. This will save a bit of memory but
-    disable validation of the EMA weights. Validation will have to be done manually in a separate
-    process, or after the training stops converging.
     This class is sensitive where it is initialized in the sequence of model init,
     GPU assignment and distributed training wrappers.
-    I've tested with the sequence in my own train.py for torch.DataParallel, apex.DDP, and single-GPU.
     """
 
-    def __init__(self, model, decay=0.9999, device=''):
+    def __init__(self, model, decay=0.9999, updates=0):
         # Create EMA
-        self.ema = deepcopy(model.module if is_parallel(model) else model)  # FP32 EMA
-        self.ema.eval()
-        self.updates = 0  # number of EMA updates
+        self.ema = deepcopy(model.module if is_parallel(model) else model).eval()  # FP32 EMA
+        # if next(model.parameters()).device.type != 'cpu':
+        #     self.ema.half()  # FP16 EMA
+        self.updates = updates  # number of EMA updates
         self.decay = lambda x: decay * (1 - math.exp(-x / 2000))  # decay exponential ramp (to help early epochs)
-        self.device = device  # perform ema on different device from model if set
-        if device:
-            self.ema.to(device)
         for p in self.ema.parameters():
             p.requires_grad_(False)
 
@@ -198,8 +214,6 @@ class ModelEMA:
                     v *= d
                     v += (1. - d) * msd[k].detach()
 
-    def update_attr(self, model):
+    def update_attr(self, model, include=(), exclude=('process_group', 'reducer')):
         # Update EMA attributes
-        for k, v in model.__dict__.items():
-            if not k.startswith('_') and k not in ["process_group", "reducer"]:
-                setattr(self.ema, k, v)
+        copy_attr(self.ema, model, include, exclude)
