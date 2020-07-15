@@ -186,7 +186,7 @@ def train(hyp):
     # model._initialize_biases(cf.to(device))
     plot_labels(labels, save_dir=log_dir)
     if tb_writer:
-        tb_writer.add_hparams(hyp, {})
+        # tb_writer.add_hparams(hyp, {})  # causes duplicate https://github.com/ultralytics/yolov5/pull/384
         tb_writer.add_histogram('classes', c, 0)
 
     # Check anchors
