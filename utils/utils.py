@@ -902,10 +902,10 @@ def output_to_target(output, width, height):
 def increment_dir(dir, comment=''):
     # Increments a directory runs/exp1 --> runs/exp2_comment
     n = 0  # number
+    dir = str(Path(dir))  # os-agnostic
     d = sorted(glob.glob(dir + '*'))  # directories
     if len(d):
-        d = d[-1].replace(dir, '')
-        n = int(d[:d.find('_')] if '_' in d else d) + 1  # increment
+        n = max([int(x[len(dir):x.find('_') if '_' in x else None]) for x in d]) + 1  # increment
     return dir + str(n) + ('_' + comment if comment else '')
 
 
