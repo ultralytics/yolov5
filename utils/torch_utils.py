@@ -2,6 +2,7 @@ import math
 import os
 import time
 from copy import deepcopy
+import pickle
 
 import torch
 import torch.backends.cudnn as cudnn
@@ -208,8 +209,9 @@ class ModelEMA:
             self.updates += 1
             d = self.decay(self.updates)
 
-            msd = model.module.state_dict() if is_parallel(model) else model.state_dict()  # model state_dict
-            for k, v in self.ema.state_dict().items():
+            msd = model.module.state_dict() if hasattr(model, 'module') else model.state_dict()
+            esd = self.ema.module.state_dict() if hasattr(self.ema, 'module') else self.ema.state_dict()
+            for k, v in esd.items():
                 if v.dtype.is_floating_point:
                     v *= d
                     v += (1. - d) * msd[k].detach()
