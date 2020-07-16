@@ -1,0 +1,65 @@
+name: CI CPU testing
+
+# see: https://help.github.com/en/actions/reference/events-that-trigger-workflows
+on: [push, pull_request]
+
+jobs:
+  pytest:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-18.04, windows-2019, macOS-10.15]
+        python-version: [3.7, 3.8]
+
+    # Timeout: https://stackoverflow.com/a/59076067/4521646
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    # Note: This uses an internal pip API and may not always work
+    # https://github.com/actions/cache/blob/master/examples.md#multiple-oss-in-a-workflow
+    - name: Get pip cache
+      id: pip-cache
+      run: |
+        python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
+
+    - name: Cache pip
+      uses: actions/cache@v1
+      with:
+        path: ${{ steps.pip-cache.outputs.dir }}
+        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.requires }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.requires }}-pip-
+
+    - name: Install dependencies
+      run: |
+        # python -m pip install --upgrade --user pip
+        pip install -qr requirements.txt onnx
+        python --version
+        pip --version
+        pip list
+      shell: bash
+
+    - name: Download data
+      run: |
+        python3 -c "from utils.google_utils import *; gdrive_download('1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', 'coco128.zip')" && mv ./coco128 ../
+
+    - name: Tests
+      run: |
+        for x in yolov5s yolov5m yolov5l yolov5x # models
+        do
+          python train.py --weights $x.pt --cfg $x.yaml --epochs 3 --img 320 --device 0,1  # train
+          di=cpu # inference devices
+          python detect.py --weights $x.pt --device $di  # detect official
+          python detect.py --weights runs/exp0/weights/last.pt --device $di  # detect custom
+          python test.py --weights $x.pt --device $di # test official
+          python test.py --weights runs/exp0/weights/last.pt --device $di # test custom
+          python models/yolo.py --cfg $x.yaml # inspect
+          python models/export.py --weights $x.pt --img 640 --batch 1 # export
+        done
+      shell: bash
