@@ -10,12 +10,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04, macOS-10.15]  #, windows-2019
+        os: [ubuntu-18.04]  #, macOS-10.15, windows-2019
         python-version: [3.7, 3.8]
         yolo5-model: ["yolov5s", "yolov5m", "yolov5l", "yolov5x"]
-        exclude:
-          - python-version: 3.8
-            os: macOS-10.15
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
     timeout-minutes: 50
