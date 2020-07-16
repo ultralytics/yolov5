@@ -39,8 +39,9 @@ jobs:
     - name: Install dependencies
       run: |
         # python -m pip install --upgrade --user pip
+        pip install -q numpy  # for cocoapi proper install
         pip install -qr requirements.txt
-        pip install -qr onnx
+        pip install -q onnx
         python --version
         pip --version
         pip list
