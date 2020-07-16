@@ -5,7 +5,7 @@ from models.experimental import *
 from utils.datasets import *
 
 
-def evaluate(data,
+def test(data,
          weights=None,
          batch_size=16,
          imgsz=640,
@@ -254,16 +254,16 @@ if __name__ == '__main__':
     print(opt)
 
     if opt.task in ['val', 'test']:  # run normally
-        evaluate(opt.data,
-                 opt.weights,
-                 opt.batch_size,
-                 opt.img_size,
-                 opt.conf_thres,
-                 opt.iou_thres,
-                 opt.save_json,
-                 opt.single_cls,
-                 opt.augment,
-                 opt.verbose)
+        test(opt.data,
+             opt.weights,
+             opt.batch_size,
+             opt.img_size,
+             opt.conf_thres,
+             opt.iou_thres,
+             opt.save_json,
+             opt.single_cls,
+             opt.augment,
+             opt.verbose)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         for weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov3-spp.pt']:
@@ -272,7 +272,7 @@ if __name__ == '__main__':
             y = []  # y axis
             for i in x:  # img-size
                 print('\nRunning %s point %s...' % (f, i))
-                r, _, t = evaluate(opt.data, weights, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json)
+                r, _, t = test(opt.data, weights, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')
