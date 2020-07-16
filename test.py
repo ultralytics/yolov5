@@ -236,7 +236,7 @@ if __name__ == '__main__':
     parser.add_argument('--merge', action='store_true', help='use Merge NMS')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
     opt = parser.parse_args()
-    opt.save_json = opt.save_json or opt.data.endswith('coco.yaml')
+    opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
     print(opt)
 
