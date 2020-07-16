@@ -416,7 +416,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
             pbar.desc = 'Scanning labels %s (%g found, %g missing, %g empty, %g duplicate, for %g images)' % (
                 cache_path, nf, nm, ne, nd, n)
-        assert nf > 0, 'No labels found in %s. See %s' % (os.path.dirname(file) + os.sep, help_url)
+        if nf == 0:
+            s = 'WARNING: No labels found in %s. See %s' % (os.path.dirname(file) + os.sep, help_url)
+            print(s)
+            assert not augment, '%s. Can not train without labels.' % s
 
         # Cache images into memory for faster training (WARNING: large datasets may exceed system RAM)
         self.imgs = [None] * n
