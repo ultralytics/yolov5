@@ -291,14 +291,14 @@ def train(hyp):
         ema.update_attr(model, include=['md', 'nc', 'hyp', 'gr', 'names', 'stride'])
         final_epoch = epoch + 1 == epochs
         if not opt.notest or final_epoch:  # Calculate mAP
-            results, maps, times = eval.test(opt.data,
-                                             batch_size=batch_size,
-                                             imgsz=imgsz_test,
-                                             save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
-                                             model=ema.ema,
-                                             single_cls=opt.single_cls,
-                                             dataloader=testloader,
-                                             save_dir=log_dir)
+            results, maps, times = eval.evaluate(opt.data,
+                                                 batch_size=batch_size,
+                                                 imgsz=imgsz_test,
+                                                 save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
+                                                 model=ema.ema,
+                                                 single_cls=opt.single_cls,
+                                                 dataloader=testloader,
+                                                 save_dir=log_dir)
 
         # Write
         with open(results_file, 'a') as f:
