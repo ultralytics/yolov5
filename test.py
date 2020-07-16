@@ -196,14 +196,12 @@ def test(data,
         with open(f, 'w') as file:
             json.dump(jdict, file)
 
-        try:
+        try:  # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb
             from pycocotools.coco import COCO
             from pycocotools.cocoeval import COCOeval
 
-            # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb
             cocoGt = COCO(glob.glob('../coco/annotations/instances_val*.json')[0])  # initialize COCO ground truth api
             cocoDt = cocoGt.loadRes(f)  # initialize COCO pred api
-
             cocoEval = COCOeval(cocoGt, cocoDt, 'bbox')
             cocoEval.params.imgIds = imgIds  # image IDs to evaluate
             cocoEval.evaluate()
@@ -242,8 +240,7 @@ if __name__ == '__main__':
     opt.data = check_file(opt.data)  # check file
     print(opt)
 
-    # task = 'val', 'test', 'study'
-    if opt.task in ['val', 'test']:  # (default) run normally
+    if opt.task in ['val', 'test']:  # run normally
         test(opt.data,
              opt.weights,
              opt.batch_size,
