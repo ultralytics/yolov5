@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04, windows-2019, macOS-10.15]
+        os: [ubuntu-18.04, macOS-10.15]  #, windows-2019
         python-version: [3.7, 3.8]
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
@@ -55,8 +55,8 @@ jobs:
       run: |
         for x in yolov5s yolov5m yolov5l yolov5x # models
         do
-          python train.py --weights $x.pt --cfg $x.yaml --epochs 3 --img 320 --device 0,1  # train
           di=cpu # inference devices
+          python train.py --weights $x.pt --cfg $x.yaml --epochs 3 --img 320 --device $di  # train
           python detect.py --weights $x.pt --device $di  # detect official
           python detect.py --weights runs/exp0/weights/last.pt --device $di  # detect custom
           python test.py --weights $x.pt --device $di # test official
