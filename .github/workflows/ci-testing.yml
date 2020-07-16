@@ -51,8 +51,8 @@ jobs:
 
     - name: Download data
       run: |
-        cd ..
         python -c "from utils.google_utils import * ; gdrive_download('1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', 'coco128.zip')"
+        mv ./coco128 ../
 
     - name: Download weights
       run: |
