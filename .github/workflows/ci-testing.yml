@@ -71,9 +71,9 @@ jobs:
         # detect custom
         python detect.py --weights runs/exp0/weights/last.pt --device $di
         # test official
-        python eval.py --weights weights/${{ matrix.yolo5-model }}.pt --device $di --batch-size 1
+        python test.py --weights weights/${{ matrix.yolo5-model }}.pt --device $di --batch-size 1
         # test custom
-        python eval.py --weights runs/exp0/weights/last.pt --device $di  --batch-size 1
+        python test.py --weights runs/exp0/weights/last.pt --device $di  --batch-size 1
         # inspect
         python models/yolo.py --cfg models/${{ matrix.yolo5-model }}.yaml
         # export
