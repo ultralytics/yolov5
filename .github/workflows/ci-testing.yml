@@ -15,6 +15,7 @@ jobs:
         yolo5-model: ["yolov5s", "yolov5m", "yolov5l", "yolov5x"]
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
+    timeout-minutes: 50
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
