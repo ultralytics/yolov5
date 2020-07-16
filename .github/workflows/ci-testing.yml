@@ -4,7 +4,7 @@ name: CI CPU testing
 on: [push, pull_request]
 
 jobs:
-  pytest:
+  cpu-tests:
 
     runs-on: ${{ matrix.os }}
     strategy:
@@ -39,7 +39,8 @@ jobs:
     - name: Install dependencies
       run: |
         # python -m pip install --upgrade --user pip
-        pip install -qr requirements.txt onnx
+        pip install -qr requirements.txt
+        pip install -qr onnx
         python --version
         pip --version
         pip list
