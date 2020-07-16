@@ -27,8 +27,8 @@ This repository represents Ultralytics open-source research into future object d
 
 
 ** AP<sup>test</sup> denotes COCO [test-dev2017](http://cocodataset.org/#upload) server results, all other AP results in the table denote val2017 accuracy.  
-** All AP numbers are for single-model single-scale without ensemble or test-time augmentation. Reproduce by `python test.py --data coco.yaml --img 736 --conf 0.001`  
-** Speed<sub>GPU</sub> measures end-to-end time per image averaged over 5000 COCO val2017 images using a GCP [n1-standard-16](https://cloud.google.com/compute/docs/machine-types#n1_standard_machine_types) instance with one V100 GPU, and includes image preprocessing, PyTorch FP16 image inference at --batch-size 32 --img-size 640, postprocessing and NMS. Average NMS time included in this chart is 1-2ms/img.  Reproduce by `python test.py --data coco.yaml --img 640 --conf 0.1`  
+** All AP numbers are for single-model single-scale without ensemble or test-time augmentation. Reproduce by `python eval.py --data coco.yaml --img 736 --conf 0.001`  
+** Speed<sub>GPU</sub> measures end-to-end time per image averaged over 5000 COCO val2017 images using a GCP [n1-standard-16](https://cloud.google.com/compute/docs/machine-types#n1_standard_machine_types) instance with one V100 GPU, and includes image preprocessing, PyTorch FP16 image inference at --batch-size 32 --img-size 640, postprocessing and NMS. Average NMS time included in this chart is 1-2ms/img.  Reproduce by `python eval.py --data coco.yaml --img 640 --conf 0.1`  
 ** All checkpoints are trained to 300 epochs with default settings and hyperparameters (no autoaugmentation). 
 
 
