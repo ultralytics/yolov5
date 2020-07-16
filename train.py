@@ -7,7 +7,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 from torch.utils.tensorboard import SummaryWriter
 
-import test  # import test.py to get mAP after each epoch
+import eval  # import eval.py to get mAP after each epoch
 from models.yolo import Model
 from utils import google_utils
 from utils.datasets import *
@@ -291,7 +291,7 @@ def train(hyp):
         ema.update_attr(model, include=['md', 'nc', 'hyp', 'gr', 'names', 'stride'])
         final_epoch = epoch + 1 == epochs
         if not opt.notest or final_epoch:  # Calculate mAP
-            results, maps, times = test.test(opt.data,
+            results, maps, times = eval.test(opt.data,
                                              batch_size=batch_size,
                                              imgsz=imgsz_test,
                                              save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
