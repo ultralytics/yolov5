@@ -5,21 +5,21 @@ from models.experimental import *
 from utils.datasets import *
 
 
-def evaluate(data,
-             weights=None,
-             batch_size=16,
-             imgsz=640,
-             conf_thres=0.001,
-             iou_thres=0.6,  # for NMS
-             save_json=False,
-             single_cls=False,
-             augment=False,
-             verbose=False,
-             model=None,
-             dataloader=None,
-             save_dir='',
-             merge=False,
-             save_txt=False):
+def test(data,
+         weights=None,
+         batch_size=16,
+         imgsz=640,
+         conf_thres=0.001,
+         iou_thres=0.6,  # for NMS
+         save_json=False,
+         single_cls=False,
+         augment=False,
+         verbose=False,
+         model=None,
+         dataloader=None,
+         save_dir='',
+         merge=False,
+         save_txt=False):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
