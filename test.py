@@ -18,7 +18,8 @@ def test(data,
          model=None,
          dataloader=None,
          save_dir='',
-         merge=False):
+         merge=False,
+         save_txt=False):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -105,8 +106,14 @@ def test(data,
                 continue
 
             # Append to text file
-            # with open('test.txt', 'a') as file:
-            #    [file.write('%11.5g' * 7 % tuple(x) + '\n') for x in pred]
+            if save_txt:
+                gn = torch.tensor(shapes[si][0])[[1, 0, 1, 0]]  # normalization gain whwh
+                txt_path = str(out / Path(paths[si]).stem)
+                pred[:, :4] = scale_coords(img[si].shape[1:], pred[:, :4], shapes[si][0], shapes[si][1])  # to original
+                for *xyxy, conf, cls in pred:
+                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                    with open(txt_path + '.txt', 'a') as f:
+                        f.write(('%g ' * 5 + '\n') % (cls, *xywh))  # label format
 
             # Clip boxes to image bounds
             clip_coords(pred, (height, width))
@@ -235,6 +242,7 @@ if __name__ == '__main__':
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--merge', action='store_true', help='use Merge NMS')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
+    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     opt = parser.parse_args()
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
