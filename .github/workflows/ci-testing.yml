@@ -12,6 +12,7 @@ jobs:
       matrix:
         os: [ubuntu-18.04, macOS-10.15]  #, windows-2019
         python-version: [3.7, 3.8]
+        yolo5-model: ["yolov5s", "yolov5m", "yolov5l", "yolov5x"]
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
     steps:
@@ -32,9 +33,9 @@ jobs:
       uses: actions/cache@v1
       with:
         path: ${{ steps.pip-cache.outputs.dir }}
-        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.requires }}-pip-${{ hashFiles('requirements.txt') }}
+        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('requirements.txt') }}
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.requires }}-pip-
+          ${{ runner.os }}-${{ matrix.python-version }}-pip-
 
     - name: Install dependencies
       run: |
@@ -50,26 +51,26 @@ jobs:
     - name: Download data
       run: |
         python -c "from utils.google_utils import * ; gdrive_download('1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', 'coco128.zip')"
+
+    - name: Download weights
+      run: |
         bash weights/download_weights.sh
 
-    - name: Tests
+    - name: Tests workflow
       run: |
-        for name in yolov5s yolov5m yolov5l yolov5x # models
-        do
-          di=cpu # inference devices
-          # train
-          python train.py --weights weights/$name.pt --cfg models/$name.yaml --epochs 1 --img 320 --device $di --batch-size 2
-          # detect official
-          python detect.py --weights weights/$name.pt --device $di
-          # detect custom
-          python detect.py --weights runs/exp0/weights/last.pt --device $di
-          # test official
-          python test.py --weights weights/$name.pt --device $di --batch-size 2
-          # test custom
-          python test.py --weights runs/exp0/weights/last.pt --device $di  --batch-size 2
-          # inspect
-          python models/yolo.py --cfg models/$name.yaml
-          # export
-          python models/export.py --weights weights/$name.pt --img 640 --batch 1
-        done
+        di=cpu # inference devices
+        # train
+        python train.py --weights weights/${{ matrix.yolo5-model }}.pt --cfg models/${{ matrix.yolo5-model }}.yaml --epochs 1 --img 320 --device $di --batch-size 2
+        # detect official
+        python detect.py --weights weights/${{ matrix.yolo5-model }}.pt --device $di
+        # detect custom
+        python detect.py --weights runs/exp0/weights/last.pt --device $di
+        # test official
+        python test.py --weights weights/${{ matrix.yolo5-model }}.pt --device $di --batch-size 2
+        # test custom
+        python test.py --weights runs/exp0/weights/last.pt --device $di  --batch-size 2
+        # inspect
+        python models/yolo.py --cfg models/${{ matrix.yolo5-model }}.yaml
+        # export
+        python models/export.py --weights weights/${{ matrix.yolo5-model }}.pt --img 640 --batch 1
       shell: bash
