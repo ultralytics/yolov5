@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04]  #, macOS-10.15, windows-2019
+        os: [ubuntu-latest]  #, macOS-10.15, windows-2019
         python-version: [3.7, 3.8]
         yolo5-model: ["yolov5s", "yolov5m", "yolov5l", "yolov5x"]
 
