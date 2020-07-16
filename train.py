@@ -70,7 +70,7 @@ def train(hyp, tb_writer, opt, device):
     # Since I see lots of print here, the logging configuration is skipped here. We may see repeated outputs.
 
     # Configure
-    init_seeds(1)
+    init_seeds(2+local_rank)
     with open(opt.data) as f:
         data_dict = yaml.load(f, Loader=yaml.FullLoader)  # model dict
     train_path = data_dict['train']
@@ -208,20 +208,20 @@ def train(hyp, tb_writer, opt, device):
     model.names = names
 
     # Class frequency
-    if tb_writer:
-        # tb_writer.add_hparams(hyp, {})  # causes duplicate https://github.com/ultralytics/yolov5/pull/384
+    # Only one check and log is needed.
+    if local_rank in [-1, 0]:
         labels = np.concatenate(dataset.labels, 0)
         c = torch.tensor(labels[:, 0])  # classes
         # cf = torch.bincount(c.long(), minlength=nc) + 1.
         # model._initialize_biases(cf.to(device))
-        plot_labels(labels)
-        tb_writer.add_histogram('classes', c, 0)
+        plot_labels(labels, save_dir=log_dir)
+        if tb_writer:
+            # tb_writer.add_hparams(hyp, {})  # causes duplicate https://github.com/ultralytics/yolov5/pull/384
+            tb_writer.add_histogram('classes', c, 0)
 
-
-    # Check anchors
-    if not opt.noautoanchor:
-        check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
-
+        # Check anchors
+        if not opt.noautoanchor:
+            check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
     # Start training
     t0 = time.time()
     nw = max(3 * nb, 1e3)  # number of warmup iterations, max(3 epochs, 1k iterations)
@@ -414,7 +414,7 @@ if __name__ == '__main__':
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='', help='hyp.yaml path (optional)')
     parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=16, help="batch size for all gpus.")
+    parser.add_argument('--batch-size', type=int, default=16, help="Total batch size for all gpus.")
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const='get_last', default=False,
@@ -450,9 +450,9 @@ if __name__ == '__main__':
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
     device = torch_utils.select_device(opt.device, apex=mixed_precision, batch_size=opt.batch_size)
     opt.total_batch_size = opt.batch_size
+    opt.world_size = 1
     if device.type == 'cpu':
         mixed_precision = False
-        opt.world_size = 1
     elif opt.local_rank != -1:
         # DDP mode
         assert torch.cuda.device_count() > opt.local_rank
@@ -461,7 +461,7 @@ if __name__ == '__main__':
         dist.init_process_group(backend='nccl', init_method='env://')  # distributed backend
 
         opt.world_size = dist.get_world_size()
-        assert opt.batch_size % opt.world_size == 0
+        assert opt.batch_size % opt.world_size == 0, "Batch size is not a multiple of the number of devices given!"
         opt.batch_size = opt.total_batch_size // opt.world_size
     print(opt)
 
