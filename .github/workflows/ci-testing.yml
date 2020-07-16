@@ -58,6 +58,9 @@ jobs:
 
     - name: Tests workflow
       run: |
+        # to run *.py. files in subdirectories
+        export PYTHONPATH="$PWD"
+        # define device
         di=cpu # inference devices
         # train
         python train.py --weights weights/${{ matrix.yolo5-model }}.pt --cfg models/${{ matrix.yolo5-model }}.yaml --epochs 1 --img 320 --device $di --batch-size 2
