@@ -5,7 +5,7 @@ from models.experimental import *
 from utils.datasets import *
 
 
-def test(data,
+def evaluate(data,
          weights=None,
          batch_size=16,
          imgsz=640,
