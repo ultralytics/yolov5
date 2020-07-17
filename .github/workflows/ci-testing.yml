@@ -1,0 +1,81 @@
+name: CI CPU testing
+
+# see: https://help.github.com/en/actions/reference/events-that-trigger-workflows
+on: [push, pull_request]
+
+jobs:
+  cpu-tests:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]  #, macOS-10.15, windows-2019
+        python-version: [3.7, 3.8]
+        yolo5-model: ["yolov5s", "yolov5m", "yolov5l", "yolov5x"]
+
+    # Timeout: https://stackoverflow.com/a/59076067/4521646
+    timeout-minutes: 50
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    # Note: This uses an internal pip API and may not always work
+    # https://github.com/actions/cache/blob/master/examples.md#multiple-oss-in-a-workflow
+    - name: Get pip cache
+      id: pip-cache
+      run: |
+        python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
+
+    - name: Cache pip
+      uses: actions/cache@v1
+      with:
+        path: ${{ steps.pip-cache.outputs.dir }}
+        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -q numpy  # for cocoapi proper install
+        pip install -qr requirements.txt -f https://download.pytorch.org/whl/cpu/torch_stable.html
+        pip install -q onnx
+        python --version
+        pip --version
+        pip list
+      shell: bash
+
+    - name: Download data
+      run: |
+        python -c "from utils.google_utils import * ; gdrive_download('1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', 'coco128.zip')"
+        mv ./coco128 ../
+
+    - name: Download weights
+      run: |
+        bash weights/download_weights.sh
+
+    - name: Tests workflow
+      run: |
+        # to run *.py. files in subdirectories
+        export PYTHONPATH="$PWD"
+        # define device
+        di=cpu # inference devices
+        # train
+        python train.py --weights weights/${{ matrix.yolo5-model }}.pt --cfg models/${{ matrix.yolo5-model }}.yaml --epochs 1 --img 320 --device $di --batch-size 2
+        # detect official
+        python detect.py --weights weights/${{ matrix.yolo5-model }}.pt --device $di
+        # detect custom
+        python detect.py --weights runs/exp0/weights/last.pt --device $di
+        # test official
+        python test.py --weights weights/${{ matrix.yolo5-model }}.pt --device $di --batch-size 1
+        # test custom
+        python test.py --weights runs/exp0/weights/last.pt --device $di  --batch-size 1
+        # inspect
+        python models/yolo.py --cfg models/${{ matrix.yolo5-model }}.yaml
+        # export
+        python models/export.py --weights weights/${{ matrix.yolo5-model }}.pt --img 640 --batch 1
+      shell: bash
