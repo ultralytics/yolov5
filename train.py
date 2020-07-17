@@ -382,6 +382,19 @@ if __name__ == '__main__':
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     opt = parser.parse_args()
 
+    if opt.resume:
+        last_run_dir = get_latest_run() if opt.resume == 'get_last' else opt.resume
+
+        with open(last_run_dir + os.sep + 'opt.yaml', 'r') as f:
+            resume_opt = Namespace(**yaml.load(f, Loader=yaml.FullLoader))
+
+        resume_opt.weights = last_run_dir + os.sep + 'weights' + os.sep + 'last.pt'
+
+        print(f'Resuming training from {last_run_dir}')
+
+        #replace 
+        opt = resume_opt
+        
     last = get_latest_run() if opt.resume == 'get_last' else opt.resume  # resume from most recent run
     if last and not opt.weights:
         print(f'Resuming training from {last}')
