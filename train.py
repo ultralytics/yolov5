@@ -392,13 +392,10 @@ if __name__ == '__main__':
 
         print(f'Resuming training from {last_run_dir}')
 
-        #replace 
+        #replace parsed args with opt from run to resume from
         opt = resume_opt
-        
-    last = get_latest_run() if opt.resume == 'get_last' else opt.resume  # resume from most recent run
-    if last and not opt.weights:
-        print(f'Resuming training from {last}')
-    opt.weights = last if opt.resume and not opt.weights else opt.weights
+
+
     opt.cfg = check_file(opt.cfg)  # check file
     opt.data = check_file(opt.data)  # check file
     if opt.hyp:  # update hyps
