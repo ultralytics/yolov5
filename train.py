@@ -368,7 +368,7 @@ if __name__ == '__main__':
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const='get_last', default=False,
-                        help='resume from given path/to/last.pt, or most recent run if blank.')
+                        help='resume from given path/to/runs/exp* directory, or most recent run if blank.')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
@@ -387,7 +387,7 @@ if __name__ == '__main__':
 
         try:
             with open(last_run_dir + os.sep + 'opt.yaml', 'r') as f:
-                resume_opt = Namespace(**yaml.load(f, Loader=yaml.FullLoader))
+                resume_opt = argparse.Namespace(**yaml.load(f, Loader=yaml.FullLoader))
 
             resume_opt.weights = last_run_dir + os.sep + 'weights' + os.sep + 'last.pt'
 
