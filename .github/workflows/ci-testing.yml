@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]  #, macOS-10.15, windows-2019
-        python-version: [3.7, 3.8]
+        python-version: [3.8]
         yolo5-model: ["yolov5s", "yolov5m", "yolov5l", "yolov5x"]
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
@@ -60,19 +60,15 @@ jobs:
 
     - name: Tests workflow
       run: |
-        # to run *.py. files in subdirectories
-        export PYTHONPATH="$PWD"
-        # define device
-        di=cpu # inference devices
+        export PYTHONPATH="$PWD"  # to run *.py. files in subdirectories
+        di=cpu # inference devices  # define device
         # train
         python train.py --weights weights/${{ matrix.yolo5-model }}.pt --cfg models/${{ matrix.yolo5-model }}.yaml --epochs 1 --img 320 --device $di --batch-size 8
-        # detect official
+        # detect
         python detect.py --weights weights/${{ matrix.yolo5-model }}.pt --device $di
-        # detect custom
         python detect.py --weights runs/exp0/weights/last.pt --device $di
-        # test official
+        # test
         python test.py --weights weights/${{ matrix.yolo5-model }}.pt --device $di --batch 8
-        # test custom
         python test.py --weights runs/exp0/weights/last.pt --device $di  --batch 8
         # inspect
         python models/yolo.py --cfg models/${{ matrix.yolo5-model }}.yaml
