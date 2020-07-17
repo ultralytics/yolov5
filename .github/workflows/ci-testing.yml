@@ -65,15 +65,15 @@ jobs:
         # define device
         di=cpu # inference devices
         # train
-        python train.py --weights weights/${{ matrix.yolo5-model }}.pt --cfg models/${{ matrix.yolo5-model }}.yaml --epochs 1 --img 320 --device $di --batch-size 2
+        python train.py --weights weights/${{ matrix.yolo5-model }}.pt --cfg models/${{ matrix.yolo5-model }}.yaml --epochs 1 --img 320 --device $di --batch-size 8
         # detect official
         python detect.py --weights weights/${{ matrix.yolo5-model }}.pt --device $di
         # detect custom
         python detect.py --weights runs/exp0/weights/last.pt --device $di
         # test official
-        python test.py --weights weights/${{ matrix.yolo5-model }}.pt --device $di --batch-size 1
+        python test.py --weights weights/${{ matrix.yolo5-model }}.pt --device $di --batch 8
         # test custom
-        python test.py --weights runs/exp0/weights/last.pt --device $di  --batch-size 1
+        python test.py --weights runs/exp0/weights/last.pt --device $di  --batch 8
         # inspect
         python models/yolo.py --cfg models/${{ matrix.yolo5-model }}.yaml
         # export
