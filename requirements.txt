@@ -1,13 +1,13 @@
 # pip install -U -r requirements.txt
 Cython
-numpy==1.17.3
+numpy>=1.18.5
 opencv-python
 torch>=1.5.1
 matplotlib
 pillow
 tensorboard
 PyYAML>=5.3
-torchvision
+torchvision>=0.6
 scipy
 tqdm
 git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI
