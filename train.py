@@ -384,19 +384,24 @@ if __name__ == '__main__':
 
     if opt.resume:
         last_run_dir = get_latest_run() if opt.resume == 'get_last' else opt.resume
-
+        
+        if not os.path.isdir(last_run_dir):
+            print('WARNING: --resume must point to a directory with an opt.yaml and weights/last.pt to resume from.')
+        
         try:
             with open(last_run_dir + os.sep + 'opt.yaml', 'r') as f:
                 resume_opt = argparse.Namespace(**yaml.load(f, Loader=yaml.FullLoader))
+        except FileNotFoundError as e:
+            print(f'{e}. Ensure there is an opt.yaml in the runs/exp* directory you are resuming from.')
+            
+        last_weights = last_run_dir + os.sep + 'weights' + os.sep + 'last.pt'
+        resume_opt.weights = last_weights if os.path.isfile(last_weights) else print('WARNING: no weights/last.pt found to resume from.')
 
-            resume_opt.weights = last_run_dir + os.sep + 'weights' + os.sep + 'last.pt'
+        print(f'Resuming training from {last_run_dir}')
 
-            print(f'Resuming training from {last_run_dir}')
+        #replace parsed args with opt from the run to resume from
+        opt = resume_opt
 
-            #replace parsed args with opt from run to resume from
-            opt = resume_opt
-        except Exception as e:
-            print(f'Exception {e}. Ensure there is an opt.yaml in the runs/exp* directory you are resuming from.')
 
     opt.cfg = check_file(opt.cfg)  # check file
     opt.data = check_file(opt.data)  # check file
