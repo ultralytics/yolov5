@@ -10,9 +10,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]  #, macOS-10.15, windows-2019
+        os: [ubuntu-latest]  # [ubuntu-latest, macos-latest, windows-latest]
         python-version: [3.8]
-        yolo5-model: ["yolov5s", "yolov5m", "yolov5l", "yolov5x"]
+        model: ['yolov5s', 'yolov5m', 'yolov5l', 'yolov5x']  # models to test
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
     timeout-minutes: 50
@@ -60,14 +60,14 @@ jobs:
         di=cpu # inference devices  # define device
         
         # train
-        python train.py --img 256 --batch 8 --weights weights/${{ matrix.yolo5-model }}.pt --cfg models/${{ matrix.yolo5-model }}.yaml --epochs 1 --device $di
+        python train.py --img 256 --batch 8 --weights weights/${{ matrix.model }}.pt --cfg models/${{ matrix.model }}.yaml --epochs 1 --device $di
         # detect
-        python detect.py --weights weights/${{ matrix.yolo5-model }}.pt --device $di
+        python detect.py --weights weights/${{ matrix.model }}.pt --device $di
         python detect.py --weights runs/exp0/weights/last.pt --device $di
         # test
-        python test.py --img 256 --batch 8 --weights weights/${{ matrix.yolo5-model }}.pt --device $di
+        python test.py --img 256 --batch 8 --weights weights/${{ matrix.model }}.pt --device $di
         python test.py --img 256 --batch 8 --weights runs/exp0/weights/last.pt --device $di 
         
-        python models/yolo.py --cfg models/${{ matrix.yolo5-model }}.yaml  # inspect
-        python models/export.py --img 256 --batch 1 --weights weights/${{ matrix.yolo5-model }}.pt  # export
+        python models/yolo.py --cfg models/${{ matrix.model }}.yaml  # inspect
+        python models/export.py --img 256 --batch 1 --weights weights/${{ matrix.model }}.pt  # export
       shell: bash
