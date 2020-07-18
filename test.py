@@ -126,13 +126,13 @@ def test(data,
             # Append to pycocotools JSON dictionary
             if save_json:
                 # [{"image_id": 42, "category_id": 18, "bbox": [258.15, 41.29, 348.26, 243.78], "score": 0.236}, ...
-                image_id = int(Path(paths[si]).stem.split('_')[-1])
+                image_id = Path(paths[si]).stem
                 box = pred[:, :4].clone()  # xyxy
                 scale_coords(img[si].shape[1:], box, shapes[si][0], shapes[si][1])  # to original shape
                 box = xyxy2xywh(box)  # xywh
                 box[:, :2] -= box[:, 2:] / 2  # xy center to top-left corner
                 for p, b in zip(pred.tolist(), box.tolist()):
-                    jdict.append({'image_id': image_id,
+                    jdict.append({'image_id': int(image_id) if image_id.isnumeric() else image_id,
                                   'category_id': coco91class[int(p[5])],
                                   'bbox': [round(x, 3) for x in b],
                                   'score': round(p[4], 5)})
@@ -200,8 +200,7 @@ def test(data,
         print('Speed: %.1f/%.1f/%.1f ms inference/NMS/total per %gx%g image at batch-size %g' % t)
 
     # Save JSON
-    if save_json and map50 and len(jdict):
-        imgIds = [int(Path(x).stem.split('_')[-1]) for x in dataloader.dataset.img_files]
+    if save_json and len(jdict):
         f = 'detections_val2017_%s_results.json' % \
             (weights.split(os.sep)[-1].replace('.pt', '') if isinstance(weights, str) else '')  # filename
         print('\nCOCO mAP with pycocotools... saving %s...' % f)
@@ -212,6 +211,7 @@ def test(data,
             from pycocotools.coco import COCO
             from pycocotools.cocoeval import COCOeval
 
+            imgIds = [int(Path(x).stem) for x in dataloader.dataset.img_files]
             cocoGt = COCO(glob.glob('../coco/annotations/instances_val*.json')[0])  # initialize COCO ground truth api
             cocoDt = cocoGt.loadRes(f)  # initialize COCO pred api
             cocoEval = COCOeval(cocoGt, cocoDt, 'bbox')
@@ -221,8 +221,7 @@ def test(data,
             cocoEval.summarize()
             map, map50 = cocoEval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
         except:
-            print('WARNING: pycocotools must be installed with numpy==1.17 to run correctly. '
-                  'See https://github.com/cocodataset/cocoapi/issues/356')
+            print('pycocotools not evaluated')
 
     # Return results
     model.float()  # for training
