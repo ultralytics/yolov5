@@ -119,8 +119,7 @@ def train(hyp):
 
         # load model
         try:
-            ckpt['model'] = {k: v for k, v in ckpt['model'].float().state_dict().items()
-                             if model.state_dict()[k].shape == v.shape}  # to FP32, filter
+            ckpt['model'] = {k: v for k, v in ckpt['model'].float().state_dict().items() if k in model.state_dict()}
             model.load_state_dict(ckpt['model'], strict=False)
         except KeyError as e:
             s = "%s is not compatible with %s. This may be due to model differences or %s may be out of date. " \
