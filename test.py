@@ -220,8 +220,8 @@ def test(data,
             cocoEval.accumulate()
             cocoEval.summarize()
             map, map50 = cocoEval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
-        except:
-            print('pycocotools not evaluated')
+        except Exception as e:
+            print('ERROR: pycocotools unable to run: %s' % e)
 
     # Return results
     model.float()  # for training
