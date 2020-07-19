@@ -14,7 +14,7 @@ from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils.utils import xyxy2xywh, xywh2xyxy
+from utils.utils import xyxy2xywh, xywh2xyxy, torch_distributed_zero_first
 
 help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 img_formats = ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.dng']
@@ -46,21 +46,25 @@ def exif_size(img):
     return s
 
 
-def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False):
-    dataset = LoadImagesAndLabels(path, imgsz, batch_size,
-                                  augment=augment,  # augment images
-                                  hyp=hyp,  # augmentation hyperparameters
-                                  rect=rect,  # rectangular training
-                                  cache_images=cache,
-                                  single_cls=opt.single_cls,
-                                  stride=int(stride),
-                                  pad=pad)
+def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False, local_rank=-1, world_size=1):
+    # Make sure only the first process in DDP process the dataset first, and the following others can use the cache.
+    with torch_distributed_zero_first(local_rank):
+        dataset = LoadImagesAndLabels(path, imgsz, batch_size,
+                                    augment=augment,  # augment images
+                                    hyp=hyp,  # augmentation hyperparameters
+                                    rect=rect,  # rectangular training
+                                    cache_images=cache,
+                                    single_cls=opt.single_cls,
+                                    stride=int(stride),
+                                    pad=pad)
 
     batch_size = min(batch_size, len(dataset))
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    nw = min([os.cpu_count() // world_size, batch_size if batch_size > 1 else 0, 8])  # number of workers
+    train_sampler = torch.utils.data.distributed.DistributedSampler(dataset) if local_rank != -1 else None
     dataloader = torch.utils.data.DataLoader(dataset,
                                              batch_size=batch_size,
                                              num_workers=nw,
+                                             sampler=train_sampler,
                                              pin_memory=True,
                                              collate_fn=LoadImagesAndLabels.collate_fn)
     return dataloader, dataset
@@ -301,7 +305,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                     f += glob.iglob(p + os.sep + '*.*')
                 else:
                     raise Exception('%s does not exist' % p)
-            self.img_files = [x.replace('/', os.sep) for x in f if os.path.splitext(x)[-1].lower() in img_formats]
+            self.img_files = sorted([x.replace('/', os.sep) for x in f if os.path.splitext(x)[-1].lower() in img_formats])
         except Exception as e:
             raise Exception('Error loading data from %s: %s\nSee %s' % (path, e, help_url))
 
