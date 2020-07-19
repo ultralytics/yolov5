@@ -187,8 +187,8 @@ def train(hyp, tb_writer, opt, device):
         model = DDP(model, device_ids=[local_rank], output_device=local_rank)
 
     # Trainloader
-    dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
-                                            hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, local_rank=local_rank)
+    dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt, hyp=hyp, augment=True,
+                                        cache=opt.cache_images, rect=opt.rect, local_rank=local_rank, world_size=opt.world_size)
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
     nb = len(dataloader)  # number of batches
     assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Correct your labels or your model.' % (mlc, nc, opt.cfg)
@@ -196,8 +196,8 @@ def train(hyp, tb_writer, opt, device):
     # Testloader
     if local_rank in [-1, 0]:
         # local_rank is set to -1. Because only the first process is expected to do evaluation.
-        testloader = create_dataloader(test_path, imgsz_test, total_batch_size, gs, opt,
-                                    hyp=hyp, augment=False, cache=opt.cache_images, rect=True, local_rank=-1)[0]
+        testloader = create_dataloader(test_path, imgsz_test, total_batch_size, gs, opt, hyp=hyp, augment=False, 
+                                    cache=opt.cache_images, rect=True, local_rank=-1, world_size=opt.world_size)[0]
 
     # Model parameters
     hyp['cls'] *= nc / 80.  # scale coco-tuned hyp['cls'] to current dataset
