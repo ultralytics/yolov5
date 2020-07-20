@@ -405,7 +405,7 @@ if __name__ == '__main__':
         if last_weights:
             resume_opt.weights = last_weights[0]
         else:
-          raise FileNotFoundError(f'No last*.pt found in {last_run_dir}weights to resume from.')
+          raise FileNotFoundError(f'No last*.pt found in {last_run_dir}/weights to resume from.')
 
         # set hyp to values from original run 
         last_hyp = last_run_dir + os.sep + 'hyp.yaml'
