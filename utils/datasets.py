@@ -17,7 +17,7 @@ from tqdm import tqdm
 from utils.utils import xyxy2xywh, xywh2xyxy, torch_distributed_zero_first
 
 help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
-img_formats = ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.dng']
+img_formats = ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.tiff','.dng']
 vid_formats = ['.mov', '.avi', '.mp4', '.mpg', '.mpeg', '.m4v', '.wmv', '.mkv']
 
 # Get orientation exif tag
