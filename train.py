@@ -147,6 +147,10 @@ def train(hyp):
 
         del ckpt
 
+    # Warn users who try to --resume a completed run.
+    if start_epoch == epochs and opt.resume:
+      raise Warning('Previous training complete. Cannot resume. To use these weights in a new session use -- weights.')
+
     # Mixed precision training https://github.com/NVIDIA/apex
     if mixed_precision:
         model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
