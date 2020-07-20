@@ -406,6 +406,9 @@ if __name__ == '__main__':
         
         print(f'Resuming training from {last_run_dir}')
 
+        #update resume attribute to show what run this inherits from
+        resume_opt.resume = last_run_dir
+        
         #replace parsed args with opt from the run to resume from
         opt = resume_opt
 
@@ -424,7 +427,7 @@ if __name__ == '__main__':
 
     # Train
     if not opt.evolve:
-        tb_writer = SummaryWriter(log_dir=increment_dir('runs/exp', opt.name))
+        tb_writer = SummaryWriter(log_dir=increment_dir('runs' + os.sep + 'exp', opt.name))
         print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
         train(hyp)
 
