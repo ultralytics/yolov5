@@ -397,7 +397,7 @@ if __name__ == '__main__':
             with open(last_run_dir + os.sep + 'opt.yaml', 'r') as f:
                 resume_opt = argparse.Namespace(**yaml.load(f, Loader=yaml.FullLoader))
         except FileNotFoundError as e:
-            print(f'{e}. Ensure there is an opt.yaml in the runs/exp* directory you are resuming from.')
+            raise(f'{e}. Ensure there is an opt.yaml in the runs/exp* directory you are resuming from.')
         
         #set weights and hyp to values from original run
         last_weights = glob.glob(last_run_dir + os.sep + 'weights' + os.sep + 'last*.pt')[0]
