@@ -8,6 +8,7 @@ import time
 from copy import copy
 from pathlib import Path
 from sys import platform
+from contextlib import contextmanager
 
 import cv2
 import matplotlib
@@ -29,6 +30,18 @@ matplotlib.rc('font', **{'size': 11})
 
 # Prevent OpenCV from multithreading (to use PyTorch DataLoader)
 cv2.setNumThreads(0)
+
+
+@contextmanager
+def torch_distributed_zero_first(local_rank: int):
+    """
+    Decorator to make all processes in distributed training wait for each local_master to do something.
+    """
+    if local_rank not in [-1, 0]:
+        torch.distributed.barrier()
+    yield
+    if local_rank == 0:
+        torch.distributed.barrier()
 
 
 def init_seeds(seed=0):
@@ -424,15 +437,16 @@ class BCEBlurWithLogitsLoss(nn.Module):
 
 
 def compute_loss(p, targets, model):  # predictions, targets, model
+    device = targets.device
     ft = torch.cuda.FloatTensor if p[0].is_cuda else torch.Tensor
-    lcls, lbox, lobj = ft([0]), ft([0]), ft([0])
+    lcls, lbox, lobj = ft([0]).to(device), ft([0]).to(device), ft([0]).to(device)
     tcls, tbox, indices, anchors = build_targets(p, targets, model)  # targets
     h = model.hyp  # hyperparameters
     red = 'mean'  # Loss reduction (sum or mean)
 
     # Define criteria
-    BCEcls = nn.BCEWithLogitsLoss(pos_weight=ft([h['cls_pw']]), reduction=red)
-    BCEobj = nn.BCEWithLogitsLoss(pos_weight=ft([h['obj_pw']]), reduction=red)
+    BCEcls = nn.BCEWithLogitsLoss(pos_weight=ft([h['cls_pw']]), reduction=red).to(device)
+    BCEobj = nn.BCEWithLogitsLoss(pos_weight=ft([h['obj_pw']]), reduction=red).to(device)
 
     # class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
     cp, cn = smooth_BCE(eps=0.0)
@@ -448,7 +462,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
     balance = [1.0, 1.0, 1.0]
     for i, pi in enumerate(p):  # layer index, layer predictions
         b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
-        tobj = torch.zeros_like(pi[..., 0])  # target obj
+        tobj = torch.zeros_like(pi[..., 0]).to(device)  # target obj
 
         nb = b.shape[0]  # number of targets
         if nb:
@@ -458,7 +472,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
             # GIoU
             pxy = ps[:, :2].sigmoid() * 2. - 0.5
             pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anchors[i]
-            pbox = torch.cat((pxy, pwh), 1)  # predicted box
+            pbox = torch.cat((pxy, pwh), 1).to(device)  # predicted box
             giou = bbox_iou(pbox.t(), tbox[i], x1y1x2y2=False, GIoU=True)  # giou(prediction, target)
             lbox += (1.0 - giou).sum() if red == 'sum' else (1.0 - giou).mean()  # giou loss
 
@@ -467,7 +481,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
             # Class
             if model.nc > 1:  # cls loss (only if multiple classes)
-                t = torch.full_like(ps[:, 5:], cn)  # targets
+                t = torch.full_like(ps[:, 5:], cn).to(device)  # targets
                 t[range(nb), tcls[i]] = cp
                 lcls += BCEcls(ps[:, 5:], t)  # BCE
 
