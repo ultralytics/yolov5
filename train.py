@@ -387,7 +387,7 @@ if __name__ == '__main__':
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     opt = parser.parse_args()
 
-    if opt.resume:
+    if opt.resume: # resume setup -----------------------------------------------
         last_run_dir = get_latest_run() if opt.resume == 'get_last' else opt.resume
         
         if not os.path.isdir(last_run_dir):
@@ -417,7 +417,7 @@ if __name__ == '__main__':
         
         #replace parsed args with opt from the run to resume from
         opt = resume_opt
-
+    # end resume setup ---------------------------------------------------------
 
     opt.cfg = check_file(opt.cfg)  # check file
     opt.data = check_file(opt.data)  # check file
