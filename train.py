@@ -394,11 +394,8 @@ if __name__ == '__main__':
             raise NotADirectoryError('--resume must point to a directory with an opt.yaml, hyp.yaml, and weights/last*.pt to resume from.')
         
         # get opt from original run 
-        try:
-            with open(last_run_dir + os.sep + 'opt.yaml', 'r') as f:
+        with open(last_run_dir + os.sep + 'opt.yaml', 'r') as f:
                 resume_opt = argparse.Namespace(**yaml.load(f, Loader=yaml.FullLoader))
-        except FileNotFoundError as e:
-            raise FileNotFoundError(f'No opt.yaml in {last_run_dir} to resume from')
 
         # set weights to last*.pt from original run
         last_weights = glob.glob(last_run_dir + os.sep + 'weights' + os.sep + 'last*.pt')
