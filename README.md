@@ -41,6 +41,13 @@ Python 3.7 or later with all `requirements.txt` dependencies installed, includin
 $ pip install -U -r requirements.txt
 ```
 
+## Installation
+
+You can install this package straight with pip
+```bash
+pip install git+https://github.com/ultralytics/yolov5.git
+```
+
 
 ## Tutorials
 
@@ -68,19 +75,19 @@ YOLOv5 may be run in any of the following up-to-date verified environments (with
 
 Inference can be run on most common media formats. Model [checkpoints](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J) are downloaded automatically if available. Results are saved to `./inference/output`.
 ```bash
-$ python detect.py --source 0  # webcam
-                            file.jpg  # image 
-                            file.mp4  # video
-                            path/  # directory
-                            path/*.jpg  # glob
-                            rtsp://170.93.143.139/rtplive/470011e600ef003a004ee33696235daa  # rtsp stream
-                            http://112.50.243.8/PLTV/88888888/224/3221225900/1.m3u8  # http stream
+$ python yolo5/detect.py --source 0  # webcam
+                                  file.jpg  # image 
+                                  file.mp4  # video
+                                  path/  # directory
+                                  path/*.jpg  # glob
+                                  rtsp://170.93.143.139/rtplive/470011e600ef003a004ee33696235daa  # rtsp stream
+                                  http://112.50.243.8/PLTV/88888888/224/3221225900/1.m3u8  # http stream
 ```
 
 To run inference on examples in the `./inference/images` folder:
 
 ```bash
-$ python detect.py --source ./inference/images/ --weights yolov5s.pt --conf 0.4
+$ python yolo5/detect.py --source ./inference/images/ --weights yolov5s.pt --conf 0.4
 
 Namespace(agnostic_nms=False, augment=False, classes=None, conf_thres=0.4, device='', fourcc='mp4v', half=False, img_size=640, iou_thres=0.5, output='inference/output', save_txt=False, source='./inference/images/', view_img=False, weights='yolov5s.pt')
 Using CUDA device0 _CudaDeviceProperties(name='Tesla P100-PCIE-16GB', total_memory=16280MB)
@@ -99,10 +106,10 @@ Results saved to /content/yolov5/inference/output
 
 Download [COCO](https://github.com/ultralytics/yolov5/blob/master/data/get_coco2017.sh), install [Apex](https://github.com/NVIDIA/apex) and run command below. Training times for YOLOv5s/m/l/x are 2/4/6/8 days on a single V100 (multi-GPU times faster). Use the largest `--batch-size` your GPU allows (batch sizes shown for 16 GB devices).
 ```bash
-$ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 64
-                                         yolov5m                                48
-                                         yolov5l                                32
-                                         yolov5x                                16
+$ python yolo5/train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 64
+                                               yolov5m                                48
+                                               yolov5l                                32
+                                               yolov5x                                16
 ```
 <img src="https://user-images.githubusercontent.com/26833433/84186698-c4d54d00-aa45-11ea-9bde-c632c1230ccd.png" width="900">
 
