@@ -56,22 +56,26 @@ jobs:
           python -c "from yolo5.utils.google_utils import * ; gdrive_download('1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', 'coco128.zip')"
           mv ./coco128 ../
 
-      - name: Tests workflow
-        run: |
-          export PYTHONPATH="$PWD"  # to run *.py. files in subdirectories
-          di=cpu # inference devices  # define device
+       - name: PyTest
+         run: |
+           pip install -q pytest
+           python -m pytest yolo5
 
-          # train
-          python yolo5/train.py --img 256 --batch 8 --weights ./weights/${{ matrix.model }}.pt --cfg ./models/${{ matrix.model }}.yaml --epochs 1 --device $di
-          # detect
-          python yolo5/detect.py --weights ./weights/${{ matrix.model }}.pt --device $di
-          python yolo5/detect.py --weights ./runs/exp0/weights/last.pt --device $di
-          # test
-          python yolo5/test.py --img 256 --batch 8 --weights ./weights/${{ matrix.model }}.pt --device $di
-          python yolo5/test.py --img 256 --batch 8 --weights ./runs/exp0/weights/last.pt --device $di
 
-          # inspect
-          python yolo5/models/yolo.py --cfg ./models/${{ matrix.model }}.yaml
-          # export
-          python yolo5/export.py --img 256 --batch 1 --weights ./weights/${{ matrix.model }}.pt
-        shell: bash
+       - name: Tests workflow
+         run: |
+           export PYTHONPATH="$PWD"  # to run *.py. files in subdirectories
+           di=cpu # inference devices  # define device
+           # train
+           python yolo5/train.py --img 256 --batch 8 --weights ./weights/${{ matrix.model }}.pt --cfg ./models/${{ matrix.model }}.yaml --epochs 1 --device $di
+           # detect
+           python yolo5/detect.py --weights ./weights/${{ matrix.model }}.pt --device $di
+           python yolo5/detect.py --weights ./runs/exp0/weights/last.pt --device $di
+           # test
+           python yolo5/test.py --img 256 --batch 8 --weights ./weights/${{ matrix.model }}.pt --device $di
+           python yolo5/test.py --img 256 --batch 8 --weights ./runs/exp0/weights/last.pt --device $di
+           # inspect
+           python yolo5/models/yolo.py --cfg ./models/${{ matrix.model }}.yaml
+           # export
+           python yolo5/export.py --img 256 --batch 1 --weights ./weights/${{ matrix.model }}.pt
+         shell: bash
