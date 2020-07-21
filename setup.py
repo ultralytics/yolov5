@@ -87,19 +87,10 @@ setup(
 
     # This field adds keywords for your project which will appear on the
     # project page. What does your project relate to?
-    #
-    # Note that this is a string of words separated by whitespace, not a list.
     keywords='YOLO object-detection',  # Optional
 
     # You can just specify package directories manually here if your project is
     # simple. Or you can use find_packages().
-    #
-    # Alternatively, if you just want to distribute a single Python file, use
-    # the `py_modules` argument instead as follows, which will expect a file
-    # called `my_module.py` to exist:
-    #
-    #   py_modules=["my_module"],
-    #
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),  # Required
 
     # Specify which Python versions you support. In contrast to the
