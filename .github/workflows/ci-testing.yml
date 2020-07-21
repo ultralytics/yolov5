@@ -56,10 +56,11 @@ jobs:
           python -c "from yolo5.utils.google_utils import * ; gdrive_download('1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', 'coco128.zip')"
           mv ./coco128 ../
 
-       - name: PyTest
-         run: |
-           pip install -q pytest
-           python -m pytest yolo5
+      - name: PyTest
+        run: |
+          pip install -q pytest pytest-flake8
+          # todo: make code pep8 complient and uncoment this Flake8 check
+          python -m pytest yolo5 #  --flake8
 
 
        - name: Tests workflow
@@ -79,3 +80,17 @@ jobs:
            # export
            python yolo5/export.py --img 256 --batch 1 --weights ./weights/${{ matrix.model }}.pt
          shell: bash
+
+      - name: Test Install
+        run: |
+          pip install -q check-manifest twine
+
+        check-manifest
+        python setup.py check --metadata --strict
+
+        # Build the package
+        python setup.py sdist bdist_wheel
+        twine check ./dist/*
+
+        # Dry run install
+        python setup.py install --dry-run

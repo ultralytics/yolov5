@@ -1,4 +1,4 @@
-__version__ = '2.0'
+__version__ = '2.0rc1'
 __doc__ = "YOLO v5 - object detection network"
 __doc_long__ = """
 # YOLO v5

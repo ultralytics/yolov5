@@ -120,7 +120,11 @@ setup(
     # http://docs.python.org/3.4/distutils/setupscript.html#installing-additional-files
     #
     # In this case, 'data_file' will be installed into '<sys.prefix>/my_data'
-    data_files=[('models', ['yolo5/models/*.yaml', 'yolo5/models/hub/*.yaml'])],  # Optional
+    data_files=[('models',
+                 [f'yolo5/models/yolov5{n}.yaml' for n in 'smlx']
+                 + ['yolo5/models/hub/yolov3-spp.yaml']
+                 + [f'yolo5/models/hub/yolov5-{n}.yaml' for n in ('fpn', 'panet')]
+                 )],  # Optional
 
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
