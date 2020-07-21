@@ -58,10 +58,10 @@ jobs:
 
       - name: PyTest
         run: |
-          pip install -q pytest pytest-flake8
-          # todo: make code pep8 complient and uncoment this Flake8 check
-          python -m pytest yolo5 #  --flake8
-
+          pip install -q coverage pytest pytest-flake8
+          # todo: make code PEP8 complient and uncoment this Flake8 check
+          coverage run --source yolo5 -m pytest yolo5 --doctest-modules #  --flake8
+          coverage report
 
        - name: Tests workflow
          run: |

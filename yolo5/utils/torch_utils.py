@@ -11,6 +11,11 @@ import torchvision.models as models
 
 
 def init_seeds(seed=0):
+    """
+    Example:
+
+        >>> init_seeds(42)
+    """
     torch.manual_seed(seed)
 
     # Speed-reproducibility tradeoff https://pytorch.org/docs/stable/notes/randomness.html
