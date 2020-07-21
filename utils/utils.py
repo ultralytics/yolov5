@@ -958,13 +958,14 @@ def plot_wh_methods():  # from utils.utils import *; plot_wh_methods()
     yb = torch.sigmoid(torch.from_numpy(x)).numpy() * 2
 
     fig = plt.figure(figsize=(6, 3), dpi=150)
-    plt.plot(x, ya, '.-', label='yolo method')
-    plt.plot(x, yb ** 2, '.-', label='^2 power method')
-    plt.plot(x, yb ** 2.5, '.-', label='^2.5 power method')
+    plt.plot(x, ya, '.-', label='YOLOv3')
+    plt.plot(x, yb ** 2, '.-', label='YOLOv5 ^2')
+    plt.plot(x, yb ** 1.6, '.-', label='YOLOv5 ^1.6')
     plt.xlim(left=-4, right=4)
     plt.ylim(bottom=0, top=6)
     plt.xlabel('input')
     plt.ylabel('output')
+    plt.grid()
     plt.legend()
     fig.tight_layout()
     fig.savefig('comparison.png', dpi=200)
@@ -1134,8 +1135,6 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.utils import *; plot_st
 
 def plot_labels(labels, save_dir=''):
     # plot dataset labels
-    c, b = labels[:, 0], labels[:, 1:].transpose()  # classees, boxes
-
     def hist2d(x, y, n=100):
         xedges, yedges = np.linspace(x.min(), x.max(), n), np.linspace(y.min(), y.max(), n)
         hist, xedges, yedges = np.histogram2d(x, y, (xedges, yedges))
@@ -1143,9 +1142,12 @@ def plot_labels(labels, save_dir=''):
         yidx = np.clip(np.digitize(y, yedges) - 1, 0, hist.shape[1] - 1)
         return np.log(hist[xidx, yidx])
 
+    c, b = labels[:, 0], labels[:, 1:].transpose()  # classes, boxes
+    nc = int(c.max() + 1)  # number of classes
+
     fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
     ax = ax.ravel()
-    ax[0].hist(c, bins=int(c.max() + 1))
+    ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
     ax[0].set_xlabel('classes')
     ax[1].scatter(b[0], b[1], c=hist2d(b[0], b[1], 90), cmap='jet')
     ax[1].set_xlabel('x')
