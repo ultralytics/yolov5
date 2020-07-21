@@ -22,7 +22,7 @@ from scipy.cluster.vq import kmeans
 from scipy.signal import butter, filtfilt
 from tqdm import tqdm
 
-from yolov5.utils.torch_utils import init_seeds, is_parallel
+from yolo5.utils.torch_utils import init_seeds, is_parallel
 
 # Set printoptions
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -763,7 +763,7 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
     if isinstance(path, str):  # *.yaml file
         with open(path) as f:
             data_dict = yaml.load(f, Loader=yaml.FullLoader)  # model dict
-        from utils.datasets import LoadImagesAndLabels
+        from yolo5.utils.datasets import LoadImagesAndLabels
         dataset = LoadImagesAndLabels(data_dict['train'], augment=True, rect=True)
     else:
         dataset = path  # dataset

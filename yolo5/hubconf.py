@@ -2,7 +2,7 @@
 
 Usage:
     import torch
-    model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True, channels=3, classes=80)
+    model = torch.hub.load('ultralytics/yolo5', 'yolov5s', pretrained=True, channels=3, classes=80)
 """
 
 dependencies = ['torch', 'yaml']
@@ -10,8 +10,8 @@ import os
 
 import torch
 
-from yolov5.models.yolo import Model
-from yolov5.utils.google_utils import attempt_download
+from yolo5.models.yolo import Model
+from yolo5.utils.google_utils import attempt_download
 
 
 def create(name, pretrained, channels, classes):

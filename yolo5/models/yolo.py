@@ -6,10 +6,10 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-from yolov5.models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat
-from yolov5.models.experimental import MixConv2d, CrossConv, C3
-from yolov5.utils.general import check_anchor_order, make_divisible, check_file
-from yolov5.utils.torch_utils import (
+from yolo5.models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat
+from yolo5.models.experimental import MixConv2d, CrossConv, C3
+from yolo5.utils.general import check_anchor_order, make_divisible, check_file
+from yolo5.utils.torch_utils import (
     time_synchronized, fuse_conv_and_bn, model_info, scale_img, initialize_weights, select_device)
 
 

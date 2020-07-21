@@ -18,15 +18,15 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from yolov5 import test  # import test.py to get mAP after each epoch
-from yolov5.models.yolo import Model
-from yolov5.utils.datasets import create_dataloader
-from yolov5.utils.general import (
+from yolo5 import test  # import test.py to get mAP after each epoch
+from yolo5.models.yolo import Model
+from yolo5.utils.datasets import create_dataloader
+from yolo5.utils.general import (
     check_img_size, torch_distributed_zero_first, labels_to_class_weights, plot_labels, check_anchors,
     labels_to_image_weights, compute_loss, plot_images, fitness, strip_optimizer, plot_results,
     get_latest_run, check_git_status, check_file, increment_dir, print_mutation)
-from yolov5.utils.google_utils import attempt_download
-from yolov5.utils.torch_utils import init_seeds, ModelEMA, select_device
+from yolo5.utils.google_utils import attempt_download
+from yolo5.utils.torch_utils import init_seeds, ModelEMA, select_device
 
 # Hyperparameters
 hyp = {'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)

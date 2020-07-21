@@ -53,7 +53,7 @@ jobs:
 
       - name: Download data
         run: |
-          python -c "from yolov5.utils.google_utils import * ; gdrive_download('1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', 'coco128.zip')"
+          python -c "from yolo5.utils.google_utils import * ; gdrive_download('1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', 'coco128.zip')"
           mv ./coco128 ../
 
       - name: Tests workflow
@@ -62,14 +62,14 @@ jobs:
           di=cpu # inference devices  # define device
 
           # train
-          python yolov5/train.py --img 256 --batch 8 --weights weights/${{ matrix.model }}.pt --cfg models/${{ matrix.model }}.yaml --epochs 1 --device $di
+          python yolo5/train.py --img 256 --batch 8 --weights weights/${{ matrix.model }}.pt --cfg models/${{ matrix.model }}.yaml --epochs 1 --device $di
           # detect
-          python yolov5/detect.py --weights weights/${{ matrix.model }}.pt --device $di
-          python yolov5/detect.py --weights runs/exp0/weights/last.pt --device $di
+          python yolo5/detect.py --weights weights/${{ matrix.model }}.pt --device $di
+          python yolo5/detect.py --weights runs/exp0/weights/last.pt --device $di
           # test
-          python yolov5/test.py --img 256 --batch 8 --weights weights/${{ matrix.model }}.pt --device $di
-          python yolov5/test.py --img 256 --batch 8 --weights runs/exp0/weights/last.pt --device $di
+          python yolo5/test.py --img 256 --batch 8 --weights weights/${{ matrix.model }}.pt --device $di
+          python yolo5/test.py --img 256 --batch 8 --weights runs/exp0/weights/last.pt --device $di
 
-          python yolov5/models/yolo.py --cfg models/${{ matrix.model }}.yaml  # inspect
-          python yolov5/models/export.py --img 256 --batch 1 --weights weights/${{ matrix.model }}.pt  # export
+          python yolo5/models/yolo.py --cfg models/${{ matrix.model }}.yaml  # inspect
+          python yolo5/models/export.py --img 256 --batch 1 --weights weights/${{ matrix.model }}.pt  # export
         shell: bash

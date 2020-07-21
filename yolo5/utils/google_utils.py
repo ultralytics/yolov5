@@ -27,7 +27,7 @@ def attempt_download(weights):
 
         if not (r == 0 and os.path.exists(weights) and os.path.getsize(weights) > 1E6):  # weights exist and > 1MB
             os.remove(weights) if os.path.exists(weights) else None  # remove partial downloads
-            s = "curl -L -o %s 'storage.googleapis.com/ultralytics/yolov5/ckpt/%s'" % (weights, file)
+            s = "curl -L -o %s 'storage.googleapis.com/ultralytics/yolo5/ckpt/%s'" % (weights, file)
             r = os.system(s)  # execute, capture return values
 
             # Error check
