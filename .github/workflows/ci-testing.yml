@@ -62,14 +62,14 @@ jobs:
           di=cpu # inference devices  # define device
 
           # train
-          python yolo5/train.py --img 256 --batch 8 --weights weights/${{ matrix.model }}.pt --cfg models/${{ matrix.model }}.yaml --epochs 1 --device $di
+          python yolo5/train.py --img 256 --batch 8 --weights ./weights/${{ matrix.model }}.pt --cfg ./models/${{ matrix.model }}.yaml --epochs 1 --device $di
           # detect
-          python yolo5/detect.py --weights weights/${{ matrix.model }}.pt --device $di
-          python yolo5/detect.py --weights runs/exp0/weights/last.pt --device $di
+          python yolo5/detect.py --weights ./weights/${{ matrix.model }}.pt --device $di
+          python yolo5/detect.py --weights ./runs/exp0/weights/last.pt --device $di
           # test
-          python yolo5/test.py --img 256 --batch 8 --weights weights/${{ matrix.model }}.pt --device $di
-          python yolo5/test.py --img 256 --batch 8 --weights runs/exp0/weights/last.pt --device $di
+          python yolo5/test.py --img 256 --batch 8 --weights ./weights/${{ matrix.model }}.pt --device $di
+          python yolo5/test.py --img 256 --batch 8 --weights ./runs/exp0/weights/last.pt --device $di
 
-          python yolo5/models/yolo.py --cfg models/${{ matrix.model }}.yaml  # inspect
-          python yolo5/models/export.py --img 256 --batch 1 --weights weights/${{ matrix.model }}.pt  # export
+          python yolo5/models/yolo.py --cfg ./models/${{ matrix.model }}.yaml  # inspect
+          python yolo5/models/export.py --img 256 --batch 1 --weights ./weights/${{ matrix.model }}.pt  # export
         shell: bash
