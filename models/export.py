@@ -9,6 +9,24 @@ import argparse
 from models.common import *
 from utils import google_utils
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+class ExportUpsample(nn.Module):
+    def __init__(self, size, scale_factor, mode, align_corners=None):
+        super(ExportUpsample, self).__init__()
+        self.size = size
+        self.scale_factor = scale_factor
+        self.mode = mode
+        self.align_corners = align_corners
+
+    def forward(self, x):
+        sh = torch.tensor(x.shape)
+        return F.interpolate(x, size=(int(sh[2]*self.scale_factor), int(sh[3]*self.scale_factor)), mode=self.mode, align_corners=self.align_corners)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='./yolov5s.pt', help='weights path')
@@ -25,6 +43,22 @@ if __name__ == '__main__':
     google_utils.attempt_download(opt.weights)
     model = torch.load(opt.weights, map_location=torch.device('cpu'))['model'].float()
     model.eval()
+
+    # Replace all upsamples with a TensorRT compatible version
+    for index, orig_layer in enumerate(model.model):
+        if orig_layer.type == "torch.nn.modules.upsampling.Upsample":
+            model.model[index] = ExportUpsample(size=orig_layer.size,
+                                                scale_factor=orig_layer.scale_factor,
+                                                mode=orig_layer.mode,
+                                                align_corners=orig_layer.align_corners)
+
+            model.model[index].i = orig_layer.i
+            model.model[index].f = orig_layer.f
+            model.model[index].type = orig_layer.type
+            model.model[index].np = orig_layer.np
+
+
+
     model.model[-1].export = True  # set Detect() layer export=True
     y = model(img)  # dry run
 
