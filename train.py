@@ -51,7 +51,8 @@ def train(hyp, tb_writer, opt, device):
     last = wdir + 'last.pt'
     best = wdir + 'best.pt'
     results_file = log_dir + os.sep + 'results.txt'
-    epochs, batch_size, total_batch_size, weights, rank = opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.local_rank
+    epochs, batch_size, total_batch_size, weights, rank = \
+        opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.local_rank
     # TODO: Init DDP logging. Only the first process is allowed to log.
     # Since I see lots of print here, the logging configuration is skipped here. We may see repeated outputs.
 
@@ -421,7 +422,7 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
-    parser.add_argument('--sync-bn', action="store_true", help='use SyncBatchNorm, only available in DDP mode')
+    parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     opt = parser.parse_args()
 
