@@ -123,9 +123,12 @@ def train(hyp, tb_writer, opt, device):
 
         # load model
         try:
+            exclude = ['anchor']  # exclude keys
             ckpt['model'] = {k: v for k, v in ckpt['model'].float().state_dict().items()
-                             if k in model.state_dict() and model.state_dict()[k].shape == v.shape}
+                             if k in model.state_dict() and not any(x in k for x in exclude)
+                             and model.state_dict()[k].shape == v.shape}
             model.load_state_dict(ckpt['model'], strict=False)
+            print('Transferred %g/%g items from %s' % (len(ckpt['model']), len(model.state_dict()), weights))
         except KeyError as e:
             s = "%s is not compatible with %s. This may be due to model differences or %s may be out of date. " \
                 "Please delete or update %s and try again, or use --weights '' to train from scratch." \
