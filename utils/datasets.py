@@ -472,6 +472,13 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
     #     return self
 
     def __getitem__(self, index):
+        """
+        Return:
+            images:  
+            labels: shape(num_gt_boxs, 6(batchIndex + class + x+y+w+h))
+            paths: 
+            shapes:
+        """
         if self.image_weights:
             index = self.indices[index]
 
@@ -560,6 +567,13 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
     @staticmethod
     def collate_fn(batch):
+        """
+        Return:
+            images:
+            labels: shape(batch_size*num_gt_boxs, 6(batchIndex + class + x+y+w+h))
+            paths:
+            shapes:
+        """
         img, label, path, shapes = zip(*batch)  # transposed
         for i, l in enumerate(label):
             l[:, 0] = i  # add target image index for build_targets()

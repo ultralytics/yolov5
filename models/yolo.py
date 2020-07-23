@@ -19,6 +19,13 @@ class Detect(nn.Module):
         self.export = False  # onnx export
 
     def forward(self, x):
+        """
+        Return:
+            if training: x: shape: (self.nl, batch_size, self.na, output_x_len, output_y_len, self.no)
+            if not training: (z, x)
+                x is the same as x if training.
+                z: shape: (batch_size, self.nl*self.na*output_x_len*output_y_len, self.no)
+        """
         # x = x.copy()  # for profiling
         z = []  # inference output
         self.training |= self.export
@@ -79,6 +86,9 @@ class Model(nn.Module):
 
     def forward(self, x, augment=False, profile=False):
         if augment:
+            """Return: y, None
+                y: shape: (self.nl, num_scales*batch_size, self.na, output_x_len, output_y_len, self.no)
+            """
             img_size = x.shape[-2:]  # height, width
             s = [0.83, 0.67]  # scales
             y = []

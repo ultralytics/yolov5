@@ -56,8 +56,8 @@ def test(data,
     with open(data) as f:
         data = yaml.load(f, Loader=yaml.FullLoader)  # model dict
     nc = 1 if single_cls else int(data['nc'])  # number of classes
-    iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
-    niou = iouv.numel()
+    iou_vec = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
+    niou = iou_vec.numel()
 
     # Dataloader
     if not training:
@@ -67,11 +67,11 @@ def test(data,
         dataloader = create_dataloader(path, imgsz, batch_size, model.stride.max(), opt,
                                        hyp=None, augment=False, cache=False, pad=0.5, rect=True)[0]
 
-    seen = 0
+    num_image_seen = 0
     names = model.names if hasattr(model, 'names') else model.module.names
     coco91class = coco80_to_coco91_class()
     s = ('%20s' + '%12s' * 6) % ('Class', 'Images', 'Targets', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
-    p, r, f1, mp, mr, map50, map, t0, t1 = 0., 0., 0., 0., 0., 0., 0., 0., 0.
+    p, r, f1, mp, mr, mAP50, mAP, t0, t1 = 0., 0., 0., 0., 0., 0., 0., 0., 0.
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
     for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
@@ -91,6 +91,7 @@ def test(data,
 
             # Compute loss
             if training:  # if model has loss hyperparameters
+                assert not augment, "otherwise the following code will dump."
                 loss += compute_loss([x.float() for x in train_out], targets, model)[1][:3]  # GIoU, obj, cls
 
             # Run NMS
@@ -101,12 +102,15 @@ def test(data,
         # Statistics per image
         for si, pred in enumerate(output):
             labels = targets[targets[:, 0] == si, 1:]
-            nl = len(labels)
-            tcls = labels[:, 0].tolist() if nl else []  # target class
-            seen += 1
+            ## key varaibles explanation:
+            ## pred: shape(len_of_existing_detections, 6(xyxy, conf, cls))
+            ## labels: shape(len_of_gt_detections, 5(class + x+y+w+h))
+            num_gt = len(labels)
+            tcls = labels[:, 0].tolist() if num_gt else []  # target class
+            num_image_seen += 1
 
             if pred is None:
-                if nl:
+                if num_gt:
                     stats.append((torch.zeros(0, niou, dtype=torch.bool), torch.Tensor(), torch.Tensor(), tcls))
                 continue
 
@@ -137,9 +141,10 @@ def test(data,
                                   'bbox': [round(x, 3) for x in b],
                                   'score': round(p[4], 5)})
 
-            # Assign all predictions as incorrect
+            # Allocate possible gt labels to predictions.
+            # First, assign all predictions as incorrect
             correct = torch.zeros(pred.shape[0], niou, dtype=torch.bool, device=device)
-            if nl:
+            if num_gt:
                 detected = []  # target indices
                 tcls_tensor = labels[:, 0]
 
@@ -147,25 +152,28 @@ def test(data,
                 tbox = xywh2xyxy(labels[:, 1:5]) * whwh
 
                 # Per target class
-                for cls in torch.unique(tcls_tensor):
-                    ti = (cls == tcls_tensor).nonzero().view(-1)  # prediction indices
-                    pi = (cls == pred[:, 5]).nonzero().view(-1)  # target indices
-
+                for _cls in torch.unique(tcls_tensor):
+                    pi = (_cls == pred[:, 5]).nonzero().view(-1)  # target indices
                     # Search for detections
                     if pi.shape[0]:
+                        ti = (_cls == tcls_tensor).nonzero().view(-1)  # prediction indices
                         # Prediction to target ious
                         ious, i = box_iou(pred[pi, :4], tbox[ti]).max(1)  # best ious, indices
 
                         # Append detections
-                        for j in (ious > iouv[0]).nonzero():
-                            d = ti[i[j]]  # detected target
+                        for j in (ious > iou_vec[0]).nonzero():
+                            d = ti[i[j]]  # corresponding detected target
                             if d not in detected:
                                 detected.append(d)
-                                correct[pi[j]] = ious[j] > iouv  # iou_thres is 1xn
-                                if len(detected) == nl:  # all targets already located in image
+                                correct[pi[j]] = ious[j] > iou_vec  # iou_thres is 1xn
+                                if len(detected) == num_gt:  # all targets already located in image
                                     break
 
             # Append statistics (correct, conf, pcls, tcls)
+            # correct: shape(len_of_detections), bool. It represents which detection is considered correct.
+            # conf: shape(len_of_detections)
+            # pcls: shape(len_of_detections)
+            # tcls: shape(len_of_gt_boxs)
             stats.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), tcls))
 
         # Plot images
@@ -180,22 +188,23 @@ def test(data,
     if len(stats) and stats[0].any():
         p, r, ap, f1, ap_class = ap_per_class(*stats)
         p, r, ap50, ap = p[:, 0], r[:, 0], ap[:, 0], ap.mean(1)  # [P, R, AP@0.5, AP@0.5:0.95]
-        mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
+        mp, mr, mAP50, mAP = p.mean(), r.mean(), ap50.mean(), ap.mean()
         nt = np.bincount(stats[3].astype(np.int64), minlength=nc)  # number of targets per class
     else:
         nt = torch.zeros(1)
 
+    ## Print Results
     # Print results
     pf = '%20s' + '%12.3g' * 6  # print format
-    print(pf % ('all', seen, nt.sum(), mp, mr, map50, map))
+    print(pf % ('all', num_image_seen, nt.sum(), mp, mr, mAP50, mAP))
 
     # Print results per class
     if verbose and nc > 1 and len(stats):
         for i, c in enumerate(ap_class):
-            print(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
+            print(pf % (names[c], num_image_seen, nt[c], p[i], r[i], ap50[i], ap[i]))
 
     # Print speeds
-    t = tuple(x / seen * 1E3 for x in (t0, t1, t0 + t1)) + (imgsz, imgsz, batch_size)  # tuple
+    t = tuple(x / num_image_seen * 1E3 for x in (t0, t1, t0 + t1)) + (imgsz, imgsz, batch_size)  # tuple
     if not training:
         print('Speed: %.1f/%.1f/%.1f ms inference/NMS/total per %gx%g image at batch-size %g' % t)
 
@@ -219,16 +228,16 @@ def test(data,
             cocoEval.evaluate()
             cocoEval.accumulate()
             cocoEval.summarize()
-            map, map50 = cocoEval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
+            mAP, mAP50 = cocoEval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
         except Exception as e:
             print('ERROR: pycocotools unable to run: %s' % e)
 
     # Return results
     model.float()  # for training
-    maps = np.zeros(nc) + map
+    maps = np.zeros(nc) + mAP
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
-    return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
+    return (mp, mr, mAP50, mAP, *(loss.cpu() / len(dataloader)).tolist()), maps, t
 
 
 if __name__ == '__main__':

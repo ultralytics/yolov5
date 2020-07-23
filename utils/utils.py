@@ -562,9 +562,12 @@ def build_targets(p, targets, model):
 
 def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, classes=None, agnostic=False):
     """Performs Non-Maximum Suppression (NMS) on inference results
+    Args:
+        prediction: shape: (batch_size, self.nl*self.na*output_x_len*output_y_len, number_outputs_per_anchor)
+            len( number_outputs_per_anchor) = 4(center x, center y, width, height) + 1(object confidence) + 80(class score)
 
     Returns:
-         detections with shape: nx6 (x1, y1, x2, y2, conf, cls)
+         detections with shape: shape(batch_size, len_of_existing_detections, 6(xyxy, conf, cls))
     """
     if prediction.dtype is torch.float16:
         prediction = prediction.float()  # to FP32
@@ -582,9 +585,11 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, 
     t = time.time()
     output = [None] * prediction.shape[0]
     for xi, x in enumerate(prediction):  # image index, image inference
+        # per image
+
         # Apply constraints
         # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
-        x = x[xc[xi]]  # confidence
+        x = x[xc[xi]]  # confidence. x: shape: (num_of_existing_object, number_outputs_per_anchor)
 
         # If none remain process next image
         if not x.shape[0]:
@@ -598,8 +603,8 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, 
 
         # Detections matrix nx6 (xyxy, conf, cls)
         if multi_label:
-            i, j = (x[:, 5:] > conf_thres).nonzero().t()
-            x = torch.cat((box[i], x[i, j + 5, None], j[:, None].float()), 1)
+            i, j = (x[:, 5:] > conf_thres).nonzero().t()  # i: shape(len_existing_class), is the index of shape0 of x.
+            x = torch.cat((box[i], x[i, j + 5, None], j[:, None].float()), 1)  # x: shape(len_existing_class, 6(xyxy, conf, cls))
         else:  # best class only
             conf, j = x[:, 5:].max(1, keepdim=True)
             x = torch.cat((box, conf, j.float()), 1)[conf.view(-1) > conf_thres]
