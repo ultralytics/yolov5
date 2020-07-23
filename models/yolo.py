@@ -5,7 +5,7 @@ from models.experimental import *
 
 
 class Detect(nn.Module):
-    def __init__(self, nc=80, anchors=()):  # detection layer
+    def __init__(self, nc=80, anchors=(), ch=()):  # detection layer
         super(Detect, self).__init__()
         self.stride = None  # strides computed during build
         self.nc = nc  # number of classes
@@ -16,6 +16,7 @@ class Detect(nn.Module):
         a = torch.tensor(anchors).float().view(self.nl, -1, 2)
         self.register_buffer('anchors', a)  # shape(nl,na,2)
         self.register_buffer('anchor_grid', a.clone().view(self.nl, 1, -1, 1, 1, 2))  # shape(nl,1,na,1,1,2)
+        self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
         self.export = False  # onnx export
 
     def forward(self, x):
@@ -23,6 +24,7 @@ class Detect(nn.Module):
         z = []  # inference output
         self.training |= self.export
         for i in range(self.nl):
+            x[i] = self.m[i](x[i])  # conv
             bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
             x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
@@ -124,8 +126,7 @@ class Model(nn.Module):
     def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
         m = self.model[-1]  # Detect() module
-        for f, s in zip(m.f, m.stride):  #  from
-            mi = self.model[f % m.i]
+        for mi, s in zip(m.m, m.stride):  #  from
             b = mi.bias.view(m.na, -1)  # conv.bias(255) to (3,85)
             b[:, 4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
             b[:, 5:] += math.log(0.6 / (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
@@ -133,9 +134,9 @@ class Model(nn.Module):
 
     def _print_biases(self):
         m = self.model[-1]  # Detect() module
-        for f in sorted([x % m.i for x in m.f]):  #  from
-            b = self.model[f].bias.detach().view(m.na, -1).T  # conv.bias(255) to (3,85)
-            print(('%g Conv2d.bias:' + '%10.3g' * 6) % (f, *b[:5].mean(1).tolist(), b[5:].mean()))
+        for mi in m.m:  #  from
+            b = mi.bias.detach().view(m.na, -1).T  # conv.bias(255) to (3,85)
+            print(('%6g Conv2d.bias:' + '%10.3g' * 6) % (mi.weight.shape[1], *b[:5].mean(1).tolist(), b[5:].mean()))
 
     # def _print_weights(self):
     #     for m in self.model.modules():
@@ -159,7 +160,7 @@ class Model(nn.Module):
 def parse_model(d, ch):  # model_dict, input_channels(3)
     print('\n%3s%18s%3s%10s  %-40s%-30s' % ('', 'from', 'n', 'params', 'module', 'arguments'))
     anchors, nc, gd, gw = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple']
-    na = (len(anchors[0]) // 2)  # number of anchors
+    na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
 
     layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
@@ -181,6 +182,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             #     e = math.log(c2 / ch[1]) / math.log(2)
             #     c2 = int(ch[1] * ex ** e)
             # if m != Focus:
+
             c2 = make_divisible(c2 * gw, 8) if c2 != no else c2
 
             # Experimental
@@ -201,7 +203,9 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         elif m is Concat:
             c2 = sum([ch[-1 if x == -1 else x + 1] for x in f])
         elif m is Detect:
-            f = f or list(reversed([(-1 if j == i else j - 1) for j, x in enumerate(ch) if x == no]))
+            args.append([ch[x + 1] for x in f])
+            if isinstance(args[1], int):  # number of anchors
+                args[1] = [list(range(args[1] * 2))] * len(f)
         else:
             c2 = ch[f]
 
