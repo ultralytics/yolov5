@@ -5,10 +5,10 @@ import random
 import shutil
 import subprocess
 import time
+from contextlib import contextmanager
 from copy import copy
 from pathlib import Path
 from sys import platform
-from contextlib import contextmanager
 
 import cv2
 import matplotlib
@@ -110,6 +110,7 @@ def check_anchor_order(m):
     da = a[-1] - a[0]  # delta a
     ds = m.stride[-1] - m.stride[0]  # delta s
     if da.sign() != ds.sign():  # same order
+        print('Reversing anchor order')
         m.anchors[:] = m.anchors.flip(0)
         m.anchor_grid[:] = m.anchor_grid.flip(0)
 
@@ -459,7 +460,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
     # per output
     nt = 0  # number of targets
     np = len(p)  # number of outputs
-    balance = [1.0, 1.0, 1.0]
+    balance = [4.0, 1.0, 0.4] if np == 3 else [4.0, 1.0, 0.4, 0.1]  # P3-5 or P3-6
     for i, pi in enumerate(p):  # layer index, layer predictions
         b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
         tobj = torch.zeros_like(pi[..., 0]).to(device)  # target obj
@@ -493,7 +494,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
     s = 3 / np  # output count scaling
     lbox *= h['giou'] * s
-    lobj *= h['obj'] * s
+    lobj *= h['obj'] * s * (1.4 if np == 4 else 1.)
     lcls *= h['cls'] * s
     bs = tobj.shape[0]  # batch size
     if red == 'sum':
@@ -1119,7 +1120,7 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.utils import *; plot_st
         ax2.plot(y[6, :j], y[3, :j] * 1E2, '.-', linewidth=2, markersize=8,
                  label=Path(f).stem.replace('study_coco_', '').replace('yolo', 'YOLO'))
 
-    ax2.plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [33.5, 39.1, 42.5, 45.9, 49., 50.5],
+    ax2.plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [33.8, 39.6, 43.0, 47.5, 49.4, 50.7],
              'k.-', linewidth=2, markersize=8, alpha=.25, label='EfficientDet')
 
     ax2.grid()
