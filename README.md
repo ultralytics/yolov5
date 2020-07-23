@@ -20,10 +20,10 @@ This repository represents Ultralytics open-source research into future object d
 
 | Model | AP<sup>val</sup> | AP<sup>test</sup> | AP<sub>50</sub> | Speed<sub>GPU</sub> | FPS<sub>GPU</sub> || params | FLOPS |
 |---------- |------ |------ |------ | -------- | ------| ------ |------  |  :------: |
-| [YOLOv5.1s](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J)    | 36.1     | 36.1     | 55.3     | **2.1ms** | **476** || 7.5M   | 13.2B
-| [YOLOv5.1m](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J)    | 43.5     | 43.5     | 62.5     | 3.0ms     | 333     || 21.8M  | 39.4B
-| [YOLOv5.1l](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J)    | 47.0     | 47.1     | 65.6     | 3.9ms     | 256     || 47.8M  | 88.1B
-| [YOLOv5.1x](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J)    | **49.0** | **49.0** | **67.4** | 6.1ms     | 164     || 89.0M  | 166.4B
+| [YOLOv5s](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J)    | 36.1     | 36.1     | 55.3     | **2.1ms** | **476** || 7.5M   | 13.2B
+| [YOLOv5m](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J)    | 43.5     | 43.5     | 62.5     | 3.0ms     | 333     || 21.8M  | 39.4B
+| [YOLOv5l](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J)    | 47.0     | 47.1     | 65.6     | 3.9ms     | 256     || 47.8M  | 88.1B
+| [YOLOv5x](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J)    | **49.0** | **49.0** | **67.4** | 6.1ms     | 164     || 89.0M  | 166.4B
 | | | | | | || |
 | [YOLOv3-SPP](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J) | 45.6     | 45.5     | 65.2     | 4.5ms     | 222     || 63.0M  | 118.0B
 
