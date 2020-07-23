@@ -474,10 +474,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
     def __getitem__(self, index):
         """
         Return:
-            images:  
-            labels: shape(num_gt_boxs, 6(batchIndex + class + x+y+w+h))
-            paths: 
-            shapes:
+            image:  
+            labels: shape(num_gt_boxs, 6(:batchIndex + class + x+y+w+h))
+            path: 
+            shape:
         """
         if self.image_weights:
             index = self.indices[index]
