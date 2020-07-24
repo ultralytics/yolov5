@@ -6,7 +6,6 @@ Usage:
 """
 
 dependencies = ['torch', 'yaml']
-
 import os
 
 import torch

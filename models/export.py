@@ -8,7 +8,7 @@ import argparse
 
 import torch
 
-from utils import google_utils
+from utils.google_utils import attempt_download
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size(1,3,320,192) iDetection
 
     # Load PyTorch model
-    google_utils.attempt_download(opt.weights)
+    attempt_download(opt.weights)
     model = torch.load(opt.weights, map_location=torch.device('cpu'))['model'].float()
     model.eval()
     model.model[-1].export = True  # set Detect() layer export=True
