@@ -51,8 +51,8 @@ def train(hyp, tb_writer, opt, device):
     last = wdir + 'last.pt'
     best = wdir + 'best.pt'
     results_file = log_dir + os.sep + 'results.txt'
-    epochs, batch_size, total_batch_size, weights, rank = \
-        opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.local_rank
+    epochs, batch_size, total_batch_size, weights, local_rank, rank = opt.epochs, \
+            opt.batch_size, opt.total_batch_size, opt.weights, opt.local_rank, opt.global_rank
     # TODO: Init DDP logging. Only the first process is allowed to log.
     # Since I see lots of print here, the logging configuration is skipped here. We may see repeated outputs.
 
@@ -178,7 +178,7 @@ def train(hyp, tb_writer, opt, device):
 
     # DDP mode
     if device.type != 'cpu' and rank != -1:
-        model = DDP(model, device_ids=[rank], output_device=rank)
+        model = DDP(model, device_ids=[local_rank], output_device=(local_rank))
 
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt, hyp=hyp, augment=True,
@@ -433,7 +433,7 @@ if __name__ == '__main__':
     if last and not opt.weights:
         print(f'Resuming training from {last}')
     opt.weights = last if opt.resume and not opt.weights else opt.weights
-    if opt.local_rank in [-1, 0]:
+    if opt.local_rank == -1 or (opt.local_rank == 0 and os.environ["RANK"] == "0"):
         check_git_status()
     opt.cfg = check_file(opt.cfg)  # check file
     opt.data = check_file(opt.data)  # check file
@@ -445,6 +445,7 @@ if __name__ == '__main__':
     device = torch_utils.select_device(opt.device, apex=mixed_precision, batch_size=opt.batch_size)
     opt.total_batch_size = opt.batch_size
     opt.world_size = 1
+    opt.global_rank = -1
     if device.type == 'cpu':
         mixed_precision = False
     elif opt.local_rank != -1:
@@ -455,13 +456,14 @@ if __name__ == '__main__':
         dist.init_process_group(backend='nccl', init_method='env://')  # distributed backend
 
         opt.world_size = dist.get_world_size()
+        opt.global_rank = dist.get_rank()
         assert opt.batch_size % opt.world_size == 0, "Batch size is not a multiple of the number of devices given!"
         opt.batch_size = opt.total_batch_size // opt.world_size
     print(opt)
 
     # Train
     if not opt.evolve:
-        if opt.local_rank in [-1, 0]:
+        if opt.global_rank in [-1, 0]:
             print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
             tb_writer = SummaryWriter(log_dir=increment_dir('runs/exp', opt.name))
         else:
