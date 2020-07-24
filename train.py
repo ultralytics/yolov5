@@ -8,7 +8,7 @@ import torch.utils.data
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 
-import test  # import test.py to get mAP after each epoch
+from test import inference_and_eval  # import test.py to get mAP after each epoch
 from models.yolo import Model
 from utils import google_utils
 from utils.datasets import *
@@ -337,14 +337,20 @@ def train(hyp, tb_writer, opt, device):
                 ema.update_attr(model, include=['md', 'nc', 'hyp', 'gr', 'names', 'stride'])
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
-                results, maps, times = test.test(opt.data,
-                                                 batch_size=total_batch_size,
-                                                 imgsz=imgsz_test,
-                                                 save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
-                                                 model=ema.ema.module if hasattr(ema.ema, 'module') else ema.ema,
-                                                 single_cls=opt.single_cls,
-                                                 dataloader=testloader,
-                                                 save_dir=log_dir)
+                with open(opt.data) as f:
+                    yaml_data = yaml.load(f, Loader=yaml.FullLoader)  # model dict
+                nc = 1 if single_cls else int(yaml_data['nc'])  # number of classes
+                results, maps, times = inference_and_eval(ema.ema.module if hasattr(ema.ema, 'module') else ema.ema,
+                    testloader, 
+                    None, 
+                    nc, 
+                    augment=False, 
+                    training=True, 
+                    local_rank=local_rank,
+                    save_dir_for_debug_images=log_dir,
+                    verbose=verbose,
+                    do_official_coco_evaluation=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
+                    official_coco_evaluation_save_fname='detections_val2017__results.json')
 
                 # Write
                 with open(results_file, 'a') as f:

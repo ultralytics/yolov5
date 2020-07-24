@@ -560,7 +560,7 @@ def build_targets(p, targets, model):
     return tcls, tbox, indices, anch
 
 
-def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, classes=None, agnostic=False):
+def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, classes=None, agnostic=False, max_det=300):
     """Performs Non-Maximum Suppression (NMS) on inference results
     Args:
         prediction: shape: (batch_size, self.nl*self.na*output_x_len*output_y_len, number_outputs_per_anchor)
