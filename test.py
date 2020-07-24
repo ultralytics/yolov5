@@ -18,7 +18,9 @@ def test(data,
          model=None,
          dataloader=None,
          save_dir='test',
-         merge=False):
+         merge=False,
+         save_txt=False):
+
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -27,7 +29,12 @@ def test(data,
 
     else:  # called directly
         device = torch_utils.select_device(opt.device, batch_size=batch_size)
-        merge = opt.merge  # use Merge NMS
+        merge, save_txt = opt.merge, opt.save_txt  # use Merge NMS, save *.txt labels
+        if save_txt:
+            out = Path('inference/output')
+            if os.path.exists(out):
+                shutil.rmtree(out)  # delete output folder
+            os.makedirs(out)  # make new output folder
 
         # Remove previous
         for f in glob.glob(str(Path(save_dir) / 'test_batch*.jpg')):
@@ -42,9 +49,9 @@ def test(data,
         #     model = nn.DataParallel(model)
 
     # Half
-    half = device.type != 'cpu' and torch.cuda.device_count() == 1  # half precision only supported on single-GPU
+    half = device.type != 'cpu'  # half precision only supported on CUDA
     if half:
-        model.half()  # to FP16
+        model.half()
 
     # Configure
     model.eval()
@@ -70,7 +77,7 @@ def test(data,
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
     for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
-        img = img.to(device)
+        img = img.to(device, non_blocking=True)
         img = img.half() if half else img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
         targets = targets.to(device)
@@ -106,8 +113,14 @@ def test(data,
                 continue
 
             # Append to text file
-            # with open('test.txt', 'a') as file:
-            #    [file.write('%11.5g' * 7 % tuple(x) + '\n') for x in pred]
+            if save_txt:
+                gn = torch.tensor(shapes[si][0])[[1, 0, 1, 0]]  # normalization gain whwh
+                txt_path = str(out / Path(paths[si]).stem)
+                pred[:, :4] = scale_coords(img[si].shape[1:], pred[:, :4], shapes[si][0], shapes[si][1])  # to original
+                for *xyxy, conf, cls in pred:
+                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                    with open(txt_path + '.txt', 'a') as f:
+                        f.write(('%g ' * 5 + '\n') % (cls, *xywh))  # label format
 
             # Clip boxes to image bounds
             clip_coords(pred, (height, width))
@@ -115,13 +128,13 @@ def test(data,
             # Append to pycocotools JSON dictionary
             if save_json:
                 # [{"image_id": 42, "category_id": 18, "bbox": [258.15, 41.29, 348.26, 243.78], "score": 0.236}, ...
-                image_id = int(Path(paths[si]).stem.split('_')[-1])
+                image_id = Path(paths[si]).stem
                 box = pred[:, :4].clone()  # xyxy
                 scale_coords(img[si].shape[1:], box, shapes[si][0], shapes[si][1])  # to original shape
                 box = xyxy2xywh(box)  # xywh
                 box[:, :2] -= box[:, 2:] / 2  # xy center to top-left corner
                 for p, b in zip(pred.tolist(), box.tolist()):
-                    jdict.append({'image_id': image_id,
+                    jdict.append({'image_id': int(image_id) if image_id.isnumeric() else image_id,
                                   'category_id': coco91class[int(p[5])],
                                   'bbox': [round(x, 3) for x in b],
                                   'score': round(p[4], 5)})
@@ -166,7 +179,7 @@ def test(data,
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
-    if len(stats):
+    if len(stats) and stats[0].any():
         p, r, ap, f1, ap_class = ap_per_class(*stats)
         p, r, ap50, ap = p[:, 0], r[:, 0], ap[:, 0], ap.mean(1)  # [P, R, AP@0.5, AP@0.5:0.95]
         mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
@@ -189,31 +202,28 @@ def test(data,
         print('Speed: %.1f/%.1f/%.1f ms inference/NMS/total per %gx%g image at batch-size %g' % t)
 
     # Save JSON
-    if save_json and map50 and len(jdict):
-        imgIds = [int(Path(x).stem.split('_')[-1]) for x in dataloader.dataset.img_files]
+    if save_json and len(jdict):
         f = 'detections_val2017_%s_results.json' % \
             (weights.split(os.sep)[-1].replace('.pt', '') if isinstance(weights, str) else '')  # filename
         print('\nCOCO mAP with pycocotools... saving %s...' % f)
         with open(f, 'w') as file:
             json.dump(jdict, file)
 
-        try:
+        try:  # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb
             from pycocotools.coco import COCO
             from pycocotools.cocoeval import COCOeval
 
-            # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb
+            imgIds = [int(Path(x).stem) for x in dataloader.dataset.img_files]
             cocoGt = COCO(glob.glob('../coco/annotations/instances_val*.json')[0])  # initialize COCO ground truth api
             cocoDt = cocoGt.loadRes(f)  # initialize COCO pred api
-
             cocoEval = COCOeval(cocoGt, cocoDt, 'bbox')
             cocoEval.params.imgIds = imgIds  # image IDs to evaluate
             cocoEval.evaluate()
             cocoEval.accumulate()
             cocoEval.summarize()
             map, map50 = cocoEval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
-        except:
-            print('WARNING: pycocotools must be installed with numpy==1.17 to run correctly. '
-                  'See https://github.com/cocodataset/cocoapi/issues/356')
+        except Exception as e:
+            print('ERROR: pycocotools unable to run: %s' % e)
 
     # Return results
     model.float()  # for training
@@ -238,13 +248,13 @@ if __name__ == '__main__':
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--merge', action='store_true', help='use Merge NMS')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
+    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     opt = parser.parse_args()
-    opt.save_json = opt.save_json or opt.data.endswith('coco.yaml')
+    opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
     print(opt)
 
-    # task = 'val', 'test', 'study'
-    if opt.task in ['val', 'test']:  # (default) run normally
+    if opt.task in ['val', 'test']:  # run normally
         test(opt.data,
              opt.weights,
              opt.batch_size,
