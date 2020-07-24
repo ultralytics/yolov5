@@ -47,12 +47,11 @@ def torch_distributed_zero_first(local_rank: int):
 
 
 def set_logging(rank=-1):
-    # Setup logging
     logging.basicConfig(
         format="%(message)s",
-        datefmt="%d/%m/%Y %H:%M:%S",
         level=logging.INFO if rank in [-1, 0] else logging.WARN,
     )
+
 
 def init_seeds(seed=0):
     random.seed(seed)
