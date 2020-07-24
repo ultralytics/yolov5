@@ -17,11 +17,12 @@ def test(data,
          verbose=False,
          model=None,
          dataloader=None,
-         save_dir='',
+         save_dir='test',
          merge=False):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
+        save_dir = ''
         device = next(model.parameters()).device  # get model device
 
     else:  # called directly
@@ -110,7 +111,7 @@ def test(data,
 
             # Clip boxes to image bounds
             clip_coords(pred, (height, width))
-
+            # pred = pred[torch.logical_and((pred[:, 2] - pred[:, 0] > 5), (pred[:, 3] - pred[:, 1] > 5))]
             # Append to pycocotools JSON dictionary
             if save_json:
                 # [{"image_id": 42, "category_id": 18, "bbox": [258.15, 41.29, 348.26, 243.78], "score": 0.236}, ...
@@ -157,7 +158,7 @@ def test(data,
             stats.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), tcls))
 
         # Plot images
-        if batch_i < 1:
+        if batch_i in [20, 30, 40, 50, 60, 120, 130, 140, 150, 160]:
             f = Path(save_dir) / ('test_batch%g_gt.jpg' % batch_i)  # filename
             plot_images(img, targets, paths, str(f), names)  # ground truth
             f = Path(save_dir) / ('test_batch%g_pred.jpg' % batch_i)
