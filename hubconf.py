@@ -37,9 +37,11 @@ def create(name, pretrained, channels, classes):
             state_dict = {k: v for k, v in state_dict.items() if model.state_dict()[k].shape == v.shape}  # filter
             model.load_state_dict(state_dict, strict=False)  # load
         return model
+
     except Exception as e:
         help_url = 'https://github.com/ultralytics/yolov5/issues/36'
-        print('%s\nCache maybe be out of date. Delete cache and retry. See %s for help.' % (e, help_url))
+        s = 'Cache maybe be out of date, deleting cache and retrying may solve this. See %s for help.' % help_url
+        raise Exception(s) from e
 
 
 def yolov5s(pretrained=False, channels=3, classes=80):
