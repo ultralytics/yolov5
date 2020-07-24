@@ -341,11 +341,11 @@ def train(hyp, tb_writer, opt, device):
                     yaml_data = yaml.load(f, Loader=yaml.FullLoader)  # model dict
                 nc = 1 if single_cls else int(yaml_data['nc'])  # number of classes
                 results, maps, times = inference_and_eval(ema.ema.module if hasattr(ema.ema, 'module') else ema.ema,
-                    testloader, 
-                    None, 
-                    nc, 
-                    augment=False, 
-                    training=True, 
+                    testloader,
+                    None,
+                    nc,
+                    augment=False,
+                    training=True,
                     local_rank=local_rank,
                     save_dir_for_debug_images=log_dir,
                     verbose=verbose,

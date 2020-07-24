@@ -2,6 +2,7 @@ import math
 import os
 import time
 from copy import deepcopy
+from contextlib import contextmanager
 
 import torch
 import torch.backends.cudnn as cudnn
@@ -231,7 +232,7 @@ class SequentialDistributedSampler(torch.utils.data.sampler.Sampler):
     to make it easy to `gather` or `reduce` resulting tensors at the end of the loop.
     """
 
-    def __init__(self, dataset, num_replicas=None, rank=None):
+    def __init__(self, dataset, batch_size, num_replicas=None, rank=None):
         if num_replicas is None:
             if not torch.distributed.is_available():
                 raise RuntimeError("Requires distributed package to be available")
@@ -243,14 +244,15 @@ class SequentialDistributedSampler(torch.utils.data.sampler.Sampler):
         self.dataset = dataset
         self.num_replicas = num_replicas
         self.rank = rank
-        self.num_samples = int(math.ceil(len(self.dataset) * 1.0 / self.num_replicas))
+        self.batch_size = batch_size
+        self.num_samples = int(math.ceil(len(self.dataset) * 1.0 / self.batch_size / self.num_replicas)) * self.batch_size
         self.total_size = self.num_samples * self.num_replicas
 
     def __iter__(self):
         indices = list(range(len(self.dataset)))
 
         # add extra samples to make it evenly divisible
-        indices += indices[: (self.total_size - len(indices))]
+        indices += [indices[-1]] * (self.total_size - len(indices))
         assert len(indices) == self.total_size
 
         # subsample
@@ -263,3 +265,14 @@ class SequentialDistributedSampler(torch.utils.data.sampler.Sampler):
         return self.num_samples
 
 
+
+@contextmanager
+def torch_distributed_zero_first(local_rank: int):
+    """
+    Decorator to make all processes in distributed training wait for each local_master to do something.
+    """
+    if local_rank not in [-1, 0]:
+        torch.distributed.barrier()
+    yield
+    if local_rank == 0:
+        torch.distributed.barrier()

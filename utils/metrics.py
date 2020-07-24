@@ -7,14 +7,14 @@ import numpy as np
 
 from .utils import box_iou, xywh2xyxy, ap_per_class, coco80_to_coco91_class
 
-            
+
 class EvalResult:
     # TODO: Can be simplified by dataclasses
     # TODO: Relation of varaibles should be expressed here.
     def __init__(self, p, ap, mp, mr, mAP50, mAP, nt, num_images, ap_class):
-        self.p = p 
-        self.ap = ap 
-        self.mp = mp 
+        self.p = p
+        self.ap = ap
+        self.mp = mp
         self.mr = mr
         self.mAP50 = mAP50
         self.mAP = mAP
@@ -26,7 +26,7 @@ class EvalResult:
 class MetricMAP:
     def __init__(self, iou_vec, num_class):
         self.iou_vec = iou_vec
-        self.niou = iou_vec.numel() 
+        self.niou = iou_vec.numel()
         self.nc = num_class
 
     def eval(self, preds_list, labels_list):
@@ -88,7 +88,7 @@ class MetricMAP:
             p, r, f1, mp, mr, mAP50, mAP = 0., 0., 0., 0., 0., 0., 0.
             nt = torch.zeros(1)
             ap, ap_class = [], []
-        
+
         num_images = len(labels_list)
         eval_result = EvalResult(p, ap, mp, mr, mAP50, mAP, nt, num_images, ap_class)
 
@@ -101,7 +101,7 @@ class MetricMAP:
     def print_result(self, r: EvalResult, names, verbose):
         ## Print Results
 
-        # Print evaluation results. 
+        # Print evaluation results.
         print(('%20s' + '%12s' * 6) % ('Class', 'Images', 'Targets', 'P', 'R', 'mAP@.5', 'mAP@.5:.95'))
         pf = '%20s' + '%12.3g' * 6  # print format
         print(pf % ('all', r.num_images, r.nt.sum(), r.mp, r.mr, r.mAP50, r.mAP))

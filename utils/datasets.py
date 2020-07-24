@@ -14,7 +14,8 @@ from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils.utils import xyxy2xywh, xywh2xyxy, torch_distributed_zero_first
+from utils.utils import xyxy2xywh, xywh2xyxy
+from .torch_utils import torch_distributed_zero_first
 
 help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 img_formats = ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.tiff','.dng']
@@ -46,7 +47,7 @@ def exif_size(img):
     return s
 
 
-def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False, local_rank=-1, world_size=1):
+def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False, local_rank=-1, world_size=1, sampler=None):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache.
     with torch_distributed_zero_first(local_rank):
         dataset = LoadImagesAndLabels(path, imgsz, batch_size,
@@ -60,11 +61,16 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
 
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count() // world_size, batch_size if batch_size > 1 else 0, 8])  # number of workers
-    train_sampler = torch.utils.data.distributed.DistributedSampler(dataset) if local_rank != -1 else None
+    if sampler is None:
+        if local_rank != -1:
+            sampler = torch.utils.data.distributed.DistributedSampler(dataset)
+    else:
+        sampler = sampler(dataset)
+
     dataloader = torch.utils.data.DataLoader(dataset,
                                              batch_size=batch_size,
                                              num_workers=nw,
-                                             sampler=train_sampler,
+                                             sampler=sampler,
                                              pin_memory=True,
                                              collate_fn=LoadImagesAndLabels.collate_fn)
     return dataloader, dataset
@@ -474,9 +480,9 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
     def __getitem__(self, index):
         """
         Return:
-            image:  
+            image:
             labels: shape(num_gt_boxs, 6(:batchIndex + class + x+y+w+h))
-            path: 
+            path:
             shape:
         """
         if self.image_weights:

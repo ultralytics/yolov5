@@ -8,7 +8,6 @@ import time
 from copy import copy
 from pathlib import Path
 from sys import platform
-from contextlib import contextmanager
 
 import cv2
 import matplotlib
@@ -30,18 +29,6 @@ matplotlib.rc('font', **{'size': 11})
 
 # Prevent OpenCV from multithreading (to use PyTorch DataLoader)
 cv2.setNumThreads(0)
-
-
-@contextmanager
-def torch_distributed_zero_first(local_rank: int):
-    """
-    Decorator to make all processes in distributed training wait for each local_master to do something.
-    """
-    if local_rank not in [-1, 0]:
-        torch.distributed.barrier()
-    yield
-    if local_rank == 0:
-        torch.distributed.barrier()
 
 
 def init_seeds(seed=0):
