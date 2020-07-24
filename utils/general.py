@@ -5,6 +5,7 @@ import random
 import shutil
 import subprocess
 import time
+import logging
 from contextlib import contextmanager
 from copy import copy
 from pathlib import Path
@@ -44,6 +45,14 @@ def torch_distributed_zero_first(local_rank: int):
     if local_rank == 0:
         torch.distributed.barrier()
 
+
+def set_logging(rank=-1):
+    # Setup logging
+    logging.basicConfig(
+        format="%(message)s",
+        datefmt="%d/%m/%Y %H:%M:%S",
+        level=logging.INFO if rank in [-1, 0] else logging.WARN,
+    )
 
 def init_seeds(seed=0):
     random.seed(seed)
