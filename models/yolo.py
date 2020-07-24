@@ -169,7 +169,6 @@ def parse_model(md, ch):  # model_dict, input_channels(3)
         n = max(round(n * gd), 1) if n > 1 else n  # depth gain
         if m in [nn.Conv2d, Conv, Bottleneck, SPP, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP, C3]:
             c1, c2 = ch[f], args[0]
-
             # Normal
             # if i > 0 and args[0] != no:  # channel expansion factor
             #     ex = 1.75  # exponential (default 2.0)
@@ -197,6 +196,12 @@ def parse_model(md, ch):  # model_dict, input_channels(3)
             c2 = sum([ch[-1 if x == -1 else x + 1] for x in f])
         elif m is Detect:
             f = f or list(reversed([(-1 if j == i else j - 1) for j, x in enumerate(ch) if x == no]))
+        elif m is GhostBottleneck:
+            c1 = make_divisible(args[0] * gw, 8)
+            c2 = make_divisible(args[2] * gw, 8)
+            cmid = make_divisible(args[1] * gw, 8)
+
+            args = [c1, cmid, c2, *args[3:]]
         else:
             c2 = ch[f]
 
