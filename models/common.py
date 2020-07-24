@@ -1,6 +1,8 @@
 # This file contains modules common to various models
+import math
 
-from utils.utils import *
+import torch
+import torch.nn as nn
 
 
 def autopad(k, p=None):  # kernel, padding

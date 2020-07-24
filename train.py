@@ -1,19 +1,32 @@
 import argparse
+import glob
+import math
+import os
+import time
+from pathlib import Path
+from random import random
 
+import numpy as np
 import torch.distributed as dist
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
+import yaml
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
 import test  # import test.py to get mAP after each epoch
 from models.yolo import Model
-from utils import google_utils
-from utils.datasets import *
-from utils.utils import *
+from utils.datasets import create_dataloader
+from utils.general import (
+    check_img_size, torch_distributed_zero_first, labels_to_class_weights, plot_labels, check_anchors,
+    labels_to_image_weights, compute_loss, plot_images, fitness, strip_optimizer, plot_results,
+    get_latest_run, check_git_status, check_file, increment_dir, print_mutation)
+from utils.google_utils import attempt_download
+from utils.torch_utils import init_seeds, ModelEMA, select_device
 
 # Hyperparameters
 hyp = {'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
@@ -119,7 +132,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Load Model
     with torch_distributed_zero_first(rank):
-        google_utils.attempt_download(weights)
+        attempt_download(weights)
     start_epoch, best_fitness = 0, 0.0
     if weights.endswith('.pt'):  # pytorch format
         ckpt = torch.load(weights, map_location=device)  # load checkpoint
@@ -167,7 +180,7 @@ def train(hyp, opt, device, tb_writer=None):
         print('Using SyncBatchNorm()')
 
     # Exponential moving average
-    ema = torch_utils.ModelEMA(model) if rank in [-1, 0] else None
+    ema = ModelEMA(model) if rank in [-1, 0] else None
 
     # DDP mode
     if cuda and rank != -1:
@@ -438,7 +451,7 @@ if __name__ == '__main__':
         with open(opt.hyp) as f:
             hyp.update(yaml.load(f, Loader=yaml.FullLoader))  # update hyps
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
-    device = torch_utils.select_device(opt.device, batch_size=opt.batch_size)
+    device = select_device(opt.device, batch_size=opt.batch_size)
     opt.total_batch_size = opt.batch_size
     opt.world_size = 1
 

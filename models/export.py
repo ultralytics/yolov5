@@ -6,7 +6,8 @@ Usage:
 
 import argparse
 
-from models.common import *
+import torch
+
 from utils import google_utils
 
 if __name__ == '__main__':
