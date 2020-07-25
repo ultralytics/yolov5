@@ -645,26 +645,18 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, 
     return output
 
 
-def strip_optimizer(f='weights/best.pt'):  # from utils.utils import *; strip_optimizer()
-    # Strip optimizer from *.pt files for lighter files (reduced by 1/2 size)
-    x = torch.load(f, map_location=torch.device('cpu'))
-    x['optimizer'] = None
-    x['model'].half()  # to FP16
-    torch.save(x, f)
-    print('Optimizer stripped from %s, %.1fMB' % (f, os.path.getsize(f) / 1E6))
-
-
-def create_pretrained(f='weights/best.pt', s='weights/pretrained.pt'):  # from utils.utils import *; create_pretrained()
-    # create pretrained checkpoint 's' from 'f' (create_pretrained(x, x) for x in glob.glob('./*.pt'))
+def strip_optimizer(f='weights/best.pt', s=''):  # from utils.utils import *; strip_optimizer()
+    # Strip optimizer from 'f' to finalize training, optionally save as 's'
     x = torch.load(f, map_location=torch.device('cpu'))
     x['optimizer'] = None
     x['training_results'] = None
     x['epoch'] = -1
     x['model'].half()  # to FP16
     for p in x['model'].parameters():
-        p.requires_grad = True
-    torch.save(x, s)
-    print('%s saved as pretrained checkpoint %s, %.1fMB' % (f, s, os.path.getsize(s) / 1E6))
+        p.requires_grad = False
+    torch.save(x, s or f)
+    mb = os.path.getsize(s or f) / 1E6  # filesize
+    print('Optimizer stripped from %s,%s %.1fMB' % (f, (' saved as %s,' % s) if s else '', mb))
 
 
 def coco_class_count(path='../coco/labels/train2014/'):

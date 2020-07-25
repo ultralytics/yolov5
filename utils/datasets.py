@@ -17,7 +17,7 @@ from tqdm import tqdm
 from utils.utils import xyxy2xywh, xywh2xyxy, torch_distributed_zero_first
 
 help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
-img_formats = ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.tiff','.dng']
+img_formats = ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.tiff', '.dng']
 vid_formats = ['.mov', '.avi', '.mp4', '.mpg', '.mpeg', '.m4v', '.wmv', '.mkv']
 
 # Get orientation exif tag
@@ -46,17 +46,18 @@ def exif_size(img):
     return s
 
 
-def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False, local_rank=-1, world_size=1):
+def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False,
+                      local_rank=-1, world_size=1):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache.
     with torch_distributed_zero_first(local_rank):
         dataset = LoadImagesAndLabels(path, imgsz, batch_size,
-                                    augment=augment,  # augment images
-                                    hyp=hyp,  # augmentation hyperparameters
-                                    rect=rect,  # rectangular training
-                                    cache_images=cache,
-                                    single_cls=opt.single_cls,
-                                    stride=int(stride),
-                                    pad=pad)
+                                      augment=augment,  # augment images
+                                      hyp=hyp,  # augmentation hyperparameters
+                                      rect=rect,  # rectangular training
+                                      cache_images=cache,
+                                      single_cls=opt.single_cls,
+                                      stride=int(stride),
+                                      pad=pad)
 
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count() // world_size, batch_size if batch_size > 1 else 0, 8])  # number of workers
@@ -305,7 +306,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                     f += glob.iglob(p + os.sep + '*.*')
                 else:
                     raise Exception('%s does not exist' % p)
-            self.img_files = sorted([x.replace('/', os.sep) for x in f if os.path.splitext(x)[-1].lower() in img_formats])
+            self.img_files = sorted(
+                [x.replace('/', os.sep) for x in f if os.path.splitext(x)[-1].lower() in img_formats])
         except Exception as e:
             raise Exception('Error loading data from %s: %s\nSee %s' % (path, e, help_url))
 
@@ -566,6 +568,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         return torch.stack(img, 0), torch.cat(label, 0), path, shapes
 
 
+# Ancillary functions --------------------------------------------------------------------------------------------------
 def load_image(self, index):
     # loads 1 image from dataset, returns img, original hw, resized hw
     img = self.imgs[index]
@@ -766,26 +769,28 @@ def random_affine(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10,
         # h = (xy[:, 3] - xy[:, 1]) * reduction
         # xy = np.concatenate((x - w / 2, y - h / 2, x + w / 2, y + h / 2)).reshape(4, n).T
 
-        # reject warped points outside of image
+        # clip boxes
         xy[:, [0, 2]] = xy[:, [0, 2]].clip(0, width)
         xy[:, [1, 3]] = xy[:, [1, 3]].clip(0, height)
-        w = xy[:, 2] - xy[:, 0]
-        h = xy[:, 3] - xy[:, 1]
-        area = w * h
-        area0 = (targets[:, 3] - targets[:, 1]) * (targets[:, 4] - targets[:, 2])
-        ar = np.maximum(w / (h + 1e-16), h / (w + 1e-16))  # aspect ratio
-        i = (w > 2) & (h > 2) & (area / (area0 * s + 1e-16) > 0.2) & (ar < 20)
 
+        # filter candidates
+        i = box_candidates(box1=targets[:, 1:5].T * s, box2=xy.T)
         targets = targets[i]
         targets[:, 1:5] = xy[i]
 
     return img, targets
 
 
+def box_candidates(box1, box2, wh_thr=2, ar_thr=20, area_thr=0.2):  # box1(4,n), box2(4,n)
+    # Compute candidate boxes: box1 before augment, box2 after augment, wh_thr (pixels), aspect_ratio_thr, area_ratio
+    w1, h1 = box1[2] - box1[0], box1[3] - box1[1]
+    w2, h2 = box2[2] - box2[0], box2[3] - box2[1]
+    ar = np.maximum(w2 / (h2 + 1e-16), h2 / (w2 + 1e-16))  # aspect ratio
+    return (w2 > wh_thr) & (h2 > wh_thr) & (w2 * h2 / (w1 * h1 + 1e-16) > area_thr) & (ar < ar_thr)  # candidates
+
+
 def cutout(image, labels):
-    # https://arxiv.org/abs/1708.04552
-    # https://github.com/hysts/pytorch_cutout/blob/master/dataloader.py
-    # https://towardsdatascience.com/when-conventional-wisdom-fails-revisiting-data-augmentation-for-self-driving-cars-4831998c5509
+    # Applies image cutout augmentation https://arxiv.org/abs/1708.04552
     h, w = image.shape[:2]
 
     def bbox_ioa(box1, box2):
@@ -804,7 +809,6 @@ def cutout(image, labels):
         box2_area = (b2_x2 - b2_x1) * (b2_y2 - b2_y1) + 1e-16
 
         # Intersection over box2 area
-
         return inter_area / box2_area
 
     # create random masks
@@ -831,7 +835,7 @@ def cutout(image, labels):
     return labels
 
 
-def reduce_img_size(path='../data/sm4/images', img_size=1024):  # from utils.datasets import *; reduce_img_size()
+def reduce_img_size(path='path/images', img_size=1024):  # from utils.datasets import *; reduce_img_size()
     # creates a new ./images_reduced folder with reduced size images of maximum size img_size
     path_new = path + '_reduced'  # reduced images path
     create_folder(path_new)
@@ -848,31 +852,7 @@ def reduce_img_size(path='../data/sm4/images', img_size=1024):  # from utils.dat
             print('WARNING: image failure %s' % f)
 
 
-def convert_images2bmp():  # from utils.datasets import *; convert_images2bmp()
-    # Save images
-    formats = [x.lower() for x in img_formats] + [x.upper() for x in img_formats]
-    # for path in ['../coco/images/val2014', '../coco/images/train2014']:
-    for path in ['../data/sm4/images', '../data/sm4/background']:
-        create_folder(path + 'bmp')
-        for ext in formats:  # ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.dng']
-            for f in tqdm(glob.glob('%s/*%s' % (path, ext)), desc='Converting %s' % ext):
-                cv2.imwrite(f.replace(ext.lower(), '.bmp').replace(path, path + 'bmp'), cv2.imread(f))
-
-    # Save labels
-    # for path in ['../coco/trainvalno5k.txt', '../coco/5k.txt']:
-    for file in ['../data/sm4/out_train.txt', '../data/sm4/out_test.txt']:
-        with open(file, 'r') as f:
-            lines = f.read()
-            # lines = f.read().replace('2014/', '2014bmp/')  # coco
-            lines = lines.replace('/images', '/imagesbmp')
-            lines = lines.replace('/background', '/backgroundbmp')
-        for ext in formats:
-            lines = lines.replace(ext, '.bmp')
-        with open(file.replace('.txt', 'bmp.txt'), 'w') as f:
-            f.write(lines)
-
-
-def recursive_dataset2bmp(dataset='../data/sm4_bmp'):  # from utils.datasets import *; recursive_dataset2bmp()
+def recursive_dataset2bmp(dataset='path/dataset_bmp'):  # from utils.datasets import *; recursive_dataset2bmp()
     # Converts dataset to bmp (for faster training)
     formats = [x.lower() for x in img_formats] + [x.upper() for x in img_formats]
     for a, b, files in os.walk(dataset):
@@ -892,7 +872,7 @@ def recursive_dataset2bmp(dataset='../data/sm4_bmp'):  # from utils.datasets imp
                     os.system("rm '%s'" % p)
 
 
-def imagelist2folder(path='data/coco_64img.txt'):  # from utils.datasets import *; imagelist2folder()
+def imagelist2folder(path='path/images.txt'):  # from utils.datasets import *; imagelist2folder()
     # Copies all the images in a text file (list of images) into a folder
     create_folder(path[:-4])
     with open(path, 'r') as f:
@@ -901,7 +881,7 @@ def imagelist2folder(path='data/coco_64img.txt'):  # from utils.datasets import 
             print(line)
 
 
-def create_folder(path='./new_folder'):
+def create_folder(path='./new'):
     # Create folder
     if os.path.exists(path):
         shutil.rmtree(path)  # delete output folder

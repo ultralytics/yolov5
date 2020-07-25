@@ -164,13 +164,16 @@ def load_classifier(name='resnet101', n=2):
 
 def scale_img(img, ratio=1.0, same_shape=False):  # img(16,3,256,416), r=ratio
     # scales img(bs,3,y,x) by ratio
-    h, w = img.shape[2:]
-    s = (int(h * ratio), int(w * ratio))  # new size
-    img = F.interpolate(img, size=s, mode='bilinear', align_corners=False)  # resize
-    if not same_shape:  # pad/crop img
-        gs = 32  # (pixels) grid size
-        h, w = [math.ceil(x * ratio / gs) * gs for x in (h, w)]
-    return F.pad(img, [0, w - s[1], 0, h - s[0]], value=0.447)  # value = imagenet mean
+    if ratio == 1.0:
+        return img
+    else:
+        h, w = img.shape[2:]
+        s = (int(h * ratio), int(w * ratio))  # new size
+        img = F.interpolate(img, size=s, mode='bilinear', align_corners=False)  # resize
+        if not same_shape:  # pad/crop img
+            gs = 32  # (pixels) grid size
+            h, w = [math.ceil(x * ratio / gs) * gs for x in (h, w)]
+        return F.pad(img, [0, w - s[1], 0, h - s[0]], value=0.447)  # value = imagenet mean
 
 
 def copy_attr(a, b, include=(), exclude=()):
