@@ -156,6 +156,6 @@ if __name__ == '__main__':
         if opt.update:  # update all models (to fix SourceChangeWarning)
             for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov3-spp.pt']:
                 detect()
-                create_pretrained(opt.weights, opt.weights)
+                strip_optimizer(opt.weights)
         else:
             detect()
