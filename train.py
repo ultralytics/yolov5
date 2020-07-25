@@ -51,8 +51,8 @@ def train(hyp, tb_writer, opt, device):
     last = wdir + 'last.pt'
     best = wdir + 'best.pt'
     results_file = log_dir + os.sep + 'results.txt'
-    epochs, batch_size, total_batch_size, weights, local_rank, rank = opt.epochs, \
-            opt.batch_size, opt.total_batch_size, opt.weights, opt.local_rank, opt.global_rank
+    epochs, batch_size, total_batch_size, weights, rank = \
+            opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
     # TODO: Init DDP logging. Only the first process is allowed to log.
     # Since I see lots of print here, the logging configuration is skipped here. We may see repeated outputs.
 
@@ -178,7 +178,7 @@ def train(hyp, tb_writer, opt, device):
 
     # DDP mode
     if device.type != 'cpu' and rank != -1:
-        model = DDP(model, device_ids=[local_rank], output_device=(local_rank))
+        model = DDP(model, device_ids=[opt.local_rank], output_device=(opt.local_rank))
 
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt, hyp=hyp, augment=True,
