@@ -10,7 +10,7 @@ WORKDIR /usr/src/app
 COPY . /usr/src/app
 
 # Install dependencies (pip or conda)
-#RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt
 
 # Copy weights
 #RUN python3 -c "from models import *; \

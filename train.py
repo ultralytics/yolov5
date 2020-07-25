@@ -1,4 +1,5 @@
 import argparse
+import functools
 
 import torch.distributed as dist
 import torch.nn.functional as F
@@ -7,12 +8,14 @@ import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
+from utils.torch_utils import SequentialDistributedSampler
 
-from test import inference_and_eval  # import test.py to get mAP after each epoch
 from models.yolo import Model
 from utils import google_utils
 from utils.datasets import *
 from utils.utils import *
+from utils.trainer import Trainer
+from utils.evaluation import do_evaluation
 
 mixed_precision = True
 try:  # Mixed precision training https://github.com/NVIDIA/apex
@@ -173,12 +176,17 @@ def train(hyp, tb_writer, opt, device):
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
         print('Using SyncBatchNorm()')
 
-    # Exponential moving average
-    ema = torch_utils.ModelEMA(model) if rank in [-1, 0] else None
-
     # DDP mode
     if device.type != 'cpu' and rank != -1:
         model = DDP(model, device_ids=[rank], output_device=rank)
+
+    # Exponential moving average
+    ema = torch_utils.ModelEMA(model)
+
+    hooks = []
+    if not log_dir:
+        hooks.append(functools.partial(Trainer.plot_images_hook, save_dir=log_dir))
+    inferencer = Trainer(ema.ema.module if hasattr(ema.ema, 'module') else ema.ema, rank=rank)
 
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt, hyp=hyp, augment=True,
@@ -189,10 +197,9 @@ def train(hyp, tb_writer, opt, device):
     assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (mlc, nc, opt.data, nc - 1)
 
     # Testloader
-    if rank in [-1, 0]:
-        # local_rank is set to -1. Because only the first process is expected to do evaluation.
-        testloader = create_dataloader(test_path, imgsz_test, total_batch_size, gs, opt, hyp=hyp, augment=False,
-                                       cache=opt.cache_images, rect=True, local_rank=-1, world_size=opt.world_size)[0]
+    sampler = functools.partial(SequentialDistributedSampler, batch_size=batch_size) if rank != -1 else None
+    testloader = create_dataloader(test_path, imgsz_test, batch_size, gs, opt, hyp=hyp, augment=False,
+                                    cache=opt.cache_images, rect=True, local_rank=rank, world_size=opt.world_size, sampler=sampler)[0]
 
     # Model parameters
     hyp['cls'] *= nc / 80.  # scale coco-tuned hyp['cls'] to current dataset
@@ -203,7 +210,8 @@ def train(hyp, tb_writer, opt, device):
     model.names = names
 
     # Class frequency
-    if rank in [-1, 0]:
+    # TODO:
+    if 0: #rank in [-1, 0]:
         labels = np.concatenate(dataset.labels, 0)
         c = torch.tensor(labels[:, 0])  # classes
         # cf = torch.bincount(c.long(), minlength=nc) + 1.
@@ -306,8 +314,7 @@ def train(hyp, tb_writer, opt, device):
             if ni % accumulate == 0:
                 optimizer.step()
                 optimizer.zero_grad()
-                if ema is not None:
-                    ema.update(model)
+                ema.update(model)
 
             # Print
             if rank in [-1, 0]:
@@ -330,28 +337,19 @@ def train(hyp, tb_writer, opt, device):
         # Scheduler
         scheduler.step()
 
-        # Only the first process in DDP mode is allowed to log or save checkpoints.
-        if rank in [-1, 0]:
-            # mAP
-            if ema is not None:
-                ema.update_attr(model, include=['md', 'nc', 'hyp', 'gr', 'names', 'stride'])
-            final_epoch = epoch + 1 == epochs
-            if not opt.notest or final_epoch:  # Calculate mAP
-                with open(opt.data) as f:
-                    yaml_data = yaml.load(f, Loader=yaml.FullLoader)  # model dict
-                nc = 1 if single_cls else int(yaml_data['nc'])  # number of classes
-                results, maps, times = inference_and_eval(ema.ema.module if hasattr(ema.ema, 'module') else ema.ema,
-                    testloader,
-                    None,
-                    nc,
-                    augment=False,
-                    training=True,
-                    local_rank=local_rank,
-                    save_dir_for_debug_images=log_dir,
-                    verbose=verbose,
+        ema.update_attr(model, include=['md', 'nc', 'hyp', 'gr', 'names', 'stride'])
+        final_epoch = epoch + 1 == epochs
+        if not opt.notest or final_epoch:  # Calculate mAP
+            nms_kwargs = {"conf_thres":0.001, "iou_thres":0.6, "merge":False}
+            infer_results, infer_statistics = inferencer.infer(testloader,
+                augment=False, nms_kwargs=nms_kwargs, training=False, hooks=hooks)
+
+            # Only the first process in DDP mode is allowed to log or save checkpoints.
+            if rank in [-1, 0]:
+                results, maps, times = do_evaluation(infer_results, infer_statistics, inferencer.model, testloader.dataset, nc,
+                    verbose=False,
                     do_official_coco_evaluation=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
                     official_coco_evaluation_save_fname='detections_val2017__results.json')
-
                 # Write
                 with open(results_file, 'a') as f:
                     f.write(s + '%10.4g' * 7 % results + '\n')  # P, R, mAP, F1, test_losses=(GIoU, obj, cls)
@@ -371,21 +369,21 @@ def train(hyp, tb_writer, opt, device):
                 if fi > best_fitness:
                     best_fitness = fi
 
-            # Save model
-            save = (not opt.nosave) or (final_epoch and not opt.evolve)
-            if save:
-                with open(results_file, 'r') as f:  # create checkpoint
-                    ckpt = {'epoch': epoch,
-                            'best_fitness': best_fitness,
-                            'training_results': f.read(),
-                            'model': ema.ema.module if hasattr(ema, 'module') else ema.ema,
-                            'optimizer': None if final_epoch else optimizer.state_dict()}
+                # Save model
+                save = (not opt.nosave) or (final_epoch and not opt.evolve)
+                if save:
+                    with open(results_file, 'r') as f:  # create checkpoint
+                        ckpt = {'epoch': epoch,
+                                'best_fitness': best_fitness,
+                                'training_results': f.read(),
+                                'model': ema.ema.module if hasattr(ema, 'module') else ema.ema,
+                                'optimizer': None if final_epoch else optimizer.state_dict()}
 
-                # Save last, best and delete
-                torch.save(ckpt, last)
-                if (best_fitness == fi) and not final_epoch:
-                    torch.save(ckpt, best)
-                del ckpt
+                    # Save last, best and delete
+                    torch.save(ckpt, last)
+                    if (best_fitness == fi) and not final_epoch:
+                        torch.save(ckpt, best)
+                    del ckpt
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training
 

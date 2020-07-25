@@ -4,6 +4,7 @@ numpy>=1.18.5
 opencv-python
 torch>=1.5.1
 matplotlib
+dataclasses
 pillow
 tensorboard
 PyYAML>=5.3
