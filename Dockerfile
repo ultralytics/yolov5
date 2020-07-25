@@ -43,7 +43,7 @@ COPY . /usr/src/app
 # sudo docker commit 092b16b25c5b usr/resume && sudo docker run -it --gpus all --ipc=host -v "$(pwd)"/coco:/usr/src/coco --entrypoint=sh usr/resume
 
 # Send weights to GCP
-# python -c "from utils.utils import *; create_pretrained('path/last.pt')" && gsutil cp weights/pretrained.pt gs://*
+# python -c "from utils.utils import *; strip_optimizer('runs/exp0/weights/last.pt', 'temp.pt')" && gsutil cp temp.pt gs://*
 
 # Clean up
 # docker system prune -a --volumes
