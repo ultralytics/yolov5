@@ -75,6 +75,7 @@ def train(hyp, tb_writer, opt, device):
     if rank in [-1, 0]:
         for f in glob.glob('*_batch*.jpg') + glob.glob(results_file):
             os.remove(f)
+        Path(results_file).touch()
 
     # Create model
     model = Model(opt.cfg, nc=nc).to(device)
@@ -117,7 +118,7 @@ def train(hyp, tb_writer, opt, device):
     # Load Model
     with torch_distributed_zero_first(rank):
         google_utils.attempt_download(weights)
-    start_epoch, best_fitness = 0, 0.0
+    start_epoch, best_fitness, fi = 0, 0.0, -1
     if weights.endswith('.pt'):  # pytorch format
         ckpt = torch.load(weights, map_location=device)  # load checkpoint
 
