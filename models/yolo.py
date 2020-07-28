@@ -90,9 +90,9 @@ class Model(nn.Module):
                 yi = self.forward_once(xi)[0]  # forward
                 # cv2.imwrite('img%g.jpg' % s, 255 * xi[0].numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
                 yi[..., :4] /= si  # de-scale
-                if fi is 2:
+                if fi == 2:
                     yi[..., 1] = img_size[0] - yi[..., 1]  # de-flip ud
-                elif fi is 3:
+                elif fi == 3:
                     yi[..., 0] = img_size[1] - yi[..., 0]  # de-flip lr
                 y.append(yi)
             return torch.cat(y, 1), None  # augmented inference, train
@@ -148,6 +148,7 @@ class Model(nn.Module):
         print('Fusing layers... ', end='')
         for m in self.model.modules():
             if type(m) is Conv:
+                m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatability
                 m.conv = torch_utils.fuse_conv_and_bn(m.conv, m.bn)  # update conv
                 m.bn = None  # remove batchnorm
                 m.forward = m.fuseforward  # update forward
