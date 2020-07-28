@@ -148,6 +148,7 @@ class Model(nn.Module):
         print('Fusing layers... ', end='')
         for m in self.model.modules():
             if type(m) is Conv:
+                m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatability
                 m.conv = torch_utils.fuse_conv_and_bn(m.conv, m.bn)  # update conv
                 m.bn = None  # remove batchnorm
                 m.forward = m.fuseforward  # update forward
