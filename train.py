@@ -377,7 +377,7 @@ def train(hyp, tb_writer, opt, device):
 
                 # Save last, best and delete
                 torch.save(ckpt, last)
-                if (best_fitness == fi) and not final_epoch:
+                if best_fitness == fi: 
                     torch.save(ckpt, best)
                 del ckpt
         # end epoch ----------------------------------------------------------------------------------------------------
