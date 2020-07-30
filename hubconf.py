@@ -28,14 +28,20 @@ def create(name, pretrained, channels, classes):
         pytorch model
     """
     config = os.path.join(os.path.dirname(__file__), 'models', '%s.yaml' % name)  # model.yaml path
-    model = Model(config, channels, classes)
-    if pretrained:
-        ckpt = '%s.pt' % name  # checkpoint filename
-        google_utils.attempt_download(ckpt)  # download if not found locally
-        state_dict = torch.load(ckpt, map_location=torch.device('cpu'))['model'].float().state_dict()  # to FP32
-        state_dict = {k: v for k, v in state_dict.items() if model.state_dict()[k].shape == v.shape}  # filter
-        model.load_state_dict(state_dict, strict=False)  # load
-    return model
+    try:
+        model = Model(config, channels, classes)
+        if pretrained:
+            ckpt = '%s.pt' % name  # checkpoint filename
+            google_utils.attempt_download(ckpt)  # download if not found locally
+            state_dict = torch.load(ckpt, map_location=torch.device('cpu'))['model'].float().state_dict()  # to FP32
+            state_dict = {k: v for k, v in state_dict.items() if model.state_dict()[k].shape == v.shape}  # filter
+            model.load_state_dict(state_dict, strict=False)  # load
+        return model
+
+    except Exception as e:
+        help_url = 'https://github.com/ultralytics/yolov5/issues/36'
+        s = 'Cache maybe be out of date, deleting cache and retrying may solve this. See %s for help.' % help_url
+        raise Exception(s) from e
 
 
 def yolov5s(pretrained=False, channels=3, classes=80):

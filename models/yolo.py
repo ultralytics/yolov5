@@ -1,10 +1,11 @@
 import argparse
+from copy import deepcopy
 
 from models.experimental import *
 
 
 class Detect(nn.Module):
-    def __init__(self, nc=80, anchors=()):  # detection layer
+    def __init__(self, nc=80, anchors=(), ch=()):  # detection layer
         super(Detect, self).__init__()
         self.stride = None  # strides computed during build
         self.nc = nc  # number of classes
@@ -15,6 +16,7 @@ class Detect(nn.Module):
         a = torch.tensor(anchors).float().view(self.nl, -1, 2)
         self.register_buffer('anchors', a)  # shape(nl,na,2)
         self.register_buffer('anchor_grid', a.clone().view(self.nl, 1, -1, 1, 1, 2))  # shape(nl,1,na,1,1,2)
+        self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
         self.export = False  # onnx export
 
     def forward(self, x):
@@ -22,6 +24,7 @@ class Detect(nn.Module):
         z = []  # inference output
         self.training |= self.export
         for i in range(self.nl):
+            x[i] = self.m[i](x[i])  # conv
             bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
             x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
@@ -43,20 +46,21 @@ class Detect(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, model_cfg='yolov5s.yaml', ch=3, nc=None):  # model, input channels, number of classes
+    def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None):  # model, input channels, number of classes
         super(Model, self).__init__()
-        if type(model_cfg) is dict:
-            self.md = model_cfg  # model dict
+        if isinstance(cfg, dict):
+            self.yaml = cfg  # model dict
         else:  # is *.yaml
             import yaml  # for torch hub
-            with open(model_cfg) as f:
-                self.md = yaml.load(f, Loader=yaml.FullLoader)  # model dict
+            self.yaml_file = Path(cfg).name
+            with open(cfg) as f:
+                self.yaml = yaml.load(f, Loader=yaml.FullLoader)  # model dict
 
         # Define model
-        if nc and nc != self.md['nc']:
-            print('Overriding %s nc=%g with nc=%g' % (model_cfg, self.md['nc'], nc))
-            self.md['nc'] = nc  # override yaml value
-        self.model, self.save = parse_model(self.md, ch=[ch])  # model, savelist, ch_out
+        if nc and nc != self.yaml['nc']:
+            print('Overriding %s nc=%g with nc=%g' % (cfg, self.yaml['nc'], nc))
+            self.yaml['nc'] = nc  # override yaml value
+        self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch])  # model, savelist, ch_out
         # print([x.shape for x in self.forward(torch.zeros(1, ch, 64, 64))])
 
         # Build strides, anchors
@@ -72,25 +76,25 @@ class Model(nn.Module):
 
         # Init weights, biases
         torch_utils.initialize_weights(self)
-        self._initialize_biases()  # only run once
-        torch_utils.model_info(self)
+        self.info()
         print('')
 
     def forward(self, x, augment=False, profile=False):
         if augment:
             img_size = x.shape[-2:]  # height, width
-            s = [0.83, 0.67]  # scales
-            y = []
-            for i, xi in enumerate((x,
-                                    torch_utils.scale_img(x.flip(3), s[0]),  # flip-lr and scale
-                                    torch_utils.scale_img(x, s[1]),  # scale
-                                    )):
-                # cv2.imwrite('img%g.jpg' % i, 255 * xi[0].numpy().transpose((1, 2, 0))[:, :, ::-1])
-                y.append(self.forward_once(xi)[0])
-
-            y[1][..., :4] /= s[0]  # scale
-            y[1][..., 0] = img_size[1] - y[1][..., 0]  # flip lr
-            y[2][..., :4] /= s[1]  # scale
+            s = [1, 0.83, 0.67]  # scales
+            f = [None, 3, None]  # flips (2-ud, 3-lr)
+            y = []  # outputs
+            for si, fi in zip(s, f):
+                xi = torch_utils.scale_img(x.flip(fi) if fi else x, si)
+                yi = self.forward_once(xi)[0]  # forward
+                # cv2.imwrite('img%g.jpg' % s, 255 * xi[0].numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
+                yi[..., :4] /= si  # de-scale
+                if fi == 2:
+                    yi[..., 1] = img_size[0] - yi[..., 1]  # de-flip ud
+                elif fi == 3:
+                    yi[..., 0] = img_size[1] - yi[..., 0]  # de-flip lr
+                y.append(yi)
             return torch.cat(y, 1), None  # augmented inference, train
         else:
             return self.forward_once(x, profile)  # single-scale inference, train
@@ -123,8 +127,7 @@ class Model(nn.Module):
     def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
         m = self.model[-1]  # Detect() module
-        for f, s in zip(m.f, m.stride):  #  from
-            mi = self.model[f % m.i]
+        for mi, s in zip(m.m, m.stride):  #  from
             b = mi.bias.view(m.na, -1)  # conv.bias(255) to (3,85)
             b[:, 4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
             b[:, 5:] += math.log(0.6 / (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
@@ -132,9 +135,9 @@ class Model(nn.Module):
 
     def _print_biases(self):
         m = self.model[-1]  # Detect() module
-        for f in sorted([x % m.i for x in m.f]):  #  from
-            b = self.model[f].bias.detach().view(m.na, -1).T  # conv.bias(255) to (3,85)
-            print(('%g Conv2d.bias:' + '%10.3g' * 6) % (f, *b[:5].mean(1).tolist(), b[5:].mean()))
+        for mi in m.m:  #  from
+            b = mi.bias.detach().view(m.na, -1).T  # conv.bias(255) to (3,85)
+            print(('%6g Conv2d.bias:' + '%10.3g' * 6) % (mi.weight.shape[1], *b[:5].mean(1).tolist(), b[5:].mean()))
 
     # def _print_weights(self):
     #     for m in self.model.modules():
@@ -145,20 +148,25 @@ class Model(nn.Module):
         print('Fusing layers... ', end='')
         for m in self.model.modules():
             if type(m) is Conv:
+                m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatability
                 m.conv = torch_utils.fuse_conv_and_bn(m.conv, m.bn)  # update conv
                 m.bn = None  # remove batchnorm
                 m.forward = m.fuseforward  # update forward
-        torch_utils.model_info(self)
+        self.info()
         return self
 
-def parse_model(md, ch):  # model_dict, input_channels(3)
+    def info(self):  # print model information
+        torch_utils.model_info(self)
+
+
+def parse_model(d, ch):  # model_dict, input_channels(3)
     print('\n%3s%18s%3s%10s  %-40s%-30s' % ('', 'from', 'n', 'params', 'module', 'arguments'))
-    anchors, nc, gd, gw = md['anchors'], md['nc'], md['depth_multiple'], md['width_multiple']
-    na = (len(anchors[0]) // 2)  # number of anchors
+    anchors, nc, gd, gw = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple']
+    na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
 
     layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
-    for i, (f, n, m, args) in enumerate(md['backbone'] + md['head']):  # from, number, module, args
+    for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):  # from, number, module, args
         m = eval(m) if isinstance(m, str) else m  # eval strings
         for j, a in enumerate(args):
             try:
@@ -176,6 +184,7 @@ def parse_model(md, ch):  # model_dict, input_channels(3)
             #     e = math.log(c2 / ch[1]) / math.log(2)
             #     c2 = int(ch[1] * ex ** e)
             # if m != Focus:
+
             c2 = make_divisible(c2 * gw, 8) if c2 != no else c2
 
             # Experimental
@@ -196,7 +205,9 @@ def parse_model(md, ch):  # model_dict, input_channels(3)
         elif m is Concat:
             c2 = sum([ch[-1 if x == -1 else x + 1] for x in f])
         elif m is Detect:
-            f = f or list(reversed([(-1 if j == i else j - 1) for j, x in enumerate(ch) if x == no]))
+            args.append([ch[x + 1] for x in f])
+            if isinstance(args[1], int):  # number of anchors
+                args[1] = [list(range(args[1] * 2))] * len(f)
         else:
             c2 = ch[f]
 
