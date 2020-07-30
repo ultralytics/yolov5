@@ -63,15 +63,14 @@ class Mish(nn.Module):  # https://github.com/digantamisra98/Mish
         return x * F.softplus(x).tanh()
         
         
-#Frelu ----------------------------------------------------------------
+# FReLU https://arxiv.org/abs/2007.11824 --------------------------------------
 class Frelu(nn.Module):
-    def __init__(self,in_channels,window_size = 3):
+    def __init__(self, c1, k=3):  # ch_in, kernel
         super().__init()__()
-        self.conv_frelu = nn.Conv2d(in_channels,in_channels,window_size,1,1,groups = in_channels)
-        self.bn_frelu = nn.BatchNorm2d(in_channels)
-    @staticmethod
-    def forward(self,x):
-        x_ = self.bn_frelu(self.conv_frelu(x))
-        return torch.maximum(x,x_)
+        self.conv = nn.Conv2d(c1, c1, k, 1, 1, groups=c1)
+        self.bn = nn.BatchNorm2d(c1)
         
-
+    @staticmethod
+    def forward(self, x):
+        return torch.maximum(x, self.bn(self.conv(x)))
+        
