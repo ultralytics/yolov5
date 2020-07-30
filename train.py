@@ -113,6 +113,12 @@ def train(hyp, tb_writer, opt, device):
     optimizer.add_param_group({'params': pg2})  # add pg2 (biases)
     print('Optimizer groups: %g .bias, %g conv.weight, %g other' % (len(pg2), len(pg1), len(pg0)))
     del pg0, pg1, pg2
+    
+    # Scheduler https://arxiv.org/pdf/1812.01187.pdf
+    lf = lambda x: (((1 + math.cos(x * math.pi / epochs)) / 2) ** 1.0) * 0.8 + 0.2  # cosine
+    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
+    # https://discuss.pytorch.org/t/a-problem-occured-when-resuming-an-optimizer/28822
+    # plot_lr_scheduler(optimizer, scheduler, epochs)
 
     # Load Model
     with torch_distributed_zero_first(rank):
@@ -157,12 +163,6 @@ def train(hyp, tb_writer, opt, device):
     # Mixed precision training https://github.com/NVIDIA/apex
     if mixed_precision:
         model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
-
-    # Scheduler https://arxiv.org/pdf/1812.01187.pdf
-    lf = lambda x: (((1 + math.cos(x * math.pi / epochs)) / 2) ** 1.0) * 0.8 + 0.2  # cosine
-    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
-    # https://discuss.pytorch.org/t/a-problem-occured-when-resuming-an-optimizer/28822
-    # plot_lr_scheduler(optimizer, scheduler, epochs)
 
     # DP mode
     if device.type != 'cpu' and rank == -1 and torch.cuda.device_count() > 1:
