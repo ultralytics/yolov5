@@ -64,7 +64,7 @@ class Mish(nn.Module):  # https://github.com/digantamisra98/Mish
         
         
 # FReLU https://arxiv.org/abs/2007.11824 --------------------------------------
-class Frelu(nn.Module):
+class FReLU(nn.Module):
     def __init__(self, c1, k=3):  # ch_in, kernel
         super().__init()__()
         self.conv = nn.Conv2d(c1, c1, k, 1, 1, groups=c1)
