@@ -1,5 +1,6 @@
 import argparse
 from copy import deepcopy
+from torch.cuda import amp
 
 from models.experimental import *
 
@@ -78,7 +79,8 @@ class Model(nn.Module):
         torch_utils.initialize_weights(self)
         self.info()
         print('')
-
+    
+    @amp.autocast()
     def forward(self, x, augment=False, profile=False):
         if augment:
             img_size = x.shape[-2:]  # height, width
@@ -99,6 +101,7 @@ class Model(nn.Module):
         else:
             return self.forward_once(x, profile)  # single-scale inference, train
 
+    @amp.autocast()
     def forward_once(self, x, profile=False):
         y, dt = [], []  # outputs
         for m in self.model:
