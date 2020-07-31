@@ -20,7 +20,7 @@ jobs:
             git push -u origin -f
             ```
             - Verify all Continuous Integration (CI) **checks are passing**.
-            - Reduce changes to the absolute **minimum** required for your bug fix or feature addition. _"It is not daily increase but daily decrease, hack away the unessential. The closer to the source, the less wastage there is."_  -Bruce Lee
+            - Reduce changes to the absolute **minimum** required for your bug fix or feature addition. _"It is not daily increase but daily decrease, hack away the unessential. The closer to the source, the less wastage there is."_ -Bruce Lee
 
           issue-message: |
             Hello @${{ github.actor }}, thank you for your interest in our work! Please visit our [Custom Training Tutorial](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data) to get started, and see our [Jupyter Notebook](https://github.com/ultralytics/yolov5/blob/master/tutorial.ipynb) <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>, [Docker Image](https://hub.docker.com/r/ultralytics/yolov5), and [Google Cloud Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart) for example environments.
