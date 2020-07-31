@@ -72,5 +72,5 @@ class FReLU(nn.Module):
         
     @staticmethod
     def forward(self, x):
-        return torch.maximum(x, self.bn(self.conv(x)))
+        return torch.max(x, self.bn(self.conv(x)))
         
