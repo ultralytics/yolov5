@@ -133,7 +133,7 @@ def model_info(model, verbose=False):
 
     try:  # FLOPS
         from thop import profile
-        flops = profile(deepcopy(model), inputs=(torch.zeros(1, 3, 64, 64),), verbose=False)[0] / 1E9 * 2
+        flops = profile(deepcopy(model), inputs=(torch.zeros(1, 3, 640, 640),), verbose=False)[0] / 1E9 * 2
         fs = ', %.1f GFLOPS' % (flops * 100)  # 640x640 FLOPS
     except:
         fs = ''
