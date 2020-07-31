@@ -286,11 +286,11 @@ def train(hyp, tb_writer, opt, device):
 
                 # Loss
                 loss, loss_items = compute_loss(pred, targets.to(device), model)  # scaled by batch_size
-		if rank != -1:
-		    loss *= opt.world_size  # gradient averaged between devices in DDP mode
-		if not torch.isfinite(loss):
-		    print('WARNING: non-finite loss, ending training ', loss_items)
-		    return results
+				if rank != -1:
+		    		loss *= opt.world_size  # gradient averaged between devices in DDP mode
+				if not torch.isfinite(loss):
+		    		print('WARNING: non-finite loss, ending training ', loss_items)
+		    		return results
 
             # Scales loss.  Calls backward() on scaled loss to create scaled gradients.
             # Backward passes under autocast are not recommended.
