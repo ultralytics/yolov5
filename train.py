@@ -108,7 +108,7 @@ def train(hyp, tb_writer, opt, device):
     optimizer.add_param_group({'params': pg2})  # add pg2 (biases)
     print('Optimizer groups: %g .bias, %g conv.weight, %g other' % (len(pg2), len(pg1), len(pg0)))
     del pg0, pg1, pg2
-    
+
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     lf = lambda x: (((1 + math.cos(x * math.pi / epochs)) / 2) ** 1.0) * 0.8 + 0.2  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
@@ -286,11 +286,11 @@ def train(hyp, tb_writer, opt, device):
 
                 # Loss
                 loss, loss_items = compute_loss(pred, targets.to(device), model)  # scaled by batch_size
-				if rank != -1:
-		    		loss *= opt.world_size  # gradient averaged between devices in DDP mode
-				if not torch.isfinite(loss):
-		    		print('WARNING: non-finite loss, ending training ', loss_items)
-		    		return results
+                if rank != -1:
+                    loss *= opt.world_size  # gradient averaged between devices in DDP mode
+                    if not torch.isfinite(loss):
+                        print('WARNING: non-finite loss, ending training ', loss_items)
+                        return results
 
             # Scales loss.  Calls backward() on scaled loss to create scaled gradients.
             # Backward passes under autocast are not recommended.
@@ -373,7 +373,7 @@ def train(hyp, tb_writer, opt, device):
 
                 # Save last, best and delete
                 torch.save(ckpt, last)
-                if best_fitness == fi: 
+                if best_fitness == fi:
                     torch.save(ckpt, best)
                 del ckpt
         # end epoch ----------------------------------------------------------------------------------------------------
