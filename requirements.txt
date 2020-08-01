@@ -1,16 +1,16 @@
 # pip install -U -r requirements.txt
 Cython
+matplotlib>=3.2.2
 numpy>=1.18.5
-opencv-python
-torch>=1.6
-matplotlib
+opencv-python>=4.1.2
 pillow
-tensorboard
-PyYAML>=5.3
-torchvision>=0.6
-scipy
-tqdm
 # pycocotools>=2.0
+PyYAML>=5.3
+scipy>1.4.1
+tensorboard>=2.2
+torch>=1.6.0
+torchvision>=0.7.0
+tqdm>=4.41.0
 
 # Conda commands (in place of pip) ---------------------------------------------
 # conda update -yn base -c defaults conda
