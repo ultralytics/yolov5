@@ -6,7 +6,7 @@ opencv-python>=4.1.2
 pillow
 # pycocotools>=2.0
 PyYAML>=5.3
-scipy>1.4.1
+scipy>=1.4.1
 tensorboard>=2.2
 torch>=1.6.0
 torchvision>=0.7.0
