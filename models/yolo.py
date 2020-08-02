@@ -1,7 +1,16 @@
 import argparse
+import math
 from copy import deepcopy
+from pathlib import Path
 
-from models.experimental import *
+import torch
+import torch.nn as nn
+
+from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat
+from models.experimental import MixConv2d, CrossConv, C3
+from utils.general import check_anchor_order, make_divisible, check_file
+from utils.torch_utils import (
+    time_synchronized, fuse_conv_and_bn, model_info, scale_img, initialize_weights, select_device)
 
 
 class Detect(nn.Module):
@@ -75,7 +84,7 @@ class Model(nn.Module):
             # print('Strides: %s' % m.stride.tolist())
 
         # Init weights, biases
-        torch_utils.initialize_weights(self)
+        initialize_weights(self)
         self.info()
         print('')
 
@@ -86,7 +95,7 @@ class Model(nn.Module):
             f = [None, 3, None]  # flips (2-ud, 3-lr)
             y = []  # outputs
             for si, fi in zip(s, f):
-                xi = torch_utils.scale_img(x.flip(fi) if fi else x, si)
+                xi = scale_img(x.flip(fi) if fi else x, si)
                 yi = self.forward_once(xi)[0]  # forward
                 # cv2.imwrite('img%g.jpg' % s, 255 * xi[0].numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
                 yi[..., :4] /= si  # de-scale
@@ -111,10 +120,10 @@ class Model(nn.Module):
                     o = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2  # FLOPS
                 except:
                     o = 0
-                t = torch_utils.time_synchronized()
+                t = time_synchronized()
                 for _ in range(10):
                     _ = m(x)
-                dt.append((torch_utils.time_synchronized() - t) * 100)
+                dt.append((time_synchronized() - t) * 100)
                 print('%10.1f%10.0f%10.1fms %-40s' % (o, m.np, dt[-1], m.type))
 
             x = m(x)  # run
@@ -149,14 +158,14 @@ class Model(nn.Module):
         for m in self.model.modules():
             if type(m) is Conv:
                 m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatability
-                m.conv = torch_utils.fuse_conv_and_bn(m.conv, m.bn)  # update conv
+                m.conv = fuse_conv_and_bn(m.conv, m.bn)  # update conv
                 m.bn = None  # remove batchnorm
                 m.forward = m.fuseforward  # update forward
         self.info()
         return self
 
     def info(self):  # print model information
-        torch_utils.model_info(self)
+        model_info(self)
 
 
 def parse_model(d, ch):  # model_dict, input_channels(3)
@@ -228,7 +237,7 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     opt = parser.parse_args()
     opt.cfg = check_file(opt.cfg)  # check file
-    device = torch_utils.select_device(opt.device)
+    device = select_device(opt.device)
 
     # Create model
     model = Model(opt.cfg).to(device)

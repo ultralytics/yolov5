@@ -1,10 +1,19 @@
 import argparse
+import os
+import platform
+import shutil
+import time
+from pathlib import Path
 
+import cv2
+import torch
 import torch.backends.cudnn as cudnn
+from numpy import random
 
-from models.experimental import *
-from utils.datasets import *
-from utils.utils import *
+from models.experimental import attempt_load
+from utils.datasets import LoadStreams, LoadImages
+from utils.general import check_img_size, non_max_suppression, apply_classifier, scale_coords, xyxy2xywh, plot_one_box
+from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
 def detect(save_img=False):
@@ -13,7 +22,7 @@ def detect(save_img=False):
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
 
     # Initialize
-    device = torch_utils.select_device(opt.device)
+    device = select_device(opt.device)
     if os.path.exists(out):
         shutil.rmtree(out)  # delete output folder
     os.makedirs(out)  # make new output folder
@@ -28,7 +37,7 @@ def detect(save_img=False):
     # Second-stage classifier
     classify = False
     if classify:
-        modelc = torch_utils.load_classifier(name='resnet101', n=2)  # initialize
+        modelc = load_classifier(name='resnet101', n=2)  # initialize
         modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model'])  # load weights
         modelc.to(device).eval()
 
@@ -58,12 +67,12 @@ def detect(save_img=False):
             img = img.unsqueeze(0)
 
         # Inference
-        t1 = torch_utils.time_synchronized()
+        t1 = time_synchronized()
         pred = model(img, augment=opt.augment)[0]
 
         # Apply NMS
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
-        t2 = torch_utils.time_synchronized()
+        t2 = time_synchronized()
 
         # Apply Classifier
         if classify:
