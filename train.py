@@ -465,7 +465,7 @@ if __name__ == '__main__':
     # Evolve hyperparameters (optional)
     else:
         # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit, upper_limit)
-        meta = {'lr0': (1, 1e-5, 1e-2),  # initial learning rate (SGD=1E-2, Adam=1E-3)
+        meta = {'lr0': (1, 1e-5, 1e-1),  # initial learning rate (SGD=1E-2, Adam=1E-3)
                 'momentum': (0.1, 0.6, 0.98),  # SGD momentum/Adam beta1
                 'weight_decay': (1, 0.0, 0.001),  # optimizer weight decay
                 'giou': (1, 0.02, 0.2),  # GIoU loss gain
@@ -534,6 +534,6 @@ if __name__ == '__main__':
             print_mutation(hyp.copy(), results, yaml_file, opt.bucket)
 
         # Plot results
-        plot_evolution_results(yaml_file)
+        plot_evolution(yaml_file)
         print('Hyperparameter evolution complete. Best results saved as: %s\nCommand to train a new model with these '
               'hyperparameters: $ python train.py --hyp %s' % (yaml_file, yaml_file))
