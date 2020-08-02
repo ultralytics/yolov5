@@ -536,4 +536,4 @@ if __name__ == '__main__':
         # Plot results
         plot_evolution_results(yaml_file)
         print('Hyperparameter evolution complete. Best results saved as: %s\nCommand to train a new model with these '
-              'hyperparameters: $ python train.py --hyp %s' % (f, f))
+              'hyperparameters: $ python train.py --hyp %s' % (yaml_file, yaml_file))
