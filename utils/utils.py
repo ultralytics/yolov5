@@ -21,7 +21,7 @@ import yaml
 from scipy.signal import butter, filtfilt
 from tqdm import tqdm
 
-from . import torch_utils  #  torch_utils, google_utils
+from . import torch_utils  # torch_utils, google_utils
 
 # Set printoptions
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -84,7 +84,7 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
         r = wh[:, None] / k[None]
         x = torch.min(r, 1. / r).min(2)[0]  # ratio metric
         best = x.max(1)[0]  # best_x
-        return (best > 1. / thr).float().mean()  #  best possible recall
+        return (best > 1. / thr).float().mean()  # best possible recall
 
     bpr = metric(m.anchor_grid.clone().cpu().view(-1, 2))
     print('Best Possible Recall (BPR) = %.4f' % bpr, end='')
