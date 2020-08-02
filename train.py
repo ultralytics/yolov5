@@ -42,7 +42,7 @@ hyp = {'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
 
 def train(hyp, opt, device, tb_writer=None):
     print(f'Hyperparameters {hyp}')
-    log_dir = tb_writer.log_dir if tb_writer else 'runs/evolution'  # run directory
+    log_dir = tb_writer.log_dir if tb_writer else 'runs/evolve'  # run directory
     wdir = str(Path(log_dir) / 'weights') + os.sep  # weights directory
     os.makedirs(wdir, exist_ok=True)
     last = wdir + 'last.pt'
@@ -491,6 +491,7 @@ if __name__ == '__main__':
         assert opt.local_rank == -1, 'DDP mode not implemented for --evolve'
         opt.notest, opt.nosave = True, True  # only test/save final epoch
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
+        yaml_file = Path('runs/evolve/hyp_evolved.yaml')  # save best result here
         if opt.bucket:
             os.system('gsutil cp gs://%s/evolve.txt .' % opt.bucket)  # download evolve.txt if exists
 
@@ -518,17 +519,21 @@ if __name__ == '__main__':
                 while all(v == 1):  # mutate until a change occurs (prevent duplicates)
                     v = (g * (npr.random(ng) < mp) * npr.randn(ng) * npr.random() * s + 1).clip(0.3, 3.0)
                 for i, k in enumerate(hyp.keys()):  # plt.hist(v.ravel(), 300)
-                    hyp[k] = x[i + 7] * v[i]  # mutate
+                    hyp[k] = float(x[i + 7] * v[i])  # mutate
 
-            # Clip to limits
+            # Constrain to limits
             for k, v in meta.items():
-                hyp[k] = np.clip(hyp[k], v[1], v[2])
+                hyp[k] = max(hyp[k], v[1])  # lower limit
+                hyp[k] = min(hyp[k], v[2])  # upper limit
+                hyp[k] = round(hyp[k], 5)  # significant digits
 
             # Train mutation
             results = train(hyp.copy(), opt, device)
 
             # Write mutation results
-            print_mutation(hyp, results, opt.bucket)
+            print_mutation(hyp.copy(), results, yaml_file, opt.bucket)
 
-            # Plot results
-            # plot_evolution_results(hyp)
+        # Plot results
+        plot_evolution_results(yaml_file)
+        print('Hyperparameter evolution complete. Best results saved as: %s\nCommand to train a new model with these '
+              'hyperparameters: $ python train.py --hyp %s' % (f, f))
