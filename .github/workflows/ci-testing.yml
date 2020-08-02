@@ -63,34 +63,34 @@ jobs:
           coverage run --source yolo5 -m pytest yolo5 --doctest-modules #  --flake8
           coverage report
 
-       - name: Tests workflow
-         run: |
-           export PYTHONPATH="$PWD"  # to run *.py. files in subdirectories
-           di=cpu # inference devices  # define device
-           # train
-           python yolo5/train.py --img 256 --batch 8 --weights ./weights/${{ matrix.model }}.pt --cfg ./models/${{ matrix.model }}.yaml --epochs 1 --device $di
-           # detect
-           python yolo5/detect.py --weights ./weights/${{ matrix.model }}.pt --device $di
-           python yolo5/detect.py --weights ./runs/exp0/weights/last.pt --device $di
-           # test
-           python yolo5/test.py --img 256 --batch 8 --weights ./weights/${{ matrix.model }}.pt --device $di
-           python yolo5/test.py --img 256 --batch 8 --weights ./runs/exp0/weights/last.pt --device $di
-           # inspect
-           python yolo5/models/yolo.py --cfg ./models/${{ matrix.model }}.yaml
-           # export
-           python yolo5/export.py --img 256 --batch 1 --weights ./weights/${{ matrix.model }}.pt
-         shell: bash
+      - name: Tests workflow
+        run: |
+          export PYTHONPATH="$PWD"  # to run *.py. files in subdirectories
+          di=cpu # inference devices  # define device
+          # train
+          python yolo5/train.py --img 256 --batch 8 --weights ./weights/${{ matrix.model }}.pt --cfg ./models/${{ matrix.model }}.yaml --epochs 1 --device $di
+          # detect
+          python yolo5/detect.py --weights ./weights/${{ matrix.model }}.pt --device $di
+          python yolo5/detect.py --weights ./runs/exp0/weights/last.pt --device $di
+          # test
+          python yolo5/test.py --img 256 --batch 8 --weights ./weights/${{ matrix.model }}.pt --device $di
+          python yolo5/test.py --img 256 --batch 8 --weights ./runs/exp0/weights/last.pt --device $di
+          # inspect
+          python yolo5/models/yolo.py --cfg ./models/${{ matrix.model }}.yaml
+          # export
+          python yolo5/export.py --img 256 --batch 1 --weights ./weights/${{ matrix.model }}.pt
+        shell: bash
 
       - name: Test Install
         run: |
           pip install -q check-manifest twine
 
-        check-manifest
-        python setup.py check --metadata --strict
+          check-manifest
+          python setup.py check --metadata --strict
 
-        # Build the package
-        python setup.py sdist bdist_wheel
-        twine check ./dist/*
+          # Build the package
+          python setup.py sdist bdist_wheel
+          twine check ./dist/*
 
-        # Dry run install
-        python setup.py install --dry-run
+          # Dry run install
+          python setup.py install --dry-run
