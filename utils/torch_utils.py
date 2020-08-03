@@ -22,7 +22,7 @@ def init_seeds(seed=0):
         cudnn.benchmark = True
 
 
-def select_device(device='', apex=False, batch_size=None):
+def select_device(device='', batch_size=None):
     # device = 'cpu' or '0' or '0,1,2,3'
     cpu_request = device.lower() == 'cpu'
     if device and not cpu_request:  # if device requested other than 'cpu'
@@ -36,7 +36,7 @@ def select_device(device='', apex=False, batch_size=None):
         if ng > 1 and batch_size:  # check that batch_size is compatible with device_count
             assert batch_size % ng == 0, 'batch-size %g not multiple of GPU count %g' % (batch_size, ng)
         x = [torch.cuda.get_device_properties(i) for i in range(ng)]
-        s = 'Using CUDA ' + ('Apex ' if apex else '')  # apex for mixed precision https://github.com/NVIDIA/apex
+        s = 'Using CUDA '
         for i in range(0, ng):
             if i == 1:
                 s = ' ' * len(s)
@@ -164,13 +164,16 @@ def load_classifier(name='resnet101', n=2):
 
 def scale_img(img, ratio=1.0, same_shape=False):  # img(16,3,256,416), r=ratio
     # scales img(bs,3,y,x) by ratio
-    h, w = img.shape[2:]
-    s = (int(h * ratio), int(w * ratio))  # new size
-    img = F.interpolate(img, size=s, mode='bilinear', align_corners=False)  # resize
-    if not same_shape:  # pad/crop img
-        gs = 32  # (pixels) grid size
-        h, w = [math.ceil(x * ratio / gs) * gs for x in (h, w)]
-    return F.pad(img, [0, w - s[1], 0, h - s[0]], value=0.447)  # value = imagenet mean
+    if ratio == 1.0:
+        return img
+    else:
+        h, w = img.shape[2:]
+        s = (int(h * ratio), int(w * ratio))  # new size
+        img = F.interpolate(img, size=s, mode='bilinear', align_corners=False)  # resize
+        if not same_shape:  # pad/crop img
+            gs = 32  # (pixels) grid size
+            h, w = [math.ceil(x * ratio / gs) * gs for x in (h, w)]
+        return F.pad(img, [0, w - s[1], 0, h - s[0]], value=0.447)  # value = imagenet mean
 
 
 def copy_attr(a, b, include=(), exclude=()):

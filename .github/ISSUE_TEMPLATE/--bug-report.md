@@ -10,7 +10,7 @@ assignees: ''
 Before submitting a bug report, please be aware that your issue **must be reproducible** with all of the following, otherwise it is non-actionable, and we can not help you:
  - **Current repo**: run `git fetch && git status -uno` to check and `git pull` to update repo
  - **Common dataset**: coco.yaml or coco128.yaml
- - **Common environment**: Colab, Google Cloud, or Docker image. See https://github.com/ultralytics/yolov5#reproduce-our-environment
+ - **Common environment**: Colab, Google Cloud, or Docker image. See https://github.com/ultralytics/yolov5#environments
  
 If this is a custom dataset/training question you **must include** your `train*.jpg`, `test*.jpg` and `results.png` figures, or we can not help you. You can generate these with `utils.plot_results()`.
 
