@@ -18,10 +18,11 @@ import torch
 import torch.nn as nn
 import torchvision
 import yaml
+from scipy.cluster.vq import kmeans
 from scipy.signal import butter, filtfilt
 from tqdm import tqdm
 
-from . import torch_utils  #  torch_utils, google_utils
+from utils.torch_utils import init_seeds, is_parallel
 
 # Set printoptions
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -47,7 +48,7 @@ def torch_distributed_zero_first(local_rank: int):
 def init_seeds(seed=0):
     random.seed(seed)
     np.random.seed(seed)
-    torch_utils.init_seeds(seed=seed)
+    init_seeds(seed=seed)
 
 
 def get_latest_run(search_dir='./runs'):
@@ -84,15 +85,17 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
         r = wh[:, None] / k[None]
         x = torch.min(r, 1. / r).min(2)[0]  # ratio metric
         best = x.max(1)[0]  # best_x
-        return (best > 1. / thr).float().mean()  #  best possible recall
+        aat = (x > 1. / thr).float().sum(1).mean()  # anchors above threshold
+        bpr = (best > 1. / thr).float().mean()  # best possible recall
+        return bpr, aat
 
-    bpr = metric(m.anchor_grid.clone().cpu().view(-1, 2))
-    print('Best Possible Recall (BPR) = %.4f' % bpr, end='')
-    if bpr < 0.99:  # threshold to recompute
+    bpr, aat = metric(m.anchor_grid.clone().cpu().view(-1, 2))
+    print('anchors/target = %.2f, Best Possible Recall (BPR) = %.4f' % (aat, bpr), end='')
+    if bpr < 0.98:  # threshold to recompute
         print('. Attempting to generate improved anchors, please wait...' % bpr)
         na = m.anchor_grid.numel() // 2  # number of anchors
         new_anchors = kmean_anchors(dataset, n=na, img_size=imgsz, thr=thr, gen=1000, verbose=False)
-        new_bpr = metric(new_anchors.reshape(-1, 2))
+        new_bpr = metric(new_anchors.reshape(-1, 2))[0]
         if new_bpr > bpr:  # replace anchors
             new_anchors = torch.tensor(new_anchors, device=m.anchors.device).type_as(m.anchors)
             m.anchor_grid[:] = new_anchors.clone().view_as(m.anchor_grid)  # for inference
@@ -308,7 +311,7 @@ def compute_ap(recall, precision):
 
 def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False):
     # Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
-    box2 = box2.t()
+    box2 = box2.T
 
     # Get the coordinates of bounding boxes
     if x1y1x2y2:  # x1, y1, x2, y2 = box1
@@ -346,7 +349,7 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False):
             elif CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
                 v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
                 with torch.no_grad():
-                    alpha = v / (1 - iou + v)
+                    alpha = v / (1 - iou + v + 1e-16)
                 return iou - (rho2 / c2 + v * alpha)  # CIoU
 
     return iou
@@ -369,8 +372,8 @@ def box_iou(box1, box2):
         # box = 4xn
         return (box[2] - box[0]) * (box[3] - box[1])
 
-    area1 = box_area(box1.t())
-    area2 = box_area(box2.t())
+    area1 = box_area(box1.T)
+    area2 = box_area(box2.T)
 
     # inter(N,M) = (rb(N,M,2) - lt(N,M,2)).clamp(0).prod(2)
     inter = (torch.min(box1[:, None, 2:], box2[:, 2:]) - torch.max(box1[:, None, :2], box2[:, :2])).clamp(0).prod(2)
@@ -439,51 +442,49 @@ class BCEBlurWithLogitsLoss(nn.Module):
 
 def compute_loss(p, targets, model):  # predictions, targets, model
     device = targets.device
-    ft = torch.cuda.FloatTensor if p[0].is_cuda else torch.Tensor
-    lcls, lbox, lobj = ft([0]).to(device), ft([0]).to(device), ft([0]).to(device)
+    lcls, lbox, lobj = torch.zeros(1, device=device), torch.zeros(1, device=device), torch.zeros(1, device=device)
     tcls, tbox, indices, anchors = build_targets(p, targets, model)  # targets
     h = model.hyp  # hyperparameters
-    red = 'mean'  # Loss reduction (sum or mean)
 
     # Define criteria
-    BCEcls = nn.BCEWithLogitsLoss(pos_weight=ft([h['cls_pw']]), reduction=red).to(device)
-    BCEobj = nn.BCEWithLogitsLoss(pos_weight=ft([h['obj_pw']]), reduction=red).to(device)
+    BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([h['cls_pw']])).to(device)
+    BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([h['obj_pw']])).to(device)
 
-    # class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
+    # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
     cp, cn = smooth_BCE(eps=0.0)
 
-    # focal loss
+    # Focal loss
     g = h['fl_gamma']  # focal loss gamma
     if g > 0:
         BCEcls, BCEobj = FocalLoss(BCEcls, g), FocalLoss(BCEobj, g)
 
-    # per output
+    # Losses
     nt = 0  # number of targets
     np = len(p)  # number of outputs
     balance = [4.0, 1.0, 0.4] if np == 3 else [4.0, 1.0, 0.4, 0.1]  # P3-5 or P3-6
     for i, pi in enumerate(p):  # layer index, layer predictions
         b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
-        tobj = torch.zeros_like(pi[..., 0]).to(device)  # target obj
+        tobj = torch.zeros_like(pi[..., 0], device=device)  # target obj
 
-        nb = b.shape[0]  # number of targets
-        if nb:
-            nt += nb  # cumulative targets
+        n = b.shape[0]  # number of targets
+        if n:
+            nt += n  # cumulative targets
             ps = pi[b, a, gj, gi]  # prediction subset corresponding to targets
 
-            # GIoU
+            # Regression
             pxy = ps[:, :2].sigmoid() * 2. - 0.5
             pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anchors[i]
             pbox = torch.cat((pxy, pwh), 1).to(device)  # predicted box
-            giou = bbox_iou(pbox.t(), tbox[i], x1y1x2y2=False, GIoU=True)  # giou(prediction, target)
-            lbox += (1.0 - giou).sum() if red == 'sum' else (1.0 - giou).mean()  # giou loss
+            giou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, CIoU=True)  # giou(prediction, target)
+            lbox += (1.0 - giou).mean()  # giou loss
 
-            # Obj
+            # Objectness
             tobj[b, a, gj, gi] = (1.0 - model.gr) + model.gr * giou.detach().clamp(0).type(tobj.dtype)  # giou ratio
 
-            # Class
+            # Classification
             if model.nc > 1:  # cls loss (only if multiple classes)
-                t = torch.full_like(ps[:, 5:], cn).to(device)  # targets
-                t[range(nb), tcls[i]] = cp
+                t = torch.full_like(ps[:, 5:], cn, device=device)  # targets
+                t[range(n), tcls[i]] = cp
                 lcls += BCEcls(ps[:, 5:], t)  # BCE
 
             # Append targets to text file
@@ -495,14 +496,9 @@ def compute_loss(p, targets, model):  # predictions, targets, model
     s = 3 / np  # output count scaling
     lbox *= h['giou'] * s
     lobj *= h['obj'] * s * (1.4 if np == 4 else 1.)
-    lcls *= h['cls'] * s
+    if model.nc > 1:
+        lcls *= h['cls'] * s
     bs = tobj.shape[0]  # batch size
-    if red == 'sum':
-        g = 3.0  # loss gain
-        lobj *= g / bs
-        if nt:
-            lcls *= g / nt / model.nc
-            lbox *= g / nt
 
     loss = lbox + lobj + lcls
     return loss * bs, torch.cat((lbox, lobj, lcls, loss)).detach()
@@ -510,40 +506,40 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
 def build_targets(p, targets, model):
     # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
-    det = model.module.model[-1] if type(model) in (nn.parallel.DataParallel, nn.parallel.DistributedDataParallel) \
-        else model.model[-1]  # Detect() module
+    det = model.module.model[-1] if is_parallel(model) else model.model[-1]  # Detect() module
     na, nt = det.na, targets.shape[0]  # number of anchors, targets
     tcls, tbox, indices, anch = [], [], [], []
-    gain = torch.ones(6, device=targets.device)  # normalized to gridspace gain
-    off = torch.tensor([[1, 0], [0, 1], [-1, 0], [0, -1]], device=targets.device).float()  # overlap offsets
-    at = torch.arange(na).view(na, 1).repeat(1, nt)  # anchor tensor, same as .repeat_interleave(nt)
+    gain = torch.ones(7, device=targets.device)  # normalized to gridspace gain
+    ai = torch.arange(na, device=targets.device).float().view(na, 1).repeat(1, nt)  # same as .repeat_interleave(nt)
+    targets = torch.cat((targets.repeat(na, 1, 1), ai[:, :, None]), 2)  # append anchor indices
 
-    g = 0.5  # offset
-    style = 'rect4'
+    g = 0.5  # bias
+    off = torch.tensor([[0, 0],
+                        [1, 0], [0, 1], [-1, 0], [0, -1],  # j,k,l,m
+                        # [1, 1], [1, -1], [-1, 1], [-1, -1],  # jk,jm,lk,lm
+                        ], device=targets.device).float() * g  # offsets
+
     for i in range(det.nl):
         anchors = det.anchors[i]
-        gain[2:] = torch.tensor(p[i].shape)[[3, 2, 3, 2]]  # xyxy gain
+        gain[2:6] = torch.tensor(p[i].shape)[[3, 2, 3, 2]]  # xyxy gain
 
         # Match targets to anchors
-        a, t, offsets = [], targets * gain, 0
+        t, offsets = targets * gain, 0
         if nt:
-            r = t[None, :, 4:6] / anchors[:, None]  # wh ratio
+            # Matches
+            r = t[:, :, 4:6] / anchors[:, None]  # wh ratio
             j = torch.max(r, 1. / r).max(2)[0] < model.hyp['anchor_t']  # compare
-            # j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n) = wh_iou(anchors(3,2), gwh(n,2))
-            a, t = at[j], t.repeat(na, 1, 1)[j]  # filter
+            # j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
+            t = t[j]  # filter
 
-            # overlaps
+            # Offsets
             gxy = t[:, 2:4]  # grid xy
-            z = torch.zeros_like(gxy)
-            if style == 'rect2':
-                j, k = ((gxy % 1. < g) & (gxy > 1.)).T
-                a, t = torch.cat((a, a[j], a[k]), 0), torch.cat((t, t[j], t[k]), 0)
-                offsets = torch.cat((z, z[j] + off[0], z[k] + off[1]), 0) * g
-            elif style == 'rect4':
-                j, k = ((gxy % 1. < g) & (gxy > 1.)).T
-                l, m = ((gxy % 1. > (1 - g)) & (gxy < (gain[[2, 3]] - 1.))).T
-                a, t = torch.cat((a, a[j], a[k], a[l], a[m]), 0), torch.cat((t, t[j], t[k], t[l], t[m]), 0)
-                offsets = torch.cat((z, z[j] + off[0], z[k] + off[1], z[l] + off[2], z[m] + off[3]), 0) * g
+            gxi = gain[[2, 3]] - gxy  # inverse
+            j, k = ((gxy % 1. < g) & (gxy > 1.)).T
+            l, m = ((gxi % 1. < g) & (gxi > 1.)).T
+            j = torch.stack((torch.ones_like(j), j, k, l, m))
+            t = t.repeat((5, 1, 1))[j]
+            offsets = (torch.zeros_like(gxy)[None] + off[:, None])[j]
 
         # Define
         b, c = t[:, :2].long().T  # image, class
@@ -553,6 +549,7 @@ def build_targets(p, targets, model):
         gi, gj = gij.T  # grid xy indices
 
         # Append
+        a = t[:, 6].long()  # anchor indices
         indices.append((b, a, gj, gi))  # image, anchor, grid indices
         tbox.append(torch.cat((gxy - gij, gwh), 1))  # box
         anch.append(anchors[a])  # anchors
@@ -599,7 +596,7 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, 
 
         # Detections matrix nx6 (xyxy, conf, cls)
         if multi_label:
-            i, j = (x[:, 5:] > conf_thres).nonzero().t()
+            i, j = (x[:, 5:] > conf_thres).nonzero(as_tuple=False).T
             x = torch.cat((box[i], x[i, j + 5, None], j[:, None].float()), 1)
         else:  # best class only
             conf, j = x[:, 5:].max(1, keepdim=True)
@@ -783,7 +780,6 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
     wh = wh0[(wh0 >= 2.0).any(1)]  # filter > 2 pixels
 
     # Kmeans calculation
-    from scipy.cluster.vq import kmeans
     print('Running kmeans for %g anchors on %g points...' % (n, len(wh)))
     s = wh.std(0)  # sigmas for whitening
     k, dist = kmeans(wh / s, n, iter=30)  # points, mean distance
@@ -824,11 +820,11 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
     return print_results(k)
 
 
-def print_mutation(hyp, results, bucket=''):
+def print_mutation(hyp, results, yaml_file='hyp_evolved.yaml', bucket=''):
     # Print mutation results to evolve.txt (for use with train.py --evolve)
     a = '%10s' * len(hyp) % tuple(hyp.keys())  # hyperparam keys
     b = '%10.3g' * len(hyp) % tuple(hyp.values())  # hyperparam values
-    c = '%10.4g' * len(results) % results  # results (P, R, mAP, F1, test_loss)
+    c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
     print('\n%s\n%s\nEvolved fitness: %s\n' % (a, b, c))
 
     if bucket:
@@ -837,10 +833,20 @@ def print_mutation(hyp, results, bucket=''):
     with open('evolve.txt', 'a') as f:  # append result
         f.write(c + b + '\n')
     x = np.unique(np.loadtxt('evolve.txt', ndmin=2), axis=0)  # load unique rows
-    np.savetxt('evolve.txt', x[np.argsort(-fitness(x))], '%10.3g')  # save sort by fitness
+    x = x[np.argsort(-fitness(x))]  # sort
+    np.savetxt('evolve.txt', x, '%10.3g')  # save sort by fitness
 
     if bucket:
         os.system('gsutil cp evolve.txt gs://%s' % bucket)  # upload evolve.txt
+
+    # Save yaml
+    for i, k in enumerate(hyp.keys()):
+        hyp[k] = float(x[0, i + 7])
+    with open(yaml_file, 'w') as f:
+        results = tuple(x[0, :7])
+        c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
+        f.write('# Hyperparameter Evolution Results\n# Generations: %g\n# Metrics: ' % len(x) + c + '\n\n')
+        yaml.dump(hyp, f, sort_keys=False)
 
 
 def apply_classifier(x, model, img, im0):
@@ -917,6 +923,15 @@ def increment_dir(dir, comment=''):
 
 
 # Plotting functions ---------------------------------------------------------------------------------------------------
+def hist2d(x, y, n=100):
+    # 2d histogram used in labels.png and evolve.png
+    xedges, yedges = np.linspace(x.min(), x.max(), n), np.linspace(y.min(), y.max(), n)
+    hist, xedges, yedges = np.histogram2d(x, y, (xedges, yedges))
+    xidx = np.clip(np.digitize(x, xedges) - 1, 0, hist.shape[0] - 1)
+    yidx = np.clip(np.digitize(y, yedges) - 1, 0, hist.shape[1] - 1)
+    return np.log(hist[xidx, yidx])
+
+
 def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
     # https://stackoverflow.com/questions/28536191/how-to-filter-smooth-with-scipy-numpy
     def butter_lowpass(cutoff, fs, order):
@@ -1128,13 +1143,6 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.utils import *; plot_st
 
 def plot_labels(labels, save_dir=''):
     # plot dataset labels
-    def hist2d(x, y, n=100):
-        xedges, yedges = np.linspace(x.min(), x.max(), n), np.linspace(y.min(), y.max(), n)
-        hist, xedges, yedges = np.histogram2d(x, y, (xedges, yedges))
-        xidx = np.clip(np.digitize(x, xedges) - 1, 0, hist.shape[0] - 1)
-        yidx = np.clip(np.digitize(y, yedges) - 1, 0, hist.shape[1] - 1)
-        return np.log(hist[xidx, yidx])
-
     c, b = labels[:, 0], labels[:, 1:].transpose()  # classes, boxes
     nc = int(c.max() + 1)  # number of classes
 
@@ -1152,23 +1160,28 @@ def plot_labels(labels, save_dir=''):
     plt.close()
 
 
-def plot_evolution_results(hyp):  # from utils.utils import *; plot_evolution_results(hyp)
+def plot_evolution(yaml_file='runs/evolve/hyp_evolved.yaml'):  # from utils.utils import *; plot_evolution()
     # Plot hyperparameter evolution results in evolve.txt
+    with open(yaml_file) as f:
+        hyp = yaml.load(f, Loader=yaml.FullLoader)
     x = np.loadtxt('evolve.txt', ndmin=2)
     f = fitness(x)
     # weights = (f - f.min()) ** 2  # for weighted results
-    plt.figure(figsize=(12, 10), tight_layout=True)
+    plt.figure(figsize=(10, 10), tight_layout=True)
     matplotlib.rc('font', **{'size': 8})
     for i, (k, v) in enumerate(hyp.items()):
         y = x[:, i + 7]
         # mu = (y * weights).sum() / weights.sum()  # best weighted result
         mu = y[f.argmax()]  # best single result
-        plt.subplot(4, 5, i + 1)
-        plt.plot(mu, f.max(), 'o', markersize=10)
-        plt.plot(y, f, '.')
+        plt.subplot(5, 5, i + 1)
+        plt.scatter(y, f, c=hist2d(y, f, 20), cmap='viridis', alpha=.8, edgecolors='none')
+        plt.plot(mu, f.max(), 'k+', markersize=15)
         plt.title('%s = %.3g' % (k, mu), fontdict={'size': 9})  # limit to 40 characters
+        if i % 5 != 0:
+            plt.yticks([])
         print('%15s: %.3g' % (k, mu))
     plt.savefig('evolve.png', dpi=200)
+    print('\nPlot saved as evolve.png')
 
 
 def plot_results_overlay(start=0, stop=0):  # from utils.utils import *; plot_results_overlay()

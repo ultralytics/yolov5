@@ -22,7 +22,7 @@ def init_seeds(seed=0):
         cudnn.benchmark = True
 
 
-def select_device(device='', apex=False, batch_size=None):
+def select_device(device='', batch_size=None):
     # device = 'cpu' or '0' or '0,1,2,3'
     cpu_request = device.lower() == 'cpu'
     if device and not cpu_request:  # if device requested other than 'cpu'
@@ -36,7 +36,7 @@ def select_device(device='', apex=False, batch_size=None):
         if ng > 1 and batch_size:  # check that batch_size is compatible with device_count
             assert batch_size % ng == 0, 'batch-size %g not multiple of GPU count %g' % (batch_size, ng)
         x = [torch.cuda.get_device_properties(i) for i in range(ng)]
-        s = 'Using CUDA ' + ('Apex ' if apex else '')  # apex for mixed precision https://github.com/NVIDIA/apex
+        s = 'Using CUDA '
         for i in range(0, ng):
             if i == 1:
                 s = ' ' * len(s)
