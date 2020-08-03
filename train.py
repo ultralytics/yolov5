@@ -2,9 +2,9 @@ import argparse
 import glob
 import math
 import os
+import random
 import time
 from pathlib import Path
-from random import random
 
 import numpy as np
 import torch.distributed as dist
