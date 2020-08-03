@@ -23,6 +23,7 @@ if __name__ == '__main__':
     valid_images = open('camel/val.txt', 'w+')
     test_images = open('camel/test.txt', 'w+')
 
+    class_freq = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 17: 0}
     for seq in list_seqs:
         seq_name = seq.split('/')[-2]
         # os.mkdir('camel/labels/{}'.format(seq_name))
@@ -47,7 +48,8 @@ if __name__ == '__main__':
 
                     img, classe, x, y, w, h = breakline(line)
 
-                    if classe > 4:
+                    class_freq[classe - 1] = class_freq[classe - 1] + 1
+                    if classe > 3:
                         continue
 
                     if x < 0:
@@ -80,6 +82,7 @@ if __name__ == '__main__':
         except FileNotFoundError:
             print("Sequenza senza annotazioni")
 
+    print(class_freq)
     train_images.close()
     valid_images.close()
     test_images.close()
