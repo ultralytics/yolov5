@@ -65,7 +65,6 @@ def train(hyp, opt, device, tb_writer=None):
         opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
     
     # TODO: Use DDP logging. Only the first process is allowed to log.
-    
     # Save run settings
     with open(Path(log_dir) / 'hyp.yaml', 'w') as f:
         yaml.dump(hyp, f, sort_keys=False)
@@ -455,6 +454,7 @@ if __name__ == '__main__':
     opt.total_batch_size = opt.batch_size
     opt.world_size = 1
     opt.global_rank = -1
+    
     # DDP mode
     if opt.local_rank != -1:
         assert torch.cuda.device_count() > opt.local_rank
