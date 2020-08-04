@@ -38,7 +38,7 @@ This repository represents Ultralytics open-source research into future object d
 
 Python 3.8 or later with all [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) dependencies installed, including `torch>=1.6`. To install run:
 ```bash
-$ pip install -U -r requirements.txt
+$ pip install -r requirements.txt
 ```
 
 
