@@ -52,6 +52,7 @@ $ pip install -U -r requirements.txt
 * [Model Ensembling](https://github.com/ultralytics/yolov5/issues/318)
 * [Model Pruning/Sparsity](https://github.com/ultralytics/yolov5/issues/304)
 * [Hyperparameter Evolution](https://github.com/ultralytics/yolov5/issues/607)
+* [TensorRT Deployment](https://github.com/wang-xinyu/tensorrtx)
 
 
 ## Environments
