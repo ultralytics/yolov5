@@ -1,5 +1,5 @@
 import argparse
-
+import sys
 import torch.backends.cudnn as cudnn
 
 from models.experimental import *
@@ -11,6 +11,8 @@ def detect(save_img=False):
     out, source, weights, view_img, save_txt, imgsz = \
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
+
+    colab_webcam = webcam and ('google.colab' in sys.modules)
 
     # Initialize
     device = torch_utils.select_device(opt.device)
@@ -35,9 +37,12 @@ def detect(save_img=False):
     # Set Dataloader
     vid_path, vid_writer = None, None
     if webcam:
-        view_img = True
         cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(source, img_size=imgsz)
+        if colab_webcam:  
+            dataset = LoadColabStreams(img_size=imgsz)
+        else:    
+            view_img = True
+            dataset = LoadStreams(source, img_size=imgsz)
     else:
         save_img = True
         dataset = LoadImages(source, img_size=imgsz)
@@ -69,9 +74,13 @@ def detect(save_img=False):
         if classify:
             pred = apply_classifier(pred, modelc, img, im0s)
 
+        # Initialize Bounding Box Pixel
+        if colab_webcam:
+            drawing_array = np.zeros([imgsz,imgsz,4], dtype=np.uint8)
+
         # Process detections
         for i, det in enumerate(pred):  # detections per image
-            if webcam:  # batch_size >= 1
+            if webcam and not colab_webcam:  # batch_size >= 1
                 p, s, im0 = path[i], '%g: ' % i, im0s[i].copy()
             else:
                 p, s, im0 = path, '', im0s
@@ -99,9 +108,22 @@ def detect(save_img=False):
                     if save_img or view_img:  # Add bbox to image
                         label = '%s %.2f' % (names[int(cls)], conf)
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
+                    
+                    if colab_webcam: 
+                        label = '%s %.2f' % (names[int(cls)], conf)
+                        plot_one_box(xyxy, drawing_array, label=label, color=colors[int(cls)])
+                        drawing_array[:,:,3] = (drawing_array.max(axis = 2) > 0 ).astype(int) * 255     # Make tranparent background
 
-            # Print time (inference + NMS)
-            print('%sDone. (%.3fs)' % (s, t2 - t1))
+            if colab_webcam:
+                # Send bounding box bytes back to javascript
+                drawing_PIL = Image.fromarray(drawing_array, 'RGBA')
+                iobuf = io.BytesIO()
+                drawing_PIL.save(iobuf, format='png')
+                drawing_bytes = 'data:image/png;base64,{}'.format((str(base64.b64encode(iobuf.getvalue()), 'utf-8')))
+                vid_cap.stream_data = drawing_bytes
+            else:
+                # Print time (inference + NMS)
+                print('%sDone. (%.3fs)' % (s, t2 - t1))
 
             # Stream results
             if view_img:
