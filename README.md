@@ -41,6 +41,13 @@ Python 3.8 or later with all [requirements.txt](https://github.com/ultralytics/y
 $ pip install -r requirements.txt
 ```
 
+## Download Weights
+
+To download weights, run the following command from the `yolov5` directory:
+```bash
+$ ./weights/download_weights.sh
+```
+
 
 ## Tutorials
 
