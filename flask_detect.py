@@ -10,8 +10,8 @@ import sys
 
 app = Flask(__name__)
 
-weights = sys.argv[1]
-device_number = sys.argv[2]
+weights = 'yolov5s.pt' if len(sys.argv) == 1 else sys.argv[1]
+device_number = '' if len(sys.argv) <=2  else sys.argv[2]
 device = torch_utils.select_device(device_number)
 
 model = attempt_load(weights, map_location=device)  # load FP32 model
