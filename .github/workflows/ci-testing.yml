@@ -53,7 +53,8 @@ jobs:
 
       - name: Download data
         run: |
-          python -c "from utils.google_utils import * ; gdrive_download('1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', 'coco128.zip')"
+          curl -O https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128.zip
+          unzip -q coco128.zip
           mv ./coco128 ../
 
       - name: Tests workflow
