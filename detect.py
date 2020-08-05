@@ -137,12 +137,7 @@ def detect(save_img=False):
                     vid_writer.write(im0)
 
     if save_txt or save_img:
-        if out[0] == os.sep:
-            # for absolute path
-            print('Results saved to %s' % out)
-        else:
-            # for relative path
-            print('Results saved to %s' % os.getcwd() + os.sep + out)
+        print('Results saved to %s' % Path(out))
         if platform == 'darwin' and not opt.update:  # MacOS
             os.system('open ' + save_path)
 
