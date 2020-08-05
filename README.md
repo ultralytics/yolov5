@@ -95,6 +95,32 @@ Results saved to /content/yolov5/inference/output
 
 <img src="https://user-images.githubusercontent.com/26833433/83082816-59e54880-a039-11ea-8abe-ab90cc1ec4b0.jpeg" width="500">  
 
+## YOLOv5 as an API
+
+To use your model as a API run the **flask_detect.py** script and pass your model's path as an argument to it as shown below:
+
+```
+python flask_detect.py <path-to-your-model>
+Example: python flask_detect.py runs/exp1/weights/best.pt
+```
+
+If you have a single GPU, the script will use it by default.
+In case you have multiple GPUs you can pass the GPU device number(s) in order to use multiple GPUs or a specific one as shown below:
+
+```
+python flask_detect.py <path-to-your-model> <GPU-device-number(s)>
+Example: python flask_detect.py runs/exp1/weights/best.pt 1 # to use the GPU with device number '1'
+Example: python flask_detect.py runs/exp1/weights/best.pt 0, 1, 2 # to use GPUs with device numbers '0', '1' and '2'
+```
+
+The script **flask_client.py** can be used to send a request to the API as shown below:<br>
+This script uses parameters from the file **api_data.json**<br>
+```python flask_client.py```
+
+
+**Default parameters are picked from api_data.json. 
+Change necessary parameters in api_data.json as per your requirements**
+
 
 ## Training
 
@@ -106,7 +132,6 @@ $ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 
                                          yolov5x                                16
 ```
 <img src="https://user-images.githubusercontent.com/26833433/84186698-c4d54d00-aa45-11ea-9bde-c632c1230ccd.png" width="900">
-
 
 ## Citation
 
