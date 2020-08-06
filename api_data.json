@@ -1,0 +1,13 @@
+{
+    "source" : "inference/images/",
+    "output" : "inference/output",
+    "imgsz" : 640,
+    "conf_thres" : 0.4,
+    "iou_thres" : 0.5,
+    "view_img" : false,
+    "save_txt" : false,
+    "classes" : null,
+    "agnostic_nms" : false,
+    "augment" : false,
+    "update" : false
+}
