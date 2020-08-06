@@ -15,6 +15,36 @@ This repository represents Ultralytics open-source research into future object d
 - **May 27, 2020**: Public release. YOLOv5 models are SOTA among all known YOLO implementations.
 - **April 1, 2020**: Start development of future compound-scaled [YOLOv3](https://github.com/ultralytics/yolov3)/[YOLOv4](https://github.com/AlexeyAB/darknet)-based PyTorch models.
 
+## YOLOv5 as an API
+
+To use your model as a API run the **flask_detect.py** script and pass your model's path as an argument to it as shown below:
+
+```
+python flask_detect.py <path-to-your-model>
+Example: python flask_detect.py runs/exp1/weights/best.pt
+```
+
+If you have a single GPU, the script will use it by default.
+In case you have multiple GPUs you can pass the GPU device number(s) in order to use multiple GPUs or a specific one as shown below:
+
+Or just the Equivalent curl command
+```curl -X POST -H "Content-Type: application/json" -d @api_data.json http://localhost:5000/detect```
+```
+python flask_detect.py <path-to-your-model> <GPU-device-number(s)>
+Example: python flask_detect.py runs/exp1/weights/best.pt 1 # to use the GPU with device number '1'
+Example: python flask_detect.py runs/exp1/weights/best.pt 0, 1, 2 # to use GPUs with dsimply change theevice values numbers '0', '1' and '2'
+```
+
+The script **flask_client.py** can be used to send a request to the API as shown below:<br>
+This script uses parameters from the file **api_data.json**<br>
+```python flask_client.py```
+
+Or simply use the Equivalent **CURL** command
+```curl -X POST -H "Content-Type: application/json" -d @api_data.json http://localhost:5000/detect```
+
+**Default parameters are picked from ```api_data.json```.
+Change necessary parameters in api_data.json as per your requirements
+Or you can simply change the dictionary ```data's``` values in flask_client.py**
 
 ## Pretrained Checkpoints
 
