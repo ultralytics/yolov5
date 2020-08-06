@@ -62,9 +62,9 @@ def train(hyp, opt, device, tb_writer=None):
     best = wdir + 'best.pt'
     results_file = log_dir + os.sep + 'results.txt'
     epochs, batch_size, total_batch_size, weights, rank = \
-        opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.local_rank
+        opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
+    
     # TODO: Use DDP logging. Only the first process is allowed to log.
-
     # Save run settings
     with open(Path(log_dir) / 'hyp.yaml', 'w') as f:
         yaml.dump(hyp, f, sort_keys=False)
@@ -184,7 +184,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     # DDP mode
     if cuda and rank != -1:
-        model = DDP(model, device_ids=[rank], output_device=rank)
+        model = DDP(model, device_ids=[opt.local_rank], output_device=(opt.local_rank))
 
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt, hyp=hyp, augment=True,
@@ -441,8 +441,7 @@ if __name__ == '__main__':
     if last and not opt.weights:
         print(f'Resuming training from {last}')
     opt.weights = last if opt.resume and not opt.weights else opt.weights
-
-    if opt.local_rank in [-1, 0]:
+    if opt.local_rank == -1 or ("RANK" in os.environ and os.environ["RANK"] == "0"):
         check_git_status()
     opt.cfg = check_file(opt.cfg)  # check file
     opt.data = check_file(opt.data)  # check file
@@ -454,7 +453,8 @@ if __name__ == '__main__':
     device = select_device(opt.device, batch_size=opt.batch_size)
     opt.total_batch_size = opt.batch_size
     opt.world_size = 1
-
+    opt.global_rank = -1
+    
     # DDP mode
     if opt.local_rank != -1:
         assert torch.cuda.device_count() > opt.local_rank
@@ -462,6 +462,7 @@ if __name__ == '__main__':
         device = torch.device('cuda', opt.local_rank)
         dist.init_process_group(backend='nccl', init_method='env://')  # distributed backend
         opt.world_size = dist.get_world_size()
+        opt.global_rank = dist.get_rank()
         assert opt.batch_size % opt.world_size == 0, '--batch-size must be multiple of CUDA device count'
         opt.batch_size = opt.total_batch_size // opt.world_size
 
@@ -470,7 +471,7 @@ if __name__ == '__main__':
     # Train
     if not opt.evolve:
         tb_writer = None
-        if opt.local_rank in [-1, 0]:
+        if opt.global_rank in [-1, 0]:
             print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
             tb_writer = SummaryWriter(log_dir=increment_dir('runs/exp', opt.name))
 
