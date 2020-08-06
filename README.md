@@ -15,35 +15,6 @@ This repository represents Ultralytics open-source research into future object d
 - **May 27, 2020**: Public release. YOLOv5 models are SOTA among all known YOLO implementations.
 - **April 1, 2020**: Start development of future compound-scaled [YOLOv3](https://github.com/ultralytics/yolov3)/[YOLOv4](https://github.com/AlexeyAB/darknet)-based PyTorch models.
 
-## YOLOv5 as an API
-
-To use your model as a API run the **detect_api.py** script and pass your model's path as an argument to it as shown below:
-
-```
-python detect_api.py <path-to-your-model>
-Example: python detect_api.py runs/exp1/weights/best.pt
-```
-
-If you have a single GPU, the script will use it by default.
-In case you have multiple GPUs you can pass the GPU device number(s) in order to use multiple GPUs or a specific one as shown below:
-
-```
-python detect_api.py <path-to-your-model> <GPU-device-number(s)>
-Example: python detect_api.py runs/exp1/weights/best.pt 1 # to use the GPU with device number '1'
-Example: python detect_api.py runs/exp1/weights/best.pt 0, 1, 2 # to use GPUs with dsimply change theevice values numbers '0', '1' and '2'
-```
-
-The script **client.py** can be used to send a request to the API as shown below:<br>
-This script uses parameters from the file **api_data.json**<br>
-```python client.py```
-
-Or simply use the Equivalent **CURL** command
-```curl -X POST -H "Content-Type: application/json" -d @api_data.json http://localhost:5000/detect```
-
-**Default parameters are picked from ```api_data.json```.
-Change necessary parameters in api_data.json as per your requirements
-Or you can simply change the dictionary ```data's``` values in flask_client.py**
-
 ## Pretrained Checkpoints
 
 | Model | AP<sup>val</sup> | AP<sup>test</sup> | AP<sub>50</sub> | Speed<sub>GPU</sub> | FPS<sub>GPU</sub> || params | FLOPS |
@@ -83,45 +54,35 @@ $ pip install -r requirements.txt
 * [TensorRT Deployment](https://github.com/wang-xinyu/tensorrtx)
 
 
-## Environments
+## Using the API for Inference
 
-YOLOv5 may be run in any of the following up-to-date verified environments (with all dependencies including [CUDA](https://developer.nvidia.com/cuda)/[CUDNN](https://developer.nvidia.com/cudnn), [Python](https://www.python.org/) and [PyTorch](https://pytorch.org/) preinstalled):
+To use your model as a API run the **detect_api.py** script and pass your model's path as an argument to it as shown below:
 
-- **Google Colab Notebook** with free GPU: <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
-- **Kaggle Notebook** with free GPU: [https://www.kaggle.com/ultralytics/yolov5](https://www.kaggle.com/ultralytics/yolov5)
-- **Google Cloud** Deep Learning VM. See [GCP Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart) 
-- **Docker Image** https://hub.docker.com/r/ultralytics/yolov5. See [Docker Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/Docker-Quickstart) ![Docker Pulls](https://img.shields.io/docker/pulls/ultralytics/yolov5?logo=docker)
-
-
-## Inference
-
-Inference can be run on most common media formats. Model [checkpoints](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J) are downloaded automatically if available. Results are saved to `./inference/output`.
-```bash
-$ python detect.py --source 0  # webcam
-                            file.jpg  # image 
-                            file.mp4  # video
-                            path/  # directory
-                            path/*.jpg  # glob
-                            rtsp://170.93.143.139/rtplive/470011e600ef003a004ee33696235daa  # rtsp stream
-                            http://112.50.243.8/PLTV/88888888/224/3221225900/1.m3u8  # http stream
+```
+python detect_api.py <path-to-your-model>
+Example: python detect_api.py runs/exp1/weights/best.pt
 ```
 
-To run inference on examples in the `./inference/images` folder:
+If you have a single GPU, the script will use it by default.
+In case you have multiple GPUs you can pass the GPU device number(s) in order to use multiple GPUs or a specific one as shown below:
 
-```bash
-$ python detect.py --source ./inference/images/ --weights yolov5s.pt --conf 0.4
-
-Namespace(agnostic_nms=False, augment=False, classes=None, conf_thres=0.4, device='', fourcc='mp4v', half=False, img_size=640, iou_thres=0.5, output='inference/output', save_txt=False, source='./inference/images/', view_img=False, weights='yolov5s.pt')
-Using CUDA device0 _CudaDeviceProperties(name='Tesla P100-PCIE-16GB', total_memory=16280MB)
-
-Downloading https://drive.google.com/uc?export=download&id=1R5T6rIyy3lLwgFXNms8whc-387H0tMQO as yolov5s.pt... Done (2.6s)
-
-image 1/2 inference/images/bus.jpg: 640x512 3 persons, 1 buss, Done. (0.009s)
-image 2/2 inference/images/zidane.jpg: 384x640 2 persons, 2 ties, Done. (0.009s)
-Results saved to /content/yolov5/inference/output
+```
+python detect_api.py <path-to-your-model> <GPU-device-number(s)>
+Example: python detect_api.py runs/exp1/weights/best.pt 1 # to use the GPU with device number '1'
+Example: python detect_api.py runs/exp1/weights/best.pt 0, 1, 2 # to use GPUs with dsimply change theevice values numbers '0', '1' and '2'
 ```
 
-<img src="https://user-images.githubusercontent.com/26833433/83082816-59e54880-a039-11ea-8abe-ab90cc1ec4b0.jpeg" width="500">  
+The script **utils/client.py** can be used to send a request to the API as shown below:<br>
+This script uses parameters from the file **utils/api_data.json**<br>
+```python utils/client.py```
+
+Or simply use the Equivalent **CURL** command
+```curl -X POST -H "Content-Type: application/json" -d @api_data.json http://localhost:5000/detect```
+
+**Default parameters are picked from ```utils/api_data.json```.
+Change necessary parameters in ```utils/api_data.json``` as per your requirements
+Or you can simply change the dictionary ```data's``` values in utils/client.py**
+
 
 
 ## Training
