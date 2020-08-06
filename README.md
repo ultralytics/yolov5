@@ -117,10 +117,12 @@ The script **flask_client.py** can be used to send a request to the API as shown
 This script uses parameters from the file **api_data.json**<br>
 ```python flask_client.py```
 
+Or simply use the Equivalent **CURL** command
+```curl -X POST -H "Content-Type: application/json" -d @api_data.json http://localhost:5000/detect```
 
 **Default parameters are picked from api_data.json. 
-Change necessary parameters in api_data.json as per your requirements**
-
+Change necessary parameters in api_data.json as per your requirements
+Or you can simply change the dictionary values in flask_client.py**
 
 ## Training
 
