@@ -3,6 +3,7 @@
 # from google.cloud import storage
 
 import os
+import platform
 import time
 from pathlib import Path
 
@@ -27,7 +28,7 @@ def attempt_download(weights):
 
         if not (r == 0 and os.path.exists(weights) and os.path.getsize(weights) > 1E6):  # weights exist and > 1MB
             os.remove(weights) if os.path.exists(weights) else None  # remove partial downloads
-            s = "curl -L -o %s 'storage.googleapis.com/ultralytics/yolov5/ckpt/%s'" % (weights, file)
+            s = 'curl -L -o %s "storage.googleapis.com/ultralytics/yolov5/ckpt/%s"' % (weights, file)
             r = os.system(s)  # execute, capture return values
 
             # Error check
@@ -46,10 +47,11 @@ def gdrive_download(id='1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', name='coco128.zip'):
     os.remove('cookie') if os.path.exists('cookie') else None
 
     # Attempt file download
-    os.system("curl -c ./cookie -s -L \"drive.google.com/uc?export=download&id=%s\" > /dev/null" % id)
+    out = "NUL" if platform.system() == "Windows" else "/dev/null"
+    os.system('curl -c ./cookie -s -L "drive.google.com/uc?export=download&id=%s" > %s ' % (id, out))
     if os.path.exists('cookie'):  # large file
-        s = "curl -Lb ./cookie \"drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' ./cookie`&id=%s\" -o %s" % (
-            id, name)
+        s = 'curl -Lb ./cookie "drive.google.com/uc?export=download&confirm=%s&id=%s" -o %s' % (
+            get_token(), id, name)
     else:  # small file
         s = 'curl -s -L -o %s "drive.google.com/uc?export=download&id=%s"' % (name, id)
     r = os.system(s)  # execute, capture return values
@@ -69,6 +71,14 @@ def gdrive_download(id='1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', name='coco128.zip'):
 
     print('Done (%.1fs)' % (time.time() - t))
     return r
+
+
+def get_token(cookie="./cookie"):
+    with open(cookie) as f:
+        for line in f:
+            if "download" in line:
+                return line.split()[-1]
+    return ""
 
 
 # def upload_blob(bucket_name, source_file_name, destination_blob_name):
