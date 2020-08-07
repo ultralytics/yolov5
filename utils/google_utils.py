@@ -36,12 +36,6 @@ def attempt_download(weights):
                 os.remove(weights) if os.path.exists(weights) else None  # remove partial downloads
                 raise Exception(msg)
 
-def getToken(cookie="./cookie"):
-    with open(cookie) as f:
-        for line in f:
-            if ("download" in line):
-                return line.split()[-1]
-    return ""
 
 def gdrive_download(id='1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', name='coco128.zip'):
     # Downloads a file from Google Drive, accepting presented query
@@ -58,7 +52,7 @@ def gdrive_download(id='1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', name='coco128.zip'):
     os.system('curl -c ./cookie -s -L "drive.google.com/uc?export=download&id=%s" > %s ' % (id, out))
     if os.path.exists('cookie'):  # large file
         s = 'curl -Lb ./cookie "drive.google.com/uc?export=download&confirm=%s&id=%s" -o %s' % (
-            getToken(), id, name)
+            get_token(), id, name)
     else:  # small file
         s = 'curl -s -L -o %s "drive.google.com/uc?export=download&id=%s"' % (name, id)
     r = os.system(s)  # execute, capture return values
@@ -78,6 +72,14 @@ def gdrive_download(id='1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', name='coco128.zip'):
 
     print('Done (%.1fs)' % (time.time() - t))
     return r
+
+
+def get_token(cookie="./cookie"):
+    with open(cookie) as f:
+        for line in f:
+            if "download" in line:
+                return line.split()[-1]
+    return ""
 
 
 # def upload_blob(bucket_name, source_file_name, destination_blob_name):
