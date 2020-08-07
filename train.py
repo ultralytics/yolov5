@@ -472,8 +472,8 @@ if __name__ == '__main__':
     if not opt.evolve:
         tb_writer = None
         if opt.local_rank in [-1, 0]:
-            print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
-            tb_writer = SummaryWriter(log_dir=increment_dir('runs/exp', opt.name))
+            print('Start Tensorboard with "tensorboard --logdir %s", view at http://localhost:6006/' % opt.logdir)
+            tb_writer = SummaryWriter(log_dir=increment_dir(Path(opt.logdir) / 'exp', opt.name))  # runs/exp
 
         train(hyp, opt, device, tb_writer)
 
