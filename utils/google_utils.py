@@ -47,8 +47,7 @@ def gdrive_download(id='1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', name='coco128.zip'):
     os.remove('cookie') if os.path.exists('cookie') else None
 
     # Attempt file download
-    out = "NUL" if (platform.system() == "Windows") else "/dev/null"
-    
+    out = "NUL" if platform.system() == "Windows" else "/dev/null"
     os.system('curl -c ./cookie -s -L "drive.google.com/uc?export=download&id=%s" > %s ' % (id, out))
     if os.path.exists('cookie'):  # large file
         s = 'curl -Lb ./cookie "drive.google.com/uc?export=download&confirm=%s&id=%s" -o %s' % (
