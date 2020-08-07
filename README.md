@@ -96,6 +96,36 @@ Results saved to /content/yolov5/inference/output
 <img src="https://user-images.githubusercontent.com/26833433/83082816-59e54880-a039-11ea-8abe-ab90cc1ec4b0.jpeg" width="500">  
 
 
+## Using the API for Inference
+
+To use your model as a API run the **detect_api.py** script and pass your model's path as an argument to it as shown below:
+
+```
+python detect_api.py <path-to-your-model>
+Example: python detect_api.py runs/exp1/weights/best.pt
+```
+
+If you have a single GPU, the script will use it by default.
+In case you have multiple GPUs you can pass the GPU device number(s) in order to use multiple GPUs or a specific one as shown below:
+
+```
+python detect_api.py <path-to-your-model> <GPU-device-number(s)>
+Example: python detect_api.py runs/exp1/weights/best.pt 1 # to use the GPU with device number '1'
+Example: python detect_api.py runs/exp1/weights/best.pt 0, 1, 2 # to use GPUs with dsimply change theevice values numbers '0', '1' and '2'
+```
+
+The script **utils/client.py** can be used to send a request to the API as shown below:<br>
+This script uses parameters from the file **utils/api_data.json**<br>
+```python utils/client.py```
+
+Or simply use the Equivalent **CURL** command
+```curl -X POST -H "Content-Type: application/json" -d @api_data.json http://localhost:5000/detect```
+
+**Default parameters are picked from ```utils/api_data.json```.
+Change necessary parameters in ```utils/api_data.json``` as per your requirements
+Or you can simply change the dictionary ```data's``` values in utils/client.py**
+
+
 ## Training
 
 Download [COCO](https://github.com/ultralytics/yolov5/blob/master/data/get_coco2017.sh), install [Apex](https://github.com/NVIDIA/apex) and run command below. Training times for YOLOv5s/m/l/x are 2/4/6/8 days on a single V100 (multi-GPU times faster). Use the largest `--batch-size` your GPU allows (batch sizes shown for 16 GB devices).
