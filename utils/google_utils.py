@@ -4,107 +4,64 @@
 
 import os
 import time
-import requests
+import torch
 from pathlib import Path
 
 
-def attempt_download(weights):
-    # Attempt to download pretrained weights if not found locally
-    weights = weights.strip().replace("'", '')
-    msg = weights + ' missing, try downloading from https://drive.google.com/drive/folders/1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J'
+def attempt_download(weights_path):
+    if not os.path.isfile(weights_path):
+        # Attempt to download pretrained weights if not found locally
+        weights_path = weights_path.strip().replace("'", '')
+        weights_name = os.path.split(weights_path)[-1]
+        print(weights_name)
+        print('Downloading %s from https://github.com/ultralytics/yolov5/releases/download/v2.0/%s' % (weights_name, weights_name))
 
-    r = 1  # return
-    if len(weights) > 0 and not os.path.isfile(weights):
-        d = {'yolov3-spp.pt': '1mM67oNw4fZoIOL1c8M3hHmj66d8e-ni_',  # yolov3-spp.yaml
-             'yolov5s.pt': '1R5T6rIyy3lLwgFXNms8whc-387H0tMQO',  # yolov5s.yaml
-             'yolov5m.pt': '1vobuEExpWQVpXExsJ2w-Mbf3HJjWkQJr',  # yolov5m.yaml
-             'yolov5l.pt': '1hrlqD1Wdei7UT4OgT785BEk1JwnSvNEV',  # yolov5l.yaml
-             'yolov5x.pt': '1mM8aZJlWTxOg7BZJvNUMrTnA2AbeCVzS',  # yolov5x.yaml
-             }
+        msg = weights_name + ' missing, try downloading from https://drive.google.com/drive/folders/1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J'
+        valid_weights_names = ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']
 
-        file = Path(weights).name
-        if file in d:
-            r = gdrive_download(id=d[file], name=weights)
-
-        if not (r == 0 and os.path.exists(weights) and os.path.getsize(weights) > 1E6):  # weights exist and > 1MB
-            os.remove(weights) if os.path.exists(weights) else None  # remove partial downloads
-            s = "curl -L -o %s 'storage.googleapis.com/ultralytics/yolov5/ckpt/%s'" % (weights, file)
-            r = os.system(s)  # execute, capture return values
-
-            # Error check
-            if not (r == 0 and os.path.exists(weights) and os.path.getsize(weights) > 1E6):  # weights exist and > 1MB
-                os.remove(weights) if os.path.exists(weights) else None  # remove partial downloads
+        if len(weights_path) > 0 and weights_name in valid_weights_names:
+            torch.hub.download_url_to_file("https://github.com/ultralytics/yolov5/releases/download/v2.0/%s" % weights_name, weights_path)
+            
+            if not (os.path.exists(weights_path) and os.path.getsize(weights_path) > 1E6):  # weights exist and > 1MB
+                os.remove(weights_path) if os.path.exists(weights_path) else None  # remove partial downloads
                 raise Exception(msg)
-
+        else:
+            print('Valid weights for auto download are ', valid_weights_names)
+            raise Exception('Not a valid auto-download weights name')
 
 def gdrive_download(id='1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', name='coco128.zip'):
     # Downloads a file from Google Drive, accepting presented query
     # from utils.google_utils import *; gdrive_download()
     t = time.time()
-    if os.name == 'nt':
-        r = windows_download(id, name)
-    else:
-        print('Downloading https://drive.google.com/uc?export=download&id=%s as %s... ' % (id, name), end='')
-        os.remove(name) if os.path.exists(name) else None  # remove existing
-        os.remove('cookie') if os.path.exists('cookie') else None
 
-        # Attempt file download
-        os.system("curl -c ./cookie -s -L \"drive.google.com/uc?export=download&id=%s\" > /dev/null" % id)
-        if os.path.exists('cookie'):  # large file
-            s = "curl -Lb ./cookie \"drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' ./cookie`&id=%s\" -o %s" % (
-                id, name)
-        else:  # small file
-            s = 'curl -s -L -o %s "drive.google.com/uc?export=download&id=%s"' % (name, id)
-        r = os.system(s)  # execute, capture return values
-        os.remove('cookie') if os.path.exists('cookie') else None
+    print('Downloading https://drive.google.com/uc?export=download&id=%s as %s... ' % (id, name), end='')
+    os.remove(name) if os.path.exists(name) else None  # remove existing
+    os.remove('cookie') if os.path.exists('cookie') else None
 
-        # Error check
-        if r != 0:
-            os.remove(name) if os.path.exists(name) else None  # remove partial
-            print('Download error ')  # raise Exception('Download error')
-            return r
+    # Attempt file download
+    os.system("curl -c ./cookie -s -L \"drive.google.com/uc?export=download&id=%s\" > /dev/null" % id)
+    if os.path.exists('cookie'):  # large file
+        s = "curl -Lb ./cookie \"drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' ./cookie`&id=%s\" -o %s" % (
+            id, name)
+    else:  # small file
+        s = 'curl -s -L -o %s "drive.google.com/uc?export=download&id=%s"' % (name, id)
+    r = os.system(s)  # execute, capture return values
+    os.remove('cookie') if os.path.exists('cookie') else None
 
-        # Unzip if archive
-        if name.endswith('.zip'):
-            print('unzipping... ', end='')
-            os.system('unzip -q %s' % name)  # unzip
-            os.remove(name)  # remove zip to free space
+    # Error check
+    if r != 0:
+        os.remove(name) if os.path.exists(name) else None  # remove partial
+        print('Download error ')  # raise Exception('Download error')
+        return r
+
+    # Unzip if archive
+    if name.endswith('.zip'):
+        print('unzipping... ', end='')
+        os.system('unzip -q %s' % name)  # unzip
+        os.remove(name)  # remove zip to free space
 
     print('Done (%.1fs)' % (time.time() - t))
     return r
-
-
-def windows_download(id, name):
-    try:
-        URL = "https://docs.google.com/uc?export=download"
-        CHUNK_SIZE = 32768
-
-        session = requests.Session()
-
-        response = session.get(URL, params = { "id" : id }, stream = True)
-        token = get_confirm_token(response)
-
-        if token: # required for big files
-            params = { "id" : id, "confirm" : token }
-            response = session.get(URL, params = params, stream = True)
-
-        with open(name, "wb") as f:
-            for chunk in response.iter_content(CHUNK_SIZE):
-                if chunk:
-                    f.write(chunk)
-
-        return 0 # all good
-
-    except Exception as e:
-        print("Got exception %s when trying to download %s" % (e, name))
-        return 'not 0' # somehting went wrong
-
-def get_confirm_token(response):
-    for key, value in response.cookies.items():
-        if key.startswith('download_warning'):
-            return value
-
-    return None
 
 
 # def upload_blob(bucket_name, source_file_name, destination_blob_name):
