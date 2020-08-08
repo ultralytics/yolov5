@@ -1,4 +1,4 @@
-# pip install -U -r requirements.txt
+# pip install -r requirements.txt
 Cython
 matplotlib>=3.2.2
 numpy>=1.18.5
