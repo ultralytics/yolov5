@@ -78,9 +78,31 @@ class Yolov5():
             return min_max_list
 
 
-    def predict_batch(self):
-        #TODO
-        pass
+    def predict_batch(self, img0s, draw_bndbox=False, bndbox_format='min_max_list'):
+        imgs = []
+        for img0 in img0s:
+            img = letterbox(img0, new_shape=self.imgsz)[0]
+            img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB
+            img = np.ascontiguousarray(img)  # uint8 to float32
+            imgs.append(img)
+
+        imgs = np.array(imgs)
+        imgs = torch.from_numpy(imgs).to(self.device)
+        imgs = imgs.half() if self.half else imgs.float()
+        imgs /= 255.0 # 0 - 255 to 0.0 - 1.0
+
+        with torch.no_grad():
+            # Run model
+            inf_out, _ = self.model(imgs, augment=self.augment)  # inference and training outputs
+
+            # Run NMS
+            preds = non_max_suppression(inf_out, conf_thres=self.conf_thres, iou_thres=self.iou_thres)
+
+        batch_output = []
+        for pred in preds:
+            batch_output.append(self.min_max_list(pred))
+
+        return batch_output
 
 
     def min_max_list(self, det):
