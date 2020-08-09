@@ -2,6 +2,11 @@ import os
 import torch
 import numpy as np
 
+import json
+import xml.etree.cElementTree as ET
+from lxml import etree
+
+from utils.datasets import LoadImages
 from models.experimental import attempt_load
 from utils.datasets import letterbox
 from utils.general import check_img_size, non_max_suppression, scale_coords, plot_one_box
@@ -27,6 +32,8 @@ class Yolov5():
         if self.device.type != 'cpu':
             self.burn()
 
+        self.annotation_writer = AnnotationWriter()
+
 
     def __str__(self):
         out = ['Model: %s' % self.weights_name]
@@ -48,17 +55,11 @@ class Yolov5():
         _ = self.model(img.half() if self.half else img)  # run once
 
 
-    def predict(self, img0, draw_bndbox=False, bndbox_format='min_max_list'):
-        img = letterbox(img0, new_shape=self.imgsz)[0]
-        img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB
-        img = np.ascontiguousarray(img)  # uint8 to float32  
-        
-        img = torch.from_numpy(img).to(self.device)
-        img = img.half() if self.half else img.float()
-        img /= 255.0 # 0 - 255 to 0.0 - 1.0
-
-        if img.ndimension() == 3:
-            img = img.unsqueeze(0)
+    def predict(self, img0, img=None, draw_bndbox=False, bndbox_format='min_max_list'):
+        if img is None:
+            img = self.send_whatever_to_device(img0)
+        else:
+            img = self.send_to_device(img)
 
         pred = self.model(img, augment=self.augment)[0]
         pred = non_max_suppression(pred, self.conf_thres, self.iou_thres, classes=self.classes, agnostic=self.agnostic_nms)
@@ -79,17 +80,8 @@ class Yolov5():
 
 
     def predict_batch(self, img0s, draw_bndbox=False, bndbox_format='min_max_list'):
-        imgs = []
-        for img0 in img0s:
-            img = letterbox(img0, new_shape=self.imgsz)[0]
-            img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB
-            img = np.ascontiguousarray(img)  # uint8 to float32
-            imgs.append(img)
 
-        imgs = np.array(imgs)
-        imgs = torch.from_numpy(imgs).to(self.device)
-        imgs = imgs.half() if self.half else imgs.float()
-        imgs /= 255.0 # 0 - 255 to 0.0 - 1.0
+        imgs = self.send_whatever_to_device(img0s)
 
         with torch.no_grad():
             # Run model
@@ -103,6 +95,59 @@ class Yolov5():
             batch_output.append(self.min_max_list(pred))
 
         return batch_output
+
+
+    def predict_from_path_to_path(self, from_path='inference/images/', to_path='output/', draw_bnd_box=False, bndbox_format='labelimg'):
+        dataset = LoadImages(from_path, img_size=self.imgsz)
+
+        for path, img, im0s, vid_cap in dataset:
+            if bndbox_format == 'yolo':
+                #TODO
+                pass
+            elif bndbox_format == 'labelimg':
+                detections = self.predict(im0s, img, draw_bndbox=draw_bnd_box, bndbox_format='min_max_list')
+                img_name = os.path.split(path)[-1]
+                self.annotation_writer.write_labelimg(detections, im0s.shape, img_name, to_path)
+            elif bndbox_format == 'udt':
+                #TODO
+                pass
+            elif bndbox_format == 'aws':
+                #TODO
+                pass
+
+
+    def send_to_device(self, img_to_send):
+        img_to_send = torch.from_numpy(img_to_send).to(self.device)
+        img_to_send = img_to_send.half() if self.half else img_to_send.float()
+        img_to_send /= 255.0 # 0 - 255 to 0.0 - 1.0
+        if img_to_send.ndimension() == 3:
+            img_to_send = img_to_send.unsqueeze(0)
+
+        return img_to_send
+
+    
+    def reshape_copy_img(self, img):
+        _img = letterbox(img, new_shape=self.imgsz)[0]
+        _img = _img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB
+        _img = np.ascontiguousarray(_img)  # uint8 to float32
+        return _img
+
+
+    def send_whatever_to_device(self, img_s):
+        if isinstance(img_s, list):
+            img_to_send = []
+            for img in img_s:
+                img_to_send.append(self.reshape_copy_img(img))
+            img_to_send = np.array(img_to_send)
+        elif isinstance(img_s, np.ndarray):
+            img_to_send = self.reshape_copy_img(img_s)
+        else:
+            print(type(img_s), ' is not supported')
+            raise
+
+        img_to_send = self.send_to_device(img_to_send)
+
+        return img_to_send
 
 
     def min_max_list(self, det):
@@ -122,3 +167,49 @@ class Yolov5():
             min_max_list.append(obj)
 
         return min_max_list
+
+
+class AnnotationWriter():
+    def __init__(self):
+        pass
+
+    def write_udt(self):
+        pass
+
+    def write_labelimg(self, detections, image_shape, img_name, savedir):
+        self.write_xml(detections, image_shape, img_name, savedir)
+
+    def write_xml(self, detections, img_shape, img_name, savedir):
+        xml_name = img_name.replace('.jpg', '.xml')
+        if not os.path.isdir(savedir):
+            os.mkdir(savedir)
+
+        height, width, depth = img_shape
+
+        annotation = ET.Element('annotation')
+        ET.SubElement(annotation, 'filename').text = img_name
+        size = ET.SubElement(annotation, 'size')
+        ET.SubElement(size, 'width').text = str(width)
+        ET.SubElement(size, 'height').text = str(height)
+        ET.SubElement(size, 'depth').text = str(depth)
+        for obj in detections:
+            label = obj['name']
+
+            ob = ET.SubElement(annotation, 'object')
+            ET.SubElement(ob, 'conf').text = str(obj["conf"])
+            ET.SubElement(ob, 'name').text = label
+            bbox = ET.SubElement(ob, 'bndbox')
+            ET.SubElement(bbox, 'xmin').text = str(int(obj['bndbox']['xmin']))
+            ET.SubElement(bbox, 'ymin').text = str(int(obj['bndbox']['ymin']))
+            ET.SubElement(bbox, 'xmax').text = str(int(obj['bndbox']['xmax']))
+            ET.SubElement(bbox, 'ymax').text = str(int(obj['bndbox']['ymax']))
+
+        xml_str = ET.tostring(annotation)
+        root = etree.fromstring(xml_str)
+        xml_str = etree.tostring(root, pretty_print=True)
+
+        save_path = os.path.join(savedir, xml_name)
+        with open(save_path, 'wb') as _writer:
+            _writer.write(xml_str)
+
+        return xml_str
