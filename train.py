@@ -1,5 +1,4 @@
 import argparse
-import glob
 import math
 import os
 import random
@@ -26,31 +25,7 @@ from utils.general import (
     labels_to_image_weights, compute_loss, plot_images, fitness, strip_optimizer, plot_results,
     get_latest_run, check_git_status, check_file, increment_dir, print_mutation, plot_evolution)
 from utils.google_utils import attempt_download
-from utils.torch_utils import init_seeds, ModelEMA, select_device
-
-# Hyperparameters
-hyp = {'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
-       'momentum': 0.937,  # SGD momentum/Adam beta1
-       'weight_decay': 5e-4,  # optimizer weight decay
-       'giou': 0.05,  # GIoU loss gain
-       'cls': 0.5,  # cls loss gain
-       'cls_pw': 1.0,  # cls BCELoss positive_weight
-       'obj': 1.0,  # obj loss gain (scale with pixels)
-       'obj_pw': 1.0,  # obj BCELoss positive_weight
-       'iou_t': 0.20,  # IoU training threshold
-       'anchor_t': 4.0,  # anchor-multiple threshold
-       'fl_gamma': 0.0,  # focal loss gamma (efficientDet default gamma=1.5)
-       'hsv_h': 0.015,  # image HSV-Hue augmentation (fraction)
-       'hsv_s': 0.7,  # image HSV-Saturation augmentation (fraction)
-       'hsv_v': 0.4,  # image HSV-Value augmentation (fraction)
-       'degrees': 0.0,  # image rotation (+/- deg)
-       'translate': 0.5,  # image translation (+/- fraction)
-       'scale': 0.5,  # image scale (+/- gain)
-       'shear': 0.0,  # image shear (+/- deg)
-       'perspective': 0.0,  # image perspective (+/- fraction), range 0-0.001
-       'flipud': 0.0,  # image flip up-down (probability)
-       'fliplr': 0.5,  # image flip left-right (probability)
-       'mixup': 0.0}  # image mixup (probability)
+from utils.torch_utils import init_seeds, ModelEMA, select_device, intersect_dicts
 
 
 def train(hyp, opt, device, tb_writer=None):
@@ -63,7 +38,7 @@ def train(hyp, opt, device, tb_writer=None):
     results_file = str(log_dir / 'results.txt')
     epochs, batch_size, total_batch_size, weights, rank = \
         opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
-    
+
     # TODO: Use DDP logging. Only the first process is allowed to log.
     # Save run settings
     with open(log_dir / 'hyp.yaml', 'w') as f:
@@ -81,38 +56,35 @@ def train(hyp, opt, device, tb_writer=None):
     nc, names = (1, ['item']) if opt.single_cls else (int(data_dict['nc']), data_dict['names'])  # number classes, names
     assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)  # check
 
-    # Remove previous results
-    if rank in [-1, 0]:
-        for f in glob.glob('*_batch*.jpg') + glob.glob(results_file):
-            os.remove(f)
-
-    # Create model
-    model = Model(opt.cfg, nc=nc).to(device)
-
-    # Image sizes
-    gs = int(max(model.stride))  # grid size (max stride)
-    imgsz, imgsz_test = [check_img_size(x, gs) for x in opt.img_size]  # verify imgsz are gs-multiples
+    # Model
+    pretrained = weights.endswith('.pt')
+    if pretrained:
+        with torch_distributed_zero_first(rank):
+            attempt_download(weights)  # download if not found locally
+        ckpt = torch.load(weights, map_location=device)  # load checkpoint
+        model = Model(opt.cfg or ckpt['model'].yaml, ch=3, nc=nc).to(device)  # create
+        exclude = ['anchor'] if opt.cfg else []  # exclude keys
+        state_dict = ckpt['model'].float().state_dict()  # to FP32
+        state_dict = intersect_dicts(state_dict, model.state_dict(), exclude=exclude)  # intersect
+        model.load_state_dict(state_dict, strict=False)  # load
+        print('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))  # report
+    else:
+        model = Model(opt.cfg, ch=3, nc=nc).to(device)  # create
 
     # Optimizer
     nbs = 64  # nominal batch size
-    # default DDP implementation is slow for accumulation according to: https://pytorch.org/docs/stable/notes/ddp.html
-    # all-reduce operation is carried out during loss.backward().
-    # Thus, there would be redundant all-reduce communications in a accumulation procedure,
-    # which means, the result is still right but the training speed gets slower.
-    # TODO: If acceleration is needed, there is an implementation of allreduce_post_accumulation
-    # in https://github.com/NVIDIA/DeepLearningExamples/blob/master/PyTorch/LanguageModeling/BERT/run_pretraining.py
     accumulate = max(round(nbs / total_batch_size), 1)  # accumulate loss before optimizing
     hyp['weight_decay'] *= total_batch_size * accumulate / nbs  # scale weight_decay
 
     pg0, pg1, pg2 = [], [], []  # optimizer parameter groups
     for k, v in model.named_parameters():
-        if v.requires_grad:
-            if '.bias' in k:
-                pg2.append(v)  # biases
-            elif '.weight' in k and '.bn' not in k:
-                pg1.append(v)  # apply weight decay
-            else:
-                pg0.append(v)  # all else
+        v.requires_grad = True
+        if '.bias' in k:
+            pg2.append(v)  # biases
+        elif '.weight' in k and '.bn' not in k:
+            pg1.append(v)  # apply weight decay
+        else:
+            pg0.append(v)  # all else
 
     if opt.adam:
         optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
@@ -130,45 +102,27 @@ def train(hyp, opt, device, tb_writer=None):
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # plot_lr_scheduler(optimizer, scheduler, epochs)
 
-    # Load Model
-    with torch_distributed_zero_first(rank):
-        attempt_download(weights)
+    # Resume
     start_epoch, best_fitness = 0, 0.0
-    if weights.endswith('.pt'):  # pytorch format
-        ckpt = torch.load(weights, map_location=device)  # load checkpoint
-
-        # load model
-        try:
-            exclude = ['anchor']  # exclude keys
-            ckpt['model'] = {k: v for k, v in ckpt['model'].float().state_dict().items()
-                             if k in model.state_dict() and not any(x in k for x in exclude)
-                             and model.state_dict()[k].shape == v.shape}
-            model.load_state_dict(ckpt['model'], strict=False)
-            print('Transferred %g/%g items from %s' % (len(ckpt['model']), len(model.state_dict()), weights))
-        except KeyError as e:
-            s = "%s is not compatible with %s. This may be due to model differences or %s may be out of date. " \
-                "Please delete or update %s and try again, or use --weights '' to train from scratch." \
-                % (weights, opt.cfg, weights, weights)
-            raise KeyError(s) from e
-
-        # load optimizer
+    if pretrained:
+        # Optimizer
         if ckpt['optimizer'] is not None:
             optimizer.load_state_dict(ckpt['optimizer'])
             best_fitness = ckpt['best_fitness']
 
-        # load results
+        # Results
         if ckpt.get('training_results') is not None:
             with open(results_file, 'w') as file:
                 file.write(ckpt['training_results'])  # write results.txt
 
-        # epochs
+        # Epochs
         start_epoch = ckpt['epoch'] + 1
         if epochs < start_epoch:
             print('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
                   (weights, ckpt['epoch'], epochs))
             epochs += ckpt['epoch']  # finetune additional epochs
 
-        del ckpt
+        del ckpt, state_dict
 
     # DP mode
     if cuda and rank == -1 and torch.cuda.device_count() > 1:
@@ -185,6 +139,10 @@ def train(hyp, opt, device, tb_writer=None):
     # DDP mode
     if cuda and rank != -1:
         model = DDP(model, device_ids=[opt.local_rank], output_device=(opt.local_rank))
+
+    # Image sizes
+    gs = int(max(model.stride))  # grid size (max stride)
+    imgsz, imgsz_test = [check_img_size(x, gs) for x in opt.img_size]  # verify imgsz are gs-multiples
 
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt, hyp=hyp, augment=True,
@@ -411,9 +369,10 @@ def train(hyp, opt, device, tb_writer=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default='models/yolov5s.yaml', help='model.yaml path')
+    parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
+    parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
-    parser.add_argument('--hyp', type=str, default='', help='hyp.yaml path (optional)')
+    parser.add_argument('--hyp', type=str, default='data/hyp.finetune.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
@@ -426,7 +385,6 @@ if __name__ == '__main__':
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
-    parser.add_argument('--weights', type=str, default='', help='initial weights path')
     parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
@@ -444,18 +402,17 @@ if __name__ == '__main__':
     opt.weights = last if opt.resume and not opt.weights else opt.weights
     if opt.local_rank == -1 or ("RANK" in os.environ and os.environ["RANK"] == "0"):
         check_git_status()
-    opt.cfg = check_file(opt.cfg)  # check file
-    opt.data = check_file(opt.data)  # check file
-    if opt.hyp:  # update hyps
-        opt.hyp = check_file(opt.hyp)  # check file
-        with open(opt.hyp) as f:
-            hyp.update(yaml.load(f, Loader=yaml.FullLoader))  # update hyps
+
+    opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
+    assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
+    assert len(opt.hyp), '--hyp must be specified'
+
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
     device = select_device(opt.device, batch_size=opt.batch_size)
     opt.total_batch_size = opt.batch_size
     opt.world_size = 1
     opt.global_rank = -1
-    
+
     # DDP mode
     if opt.local_rank != -1:
         assert torch.cuda.device_count() > opt.local_rank
@@ -468,6 +425,8 @@ if __name__ == '__main__':
         opt.batch_size = opt.total_batch_size // opt.world_size
 
     print(opt)
+    with open(opt.hyp) as f:
+        hyp = yaml.load(f, Loader=yaml.FullLoader)  # load hyps
 
     # Train
     if not opt.evolve:

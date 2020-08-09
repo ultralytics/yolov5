@@ -120,7 +120,7 @@ def check_anchor_order(m):
 
 def check_file(file):
     # Searches for file if not found locally
-    if os.path.isfile(file):
+    if os.path.isfile(file) or file == '':
         return file
     else:
         files = glob.glob('./**/' + file, recursive=True)  # find file
