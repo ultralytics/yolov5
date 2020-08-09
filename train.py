@@ -28,30 +28,6 @@ from utils.general import (
 from utils.google_utils import attempt_download
 from utils.torch_utils import init_seeds, ModelEMA, select_device
 
-# Hyperparameters
-hyp = {'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
-       'momentum': 0.937,  # SGD momentum/Adam beta1
-       'weight_decay': 5e-4,  # optimizer weight decay
-       'giou': 0.05,  # GIoU loss gain
-       'cls': 0.5,  # cls loss gain
-       'cls_pw': 1.0,  # cls BCELoss positive_weight
-       'obj': 1.0,  # obj loss gain (scale with pixels)
-       'obj_pw': 1.0,  # obj BCELoss positive_weight
-       'iou_t': 0.20,  # IoU training threshold
-       'anchor_t': 4.0,  # anchor-multiple threshold
-       'fl_gamma': 0.0,  # focal loss gamma (efficientDet default gamma=1.5)
-       'hsv_h': 0.015,  # image HSV-Hue augmentation (fraction)
-       'hsv_s': 0.7,  # image HSV-Saturation augmentation (fraction)
-       'hsv_v': 0.4,  # image HSV-Value augmentation (fraction)
-       'degrees': 0.0,  # image rotation (+/- deg)
-       'translate': 0.5,  # image translation (+/- fraction)
-       'scale': 0.5,  # image scale (+/- gain)
-       'shear': 0.0,  # image shear (+/- deg)
-       'perspective': 0.0,  # image perspective (+/- fraction), range 0-0.001
-       'flipud': 0.0,  # image flip up-down (probability)
-       'fliplr': 0.5,  # image flip left-right (probability)
-       'mixup': 0.0}  # image mixup (probability)
-
 
 def train(hyp, opt, device, tb_writer=None):
     print(f'Hyperparameters {hyp}')
@@ -418,7 +394,7 @@ if __name__ == '__main__':
     parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
-    parser.add_argument('--hyp', type=str, default='', help='hyp.yaml path (optional)')
+    parser.add_argument('--hyp', type=str, default='data/hyp.finetune.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
@@ -449,13 +425,9 @@ if __name__ == '__main__':
     if opt.local_rank == -1 or ("RANK" in os.environ and os.environ["RANK"] == "0"):
         check_git_status()
 
-    opt.data = check_file(opt.data)  # check file
-    opt.cfg = check_file(opt.cfg)  # check file
+    opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
     assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
-    if opt.hyp:  # update hyps
-        opt.hyp = check_file(opt.hyp)  # check file
-        with open(opt.hyp) as f:
-            hyp.update(yaml.load(f, Loader=yaml.FullLoader))  # update hyps
+    assert len(opt.hyp), '--hyp must be specified'
 
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
     device = select_device(opt.device, batch_size=opt.batch_size)
@@ -475,6 +447,8 @@ if __name__ == '__main__':
         opt.batch_size = opt.total_batch_size // opt.world_size
 
     print(opt)
+    with open(opt.hyp) as f:
+        hyp = yaml.load(f, Loader=yaml.FullLoader)  # load hyps
 
     # Train
     if not opt.evolve:
