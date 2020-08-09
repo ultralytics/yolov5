@@ -63,7 +63,7 @@ def train(hyp, opt, device, tb_writer=None):
     results_file = str(log_dir / 'results.txt')
     epochs, batch_size, total_batch_size, weights, rank = \
         opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
-    
+
     # TODO: Use DDP logging. Only the first process is allowed to log.
     # Save run settings
     with open(log_dir / 'hyp.yaml', 'w') as f:
@@ -81,17 +81,35 @@ def train(hyp, opt, device, tb_writer=None):
     nc, names = (1, ['item']) if opt.single_cls else (int(data_dict['nc']), data_dict['names'])  # number classes, names
     assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)  # check
 
-    # Remove previous results
-    if rank in [-1, 0]:
-        for f in glob.glob('*_batch*.jpg') + glob.glob(results_file):
-            os.remove(f)
+    # Model
+    if weights:
+        # Download
+        with torch_distributed_zero_first(rank):
+            attempt_download(weights)
 
-    # Create model
-    model = Model(opt.cfg, nc=nc).to(device)
+        # Load
+        ckpt = torch.load(weights, map_location=device)  # load checkpoint
 
-    # Image sizes
-    gs = int(max(model.stride))  # grid size (max stride)
-    imgsz, imgsz_test = [check_img_size(x, gs) for x in opt.img_size]  # verify imgsz are gs-multiples
+        # Transfer
+        if opt.cfg:  # i.e. yolov5s.yaml
+            model = Model(opt.cfg, nc=nc).to(device)
+            try:
+                exclude = ['anchor']  # exclude keys
+                ckpt['model'] = {k: v for k, v in ckpt['model'].float().state_dict().items()
+                                 if k in model.state_dict() and not any(x in k for x in exclude)
+                                 and model.state_dict()[k].shape == v.shape}
+                model.load_state_dict(ckpt['model'], strict=False)
+                print('Transferred %g/%g items from %s' % (len(ckpt['model']), len(model.state_dict()), weights))
+            except KeyError as e:
+                s = "%s is not compatible with %s. This may be due to model differences or %s may be out of date. " \
+                    "Please delete or update %s and try again, or use --weights '' to train from scratch." \
+                    % (weights, opt.cfg, weights, weights)
+                raise KeyError(s) from e
+        else:
+            model = ckpt['model'].float()
+
+    else:
+        model = Model(opt.cfg, nc=nc).to(device)
 
     # Optimizer
     nbs = 64  # nominal batch size
@@ -106,13 +124,13 @@ def train(hyp, opt, device, tb_writer=None):
 
     pg0, pg1, pg2 = [], [], []  # optimizer parameter groups
     for k, v in model.named_parameters():
-        if v.requires_grad:
-            if '.bias' in k:
-                pg2.append(v)  # biases
-            elif '.weight' in k and '.bn' not in k:
-                pg1.append(v)  # apply weight decay
-            else:
-                pg0.append(v)  # all else
+        v.requires_grad = True
+        if '.bias' in k:
+            pg2.append(v)  # biases
+        elif '.weight' in k and '.bn' not in k:
+            pg1.append(v)  # apply weight decay
+        else:
+            pg0.append(v)  # all else
 
     if opt.adam:
         optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
@@ -130,38 +148,20 @@ def train(hyp, opt, device, tb_writer=None):
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # plot_lr_scheduler(optimizer, scheduler, epochs)
 
-    # Load Model
-    with torch_distributed_zero_first(rank):
-        attempt_download(weights)
+    # Resume
     start_epoch, best_fitness = 0, 0.0
-    if weights.endswith('.pt'):  # pytorch format
-        ckpt = torch.load(weights, map_location=device)  # load checkpoint
-
-        # load model
-        try:
-            exclude = ['anchor']  # exclude keys
-            ckpt['model'] = {k: v for k, v in ckpt['model'].float().state_dict().items()
-                             if k in model.state_dict() and not any(x in k for x in exclude)
-                             and model.state_dict()[k].shape == v.shape}
-            model.load_state_dict(ckpt['model'], strict=False)
-            print('Transferred %g/%g items from %s' % (len(ckpt['model']), len(model.state_dict()), weights))
-        except KeyError as e:
-            s = "%s is not compatible with %s. This may be due to model differences or %s may be out of date. " \
-                "Please delete or update %s and try again, or use --weights '' to train from scratch." \
-                % (weights, opt.cfg, weights, weights)
-            raise KeyError(s) from e
-
-        # load optimizer
+    if weights:
+        # Optimizer
         if ckpt['optimizer'] is not None:
             optimizer.load_state_dict(ckpt['optimizer'])
             best_fitness = ckpt['best_fitness']
 
-        # load results
+        # Results
         if ckpt.get('training_results') is not None:
             with open(results_file, 'w') as file:
                 file.write(ckpt['training_results'])  # write results.txt
 
-        # epochs
+        # Epochs
         start_epoch = ckpt['epoch'] + 1
         if epochs < start_epoch:
             print('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
@@ -185,6 +185,10 @@ def train(hyp, opt, device, tb_writer=None):
     # DDP mode
     if cuda and rank != -1:
         model = DDP(model, device_ids=[opt.local_rank], output_device=(opt.local_rank))
+
+    # Image sizes
+    gs = int(max(model.stride))  # grid size (max stride)
+    imgsz, imgsz_test = [check_img_size(x, gs) for x in opt.img_size]  # verify imgsz are gs-multiples
 
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt, hyp=hyp, augment=True,
@@ -411,7 +415,8 @@ def train(hyp, opt, device, tb_writer=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default='models/yolov5s.yaml', help='model.yaml path')
+    parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
+    parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='', help='hyp.yaml path (optional)')
     parser.add_argument('--epochs', type=int, default=300)
@@ -426,7 +431,6 @@ if __name__ == '__main__':
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
-    parser.add_argument('--weights', type=str, default='', help='initial weights path')
     parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
@@ -444,18 +448,21 @@ if __name__ == '__main__':
     opt.weights = last if opt.resume and not opt.weights else opt.weights
     if opt.local_rank == -1 or ("RANK" in os.environ and os.environ["RANK"] == "0"):
         check_git_status()
-    opt.cfg = check_file(opt.cfg)  # check file
+
     opt.data = check_file(opt.data)  # check file
+    opt.cfg = check_file(opt.cfg)  # check file
+    assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
     if opt.hyp:  # update hyps
         opt.hyp = check_file(opt.hyp)  # check file
         with open(opt.hyp) as f:
             hyp.update(yaml.load(f, Loader=yaml.FullLoader))  # update hyps
+
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
     device = select_device(opt.device, batch_size=opt.batch_size)
     opt.total_batch_size = opt.batch_size
     opt.world_size = 1
     opt.global_rank = -1
-    
+
     # DDP mode
     if opt.local_rank != -1:
         assert torch.cuda.device_count() > opt.local_rank
