@@ -25,7 +25,7 @@ from utils.general import (
     labels_to_image_weights, compute_loss, plot_images, fitness, strip_optimizer, plot_results,
     get_latest_run, check_git_status, check_file, increment_dir, print_mutation, plot_evolution)
 from utils.google_utils import attempt_download
-from utils.torch_utils import init_seeds, ModelEMA, select_device
+from utils.torch_utils import init_seeds, ModelEMA, select_device, intersect_dicts
 
 
 def train(hyp, opt, device, tb_writer=None):
@@ -57,43 +57,22 @@ def train(hyp, opt, device, tb_writer=None):
     assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)  # check
 
     # Model
-    if weights:
-        # Download
+    pretrained = weights.endswith('.pt')
+    if pretrained:
         with torch_distributed_zero_first(rank):
-            attempt_download(weights)
-
-        # Load
+            attempt_download(weights)  # download if not found locally
         ckpt = torch.load(weights, map_location=device)  # load checkpoint
-
-        # Transfer
-        if opt.cfg:  # i.e. yolov5s.yaml
-            model = Model(opt.cfg, nc=nc).to(device)
-            try:
-                exclude = ['anchor']  # exclude keys
-                ckpt['model'] = {k: v for k, v in ckpt['model'].float().state_dict().items()
-                                 if k in model.state_dict() and not any(x in k for x in exclude)
-                                 and model.state_dict()[k].shape == v.shape}
-                model.load_state_dict(ckpt['model'], strict=False)
-                print('Transferred %g/%g items from %s' % (len(ckpt['model']), len(model.state_dict()), weights))
-            except KeyError as e:
-                s = "%s is not compatible with %s. This may be due to model differences or %s may be out of date. " \
-                    "Please delete or update %s and try again, or use --weights '' to train from scratch." \
-                    % (weights, opt.cfg, weights, weights)
-                raise KeyError(s) from e
-        else:
-            model = ckpt['model'].float()
-
+        model = Model(opt.cfg | ckpt['model'].yaml, ch=3, nc=nc)  # create
+        exclude = ['anchor'] if opt.cfg else []  # exclude keys
+        state_dict = ckpt['model'].float().state_dict()  # to FP32
+        state_dict = intersect_dicts(state_dict, model.state_dict(), exclude=exclude)  # intersect
+        model.load_state_dict(state_dict, strict=False)  # load
+        print('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))  # report
     else:
-        model = Model(opt.cfg, nc=nc).to(device)
+        model = Model(opt.cfg, ch=3, nc=nc).to(device)  # create
 
     # Optimizer
     nbs = 64  # nominal batch size
-    # default DDP implementation is slow for accumulation according to: https://pytorch.org/docs/stable/notes/ddp.html
-    # all-reduce operation is carried out during loss.backward().
-    # Thus, there would be redundant all-reduce communications in a accumulation procedure,
-    # which means, the result is still right but the training speed gets slower.
-    # TODO: If acceleration is needed, there is an implementation of allreduce_post_accumulation
-    # in https://github.com/NVIDIA/DeepLearningExamples/blob/master/PyTorch/LanguageModeling/BERT/run_pretraining.py
     accumulate = max(round(nbs / total_batch_size), 1)  # accumulate loss before optimizing
     hyp['weight_decay'] *= total_batch_size * accumulate / nbs  # scale weight_decay
 
@@ -125,7 +104,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
-    if weights:
+    if pretrained:
         # Optimizer
         if ckpt['optimizer'] is not None:
             optimizer.load_state_dict(ckpt['optimizer'])
@@ -143,7 +122,7 @@ def train(hyp, opt, device, tb_writer=None):
                   (weights, ckpt['epoch'], epochs))
             epochs += ckpt['epoch']  # finetune additional epochs
 
-        del ckpt
+        del ckpt, state_dict
 
     # DP mode
     if cuda and rank == -1 and torch.cuda.device_count() > 1:

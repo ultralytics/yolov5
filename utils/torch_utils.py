@@ -55,8 +55,12 @@ def time_synchronized():
 
 
 def is_parallel(model):
-    # is model is parallel with DP or DDP
     return type(model) in (nn.parallel.DataParallel, nn.parallel.DistributedDataParallel)
+
+
+def intersect_dicts(da, db, exclude=()):
+    # Dictionary intersection of matching keys and shapes, omitting 'exclude' keys, using da values
+    return {k: v for k, v in da.items() if k in db and not any(x in k for x in exclude) and v.shape == db[k].shape}
 
 
 def initialize_weights(model):
@@ -72,7 +76,7 @@ def initialize_weights(model):
 
 
 def find_modules(model, mclass=nn.Conv2d):
-    # finds layer indices matching module class 'mclass'
+    # Finds layer indices matching module class 'mclass'
     return [i for i, m in enumerate(model.module_list) if isinstance(m, mclass)]
 
 
