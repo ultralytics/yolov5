@@ -36,9 +36,9 @@ This repository represents Ultralytics open-source research into future object d
 
 ## Requirements
 
-Python 3.7 or later with all `requirements.txt` dependencies installed, including `torch >= 1.5`. To install run:
+Python 3.8 or later with all [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) dependencies installed, including `torch>=1.6`. To install run:
 ```bash
-$ pip install -U -r requirements.txt
+$ pip install -r requirements.txt
 ```
 
 
@@ -51,6 +51,8 @@ $ pip install -U -r requirements.txt
 * [Test-Time Augmentation (TTA)](https://github.com/ultralytics/yolov5/issues/303)
 * [Model Ensembling](https://github.com/ultralytics/yolov5/issues/318)
 * [Model Pruning/Sparsity](https://github.com/ultralytics/yolov5/issues/304)
+* [Hyperparameter Evolution](https://github.com/ultralytics/yolov5/issues/607)
+* [TensorRT Deployment](https://github.com/wang-xinyu/tensorrtx)
 
 
 ## Environments

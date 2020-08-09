@@ -1,8 +1,21 @@
 import argparse
+import glob
 import json
+import os
+import shutil
+from pathlib import Path
 
-from models.experimental import *
-from utils.datasets import *
+import numpy as np
+import torch
+import yaml
+from tqdm import tqdm
+
+from models.experimental import attempt_load
+from utils.datasets import create_dataloader
+from utils.general import (
+    coco80_to_coco91_class, check_file, check_img_size, compute_loss, non_max_suppression,
+    scale_coords, xyxy2xywh, clip_coords, plot_images, xywh2xyxy, box_iou, output_to_target, ap_per_class)
+from utils.torch_utils import select_device, time_synchronized
 
 
 def test(data,
@@ -26,7 +39,7 @@ def test(data,
         device = next(model.parameters()).device  # get model device
 
     else:  # called directly
-        device = torch_utils.select_device(opt.device, batch_size=batch_size)
+        device = select_device(opt.device, batch_size=batch_size)
         merge, save_txt = opt.merge, opt.save_txt  # use Merge NMS, save *.txt labels
         if save_txt:
             out = Path('inference/output')
@@ -85,18 +98,18 @@ def test(data,
         # Disable gradients
         with torch.no_grad():
             # Run model
-            t = torch_utils.time_synchronized()
+            t = time_synchronized()
             inf_out, train_out = model(img, augment=augment)  # inference and training outputs
-            t0 += torch_utils.time_synchronized() - t
+            t0 += time_synchronized() - t
 
             # Compute loss
             if training:  # if model has loss hyperparameters
                 loss += compute_loss([x.float() for x in train_out], targets, model)[1][:3]  # GIoU, obj, cls
 
             # Run NMS
-            t = torch_utils.time_synchronized()
+            t = time_synchronized()
             output = non_max_suppression(inf_out, conf_thres=conf_thres, iou_thres=iou_thres, merge=merge)
-            t1 += torch_utils.time_synchronized() - t
+            t1 += time_synchronized() - t
 
         # Statistics per image
         for si, pred in enumerate(output):

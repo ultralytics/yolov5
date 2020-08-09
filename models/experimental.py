@@ -1,7 +1,11 @@
 # This file contains experimental modules
 
-from models.common import *
-from utils import google_utils
+import numpy as np
+import torch
+import torch.nn as nn
+
+from models.common import Conv, DWConv
+from utils.google_utils import attempt_download
 
 
 class CrossConv(nn.Module):
@@ -129,7 +133,7 @@ def attempt_load(weights, map_location=None):
     # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a
     model = Ensemble()
     for w in weights if isinstance(weights, list) else [weights]:
-        google_utils.attempt_download(w)
+        attempt_download(w)
         model.append(torch.load(w, map_location=map_location)['model'].float().fuse().eval())  # load FP32 model
 
     if len(model) == 1:

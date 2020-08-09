@@ -1,59 +1,74 @@
 import argparse
+import glob
+import math
+import os
+import random
+import time
+from pathlib import Path
 
+import numpy as np
 import torch.distributed as dist
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
+import yaml
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
 import test  # import test.py to get mAP after each epoch
 from models.yolo import Model
-from utils import google_utils
-from utils.datasets import *
-from utils.utils import *
+from utils.datasets import create_dataloader
+from utils.general import (
+    check_img_size, torch_distributed_zero_first, labels_to_class_weights, plot_labels, check_anchors,
+    labels_to_image_weights, compute_loss, plot_images, fitness, strip_optimizer, plot_results,
+    get_latest_run, check_git_status, check_file, increment_dir, print_mutation, plot_evolution)
+from utils.google_utils import attempt_download
+from utils.torch_utils import init_seeds, ModelEMA, select_device
 
 # Hyperparameters
-hyp = {'optimizer': 'SGD',  # ['adam', 'SGD', None] if none, default is SGD
-       'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
+hyp = {'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
        'momentum': 0.937,  # SGD momentum/Adam beta1
        'weight_decay': 5e-4,  # optimizer weight decay
-       'giou': 0.05,  # giou loss gain
+       'giou': 0.05,  # GIoU loss gain
        'cls': 0.5,  # cls loss gain
        'cls_pw': 1.0,  # cls BCELoss positive_weight
-       'obj': 1.0,  # obj loss gain (*=img_size/320 if img_size != 320)
+       'obj': 1.0,  # obj loss gain (scale with pixels)
        'obj_pw': 1.0,  # obj BCELoss positive_weight
-       'iou_t': 0.20,  # iou training threshold
+       'iou_t': 0.20,  # IoU training threshold
        'anchor_t': 4.0,  # anchor-multiple threshold
-       'fl_gamma': 0.0,  # focal loss gamma (efficientDet default is gamma=1.5)
+       'fl_gamma': 0.0,  # focal loss gamma (efficientDet default gamma=1.5)
        'hsv_h': 0.015,  # image HSV-Hue augmentation (fraction)
        'hsv_s': 0.7,  # image HSV-Saturation augmentation (fraction)
        'hsv_v': 0.4,  # image HSV-Value augmentation (fraction)
        'degrees': 0.0,  # image rotation (+/- deg)
        'translate': 0.5,  # image translation (+/- fraction)
        'scale': 0.5,  # image scale (+/- gain)
-       'shear': 0.0}  # image shear (+/- deg)
+       'shear': 0.0,  # image shear (+/- deg)
+       'perspective': 0.0,  # image perspective (+/- fraction), range 0-0.001
+       'flipud': 0.0,  # image flip up-down (probability)
+       'fliplr': 0.5,  # image flip left-right (probability)
+       'mixup': 0.0}  # image mixup (probability)
 
 
-def train(hyp, tb_writer, opt, device):
+def train(hyp, opt, device, tb_writer=None):
     print(f'Hyperparameters {hyp}')
-    log_dir = tb_writer.log_dir if tb_writer else 'runs/evolution'  # run directory
-    wdir = str(Path(log_dir) / 'weights') + os.sep  # weights directory
+    log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
+    wdir = str(log_dir / 'weights') + os.sep  # weights directory
     os.makedirs(wdir, exist_ok=True)
     last = wdir + 'last.pt'
     best = wdir + 'best.pt'
-    results_file = log_dir + os.sep + 'results.txt'
+    results_file = str(log_dir / 'results.txt')
     epochs, batch_size, total_batch_size, weights, rank = \
-        opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.local_rank
-    # TODO: Init DDP logging. Only the first process is allowed to log.
-    # Since I see lots of print here, the logging configuration is skipped here. We may see repeated outputs.
-
+        opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
+    
+    # TODO: Use DDP logging. Only the first process is allowed to log.
     # Save run settings
-    with open(Path(log_dir) / 'hyp.yaml', 'w') as f:
+    with open(log_dir / 'hyp.yaml', 'w') as f:
         yaml.dump(hyp, f, sort_keys=False)
-    with open(Path(log_dir) / 'opt.yaml', 'w') as f:
+    with open(log_dir / 'opt.yaml', 'w') as f:
         yaml.dump(vars(opt), f, sort_keys=False)
 
     # Configure
@@ -99,7 +114,7 @@ def train(hyp, tb_writer, opt, device):
             else:
                 pg0.append(v)  # all else
 
-    if hyp['optimizer'] == 'adam':  # https://pytorch.org/docs/stable/_modules/torch/optim/lr_scheduler.html#OneCycleLR
+    if opt.adam:
         optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
     else:
         optimizer = optim.SGD(pg0, lr=hyp['lr0'], momentum=hyp['momentum'], nesterov=True)
@@ -110,14 +125,14 @@ def train(hyp, tb_writer, opt, device):
     del pg0, pg1, pg2
 
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
+    # https://pytorch.org/docs/stable/_modules/torch/optim/lr_scheduler.html#OneCycleLR
     lf = lambda x: (((1 + math.cos(x * math.pi / epochs)) / 2) ** 1.0) * 0.8 + 0.2  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
-    # https://discuss.pytorch.org/t/a-problem-occured-when-resuming-an-optimizer/28822
     # plot_lr_scheduler(optimizer, scheduler, epochs)
 
     # Load Model
     with torch_distributed_zero_first(rank):
-        google_utils.attempt_download(weights)
+        attempt_download(weights)
     start_epoch, best_fitness = 0, 0.0
     if weights.endswith('.pt'):  # pytorch format
         ckpt = torch.load(weights, map_location=device)  # load checkpoint
@@ -165,11 +180,11 @@ def train(hyp, tb_writer, opt, device):
         print('Using SyncBatchNorm()')
 
     # Exponential moving average
-    ema = torch_utils.ModelEMA(model) if rank in [-1, 0] else None
+    ema = ModelEMA(model) if rank in [-1, 0] else None
 
     # DDP mode
     if cuda and rank != -1:
-        model = DDP(model, device_ids=[rank], output_device=rank)
+        model = DDP(model, device_ids=[opt.local_rank], output_device=(opt.local_rank))
 
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt, hyp=hyp, augment=True,
@@ -211,6 +226,7 @@ def train(hyp, tb_writer, opt, device):
     # Start training
     t0 = time.time()
     nw = max(3 * nb, 1e3)  # number of warmup iterations, max(3 epochs, 1k iterations)
+    # nw = min(nw, (epochs - start_epoch) / 2 * nb)  # limit warmup to < 1/2 of training
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0)  # 'P', 'R', 'mAP', 'F1', 'val GIoU', 'val Objectness', 'val Classification'
     scheduler.last_epoch = start_epoch - 1  # do not move
@@ -276,7 +292,7 @@ def train(hyp, tb_writer, opt, device):
                     imgs = F.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
 
             # Autocast
-            with amp.autocast():
+            with amp.autocast(enabled=cuda):
                 # Forward
                 pred = model(imgs)
 
@@ -309,7 +325,7 @@ def train(hyp, tb_writer, opt, device):
 
                 # Plot
                 if ni < 3:
-                    f = str(Path(log_dir) / ('train_batch%g.jpg' % ni))  # filename
+                    f = str(log_dir / ('train_batch%g.jpg' % ni))  # filename
                     result = plot_images(images=imgs, targets=targets, paths=paths, fname=f)
                     if tb_writer and result is not None:
                         tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
@@ -399,11 +415,11 @@ if __name__ == '__main__':
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='', help='hyp.yaml path (optional)')
     parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=16, help="Total batch size for all gpus.")
+    parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const='get_last', default=False,
-                        help='resume from given path/to/last.pt, or most recent run if blank.')
+                        help='resume from given path/last.pt, or most recent run if blank')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
@@ -415,8 +431,10 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
+    parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
+    parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
     opt = parser.parse_args()
 
     # Resume
@@ -424,8 +442,7 @@ if __name__ == '__main__':
     if last and not opt.weights:
         print(f'Resuming training from {last}')
     opt.weights = last if opt.resume and not opt.weights else opt.weights
-
-    if opt.local_rank in [-1, 0]:
+    if opt.local_rank == -1 or ("RANK" in os.environ and os.environ["RANK"] == "0"):
         check_git_status()
     opt.cfg = check_file(opt.cfg)  # check file
     opt.data = check_file(opt.data)  # check file
@@ -434,42 +451,67 @@ if __name__ == '__main__':
         with open(opt.hyp) as f:
             hyp.update(yaml.load(f, Loader=yaml.FullLoader))  # update hyps
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
-    device = torch_utils.select_device(opt.device, batch_size=opt.batch_size)
+    device = select_device(opt.device, batch_size=opt.batch_size)
     opt.total_batch_size = opt.batch_size
     opt.world_size = 1
-
+    opt.global_rank = -1
+    
     # DDP mode
     if opt.local_rank != -1:
         assert torch.cuda.device_count() > opt.local_rank
         torch.cuda.set_device(opt.local_rank)
-        device = torch.device("cuda", opt.local_rank)
+        device = torch.device('cuda', opt.local_rank)
         dist.init_process_group(backend='nccl', init_method='env://')  # distributed backend
         opt.world_size = dist.get_world_size()
-        assert opt.batch_size % opt.world_size == 0, "Batch size is not a multiple of the number of devices given!"
+        opt.global_rank = dist.get_rank()
+        assert opt.batch_size % opt.world_size == 0, '--batch-size must be multiple of CUDA device count'
         opt.batch_size = opt.total_batch_size // opt.world_size
 
     print(opt)
 
     # Train
     if not opt.evolve:
-        if opt.local_rank in [-1, 0]:
-            print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
-            tb_writer = SummaryWriter(log_dir=increment_dir('runs/exp', opt.name))
-        else:
-            tb_writer = None
+        tb_writer = None
+        if opt.global_rank in [-1, 0]:
+            print('Start Tensorboard with "tensorboard --logdir %s", view at http://localhost:6006/' % opt.logdir)
+            tb_writer = SummaryWriter(log_dir=increment_dir(Path(opt.logdir) / 'exp', opt.name))  # runs/exp
 
-        train(hyp, tb_writer, opt, device)
+        train(hyp, opt, device, tb_writer)
 
     # Evolve hyperparameters (optional)
     else:
-        assert opt.local_rank == -1, 'DDP mode not implemented for --evolve'
+        # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit, upper_limit)
+        meta = {'lr0': (1, 1e-5, 1e-1),  # initial learning rate (SGD=1E-2, Adam=1E-3)
+                'momentum': (0.1, 0.6, 0.98),  # SGD momentum/Adam beta1
+                'weight_decay': (1, 0.0, 0.001),  # optimizer weight decay
+                'giou': (1, 0.02, 0.2),  # GIoU loss gain
+                'cls': (1, 0.2, 4.0),  # cls loss gain
+                'cls_pw': (1, 0.5, 2.0),  # cls BCELoss positive_weight
+                'obj': (1, 0.2, 4.0),  # obj loss gain (scale with pixels)
+                'obj_pw': (1, 0.5, 2.0),  # obj BCELoss positive_weight
+                'iou_t': (0, 0.1, 0.7),  # IoU training threshold
+                'anchor_t': (1, 2.0, 8.0),  # anchor-multiple threshold
+                'fl_gamma': (0, 0.0, 2.0),  # focal loss gamma (efficientDet default gamma=1.5)
+                'hsv_h': (1, 0.0, 0.1),  # image HSV-Hue augmentation (fraction)
+                'hsv_s': (1, 0.0, 0.9),  # image HSV-Saturation augmentation (fraction)
+                'hsv_v': (1, 0.0, 0.9),  # image HSV-Value augmentation (fraction)
+                'degrees': (1, 0.0, 45.0),  # image rotation (+/- deg)
+                'translate': (1, 0.0, 0.9),  # image translation (+/- fraction)
+                'scale': (1, 0.0, 0.9),  # image scale (+/- gain)
+                'shear': (1, 0.0, 10.0),  # image shear (+/- deg)
+                'perspective': (1, 0.0, 0.001),  # image perspective (+/- fraction), range 0-0.001
+                'flipud': (0, 0.0, 1.0),  # image flip up-down (probability)
+                'fliplr': (1, 0.0, 1.0),  # image flip left-right (probability)
+                'mixup': (1, 0.0, 1.0)}  # image mixup (probability)
 
-        tb_writer = None
+        assert opt.local_rank == -1, 'DDP mode not implemented for --evolve'
         opt.notest, opt.nosave = True, True  # only test/save final epoch
+        # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
+        yaml_file = Path('runs/evolve/hyp_evolved.yaml')  # save best result here
         if opt.bucket:
             os.system('gsutil cp gs://%s/evolve.txt .' % opt.bucket)  # download evolve.txt if exists
 
-        for _ in range(10):  # generations to evolve
+        for _ in range(100):  # generations to evolve
             if os.path.exists('evolve.txt'):  # if evolve.txt exists: select best hyps and mutate
                 # Select parent(s)
                 parent = 'single'  # parent selection method: 'single' or 'weighted'
@@ -487,25 +529,27 @@ if __name__ == '__main__':
                 mp, s = 0.9, 0.2  # mutation probability, sigma
                 npr = np.random
                 npr.seed(int(time.time()))
-                g = np.array([1, 1, 1, 1, 1, 1, 1, 0, .1, 1, 0, 1, 1, 1, 1, 1, 1, 1])  # gains
-                ng = len(g)
+                g = np.array([x[0] for x in meta.values()])  # gains 0-1
+                ng = len(meta)
                 v = np.ones(ng)
                 while all(v == 1):  # mutate until a change occurs (prevent duplicates)
                     v = (g * (npr.random(ng) < mp) * npr.randn(ng) * npr.random() * s + 1).clip(0.3, 3.0)
                 for i, k in enumerate(hyp.keys()):  # plt.hist(v.ravel(), 300)
-                    hyp[k] = x[i + 7] * v[i]  # mutate
+                    hyp[k] = float(x[i + 7] * v[i])  # mutate
 
-            # Clip to limits
-            keys = ['lr0', 'iou_t', 'momentum', 'weight_decay', 'hsv_s', 'hsv_v', 'translate', 'scale', 'fl_gamma']
-            limits = [(1e-5, 1e-2), (0.00, 0.70), (0.60, 0.98), (0, 0.001), (0, .9), (0, .9), (0, .9), (0, .9), (0, 3)]
-            for k, v in zip(keys, limits):
-                hyp[k] = np.clip(hyp[k], v[0], v[1])
+            # Constrain to limits
+            for k, v in meta.items():
+                hyp[k] = max(hyp[k], v[1])  # lower limit
+                hyp[k] = min(hyp[k], v[2])  # upper limit
+                hyp[k] = round(hyp[k], 5)  # significant digits
 
             # Train mutation
-            results = train(hyp.copy(), tb_writer, opt, device)
+            results = train(hyp.copy(), opt, device)
 
             # Write mutation results
-            print_mutation(hyp, results, opt.bucket)
+            print_mutation(hyp.copy(), results, yaml_file, opt.bucket)
 
-            # Plot results
-            # plot_evolution_results(hyp)
+        # Plot results
+        plot_evolution(yaml_file)
+        print('Hyperparameter evolution complete. Best results saved as: %s\nCommand to train a new model with these '
+              'hyperparameters: $ python train.py --hyp %s' % (yaml_file, yaml_file))
