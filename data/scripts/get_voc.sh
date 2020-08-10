@@ -1,33 +1,32 @@
+#!/bin/bash
 # PASCAL VOC dataset http://host.robots.ox.ac.uk/pascal/VOC/
-# Download command: bash ./data/get_voc.sh
+# Download command: bash data/scripts/get_voc.sh
 # Train command: python train.py --data voc.yaml
 # Default dataset location is next to /yolov5:
 #   /parent_folder
 #     /VOC
 #     /yolov5
 
-
-start=`date +%s`
+start=$(date +%s)
 
 # handle optional download dir
-if [ -z "$1" ]
-  then
-    # navigate to ~/tmp
-    echo "navigating to ../tmp/ ..."
-    mkdir -p ../tmp
-    cd ../tmp/
-  else
-    # check if is valid directory
-    if [ ! -d $1 ]; then
-        echo $1 "is not a valid directory"
-        exit 0
-    fi
-    echo "navigating to" $1 "..."
-    cd $1
+if [ -z "$1" ]; then
+  # navigate to ~/tmp
+  echo "navigating to ../tmp/ ..."
+  mkdir -p ../tmp
+  cd ../tmp/
+else
+  # check if is valid directory
+  if [ ! -d $1 ]; then
+    echo $1 "is not a valid directory"
+    exit 0
+  fi
+  echo "navigating to" $1 "..."
+  cd $1
 fi
 
 echo "Downloading VOC2007 trainval ..."
-# Download the data.
+# Download data
 curl -LO http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtrainval_06-Nov-2007.tar
 echo "Downloading VOC2007 test data ..."
 curl -LO http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtest_06-Nov-2007.tar
@@ -42,35 +41,33 @@ echo "removing tars ..."
 rm VOCtrainval_06-Nov-2007.tar
 rm VOCtest_06-Nov-2007.tar
 
-end=`date +%s`
-runtime=$((end-start))
+end=$(date +%s)
+runtime=$((end - start))
 
 echo "Completed in" $runtime "seconds"
 
-start=`date +%s`
+start=$(date +%s)
 
 # handle optional download dir
-if [ -z "$1" ]
-  then
-    # navigate to ~/tmp
-    echo "navigating to ../tmp/ ..."
-    mkdir -p ../tmp
-    cd ../tmp/
-  else
-    # check if is valid directory
-    if [ ! -d $1 ]; then
-        echo $1 "is not a valid directory"
-        exit 0
-    fi
-    echo "navigating to" $1 "..."
-    cd $1
+if [ -z "$1" ]; then
+  # navigate to ~/tmp
+  echo "navigating to ../tmp/ ..."
+  mkdir -p ../tmp
+  cd ../tmp/
+else
+  # check if is valid directory
+  if [ ! -d $1 ]; then
+    echo $1 "is not a valid directory"
+    exit 0
+  fi
+  echo "navigating to" $1 "..."
+  cd $1
 fi
 
 echo "Downloading VOC2012 trainval ..."
-# Download the data.
+# Download data
 curl -LO http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar
 echo "Done downloading."
-
 
 # Extract data
 echo "Extracting trainval ..."
@@ -78,8 +75,8 @@ tar -xf VOCtrainval_11-May-2012.tar
 echo "removing tar ..."
 rm VOCtrainval_11-May-2012.tar
 
-end=`date +%s`
-runtime=$((end-start))
+end=$(date +%s)
+runtime=$((end - start))
 
 echo "Completed in" $runtime "seconds"
 
@@ -144,8 +141,8 @@ for year, image_set in sets:
 
 END
 
-cat 2007_train.txt 2007_val.txt 2012_train.txt 2012_val.txt > train.txt
-cat 2007_train.txt 2007_val.txt 2007_test.txt 2012_train.txt 2012_val.txt > train.all.txt
+cat 2007_train.txt 2007_val.txt 2012_train.txt 2012_val.txt >train.txt
+cat 2007_train.txt 2007_val.txt 2007_test.txt 2012_train.txt 2012_val.txt >train.all.txt
 
 python3 - "$@" <<END
 
@@ -211,5 +208,5 @@ for line in lines:
 
 END
 
-rm -rf ../tmp  # remove temporary directory
+rm -rf ../tmp # remove temporary directory
 echo "VOC download done."

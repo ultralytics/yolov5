@@ -21,9 +21,9 @@ import test  # import test.py to get mAP after each epoch
 from models.yolo import Model
 from utils.datasets import create_dataloader
 from utils.general import (
-    check_img_size, torch_distributed_zero_first, labels_to_class_weights, plot_labels, check_anchors,
-    labels_to_image_weights, compute_loss, plot_images, fitness, strip_optimizer, plot_results,
-    get_latest_run, check_git_status, check_file, increment_dir, print_mutation, plot_evolution)
+    torch_distributed_zero_first, labels_to_class_weights, plot_labels, check_anchors, labels_to_image_weights,
+    compute_loss, plot_images, fitness, strip_optimizer, plot_results, get_latest_run, check_dataset, check_file,
+    check_git_status, check_img_size, increment_dir, print_mutation, plot_evolution)
 from utils.google_utils import attempt_download
 from utils.torch_utils import init_seeds, ModelEMA, select_device, intersect_dicts
 
@@ -51,6 +51,8 @@ def train(hyp, opt, device, tb_writer=None):
     init_seeds(2 + rank)
     with open(opt.data) as f:
         data_dict = yaml.load(f, Loader=yaml.FullLoader)  # model dict
+    with torch_distributed_zero_first(rank):
+        check_dataset(data_dict)  # check
     train_path = data_dict['train']
     test_path = data_dict['val']
     nc, names = (1, ['item']) if opt.single_cls else (int(data_dict['nc']), data_dict['names'])  # number classes, names

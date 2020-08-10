@@ -128,6 +128,25 @@ def check_file(file):
         return files[0]  # return first file if multiple found
 
 
+def check_dataset(dict):
+    # Download dataset if not found
+    train, val = os.path.abspath(dict['train']), os.path.abspath(dict['val'])  # data paths
+    if not (os.path.exists(train) and os.path.exists(val)):
+        print('\nWARNING: Dataset not found, nonexistant paths: %s' % [train, val])
+        if 'download' in dict:
+            s = dict['download']
+            print('Attempting autodownload from: %s' % s)
+            if s.startswith('http') and s.endswith('.zip'):  # URL
+                f = Path(s).name  # filename
+                torch.hub.download_url_to_file(s, f)
+                r = os.system('unzip -q %s -d ../ && rm %s' % (f, f))
+            else:  # bash script
+                r = os.system(s)
+            print('Dataset autodownload %s\n' % ('success' if r == 0 else 'failure'))  # analyze return value
+        else:
+            Exception('Dataset autodownload unavailable.')
+
+
 def make_divisible(x, divisor):
     # Returns x evenly divisble by divisor
     return math.ceil(x / divisor) * divisor

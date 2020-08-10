@@ -1,11 +1,13 @@
 # COCO 2017 dataset http://cocodataset.org
-# Download command: bash yolov5/data/get_coco2017.sh
 # Train command: python train.py --data coco.yaml
 # Default dataset location is next to /yolov5:
 #   /parent_folder
 #     /coco
 #     /yolov5
 
+
+# download command/URL (optional)
+download: bash data/scripts/get_coco.sh
 
 # train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
 train: ../coco/train2017.txt  # 118287 images
