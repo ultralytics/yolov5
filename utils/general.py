@@ -142,7 +142,7 @@ def check_dataset(dict):
                 r = os.system('unzip -q %s -d ../ && rm %s' % (f, f))
             else:  # bash script
                 r = os.system(s)
-            print('Dataset autodownload %s' % ('success' if r == 0 else 'failure'))  # analyze return value
+            print('Dataset autodownload %s\n' % ('success' if r == 0 else 'failure'))  # analyze return value
         else:
             Exception('Dataset autodownload unavailable.')
 
