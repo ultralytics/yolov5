@@ -406,8 +406,8 @@ if __name__ == '__main__':
 
     # Set DDP variables
     opt.total_batch_size = opt.batch_size
-    opt.world_size = os.environ["WORLD_SIZE"] if "WORLD_SIZE" in os.environ else 1
-    opt.global_rank = os.environ["RANK"] if "RANK" in os.environ else -1
+    opt.world_size = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1
+    opt.global_rank = int(os.environ["RANK"]) if "RANK" in os.environ else -1
     set_logging(opt.global_rank)
 
     # Resume
