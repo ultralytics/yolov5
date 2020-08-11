@@ -374,7 +374,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         create_datasubset, extract_bounding_boxes, labels_loaded = False, False, False
         nm, nf, ne, ns, nd = 0, 0, 0, 0, 0  # number missing, found, empty, datasubset, duplicate
         pbar = enumerate(self.label_files)
-        if (rank in [-1, 0]): pbar = tqdm(pbar)    
+        if rank in [-1, 0]:
+            pbar = tqdm(pbar)
         for i, file in pbar:
             l = self.labels[i]  # label
             if l.shape[0]:
@@ -422,7 +423,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 ne += 1  # print('empty labels for image %s' % self.img_files[i])  # file empty
                 # os.system("rm '%s' '%s'" % (self.img_files[i], self.label_files[i]))  # remove
 
-            if (rank in [-1,0]):
+            if rank in [-1,0]:
                 pbar.desc = 'Scanning labels %s (%g found, %g missing, %g empty, %g duplicate, for %g images)' % (
                     cache_path, nf, nm, ne, nd, n)
         if nf == 0:
