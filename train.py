@@ -3,6 +3,7 @@ import math
 import os
 import random
 import time
+import logging
 from pathlib import Path
 
 import numpy as np
@@ -23,13 +24,14 @@ from utils.datasets import create_dataloader
 from utils.general import (
     torch_distributed_zero_first, labels_to_class_weights, plot_labels, check_anchors, labels_to_image_weights,
     compute_loss, plot_images, fitness, strip_optimizer, plot_results, get_latest_run, check_dataset, check_file,
-    check_git_status, check_img_size, increment_dir, print_mutation, plot_evolution)
+    check_git_status, check_img_size, increment_dir, print_mutation, plot_evolution, set_logging)
 from utils.google_utils import attempt_download
 from utils.torch_utils import init_seeds, ModelEMA, select_device, intersect_dicts
 
+logger = logging.getLogger(__name__)
 
 def train(hyp, opt, device, tb_writer=None):
-    print(f'Hyperparameters {hyp}')
+    logger.info(f'Hyperparameters {hyp}')
     log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
     wdir = str(log_dir / 'weights') + os.sep  # weights directory
     os.makedirs(wdir, exist_ok=True)
@@ -69,7 +71,7 @@ def train(hyp, opt, device, tb_writer=None):
         state_dict = ckpt['model'].float().state_dict()  # to FP32
         state_dict = intersect_dicts(state_dict, model.state_dict(), exclude=exclude)  # intersect
         model.load_state_dict(state_dict, strict=False)  # load
-        print('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))  # report
+        logging.info('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))  # report
     else:
         model = Model(opt.cfg, ch=3, nc=nc).to(device)  # create
 
@@ -103,7 +105,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     optimizer.add_param_group({'params': pg1, 'weight_decay': hyp['weight_decay']})  # add pg1 with weight_decay
     optimizer.add_param_group({'params': pg2})  # add pg2 (biases)
-    print('Optimizer groups: %g .bias, %g conv.weight, %g other' % (len(pg2), len(pg1), len(pg0)))
+    logger.info('Optimizer groups: %g .bias, %g conv.weight, %g other' % (len(pg2), len(pg1), len(pg0)))
     del pg0, pg1, pg2
 
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
@@ -128,7 +130,7 @@ def train(hyp, opt, device, tb_writer=None):
         # Epochs
         start_epoch = ckpt['epoch'] + 1
         if epochs < start_epoch:
-            print('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
+            logger.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
                   (weights, ckpt['epoch'], epochs))
             epochs += ckpt['epoch']  # finetune additional epochs
 
@@ -145,7 +147,7 @@ def train(hyp, opt, device, tb_writer=None):
     # SyncBatchNorm
     if opt.sync_bn and cuda and rank != -1:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
-        print('Using SyncBatchNorm()')
+        logger.info('Using SyncBatchNorm()')
 
     # Exponential moving average
     ema = ModelEMA(model) if rank in [-1, 0] else None
@@ -156,7 +158,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt, hyp=hyp, augment=True,
-                                            cache=opt.cache_images, rect=opt.rect, local_rank=rank,
+                                            cache=opt.cache_images, rect=opt.rect, rank=rank,
                                             world_size=opt.world_size)
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
     nb = len(dataloader)  # number of batches
@@ -166,7 +168,7 @@ def train(hyp, opt, device, tb_writer=None):
     if rank in [-1, 0]:
         # local_rank is set to -1. Because only the first process is expected to do evaluation.
         testloader = create_dataloader(test_path, imgsz_test, total_batch_size, gs, opt, hyp=hyp, augment=False,
-                                       cache=opt.cache_images, rect=True, local_rank=-1, world_size=opt.world_size)[0]
+                                       cache=opt.cache_images, rect=True, rank=-1, world_size=opt.world_size)[0]
 
     # Model parameters
     hyp['cls'] *= nc / 80.  # scale coco-tuned hyp['cls'] to current dataset
@@ -199,10 +201,9 @@ def train(hyp, opt, device, tb_writer=None):
     results = (0, 0, 0, 0, 0, 0, 0)  # 'P', 'R', 'mAP', 'F1', 'val GIoU', 'val Objectness', 'val Classification'
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
-    if rank in [0, -1]:
-        print('Image sizes %g train, %g test' % (imgsz, imgsz_test))
-        print('Using %g dataloader workers' % dataloader.num_workers)
-        print('Starting training for %g epochs...' % epochs)
+    logger.info('Image sizes %g train, %g test' % (imgsz, imgsz_test))
+    logger.info('Using %g dataloader workers' % dataloader.num_workers)
+    logger.info('Starting training for %g epochs...' % epochs)
     # torch.autograd.set_detect_anomaly(True)
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
@@ -232,8 +233,8 @@ def train(hyp, opt, device, tb_writer=None):
         if rank != -1:
             dataloader.sampler.set_epoch(epoch)
         pbar = enumerate(dataloader)
+        logging.info(('\n' + '%10s' * 8) % ('Epoch', 'gpu_mem', 'GIoU', 'obj', 'cls', 'total', 'targets', 'img_size'))
         if rank in [-1, 0]:
-            print(('\n' + '%10s' * 8) % ('Epoch', 'gpu_mem', 'GIoU', 'obj', 'cls', 'total', 'targets', 'img_size'))
             pbar = tqdm(pbar, total=nb)  # progress bar
         optimizer.zero_grad()
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
@@ -269,7 +270,7 @@ def train(hyp, opt, device, tb_writer=None):
                 if rank != -1:
                     loss *= opt.world_size  # gradient averaged between devices in DDP mode
                 # if not torch.isfinite(loss):
-                #     print('WARNING: non-finite loss, ending training ', loss_items)
+                #     logger.info('WARNING: non-finite loss, ending training ', loss_items)
                 #     return results
 
             # Backward
@@ -369,7 +370,7 @@ def train(hyp, opt, device, tb_writer=None):
         # Finish
         if not opt.evolve:
             plot_results(save_dir=log_dir)  # save as results.png
-        print('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
+        logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
 
     dist.destroy_process_group() if rank not in [-1, 0] else None
     torch.cuda.empty_cache()
@@ -404,13 +405,19 @@ if __name__ == '__main__':
     parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
     opt = parser.parse_args()
 
+    # Set DDP variables
+    opt.total_batch_size = opt.batch_size
+    opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
+    opt.global_rank = int(os.environ['RANK']) if 'RANK' in os.environ else -1
+    set_logging(opt.global_rank)
+
     # Resume
     if opt.resume:
         last = get_latest_run() if opt.resume == 'get_last' else opt.resume  # resume from most recent run
         if last and not opt.weights:
-            print(f'Resuming training from {last}')
+            logger.info(f'Resuming training from {last}')
         opt.weights = last if opt.resume and not opt.weights else opt.weights
-    if opt.local_rank == -1 or ("RANK" in os.environ and os.environ["RANK"] == "0"):
+    if opt.global_rank in [-1,0]:
         check_git_status()
 
     opt.hyp = opt.hyp or ('data/hyp.finetune.yaml' if opt.weights else 'data/hyp.scratch.yaml')
@@ -419,9 +426,6 @@ if __name__ == '__main__':
 
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
     device = select_device(opt.device, batch_size=opt.batch_size)
-    opt.total_batch_size = opt.batch_size
-    opt.world_size = 1
-    opt.global_rank = -1
 
     # DDP mode
     if opt.local_rank != -1:
@@ -429,12 +433,10 @@ if __name__ == '__main__':
         torch.cuda.set_device(opt.local_rank)
         device = torch.device('cuda', opt.local_rank)
         dist.init_process_group(backend='nccl', init_method='env://')  # distributed backend
-        opt.world_size = dist.get_world_size()
-        opt.global_rank = dist.get_rank()
         assert opt.batch_size % opt.world_size == 0, '--batch-size must be multiple of CUDA device count'
         opt.batch_size = opt.total_batch_size // opt.world_size
 
-    print(opt)
+    logger.info(opt)
     with open(opt.hyp) as f:
         hyp = yaml.load(f, Loader=yaml.FullLoader)  # load hyps
 
@@ -442,7 +444,7 @@ if __name__ == '__main__':
     if not opt.evolve:
         tb_writer = None
         if opt.global_rank in [-1, 0]:
-            print('Start Tensorboard with "tensorboard --logdir %s", view at http://localhost:6006/' % opt.logdir)
+            logger.info('Start Tensorboard with "tensorboard --logdir %s", view at http://localhost:6006/' % opt.logdir)
             tb_writer = SummaryWriter(log_dir=increment_dir(Path(opt.logdir) / 'exp', opt.name))  # runs/exp
 
         train(hyp, opt, device, tb_writer)

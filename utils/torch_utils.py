@@ -1,6 +1,7 @@
 import math
 import os
 import time
+import logging
 from copy import deepcopy
 
 import torch
@@ -9,6 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 
+logger = logging.getLogger(__name__)
 
 def init_seeds(seed=0):
     torch.manual_seed(seed)
@@ -40,12 +42,12 @@ def select_device(device='', batch_size=None):
         for i in range(0, ng):
             if i == 1:
                 s = ' ' * len(s)
-            print("%sdevice%g _CudaDeviceProperties(name='%s', total_memory=%dMB)" %
+            logger.info("%sdevice%g _CudaDeviceProperties(name='%s', total_memory=%dMB)" %
                   (s, i, x[i].name, x[i].total_memory / c))
     else:
-        print('Using CPU')
+        logger.info('Using CPU')
 
-    print('')  # skip a line
+    logger.info('')  # skip a line
     return torch.device('cuda:0' if cuda else 'cpu')
 
 
@@ -142,7 +144,7 @@ def model_info(model, verbose=False):
     except:
         fs = ''
 
-    print('Model Summary: %g layers, %g parameters, %g gradients%s' % (len(list(model.parameters())), n_p, n_g, fs))
+    logger.info('Model Summary: %g layers, %g parameters, %g gradients%s' % (len(list(model.parameters())), n_p, n_g, fs))
 
 
 def load_classifier(name='resnet101', n=2):
