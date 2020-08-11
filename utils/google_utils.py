@@ -6,7 +6,7 @@ import os
 import platform
 import time
 from pathlib import Path
-import torch.hub as hub
+import torch
 
 
 def attempt_download(weights):
@@ -28,13 +28,18 @@ def attempt_download(weights):
         #    return
 
         # GitHub
-        hub.download_url_to_file('https://github.com/ultralytics/yolov5/releases/download/v2.0/' + file, weights)
+        url = 'https://github.com/ultralytics/yolov5/releases/download/v2.0/' + file
+        print('Downloading %s to %s...' % (url, weights))
+        torch.hub.download_url_to_file(url, weights)
         if os.path.exists(weights) and os.path.getsize(weights) > 1E6:  # check
+            print('')
             return
 
         # GCP (redundant backup)
-        hub.download_url_to_file('https://storage.googleapis.com/ultralytics/yolov5/ckpt/' + file, weights)
+        url = 'https://storage.googleapis.com/ultralytics/yolov5/ckpt/' + file
+        torch.hub.download_url_to_file(url, weights)
         if os.path.exists(weights) and os.path.getsize(weights) > 1E6:  # check
+            print('')
             return
         else:
             os.remove(weights) if os.path.exists(weights) else None  # remove partial downloads
@@ -42,8 +47,7 @@ def attempt_download(weights):
 
 
 def gdrive_download(id='1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', name='coco128.zip'):
-    # Downloads a file from Google Drive, accepting presented query
-    # from utils.google_utils import *; gdrive_download()
+    # Downloads a file from Google Drive. from utils.google_utils import *; gdrive_download()
     t = time.time()
 
     print('Downloading https://drive.google.com/uc?export=download&id=%s as %s... ' % (id, name), end='')
@@ -57,7 +61,7 @@ def gdrive_download(id='1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', name='coco128.zip'):
         s = 'curl -Lb ./cookie "drive.google.com/uc?export=download&confirm=%s&id=%s" -o %s' % (get_token(), id, name)
     else:  # small file
         s = 'curl -s -L -o %s "drive.google.com/uc?export=download&id=%s"' % (name, id)
-    r = os.system(s)  # execute, capture return values
+    r = os.system(s)  # execute, capture return
     os.remove('cookie') if os.path.exists('cookie') else None
 
     # Error check
