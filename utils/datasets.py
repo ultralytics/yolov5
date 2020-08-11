@@ -375,7 +375,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         pbar = tqdm(self.label_files)
         for i, file in enumerate(pbar):
             l = self.labels[i]  # label
-            if l.shape[0]:
+            if l is not None and l.shape[0]:
                 assert l.shape[1] == 5, '> 5 label columns: %s' % file
                 assert (l >= 0).all(), 'negative labels: %s' % file
                 assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels: %s' % file
