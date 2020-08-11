@@ -45,9 +45,9 @@ def select_device(device='', batch_size=None):
             logger.info("%sdevice%g _CudaDeviceProperties(name='%s', total_memory=%dMB)" %
                   (s, i, x[i].name, x[i].total_memory / c))
     else:
-        print('Using CPU')
+        logger.info('Using CPU')
 
-    print('')  # skip a line
+    logger.info('')  # skip a line
     return torch.device('cuda:0' if cuda else 'cpu')
 
 
