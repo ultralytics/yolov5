@@ -31,7 +31,7 @@ from utils.torch_utils import init_seeds, ModelEMA, select_device, intersect_dic
 logger = logging.getLogger(__name__)
 
 def train(hyp, opt, device, tb_writer=None):
-    logger.info(f'Hyperparameter {hyp}')
+    logger.info(f'Hyperparameters {hyp}')
     log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
     wdir = str(log_dir / 'weights') + os.sep  # weights directory
     os.makedirs(wdir, exist_ok=True)
