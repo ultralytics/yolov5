@@ -5,6 +5,7 @@
 import os
 import platform
 import time
+import torch
 from pathlib import Path
 
 
@@ -34,7 +35,12 @@ def attempt_download(weights):
             # Error check
             if not (r == 0 and os.path.exists(weights) and os.path.getsize(weights) > 1E6):  # weights exist and > 1MB
                 os.remove(weights) if os.path.exists(weights) else None  # remove partial downloads
-                raise Exception(msg)
+                
+                torch.hub.download_url_to_file("https://github.com/ultralytics/yolov5/releases/download/v2.0/%s" % file, weights)
+                if not (os.path.exists(weights) and os.path.getsize(weights) > 1E6):  # weights exist and > 1MB
+                    os.remove(weights) if os.path.exists(weights) else None  # remove partial downloads
+
+                    raise Exception(msg)
 
 
 def gdrive_download(id='1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', name='coco128.zip'):
