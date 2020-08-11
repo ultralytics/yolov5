@@ -31,7 +31,7 @@ from utils.torch_utils import init_seeds, ModelEMA, select_device, intersect_dic
 logger = logging.getLogger(__name__)
 
 def train(hyp, opt, device, tb_writer=None):
-    logger.info(f"Hyperparameter {hyp}")
+    logger.info(f'Hyperparameter {hyp}')
     log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
     wdir = str(log_dir / 'weights') + os.sep  # weights directory
     os.makedirs(wdir, exist_ok=True)
@@ -406,8 +406,8 @@ if __name__ == '__main__':
 
     # Set DDP variables
     opt.total_batch_size = opt.batch_size
-    opt.world_size = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1
-    opt.global_rank = int(os.environ["RANK"]) if "RANK" in os.environ else -1
+    opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
+    opt.global_rank = int(os.environ['RANK']) if 'RANK' in os.environ else -1
     set_logging(opt.global_rank)
 
     # Resume
