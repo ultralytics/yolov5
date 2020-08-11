@@ -404,7 +404,11 @@ if __name__ == '__main__':
     parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
     opt = parser.parse_args()
 
-    set_logging(opt.local_rank)
+    # Set DDP variables
+    opt.total_batch_size = opt.batch_size
+    opt.world_size = os.environ["WORLD_SIZE"] if "WORLD_SIZE" in os.environ else 1
+    opt.global_rank = os.environ["RANK"] if "RANK" in os.environ else -1
+    set_logging(opt.global_rank)
 
     # Resume
     if opt.resume:
@@ -412,7 +416,7 @@ if __name__ == '__main__':
         if last and not opt.weights:
             logger.info(f'Resuming training from {last}')
         opt.weights = last if opt.resume and not opt.weights else opt.weights
-    if opt.local_rank == -1 or ("RANK" in os.environ and os.environ["RANK"] == "0"):
+    if opt.global_rank in [-1,0]:
         check_git_status()
 
     opt.hyp = opt.hyp or ('data/hyp.finetune.yaml' if opt.weights else 'data/hyp.scratch.yaml')
@@ -421,9 +425,6 @@ if __name__ == '__main__':
 
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
     device = select_device(opt.device, batch_size=opt.batch_size)
-    opt.total_batch_size = opt.batch_size
-    opt.world_size = 1
-    opt.global_rank = -1
 
     # DDP mode
     if opt.local_rank != -1:
@@ -431,8 +432,6 @@ if __name__ == '__main__':
         torch.cuda.set_device(opt.local_rank)
         device = torch.device('cuda', opt.local_rank)
         dist.init_process_group(backend='nccl', init_method='env://')  # distributed backend
-        opt.world_size = dist.get_world_size()
-        opt.global_rank = dist.get_rank()
         assert opt.batch_size % opt.world_size == 0, '--batch-size must be multiple of CUDA device count'
         opt.batch_size = opt.total_batch_size // opt.world_size
 
