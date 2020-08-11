@@ -30,14 +30,17 @@ def attempt_download(weights):
         # GitHub
         url = 'https://github.com/ultralytics/yolov5/releases/download/v2.0/' + file
         print('Downloading %s to %s...' % (url, weights))
-        torch.hub.download_url_to_file(url, weights)
+        if platform.system() == 'Darwin':  # avoid MacOS python requests certificate error
+            r = os.system('curl -L %s -o %s' % (url, weights))
+        else:
+            torch.hub.download_url_to_file(url, weights)
         if os.path.exists(weights) and os.path.getsize(weights) > 1E6:  # check
             print('')
             return
 
         # GCP (redundant backup)
         url = 'https://storage.googleapis.com/ultralytics/yolov5/ckpt/' + file
-        torch.hub.download_url_to_file(url, weights)
+        r = os.system('curl -L %s -o %s' % (url, weights))  # torch.hub.download_url_to_file(url, weights)
         if os.path.exists(weights) and os.path.getsize(weights) > 1E6:  # check
             print('')
             return
