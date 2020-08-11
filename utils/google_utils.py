@@ -23,7 +23,7 @@ def attempt_download(weights):
         #      'yolov5m.pt': '1vobuEExpWQVpXExsJ2w-Mbf3HJjWkQJr',
         #      'yolov5l.pt': '1hrlqD1Wdei7UT4OgT785BEk1JwnSvNEV',
         #      'yolov5x.pt': '1mM8aZJlWTxOg7BZJvNUMrTnA2AbeCVzS'}
-        # r = gdrive_download(id=d[file], name=weights) if file in d else 1  # return value
+        # r = gdrive_download(id=d[file], name=weights) if file in d else 1
         # if r == 0 and os.path.exists(weights) and os.path.getsize(weights) > 1E6:  # check
         #    return
 
@@ -35,16 +35,15 @@ def attempt_download(weights):
             else:
                 torch.hub.download_url_to_file(url, weights)
             assert os.path.exists(weights) and os.path.getsize(weights) > 1E6  # check
-
         except Exception as e:  # GCP
+            print('Download error: %s' % e)
             url = 'https://storage.googleapis.com/ultralytics/yolov5/ckpt/' + file
             print('Downloading %s to %s...' % (url, weights))
             r = os.system('curl -L %s -o %s' % (url, weights))  # torch.hub.download_url_to_file(url, weights)
-
         finally:
             if not (os.path.exists(weights) and os.path.getsize(weights) > 1E6):  # check
                 os.remove(weights) if os.path.exists(weights) else None  # remove partial downloads
-                print('ERROR: Download failure: %s' % e)
+                print('ERROR: Download failure: %s' % msg)
             print('')
             return
 
