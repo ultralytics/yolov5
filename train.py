@@ -72,8 +72,13 @@ def train(hyp, opt, device, tb_writer=None):
         print('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))  # report
     else:
         model = Model(opt.cfg, ch=3, nc=nc).to(device)  # create
-
+    
     # Freeze
+    if opt.freeze !='':
+        freeze=[]
+        [freeze.append(x)for x in opt.freeze.split()]
+    else:
+        freeze = ['', ]
     freeze = ['', ]  # parameter names to freeze (full or partial)
     if any(freeze):
         for k, v in model.named_parameters():
@@ -402,6 +407,7 @@ if __name__ == '__main__':
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
+    parser.add_argument('--freeze', type=str, default='', help='freezing gradients')
     opt = parser.parse_args()
 
     # Resume
