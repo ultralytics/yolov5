@@ -27,26 +27,26 @@ def attempt_download(weights):
         # if r == 0 and os.path.exists(weights) and os.path.getsize(weights) > 1E6:  # check
         #    return
 
-        # GitHub
-        url = 'https://github.com/ultralytics/yolov5/releases/download/v2.0/' + file
-        print('Downloading %s to %s...' % (url, weights))
-        if platform.system() == 'Darwin':  # avoid MacOS python requests certificate error
-            r = os.system('curl -L %s -o %s' % (url, weights))
-        else:
-            torch.hub.download_url_to_file(url, weights)
-        if os.path.exists(weights) and os.path.getsize(weights) > 1E6:  # check
-            print('')
-            return
+        try:  # GitHub
+            url = 'https://github.com/ultralytics/yolov5/releases/download/v2.0/' + file
+            print('Downloading %s to %s...' % (url, weights))
+            if platform.system() == 'Darwin':  # avoid MacOS python requests certificate error
+                r = os.system('curl -L %s -o %s' % (url, weights))
+            else:
+                torch.hub.download_url_to_file(url, weights)
+            assert os.path.exists(weights) and os.path.getsize(weights) > 1E6  # check
 
-        # GCP (redundant backup)
-        url = 'https://storage.googleapis.com/ultralytics/yolov5/ckpt/' + file
-        r = os.system('curl -L %s -o %s' % (url, weights))  # torch.hub.download_url_to_file(url, weights)
-        if os.path.exists(weights) and os.path.getsize(weights) > 1E6:  # check
+        except Exception as e:  # GCP
+            url = 'https://storage.googleapis.com/ultralytics/yolov5/ckpt/' + file
+            print('Downloading %s to %s...' % (url, weights))
+            r = os.system('curl -L %s -o %s' % (url, weights))  # torch.hub.download_url_to_file(url, weights)
+
+        finally:
+            if not (os.path.exists(weights) and os.path.getsize(weights) > 1E6):  # check
+                os.remove(weights) if os.path.exists(weights) else None  # remove partial downloads
+                print('ERROR: Download failure: %s' % e)
             print('')
             return
-        else:
-            os.remove(weights) if os.path.exists(weights) else None  # remove partial downloads
-            raise Exception(msg)
 
 
 def gdrive_download(id='1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', name='coco128.zip'):
