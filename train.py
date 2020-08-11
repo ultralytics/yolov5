@@ -79,7 +79,7 @@ def train(hyp, opt, device, tb_writer=None):
         [freeze.append(x)for x in opt.freeze.split()]
     else:
         freeze = ['', ]
-    freeze = ['', ]  # parameter names to freeze (full or partial)
+     # parameter names to freeze (full or partial)
     if any(freeze):
         for k, v in model.named_parameters():
             if any(x in k for x in freeze):
