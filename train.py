@@ -406,6 +406,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     set_logging(opt.local_rank)
+    
     # Resume
     if opt.resume:
         last = get_latest_run() if opt.resume == 'get_last' else opt.resume  # resume from most recent run
