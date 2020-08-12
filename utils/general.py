@@ -137,9 +137,10 @@ def check_file(file):
 
 def check_dataset(dict):
     # Download dataset if not found
-    train, val = os.path.abspath(dict['train']), os.path.abspath(dict['val'])  # data paths
-    if not (os.path.exists(train) and os.path.exists(val)):
-        print('\nWARNING: Dataset not found, nonexistant paths: %s' % [train, val])
+    listify = lambda x: [x] if isinstance(x, str) else x
+    train, val = [os.path.abspath(p) for p in listify(dict['train'])], [os.path.abspath(p) for p in listify(dict['val'])] # data paths
+    if not all(os.path.exists(p) for p in [*train, *val]):
+        print('\nWARNING: Dataset not found, nonexistant paths: %s' % [*train, *val])
         if 'download' in dict:
             s = dict['download']
             print('Attempting autodownload from: %s' % s)
