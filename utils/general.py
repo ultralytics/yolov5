@@ -152,7 +152,7 @@ def check_dataset(dict):
                 r = os.system(s)
             print('Dataset autodownload %s\n' % ('success' if r == 0 else 'failure'))  # analyze return value
         else:
-            Exception('Dataset autodownload unavailable.')
+            raise Exception('Dataset autodownload unavailable.')
 
 
 def make_divisible(x, divisor):
