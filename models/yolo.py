@@ -156,7 +156,7 @@ class Model(nn.Module):
     #             print('%10.3g' % (m.w.detach().sigmoid() * 2))  # shortcut weights
 
     def fuse(self):  # fuse model Conv2d() + BatchNorm2d() layers
-        print('Fusing layers... ', end='')
+        logging.info('Fusing layers... ', end='')
         for m in self.model.modules():
             if type(m) is Conv:
                 m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatability
