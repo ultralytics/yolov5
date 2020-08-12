@@ -9,6 +9,7 @@ import argparse
 import torch
 
 from utils.google_utils import attempt_download
+from utils.general import set_logging
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -18,6 +19,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
+    set_logging()
 
     # Input
     img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size(1,3,320,192) iDetection
