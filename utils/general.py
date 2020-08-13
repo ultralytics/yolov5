@@ -5,10 +5,11 @@ import random
 import shutil
 import subprocess
 import time
+import logging
 from contextlib import contextmanager
 from copy import copy
 from pathlib import Path
-from sys import platform
+import platform
 
 import cv2
 import matplotlib
@@ -45,6 +46,12 @@ def torch_distributed_zero_first(local_rank: int):
         torch.distributed.barrier()
 
 
+def set_logging(rank=-1):
+    logging.basicConfig(
+        format="%(message)s",
+        level=logging.INFO if rank in [-1, 0] else logging.WARN)
+
+
 def init_seeds(seed=0):
     random.seed(seed)
     np.random.seed(seed)
@@ -59,7 +66,7 @@ def get_latest_run(search_dir='./runs'):
 
 def check_git_status():
     # Suggest 'git pull' if repo is out of date
-    if platform in ['linux', 'darwin'] and not os.path.isfile('/.dockerenv'):
+    if platform.system() in ['Linux', 'Darwin'] and not os.path.isfile('/.dockerenv'):
         s = subprocess.check_output('if [ -d .git ]; then git fetch && git status -uno; fi', shell=True).decode('utf-8')
         if 'Your branch is behind' in s:
             print(s[s.find('Your branch is behind'):s.find('\n\n')] + '\n')
@@ -119,7 +126,7 @@ def check_anchor_order(m):
 
 
 def check_file(file):
-    # Searches for file if not found locally
+    # Search for file if not found
     if os.path.isfile(file) or file == '':
         return file
     else:
@@ -130,21 +137,25 @@ def check_file(file):
 
 def check_dataset(dict):
     # Download dataset if not found
-    train, val = os.path.abspath(dict['train']), os.path.abspath(dict['val'])  # data paths
-    if not (os.path.exists(train) and os.path.exists(val)):
-        print('\nWARNING: Dataset not found, nonexistant paths: %s' % [train, val])
-        if 'download' in dict:
-            s = dict['download']
-            print('Attempting autodownload from: %s' % s)
-            if s.startswith('http') and s.endswith('.zip'):  # URL
-                f = Path(s).name  # filename
-                torch.hub.download_url_to_file(s, f)
-                r = os.system('unzip -q %s -d ../ && rm %s' % (f, f))
-            else:  # bash script
-                r = os.system(s)
-            print('Dataset autodownload %s\n' % ('success' if r == 0 else 'failure'))  # analyze return value
-        else:
-            Exception('Dataset autodownload unavailable.')
+    val, s = dict.get('val'), dict.get('download')
+    if val and len(val):
+        val = [os.path.abspath(x) for x in (val if isinstance(val, list) else [val])]  # val path
+        if not all(os.path.exists(x) for x in val):
+            print('\nWARNING: Dataset not found, nonexistant paths: %s' % [*val])
+            if s and len(s):  # download script
+                print('Attempting autodownload from: %s' % s)
+                if s.startswith('http') and s.endswith('.zip'):  # URL
+                    f = Path(s).name  # filename
+                    if platform.system() == 'Darwin':  # avoid MacOS python requests certificate error
+                        os.system('curl -L %s -o %s' % (s, f))
+                    else:
+                        torch.hub.download_url_to_file(s, f)
+                    r = os.system('unzip -q %s -d ../ && rm %s' % (f, f))  # unzip
+                else:  # bash script
+                    r = os.system(s)
+                print('Dataset autodownload %s\n' % ('success' if r == 0 else 'failure'))  # analyze return value
+            else:
+                raise Exception('Dataset not found.')
 
 
 def make_divisible(x, divisor):
@@ -663,7 +674,7 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, 
     return output
 
 
-def strip_optimizer(f='weights/best.pt', s=''):  # from utils.utils import *; strip_optimizer()
+def strip_optimizer(f='weights/best.pt', s=''):  # from utils.general import *; strip_optimizer()
     # Strip optimizer from 'f' to finalize training, optionally save as 's'
     x = torch.load(f, map_location=torch.device('cpu'))
     x['optimizer'] = None
@@ -688,7 +699,7 @@ def coco_class_count(path='../coco/labels/train2014/'):
         print(i, len(files))
 
 
-def coco_only_people(path='../coco/labels/train2017/'):  # from utils.utils import *; coco_only_people()
+def coco_only_people(path='../coco/labels/train2017/'):  # from utils.general import *; coco_only_people()
     # Find images with only people
     files = sorted(glob.glob('%s/*.*' % path))
     for i, file in enumerate(files):
@@ -697,7 +708,7 @@ def coco_only_people(path='../coco/labels/train2017/'):  # from utils.utils impo
             print(labels.shape[0], file)
 
 
-def crop_images_random(path='../images/', scale=0.50):  # from utils.utils import *; crop_images_random()
+def crop_images_random(path='../images/', scale=0.50):  # from utils.general import *; crop_images_random()
     # crops images into random squares up to scale fraction
     # WARNING: overwrites images!
     for file in tqdm(sorted(glob.glob('%s/*.*' % path))):
@@ -721,7 +732,7 @@ def crop_images_random(path='../images/', scale=0.50):  # from utils.utils impor
 
 
 def coco_single_class_labels(path='../coco/labels/train2014/', label_class=43):
-    # Makes single-class coco datasets. from utils.utils import *; coco_single_class_labels()
+    # Makes single-class coco datasets. from utils.general import *; coco_single_class_labels()
     if os.path.exists('new/'):
         shutil.rmtree('new/')  # delete output folder
     os.makedirs('new/')  # make new output folder
@@ -756,7 +767,7 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
             k: kmeans evolved anchors
 
         Usage:
-            from utils.utils import *; _ = kmean_anchors()
+            from utils.general import *; _ = kmean_anchors()
     """
     thr = 1. / thr
 
@@ -979,7 +990,7 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None):
         cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
 
 
-def plot_wh_methods():  # from utils.utils import *; plot_wh_methods()
+def plot_wh_methods():  # from utils.general import *; plot_wh_methods()
     # Compares the two methods for width-height anchor multiplication
     # https://github.com/ultralytics/yolov3/issues/168
     x = np.arange(-4.0, 4.0, .1)
@@ -1100,7 +1111,7 @@ def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=''):
     plt.savefig(Path(save_dir) / 'LR.png', dpi=200)
 
 
-def plot_test_txt():  # from utils.utils import *; plot_test()
+def plot_test_txt():  # from utils.general import *; plot_test()
     # Plot test.txt histograms
     x = np.loadtxt('test.txt', dtype=np.float32)
     box = xyxy2xywh(x[:, :4])
@@ -1117,7 +1128,7 @@ def plot_test_txt():  # from utils.utils import *; plot_test()
     plt.savefig('hist1d.png', dpi=200)
 
 
-def plot_targets_txt():  # from utils.utils import *; plot_targets_txt()
+def plot_targets_txt():  # from utils.general import *; plot_targets_txt()
     # Plot targets.txt histograms
     x = np.loadtxt('targets.txt', dtype=np.float32).T
     s = ['x targets', 'y targets', 'width targets', 'height targets']
@@ -1130,7 +1141,7 @@ def plot_targets_txt():  # from utils.utils import *; plot_targets_txt()
     plt.savefig('targets.jpg', dpi=200)
 
 
-def plot_study_txt(f='study.txt', x=None):  # from utils.utils import *; plot_study_txt()
+def plot_study_txt(f='study.txt', x=None):  # from utils.general import *; plot_study_txt()
     # Plot study.txt generated by test.py
     fig, ax = plt.subplots(2, 4, figsize=(10, 6), tight_layout=True)
     ax = ax.ravel()
@@ -1181,7 +1192,7 @@ def plot_labels(labels, save_dir=''):
     plt.close()
 
 
-def plot_evolution(yaml_file='runs/evolve/hyp_evolved.yaml'):  # from utils.utils import *; plot_evolution()
+def plot_evolution(yaml_file='runs/evolve/hyp_evolved.yaml'):  # from utils.general import *; plot_evolution()
     # Plot hyperparameter evolution results in evolve.txt
     with open(yaml_file) as f:
         hyp = yaml.load(f, Loader=yaml.FullLoader)
@@ -1205,7 +1216,7 @@ def plot_evolution(yaml_file='runs/evolve/hyp_evolved.yaml'):  # from utils.util
     print('\nPlot saved as evolve.png')
 
 
-def plot_results_overlay(start=0, stop=0):  # from utils.utils import *; plot_results_overlay()
+def plot_results_overlay(start=0, stop=0):  # from utils.general import *; plot_results_overlay()
     # Plot training 'results*.txt', overlaying train and val losses
     s = ['train', 'train', 'train', 'Precision', 'mAP@0.5', 'val', 'val', 'val', 'Recall', 'mAP@0.5:0.95']  # legends
     t = ['GIoU', 'Objectness', 'Classification', 'P-R', 'mAP-F1']  # titles
@@ -1229,7 +1240,7 @@ def plot_results_overlay(start=0, stop=0):  # from utils.utils import *; plot_re
 
 
 def plot_results(start=0, stop=0, bucket='', id=(), labels=(),
-                 save_dir=''):  # from utils.utils import *; plot_results()
+                 save_dir=''):  # from utils.general import *; plot_results()
     # Plot training 'results*.txt' as seen in https://github.com/ultralytics/yolov5#reproduce-our-training
     fig, ax = plt.subplots(2, 5, figsize=(12, 6))
     ax = ax.ravel()
