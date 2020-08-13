@@ -1247,8 +1247,11 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(),
     s = ['GIoU', 'Objectness', 'Classification', 'Precision', 'Recall',
          'val GIoU', 'val Objectness', 'val Classification', 'mAP@0.5', 'mAP@0.5:0.95']
     if bucket:
-        os.system('rm -rf storage.googleapis.com')
-        files = ['https://storage.googleapis.com/%s/results%g.txt' % (bucket, x) for x in id]
+        # os.system('rm -rf storage.googleapis.com')
+        # files = ['https://storage.googleapis.com/%s/results%g.txt' % (bucket, x) for x in id]
+        files = ['results%g.txt' % x for x in id]
+        c = ('gsutil cp ' + '%s ' * len(files) + '.') % tuple('gs://%s/results%g.txt' % (bucket, x) for x in id)
+        os.system(c)
     else:
         files = glob.glob(str(Path(save_dir) / 'results*.txt')) + glob.glob('../../Downloads/results*.txt')
     for fi, f in enumerate(files):
@@ -1266,8 +1269,8 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(),
                 ax[i].set_title(s[i])
                 # if i in [5, 6, 7]:  # share train and val loss y axes
                 #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
-        except:
-            print('Warning: Plotting error for %s, skipping file' % f)
+        except Exception as e:
+            print('Warning: Plotting error for %s; %s' % (f, e))
 
     fig.tight_layout()
     ax[1].legend()

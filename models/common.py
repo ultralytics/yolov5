@@ -23,7 +23,7 @@ class Conv(nn.Module):
         super(Conv, self).__init__()
         self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False)
         self.bn = nn.BatchNorm2d(c2)
-        self.act = nn.LeakyReLU(0.1, inplace=True) if act else nn.Identity()
+        self.act = nn.Hardswish() if act else nn.Identity()
 
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
