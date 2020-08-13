@@ -137,7 +137,7 @@ def detect(save_img=False):
             os.system('open ' + save_path)
     
     print('%i structures found across %i images' %(c, len(dataset)))
-    print('Done. (%.3fs)' % (time.time() - t0)
+    print('Done. (%.3fs)' % (time.time() - t0))
 
 
 if __name__ == '__main__':
