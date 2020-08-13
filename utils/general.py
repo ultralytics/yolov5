@@ -1147,7 +1147,7 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.general import *; plot_
     ax = ax.ravel()
 
     fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
-    for f in ['coco_study/study_coco_yolov5%s.txt' % x for x in ['s', 'm', 'l', 'x']]:
+    for f in ['study/study_coco_yolov5%s.txt' % x for x in ['s', 'm', 'l', 'x']]:
         y = np.loadtxt(f, dtype=np.float32, usecols=[0, 1, 2, 3, 7, 8, 9], ndmin=2).T
         x = np.arange(y.shape[1]) if x is None else np.array(x)
         s = ['P', 'R', 'mAP@.5', 'mAP@.5:.95', 't_inference (ms/img)', 't_NMS (ms/img)', 't_total (ms/img)']
@@ -1170,7 +1170,7 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.general import *; plot_
     ax2.set_ylabel('COCO AP val')
     ax2.legend(loc='lower right')
     plt.savefig('study_mAP_latency.png', dpi=300)
-    plt.savefig(f.replace('.txt', '.png'), dpi=200)
+    plt.savefig(f.replace('.txt', '.png'), dpi=300)
 
 
 def plot_labels(labels, save_dir=''):
