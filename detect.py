@@ -72,7 +72,9 @@ def detect(save_img=False):
         # Apply Classifier
         if classify:
             pred = apply_classifier(pred, modelc, img, im0s)
-        c = 0
+        
+        stru_nums = 0
+        
         # Process detections
         for i, det in enumerate(pred):  # detections per image
             if webcam:  # batch_size >= 1
@@ -92,7 +94,7 @@ def detect(save_img=False):
                 for c in det[:, -1].unique():
                     n = (det[:, -1] == c).sum()  # detections per class
                     s += '%g %ss, ' % (n, names[int(c)])  # add to string
-                    c += n
+                stru_nums += n.item()
 
                 # Write results
                 for *xyxy, conf, cls in det:
@@ -136,7 +138,7 @@ def detect(save_img=False):
         if platform == 'darwin':  # MacOS
             os.system('open ' + save_path)
     
-    print('%i structures found across %i images' %(c, len(dataset)))
+    print('%i structures found across %i images' %(stru_nums, len(dataset)))
     print('Done. (%.3fs)' % (time.time() - t0))
 
 
