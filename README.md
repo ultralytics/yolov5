@@ -22,7 +22,7 @@ This repository represents Ultralytics open-source research into future object d
 | Model | AP<sup>val</sup> | AP<sup>test</sup> | AP<sub>50</sub> | Speed<sub>GPU</sub> | FPS<sub>GPU</sub> || params | FLOPS |
 |---------- |------ |------ |------ | -------- | ------| ------ |------  |  :------: |
 | [YOLOv5s](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J)    | 37.0     | 37.0     | 56.2     | **2.1ms** | **476** || 7.5M   | 13.2B
-| [YOLOv5m](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J)    | 44.3     | 44.3     | 63.4     | 3.0ms     | 333     || 21.8M  | 39.4B
+| [YOLOv5m](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J)    | 44.3     | 44.3     | 63.2     | 3.0ms     | 333     || 21.8M  | 39.4B
 | [YOLOv5l](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J)    | 47.7     | 47.7     | 66.5     | 3.9ms     | 256     || 47.8M  | 88.1B
 | [YOLOv5x](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J)    | **49.2** | **49.2** | **67.7** | 6.1ms     | 164     || 89.0M  | 166.4B
 | | | | | | || |
