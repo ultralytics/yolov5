@@ -30,6 +30,7 @@ from utils.torch_utils import init_seeds, ModelEMA, select_device, intersect_dic
 
 logger = logging.getLogger(__name__)
 
+
 def train(hyp, opt, device, tb_writer=None):
     logger.info(f'Hyperparameters {hyp}')
     log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
@@ -131,7 +132,7 @@ def train(hyp, opt, device, tb_writer=None):
         start_epoch = ckpt['epoch'] + 1
         if epochs < start_epoch:
             logger.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
-                  (weights, ckpt['epoch'], epochs))
+                        (weights, ckpt['epoch'], epochs))
             epochs += ckpt['epoch']  # finetune additional epochs
 
         del ckpt, state_dict
@@ -404,7 +405,7 @@ if __name__ == '__main__':
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
-    parser.add_argument('--workers', type=int, default=8, help='maximum number of workers for dataloader')
+    parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
     opt = parser.parse_args()
 
     # Set DDP variables
@@ -419,7 +420,7 @@ if __name__ == '__main__':
         if last and not opt.weights:
             logger.info(f'Resuming training from {last}')
         opt.weights = last if opt.resume and not opt.weights else opt.weights
-    if opt.global_rank in [-1,0]:
+    if opt.global_rank in [-1, 0]:
         check_git_status()
 
     opt.hyp = opt.hyp or ('data/hyp.finetune.yaml' if opt.weights else 'data/hyp.scratch.yaml')

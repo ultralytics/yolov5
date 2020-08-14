@@ -1147,7 +1147,7 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.general import *; plot_
     ax = ax.ravel()
 
     fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
-    for f in ['coco_study/study_coco_yolov5%s.txt' % x for x in ['s', 'm', 'l', 'x']]:
+    for f in ['study/study_coco_yolov5%s.txt' % x for x in ['s', 'm', 'l', 'x']]:
         y = np.loadtxt(f, dtype=np.float32, usecols=[0, 1, 2, 3, 7, 8, 9], ndmin=2).T
         x = np.arange(y.shape[1]) if x is None else np.array(x)
         s = ['P', 'R', 'mAP@.5', 'mAP@.5:.95', 't_inference (ms/img)', 't_NMS (ms/img)', 't_total (ms/img)']
@@ -1159,7 +1159,7 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.general import *; plot_
         ax2.plot(y[6, :j], y[3, :j] * 1E2, '.-', linewidth=2, markersize=8,
                  label=Path(f).stem.replace('study_coco_', '').replace('yolo', 'YOLO'))
 
-    ax2.plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [33.8, 39.6, 43.0, 47.5, 49.4, 50.7],
+    ax2.plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [34.6, 40.5, 43.0, 47.5, 49.7, 51.5],
              'k.-', linewidth=2, markersize=8, alpha=.25, label='EfficientDet')
 
     ax2.grid()
@@ -1170,7 +1170,7 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.general import *; plot_
     ax2.set_ylabel('COCO AP val')
     ax2.legend(loc='lower right')
     plt.savefig('study_mAP_latency.png', dpi=300)
-    plt.savefig(f.replace('.txt', '.png'), dpi=200)
+    plt.savefig(f.replace('.txt', '.png'), dpi=300)
 
 
 def plot_labels(labels, save_dir=''):
@@ -1247,8 +1247,11 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(),
     s = ['GIoU', 'Objectness', 'Classification', 'Precision', 'Recall',
          'val GIoU', 'val Objectness', 'val Classification', 'mAP@0.5', 'mAP@0.5:0.95']
     if bucket:
-        os.system('rm -rf storage.googleapis.com')
-        files = ['https://storage.googleapis.com/%s/results%g.txt' % (bucket, x) for x in id]
+        # os.system('rm -rf storage.googleapis.com')
+        # files = ['https://storage.googleapis.com/%s/results%g.txt' % (bucket, x) for x in id]
+        files = ['results%g.txt' % x for x in id]
+        c = ('gsutil cp ' + '%s ' * len(files) + '.') % tuple('gs://%s/results%g.txt' % (bucket, x) for x in id)
+        os.system(c)
     else:
         files = glob.glob(str(Path(save_dir) / 'results*.txt')) + glob.glob('../../Downloads/results*.txt')
     for fi, f in enumerate(files):
@@ -1266,8 +1269,8 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(),
                 ax[i].set_title(s[i])
                 # if i in [5, 6, 7]:  # share train and val loss y axes
                 #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
-        except:
-            print('Warning: Plotting error for %s, skipping file' % f)
+        except Exception as e:
+            print('Warning: Plotting error for %s; %s' % (f, e))
 
     fig.tight_layout()
     ax[1].legend()
