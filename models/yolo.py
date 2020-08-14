@@ -98,6 +98,11 @@ class Model(nn.Module):
 
     def forward_once(self, x, profile=False):
         y, dt = [], []  # outputs
+
+        # Save an intermediate output for SAC training and the robot
+        extra_saves = [9]
+        extra_outputs = []
+
         for m in self.model:
             if m.f != -1:  # if not from previous layer
                 x = y[m.f] if isinstance(m.f, int) else [x if j == -1 else y[j] for j in m.f]  # from earlier layers
@@ -117,9 +122,12 @@ class Model(nn.Module):
             x = m(x)  # run
             y.append(x if m.i in self.save else None)  # save output
 
+            if m.i in extra_saves:
+                extra_outputs.append(x)
+
         if profile:
             print('%.1fms total' % sum(dt))
-        return x
+        return x + extra_outputs
 
     def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
