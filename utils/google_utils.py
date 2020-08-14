@@ -28,7 +28,7 @@ def attempt_download(weights):
         #    return
 
         try:  # GitHub
-            url = 'https://github.com/ultralytics/yolov5/releases/download/v2.0/' + file
+            url = 'https://github.com/ultralytics/yolov5/releases/download/v3.0/' + file
             print('Downloading %s to %s...' % (url, weights))
             if platform.system() == 'Darwin':  # avoid MacOS python requests certificate error
                 r = os.system('curl -L %s -o %s' % (url, weights))
