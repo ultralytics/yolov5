@@ -419,8 +419,7 @@ if __name__ == '__main__':
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
-            for k, v in yaml.load(f, Loader=yaml.FullLoader).items():  # load opt
-                setattr(opt, k, v)
+            opt = argparse.Namespace(**yaml.load(f, Loader=yaml.FullLoader))  # replace
         opt.cfg, opt.weights = '', ckpt
         logger.info('Resuming training from %s' % ckpt)
 
