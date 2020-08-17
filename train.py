@@ -158,19 +158,19 @@ def train(hyp, opt, device, tb_writer=None):
         model = DDP(model, device_ids=[opt.local_rank], output_device=(opt.local_rank))
 
     # Trainloader
-    dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt, hyp=hyp, augment=True,
-                                            cache=opt.cache_images, rect=opt.rect, rank=rank,
+    dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
+                                            hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank,
                                             world_size=opt.world_size, workers=opt.workers)
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
     nb = len(dataloader)  # number of batches
+    ema.updates = start_epoch * nb // accumulate  # set EMA updates
     assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (mlc, nc, opt.data, nc - 1)
 
     # Testloader
     if rank in [-1, 0]:
-        # local_rank is set to -1. Because only the first process is expected to do evaluation.
-        testloader = create_dataloader(test_path, imgsz_test, total_batch_size, gs, opt, hyp=hyp, augment=False,
-                                       cache=opt.cache_images, rect=True, rank=-1, world_size=opt.world_size,
-                                       workers=opt.workers)[0]
+        testloader = create_dataloader(test_path, imgsz_test, total_batch_size, gs, opt,
+                                       hyp=hyp, augment=False, cache=opt.cache_images, rect=True, rank=-1,
+                                       world_size=opt.world_size, workers=opt.workers)[0]  # only runs on process 0
 
     # Model parameters
     hyp['cls'] *= nc / 80.  # scale coco-tuned hyp['cls'] to current dataset
@@ -283,7 +283,7 @@ def train(hyp, opt, device, tb_writer=None):
                 scaler.step(optimizer)  # optimizer.step
                 scaler.update()
                 optimizer.zero_grad()
-                if ema is not None:
+                if ema:
                     ema.update(model)
 
             # Print
@@ -310,7 +310,7 @@ def train(hyp, opt, device, tb_writer=None):
         # DDP process 0 or single-GPU
         if rank in [-1, 0]:
             # mAP
-            if ema is not None:
+            if ema:
                 ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride'])
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
@@ -389,8 +389,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
-    parser.add_argument('--resume', nargs='?', const='get_last', default=False,
-                        help='resume from given path/last.pt, or most recent run if blank')
+    parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
@@ -413,19 +412,22 @@ if __name__ == '__main__':
     opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
     opt.global_rank = int(os.environ['RANK']) if 'RANK' in os.environ else -1
     set_logging(opt.global_rank)
-
-    # Resume
-    if opt.resume:
-        last = get_latest_run() if opt.resume == 'get_last' else opt.resume  # resume from most recent run
-        if last and not opt.weights:
-            logger.info(f'Resuming training from {last}')
-        opt.weights = last if opt.resume and not opt.weights else opt.weights
     if opt.global_rank in [-1, 0]:
         check_git_status()
 
     opt.hyp = opt.hyp or ('data/hyp.finetune.yaml' if opt.weights else 'data/hyp.scratch.yaml')
     opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
     assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
+
+    # Resume
+    if opt.resume:  # resume an interrupted run
+        ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
+        assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
+        with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
+            for k, v in yaml.load(f, Loader=yaml.FullLoader).items():  # load opt
+                setattr(opt, k, v)
+        opt.cfg, opt.weights = '', ckpt
+        logger.info('Resuming training from %s' % ckpt)
 
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
     device = select_device(opt.device, batch_size=opt.batch_size)
