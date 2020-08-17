@@ -42,7 +42,6 @@ def train(hyp, opt, device, tb_writer=None):
     epochs, batch_size, total_batch_size, weights, rank = \
         opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
 
-    # TODO: Use DDP logging. Only the first process is allowed to log.
     # Save run settings
     with open(log_dir / 'hyp.yaml', 'w') as f:
         yaml.dump(hyp, f, sort_keys=False)
@@ -415,10 +414,6 @@ if __name__ == '__main__':
     if opt.global_rank in [-1, 0]:
         check_git_status()
 
-    opt.hyp = opt.hyp or ('data/hyp.finetune.yaml' if opt.weights else 'data/hyp.scratch.yaml')
-    opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
-    assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
-
     # Resume
     if opt.resume:  # resume an interrupted run
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
@@ -429,7 +424,12 @@ if __name__ == '__main__':
         opt.cfg, opt.weights = '', ckpt
         logger.info('Resuming training from %s' % ckpt)
 
-    opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
+    else:
+        opt.hyp = opt.hyp or ('data/hyp.finetune.yaml' if opt.weights else 'data/hyp.scratch.yaml')
+        opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
+        assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
+        opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
+
     device = select_device(opt.device, batch_size=opt.batch_size)
 
     # DDP mode
