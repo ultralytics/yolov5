@@ -164,7 +164,8 @@ def train(hyp, opt, device, tb_writer=None):
                                             world_size=opt.world_size, workers=opt.workers)
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
     nb = len(dataloader)  # number of batches
-    ema.updates = start_epoch * nb // accumulate  # set EMA updates
+    if rank in [-1, 0]:
+        ema.updates = start_epoch * nb // accumulate  # set EMA updates
     assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (mlc, nc, opt.data, nc - 1)
 
     # Testloader
