@@ -421,8 +421,9 @@ if __name__ == '__main__':
     # Resume
     if opt.resume:  # resume an interrupted run
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
+        log_dir = Path(ckpt).parent.parent  # runs/exp0
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
-        with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
+        with open(log_dir / 'opt.yaml') as f:
             opt = argparse.Namespace(**yaml.load(f, Loader=yaml.FullLoader))  # replace
         opt.cfg, opt.weights, opt.resume = '', ckpt, True
         logger.info('Resuming training from %s' % ckpt)
@@ -432,6 +433,7 @@ if __name__ == '__main__':
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
+        log_dir = increment_dir(Path(opt.logdir) / 'exp', opt.name)  # runs/exp1
 
     device = select_device(opt.device, batch_size=opt.batch_size)
 
@@ -453,7 +455,7 @@ if __name__ == '__main__':
         tb_writer = None
         if opt.global_rank in [-1, 0]:
             logger.info('Start Tensorboard with "tensorboard --logdir %s", view at http://localhost:6006/' % opt.logdir)
-            tb_writer = SummaryWriter(log_dir=increment_dir(Path(opt.logdir) / 'exp', opt.name))  # runs/exp
+            tb_writer = SummaryWriter(log_dir=log_dir)  # runs/exp0
 
         train(hyp, opt, device, tb_writer)
 
