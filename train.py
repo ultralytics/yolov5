@@ -164,11 +164,11 @@ def train(hyp, opt, device, tb_writer=None):
                                             world_size=opt.world_size, workers=opt.workers)
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
     nb = len(dataloader)  # number of batches
-    ema.updates = start_epoch * nb // accumulate  # set EMA updates
     assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (mlc, nc, opt.data, nc - 1)
 
     # Testloader
     if rank in [-1, 0]:
+        ema.updates = start_epoch * nb // accumulate  # set EMA updates
         testloader = create_dataloader(test_path, imgsz_test, total_batch_size, gs, opt,
                                        hyp=hyp, augment=False, cache=opt.cache_images, rect=True, rank=-1,
                                        world_size=opt.world_size, workers=opt.workers)[0]  # only runs on process 0
