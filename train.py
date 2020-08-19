@@ -267,7 +267,7 @@ def train(hyp, opt, device, tb_writer=None):
             # Forward
             reduce = model.no_sync if rank != -1 and ni % accumulate != 0 else contextlib.nullcontext()
             with amp.autocast(enabled=cuda), reduce:
-                pred = model(imgs)  # foward
+                pred = model(imgs)  # forward
                 loss, loss_items = compute_loss(pred, targets.to(device), model)  # loss scaled by batch_size
                 if rank != -1:
                     loss *= opt.world_size  # gradient averaged between devices in DDP mode
