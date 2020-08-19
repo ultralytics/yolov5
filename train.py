@@ -1,12 +1,12 @@
 import argparse
+import contextlib
+import logging
 import math
 import os
 import random
 import time
-import logging
 from pathlib import Path
 
-import contextlib
 import numpy as np
 import torch.distributed as dist
 import torch.nn.functional as F
