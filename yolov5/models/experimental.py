@@ -1,7 +1,7 @@
 # This file contains experimental modules
 
-import sys
-sys.path.insert(0, './yolov5')  # Fix according to https://github.com/ultralytics/yolov5/issues/353
+# import sys
+# sys.path.insert(0, './yolov5')  # Fix according to https://github.com/ultralytics/yolov5/issues/353
 
 import numpy as np
 import torch
