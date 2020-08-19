@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='yolov5',
-      version='1.0',
+      version='1.1',
       author="Baptiste Amato",
       description="Fork of yolov5",
       url="https://github.com/PsycleResearch/yolov5",
