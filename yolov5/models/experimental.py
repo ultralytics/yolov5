@@ -1,9 +1,5 @@
 # This file contains experimental modules
 
-import os 
-dir_path = os.path.dirname(os.path.realpath(__file__))
-print(dir_path)
-
 import sys
 sys.path.insert(0, './yolov5')  # Fix according to https://github.com/ultralytics/yolov5/issues/353
 
@@ -13,6 +9,11 @@ import torch.nn as nn
 
 from yolov5.models.common import Conv, DWConv
 from yolov5.utils.google_utils import attempt_download
+
+def toto():
+    import os 
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    print(dir_path)
 
 
 class CrossConv(nn.Module):
