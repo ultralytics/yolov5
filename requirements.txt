@@ -1,10 +1,11 @@
 # pip install -r requirements.txt
+
+# base ----------------------------------------
 Cython
 matplotlib>=3.2.2
 numpy>=1.18.5
 opencv-python>=4.1.2
 pillow
-# pycocotools>=2.0
 PyYAML>=5.3
 scipy>=1.4.1
 tensorboard>=2.2
@@ -12,10 +13,12 @@ torch>=1.6.0
 torchvision>=0.7.0
 tqdm>=4.41.0
 
-# Conda commands (in place of pip) ---------------------------------------------
-# conda update -yn base -c defaults conda
-# conda install -yc anaconda numpy opencv matplotlib tqdm pillow ipython
-# conda install -yc conda-forge scikit-image pycocotools tensorboard
-# conda install -yc spyder-ide spyder-line-profiler
-# conda install -yc pytorch pytorch torchvision
-# conda install -yc conda-forge protobuf numpy && pip install onnx==1.6.0  # https://github.com/onnx/onnx#linux-and-macos
+# coco ----------------------------------------
+# pycocotools>=2.0
+
+# export --------------------------------------
+# coremltools==4.0b2
+# onnx>=1.7.0
+
+# extras --------------------------------------
+# thop

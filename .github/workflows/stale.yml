@@ -15,3 +15,4 @@ jobs:
           days-before-stale: 30
           days-before-close: 5
           exempt-issue-label: 'documentation,tutorial'
+          operations-per-run: 100  # The maximum number of operations per run, used to control rate limiting.
