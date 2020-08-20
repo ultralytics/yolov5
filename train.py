@@ -1,9 +1,10 @@
 import argparse
+import logging
 import math
 import os
 import random
+import shutil
 import time
-import logging
 from pathlib import Path
 
 import numpy as np
@@ -34,10 +35,10 @@ logger = logging.getLogger(__name__)
 def train(hyp, opt, device, tb_writer=None):
     logger.info(f'Hyperparameters {hyp}')
     log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
-    wdir = str(log_dir / 'weights') + os.sep  # weights directory
+    wdir = log_dir / 'weights'  # weights directory
     os.makedirs(wdir, exist_ok=True)
-    last = wdir + 'last.pt'
-    best = wdir + 'best.pt'
+    last = wdir / 'last.pt'
+    best = wdir / 'best.pt'
     results_file = str(log_dir / 'results.txt')
     epochs, batch_size, total_batch_size, weights, rank = \
         opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
@@ -131,6 +132,7 @@ def train(hyp, opt, device, tb_writer=None):
         start_epoch = ckpt['epoch'] + 1
         if opt.resume:
             assert start_epoch > 0, '%s training to %g epochs is finished, nothing to resume.' % (weights, epochs)
+            shutil.copytree(wdir, wdir.parent / f'weights_backup_epoch{start_epoch - 1}')  # save previous weights
         if epochs < start_epoch:
             logger.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
                         (weights, ckpt['epoch'], epochs))
@@ -365,13 +367,13 @@ def train(hyp, opt, device, tb_writer=None):
     if rank in [-1, 0]:
         # Strip optimizers
         n = ('_' if len(opt.name) and not opt.name.isnumeric() else '') + opt.name
-        fresults, flast, fbest = 'results%s.txt' % n, wdir + 'last%s.pt' % n, wdir + 'best%s.pt' % n
-        for f1, f2 in zip([wdir + 'last.pt', wdir + 'best.pt', 'results.txt'], [flast, fbest, fresults]):
+        fresults, flast, fbest = 'results%s.txt' % n, wdir / f'last{n}.pt', wdir / f'best{n}.pt'
+        for f1, f2 in zip([wdir / 'last.pt', wdir / 'best.pt', 'results.txt'], [flast, fbest, fresults]):
             if os.path.exists(f1):
                 os.rename(f1, f2)  # rename
-                ispt = f2.endswith('.pt')  # is *.pt
-                strip_optimizer(f2) if ispt else None  # strip optimizer
-                os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket and ispt else None  # upload
+                if str(f2).endswith('.pt'):  # is *.pt
+                    strip_optimizer(f2)  # strip optimizer
+                    os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket else None  # upload
         # Finish
         if not opt.evolve:
             plot_results(save_dir=log_dir)  # save as results.png
