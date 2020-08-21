@@ -319,7 +319,10 @@ def train(hyp, opt, device, tb_writer=None):
             final_epoch = epoch + 1 == epochs
             if final_epoch:
                 print('SWA BatchNorm update...')
-                swa_utils.update_bn(dataloader, ema.ema, device)  # update
+                swaloader = create_dataloader(train_path, imgsz_test, total_batch_size, gs, opt,
+                                              hyp=hyp, augment=False, cache=False, rect=True, rank=-1,
+                                              world_size=opt.world_size, workers=opt.workers)[0]
+                swa_utils.update_bn(swaloader, ema.ema, device)  # update
             if not opt.notest or final_epoch:  # Calculate mAP
                 results, maps, times = test.test(opt.data,
                                                  batch_size=total_batch_size,
