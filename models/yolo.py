@@ -168,8 +168,8 @@ class Model(nn.Module):
         self.info()
         return self
 
-    def info(self):  # print model information
-        model_info(self)
+    def info(self, verbose=False):  # print model information
+        model_info(self, verbose)
 
 
 def parse_model(d, ch):  # model_dict, input_channels(3)
