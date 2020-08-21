@@ -318,7 +318,8 @@ def train(hyp, opt, device, tb_writer=None):
                 ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride'])
             final_epoch = epoch + 1 == epochs
             if final_epoch:
-                swa_utils.update_bn(dataloader, ema.ema)  # update batchnorm
+                print('SWA BatchNorm update...')
+                swa_utils.update_bn(dataloader, ema.ema, device)  # update
             if not opt.notest or final_epoch:  # Calculate mAP
                 results, maps, times = test.test(opt.data,
                                                  batch_size=total_batch_size,
