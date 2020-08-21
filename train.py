@@ -11,11 +11,11 @@ import numpy as np
 import torch.distributed as dist
 import torch.nn.functional as F
 import torch.optim as optim
-import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 import yaml
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.optim import lr_scheduler, swa_utils
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
@@ -317,11 +317,13 @@ def train(hyp, opt, device, tb_writer=None):
             if ema:
                 ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride'])
             final_epoch = epoch + 1 == epochs
+            if final_epoch:
+                swa_utils.update_bn(dataloader, ema.ema)  # update batchnorm
             if not opt.notest or final_epoch:  # Calculate mAP
                 results, maps, times = test.test(opt.data,
                                                  batch_size=total_batch_size,
                                                  imgsz=imgsz_test,
-                                                 model=ema.ema.module if hasattr(ema.ema, 'module') else ema.ema,
+                                                 model=ema.ema,
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
                                                  save_dir=log_dir)
@@ -353,7 +355,7 @@ def train(hyp, opt, device, tb_writer=None):
                     ckpt = {'epoch': epoch,
                             'best_fitness': best_fitness,
                             'training_results': f.read(),
-                            'model': ema.ema.module if hasattr(ema, 'module') else ema.ema,
+                            'model': ema.ema,
                             'optimizer': None if final_epoch else optimizer.state_dict()}
 
                 # Save last, best and delete
