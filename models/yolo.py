@@ -93,7 +93,7 @@ class Model(nn.Module):
         print('')
 
     def forward(self, x, augment=False, profile=False):
-        if isinstance(x, torch.ByteTensor):
+        if x.dtype is torch.uint8:
             x = x.float() / 255.0  # uint8 to float32, 0-255 to 0.0-1.0
 
         if augment:
