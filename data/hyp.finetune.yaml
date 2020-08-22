@@ -7,9 +7,9 @@ lr0: 0.01  # initial learning rate (SGD=1E-2, Adam=1E-3)
 momentum: 0.94  # SGD momentum/Adam beta1
 weight_decay: 0.0005  # optimizer weight decay 5e-4
 giou: 0.05  # GIoU loss gain
-cls: 0.2  # cls loss gain
+cls: 0.4  # cls loss gain
 cls_pw: 1.0  # cls BCELoss positive_weight
-obj: 0.3  # obj loss gain (scale with pixels)
+obj: 0.5  # obj loss gain (scale with pixels)
 obj_pw: 1.0  # obj BCELoss positive_weight
 iou_t: 0.20  # IoU training threshold
 anchor_t: 4.0  # anchor-multiple threshold
