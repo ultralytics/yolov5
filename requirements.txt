@@ -17,8 +17,9 @@ tqdm>=4.41.0
 # pycocotools>=2.0
 
 # export --------------------------------------
-# coremltools==4.0b2
+# coremltools==4.0b3
 # onnx>=1.7.0
+# packaging  # for coremltools
 
 # extras --------------------------------------
 # thop
