@@ -143,7 +143,7 @@ def check_dataset(dict):
         if not all(os.path.exists(x) for x in val):
             print('\nWARNING: Dataset not found, nonexistant paths: %s' % [*val])
             if s and len(s):  # download script
-                print('Attempting autodownload from: %s' % s)
+                print('Downloading %s ...' % s)
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
                     if platform.system() == 'Darwin':  # avoid MacOS python requests certificate error
@@ -1263,7 +1263,7 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(),
                     y[y == 0] = np.nan  # dont show zero loss values
                     # y /= y[0]  # normalize
                 label = labels[fi] if len(labels) else Path(f).stem
-                ax[i].plot(x, y, marker='.', label=label, linewidth=2, markersize=8)
+                ax[i].plot(x, y, marker='.', label=label, linewidth=1, markersize=6)
                 ax[i].set_title(s[i])
                 # if i in [5, 6, 7]:  # share train and val loss y axes
                 #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
