@@ -321,7 +321,7 @@ def train(hyp, opt, device, tb_writer=None):
                 results, maps, times = test.test(opt.data,
                                                  batch_size=total_batch_size,
                                                  imgsz=imgsz_test,
-                                                 model=ema.ema.module if hasattr(ema.ema, 'module') else ema.ema,
+                                                 model=ema.ema,
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
                                                  save_dir=log_dir)
@@ -353,7 +353,7 @@ def train(hyp, opt, device, tb_writer=None):
                     ckpt = {'epoch': epoch,
                             'best_fitness': best_fitness,
                             'training_results': f.read(),
-                            'model': ema.ema.module if hasattr(ema, 'module') else ema.ema,
+                            'model': ema.ema,
                             'optimizer': None if final_epoch else optimizer.state_dict()}
 
                 # Save last, best and delete
