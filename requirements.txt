@@ -17,9 +17,10 @@ tqdm>=4.41.0
 # pycocotools>=2.0
 
 # export --------------------------------------
+# packaging  # for coremltools
 # coremltools==4.0b3
 # onnx>=1.7.0
-# packaging  # for coremltools
+# scikit-learn==0.19.2  # for coreml quantization
 
 # extras --------------------------------------
 # thop
