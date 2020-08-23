@@ -23,7 +23,8 @@ from scipy.cluster.vq import kmeans
 from scipy.signal import butter, filtfilt
 from tqdm import tqdm
 
-from utils.torch_utils import init_seeds, is_parallel
+from utils.torch_utils import init_seeds as init_torch_seeds
+from utils.torch_utils import is_parallel
 
 # Set printoptions
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -55,7 +56,7 @@ def set_logging(rank=-1):
 def init_seeds(seed=0):
     random.seed(seed)
     np.random.seed(seed)
-    init_seeds(seed=seed)
+    init_torch_seeds(seed=seed)
 
 
 def get_latest_run(search_dir='./runs'):
