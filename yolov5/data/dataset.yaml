@@ -1,0 +1,4 @@
+train: train.txt
+val: test.txt
+nc: 1
+names: ['my_class']
