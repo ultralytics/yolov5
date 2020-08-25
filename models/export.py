@@ -7,13 +7,16 @@ Usage:
 import argparse
 
 import torch
+import torch.nn as nn
 
-from utils.google_utils import attempt_download
+from models.common import Conv
+from models.experimental import attempt_load
+from utils.activations import Hardswish
 from utils.general import set_logging
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='./yolov5s.pt', help='weights path')
+    parser.add_argument('--weights', type=str, default='./yolov5s.pt', help='weights path')  # from yolov5/models/
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     opt = parser.parse_args()
@@ -25,9 +28,15 @@ if __name__ == '__main__':
     img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size(1,3,320,192) iDetection
 
     # Load PyTorch model
-    attempt_download(opt.weights)
-    model = torch.load(opt.weights, map_location=torch.device('cpu'))['model'].float()
-    model.eval()
+    model = attempt_load(opt.weights, map_location=torch.device('cpu'))  # load FP32 model
+
+    # Update model
+    for k, m in model.named_modules():
+        m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatability
+        if isinstance(m, Conv) and isinstance(m.act, nn.Hardswish):
+            m.act = Hardswish()  # assign activation
+        # if isinstance(m, Detect):
+        #    m.forward = m.forward_export  # assign forward (optional)
     model.model[-1].export = True  # set Detect() layer export=True
     y = model(img)  # dry run
 
@@ -47,14 +56,13 @@ if __name__ == '__main__':
 
         print('\nStarting ONNX export with onnx %s...' % onnx.__version__)
         f = opt.weights.replace('.pt', '.onnx')  # filename
-        model.fuse()  # only for ONNX
         torch.onnx.export(model, img, f, verbose=False, opset_version=12, input_names=['images'],
                           output_names=['classes', 'boxes'] if y is None else ['output'])
 
         # Checks
         onnx_model = onnx.load(f)  # load onnx model
         onnx.checker.check_model(onnx_model)  # check onnx model
-        print(onnx.helper.printable_graph(onnx_model.graph))  # print a human readable model
+        # print(onnx.helper.printable_graph(onnx_model.graph))  # print a human readable model
         print('ONNX export success, saved as %s' % f)
     except Exception as e:
         print('ONNX export failure: %s' % e)

@@ -1,15 +1,15 @@
 import glob
+import logging
 import math
 import os
+import platform
 import random
 import shutil
 import subprocess
 import time
-import logging
 from contextlib import contextmanager
 from copy import copy
 from pathlib import Path
-import platform
 
 import cv2
 import matplotlib
@@ -143,7 +143,7 @@ def check_dataset(dict):
         if not all(os.path.exists(x) for x in val):
             print('\nWARNING: Dataset not found, nonexistant paths: %s' % [*val])
             if s and len(s):  # download script
-                print('Attempting autodownload from: %s' % s)
+                print('Downloading %s ...' % s)
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
                     if platform.system() == 'Darwin':  # avoid MacOS python requests certificate error
@@ -339,19 +339,19 @@ def compute_ap(recall, precision):
     return ap
 
 
-def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False):
+def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-12):
     # Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
     box2 = box2.T
 
     # Get the coordinates of bounding boxes
     if x1y1x2y2:  # x1, y1, x2, y2 = box1
-        b1_x1, b1_y1, b1_x2, b1_y2 = box1[0], box1[1], box1[2], box1[3]
-        b2_x1, b2_y1, b2_x2, b2_y2 = box2[0], box2[1], box2[2], box2[3]
+        b1_x1, b1_y1, b1_x2, b1_y2 = box1[0], box1[1], box1[2] + eps, box1[3] + eps
+        b2_x1, b2_y1, b2_x2, b2_y2 = box2[0], box2[1], box2[2] + eps, box2[3] + eps
     else:  # transform from xywh to xyxy
-        b1_x1, b1_x2 = box1[0] - box1[2] / 2, box1[0] + box1[2] / 2
-        b1_y1, b1_y2 = box1[1] - box1[3] / 2, box1[1] + box1[3] / 2
-        b2_x1, b2_x2 = box2[0] - box2[2] / 2, box2[0] + box2[2] / 2
-        b2_y1, b2_y2 = box2[1] - box2[3] / 2, box2[1] + box2[3] / 2
+        b1_x1, b1_x2 = box1[0] - box1[2] / 2, box1[0] + box1[2] / 2 + eps
+        b1_y1, b1_y2 = box1[1] - box1[3] / 2, box1[1] + box1[3] / 2 + eps
+        b2_x1, b2_x2 = box2[0] - box2[2] / 2, box2[0] + box2[2] / 2 + eps
+        b2_y1, b2_y2 = box2[1] - box2[3] / 2, box2[1] + box2[3] / 2 + eps
 
     # Intersection area
     inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * \
@@ -360,18 +360,18 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False):
     # Union Area
     w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1
     w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1
-    union = (w1 * h1 + 1e-16) + w2 * h2 - inter
+    union = w1 * h1 + w2 * h2 - inter
 
     iou = inter / union  # iou
     if GIoU or DIoU or CIoU:
         cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)  # convex (smallest enclosing box) width
         ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)  # convex height
         if GIoU:  # Generalized IoU https://arxiv.org/pdf/1902.09630.pdf
-            c_area = cw * ch + 1e-16  # convex area
+            c_area = cw * ch  # convex area
             return iou - (c_area - union) / c_area  # GIoU
         if DIoU or CIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
             # convex diagonal squared
-            c2 = cw ** 2 + ch ** 2 + 1e-16
+            c2 = cw ** 2 + ch ** 2
             # centerpoint distance squared
             rho2 = ((b2_x1 + b2_x2) - (b1_x1 + b1_x2)) ** 2 / 4 + ((b2_y1 + b2_y2) - (b1_y1 + b1_y2)) ** 2 / 4
             if DIoU:
@@ -379,7 +379,7 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False):
             elif CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
                 v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
                 with torch.no_grad():
-                    alpha = v / (1 - iou + v + 1e-16)
+                    alpha = v / ((1 + eps) - iou + v)
                 return iou - (rho2 / c2 + v * alpha)  # CIoU
 
     return iou
@@ -596,8 +596,6 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, 
     Returns:
          detections with shape: nx6 (x1, y1, x2, y2, conf, cls)
     """
-    if prediction.dtype is torch.float16:
-        prediction = prediction.float()  # to FP32
 
     nc = prediction[0].shape[1] - 5  # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
@@ -868,9 +866,6 @@ def print_mutation(hyp, results, yaml_file='hyp_evolved.yaml', bucket=''):
     x = x[np.argsort(-fitness(x))]  # sort
     np.savetxt('evolve.txt', x, '%10.3g')  # save sort by fitness
 
-    if bucket:
-        os.system('gsutil cp evolve.txt gs://%s' % bucket)  # upload evolve.txt
-
     # Save yaml
     for i, k in enumerate(hyp.keys()):
         hyp[k] = float(x[0, i + 7])
@@ -879,6 +874,9 @@ def print_mutation(hyp, results, yaml_file='hyp_evolved.yaml', bucket=''):
         c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
         f.write('# Hyperparameter Evolution Results\n# Generations: %g\n# Metrics: ' % len(x) + c + '\n\n')
         yaml.dump(hyp, f, sort_keys=False)
+
+    if bucket:
+        os.system('gsutil cp evolve.txt %s gs://%s' % (yaml_file, bucket))  # upload
 
 
 def apply_classifier(x, model, img, im0):
@@ -1265,7 +1263,7 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(),
                     y[y == 0] = np.nan  # dont show zero loss values
                     # y /= y[0]  # normalize
                 label = labels[fi] if len(labels) else Path(f).stem
-                ax[i].plot(x, y, marker='.', label=label, linewidth=2, markersize=8)
+                ax[i].plot(x, y, marker='.', label=label, linewidth=1, markersize=6)
                 ax[i].set_title(s[i])
                 # if i in [5, 6, 7]:  # share train and val loss y axes
                 #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
