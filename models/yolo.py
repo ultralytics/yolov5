@@ -163,7 +163,7 @@ class Model(nn.Module):
             if type(m) is Conv:
                 m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatability
                 m.conv = fuse_conv_and_bn(m.conv, m.bn)  # update conv
-                m.bn = None  # remove batchnorm
+                delattr(m, 'bn')  # remove batchnorm
                 m.forward = m.fuseforward  # update forward
         self.info()
         return self
