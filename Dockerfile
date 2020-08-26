@@ -1,12 +1,10 @@
 # Start FROM Nvidia PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
-FROM nvcr.io/nvidia/pytorch:20.03-py3
+FROM nvcr.io/nvidia/pytorch:20.08-py3
 
 # Install dependencies
-COPY requirements.txt .
-RUN pip install -r requirements.txt gsutil
-
-# ImportError: libGL.so.1: cannot open shared object file: No such file or directory solution
-RUN apt update && apt install -y libgl1-mesa-glx
+# COPY requirements.txt .
+# RUN pip install -r requirements.txt
+RUN pip install gsutil
 
 # Create working directory
 RUN mkdir -p /usr/src/app
