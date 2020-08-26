@@ -1190,7 +1190,7 @@ def plot_labels(labels, save_dir=''):
     plt.close()
 
 
-def plot_evolution(yaml_file='runs/evolve/hyp_evolved.yaml'):  # from utils.general import *; plot_evolution()
+def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.general import *; plot_evolution()
     # Plot hyperparameter evolution results in evolve.txt
     with open(yaml_file) as f:
         hyp = yaml.load(f, Loader=yaml.FullLoader)
