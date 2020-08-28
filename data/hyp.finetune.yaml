@@ -1,27 +1,34 @@
-# Hyperparameters for VOC fine-tuning
-# python train.py --batch 64 --cfg '' --weights yolov5m.pt --data voc.yaml --img 512 --epochs 50
+# Hyperparameters for VOC finetuning
+# python train.py --batch 64 --weights yolov5m.pt --data voc.yaml --img 512 --epochs 50
 # See tutorials for hyperparameter evolution https://github.com/ultralytics/yolov5#tutorials
 
 
-lr0: 0.01  # initial learning rate (SGD=1E-2, Adam=1E-3)
-momentum: 0.94  # SGD momentum/Adam beta1
-weight_decay: 0.0005  # optimizer weight decay 5e-4
-giou: 0.05  # GIoU loss gain
-cls: 0.4  # cls loss gain
-cls_pw: 1.0  # cls BCELoss positive_weight
-obj: 0.5  # obj loss gain (scale with pixels)
-obj_pw: 1.0  # obj BCELoss positive_weight
-iou_t: 0.20  # IoU training threshold
-anchor_t: 4.0  # anchor-multiple threshold
-fl_gamma: 0.0  # focal loss gamma (efficientDet default gamma=1.5)
-hsv_h: 0.015  # image HSV-Hue augmentation (fraction)
-hsv_s: 0.7  # image HSV-Saturation augmentation (fraction)
-hsv_v: 0.4  # image HSV-Value augmentation (fraction)
-degrees: 1.0  # image rotation (+/- deg)
-translate: 0.1  # image translation (+/- fraction)
-scale: 0.6  # image scale (+/- gain)
-shear: 1.0  # image shear (+/- deg)
-perspective: 0.0  # image perspective (+/- fraction), range 0-0.001
-flipud: 0.01  # image flip up-down (probability)
-fliplr: 0.5  # image flip left-right (probability)
-mixup: 0.2  # image mixup (probability)
+# Hyperparameter Evolution Results
+# Generations: 51
+#                   P         R     mAP.5 mAP.5:.95       box       obj       cls
+# Metrics:      0.625     0.926      0.89     0.677    0.0111   0.00849   0.00124
+
+lr0: 0.00447
+lrf: 0.114
+momentum: 0.873
+weight_decay: 0.00047
+giou: 0.0306
+cls: 0.211
+cls_pw: 0.546
+obj: 0.421
+obj_pw: 0.972
+iou_t: 0.2
+anchor_t: 2.26
+# anchors: 5.07
+fl_gamma: 0.0
+hsv_h: 0.0154
+hsv_s: 0.9
+hsv_v: 0.619
+degrees: 0.404
+translate: 0.206
+scale: 0.86
+shear: 0.795
+perspective: 0.0
+flipud: 0.00756
+fliplr: 0.5
+mixup: 0.153

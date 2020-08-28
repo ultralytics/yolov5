@@ -53,7 +53,7 @@ def train(hyp, opt, device, tb_writer=None):
     cuda = device.type != 'cpu'
     init_seeds(2 + rank)
     with open(opt.data) as f:
-        data_dict = yaml.load(f, Loader=yaml.FullLoader)  # model dict
+        data_dict = yaml.load(f, Loader=yaml.FullLoader)  # data dict
     with torch_distributed_zero_first(rank):
         check_dataset(data_dict)  # check
     train_path = data_dict['train']
@@ -67,6 +67,8 @@ def train(hyp, opt, device, tb_writer=None):
         with torch_distributed_zero_first(rank):
             attempt_download(weights)  # download if not found locally
         ckpt = torch.load(weights, map_location=device)  # load checkpoint
+        # if hyp['anchors']:
+        #     ckpt['model'].yaml['anchors'] = round(hyp['anchors'])  # force autoanchor
         model = Model(opt.cfg or ckpt['model'].yaml, ch=3, nc=nc).to(device)  # create
         exclude = ['anchor'] if opt.cfg else []  # exclude keys
         state_dict = ckpt['model'].float().state_dict()  # to FP32
@@ -111,7 +113,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     # https://pytorch.org/docs/stable/_modules/torch/optim/lr_scheduler.html#OneCycleLR
-    lf = lambda x: (((1 + math.cos(x * math.pi / epochs)) / 2) ** 1.0) * 0.8 + 0.2  # cosine
+    lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - hyp['lrf']) + hyp['lrf']  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # plot_lr_scheduler(optimizer, scheduler, epochs)
 
@@ -459,6 +461,7 @@ if __name__ == '__main__':
     else:
         # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit, upper_limit)
         meta = {'lr0': (1, 1e-5, 1e-1),  # initial learning rate (SGD=1E-2, Adam=1E-3)
+                'lrf': (1, 0.01, 1.0),  # final OneCycleLR learning rate (lr0 * lrf)
                 'momentum': (0.1, 0.6, 0.98),  # SGD momentum/Adam beta1
                 'weight_decay': (1, 0.0, 0.001),  # optimizer weight decay
                 'giou': (1, 0.02, 0.2),  # GIoU loss gain
@@ -468,6 +471,7 @@ if __name__ == '__main__':
                 'obj_pw': (1, 0.5, 2.0),  # obj BCELoss positive_weight
                 'iou_t': (0, 0.1, 0.7),  # IoU training threshold
                 'anchor_t': (1, 2.0, 8.0),  # anchor-multiple threshold
+                 # 'anchors': (1, 2.0, 10.0),  # anchors per output grid (0 to ignore)
                 'fl_gamma': (0, 0.0, 2.0),  # focal loss gamma (efficientDet default gamma=1.5)
                 'hsv_h': (1, 0.0, 0.1),  # image HSV-Hue augmentation (fraction)
                 'hsv_s': (1, 0.0, 0.9),  # image HSV-Saturation augmentation (fraction)
@@ -476,9 +480,9 @@ if __name__ == '__main__':
                 'translate': (1, 0.0, 0.9),  # image translation (+/- fraction)
                 'scale': (1, 0.0, 0.9),  # image scale (+/- gain)
                 'shear': (1, 0.0, 10.0),  # image shear (+/- deg)
-                'perspective': (1, 0.0, 0.001),  # image perspective (+/- fraction), range 0-0.001
-                'flipud': (0, 0.0, 1.0),  # image flip up-down (probability)
-                'fliplr': (1, 0.0, 1.0),  # image flip left-right (probability)
+                'perspective': (0, 0.0, 0.001),  # image perspective (+/- fraction), range 0-0.001
+                'flipud': (1, 0.0, 1.0),  # image flip up-down (probability)
+                'fliplr': (0, 0.0, 1.0),  # image flip left-right (probability)
                 'mixup': (1, 0.0, 1.0)}  # image mixup (probability)
 
         assert opt.local_rank == -1, 'DDP mode not implemented for --evolve'
