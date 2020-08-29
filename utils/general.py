@@ -1188,6 +1188,19 @@ def plot_labels(labels, save_dir=''):
     plt.savefig(Path(save_dir) / 'labels.png', dpi=200)
     plt.close()
 
+    # seaborn correlogram
+    try:
+        import seaborn as sns
+        import pandas as pd
+        x = pd.DataFrame(b.transpose(), columns=['x', 'y', 'width', 'height'])
+        sns.pairplot(x, corner=True, diag_kind='hist', kind='scatter', markers='o',
+                     plot_kws=dict(s=3, edgecolor=None, linewidth=1, alpha=0.02),
+                     diag_kws=dict(bins=50))
+        plt.savefig(Path(save_dir) / 'labels_correlogram.png', dpi=200)
+        plt.close()
+    except Exception as e:
+        pass
+
 
 def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.general import *; plot_evolution()
     # Plot hyperparameter evolution results in evolve.txt
