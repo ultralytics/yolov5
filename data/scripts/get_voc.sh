@@ -163,48 +163,29 @@ f = open('../tmp/train.txt', 'r')
 lines = f.readlines()
 
 for line in lines:
-    #print(line.split('/')[-1][:-1])
-    line = "/".join(line.split('/')[2:])
-    #print(line)
-    if (os.path.exists("../" + line[:-1])):
-        os.system("cp ../"+ line[:-1] + " ../VOC/images/train")
+    line = "/".join(line.split('/')[-5:]).strip()
+    if (os.path.exists("../" + line)):
+        os.system("cp ../"+ line + " ../VOC/images/train")
         
-print(os.path.exists('../tmp/train.txt'))
-f = open('../tmp/train.txt', 'r')
-lines = f.readlines()
-
-for line in lines:
-    #print(line.split('/')[-1][:-1])
-    line = "/".join(line.split('/')[2:])
     line = line.replace('JPEGImages', 'labels')
     line = line.replace('jpg', 'txt')
-    #print(line)
-    if (os.path.exists("../" + line[:-1])):
-        os.system("cp ../"+ line[:-1] + " ../VOC/labels/train")
+    if (os.path.exists("../" + line)):
+        os.system("cp ../"+ line + " ../VOC/labels/train")
+
 
 print(os.path.exists('../tmp/2007_test.txt'))
 f = open('../tmp/2007_test.txt', 'r')
 lines = f.readlines()
 
 for line in lines:
-    #print(line.split('/')[-1][:-1])
-    line = "/".join(line.split('/')[2:])
-    
-    if (os.path.exists("../" + line[:-1])):
-        os.system("cp ../"+ line[:-1] + " ../VOC/images/val")
-
-print(os.path.exists('../tmp/2007_test.txt'))
-f = open('../tmp/2007_test.txt', 'r')
-lines = f.readlines()
-
-for line in lines:
-    #print(line.split('/')[-1][:-1])
-    line = "/".join(line.split('/')[2:])
+    line = "/".join(line.split('/')[-5:]).strip()
+    if (os.path.exists("../" + line)):
+        os.system("cp ../"+ line + " ../VOC/images/val")
+        
     line = line.replace('JPEGImages', 'labels')
     line = line.replace('jpg', 'txt')
-    #print(line)
-    if (os.path.exists("../" + line[:-1])):
-        os.system("cp ../"+ line[:-1] + " ../VOC/labels/val")
+    if (os.path.exists("../" + line)):
+        os.system("cp ../"+ line + " ../VOC/labels/val")
 
 END
 
