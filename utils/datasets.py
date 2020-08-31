@@ -72,6 +72,42 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
     return dataloader, dataset
 
 
+class InfiniteDataLoader(torch.utils.data.dataloader.DataLoader):
+    '''
+    Dataloader that reuses workers.
+
+    Uses same syntax as vanilla DataLoader.
+    '''
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        object.__setattr__(self, 'batch_sampler', _RepeatSampler(self.batch_sampler))
+        self.iterator = super().__iter__()
+
+    def __len__(self):
+        return len(self.batch_sampler.sampler)
+
+    def __iter__(self):
+        for i in range(len(self)):
+            yield next(self.iterator)
+
+
+class _RepeatSampler(object):
+    ''' 
+    Sampler that repeats forever. 
+
+    Args:
+        sampler (Sampler)
+    '''
+
+    def __init__(self, sampler):
+        self.sampler = sampler
+
+    def __iter__(self):
+        while True:
+            yield from iter(self.sampler)
+            
+
 class LoadImages:  # for inference
     def __init__(self, path, img_size=640):
         p = str(Path(path))  # os-agnostic
@@ -289,42 +325,6 @@ class LoadStreams:  # multiple IP or RTSP cameras
 
     def __len__(self):
         return 0  # 1E12 frames = 32 streams at 30 FPS for 30 years
-
-
-class InfiniteDataLoader(torch.utils.data.dataloader.DataLoader):
-    '''
-    Dataloader that reuses workers.
-
-    Uses same syntax as vanilla DataLoader.
-    '''
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        object.__setattr__(self, 'batch_sampler', _RepeatSampler(self.batch_sampler))
-        self.iterator = super().__iter__()
-
-    def __len__(self):
-        return len(self.batch_sampler.sampler)
-
-    def __iter__(self):
-        for i in range(len(self)):
-            yield next(self.iterator)
-
-
-class _RepeatSampler(object):
-    ''' 
-    Sampler that repeats forever. 
-
-    Args:
-        sampler (Sampler)
-    '''
-
-    def __init__(self, sampler):
-        self.sampler = sampler
-
-    def __iter__(self):
-        while True:
-            yield from iter(self.sampler)
 
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
