@@ -51,6 +51,7 @@ def detect(save_img=False):
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
 
     # Run inference
+    stru_nums = 0
     t0 = time.time()
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
     _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
@@ -73,7 +74,7 @@ def detect(save_img=False):
         if classify:
             pred = apply_classifier(pred, modelc, img, im0s)
         
-        stru_nums = 0
+
         
         # Process detections
         for i, det in enumerate(pred):  # detections per image
@@ -94,7 +95,7 @@ def detect(save_img=False):
                 for c in det[:, -1].unique():
                     n = (det[:, -1] == c).sum()  # detections per class
                     s += '%g %ss, ' % (n, names[int(c)])  # add to string
-                stru_nums += n.item()
+                    stru_nums += n.item()
 
                 # Write results
                 for *xyxy, conf, cls in det:
