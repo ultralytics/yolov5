@@ -1,9 +1,10 @@
 import argparse
+import logging
 import math
 import os
 import random
+import shutil
 import time
-import logging
 from pathlib import Path
 
 import numpy as np
@@ -34,10 +35,10 @@ logger = logging.getLogger(__name__)
 def train(hyp, opt, device, tb_writer=None):
     logger.info(f'Hyperparameters {hyp}')
     log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
-    wdir = str(log_dir / 'weights') + os.sep  # weights directory
+    wdir = log_dir / 'weights'  # weights directory
     os.makedirs(wdir, exist_ok=True)
-    last = wdir + 'last.pt'
-    best = wdir + 'best.pt'
+    last = wdir / 'last.pt'
+    best = wdir / 'best.pt'
     results_file = str(log_dir / 'results.txt')
     epochs, batch_size, total_batch_size, weights, rank = \
         opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
@@ -52,7 +53,7 @@ def train(hyp, opt, device, tb_writer=None):
     cuda = device.type != 'cpu'
     init_seeds(2 + rank)
     with open(opt.data) as f:
-        data_dict = yaml.load(f, Loader=yaml.FullLoader)  # model dict
+        data_dict = yaml.load(f, Loader=yaml.FullLoader)  # data dict
     with torch_distributed_zero_first(rank):
         check_dataset(data_dict)  # check
     train_path = data_dict['train']
@@ -66,6 +67,8 @@ def train(hyp, opt, device, tb_writer=None):
         with torch_distributed_zero_first(rank):
             attempt_download(weights)  # download if not found locally
         ckpt = torch.load(weights, map_location=device)  # load checkpoint
+        # if hyp['anchors']:
+        #     ckpt['model'].yaml['anchors'] = round(hyp['anchors'])  # force autoanchor
         model = Model(opt.cfg or ckpt['model'].yaml, ch=3, nc=nc).to(device)  # create
         exclude = ['anchor'] if opt.cfg else []  # exclude keys
         state_dict = ckpt['model'].float().state_dict()  # to FP32
@@ -110,7 +113,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     # https://pytorch.org/docs/stable/_modules/torch/optim/lr_scheduler.html#OneCycleLR
-    lf = lambda x: (((1 + math.cos(x * math.pi / epochs)) / 2) ** 1.0) * 0.8 + 0.2  # cosine
+    lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - hyp['lrf']) + hyp['lrf']  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # plot_lr_scheduler(optimizer, scheduler, epochs)
 
@@ -131,6 +134,7 @@ def train(hyp, opt, device, tb_writer=None):
         start_epoch = ckpt['epoch'] + 1
         if opt.resume:
             assert start_epoch > 0, '%s training to %g epochs is finished, nothing to resume.' % (weights, epochs)
+            shutil.copytree(wdir, wdir.parent / f'weights_backup_epoch{start_epoch - 1}')  # save previous weights
         if epochs < start_epoch:
             logger.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
                         (weights, ckpt['epoch'], epochs))
@@ -212,18 +216,15 @@ def train(hyp, opt, device, tb_writer=None):
         model.train()
 
         # Update image weights (optional)
-        if dataset.image_weights:
+        if opt.image_weights:
             # Generate indices
             if rank in [-1, 0]:
-                w = model.class_weights.cpu().numpy() * (1 - maps) ** 2  # class weights
-                image_weights = labels_to_image_weights(dataset.labels, nc=nc, class_weights=w)
-                dataset.indices = random.choices(range(dataset.n), weights=image_weights,
-                                                 k=dataset.n)  # rand weighted idx
+                cw = model.class_weights.cpu().numpy() * (1 - maps) ** 2  # class weights
+                iw = labels_to_image_weights(dataset.labels, nc=nc, class_weights=cw)  # image weights
+                dataset.indices = random.choices(range(dataset.n), weights=iw, k=dataset.n)  # rand weighted idx
             # Broadcast if DDP
             if rank != -1:
-                indices = torch.zeros([dataset.n], dtype=torch.int)
-                if rank == 0:
-                    indices[:] = torch.from_tensor(dataset.indices, dtype=torch.int)
+                indices = (torch.tensor(dataset.indices) if rank == 0 else torch.zeros(dataset.n)).int()
                 dist.broadcast(indices, 0)
                 if rank != 0:
                     dataset.indices = indices.cpu().numpy()
@@ -263,18 +264,12 @@ def train(hyp, opt, device, tb_writer=None):
                     ns = [math.ceil(x * sf / gs) * gs for x in imgs.shape[2:]]  # new shape (stretched to gs-multiple)
                     imgs = F.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
 
-            # Autocast
+            # Forward
             with amp.autocast(enabled=cuda):
-                # Forward
-                pred = model(imgs)
-
-                # Loss
-                loss, loss_items = compute_loss(pred, targets.to(device), model)  # scaled by batch_size
+                pred = model(imgs)  # forward
+                loss, loss_items = compute_loss(pred, targets.to(device), model)  # loss scaled by batch_size
                 if rank != -1:
                     loss *= opt.world_size  # gradient averaged between devices in DDP mode
-                # if not torch.isfinite(loss):
-                #     logger.info('WARNING: non-finite loss, ending training ', loss_items)
-                #     return results
 
             # Backward
             scaler.scale(loss).backward()
@@ -319,7 +314,7 @@ def train(hyp, opt, device, tb_writer=None):
                 results, maps, times = test.test(opt.data,
                                                  batch_size=total_batch_size,
                                                  imgsz=imgsz_test,
-                                                 model=ema.ema.module if hasattr(ema.ema, 'module') else ema.ema,
+                                                 model=ema.ema,
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
                                                  save_dir=log_dir)
@@ -351,7 +346,7 @@ def train(hyp, opt, device, tb_writer=None):
                     ckpt = {'epoch': epoch,
                             'best_fitness': best_fitness,
                             'training_results': f.read(),
-                            'model': ema.ema.module if hasattr(ema, 'module') else ema.ema,
+                            'model': ema.ema,
                             'optimizer': None if final_epoch else optimizer.state_dict()}
 
                 # Save last, best and delete
@@ -365,13 +360,13 @@ def train(hyp, opt, device, tb_writer=None):
     if rank in [-1, 0]:
         # Strip optimizers
         n = ('_' if len(opt.name) and not opt.name.isnumeric() else '') + opt.name
-        fresults, flast, fbest = 'results%s.txt' % n, wdir + 'last%s.pt' % n, wdir + 'best%s.pt' % n
-        for f1, f2 in zip([wdir + 'last.pt', wdir + 'best.pt', 'results.txt'], [flast, fbest, fresults]):
+        fresults, flast, fbest = 'results%s.txt' % n, wdir / f'last{n}.pt', wdir / f'best{n}.pt'
+        for f1, f2 in zip([wdir / 'last.pt', wdir / 'best.pt', 'results.txt'], [flast, fbest, fresults]):
             if os.path.exists(f1):
                 os.rename(f1, f2)  # rename
-                ispt = f2.endswith('.pt')  # is *.pt
-                strip_optimizer(f2) if ispt else None  # strip optimizer
-                os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket and ispt else None  # upload
+                if str(f2).endswith('.pt'):  # is *.pt
+                    strip_optimizer(f2)  # strip optimizer
+                    os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket else None  # upload
         # Finish
         if not opt.evolve:
             plot_results(save_dir=log_dir)  # save as results.png
@@ -390,7 +385,7 @@ if __name__ == '__main__':
     parser.add_argument('--hyp', type=str, default='', help='hyperparameters path, i.e. data/hyp.scratch.yaml')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
@@ -399,6 +394,7 @@ if __name__ == '__main__':
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
+    parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
     parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
@@ -421,8 +417,9 @@ if __name__ == '__main__':
     # Resume
     if opt.resume:  # resume an interrupted run
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
+        log_dir = Path(ckpt).parent.parent  # runs/exp0
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
-        with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
+        with open(log_dir / 'opt.yaml') as f:
             opt = argparse.Namespace(**yaml.load(f, Loader=yaml.FullLoader))  # replace
         opt.cfg, opt.weights, opt.resume = '', ckpt, True
         logger.info('Resuming training from %s' % ckpt)
@@ -432,6 +429,7 @@ if __name__ == '__main__':
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
+        log_dir = increment_dir(Path(opt.logdir) / 'exp', opt.name)  # runs/exp1
 
     device = select_device(opt.device, batch_size=opt.batch_size)
 
@@ -453,7 +451,7 @@ if __name__ == '__main__':
         tb_writer = None
         if opt.global_rank in [-1, 0]:
             logger.info('Start Tensorboard with "tensorboard --logdir %s", view at http://localhost:6006/' % opt.logdir)
-            tb_writer = SummaryWriter(log_dir=increment_dir(Path(opt.logdir) / 'exp', opt.name))  # runs/exp
+            tb_writer = SummaryWriter(log_dir=log_dir)  # runs/exp0
 
         train(hyp, opt, device, tb_writer)
 
@@ -461,6 +459,7 @@ if __name__ == '__main__':
     else:
         # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit, upper_limit)
         meta = {'lr0': (1, 1e-5, 1e-1),  # initial learning rate (SGD=1E-2, Adam=1E-3)
+                'lrf': (1, 0.01, 1.0),  # final OneCycleLR learning rate (lr0 * lrf)
                 'momentum': (0.1, 0.6, 0.98),  # SGD momentum/Adam beta1
                 'weight_decay': (1, 0.0, 0.001),  # optimizer weight decay
                 'giou': (1, 0.02, 0.2),  # GIoU loss gain
@@ -470,6 +469,7 @@ if __name__ == '__main__':
                 'obj_pw': (1, 0.5, 2.0),  # obj BCELoss positive_weight
                 'iou_t': (0, 0.1, 0.7),  # IoU training threshold
                 'anchor_t': (1, 2.0, 8.0),  # anchor-multiple threshold
+                # 'anchors': (1, 2.0, 10.0),  # anchors per output grid (0 to ignore)
                 'fl_gamma': (0, 0.0, 2.0),  # focal loss gamma (efficientDet default gamma=1.5)
                 'hsv_h': (1, 0.0, 0.1),  # image HSV-Hue augmentation (fraction)
                 'hsv_s': (1, 0.0, 0.9),  # image HSV-Saturation augmentation (fraction)
@@ -478,9 +478,9 @@ if __name__ == '__main__':
                 'translate': (1, 0.0, 0.9),  # image translation (+/- fraction)
                 'scale': (1, 0.0, 0.9),  # image scale (+/- gain)
                 'shear': (1, 0.0, 10.0),  # image shear (+/- deg)
-                'perspective': (1, 0.0, 0.001),  # image perspective (+/- fraction), range 0-0.001
-                'flipud': (0, 0.0, 1.0),  # image flip up-down (probability)
-                'fliplr': (1, 0.0, 1.0),  # image flip left-right (probability)
+                'perspective': (0, 0.0, 0.001),  # image perspective (+/- fraction), range 0-0.001
+                'flipud': (1, 0.0, 1.0),  # image flip up-down (probability)
+                'fliplr': (0, 0.0, 1.0),  # image flip left-right (probability)
                 'mixup': (1, 0.0, 1.0)}  # image mixup (probability)
 
         assert opt.local_rank == -1, 'DDP mode not implemented for --evolve'

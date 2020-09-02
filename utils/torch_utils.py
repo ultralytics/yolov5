@@ -1,7 +1,7 @@
+import logging
 import math
 import os
 import time
-import logging
 from copy import deepcopy
 
 import torch

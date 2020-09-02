@@ -172,9 +172,11 @@ def test(data,
                         ious, i = box_iou(pred[pi, :4], tbox[ti]).max(1)  # best ious, indices
 
                         # Append detections
+                        detected_set = set()
                         for j in (ious > iouv[0]).nonzero(as_tuple=False):
                             d = ti[i[j]]  # detected target
-                            if d not in detected:
+                            if d.item() not in detected_set:
+                                detected_set.add(d.item())
                                 detected.append(d)
                                 correct[pi[j]] = ious[j] > iouv  # iou_thres is 1xn
                                 if len(detected) == nl:  # all targets already located in image

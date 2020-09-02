@@ -1,6 +1,6 @@
 import argparse
-import math
 import logging
+import math
 from copy import deepcopy
 from pathlib import Path
 
@@ -163,13 +163,13 @@ class Model(nn.Module):
             if type(m) is Conv:
                 m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatability
                 m.conv = fuse_conv_and_bn(m.conv, m.bn)  # update conv
-                m.bn = None  # remove batchnorm
+                delattr(m, 'bn')  # remove batchnorm
                 m.forward = m.fuseforward  # update forward
         self.info()
         return self
 
-    def info(self):  # print model information
-        model_info(self)
+    def info(self, verbose=False):  # print model information
+        model_info(self, verbose)
 
 
 def parse_model(d, ch):  # model_dict, input_channels(3)

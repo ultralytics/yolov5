@@ -17,8 +17,11 @@ tqdm>=4.41.0
 # pycocotools>=2.0
 
 # export --------------------------------------
-# coremltools==4.0b2
+# packaging  # for coremltools
+# coremltools==4.0b3
 # onnx>=1.7.0
+# scikit-learn==0.19.2  # for coreml quantization
 
 # extras --------------------------------------
-# thop
+# thop  # FLOPS computation
+# seaborn  # plotting
