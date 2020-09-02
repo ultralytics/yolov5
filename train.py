@@ -1,4 +1,5 @@
 import argparse
+import glob
 import logging
 import math
 import os
@@ -311,6 +312,8 @@ def train(hyp, opt, device, tb_writer=None):
                 ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride'])
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
+                if final_epoch:  # replot predictions
+                    [os.remove(x) for x in glob.glob(str(log_dir / 'test_batch*_pred.jpg')) if os.path.exists(x)]
                 results, maps, times = test.test(opt.data,
                                                  batch_size=total_batch_size,
                                                  imgsz=imgsz_test,
@@ -359,7 +362,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     if rank in [-1, 0]:
         # Strip optimizers
-        n = ('_' if len(opt.name) and not opt.name.isnumeric() else '') + opt.name
+        n = opt.name if opt.name.isnumeric() else ''
         fresults, flast, fbest = 'results%s.txt' % n, wdir / f'last{n}.pt', wdir / f'best{n}.pt'
         for f1, f2 in zip([wdir / 'last.pt', wdir / 'best.pt', 'results.txt'], [flast, fbest, fresults]):
             if os.path.exists(f1):
@@ -382,7 +385,7 @@ if __name__ == '__main__':
     parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
-    parser.add_argument('--hyp', type=str, default='', help='hyperparameters path, i.e. data/hyp.scratch.yaml')
+    parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
@@ -425,7 +428,7 @@ if __name__ == '__main__':
         logger.info('Resuming training from %s' % ckpt)
 
     else:
-        opt.hyp = opt.hyp or ('data/hyp.finetune.yaml' if opt.weights else 'data/hyp.scratch.yaml')
+        # opt.hyp = opt.hyp or ('hyp.finetune.yaml' if opt.weights else 'hyp.scratch.yaml')
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
