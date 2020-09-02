@@ -186,19 +186,19 @@ def train(hyp, opt, device, tb_writer=None):
     model.names = names
 
     # Class frequency
-    if not opt.resume and rank in [-1, 0]:
-        labels = np.concatenate(dataset.labels, 0)
-        c = torch.tensor(labels[:, 0])  # classes
-        # cf = torch.bincount(c.long(), minlength=nc) + 1.
-        # model._initialize_biases(cf.to(device))
-        plot_labels(labels, save_dir=log_dir)
-        if tb_writer:
-            # tb_writer.add_hparams(hyp, {})  # causes duplicate https://github.com/ultralytics/yolov5/pull/384
-            tb_writer.add_histogram('classes', c, 0)
-
-    # Check anchors
-    if not opt.noautoanchor:
-        check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
+    if rank in [-1, 0]:
+        if not opt.resume:
+            labels = np.concatenate(dataset.labels, 0)
+            c = torch.tensor(labels[:, 0])  # classes
+            # cf = torch.bincount(c.long(), minlength=nc) + 1.
+            # model._initialize_biases(cf.to(device))
+            plot_labels(labels, save_dir=log_dir)
+            if tb_writer:
+                # tb_writer.add_hparams(hyp, {})  # causes duplicate https://github.com/ultralytics/yolov5/pull/384
+                tb_writer.add_histogram('classes', c, 0)
+        # Check anchors
+        if not opt.noautoanchor:
+            check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
 
     # Start training
     t0 = time.time()
