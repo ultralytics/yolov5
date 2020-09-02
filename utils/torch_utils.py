@@ -112,6 +112,7 @@ def fuse_conv_and_bn(conv, bn):
                               kernel_size=conv.kernel_size,
                               stride=conv.stride,
                               padding=conv.padding,
+                              groups=conv.groups,
                               bias=True).to(conv.weight.device)
 
         # prepare filters
