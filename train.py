@@ -185,18 +185,18 @@ def train(hyp, opt, device, tb_writer=None):
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device)  # attach class weights
     model.names = names
 
-    # Class frequency
-    if rank in [-1, 0]:
+    # Classes and Anchors
+    if rank in [-1, 0] and not opt.resume:
         labels = np.concatenate(dataset.labels, 0)
         c = torch.tensor(labels[:, 0])  # classes
-        # cf = torch.bincount(c.long(), minlength=nc) + 1.
+        # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
         # model._initialize_biases(cf.to(device))
         plot_labels(labels, save_dir=log_dir)
         if tb_writer:
             # tb_writer.add_hparams(hyp, {})  # causes duplicate https://github.com/ultralytics/yolov5/pull/384
             tb_writer.add_histogram('classes', c, 0)
 
-        # Check anchors
+        # Anchors
         if not opt.noautoanchor:
             check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
 
