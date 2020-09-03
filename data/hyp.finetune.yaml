@@ -4,31 +4,31 @@
 
 
 # Hyperparameter Evolution Results
-# Generations: 51
+# Generations: 306
 #                   P         R     mAP.5 mAP.5:.95       box       obj       cls
-# Metrics:      0.625     0.926      0.89     0.677    0.0111   0.00849   0.00124
+# Metrics:        0.6     0.936     0.896     0.684    0.0115   0.00805   0.00146
 
-lr0: 0.00447
-lrf: 0.114
-momentum: 0.873
-weight_decay: 0.00047
-giou: 0.0306
-cls: 0.211
-cls_pw: 0.546
-obj: 0.421
-obj_pw: 0.972
+lr0: 0.0032
+lrf: 0.12
+momentum: 0.843
+weight_decay: 0.00036
+giou: 0.0296
+cls: 0.243
+cls_pw: 0.631
+obj: 0.301
+obj_pw: 0.911
 iou_t: 0.2
-anchor_t: 2.26
-# anchors: 5.07
+anchor_t: 2.91
+# anchors: 3.63
 fl_gamma: 0.0
-hsv_h: 0.0154
-hsv_s: 0.9
-hsv_v: 0.619
-degrees: 0.404
-translate: 0.206
-scale: 0.86
-shear: 0.795
+hsv_h: 0.0138
+hsv_s: 0.664
+hsv_v: 0.464
+degrees: 0.373
+translate: 0.245
+scale: 0.898
+shear: 0.602
 perspective: 0.0
-flipud: 0.00756
+flipud: 0.00856
 fliplr: 0.5
-mixup: 0.153
+mixup: 0.243
