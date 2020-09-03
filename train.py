@@ -68,8 +68,8 @@ def train(hyp, opt, device, tb_writer=None):
         with torch_distributed_zero_first(rank):
             attempt_download(weights)  # download if not found locally
         ckpt = torch.load(weights, map_location=device)  # load checkpoint
-        # if hyp['anchors']:
-        #     ckpt['model'].yaml['anchors'] = round(hyp['anchors'])  # force autoanchor
+        if 'anchors' in hyp and hyp['anchors']:
+            ckpt['model'].yaml['anchors'] = round(hyp['anchors'])  # force autoanchor
         model = Model(opt.cfg or ckpt['model'].yaml, ch=3, nc=nc).to(device)  # create
         exclude = ['anchor'] if opt.cfg else []  # exclude keys
         state_dict = ckpt['model'].float().state_dict()  # to FP32
@@ -472,7 +472,7 @@ if __name__ == '__main__':
                 'obj_pw': (1, 0.5, 2.0),  # obj BCELoss positive_weight
                 'iou_t': (0, 0.1, 0.7),  # IoU training threshold
                 'anchor_t': (1, 2.0, 8.0),  # anchor-multiple threshold
-                # 'anchors': (1, 2.0, 10.0),  # anchors per output grid (0 to ignore)
+                'anchors': (1, 2.0, 10.0),  # anchors per output grid (0 to ignore)
                 'fl_gamma': (0, 0.0, 2.0),  # focal loss gamma (efficientDet default gamma=1.5)
                 'hsv_h': (1, 0.0, 0.1),  # image HSV-Hue augmentation (fraction)
                 'hsv_s': (1, 0.0, 0.9),  # image HSV-Saturation augmentation (fraction)
@@ -493,7 +493,7 @@ if __name__ == '__main__':
         if opt.bucket:
             os.system('gsutil cp gs://%s/evolve.txt .' % opt.bucket)  # download evolve.txt if exists
 
-        for _ in range(100):  # generations to evolve
+        for _ in range(1):  # generations to evolve
             if os.path.exists('evolve.txt'):  # if evolve.txt exists: select best hyps and mutate
                 # Select parent(s)
                 parent = 'single'  # parent selection method: 'single' or 'weighted'
