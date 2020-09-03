@@ -146,10 +146,7 @@ def check_dataset(dict):
                 print('Downloading %s ...' % s)
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
-                    if platform.system() == 'Darwin':  # avoid MacOS python requests certificate error
-                        os.system('curl -L %s -o %s' % (s, f))
-                    else:
-                        torch.hub.download_url_to_file(s, f)
+                    torch.hub.download_url_to_file(s, f)
                     r = os.system('unzip -q %s -d ../ && rm %s' % (f, f))  # unzip
                 else:  # bash script
                     r = os.system(s)
