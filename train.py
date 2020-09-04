@@ -161,7 +161,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     # DDP mode
     if cuda and rank != -1:
-        model = DDP(model, device_ids=[opt.local_rank], output_device=(opt.local_rank))
+        model = DDP(model, device_ids=[opt.local_rank], output_device=opt.local_rank)
 
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
@@ -171,12 +171,26 @@ def train(hyp, opt, device, tb_writer=None):
     nb = len(dataloader)  # number of batches
     assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (mlc, nc, opt.data, nc - 1)
 
-    # Testloader
+    # Process 0
     if rank in [-1, 0]:
         ema.updates = start_epoch * nb // accumulate  # set EMA updates
         testloader = create_dataloader(test_path, imgsz_test, total_batch_size, gs, opt,
                                        hyp=hyp, augment=False, cache=opt.cache_images, rect=True, rank=-1,
-                                       world_size=opt.world_size, workers=opt.workers)[0]  # only runs on process 0
+                                       world_size=opt.world_size, workers=opt.workers)[0]  # testloader
+
+        if not opt.resume:
+            labels = np.concatenate(dataset.labels, 0)
+            c = torch.tensor(labels[:, 0])  # classes
+            # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
+            # model._initialize_biases(cf.to(device))
+            plot_labels(labels, save_dir=log_dir)
+            if tb_writer:
+                # tb_writer.add_hparams(hyp, {})  # causes duplicate https://github.com/ultralytics/yolov5/pull/384
+                tb_writer.add_histogram('classes', c, 0)
+
+            # Anchors
+            if not opt.noautoanchor:
+                check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
 
     # Model parameters
     hyp['cls'] *= nc / 80.  # scale coco-tuned hyp['cls'] to current dataset
@@ -186,21 +200,6 @@ def train(hyp, opt, device, tb_writer=None):
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device)  # attach class weights
     model.names = names
 
-    # Classes and Anchors
-    if rank in [-1, 0] and not opt.resume:
-        labels = np.concatenate(dataset.labels, 0)
-        c = torch.tensor(labels[:, 0])  # classes
-        # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
-        # model._initialize_biases(cf.to(device))
-        plot_labels(labels, save_dir=log_dir)
-        if tb_writer:
-            # tb_writer.add_hparams(hyp, {})  # causes duplicate https://github.com/ultralytics/yolov5/pull/384
-            tb_writer.add_histogram('classes', c, 0)
-
-        # Anchors
-        if not opt.noautoanchor:
-            check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
-
     # Start training
     t0 = time.time()
     nw = max(3 * nb, 1e3)  # number of warmup iterations, max(3 epochs, 1k iterations)
@@ -209,10 +208,8 @@ def train(hyp, opt, device, tb_writer=None):
     results = (0, 0, 0, 0, 0, 0, 0)  # 'P', 'R', 'mAP', 'F1', 'val GIoU', 'val Objectness', 'val Classification'
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
-    logger.info('Image sizes %g train, %g test' % (imgsz, imgsz_test))
-    logger.info('Using %g dataloader workers' % dataloader.num_workers)
-    logger.info('Starting training for %g epochs...' % epochs)
-    # torch.autograd.set_detect_anomaly(True)
+    logger.info('Image sizes %g train, %g test\nUsing %g dataloader workers\nLogging results to %s\n'
+                'Starting training for %g epochs...' % (imgsz, imgsz_test, dataloader.num_workers, log_dir, epochs))
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
 
