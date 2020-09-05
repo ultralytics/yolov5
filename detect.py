@@ -8,6 +8,7 @@ from pathlib import Path
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
+import yaml
 from numpy import random
 
 from models.experimental import attempt_load
@@ -22,6 +23,7 @@ def detect(save_img=False):
     out, source, weights, view_img, save_txt, imgsz = \
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source.isnumeric() or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
+    from_yaml = source.endswith('.yaml')
 
     # Initialize
     set_logging()
@@ -50,6 +52,11 @@ def detect(save_img=False):
         view_img = True
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadStreams(source, img_size=imgsz)
+    elif from_yaml:
+        save_img = True
+        with open(source) as f:
+            data_dict = yaml.load(f, Loader=yaml.FullLoader)
+        dataset = LoadImages(data_dict['inf'], img_size=imgsz, from_yaml=True)
     else:
         save_img = True
         dataset = LoadImages(source, img_size=imgsz)

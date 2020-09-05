@@ -106,7 +106,7 @@ class InfiniteDataLoader(torch.utils.data.dataloader.DataLoader):
 
 
 class LoadImages:  # for inference
-    def __init__(self, path, img_size=640):
+    def __init__(self, path, img_size=640, from_yaml=False):
         p = str(Path(path))  # os-agnostic
         p = os.path.abspath(p)  # absolute path
         if '*' in p:
@@ -114,7 +114,14 @@ class LoadImages:  # for inference
         elif os.path.isdir(p):
             files = sorted(glob.glob(os.path.join(p, '*.*')))  # dir
         elif os.path.isfile(p):
-            files = [p]  # files
+            if from_yaml:
+                f = []
+                with open(p, 'r') as t:
+                    t = t.read().splitlines()
+                    f += [x for x in t]
+                files = sorted([x.replace('/', os.sep) for x in f])
+            else:
+                files = [p]  # files
         else:
             raise Exception('ERROR: %s does not exist' % p)
 
