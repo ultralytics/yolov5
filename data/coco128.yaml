@@ -13,7 +13,7 @@ download: https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128.z
 train: ./coco128/images/  # 128 images
 val: ./coco128/images/  # 128 images
 label: ./coco128/labels/
-bucket: danadynamics-coco128
+bucket: blalalal
 imagePrefix: images/train2017/
 labelPrefix: labels/train2017/ 
 
