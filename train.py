@@ -81,8 +81,9 @@ def train(hyp, opt, device, tb_writer=None):
         data_dict = yaml.load(f, Loader=yaml.FullLoader)  # data dict
     with torch_distributed_zero_first(rank):
         check_dataset(data_dict)  # check
+
     train_path = data_dict["train"]
-    test_path = data_dict["val"]
+    test_path = train_path.replace("train", "val")
     nc, names = (
         (1, ["item"]) if opt.single_cls else (int(data_dict["nc"]), data_dict["names"])
     )  # number classes, names

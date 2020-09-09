@@ -20,9 +20,7 @@ COPY . /usr/src/app
 #attempt_download('weights/yolov5m.pt'); \
 #attempt_download('weights/yolov5l.pt')"
 
-
 # ---------------------------------------------------  Extras Below  ---------------------------------------------------
-
 # Build and Push
 # t=ultralytics/yolov5:latest && sudo docker build -t $t . && sudo docker push $t
 # for v in {300..303}; do t=ultralytics/coco:v$v && sudo docker build -t $t . && sudo docker push $t; done

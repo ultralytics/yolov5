@@ -26,6 +26,8 @@ from utils.google_utils import gsutil_getsize
 from utils.torch_utils import init_seeds as init_torch_seeds
 from utils.torch_utils import is_parallel
 
+from google.cloud import storage
+
 # Set printoptions
 torch.set_printoptions(linewidth=320, precision=5, profile="long")
 np.set_printoptions(
@@ -35,6 +37,79 @@ matplotlib.rc("font", **{"size": 11})
 
 # Prevent OpenCV from multithreading (to use PyTorch DataLoader)
 cv2.setNumThreads(0)
+
+#: Download objects
+def download_file_blob_to_dir(directory, file_blob):
+    file_name = file_blob.name.split("/")[2]
+    destination = Path(directory) / f"{file_name}"
+    destination.touch()
+    blob.download_to_filename(destination)
+
+
+#: Copy GCS objects in their respective local directories
+def copy_object_from_GCS(local_directory, file_blob):
+    train_image_directory = local_directory[0]
+    train_label_directory = local_directory[1]
+    validation_image_directory = local_directory[2]
+    validation_label_directory = local_directory[3]
+
+    if file_blob.name.startswith("images/train") and file_blob.name.endswith(".jpg"):
+        download_file_blob_to_dir(train_image_directory, file_blobblob)
+
+    elif file_blob.name.startswith("labels/train") and file_blob.name.endswith(".txt"):
+        download_file_blob_to_dir(train_label_directory, file_blob)
+
+    elif file_blob.name.startswith("images/val") and file_blob.name.endswith(".jpg"):
+        download_file_blob_to_dir(validation_image_directory, file_blob)
+
+    elif file_blob.name.startswith("labels/val") and file_blob.name.endswith(".txt"):
+        download_file_blob_to_dir(validation_label_directory, file_blob)
+
+
+def download_training_objects_from_GC_bucket(func):
+    """
+    Decorator that generates directories. Once directories are generated, training and validation,
+    images and labels are downloaded from GCS, and place in the generated directories.
+    The directories are:
+        - ../dataset/images/train
+        - ../dataset/images/val
+        - ../dataset/labels/train
+        - ../dataset/labels/val
+    """
+
+    def get_bucket_objects(data_dict):
+        bucket_name = data_dict["bucket"]
+
+        train_image_path = data_dict["train"]
+        val_image_path = train_image_path.replace("train", "val")
+
+        train_label_path = train_image_path.replace("image", "label")
+        val_label_path = val_image_path.replace("image", "label")
+
+        local_directories = [
+            train_image_path,
+            train_label_path,
+            val_image_path,
+            val_label_path,
+        ]
+
+        #: If no directories exists they will be generated
+        for directory in local_directories:
+            if not os.path.isdir(directory):
+                os.makedirs(directory)
+
+        #: Get acces to google cloud bucket and the objects within
+        storage_client = storage.Client()
+        bucket = storage_client.get_bucket(bucket_name)
+
+        blobs = bucket.list_blobs()
+
+        for file_blob in blobs:
+            copy_object_from_GCS(local_directories, file_blob)
+
+        func(data_dict)
+
+    return get_bucket_objects
 
 
 @contextmanager
@@ -163,6 +238,7 @@ def check_file(file):
         return files[0]  # return first file if multiple found
 
 
+@download_training_objects_from_GC_bucket
 def check_dataset(dict):
     # Download dataset if not found
     val, s = dict.get("val"), dict.get("download")
