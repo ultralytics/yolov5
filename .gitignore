@@ -36,7 +36,8 @@ data/*
 !data/trainvalno5k.shapes
 !data/*.sh
 
-coco128/
+blak_test.py
+data/coco128.yaml
 pycocotools/*
 results*.txt
 gcp_test*.sh

@@ -46,33 +46,11 @@ def exif_size(img):
 
     return s
 
-def get_bucket_objects(bucket_name, image_bucket_prefix, label_bucket_prefix, image_local_directory, label_local_directory):
-    storage_client = storage.Client()    
-    bucket = storage_client.get_bucket(bucket_name)
-    label_local = Path(label_local_directory) 
-    image_local = Path(image_local_directory)
-        
-    for blob in tqdm(bucket.list_blobs(prefix=label_bucket_prefix)):
-        
-        blob_name = blob.name
-        file_name = blob_name.replace(label_bucket_prefix, "")
-        blob_path = label_local / f'{file_name}'
-        blob_path.touch()
-        blob.download_to_filename(blob_path)
-
-    for blob in tqdm(bucket.list_blobs(prefix=image_bucket_prefix)):
-        
-        blob_name = blob.name
-        file_name = blob_name.replace(image_bucket_prefix, "")
-        blob_path = image_local / f'{file_name}'
-        blob_path.touch()
-        blob.download_to_filename(blob_path)
-
-def create_dataloader(path, lab_path, bucket, prefixes, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False,
+def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False,
                       rank=-1, world_size=1, workers=8):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache.
     with torch_distributed_zero_first(rank):
-        dataset = LoadImagesAndLabels(path, lab_path, bucket, prefixes, imgsz, batch_size,
+        dataset = LoadImagesAndLabels(path, imgsz, batch_size,
                                       augment=augment,  # augment images
                                       hyp=hyp,  # augmentation hyperparameters
                                       rect=rect,  # rectangular training
@@ -347,11 +325,8 @@ class LoadStreams:  # multiple IP or RTSP cameras
 
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
-    def __init__(self, path, labpath, bucket, prefixes, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
+    def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
                  cache_images=False, single_cls=False, stride=32, pad=0.0, rank=-1):
-
-        get_bucket_objects(bucket, prefixes[0], prefixes[1], path, labpath)
-
         try:
             f = []  # image files
             for p in path if isinstance(path, list) else [path]:
