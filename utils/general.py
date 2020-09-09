@@ -38,7 +38,7 @@ matplotlib.rc("font", **{"size": 11})
 # Prevent OpenCV from multithreading (to use PyTorch DataLoader)
 cv2.setNumThreads(0)
 
-# Download objects
+#: Download objects
 def download_file_blob_to_dir(directory, file_blob):
     file_name = file_blob.name.split("/")[2]
     destination = Path(directory) / f"{file_name}"
@@ -46,9 +46,8 @@ def download_file_blob_to_dir(directory, file_blob):
     blob.download_to_filename(destination)
 
 
-# Place GCS objects in their respective local directories
-def place_object(local_directory, file_blob):
-
+#: Copy GCS objects in their respective local directories
+def copy_object_from_GCS(local_directory, file_blob):
     train_image_directory = local_directory[0]
     train_label_directory = local_directory[1]
     validation_image_directory = local_directory[2]
@@ -67,8 +66,13 @@ def place_object(local_directory, file_blob):
         download_file_blob_to_dir(validation_label_directory, file_blob)
 
 
-# Decorator for "check_dataset"
 def download_training_objects_from_GC_bucket(func):
+    """
+    This decorator is called before the function check_dataset, which checks if a dataset is present
+    on the system. The function reads the .yaml file, which should consists of a google cloud storage bucket and a directory
+    where the training images are.
+    """
+
     def get_bucket_objects(data_dict):
         bucket_name = data_dict["bucket"]
 
@@ -85,17 +89,19 @@ def download_training_objects_from_GC_bucket(func):
             val_label_path,
         ]
 
+        #: If no directories exists they will be generated
         for directory in local_directories:
             if not os.path.isdir(directory):
                 os.makedirs(directory)
 
+        #: Get acces to google cloud bucket and the objects within
         storage_client = storage.Client()
         bucket = storage_client.get_bucket(bucket_name)
 
         blobs = bucket.list_blobs()
 
         for file_blob in blobs:
-            place_object(local_directories, file_blob)
+            copy_object_from_GCS(local_directories, file_blob)
 
         func(data_dict)
 
