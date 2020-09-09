@@ -39,26 +39,26 @@ matplotlib.rc("font", **{"size": 11})
 cv2.setNumThreads(0)
 
 # Download objects
-def download_file_blob_to_dir(dir, blob):
-    file_name = blob.name.split("/")[2]
-    destination = Path(dir) / f"{file_name}"
+def download_file_blob_to_dir(directory, file_blob):
+    file_name = file_blob.name.split("/")[2]
+    destination = Path(directory) / f"{file_name}"
     destination.touch()
     blob.download_to_filename(destination)
 
 
 # Place GCS objects in their respective local directories
-def place_object(local_directory, blob):
-    if blob.name.startswith("images/t") and blob.name.endswith(".jpg"):
-        download_file_blob_to_dir(local_directory[0], blob)
+def place_object(local_directory, file_blob):
+    if file_blob.name.startswith("images/t") and file_blob.name.endswith(".jpg"):
+        download_file_blob_to_dir(local_directory[0], file_blobblob)
 
-    elif blob.name.startswith("labels/t") and blob.name.endswith(".txt"):
-        download_file_blob_to_dir(local_directory[1], blob)
+    elif file_blob.name.startswith("labels/t") and file_blob.name.endswith(".txt"):
+        download_file_blob_to_dir(local_directory[1], file_blob)
 
-    elif blob.name.startswith("images/v") and blob.name.endswith(".jpg"):
-        download_file_blob_to_dir(local_directory[2], blob)
+    elif file_blob.name.startswith("images/v") and file_blob.name.endswith(".jpg"):
+        download_file_blob_to_dir(local_directory[2], file_blob)
 
-    elif blob.name.startswith("labels/v") and blob.name.endswith(".txt"):
-        download_file_blob_to_dir(local_directory[3], blob)
+    elif file_blob.name.startswith("labels/v") and file_blob.name.endswith(".txt"):
+        download_file_blob_to_dir(local_directory[3], file_blob)
 
 
 # Decorator for "check_dataset"
@@ -88,8 +88,8 @@ def download_and_setup_dataset(func):
 
         blobs = bucket.list_blobs()
 
-        for blob in blobs:
-            place_object(local_directories, blob)
+        for file_blob in blobs:
+            place_object(local_directories, file_blob)
 
         func(data_dict)
 
