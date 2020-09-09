@@ -39,7 +39,7 @@ matplotlib.rc("font", **{"size": 11})
 cv2.setNumThreads(0)
 
 # Download objects
-def download_file(dir, blob):
+def download_file_blob_to_dir(dir, blob):
     file_name = blob.name.split("/")[2]
     destination = Path(dir) / f"{file_name}"
     destination.touch()
@@ -47,32 +47,22 @@ def download_file(dir, blob):
 
 
 # Place GCS objects in their respective local directories
-def place_object(local_dir, blob):
-    image_train = "images/t"
-    image_val = "images/v"
-    label_train = "labels/t"
-    label_val = "labels/v"
-    jpg = ".jpg"
-    txt = ".txt"
+def place_object(local_directory, blob):
+    if blob.name.startswith("images/t") and blob.name.endswith(".jpg"):
+        download_file_blob_to_dir(local_directory[0], blob)
 
-    if blob.name.startswith(image_train) and blob.name.endswith(jpg):
-        download_file(local_dir[0], blob)
+    elif blob.name.startswith("labels/t") and blob.name.endswith(".txt"):
+        download_file_blob_to_dir(local_directory[1], blob)
 
-    elif blob.name.startswith(label_train) and blob.name.endswith(txt):
-        download_file(local_dir[1], blob)
+    elif blob.name.startswith("images/v") and blob.name.endswith(".jpg"):
+        download_file_blob_to_dir(local_directory[2], blob)
 
-    elif blob.name.startswith(image_val) and blob.name.endswith(jpg):
-        download_file(local_dir[2], blob)
+    elif blob.name.startswith("labels/v") and blob.name.endswith(".txt"):
+        download_file_blob_to_dir(local_directory[3], blob)
 
-    elif blob.name.startswith(label_val) and blob.name.endswith(txt):
-        download_file(local_dir[3], blob)
 
-    else:
-        pass
-
- 
 # Decorator for "check_dataset"
-def check_decorator(func):
+def download_and_setup_dataset(func):
     def get_bucket_objects(data_dict):
         bucket_name = data_dict["bucket"]
 
@@ -82,14 +72,14 @@ def check_decorator(func):
         train_label_path = train_image_path.replace("image", "label")
         val_label_path = val_image_path.replace("image", "label")
 
-        directories = [
+        local_directories = [
             train_image_path,
             train_label_path,
             val_image_path,
             val_label_path,
         ]
 
-        for directory in directories:
+        for directory in local_directories:
             if not os.path.isdir(directory):
                 os.makedirs(directory)
 
@@ -99,7 +89,7 @@ def check_decorator(func):
         blobs = bucket.list_blobs()
 
         for blob in blobs:
-            place_object(directories, blob)
+            place_object(local_directories, blob)
 
         func(data_dict)
 
@@ -232,7 +222,7 @@ def check_file(file):
         return files[0]  # return first file if multiple found
 
 
-@check_decorator
+@download_and_setup_dataset
 def check_dataset(dict):
     # Download dataset if not found
     val, s = dict.get("val"), dict.get("download")

@@ -11,7 +11,7 @@ download: https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128.z
 
 # train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
 
-bucket: #Insert bucket name
+bucket: your-bucket-here
 train: ../dataset/images/train/
 
 

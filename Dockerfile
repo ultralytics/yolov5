@@ -19,7 +19,6 @@ COPY . /usr/src/app
 #attempt_download('weights/yolov5s.pt'); \
 #attempt_download('weights/yolov5m.pt'); \
 #attempt_download('weights/yolov5l.pt')"
- 
 
 # ---------------------------------------------------  Extras Below  ---------------------------------------------------
 
