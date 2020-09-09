@@ -62,7 +62,7 @@ __pycache__/
 
 # C extensions
 *.so
-
+blak_test.py
 # Distribution / packaging
 .Python
 env/
