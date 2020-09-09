@@ -68,9 +68,13 @@ def copy_object_from_GCS(local_directory, file_blob):
 
 def download_training_objects_from_GC_bucket(func):
     """
-    This decorator is called before the function check_dataset, which checks if a dataset is present
-    on the system. The function reads the .yaml file, which should consists of a google cloud storage bucket and a directory
-    where the training images are.
+    Decorator that generates directories. Once directories are generated, training and validation,
+    images and labels are downloaded from GCS, and place in the generated directories.
+    The directories are:
+        - ../dataset/images/train
+        - ../dataset/images/val
+        - ../dataset/labels/train
+        - ../dataset/labels/val
     """
 
     def get_bucket_objects(data_dict):
