@@ -45,7 +45,8 @@ def download_file(dir, blob):
     destination.touch()
     blob.download_to_filename(destination)
 
-# Place GCS objects in their respective local directories 
+
+# Place GCS objects in their respective local directories
 def place_object(local_dir, blob):
     image_train = "images/t"
     image_val = "images/v"
@@ -69,7 +70,8 @@ def place_object(local_dir, blob):
     else:
         pass
 
-#Decorator for "check_dataset"
+
+# Decorator for "check_dataset"
 def check_decorator(func):
     def get_bucket_objects(data_dict):
         bucket_name = data_dict["bucket"]
@@ -86,7 +88,6 @@ def check_decorator(func):
             val_image_path,
             val_label_path,
         ]
-        print(directories)
 
         for directory in directories:
             if not os.path.isdir(directory):
