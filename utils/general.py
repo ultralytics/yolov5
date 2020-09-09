@@ -68,7 +68,7 @@ def place_object(local_directory, file_blob):
 
 
 # Decorator for "check_dataset"
-def download_and_setup_dataset(func):
+def download_training_objects_from_GC_bucket(func):
     def get_bucket_objects(data_dict):
         bucket_name = data_dict["bucket"]
 
@@ -228,7 +228,7 @@ def check_file(file):
         return files[0]  # return first file if multiple found
 
 
-@download_and_setup_dataset
+@download_training_objects_from_GC_bucket
 def check_dataset(dict):
     # Download dataset if not found
     val, s = dict.get("val"), dict.get("download")
