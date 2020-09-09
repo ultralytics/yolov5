@@ -48,17 +48,23 @@ def download_file_blob_to_dir(directory, file_blob):
 
 # Place GCS objects in their respective local directories
 def place_object(local_directory, file_blob):
+
+    train_image_directory = local_directory[0]
+    train_label_directory = local_directory[1]
+    validation_image_directory = local_directory[2]
+    validation_label_directory = local_directory[3]
+
     if file_blob.name.startswith("images/t") and file_blob.name.endswith(".jpg"):
-        download_file_blob_to_dir(local_directory[0], file_blobblob)
+        download_file_blob_to_dir(train_image_directory, file_blobblob)
 
     elif file_blob.name.startswith("labels/t") and file_blob.name.endswith(".txt"):
-        download_file_blob_to_dir(local_directory[1], file_blob)
+        download_file_blob_to_dir(train_label_directory, file_blob)
 
     elif file_blob.name.startswith("images/v") and file_blob.name.endswith(".jpg"):
-        download_file_blob_to_dir(local_directory[2], file_blob)
+        download_file_blob_to_dir(validation_image_directory, file_blob)
 
     elif file_blob.name.startswith("labels/v") and file_blob.name.endswith(".txt"):
-        download_file_blob_to_dir(local_directory[3], file_blob)
+        download_file_blob_to_dir(validation_label_directory, file_blob)
 
 
 # Decorator for "check_dataset"
