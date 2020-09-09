@@ -54,16 +54,16 @@ def place_object(local_directory, file_blob):
     validation_image_directory = local_directory[2]
     validation_label_directory = local_directory[3]
 
-    if file_blob.name.startswith("images/t") and file_blob.name.endswith(".jpg"):
+    if file_blob.name.startswith("images/train") and file_blob.name.endswith(".jpg"):
         download_file_blob_to_dir(train_image_directory, file_blobblob)
 
-    elif file_blob.name.startswith("labels/t") and file_blob.name.endswith(".txt"):
+    elif file_blob.name.startswith("labels/train") and file_blob.name.endswith(".txt"):
         download_file_blob_to_dir(train_label_directory, file_blob)
 
-    elif file_blob.name.startswith("images/v") and file_blob.name.endswith(".jpg"):
+    elif file_blob.name.startswith("images/val") and file_blob.name.endswith(".jpg"):
         download_file_blob_to_dir(validation_image_directory, file_blob)
 
-    elif file_blob.name.startswith("labels/v") and file_blob.name.endswith(".txt"):
+    elif file_blob.name.startswith("labels/val") and file_blob.name.endswith(".txt"):
         download_file_blob_to_dir(validation_label_directory, file_blob)
 
 
