@@ -5,7 +5,7 @@ Usage:
     model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True, channels=3, classes=80)
 """
 
-dependencies = ['torch', 'yaml']
+dependencies = ["torch", "yaml"]
 import os
 
 import torch
@@ -26,20 +26,33 @@ def create(name, pretrained, channels, classes):
     Returns:
         pytorch model
     """
-    config = os.path.join(os.path.dirname(__file__), 'models', '%s.yaml' % name)  # model.yaml path
+    config = os.path.join(
+        os.path.dirname(__file__), "models", "%s.yaml" % name
+    )  # model.yaml path
     try:
         model = Model(config, channels, classes)
         if pretrained:
-            ckpt = '%s.pt' % name  # checkpoint filename
+            ckpt = "%s.pt" % name  # checkpoint filename
             attempt_download(ckpt)  # download if not found locally
-            state_dict = torch.load(ckpt, map_location=torch.device('cpu'))['model'].float().state_dict()  # to FP32
-            state_dict = {k: v for k, v in state_dict.items() if model.state_dict()[k].shape == v.shape}  # filter
+            state_dict = (
+                torch.load(ckpt, map_location=torch.device("cpu"))["model"]
+                .float()
+                .state_dict()
+            )  # to FP32
+            state_dict = {
+                k: v
+                for k, v in state_dict.items()
+                if model.state_dict()[k].shape == v.shape
+            }  # filter
             model.load_state_dict(state_dict, strict=False)  # load
         return model
 
     except Exception as e:
-        help_url = 'https://github.com/ultralytics/yolov5/issues/36'
-        s = 'Cache maybe be out of date, deleting cache and retrying may solve this. See %s for help.' % help_url
+        help_url = "https://github.com/ultralytics/yolov5/issues/36"
+        s = (
+            "Cache maybe be out of date, deleting cache and retrying may solve this. See %s for help."
+            % help_url
+        )
         raise Exception(s) from e
 
 
@@ -54,7 +67,7 @@ def yolov5s(pretrained=False, channels=3, classes=80):
     Returns:
         pytorch model
     """
-    return create('yolov5s', pretrained, channels, classes)
+    return create("yolov5s", pretrained, channels, classes)
 
 
 def yolov5m(pretrained=False, channels=3, classes=80):
@@ -68,7 +81,7 @@ def yolov5m(pretrained=False, channels=3, classes=80):
     Returns:
         pytorch model
     """
-    return create('yolov5m', pretrained, channels, classes)
+    return create("yolov5m", pretrained, channels, classes)
 
 
 def yolov5l(pretrained=False, channels=3, classes=80):
@@ -82,7 +95,7 @@ def yolov5l(pretrained=False, channels=3, classes=80):
     Returns:
         pytorch model
     """
-    return create('yolov5l', pretrained, channels, classes)
+    return create("yolov5l", pretrained, channels, classes)
 
 
 def yolov5x(pretrained=False, channels=3, classes=80):
@@ -96,4 +109,4 @@ def yolov5x(pretrained=False, channels=3, classes=80):
     Returns:
         pytorch model
     """
-    return create('yolov5x', pretrained, channels, classes)
+    return create("yolov5x", pretrained, channels, classes)

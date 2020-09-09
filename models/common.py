@@ -19,7 +19,9 @@ def DWConv(c1, c2, k=1, s=1, act=True):
 
 class Conv(nn.Module):
     # Standard convolution
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
+    def __init__(
+        self, c1, c2, k=1, s=1, p=None, g=1, act=True
+    ):  # ch_in, ch_out, kernel, stride, padding, groups
         super(Conv, self).__init__()
         self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False)
         self.bn = nn.BatchNorm2d(c2)
@@ -34,7 +36,9 @@ class Conv(nn.Module):
 
 class Bottleneck(nn.Module):
     # Standard bottleneck
-    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, shortcut, groups, expansion
+    def __init__(
+        self, c1, c2, shortcut=True, g=1, e=0.5
+    ):  # ch_in, ch_out, shortcut, groups, expansion
         super(Bottleneck, self).__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
@@ -47,7 +51,9 @@ class Bottleneck(nn.Module):
 
 class BottleneckCSP(nn.Module):
     # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
+    def __init__(
+        self, c1, c2, n=1, shortcut=True, g=1, e=0.5
+    ):  # ch_in, ch_out, number, shortcut, groups, expansion
         super(BottleneckCSP, self).__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
@@ -56,7 +62,9 @@ class BottleneckCSP(nn.Module):
         self.cv4 = Conv(2 * c_, c2, 1, 1)
         self.bn = nn.BatchNorm2d(2 * c_)  # applied to cat(cv2, cv3)
         self.act = nn.LeakyReLU(0.1, inplace=True)
-        self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)])
+        self.m = nn.Sequential(
+            *[Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)]
+        )
 
     def forward(self, x):
         y1 = self.cv3(self.m(self.cv1(x)))
@@ -71,7 +79,9 @@ class SPP(nn.Module):
         c_ = c1 // 2  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
         self.cv2 = Conv(c_ * (len(k) + 1), c2, 1, 1)
-        self.m = nn.ModuleList([nn.MaxPool2d(kernel_size=x, stride=1, padding=x // 2) for x in k])
+        self.m = nn.ModuleList(
+            [nn.MaxPool2d(kernel_size=x, stride=1, padding=x // 2) for x in k]
+        )
 
     def forward(self, x):
         x = self.cv1(x)
@@ -80,12 +90,24 @@ class SPP(nn.Module):
 
 class Focus(nn.Module):
     # Focus wh information into c-space
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
+    def __init__(
+        self, c1, c2, k=1, s=1, p=None, g=1, act=True
+    ):  # ch_in, ch_out, kernel, stride, padding, groups
         super(Focus, self).__init__()
         self.conv = Conv(c1 * 4, c2, k, s, p, g, act)
 
     def forward(self, x):  # x(b,c,w,h) -> y(b,4c,w/2,h/2)
-        return self.conv(torch.cat([x[..., ::2, ::2], x[..., 1::2, ::2], x[..., ::2, 1::2], x[..., 1::2, 1::2]], 1))
+        return self.conv(
+            torch.cat(
+                [
+                    x[..., ::2, ::2],
+                    x[..., 1::2, ::2],
+                    x[..., ::2, 1::2],
+                    x[..., 1::2, 1::2],
+                ],
+                1,
+            )
+        )
 
 
 class Concat(nn.Module):
@@ -107,12 +129,18 @@ class Flatten(nn.Module):
 
 class Classify(nn.Module):
     # Classification head, i.e. x(b,c1,20,20) to x(b,c2)
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1):  # ch_in, ch_out, kernel, stride, padding, groups
+    def __init__(
+        self, c1, c2, k=1, s=1, p=None, g=1
+    ):  # ch_in, ch_out, kernel, stride, padding, groups
         super(Classify, self).__init__()
         self.aap = nn.AdaptiveAvgPool2d(1)  # to x(b,c1,1,1)
-        self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False)  # to x(b,c2,1,1)
+        self.conv = nn.Conv2d(
+            c1, c2, k, s, autopad(k, p), groups=g, bias=False
+        )  # to x(b,c2,1,1)
         self.flat = Flatten()
 
     def forward(self, x):
-        z = torch.cat([self.aap(y) for y in (x if isinstance(x, list) else [x])], 1)  # cat if list
+        z = torch.cat(
+            [self.aap(y) for y in (x if isinstance(x, list) else [x])], 1
+        )  # cat if list
         return self.flat(self.conv(z))  # flatten to x(b,c2)
