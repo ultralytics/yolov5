@@ -10,6 +10,7 @@ import time
 from contextlib import contextmanager
 from copy import copy
 from pathlib import Path
+from distutils.dir_util import copy_tree
 
 import cv2
 import matplotlib
@@ -53,6 +54,25 @@ def download_file_blob_to_dir(directory, file_blob):
     os.remove(file_destination)
 
 
+def move_downloaded_data_to_single_directory(directories):
+
+    for directory in directories:
+        if not os.path.isdir(directory + "train"):
+            os.makedirs(directory + "train")
+        if not os.path.isdir(directory + "val"):
+            os.makedirs(directory + "val")
+
+        folders = os.listdir(directory)
+        for folder in folders:
+            if folder != "train" and folder != "val":
+                if folder.startswith("train"):
+                    copy_tree(directory + folder, directory + "train")
+                    shutil.rmtree(directory + folder)
+                if folder.startswith("val"):
+                    copy_tree(directory + folder, directory + "val")
+                    shutil.rmtree(directory + folder)
+
+
 def download_training_objects_from_GC_bucket(func):
     """
     Decorator that generates directories. Once directories are generated, training and validation,
@@ -71,7 +91,6 @@ def download_training_objects_from_GC_bucket(func):
         labels_path = images_path.replace("images", "labels")
 
         directories = [images_path, labels_path]
-        print(directories)
 
         for directory in directories:
             if not os.path.isdir(directory):
@@ -83,12 +102,13 @@ def download_training_objects_from_GC_bucket(func):
         blobs = bucket.list_blobs()
 
         for blob in blobs:
-            if blob.name.startswith("images/"):
+            if blob.name.startswith("images/") and blob.name.endswith(".zip"):
                 download_file_blob_to_dir(images_path, blob)
 
-            elif blob.name.startswith("labels/"):
+            elif blob.name.startswith("labels/") and blob.name.endswith(".zip"):
                 download_file_blob_to_dir(labels_path, blob)
 
+        move_downloaded_data_to_single_directory(directories)
         func(data_dict)
 
     return get_bucket_objects
