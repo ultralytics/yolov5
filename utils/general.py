@@ -10,7 +10,6 @@ import time
 from contextlib import contextmanager
 from copy import copy
 from pathlib import Path
-from distutils.dir_util import copy_tree
 
 import cv2
 import matplotlib
@@ -66,10 +65,14 @@ def move_downloaded_data_to_single_directory(directories):
         for folder in folders:
             if folder != "train" and folder != "val":
                 if folder.startswith("train"):
-                    copy_tree(directory + folder, directory + "train")
+                    shutil.copytree(
+                        directory + folder, directory + "train", dirs_exist_ok=True
+                    )
                     shutil.rmtree(directory + folder)
                 if folder.startswith("val"):
-                    copy_tree(directory + folder, directory + "val")
+                    shutil.copytree(
+                        directory + folder, directory + "val", dirs_exist_ok=True
+                    )
                     shutil.rmtree(directory + folder)
 
 
