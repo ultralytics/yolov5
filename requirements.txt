@@ -1,27 +1,45 @@
-# pip install -r requirements.txt
-
-# base ----------------------------------------
-Cython
-matplotlib>=3.2.2
-numpy>=1.18.5
-opencv-python>=4.1.2
-pillow
-PyYAML>=5.3
-scipy>=1.4.1
-tensorboard>=2.2
-torch>=1.6.0
-torchvision>=0.7.0
-tqdm>=4.41.0
-
-# coco ----------------------------------------
-# pycocotools>=2.0
-
-# export --------------------------------------
-# packaging  # for coremltools
-# coremltools==4.0b3
-# onnx>=1.7.0
-# scikit-learn==0.19.2  # for coreml quantization
-
-# extras --------------------------------------
-# thop  # FLOPS computation
-# seaborn  # plotting
+absl-py==0.10.0
+cachetools==4.1.1
+certifi==2020.6.20
+cffi==1.14.2
+chardet==3.0.4
+cycler==0.10.0
+Cython==0.29.21
+future==0.18.2
+google-api-core==1.22.2
+google-auth==1.21.1
+google-auth-oauthlib==0.4.1
+google-cloud-core==1.4.1
+google-cloud-storage==1.31.0
+google-crc32c==1.0.0
+google-resumable-media==1.0.0
+googleapis-common-protos==1.52.0
+grpcio==1.32.0
+idna==2.10
+kiwisolver==1.2.0
+Markdown==3.2.2
+matplotlib==3.3.1
+numpy==1.19.1
+oauthlib==3.1.0
+opencv-python==4.4.0.42
+Pillow==7.2.0
+protobuf==3.13.0
+pyasn1==0.4.8
+pyasn1-modules==0.2.8
+pycparser==2.20
+pyparsing==2.4.7
+python-dateutil==2.8.1
+pytz==2020.1
+PyYAML==5.3.1
+requests==2.24.0
+requests-oauthlib==1.3.0
+rsa==4.6
+scipy==1.5.2
+six==1.15.0
+tensorboard==2.3.0
+tensorboard-plugin-wit==1.7.0
+torch==1.6.0
+torchvision==0.7.0
+tqdm==4.48.2
+urllib3==1.25.10
+Werkzeug==1.0.1
