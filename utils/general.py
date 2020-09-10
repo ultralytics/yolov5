@@ -53,7 +53,13 @@ def download_file_blob_to_dir(directory, file_blob):
     os.remove(file_destination)
 
 
-def move_downloaded_data_to_single_directory(directories):
+def simplify_dataset_path(directories):
+    """
+    If data is placed in different folders, this function makes sure
+    that they are gathered in one folder pr. type of data. An example of this could be
+    that the training images are spread out in multiple folders called "train1, train2, ... , trainN".
+    The function puts the data within all of the "train#" folders into one "train" folder.
+    """
 
     for directory in directories:
         if not os.path.isdir(directory + "train"):
@@ -63,7 +69,11 @@ def move_downloaded_data_to_single_directory(directories):
 
         folders = os.listdir(directory)
         for folder in folders:
-            if folder != "train" and folder != "val":
+            #: The data is currently within year-numerated folders. (ex. train2017)
+            #: There exists two folders called "train" and "val", where we want to copy the data to.
+            #: To avoid copying the data from "train" into "train", we use this if statement.
+            #: This way we only copy content from folders that starts with "train" but are not only colled train
+            if folder not in ["train", "val"]:
                 if folder.startswith("train"):
                     shutil.copytree(
                         directory + folder, directory + "train", dirs_exist_ok=True
@@ -111,7 +121,7 @@ def download_training_objects_from_GC_bucket(func):
             elif blob.name.startswith("labels/") and blob.name.endswith(".zip"):
                 download_file_blob_to_dir(labels_path, blob)
 
-        move_downloaded_data_to_single_directory(directories)
+        simplify_dataset_path(directories)
         func(data_dict)
 
     return get_bucket_objects
