@@ -69,21 +69,17 @@ def simplify_dataset_path(directories):
 
         folders = os.listdir(directory)
         for folder in folders:
-            #: The data is currently within year-numerated folders. (ex. train2017)
-            #: There exists two folders called "train" and "val", where we want to copy the data to.
-            #: To avoid copying the data from "train" into "train", we use this if statement.
-            #: This way we only copy content from folders that starts with "train" but are not only colled train
-            if folder not in ["train", "val"]:
-                if folder.startswith("train"):
-                    shutil.copytree(
-                        directory + folder, directory + "train", dirs_exist_ok=True
-                    )
-                    shutil.rmtree(directory + folder)
-                if folder.startswith("val"):
-                    shutil.copytree(
-                        directory + folder, directory + "val", dirs_exist_ok=True
-                    )
-                    shutil.rmtree(directory + folder)
+
+            if folder.startswith("train20"):
+                shutil.copytree(
+                    directory + folder, directory + "train", dirs_exist_ok=True
+                )
+                shutil.rmtree(directory + folder)
+            if folder.startswith("val20"):
+                shutil.copytree(
+                    directory + folder, directory + "val", dirs_exist_ok=True
+                )
+                shutil.rmtree(directory + folder)
 
 
 def download_training_objects_from_GC_bucket(func):
