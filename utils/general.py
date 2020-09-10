@@ -27,6 +27,7 @@ from utils.torch_utils import init_seeds as init_torch_seeds
 from utils.torch_utils import is_parallel
 
 from google.cloud import storage
+from zipfile import ZipFile
 
 # Set printoptions
 torch.set_printoptions(linewidth=320, precision=5, profile="long")
@@ -40,30 +41,16 @@ cv2.setNumThreads(0)
 
 #: Download objects
 def download_file_blob_to_dir(directory, file_blob):
-    file_name = file_blob.name.split("/")[2]
-    destination = Path(directory) / f"{file_name}"
-    destination.touch()
-    blob.download_to_filename(destination)
+    file_name = file_blob.name.split("/")[1]
+    file_directory = Path(directory)
+    file_destination = file_directory / f"{file_name}"
+    file_destination.touch()
 
+    file_blob.download_to_filename(file_destination)
 
-#: Copy GCS objects in their respective local directories
-def copy_object_from_GCS(local_directory, file_blob):
-    train_image_directory = local_directory[0]
-    train_label_directory = local_directory[1]
-    validation_image_directory = local_directory[2]
-    validation_label_directory = local_directory[3]
-
-    if file_blob.name.startswith("images/train") and file_blob.name.endswith(".jpg"):
-        download_file_blob_to_dir(train_image_directory, file_blobblob)
-
-    elif file_blob.name.startswith("labels/train") and file_blob.name.endswith(".txt"):
-        download_file_blob_to_dir(train_label_directory, file_blob)
-
-    elif file_blob.name.startswith("images/val") and file_blob.name.endswith(".jpg"):
-        download_file_blob_to_dir(validation_image_directory, file_blob)
-
-    elif file_blob.name.startswith("labels/val") and file_blob.name.endswith(".txt"):
-        download_file_blob_to_dir(validation_label_directory, file_blob)
+    with ZipFile(file_destination, "r") as zip_object:
+        zip_object.extractall(file_directory)
+    os.remove(file_destination)
 
 
 def download_training_objects_from_GC_bucket(func):
@@ -79,33 +66,28 @@ def download_training_objects_from_GC_bucket(func):
 
     def get_bucket_objects(data_dict):
         bucket_name = data_dict["bucket"]
+        train_path = data_dict["train"]
+        images_path = train_path.replace("train/", "")
+        labels_path = images_path.replace("images", "labels")
 
-        train_image_path = data_dict["train"]
-        val_image_path = train_image_path.replace("train", "val")
+        directories = [images_path, labels_path]
+        print(directories)
 
-        train_label_path = train_image_path.replace("image", "label")
-        val_label_path = val_image_path.replace("image", "label")
-
-        local_directories = [
-            train_image_path,
-            train_label_path,
-            val_image_path,
-            val_label_path,
-        ]
-
-        #: If no directories exists they will be generated
-        for directory in local_directories:
+        for directory in directories:
             if not os.path.isdir(directory):
                 os.makedirs(directory)
 
-        #: Get acces to google cloud bucket and the objects within
         storage_client = storage.Client()
         bucket = storage_client.get_bucket(bucket_name)
 
         blobs = bucket.list_blobs()
 
-        for file_blob in blobs:
-            copy_object_from_GCS(local_directories, file_blob)
+        for blob in blobs:
+            if blob.name.startswith("images/"):
+                download_file_blob_to_dir(images_path, blob)
+
+            elif blob.name.startswith("labels/"):
+                download_file_blob_to_dir(labels_path, blob)
 
         func(data_dict)
 
