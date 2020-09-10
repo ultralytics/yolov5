@@ -53,6 +53,35 @@ def download_file_blob_to_dir(directory, file_blob):
     os.remove(file_destination)
 
 
+def simplify_dataset_path(directories):
+    """
+    If data is placed in different folders, this function makes sure
+    that they are gathered in one folder pr. type of data. An example of this could be
+    that the training images are spread out in multiple folders called "train1, train2, ... , trainN".
+    The function puts the data within all of the "train#" folders into one "train" folder.
+    """
+
+    for directory in directories:
+        if not os.path.isdir(directory + "train"):
+            os.makedirs(directory + "train")
+        if not os.path.isdir(directory + "val"):
+            os.makedirs(directory + "val")
+
+        folders = os.listdir(directory)
+        for folder in folders:
+
+            if folder.startswith("train20"):
+                shutil.copytree(
+                    directory + folder, directory + "train", dirs_exist_ok=True
+                )
+                shutil.rmtree(directory + folder)
+            if folder.startswith("val20"):
+                shutil.copytree(
+                    directory + folder, directory + "val", dirs_exist_ok=True
+                )
+                shutil.rmtree(directory + folder)
+
+
 def download_training_objects_from_GC_bucket(func):
     """
     Decorator that generates directories. Once directories are generated, training and validation,
@@ -71,7 +100,6 @@ def download_training_objects_from_GC_bucket(func):
         labels_path = images_path.replace("images", "labels")
 
         directories = [images_path, labels_path]
-        print(directories)
 
         for directory in directories:
             if not os.path.isdir(directory):
@@ -83,12 +111,13 @@ def download_training_objects_from_GC_bucket(func):
         blobs = bucket.list_blobs()
 
         for blob in blobs:
-            if blob.name.startswith("images/"):
+            if blob.name.startswith("images/") and blob.name.endswith(".zip"):
                 download_file_blob_to_dir(images_path, blob)
 
-            elif blob.name.startswith("labels/"):
+            elif blob.name.startswith("labels/") and blob.name.endswith(".zip"):
                 download_file_blob_to_dir(labels_path, blob)
 
+        simplify_dataset_path(directories)
         func(data_dict)
 
     return get_bucket_objects
