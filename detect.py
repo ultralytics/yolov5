@@ -170,19 +170,7 @@ def detect(save_img=False):
         # Inference
         t1 = time_synchronized()
         if backend == 'pytorch':
-            def hook_wrapper(i):
-                def pytorch_hook(model, input, output):
-                    # print(model.__class__.__name__)
-                    np.save('./tensors/pytorch_%d_%s.npy' % (i, model.__class__.__name__), output.cpu().numpy())
-                return pytorch_hook
-
-            # for i, m in enumerate(model.model[:-1]):
-            #     m.register_forward_hook(hook_wrapper(i))
             pred = model(img, augment=opt.augment)[0]
-            # for i, m in enumerate(model(img, augment=opt.augment)[1]):
-            #     np.save('./pytorch_%d.npy' % i, m.cpu().numpy())
-
-            # np.save('./pytorch_out.npy', pred.cpu().numpy())
 
         elif backend == 'saved_model':
             if tf.__version__.startswith('1'):
@@ -192,19 +180,6 @@ def detect(save_img=False):
                 res = model(img.permute(0, 2, 3, 1).cpu().numpy(), training=False)
                 pred = res[0].numpy()
                 pred = torch.tensor(pred)
-                # inp = model.input
-                # outputs = [layer.output for layer in model.layers]
-                # layer_names = [layer.name for layer in model.layers]
-                # keras.backend.set_learning_phase(0)
-                # functors = [keras.backend.function([inp], out) for out in outputs]
-                # layer_outs = [func(img.permute(0, 2, 3, 1).cpu().numpy()) for func in functors]
-                # for l_name, l_out in zip(layer_names[:-1], layer_outs[:-1]):
-                #      np.save('./tensors/' + l_name + '.npy', l_out)
-
-                # for i, m in enumerate(res[1]):
-                #     np.save('./tf_%d.npy' % i, res[1][i].numpy())
-
-                # np.save('./tf_out.npy', res[0].numpy())
 
         elif backend == 'graph_def':
             if tf.__version__.startswith('1'):

@@ -55,7 +55,6 @@ class tf_Conv(keras.layers.Layer):
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
         assert isinstance(k, int), "Convolution with multiple kernels are not allowed."
 
-        # assert s == 1 or s == 2, "Paddings may need recomputation when s > 2"
         # TensorFlow convolution padding is inconsistent with PyTorch (e.g. k=3 s=2 'SAME' padding)
         # see https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
         if s == 1:
@@ -171,13 +170,9 @@ class tf_Detect(keras.layers.Layer):
         self.nl = len(anchors)  # number of detection layers
         self.na = len(anchors[0]) // 2  # number of anchors
         self.grid = [tf.zeros(1)] * self.nl  # init grid
-        # a = torch.tensor(anchors).float().view(self.nl, -1, 2)
         a = tf.reshape(tf.convert_to_tensor(anchors, dtype=tf.float32), [self.nl, -1 ,2])
-        # self.register_buffer('anchors', a)  # shape(nl,na,2)
-        # self.register_buffer('anchor_grid', a.clone().view(self.nl, 1, -1, 1, 1, 2))  # shape(nl,1,na,1,1,2)
         self.anchors = tf.Variable(a, trainable=False)
         self.anchor_grid = tf.reshape(tf.Variable(a, trainable=False), [self.nl, 1, -1, 1, 2])
-        # self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
         self.m = [tf_Conv2d(x, self.no * self.na, 1, w=w.m[i]) for i, x in enumerate(ch)]
         self.export = False  # onnx export
         self.training = True # set to False after building model
@@ -193,16 +188,10 @@ class tf_Detect(keras.layers.Layer):
         for i in range(self.nl):
             x.append(self.m[i](inputs[i]))
             # x(bs,20,20,255) to x(bs,3,20,20,85)
-            # bs, ny, nx = tf.shape(x[i])[0], tf.shape(x[i])[1], tf.shape(x[i])[2]
             ny, nx = opt.img_size[0] // self.stride[i], opt.img_size[1] // self.stride[i]
             x[i] = tf.transpose(tf.reshape(x[i], [-1, ny * nx, self.na, self.no]), [0, 2, 1, 3])
 
             if not self.training:  # inference
-                # Avoid Range and Size op
-                # if self.grid[i].shape[2:4] != x[i].shape[2:4]:
-                #     self.grid[i] = self._make_grid(nx, ny)
-
-                # Avoid item assignment
                 y = tf.sigmoid(x[i])
                 xy = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
                 squared = 4 * y[..., 2:4] * y[..., 2:4]
@@ -283,10 +272,7 @@ def parse_model(d, ch, model):  # model_dict, input_channels(3)
 
         torch_m_ = nn.Sequential(*[m(*args) for _ in range(n)]) if n > 1 else m(*args)  # module
         t = str(m)[8:-2].replace('__main__.', '')  # module type
-        # t = str(m)
         np = sum([x.numel() for x in torch_m_.parameters()])  # number params
-        # np = sum([x.size for x in m_.get_weights()])  # number params
-        # Cannot get np before building keras.Sequential
         m_.i, m_.f, m_.type, m_.np = i, f, t, np  # attach index, 'from' index, type, number params
         logger.info('%3s%18s%3s%10.0f  %-40s%-30s' % (i, f, n, np, t, args))  # print
         save.extend(x % i for x in ([f] if isinstance(f, int) else f) if x != -1)  # append to savelist
@@ -362,8 +348,6 @@ class tf_Model():
                 print('%10.1f%10.0f%10.1fms %-40s' % (o, m.np, dt[-1], m.type))
 
             x = m(x)  # run
-            # print('%d %s output ' % (i, m))
-            # print('x.shape', x.shape)
             y.append(x if m.i in self.savelist else None)  # save output
 
         if profile:
@@ -385,7 +369,6 @@ if __name__ == "__main__":
     img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size(1,3,320,192) iDetection
 
     # Load PyTorch model
-    # google_utils.attempt_download(opt.weights)
     model = torch.load(opt.weights, map_location=torch.device('cpu'))['model'].float()
     model.eval()
     model.model[-1].export = False  # set Detect() layer export=True
