@@ -16,6 +16,10 @@ from utils.general import (
     xyxy2xywh, plot_one_box, strip_optimizer, set_logging)
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
+import tensorflow as tf
+from tensorflow import keras
+import numpy as np
+
 
 def detect(save_img=False):
     out, source, weights, view_img, save_txt, imgsz = \
@@ -31,9 +35,82 @@ def detect(save_img=False):
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
-    model = attempt_load(weights, map_location=device)  # load FP32 model
-    imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
-    if half:
+    if weights[0].split('.')[-1] == 'pt':
+        backend = 'pytorch'
+    elif weights[0].split('.')[-1] == 'pb':
+        backend = 'graph_def'
+    elif weights[0].split('.')[-1] == 'tflite':
+        backend = 'tflite'
+    else:
+        backend = 'saved_model'
+
+    if backend == 'pytorch':
+        model = attempt_load(weights, map_location=device)  # load FP32 model
+    elif backend == 'saved_model':
+        if tf.__version__.startswith('1'):
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth=True
+            sess = tf.Session(config=config)
+            loaded = tf.saved_model.load(sess, [tf.saved_model.tag_constants.SERVING], weights[0])
+            tf_input = loaded.signature_def['serving_default'].inputs['input_1']
+            tf_output = loaded.signature_def['serving_default'].outputs['tf__detect']
+        else:
+            model = keras.models.load_model(weights[0])
+    elif backend == 'graph_def':
+        if tf.__version__.startswith('1'):
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth=True
+            sess = tf.Session(config=config)
+            graph = tf.Graph()
+            graph_def = graph.as_graph_def()
+            graph_def.ParseFromString(open(weights[0], 'rb').read())
+            tf.import_graph_def(graph_def, name='')
+            default_graph = tf.get_default_graph()
+            tf_input = default_graph.get_tensor_by_name('x:0')
+            tf_output = default_graph.get_tensor_by_name('Identity:0')
+        else:
+            # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
+            # https://github.com/leimao/Frozen_Graph_TensorFlow
+            def wrap_frozen_graph(graph_def, inputs, outputs, print_graph=False):
+                def _imports_graph_def():
+                    tf.compat.v1.import_graph_def(graph_def, name="")
+
+                wrapped_import = tf.compat.v1.wrap_function(_imports_graph_def, [])
+                import_graph = wrapped_import.graph
+
+                if print_graph == True:
+                    print("-" * 50)
+                    print("Frozen model layers: ")
+                    layers = [op.name for op in import_graph.get_operations()]
+                    for layer in layers:
+                        print(layer)
+                    print("-" * 50)
+
+                return wrapped_import.prune(
+                    tf.nest.map_structure(import_graph.as_graph_element, inputs),
+                    tf.nest.map_structure(import_graph.as_graph_element, outputs))
+
+            graph = tf.Graph()
+            graph_def = graph.as_graph_def()
+            graph_def.ParseFromString(open(weights[0], 'rb').read())
+            frozen_func = wrap_frozen_graph(graph_def=graph_def,
+                                            inputs="x:0",
+                                            outputs="Identity:0",
+                                            print_graph=False)
+
+    elif backend == 'tflite':
+        # Load TFLite model and allocate tensors.
+        interpreter = tf.lite.Interpreter(model_path=opt.weights[0])
+        interpreter.allocate_tensors()
+
+        # Get input and output tensors.
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+
+    if backend == 'pytorch':
+        imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
+
+    if half and backend == 'pytorch':
         model.half()  # to FP16
 
     # Second-stage classifier
@@ -48,19 +125,41 @@ def detect(save_img=False):
     if webcam:
         view_img = True
         cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(source, img_size=imgsz)
+        dataset = LoadStreams(source, img_size=imgsz, auto=True if backend == 'pytorch' else False)
     else:
         save_img = True
-        dataset = LoadImages(source, img_size=imgsz)
+        dataset = LoadImages(source, img_size=imgsz, auto=True if backend == 'pytorch' else False)
 
     # Get names and colors
-    names = model.module.names if hasattr(model, 'module') else model.names
+    if backend == 'pytorch':
+        names = model.module.names if hasattr(model, 'module') else model.names
+    # Assume using COCO labels
+    else:
+        names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
+
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
 
     # Run inference
     t0 = time.time()
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
-    _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
+    if backend == 'pytorch':
+        _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
+    elif backend == 'saved_model':
+        if tf.__version__.startswith('1'):
+            _ = sess.run(tf_output.name, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+        else:
+            _ = model(img.permute(0, 2, 3, 1).cpu().numpy(), training=False)
+    elif backend == 'graph_def':
+        if tf.__version__.startswith('1'):
+            _ = sess.run(tf_output.name, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+        else:
+            _ = frozen_func(x=tf.constant(img.permute(0, 2, 3, 1).cpu().numpy()))
+    elif backend == 'tflite':
+        input_data = img.permute(0, 2, 3, 1).cpu().numpy()
+        interpreter.set_tensor(input_details[0]['index'], input_data)
+        interpreter.invoke()
+        output_data = interpreter.get_tensor(output_details[0]['index'])
+
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -70,7 +169,58 @@ def detect(save_img=False):
 
         # Inference
         t1 = time_synchronized()
-        pred = model(img, augment=opt.augment)[0]
+        if backend == 'pytorch':
+            def hook_wrapper(i):
+                def pytorch_hook(model, input, output):
+                    # print(model.__class__.__name__)
+                    np.save('./tensors/pytorch_%d_%s.npy' % (i, model.__class__.__name__), output.cpu().numpy())
+                return pytorch_hook
+
+            # for i, m in enumerate(model.model[:-1]):
+            #     m.register_forward_hook(hook_wrapper(i))
+            pred = model(img, augment=opt.augment)[0]
+            # for i, m in enumerate(model(img, augment=opt.augment)[1]):
+            #     np.save('./pytorch_%d.npy' % i, m.cpu().numpy())
+
+            # np.save('./pytorch_out.npy', pred.cpu().numpy())
+
+        elif backend == 'saved_model':
+            if tf.__version__.startswith('1'):
+                pred = sess.run(tf_output.name, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+                pred = torch.tensor(pred)
+            else:
+                res = model(img.permute(0, 2, 3, 1).cpu().numpy(), training=False)
+                pred = res[0].numpy()
+                pred = torch.tensor(pred)
+                # inp = model.input
+                # outputs = [layer.output for layer in model.layers]
+                # layer_names = [layer.name for layer in model.layers]
+                # keras.backend.set_learning_phase(0)
+                # functors = [keras.backend.function([inp], out) for out in outputs]
+                # layer_outs = [func(img.permute(0, 2, 3, 1).cpu().numpy()) for func in functors]
+                # for l_name, l_out in zip(layer_names[:-1], layer_outs[:-1]):
+                #      np.save('./tensors/' + l_name + '.npy', l_out)
+
+                # for i, m in enumerate(res[1]):
+                #     np.save('./tf_%d.npy' % i, res[1][i].numpy())
+
+                # np.save('./tf_out.npy', res[0].numpy())
+
+        elif backend == 'graph_def':
+            if tf.__version__.startswith('1'):
+                pred = sess.run(tf_output.name, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+                pred = torch.tensor(pred)
+            else:
+                pred = frozen_func(x=tf.constant(img.permute(0, 2, 3, 1).cpu().numpy()))
+                pred = torch.tensor(pred.numpy())
+
+        elif backend == 'tflite':
+            input_data = img.permute(0, 2, 3, 1).cpu().numpy()
+            interpreter.set_tensor(input_details[0]['index'], input_data)
+            interpreter.invoke()
+            output_data = interpreter.get_tensor(output_details[0]['index'])
+            pred = torch.tensor(output_data)
+
 
         # Apply NMS
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
