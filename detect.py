@@ -8,6 +8,7 @@ import cv2
 import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
+import numpy as np
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
@@ -15,10 +16,6 @@ from utils.general import (
     check_img_size, non_max_suppression, apply_classifier, scale_coords,
     xyxy2xywh, plot_one_box, strip_optimizer, set_logging)
 from utils.torch_utils import select_device, load_classifier, time_synchronized
-
-import tensorflow as tf
-from tensorflow import keras
-import numpy as np
 
 
 def detect(save_img=False):
@@ -43,6 +40,10 @@ def detect(save_img=False):
         backend = 'tflite'
     else:
         backend = 'saved_model'
+
+    if backend == 'saved_model' or backend =='graph_def' or backend=='tflite':
+       import tensorflow as tf
+       from tensorflow import keras
 
     if backend == 'pytorch':
         model = attempt_load(weights, map_location=device)  # load FP32 model
