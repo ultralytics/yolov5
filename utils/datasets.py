@@ -364,7 +364,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         # Define labels
         sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
-        self.label_files = [sb.join(x.rsplit(sa, 1)).replace(os.path.splitext(x)[-1], '.txt') for x in self.img_files]
+        self.label_files = [x.replace(sa, sb, 1).replace(os.path.splitext(x)[-1], '.txt') for x in self.img_files]
 
         # Check cache
         cache_path = str(Path(self.label_files[0]).parent) + '.cache'  # cached labels
