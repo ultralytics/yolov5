@@ -12,6 +12,9 @@ lr0: 0.0032
 lrf: 0.12
 momentum: 0.843
 weight_decay: 0.00036
+warmup_epochs: 2.0
+warmup_momentum: 0.5
+warmup_bias_lr: 0.05
 giou: 0.0296
 cls: 0.243
 cls_pw: 0.631
@@ -31,4 +34,5 @@ shear: 0.602
 perspective: 0.0
 flipud: 0.00856
 fliplr: 0.5
+mosaic: 1.0
 mixup: 0.243
