@@ -78,7 +78,7 @@ class tf_Conv(keras.layers.Layer):
         if isinstance(w.act, nn.LeakyReLU):
             self.act = (lambda x: keras.activations.relu(x, alpha=0.1)) if act else tf.identity
         elif isinstance(w.act, nn.Hardswish): 
-            self.act = (lambda x: x * tf.nn.relu6(x+3) / 6) if act else tf.identity
+            self.act = (lambda x: x * tf.nn.relu6(x+3) * 0.166666667) if act else tf.identity
 
     def call(self, inputs):
         return self.act(self.bn(self.conv(inputs)))
