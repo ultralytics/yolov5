@@ -12,8 +12,6 @@ from pathlib import Path
 import platform
 
 import cv2
-import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -28,7 +26,6 @@ from yolov5.utils.torch_utils import init_seeds, is_parallel
 # Set printoptions
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
 np.set_printoptions(linewidth=320, formatter={'float_kind': '{:11.5g}'.format})  # format short g, %precision=5
-matplotlib.rc('font', **{'size': 11})
 
 # Prevent OpenCV from multithreading (to use PyTorch DataLoader)
 cv2.setNumThreads(0)
@@ -1200,7 +1197,6 @@ def plot_evolution(yaml_file='runs/evolve/hyp_evolved.yaml'):  # from utils.gene
     f = fitness(x)
     # weights = (f - f.min()) ** 2  # for weighted results
     plt.figure(figsize=(10, 10), tight_layout=True)
-    matplotlib.rc('font', **{'size': 8})
     for i, (k, v) in enumerate(hyp.items()):
         y = x[:, i + 7]
         # mu = (y * weights).sum() / weights.sum()  # best weighted result
