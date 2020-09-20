@@ -7,7 +7,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat
+from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat, NMS
 from models.experimental import MixConv2d, CrossConv, C3
 from utils.general import check_anchor_order, make_divisible, check_file, set_logging
 from utils.torch_utils import (
@@ -166,6 +166,15 @@ class Model(nn.Module):
                 delattr(m, 'bn')  # remove batchnorm
                 m.forward = m.fuseforward  # update forward
         self.info()
+        return self
+
+    def add_nms(self):  # fuse model Conv2d() + BatchNorm2d() layers
+        if type(self.model[-1]) is not NMS:  # if missing NMS
+            print('Adding NMS module... ')
+            m = NMS()  # module
+            m.f = -1  # from
+            m.i = self.model[-1].i + 1  # index
+            self.model.add_module(name='%s' % m.i, module=m)  # add
         return self
 
     def info(self, verbose=False):  # print model information

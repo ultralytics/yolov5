@@ -37,10 +37,7 @@ def create(name, pretrained, channels, classes):
             state_dict = {k: v for k, v in state_dict.items() if model.state_dict()[k].shape == v.shape}  # filter
             model.load_state_dict(state_dict, strict=False)  # load
 
-            m = NMS()
-            m.f = -1  # from
-            m.i = model.model[-1].i + 1  # index
-            model.model.add_module(name='%s' % m.i, module=m)  # add NMS
+            model.add_nms()  # add NMS module
             model.eval()
         return model
 
