@@ -194,8 +194,7 @@ class tf_Detect(keras.layers.Layer):
             if not self.training:  # inference
                 y = tf.sigmoid(x[i])
                 xy = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
-                squared = 4 * y[..., 2:4] * y[..., 2:4]
-                wh = squared * self.anchor_grid[i]  # wh
+                wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]
                 y = tf.concat([xy, wh, y[..., 4:]], -1)
                 z.append(tf.reshape(y, [opt.batch_size, 3 * ny * nx, self.no]))
 
@@ -361,6 +360,7 @@ if __name__ == "__main__":
     parser.add_argument('--weights', type=str, default='./weights/yolov5s.pt', help='weights path')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
+    parser.add_argument('--no-tfl-detect', action='store_true', dest='no_tfl_detect', help='Remove Detect module in TFLite model')
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
@@ -421,6 +421,10 @@ if __name__ == "__main__":
     # TFLite model export
     try:
         print('\nStarting TFLite export with TensorFlow %s...' % tf.__version__)
+        if opt.no_tfl_detect:
+            print("Don't export Detect module")
+            m.training = True
+            keras_model = keras.Model(inputs=inputs, outputs=tf_model.predict(inputs))
         converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
         converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
         converter.allow_custom_ops = False
