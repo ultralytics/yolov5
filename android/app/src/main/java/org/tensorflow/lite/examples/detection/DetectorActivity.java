@@ -53,12 +53,6 @@ import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
 public class DetectorActivity extends CameraActivity implements OnImageAvailableListener {
     private static final Logger LOGGER = new Logger();
 
-//    private static final int TF_OD_API_INPUT_SIZE = 224;
-//    private static final boolean TF_OD_API_IS_QUANTIZED = false;
-//    private static final String TF_OD_API_MODEL_FILE = "yolov3.tflite";
-
-//    private static final String TF_OD_API_LABELS_FILE = "file:///android_asset/coco.txt";
-
     private static final DetectorMode MODE = DetectorMode.TF_OD_API;
     private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.3f;
     private static final boolean MAINTAIN_ASPECT = true;
@@ -101,13 +95,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         try {
             detector = DetectorFactory.getDetector(getAssets(), modelString);
-//            detector =
-//                    YoloV4Classifier.create(
-//                            getAssets(),
-//                            TF_OD_API_MODEL_FILE,
-//                            TF_OD_API_LABELS_FILE,
-//                            TF_OD_API_IS_QUANTIZED);
-//            cropSize = TF_OD_API_INPUT_SIZE;
         } catch (final IOException e) {
             e.printStackTrace();
             LOGGER.e(e, "Exception initializing classifier!");

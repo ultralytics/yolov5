@@ -6,9 +6,6 @@ buildscript {
         google()
         jcenter()
 //        mavenLocal()
-//        flatDir {
-//            dirs 'lib'
-//        }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.5.0'
@@ -24,9 +21,6 @@ allprojects {
         google()
         jcenter()
 //        mavenLocal()
-//        flatDir {
-//            dirs 'lib'
-//        }
     }
 }
 

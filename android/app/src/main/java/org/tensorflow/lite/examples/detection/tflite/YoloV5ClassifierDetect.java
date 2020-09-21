@@ -351,10 +351,7 @@ public class YoloV5ClassifierDetect implements Classifier {
         ByteBuffer byteBuffer = convertBitmapToByteBuffer(bitmap);
 
         Map<Integer, Object> outputMap = new HashMap<>();
-//        for (int i = 0; i < OUTPUT_WIDTH.length; i++) {
-//            float[][][][][] out = new float[1][OUTPUT_WIDTH[i]][OUTPUT_WIDTH[i]][3][5 + labels.size()];
-//            outputMap.put(i, out);
-//        }
+
         for (int i = 0; i < OUTPUT_WIDTH.length; i++) {
             float[][][][] out = new float[1][3][OUTPUT_WIDTH[i] * OUTPUT_WIDTH[i]][5 + labels.size()];
             outputMap.put(i, out);
@@ -380,7 +377,6 @@ public class YoloV5ClassifierDetect implements Classifier {
                                         + (NUM_BOXES_PER_BLOCK * (labels.size() + 5)) * x
                                         + (labels.size() + 5) * b;
 
-//                        final float confidence = expit(out[0][y * gridWidth + x][b][4]);
                         final float confidence = expit(out[0][b][y * gridWidth + x][4]);
                         int detectedClass = -1;
                         float maxClass = 0;
@@ -399,9 +395,6 @@ public class YoloV5ClassifierDetect implements Classifier {
 
                         final float confidenceInClass = maxClass * confidence;
                         if (confidenceInClass > getObjThresh()) {
-//                            final float xPos = (x + (expit(out[0][y][x][b][0]) * XYSCALE[i]) - (0.5f * (XYSCALE[i] - 1))) * (INPUT_SIZE / gridWidth);
-//                            final float yPos = (y + (expit(out[0][y][x][b][1]) * XYSCALE[i]) - (0.5f * (XYSCALE[i] - 1))) * (INPUT_SIZE / gridWidth);
-
                             final float xPos = (x + expit(out[0][b][y * gridWidth + x][0]) * 2.f - 0.5f) * (1.0f * INPUT_SIZE / gridWidth);
                             final float yPos = (y + expit(out[0][b][y * gridWidth + x][1]) * 2.f - 0.5f) * (1.0f * INPUT_SIZE / gridWidth);
 

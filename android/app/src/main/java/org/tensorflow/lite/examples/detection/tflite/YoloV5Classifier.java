@@ -67,10 +67,7 @@ public class YoloV5Classifier implements Classifier {
             final String modelFilename,
             final String labelFilename,
             final boolean isQuantized,
-            final int inputSize
-            /*final int[] output_width,
-            final int[][] masks,
-            final int[] anchors*/)
+            final int inputSize)
             throws IOException {
         final YoloV5Classifier d = new YoloV5Classifier();
 
@@ -126,9 +123,7 @@ public class YoloV5Classifier implements Classifier {
         d.intValues = new int[d.INPUT_SIZE * d.INPUT_SIZE];
         d.INPUT_SIZE = inputSize;
         d.output_box = (int) ((Math.pow((inputSize / 32), 2) + Math.pow((inputSize / 16), 2) + Math.pow((inputSize / 8), 2)) * 3);
-//        d.OUTPUT_WIDTH = output_width;
-//        d.MASKS = masks;
-//        d.ANCHORS = anchors;
+
         return d;
     }
 
@@ -208,9 +203,6 @@ public class YoloV5Classifier implements Classifier {
     //config yolo
     private int INPUT_SIZE = -1;
 
-//    private int[] OUTPUT_WIDTH;
-//    private int[][] MASKS;
-//    private int[] ANCHORS;
     private  int output_box;
 
     private static final float[] XYSCALE = new float[]{1.2f, 1.1f, 1.05f};

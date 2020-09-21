@@ -41,8 +41,6 @@ project.ext.TMP_DIR = project.buildDir.toString() + '/downloads'
 // place them in the "assets" directory and comment out this line.
 //apply from: "download_model.gradle"
 
-//apply from: 'download_model.gradle'
-
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.coordinatorlayout:coordinatorlayout:1.1.0'
