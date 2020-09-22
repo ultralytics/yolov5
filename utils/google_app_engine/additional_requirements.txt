@@ -1,6 +1,4 @@
 # add these requirements in your app on top of the existing ones
 pip==18.1
 Flask==1.0.2
-pandas==0.23.4
-xlrd==1.2.0
 gunicorn==19.9.0
