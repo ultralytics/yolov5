@@ -1,9 +1,12 @@
 # This file contains modules common to various models
 import math
 
+import numpy as np
 import torch
 import torch.nn as nn
-from utils.general import non_max_suppression
+
+from utils.datasets import letterbox
+from utils.general import non_max_suppression, make_divisible, scale_coords
 
 
 def autopad(k, p=None):  # kernel, padding
@@ -101,15 +104,35 @@ class Concat(nn.Module):
 
 class NMS(nn.Module):
     # Non-Maximum Suppression (NMS) module
-    conf = 0.3  # confidence threshold
-    iou = 0.6  # IoU threshold
+    conf = 0.25  # confidence threshold
+    iou = 0.45  # IoU threshold
     classes = None  # (optional list) filter by class
 
-    def __init__(self, dimension=1):
+    def __init__(self):
         super(NMS, self).__init__()
 
     def forward(self, x):
         return non_max_suppression(x[0], conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)
+
+
+class autoShape(nn.Module):
+    # auto-reshape image size model wrapper
+    img_size = 640  # inference size (pixels)
+
+    def __init__(self, model):
+        super(autoShape, self).__init__()
+        self.model = model
+
+    def forward(self, x, shape=640, augment=False, profile=False):  # x = cv2.imread('img.jpg')
+        x0shape = x.shape[:2]
+        p = next(self.model.parameters())
+        x, ratio, (dw, dh) = letterbox(x, new_shape=make_divisible(shape or max(x0shape), int(self.stride.max())))
+        x1shape = x.shape[:2]
+        x = np.ascontiguousarray(x[:, :, ::-1].transpose(2, 0, 1))  # BGR to RGB, to 3x640x640
+        x = torch.from_numpy(x).to(p.device).type_as(p).unsqueeze(0) / 255.  # uint8 to fp16/32
+        x = self.model(x, augment, profile)  # forward
+        x[0][:, :4] = scale_coords(x1shape, x[0][:, :4], x0shape)
+        return x
 
 
 class Flatten(nn.Module):
