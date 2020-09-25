@@ -36,9 +36,7 @@ def create(name, pretrained, channels, classes):
             state_dict = torch.load(ckpt, map_location=torch.device('cpu'))['model'].float().state_dict()  # to FP32
             state_dict = {k: v for k, v in state_dict.items() if model.state_dict()[k].shape == v.shape}  # filter
             model.load_state_dict(state_dict, strict=False)  # load
-
-            model.add_nms()  # add NMS module
-            model.eval()
+            # model = model.autoshape()  # cv2/PIL/np inference:  predictions = model(cv2.imread('img.jpg'))
         return model
 
     except Exception as e:
