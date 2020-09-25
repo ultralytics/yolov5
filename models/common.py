@@ -1,6 +1,6 @@
 # This file contains modules common to various models
-import math
 
+import math
 import numpy as np
 import torch
 import torch.nn as nn
@@ -116,38 +116,53 @@ class NMS(nn.Module):
 
 
 class autoShape(nn.Module):
-    # auto-reshape input image model wrapper
+    # input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS
     img_size = 640  # inference size (pixels)
+    conf = 0.25  # NMS confidence threshold
+    iou = 0.45  # NMS IoU threshold
+    classes = None  # (optional list) filter by class
 
     def __init__(self, model):
         super(autoShape, self).__init__()
         self.model = model
 
-    def forward(self, x, shape=640, augment=False, profile=False):
-        # x is cv2/np/PIL RGB image, or list of images for batched inference, i.e. x = Image.open('image.jpg')
+    def forward(self, x, size=640, augment=False, profile=False):
+        # supports inference from various sources. For height=720, width=1280, RGB images example inputs are:
+        #   opencv:     x = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(720,1280,3)
+        #   PIL:        x = Image.open('image.jpg')  # HWC x(720,1280,3)
+        #   numpy:      x = np.zeros((720,1280,3))  # HWC
+        #   torch:      x = torch.zeros(16,3,720,1280)  # BCHW
+        #   multiple:   x = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
+
         p = next(self.model.parameters())  # for device and type
+        if isinstance(x, torch.Tensor):  # torch
+            return self.model(x.to(p.device).type_as(p), augment, profile)  # inference
+
+        # Pre-process
         if not isinstance(x, list):
             x = [x]
-        batch = range(len(x))  # batch size
-
         shape0, shape1 = [], []  # image and inference shapes
+        batch = range(len(x))  # batch size
         for i in batch:
             x[i] = np.array(x[i])[:, :, :3]  # up to 3 channels if png
             s = x[i].shape[:2]  # HWC
             shape0.append(s)  # image shape
-            g = (shape / max(s))  # gain
+            g = (size / max(s))  # gain
             shape1.append([y * g for y in s])
         shape1 = [make_divisible(x, int(self.stride.max())) for x in np.stack(shape1, 0).max(0)]  # inference shape
-
         x = [letterbox(x[i], new_shape=shape1, auto=False)[0] for i in batch]  # pad
         x = np.stack(x, 0) if batch[-1] else x[0][None]  # stack
         x = np.ascontiguousarray(x.transpose((0, 3, 1, 2)))  # BHWC to BCHW
         x = torch.from_numpy(x).to(p.device).type_as(p) / 255.  # uint8 to fp16/32
 
+        # Inference
         x = self.model(x, augment, profile)  # forward
+        x = non_max_suppression(x[0], conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)  # NMS
 
+        # Post-process
         for i in batch:
-            x[i][:, :4] = scale_coords(shape1, x[i][:, :4], shape0[i])  # postprocess
+            if x[i] is not None:
+                x[i][:, :4] = scale_coords(shape1, x[i][:, :4], shape0[i])
         return x
 
 
