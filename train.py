@@ -6,6 +6,7 @@ import random
 import shutil
 import time
 from pathlib import Path
+from pprint import pprint
 
 import numpy as np
 import torch.distributed as dist
@@ -207,7 +208,8 @@ def train(hyp, opt, device, tb_writer=None):
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
-    logger.info('Image sizes %g train, %g test\nUsing %g dataloader workers\nLogging results to %s\n'
+    logger.info('Image sizes %g train, %g test\n'
+                'Using %g dataloader workers\nLogging results to %s\n'
                 'Starting training for %g epochs...' % (imgsz, imgsz_test, dataloader.num_workers, log_dir, epochs))
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
@@ -440,7 +442,7 @@ if __name__ == '__main__':
         assert opt.batch_size % opt.world_size == 0, '--batch-size must be multiple of CUDA device count'
         opt.batch_size = opt.total_batch_size // opt.world_size
 
-    logger.info(opt)
+    pprint(vars(opt))
     with open(opt.hyp) as f:
         hyp = yaml.load(f, Loader=yaml.FullLoader)  # load hyps
 
@@ -448,7 +450,7 @@ if __name__ == '__main__':
     if not opt.evolve:
         tb_writer = None
         if opt.global_rank in [-1, 0]:
-            logger.info('Start Tensorboard with "tensorboard --logdir %s", view at http://localhost:6006/' % opt.logdir)
+            logger.info(f'Start Tensorboard with "tensorboard --logdir {opt.logdir}", view at http://localhost:6006/')
             tb_writer = SummaryWriter(log_dir=log_dir)  # runs/exp0
 
         train(hyp, opt, device, tb_writer)
@@ -470,7 +472,8 @@ if __name__ == '__main__':
                 'obj_pw': (1, 0.5, 2.0),  # obj BCELoss positive_weight
                 'iou_t': (0, 0.1, 0.7),  # IoU training threshold
                 'anchor_t': (1, 2.0, 8.0),  # anchor-multiple threshold
-                'anchors': (2, 2.0, 10.0),  # anchors per output grid (0 to ignore)
+                # temp fix for https://github.com/ultralytics/yolov5/issues/607#issuecomment-692589883
+                # 'anchors': (2, 2.0, 10.0),  # anchors per output grid (0 to ignore)
                 'fl_gamma': (0, 0.0, 2.0),  # focal loss gamma (efficientDet default gamma=1.5)
                 'hsv_h': (1, 0.0, 0.1),  # image HSV-Hue augmentation (fraction)
                 'hsv_s': (1, 0.0, 0.9),  # image HSV-Saturation augmentation (fraction)
@@ -532,5 +535,5 @@ if __name__ == '__main__':
 
         # Plot results
         plot_evolution(yaml_file)
-        print('Hyperparameter evolution complete. Best results saved as: %s\nCommand to train a new model with these '
-              'hyperparameters: $ python train.py --hyp %s' % (yaml_file, yaml_file))
+        print(f'Hyperparameter evolution complete. Best results saved as: {yaml_file}\n'
+              f'Command to train a new model with these hyperparameters: $ python train.py --hyp {yaml_file}')
