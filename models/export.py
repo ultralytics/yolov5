@@ -9,6 +9,9 @@ import argparse
 import torch
 import torch.nn as nn
 
+import sys
+sys.path.append('./')
+
 import models
 from models.experimental import attempt_load
 from utils.activations import Hardswish
