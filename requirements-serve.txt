@@ -4,8 +4,6 @@ matplotlib==3.3.0
 numpy==1.19.1
 opencv-python-headless==4.4.0.44
 pandas==1.0.3
-scikit-image==0.15.0
-scikit-learn==0.23.1
 flask==1.1.2
 gunicorn==19.9.0
 torch==1.6.0

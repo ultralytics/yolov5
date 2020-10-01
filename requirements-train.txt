@@ -1,9 +1,14 @@
 bdrk==0.3.2
+boto3==1.15.9
+botocore==1.18.9
 numpy==1.19.1
 opencv-python-headless==4.4.0.44
 pandas==1.0.3
-scikit-image==0.15.0
-scikit-learn==0.23.1
 s3fs==0.3.5
 torch==1.6.0
 torchvision==0.7.0
+pillow
+PyYAML>=5.3
+scipy>=1.4.1
+matplotlib==3.3.0
+tqdm>=4.41.0
