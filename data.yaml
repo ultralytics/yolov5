@@ -1,0 +1,5 @@
+train: ./img_data/train/images
+val: ./img_data/valid/images
+
+nc: 3
+names: ['Crab', 'Lobster', 'Shrimp']
