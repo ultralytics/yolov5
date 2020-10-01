@@ -11,4 +11,5 @@ pillow
 PyYAML>=5.3
 scipy>=1.4.1
 matplotlib==3.3.0
+tensorboard>=2.2
 tqdm>=4.41.0
