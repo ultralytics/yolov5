@@ -2,7 +2,7 @@ version = "1.0"
 
 train {
     step train {
-        image = "basisai/workload-standard:v0.2.1"
+        image = "tensorflow/tensorflow:2.3.1-gpu"
         install = [
             "pip3 install --upgrade pip",
             "pip3 install -r requirements-train.txt",
@@ -20,6 +20,7 @@ train {
         DATA_DIR = "shellfish"
         EXECUTION_DATE = "2020-10-01"
         NUM_EPOCHS = "10"
+        BATCH_SIZE = "16"
     }
 }
 

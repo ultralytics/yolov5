@@ -3,6 +3,7 @@ Script to train model.
 """
 import logging
 import os
+import shutil
 import time
 
 import boto3
@@ -10,7 +11,7 @@ import botocore
 import torch
 from bedrock_client.bedrock.api import BedrockApi
 
-from train import trainer
+from train import set_params, trainer
 
 BUCKET_NAME = os.getenv("BUCKET_NAME")
 DATA_DIR = os.getenv("DATA_DIR")
@@ -133,7 +134,7 @@ def compute_log_metrics():
     bedrock.log_metric("val Classification", val_cls)
 
 
-def train():
+def main():
     """Train"""
     print("PyTorch Version:", torch.__version__)
 
@@ -154,17 +155,26 @@ def train():
         'weights': '',
         'cfg': './models/custom_yolov5s.yaml',
         'data': 'data.yaml',
-        'epochs': 2,
-        'batch_size': 16,
+        'epochs': int(os.getenv("NUM_EPOCHS")),
+        'batch_size': int(os.getenv("BATCH_SIZE")),
         'img_size': [416],
         'cache_images': True,
         'name': 'yolov5s_results',
     }
-    trainer(params)
+    trainer(set_params(params))
 
     print("\nEvaluate")
     compute_log_metrics()
 
+    print("\nSave artefacts and results")
+    name = params['name']
+    for fpath in os.listdir(f"./runs/exp0_{name}/"):
+        if fpath == "weights":
+            # Copy best weights
+            shutil.copy2(f"./runs/exp0_{name}/weights/best.pt", "/artefact/best.pt")
+        elif os.path.isfile(fpath):
+            shutil.copy2(f"./runs/exp0_{name}/{fpath}", f"/artefact/{fpath}")
+
 
 if __name__ == "__main__":
-    train()
+    main()
