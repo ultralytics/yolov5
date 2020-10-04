@@ -1,8 +1,12 @@
 import argparse
 import logging
 import math
+import sys
 from copy import deepcopy
 from pathlib import Path
+
+sys.path.append('./')  # to run '$ python *.py' files in subdirectories
+logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn
@@ -12,8 +16,6 @@ from models.experimental import MixConv2d, CrossConv, C3
 from utils.general import check_anchor_order, make_divisible, check_file, set_logging
 from utils.torch_utils import (
     time_synchronized, fuse_conv_and_bn, model_info, scale_img, initialize_weights, select_device)
-
-logger = logging.getLogger(__name__)
 
 
 class Detect(nn.Module):

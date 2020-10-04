@@ -53,13 +53,13 @@ jobs:
 
       - name: Download data
         run: |
-          curl -L -o temp.zip https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128.zip
-          unzip -q temp.zip -d ../
-          rm temp.zip
+          # curl -L -o tmp.zip https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128.zip
+          # unzip -q tmp.zip -d ../
+          # rm tmp.zip
 
       - name: Tests workflow
         run: |
-          export PYTHONPATH="$PWD"  # to run *.py. files in subdirectories
+          # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
           di=cpu # inference devices  # define device
 
           # train
