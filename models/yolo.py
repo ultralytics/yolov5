@@ -1,6 +1,7 @@
 import argparse
 import logging
 import math
+import sys
 from copy import deepcopy
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from utils.general import check_anchor_order, make_divisible, check_file, set_lo
 from utils.torch_utils import (
     time_synchronized, fuse_conv_and_bn, model_info, scale_img, initialize_weights, select_device)
 
+sys.path.append('./')  # to run '$ python *.py' files in subdirectories
 logger = logging.getLogger(__name__)
 
 
