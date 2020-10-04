@@ -59,7 +59,7 @@ jobs:
 
       - name: Tests workflow
         run: |
-          export PYTHONPATH="$PWD"  # to run *.py. files in subdirectories
+          # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
           di=cpu # inference devices  # define device
 
           # train
