@@ -6,6 +6,7 @@ Usage:
 
 import argparse
 import sys
+import time
 
 sys.path.append('./')  # to run '$ python *.py' files in subdirectories
 
@@ -15,7 +16,7 @@ import torch.nn as nn
 import models
 from models.experimental import attempt_load
 from utils.activations import Hardswish
-from utils.general import set_logging
+from utils.general import set_logging, check_img_size
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -26,16 +27,22 @@ if __name__ == '__main__':
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
     set_logging()
+    t = time.time()
 
     # Input
     img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size(1,3,320,192) iDetection
 
     # Load PyTorch model
     model = attempt_load(opt.weights, map_location=torch.device('cpu'))  # load FP32 model
+    labels = model.names
+
+    # Checks
+    gs = int(max(model.stride))  # grid size (max stride)
+    opt.img_size = [check_img_size(x, gs) for x in opt.img_size]  # verify img_size are gs-multiples
 
     # Update model
     for k, m in model.named_modules():
-        m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatability
+        m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatibility
         if isinstance(m, models.common.Conv) and isinstance(m.act, nn.Hardswish):
             m.act = Hardswish()  # assign activation
         # if isinstance(m, models.yolo.Detect):
@@ -76,7 +83,7 @@ if __name__ == '__main__':
 
         print('\nStarting CoreML export with coremltools %s...' % ct.__version__)
         # convert model from torchscript and apply pixel scaling as per detect.py
-        model = ct.convert(ts, inputs=[ct.ImageType(name='images', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
+        model = ct.convert(ts, inputs=[ct.ImageType(name='image', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
         f = opt.weights.replace('.pt', '.mlmodel')  # filename
         model.save(f)
         print('CoreML export success, saved as %s' % f)
@@ -84,4 +91,4 @@ if __name__ == '__main__':
         print('CoreML export failure: %s' % e)
 
     # Finish
-    print('\nExport complete. Visualize with https://github.com/lutzroeder/netron.')
+    print('\nExport complete (%.2fs). Visualize with https://github.com/lutzroeder/netron.' % (time.time() - t))

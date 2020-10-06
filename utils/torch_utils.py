@@ -8,12 +8,11 @@ import torch
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision.models as models
 
 logger = logging.getLogger(__name__)
 
 
-def init_seeds(seed=0):
+def init_torch_seeds(seed=0):
     torch.manual_seed(seed)
 
     # Speed-reproducibility tradeoff https://pytorch.org/docs/stable/notes/randomness.html
@@ -152,16 +151,15 @@ def model_info(model, verbose=False):
 
 def load_classifier(name='resnet101', n=2):
     # Loads a pretrained model reshaped to n-class output
-    model = models.__dict__[name](pretrained=True)
+    import torchvision
+    model = torchvision.models.__dict__[name](pretrained=True)
 
-    # Display model properties
-    input_size = [3, 224, 224]
-    input_space = 'RGB'
-    input_range = [0, 1]
-    mean = [0.485, 0.456, 0.406]
-    std = [0.229, 0.224, 0.225]
-    for x in ['input_size', 'input_space', 'input_range', 'mean', 'std']:
-        print(x + ' =', eval(x))
+    # ResNet model properties
+    # input_size = [3, 224, 224]
+    # input_space = 'RGB'
+    # input_range = [0, 1]
+    # mean = [0.485, 0.456, 0.406]
+    # std = [0.229, 0.224, 0.225]
 
     # Reshape output to n classes
     filters = model.fc.weight.shape[1]
