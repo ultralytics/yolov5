@@ -17,8 +17,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="check_training_results.py", description="Script to evaluate and display the training results on the test data.")
     parser.add_argument('--run-num', type=int, default=0, help='run number to display')
     opt = parser.parse_args()
-
-    data_paths = list(Path(f"runs/exp{opt.run_num}/training_info_mojo").glob("*.txt"))
+    root = Path(f"runs/exp{opt.run_num}").resolve()
+    data_paths = list(root.glob("training_info_mojo/*.txt"))
     data = []
     ground_truths = []
 
@@ -42,9 +42,11 @@ if __name__ == "__main__":
     diff = ground_truths - final_predictions[0.5]
     sorted_ind = np.argsort(diff)
 
-    print(f"{'GT':<5} {'Diff':<5} {'location'}")
+    results_str = f"{'GT':<5} {'Diff':<5} {'Data-location'}\n"
     for i in sorted_ind:
-        print(f"{int(ground_truths[i]):<5} {int(diff[i]):<5} {data_paths[i]}")
+        results_str += f"{int(ground_truths[i]):<5} {int(diff[i]):<5} {data_paths[i]}\n"
+    with (root / "test_data_results_end_training.txt").open("w") as f:
+        f.writelines(results_str)
 
     n = len(data)
     h = int(np.sqrt(n))
@@ -61,7 +63,7 @@ if __name__ == "__main__":
     axs[0, 0].legend()
     axs[-1, w//2].set_xlabel("Epoch")
     axs[h//2, 0].set_ylabel("N_tagged - N_predicted")
-    plt.show()
+    plt.savefig(root / "test_data_training_count_error.pdf")
     plt.clf()
 
     rand_vector = (np.random.rand(2, len(ground_truths))-0.5)/4
@@ -73,4 +75,6 @@ if __name__ == "__main__":
     plt.legend()
     plt.xlabel("Ground Truth")
     plt.ylabel("N-predicted")
-    plt.show()
+    plt.title("Ground truths vs Predictions on the test data at the end of training")
+    plt.savefig(root / "test_data_groundtruth_vs_predictions.pdf")
+    plt.clf()
