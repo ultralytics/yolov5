@@ -29,6 +29,7 @@ from utils.general import (
     check_git_status, check_img_size, increment_dir, print_mutation, plot_evolution, set_logging)
 from utils.google_utils import attempt_download
 from utils.torch_utils import init_seeds, ModelEMA, select_device, intersect_dicts
+from detect import detect
 
 logger = logging.getLogger(__name__)
 
@@ -405,6 +406,7 @@ if __name__ == '__main__':
     parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
     opt = parser.parse_args()
+    print(opt)
 
     # Set DDP variables
     opt.total_batch_size = opt.batch_size
@@ -454,6 +456,35 @@ if __name__ == '__main__':
             tb_writer = SummaryWriter(log_dir=log_dir)  # runs/exp0
 
         train(hyp, opt, device, tb_writer)
+        torch.cuda.empty_cache()
+
+        with open(opt.data) as f:
+            data_dict = yaml.load(f, Loader=yaml.FullLoader)  # data dict
+        train_path = data_dict['train']
+        test_path = data_dict['val']
+        root_dir = Path(log_dir).resolve()
+
+        detection_info_dict = {
+            "weights": str(root_dir / "weights" / "last.pt"),
+            "source": train_path,
+            "output": str(root_dir / "results" / "train" / "img"),
+            "img_size": opt.img_size[0],
+            "conf_thres": 0.5,
+            "iou_thres": 0.5,
+            "device": "",
+            "view_img": False,
+            "save_txt": True,
+            "agnostic_nms": False,
+            "augment": False,
+            "update": False,
+            "classes": None,
+        }
+
+        with torch.no_grad():
+            detect(detection_info_dict)
+            detection_info_dict["source"] = test_path
+            detection_info_dict["output"] = str(root_dir / "results" / "test" / "img")
+            detect(detection_info_dict)
 
     # Evolve hyperparameters (optional)
     else:
