@@ -463,9 +463,13 @@ if __name__ == '__main__':
         train_path = data_dict['train']
         test_path = data_dict['val']
         root_dir = Path(log_dir).resolve()
-
+        if (root_dir / "weights" / "best.pt").exists():
+            weights_path = (root_dir / "weights" / "best.pt")
+        else:
+            weights_path = (root_dir / "weights" / "last.pt")
+        print(f"Testing with weights from {weights_path}")
         detection_info_dict = {
-            "weights": str(root_dir / "weights" / "last.pt"),
+            "weights": str(weights_path),
             "source": train_path,
             "output": str(root_dir / "results" / "train" / "img"),
             "img_size": opt.img_size[0],
