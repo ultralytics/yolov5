@@ -32,7 +32,12 @@ def test(data,
          dataloader=None,
          save_dir='',
          merge=False,
-         save_txt=False):
+         save_txt=False,
+         bbox_debug=0):
+    # Import wandb if logging is enabled
+    if bbox_debug > 0:
+        import wandb
+
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -88,7 +93,7 @@ def test(data,
     s = ('%20s' + '%12s' * 6) % ('Class', 'Images', 'Targets', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
     p, r, f1, mp, mr, map50, map, t0, t1 = 0., 0., 0., 0., 0., 0., 0., 0., 0.
     loss = torch.zeros(3, device=device)
-    jdict, stats, ap, ap_class = [], [], [], []
+    jdict, stats, ap, ap_class, wandb_image_log = [], [], [], [], []
     for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
         img = img.to(device, non_blocking=True)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -134,6 +139,25 @@ def test(data,
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                     with open(str(out / Path(paths[si]).stem) + '.txt', 'a') as f:
                         f.write(('%g ' * 5 + '\n') % (cls, *xywh))  # label format
+
+            # Log images with bounding boxes
+            if len(wandb_image_log) < bbox_debug:
+                x = pred.clone()
+                bbox_data = [{
+                    "position": {
+                        "minX": float(xyxy[0]),
+                        "minY": float(xyxy[1]),
+                        "maxX": float(xyxy[2]),
+                        "maxY": float(xyxy[3])
+                    },
+                    "class_id": int(cls),
+                    "scores": {
+                        "class_score": float(conf)
+                    },
+                    "domain":"pixel"
+                } for *xyxy, conf, cls in x]
+                im = wandb.Image(img[si], boxes={"predictions": {"box_data":bbox_data}})
+                wandb_image_log.append(im)
 
             # Clip boxes to image bounds
             clip_coords(pred, (height, width))
@@ -191,6 +215,10 @@ def test(data,
             plot_images(img, targets, paths, str(f), names)  # ground truth
             f = Path(save_dir) / ('test_batch%g_pred.jpg' % batch_i)
             plot_images(img, output_to_target(output, width, height), paths, str(f), names)  # predictions
+
+    # Log the images to W&B
+    if len(wandb_image_log) > 0:
+        wandb.log({"outputs":wandb_image_log})
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy

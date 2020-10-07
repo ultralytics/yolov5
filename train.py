@@ -32,8 +32,28 @@ from utils.torch_utils import ModelEMA, select_device, intersect_dicts
 
 logger = logging.getLogger(__name__)
 
+try:
+    import wandb
+    wandb_disabled = os.environ['WANDB_DISABLED'] if 'WANDB_DISABLED' in os.environ else None
+    if wandb_disabled is True:
+        wandb_log = False
+    else:
+        wandb_log = True
+        print("Automatic Weights & Biases logging enabled, to disable set os.environ['WANDB_DISABLED'] = 'true'")
+except ImportError:
+    wandb_log = False
+    print("wandb is not installed. Install wandb using 'pip install wandb' to track your experiments and enable bounding box debugging")
+
 
 def train(hyp, opt, device, tb_writer=None):
+    if wandb_log and not opt.resume:
+        name = opt.name if opt.name != '' else 'yoloV5'
+        run = wandb.init(project=name, config=opt)
+    # Do not log bounding box images if wandb is not initialized
+    if not wandb_log:
+        print("Setting num_bbox to 0")
+        opt.num_bbox = 0
+
     logger.info(f'Hyperparameters {hyp}')
     log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
     wdir = log_dir / 'weights'  # weights directory
@@ -78,6 +98,20 @@ def train(hyp, opt, device, tb_writer=None):
         logger.info('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))  # report
     else:
         model = Model(opt.cfg, ch=3, nc=nc).to(device)  # create
+
+    # Resume Logging in the same W&B run
+    if wandb_log and opt.resume:
+        if 'wandb_id' in ckpt:
+            try:
+                run = wandb.init(id=ckpt['wandb_id'],resume='must')
+                print('Resuming wandb logging')
+            except KeyError:
+                print('wandb run cannot be resumed, creating a new run')
+
+        if wandb.run is None:
+            name = opt.name if opt.name != '' else 'yoloV5'
+            run = wandb.init(project=name, config=opt)
+            print('wandb logging enabled')
 
     # Freeze
     freeze = ['', ]  # parameter names to freeze (full or partial)
@@ -317,7 +351,8 @@ def train(hyp, opt, device, tb_writer=None):
                                                  model=ema.ema,
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
-                                                 save_dir=log_dir)
+                                                 save_dir=log_dir,
+                                                 bbox_debug=opt.num_bbox)
 
             # Write
             with open(results_file, 'a') as f:
@@ -325,14 +360,19 @@ def train(hyp, opt, device, tb_writer=None):
             if len(opt.name) and opt.bucket:
                 os.system('gsutil cp %s gs://%s/results/results%s.txt' % (results_file, opt.bucket, opt.name))
 
+            tags = ['train/giou_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
+                    'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+                    'val/giou_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
+                    'x/lr0', 'x/lr1', 'x/lr2']  # params
             # Tensorboard
             if tb_writer:
-                tags = ['train/giou_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
-                        'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
-                        'val/giou_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
-                        'x/lr0', 'x/lr1', 'x/lr2']  # params
                 for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
                     tb_writer.add_scalar(tag, x, epoch)
+
+            # W&B logging
+            if wandb_log:
+                for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
+                    wandb.log({tag:x})
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # fitness_i = weighted combination of [P, R, mAP, F1]
@@ -347,7 +387,8 @@ def train(hyp, opt, device, tb_writer=None):
                             'best_fitness': best_fitness,
                             'training_results': f.read(),
                             'model': ema.ema,
-                            'optimizer': None if final_epoch else optimizer.state_dict()}
+                            'optimizer': None if final_epoch else optimizer.state_dict(),
+                            'wandb_id': run.id if wandb_log else None}
 
                 # Save last, best and delete
                 torch.save(ckpt, last)
@@ -404,6 +445,7 @@ if __name__ == '__main__':
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
+    parser.add_argument('--num-bbox', type=int, default=50, help='maximum number of images logged to W&B for bounding box debugging')
     opt = parser.parse_args()
 
     # Set DDP variables
