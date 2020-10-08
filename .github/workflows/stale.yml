@@ -14,5 +14,5 @@ jobs:
           stale-pr-message: 'This issue has been automatically marked as stale because it has not had recent activity. It will be closed if no further activity occurs. Thank you for your contributions.'
           days-before-stale: 30
           days-before-close: 5
-          exempt-issue-label: 'documentation,tutorial'
+          exempt-issue-labels: 'documentation,tutorial'
           operations-per-run: 100  # The maximum number of operations per run, used to control rate limiting.

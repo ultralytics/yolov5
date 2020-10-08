@@ -23,8 +23,7 @@ from scipy.signal import butter, filtfilt
 from tqdm import tqdm
 
 from utils.google_utils import gsutil_getsize
-from utils.torch_utils import init_seeds as init_torch_seeds
-from utils.torch_utils import is_parallel
+from utils.torch_utils import is_parallel, init_torch_seeds
 
 # Set printoptions
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -56,7 +55,7 @@ def set_logging(rank=-1):
 def init_seeds(seed=0):
     random.seed(seed)
     np.random.seed(seed)
-    init_torch_seeds(seed=seed)
+    init_torch_seeds(seed)
 
 
 def get_latest_run(search_dir='./runs'):
@@ -947,7 +946,7 @@ def increment_dir(dir, comment=''):
     dir = str(Path(dir))  # os-agnostic
     d = sorted(glob.glob(dir + '*'))  # directories
     if len(d):
-        n = max([int(x[len(dir):x.find('_') if '_' in x else None]) for x in d]) + 1  # increment
+        n = max([int(x[len(dir):x.rfind('_') if '_' in Path(x).name else None]) for x in d]) + 1  # increment
     return dir + str(n) + ('_' + comment if comment else '')
 
 

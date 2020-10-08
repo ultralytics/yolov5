@@ -1,5 +1,5 @@
 # Repo-specific DockerIgnore -------------------------------------------------------------------------------------------
-.git
+#.git
 .cache
 .idea
 runs
@@ -110,9 +110,9 @@ celerybeat-schedule
 .env
 
 # virtualenv
-.venv
+.venv*
 venv*/
-ENV/
+ENV*/
 
 # Spyder project settings
 .spyderproject

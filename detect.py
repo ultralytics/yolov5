@@ -129,8 +129,6 @@ def detect(info_dict, save_img=False):
 
     if save_txt or save_img:
         print('Results saved to %s' % Path(out))
-        if platform.system() == 'Darwin' and not info_dict["update"]:  # MacOS
-            os.system('open ' + save_path)
 
     print('Done. (%.3fs)' % (time.time() - t0))
 
