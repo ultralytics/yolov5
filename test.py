@@ -33,10 +33,12 @@ def test(data,
          save_dir='',
          merge=False,
          save_txt=False,
-         bbox_debug=0):
+         num_predictions=0):
     # Import wandb if logging is enabled
-    if bbox_debug > 0:
+    if num_predictions > 0:
         import wandb
+        if num_predictions > 100:
+            num_predictions = 100
 
     # Initialize/load model and set device
     training = model is not None
@@ -141,7 +143,7 @@ def test(data,
                         f.write(('%g ' * 5 + '\n') % (cls, *xywh))  # label format
 
             # Log images with bounding boxes
-            if len(wandb_image_log) < bbox_debug:
+            if len(wandb_image_log) < num_predictions:
                 x = pred.clone()
                 bbox_data = [{
                     "position": {

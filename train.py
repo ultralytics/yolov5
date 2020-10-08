@@ -15,7 +15,7 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 import yaml
-from torch.cuda import amp
+#from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -34,8 +34,8 @@ logger = logging.getLogger(__name__)
 
 try:
     import wandb
-    wandb_disabled = os.environ['WANDB_DISABLED'] if 'WANDB_DISABLED' in os.environ else None
-    if wandb_disabled is True:
+    wandb_disabled = os.environ.get('WANDB_DISABLED')
+    if wandb_disabled == 'true':
         wandb_log = False
     else:
         wandb_log = True
@@ -46,13 +46,13 @@ except ImportError:
 
 
 def train(hyp, opt, device, tb_writer=None):
-    if wandb_log and not opt.resume:
-        name = opt.name if opt.name != '' else 'yoloV5'
-        run = wandb.init(project=name, config=opt)
+    if wandb_log and not opt.resume and wandb.run is None:
+        project = opt.name if opt.name != '' else 'yoloV5'
+        run = wandb.init(project=project, config=opt)
     # Do not log bounding box images if wandb is not initialized
     if not wandb_log:
-        print("Setting num_bbox to 0")
-        opt.num_bbox = 0
+        print("Setting num_predictions to 0")
+        opt.num_predictions = 0
 
     logger.info(f'Hyperparameters {hyp}')
     log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
@@ -101,17 +101,9 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Resume Logging in the same W&B run
     if wandb_log and opt.resume:
-        if 'wandb_id' in ckpt:
-            try:
-                run = wandb.init(id=ckpt['wandb_id'],resume='must')
-                print('Resuming wandb logging')
-            except KeyError:
-                print('wandb run cannot be resumed, creating a new run')
-
         if wandb.run is None:
-            name = opt.name if opt.name != '' else 'yoloV5'
-            run = wandb.init(project=name, config=opt)
-            print('wandb logging enabled')
+            project = opt.name if opt.name != '' else 'yoloV5'
+            run = wandb.init(id=ckpt['wandb_id'], resume="allow", project=project, config=opt)
 
     # Freeze
     freeze = ['', ]  # parameter names to freeze (full or partial)
@@ -352,7 +344,7 @@ def train(hyp, opt, device, tb_writer=None):
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
                                                  save_dir=log_dir,
-                                                 bbox_debug=opt.num_bbox)
+                                                 num_predictions=opt.num_predictions)
 
             # Write
             with open(results_file, 'a') as f:
@@ -445,7 +437,8 @@ if __name__ == '__main__':
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
-    parser.add_argument('--num-bbox', type=int, default=50, help='maximum number of images logged to W&B for bounding box debugging')
+    parser.add_argument('--num-predictions', type=int, default=50, help='number of images logged to W&B for bounding box debugging. Maximum limit is 100')
+
     opt = parser.parse_args()
 
     # Set DDP variables
