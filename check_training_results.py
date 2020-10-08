@@ -3,13 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 
+
 def get_data_from_path(path):
     with path.open("r") as file:
         data = np.array([list(map(float, line.rstrip().split())) for line in file.readlines()])
-    ground_truth, _ = data[0, 0], data[:, 1:]
+    ground_truth, training_data = data[0, 0], data[:, 1:]
     prediction_data = {}
-    for i in range(0, _.shape[1], 4):
-        prediction_data[_[0, i]] = _[:, i+1:i+4]
+    for i in range(0, training_data.shape[1], 4):
+        prediction_data[training_data[0, i]] = training_data[:, i+1:i+4]
     return ground_truth, prediction_data
 
 

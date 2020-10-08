@@ -8,7 +8,7 @@ ROOT_YOLO_OUTPUT = "data/mojo_yolo_dataset_grey" # Always use data to store in e
 USE_RGB = False
 
 # annotation classes
-ANNOTATION_CLASSES_TO_ID = {"sperm": 1}
+ANNOTATION_CLASSES_TO_ID = {"sperm": 0}
 
 
 def make_yolo_dataset(rgb=False):
@@ -63,9 +63,10 @@ def convert_to_yolo_supervisely(frame, annotation_data, image_name, w=80):
             x = obj["points"]["exterior"][0][0]
             y = obj["points"]["exterior"][0][1]
             bbox = [x, y, w, w]
-            
-            if class_id > 0:
-                f.write(f"{class_id-1} {bbox[0]/im_width:.6f} {bbox[1]/im_height:.6f} {bbox[2]/im_width:.6f} {bbox[3]/im_height:.6f}\n")
+
+            # Only keep sperm for now
+            if class_id == 0:
+                f.write(f"{class_id} {bbox[0]/im_width:.6f} {bbox[1]/im_height:.6f} {bbox[2]/im_width:.6f} {bbox[3]/im_height:.6f}\n")
   
 
 if __name__ == "__main__":
