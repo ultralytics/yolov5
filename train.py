@@ -15,7 +15,7 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 import yaml
-#from torch.cuda import amp
+from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -46,14 +46,6 @@ except ImportError:
 
 
 def train(hyp, opt, device, tb_writer=None):
-    if wandb_log and not opt.resume and wandb.run is None:
-        project = opt.name if opt.name != '' else 'yoloV5'
-        run = wandb.init(project=project, config=opt)
-    # Do not log bounding box images if wandb is not initialized
-    if not wandb_log:
-        print("Setting num_predictions to 0")
-        opt.num_predictions = 0
-
     logger.info(f'Hyperparameters {hyp}')
     log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
     wdir = log_dir / 'weights'  # weights directory
@@ -98,12 +90,16 @@ def train(hyp, opt, device, tb_writer=None):
         logger.info('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))  # report
     else:
         model = Model(opt.cfg, ch=3, nc=nc).to(device)  # create
-
-    # Resume Logging in the same W&B run
-    if wandb_log and opt.resume:
-        if wandb.run is None:
-            project = opt.name if opt.name != '' else 'yoloV5'
-            run = wandb.init(id=ckpt['wandb_id'], resume="allow", project=project, config=opt)
+    
+    # Initialize wandb
+    if wandb_log and wandb.run is None:
+        project = opt.name if opt.name != '' else 'yoloV5'
+        id = ckpt.get('wandb_id') if 'ckpt' in locals() else None
+        run = wandb.init(id=id, resume="allow", project=project, config=opt)
+    # Do not log bounding box images if wandb is not initialized
+    if not wandb_log:
+        print("Setting num_predictions to 0")
+        opt.num_predictions = 0
 
     # Freeze
     freeze = ['', ]  # parameter names to freeze (full or partial)
