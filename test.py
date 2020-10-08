@@ -140,7 +140,7 @@ def test(data,
                         f.write(('%g ' * len(line) + '\n') % line)
 
             # Log images with bounding boxes
-            if len(wandb_image_log) < bbox_debug:
+            if len(wandb_image_log) < num_predictions:
                 x = pred.clone()
                 bbox_data = [{
                     "position": {
