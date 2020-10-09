@@ -31,6 +31,18 @@ from utils.torch_utils import ModelEMA, select_device, intersect_dicts
 
 logger = logging.getLogger(__name__)
 
+try:
+    import wandb
+    wandb_disabled = os.environ.get('WANDB_DISABLED')
+    if wandb_disabled == 'true':
+        wandb_log = False
+    else:
+        wandb_log = True
+        print("Automatic Weights & Biases logging enabled, to disable set os.environ['WANDB_DISABLED'] = 'true'")
+except ImportError:
+    wandb_log = False
+    print("wandb is not installed. Install wandb using 'pip install wandb' to track your experiments and enable bounding box debugging")
+
 
 def train(hyp, opt, device, tb_writer=None):
     logger.info(f'Hyperparameters {hyp}')
@@ -77,6 +89,16 @@ def train(hyp, opt, device, tb_writer=None):
         logger.info('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))  # report
     else:
         model = Model(opt.cfg, ch=3, nc=nc).to(device)  # create
+    
+    # Initialize wandb
+    if wandb_log and wandb.run is None:
+        project = opt.name if opt.name != '' else 'yoloV5'
+        id = ckpt.get('wandb_id') if 'ckpt' in locals() else None
+        run = wandb.init(id=id, resume="allow", project=project, config=opt)
+    # Do not log bounding box images if wandb is not initialized
+    if not wandb_log:
+        print("Setting num_predictions to 0")
+        opt.num_predictions = 0
 
     # Freeze
     freeze = ['', ]  # parameter names to freeze (full or partial)
@@ -315,7 +337,8 @@ def train(hyp, opt, device, tb_writer=None):
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
                                                  save_dir=log_dir,
-                                                 plots=epoch == 0 or final_epoch)  # plot first and last
+                                                 plots=epoch == 0 or final_epoch,# plot first and last
+                                                 num_predictions=opt.num_predictions)
 
             # Write
             with open(results_file, 'a') as f:
@@ -323,14 +346,19 @@ def train(hyp, opt, device, tb_writer=None):
             if len(opt.name) and opt.bucket:
                 os.system('gsutil cp %s gs://%s/results/results%s.txt' % (results_file, opt.bucket, opt.name))
 
+            tags = ['train/giou_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
+                    'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+                    'val/giou_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
+                    'x/lr0', 'x/lr1', 'x/lr2']  # params
             # Tensorboard
             if tb_writer:
-                tags = ['train/giou_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
-                        'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
-                        'val/giou_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
-                        'x/lr0', 'x/lr1', 'x/lr2']  # params
                 for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
                     tb_writer.add_scalar(tag, x, epoch)
+
+            # W&B logging
+            if wandb_log:
+                for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
+                    wandb.log({tag:x})
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # fitness_i = weighted combination of [P, R, mAP, F1]
@@ -345,7 +373,8 @@ def train(hyp, opt, device, tb_writer=None):
                             'best_fitness': best_fitness,
                             'training_results': f.read(),
                             'model': ema.ema,
-                            'optimizer': None if final_epoch else optimizer.state_dict()}
+                            'optimizer': None if final_epoch else optimizer.state_dict(),
+                            'wandb_id': run.id if wandb_log else None}
 
                 # Save last, best and delete
                 torch.save(ckpt, last)
@@ -402,6 +431,8 @@ if __name__ == '__main__':
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
+    parser.add_argument('--num-predictions', type=int, default=50, help='number of images logged to W&B for bounding box debugging. Maximum limit is 100')
+
     opt = parser.parse_args()
 
     # Set DDP variables
