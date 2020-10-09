@@ -1,7 +1,10 @@
 import json
+import os
 from pathlib import Path
 import shutil
 import cv2
+from nanovare_casa_core.utils import supervisely as sly
+from nanovare_casa_core.utils import constants
 
 ROOT = "D:/Nanovare/dev/yolo/AnnotationDatasetKarolinska/crossed_process_dataset"
 ROOT_YOLO_OUTPUT = "data/mojo_yolo_dataset_grey" # Always use data to store in expected folder
@@ -12,7 +15,9 @@ ANNOTATION_CLASSES_TO_ID = {"sperm": 0}
 
 
 def make_yolo_dataset(rgb=False):
-    frames_path = Path(ROOT).resolve().glob("**/*.png")
+    api = sly.Api()
+    api.download_merge_project(constants.SUPERVISELY_LOCALISATION_PROJECT_ID)
+    frames_path = api.get_project_image_path_list(constants.SUPERVISELY_LOCALISATION_PROJECT_ID)
     
     resolved_root = Path(ROOT_YOLO_OUTPUT).resolve()
     if resolved_root.is_dir():
