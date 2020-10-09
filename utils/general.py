@@ -292,7 +292,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, fname='precision-re
             p[ci] = np.interp(-pr_score, -conf[i], precision[:, 0])  # p at pr_score
 
             # AP from recall-precision curve
-            py.append(np.interp(px, recall[:, 0], precision[:, 0]))  # plot at mAP@0.5
+            py.append(np.interp(px, recall[:, 0], precision[:, 0]))  # precision at mAP@0.5
             for j in range(tp.shape[1]):
                 ap[ci, j] = compute_ap(recall[:, j], precision[:, j])
 
@@ -300,9 +300,10 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, fname='precision-re
     f1 = 2 * p * r / (p + r + 1e-16)
 
     if plot:
+        py = np.stack(py, axis=1)
         fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-        ax.plot(px, np.stack(py, axis=1), linewidth=0.5, color='grey')  # plot(recall, precision)
-        ax.plot(px, np.stack(py, axis=1).mean(1), linewidth=2, color='blue', label='all classes')
+        ax.plot(px, py, linewidth=0.5, color='grey')  # plot(recall, precision)
+        ax.plot(px, py.mean(1), linewidth=2, color='blue', label='all classes')
         ax.set_xlabel('Recall')
         ax.set_ylabel('Precision')
         ax.set_xlim(0, 1)
