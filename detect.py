@@ -10,6 +10,7 @@ from numpy import random
 import numpy as np
 
 from models.experimental import attempt_load
+from models.yolo import Detect
 from utils.datasets import LoadStreams, LoadImages
 from utils.general import check_img_size, check_requirements, non_max_suppression, apply_classifier, scale_coords, \
     xyxy2xywh, strip_optimizer, set_logging, increment_path
@@ -187,9 +188,39 @@ def detect(save_img=False):
             input_data = img.permute(0, 2, 3, 1).cpu().numpy()
             interpreter.set_tensor(input_details[0]['index'], input_data)
             interpreter.invoke()
-            output_data = interpreter.get_tensor(output_details[0]['index'])
-            pred = torch.tensor(output_data)
+            if not opt.tfl_detect:
+                output_data = interpreter.get_tensor(output_details[0]['index'])
+                pred = torch.tensor(output_data)
+            else:
+                import yaml
+                yaml_file = Path(opt.cfg).name
+                with open(opt.cfg) as f:
+                    yaml = yaml.load(f, Loader=yaml.FullLoader)  # model dict
 
+                anchors = yaml['anchors']
+                nc = yaml['nc']
+                nl = len(anchors)
+                x = [torch.tensor(interpreter.get_tensor(output_details[i]['index']), device=device) for i in range(nl)]
+                def _make_grid(nx=20, ny=20):
+                    yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
+                    return torch.stack((xv, yv), 2).view((1, 1, ny * nx, 2)).float()
+
+                no = nc + 5
+                grid = [torch.zeros(1)] * nl  # init grid
+                a = torch.tensor(anchors).float().view(nl, -1, 2).to(device)
+                anchor_grid = a.clone().view(nl, 1, -1, 1, 2)  # shape(nl,1,na,1,2)
+                z = []  # inference output
+                for i in range(nl):
+                    _, _, ny_nx, _ = x[i].shape
+                    nx = ny = int(np.sqrt(ny_nx))
+                    grid[i] = _make_grid(nx, ny).to(x[i].device)
+                    stride = imgsz // ny
+                    y = x[i].sigmoid()
+                    y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + grid[i].to(x[i].device)) * stride  # xy
+                    y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * anchor_grid[i]  # wh
+                    z.append(y.view(-1, no))
+
+                pred = torch.unsqueeze(torch.cat(z, 0), 0)
 
         # Apply NMS
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
@@ -281,7 +312,8 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='runs/detect', help='save results to project/name')
     parser.add_argument('--name', default='exp', help='save results to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
-    parser.add_argument('--tfl-int8', action='store_true', help='use int8 quantized TFLite model')
+    parser.add_argument('--tfl-detect', action='store_true', help='add Detect module in TFLite')
+    parser.add_argument('--cfg', type=str, default='./models/yolov5s.yaml', help='cfg path')
     opt = parser.parse_args()
     print(opt)
     check_requirements()
