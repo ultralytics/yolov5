@@ -187,7 +187,6 @@ class Model(nn.Module):
 
     def autoshape(self):  # add autoShape module
         print('Adding autoShape... ')
-        self.nms()  # add NMS
         m = autoShape(self)  # wrap model
         copy_attr(m, self, include=('names', 'stride', 'nc', 'autoshape'), exclude=())  # copy attributes
         return m
