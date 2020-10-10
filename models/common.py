@@ -119,13 +119,16 @@ class NMS(nn.Module):
 class autoShape(nn.Module):
     # input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS
     img_size = 640  # inference size (pixels)
+    conf = 0.25  # NMS confidence threshold
+    iou = 0.45  # NMS IoU threshold
+    classes = None  # (optional list) filter by class
 
     def __init__(self, model):
         super(autoShape, self).__init__()
         self.model = model
 
-    def forward(self, x, shape=640, augment=False, profile=False):
-        # supports inference from various sources. For height=720, width=1280, RGB color images example inputs are:
+    def forward(self, x, size=640, augment=False, profile=False):
+        # supports inference from various sources. For height=720, width=1280, RGB images example inputs are:
         #   opencv:     x = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(720,1280,3)
         #   PIL:        x = Image.open('image.jpg')  # HWC x(720,1280,3)
         #   numpy:      x = np.zeros((720,1280,3))  # HWC
@@ -145,7 +148,7 @@ class autoShape(nn.Module):
             x[i] = np.array(x[i])[:, :, :3]  # up to 3 channels if png
             s = x[i].shape[:2]  # HWC
             shape0.append(s)  # image shape
-            g = (shape / max(s))  # gain
+            g = (size / max(s))  # gain
             shape1.append([y * g for y in s])
         shape1 = [make_divisible(x, int(self.stride.max())) for x in np.stack(shape1, 0).max(0)]  # inference shape
         x = [letterbox(x[i], new_shape=shape1, auto=False)[0] for i in batch]  # pad
@@ -154,7 +157,8 @@ class autoShape(nn.Module):
         x = torch.from_numpy(x).to(p.device).type_as(p) / 255.  # uint8 to fp16/32
 
         # Inference
-        x = self.model(x, augment, profile)  # optional NMS()
+        x = self.model(x, augment, profile)  # forward
+        x = non_max_suppression(x[0], conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)  # NMS
 
         # Post-process
         for i in batch:
