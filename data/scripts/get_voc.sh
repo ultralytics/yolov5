@@ -27,9 +27,9 @@ fi
 
 echo "Downloading VOC2007 trainval ..."
 # Download data
-curl -LO http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtrainval_06-Nov-2007.tar
+curl -LO http://pjreddie.com/media/files/VOCtrainval_06-Nov-2007.tar
 echo "Downloading VOC2007 test data ..."
-curl -LO http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtest_06-Nov-2007.tar
+curl -LO http://pjreddie.com/media/files/VOCtest_06-Nov-2007.tar
 echo "Done downloading."
 
 # Extract data

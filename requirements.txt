@@ -18,7 +18,7 @@ tqdm>=4.41.0
 
 # export --------------------------------------
 # packaging  # for coremltools
-# coremltools==4.0b3
+# coremltools==4.0b4
 # onnx>=1.7.0
 # scikit-learn==0.19.2  # for coreml quantization
 

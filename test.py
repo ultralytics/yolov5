@@ -30,9 +30,9 @@ def test(data,
          verbose=False,
          model=None,
          dataloader=None,
-         save_dir='',
-         merge=False,
-         save_txt=False):
+         save_dir=Path(''),  # for saving images
+         save_txt=False,  # for auto-labelling
+         plots=True):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -41,7 +41,7 @@ def test(data,
     else:  # called directly
         set_logging()
         device = select_device(opt.device, batch_size=batch_size)
-        merge, save_txt = opt.merge, opt.save_txt  # use Merge NMS, save *.txt labels
+        save_txt = opt.save_txt  # save *.txt labels
         if save_txt:
             out = Path('inference/output')
             if os.path.exists(out):
@@ -49,7 +49,7 @@ def test(data,
             os.makedirs(out)  # make new output folder
 
         # Remove previous
-        for f in glob.glob(str(Path(save_dir) / 'test_batch*.jpg')):
+        for f in glob.glob(str(save_dir / 'test_batch*.jpg')):
             os.remove(f)
 
         # Load model
@@ -110,7 +110,7 @@ def test(data,
 
             # Run NMS
             t = time_synchronized()
-            output = non_max_suppression(inf_out, conf_thres=conf_thres, iou_thres=iou_thres, merge=merge)
+            output = non_max_suppression(inf_out, conf_thres=conf_thres, iou_thres=iou_thres)
             t1 += time_synchronized() - t
 
         # Statistics per image
@@ -186,16 +186,16 @@ def test(data,
             stats.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), tcls))
 
         # Plot images
-        if batch_i < 1:
-            f = Path(save_dir) / ('test_batch%g_gt.jpg' % batch_i)  # filename
+        if plots and batch_i < 1:
+            f = save_dir / ('test_batch%g_gt.jpg' % batch_i)  # filename
             plot_images(img, targets, paths, str(f), names)  # ground truth
-            f = Path(save_dir) / ('test_batch%g_pred.jpg' % batch_i)
+            f = save_dir / ('test_batch%g_pred.jpg' % batch_i)
             plot_images(img, output_to_target(output, width, height), paths, str(f), names)  # predictions
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
-        p, r, ap, f1, ap_class = ap_per_class(*stats)
+        p, r, ap, f1, ap_class = ap_per_class(*stats, plot=plots, fname=save_dir / 'precision-recall_curve.png')
         p, r, ap50, ap = p[:, 0], r[:, 0], ap[:, 0], ap.mean(1)  # [P, R, AP@0.5, AP@0.5:0.95]
         mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
         nt = np.bincount(stats[3].astype(np.int64), minlength=nc)  # number of targets per class
@@ -261,7 +261,6 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--single-cls', action='store_true', help='treat as single-class dataset')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
-    parser.add_argument('--merge', action='store_true', help='use Merge NMS')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     opt = parser.parse_args()

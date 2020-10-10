@@ -1,5 +1,4 @@
 import argparse
-import glob
 import logging
 import math
 import os
@@ -26,9 +25,9 @@ from utils.datasets import create_dataloader
 from utils.general import (
     torch_distributed_zero_first, labels_to_class_weights, plot_labels, check_anchors, labels_to_image_weights,
     compute_loss, plot_images, fitness, strip_optimizer, plot_results, get_latest_run, check_dataset, check_file,
-    check_git_status, check_img_size, increment_dir, print_mutation, plot_evolution, set_logging)
+    check_git_status, check_img_size, increment_dir, print_mutation, plot_evolution, set_logging, init_seeds)
 from utils.google_utils import attempt_download
-from utils.torch_utils import init_seeds, ModelEMA, select_device, intersect_dicts
+from utils.torch_utils import ModelEMA, select_device, intersect_dicts
 
 logger = logging.getLogger(__name__)
 
@@ -309,15 +308,14 @@ def train(hyp, opt, device, tb_writer=None):
                 ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride'])
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
-                if final_epoch:  # replot predictions
-                    [os.remove(x) for x in glob.glob(str(log_dir / 'test_batch*_pred.jpg')) if os.path.exists(x)]
                 results, maps, times = test.test(opt.data,
                                                  batch_size=total_batch_size,
                                                  imgsz=imgsz_test,
                                                  model=ema.ema,
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
-                                                 save_dir=log_dir)
+                                                 save_dir=log_dir,
+                                                 plots=epoch == 0 or final_epoch)  # plot first and last
 
             # Write
             with open(results_file, 'a') as f:
