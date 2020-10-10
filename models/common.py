@@ -1,4 +1,5 @@
 # This file contains modules common to various models
+
 import math
 
 import numpy as np
@@ -157,7 +158,8 @@ class autoShape(nn.Module):
 
         # Post-process
         for i in batch:
-            x[i][:, :4] = scale_coords(shape1, x[i][:, :4], shape0[i])
+            if x[i] is not None:
+                x[i][:, :4] = scale_coords(shape1, x[i][:, :4], shape0[i])
         return x
 
 
