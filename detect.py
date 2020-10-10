@@ -32,55 +32,87 @@ def detect(save_img=False):
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
-    weights = weights[0] if isinstance(weights, list) else weights
-    suffix = Path(weights).suffix
-    if suffix == '.pt':
+    if weights[0].split('.')[-1] == 'pt':
         backend = 'pytorch'
-        model = attempt_load(weights, map_location=device)  # load FP32 model
-        imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
-        names = model.module.names if hasattr(model, 'module') else model.names  # class names
-        if half:
-            model.half()  # to FP16
+    elif weights[0].split('.')[-1] == 'pb':
+        backend = 'graph_def'
+    elif weights[0].split('.')[-1] == 'tflite':
+        backend = 'tflite'
     else:
-        import tensorflow as tf
-        from tensorflow import keras
+        backend = 'saved_model'
 
-        with open('data/coco.yaml') as f:
-            names = yaml.load(f, Loader=yaml.FullLoader)['names']  # class names (assume COCO)
+    if backend == 'saved_model' or backend =='graph_def' or backend=='tflite':
+       import tensorflow as tf
+       from tensorflow import keras
 
-        if suffix == '.pb':
-            backend = 'graph_def'
-
+    if backend == 'pytorch':
+        model = attempt_load(weights, map_location=device)  # load FP32 model
+    elif backend == 'saved_model':
+        if tf.__version__.startswith('1'):
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth=True
+            sess = tf.Session(config=config)
+            loaded = tf.saved_model.load(sess, [tf.saved_model.tag_constants.SERVING], weights[0])
+            tf_input = loaded.signature_def['serving_default'].inputs['input_1']
+            tf_output = loaded.signature_def['serving_default'].outputs['tf__detect']
+        else:
+            model = keras.models.load_model(weights[0])
+    elif backend == 'graph_def':
+        if tf.__version__.startswith('1'):
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth=True
+            sess = tf.Session(config=config)
+            graph = tf.Graph()
+            graph_def = graph.as_graph_def()
+            graph_def.ParseFromString(open(weights[0], 'rb').read())
+            tf.import_graph_def(graph_def, name='')
+            default_graph = tf.get_default_graph()
+            tf_input = default_graph.get_tensor_by_name('x:0')
+            tf_output = default_graph.get_tensor_by_name('Identity:0')
+        else:
             # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
             # https://github.com/leimao/Frozen_Graph_TensorFlow
-            def wrap_frozen_graph(graph_def, inputs, outputs):
+            def wrap_frozen_graph(graph_def, inputs, outputs, print_graph=False):
                 def _imports_graph_def():
                     tf.compat.v1.import_graph_def(graph_def, name="")
 
                 wrapped_import = tf.compat.v1.wrap_function(_imports_graph_def, [])
                 import_graph = wrapped_import.graph
+
+                if print_graph == True:
+                    print("-" * 50)
+                    print("Frozen model layers: ")
+                    layers = [op.name for op in import_graph.get_operations()]
+                    for layer in layers:
+                        print(layer)
+                    print("-" * 50)
+
                 return wrapped_import.prune(
                     tf.nest.map_structure(import_graph.as_graph_element, inputs),
                     tf.nest.map_structure(import_graph.as_graph_element, outputs))
 
             graph = tf.Graph()
             graph_def = graph.as_graph_def()
-            graph_def.ParseFromString(open(weights, 'rb').read())
-            frozen_func = wrap_frozen_graph(graph_def=graph_def, inputs="x:0", outputs="Identity:0")
+            graph_def.ParseFromString(open(weights[0], 'rb').read())
+            frozen_func = wrap_frozen_graph(graph_def=graph_def,
+                                            inputs="x:0",
+                                            outputs="Identity:0",
+                                            print_graph=False)
 
-        elif suffix == '.tflite':
-            backend = 'tflite'
-            # Load TFLite model and allocate tensors
-            interpreter = tf.lite.Interpreter(model_path=weights)
-            interpreter.allocate_tensors()
+    elif backend == 'tflite':
+        # Load TFLite model and allocate tensors.
+        interpreter = tf.lite.Interpreter(model_path=opt.weights[0])
+        interpreter.allocate_tensors()
 
-            # Get input and output tensors
-            input_details = interpreter.get_input_details()
-            output_details = interpreter.get_output_details()
+        # Get input and output tensors.
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
 
-        else:
-            backend = 'saved_model'
-            model = keras.models.load_model(weights)
+    if backend == 'pytorch':
+        imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
+
+    if half and backend == 'pytorch':
+        model.half()  # to FP16
 
     # Second-stage classifier
     classify = False
@@ -104,7 +136,24 @@ def detect(save_img=False):
     # Run inference
     t0 = time.time()
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
-    _ = model(img.half() if half else img) if (device.type != 'cpu' and backend == 'pytorch') else None  # run once
+    if backend == 'pytorch':
+        _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
+    elif backend == 'saved_model':
+        if tf.__version__.startswith('1'):
+            _ = sess.run(tf_output.name, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+        else:
+            _ = model(img.permute(0, 2, 3, 1).cpu().numpy(), training=False)
+    elif backend == 'graph_def':
+        if tf.__version__.startswith('1'):
+            _ = sess.run(tf_output.name, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+        else:
+            _ = frozen_func(x=tf.constant(img.permute(0, 2, 3, 1).cpu().numpy()))
+    elif backend == 'tflite':
+        input_data = img.permute(0, 2, 3, 1).cpu().numpy()
+        interpreter.set_tensor(input_details[0]['index'], input_data)
+        interpreter.invoke()
+        output_data = interpreter.get_tensor(output_details[0]['index'])
+
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
         img = img.half() if half and backend == 'pytorch' else img.float()  # uint8 to fp16/32
@@ -116,27 +165,31 @@ def detect(save_img=False):
         t1 = time_synchronized()
         if backend == 'pytorch':
             pred = model(img, augment=opt.augment)[0]
-        else:
-            if backend == 'saved_model':
-                pred = model(img.permute(0, 2, 3, 1).cpu().numpy(), training=False).numpy()
-            elif backend == 'graph_def':
-                pred = frozen_func(x=tf.constant(img.permute(0, 2, 3, 1).cpu().numpy())).numpy()
-            elif backend == 'tflite':
-                input_data = img.permute(0, 2, 3, 1).cpu().numpy()
-                if opt.tfl_int8:
-                    scale, zero_point = input_details[0]['quantization']
-                    input_data = input_data / scale + zero_point
-                    input_data = input_data.astype(np.uint8)
-                interpreter.set_tensor(input_details[0]['index'], input_data)
-                interpreter.invoke()
-                pred = interpreter.get_tensor(output_details[0]['index'])
-                if opt.tfl_int8:
-                    scale, zero_point = output_details[0]['quantization']
-                    pred = pred.astype(np.float32)
-                    pred = (pred - zero_point) * scale
-            # Denormalize xywh
-            pred[..., :4] *= opt.img_size
-            pred = torch.tensor(pred)
+
+        elif backend == 'saved_model':
+            if tf.__version__.startswith('1'):
+                pred = sess.run(tf_output.name, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+                pred = torch.tensor(pred)
+            else:
+                res = model(img.permute(0, 2, 3, 1).cpu().numpy(), training=False)
+                pred = res[0].numpy()
+                pred = torch.tensor(pred)
+
+        elif backend == 'graph_def':
+            if tf.__version__.startswith('1'):
+                pred = sess.run(tf_output.name, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+                pred = torch.tensor(pred)
+            else:
+                pred = frozen_func(x=tf.constant(img.permute(0, 2, 3, 1).cpu().numpy()))
+                pred = torch.tensor(pred.numpy())
+
+        elif backend == 'tflite':
+            input_data = img.permute(0, 2, 3, 1).cpu().numpy()
+            interpreter.set_tensor(input_details[0]['index'], input_data)
+            interpreter.invoke()
+            output_data = interpreter.get_tensor(output_details[0]['index'])
+            pred = torch.tensor(output_data)
+
 
         # Apply NMS
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
