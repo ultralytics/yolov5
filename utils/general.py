@@ -509,11 +509,11 @@ def compute_loss(p, targets, model):  # predictions, targets, model
             pxy = ps[:, :2].sigmoid() * 2. - 0.5
             pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anchors[i]
             pbox = torch.cat((pxy, pwh), 1).to(device)  # predicted box
-            giou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, CIoU=True)  # giou(prediction, target)
-            lbox += (1.0 - giou).mean()  # giou loss
+            iou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, CIoU=True)  # iou(prediction, target)
+            lbox += (1.0 - iou).mean()  # iou loss
 
             # Objectness
-            tobj[b, a, gj, gi] = (1.0 - model.gr) + model.gr * giou.detach().clamp(0).type(tobj.dtype)  # giou ratio
+            tobj[b, a, gj, gi] = (1.0 - model.gr) + model.gr * iou.detach().clamp(0).type(tobj.dtype)  # iou ratio
 
             # Classification
             if model.nc > 1:  # cls loss (only if multiple classes)
@@ -528,7 +528,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
         lobj += BCEobj(pi[..., 4], tobj) * balance[i]  # obj loss
 
     s = 3 / np  # output count scaling
-    lbox *= h['giou'] * s
+    lbox *= h['box'] * s
     lobj *= h['obj'] * s * (1.4 if np == 4 else 1.)
     lcls *= h['cls'] * s
     bs = tobj.shape[0]  # batch size
@@ -1234,7 +1234,7 @@ def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.general im
 def plot_results_overlay(start=0, stop=0):  # from utils.general import *; plot_results_overlay()
     # Plot training 'results*.txt', overlaying train and val losses
     s = ['train', 'train', 'train', 'Precision', 'mAP@0.5', 'val', 'val', 'val', 'Recall', 'mAP@0.5:0.95']  # legends
-    t = ['GIoU', 'Objectness', 'Classification', 'P-R', 'mAP-F1']  # titles
+    t = ['Box', 'Objectness', 'Classification', 'P-R', 'mAP-F1']  # titles
     for f in sorted(glob.glob('results*.txt') + glob.glob('../../Downloads/results*.txt')):
         results = np.loadtxt(f, usecols=[2, 3, 4, 8, 9, 12, 13, 14, 10, 11], ndmin=2).T
         n = results.shape[1]  # number of rows
@@ -1254,13 +1254,13 @@ def plot_results_overlay(start=0, stop=0):  # from utils.general import *; plot_
         fig.savefig(f.replace('.txt', '.png'), dpi=200)
 
 
-def plot_results(start=0, stop=0, bucket='', id=(), labels=(),
-                 save_dir=''):  # from utils.general import *; plot_results()
+def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
+    # from utils.general import *; plot_results()
     # Plot training 'results*.txt' as seen in https://github.com/ultralytics/yolov5#reproduce-our-training
     fig, ax = plt.subplots(2, 5, figsize=(12, 6))
     ax = ax.ravel()
-    s = ['GIoU', 'Objectness', 'Classification', 'Precision', 'Recall',
-         'val GIoU', 'val Objectness', 'val Classification', 'mAP@0.5', 'mAP@0.5:0.95']
+    s = ['Box', 'Objectness', 'Classification', 'Precision', 'Recall',
+         'val Box', 'val Objectness', 'val Classification', 'mAP@0.5', 'mAP@0.5:0.95']
     if bucket:
         # os.system('rm -rf storage.googleapis.com')
         # files = ['https://storage.googleapis.com/%s/results%g.txt' % (bucket, x) for x in id]
