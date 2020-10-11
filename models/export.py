@@ -29,9 +29,6 @@ if __name__ == '__main__':
     set_logging()
     t = time.time()
 
-    # Input
-    img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size(1,3,320,192) iDetection
-
     # Load PyTorch model
     model = attempt_load(opt.weights, map_location=torch.device('cpu'))  # load FP32 model
     labels = model.names
@@ -39,6 +36,9 @@ if __name__ == '__main__':
     # Checks
     gs = int(max(model.stride))  # grid size (max stride)
     opt.img_size = [check_img_size(x, gs) for x in opt.img_size]  # verify img_size are gs-multiples
+
+    # Input
+    img = torch.zeros(opt.batch_size, 3, *opt.img_size)  # image size(1,3,320,192) iDetection
 
     # Update model
     for k, m in model.named_modules():
