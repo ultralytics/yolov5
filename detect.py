@@ -151,6 +151,8 @@ def detect(save_img=False):
             _ = frozen_func(x=tf.constant(img.permute(0, 2, 3, 1).cpu().numpy()))
     elif backend == 'tflite':
         input_data = img.permute(0, 2, 3, 1).cpu().numpy()
+        if opt.tfl_int8:
+            input_data = input_data.astype(np.uint8)
         interpreter.set_tensor(input_details[0]['index'], input_data)
         interpreter.invoke()
         output_data = interpreter.get_tensor(output_details[0]['index'])
@@ -186,6 +188,10 @@ def detect(save_img=False):
 
         elif backend == 'tflite':
             input_data = img.permute(0, 2, 3, 1).cpu().numpy()
+            if opt.tfl_int8:
+                scale, zero_point = input_details[0]['quantization']
+                input_data = input_data / scale + zero_point
+                input_data = input_data.astype(np.uint8)
             interpreter.set_tensor(input_details[0]['index'], input_data)
             interpreter.invoke()
             if not opt.tfl_detect:
@@ -195,12 +201,18 @@ def detect(save_img=False):
                 import yaml
                 yaml_file = Path(opt.cfg).name
                 with open(opt.cfg) as f:
-                    yaml = yaml.load(f, Loader=yaml.FullLoader)  # model dict
+                    yaml = yaml.load(f, Loader=yaml.FullLoader)
 
                 anchors = yaml['anchors']
                 nc = yaml['nc']
                 nl = len(anchors)
                 x = [torch.tensor(interpreter.get_tensor(output_details[i]['index']), device=device) for i in range(nl)]
+                if opt.tfl_int8:
+                    for i in range(nl):
+                        scale, zero_point = output_details[i]['quantization']
+                        x[i] = x[i].float()
+                        x[i] = (x[i] - zero_point) * scale
+
                 def _make_grid(nx=20, ny=20):
                     yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
                     return torch.stack((xv, yv), 2).view((1, 1, ny * nx, 2)).float()
@@ -314,6 +326,7 @@ if __name__ == '__main__':
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--tfl-detect', action='store_true', help='add Detect module in TFLite')
     parser.add_argument('--cfg', type=str, default='./models/yolov5s.yaml', help='cfg path')
+    parser.add_argument('--tfl-int8', action='store_true', help='use int8 quantized TFLite model')
     opt = parser.parse_args()
     print(opt)
     check_requirements()
