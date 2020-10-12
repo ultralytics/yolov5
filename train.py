@@ -6,7 +6,6 @@ import random
 import shutil
 import time
 from pathlib import Path
-from pprint import pprint
 
 import numpy as np
 import torch.distributed as dist
@@ -442,7 +441,7 @@ if __name__ == '__main__':
         assert opt.batch_size % opt.world_size == 0, '--batch-size must be multiple of CUDA device count'
         opt.batch_size = opt.total_batch_size // opt.world_size
 
-    pprint(vars(opt))
+    logger.info(opt)
     with open(opt.hyp) as f:
         hyp = yaml.load(f, Loader=yaml.FullLoader)  # load hyps
 
