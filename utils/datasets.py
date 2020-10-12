@@ -10,6 +10,8 @@ from pathlib import Path
 from threading import Thread
 
 import cv2
+import math
+import skvideo.io
 import numpy as np
 import torch
 from PIL import Image, ExifTags
@@ -124,9 +126,19 @@ class LoadImages:  # for inference
         images = [x for x in files if os.path.splitext(x)[-1].lower() in img_formats]
         videos = [x for x in files if os.path.splitext(x)[-1].lower() in vid_formats]
         ni, nv = len(images), len(videos)
+        videos_rotation = [None for _ in videos]
+        for index in range(nv):
+            metadata = skvideo.io.ffprobe(videos[index])
+            if 'video' in metadata and 'tag' in metadata['video']:
+                tags = metadata['video']['tag']
+
+                for tag in tags:
+                    if tag['@key'] == 'rotate':
+                        videos_rotation[index] = tag['@value']
 
         self.img_size = img_size
         self.files = images + videos
+        self.rotation = [None for _ in images] + videos_rotation
         self.nf = ni + nv  # number of files
         self.video_flag = [False] * ni + [True] * nv
         self.mode = 'images'
@@ -145,6 +157,7 @@ class LoadImages:  # for inference
         if self.count == self.nf:
             raise StopIteration
         path = self.files[self.count]
+        rotation = self.rotation[self.count]
 
         if self.video_flag[self.count]:
             # Read video
@@ -170,6 +183,10 @@ class LoadImages:  # for inference
             assert img0 is not None, 'Image Not Found ' + path
             print('image %g/%g %s: ' % (self.count, self.nf, path), end='')
 
+        # Rotation Valid
+        if rotation:
+            img0 = cv2.rotate(img0, 0)
+
         # Padded resize
         img = letterbox(img0, new_shape=self.img_size)[0]
 
@@ -178,7 +195,7 @@ class LoadImages:  # for inference
         img = np.ascontiguousarray(img)
 
         # cv2.imwrite(path + '.letterbox.jpg', 255 * img.transpose((1, 2, 0))[:, :, ::-1])  # save letterbox image
-        return path, img, img0, self.cap
+        return path, img, img0, self.cap, rotation
 
     def new_video(self, path):
         self.frame = 0
@@ -248,7 +265,7 @@ class LoadWebcam:  # for inference
         img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
         img = np.ascontiguousarray(img)
 
-        return img_path, img, img0, None
+        return img_path, img, img0, None, None
 
     def __len__(self):
         return 0
@@ -321,7 +338,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
         img = img[:, :, :, ::-1].transpose(0, 3, 1, 2)  # BGR to RGB, to bsx3x416x416
         img = np.ascontiguousarray(img)
 
-        return self.sources, img, img0, None
+        return self.sources, img, img0, None, None
 
     def __len__(self):
         return 0  # 1E12 frames = 32 streams at 30 FPS for 30 years
