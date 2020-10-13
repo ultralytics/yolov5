@@ -143,7 +143,7 @@ def check_dataset(dict):
     if val and len(val):
         val = [os.path.abspath(x) for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(os.path.exists(x) for x in val):
-            print('\nWARNING: Dataset not found, nonexistant paths: %s' % [*val])
+            print('\nWARNING: Dataset not found, nonexistent paths: %s' % [*val])
             if s and len(s):  # download script
                 print('Downloading %s ...' % s)
                 if s.startswith('http') and s.endswith('.zip'):  # URL
@@ -158,7 +158,7 @@ def check_dataset(dict):
 
 
 def make_divisible(x, divisor):
-    # Returns x evenly divisble by divisor
+    # Returns x evenly divisible by divisor
     return math.ceil(x / divisor) * divisor
 
 
@@ -169,9 +169,9 @@ def labels_to_class_weights(labels, nc=80):
 
     labels = np.concatenate(labels, 0)  # labels.shape = (866643, 5) for COCO
     classes = labels[:, 0].astype(np.int)  # labels = [class xywh]
-    weights = np.bincount(classes, minlength=nc)  # occurences per class
+    weights = np.bincount(classes, minlength=nc)  # occurrences per class
 
-    # Prepend gridpoint count (for uCE trianing)
+    # Prepend gridpoint count (for uCE training)
     # gpi = ((320 / 32 * np.array([1, 2, 4])) ** 2 * 3).sum()  # gridpoints per image
     # weights = np.hstack([gpi * len(labels)  - weights.sum() * 9, weights * 9]) ** 0.5  # prepend gridpoints to start
 
@@ -820,7 +820,7 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
     k, dist = kmeans(wh / s, n, iter=30)  # points, mean distance
     k *= s
     wh = torch.tensor(wh, dtype=torch.float32)  # filtered
-    wh0 = torch.tensor(wh0, dtype=torch.float32)  # unflitered
+    wh0 = torch.tensor(wh0, dtype=torch.float32)  # unfiltered
     k = print_results(k)
 
     # Plot
@@ -1281,7 +1281,7 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
             for i in range(10):
                 y = results[i, x]
                 if i in [0, 1, 2, 5, 6, 7]:
-                    y[y == 0] = np.nan  # dont show zero loss values
+                    y[y == 0] = np.nan  # don't show zero loss values
                     # y /= y[0]  # normalize
                 label = labels[fi] if len(labels) else Path(f).stem
                 ax[i].plot(x, y, marker='.', label=label, linewidth=1, markersize=6)
