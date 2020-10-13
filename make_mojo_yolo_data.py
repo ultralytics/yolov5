@@ -3,8 +3,8 @@ from pathlib import Path
 import shutil
 import cv2
 
-ROOT = "D:/Nanovare/dev/yolo/AnnotationDatasetKarolinska/crossed_process_dataset"
-ROOT_YOLO_OUTPUT = "data/mojo_yolo_dataset_grey" # Always use data to store in expected folder
+ROOT = r"D:\Nanovare\data\supervisely\NanovareAnnotationData\LocalizationAnnotationData\all"
+ROOT_YOLO_OUTPUT = "data/mojo_yolo_dataset_kings_v2_grey" # Always use data to store in expected folder
 USE_RGB = False
 
 # annotation classes
@@ -17,7 +17,7 @@ def make_yolo_dataset(rgb=False):
     resolved_root = Path(ROOT_YOLO_OUTPUT).resolve()
     if resolved_root.is_dir():
         shutil.rmtree(resolved_root)
-    
+
     for frame_path in frames_path:
         print(frame_path)
 
@@ -36,6 +36,20 @@ def make_yolo_dataset(rgb=False):
             with annotation_path.open() as annotation_file:
                 annotation_data = json.load(annotation_file)
 
+            discard = False
+            # Remove images with "To ignore" tag
+            for tag in annotation_data["tags"]:
+                if tag["name"] == "To ignore":
+                    discard = True
+                    break
+            # Remove images with no objects (to remove images not tagged yet)
+            if len(annotation_data["objects"]) == 0:
+                discard = True
+
+            if discard:
+                print("Discarding")
+                continue
+
         if rgb:
             frame = cv2.imread(str(frame_path), 1)
         else:
@@ -45,7 +59,7 @@ def make_yolo_dataset(rgb=False):
 
 
 def convert_to_yolo_supervisely(frame, annotation_data, image_name, w=80):
-    if "cover0" in image_name:
+    if "cover0" in image_name or "cover2" in image_name:
         folder = "train"
     else:
         folder = "test"
@@ -59,6 +73,8 @@ def convert_to_yolo_supervisely(frame, annotation_data, image_name, w=80):
     im_height, im_width = frame.shape[:2]
     with annotation_path.open("w") as f:
         for obj in annotation_data["objects"]:
+            if obj["classTitle"] not in ANNOTATION_CLASSES_TO_ID:
+                continue
             class_id = ANNOTATION_CLASSES_TO_ID[obj["classTitle"]]
             x = obj["points"]["exterior"][0][0]
             y = obj["points"]["exterior"][0][1]

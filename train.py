@@ -28,7 +28,7 @@ from utils.general import (
     compute_loss, plot_images, fitness, strip_optimizer, plot_results, get_latest_run, check_dataset, check_file,
     check_git_status, check_img_size, increment_dir, print_mutation, plot_evolution, set_logging, init_seeds)
 from utils.google_utils import attempt_download
-from utils.torch_utils import init_seeds, ModelEMA, select_device, intersect_dicts
+from utils.torch_utils import init_torch_seeds, ModelEMA, select_device, intersect_dicts
 from detect import detect
 
 logger = logging.getLogger(__name__)
