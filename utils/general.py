@@ -7,6 +7,7 @@ import random
 import shutil
 import subprocess
 import time
+import re
 from contextlib import contextmanager
 from copy import copy
 from pathlib import Path
@@ -952,9 +953,12 @@ def increment_dir(dir, comment=''):
     # Increments a directory runs/exp1 --> runs/exp2_comment
     n = 0  # number
     dir = str(Path(dir))  # os-agnostic
-    d = sorted(glob.glob(dir + '*'))  # directories
-    if len(d):
-        n = max([int(x[len(dir):x.rfind('_') if '_' in Path(x).name else None]) for x in d]) + 1  # increment
+    dirs = sorted(glob.glob(dir + '*'))  # directories
+    if dirs:
+        matches = [re.search(r"exp(\d+)", d) for d in dirs]
+        idxs = [int(m.groups()[0]) for m in matches if m]
+        if idxs:
+            n = max(idxs) + 1  # increment
     return dir + str(n) + ('_' + comment if comment else '')
 
 
