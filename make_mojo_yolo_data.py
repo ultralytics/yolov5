@@ -18,23 +18,20 @@ ANNOTATION_CLASSES_TO_ID = {"sperm": 0}
 dataset_name_id = dict(map(lambda x: (x.id, x.name), sly.Api().dataset.get_list(constants.SUPERVISELY_LOCALISATION_PROJECT_ID)))
 
 
-def init_dataset():
+def init_dataset(filter_by_name=["2020_01_15", "2020_01_17", "2020_01_21", "2020_01_22"], dir_name="vincent_ann_540"):
     api = sly.Api()
-    filter_by_name = ["2020_01_15", "2020_01_17", "2020_01_21", "2020_01_22"]
     api.download_project(
         constants.SUPERVISELY_LOCALISATION_PROJECT_ID
     )
-    print(dict(filter(lambda x: x[1] in filter_by_name, dataset_name_id.items())))
     image_dir = api.merge_project(
         constants.SUPERVISELY_LOCALISATION_PROJECT_ID,
         dataset_filter_id=dict(filter(lambda x: x[1] in filter_by_name, dataset_name_id.items())),
-        dir_name="vincent_ann_540",
+        dir_name=dir_name,
     )
     return image_dir
 
 
 def convert_to_yolo(image_dir, rgb=False):
-    print(image_dir)
     frames_path = list(image_dir.glob("*.png"))
     train_frame_path, test_frame_path = model_selection.train_test_split(frames_path, test_size=0.25, shuffle=True, random_state=42)
     resolved_root = Path(ROOT_YOLO_OUTPUT).resolve()
@@ -107,9 +104,25 @@ def convert_to_yolo_image(frame, annotation_data, image_name, train=True, w=80):
             # Only keep sperm for now
             if class_id == 0:
                 f.write(f"{class_id} {bbox[0]/im_width:.6f} {bbox[1]/im_height:.6f} {bbox[2]/im_width:.6f} {bbox[3]/im_height:.6f}\n")
-  
 
-if __name__ == "__main__":
-    #image_dir = init_dataset(); print(image_dir)
-    image_dir = Path(r"Q:\data\supervisely\NanovareAnnotationData\LocalizationAnnotationData\vincent_ann_540\img")
-    convert_to_yolo(image_dir, rgb=USE_RGB)
+
+def main():
+    import train
+    dataset_vincent_540 = ["2020_01_15", "2020_01_17", "2020_01_21", "2020_01_22"]
+    dataset_zoe_380 = ["2020_01_24", "2020_01_23", "2020_01_16"]
+    dir_name_filter_dataset = {
+        "dataset_vincent_540": dataset_vincent_540,
+        "dataset_zoe_380": dataset_zoe_380,
+        "dataset_zoe_380_vincent_540": dataset_zoe_380 + dataset_vincent_540
+    }
+    for dir_name, filter_by_name in dir_name_filter_dataset.items():
+        image_dir = init_dataset(filter_by_name, dir_name)
+        convert_to_yolo(image_dir, rgb=USE_RGB)
+        train.main()
+        print(f"Project name {dir_name}")
+        print("=========================     END      =================================")
+
+
+if __name__ == '__main__':
+    main()
+
