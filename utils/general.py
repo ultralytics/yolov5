@@ -1,19 +1,18 @@
 import glob
 import logging
-import math
 import os
 import platform
 import random
+import re
 import shutil
 import subprocess
 import time
-import re
 from contextlib import contextmanager
 from copy import copy
 from pathlib import Path
-from warnings import warn
 
 import cv2
+import math
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -530,9 +529,6 @@ def compute_loss(p, targets, model):  # predictions, targets, model
         lobj += BCEobj(pi[..., 4], tobj) * balance[i]  # obj loss
 
     s = 3 / np  # output count scaling
-    if 'box' not in h:
-        warn('Compatibility your hyper confing is missing "box" which was renamed from past "giou".')
-        h['box'] = h.pop('giou')
     lbox *= h['box'] * s
     lobj *= h['obj'] * s * (1.4 if np == 4 else 1.)
     lcls *= h['cls'] * s
