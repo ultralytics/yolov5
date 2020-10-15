@@ -1,7 +1,6 @@
 # This file contains modules common to various models
 
 import math
-
 import numpy as np
 import torch
 import torch.nn as nn
