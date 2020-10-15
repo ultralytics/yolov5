@@ -1,9 +1,10 @@
 import argparse
 import logging
-import math
 import sys
 from copy import deepcopy
 from pathlib import Path
+
+import math
 
 sys.path.append('./')  # to run '$ python *.py' files in subdirectories
 logger = logging.getLogger(__name__)
@@ -188,7 +189,7 @@ class Model(nn.Module):
     def autoshape(self):  # add autoShape module
         print('Adding autoShape... ')
         m = autoShape(self)  # wrap model
-        copy_attr(m, self, include=('names', 'stride', 'nc', 'autoshape'), exclude=())  # copy attributes
+        copy_attr(m, self, include=('yaml', 'nc', 'hyp', 'names', 'stride'), exclude=())  # copy attributes
         return m
 
     def info(self, verbose=False):  # print model information
