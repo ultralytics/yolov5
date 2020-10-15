@@ -1,9 +1,9 @@
 import logging
-import math
 import os
 import time
 from copy import deepcopy
 
+import math
 import torch
 import torch.backends.cudnn as cudnn
 import torch.nn as nn

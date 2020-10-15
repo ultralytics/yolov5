@@ -1,5 +1,4 @@
 import glob
-import math
 import os
 import random
 import shutil
@@ -8,6 +7,7 @@ from pathlib import Path
 from threading import Thread
 
 import cv2
+import math
 import numpy as np
 import torch
 from PIL import Image, ExifTags
