@@ -1,18 +1,18 @@
 import glob
 import logging
-import math
 import os
 import platform
 import random
+import re
 import shutil
 import subprocess
 import time
-import re
 from contextlib import contextmanager
 from copy import copy
 from pathlib import Path
 
 import cv2
+import math
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
