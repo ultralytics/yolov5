@@ -30,7 +30,7 @@ def test(data,
          verbose=False,
          model=None,
          dataloader=None,
-         save_dir='',
+         save_dir=None,
          merge=False,
          save_txt=False):
     # Initialize/load model and set device
@@ -196,7 +196,7 @@ def test(data,
                     correct_perc_50 = correct_perc_95 = 1
                 str_to_save += f" {conf_interval} {len(correct_to_consider)} {correct_perc_50} {correct_perc_95}"
 
-            training_info_mojo_dir = save_dir / "training_info_mojo"
+            training_info_mojo_dir = Path(save_dir) / "training_info_mojo"
             training_info_mojo_dir.mkdir(parents=True, exist_ok=True)
             with open(str(training_info_mojo_dir / Path(paths[si]).stem) + '.txt', 'a') as f:
                 f.write(f"{len(labels)}{str_to_save}\n")  # label format
