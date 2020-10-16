@@ -9,38 +9,33 @@ from sklearn import model_selection
 from nanovare_casa_core.utils import supervisely as sly
 from nanovare_casa_core.utils import constants
 
-ROOT_YOLO_OUTPUT = "data/mojo_yolo_dataset_grey" # Always use data to store in expected folder
-USE_RGB = False
-
 # annotation classes
 ANNOTATION_CLASSES_TO_ID = {"sperm": 0}
 
-dataset_name_id = dict(map(lambda x: (x.id, x.name), sly.Api().dataset.get_list(constants.SUPERVISELY_LOCALISATION_PROJECT_ID)))
 
-
-def init_dataset(filter_by_name=["2020_01_15", "2020_01_17", "2020_01_21", "2020_01_22"], dir_name="vincent_ann_540"):
+def init_supervisely_dataset(dir_name, dataset_filter_id=None):
     api = sly.Api()
     api.download_project(
-        constants.SUPERVISELY_LOCALISATION_PROJECT_ID
-    )
-    image_dir = api.merge_project(
         constants.SUPERVISELY_LOCALISATION_PROJECT_ID,
-        dataset_filter_id=dict(filter(lambda x: x[1] in filter_by_name, dataset_name_id.items())),
+        dataset_filter_id=dataset_filter_id,
+        check=True
+    )
+    supervisely_image_dir = api.merge_project(
+        constants.SUPERVISELY_LOCALISATION_PROJECT_ID,
+        dataset_filter_id=dataset_filter_id,
         dir_name=dir_name,
     )
-    return image_dir
+    return supervisely_image_dir
 
 
-def convert_to_yolo(image_dir, rgb=False):
-    frames_path = list(image_dir.glob("*.png"))
-    train_frame_path, test_frame_path = model_selection.train_test_split(frames_path, test_size=0.25, shuffle=True, random_state=42)
-    resolved_root = Path(ROOT_YOLO_OUTPUT).resolve()
-    if resolved_root.is_dir():
-        shutil.rmtree(resolved_root)
+def convert_supervisely_to_yolo(supervisely_image_dir, yolo_data_dir, rgb=False):
+    image_path_list = list(supervisely_image_dir.glob("*.png"))
+    train_frame_path, test_frame_path = model_selection.train_test_split(image_path_list, test_size=0.25, shuffle=True, random_state=42)
+    yolo_data_dir = Path(yolo_data_dir).resolve()
     discard_count = 0
-    total_count = len(frames_path)
+    total_count = len(image_path_list)
 
-    for frame_path in tqdm(frames_path, "Converting to YOLO format"):
+    for frame_path in tqdm(image_path_list, "Converting to YOLO format"):
 
         annotation_path = frame_path.parents[1] / "ann" / (frame_path.name + ".json")
         if not annotation_path.is_file():                            
@@ -71,28 +66,26 @@ def convert_to_yolo(image_dir, rgb=False):
                 continue
 
         if rgb:
-            frame = cv2.imread(str(frame_path), 1)
+            image = cv2.imread(str(frame_path), 1)
         else:
-            frame = cv2.imread(str(frame_path), 0)
-
-        convert_to_yolo_image(frame, annotation_data, frame_path.stem, train=frame_path in train_frame_path)
+            image = cv2.imread(str(frame_path), 0)
+        if frame_path in train_frame_path:
+            folder = "train"
+        else:
+            folder = "val"
+        yolo_image_path = yolo_data_dir / "images" / folder / f"{frame_path.stem}.jpg"
+        yolo_annotation_path = yolo_data_dir / "labels" / folder / f"{frame_path.stem}.txt"
+        yolo_image_path.parent.mkdir(parents=True, exist_ok=True)
+        yolo_annotation_path.parent.mkdir(parents=True, exist_ok=True)
+        convert_supervisely_to_yolo_image(image, yolo_image_path, annotation_data, yolo_annotation_path)
     print(f"Discard {discard_count} out of {total_count}")
+    return yolo_data_dir / "images" / "train", yolo_data_dir / "images" / "val"
 
 
-def convert_to_yolo_image(frame, annotation_data, image_name, train=True, w=80):
-    if train:
-        folder = "train"
-    else:
-        folder = "test"
-    resolved_root = Path(ROOT_YOLO_OUTPUT).resolve()
-    image_path = resolved_root / "images" / folder / f"{image_name}.jpg"
-    annotation_path = resolved_root / "labels" / folder / f"{image_name}.txt"
-    image_path.parent.mkdir(parents=True, exist_ok=True)
-    annotation_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    cv2.imwrite(str(image_path), frame)
-    im_height, im_width = frame.shape[:2]
-    with annotation_path.open("w") as f:
+def convert_supervisely_to_yolo_image(image, yolo_image_path, annotation_data, yolo_annotation_path, w=80):
+    cv2.imwrite(yolo_image_path.as_posix(), image)
+    im_height, im_width = image.shape[:2]
+    with yolo_annotation_path.open("w") as f:
         for obj in annotation_data["objects"]:
             if obj["classTitle"] not in ANNOTATION_CLASSES_TO_ID:
                 continue
@@ -104,25 +97,3 @@ def convert_to_yolo_image(frame, annotation_data, image_name, train=True, w=80):
             # Only keep sperm for now
             if class_id == 0:
                 f.write(f"{class_id} {bbox[0]/im_width:.6f} {bbox[1]/im_height:.6f} {bbox[2]/im_width:.6f} {bbox[3]/im_height:.6f}\n")
-
-
-def main():
-    import train
-    dataset_vincent_540 = ["2020_01_15", "2020_01_17", "2020_01_21", "2020_01_22"]
-    dataset_zoe_380 = ["2020_01_24", "2020_01_23", "2020_01_16"]
-    dir_name_filter_dataset = {
-        "dataset_vincent_540": dataset_vincent_540,
-        "dataset_zoe_380": dataset_zoe_380,
-        "dataset_zoe_380_vincent_540": dataset_zoe_380 + dataset_vincent_540
-    }
-    for dir_name, filter_by_name in dir_name_filter_dataset.items():
-        image_dir = init_dataset(filter_by_name, dir_name)
-        convert_to_yolo(image_dir, rgb=USE_RGB)
-        train.main()
-        print(f"Project name {dir_name}")
-        print("=========================     END      =================================")
-
-
-if __name__ == '__main__':
-    main()
-
