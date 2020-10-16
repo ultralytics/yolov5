@@ -53,7 +53,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Configure
     cuda = device.type != 'cpu'
-    init_torch_seeds(2 + rank)
+    init_seeds(2 + rank)
     with open(opt.data) as f:
         data_dict = yaml.load(f, Loader=yaml.FullLoader)  # data dict
     with torch_distributed_zero_first(rank):
@@ -378,12 +378,11 @@ def train(hyp, opt, device, tb_writer=None):
     return results
 
 
-def main():
-    # parse arguments using optparse or argparse or what have you
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
-    parser.add_argument('--data', type=str, default='data/mojo.yaml', help='data.yaml path')
+    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
@@ -572,8 +571,3 @@ def main():
         plot_evolution(yaml_file)
         print('Hyperparameter evolution complete. Best results saved as: %s\nCommand to train a new model with these '
               'hyperparameters: $ python train.py --hyp %s' % (yaml_file, yaml_file))
-    print(f"Logging directory {log_dir}")
-
-
-if __name__ == '__main__':
-    main()
