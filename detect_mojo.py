@@ -110,7 +110,7 @@ def get_serializable_structure(data):
     return data
 
 
-def detect(save_img=False):
+def detect(opt, save_img=False):
     out, source, weights, view_img, save_txt, imgsz = \
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source.isnumeric() or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
@@ -290,8 +290,7 @@ def detect(save_img=False):
     print('Done. (%.3fs)' % (time.time() - t0))
 
 
-
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
@@ -312,7 +311,22 @@ if __name__ == '__main__':
     with torch.no_grad():
         if opt.update:  # update all models (to fix SourceChangeWarning)
             for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
-                detect()
+                detect(opt)
                 strip_optimizer(opt.weights)
         else:
-            detect()
+            detect(opt)
+
+
+if __name__ == '__main__':
+    import sys
+    karolinska_capture = Path("..\..\data\Karolinska\capture_Mast_data")
+
+    for date in os.listdir(karolinska_capture):
+        for patient_id in os.listdir(karolinska_capture / date):
+            source = karolinska_capture / date / patient_id
+            if list(source.glob("*.avi")):
+
+                sys.argv += ["--source", (karolinska_capture / date / patient_id).resolve().as_posix()]
+                main()
+                sys.argv.pop(-1)
+                sys.argv.pop(-1)
