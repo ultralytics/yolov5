@@ -319,14 +319,25 @@ def main():
 
 if __name__ == '__main__':
     import sys
-    karolinska_capture = Path("..\..\data\Karolinska\capture_Mast_data")
+    import d6tflow
+    import luigi
+
+    d6tflow.settings.log_level = "ERROR"
+    karolinska_capture = Path("../../data/Karolinska/capture_MAST_data")
+
+    class TaskDetectKarolinska(d6tflow.tasks.TaskPickle):
+        date = luigi.Parameter()
+        patient_id = luigi.Parameter()
+
+        def run(self):
+            if not "--source" in sys.argv:
+                sys.argv += ["--source", "To be replaced"]
+            source = karolinska_capture / self.date / self.patient_id
+            if list(source.glob("*.avi")):
+                sys.argv[sys.argv.index("--source") + 1] = source.resolve().as_posix()
+                main()
+
 
     for date in os.listdir(karolinska_capture):
         for patient_id in os.listdir(karolinska_capture / date):
-            source = karolinska_capture / date / patient_id
-            if list(source.glob("*.avi")):
-
-                sys.argv += ["--source", (karolinska_capture / date / patient_id).resolve().as_posix()]
-                main()
-                sys.argv.pop(-1)
-                sys.argv.pop(-1)
+            d6tflow.run(TaskDetectKarolinska(date=date, patient_id=patient_id))
