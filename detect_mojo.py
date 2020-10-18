@@ -246,7 +246,7 @@ def detect(opt, save_img=False):
             centroids.append(centroids_in_frame)
 
             # Print time (inference + NMS)
-             #print('%sDone. (%.3fs)' % (s, t2 - t1))
+            #print('%sDone. (%.3fs)' % (s, t2 - t1))
 
             # Stream results
             if view_img:
@@ -337,7 +337,12 @@ if __name__ == '__main__':
                 sys.argv[sys.argv.index("--source") + 1] = source.resolve().as_posix()
                 main()
 
+    print_first_invalid_task = True
 
     for date in os.listdir(karolinska_capture):
         for patient_id in os.listdir(karolinska_capture / date):
-            d6tflow.run(TaskDetectKarolinska(date=date, patient_id=patient_id))
+            task = TaskDetectKarolinska(date=date, patient_id=patient_id)
+            if print_first_invalid_task and not(task.complete()):
+                d6tflow.preview(task)
+                print_first_invalid_task = False
+            d6tflow.run(task)
