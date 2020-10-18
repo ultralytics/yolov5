@@ -336,6 +336,7 @@ if __name__ == '__main__':
             if list(source.glob("*.avi")):
                 sys.argv[sys.argv.index("--source") + 1] = source.resolve().as_posix()
                 main()
+            self.save(0)
 
     print_first_invalid_task = True
 
