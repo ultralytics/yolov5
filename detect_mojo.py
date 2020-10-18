@@ -342,7 +342,5 @@ if __name__ == '__main__':
     for date in os.listdir(karolinska_capture):
         for patient_id in os.listdir(karolinska_capture / date):
             task = TaskDetectKarolinska(date=date, patient_id=patient_id)
-            if print_first_invalid_task and not(task.complete()):
-                d6tflow.preview(task)
-                print_first_invalid_task = False
+            d6tflow.preview(task)
             d6tflow.run(task)
