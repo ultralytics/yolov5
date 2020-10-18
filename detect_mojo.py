@@ -246,7 +246,7 @@ def detect(opt, save_img=False):
             centroids.append(centroids_in_frame)
 
             # Print time (inference + NMS)
-            print('%sDone. (%.3fs)' % (s, t2 - t1))
+             #print('%sDone. (%.3fs)' % (s, t2 - t1))
 
             # Stream results
             if view_img:
