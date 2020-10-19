@@ -343,8 +343,11 @@ if __name__ == '__main__':
         date = luigi.Parameter()
         patient_id = luigi.Parameter()
 
+        def requires(self): return TaskDetectKarolinska(date=date, patient_id=patient_id)
+
         def run(self):
-            for path in list((karolinska_capture / date / patient_id).glob("*.avi")):
+            patient_path = self.inputLoad()
+            for path in list((patient_path).glob("*.avi")):
                 analyze_frames(
                     path,
                     run_detection=False,
@@ -354,13 +357,16 @@ if __name__ == '__main__':
                 )
 
     if "--localization" in sys.argv:
+        sys.argv.remove("--localization")
         for date in os.listdir(karolinska_capture):
             for patient_id in os.listdir(karolinska_capture / date):
-                task = TaskDetectKarolinska(date=date, patient_id=patient_id)
-                d6tflow.preview(task)
-                d6tflow.run(task)
+                detect_task = TaskDetectKarolinska(date=date, patient_id=patient_id)
+                d6tflow.preview(detect_task)
+                d6tflow.run(detect_task)
+
 
     if "--tracking" in sys.argv:
+        sys.argv.remove("--tracking")
         from nanovare_casa_core.analysis.analysis import analyze_frames
         for date in os.listdir(karolinska_capture):
             for patient_id in os.listdir(karolinska_capture / date):
