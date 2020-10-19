@@ -32,6 +32,7 @@ def test(data,
          dataloader=None,
          save_dir=Path(''),  # for saving images
          save_txt=False,  # for auto-labelling
+         save_conf=False,
          plots=True):
     # Initialize/load model and set device
     training = model is not None
@@ -133,7 +134,10 @@ def test(data,
                 for *xyxy, conf, cls in x:
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                     with open(str(out / Path(paths[si]).stem) + '.txt', 'a') as f:
-                        f.write(('%g ' * 5 + '\n') % (cls, *xywh))  # label format
+                        if save_conf:
+                            f.write(('%g ' * 6 + '\n') % (cls, conf, *xywh))  # label format includes conf
+                        else: 
+                            f.write(('%g ' * 5 + '\n') % (cls, *xywh))  # label format does not include conf
 
             # Clip boxes to image bounds
             clip_coords(pred, (height, width))
@@ -262,7 +266,9 @@ if __name__ == '__main__':
     parser.add_argument('--single-cls', action='store_true', help='treat as single-class dataset')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
-    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    parser.add_argument('--save-txt', action='store_false', help='save results to *.txt')
+    parser.add_argument('--save-conf', action='store_false', help='put confidence score next to class in label*.txt')
+    parser.add_argument('--output', type=str, default='', help='output folder')  # output folder
     opt = parser.parse_args()
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
@@ -278,7 +284,11 @@ if __name__ == '__main__':
              opt.save_json,
              opt.single_cls,
              opt.augment,
-             opt.verbose)
+             opt.verbose,
+             save_dir=Path(opt.output),
+             save_txt=opt.save_txt,
+             save_conf=opt.save_conf,
+             )
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         for weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
