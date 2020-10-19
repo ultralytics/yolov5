@@ -336,12 +336,34 @@ if __name__ == '__main__':
             if list(source.glob("*.avi")):
                 sys.argv[sys.argv.index("--source") + 1] = source.resolve().as_posix()
                 main()
-            self.save(0)
+            self.save(source)
 
-    print_first_invalid_task = True
 
-    for date in os.listdir(karolinska_capture):
-        for patient_id in os.listdir(karolinska_capture / date):
-            task = TaskDetectKarolinska(date=date, patient_id=patient_id)
-            d6tflow.preview(task)
-            d6tflow.run(task)
+    class TaskTrackKarolinska(d6tflow.tasks.TaskPickle):
+        date = luigi.Parameter()
+        patient_id = luigi.Parameter()
+
+        def run(self):
+            for path in list((karolinska_capture / date / patient_id).glob("*.avi")):
+                analyze_frames(
+                    path,
+                    run_detection=False,
+                    run_classification=True,
+                    run_tracking=True,
+                    run_viz=True,
+                )
+
+    if "--localization" in sys.argv:
+        for date in os.listdir(karolinska_capture):
+            for patient_id in os.listdir(karolinska_capture / date):
+                task = TaskDetectKarolinska(date=date, patient_id=patient_id)
+                d6tflow.preview(task)
+                d6tflow.run(task)
+
+    if "--tracking" in sys.argv:
+        from nanovare_casa_core.analysis.analysis import analyze_frames
+        for date in os.listdir(karolinska_capture):
+            for patient_id in os.listdir(karolinska_capture / date):
+                task = TaskTrackKarolinska(date=date, patient_id=patient_id)
+                d6tflow.preview(task)
+                d6tflow.run(task)
