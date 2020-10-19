@@ -348,7 +348,7 @@ if __name__ == '__main__':
                 analyze_frames(
                     path,
                     run_detection=False,
-                    run_classification=True,
+                    run_classification=False,
                     run_tracking=True,
                     run_viz=True,
                 )
