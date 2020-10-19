@@ -325,7 +325,7 @@ if __name__ == '__main__':
     d6tflow.settings.log_level = "ERROR"
     karolinska_capture = Path("../../data/Karolinska/capture_MAST_data")
 
-    class TaskDetectKarolinska(d6tflow.tasks.TaskPickle):
+    class TaskLocalization(d6tflow.tasks.TaskPickle):
         date = luigi.Parameter()
         patient_id = luigi.Parameter()
 
@@ -339,37 +339,41 @@ if __name__ == '__main__':
             self.save(source)
 
 
-    class TaskTrackKarolinska(d6tflow.tasks.TaskPickle):
+    class TaskTracking(d6tflow.tasks.TaskPickle):
         date = luigi.Parameter()
         patient_id = luigi.Parameter()
+        run_viz = luigi.BoolParameter(default=False)
 
-        def requires(self): return TaskDetectKarolinska(date=date, patient_id=patient_id)
+        def requires(self): return TaskLocalization(date=date, patient_id=patient_id)
 
         def run(self):
-            patient_path = self.inputLoad()
-            for path in list((patient_path).glob("*.avi")):
+            for path in list((self.inputLoad()).glob("*.avi")):
                 analyze_frames(
                     path,
                     run_detection=False,
                     run_classification=False,
                     run_tracking=True,
-                    run_viz=True,
+                    run_viz=self.run_viz,
                 )
+            self.save(self.inputLoad())
 
-    if "--localization" in sys.argv:
-        sys.argv.remove("--localization")
+
+    if "--run-localization" in sys.argv:
+        sys.argv.remove("--run-localization")
         for date in os.listdir(karolinska_capture):
             for patient_id in os.listdir(karolinska_capture / date):
-                detect_task = TaskDetectKarolinska(date=date, patient_id=patient_id)
+                detect_task = TaskLocalization(date=date, patient_id=patient_id)
                 d6tflow.preview(detect_task)
                 d6tflow.run(detect_task)
 
-
-    if "--tracking" in sys.argv:
-        sys.argv.remove("--tracking")
+    if "--run-tracking" in sys.argv:
+        sys.argv.remove("--run-tracking")
+        if "--run-viz" in sys.argv:
+            sys.argv.remove("--run-viz")
+            run_viz = True
         from nanovare_casa_core.analysis.analysis import analyze_frames
         for date in os.listdir(karolinska_capture):
             for patient_id in os.listdir(karolinska_capture / date):
-                task = TaskTrackKarolinska(date=date, patient_id=patient_id)
+                task = TaskTracking(date=date, patient_id=patient_id, run_viz=run_viz)
                 d6tflow.preview(task)
                 d6tflow.run(task)
