@@ -26,6 +26,30 @@ import datetime
 RESIZE_FACTOR = 2
 
 
+def plot_manual_against_mast_yolo():
+    import pandas as pd
+
+    mast = Path("../../data/Karolinska") / "capture_MAST_data"
+    manual_result = pd.read_excel(Path("../../data/Karolinska") / "manual_results.xlsx")
+    manual_result.index = manual_result.patient_id
+    manual_result = manual_result["concentration"]
+    patient_id_yolo_result = []
+    for date in os.listdir(mast):
+        for patient_id in os.listdir(mast / date):
+            if patient_id in manual_result.index:
+                yolo_result_path = mast / date / patient_id / "patient_results.json"
+                if yolo_result_path.exists():
+                    yolo_result = json.load(open(yolo_result_path, 'r'))
+                    patient_id_yolo_result.append((patient_id, yolo_result["concentration_sperm"]))
+    patient_id_yolo_result = pd.DataFrame(patient_id_yolo_result)
+    patient_id_yolo_result.index = patient_id_yolo_result[0]
+    patient_id_yolo_result = patient_id_yolo_result[1]
+    merge = pd.merge(manual_result, patient_id_yolo_result, left_index=True, right_index=True)
+    import matplotlib.pyplot as plt
+    plt.scatter(merge[1].values, merge["concentration"].values)
+    plt.savefig("a.png")
+
+
 def id_generator(size=4, chars=string.digits + string.ascii_uppercase, nb=None):
     if nb is None:
         generated_id = "".join(random.choice(chars) for _ in range(size))
