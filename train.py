@@ -588,13 +588,12 @@ if __name__ == '__main__':
         override_parser = argparse.ArgumentParser()
         override_parser.add_argument('pipeline_name',
                                      help='Name of the pipeline')
-        remove_option_arg.append(override_parser.add_argument('-init-supervisely', action='store_true',
+        remove_option_arg.append(override_parser.add_argument('--init-supervisely', action='store_true',
                                                               help='Download, check integrity and merge a filtered '
                                                                    'supervisely dataset'))
         remove_option_arg.append(override_parser.add_argument('--init-yolo', action='store_true',
                                                               help='Convert a supervisely dataset to a yolo dataset'))
         remove_option_arg.append(override_parser.add_argument('--run-train', action='store_true',
-                                                              default=True,
                                                               help='Convert a supervisely dataset to a yolo dataset'))
         override_opt = override_parser.parse_args()
         remove_position_arg = list(map(lambda x: override_opt.__dict__[x], remove_position_arg))
@@ -646,4 +645,4 @@ if __name__ == '__main__':
             sys.argv += ["--logdir", logdir.as_posix()]
             #hyp_path = f"data/{pipeline_name}/data.yaml"
 
-    main()
+            main()
