@@ -77,7 +77,8 @@ You need to set the $MAST_ANALYSIS_IDENTIFIER at YOLO to output proper mojo-frie
 
 ```bash
 python detect_mojo.py --run-tracking # Run localization then tracking for each patient (by overwriting the ultraltytics --source)
-
+```
+```bash
 python detect_mojo.py --run-localization
                       --run-tracking # Run localization for all patient then tracking for all patient
                     
