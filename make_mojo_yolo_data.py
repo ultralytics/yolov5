@@ -14,7 +14,10 @@ ANNOTATION_CLASSES_TO_ID = {"sperm": 0}
 
 
 def init_supervisely_dataset(dir_name, dataset_filter_id=None):
-    api = sly.Api()
+    api = sly.Api(
+        token=os.getenv("SUPERVISELY_API_KEY"),
+        root_dir=os.getenv("SUPERVISELY_PATH_DATA")
+    )
     api.download_project(
         constants.SUPERVISELY_LOCALISATION_PROJECT_ID,
         dataset_filter_id=dataset_filter_id,
@@ -22,10 +25,18 @@ def init_supervisely_dataset(dir_name, dataset_filter_id=None):
     )
     supervisely_image_dir = api.merge_project(
         constants.SUPERVISELY_LOCALISATION_PROJECT_ID,
-        dataset_filter_id=dataset_filter_id,
         dir_name=dir_name,
+        dataset_filter_id=dataset_filter_id
     )
     return supervisely_image_dir
+
+
+def get_supervisely_image_dir(dir_name):
+    api = sly.Api(
+        token=os.getenv("SUPERVISELY_API_KEY"),
+        root_dir=os.getenv("SUPERVISELY_PATH_DATA")
+    )
+    return api.get_project_image_dir(project_id=constants.SUPERVISELY_LOCALISATION_PROJECT_ID, dir_name=dir_name)
 
 
 def convert_supervisely_to_yolo(supervisely_image_dir, yolo_data_dir, rgb=False):
