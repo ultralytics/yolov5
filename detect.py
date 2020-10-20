@@ -139,7 +139,10 @@ def detect(save_img=False):
 
     # Run inference
     t0 = time.time()
-    img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
+    if isinstance(imgsz, int):
+        imgsz = (imgsz, imgsz)
+    img = torch.zeros((1, 3, *imgsz), device=device)  # init img
+
     if backend == 'pytorch':
         _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
     elif backend == 'saved_model':
@@ -227,9 +230,11 @@ def detect(save_img=False):
                 z = []  # inference output
                 for i in range(nl):
                     _, _, ny_nx, _ = x[i].shape
-                    nx = ny = int(np.sqrt(ny_nx))
+                    r = imgsz[0] / imgsz[1]
+                    nx = int(np.sqrt(ny_nx / r))
+                    ny = int(r * nx)
                     grid[i] = _make_grid(nx, ny).to(x[i].device)
-                    stride = imgsz // ny
+                    stride = imgsz[0] // ny
                     y = x[i].sigmoid()
                     y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + grid[i].to(x[i].device)) * stride  # xy
                     y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * anchor_grid[i]  # wh
@@ -313,7 +318,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='data/images', help='source')  # file/folder, 0 for webcam
-    parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
+    parser.add_argument('--img-size', nargs='+', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
