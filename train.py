@@ -646,3 +646,5 @@ if __name__ == '__main__':
             #hyp_path = f"data/{pipeline_name}/data.yaml"
 
             main()
+    else:
+        main()
