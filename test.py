@@ -44,7 +44,7 @@ def test(data,
         device = select_device(opt.device, batch_size=batch_size)
         save_txt = opt.save_txt  # save *.txt labels
         if save_txt:
-            out = Path('inference/output')
+            out = save_dir / 'output'
             if os.path.exists(out):
                 shutil.rmtree(out)  # delete output folder
             os.makedirs(out)  # make new output folder
