@@ -45,6 +45,7 @@ def plot_manual_against_mast_yolo():
     patient_id_yolo_result.index = patient_id_yolo_result[0]
     patient_id_yolo_result = patient_id_yolo_result[1]
     merge = pd.merge(manual_result, patient_id_yolo_result, left_index=True, right_index=True)
+    print(merge.describe())
     import matplotlib.pyplot as plt
     plt.scatter(merge[1].values, merge["concentration"].values)
     plt.savefig("a.png")
