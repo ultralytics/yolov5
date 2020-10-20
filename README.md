@@ -66,7 +66,40 @@ YOLOv5 may be run in any of the following up-to-date verified environments (with
 - **Google Cloud** Deep Learning VM. See [GCP Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart) 
 - **Docker Image** https://hub.docker.com/r/ultralytics/yolov5. See [Docker Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/Docker-Quickstart) ![Docker Pulls](https://img.shields.io/docker/pulls/ultralytics/yolov5?logo=docker)
 
+## Mojo inference
 
+If you pass mojo arguments, detect_mojo is in mojo mode (run localization and tracking on the all MAST capture dataset) but is ultralytics-friendly (accept ultralytics arguments).
+The mojo mode performs task under the supervision of luigi so you can quit a detect_mojo process with no damage. It will start back where it was left.
+
+You need to set the $PATH_DATA env variable in .env or in the shell to indicate where the capture MAST dataset is.
+You need to set the $MAST_ANALYSIS_IDENTIFIER at YOLO to output proper mojo-friendly localization output (tracking input)
+
+
+```bash
+python detect_mojo.py --run-tracking # Run localization then tracking for each patient (by overwriting the ultraltytics --source)
+
+python detect_mojo.py --run-localization
+                      --run-tracking # Run localization for all patient then tracking for all patient
+                    
+```
+```bash
+python detect_mojo.py --run-tracking
+                       --patient-id tp23 # Filter by patient_id
+                       --date 2020_05_12 # Filter by date
+```
+```bash
+ python detect_mojo.py --run-tracking
+                       --patient-id tp23 # Filter by patient_id
+                       --date 2020_05_12 # Filter by date
+                       --iou-thres 0.8 # Add ultralytics arguments
+                       --weights runs\dataset_zoe_380_vincent_540\weights\best.pt
+```
+If you pass only ultralytics arguments, detect_mojo is in ultralytics mode
+
+```bash
+ python detect_mojo.py --source Q:\data\Karolinska\capture_MAST_data\2020_05_12\test-patient-03 # Ultralytics arg
+                       --iou-thres 0.8 # Ultralytics arg
+```
 ## Inference
 
 Inference can be run on most common media formats. Model [checkpoints](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J) are downloaded automatically if available. Results are saved to `./inference/output`.
