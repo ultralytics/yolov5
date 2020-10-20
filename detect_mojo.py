@@ -388,17 +388,20 @@ if __name__ == '__main__':
 
     if mojo_opt.run_localization:
         for date in os.listdir(data_path):
-            for patient_id in os.listdir(data_path / date):
-                if not mojo_opt.patient_id or mojo_opt.patient_id == patient_id:
-                    detect_task = TaskLocalization(date=date, patient_id=patient_id)
-                    d6tflow.preview(detect_task)
-                    d6tflow.run(detect_task)
+            if not mojo_opt.date or mojo_opt.date == date:
+                for patient_id in os.listdir(data_path / date):
+                    if not mojo_opt.patient_id or mojo_opt.patient_id == patient_id:
+                        detect_task = TaskLocalization(date=date, patient_id=patient_id)
+                        d6tflow.preview(detect_task)
+                        d6tflow.run(detect_task)
 
     if mojo_opt.run_tracking:
         from nanovare_casa_core.analysis.analysis import analyze_frames
 
         for date in os.listdir(data_path):
-            for patient_id in os.listdir(data_path / date):
-                detect_task = TaskTracking(date=date, patient_id=patient_id, run_viz=mojo_opt.run_viz)
-                d6tflow.preview(detect_task)
-                d6tflow.run(detect_task)
+            if not mojo_opt.date or mojo_opt.date == date:
+                for patient_id in os.listdir(data_path / date):
+                    if not mojo_opt.patient_id or mojo_opt.patient_id == patient_id:
+                        detect_task = TaskTracking(date=date, patient_id=patient_id, run_viz=mojo_opt.run_viz)
+                        d6tflow.preview(detect_task)
+                        d6tflow.run(detect_task)
