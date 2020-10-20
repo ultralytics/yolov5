@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 import platform
 import shutil
 import time
@@ -77,7 +78,7 @@ def get_serializable_structure(data):
     def get_serializable_atomic_value(value):
         if type(value) == datetime_type:
             return (
-                value.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+                    value.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
             )  # Convert to iso with timezone
         elif type(value) in (invalid_int_value + invalid_uint_value):
             return int(value)
@@ -208,17 +209,17 @@ def detect(opt, save_img=False):
 
                 for bbox in xyxy2xywh(det[:, :4]).tolist():
                     centroid_bbox = [
-                        max((bbox[0]-bbox[2]/2)//RESIZE_FACTOR, 0),
-                        max((bbox[1]-bbox[3]/2)//RESIZE_FACTOR, 0),
-                        bbox[2]//RESIZE_FACTOR,
-                        bbox[3]//RESIZE_FACTOR
+                        max((bbox[0] - bbox[2] / 2) // RESIZE_FACTOR, 0),
+                        max((bbox[1] - bbox[3] / 2) // RESIZE_FACTOR, 0),
+                        bbox[2] // RESIZE_FACTOR,
+                        bbox[3] // RESIZE_FACTOR
                     ]
                     centroids_in_frame.append(
                         {
                             "bbox": centroid_bbox,
                             "center": [
-                                round(bbox[0]/RESIZE_FACTOR, 2),
-                                round(bbox[1]/RESIZE_FACTOR, 2),
+                                round(bbox[0] / RESIZE_FACTOR, 2),
+                                round(bbox[1] / RESIZE_FACTOR, 2),
                             ],
                             "class": 1,
                             "interpolated": False,
@@ -246,7 +247,7 @@ def detect(opt, save_img=False):
             centroids.append(centroids_in_frame)
 
             # Print time (inference + NMS)
-            #print('%sDone. (%.3fs)' % (s, t2 - t1))
+            # print('%sDone. (%.3fs)' % (s, t2 - t1))
 
             # Stream results
             if view_img:
@@ -290,8 +291,7 @@ def detect(opt, save_img=False):
     print('Done. (%.3fs)' % (time.time() - t0))
 
 
-def main():
-    parser = argparse.ArgumentParser()
+def ultralytics(parser):
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--output', type=str, default='inference/output', help='output folder')  # output folder
@@ -305,7 +305,11 @@ def main():
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--update', action='store_true', help='update all models')
-    opt = parser.parse_args()
+    return parser
+
+
+def main():
+    opt, _ = ultralytics(argparse.ArgumentParser()).parse_known_args()
     print(opt)
 
     with torch.no_grad():
@@ -317,76 +321,84 @@ def main():
             detect(opt)
 
 
+def mojo(parser):
+    parser.add_argument('--patient-id', help='Filter a patient ID', default=None)
+    parser.add_argument('--date', help='Filter a date', default=None)
+    parser.add_argument('--run-localization', action='store_true',
+                        help='Run localization')
+    parser.add_argument('--run-tracking', action='store_true',
+                        help='Run tracking')
+    parser.add_argument('--run-viz', action='store_true',
+                        help='Run vizualization after tracking')
+    return parser
+
+
 if __name__ == '__main__':
-    import sys
-    import d6tflow
-    import luigi
-    from dotenv import load_dotenv
-
-    load_dotenv()
-    d6tflow.settings.log_level = "ERROR"
-    data_path = Path(os.getenv("PATH_DATA")) / "capture_MAST_data"
-
-    class TaskLocalization(d6tflow.tasks.TaskPickle):
-        date = luigi.Parameter()
-        patient_id = luigi.Parameter()
-
-        def run(self):
-            if "--source" not in sys.argv:
-                sys.argv += ["--source", "To be replaced"]
-            source = data_path / self.date / self.patient_id
-            if list(source.glob("*.avi")):
-                sys.argv[sys.argv.index("--source") + 1] = source.resolve().as_posix()
-                main()
-            self.save(source)
-
-
-    class TaskTracking(d6tflow.tasks.TaskPickle):
-        date = luigi.Parameter()
-        patient_id = luigi.Parameter()
-        run_viz = luigi.BoolParameter(default=False)
-
-        def requires(self): return TaskLocalization(date=date, patient_id=patient_id)
-
-        def run(self):
-            for path in list((self.inputLoad()).glob("*.avi")):
-                analyze_frames(
-                    path,
-                    run_detection=False,
-                    run_classification=False,
-                    run_tracking=True,
-                    run_viz=self.run_viz,
-                )
-            self.save(self.inputLoad())
-
-    if "--patient-id" in sys.argv:
-        patient_id_intersect = [sys.argv[sys.argv.index("--patient-id") + 1]]
+    mojo_parser = mojo(argparse.ArgumentParser())
+    ultralytics_parser = ultralytics(argparse.ArgumentParser())
+    mojo_opt, mojo_unknown = mojo_parser.parse_known_args()
+    ultralytics_opt, ultralytics_unknown = ultralytics_parser.parse_known_args()
+    # Ultralytics unknown args should be mojo known args and vice-versa
+    # Otherwise abort
+    mojo_parser.parse_args(ultralytics_unknown)
+    ultralytics_parser.parse_args(mojo_unknown)
+    if not ultralytics_unknown:
+        main()
     else:
-        patient_id_intersect = None
+        import d6tflow
+        import luigi
+        from dotenv import load_dotenv
 
-    if "--date" in sys.argv:
-        date_intersect = [sys.argv[sys.argv.index("--date") + 1]]
-    else:
-        date_intersect = None
+        load_dotenv()
+        d6tflow.settings.log_level = "ERROR"
+        data_path = Path(os.getenv("PATH_DATA")) / "capture_MAST_data"
 
-    if "--run-localization" in sys.argv:
-        sys.argv.remove("--run-localization")
-        for date in [date for date in os.listdir(data_path) if not date_intersect or date in date_intersect]:
-            for patient_id in [patient_id for patient_id in os.listdir(data_path / date) if not patient_id_intersect or patient_id in patient_id_intersect]:
-                detect_task = TaskLocalization(date=date, patient_id=patient_id)
-                d6tflow.preview(detect_task)
-                d6tflow.run(detect_task)
 
-    if "--run-tracking" in sys.argv:
-        sys.argv.remove("--run-tracking")
-        if "--run-viz" in sys.argv:
-            sys.argv.remove("--run-viz")
-            run_viz = True
+        class TaskLocalization(d6tflow.tasks.TaskPickle):
+            date = luigi.Parameter()
+            patient_id = luigi.Parameter()
+
+            def run(self):
+                if "--source" not in sys.argv:
+                    sys.argv += ["--source", "To be replaced"]
+                source = data_path / self.date / self.patient_id
+                if list(source.glob("*.avi")):
+                    sys.argv[sys.argv.index("--source") + 1] = source.resolve().as_posix()
+                    main()
+                self.save(source)
+
+
+        class TaskTracking(d6tflow.tasks.TaskPickle):
+            date = luigi.Parameter()
+            patient_id = luigi.Parameter()
+            run_viz = luigi.BoolParameter()
+
+            def requires(self): return TaskLocalization(date=date, patient_id=patient_id)
+
+            def run(self):
+                for path in list((self.inputLoad()).glob("*.avi")):
+                    analyze_frames(
+                        path,
+                        run_detection=False,
+                        run_classification=False,
+                        run_tracking=True,
+                        run_viz=self.run_viz,
+                    )
+                self.save(self.inputLoad())
+
+    if mojo_opt.run_localization:
+        for date in os.listdir(data_path):
+            for patient_id in os.listdir(data_path / date):
+                if not mojo_opt.patient_id or mojo_opt.patient_id == patient_id:
+                    detect_task = TaskLocalization(date=date, patient_id=patient_id)
+                    d6tflow.preview(detect_task)
+                    d6tflow.run(detect_task)
+
+    if mojo_opt.run_tracking:
         from nanovare_casa_core.analysis.analysis import analyze_frames
 
-        for date in [date for date in os.listdir(data_path) if not date_intersect or date in date_intersect]:
-            for patient_id in [patient_id for patient_id in os.listdir(data_path / date) if
-                               not patient_id_intersect or patient_id in patient_id_intersect]:
-                detect_task = TaskTracking(date=date, patient_id=patient_id)
+        for date in os.listdir(data_path):
+            for patient_id in os.listdir(data_path / date):
+                detect_task = TaskTracking(date=date, patient_id=patient_id, run_viz=mojo_opt.run_viz)
                 d6tflow.preview(detect_task)
                 d6tflow.run(detect_task)
