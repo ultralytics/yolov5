@@ -133,11 +133,9 @@ def test(data,
                 x[:, :4] = scale_coords(img[si].shape[1:], x[:, :4], shapes[si][0], shapes[si][1])  # to original
                 for *xyxy, conf, cls in x:
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                    line = (cls, conf, *xywh) if save_conf else (cls, *xywh)  # label format
                     with open(str(out / Path(paths[si]).stem) + '.txt', 'a') as f:
-                        if save_conf:
-                            f.write(('%g ' * 6 + '\n') % (cls, conf, *xywh))  # label format includes conf
-                        else: 
-                            f.write(('%g ' * 5 + '\n') % (cls, *xywh))  # label format does not include conf
+                        f.write(('%g ' * len(line) + '\n') % line)
 
             # Clip boxes to image bounds
             clip_coords(pred, (height, width))
