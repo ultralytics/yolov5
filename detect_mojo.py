@@ -321,18 +321,20 @@ if __name__ == '__main__':
     import sys
     import d6tflow
     import luigi
+    from dotenv import load_dotenv
 
+    load_dotenv()
     d6tflow.settings.log_level = "ERROR"
-    karolinska_capture = Path("../../data/Karolinska/capture_MAST_data")
+    data_path = Path(os.getenv("PATH_DATA")) / "capture_MAST_data"
 
     class TaskLocalization(d6tflow.tasks.TaskPickle):
         date = luigi.Parameter()
         patient_id = luigi.Parameter()
 
         def run(self):
-            if not "--source" in sys.argv:
+            if "--source" not in sys.argv:
                 sys.argv += ["--source", "To be replaced"]
-            source = karolinska_capture / self.date / self.patient_id
+            source = data_path / self.date / self.patient_id
             if list(source.glob("*.avi")):
                 sys.argv[sys.argv.index("--source") + 1] = source.resolve().as_posix()
                 main()
@@ -357,11 +359,20 @@ if __name__ == '__main__':
                 )
             self.save(self.inputLoad())
 
+    if "--patient-id" in sys.argv:
+        patient_id_intersect = [sys.argv[sys.argv.index("--patient-id") + 1]]
+    else:
+        patient_id_intersect = None
+
+    if "--date" in sys.argv:
+        date_intersect = [sys.argv[sys.argv.index("--date") + 1]]
+    else:
+        date_intersect = None
 
     if "--run-localization" in sys.argv:
         sys.argv.remove("--run-localization")
-        for date in os.listdir(karolinska_capture):
-            for patient_id in os.listdir(karolinska_capture / date):
+        for date in [date for date in os.listdir(data_path) if not date_intersect or date in date_intersect]:
+            for patient_id in [patient_id for patient_id in os.listdir(data_path / date) if not patient_id_intersect or patient_id in patient_id_intersect]:
                 detect_task = TaskLocalization(date=date, patient_id=patient_id)
                 d6tflow.preview(detect_task)
                 d6tflow.run(detect_task)
@@ -372,8 +383,10 @@ if __name__ == '__main__':
             sys.argv.remove("--run-viz")
             run_viz = True
         from nanovare_casa_core.analysis.analysis import analyze_frames
-        for date in os.listdir(karolinska_capture):
-            for patient_id in os.listdir(karolinska_capture / date):
-                task = TaskTracking(date=date, patient_id=patient_id, run_viz=run_viz)
-                d6tflow.preview(task)
-                d6tflow.run(task)
+
+        for date in [date for date in os.listdir(data_path) if not date_intersect or date in date_intersect]:
+            for patient_id in [patient_id for patient_id in os.listdir(data_path / date) if
+                               not patient_id_intersect or patient_id in patient_id_intersect]:
+                detect_task = TaskTracking(date=date, patient_id=patient_id)
+                d6tflow.preview(detect_task)
+                d6tflow.run(detect_task)
