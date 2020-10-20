@@ -164,7 +164,7 @@ if __name__ == '__main__':
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--update', action='store_true', help='update all models')
-    parser.add_argument('--save-conf', action='store_true', help='put confidence score next to class in label*.txt')
+    parser.add_argument('--save-conf', action='store_true', help='output confidences in --save-txt labels')
     opt = parser.parse_args()
     print(opt)
 
