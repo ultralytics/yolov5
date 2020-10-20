@@ -266,8 +266,8 @@ if __name__ == '__main__':
     parser.add_argument('--single-cls', action='store_true', help='treat as single-class dataset')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
-    parser.add_argument('--save-txt', action='store_false', help='save results to *.txt')
-    parser.add_argument('--save-conf', action='store_false', help='put confidence score next to class in label*.txt')
+    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    parser.add_argument('--save-conf', action='store_true', help='put confidence score next to class in label*.txt')
     parser.add_argument('--output', type=str, default='', help='output folder')  # output folder
     opt = parser.parse_args()
     opt.save_json |= opt.data.endswith('coco.yaml')
