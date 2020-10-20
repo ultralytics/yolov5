@@ -594,7 +594,7 @@ if __name__ == '__main__':
         remove_option_arg.append(override_parser.add_argument('--init-yolo', action='store_true',
                                                               help='Convert a supervisely dataset to a yolo dataset'))
         remove_option_arg.append(override_parser.add_argument('--run-train', action='store_true',
-                                                              help='Convert a supervisely dataset to a yolo dataset'))
+                                                              help='Train'))
         override_opt = override_parser.parse_args()
         remove_position_arg = list(map(lambda x: override_opt.__dict__[x], remove_position_arg))
         remove_option_arg = list(map(lambda x: x.option_strings[0], remove_option_arg))
