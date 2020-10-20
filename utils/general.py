@@ -1,9 +1,9 @@
 import glob
 import logging
-import math
 import os
 import platform
 import random
+import re
 import shutil
 import subprocess
 import time
@@ -12,6 +12,7 @@ from copy import copy
 from pathlib import Path
 
 import cv2
+import math
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,8 +24,7 @@ from scipy.signal import butter, filtfilt
 from tqdm import tqdm
 
 from utils.google_utils import gsutil_getsize
-from utils.torch_utils import init_seeds as init_torch_seeds
-from utils.torch_utils import is_parallel
+from utils.torch_utils import is_parallel, init_torch_seeds
 
 # Set printoptions
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -56,7 +56,7 @@ def set_logging(rank=-1):
 def init_seeds(seed=0):
     random.seed(seed)
     np.random.seed(seed)
-    init_torch_seeds(seed=seed)
+    init_torch_seeds(seed)
 
 
 def get_latest_run(search_dir='./runs'):
@@ -143,7 +143,7 @@ def check_dataset(dict):
     if val and len(val):
         val = [os.path.abspath(x) for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(os.path.exists(x) for x in val):
-            print('\nWARNING: Dataset not found, nonexistant paths: %s' % [*val])
+            print('\nWARNING: Dataset not found, nonexistent paths: %s' % [*val])
             if s and len(s):  # download script
                 print('Downloading %s ...' % s)
                 if s.startswith('http') and s.endswith('.zip'):  # URL
@@ -158,7 +158,7 @@ def check_dataset(dict):
 
 
 def make_divisible(x, divisor):
-    # Returns x evenly divisble by divisor
+    # Returns x evenly divisible by divisor
     return math.ceil(x / divisor) * divisor
 
 
@@ -169,9 +169,9 @@ def labels_to_class_weights(labels, nc=80):
 
     labels = np.concatenate(labels, 0)  # labels.shape = (866643, 5) for COCO
     classes = labels[:, 0].astype(np.int)  # labels = [class xywh]
-    weights = np.bincount(classes, minlength=nc)  # occurences per class
+    weights = np.bincount(classes, minlength=nc)  # occurrences per class
 
-    # Prepend gridpoint count (for uCE trianing)
+    # Prepend gridpoint count (for uCE training)
     # gpi = ((320 / 32 * np.array([1, 2, 4])) ** 2 * 3).sum()  # gridpoints per image
     # weights = np.hstack([gpi * len(labels)  - weights.sum() * 9, weights * 9]) ** 0.5  # prepend gridpoints to start
 
@@ -246,14 +246,16 @@ def clip_coords(boxes, img_shape):
     boxes[:, 3].clamp_(0, img_shape[0])  # y2
 
 
-def ap_per_class(tp, conf, pred_cls, target_cls):
+def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, fname='precision-recall_curve.png'):
     """ Compute the average precision, given the recall and precision curves.
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
     # Arguments
-        tp:    True positives (nparray, nx1 or nx10).
+        tp:  True positives (nparray, nx1 or nx10).
         conf:  Objectness value from 0-1 (nparray).
-        pred_cls: Predicted object classes (nparray).
-        target_cls: True object classes (nparray).
+        pred_cls:  Predicted object classes (nparray).
+        target_cls:  True object classes (nparray).
+        plot:  Plot precision-recall curve at mAP@0.5
+        fname:  Plot filename
     # Returns
         The average precision as computed in py-faster-rcnn.
     """
@@ -266,6 +268,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls):
     unique_classes = np.unique(target_cls)
 
     # Create Precision-Recall curve and compute AP for each class
+    px, py = np.linspace(0, 1, 1000), []  # for plotting
     pr_score = 0.1  # score to evaluate P and R https://github.com/ultralytics/yolov3/issues/898
     s = [unique_classes.shape[0], tp.shape[1]]  # number class, number iou thresholds (i.e. 10 for mAP0.5...0.95)
     ap, p, r = np.zeros(s), np.zeros(s), np.zeros(s)
@@ -290,21 +293,25 @@ def ap_per_class(tp, conf, pred_cls, target_cls):
             p[ci] = np.interp(-pr_score, -conf[i], precision[:, 0])  # p at pr_score
 
             # AP from recall-precision curve
+            py.append(np.interp(px, recall[:, 0], precision[:, 0]))  # precision at mAP@0.5
             for j in range(tp.shape[1]):
                 ap[ci, j] = compute_ap(recall[:, j], precision[:, j])
 
-            # Plot
-            # fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-            # ax.plot(recall, precision)
-            # ax.set_xlabel('Recall')
-            # ax.set_ylabel('Precision')
-            # ax.set_xlim(0, 1.01)
-            # ax.set_ylim(0, 1.01)
-            # fig.tight_layout()
-            # fig.savefig('PR_curve.png', dpi=300)
-
     # Compute F1 score (harmonic mean of precision and recall)
     f1 = 2 * p * r / (p + r + 1e-16)
+
+    if plot:
+        py = np.stack(py, axis=1)
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+        ax.plot(px, py, linewidth=0.5, color='grey')  # plot(recall, precision)
+        ax.plot(px, py.mean(1), linewidth=2, color='blue', label='all classes')
+        ax.set_xlabel('Recall')
+        ax.set_ylabel('Precision')
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+        plt.legend()
+        fig.tight_layout()
+        fig.savefig(fname, dpi=200)
 
     return p, r, ap, f1, unique_classes.astype('int32')
 
@@ -503,11 +510,11 @@ def compute_loss(p, targets, model):  # predictions, targets, model
             pxy = ps[:, :2].sigmoid() * 2. - 0.5
             pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anchors[i]
             pbox = torch.cat((pxy, pwh), 1).to(device)  # predicted box
-            giou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, CIoU=True)  # giou(prediction, target)
-            lbox += (1.0 - giou).mean()  # giou loss
+            iou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, CIoU=True)  # iou(prediction, target)
+            lbox += (1.0 - iou).mean()  # iou loss
 
             # Objectness
-            tobj[b, a, gj, gi] = (1.0 - model.gr) + model.gr * giou.detach().clamp(0).type(tobj.dtype)  # giou ratio
+            tobj[b, a, gj, gi] = (1.0 - model.gr) + model.gr * iou.detach().clamp(0).type(tobj.dtype)  # iou ratio
 
             # Classification
             if model.nc > 1:  # cls loss (only if multiple classes)
@@ -522,7 +529,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
         lobj += BCEobj(pi[..., 4], tobj) * balance[i]  # obj loss
 
     s = 3 / np  # output count scaling
-    lbox *= h['giou'] * s
+    lbox *= h['box'] * s
     lobj *= h['obj'] * s * (1.4 if np == 4 else 1.)
     lcls *= h['cls'] * s
     bs = tobj.shape[0]  # batch size
@@ -813,7 +820,7 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
     k, dist = kmeans(wh / s, n, iter=30)  # points, mean distance
     k *= s
     wh = torch.tensor(wh, dtype=torch.float32)  # filtered
-    wh0 = torch.tensor(wh0, dtype=torch.float32)  # unflitered
+    wh0 = torch.tensor(wh0, dtype=torch.float32)  # unfiltered
     k = print_results(k)
 
     # Plot
@@ -946,9 +953,12 @@ def increment_dir(dir, comment=''):
     # Increments a directory runs/exp1 --> runs/exp2_comment
     n = 0  # number
     dir = str(Path(dir))  # os-agnostic
-    d = sorted(glob.glob(dir + '*'))  # directories
-    if len(d):
-        n = max([int(x[len(dir):x.find('_') if '_' in x else None]) for x in d]) + 1  # increment
+    dirs = sorted(glob.glob(dir + '*'))  # directories
+    if dirs:
+        matches = [re.search(r"exp(\d+)", d) for d in dirs]
+        idxs = [int(m.groups()[0]) for m in matches if m]
+        if idxs:
+            n = max(idxs) + 1  # increment
     return dir + str(n) + ('_' + comment if comment else '')
 
 
@@ -1012,8 +1022,6 @@ def plot_wh_methods():  # from utils.general import *; plot_wh_methods()
 def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max_size=640, max_subplots=16):
     tl = 3  # line thickness
     tf = max(tl - 1, 1)  # font thickness
-    if os.path.isfile(fname):  # do not overwrite
-        return None
 
     if isinstance(images, torch.Tensor):
         images = images.cpu().float().numpy()
@@ -1230,7 +1238,7 @@ def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.general im
 def plot_results_overlay(start=0, stop=0):  # from utils.general import *; plot_results_overlay()
     # Plot training 'results*.txt', overlaying train and val losses
     s = ['train', 'train', 'train', 'Precision', 'mAP@0.5', 'val', 'val', 'val', 'Recall', 'mAP@0.5:0.95']  # legends
-    t = ['GIoU', 'Objectness', 'Classification', 'P-R', 'mAP-F1']  # titles
+    t = ['Box', 'Objectness', 'Classification', 'P-R', 'mAP-F1']  # titles
     for f in sorted(glob.glob('results*.txt') + glob.glob('../../Downloads/results*.txt')):
         results = np.loadtxt(f, usecols=[2, 3, 4, 8, 9, 12, 13, 14, 10, 11], ndmin=2).T
         n = results.shape[1]  # number of rows
@@ -1250,13 +1258,13 @@ def plot_results_overlay(start=0, stop=0):  # from utils.general import *; plot_
         fig.savefig(f.replace('.txt', '.png'), dpi=200)
 
 
-def plot_results(start=0, stop=0, bucket='', id=(), labels=(),
-                 save_dir=''):  # from utils.general import *; plot_results()
+def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
+    # from utils.general import *; plot_results()
     # Plot training 'results*.txt' as seen in https://github.com/ultralytics/yolov5#reproduce-our-training
     fig, ax = plt.subplots(2, 5, figsize=(12, 6))
     ax = ax.ravel()
-    s = ['GIoU', 'Objectness', 'Classification', 'Precision', 'Recall',
-         'val GIoU', 'val Objectness', 'val Classification', 'mAP@0.5', 'mAP@0.5:0.95']
+    s = ['Box', 'Objectness', 'Classification', 'Precision', 'Recall',
+         'val Box', 'val Objectness', 'val Classification', 'mAP@0.5', 'mAP@0.5:0.95']
     if bucket:
         # os.system('rm -rf storage.googleapis.com')
         # files = ['https://storage.googleapis.com/%s/results%g.txt' % (bucket, x) for x in id]
@@ -1273,7 +1281,7 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(),
             for i in range(10):
                 y = results[i, x]
                 if i in [0, 1, 2, 5, 6, 7]:
-                    y[y == 0] = np.nan  # dont show zero loss values
+                    y[y == 0] = np.nan  # don't show zero loss values
                     # y /= y[0]  # normalize
                 label = labels[fi] if len(labels) else Path(f).stem
                 ax[i].plot(x, y, marker='.', label=label, linewidth=1, markersize=6)
