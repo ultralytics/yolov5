@@ -1,0 +1,5 @@
+names:
+- sperm
+nc: 1
+train: Q:/dev/yolov5/data/2020_10_20/images/train
+val: Q:/dev/yolov5/data/2020_10_20/images/val

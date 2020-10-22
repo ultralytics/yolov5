@@ -1,0 +1,5 @@
+names:
+- sperm
+nc: 1
+train: Q:/dev/yolov5/data/dataset_zoe_380_vincent_540/images/train
+val: Q:/dev/yolov5/data/dataset_zoe_380_vincent_540/images/val
