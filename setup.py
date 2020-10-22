@@ -1,8 +1,17 @@
+import pathlib
+
 import setuptools
 from pkg_resources import parse_requirements
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
+
+with pathlib.Path('requirements.txt').open() as requirements_txt:
+    install_requires = [
+        str(requirement)
+        for requirement
+        in parse_requirements(requirements_txt)
+    ]
 
 setuptools.setup(
     name="yolov5",
@@ -20,5 +29,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.7',
-    install_reqs = parse_requirements('requirements.txt')
+    install_requires = install_requires
 )
