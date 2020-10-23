@@ -580,15 +580,81 @@ def ultralytics(parser):
 
 def mojo(parser):
     parser.add_argument('pipeline_name', help='Name of the pipeline')
-    parser.add_argument('--init-supervisely', action='store_true',
-                                 help='Download, check integrity and merge a filtered '
-                                      'supervisely dataset')
-    parser.add_argument('--init-supervisely', action='store_true',
-                        help='Download, check integrity and merge a filtered supervisely dataset')
+    parser.add_argument('--init-supervisely', default="zoe", choices=["zoe", "vincent", "zoe+vincent"], help='Download, check integrity and merge a filtered '
+                                      'supervisely dataset. Dataset choices: %(choices)')
     parser.add_argument('--init-yolo', action='store_true', help='Convert a supervisely dataset to a yolo dataset')
     parser.add_argument('--run-train', action='store_true', help='Train')
     return parser
 
 
 if __name__ == '__main__':
-    main()
+    mojo_parser = mojo(argparse.ArgumentParser())
+    ultralytics_parser = ultralytics(argparse.ArgumentParser())
+    mojo_opt, mojo_unknown = mojo_parser.parse_known_args()
+    ultralytics_opt, ultralytics_unknown = ultralytics_parser.parse_known_args()
+    # Ultralytics unknown args should be mojo known args and vice-versa
+    # Otherwise abort
+    mojo_parser.parse_args(ultralytics_unknown)
+    ultralytics_parser.parse_args(mojo_unknown)
+    if not ultralytics_unknown:
+        main()
+
+    else:
+
+        import sys
+
+        from nanovare_casa_core.utils import supervisely as sly
+        from nanovare_casa_core.utils import constants
+
+        import make_mojo_yolo_data
+
+        pipeline_name = mojo_opt.pipeline_name
+
+        remote_dataset_name_id = dict(map(
+            lambda x: (x.id, x.name),
+            sly.Api().dataset.get_list(constants.SUPERVISELY_LOCALISATION_PROJECT_ID))
+        )
+
+        dataset_vincent_540 = ["2020_01_15", "2020_01_17", "2020_01_21", "2020_01_22"]
+        dataset_zoe_380 = ["2020_01_24", "2020_01_23", "2020_01_16"]
+
+        if mojo_opt.init_supervisely is not None:
+            print(
+                "\n=========================     INIT SUPERVISELY DATASET     =================================")
+            dataset_filter_id = list(
+                dict(filter(lambda x: x[1] in dataset_zoe_380 + dataset_vincent_540,
+                            remote_dataset_name_id.items())))
+            make_mojo_yolo_data.init_supervisely_dataset(pipeline_name, dataset_filter_id)
+
+        if mojo_opt.init_yolo:
+            print("\n=========================     INIT YOLO DATASET     =================================")
+            make_mojo_yolo_data.convert_supervisely_to_yolo(
+                make_mojo_yolo_data.get_supervisely_image_dir(pipeline_name),
+                f"data/{pipeline_name}"
+            )
+
+        if mojo_opt.run_train:
+            yolo_data_dir = f"data/{pipeline_name}"
+            print(f"Pipeline name {pipeline_name}")
+            print(f"Yolo data directory {yolo_data_dir}")
+            print("=========================     BEGIN TRAINING      =================================")
+            data_dict = dict(
+                nc=1,
+                names=['sperm'],
+                train=(Path(yolo_data_dir) / "images" / "train").resolve().as_posix(),
+                val=(Path(yolo_data_dir) / "images" / "val").resolve().as_posix()
+            )
+            pathdir = Path(f"data/{pipeline_name}")
+            logdir = Path(f"./runs/{pipeline_name}")
+            pathdir.mkdir(parents=True, exist_ok=True)
+            logdir.mkdir(parents=True, exist_ok=True)
+
+            data_path = pathdir / "data.yaml"
+            yaml.dump(data_dict, open(data_path, 'w'))
+            if "--data" not in sys.argv:
+                sys.argv += ["--data", data_path.as_posix()]
+            if "--logdir" not in sys.argv:
+                sys.argv += ["--logdir", logdir.as_posix()]
+            # hyp_path = f"data/{pipeline_name}/data.yaml"
+
+            main()
