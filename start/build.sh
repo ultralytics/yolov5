@@ -1,0 +1,1 @@
+nvidia-docker build -t yolo5 .
