@@ -578,5 +578,17 @@ def ultralytics(parser):
     return parser
 
 
+def mojo(parser):
+    parser.add_argument('pipeline_name', help='Name of the pipeline')
+    parser.add_argument('--init-supervisely', action='store_true',
+                                 help='Download, check integrity and merge a filtered '
+                                      'supervisely dataset')
+    parser.add_argument('--init-supervisely', action='store_true',
+                        help='Download, check integrity and merge a filtered supervisely dataset')
+    parser.add_argument('--init-yolo', action='store_true', help='Convert a supervisely dataset to a yolo dataset')
+    parser.add_argument('--run-train', action='store_true', help='Train')
+    return parser
+
+
 if __name__ == '__main__':
     main()
