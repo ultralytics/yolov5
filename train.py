@@ -380,7 +380,10 @@ def train(hyp, opt, device, tb_writer=None):
 
 def main():
     parser = ultralytics(argparse.ArgumentParser())
+
     opt, _ = parser.parse_known_args()
+    print("Ultralytics options")
+    pretty_dict(opt.__dict__)
 
     # Set DDP variables
     opt.total_batch_size = opt.batch_size
@@ -595,14 +598,13 @@ if __name__ == '__main__':
     # Otherwise abort
     nanovare_parser.parse_args(ultralytics_unknown)
     ultralytics_parser.parse_args(nanovare_unknown)
-    print("Ultralytics options")
-    pretty_dict(ultralytics_opt.__dict__)
-    print("Nanovare options")
-    pretty_dict(nanovare_opt.__dict__)
 
     if not ultralytics_unknown:
         main()
     else:
+        print("Nanovare options")
+        pretty_dict(nanovare_opt.__dict__)
+
         if not len(nanovare_opt.pipeline_name):
             pipeline_name="training_default"
 
