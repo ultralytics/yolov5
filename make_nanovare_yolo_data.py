@@ -13,34 +13,36 @@ from nanovare_casa_core.utils import constants
 ANNOTATION_CLASSES_TO_ID = {"sperm": 0}
 
 
-def init_supervisely_dataset(dir_name, dataset_filter_id=None):
+def init_supervisely_dataset(dir_name, root_dir=os.getenv("SUPERVISELY_PATH_DATA"), dataset_filter_id=None):
     api = sly.Api(
         token=os.getenv("SUPERVISELY_API_KEY"),
-        root_dir=os.getenv("SUPERVISELY_PATH_DATA")
+        root_dir=root_dir
     )
     api.download_project(
         constants.SUPERVISELY_LOCALISATION_PROJECT_ID,
         dataset_filter_id=dataset_filter_id,
+        update=False,
         check=True
     )
     supervisely_image_dir = api.merge_project(
         constants.SUPERVISELY_LOCALISATION_PROJECT_ID,
-        dir_name=dir_name,
-        dataset_filter_id=dataset_filter_id
+        dataset_filter_id=dataset_filter_id,
+        update=False,
+        dir_name=dir_name
     )
     return supervisely_image_dir
 
 
-def get_supervisely_image_dir(dir_name):
+def get_supervisely_data_dir(dir_name):
     api = sly.Api(
         token=os.getenv("SUPERVISELY_API_KEY"),
         root_dir=os.getenv("SUPERVISELY_PATH_DATA")
     )
-    return api.get_project_image_dir(project_id=constants.SUPERVISELY_LOCALISATION_PROJECT_ID, dir_name=dir_name)
+    return api.get_project_dir(project_id=constants.SUPERVISELY_LOCALISATION_PROJECT_ID, dir_name=dir_name)
 
 
-def convert_supervisely_to_yolo(supervisely_image_dir, yolo_data_dir, rgb=False):
-    image_path_list = list(supervisely_image_dir.glob("*.png"))
+def convert_supervisely_to_yolo(supervisely_data_dir, yolo_data_dir, rgb=False):
+    image_path_list = list(supervisely_data_dir.glob("**/*.png"))
     train_frame_path, test_frame_path = model_selection.train_test_split(image_path_list, test_size=0.25, shuffle=True, random_state=42)
     yolo_data_dir = Path(yolo_data_dir).resolve()
     discard_count = 0
