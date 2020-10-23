@@ -165,16 +165,16 @@ class tf_SPP(keras.layers.Layer):
 class tf_Detect(keras.layers.Layer):
     def __init__(self, nc=80, anchors=(), ch=(), w=None):  # detection layer
         super(tf_Detect, self).__init__()
-        # self.stride = None  # strides computed during build
-        self.stride = tf.Variable([8, 16, 32], dtype=tf.float32)
+        self.stride = tf.convert_to_tensor(w.stride.numpy(), dtype=tf.float32)
         self.nc = nc  # number of classes
         self.no = nc + 5  # number of outputs per anchor
         self.nl = len(anchors)  # number of detection layers
         self.na = len(anchors[0]) // 2  # number of anchors
         self.grid = [tf.zeros(1)] * self.nl  # init grid
-        a = tf.reshape(tf.convert_to_tensor(anchors, dtype=tf.float32), [self.nl, -1 ,2])
-        self.anchors = tf.Variable(a, trainable=False)
-        self.anchor_grid = tf.reshape(tf.Variable(a, trainable=False), [self.nl, 1, -1, 1, 2])
+        self.anchors = tf.convert_to_tensor(w.anchors.numpy(), dtype=tf.float32)
+        self.anchor_grid = tf.reshape(
+                tf.convert_to_tensor(w.anchor_grid.numpy(), dtype=tf.float32),
+                [self.nl, 1, -1, 1, 2])
         self.m = [tf_Conv2d(x, self.no * self.na, 1, w=w.m[i]) for i, x in enumerate(ch)]
         self.export = False  # onnx export
         self.training = True # set to False after building model
@@ -310,24 +310,11 @@ class tf_Model():
             print('Overriding %s nc=%g with nc=%g' % (cfg, self.yaml['nc'], nc))
             self.yaml['nc'] = nc  # override yaml value
         self.model, self.savelist = parse_model(deepcopy(self.yaml), ch=[ch], model=model)  # model, savelist, ch_out
-        # print([x.shape for x in self.forward(torch.zeros(1, ch, 64, 64))])
 
         # Build strides, anchors
         m = self.model.layers[-1]  # Detect()
         if isinstance(m, tf_Detect):
-            # s = 128  # 2x min stride
-            # m.stride = tf.convert_to_tensor([s / x.shape[-2] for x in self.predict(tf.zeros([1, s, s, ch]))])  # forward
-            m.anchors = tf.cast(m.anchors, dtype=tf.float32) / tf.reshape(m.stride, [-1, 1, 1])
             tf_check_anchor_order(m)
-            # self.stride = m.stride
-            # self._initialize_biases()  # only run once
-            # print('Strides: %s' % m.stride.tolist())
-
-        # Init weights, biases
-        # torch_utils.initialize_weights(self)
-
-        # keras.layers.Layer has no summary/info method
-        # self.info()
 
     def predict(self, inputs, profile=False):
         y, dt = [], []  # outputs
