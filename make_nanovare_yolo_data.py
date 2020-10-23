@@ -13,7 +13,7 @@ from nanovare_casa_core.utils import constants
 ANNOTATION_CLASSES_TO_ID = {"sperm": 0}
 
 
-def init_supervisely_dataset(dir_name, root_dir=os.getenv("SUPERVISELY_PATH_DATA"), dataset_filter_id=None):
+def init_supervisely_dataset(dir_name, root_dir, dataset_filter_id=None):
     api = sly.Api(
         token=os.getenv("SUPERVISELY_API_KEY"),
         root_dir=root_dir
@@ -27,16 +27,16 @@ def init_supervisely_dataset(dir_name, root_dir=os.getenv("SUPERVISELY_PATH_DATA
     supervisely_image_dir = api.merge_project(
         constants.SUPERVISELY_LOCALISATION_PROJECT_ID,
         dataset_filter_id=dataset_filter_id,
-        update=False,
+        update=True,
         dir_name=dir_name
     )
     return supervisely_image_dir
 
 
-def get_supervisely_data_dir(dir_name):
+def get_supervisely_data_dir(dir_name, root_dir):
     api = sly.Api(
         token=os.getenv("SUPERVISELY_API_KEY"),
-        root_dir=os.getenv("SUPERVISELY_PATH_DATA")
+        root_dir=root_dir
     )
     return api.get_project_dir(project_id=constants.SUPERVISELY_LOCALISATION_PROJECT_ID, dir_name=dir_name)
 

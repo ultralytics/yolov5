@@ -590,6 +590,10 @@ def nanovare(parser):
 
 if __name__ == '__main__':
     from nanovare_casa_core.utils.utils import pretty_dict
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
     nanovare_parser = nanovare(argparse.ArgumentParser())
     ultralytics_parser = ultralytics(argparse.ArgumentParser())
     nanovare_opt, nanovare_unknown = nanovare_parser.parse_known_args()
@@ -605,9 +609,6 @@ if __name__ == '__main__':
         print("Nanovare options")
         pretty_dict(nanovare_opt.__dict__)
 
-        if not len(nanovare_opt.pipeline_name):
-            pipeline_name="training_default"
-
         import sys
 
         from nanovare_casa_core.utils import supervisely as sly
@@ -617,9 +618,16 @@ if __name__ == '__main__':
 
         pipeline_name = nanovare_opt.pipeline_name
 
+        training_data_path = Path(os.getenv("ANALYSIS_DATA_PATH", "data")).resolve()
+        supervisely_root_dir = Path(os.getenv("SUPERVISELY_PATH_DATA", training_data_path / "supervisely")).resolve()
+        yolo_root_dir = training_data_path / "yolo" / pipeline_name
+        log_dir = yolo_root_dir / "runs"
+        # hyp_path = f"data/{pipeline_name}/hyp.yaml"
+        data_dir = yolo_root_dir / "data.yaml"
+
         remote_dataset_name_id = dict(map(
             lambda x: (x.id, x.name),
-            sly.Api().dataset.get_list(constants.SUPERVISELY_LOCALISATION_PROJECT_ID))
+            sly.Api(os.getenv("SUPERVISELY_API_KEY")).dataset.get_list(constants.SUPERVISELY_LOCALISATION_PROJECT_ID))
         )
 
         if nanovare_opt.init_supervisely:
@@ -635,44 +643,37 @@ if __name__ == '__main__':
                 dataset = dataset_zoe + dataset_vincent
             dataset_filter_id = list(
                 dict(filter(lambda x: x[1] in dataset, remote_dataset_name_id.items())))
-            make_nanovare_yolo_data.init_supervisely_dataset(pipeline_name, dataset_filter_id=dataset_filter_id)
+            make_nanovare_yolo_data.init_supervisely_dataset(pipeline_name,
+                                                             supervisely_root_dir,
+                                                             dataset_filter_id=dataset_filter_id)
             supervisely_data_dir = make_nanovare_yolo_data.get_supervisely_data_dir(pipeline_name)
-            print(f"From remote supervisely to {supervisely_data_dir.resolve()}")
+            print(f"From remote supervisely to {supervisely_data_dir}")
 
         if nanovare_opt.init_yolo:
-            supervisely_data_dir = make_nanovare_yolo_data.get_supervisely_data_dir(pipeline_name)
-            yolo_data_dir = f"data/{pipeline_name}"
+            supervisely_data_dir = make_nanovare_yolo_data.get_supervisely_data_dir(pipeline_name, supervisely_root_dir)
             print("\n=========================     INIT YOLO DATASET     =================================")
-            print(f"FROM {Path(supervisely_data_dir).resolve()} TO {Path(yolo_data_dir).resolve()}")
+            print(f"FROM {supervisely_data_dir} TO {Path(yolo_root_dir)}")
 
             make_nanovare_yolo_data.convert_supervisely_to_yolo(
                 supervisely_data_dir=supervisely_data_dir,
-                yolo_data_dir=yolo_data_dir
+                yolo_data_dir=yolo_root_dir
             )
 
         if nanovare_opt.run_train:
-            yolo_data_dir = f"data/{pipeline_name}"
             print(f"Pipeline name {pipeline_name}")
             print("=========================     BEGIN TRAINING      =================================")
-            print(f"From yolo data directory {yolo_data_dir}")
+            print(f"From yolo data directory {yolo_root_dir}")
             data_dict = dict(
                 nc=1,
                 names=['sperm'],
-                train=(Path(yolo_data_dir) / "images" / "train").resolve().as_posix(),
-                val=(Path(yolo_data_dir) / "images" / "val").resolve().as_posix()
+                train=(Path(yolo_root_dir) / "images" / "train").resolve().as_posix(),
+                val=(Path(yolo_root_dir) / "images" / "val").resolve().as_posix()
             )
-            pathdir = Path(f"data/{pipeline_name}")
-            logdir = Path(f"./runs/{pipeline_name}")
-            # hyp_path = f"data/{pipeline_name}/hyp.yaml"
-            pathdir.mkdir(parents=True, exist_ok=True)
-            logdir.mkdir(parents=True, exist_ok=True)
 
-            data_path = pathdir / "data.yaml"
-            yaml.dump(data_dict, open(data_path, 'w'))
+            yaml.dump(data_dict, open(data_dir, 'w'))
             if "--data" not in sys.argv:
-                sys.argv += ["--data", data_path.as_posix()]
+                sys.argv += ["--data", data_dir.as_posix()]
             if "--logdir" not in sys.argv:
-                sys.argv += ["--logdir", logdir.as_posix()]
-
+                sys.argv += ["--logdir", log_dir.as_posix()]
 
             main()

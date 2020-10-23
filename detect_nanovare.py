@@ -321,7 +321,7 @@ def main():
             detect(opt)
 
 
-def mojo(parser):
+def nanovare(parser):
     parser.add_argument('--patient-id', help='Filter a patient ID', default=None)
     parser.add_argument('--date', help='Filter a date', default=None)
     parser.add_argument('--run-localization', action='store_true',
@@ -334,14 +334,14 @@ def mojo(parser):
 
 
 if __name__ == '__main__':
-    mojo_parser = mojo(argparse.ArgumentParser())
+    nanovare_parser = nanovare(argparse.ArgumentParser())
     ultralytics_parser = ultralytics(argparse.ArgumentParser())
-    mojo_opt, mojo_unknown = mojo_parser.parse_known_args()
+    nanovare_opt, nanovare_unknown = nanovare_parser.parse_known_args()
     ultralytics_opt, ultralytics_unknown = ultralytics_parser.parse_known_args()
-    # Ultralytics unknown args should be mojo known args and vice-versa
+    # Ultralytics unknown args should be nanovare known args and vice-versa
     # Otherwise abort
-    mojo_parser.parse_args(ultralytics_unknown)
-    ultralytics_parser.parse_args(mojo_unknown)
+    nanovare_parser.parse_args(ultralytics_unknown)
+    ultralytics_parser.parse_args(nanovare_unknown)
     if not ultralytics_unknown:
         main()
     else:
@@ -386,22 +386,22 @@ if __name__ == '__main__':
                     )
                 self.save(self.inputLoad())
 
-    if mojo_opt.run_localization:
+    if nanovare_opt.run_localization:
         for date in os.listdir(data_path):
-            if not mojo_opt.date or mojo_opt.date == date:
+            if not nanovare_opt.date or nanovare_opt.date == date:
                 for patient_id in os.listdir(data_path / date):
-                    if not mojo_opt.patient_id or mojo_opt.patient_id == patient_id:
+                    if not nanovare_opt.patient_id or nanovare_opt.patient_id == patient_id:
                         detect_task = TaskLocalization(date=date, patient_id=patient_id)
                         d6tflow.preview(detect_task)
                         d6tflow.run(detect_task)
 
-    if mojo_opt.run_tracking:
+    if nanovare_opt.run_tracking:
         from nanovare_casa_core.analysis.analysis import analyze_frames
 
         for date in os.listdir(data_path):
-            if not mojo_opt.date or mojo_opt.date == date:
+            if not nanovare_opt.date or nanovare_opt.date == date:
                 for patient_id in os.listdir(data_path / date):
-                    if not mojo_opt.patient_id or mojo_opt.patient_id == patient_id:
-                        detect_task = TaskTracking(date=date, patient_id=patient_id, run_viz=mojo_opt.run_viz)
+                    if not nanovare_opt.patient_id or nanovare_opt.patient_id == patient_id:
+                        detect_task = TaskTracking(date=date, patient_id=patient_id, run_viz=nanovare_opt.run_viz)
                         d6tflow.preview(detect_task)
                         d6tflow.run(detect_task)
