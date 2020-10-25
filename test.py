@@ -43,15 +43,17 @@ def test(data,
         set_logging()
         device = select_device(opt.device, batch_size=batch_size)
         save_txt = opt.save_txt  # save *.txt labels
+
+        # Remove previous
+        if os.path.exists(save_dir):
+            shutil.rmtree(save_dir)  # delete dir
+        os.makedirs(save_dir)  # make new dir
+
         if save_txt:
             out = save_dir / 'autolabels'
             if os.path.exists(out):
                 shutil.rmtree(out)  # delete dir
             os.makedirs(out)  # make new dir
-
-        # Remove previous
-        for f in glob.glob(str(save_dir / 'test_batch*.jpg')):
-            os.remove(f)
 
         # Load model
         model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -287,6 +289,8 @@ if __name__ == '__main__':
              save_txt=opt.save_txt,
              save_conf=opt.save_conf,
              )
+
+        print('Results saved to %s' % opt.save_dir)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         for weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
