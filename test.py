@@ -44,10 +44,10 @@ def test(data,
         device = select_device(opt.device, batch_size=batch_size)
         save_txt = opt.save_txt  # save *.txt labels
         if save_txt:
-            out = save_dir / 'output'
+            out = save_dir / 'autolabels'
             if os.path.exists(out):
-                shutil.rmtree(out)  # delete output folder
-            os.makedirs(out)  # make new output folder
+                shutil.rmtree(out)  # delete dir
+            os.makedirs(out)  # make new dir
 
         # Remove previous
         for f in glob.glob(str(save_dir / 'test_batch*.jpg')):
@@ -265,8 +265,8 @@ if __name__ == '__main__':
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
-    parser.add_argument('--save-conf', action='store_true', help='output confidences in --save-txt labels')
-    parser.add_argument('--output', type=str, default='', help='output folder to save results')
+    parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
+    parser.add_argument('--save-dir', type=str, default='runs/test', help='directory to save results')
     opt = parser.parse_args()
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
@@ -283,7 +283,7 @@ if __name__ == '__main__':
              opt.single_cls,
              opt.augment,
              opt.verbose,
-             save_dir=Path(opt.output),
+             save_dir=Path(opt.save_dir),
              save_txt=opt.save_txt,
              save_conf=opt.save_conf,
              )
