@@ -222,11 +222,11 @@ def test(data,
 
     # Save JSON
     if save_json and len(jdict):
-        f = 'detections_val2017_%s_results.json' % \
-            (weights.split(os.sep)[-1].replace('.pt', '') if isinstance(weights, str) else '')  # filename
-        print('\nCOCO mAP with pycocotools... saving %s...' % f)
-        with open(f, 'w') as file:
-            json.dump(jdict, file)
+        w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
+        file = save_dir / f"detections_val2017_{w}_results.json"  # predicted annotations file
+        print('\nCOCO mAP with pycocotools... saving %s...' % file)
+        with open(file, 'w') as f:
+            json.dump(jdict, f)
 
         try:  # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb
             from pycocotools.coco import COCO
@@ -234,7 +234,7 @@ def test(data,
 
             imgIds = [int(Path(x).stem) for x in dataloader.dataset.img_files]
             cocoGt = COCO(glob.glob('../coco/annotations/instances_val*.json')[0])  # initialize COCO ground truth api
-            cocoDt = cocoGt.loadRes(f)  # initialize COCO pred api
+            cocoDt = cocoGt.loadRes(str(file))  # initialize COCO pred api
             cocoEval = COCOeval(cocoGt, cocoDt, 'bbox')
             cocoEval.params.imgIds = imgIds  # image IDs to evaluate
             cocoEval.evaluate()
