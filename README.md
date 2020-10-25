@@ -69,7 +69,7 @@ YOLOv5 may be run in any of the following up-to-date verified environments (with
 
 ## Inference
 
-detect.py runs inference on a variety of sources, downloading models automatically from the [latest YOLOv5 release](https://github.com/ultralytics/yolov5/releases), and saving results to `inference/output`.
+detect.py runs inference on a variety of sources, downloading models automatically from the [latest YOLOv5 release](https://github.com/ultralytics/yolov5/releases) and saving results to `inference/output`.
 ```bash
 $ python detect.py --source 0  # webcam
                             file.jpg  # image 
@@ -81,7 +81,7 @@ $ python detect.py --source 0  # webcam
                             http://112.50.243.8/PLTV/88888888/224/3221225900/1.m3u8  # http stream
 ```
 
-To run inference on example images in the `inference/images`:
+To run inference on example images in `inference/images`:
 ```bash
 $ python detect.py --source inference/images --weights yolov5s.pt --conf 0.25
 
@@ -99,6 +99,8 @@ Results saved to yolov5/inference/output
 Done. (0.124s)
 ```
 <img src="https://user-images.githubusercontent.com/26833433/97107365-685a8d80-16c7-11eb-8c2e-83aac701d8b9.jpeg" width="500">  
+
+### PyTorch Hub
 
 To run **batched inference** with YOLOv5 and [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36):
 ```python
