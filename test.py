@@ -32,6 +32,7 @@ def test(data,
          dataloader=None,
          save_dir=Path(''),  # for saving images
          save_txt=False,  # for auto-labelling
+         save_conf=False,
          plots=True):
     # Initialize/load model and set device
     training = model is not None
@@ -42,15 +43,17 @@ def test(data,
         set_logging()
         device = select_device(opt.device, batch_size=batch_size)
         save_txt = opt.save_txt  # save *.txt labels
-        if save_txt:
-            out = Path('inference/output')
-            if os.path.exists(out):
-                shutil.rmtree(out)  # delete output folder
-            os.makedirs(out)  # make new output folder
 
         # Remove previous
-        for f in glob.glob(str(save_dir / 'test_batch*.jpg')):
-            os.remove(f)
+        if os.path.exists(save_dir):
+            shutil.rmtree(save_dir)  # delete dir
+        os.makedirs(save_dir)  # make new dir
+
+        if save_txt:
+            out = save_dir / 'autolabels'
+            if os.path.exists(out):
+                shutil.rmtree(out)  # delete dir
+            os.makedirs(out)  # make new dir
 
         # Load model
         model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -132,8 +135,9 @@ def test(data,
                 x[:, :4] = scale_coords(img[si].shape[1:], x[:, :4], shapes[si][0], shapes[si][1])  # to original
                 for *xyxy, conf, cls in x:
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                    line = (cls, conf, *xywh) if save_conf else (cls, *xywh)  # label format
                     with open(str(out / Path(paths[si]).stem) + '.txt', 'a') as f:
-                        f.write(('%g ' * 5 + '\n') % (cls, *xywh))  # label format
+                        f.write(('%g ' * len(line) + '\n') % line)
 
             # Clip boxes to image bounds
             clip_coords(pred, (height, width))
@@ -263,6 +267,8 @@ if __name__ == '__main__':
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
+    parser.add_argument('--save-dir', type=str, default='runs/test', help='directory to save results')
     opt = parser.parse_args()
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
@@ -278,7 +284,13 @@ if __name__ == '__main__':
              opt.save_json,
              opt.single_cls,
              opt.augment,
-             opt.verbose)
+             opt.verbose,
+             save_dir=Path(opt.save_dir),
+             save_txt=opt.save_txt,
+             save_conf=opt.save_conf,
+             )
+
+        print('Results saved to %s' % opt.save_dir)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         for weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
