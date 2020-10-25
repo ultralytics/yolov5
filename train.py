@@ -587,13 +587,16 @@ def nanovare(parser):
     parser.add_argument('--run-train', default=True, action='store_true', help='Train')
     return parser
 
+def pretty_dict(d, indent=0):
+    for key, value in d.items():
+        print('\t' * indent + str(key))
+        if isinstance(value, dict):
+            pretty_dict(value, indent + 1)
+        else:
+            print('\t' * (indent + 1) + str(value))
+
 
 if __name__ == '__main__':
-    from nanovare_casa_core.utils.utils import pretty_dict
-    from dotenv import load_dotenv
-
-    load_dotenv()
-
     nanovare_parser = nanovare(argparse.ArgumentParser())
     ultralytics_parser = ultralytics(argparse.ArgumentParser())
     nanovare_opt, nanovare_unknown = nanovare_parser.parse_known_args()
@@ -606,15 +609,17 @@ if __name__ == '__main__':
     if not ultralytics_unknown:
         main()
     else:
-        print("Nanovare options")
-        pretty_dict(nanovare_opt.__dict__)
-
         import sys
 
         from nanovare_casa_core.utils import supervisely as sly
         from nanovare_casa_core.utils import constants
+        from dotenv import load_dotenv
 
         import make_nanovare_yolo_data
+
+        load_dotenv()
+        print("Nanovare options")
+        pretty_dict(nanovare_opt.__dict__)
 
         pipeline_name = nanovare_opt.pipeline_name
 

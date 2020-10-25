@@ -310,7 +310,6 @@ def ultralytics(parser):
 
 def main():
     opt, _ = ultralytics(argparse.ArgumentParser()).parse_known_args()
-    print(opt)
 
     with torch.no_grad():
         if opt.update:  # update all models (to fix SourceChangeWarning)
@@ -333,6 +332,15 @@ def nanovare(parser):
     return parser
 
 
+def pretty_dict(d, indent=0):
+    for key, value in d.items():
+        print('\t' * indent + str(key))
+        if isinstance(value, dict):
+            pretty_dict(value, indent + 1)
+        else:
+            print('\t' * (indent + 1) + str(value))
+
+
 if __name__ == '__main__':
     nanovare_parser = nanovare(argparse.ArgumentParser())
     ultralytics_parser = ultralytics(argparse.ArgumentParser())
@@ -342,6 +350,11 @@ if __name__ == '__main__':
     # Otherwise abort
     nanovare_parser.parse_args(ultralytics_unknown)
     ultralytics_parser.parse_args(nanovare_unknown)
+    print("Nanovare options")
+    pretty_dict(nanovare_opt.__dict__)
+    print("Ultralytics options")
+    pretty_dict(ultralytics_opt.__dict__)
+
     if not ultralytics_unknown:
         main()
     else:
