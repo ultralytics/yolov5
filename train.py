@@ -585,7 +585,7 @@ def nanovare(parser):
     parser.add_argument('--pipeline-name', default="training_default", help='Name of the pipeline')
     parser.add_argument('--init-supervisely', choices=["zoe", "vincent", "zoe+vincent"],
                         help=f'Download, check integrity and merge a filtered supervisely dataset')
-    parser.add_argument('--init-yolo',
+    parser.add_argument('--init-yolo', action='store_true',
                         help='Convert a supervisely dataset to a grey|rgb yolo dataset')
     parser.add_argument('--run-train', action='store_true', help='Train')
     parser.add_argument('--gray', action='store_true', help='Gray mode')
