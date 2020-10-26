@@ -72,8 +72,8 @@ If you pass at least one nanovare arguments, detect_nanovare is in nanovare mode
 The nanovare mode only loops on the Mast capture dataset by date and patient and overwrites the ultralytics --source arguments and call the original ultralytics detect.py on this patient dataset.
 The nanovare mode performs tasks for each patient under the supervision of luigi so you can quit a detect_nanovare process with no damage. It will start back where it stopped. You can invalidate a task by passing the --invalidate arguments if you wish to rerun a task for any reasons (data changed, task not performed as expected, test, ...)
 
-You need to set the $PATH_DATA env variable in .env or in the shell to indicate where the capture MAST dataset is.
-You need to set the $MAST_ANALYSIS_IDENTIFIER at YOLO to output proper nanovare-friendly localization output (tracking input)
+You need to set the $PATH_DATA env variable in .env or in the shell to indicate where the capture dataset is  $PATH_DATA / "capture_MAST_data" is the capture dataset.
+AND you need to set the $MAST_ANALYSIS_IDENTIFIER at YOLO to output proper nanovare-friendly localization output (tracking input) inside this capture MAST dataset to avoid conflict with localization output from another MAST method.
 
 
 If you pass only ultralytics arguments, detect_nanovare is in nanovare mode:
