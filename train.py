@@ -291,11 +291,11 @@ def train(hyp, opt, device, tb_writer=None):
 
                 # Plot
                 if ni < 3:
-                    f = str(log_dir / ('train_batch%g.jpg' % ni))  # filename
+                    f = str(log_dir / f'train_batch{ni}.jpg')  # filename
                     result = plot_images(images=imgs, targets=targets, paths=paths, fname=f)
-                    if tb_writer and result is not None:
-                        tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
-                        # tb_writer.add_graph(model, imgs)  # add model to tensorboard
+                    # if tb_writer and result is not None:
+                    # tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
+                    # tb_writer.add_graph(model, imgs)  # add model to tensorboard
 
             # end batch ------------------------------------------------------------------------------------------------
 

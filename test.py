@@ -191,9 +191,9 @@ def test(data,
 
         # Plot images
         if plots and batch_i < 1:
-            f = save_dir / ('test_batch%g_gt.jpg' % batch_i)  # filename
+            f = save_dir / f'test_batch{batch_i}_gt.jpg'  # filename
             plot_images(img, targets, paths, str(f), names)  # ground truth
-            f = save_dir / ('test_batch%g_pred.jpg' % batch_i)
+            f = save_dir / f'test_batch{batch_i}_pred.jpg'
             plot_images(img, output_to_target(output, width, height), paths, str(f), names)  # predictions
 
     # Compute statistics
