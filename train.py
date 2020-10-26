@@ -587,6 +587,7 @@ def nanovare(parser):
     parser.add_argument('--run-train', default=True, action='store_true', help='Train')
     return parser
 
+
 def pretty_dict(d, indent=0):
     for key, value in d.items():
         print('\t' * indent + str(key))
@@ -627,7 +628,7 @@ if __name__ == '__main__':
         supervisely_root_dir = Path(os.getenv("SUPERVISELY_PATH_DATA", training_data_path / "supervisely")).resolve()
         yolo_root_dir = training_data_path / "yolo" / pipeline_name
         log_dir = yolo_root_dir / "runs"
-        # hyp_path = f"data/{pipeline_name}/hyp.yaml"
+        hyp_dir = yolo_root_dir / "hyp.scratch.yaml"
         data_dir = yolo_root_dir / "data.yaml"
 
         remote_dataset_name_id = dict(map(
@@ -651,7 +652,7 @@ if __name__ == '__main__':
             make_nanovare_yolo_data.init_supervisely_dataset(pipeline_name,
                                                              supervisely_root_dir,
                                                              dataset_filter_id=dataset_filter_id)
-            supervisely_data_dir = make_nanovare_yolo_data.get_supervisely_data_dir(pipeline_name)
+            supervisely_data_dir = make_nanovare_yolo_data.get_supervisely_data_dir(pipeline_name, supervisely_root_dir)
             print(f"From remote supervisely to {supervisely_data_dir}")
 
         if nanovare_opt.init_yolo:
@@ -676,6 +677,7 @@ if __name__ == '__main__':
             )
 
             yaml.dump(data_dict, open(data_dir, 'w'))
+            shutil.copy("data/hyp.scratch.yaml", hyp_dir)
             if "--data" not in sys.argv:
                 sys.argv += ["--data", data_dir.as_posix()]
             if "--logdir" not in sys.argv:
