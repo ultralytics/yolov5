@@ -329,6 +329,8 @@ def nanovare(parser):
                         help='Run tracking')
     parser.add_argument('--run-viz', action='store_true',
                         help='Run vizualization after tracking')
+    parser.add_argument('--invalidate', action='store_true',
+                        help='Run vizualization after tracking')
     return parser
 
 
@@ -422,6 +424,8 @@ if __name__ == '__main__':
                 for patient_id in os.listdir(data_path / date):
                     if not nanovare_opt.patient_id or nanovare_opt.patient_id == patient_id:
                         detect_task = TaskLocalization(date=date, patient_id=patient_id)
+                        if nanovare_opt.invalidate:
+                            detect_task.invalidate(confirm=False)
                         d6tflow.preview(detect_task)
                         d6tflow.run(detect_task)
 
@@ -432,9 +436,11 @@ if __name__ == '__main__':
             if not nanovare_opt.date or nanovare_opt.date == date:
                 for patient_id in os.listdir(data_path / date):
                     if not nanovare_opt.patient_id or nanovare_opt.patient_id == patient_id:
-                        detect_task = TaskTracking(date=date, patient_id=patient_id)
-                        d6tflow.preview(detect_task)
-                        d6tflow.run(detect_task)
+                        tracking_task = TaskTracking(date=date, patient_id=patient_id)
+                        if nanovare_opt.invalidate:
+                            tracking_task.invalidate(confirm=False)
+                        d6tflow.preview(tracking_task)
+                        d6tflow.run(tracking_task)
 
     if nanovare_opt.run_viz:
         from nanovare_casa_core.analysis.analysis import analyze_frames
@@ -443,6 +449,8 @@ if __name__ == '__main__':
             if not nanovare_opt.date or nanovare_opt.date == date:
                 for patient_id in os.listdir(data_path / date):
                     if not nanovare_opt.patient_id or nanovare_opt.patient_id == patient_id:
-                        detect_task = TaskViz(date=date, patient_id=patient_id)
-                        d6tflow.preview(detect_task)
-                        d6tflow.run(detect_task)
+                        viz_task = TaskViz(date=date, patient_id=patient_id)
+                        if nanovare_opt.invalidate:
+                            viz_task.invalidate(confirm=False)
+                        d6tflow.preview(viz_task)
+                        d6tflow.run(viz_task)
