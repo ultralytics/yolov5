@@ -68,15 +68,18 @@ YOLOv5 may be run in any of the following up-to-date verified environments (with
 
 ## Nanovare inference
 
-If you pass mojo arguments, detect_nanovare is in nanovare mode (run localization, tracking on the all MAST capture dataset by overwriting the ultraltytics --source arguments) but is ultralytics-friendly (accept ultralytics arguments).
-The mojo mode performs task under the supervision of luigi so you can quit a detect_nanovare process with no damage. It will start back where it was left.
+If you pass at least one nanovare arguments, detect_nanovare is in nanovare mode (run localization, tracking on the all MAST capture dataset) but is ultralytics-friendly (accept ultralytics arguments).
+The nanovare mode only loops on the Mast capture dataset by date and patient and overwrites the ultralytics --source arguments and call the original ultralytics detect.py on this patient dataset.
+The nanovare mode performs tasks for each patient under the supervision of luigi so you can quit a detect_nanovare process with no damage. It will start back where it stopped. You can invalidate a task by passing the --invalidate arguments if you wish to rerun a task for any reasons (data changed, task not performed as expected, test, ...)
 
 You need to set the $PATH_DATA env variable in .env or in the shell to indicate where the capture MAST dataset is.
 You need to set the $MAST_ANALYSIS_IDENTIFIER at YOLO to output proper nanovare-friendly localization output (tracking input)
 
 
+If you pass only ultralytics arguments, detect_nanovare is in nanovare mode:
+
 ```bash
-python detect_nanovare.py --run-tracking # Run localization then tracking for each patient (luigi runs the localization task because tracking depends on localization)  
+python detect_nanovare.py --run-tracking # Run localization for each patient then tracking for each patient (luigi runs the localization task because tracking depends on localization)  
 ```
 ```bash
 python detect_nanovare.py --run-localization
@@ -84,21 +87,25 @@ python detect_nanovare.py --run-localization
                     
 ```
 ```bash
-python detect_nanovare.py --run-tracking
+python detect_nanovare.py --run-tracking    # Run localization for tp23 then tracking patient for tp23
                           --patient-id tp23 # Filter by patient_id
                           --date 2020_05_12 # Filter by date
+                          --invalidate # Invalidate the task TaskRunTracking(patient_id=tp23, date=2020_05_12) before running it again
+                                       # Invalidates also automatically all upstream tasks; here the only upstream task 
+                                       # to be invalidated is TaskRunLocalization(patient_id=tp23, date=2020_05_12) before running it again
 ```
 ```bash
- python detect_nanovare.py --run-tracking
-                       --patient-id tp23 # Filter by patient_id
-                       --date 2020_05_12 # Filter by date
-                       --iou-thres 0.8 # Add ultralytics arguments
-                       --weights ..\..\data\analysis\yolo\minimal_deformation\runs\exp0\weights\weights\best.pt
+python detect_nanovare.py --run-tracking
+                          --patient-id tp23 # Nanovare arg
+                          --date 2020_05_12 # Nanovare arg
+                          --invalidate # Nanovare arg
+                          --iou-thres 0.8   # Ultralytics arg
+                          --weights ..\..\data\analysis\yolo\minimal_deformation\runs\exp0\weights\weights\best.pt # Ultralytics arg
 ```
-If you pass only ultralytics arguments, detect_mojo is in ultralytics mode
+If you pass only ultralytics arguments, detect_nanovare is in ultralytics mode
 
 ```bash
- python detect_mojo.py --source Q:\data\Karolinska\capture_MAST_data\2020_05_12\test-patient-03 # Ultralytics arg
+ python detect_nanovare.py --source  ..\..\data\Karolinska\capture_MAST_data\2020_05_12\test-patient-03 # Ultralytics arg
                        --iou-thres 0.8 # Ultralytics arg
 ```
 ## Inference
@@ -132,6 +139,8 @@ Results saved to /content/yolov5/inference/output
 
 <img src="https://user-images.githubusercontent.com/26833433/83082816-59e54880-a039-11ea-8abe-ab90cc1ec4b0.jpeg" width="500">  
 
+
+## Nanovare Training
 
 ## Training
 
