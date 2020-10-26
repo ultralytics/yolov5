@@ -384,7 +384,6 @@ if __name__ == '__main__':
         class TaskTracking(d6tflow.tasks.TaskPickle):
             date = luigi.Parameter()
             patient_id = luigi.Parameter()
-            run_viz = luigi.BoolParameter()
 
             def requires(self): return TaskLocalization(date=date, patient_id=patient_id)
 
@@ -395,7 +394,25 @@ if __name__ == '__main__':
                         run_detection=False,
                         run_classification=False,
                         run_tracking=True,
-                        run_viz=self.run_viz,
+                        run_viz=False,
+                    )
+                self.save(self.inputLoad())
+
+
+        class TaskViz(d6tflow.tasks.TaskPickle):
+            date = luigi.Parameter()
+            patient_id = luigi.Parameter()
+
+            def requires(self): return TaskTracking(date=date, patient_id=patient_id)
+
+            def run(self):
+                for path in list((self.inputLoad()).glob("*.avi")):
+                    analyze_frames(
+                        path,
+                        run_detection=False,
+                        run_classification=False,
+                        run_tracking=False,
+                        run_viz=True,
                     )
                 self.save(self.inputLoad())
 
@@ -415,6 +432,17 @@ if __name__ == '__main__':
             if not nanovare_opt.date or nanovare_opt.date == date:
                 for patient_id in os.listdir(data_path / date):
                     if not nanovare_opt.patient_id or nanovare_opt.patient_id == patient_id:
-                        detect_task = TaskTracking(date=date, patient_id=patient_id, run_viz=nanovare_opt.run_viz)
+                        detect_task = TaskTracking(date=date, patient_id=patient_id)
+                        d6tflow.preview(detect_task)
+                        d6tflow.run(detect_task)
+
+    if nanovare_opt.run_viz:
+        from nanovare_casa_core.analysis.analysis import analyze_frames
+
+        for date in os.listdir(data_path):
+            if not nanovare_opt.date or nanovare_opt.date == date:
+                for patient_id in os.listdir(data_path / date):
+                    if not nanovare_opt.patient_id or nanovare_opt.patient_id == patient_id:
+                        detect_task = TaskViz(date=date, patient_id=patient_id)
                         d6tflow.preview(detect_task)
                         d6tflow.run(detect_task)
