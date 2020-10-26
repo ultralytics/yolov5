@@ -628,7 +628,6 @@ if __name__ == '__main__':
         supervisely_root_dir = Path(os.getenv("SUPERVISELY_PATH_DATA", training_data_path / "supervisely")).resolve()
         yolo_root_dir = training_data_path / "yolo" / pipeline_name
         log_dir = yolo_root_dir / "runs"
-        hyp_dir = yolo_root_dir / "hyp.scratch.yaml"
         data_dir = yolo_root_dir / "data.yaml"
 
         remote_dataset_name_id = dict(map(
@@ -677,7 +676,6 @@ if __name__ == '__main__':
             )
 
             yaml.dump(data_dict, open(data_dir, 'w'))
-            shutil.copy("data/hyp.scratch.yaml", hyp_dir)
             if "--data" not in sys.argv:
                 sys.argv += ["--data", data_dir.as_posix()]
             if "--logdir" not in sys.argv:
