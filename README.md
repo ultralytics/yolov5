@@ -72,42 +72,61 @@ If you pass at least one nanovare arguments, detect_nanovare is in nanovare mode
 The nanovare mode only loops on the Mast capture dataset by date and patient and overwrites the ultralytics --source arguments and call the original ultralytics detect.py on this patient dataset.
 The nanovare mode performs tasks for each patient under the supervision of luigi so you can quit a detect_nanovare process with no damage. It will start back where it stopped. You can invalidate a task by passing the --invalidate arguments if you wish to rerun a task for any reasons (data changed, task not performed as expected, test, ...)
 
-You need to set the $PATH_DATA env variable in .env or in the shell to indicate where the capture dataset is  $PATH_DATA / "capture_MAST_data" is the capture dataset.
+If using the nanovare mode, you need to set the $PATH_DATA env variable in .env or in the shell to indicate where the capture dataset is.  $PATH_DATA / "capture_MAST_data" is the capture dataset.
 AND you need to set the $MAST_ANALYSIS_IDENTIFIER at YOLO to output proper nanovare-friendly localization output (tracking input) inside this capture MAST dataset to avoid conflict with localization output from another MAST method.
 
 
-If you pass only ultralytics arguments, detect_nanovare is in nanovare mode:
+If you pass at least one nanovare argument, detect_nanovare is in nanovare mode:
 
 ```bash
-python detect_nanovare.py --run-tracking # Run localization for each patient then tracking for each patient (luigi runs the localization task because tracking depends on localization)  
+python detect_nanovare.py --run-tracking    # Run localization for each patient then tracking for each patient (luigi runs the localization task because tracking depends on localization)  
 ```
 ```bash
 python detect_nanovare.py --run-localization
-                          --run-tracking # Run localization for all patient then tracking for all patient
+                          --run-tracking    # Run localization for all patient then tracking for all patient
                     
 ```
 ```bash
 python detect_nanovare.py --run-tracking    # Run localization for tp23 then tracking patient for tp23
                           --patient-id tp23 # Filter by patient_id
                           --date 2020_05_12 # Filter by date
-                          --invalidate # Invalidate the task TaskRunTracking(patient_id=tp23, date=2020_05_12) before running it again
-                                       # Invalidates also automatically all upstream tasks; here the only upstream task 
-                                       # to be invalidated is TaskRunLocalization(patient_id=tp23, date=2020_05_12) before running it again
+                          --invalidate      # Invalidate the task TaskRunTracking(patient_id=tp23, date=2020_05_12) before running it again
+                                            # Invalidates also automatically all upstream tasks; here the only upstream task 
+                                            # to be invalidated is TaskRunLocalization(patient_id=tp23, date=2020_05_12) before running it again
 ```
 ```bash
 python detect_nanovare.py --run-tracking
-                          --patient-id tp23 # Nanovare arg
-                          --date 2020_05_12 # Nanovare arg
-                          --invalidate # Nanovare arg
-                          --iou-thres 0.8   # Ultralytics arg
+                          --patient-id tp23                                                                        # Nanovare arg
+                          --date 2020_05_12                                                                        # Nanovare arg
+                          --invalidate                                                                             # Nanovare arg
+                          --iou-thres 0.8                                                                          # Ultralytics arg
                           --weights ..\..\data\analysis\yolo\minimal_deformation\runs\exp0\weights\weights\best.pt # Ultralytics arg
 ```
-If you pass only ultralytics arguments, detect_nanovare is in ultralytics mode
+Else if you pass only ultralytics arguments, detect_nanovare is in ultralytics mode
 
 ```bash
  python detect_nanovare.py --source  ..\..\data\Karolinska\capture_MAST_data\2020_05_12\test-patient-03 # Ultralytics arg
-                       --iou-thres 0.8 # Ultralytics arg
+                           --iou-thres 0.8                                                              # Ultralytics arg
 ```
+
+All nanovare options:
+```bash
+(.windows_venv38) Q:\dev\yolov5>python detect_nanovare.py -h
+usage: detect_nanovare.py [-h] [--patient-id PATIENT_ID] [--date DATE] [--run-localization] [--run-tracking]
+                          [--run-viz] [--invalidate]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --patient-id PATIENT_ID
+                        Filter a patient ID
+  --date DATE           Filter a date
+  --run-localization    Run localization
+  --run-tracking        Run tracking
+  --run-viz             Run vizualization after tracking
+  --invalidate          Run vizualization after tracking
+
+```
+
 ## Inference
 
 Inference can be run on most common media formats. Model [checkpoints](https://drive.google.com/open?id=1Drs_Aiu7xx6S-ix95f9kNsA6ueKRpN2J) are downloaded automatically if available. Results are saved to `./inference/output`.
@@ -142,7 +161,58 @@ Results saved to /content/yolov5/inference/output
 
 ## Nanovare Training
 
-## Training
+If you pass at least one nanovare arguments, detect_nanovare is in nanovare mode (creates, download and check a supervisely dataset, convert it to yolo and train) but is ultralytics-friendly (accept ultralytics arguments).
+The nanovare mode creates a new dataset, overwrites the ultralytics --data arguments and call the original ultralytics train.py. This pipeline is tracked thanks to a identifier called 'pipeline_name' that you call as an argument --pipelinename pipeline_name. All datasets and datas related will fall into the 'pipeline_name' folder.
+To the contrary of detect_nanovare, the nanovare mode of training does not performs task under the supervision of luigi yet.
+
+If using the nanovare mode, you need to set the $ANALYSIS_PATH_DATA (ex: ../../data/analysis) env variable in .env or in the shell to indicate where the yolo data folder is. $ANALYSIS_PATH_DATA / "yolo" is the yolo data folder.
+AND you need to set the supervisely variables SUPERVISELY_PATH_DATA (ex: ../../data/supervisely) for the download folder and SUPERVISELY_API_KEY to set your API token.
+
+
+If you pass at least one nanovare argument, train is in nanovare mode:
+
+```bash
+python train.py strong_mosaic_aug               # specify a pipeline name
+                --init-supervisely zoe+vincent  # Download the supervisely dataset if not already
+                --init-yolo                     # Convert it to a yolov5-friendly dataset
+                --run-train                     # Launch the training on this dataset 
+```
+```bash
+python train.py strong_mosaic_aug                                                             # Nanovare arg
+                --run-train                                                                   # Nanovare arg
+                --resume ..\..\data\analysis\yolo\strong_mosaic_aug\runs\exp6\weights\last.pt # Ultralytics arg
+                    
+```
+
+Else if you pass only ultralytics arguments, train is in ultralytics mode
+
+```bash
+ python train.py --data  ..\..\data\analysis\yolo\strong_mosaic_aug\data.yaml       # Ultralytics arg
+                 --hyp  ..\..\data\analysis\yolo\strong_mosaic_aug\hyp.scratch.yaml # Ultralytics arg
+                 --nosave                                                           # Ultralytics arg
+                 --notest                                                           # Ultralytics arg
+                 --epochs 150                                                       # Ultralytics arg
+```
+
+All nanovare options:
+```bash
+(.windows_venv38) Q:\dev\yolov5>python train.py -h
+usage: train.py [-h] [--pipeline-name PIPELINE_NAME] [--init-supervisely {zoe,vincent,zoe+vincent}] [--init-yolo]
+                [--run-train] [--gray]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --pipeline-name PIPELINE_NAME
+                        Name of the pipeline
+  --init-supervisely {zoe,vincent,zoe+vincent}
+                        Download, check integrity and merge a filtered supervisely dataset
+  --init-yolo           Convert a supervisely dataset to a grey|rgb yolo dataset
+  --run-train           Train
+  --gray                Gray mode
+
+```
+
+### Training
 
 Download [COCO](https://github.com/ultralytics/yolov5/blob/master/data/scripts/get_coco.sh) and run command below. Training times for YOLOv5s/m/l/x are 2/4/6/8 days on a single V100 (multi-GPU times faster). Use the largest `--batch-size` your GPU allows (batch sizes shown for 16 GB devices).
 ```bash
