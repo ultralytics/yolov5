@@ -398,8 +398,6 @@ def main():
 
     # Resume
     if opt.resume:  # resume an interrupted run
-        print(Path(opt.resume))
-        print(Path(opt.resume).exists())
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
         log_dir = Path(ckpt).parent.parent  # runs/exp0
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
