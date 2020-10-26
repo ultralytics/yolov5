@@ -628,7 +628,7 @@ if __name__ == '__main__':
 
         pipeline_name = nanovare_opt.pipeline_name
 
-        training_data_path = Path(os.getenv("ANALYSIS_DATA_PATH", "data")).resolve()
+        training_data_path = Path(os.getenv("ANALYSIS_PATH_DATA", "data")).resolve()
         supervisely_root_dir = Path(os.getenv("SUPERVISELY_PATH_DATA", training_data_path / "supervisely")).resolve()
         yolo_root_dir = training_data_path / "yolo" / pipeline_name
         log_dir = yolo_root_dir / "runs"
