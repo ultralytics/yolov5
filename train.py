@@ -395,6 +395,8 @@ def main():
 
     # Resume
     if opt.resume:  # resume an interrupted run
+        print(Path(opt.resume))
+        print(Path(opt.resume).exists())
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
         log_dir = Path(ckpt).parent.parent  # runs/exp0
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
@@ -583,8 +585,10 @@ def nanovare(parser):
     parser.add_argument('--pipeline-name', default="training_default", help='Name of the pipeline')
     parser.add_argument('--init-supervisely', choices=["zoe", "vincent", "zoe+vincent"],
                         help=f'Download, check integrity and merge a filtered supervisely dataset')
-    parser.add_argument('--init-yolo', action='store_true', help='Convert a supervisely dataset to a yolo dataset')
+    parser.add_argument('--init-yolo',
+                        help='Convert a supervisely dataset to a grey|rgb yolo dataset')
     parser.add_argument('--run-train', action='store_true', help='Train')
+    parser.add_argument('--gray', action='store_true', help='Gray mode')
     return parser
 
 
@@ -661,7 +665,8 @@ if __name__ == '__main__':
 
             make_nanovare_yolo_data.convert_supervisely_to_yolo(
                 supervisely_data_dir=supervisely_data_dir,
-                yolo_data_dir=yolo_root_dir
+                yolo_data_dir=yolo_root_dir,
+                rgb=not nanovare_opt.gray
             )
 
         if nanovare_opt.run_train:
