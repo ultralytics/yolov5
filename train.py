@@ -583,8 +583,8 @@ def nanovare(parser):
     parser.add_argument('--pipeline-name', default="training_default", help='Name of the pipeline')
     parser.add_argument('--init-supervisely', choices=["zoe", "vincent", "zoe+vincent"],
                         help=f'Download, check integrity and merge a filtered supervisely dataset')
-    parser.add_argument('--init-yolo', default=True, action='store_true', help='Convert a supervisely dataset to a yolo dataset')
-    parser.add_argument('--run-train', default=True, action='store_true', help='Train')
+    parser.add_argument('--init-yolo', action='store_true', help='Convert a supervisely dataset to a yolo dataset')
+    parser.add_argument('--run-train', action='store_true', help='Train')
     return parser
 
 
@@ -633,7 +633,7 @@ if __name__ == '__main__':
 
         remote_dataset_name_id = dict(map(
             lambda x: (x.id, x.name),
-            sly.Api(os.getenv("SUPERVISELY_API_KEY")).dataset.get_list(constants.SUPERVISELY_LOCALISATION_PROJECT_ID))
+            sly.Api(token=os.getenv("SUPERVISELY_API_KEY")).dataset.get_list(constants.SUPERVISELY_LOCALISATION_PROJECT_ID))
         )
 
         if nanovare_opt.init_supervisely:
