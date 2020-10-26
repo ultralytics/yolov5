@@ -632,6 +632,7 @@ if __name__ == '__main__':
         training_data_path = Path(os.getenv("ANALYSIS_PATH_DATA", "data")).resolve()
         supervisely_root_dir = Path(os.getenv("SUPERVISELY_PATH_DATA", training_data_path / "supervisely")).resolve()
         yolo_root_dir = training_data_path / "yolo" / pipeline_name
+        yolo_root_dir.mkdir(parents=True, exist_ok=True)
         log_dir = yolo_root_dir / "runs"
         data_dir = yolo_root_dir / "data.yaml"
 
