@@ -1,4 +1,4 @@
-name: Greetings
+name: First interaction
 
 on: [pull_request_target, issues]
 
@@ -6,7 +6,7 @@ jobs:
   greeting:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/first-interaction@v1
+      - uses: actions/first-interaction@v1.0.0
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           pr-message: |
