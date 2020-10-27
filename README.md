@@ -162,7 +162,7 @@ Results saved to /content/yolov5/inference/output
 ## Nanovare Training
 
 If you pass at least one nanovare arguments, detect_nanovare is in nanovare mode (creates, download and check a supervisely dataset, convert it to yolo and train) but is ultralytics-friendly (accept ultralytics arguments).
-The nanovare mode creates a new dataset, overwrites the ultralytics --data arguments and call the original ultralytics train.py. This pipeline is tracked thanks to a identifier called 'pipeline_name' that you call as an argument --pipelinename pipeline_name. All datasets and datas related will fall into the 'pipeline_name' folder.
+The nanovare mode creates a new dataset, overwrites the ultralytics --data arguments and call the original ultralytics train.py. This pipeline is tracked thanks to a identifier called 'pipeline_name' that you call as an argument --pipeline-name pipeline_name. All datasets and datas related will fall into the 'pipeline_name' folder.
 To the contrary of detect_nanovare, the nanovare mode of training does not performs task under the supervision of luigi yet.
 
 If using the nanovare mode, you need to set the $ANALYSIS_PATH_DATA (ex: ../../data/analysis) env variable in .env or in the shell to indicate where the yolo data folder is. $ANALYSIS_PATH_DATA / "yolo" is the yolo data folder.
@@ -172,13 +172,13 @@ AND you need to set the supervisely variables SUPERVISELY_PATH_DATA (ex: ../../d
 If you pass at least one nanovare argument, train is in nanovare mode:
 
 ```bash
-python train.py strong_mosaic_aug               # specify a pipeline name
-                --init-supervisely zoe+vincent  # Download the supervisely dataset if not already
-                --init-yolo                     # Convert it to a yolov5-friendly dataset
-                --run-train                     # Launch the training on this dataset 
+python train.py --pipeline-name strong_mosaic_aug # specify a pipeline name
+                --init-supervisely zoe+vincent    # Download the supervisely dataset if not already
+                --init-yolo                       # Convert it to a yolov5-friendly dataset
+                --run-train                       # Launch the training on this dataset 
 ```
 ```bash
-python train.py strong_mosaic_aug                                                             # Nanovare arg
+python train.py --pipeline-name strong_mosaic_aug                                                             # Nanovare arg
                 --run-train                                                                   # Nanovare arg
                 --resume ..\..\data\analysis\yolo\strong_mosaic_aug\runs\exp6\weights\last.pt # Ultralytics arg
                     
@@ -208,7 +208,7 @@ optional arguments:
                         Download, check integrity and merge a filtered supervisely dataset
   --init-yolo           Convert a supervisely dataset to a grey|rgb yolo dataset
   --run-train           Train
-  --gray                Gray mode
+  --gray                Gray dataset
 
 ```
 
