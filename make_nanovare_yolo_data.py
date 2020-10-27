@@ -41,7 +41,7 @@ def get_supervisely_data_dir(dir_name, root_dir):
     return api.get_project_dir(project_id=constants.SUPERVISELY_LOCALISATION_PROJECT_ID, dir_name=dir_name)
 
 
-def convert_supervisely_to_yolo(supervisely_data_dir, yolo_data_dir, rgb):
+def convert_supervisely_to_yolo(supervisely_data_dir, yolo_data_dir, color):
     image_path_list = list(supervisely_data_dir.glob("**/*.png"))
     train_frame_path, test_frame_path = model_selection.train_test_split(image_path_list, test_size=0.25, shuffle=True, random_state=42)
     yolo_data_dir = Path(yolo_data_dir).resolve()
@@ -78,10 +78,15 @@ def convert_supervisely_to_yolo(supervisely_data_dir, yolo_data_dir, rgb):
                 discard_count += 1
                 continue
 
-        if rgb:
+        if color == "bgr":
             image = cv2.imread(str(frame_path), 1)
-        else:
+        elif color == "green":
+            image = cv2.imread(str(frame_path), 1)[:, :, 1]
+        elif color == "gray":
             image = cv2.imread(str(frame_path), 0)
+        else:
+            raise ValueError("Wrong color")
+
         if frame_path in train_frame_path:
             folder = "train"
         else:

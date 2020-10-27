@@ -554,7 +554,7 @@ def main():
 
 
 def ultralytics(parser):
-    parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
+    parser.add_argument('--weights', type=str, default='weights/yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
@@ -587,9 +587,10 @@ def nanovare(parser):
     parser.add_argument('--init-supervisely', choices=["zoe", "vincent", "zoe+vincent"],
                         help=f'Download, check integrity and merge a filtered supervisely dataset')
     parser.add_argument('--init-yolo', action='store_true',
-                        help='Convert a supervisely dataset to a grey|rgb yolo dataset')
+                        help='Convert a supervisely dataset to a yolo dataset')
     parser.add_argument('--run-train', action='store_true', help='Train')
-    parser.add_argument('--gray', action='store_true', help='Gray mode')
+    parser.add_argument('--color', default="gray", choices=["bgr", "gray", "green"],
+                        help='When init yolo, choose the dataset color')
     return parser
 
 
@@ -668,7 +669,7 @@ if __name__ == '__main__':
             make_nanovare_yolo_data.convert_supervisely_to_yolo(
                 supervisely_data_dir=supervisely_data_dir,
                 yolo_data_dir=yolo_root_dir,
-                rgb=not nanovare_opt.gray
+                color=nanovare_opt.color
             )
 
         if nanovare_opt.run_train:
