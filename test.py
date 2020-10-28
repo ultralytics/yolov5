@@ -32,6 +32,7 @@ def test(data,
          dataloader=None,
          save_dir=Path(''),  # for saving images
          save_txt=False,  # for auto-labelling
+         save_conf=False,
          plots=True,
          num_predictions=0):
     # Import wandb if logging is enabled
