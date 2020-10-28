@@ -41,17 +41,12 @@ def get_supervisely_data_dir(dir_name, root_dir):
     return api.get_project_dir(project_id=constants.SUPERVISELY_LOCALISATION_PROJECT_ID, dir_name=dir_name)
 
 
-def convert_supervisely_to_yolo(supervisely_data_dir, yolo_data_dir, color):
-    image_path_list = list(supervisely_data_dir.glob("**/*.png"))
-    train_frame_path, test_frame_path = model_selection.train_test_split(image_path_list, test_size=0.25, shuffle=True, random_state=42)
-    yolo_data_dir = Path(yolo_data_dir).resolve()
-    discard_count = 0
-    total_count = len(image_path_list)
+def filter_image_path_list(image_path_list):
+    discard_path_list = []
 
-    for frame_path in tqdm(image_path_list, "Converting to YOLO format"):
-
+    for frame_path in image_path_list:
         annotation_path = frame_path.parents[1] / "ann" / (frame_path.name + ".json")
-        if not annotation_path.is_file():                            
+        if not annotation_path.is_file():
             annotation_data = {
                     "description": "",
                     "tags": [],
@@ -61,22 +56,36 @@ def convert_supervisely_to_yolo(supervisely_data_dir, yolo_data_dir, color):
                     },
                     "objects": []
                 }
-        else:
-            with annotation_path.open() as annotation_file:
-                annotation_data = json.load(annotation_file)
-            discard = False
-            # Remove images with "To ignore" tag
-            for tag in annotation_data["tags"]:
-                if tag["name"] == "To ignore":
-                    discard = True
-                    break
-            # Remove images with no objects (to remove images not tagged yet)
-            if len(annotation_data["objects"]) == 0:
-                discard = True
+            json.dump(annotation_data, open(annotation_path, 'w'))
+        with annotation_path.open() as annotation_file:
+            annotation_data = json.load(annotation_file)
 
-            if discard:
-                discard_count += 1
-                continue
+        discard = False
+        # Remove images with "To ignore" tag
+        for tag in annotation_data["tags"]:
+            if tag["name"] == "To ignore":
+                discard = True
+                break
+        # Remove images with no objects (to remove images not tagged yet)
+        if len(annotation_data["objects"]) == 0:
+            discard = True
+
+        if discard:
+            discard_path_list.append(frame_path)
+    return list(set(image_path_list) - set(discard_path_list))
+
+
+def convert_supervisely_to_yolo(supervisely_data_dir, yolo_data_dir, color):
+    image_path_list = list(supervisely_data_dir.glob("**/*.png"))
+    dataset_length_supervisely = len(image_path_list)
+    image_path_list = filter_image_path_list(image_path_list)
+    print(f"Keep {len(image_path_list)} yolo images out of {dataset_length_supervisely} supervisely images")
+    train_frame_path, test_frame_path = model_selection.train_test_split(image_path_list, test_size=0.25, shuffle=True, random_state=42)
+    yolo_data_dir = Path(yolo_data_dir).resolve()
+    if yolo_data_dir.exists():
+        shutil.rmtree(yolo_data_dir)
+
+    for frame_path in tqdm(image_path_list, "Converting to YOLO format"):
 
         if color == "bgr":
             image = cv2.imread(str(frame_path), 1)
@@ -95,8 +104,14 @@ def convert_supervisely_to_yolo(supervisely_data_dir, yolo_data_dir, color):
         yolo_annotation_path = yolo_data_dir / "labels" / folder / f"{frame_path.stem}.txt"
         yolo_image_path.parent.mkdir(parents=True, exist_ok=True)
         yolo_annotation_path.parent.mkdir(parents=True, exist_ok=True)
+
+        annotation_path = frame_path.parents[1] / "ann" / (frame_path.name + ".json")
+
+        with annotation_path.open() as annotation_file:
+            annotation_data = json.load(annotation_file)
+
         convert_supervisely_to_yolo_image(image, yolo_image_path, annotation_data, yolo_annotation_path)
-    print(f"Discard {discard_count} out of {total_count}")
+
     return yolo_data_dir / "images" / "train", yolo_data_dir / "images" / "val"
 
 
