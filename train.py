@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import wandb
+
     wandb_disabled = os.environ.get('WANDB_DISABLED')
     if wandb_disabled == 'true':
         wandb_log = False
@@ -42,7 +43,8 @@ try:
         print("Automatic Weights & Biases logging enabled, to disable set os.environ['WANDB_DISABLED'] = 'true'")
 except ImportError:
     wandb_log = False
-    print("wandb is not installed. Install wandb using 'pip install wandb' to track your experiments and enable bounding box debugging")
+    print(
+        "wandb is not installed. Install wandb using 'pip install wandb' to track your experiments and enable bounding box debugging")
 
 
 def train(hyp, opt, device, tb_writer=None):
@@ -90,7 +92,7 @@ def train(hyp, opt, device, tb_writer=None):
         logger.info('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))  # report
     else:
         model = Model(opt.cfg, ch=3, nc=nc).to(device)  # create
-    
+
     # Initialize wandb
     if wandb_log and wandb.run is None:
         project = opt.name if opt.name != '' else 'yoloV5'
@@ -360,7 +362,7 @@ def train(hyp, opt, device, tb_writer=None):
             # W&B logging
             if wandb_log:
                 for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
-                    wandb.log({tag:x})
+                    wandb.log({tag: x})
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
@@ -433,7 +435,8 @@ if __name__ == '__main__':
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
-    parser.add_argument('--num-predictions', type=int, default=50, help='number of images logged to W&B for bounding box debugging. Maximum limit is 100')
+    parser.add_argument('--num-predictions', type=int, default=50,
+                        help='number of images logged to W&B for bounding box debugging. Maximum limit is 100')
 
     opt = parser.parse_args()
 

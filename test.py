@@ -148,21 +148,21 @@ def test(data,
 
             # Log images with bounding boxes
             if len(wandb_image_log) < num_predictions:
-                x = pred.clone()
+                x = [[x1, x2, x3, x4, x5, x6] for x1, x2, x3, x4, x5, x6 in pred.clone().tolist()]
                 bbox_data = [{
                     "position": {
-                        "minX": float(xyxy[0]),
-                        "minY": float(xyxy[1]),
-                        "maxX": float(xyxy[2]),
-                        "maxY": float(xyxy[3])
+                        "minX": xyxy[0],
+                        "minY": xyxy[1],
+                        "maxX": xyxy[2],
+                        "maxY": xyxy[3]
                     },
                     "class_id": int(cls),
                     "scores": {
-                        "class_score": float(conf)
+                        "class_score": conf
                     },
-                    "domain":"pixel"
-                } for *xyxy, conf, cls in x]
-                im = wandb.Image(img[si], boxes={"predictions": {"box_data":bbox_data}})
+                    "domain": "pixel"
+                } for *xyxy, conf, cls in pred.clone().tolist()]
+                im = wandb.Image(img[si], boxes={"predictions": {"box_data": bbox_data}})
                 wandb_image_log.append(im)
 
             # Clip boxes to image bounds
@@ -224,7 +224,7 @@ def test(data,
 
     # Log the images to W&B
     if len(wandb_image_log) > 0:
-        wandb.log({"outputs":wandb_image_log})
+        wandb.log({"outputs": wandb_image_log})
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
