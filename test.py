@@ -33,7 +33,14 @@ def test(data,
          save_dir=Path(''),  # for saving images
          save_txt=False,  # for auto-labelling
          save_conf=False,
-         plots=True):
+         plots=True,
+         num_predictions=0):
+    # Import wandb if logging is enabled
+    if num_predictions > 0:
+        import wandb
+        if num_predictions > 100:
+            num_predictions = 100
+
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py

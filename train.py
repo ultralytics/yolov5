@@ -339,7 +339,8 @@ def train(hyp, opt, device, tb_writer=None):
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
                                                  save_dir=log_dir,
-                                                 plots=epoch == 0 or final_epoch)  # plot first and last
+                                                 plots=epoch == 0 or final_epoch,  # plot first and last
+                                                 num_predictions=opt.num_predictions)
 
             # Write
             with open(results_file, 'a') as f:
@@ -353,10 +354,6 @@ def train(hyp, opt, device, tb_writer=None):
                     'x/lr0', 'x/lr1', 'x/lr2']  # params
             # Tensorboard
             if tb_writer:
-                tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
-                        'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
-                        'val/box_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
-                        'x/lr0', 'x/lr1', 'x/lr2']  # params
                 for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
                     tb_writer.add_scalar(tag, x, epoch)
 
