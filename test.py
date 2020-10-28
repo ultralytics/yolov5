@@ -50,15 +50,17 @@ def test(data,
         set_logging()
         device = select_device(opt.device, batch_size=batch_size)
         save_txt = opt.save_txt  # save *.txt labels
-        if save_txt:
-            out = Path('inference/output')
-            if os.path.exists(out):
-                shutil.rmtree(out)  # delete output folder
-            os.makedirs(out)  # make new output folder
 
         # Remove previous
-        for f in glob.glob(str(save_dir / 'test_batch*.jpg')):
-            os.remove(f)
+        if os.path.exists(save_dir):
+            shutil.rmtree(save_dir)  # delete dir
+        os.makedirs(save_dir)  # make new dir
+
+        if save_txt:
+            out = save_dir / 'autolabels'
+            if os.path.exists(out):
+                shutil.rmtree(out)  # delete dir
+            os.makedirs(out)  # make new dir
 
         # Load model
         model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -114,7 +116,7 @@ def test(data,
 
             # Compute loss
             if training:  # if model has loss hyperparameters
-                loss += compute_loss([x.float() for x in train_out], targets, model)[1][:3]  # GIoU, obj, cls
+                loss += compute_loss([x.float() for x in train_out], targets, model)[1][:3]  # box, obj, cls
 
             # Run NMS
             t = time_synchronized()
@@ -140,11 +142,12 @@ def test(data,
                 x[:, :4] = scale_coords(img[si].shape[1:], x[:, :4], shapes[si][0], shapes[si][1])  # to original
                 for *xyxy, conf, cls in x:
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                    line = (cls, conf, *xywh) if save_conf else (cls, *xywh)  # label format
                     with open(str(out / Path(paths[si]).stem) + '.txt', 'a') as f:
-                        f.write(('%g ' * 5 + '\n') % (cls, *xywh))  # label format
+                        f.write(('%g ' * len(line) + '\n') % line)
 
             # Log images with bounding boxes
-            if len(wandb_image_log) < num_predictions:
+            if len(wandb_image_log) < bbox_debug:
                 x = pred.clone()
                 bbox_data = [{
                     "position": {
@@ -214,9 +217,9 @@ def test(data,
 
         # Plot images
         if plots and batch_i < 1:
-            f = save_dir / ('test_batch%g_gt.jpg' % batch_i)  # filename
+            f = save_dir / f'test_batch{batch_i}_gt.jpg'  # filename
             plot_images(img, targets, paths, str(f), names)  # ground truth
-            f = save_dir / ('test_batch%g_pred.jpg' % batch_i)
+            f = save_dir / f'test_batch{batch_i}_pred.jpg'
             plot_images(img, output_to_target(output, width, height), paths, str(f), names)  # predictions
 
     # Log the images to W&B
@@ -249,11 +252,11 @@ def test(data,
 
     # Save JSON
     if save_json and len(jdict):
-        f = 'detections_val2017_%s_results.json' % \
-            (weights.split(os.sep)[-1].replace('.pt', '') if isinstance(weights, str) else '')  # filename
-        print('\nCOCO mAP with pycocotools... saving %s...' % f)
-        with open(f, 'w') as file:
-            json.dump(jdict, file)
+        w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
+        file = save_dir / f"detections_val2017_{w}_results.json"  # predicted annotations file
+        print('\nCOCO mAP with pycocotools... saving %s...' % file)
+        with open(file, 'w') as f:
+            json.dump(jdict, f)
 
         try:  # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb
             from pycocotools.coco import COCO
@@ -261,7 +264,7 @@ def test(data,
 
             imgIds = [int(Path(x).stem) for x in dataloader.dataset.img_files]
             cocoGt = COCO(glob.glob('../coco/annotations/instances_val*.json')[0])  # initialize COCO ground truth api
-            cocoDt = cocoGt.loadRes(f)  # initialize COCO pred api
+            cocoDt = cocoGt.loadRes(str(file))  # initialize COCO pred api
             cocoEval = COCOeval(cocoGt, cocoDt, 'bbox')
             cocoEval.params.imgIds = imgIds  # image IDs to evaluate
             cocoEval.evaluate()
@@ -294,6 +297,8 @@ if __name__ == '__main__':
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
+    parser.add_argument('--save-dir', type=str, default='runs/test', help='directory to save results')
     opt = parser.parse_args()
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
@@ -309,7 +314,13 @@ if __name__ == '__main__':
              opt.save_json,
              opt.single_cls,
              opt.augment,
-             opt.verbose)
+             opt.verbose,
+             save_dir=Path(opt.save_dir),
+             save_txt=opt.save_txt,
+             save_conf=opt.save_conf,
+             )
+
+        print('Results saved to %s' % opt.save_dir)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         for weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
