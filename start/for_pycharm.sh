@@ -19,4 +19,4 @@ docker run \
     --add-host="app.supervise.ly:136.243.97.171" \
     docker.deepsystems.io/supervisely/five/base-py:6.0.17 bash
 
-#pip install --upgrade docker
+#pip install --upgrade docker to run script
