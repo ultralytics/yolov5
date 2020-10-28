@@ -1,0 +1,7 @@
+#to train NN run:
+python train.py --img 640 --batch 16 --epochs 350 --data /alex_data/sl.yaml --weights yolov5s.pt
+
+
+
+#to check result NN (best.pt) run:
+python detect.py --source /alex_data/sl_test/ --weights best.pt --conf 0.4
