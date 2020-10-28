@@ -148,7 +148,6 @@ def test(data,
 
             # Log images with bounding boxes
             if len(wandb_image_log) < num_predictions:
-                x = [[x1, x2, x3, x4, x5, x6] for x1, x2, x3, x4, x5, x6 in pred.clone().tolist()]
                 bbox_data = [{
                     "position": {
                         "minX": xyxy[0],
