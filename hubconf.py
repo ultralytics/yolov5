@@ -108,3 +108,11 @@ def yolov5x(pretrained=False, channels=3, classes=80):
 
 if __name__ == '__main__':
     model = create(name='yolov5s', pretrained=True, channels=3, classes=80)  # example
+    model = model.fuse().eval().autoshape()  # for autoshaping of PIL/cv2/np inputs and NMS
+
+    # Verify inference
+    from PIL import Image
+
+    img = Image.open('inference/images/zidane.jpg')
+    y = model(img)
+    print(y[0].shape)
