@@ -676,13 +676,16 @@ if __name__ == '__main__':
             print(f"Pipeline name {pipeline_name}")
             print("=========================     BEGIN TRAINING      =================================")
             print(f"From yolo data directory {yolo_root_dir}")
+            images = Path(yolo_root_dir) / "images"
+            labels = Path(yolo_root_dir) / "labels"
             data_dict = dict(
                 nc=1,
                 names=['sperm'],
-                train=(Path(yolo_root_dir) / "images" / "train").resolve().as_posix(),
-                val=(Path(yolo_root_dir) / "images" / "val").resolve().as_posix()
+                train=(images / "train").resolve().as_posix(),
+                val=(images / "val").resolve().as_posix()
             )
-
+            assert set((images / "train").glob("*.jpg")) & set((images / "valid").glob("*.jpg")) == set()
+            assert set((labels / "train").glob("*.txt")) & set((images / "valid").glob("*.txt")) == set()
             yaml.dump(data_dict, open(data_dir, 'w'))
             if "--data" not in sys.argv:
                 sys.argv += ["--data", data_dir.as_posix()]
