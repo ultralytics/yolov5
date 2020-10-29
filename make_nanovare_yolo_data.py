@@ -75,12 +75,23 @@ def filter_image_path_list(image_path_list):
     return list(set(image_path_list) - set(discard_path_list))
 
 
-def convert_supervisely_to_yolo(supervisely_data_dir, yolo_data_dir, color):
+def convert_supervisely_to_yolo(supervisely_data_dir, yolo_data_dir, color, copy_dir=None):
     image_path_list = list(supervisely_data_dir.glob("**/*.png"))
     dataset_length_supervisely = len(image_path_list)
-    image_path_list = filter_image_path_list(image_path_list)
-    print(f"Keep {len(image_path_list)} yolo images out of {dataset_length_supervisely} supervisely images")
-    train_frame_path, test_frame_path = model_selection.train_test_split(image_path_list, test_size=0.25, shuffle=True, random_state=42)
+    #image_path_list = filter_image_path_list(image_path_list)
+    print(f"Keep {len(image_path_list)} images out of {dataset_length_supervisely} supervisely images")
+    image_stem_list = list(map(lambda x: x.stem, image_path_list))
+
+    if copy_dir is not None:
+        train_stem = list(map(lambda x: x.stem, list((Path(copy_dir) / "images" / "train").glob("*.jpg"))))
+        valid_stem = list(map(lambda x: x.stem, list((Path(copy_dir) / "images" / "val").glob("*.jpg"))))
+    else:
+        train_stem, valid_stem = model_selection.train_test_split(image_stem_list,
+                                                                  test_size=0.25,
+                                                                  shuffle=True,
+                                                                  random_state=42)
+
+    assert set(valid_stem + train_stem).issubset(image_stem_list)
     yolo_data_dir = Path(yolo_data_dir).resolve()
     if yolo_data_dir.exists():
         shutil.rmtree(yolo_data_dir)
@@ -95,10 +106,9 @@ def convert_supervisely_to_yolo(supervisely_data_dir, yolo_data_dir, color):
             image = cv2.imread(str(frame_path), 0)
         else:
             raise ValueError("Wrong color")
-
-        if frame_path in train_frame_path:
+        if frame_path.stem in train_stem:
             folder = "train"
-        else:
+        elif frame_path.stem in valid_stem:
             folder = "val"
         yolo_image_path = yolo_data_dir / "images" / folder / f"{frame_path.stem}.jpg"
         yolo_annotation_path = yolo_data_dir / "labels" / folder / f"{frame_path.stem}.txt"

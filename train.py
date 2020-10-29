@@ -588,9 +588,11 @@ def nanovare(parser):
                         help=f'Download, check integrity and merge a filtered supervisely dataset')
     parser.add_argument('--init-yolo', action='store_true',
                         help='Convert a supervisely dataset to a yolo dataset')
-    parser.add_argument('--run-train', action='store_true', help='Train')
     parser.add_argument('--color', default="gray", choices=["bgr", "gray", "green"],
-                        help='When init yolo, choose the dataset color')
+                        help='(ONLY IF --init-yolo)')
+    parser.add_argument('--copy-pipeline',
+                        help='Choose the same dataset from another pipeline for comparison (ONLY IF --init-yolo)')
+    parser.add_argument('--run-train', action='store_true', help='Train')
     return parser
 
 
@@ -669,7 +671,8 @@ if __name__ == '__main__':
             make_nanovare_yolo_data.convert_supervisely_to_yolo(
                 supervisely_data_dir=supervisely_data_dir,
                 yolo_data_dir=yolo_root_dir,
-                color=nanovare_opt.color
+                color=nanovare_opt.color,
+                copy_dir=(yolo_root_dir / ".." / nanovare_opt.copy_pipeline).resolve()
             )
 
         if nanovare_opt.run_train:
