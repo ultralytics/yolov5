@@ -11,6 +11,7 @@ import math
 import numpy as np
 import torch.distributed as dist
 import torch.nn.functional as F
+import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
@@ -102,7 +103,6 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             pg1.append(v.weight)    # apply weight decay
     for k, v in model.named_parameters():
         v.requires_grad = True
-
 
     if opt.adam:
         optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
