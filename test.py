@@ -185,21 +185,6 @@ def test(data,
                                 if len(detected) == nl:  # all targets already located in image
                                     break
 
-            str_to_save = ""
-            for conf_interval in [0.1, 0.4, 0.5, 0.6, 0.7, 0.9]:
-                ind_to_consider = pred[:, 4] > conf_interval # Threshold defined arbitrarly
-                correct_to_consider = correct[ind_to_consider]
-                if len(correct_to_consider)>0:
-                    correct_perc_50 = len(np.where(correct_to_consider[:, 0].tolist())[0])/len(correct_to_consider)
-                    correct_perc_95 = len(np.where(correct_to_consider[:, -1].tolist())[0])/len(correct_to_consider)
-                else:
-                    correct_perc_50 = correct_perc_95 = 1
-                str_to_save += f" {conf_interval} {len(correct_to_consider)} {correct_perc_50} {correct_perc_95}"
-
-            training_info_mojo_dir = Path(save_dir) / "training_info_mojo"
-            training_info_mojo_dir.mkdir(parents=True, exist_ok=True)
-            with open(str(training_info_mojo_dir / Path(paths[si]).stem) + '.txt', 'a') as f:
-                f.write(f"{len(labels)}{str_to_save}\n")  # label format
 
             # Append statistics (correct, conf, pcls, tcls)
             stats.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), tcls))
