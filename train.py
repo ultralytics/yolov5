@@ -93,14 +93,16 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     hyp['weight_decay'] *= total_batch_size * accumulate / nbs  # scale weight_decay
 
     pg0, pg1, pg2 = [], [], []  # optimizer parameter groups
+    for k, v in model.named_modules():
+        if hasattr(v, 'bias') and isinstance(v.bias, torch.Tensor):
+            pg2.append(v.bias)  # biases
+        if isinstance(v, nn.BatchNorm2d):
+            pg0.append(v.weight)
+        elif hasattr(v, 'weight') and isinstance(v.weight, torch.Tensor):
+            pg1.append(v.weight)    # apply weight decay
     for k, v in model.named_parameters():
         v.requires_grad = True
-        if '.bias' in k:
-            pg2.append(v)  # biases
-        elif '.weight' in k and '.bn' not in k:
-            pg1.append(v)  # apply weight decay
-        else:
-            pg0.append(v)  # all else
+
 
     if opt.adam:
         optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
