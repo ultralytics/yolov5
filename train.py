@@ -692,8 +692,10 @@ if __name__ == '__main__':
                 train=(images / "train").resolve().as_posix(),
                 val=(images / "val").resolve().as_posix()
             )
-            assert set((images / "train").glob("*.jpg")) & set((images / "valid").glob("*.jpg")) == set()
-            assert set((labels / "train").glob("*.txt")) & set((images / "valid").glob("*.txt")) == set()
+            train_name = list(map(lambda x: x.stem, list((images / "train").glob("*.jpg"))))
+            valid_name = list(map(lambda x: x.stem, list((images / "valid").glob("*.jpg"))))
+            assert set(valid_name) & set(train_name) == set()
+            
             yaml.dump(data_dict, open(data_dir, 'w'))
             if "--data" not in sys.argv:
                 sys.argv += ["--data", data_dir.as_posix()]
