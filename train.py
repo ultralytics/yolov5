@@ -668,11 +668,16 @@ if __name__ == '__main__':
             print("\n=========================     INIT YOLO DATASET     =================================")
             print(f"FROM {supervisely_data_dir} TO {Path(yolo_root_dir)}")
 
+            if nanovare_opt.copy_pipeline:
+                copy_dir = (yolo_root_dir / ".." / nanovare_opt.copy_pipeline).resolve()
+            else:
+                copy_dir = None
+
             make_nanovare_yolo_data.convert_supervisely_to_yolo(
                 supervisely_data_dir=supervisely_data_dir,
                 yolo_data_dir=yolo_root_dir,
                 color=nanovare_opt.color,
-                copy_dir=(yolo_root_dir / ".." / nanovare_opt.copy_pipeline).resolve()
+                copy_dir=copy_dir
             )
 
         if nanovare_opt.run_train:
