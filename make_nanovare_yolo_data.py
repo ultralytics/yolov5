@@ -78,9 +78,12 @@ def filter_image_path_list(image_path_list):
 def convert_supervisely_to_yolo(supervisely_data_dir, yolo_data_dir, color, copy_dir=None):
     image_path_list = list(supervisely_data_dir.glob("**/*.png"))
     dataset_length_supervisely = len(image_path_list)
-    #image_path_list = filter_image_path_list(image_path_list)
+    image_path_list = filter_image_path_list(image_path_list)
     print(f"Keep {len(image_path_list)} images out of {dataset_length_supervisely} supervisely images")
     image_stem_list = list(map(lambda x: x.stem, image_path_list))
+
+    if yolo_data_dir.exists():
+        shutil.rmtree(yolo_data_dir)
 
     if copy_dir is not None:
         train_stem = list(map(lambda x: x.stem, list((Path(copy_dir) / "images" / "train").glob("*.jpg"))))
