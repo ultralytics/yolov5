@@ -34,7 +34,7 @@ def test(data,
          save_txt=False,  # for auto-labelling
          save_conf=False,
          plots=True,
-         num_predictions=0):  # number of logged images
+         log_imgs=0):  # number of logged images
 
     # Initialize/load model and set device
     training = model is not None
@@ -80,11 +80,11 @@ def test(data,
     niou = iouv.numel()
 
     # Logging
-    num_predictions = min(num_predictions, 100)  # ceil
+    log_imgs = min(log_imgs, 100)  # ceil
     try:
         import wandb  # Weights & Biases
-    except:
-        num_predictions = 0
+    except ImportError:
+        log_imgs = 0
 
     # Dataloader
     if not training:
@@ -149,7 +149,7 @@ def test(data,
                         f.write(('%g ' * len(line) + '\n') % line)
 
             # W&B logging
-            if len(wandb_images) < num_predictions:
+            if len(wandb_images) < log_imgs:
                 bbox_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
                               "class_id": int(cls),
                               "scores": {"class_score": conf},
