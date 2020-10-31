@@ -118,6 +118,11 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # plot_lr_scheduler(optimizer, scheduler, epochs)
 
+    # Logging
+    if wandb and wandb.run is None:
+        id = ckpt.get('wandb_id') if 'ckpt' in locals() else None
+        wandb_run = wandb.init(config=opt, resume="allow", project=log_dir, id=id)
+
     # Resume
     start_epoch, best_fitness = 0, 0.0
     if pretrained:
@@ -140,10 +145,6 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             logger.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
                         (weights, ckpt['epoch'], epochs))
             epochs += ckpt['epoch']  # finetune additional epochs
-
-        # Logging
-        if wandb and wandb.run is None:
-            wandb_run = wandb.init(config=opt, resume="allow", project=log_dir, id=ckpt.get('wandb_id'))
 
         del ckpt, state_dict
 
