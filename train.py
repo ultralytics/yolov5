@@ -469,15 +469,13 @@ if __name__ == '__main__':
             tb_writer = SummaryWriter(log_dir=log_dir)  # runs/exp0
 
             # W&B
+            wandb = None
             try:
                 import wandb
 
-                if os.environ.get('WANDB_DISABLED') == 'true':
-                    wandb = False
-                else:
-                    print("Weights & Biases logging enabled, to disable set os.environ['WANDB_DISABLED'] = 'true'")
+                assert os.environ.get('WANDB_DISABLED') == 'true'
+                print("Weights & Biases logging enabled, to disable set os.environ['WANDB_DISABLED'] = 'true'")
             except ImportError:
-                wandb = False
                 opt.log_imgs = 0
                 print("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")
 
