@@ -33,7 +33,7 @@ from utils.torch_utils import ModelEMA, select_device, intersect_dicts
 logger = logging.getLogger(__name__)
 
 
-def train(hyp, opt, device, tb_writer=None):
+def train(hyp, opt, device, tb_writer=None, wandb=None):
     logger.info(f'Hyperparameters {hyp}')
     log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
     wdir = log_dir / 'weights'  # weights directory
@@ -117,6 +117,11 @@ def train(hyp, opt, device, tb_writer=None):
     lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - hyp['lrf']) + hyp['lrf']  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # plot_lr_scheduler(optimizer, scheduler, epochs)
+
+    # Logging
+    if wandb and wandb.run is None:
+        id = ckpt.get('wandb_id') if 'ckpt' in locals() else None
+        wandb_run = wandb.init(config=opt, resume="allow", project=os.path.basename(log_dir), id=id)
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
@@ -317,7 +322,8 @@ def train(hyp, opt, device, tb_writer=None):
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
                                                  save_dir=log_dir,
-                                                 plots=epoch == 0 or final_epoch)  # plot first and last
+                                                 plots=epoch == 0 or final_epoch,  # plot first and last
+                                                 log_imgs=opt.log_imgs)
 
             # Write
             with open(results_file, 'a') as f:
@@ -325,14 +331,16 @@ def train(hyp, opt, device, tb_writer=None):
             if len(opt.name) and opt.bucket:
                 os.system('gsutil cp %s gs://%s/results/results%s.txt' % (results_file, opt.bucket, opt.name))
 
-            # Tensorboard
-            if tb_writer:
-                tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
-                        'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
-                        'val/box_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
-                        'x/lr0', 'x/lr1', 'x/lr2']  # params
-                for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
-                    tb_writer.add_scalar(tag, x, epoch)
+            # Log
+            tags = ['train/giou_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
+                    'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+                    'val/giou_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
+                    'x/lr0', 'x/lr1', 'x/lr2']  # params
+            for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
+                if tb_writer:
+                    tb_writer.add_scalar(tag, x, epoch)  # tensorboard
+                if wandb:
+                    wandb.log({tag: x})  # W&B
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
@@ -347,7 +355,8 @@ def train(hyp, opt, device, tb_writer=None):
                             'best_fitness': best_fitness,
                             'training_results': f.read(),
                             'model': ema.ema,
-                            'optimizer': None if final_epoch else optimizer.state_dict()}
+                            'optimizer': None if final_epoch else optimizer.state_dict(),
+                            'wandb_id': wandb_run.id if wandb else None}
 
                 # Save last, best and delete
                 torch.save(ckpt, last)
@@ -403,7 +412,9 @@ if __name__ == '__main__':
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
+    parser.add_argument('--log-imgs', type=int, default=10, help='number of images for W&B logging, max 100')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
+
     opt = parser.parse_args()
 
     # Set DDP variables
@@ -452,12 +463,23 @@ if __name__ == '__main__':
     # Train
     logger.info(opt)
     if not opt.evolve:
-        tb_writer = None
+        tb_writer, wandb = None, None  # init loggers
         if opt.global_rank in [-1, 0]:
+            # Tensorboard
             logger.info(f'Start Tensorboard with "tensorboard --logdir {opt.logdir}", view at http://localhost:6006/')
             tb_writer = SummaryWriter(log_dir=log_dir)  # runs/exp0
 
-        train(hyp, opt, device, tb_writer)
+            # W&B
+            try:
+                import wandb
+
+                assert os.environ.get('WANDB_DISABLED') != 'true'
+                logger.info("Weights & Biases logging enabled, to disable set os.environ['WANDB_DISABLED'] = 'true'")
+            except (ImportError, AssertionError):
+                opt.log_imgs = 0
+                logger.info("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")
+
+        train(hyp, opt, device, tb_writer, wandb)
 
     # Evolve hyperparameters (optional)
     else:
