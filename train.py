@@ -473,7 +473,7 @@ if __name__ == '__main__':
             try:
                 import wandb
 
-                assert os.environ.get('WANDB_DISABLED') == 'true'
+                assert os.environ.get('WANDB_DISABLED') != 'true'
                 print("Weights & Biases logging enabled, to disable set os.environ['WANDB_DISABLED'] = 'true'")
             except ImportError:
                 opt.log_imgs = 0
