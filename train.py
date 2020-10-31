@@ -478,7 +478,7 @@ if __name__ == '__main__':
                 opt.log_imgs = 0
                 logger.info("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")
 
-        train(hyp, opt, device, tb_writer)
+        train(hyp, opt, device, tb_writer, wandb)
 
     # Evolve hyperparameters (optional)
     else:
