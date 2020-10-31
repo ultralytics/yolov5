@@ -462,14 +462,13 @@ if __name__ == '__main__':
     # Train
     logger.info(opt)
     if not opt.evolve:
-        tb_writer = None
+        tb_writer, wandb = None, None  # init loggers
         if opt.global_rank in [-1, 0]:
             # Tensorboard
             logger.info(f'Start Tensorboard with "tensorboard --logdir {opt.logdir}", view at http://localhost:6006/')
             tb_writer = SummaryWriter(log_dir=log_dir)  # runs/exp0
 
             # W&B
-            wandb = None
             try:
                 import wandb
 
