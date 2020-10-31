@@ -95,11 +95,11 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
     pg0, pg1, pg2 = [], [], []  # optimizer parameter groups
     for k, v in model.named_modules():
-        if hasattr(v, 'bias') and isinstance(v.bias, torch.Tensor):
+        if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):
             pg2.append(v.bias)  # biases
         if isinstance(v, nn.BatchNorm2d):
             pg0.append(v.weight)
-        elif hasattr(v, 'weight') and isinstance(v.weight, torch.Tensor):
+        elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):
             pg1.append(v.weight)    # apply weight decay
     for k, v in model.named_parameters():
         v.requires_grad = True
