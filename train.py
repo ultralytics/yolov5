@@ -475,7 +475,7 @@ if __name__ == '__main__':
 
                 assert os.environ.get('WANDB_DISABLED') != 'true'
                 print("Weights & Biases logging enabled, to disable set os.environ['WANDB_DISABLED'] = 'true'")
-            except ImportError:
+            except (ImportError, AssertionError):
                 opt.log_imgs = 0
                 print("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")
 
