@@ -10,8 +10,8 @@ from warnings import warn
 import math
 import numpy as np
 import torch.distributed as dist
-import torch.nn.functional as F
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
@@ -82,11 +82,11 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
     # Freeze
     freeze = ['', ]  # parameter names to freeze (full or partial)
-    if any(freeze):
-        for k, v in model.named_parameters():
-            if any(x in k for x in freeze):
-                print('freezing %s' % k)
-                v.requires_grad = False
+    for k, v in model.named_parameters():
+        v.requires_grad = True  # train all layers
+        if any(x in k for x in freeze):
+            print('freezing %s' % k)
+            v.requires_grad = False
 
     # Optimizer
     nbs = 64  # nominal batch size
@@ -98,11 +98,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
         if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):
             pg2.append(v.bias)  # biases
         if isinstance(v, nn.BatchNorm2d):
-            pg0.append(v.weight)
+            pg0.append(v.weight)  # no decay
         elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):
-            pg1.append(v.weight)    # apply weight decay
-    for k, v in model.named_parameters():
-        v.requires_grad = True
+            pg1.append(v.weight)  # apply decay
 
     if opt.adam:
         optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
