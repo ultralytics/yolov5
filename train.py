@@ -121,7 +121,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     # Logging
     if wandb and wandb.run is None:
         id = ckpt.get('wandb_id') if 'ckpt' in locals() else None
-        wandb_run = wandb.init(config=opt, resume="allow", project=os.path.basename(log_dir), id=id)
+        wandb_run = wandb.init(config=opt, resume="allow", project="YOLOv5", name=os.path.basename(log_dir), id=id)
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
