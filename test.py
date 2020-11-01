@@ -96,6 +96,7 @@ def test(data,
 
     seen = 0
     names = model.names if hasattr(model, 'names') else model.module.names
+    names_dict = { i: names[i] for i in range(len(names))}
     coco91class = coco80_to_coco91_class()
     s = ('%20s' + '%12s' * 6) % ('Class', 'Images', 'Targets', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
     p, r, f1, mp, mr, map50, map, t0, t1 = 0., 0., 0., 0., 0., 0., 0., 0., 0.
@@ -152,9 +153,10 @@ def test(data,
             if len(wandb_images) < log_imgs:
                 bbox_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
                               "class_id": int(cls),
+                              "box_caption" : "%s (%.3f)" % (names_dict[cls], conf),
                               "scores": {"class_score": conf},
                               "domain": "pixel"} for *xyxy, conf, cls in pred.clone().tolist()]
-                wandb_images.append(wandb.Image(img[si], boxes={"predictions": {"box_data": bbox_data}}))
+                wandb_images.append(wandb.Image(img[si], boxes={"predictions": {"box_data": bbox_data, "class_labels": names_dict}}))
 
             # Clip boxes to image bounds
             clip_coords(pred, (height, width))
