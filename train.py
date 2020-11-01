@@ -268,6 +268,7 @@ def train(hyp, opt, device, tb_writer=None):
 
             # Forward
             with amp.autocast(enabled=cuda):
+
                 pred = model(imgs)  # forward
                 loss, loss_items = compute_loss(pred, targets.to(device), model)  # loss scaled by batch_size
                 if rank != -1:
@@ -560,8 +561,8 @@ def ultralytics(parser):
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
-    parser.add_argument('--rect', default=True, action='store_true', help='rectangular training')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[992, 992], help='[train, test] image sizes')
+    parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
@@ -695,7 +696,7 @@ if __name__ == '__main__':
             train_name = list(map(lambda x: x.stem, list((images / "train").glob("*.jpg"))))
             valid_name = list(map(lambda x: x.stem, list((images / "valid").glob("*.jpg"))))
             assert set(valid_name) & set(train_name) == set()
-            
+
             yaml.dump(data_dict, open(data_dir, 'w'))
             if "--data" not in sys.argv:
                 sys.argv += ["--data", data_dir.as_posix()]
