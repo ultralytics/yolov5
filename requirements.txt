@@ -5,7 +5,7 @@
 Cython
 matplotlib>=3.2.2
 numpy>=1.18.5
-opencv-python>=4.1.2 # Due to core should be 3.4.11.43 but yolov5 recommends >=4.1.2 (Actually compatible with 3.4.11.43)
+opencv-python # Due to core should be 3.4.11.43 but yolov5 recommends >=4.1.2 (Actually compatible with 3.4.11.43)
 pillow
 PyYAML>=5.3
 scipy>=1.4.1
