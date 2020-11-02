@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 import platform
 import shutil
 import time
@@ -77,7 +78,7 @@ def get_serializable_structure(data):
     def get_serializable_atomic_value(value):
         if type(value) == datetime_type:
             return (
-                value.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+                    value.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
             )  # Convert to iso with timezone
         elif type(value) in (invalid_int_value + invalid_uint_value):
             return int(value)
@@ -110,7 +111,7 @@ def get_serializable_structure(data):
     return data
 
 
-def detect(save_img=False):
+def detect(opt, save_img=False):
     out, source, weights, view_img, save_txt, imgsz = \
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source.isnumeric() or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
@@ -161,7 +162,8 @@ def detect(save_img=False):
     for path, img, im0s, vid_cap in dataset:
         if current_count != dataset.count:
             video_key = Path(dataset.files[current_count]).resolve()
-            out_path = video_key.parent / (video_key.stem + "_YOLO_output") / "centroids_with_meta.json"
+            out_path = video_key.parent / (video_key.stem + "_" + os.getenv("MAST_ANALYSIS_IDENTIFIER")
+                                           + "_output") / "centroids_with_meta.json"
             centroids_with_meta = {
                 "centroids": centroids,
                 "extra_information": {"resize_factor": RESIZE_FACTOR},
@@ -202,23 +204,24 @@ def detect(save_img=False):
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
 
             centroids_in_frame = []
+
             if det is not None and len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
                 for bbox in xyxy2xywh(det[:, :4]).tolist():
                     centroid_bbox = [
-                        max((bbox[0]-bbox[2]/2)//RESIZE_FACTOR, 0),
-                        max((bbox[1]-bbox[3]/2)//RESIZE_FACTOR, 0),
-                        bbox[2]//RESIZE_FACTOR,
-                        bbox[3]//RESIZE_FACTOR
+                        max((bbox[0] - bbox[2] / 2) // RESIZE_FACTOR, 0),
+                        max((bbox[1] - bbox[3] / 2) // RESIZE_FACTOR, 0),
+                        bbox[2] // RESIZE_FACTOR,
+                        bbox[3] // RESIZE_FACTOR
                     ]
                     centroids_in_frame.append(
                         {
                             "bbox": centroid_bbox,
                             "center": [
-                                round(bbox[0]/RESIZE_FACTOR, 2),
-                                round(bbox[1]/RESIZE_FACTOR, 2),
+                                round(bbox[0] / RESIZE_FACTOR, 2),
+                                round(bbox[1] / RESIZE_FACTOR, 2),
                             ],
                             "class": 1,
                             "interpolated": False,
@@ -246,7 +249,7 @@ def detect(save_img=False):
             centroids.append(centroids_in_frame)
 
             # Print time (inference + NMS)
-            print('%sDone. (%.3fs)' % (s, t2 - t1))
+            # print('%sDone. (%.3fs)' % (s, t2 - t1))
 
             # Stream results
             if view_img:
@@ -272,7 +275,8 @@ def detect(save_img=False):
                     vid_writer.write(im0)
 
     video_key = Path(dataset.files[current_count]).resolve()
-    out_path = video_key.parent / (video_key.stem + "_YOLO_output") / "centroids_with_meta.json"
+    out_path = video_key.parent / (video_key.stem + "_" + os.getenv("MAST_ANALYSIS_IDENTIFIER")
+                                   + "_output") / "centroids_with_meta.json"
     centroids_with_meta = {
         "centroids": centroids,
         "extra_information": {"resize_factor": RESIZE_FACTOR},
@@ -290,9 +294,7 @@ def detect(save_img=False):
     print('Done. (%.3fs)' % (time.time() - t0))
 
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+def ultralytics(parser):
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--output', type=str, default='inference/output', help='output folder')  # output folder
@@ -306,13 +308,152 @@ if __name__ == '__main__':
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--update', action='store_true', help='update all models')
-    opt = parser.parse_args()
-    print(opt)
+    return parser
+
+
+def main():
+    opt, _ = ultralytics(argparse.ArgumentParser()).parse_known_args()
 
     with torch.no_grad():
         if opt.update:  # update all models (to fix SourceChangeWarning)
             for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
-                detect()
+                detect(opt)
                 strip_optimizer(opt.weights)
         else:
-            detect()
+            detect(opt)
+
+
+def nanovare(parser):
+    parser.add_argument('--patient-id', help='Filter a patient ID', default=None)
+    parser.add_argument('--date', help='Filter a date', default=None)
+    parser.add_argument('--run-localization', action='store_true',
+                        help='Run localization')
+    parser.add_argument('--run-tracking', action='store_true',
+                        help='Run tracking')
+    parser.add_argument('--run-viz', action='store_true',
+                        help='Run visualization after tracking')
+    parser.add_argument('--invalidate', action='store_true',
+                        help='Invalidate previous run and force rerun of tasks')
+    return parser
+
+
+def pretty_dict(d, indent=0):
+    for key, value in d.items():
+        print('\t' * indent + str(key))
+        if isinstance(value, dict):
+            pretty_dict(value, indent + 1)
+        else:
+            print('\t' * (indent + 1) + str(value))
+
+
+if __name__ == '__main__':
+    nanovare_parser = nanovare(argparse.ArgumentParser())
+    ultralytics_parser = ultralytics(argparse.ArgumentParser())
+    nanovare_opt, nanovare_unknown = nanovare_parser.parse_known_args()
+    ultralytics_opt, ultralytics_unknown = ultralytics_parser.parse_known_args()
+    # Ultralytics unknown args should be nanovare known args and vice-versa
+    # Otherwise abort
+    nanovare_parser.parse_args(ultralytics_unknown)
+    ultralytics_parser.parse_args(nanovare_unknown)
+    print("Nanovare options")
+    pretty_dict(nanovare_opt.__dict__)
+    print("Ultralytics options")
+    pretty_dict(ultralytics_opt.__dict__)
+
+    if not ultralytics_unknown:
+        main()
+    else:
+        import d6tflow
+        import luigi
+        from dotenv import load_dotenv
+
+        load_dotenv()
+        d6tflow.settings.log_level = "ERROR"
+        data_path = Path(os.getenv("PATH_DATA")) / "capture_MAST_data"
+
+
+        class TaskLocalization(d6tflow.tasks.TaskPickle):
+            date = luigi.Parameter()
+            patient_id = luigi.Parameter()
+
+            def run(self):
+                if "--source" not in sys.argv:
+                    sys.argv += ["--source", "To be replaced"]
+                source = data_path / self.date / self.patient_id
+                if list(source.glob("*.avi")):
+                    sys.argv[sys.argv.index("--source") + 1] = source.resolve().as_posix()
+                    main()
+                self.save(source)
+
+
+        class TaskTracking(d6tflow.tasks.TaskPickle):
+            date = luigi.Parameter()
+            patient_id = luigi.Parameter()
+
+            def requires(self): return TaskLocalization(date=date, patient_id=patient_id)
+
+            def run(self):
+                for path in list((self.inputLoad()).glob("*.avi")):
+                    analyze_frames(
+                        path,
+                        run_detection=False,
+                        run_classification=False,
+                        run_tracking=True,
+                        run_viz=False,
+                    )
+                self.save(self.inputLoad())
+
+
+        class TaskViz(d6tflow.tasks.TaskPickle):
+            date = luigi.Parameter()
+            patient_id = luigi.Parameter()
+
+            def requires(self): return TaskTracking(date=date, patient_id=patient_id)
+
+            def run(self):
+                for path in list((self.inputLoad()).glob("*.avi")):
+                    analyze_frames(
+                        path,
+                        run_detection=False,
+                        run_classification=False,
+                        run_tracking=False,
+                        run_viz=True,
+                    )
+                self.save(self.inputLoad())
+
+    if nanovare_opt.run_localization:
+        for date in os.listdir(data_path):
+            if not nanovare_opt.date or nanovare_opt.date == date:
+                for patient_id in os.listdir(data_path / date):
+                    if not nanovare_opt.patient_id or nanovare_opt.patient_id == patient_id:
+                        detect_task = TaskLocalization(date=date, patient_id=patient_id)
+                        if nanovare_opt.invalidate:
+                            detect_task.invalidate(confirm=False)
+                        d6tflow.preview(detect_task)
+                        d6tflow.run(detect_task)
+
+    if nanovare_opt.run_tracking:
+        from nanovare_casa_core.analysis.analysis import analyze_frames
+
+        for date in os.listdir(data_path):
+            if not nanovare_opt.date or nanovare_opt.date == date:
+                for patient_id in os.listdir(data_path / date):
+                    if not nanovare_opt.patient_id or nanovare_opt.patient_id == patient_id:
+                        tracking_task = TaskTracking(date=date, patient_id=patient_id)
+                        if nanovare_opt.invalidate:
+                            tracking_task.invalidate(confirm=False)
+                        d6tflow.preview(tracking_task)
+                        d6tflow.run(tracking_task)
+
+    if nanovare_opt.run_viz:
+        from nanovare_casa_core.analysis.analysis import analyze_frames
+
+        for date in os.listdir(data_path):
+            if not nanovare_opt.date or nanovare_opt.date == date:
+                for patient_id in os.listdir(data_path / date):
+                    if not nanovare_opt.patient_id or nanovare_opt.patient_id == patient_id:
+                        viz_task = TaskViz(date=date, patient_id=patient_id)
+                        if nanovare_opt.invalidate:
+                            viz_task.invalidate(confirm=False)
+                        d6tflow.preview(viz_task)
+                        d6tflow.run(viz_task)

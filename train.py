@@ -136,6 +136,9 @@ def train(hyp, opt, device, tb_writer=None):
         start_epoch = ckpt['epoch'] + 1
         if opt.resume:
             assert start_epoch > 0, '%s training to %g epochs is finished, nothing to resume.' % (weights, epochs)
+            backup_weight = wdir.parent / f'weights_backup_epoch{start_epoch - 1}'
+            if backup_weight.exists():
+                shutil.rmtree(backup_weight)
             shutil.copytree(wdir, wdir.parent / f'weights_backup_epoch{start_epoch - 1}')  # save previous weights
         if epochs < start_epoch:
             logger.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
@@ -265,6 +268,7 @@ def train(hyp, opt, device, tb_writer=None):
 
             # Forward
             with amp.autocast(enabled=cuda):
+
                 pred = model(imgs)  # forward
                 loss, loss_items = compute_loss(pred, targets.to(device), model)  # loss scaled by batch_size
                 if rank != -1:
@@ -378,35 +382,12 @@ def train(hyp, opt, device, tb_writer=None):
     return results
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
-    parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
-    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
-    parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
-    parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
-    parser.add_argument('--rect', action='store_true', help='rectangular training')
-    parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
-    parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
-    parser.add_argument('--notest', action='store_true', help='only test final epoch')
-    parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
-    parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
-    parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
-    parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
-    parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
-    parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
-    parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
-    parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
-    parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
-    parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
-    parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
-    parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
-    opt = parser.parse_args()
-    print(opt)
+def main():
+    parser = ultralytics(argparse.ArgumentParser())
+
+    opt, _ = parser.parse_known_args()
+    print("Ultralytics options")
+    pretty_dict(opt.__dict__)
 
     # Set DDP variables
     opt.total_batch_size = opt.batch_size
@@ -571,3 +552,155 @@ if __name__ == '__main__':
         plot_evolution(yaml_file)
         print('Hyperparameter evolution complete. Best results saved as: %s\nCommand to train a new model with these '
               'hyperparameters: $ python train.py --hyp %s' % (yaml_file, yaml_file))
+
+
+def ultralytics(parser):
+    parser.add_argument('--weights', type=str, default='weights/yolov5s.pt', help='initial weights path')
+    parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
+    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
+    parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
+    parser.add_argument('--epochs', type=int, default=300)
+    parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[992, 992], help='[train, test] image sizes')
+    parser.add_argument('--rect', default=True, action='store_true', help='rectangular training')
+    parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
+    parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
+    parser.add_argument('--notest', action='store_true', help='only test final epoch')
+    parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
+    parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
+    parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
+    parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
+    parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
+    parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
+    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
+    parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
+    parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
+    parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
+    parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
+    parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
+    parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
+    return parser
+
+
+def nanovare(parser):
+    parser.add_argument('--pipeline-name', default="training_default", help='Name of the pipeline')
+    parser.add_argument('--init-supervisely', choices=["zoe", "vincent", "zoe+vincent"],
+                        help=f'Download, check integrity and merge a filtered supervisely dataset')
+    parser.add_argument('--init-yolo', action='store_true',
+                        help='Convert a supervisely dataset to a yolo dataset')
+    parser.add_argument('--color', default="gray", choices=["bgr", "gray", "green"],
+                        help='(ONLY IF --init-yolo)')
+    parser.add_argument('--copy-pipeline',
+                        help='Choose the same dataset from another pipeline for comparison (ONLY IF --init-yolo)')
+    parser.add_argument('--run-train', action='store_true', help='Train')
+    return parser
+
+
+def pretty_dict(d, indent=0):
+    for key, value in d.items():
+        print('\t' * indent + str(key))
+        if isinstance(value, dict):
+            pretty_dict(value, indent + 1)
+        else:
+            print('\t' * (indent + 1) + str(value))
+
+
+if __name__ == '__main__':
+    nanovare_parser = nanovare(argparse.ArgumentParser())
+    ultralytics_parser = ultralytics(argparse.ArgumentParser())
+    nanovare_opt, nanovare_unknown = nanovare_parser.parse_known_args()
+    ultralytics_opt, ultralytics_unknown = ultralytics_parser.parse_known_args()
+    # Ultralytics unknown args should be nanovare known args and vice-versa
+    # Otherwise abort
+    nanovare_parser.parse_args(ultralytics_unknown)
+    ultralytics_parser.parse_args(nanovare_unknown)
+
+    if not ultralytics_unknown:
+        main()
+    else:
+        import sys
+
+        from nanovare_casa_core.utils import supervisely as sly
+        from nanovare_casa_core.utils import constants
+        from dotenv import load_dotenv
+
+        import make_nanovare_yolo_data
+
+        load_dotenv()
+        print("Nanovare options")
+        pretty_dict(nanovare_opt.__dict__)
+
+        pipeline_name = nanovare_opt.pipeline_name
+
+        training_data_path = Path(os.getenv("ANALYSIS_PATH_DATA", "data")).resolve()
+        supervisely_root_dir = Path(os.getenv("SUPERVISELY_PATH_DATA", training_data_path / "supervisely")).resolve()
+        yolo_root_dir = training_data_path / "yolo" / pipeline_name
+        yolo_root_dir.mkdir(parents=True, exist_ok=True)
+        log_dir = yolo_root_dir / "runs"
+        data_dir = yolo_root_dir / "data.yaml"
+
+        remote_dataset_name_id = dict(map(
+            lambda x: (x.id, x.name),
+            sly.Api(token=os.getenv("SUPERVISELY_API_KEY")).dataset.get_list(constants.SUPERVISELY_LOCALISATION_PROJECT_ID))
+        )
+
+        if nanovare_opt.init_supervisely:
+            print("\n=========================     INIT SUPERVISELY DATASET     =================================")
+
+            dataset_vincent = ["2020_01_15", "2020_01_17", "2020_01_21", "2020_01_22"]
+            dataset_zoe = ["2020_01_24", "2020_01_23", "2020_01_16"]
+            if nanovare_opt.init_supervisely == "zoe":
+                dataset = dataset_zoe
+            elif nanovare_opt.init_supervisely == "vincent":
+                dataset = dataset_vincent
+            else:
+                dataset = dataset_zoe + dataset_vincent
+            dataset_filter_id = list(
+                dict(filter(lambda x: x[1] in dataset, remote_dataset_name_id.items())))
+            make_nanovare_yolo_data.init_supervisely_dataset(pipeline_name,
+                                                             supervisely_root_dir,
+                                                             dataset_filter_id=dataset_filter_id)
+            supervisely_data_dir = make_nanovare_yolo_data.get_supervisely_data_dir(pipeline_name, supervisely_root_dir)
+            print(f"From remote supervisely to {supervisely_data_dir}")
+
+        if nanovare_opt.init_yolo:
+            supervisely_data_dir = make_nanovare_yolo_data.get_supervisely_data_dir(pipeline_name, supervisely_root_dir)
+            print("\n=========================     INIT YOLO DATASET     =================================")
+            print(f"FROM {supervisely_data_dir} TO {Path(yolo_root_dir)}")
+
+            if nanovare_opt.copy_pipeline:
+                copy_dir = (yolo_root_dir / ".." / nanovare_opt.copy_pipeline).resolve()
+            else:
+                copy_dir = None
+
+            make_nanovare_yolo_data.convert_supervisely_to_yolo(
+                supervisely_data_dir=supervisely_data_dir,
+                yolo_data_dir=yolo_root_dir,
+                color=nanovare_opt.color,
+                copy_dir=copy_dir
+            )
+
+        if nanovare_opt.run_train:
+            print(f"Pipeline name {pipeline_name}")
+            print("=========================     BEGIN TRAINING      =================================")
+            print(f"From yolo data directory {yolo_root_dir}")
+            images = Path(yolo_root_dir) / "images"
+            labels = Path(yolo_root_dir) / "labels"
+            data_dict = dict(
+                nc=1,
+                names=['sperm'],
+                train=(images / "train").resolve().as_posix(),
+                val=(images / "val").resolve().as_posix()
+            )
+            train_name = list(map(lambda x: x.stem, list((images / "train").glob("*.jpg"))))
+            valid_name = list(map(lambda x: x.stem, list((images / "valid").glob("*.jpg"))))
+            assert set(valid_name) & set(train_name) == set()
+
+            yaml.dump(data_dict, open(data_dir, 'w'))
+            if "--data" not in sys.argv:
+                sys.argv += ["--data", data_dir.as_posix()]
+            if "--logdir" not in sys.argv:
+                sys.argv += ["--logdir", log_dir.as_posix()]
+
+            main()

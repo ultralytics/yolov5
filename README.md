@@ -66,6 +66,66 @@ YOLOv5 may be run in any of the following up-to-date verified environments (with
 - **Google Cloud** Deep Learning VM. See [GCP Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart) 
 - **Docker Image** https://hub.docker.com/r/ultralytics/yolov5. See [Docker Quickstart Guide](https://github.com/ultralytics/yolov5/wiki/Docker-Quickstart) ![Docker Pulls](https://img.shields.io/docker/pulls/ultralytics/yolov5?logo=docker)
 
+## Nanovare inference
+
+If you pass at least one nanovare arguments, detect_nanovare is in nanovare mode (run localization, tracking on the all MAST capture dataset) but is ultralytics-friendly (accept ultralytics arguments).
+The nanovare mode only loops on the Mast capture dataset by date and patient and overwrites the ultralytics --source arguments and call the original ultralytics detect.py on this patient dataset.
+The nanovare mode performs tasks for each patient under the supervision of luigi so you can quit a detect_nanovare process with no damage. It will start back where it stopped. You can invalidate a task by passing the --invalidate arguments if you wish to rerun a task for any reasons (data changed, task not performed as expected, test, ...)
+
+If using the nanovare mode, you need to set the $PATH_DATA env variable in .env or in the shell to indicate where the capture dataset is.  $PATH_DATA / "capture_MAST_data" is the capture dataset.
+AND you need to set the $MAST_ANALYSIS_IDENTIFIER at YOLO to output proper nanovare-friendly localization output (tracking input) inside this capture MAST dataset to avoid conflict with localization output from another MAST method.
+
+
+If you pass at least one nanovare argument, detect_nanovare is in nanovare mode:
+
+```bash
+python detect_nanovare.py --run-tracking    # Run localization for each patient then tracking for each patient (luigi runs the localization task because tracking depends on localization)  
+```
+```bash
+python detect_nanovare.py --run-localization
+                          --run-tracking    # Run localization for all patient then tracking for all patient
+                    
+```
+```bash
+python detect_nanovare.py --run-tracking    # Run localization for tp23 then tracking patient for tp23
+                          --patient-id tp23 # Filter by patient_id
+                          --date 2020_05_12 # Filter by date
+                          --invalidate      # Invalidate the task TaskRunTracking(patient_id=tp23, date=2020_05_12) before running it again
+                                            # Invalidates also automatically all upstream tasks; here the only upstream task 
+                                            # to be invalidated is TaskRunLocalization(patient_id=tp23, date=2020_05_12) before running it again
+```
+```bash
+python detect_nanovare.py --run-tracking
+                          --patient-id tp23                                                                        # Nanovare arg
+                          --date 2020_05_12                                                                        # Nanovare arg
+                          --invalidate                                                                             # Nanovare arg
+                          --iou-thres 0.8                                                                          # Ultralytics arg
+                          --weights ..\..\data\analysis\yolo\minimal_deformation\runs\exp0\weights\weights\best.pt # Ultralytics arg
+```
+Else if you pass only ultralytics arguments, detect_nanovare is in ultralytics mode
+
+```bash
+ python detect_nanovare.py --source  ..\..\data\Karolinska\capture_MAST_data\2020_05_12\test-patient-03 # Ultralytics arg
+                           --iou-thres 0.8                                                              # Ultralytics arg
+```
+
+All nanovare options:
+```bash
+(.windows_venv38) Q:\dev\yolov5>python detect_nanovare.py -h
+usage: detect_nanovare.py [-h] [--patient-id PATIENT_ID] [--date DATE] [--run-localization] [--run-tracking]
+                          [--run-viz] [--invalidate]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --patient-id PATIENT_ID
+                        Filter a patient ID
+  --date DATE           Filter a date
+  --run-localization    Run localization
+  --run-tracking        Run tracking
+  --run-viz             Run vizualization after tracking
+  --invalidate          Run vizualization after tracking
+
+```
 
 ## Inference
 
@@ -99,7 +159,66 @@ Results saved to /content/yolov5/inference/output
 <img src="https://user-images.githubusercontent.com/26833433/83082816-59e54880-a039-11ea-8abe-ab90cc1ec4b0.jpeg" width="500">  
 
 
-## Training
+## Nanovare Training
+
+If you pass at least one nanovare arguments, detect_nanovare is in nanovare mode (creates, download and check a supervisely dataset, convert it to yolo and train) but is ultralytics-friendly (accept ultralytics arguments).
+The nanovare mode creates a new dataset, overwrites the ultralytics --data arguments and call the original ultralytics train.py. This pipeline is tracked thanks to a identifier called 'pipeline_name' that you call as an argument --pipeline-name pipeline_name. All datasets and datas related will fall into the 'pipeline_name' folder.
+To the contrary of detect_nanovare, the nanovare mode of training does not performs task under the supervision of luigi yet.
+
+If using the nanovare mode, you need to set the $ANALYSIS_PATH_DATA (ex: ../../data/analysis) env variable in .env or in the shell to indicate where the yolo data folder is. $ANALYSIS_PATH_DATA / "yolo" is the yolo data folder.
+AND you need to set the supervisely variables SUPERVISELY_PATH_DATA (ex: ../../data/supervisely) for the download folder and SUPERVISELY_API_KEY to set your API token.
+
+
+If you pass at least one nanovare argument, train is in nanovare mode:
+
+```bash
+python train.py --pipeline-name strong_mosaic_aug # specify a pipeline name
+                --init-supervisely zoe+vincent    # Download the supervisely dataset if not already
+                --init-yolo                       # Convert it to a yolov5-friendly dataset
+                --run-train                       # Launch the training on this dataset 
+```
+```bash
+python train.py --pipeline-name strong_mosaic_aug                                                             # Nanovare arg
+                --run-train                                                                   # Nanovare arg
+                --resume ..\..\data\analysis\yolo\strong_mosaic_aug\runs\exp6\weights\last.pt # Ultralytics arg
+                    
+```
+
+Else if you pass only ultralytics arguments, train is in ultralytics mode
+
+```bash
+ python train.py --data  ..\..\data\analysis\yolo\strong_mosaic_aug\data.yaml       # Ultralytics arg
+                 --hyp  ..\..\data\analysis\yolo\strong_mosaic_aug\hyp.scratch.yaml # Ultralytics arg
+                 --nosave                                                           # Ultralytics arg
+                 --notest                                                           # Ultralytics arg
+                 --epochs 150                                                       # Ultralytics arg
+```
+
+All nanovare options:
+```bash
+(.windows_venv38) Q:\dev\yolov5>python train.py -h
+usage: train.py [-h] [--pipeline-name PIPELINE_NAME]
+                [--init-supervisely {zoe,vincent,zoe+vincent}] [--init-yolo]
+                [--color {bgr,gray,green}] [--copy-pipeline COPY_PIPELINE]
+                [--run-train]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --pipeline-name PIPELINE_NAME
+                        Name of the pipeline
+  --init-supervisely {zoe,vincent,zoe+vincent}
+                        Download, check integrity and merge a filtered
+                        supervisely dataset
+  --init-yolo           Convert a supervisely dataset to a yolo dataset
+  --color {bgr,gray,green}
+                        (ONLY IF --init-yolo)
+  --copy-pipeline COPY_PIPELINE
+                        Choose the same dataset from another pipeline for
+                        comparison (ONLY IF --init-yolo)
+  --run-train           Train
+```
+
+### Training
 
 Download [COCO](https://github.com/ultralytics/yolov5/blob/master/data/scripts/get_coco.sh) and run command below. Training times for YOLOv5s/m/l/x are 2/4/6/8 days on a single V100 (multi-GPU times faster). Use the largest `--batch-size` your GPU allows (batch sizes shown for 16 GB devices).
 ```bash
