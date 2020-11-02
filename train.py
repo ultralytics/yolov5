@@ -562,7 +562,7 @@ def ultralytics(parser):
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[992, 992], help='[train, test] image sizes')
-    parser.add_argument('--rect', action='store_true', help='rectangular training')
+    parser.add_argument('--rect', default=True, action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
