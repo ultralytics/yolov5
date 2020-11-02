@@ -204,6 +204,7 @@ def detect(opt, save_img=False):
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
 
             centroids_in_frame = []
+
             if det is not None and len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
@@ -274,7 +275,8 @@ def detect(opt, save_img=False):
                     vid_writer.write(im0)
 
     video_key = Path(dataset.files[current_count]).resolve()
-    out_path = video_key.parent / (video_key.stem + "_YOLO_output") / "centroids_with_meta.json"
+    out_path = video_key.parent / (video_key.stem + "_" + os.getenv("MAST_ANALYSIS_IDENTIFIER")
+                                   + "_output") / "centroids_with_meta.json"
     centroids_with_meta = {
         "centroids": centroids,
         "extra_information": {"resize_factor": RESIZE_FACTOR},
