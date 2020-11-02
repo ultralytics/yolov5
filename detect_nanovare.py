@@ -162,7 +162,8 @@ def detect(opt, save_img=False):
     for path, img, im0s, vid_cap in dataset:
         if current_count != dataset.count:
             video_key = Path(dataset.files[current_count]).resolve()
-            out_path = video_key.parent / (video_key.stem + "_YOLO_output") / "centroids_with_meta.json"
+            out_path = video_key.parent / (video_key.stem + "_" + os.getenv("MAST_ANALYSIS_IDENTIFIER")
+                                           + "_output") / "centroids_with_meta.json"
             centroids_with_meta = {
                 "centroids": centroids,
                 "extra_information": {"resize_factor": RESIZE_FACTOR},
