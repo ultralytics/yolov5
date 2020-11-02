@@ -317,29 +317,33 @@ class tf_Model():
             tf_check_anchor_order(m)
 
     def predict(self, inputs, profile=False):
-        y, dt = [], []  # outputs
+        y = []  # outputs
         x = inputs
         for i, m in enumerate(self.model.layers):
             if m.f != -1:  # if not from previous layer
                 x = y[m.f] if isinstance(m.f, int) else [x if j == -1 else y[j] for j in m.f]  # from earlier layers
 
-            if profile:
-                try:
-                    import thop
-                    o = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2  # FLOPS
-                except:
-                    o = 0
-                t = torch_utils.time_synchronized()
-                for _ in range(10):
-                    _ = m(x)
-                dt.append((torch_utils.time_synchronized() - t) * 100)
-                print('%10.1f%10.0f%10.1fms %-40s' % (o, m.np, dt[-1], m.type))
-
             x = m(x)  # run
             y.append(x if m.i in self.savelist else None)  # save output
 
-        if profile:
-            print('%.1fms total' % sum(dt))
+        # Add TensorFlow NMS
+        if opt.tf_nms:
+            xy = x[0][:, :, 0:2]
+            wh = x[0][:, :, 2:4]
+            x1 = xy[:, :, 0:1] - wh[:, :, 0:1] / 2
+            x2 = xy[:, :, 0:1] + wh[:, :, 0:1] / 2
+            y1 = xy[:, :, 1:2] - wh[:, :, 1:2] / 2
+            y2 = xy[:, :, 1:2] + wh[:, :, 1:2] / 2
+            xyxy = tf.concat([x1, y1, x2, y2], 2)
+            boxes = tf.expand_dims(xyxy, 2)
+            probs = x[0][:, :, 4:5]
+            classes = x[0][:, :, 5:]
+            scores = probs * classes
+            nms = tf.image.combined_non_max_suppression(
+                    boxes, scores, opt.topk_per_class, opt.topk_all, opt.iou_thres, opt.score_thres,
+                    clip_boxes=False)
+            return nms, x[1]
+
         return x
 
 
@@ -353,6 +357,11 @@ if __name__ == "__main__":
     parser.add_argument('--source', type=str, default='/dataset/coco/coco2017/train2017', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--ncalib', type=int, default=100, help='number of calibration images')  # file/folder, 0 for webcam
     parser.add_argument('--tfl-int8', action='store_true', dest='tfl_int8', help='export TFLite int8 model')
+    parser.add_argument('--tf-nms', action='store_true', dest='tf_nms', help='add TensorFlow NMS (without TFLite export)')
+    parser.add_argument('--topk-per-class', type=int, default=100, help='topk per class to keep in NMS')
+    parser.add_argument('--topk-all', type=int, default=100, help='topk for all classes to keep in NMS')
+    parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
+    parser.add_argument('--score-thres', type=float, default=0.4, help='score threshold for NMS')
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
@@ -410,64 +419,67 @@ if __name__ == "__main__":
         print('TensorFlow GraphDef export failure: %s' % e)
         traceback.print_exc(file=sys.stdout)
 
-    # TFLite model export
-    try:
-        print('\nStarting TFLite export with TensorFlow %s...' % tf.__version__)
-        if opt.no_tfl_detect:
-            print("Don't export Detect module")
-            m.training = True
-            keras_model = keras.Model(inputs=inputs, outputs=tf_model.predict(inputs))
-        # fp32 TFLite model export
-        # converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
-        # converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
-        # converter.allow_custom_ops = False
-        # converter.experimental_new_converter = True
-        # tflite_model = converter.convert()
-        # f = opt.weights.replace('.pt', '.tflite')  # filename
-        # open(f, "wb").write(tflite_model)
+    # NMS doesn't support TFLite export
 
-        # fp16 TFLite model export
-        converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
-        converter.optimizations = [tf.lite.Optimize.DEFAULT]
-        converter.target_spec.supported_types = [tf.float16]
-        converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
-        converter.allow_custom_ops = False
-        converter.experimental_new_converter = True
-        tflite_model = converter.convert()
-        f = opt.weights.replace('.pt', '-fp16.tflite')  # filename
-        open(f, "wb").write(tflite_model)
-        print('\nTFLite export success, saved as %s' % f)
+    if not opt.tf_nms:
+        # TFLite model export
+        try:
+            print('\nStarting TFLite export with TensorFlow %s...' % tf.__version__)
+            if opt.no_tfl_detect:
+                print("Don't export Detect module")
+                m.training = True
+                keras_model = keras.Model(inputs=inputs, outputs=tf_model.predict(inputs))
+            # fp32 TFLite model export
+            # converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
+            # converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
+            # converter.allow_custom_ops = False
+            # converter.experimental_new_converter = True
+            # tflite_model = converter.convert()
+            # f = opt.weights.replace('.pt', '.tflite')  # filename
+            # open(f, "wb").write(tflite_model)
 
-        # int8 TFLite model export
-        if opt.tfl_int8:
+            # fp16 TFLite model export
             converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
             converter.optimizations = [tf.lite.Optimize.DEFAULT]
-            dataset = LoadImages(opt.source, img_size=opt.img_size, auto=False)
-
-            def representative_dataset_gen():
-                n = 0
-                for path, img, im0s, vid_cap in dataset:
-                    # Get sample input data as a numpy array in a method of your choosing.
-                    n += 1
-                    input = np.transpose(img, [1, 2, 0])
-                    input = np.expand_dims(input, axis=0).astype(np.float32)
-                    input /= 255.0
-                    yield [input]
-                    if n >= opt.ncalib:
-                        break
-
-            converter.representative_dataset = representative_dataset_gen
-            converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-            converter.inference_input_type = tf.uint8  # or tf.int8
-            converter.inference_output_type = tf.uint8  # or tf.int8
+            converter.target_spec.supported_types = [tf.float16]
+            converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
             converter.allow_custom_ops = False
             converter.experimental_new_converter = True
             tflite_model = converter.convert()
-            f = opt.weights.replace('.pt', '-int8.tflite')  # filename
+            f = opt.weights.replace('.pt', '-fp16.tflite')  # filename
             open(f, "wb").write(tflite_model)
-            print('\nTFLite (int8) export success, saved as %s' % f)
+            print('\nTFLite export success, saved as %s' % f)
 
-    except Exception as e:
-        print('\nTFLite export failure: %s' % e)
-        traceback.print_exc(file=sys.stdout)
+            # int8 TFLite model export
+            if opt.tfl_int8:
+                converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
+                converter.optimizations = [tf.lite.Optimize.DEFAULT]
+                dataset = LoadImages(opt.source, img_size=opt.img_size, auto=False)
+
+                def representative_dataset_gen():
+                    n = 0
+                    for path, img, im0s, vid_cap in dataset:
+                        # Get sample input data as a numpy array in a method of your choosing.
+                        n += 1
+                        input = np.transpose(img, [1, 2, 0])
+                        input = np.expand_dims(input, axis=0).astype(np.float32)
+                        input /= 255.0
+                        yield [input]
+                        if n >= opt.ncalib:
+                            break
+
+                converter.representative_dataset = representative_dataset_gen
+                converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+                converter.inference_input_type = tf.uint8  # or tf.int8
+                converter.inference_output_type = tf.uint8  # or tf.int8
+                converter.allow_custom_ops = False
+                converter.experimental_new_converter = True
+                tflite_model = converter.convert()
+                f = opt.weights.replace('.pt', '-int8.tflite')  # filename
+                open(f, "wb").write(tflite_model)
+                print('\nTFLite (int8) export success, saved as %s' % f)
+
+        except Exception as e:
+            print('\nTFLite export failure: %s' % e)
+            traceback.print_exc(file=sys.stdout)
 
