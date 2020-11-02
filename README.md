@@ -197,19 +197,25 @@ Else if you pass only ultralytics arguments, train is in ultralytics mode
 All nanovare options:
 ```bash
 (.windows_venv38) Q:\dev\yolov5>python train.py -h
-usage: train.py [-h] [--pipeline-name PIPELINE_NAME] [--init-supervisely {zoe,vincent,zoe+vincent}] [--init-yolo]
-                [--run-train] [--gray]
+usage: train.py [-h] [--pipeline-name PIPELINE_NAME]
+                [--init-supervisely {zoe,vincent,zoe+vincent}] [--init-yolo]
+                [--color {bgr,gray,green}] [--copy-pipeline COPY_PIPELINE]
+                [--run-train]
 
 optional arguments:
   -h, --help            show this help message and exit
   --pipeline-name PIPELINE_NAME
                         Name of the pipeline
   --init-supervisely {zoe,vincent,zoe+vincent}
-                        Download, check integrity and merge a filtered supervisely dataset
-  --init-yolo           Convert a supervisely dataset to a grey|rgb yolo dataset
+                        Download, check integrity and merge a filtered
+                        supervisely dataset
+  --init-yolo           Convert a supervisely dataset to a yolo dataset
+  --color {bgr,gray,green}
+                        (ONLY IF --init-yolo)
+  --copy-pipeline COPY_PIPELINE
+                        Choose the same dataset from another pipeline for
+                        comparison (ONLY IF --init-yolo)
   --run-train           Train
-  --gray                Gray dataset
-
 ```
 
 ### Training

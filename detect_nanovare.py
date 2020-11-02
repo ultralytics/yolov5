@@ -329,9 +329,9 @@ def nanovare(parser):
     parser.add_argument('--run-tracking', action='store_true',
                         help='Run tracking')
     parser.add_argument('--run-viz', action='store_true',
-                        help='Run vizualization after tracking')
+                        help='Run visualization after tracking')
     parser.add_argument('--invalidate', action='store_true',
-                        help='Run vizualization after tracking')
+                        help='Invalidate previous run and force rerun of tasks')
     return parser
 
 
