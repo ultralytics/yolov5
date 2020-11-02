@@ -55,7 +55,14 @@ def detect(save_img=False):
             sess = tf.Session(config=config)
             loaded = tf.saved_model.load(sess, [tf.saved_model.tag_constants.SERVING], weights[0])
             tf_input = loaded.signature_def['serving_default'].inputs['input_1']
-            tf_output = loaded.signature_def['serving_default'].outputs['tf__detect']
+            if not opt.no_tf_nms:
+                tf_output = loaded.signature_def['serving_default'].outputs['tf__detect']
+            else:
+                tf_outputs = [loaded.signature_def['serving_default'].outputs['tf_op_layer_CombinedNonMaxSuppression'],
+                              loaded.signature_def['serving_default'].outputs['tf_op_layer_CombinedNonMaxSuppression_1'],
+                              loaded.signature_def['serving_default'].outputs['tf_op_layer_CombinedNonMaxSuppression_2'],
+                              loaded.signature_def['serving_default'].outputs['tf_op_layer_CombinedNonMaxSuppression_3']
+                ]
         else:
             model = keras.models.load_model(weights[0])
     elif backend == 'graph_def':
@@ -69,7 +76,15 @@ def detect(save_img=False):
             tf.import_graph_def(graph_def, name='')
             default_graph = tf.get_default_graph()
             tf_input = default_graph.get_tensor_by_name('x:0')
-            tf_output = default_graph.get_tensor_by_name('Identity:0')
+            if not opt.no_tf_nms:
+                tf_output = default_graph.get_tensor_by_name('Identity:0')
+            else:
+                tf_outputs = [default_graph.get_tensor_by_name('Identity:0'),
+                              default_graph.get_tensor_by_name('Identity_1:0'),
+                              default_graph.get_tensor_by_name('Identity_2:0'),
+                              default_graph.get_tensor_by_name('Identity_3:0')
+                ]
+
         else:
             # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
             # https://github.com/leimao/Frozen_Graph_TensorFlow
@@ -97,7 +112,8 @@ def detect(save_img=False):
             graph_def.ParseFromString(open(weights[0], 'rb').read())
             frozen_func = wrap_frozen_graph(graph_def=graph_def,
                                             inputs="x:0",
-                                            outputs="Identity:0",
+                                            outputs="Identity:0" if not opt.no_tf_nms else
+                                                ["Identity:0", "Identity_1:0", "Identity_2:0", "Identity_3:0"],
                                             print_graph=False)
 
     elif backend == 'tflite':
@@ -142,17 +158,19 @@ def detect(save_img=False):
     if isinstance(imgsz, int):
         imgsz = (imgsz, imgsz)
     img = torch.zeros((1, 3, *imgsz), device=device)  # init img
+    if (backend == 'saved_model' or backend == 'graph_def') and tf.__version__.startswith('1'):
+        fetches = tf_output.name if not opt.no_tf_nms else [o.name for o in tf_outputs]
 
     if backend == 'pytorch':
         _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
     elif backend == 'saved_model':
         if tf.__version__.startswith('1'):
-            _ = sess.run(tf_output.name, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+            _ = sess.run(fetches, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
         else:
             _ = model(img.permute(0, 2, 3, 1).cpu().numpy(), training=False)
     elif backend == 'graph_def':
         if tf.__version__.startswith('1'):
-            _ = sess.run(tf_output.name, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+            _ = sess.run(fetches, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
         else:
             _ = frozen_func(x=tf.constant(img.permute(0, 2, 3, 1).cpu().numpy()))
     elif backend == 'tflite':
@@ -177,20 +195,26 @@ def detect(save_img=False):
 
         elif backend == 'saved_model':
             if tf.__version__.startswith('1'):
-                pred = sess.run(tf_output.name, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
-                pred = torch.tensor(pred)
+                pred = sess.run(fetches, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+                if not opt.no_tf_nms:
+                    pred = torch.tensor(pred)
             else:
                 res = model(img.permute(0, 2, 3, 1).cpu().numpy(), training=False)
-                pred = res[0].numpy()
-                pred = torch.tensor(pred)
+                if not opt.no_tf_nms:
+                    pred = res[0].numpy()
+                    pred = torch.tensor(pred)
+                else:
+                    pred = res[0]
 
         elif backend == 'graph_def':
             if tf.__version__.startswith('1'):
-                pred = sess.run(tf_output.name, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
-                pred = torch.tensor(pred)
+                pred = sess.run(fetches, feed_dict={tf_input.name: img.permute(0, 2, 3, 1).cpu().numpy()})
+                if not opt.no_tf_nms:
+                    pred = torch.tensor(pred)
             else:
                 pred = frozen_func(x=tf.constant(img.permute(0, 2, 3, 1).cpu().numpy()))
-                pred = torch.tensor(pred.numpy())
+                if not opt.no_tf_nms:
+                    pred = torch.tensor(pred.numpy())
 
         elif backend == 'tflite':
             input_data = img.permute(0, 2, 3, 1).cpu().numpy()
@@ -243,7 +267,27 @@ def detect(save_img=False):
                 pred = torch.unsqueeze(torch.cat(z, 0), 0)
 
         # Apply NMS
-        pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
+        if not opt.no_tf_nms:
+            pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
+        else:
+            nmsed_boxes, nmsed_scores, nmsed_classes, valid_detections = pred
+            if not tf.__version__.startswith('1'):
+                nmsed_boxes = torch.tensor(nmsed_boxes.numpy())
+                nmsed_scores = torch.tensor(nmsed_scores.numpy())
+                nmsed_classes = torch.tensor(nmsed_classes.numpy())
+                valid_detections = torch.tensor(valid_detections.numpy())
+            else:
+                nmsed_boxes = torch.tensor(nmsed_boxes)
+                nmsed_scores = torch.tensor(nmsed_scores)
+                nmsed_classes = torch.tensor(nmsed_classes)
+                valid_detections = torch.tensor(valid_detections)
+            bs = nmsed_boxes.shape[0]
+            pred = [None] * bs
+            for i in range(bs):
+                pred[i] = torch.cat([nmsed_boxes[i, :valid_detections[i], :],
+                                     torch.unsqueeze(nmsed_scores[i, :valid_detections[i]], -1),
+                                     torch.unsqueeze(nmsed_classes[i, :valid_detections[i]], -1)], -1)
+
         t2 = time_synchronized()
 
         # Apply Classifier
