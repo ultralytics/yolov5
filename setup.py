@@ -49,7 +49,8 @@ def copy_to_module():
                 if line.startswith(strings_to_search_for):
                     lines_changed.append(line)
                     for key in strings_to_search_for:
-                        line = line.replace(key, strings_to_replace[key])
+                        if line.startswith(key):
+                            line = line.replace(key, strings_to_replace[key], 1)
                 data.append(line)
         with python_file_path.open("w") as f:
             for line in data:
