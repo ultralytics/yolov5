@@ -20,6 +20,9 @@
 *.data
 *.json
 
+#package
+yolov5/*
+
 *.cfg
 !cfg/yolov3*.cfg
 

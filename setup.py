@@ -6,13 +6,18 @@ from pkg_resources import parse_requirements
 import glob
 import os
 import shutil
+
 MODULE_NAME = "yolov5"
 
 
 def copy_to_module():
     if os.path.isdir(MODULE_NAME):
         shutil.rmtree(MODULE_NAME)
+
     for python_file_path in glob.glob("**/*.py", recursive=True):
+        if python_file_path == "setup.py":
+            continue
+
         out_path = f"{MODULE_NAME}/{python_file_path}"
         out_dir = os.path.dirname(out_path)
         if not os.path.isdir(out_dir):
@@ -57,6 +62,3 @@ setuptools.setup(
         ],
     install_requires=install_requires
 )
-
-# Cleanup module
-shutil.rmtree(MODULE_NAME)
