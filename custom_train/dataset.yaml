@@ -1,0 +1,9 @@
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+train: ./custom_train/train_final.txt
+val: ./custom_train/valid_final.txt
+
+# number of classes
+nc: 5
+
+# class names
+names: ["original", "deepfake", "face2Face", "faceSwap", "NeuralTextures"]
