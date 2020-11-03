@@ -3,6 +3,22 @@ import pathlib
 import setuptools
 from pkg_resources import parse_requirements
 
+import glob
+import os
+import shutil
+MODULE_NAME = "yolov5"
+
+
+def copy_to_module():
+    if os.path.isdir(MODULE_NAME):
+        shutil.rmtree(MODULE_NAME)
+    for python_file_path in glob.glob("**/*.py", recursive=True):
+        out_path = f"{MODULE_NAME}/{python_file_path}"
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        shutil.copyfile(python_file_path, out_path)
+        print(python_file_path)
+
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
@@ -13,8 +29,13 @@ with pathlib.Path('requirements.txt').open() as requirements_txt:
         in parse_requirements(requirements_txt)
     ]
 
+
+copy_to_module()
+modules = setuptools.find_packages(include=['yolov5', 'yolov5.*'])
+print(modules)
+
 setuptools.setup(
-    name="yolov5",
+    name=MODULE_NAME,
     version="0.0.1",
     author="nanovare",
     author_email="vincent@nanovare.com",
@@ -22,7 +43,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/robin-maillot/yolov5",
-    packages=setuptools.find_packages(include=['yolov5', 'yolov5.*']),
+    packages=modules,
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
@@ -34,3 +55,6 @@ setuptools.setup(
         ],
     install_requires=install_requires
 )
+
+# Cleanup module
+shutil.rmtree(MODULE_NAME)
