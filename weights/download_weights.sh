@@ -1,7 +1,7 @@
 #!/bin/bash
 # Download common models
 
-python -c "
+python3 -c "
 from utils.google_utils import *;
 attempt_download('weights/yolov5s.pt');
 attempt_download('weights/yolov5m.pt');
