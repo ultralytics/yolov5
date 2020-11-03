@@ -123,7 +123,7 @@ optional arguments:
   --run-localization    Run localization
   --run-tracking        Run tracking
   --run-viz             Run vizualization after tracking
-  --invalidate          Run vizualization after tracking
+  --invalidate          Invalidate task to run again if already completed
 
 ```
 
