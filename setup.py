@@ -70,7 +70,7 @@ with pathlib.Path('requirements.txt').open() as requirements_txt:
     ]
 
 copy_to_module()
-modules = setuptools.find_packages(include=['yolov5', 'yolov5.*'])
+modules = setuptools.find_packages(include=[MODULE_NAME, f"{MODULE_NAME}.*"])
 
 setuptools.setup(
     name=MODULE_NAME,
