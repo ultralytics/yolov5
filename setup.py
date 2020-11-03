@@ -69,7 +69,6 @@ with pathlib.Path('requirements.txt').open() as requirements_txt:
     ]
 
 copy_to_module()
-exit()
 modules = setuptools.find_packages(include=['yolov5', 'yolov5.*'])
 
 setuptools.setup(
