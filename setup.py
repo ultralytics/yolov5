@@ -18,7 +18,7 @@ setuptools.setup(
     version="0.0.0",
     author="nanovare",
     author_email="vincent@nanovare.com",
-    description="Integrate yolov5 for nanovare",
+    description="yolov5 modifications for nanovare",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/robin-maillot/yolov5",
