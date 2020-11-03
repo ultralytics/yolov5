@@ -20,6 +20,7 @@ def copy_to_module():
             with open(f"{out_dir}/__init__.py", 'a'):
                 pass
         shutil.copyfile(python_file_path, out_path)
+        print(python_file_path)
 
 
 with open("README.md", "r") as fh:
@@ -35,7 +36,8 @@ with pathlib.Path('requirements.txt').open() as requirements_txt:
 
 copy_to_module()
 modules = setuptools.find_packages(include=['yolov5', 'yolov5.*'])
-
+print(modules)
+exit()
 setuptools.setup(
     name=MODULE_NAME,
     version="0.0.1",
