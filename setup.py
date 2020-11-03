@@ -15,10 +15,10 @@ with pathlib.Path('requirements.txt').open() as requirements_txt:
 
 setuptools.setup(
     name="yolov5",
-    version="nanovare.0.0.0",
+    version="yolov5.nanovare.0.0.0",
     author="nanovare",
     author_email="vincent@nanovare.com",
-    description="Integrate yolov5 for mojo",
+    description="Integrate yolov5 for nanovare",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/robin-maillot/yolov5",
@@ -29,5 +29,8 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.7',
+    dependency_links=[
+            "https://download.pytorch.org/whl/torch_stable.html",
+        ],
     install_requires=install_requires
 )
