@@ -14,8 +14,8 @@ with pathlib.Path('requirements.txt').open() as requirements_txt:
     ]
 
 setuptools.setup(
-    name="yolov5",
-    version="yolov5.nanovare.0.0.0",
+    name="yolov5-nanovare",
+    version="0.0.0",
     author="nanovare",
     author_email="vincent@nanovare.com",
     description="Integrate yolov5 for nanovare",
