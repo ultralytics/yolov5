@@ -45,10 +45,12 @@ $ pip install -r requirements.txt
 
 ### Install as Module
 To install yolov5 as a module you can either:
-- `python setup.py install` from the root folder
-- `pip install . -f https://download.pytorch.org/whl/torch_stable.html` from the root folder
-- `pip install .` from the root folder (on windows only compatible with pip<1.9)
-- `pip install git+https://github.com/robin-maillot/yolov5.git -f https://download.pytorch.org/whl/torch_stable.html` (NO LONGER SUPPORTED, NEED TO USE GITLAB ACTIONS TO BUILD) 
+- Gret from git directly:
+  - `pip install git+https://github.com/robin-maillot/yolov5.git -f https://download.pytorch.org/whl/torch_stable.html`
+- Clone the repo and:
+  - `python setup.py install` from the root folder
+  - `pip install . -f https://download.pytorch.org/whl/torch_stable.html` from the root folder
+  - `pip install .` from the root folder (on windows only compatible with pip<1.9)
 
 
 ## Tutorials
