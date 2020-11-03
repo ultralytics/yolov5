@@ -76,7 +76,7 @@ setuptools.setup(
     name=MODULE_NAME,
     version="0.0.1",
     author="nanovare",
-    author_email="vincent@nanovare.com",
+    author_email="vincent@nanovare.com, robin@nanovare.com",
     description="yolov5 modifications for nanovare",
     long_description=long_description,
     long_description_content_type="text/markdown",
