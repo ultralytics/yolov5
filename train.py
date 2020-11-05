@@ -1,15 +1,16 @@
 import argparse
-import glob
 import logging
-import math
 import os
 import random
 import shutil
 import time
 from pathlib import Path
+from warnings import warn
 
+import math
 import numpy as np
 import torch.distributed as dist
+import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
@@ -28,13 +29,12 @@ from utils.general import (
     compute_loss, plot_images, fitness, strip_optimizer, plot_results, get_latest_run, check_dataset, check_file,
     check_git_status, check_img_size, increment_dir, print_mutation, plot_evolution, set_logging, init_seeds)
 from utils.google_utils import attempt_download
-from utils.torch_utils import init_torch_seeds, ModelEMA, select_device, intersect_dicts
-from detect import detect
+from utils.torch_utils import ModelEMA, select_device, intersect_dicts
 
 logger = logging.getLogger(__name__)
 
 
-def train(hyp, opt, device, tb_writer=None):
+def train(hyp, opt, device, tb_writer=None, wandb=None):
     logger.info(f'Hyperparameters {hyp}')
     log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
     wdir = log_dir / 'weights'  # weights directory
@@ -81,12 +81,12 @@ def train(hyp, opt, device, tb_writer=None):
         model = Model(opt.cfg, ch=3, nc=nc).to(device)  # create
 
     # Freeze
-    freeze = ['', ]  # parameter names to freeze (full or partial)
-    if any(freeze):
-        for k, v in model.named_parameters():
-            if any(x in k for x in freeze):
-                print('freezing %s' % k)
-                v.requires_grad = False
+    freeze = []  # parameter names to freeze (full or partial)
+    for k, v in model.named_parameters():
+        v.requires_grad = True  # train all layers
+        if any(x in k for x in freeze):
+            print('freezing %s' % k)
+            v.requires_grad = False
 
     # Optimizer
     nbs = 64  # nominal batch size
@@ -94,14 +94,13 @@ def train(hyp, opt, device, tb_writer=None):
     hyp['weight_decay'] *= total_batch_size * accumulate / nbs  # scale weight_decay
 
     pg0, pg1, pg2 = [], [], []  # optimizer parameter groups
-    for k, v in model.named_parameters():
-        v.requires_grad = True
-        if '.bias' in k:
-            pg2.append(v)  # biases
-        elif '.weight' in k and '.bn' not in k:
-            pg1.append(v)  # apply weight decay
-        else:
-            pg0.append(v)  # all else
+    for k, v in model.named_modules():
+        if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):
+            pg2.append(v.bias)  # biases
+        if isinstance(v, nn.BatchNorm2d):
+            pg0.append(v.weight)  # no decay
+        elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):
+            pg1.append(v.weight)  # apply decay
 
     if opt.adam:
         optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
@@ -118,6 +117,11 @@ def train(hyp, opt, device, tb_writer=None):
     lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - hyp['lrf']) + hyp['lrf']  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # plot_lr_scheduler(optimizer, scheduler, epochs)
+
+    # Logging
+    if wandb and wandb.run is None:
+        id = ckpt.get('wandb_id') if 'ckpt' in locals() else None
+        wandb_run = wandb.init(config=opt, resume="allow", project="YOLOv5", name=os.path.basename(log_dir), id=id)
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
@@ -136,9 +140,6 @@ def train(hyp, opt, device, tb_writer=None):
         start_epoch = ckpt['epoch'] + 1
         if opt.resume:
             assert start_epoch > 0, '%s training to %g epochs is finished, nothing to resume.' % (weights, epochs)
-            backup_weight = wdir.parent / f'weights_backup_epoch{start_epoch - 1}'
-            if backup_weight.exists():
-                shutil.rmtree(backup_weight)
             shutil.copytree(wdir, wdir.parent / f'weights_backup_epoch{start_epoch - 1}')  # save previous weights
         if epochs < start_epoch:
             logger.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
@@ -200,7 +201,7 @@ def train(hyp, opt, device, tb_writer=None):
     hyp['cls'] *= nc / 80.  # scale coco-tuned hyp['cls'] to current dataset
     model.nc = nc  # attach number of classes to model
     model.hyp = hyp  # attach hyperparameters to model
-    model.gr = 1.0  # giou loss ratio (obj_loss = 1.0 or giou)
+    model.gr = 1.0  # iou loss ratio (obj_loss = 1.0 or iou)
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device)  # attach class weights
     model.names = names
 
@@ -209,10 +210,11 @@ def train(hyp, opt, device, tb_writer=None):
     nw = max(round(hyp['warmup_epochs'] * nb), 1e3)  # number of warmup iterations, max(3 epochs, 1k iterations)
     # nw = min(nw, (epochs - start_epoch) / 2 * nb)  # limit warmup to < 1/2 of training
     maps = np.zeros(nc)  # mAP per class
-    results = (0, 0, 0, 0, 0, 0, 0)  # 'P', 'R', 'mAP', 'F1', 'val GIoU', 'val Objectness', 'val Classification'
+    results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
-    logger.info('Image sizes %g train, %g test\nUsing %g dataloader workers\nLogging results to %s\n'
+    logger.info('Image sizes %g train, %g test\n'
+                'Using %g dataloader workers\nLogging results to %s\n'
                 'Starting training for %g epochs...' % (imgsz, imgsz_test, dataloader.num_workers, log_dir, epochs))
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
@@ -239,7 +241,7 @@ def train(hyp, opt, device, tb_writer=None):
         if rank != -1:
             dataloader.sampler.set_epoch(epoch)
         pbar = enumerate(dataloader)
-        logger.info(('\n' + '%10s' * 8) % ('Epoch', 'gpu_mem', 'GIoU', 'obj', 'cls', 'total', 'targets', 'img_size'))
+        logger.info(('\n' + '%10s' * 8) % ('Epoch', 'gpu_mem', 'box', 'obj', 'cls', 'total', 'targets', 'img_size'))
         if rank in [-1, 0]:
             pbar = tqdm(pbar, total=nb)  # progress bar
         optimizer.zero_grad()
@@ -250,7 +252,7 @@ def train(hyp, opt, device, tb_writer=None):
             # Warmup
             if ni <= nw:
                 xi = [0, nw]  # x interp
-                # model.gr = np.interp(ni, xi, [0.0, 1.0])  # giou loss ratio (obj_loss = 1.0 or giou)
+                # model.gr = np.interp(ni, xi, [0.0, 1.0])  # iou loss ratio (obj_loss = 1.0 or iou)
                 accumulate = max(1, np.interp(ni, xi, [1, nbs / total_batch_size]).round())
                 for j, x in enumerate(optimizer.param_groups):
                     # bias lr falls from 0.1 to lr0, all other lrs rise from 0.0 to lr0
@@ -268,7 +270,6 @@ def train(hyp, opt, device, tb_writer=None):
 
             # Forward
             with amp.autocast(enabled=cuda):
-
                 pred = model(imgs)  # forward
                 loss, loss_items = compute_loss(pred, targets.to(device), model)  # loss scaled by batch_size
                 if rank != -1:
@@ -295,11 +296,11 @@ def train(hyp, opt, device, tb_writer=None):
 
                 # Plot
                 if ni < 3:
-                    f = str(log_dir / ('train_batch%g.jpg' % ni))  # filename
+                    f = str(log_dir / f'train_batch{ni}.jpg')  # filename
                     result = plot_images(images=imgs, targets=targets, paths=paths, fname=f)
-                    if tb_writer and result is not None:
-                        tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
-                        # tb_writer.add_graph(model, imgs)  # add model to tensorboard
+                    # if tb_writer and result is not None:
+                    # tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
+                    # tb_writer.add_graph(model, imgs)  # add model to tensorboard
 
             # end batch ------------------------------------------------------------------------------------------------
 
@@ -314,33 +315,35 @@ def train(hyp, opt, device, tb_writer=None):
                 ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride'])
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
-                if final_epoch:  # replot predictions
-                    [os.remove(x) for x in glob.glob(str(log_dir / 'test_batch*_pred.jpg')) if os.path.exists(x)]
                 results, maps, times = test.test(opt.data,
                                                  batch_size=total_batch_size,
                                                  imgsz=imgsz_test,
                                                  model=ema.ema,
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
-                                                 save_dir=log_dir)
+                                                 save_dir=log_dir,
+                                                 plots=epoch == 0 or final_epoch,  # plot first and last
+                                                 log_imgs=opt.log_imgs)
 
             # Write
             with open(results_file, 'a') as f:
-                f.write(s + '%10.4g' * 7 % results + '\n')  # P, R, mAP, F1, test_losses=(GIoU, obj, cls)
+                f.write(s + '%10.4g' * 7 % results + '\n')  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
             if len(opt.name) and opt.bucket:
                 os.system('gsutil cp %s gs://%s/results/results%s.txt' % (results_file, opt.bucket, opt.name))
 
-            # Tensorboard
-            if tb_writer:
-                tags = ['train/giou_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
-                        'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
-                        'val/giou_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
-                        'x/lr0', 'x/lr1', 'x/lr2']  # params
-                for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
-                    tb_writer.add_scalar(tag, x, epoch)
+            # Log
+            tags = ['train/giou_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
+                    'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+                    'val/giou_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
+                    'x/lr0', 'x/lr1', 'x/lr2']  # params
+            for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
+                if tb_writer:
+                    tb_writer.add_scalar(tag, x, epoch)  # tensorboard
+                if wandb:
+                    wandb.log({tag: x})  # W&B
 
             # Update best mAP
-            fi = fitness(np.array(results).reshape(1, -1))  # fitness_i = weighted combination of [P, R, mAP, F1]
+            fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             if fi > best_fitness:
                 best_fitness = fi
 
@@ -352,7 +355,8 @@ def train(hyp, opt, device, tb_writer=None):
                             'best_fitness': best_fitness,
                             'training_results': f.read(),
                             'model': ema.ema,
-                            'optimizer': None if final_epoch else optimizer.state_dict()}
+                            'optimizer': None if final_epoch else optimizer.state_dict(),
+                            'wandb_id': wandb_run.id if wandb else None}
 
                 # Save last, best and delete
                 torch.save(ckpt, last)
@@ -382,12 +386,36 @@ def train(hyp, opt, device, tb_writer=None):
     return results
 
 
-def main():
-    parser = ultralytics(argparse.ArgumentParser())
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
+    parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
+    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
+    parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
+    parser.add_argument('--epochs', type=int, default=300)
+    parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
+    parser.add_argument('--rect', action='store_true', help='rectangular training')
+    parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
+    parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
+    parser.add_argument('--notest', action='store_true', help='only test final epoch')
+    parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
+    parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
+    parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
+    parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
+    parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
+    parser.add_argument('--name', default='', help='renames experiment folder exp{N} to exp{N}_{name} if supplied')
+    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
+    parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
+    parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
+    parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
+    parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
+    parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
+    parser.add_argument('--log-imgs', type=int, default=10, help='number of images for W&B logging, max 100')
+    parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
 
-    opt, _ = parser.parse_known_args()
-    print("Ultralytics options")
-    pretty_dict(opt.__dict__)
+    opt = parser.parse_args()
 
     # Set DDP variables
     opt.total_batch_size = opt.batch_size
@@ -414,9 +442,8 @@ def main():
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
         log_dir = increment_dir(Path(opt.logdir) / 'exp', opt.name)  # runs/exp1
 
-    device = select_device(opt.device, batch_size=opt.batch_size)
-
     # DDP mode
+    device = select_device(opt.device, batch_size=opt.batch_size)
     if opt.local_rank != -1:
         assert torch.cuda.device_count() > opt.local_rank
         torch.cuda.set_device(opt.local_rank)
@@ -425,51 +452,34 @@ def main():
         assert opt.batch_size % opt.world_size == 0, '--batch-size must be multiple of CUDA device count'
         opt.batch_size = opt.total_batch_size // opt.world_size
 
-    logger.info(opt)
+    # Hyperparameters
     with open(opt.hyp) as f:
         hyp = yaml.load(f, Loader=yaml.FullLoader)  # load hyps
+        if 'box' not in hyp:
+            warn('Compatibility: %s missing "box" which was renamed from "giou" in %s' %
+                 (opt.hyp, 'https://github.com/ultralytics/yolov5/pull/1120'))
+            hyp['box'] = hyp.pop('giou')
 
     # Train
+    logger.info(opt)
     if not opt.evolve:
-        tb_writer = None
+        tb_writer, wandb = None, None  # init loggers
         if opt.global_rank in [-1, 0]:
-            logger.info('Start Tensorboard with "tensorboard --logdir %s", view at http://localhost:6006/' % opt.logdir)
+            # Tensorboard
+            logger.info(f'Start Tensorboard with "tensorboard --logdir {opt.logdir}", view at http://localhost:6006/')
             tb_writer = SummaryWriter(log_dir=log_dir)  # runs/exp0
 
-        train(hyp, opt, device, tb_writer)
-        torch.cuda.empty_cache()
+            # W&B
+            try:
+                import wandb
 
-        with open(opt.data) as f:
-            data_dict = yaml.load(f, Loader=yaml.FullLoader)  # data dict
-        train_path = data_dict['train']
-        test_path = data_dict['val']
-        root_dir = Path(log_dir).resolve()
-        if (root_dir / "weights" / "best.pt").exists():
-            weights_path = (root_dir / "weights" / "best.pt")
-        else:
-            weights_path = (root_dir / "weights" / "last.pt")
-        print(f"Testing with weights from {weights_path}")
-        detection_info_dict = {
-            "weights": str(weights_path),
-            "source": train_path,
-            "output": str(root_dir / "results" / "train" / "img"),
-            "img_size": opt.img_size[0],
-            "conf_thres": 0.5,
-            "iou_thres": 0.5,
-            "device": "",
-            "view_img": False,
-            "save_txt": True,
-            "agnostic_nms": False,
-            "augment": False,
-            "update": False,
-            "classes": None,
-        }
+                assert os.environ.get('WANDB_DISABLED') != 'true'
+                logger.info("Weights & Biases logging enabled, to disable set os.environ['WANDB_DISABLED'] = 'true'")
+            except (ImportError, AssertionError):
+                opt.log_imgs = 0
+                logger.info("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")
 
-        with torch.no_grad():
-            detect(detection_info_dict)
-            detection_info_dict["source"] = test_path
-            detection_info_dict["output"] = str(root_dir / "results" / "test" / "img")
-            detect(detection_info_dict)
+        train(hyp, opt, device, tb_writer, wandb)
 
     # Evolve hyperparameters (optional)
     else:
@@ -481,7 +491,7 @@ def main():
                 'warmup_epochs': (1, 0.0, 5.0),  # warmup epochs (fractions ok)
                 'warmup_momentum': (1, 0.0, 0.95),  # warmup initial momentum
                 'warmup_bias_lr': (1, 0.0, 0.2),  # warmup initial bias lr
-                'giou': (1, 0.02, 0.2),  # GIoU loss gain
+                'box': (1, 0.02, 0.2),  # box loss gain
                 'cls': (1, 0.2, 4.0),  # cls loss gain
                 'cls_pw': (1, 0.5, 2.0),  # cls BCELoss positive_weight
                 'obj': (1, 0.2, 4.0),  # obj loss gain (scale with pixels)
@@ -506,7 +516,7 @@ def main():
         assert opt.local_rank == -1, 'DDP mode not implemented for --evolve'
         opt.notest, opt.nosave = True, True  # only test/save final epoch
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
-        yaml_file = Path('runs/evolve/hyp_evolved.yaml')  # save best result here
+        yaml_file = Path(opt.logdir) / 'evolve' / 'hyp_evolved.yaml'  # save best result here
         if opt.bucket:
             os.system('gsutil cp gs://%s/evolve.txt .' % opt.bucket)  # download evolve.txt if exists
 
@@ -550,157 +560,5 @@ def main():
 
         # Plot results
         plot_evolution(yaml_file)
-        print('Hyperparameter evolution complete. Best results saved as: %s\nCommand to train a new model with these '
-              'hyperparameters: $ python train.py --hyp %s' % (yaml_file, yaml_file))
-
-
-def ultralytics(parser):
-    parser.add_argument('--weights', type=str, default='weights/yolov5s.pt', help='initial weights path')
-    parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
-    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
-    parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
-    parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[992, 992], help='[train, test] image sizes')
-    parser.add_argument('--rect', default=True, action='store_true', help='rectangular training')
-    parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
-    parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
-    parser.add_argument('--notest', action='store_true', help='only test final epoch')
-    parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
-    parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
-    parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
-    parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
-    parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
-    parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
-    parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
-    parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
-    parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
-    parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
-    parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
-    parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
-    return parser
-
-
-def nanovare(parser):
-    parser.add_argument('--pipeline-name', default="training_default", help='Name of the pipeline')
-    parser.add_argument('--init-supervisely', choices=["zoe", "vincent", "zoe+vincent"],
-                        help=f'Download, check integrity and merge a filtered supervisely dataset')
-    parser.add_argument('--init-yolo', action='store_true',
-                        help='Convert a supervisely dataset to a yolo dataset')
-    parser.add_argument('--color', default="gray", choices=["bgr", "gray", "green"],
-                        help='(ONLY IF --init-yolo)')
-    parser.add_argument('--copy-pipeline',
-                        help='Choose the same dataset from another pipeline for comparison (ONLY IF --init-yolo)')
-    parser.add_argument('--run-train', action='store_true', help='Train')
-    return parser
-
-
-def pretty_dict(d, indent=0):
-    for key, value in d.items():
-        print('\t' * indent + str(key))
-        if isinstance(value, dict):
-            pretty_dict(value, indent + 1)
-        else:
-            print('\t' * (indent + 1) + str(value))
-
-
-if __name__ == '__main__':
-    nanovare_parser = nanovare(argparse.ArgumentParser())
-    ultralytics_parser = ultralytics(argparse.ArgumentParser())
-    nanovare_opt, nanovare_unknown = nanovare_parser.parse_known_args()
-    ultralytics_opt, ultralytics_unknown = ultralytics_parser.parse_known_args()
-    # Ultralytics unknown args should be nanovare known args and vice-versa
-    # Otherwise abort
-    nanovare_parser.parse_args(ultralytics_unknown)
-    ultralytics_parser.parse_args(nanovare_unknown)
-
-    if not ultralytics_unknown:
-        main()
-    else:
-        import sys
-
-        from nanovare_casa_core.utils import supervisely as sly
-        from nanovare_casa_core.utils import constants
-        from dotenv import load_dotenv
-
-        import make_nanovare_yolo_data
-
-        load_dotenv()
-        print("Nanovare options")
-        pretty_dict(nanovare_opt.__dict__)
-
-        pipeline_name = nanovare_opt.pipeline_name
-
-        training_data_path = Path(os.getenv("ANALYSIS_PATH_DATA", "data")).resolve()
-        supervisely_root_dir = Path(os.getenv("SUPERVISELY_PATH_DATA", training_data_path / "supervisely")).resolve()
-        yolo_root_dir = training_data_path / "yolo" / pipeline_name
-        yolo_root_dir.mkdir(parents=True, exist_ok=True)
-        log_dir = yolo_root_dir / "runs"
-        data_dir = yolo_root_dir / "data.yaml"
-
-        remote_dataset_name_id = dict(map(
-            lambda x: (x.id, x.name),
-            sly.Api(token=os.getenv("SUPERVISELY_API_KEY")).dataset.get_list(constants.SUPERVISELY_LOCALISATION_PROJECT_ID))
-        )
-
-        if nanovare_opt.init_supervisely:
-            print("\n=========================     INIT SUPERVISELY DATASET     =================================")
-
-            dataset_vincent = ["2020_01_15", "2020_01_17", "2020_01_21", "2020_01_22"]
-            dataset_zoe = ["2020_01_24", "2020_01_23", "2020_01_16"]
-            if nanovare_opt.init_supervisely == "zoe":
-                dataset = dataset_zoe
-            elif nanovare_opt.init_supervisely == "vincent":
-                dataset = dataset_vincent
-            else:
-                dataset = dataset_zoe + dataset_vincent
-            dataset_filter_id = list(
-                dict(filter(lambda x: x[1] in dataset, remote_dataset_name_id.items())))
-            make_nanovare_yolo_data.init_supervisely_dataset(pipeline_name,
-                                                             supervisely_root_dir,
-                                                             dataset_filter_id=dataset_filter_id)
-            supervisely_data_dir = make_nanovare_yolo_data.get_supervisely_data_dir(pipeline_name, supervisely_root_dir)
-            print(f"From remote supervisely to {supervisely_data_dir}")
-
-        if nanovare_opt.init_yolo:
-            supervisely_data_dir = make_nanovare_yolo_data.get_supervisely_data_dir(pipeline_name, supervisely_root_dir)
-            print("\n=========================     INIT YOLO DATASET     =================================")
-            print(f"FROM {supervisely_data_dir} TO {Path(yolo_root_dir)}")
-
-            if nanovare_opt.copy_pipeline:
-                copy_dir = (yolo_root_dir / ".." / nanovare_opt.copy_pipeline).resolve()
-            else:
-                copy_dir = None
-
-            make_nanovare_yolo_data.convert_supervisely_to_yolo(
-                supervisely_data_dir=supervisely_data_dir,
-                yolo_data_dir=yolo_root_dir,
-                color=nanovare_opt.color,
-                copy_dir=copy_dir
-            )
-
-        if nanovare_opt.run_train:
-            print(f"Pipeline name {pipeline_name}")
-            print("=========================     BEGIN TRAINING      =================================")
-            print(f"From yolo data directory {yolo_root_dir}")
-            images = Path(yolo_root_dir) / "images"
-            labels = Path(yolo_root_dir) / "labels"
-            data_dict = dict(
-                nc=1,
-                names=['sperm'],
-                train=(images / "train").resolve().as_posix(),
-                val=(images / "val").resolve().as_posix()
-            )
-            train_name = list(map(lambda x: x.stem, list((images / "train").glob("*.jpg"))))
-            valid_name = list(map(lambda x: x.stem, list((images / "valid").glob("*.jpg"))))
-            assert set(valid_name) & set(train_name) == set()
-
-            yaml.dump(data_dict, open(data_dir, 'w'))
-            if "--data" not in sys.argv:
-                sys.argv += ["--data", data_dir.as_posix()]
-            if "--logdir" not in sys.argv:
-                sys.argv += ["--logdir", log_dir.as_posix()]
-
-            main()
+        print(f'Hyperparameter evolution complete. Best results saved as: {yaml_file}\n'
+              f'Command to train a new model with these hyperparameters: $ python train.py --hyp {yaml_file}')
