@@ -36,7 +36,7 @@ def attempt_download(weights):
         #    return
 
         try:  # GitHub
-            url = 'https://github.com/ultralytics/yolov5/releases/download/v3.0/' + file
+            url = 'https://github.com/ultralytics/yolov5/releases/download/v3.1/' + file
             print('Downloading %s to %s...' % (url, weights))
             torch.hub.download_url_to_file(url, weights)
             assert os.path.exists(weights) and os.path.getsize(weights) > 1E6  # check
