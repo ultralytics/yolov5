@@ -46,7 +46,8 @@ $ pip install -r requirements.txt
 
 ## Tutorials
 
-* [Train Custom Data](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data)
+* [Train Custom Data](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data) (🚀  recommended)
+* [Weights & Biases Logging](https://github.com/ultralytics/yolov5/issues/1289) (🚀  NEW)
 * [Multi-GPU Training](https://github.com/ultralytics/yolov5/issues/475)
 * [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)
 * [ONNX and TorchScript Export](https://github.com/ultralytics/yolov5/issues/251)
