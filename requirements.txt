@@ -1,17 +1,17 @@
 # pip install -r requirements.txt
---find-links https://download.pytorch.org/whl/torch_stable.html
+
 
 # base ----------------------------------------
 Cython
 matplotlib>=3.2.2
 numpy>=1.18.5
-opencv-python==3.4.11.43 # Due to core should be 3.4.11.43 but yolov5 recommends >=4.1.2 (Actually compatible with 3.4.11.43)
+opencv-python>=3.4.11,<4.0.0 # Due to core should be 3.4.11.43 but yolov5 recommends >=4.1.2 (Actually compatible with 3.4.11.43)
 pillow
 PyYAML>=5.3
 scipy>=1.4.1
 tensorboard>=2.2
-torch==1.6.0 # Not yet compatible with 1.7
-torchvision==0.7.0 # Not yet compatible with 0.8
+torch>=1.6,<1.7.0 # Not yet compatible with 1.7
+torchvision>=0.7,<0.8.0 # Not yet compatible with 0.8
 tqdm>=4.41.0
 
 # coco ----------------------------------------
