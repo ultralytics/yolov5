@@ -10,9 +10,11 @@ import os
 
 import torch
 
-from models.common import NMS
 from models.yolo import Model
+from utils.general import set_logging
 from utils.google_utils import attempt_download
+
+set_logging()
 
 
 def create(name, pretrained, channels, classes):
@@ -27,23 +29,24 @@ def create(name, pretrained, channels, classes):
     Returns:
         pytorch model
     """
-    config = os.path.join(os.path.dirname(__file__), 'models', '%s.yaml' % name)  # model.yaml path
+    config = os.path.join(os.path.dirname(__file__), 'models', f'{name}.yaml')  # model.yaml path
     try:
         model = Model(config, channels, classes)
         if pretrained:
-            ckpt = '%s.pt' % name  # checkpoint filename
-            attempt_download(ckpt)  # download if not found locally
-            state_dict = torch.load(ckpt, map_location=torch.device('cpu'))['model'].float().state_dict()  # to FP32
+            fname = f'{name}.pt'  # checkpoint filename
+            attempt_download(fname)  # download if not found locally
+            ckpt = torch.load(fname, map_location=torch.device('cpu'))  # load
+            state_dict = ckpt['model'].float().state_dict()  # to FP32
             state_dict = {k: v for k, v in state_dict.items() if model.state_dict()[k].shape == v.shape}  # filter
             model.load_state_dict(state_dict, strict=False)  # load
-
-            model.add_nms()  # add NMS module
-            model.eval()
+            if len(ckpt['model'].names) == classes:
+                model.names = ckpt['model'].names  # set class names attribute
+            # model = model.autoshape()  # for autoshaping of PIL/cv2/np inputs and NMS
         return model
 
     except Exception as e:
         help_url = 'https://github.com/ultralytics/yolov5/issues/36'
-        s = 'Cache maybe be out of date, deleting cache and retrying may solve this. See %s for help.' % help_url
+        s = 'Cache maybe be out of date, try force_reload=True. See %s for help.' % help_url
         raise Exception(s) from e
 
 
@@ -101,3 +104,15 @@ def yolov5x(pretrained=False, channels=3, classes=80):
         pytorch model
     """
     return create('yolov5x', pretrained, channels, classes)
+
+
+if __name__ == '__main__':
+    model = create(name='yolov5s', pretrained=True, channels=3, classes=80)  # example
+    model = model.fuse().eval().autoshape()  # for autoshaping of PIL/cv2/np inputs and NMS
+
+    # Verify inference
+    from PIL import Image
+
+    img = Image.open('inference/images/zidane.jpg')
+    y = model(img)
+    print(y[0].shape)

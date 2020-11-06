@@ -14,12 +14,15 @@ torch>=1.6,<1.7.0 # Not yet compatible with 1.7
 torchvision>=0.7,<0.8.0 # Not yet compatible with 0.8
 tqdm>=4.41.0
 
+# logging -------------------------------------
+# wandb
+
 # coco ----------------------------------------
 # pycocotools>=2.0
 
 # export --------------------------------------
 # packaging  # for coremltools
-# coremltools==4.0b4
+# coremltools==4.0
 # onnx>=1.7.0
 # scikit-learn==0.19.2  # for coreml quantization
 
