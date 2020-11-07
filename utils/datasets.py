@@ -1,13 +1,15 @@
 import glob
+import math
 import os
 import random
 import shutil
 import time
+from itertools import repeat
+from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from threading import Thread
 
 import cv2
-import math
 import numpy as np
 import torch
 from PIL import Image, ExifTags
@@ -474,10 +476,11 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.imgs = [None] * n
         if cache_images:
             gb = 0  # Gigabytes of cached images
-            pbar = tqdm(range(len(self.img_files)), desc='Caching images')
             self.img_hw0, self.img_hw = [None] * n, [None] * n
-            for i in pbar:  # max 10k images
-                self.imgs[i], self.img_hw0[i], self.img_hw[i] = load_image(self, i)  # img, hw_original, hw_resized
+            results = ThreadPool(8).imap_unordered(lambda x: load_image(*x), zip(repeat(self), range(n)))  # 8 threads
+            pbar = tqdm(enumerate(results), total=n)
+            for i, x in pbar:
+                self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
                 gb += self.imgs[i].nbytes
                 pbar.desc = 'Caching images (%.1fGB)' % (gb / 1E9)
 
