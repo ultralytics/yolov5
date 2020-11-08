@@ -428,7 +428,7 @@ if __name__ == '__main__':
     # Resume
     if opt.resume:  # resume an interrupted run
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
-        log_dir = Path(ckpt).parent.parent  # runs/exp0
+        log_dir = Path(ckpt).parent.parent  # runs/train/exp0
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         with open(log_dir / 'opt.yaml') as f:
             opt = argparse.Namespace(**yaml.load(f, Loader=yaml.FullLoader))  # replace
@@ -467,7 +467,7 @@ if __name__ == '__main__':
         if opt.global_rank in [-1, 0]:
             # Tensorboard
             logger.info(f'Start Tensorboard with "tensorboard --logdir {opt.logdir}", view at http://localhost:6006/')
-            tb_writer = SummaryWriter(log_dir=log_dir)  # runs/exp0
+            tb_writer = SummaryWriter(log_dir=log_dir)  # runs/train/exp0
 
             # W&B
             try:

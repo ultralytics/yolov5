@@ -1268,7 +1268,7 @@ def plot_results_overlay(start=0, stop=0):  # from utils.general import *; plot_
 
 
 def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
-    # from utils.general import *; plot_results(save_dir='runs/exp0')
+    # from utils.general import *; plot_results(save_dir='runs/train/exp0')
     # Plot training 'results*.txt' as seen in https://github.com/ultralytics/yolov5#reproduce-our-training
     fig, ax = plt.subplots(2, 5, figsize=(12, 6))
     ax = ax.ravel()
