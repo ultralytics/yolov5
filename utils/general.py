@@ -955,9 +955,15 @@ def increment_dir(dir, comment=''):
     # Increments a directory runs/exp1 --> runs/exp2_comment
     n = 0  # number
     dir = str(Path(dir))  # os-agnostic
+    if os.path.isdir(dir):
+        stem = ''
+        dir += os.sep  # removed by Path
+    else:
+        stem = Path(dir).stem
+
     dirs = sorted(glob.glob(dir + '*'))  # directories
     if dirs:
-        matches = [re.search(r"exp(\d+)", d) for d in dirs]
+        matches = [re.search(r"%s(\d+)" % stem, d) for d in dirs]
         idxs = [int(m.groups()[0]) for m in matches if m]
         if idxs:
             n = max(idxs) + 1  # increment
