@@ -1,10 +1,9 @@
 import argparse
 import logging
+import math
 import sys
 from copy import deepcopy
 from pathlib import Path
-
-import math
 
 sys.path.append('./')  # to run '$ python *.py' files in subdirectories
 logger = logging.getLogger(__name__)
