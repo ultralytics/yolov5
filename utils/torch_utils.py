@@ -1,9 +1,9 @@
 import logging
+import math
 import os
 import time
 from copy import deepcopy
 
-import math
 import torch
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
@@ -39,14 +39,13 @@ def select_device(device='', batch_size=None):
         if ng > 1 and batch_size:  # check that batch_size is compatible with device_count
             assert batch_size % ng == 0, 'batch-size %g not multiple of GPU count %g' % (batch_size, ng)
         x = [torch.cuda.get_device_properties(i) for i in range(ng)]
-        s = 'Using CUDA '
+        s = f'Using torch {torch.__version__} '
         for i in range(0, ng):
             if i == 1:
                 s = ' ' * len(s)
-            logger.info("%sdevice%g _CudaDeviceProperties(name='%s', total_memory=%dMB)" %
-                        (s, i, x[i].name, x[i].total_memory / c))
+            logger.info("%sCUDA:%g (%s, %dMB)" % (s, i, x[i].name, x[i].total_memory / c))
     else:
-        logger.info('Using CPU')
+        logger.info(f'Using torch {torch.__version__} CPU')
 
     logger.info('')  # skip a line
     return torch.device('cuda:0' if cuda else 'cpu')
@@ -143,7 +142,7 @@ def model_info(model, verbose=False):
         from thop import profile
         flops = profile(deepcopy(model), inputs=(torch.zeros(1, 3, 64, 64),), verbose=False)[0] / 1E9 * 2
         fs = ', %.1f GFLOPS' % (flops * 100)  # 640x640 FLOPS
-    except:
+    except ImportError:
         fs = ''
 
     logger.info(
