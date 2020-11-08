@@ -262,6 +262,7 @@ def test(data,
             print('ERROR: pycocotools unable to run: %s' % e)
 
     # Return results
+    print('Results saved to %s' % save_dir)
     model.float()  # for training
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
@@ -307,8 +308,6 @@ if __name__ == '__main__':
              save_txt=opt.save_txt,
              save_conf=opt.save_conf,
              )
-
-        print('Results saved to %s' % opt.save_dir)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         for weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
