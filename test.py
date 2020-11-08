@@ -2,7 +2,6 @@ import argparse
 import glob
 import json
 import os
-import shutil
 from pathlib import Path
 
 import numpy as np
@@ -12,9 +11,9 @@ from tqdm import tqdm
 
 from models.experimental import attempt_load
 from utils.datasets import create_dataloader
-from utils.general import (
-    coco80_to_coco91_class, check_dataset, check_file, check_img_size, compute_loss, non_max_suppression, scale_coords,
-    xyxy2xywh, clip_coords, plot_images, xywh2xyxy, box_iou, output_to_target, ap_per_class, set_logging)
+from utils.general import coco80_to_coco91_class, check_dataset, check_file, check_img_size, compute_loss, \
+    non_max_suppression, scale_coords, xyxy2xywh, clip_coords, plot_images, xywh2xyxy, box_iou, output_to_target, \
+    ap_per_class, set_logging, increment_dir
 from utils.torch_utils import select_device, time_synchronized
 
 
@@ -46,16 +45,11 @@ def test(data,
         device = select_device(opt.device, batch_size=batch_size)
         save_txt = opt.save_txt  # save *.txt labels
 
-        # Remove previous
-        if os.path.exists(save_dir):
-            shutil.rmtree(save_dir)  # delete dir
-        os.makedirs(save_dir)  # make new dir
-
-        if save_txt:
-            out = save_dir / 'autolabels'
-            if os.path.exists(out):
-                shutil.rmtree(out)  # delete dir
-            os.makedirs(out)  # make new dir
+        # Directories
+        if save_dir == Path('runs/test'):  # if default
+            os.makedirs('runs/test', exist_ok=True)  # make base
+            save_dir = Path(increment_dir(save_dir / 'exp', opt.name))  # increment run
+        os.makedirs(save_dir / 'labels' if save_txt else save_dir, exist_ok=True)  # make new dir
 
         # Load model
         model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -144,8 +138,8 @@ def test(data,
                 x[:, :4] = scale_coords(img[si].shape[1:], x[:, :4], shapes[si][0], shapes[si][1])  # to original
                 for *xyxy, conf, cls in x:
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                    line = (cls, conf, *xywh) if save_conf else (cls, *xywh)  # label format
-                    with open(str(out / Path(paths[si]).stem) + '.txt', 'a') as f:
+                    line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
+                    with open(str(save_dir / 'labels' / Path(paths[si]).stem) + '.txt', 'a') as f:
                         f.write(('%g ' * len(line) + '\n') % line)
 
             # W&B logging
@@ -268,6 +262,7 @@ def test(data,
             print('ERROR: pycocotools unable to run: %s' % e)
 
     # Return results
+    print('Results saved to %s' % save_dir)
     model.float()  # for training
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
@@ -292,6 +287,7 @@ if __name__ == '__main__':
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-dir', type=str, default='runs/test', help='directory to save results')
+    parser.add_argument('--name', default='', help='name to append to --save-dir: i.e. runs/{N} -> runs/{N}_{name}')
     opt = parser.parse_args()
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
@@ -312,8 +308,6 @@ if __name__ == '__main__':
              save_txt=opt.save_txt,
              save_conf=opt.save_conf,
              )
-
-        print('Results saved to %s' % opt.save_dir)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         for weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:

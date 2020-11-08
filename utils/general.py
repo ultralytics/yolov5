@@ -955,9 +955,15 @@ def increment_dir(dir, comment=''):
     # Increments a directory runs/exp1 --> runs/exp2_comment
     n = 0  # number
     dir = str(Path(dir))  # os-agnostic
+    if os.path.isdir(dir):
+        stem = ''
+        dir += os.sep  # removed by Path
+    else:
+        stem = Path(dir).stem
+
     dirs = sorted(glob.glob(dir + '*'))  # directories
     if dirs:
-        matches = [re.search(r"exp(\d+)", d) for d in dirs]
+        matches = [re.search(r"%s(\d+)" % stem, d) for d in dirs]
         idxs = [int(m.groups()[0]) for m in matches if m]
         if idxs:
             n = max(idxs) + 1  # increment
@@ -1262,7 +1268,7 @@ def plot_results_overlay(start=0, stop=0):  # from utils.general import *; plot_
 
 
 def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
-    # from utils.general import *; plot_results(save_dir='runs/exp0')
+    # from utils.general import *; plot_results(save_dir='runs/train/exp0')
     # Plot training 'results*.txt' as seen in https://github.com/ultralytics/yolov5#reproduce-our-training
     fig, ax = plt.subplots(2, 5, figsize=(12, 6))
     ax = ax.ravel()

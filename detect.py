@@ -1,6 +1,5 @@
 import argparse
 import os
-import shutil
 import time
 from pathlib import Path
 
@@ -11,23 +10,25 @@ from numpy import random
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
-from utils.general import (
-    check_img_size, non_max_suppression, apply_classifier, scale_coords,
-    xyxy2xywh, plot_one_box, strip_optimizer, set_logging)
+from utils.general import check_img_size, non_max_suppression, apply_classifier, scale_coords, xyxy2xywh, \
+    plot_one_box, strip_optimizer, set_logging, increment_dir
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
 def detect(save_img=False):
-    out, source, weights, view_img, save_txt, imgsz = \
-        opt.save_dir, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
+    save_dir, source, weights, view_img, save_txt, imgsz = \
+        Path(opt.save_dir), opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source.isnumeric() or source.startswith(('rtsp://', 'rtmp://', 'http://')) or source.endswith('.txt')
+
+    # Directories
+    if save_dir == Path('runs/detect'):  # if default
+        os.makedirs('runs/detect', exist_ok=True)  # make base
+        save_dir = Path(increment_dir(save_dir / 'exp', opt.name))  # increment run
+    os.makedirs(save_dir / 'labels' if save_txt else save_dir, exist_ok=True)  # make new dir
 
     # Initialize
     set_logging()
     device = select_device(opt.device)
-    if os.path.exists(out):  # output dir
-        shutil.rmtree(out)  # delete dir
-    os.makedirs(out)  # make new dir
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
@@ -83,12 +84,12 @@ def detect(save_img=False):
         # Process detections
         for i, det in enumerate(pred):  # detections per image
             if webcam:  # batch_size >= 1
-                p, s, im0 = path[i], '%g: ' % i, im0s[i].copy()
+                p, s, im0 = Path(path[i]), '%g: ' % i, im0s[i].copy()
             else:
-                p, s, im0 = path, '', im0s
+                p, s, im0 = Path(path), '', im0s
 
-            save_path = str(Path(out) / Path(p).name)
-            txt_path = str(Path(out) / Path(p).stem) + ('_%g' % dataset.frame if dataset.mode == 'video' else '')
+            save_path = str(save_dir / p.name)
+            txt_path = str(save_dir / 'labels' / p.stem) + ('_%g' % dataset.frame if dataset.mode == 'video' else '')
             s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             if det is not None and len(det):
@@ -104,7 +105,7 @@ def detect(save_img=False):
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                        line = (cls, conf, *xywh) if opt.save_conf else (cls, *xywh)  # label format
+                        line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
                         with open(txt_path + '.txt', 'a') as f:
                             f.write(('%g ' * len(line) + '\n') % line)
 
@@ -139,7 +140,7 @@ def detect(save_img=False):
                     vid_writer.write(im0)
 
     if save_txt or save_img:
-        print('Results saved to %s' % Path(out))
+        print('Results saved to %s' % save_dir)
 
     print('Done. (%.3fs)' % (time.time() - t0))
 
@@ -147,15 +148,16 @@ def detect(save_img=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
-    parser.add_argument('--source', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
+    parser.add_argument('--source', type=str, default='data/images', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='display results')
-    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    parser.add_argument('--save-txt', action='store_false', help='save results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
-    parser.add_argument('--save-dir', type=str, default='inference/output', help='directory to save results')
+    parser.add_argument('--save-dir', type=str, default='runs/detect', help='directory to save results')
+    parser.add_argument('--name', default='', help='name to append to --save-dir: i.e. runs/{N} -> runs/{N}_{name}')
     parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --class 0, or --class 0 2 3')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
