@@ -262,7 +262,8 @@ def test(data,
             print('ERROR: pycocotools unable to run: %s' % e)
 
     # Return results
-    print('Results saved to %s' % save_dir)
+    if not training:
+        print('Results saved to %s' % save_dir)
     model.float()  # for training
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
