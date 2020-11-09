@@ -66,10 +66,10 @@ jobs:
           python train.py --img 256 --batch 8 --weights weights/${{ matrix.model }}.pt --cfg models/${{ matrix.model }}.yaml --epochs 1 --device $di
           # detect
           python detect.py --weights weights/${{ matrix.model }}.pt --device $di
-          python detect.py --weights runs/exp0/weights/last.pt --device $di
+          python detect.py --weights runs/train/exp0/weights/last.pt --device $di
           # test
           python test.py --img 256 --batch 8 --weights weights/${{ matrix.model }}.pt --device $di
-          python test.py --img 256 --batch 8 --weights runs/exp0/weights/last.pt --device $di
+          python test.py --img 256 --batch 8 --weights runs/train/exp0/weights/last.pt --device $di
 
           python models/yolo.py --cfg models/${{ matrix.model }}.yaml  # inspect
           python models/export.py --img 256 --batch 1 --weights weights/${{ matrix.model }}.pt  # export

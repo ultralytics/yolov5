@@ -1,5 +1,6 @@
 import argparse
 import logging
+import math
 import os
 import random
 import shutil
@@ -7,7 +8,6 @@ import time
 from pathlib import Path
 from warnings import warn
 
-import math
 import numpy as np
 import torch.distributed as dist
 import torch.nn as nn
@@ -404,14 +404,14 @@ if __name__ == '__main__':
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
-    parser.add_argument('--name', default='', help='renames experiment folder exp{N} to exp{N}_{name} if supplied')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
-    parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
+    parser.add_argument('--logdir', type=str, default='runs/train', help='logging directory')
+    parser.add_argument('--name', default='', help='name to append to --save-dir: i.e. runs/{N} -> runs/{N}_{name}')
     parser.add_argument('--log-imgs', type=int, default=10, help='number of images for W&B logging, max 100')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
 
@@ -428,7 +428,7 @@ if __name__ == '__main__':
     # Resume
     if opt.resume:  # resume an interrupted run
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
-        log_dir = Path(ckpt).parent.parent  # runs/exp0
+        log_dir = Path(ckpt).parent.parent  # runs/train/exp0
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         with open(log_dir / 'opt.yaml') as f:
             opt = argparse.Namespace(**yaml.load(f, Loader=yaml.FullLoader))  # replace
@@ -467,14 +467,13 @@ if __name__ == '__main__':
         if opt.global_rank in [-1, 0]:
             # Tensorboard
             logger.info(f'Start Tensorboard with "tensorboard --logdir {opt.logdir}", view at http://localhost:6006/')
-            tb_writer = SummaryWriter(log_dir=log_dir)  # runs/exp0
+            tb_writer = SummaryWriter(log_dir=log_dir)  # runs/train/exp0
 
             # W&B
             try:
                 import wandb
 
                 assert os.environ.get('WANDB_DISABLED') != 'true'
-                logger.info("Weights & Biases logging enabled, to disable set os.environ['WANDB_DISABLED'] = 'true'")
             except (ImportError, AssertionError):
                 opt.log_imgs = 0
                 logger.info("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")

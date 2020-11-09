@@ -25,7 +25,7 @@ end=$(date +%s)
 runtime=$((end - start))
 echo "Completed in" $runtime "seconds"
 
-echo "Spliting dataset..."
+echo "Splitting dataset..."
 python3 - "$@" <<END
 import xml.etree.ElementTree as ET
 import pickle

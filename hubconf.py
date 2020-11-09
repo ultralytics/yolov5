@@ -113,6 +113,6 @@ if __name__ == '__main__':
     # Verify inference
     from PIL import Image
 
-    img = Image.open('inference/images/zidane.jpg')
+    img = Image.open('data/images/zidane.jpg')
     y = model(img)
     print(y[0].shape)

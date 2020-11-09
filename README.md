@@ -70,7 +70,7 @@ YOLOv5 may be run in any of the following up-to-date verified environments (with
 
 ## Inference
 
-detect.py runs inference on a variety of sources, downloading models automatically from the [latest YOLOv5 release](https://github.com/ultralytics/yolov5/releases) and saving results to `inference/output`.
+detect.py runs inference on a variety of sources, downloading models automatically from the [latest YOLOv5 release](https://github.com/ultralytics/yolov5/releases) and saving results to `runs/detect`.
 ```bash
 $ python detect.py --source 0  # webcam
                             file.jpg  # image 
@@ -82,20 +82,20 @@ $ python detect.py --source 0  # webcam
                             http://112.50.243.8/PLTV/88888888/224/3221225900/1.m3u8  # http stream
 ```
 
-To run inference on example images in `inference/images`:
+To run inference on example images in `data/images`:
 ```bash
-$ python detect.py --source inference/images --weights yolov5s.pt --conf 0.25
+$ python detect.py --source data/images --weights yolov5s.pt --conf 0.25
 
-Namespace(agnostic_nms=False, augment=False, classes=None, conf_thres=0.25, device='', img_size=640, iou_thres=0.45, output='inference/output', save_conf=False, save_txt=False, source='inference/images', update=False, view_img=False, weights='yolov5s.pt')
+Namespace(agnostic_nms=False, augment=False, classes=None, conf_thres=0.25, device='', img_size=640, iou_thres=0.45, output='runs/detect', save_conf=False, save_txt=False, source='data/images', update=False, view_img=False, weights='yolov5s.pt')
 Using CUDA device0 _CudaDeviceProperties(name='Tesla V100-SXM2-16GB', total_memory=16160MB)
 
 Downloading https://github.com/ultralytics/yolov5/releases/download/v3.0/yolov5s.pt to yolov5s.pt... 100%|██████████████| 14.5M/14.5M [00:00<00:00, 21.3MB/s]
 
 Fusing layers... 
 Model Summary: 140 layers, 7.45958e+06 parameters, 0 gradients
-image 1/2 yolov5/inference/images/bus.jpg: 640x480 4 persons, 1 buss, 1 skateboards, Done. (0.013s)
-image 2/2 yolov5/inference/images/zidane.jpg: 384x640 2 persons, 2 ties, Done. (0.013s)
-Results saved to yolov5/inference/output
+image 1/2 data/images/bus.jpg: 640x480 4 persons, 1 buss, 1 skateboards, Done. (0.013s)
+image 2/2 data/images/zidane.jpg: 384x640 2 persons, 2 ties, Done. (0.013s)
+Results saved to runs/detect/exp0
 Done. (0.124s)
 ```
 <img src="https://user-images.githubusercontent.com/26833433/97107365-685a8d80-16c7-11eb-8c2e-83aac701d8b9.jpeg" width="500">  
