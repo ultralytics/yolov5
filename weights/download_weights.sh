@@ -1,10 +1,10 @@
 #!/bin/bash
-# Download common models
+# Download latest model from https://github.com/ultralytics/yolov5/releases
 
-python -c "
-from utils.google_utils import *;
-attempt_download('weights/yolov5s.pt');
-attempt_download('weights/yolov5m.pt');
-attempt_download('weights/yolov5l.pt');
-attempt_download('weights/yolov5x.pt')
-"
+python - <<EOF
+from utils.google_utils import attempt_download
+
+for x in ['s', 'm', 'l', 'x']:
+    attempt_download(f'yolov5{x}.pt')
+
+EOF
