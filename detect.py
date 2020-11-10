@@ -17,15 +17,14 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 def detect(save_img=False):
     save_dir, source, weights, view_img, save_txt, imgsz = \
         Path(opt.save_dir), opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
-    webcam = source.isnumeric() or source.startswith(('rtsp://', 'rtmp://', 'http://')) or source.endswith('.txt')
+    webcam = source.isnumeric() or source.endswith('.txt') or \
+             source.lower().startswith(('rtsp://', 'rtmp://', 'http://'))
 
     # Directories
     if save_dir == Path('runs/detect'):  # if default
         save_dir.mkdir(parents=True, exist_ok=True) # make base
         save_dir = Path(increment_dir(save_dir / 'exp', opt.name))  # increment run
-    if save_txt:
-        save_dir = save_dir / 'labels'
-    save_dir.mkdir(parents=True, exist_ok=True) # make new dir
+    (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make new dir
 
     # Initialize
     set_logging()
