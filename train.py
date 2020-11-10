@@ -41,7 +41,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     wdir.mkdir(parents=True, exist_ok=True)
     last = wdir / 'last.pt'
     best = wdir / 'best.pt'
-    results_file = str(log_dir / 'results.txt')
+    results_file = log_dir / 'results.txt'
     epochs, batch_size, total_batch_size, weights, rank = \
         opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
 
