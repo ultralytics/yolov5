@@ -87,7 +87,7 @@ To run inference on example images in `data/images`:
 $ python detect.py --source data/images --weights yolov5s.pt --conf 0.25
 
 Namespace(agnostic_nms=False, augment=False, classes=None, conf_thres=0.25, device='', img_size=640, iou_thres=0.45, output='runs/detect', save_conf=False, save_txt=False, source='data/images', update=False, view_img=False, weights='yolov5s.pt')
-Using CUDA device0 _CudaDeviceProperties(name='Tesla V100-SXM2-16GB', total_memory=16160MB)
+Using torch 1.7.0+cu101 CUDA:0 (Tesla V100-SXM2-16GB, 16130MB)
 
 Downloading https://github.com/ultralytics/yolov5/releases/download/v3.0/yolov5s.pt to yolov5s.pt... 100%|██████████████| 14.5M/14.5M [00:00<00:00, 21.3MB/s]
 
