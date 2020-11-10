@@ -204,8 +204,8 @@ def test(data,
 
         # Plot images
         if plots and batch_i < 1:
-            f = save_dir / f'test_batch{batch_i}_gt.jpg'  # filename
-            plot_images(img, targets, paths, str(f), names)  # ground truth
+            f = save_dir / f'test_batch{batch_i}_labels.jpg'  # filename
+            plot_images(img, targets, paths, str(f), names)  # labels
             f = save_dir / f'test_batch{batch_i}_pred.jpg'
             plot_images(img, output_to_target(output, width, height), paths, str(f), names)  # predictions
 
@@ -250,9 +250,9 @@ def test(data,
             from pycocotools.cocoeval import COCOeval
 
             imgIds = [int(Path(x).stem) for x in dataloader.dataset.img_files]
-            cocoGt = COCO(glob.glob('../coco/annotations/instances_val*.json')[0])  # initialize COCO ground truth api
-            cocoDt = cocoGt.loadRes(str(file))  # initialize COCO pred api
-            cocoEval = COCOeval(cocoGt, cocoDt, 'bbox')
+            cocoAnno = COCO(glob.glob('../coco/annotations/instances_val*.json')[0])  # initialize COCO annotations api
+            cocoPred = cocoAnno.loadRes(str(file))  # initialize COCO pred api
+            cocoEval = COCOeval(cocoAnno, cocoPred, 'bbox')
             cocoEval.params.imgIds = imgIds  # image IDs to evaluate
             cocoEval.evaluate()
             cocoEval.accumulate()
