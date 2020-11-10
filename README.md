@@ -1,5 +1,5 @@
 <a href="https://apps.apple.com/app/id1452689527" target="_blank">
-<img src="https://user-images.githubusercontent.com/26833433/82944393-f7644d80-9f4f-11ea-8b87-1a5b04f555f1.jpg" width="1000"></a>
+<img src="https://user-images.githubusercontent.com/26833433/98699617-a1595a00-2377-11eb-8145-fc674eb9b1a7.jpg" width="1000"></a>
 &nbsp
 
 ![CI CPU testing](https://github.com/ultralytics/yolov5/workflows/CI%20CPU%20testing/badge.svg)
@@ -46,15 +46,16 @@ $ pip install -r requirements.txt
 
 ## Tutorials
 
-* [Train Custom Data](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data) (🚀  recommended)
-* [Weights & Biases Logging](https://github.com/ultralytics/yolov5/issues/1289) (🚀  NEW)
+* [Train Custom Data](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data)&nbsp; 🚀 RECOMMENDED
+* [Weights & Biases Logging](https://github.com/ultralytics/yolov5/issues/1289)&nbsp; 🌟 NEW
 * [Multi-GPU Training](https://github.com/ultralytics/yolov5/issues/475)
-* [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)
+* [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)&nbsp; ⭐ NEW
 * [ONNX and TorchScript Export](https://github.com/ultralytics/yolov5/issues/251)
 * [Test-Time Augmentation (TTA)](https://github.com/ultralytics/yolov5/issues/303)
 * [Model Ensembling](https://github.com/ultralytics/yolov5/issues/318)
 * [Model Pruning/Sparsity](https://github.com/ultralytics/yolov5/issues/304)
 * [Hyperparameter Evolution](https://github.com/ultralytics/yolov5/issues/607)
+* [Transfer Learning with Frozen Layers](https://github.com/ultralytics/yolov5/issues/1314)&nbsp; ⭐ NEW
 * [TensorRT Deployment](https://github.com/wang-xinyu/tensorrtx)
 
 
