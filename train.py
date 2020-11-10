@@ -38,10 +38,10 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     logger.info(f'Hyperparameters {hyp}')
     log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
     wdir = log_dir / 'weights'  # weights directory
-    os.makedirs(wdir, exist_ok=True)
+    wdir.mkdir(parents=True, exist_ok=True)
     last = wdir / 'last.pt'
     best = wdir / 'best.pt'
-    results_file = str(log_dir / 'results.txt')
+    results_file = log_dir / 'results.txt'
     epochs, batch_size, total_batch_size, weights, rank = \
         opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
 
@@ -121,7 +121,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     # Logging
     if wandb and wandb.run is None:
         id = ckpt.get('wandb_id') if 'ckpt' in locals() else None
-        wandb_run = wandb.init(config=opt, resume="allow", project="YOLOv5", name=os.path.basename(log_dir), id=id)
+        wandb_run = wandb.init(config=opt, resume="allow", project="YOLOv5", name=log_dir.stem, id=id)
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
@@ -371,7 +371,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
         n = opt.name if opt.name.isnumeric() else ''
         fresults, flast, fbest = log_dir / f'results{n}.txt', wdir / f'last{n}.pt', wdir / f'best{n}.pt'
         for f1, f2 in zip([wdir / 'last.pt', wdir / 'best.pt', results_file], [flast, fbest, fresults]):
-            if os.path.exists(f1):
+            if f1.exists():
                 os.rename(f1, f2)  # rename
                 if str(f2).endswith('.pt'):  # is *.pt
                     strip_optimizer(f2)  # strip optimizer
@@ -520,7 +520,7 @@ if __name__ == '__main__':
             os.system('gsutil cp gs://%s/evolve.txt .' % opt.bucket)  # download evolve.txt if exists
 
         for _ in range(300):  # generations to evolve
-            if os.path.exists('evolve.txt'):  # if evolve.txt exists: select best hyps and mutate
+            if Path('evolve.txt').exists():  # if evolve.txt exists: select best hyps and mutate
                 # Select parent(s)
                 parent = 'single'  # parent selection method: 'single' or 'weighted'
                 x = np.loadtxt('evolve.txt', ndmin=2)

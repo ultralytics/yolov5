@@ -1,5 +1,4 @@
 import argparse
-import os
 import time
 from pathlib import Path
 
@@ -18,13 +17,14 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 def detect(save_img=False):
     save_dir, source, weights, view_img, save_txt, imgsz = \
         Path(opt.save_dir), opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
-    webcam = source.isnumeric() or source.startswith(('rtsp://', 'rtmp://', 'http://')) or source.endswith('.txt')
+    webcam = source.isnumeric() or source.endswith('.txt') or \
+             source.lower().startswith(('rtsp://', 'rtmp://', 'http://'))
 
     # Directories
     if save_dir == Path('runs/detect'):  # if default
-        os.makedirs('runs/detect', exist_ok=True)  # make base
+        save_dir.mkdir(parents=True, exist_ok=True)  # make base
         save_dir = Path(increment_dir(save_dir / 'exp', opt.name))  # increment run
-    os.makedirs(save_dir / 'labels' if save_txt else save_dir, exist_ok=True)  # make new dir
+    (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make new dir
 
     # Initialize
     set_logging()
