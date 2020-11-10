@@ -22,7 +22,7 @@ def detect(save_img=False):
 
     # Directories
     if save_dir == Path('runs/detect'):  # if default
-        save_dir.mkdir(parents=True, exist_ok=True) # make base
+        save_dir.mkdir(parents=True, exist_ok=True)  # make base
         save_dir = Path(increment_dir(save_dir / 'exp', opt.name))  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make new dir
 

@@ -29,7 +29,7 @@ def create(name, pretrained, channels, classes):
     Returns:
         pytorch model
     """
-    config = Path(__file__).parent / 'models' / f'{name}.yaml' # model.yaml path
+    config = Path(__file__).parent / 'models' / f'{name}.yaml'  # model.yaml path
     try:
         model = Model(config, channels, classes)
         if pretrained:
