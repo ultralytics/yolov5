@@ -184,8 +184,12 @@ class LoadImages:  # for inference
             print('image %g/%g %s: ' % (self.count, self.nf, path), end='')
 
         # Rotation Valid
-        if rotation:
+        if rotation == '90':
             img0 = cv2.rotate(img0, 0)
+        if rotation == '180':
+            img0 = cv2.rotate(img0, 1)
+        if rotation == '270':
+            img0 = cv2.rotate(img0, 2)
 
         # Padded resize
         img = letterbox(img0, new_shape=self.img_size)[0]

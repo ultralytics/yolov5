@@ -134,8 +134,8 @@ def detect(save_img=False):
 
                         fourcc = 'mp4v'  # output video codec
                         fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                        w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)) if not rotation else int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                        h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) if not rotation else int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                        w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)) if not rotation or rotation == '180' else int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                        h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) if not rotation or rotation == '180' else int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
                     vid_writer.write(im0)
 
