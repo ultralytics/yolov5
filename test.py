@@ -47,9 +47,11 @@ def test(data,
 
         # Directories
         if save_dir == Path('runs/test'):  # if default
-            os.makedirs('runs/test', exist_ok=True)  # make base
+            save_dir.mkdir(parents=True, exist_ok=True) # make base
             save_dir = Path(increment_dir(save_dir / 'exp', opt.name))  # increment run
-        os.makedirs(save_dir / 'labels' if save_txt else save_dir, exist_ok=True)  # make new dir
+        if save_txt:
+            save_dir = save_dir / 'labels'
+        save_dir.mkdir(parents=True, exist_ok=True)  # make new dir
 
         # Load model
         model = attempt_load(weights, map_location=device)  # load FP32 model
