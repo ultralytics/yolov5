@@ -121,7 +121,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     # Logging
     if wandb and wandb.run is None:
         id = ckpt.get('wandb_id') if 'ckpt' in locals() else None
-        wandb_run = wandb.init(config=opt, resume="allow", project="YOLOv5", name=log_dir.stem, id=id)
+        wandb_run = wandb.init(config=opt, resume="allow", project=opt.project, name=log_dir.stem, id=id)
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
@@ -414,6 +414,7 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='', help='name to append to --save-dir: i.e. runs/{N} -> runs/{N}_{name}')
     parser.add_argument('--log-imgs', type=int, default=10, help='number of images for W&B logging, max 100')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
+    parser.add_argument('--project', type=str, default='YOLOv5', help='name of the project')
 
     opt = parser.parse_args()
 
