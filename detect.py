@@ -22,6 +22,7 @@ def detect(save_img=False):
 
     # Directories
     if save_dir == Path('runs/detect'):  # if default
+        save_dir = opt.project / save_dir
         save_dir.mkdir(parents=True, exist_ok=True)  # make base
         save_dir = Path(increment_dir(save_dir / 'exp', opt.name))  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make new dir
@@ -162,6 +163,8 @@ if __name__ == '__main__':
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--update', action='store_true', help='update all models')
+    parser.add_argument('--project', type=str, default='YOLOv5', help='name of the project: i.e. {project}/runs/{N}_{name}')
+
     opt = parser.parse_args()
     print(opt)
 

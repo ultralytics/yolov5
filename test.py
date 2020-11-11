@@ -47,6 +47,7 @@ def test(data,
 
         # Directories
         if save_dir == Path('runs/test'):  # if default
+            save_dir = opt.project / save_dir
             save_dir.mkdir(parents=True, exist_ok=True)  # make base
             save_dir = Path(increment_dir(save_dir / 'exp', opt.name))  # increment run
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make new dir
@@ -289,6 +290,8 @@ if __name__ == '__main__':
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-dir', type=str, default='runs/test', help='directory to save results')
     parser.add_argument('--name', default='', help='name to append to --save-dir: i.e. runs/{N} -> runs/{N}_{name}')
+    parser.add_argument('--project', type=str, default='YOLOv5', help='name of the project: i.e. {project}/runs/{N}_{name}')
+
     opt = parser.parse_args()
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file

@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 def train(hyp, opt, device, tb_writer=None, wandb=None):
     logger.info(f'Hyperparameters {hyp}')
-    log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
+    log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.project) / Path(opt.logdir) / 'evolve'  # logging directory
     wdir = log_dir / 'weights'  # weights directory
     wdir.mkdir(parents=True, exist_ok=True)
     last = wdir / 'last.pt'
@@ -414,7 +414,7 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='', help='name to append to --save-dir: i.e. runs/{N} -> runs/{N}_{name}')
     parser.add_argument('--log-imgs', type=int, default=10, help='number of images for W&B logging, max 100')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
-    parser.add_argument('--project', type=str, default='YOLOv5', help='name of the project')
+    parser.add_argument('--project', type=str, default='YOLOv5', help='name of the project: i.e. {project}/runs/{N}_{name}')
 
     opt = parser.parse_args()
 
@@ -441,7 +441,7 @@ if __name__ == '__main__':
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
-        log_dir = increment_dir(Path(opt.logdir) / 'exp', opt.name)  # runs/exp1
+        log_dir = increment_dir(Path(opt.project) / Path(opt.logdir) / 'exp', opt.name)  # runs/exp1
 
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
