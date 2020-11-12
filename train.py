@@ -326,7 +326,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                                                  dataloader=testloader,
                                                  save_dir=save_dir,
                                                  plots=epoch == 0 or final_epoch,  # plot first and last
-                                                 log_imgs=opt.log_imgs)
+                                                 log_imgs=opt.log_imgs if wandb else 0)
 
             # Write
             with open(results_file, 'a') as f:
@@ -478,7 +478,6 @@ if __name__ == '__main__':
 
                 assert os.environ.get('WANDB_DISABLED') != 'true'
             except (ImportError, AssertionError):
-                opt.log_imgs = 0
                 logger.info("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")
 
         train(hyp, opt, device, tb_writer, wandb)
