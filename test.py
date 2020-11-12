@@ -140,7 +140,7 @@ def test(data,
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                     line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                     with open(str(save_dir / 'labels' / Path(paths[si]).stem) + '.txt', 'a') as f:
-                        f.write(('%g ' * len(line) + '\n') % line)
+                        f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
             # W&B logging
             if len(wandb_images) < log_imgs:
