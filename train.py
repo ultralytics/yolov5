@@ -27,7 +27,7 @@ from utils.datasets import create_dataloader
 from utils.general import (
     torch_distributed_zero_first, labels_to_class_weights, plot_labels, check_anchors, labels_to_image_weights,
     compute_loss, plot_images, fitness, strip_optimizer, plot_results, get_latest_run, check_dataset, check_file,
-    check_git_status, check_img_size, increment_dir, print_mutation, plot_evolution, set_logging, init_seeds)
+    check_git_status, check_img_size, increment_path, print_mutation, plot_evolution, set_logging, init_seeds)
 from utils.google_utils import attempt_download
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts
 
@@ -36,19 +36,20 @@ logger = logging.getLogger(__name__)
 
 def train(hyp, opt, device, tb_writer=None, wandb=None):
     logger.info(f'Hyperparameters {hyp}')
-    log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
-    wdir = log_dir / 'weights'  # weights directory
-    wdir.mkdir(parents=True, exist_ok=True)
+    save_dir, epochs, batch_size, total_batch_size, weights, rank = \
+        opt.save_dir, opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
+
+    # Directories
+    wdir = save_dir / 'weights'
+    wdir.mkdir(parents=True, exist_ok=True)  # make dir
     last = wdir / 'last.pt'
     best = wdir / 'best.pt'
-    results_file = log_dir / 'results.txt'
-    epochs, batch_size, total_batch_size, weights, rank = \
-        opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
+    results_file = save_dir / 'results.txt'
 
     # Save run settings
-    with open(log_dir / 'hyp.yaml', 'w') as f:
+    with open(save_dir / 'hyp.yaml', 'w') as f:
         yaml.dump(hyp, f, sort_keys=False)
-    with open(log_dir / 'opt.yaml', 'w') as f:
+    with open(save_dir / 'opt.yaml', 'w') as f:
         yaml.dump(vars(opt), f, sort_keys=False)
 
     # Configure
@@ -120,8 +121,10 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
     # Logging
     if wandb and wandb.run is None:
-        id = ckpt.get('wandb_id') if 'ckpt' in locals() else None
-        wandb_run = wandb.init(config=opt, resume="allow", project="YOLOv5", name=log_dir.stem, id=id)
+        wandb_run = wandb.init(config=opt, resume="allow",
+                               project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
+                               name=save_dir.stem,
+                               id=ckpt.get('wandb_id') if 'ckpt' in locals() else None)
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
@@ -188,7 +191,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             c = torch.tensor(labels[:, 0])  # classes
             # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
             # model._initialize_biases(cf.to(device))
-            plot_labels(labels, save_dir=log_dir)
+            plot_labels(labels, save_dir=save_dir)
             if tb_writer:
                 # tb_writer.add_hparams(hyp, {})  # causes duplicate https://github.com/ultralytics/yolov5/pull/384
                 tb_writer.add_histogram('classes', c, 0)
@@ -215,7 +218,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     scaler = amp.GradScaler(enabled=cuda)
     logger.info('Image sizes %g train, %g test\n'
                 'Using %g dataloader workers\nLogging results to %s\n'
-                'Starting training for %g epochs...' % (imgsz, imgsz_test, dataloader.num_workers, log_dir, epochs))
+                'Starting training for %g epochs...' % (imgsz, imgsz_test, dataloader.num_workers, save_dir, epochs))
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
 
@@ -296,7 +299,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
                 # Plot
                 if ni < 3:
-                    f = str(log_dir / f'train_batch{ni}.jpg')  # filename
+                    f = str(save_dir / f'train_batch{ni}.jpg')  # filename
                     result = plot_images(images=imgs, targets=targets, paths=paths, fname=f)
                     # if tb_writer and result is not None:
                     # tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
@@ -321,7 +324,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                                                  model=ema.ema,
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
-                                                 save_dir=log_dir,
+                                                 save_dir=save_dir,
                                                  plots=epoch == 0 or final_epoch,  # plot first and last
                                                  log_imgs=opt.log_imgs if wandb else 0)
 
@@ -369,7 +372,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     if rank in [-1, 0]:
         # Strip optimizers
         n = opt.name if opt.name.isnumeric() else ''
-        fresults, flast, fbest = log_dir / f'results{n}.txt', wdir / f'last{n}.pt', wdir / f'best{n}.pt'
+        fresults, flast, fbest = save_dir / f'results{n}.txt', wdir / f'last{n}.pt', wdir / f'best{n}.pt'
         for f1, f2 in zip([wdir / 'last.pt', wdir / 'best.pt', results_file], [flast, fbest, fresults]):
             if f1.exists():
                 os.rename(f1, f2)  # rename
@@ -378,7 +381,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                     os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket else None  # upload
         # Finish
         if not opt.evolve:
-            plot_results(save_dir=log_dir)  # save as results.png
+            plot_results(save_dir=save_dir)  # save as results.png
         logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
 
     dist.destroy_process_group() if rank not in [-1, 0] else None
@@ -410,11 +413,11 @@ if __name__ == '__main__':
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
-    parser.add_argument('--logdir', type=str, default='runs/train', help='logging directory')
-    parser.add_argument('--name', default='', help='name to append to --save-dir: i.e. runs/{N} -> runs/{N}_{name}')
     parser.add_argument('--log-imgs', type=int, default=10, help='number of images for W&B logging, max 100')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
-
+    parser.add_argument('--project', default='runs/train', help='save to project/name')
+    parser.add_argument('--name', default='exp', help='save to project/name')
+    parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     opt = parser.parse_args()
 
     # Set DDP variables
@@ -428,19 +431,19 @@ if __name__ == '__main__':
     # Resume
     if opt.resume:  # resume an interrupted run
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
-        log_dir = Path(ckpt).parent.parent  # runs/train/exp0
+        opt.save_dir = Path(ckpt).parent.parent  # runs/train/exp
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
-        with open(log_dir / 'opt.yaml') as f:
+        with open(opt.save_dir / 'opt.yaml') as f:
             opt = argparse.Namespace(**yaml.load(f, Loader=yaml.FullLoader))  # replace
         opt.cfg, opt.weights, opt.resume = '', ckpt, True
         logger.info('Resuming training from %s' % ckpt)
-
     else:
         # opt.hyp = opt.hyp or ('hyp.finetune.yaml' if opt.weights else 'hyp.scratch.yaml')
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
-        log_dir = increment_dir(Path(opt.logdir) / 'exp', opt.name)  # runs/exp1
+        opt.name = 'evolve' if opt.evolve else opt.name
+        opt.save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
 
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
@@ -466,8 +469,8 @@ if __name__ == '__main__':
         tb_writer, wandb = None, None  # init loggers
         if opt.global_rank in [-1, 0]:
             # Tensorboard
-            logger.info(f'Start Tensorboard with "tensorboard --logdir {opt.logdir}", view at http://localhost:6006/')
-            tb_writer = SummaryWriter(log_dir=log_dir)  # runs/train/exp0
+            logger.info(f'Start Tensorboard with "tensorboard --logdir {opt.project}", view at http://localhost:6006/')
+            tb_writer = SummaryWriter(opt.save_dir)  # runs/train/exp
 
             # W&B
             try:
@@ -514,7 +517,7 @@ if __name__ == '__main__':
         assert opt.local_rank == -1, 'DDP mode not implemented for --evolve'
         opt.notest, opt.nosave = True, True  # only test/save final epoch
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
-        yaml_file = Path(opt.logdir) / 'evolve' / 'hyp_evolved.yaml'  # save best result here
+        yaml_file = opt.save_dir / 'hyp_evolved.yaml'  # save best result here
         if opt.bucket:
             os.system('gsutil cp gs://%s/evolve.txt .' % opt.bucket)  # download evolve.txt if exists
 
