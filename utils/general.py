@@ -142,8 +142,8 @@ def check_dataset(dict):
     # Download dataset if not found
     val, s = dict.get('val'), dict.get('download')
     if val and len(val):
-        val = [os.path.abspath(x) for x in (val if isinstance(val, list) else [val])]  # val path
-        if not all(os.path.exists(x) for x in val):
+        val = [Path(x).absolute() for x in (val if isinstance(val, list) else [val])]  # val path
+        if not all(x.exists() for x in val):
             print('\nWARNING: Dataset not found, nonexistent paths: %s' % [*val])
             if s and len(s):  # download script
                 print('Downloading %s ...' % s)
