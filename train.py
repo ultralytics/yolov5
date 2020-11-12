@@ -122,7 +122,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     # Logging
     if wandb and wandb.run is None:
         wandb_run = wandb.init(config=opt, resume="allow",
-                               project='YOLOv5' if opt.project == 'runs/train' else opt.project,
+                               project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
                                name=save_dir.stem,
                                id=ckpt.get('wandb_id') if 'ckpt' in locals() else None)
 
