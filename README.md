@@ -96,7 +96,7 @@ Fusing layers...
 Model Summary: 140 layers, 7.45958e+06 parameters, 0 gradients
 image 1/2 data/images/bus.jpg: 640x480 4 persons, 1 buss, 1 skateboards, Done. (0.013s)
 image 2/2 data/images/zidane.jpg: 384x640 2 persons, 2 ties, Done. (0.013s)
-Results saved to runs/detect/exp0
+Results saved to runs/detect/exp
 Done. (0.124s)
 ```
 <img src="https://user-images.githubusercontent.com/26833433/97107365-685a8d80-16c7-11eb-8c2e-83aac701d8b9.jpeg" width="500">  
