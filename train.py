@@ -50,6 +50,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     with open(save_dir / 'hyp.yaml', 'w') as f:
         yaml.dump(hyp, f, sort_keys=False)
     with open(save_dir / 'opt.yaml', 'w') as f:
+        opt.save_dir = str(save_dir)  # yaml constructor can not read PosixPath
         yaml.dump(vars(opt), f, sort_keys=False)
 
     # Configure
