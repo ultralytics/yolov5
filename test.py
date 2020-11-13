@@ -11,9 +11,11 @@ from tqdm import tqdm
 
 from models.experimental import attempt_load
 from utils.datasets import create_dataloader
-from utils.general import coco80_to_coco91_class, check_dataset, check_file, check_img_size, compute_loss, \
-    non_max_suppression, scale_coords, xyxy2xywh, clip_coords, plot_images, xywh2xyxy, box_iou, output_to_target, \
-    ap_per_class, set_logging, increment_path
+from utils.general import coco80_to_coco91_class, check_dataset, check_file, check_img_size, box_iou, \
+    non_max_suppression, scale_coords, xyxy2xywh, xywh2xyxy, clip_coords, set_logging, increment_path
+from utils.loss import compute_loss
+from utils.metrics import ap_per_class
+from utils.plots import plot_images, output_to_target
 from utils.torch_utils import select_device, time_synchronized
 
 

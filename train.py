@@ -3,7 +3,6 @@ import logging
 import math
 import os
 import random
-import shutil
 import time
 from pathlib import Path
 from warnings import warn
@@ -23,13 +22,15 @@ from tqdm import tqdm
 
 import test  # import test.py to get mAP after each epoch
 from models.yolo import Model
+from utils.autoanchor import check_anchors
 from utils.datasets import create_dataloader
-from utils.general import (
-    torch_distributed_zero_first, labels_to_class_weights, plot_labels, check_anchors, labels_to_image_weights,
-    compute_loss, plot_images, fitness, strip_optimizer, plot_results, get_latest_run, check_dataset, check_file,
-    check_git_status, check_img_size, increment_path, print_mutation, plot_evolution, set_logging, init_seeds)
+from utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds, \
+    fitness, strip_optimizer, get_latest_run, check_dataset, check_file, check_git_status, check_img_size, \
+    print_mutation, set_logging
 from utils.google_utils import attempt_download
-from utils.torch_utils import ModelEMA, select_device, intersect_dicts
+from utils.loss import compute_loss
+from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
+from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first
 
 logger = logging.getLogger(__name__)
 
