@@ -17,8 +17,8 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 def detect(save_img=False):
     source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
-    webcam = source.isnumeric() or source.endswith('.txt') or \
-             source.lower().startswith(('rtsp://', 'rtmp://', 'http://'))
+    webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
+        ('rtsp://', 'rtmp://', 'http://'))
 
     # Directories
     save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
