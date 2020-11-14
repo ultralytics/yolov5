@@ -66,6 +66,7 @@ def test(data,
 
     # Configure
     model.eval()
+    is_coco = data.endswith('coco.yaml')  # is COCO dataset
     with open(data) as f:
         data = yaml.load(f, Loader=yaml.FullLoader)  # model dict
     check_dataset(data)  # check
@@ -240,24 +241,25 @@ def test(data,
     # Save JSON
     if save_json and len(jdict):
         w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
-        file = save_dir / f"detections_val2017_{w}_results.json"  # predicted annotations file
-        print('\nCOCO mAP with pycocotools... saving %s...' % file)
-        with open(file, 'w') as f:
+        anno_json = glob.glob('../coco/annotations/instances_val*.json')[0]  # annotations json
+        pred_json = str(save_dir / f"{w}_predictions.json")  # predictions json
+        print('\nEvaluating pycocotools mAP... saving %s...' % pred_json)
+        with open(pred_json, 'w') as f:
             json.dump(jdict, f)
 
         try:  # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb
             from pycocotools.coco import COCO
             from pycocotools.cocoeval import COCOeval
 
-            imgIds = [int(Path(x).stem) for x in dataloader.dataset.img_files]
-            cocoAnno = COCO(glob.glob('../coco/annotations/instances_val*.json')[0])  # initialize COCO annotations api
-            cocoPred = cocoAnno.loadRes(str(file))  # initialize COCO pred api
-            cocoEval = COCOeval(cocoAnno, cocoPred, 'bbox')
-            cocoEval.params.imgIds = imgIds  # image IDs to evaluate
-            cocoEval.evaluate()
-            cocoEval.accumulate()
-            cocoEval.summarize()
-            map, map50 = cocoEval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
+            anno = COCO(anno_json)  # init annotations api
+            pred = anno.loadRes(pred_json)  # init predictions api
+            eval = COCOeval(anno, pred, 'bbox')
+            if is_coco:
+                eval.params.imgIds = [int(Path(x).stem) for x in dataloader.dataset.img_files]  # image IDs to evaluate
+            eval.evaluate()
+            eval.accumulate()
+            eval.summarize()
+            map, map50 = eval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
         except Exception as e:
             print('ERROR: pycocotools unable to run: %s' % e)
 
