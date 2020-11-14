@@ -193,22 +193,14 @@ class LoadImages:  # for inference
 
 
 class LoadWebcam:  # for inference
-    def __init__(self, pipe=0, img_size=640):
+    def __init__(self, pipe='0', img_size=640):
         self.img_size = img_size
 
-        if pipe == '0':
-            pipe = 0  # local camera
+        if pipe.isnumeric():
+            pipe = eval(pipe)  # local camera
         # pipe = 'rtsp://192.168.1.64/1'  # IP camera
         # pipe = 'rtsp://username:password@192.168.1.64/1'  # IP camera with login
-        # pipe = 'rtsp://170.93.143.139/rtplive/470011e600ef003a004ee33696235daa'  # IP traffic camera
         # pipe = 'http://wmccpinetop.axiscam.net/mjpg/video.mjpg'  # IP golf camera
-
-        # https://answers.opencv.org/question/215996/changing-gstreamer-pipeline-to-opencv-in-pythonsolved/
-        # pipe = '"rtspsrc location="rtsp://username:password@192.168.1.64/1" latency=10 ! appsink'  # GStreamer
-
-        # https://answers.opencv.org/question/200787/video-acceleration-gstremer-pipeline-in-videocapture/
-        # https://stackoverflow.com/questions/54095699/install-gstreamer-support-for-opencv-python-package  # install help
-        # pipe = "rtspsrc location=rtsp://root:root@192.168.0.91:554/axis-media/media.amp?videocodec=h264&resolution=3840x2160 protocols=GST_RTSP_LOWER_TRANS_TCP ! rtph264depay ! queue ! vaapih264dec ! videoconvert ! appsink"  # GStreamer
 
         self.pipe = pipe
         self.cap = cv2.VideoCapture(pipe)  # video capture object
