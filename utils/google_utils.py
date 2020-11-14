@@ -1,6 +1,4 @@
-# This file contains google utils: https://cloud.google.com/storage/docs/reference/libraries
-# pip install --upgrade google-cloud-storage
-# from google.cloud import storage
+# Google utils: https://cloud.google.com/storage/docs/reference/libraries
 
 import os
 import platform

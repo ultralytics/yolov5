@@ -1,7 +1,10 @@
+# PyTorch utils
+
 import logging
 import math
 import os
 import time
+from contextlib import contextmanager
 from copy import deepcopy
 
 import torch
@@ -13,10 +16,21 @@ import torchvision
 logger = logging.getLogger(__name__)
 
 
-def init_torch_seeds(seed=0):
-    torch.manual_seed(seed)
+@contextmanager
+def torch_distributed_zero_first(local_rank: int):
+    """
+    Decorator to make all processes in distributed training wait for each local_master to do something.
+    """
+    if local_rank not in [-1, 0]:
+        torch.distributed.barrier()
+    yield
+    if local_rank == 0:
+        torch.distributed.barrier()
 
+
+def init_torch_seeds(seed=0):
     # Speed-reproducibility tradeoff https://pytorch.org/docs/stable/notes/randomness.html
+    torch.manual_seed(seed)
     if seed == 0:  # slower, more reproducible
         cudnn.deterministic = True
         cudnn.benchmark = False
@@ -104,8 +118,6 @@ def prune(model, amount=0.3):
 
 def fuse_conv_and_bn(conv, bn):
     # Fuse convolution and batchnorm layers https://tehnokv.com/posts/fusing-batchnorm-and-conv/
-
-    # init
     fusedconv = nn.Conv2d(conv.in_channels,
                           conv.out_channels,
                           kernel_size=conv.kernel_size,
@@ -145,8 +157,7 @@ def model_info(model, verbose=False):
     except ImportError:
         fs = ''
 
-    logger.info(
-        'Model Summary: %g layers, %g parameters, %g gradients%s' % (len(list(model.parameters())), n_p, n_g, fs))
+    logger.info(f"Model Summary: {len(list(model.modules()))} layers, {n_p} parameters, {n_g} gradients{fs}")
 
 
 def load_classifier(name='resnet101', n=2):
