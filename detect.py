@@ -39,8 +39,7 @@ def detect(save_img=False):
     classify = False
     if classify:
         modelc = load_classifier(name='resnet101', n=2)  # initialize
-        modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model'])  # load weights
-        modelc.to(device).eval()
+        modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
 
     # Set Dataloader
     vid_path, vid_writer = None, None
@@ -54,7 +53,7 @@ def detect(save_img=False):
 
     # Get names and colors
     names = model.module.names if hasattr(model, 'module') else model.names
-    colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
+    colors = [[random.randint(0, 255) for _ in range(3)] for _ in names]
 
     # Run inference
     t0 = time.time()
