@@ -121,8 +121,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     # plot_lr_scheduler(optimizer, scheduler, epochs)
 
     # Logging
-    if wandb:
-        wandb_run = wandb.init(config=setattr(opt, 'hyp', hyp), resume="allow",
+    if wandb and wandb.run is None:
+        opt.hyp = hyp
+        wandb_run = wandb.init(config=opt, resume="allow",
                                project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
                                name=save_dir.stem,
                                id=ckpt.get('wandb_id') if 'ckpt' in locals() else None)
@@ -193,8 +194,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             # model._initialize_biases(cf.to(device))
             plot_labels(labels, save_dir=save_dir)
             if tb_writer:
-                # tb_writer.add_hparams(hyp, {})  # causes duplicate https://github.com/ultralytics/yolov5/pull/384
                 tb_writer.add_histogram('classes', c, 0)
+            if wandb:
+                wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in save_dir.glob('*labels*.png')]})
 
             # Anchors
             if not opt.noautoanchor:
@@ -299,11 +301,13 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
                 # Plot
                 if ni < 3:
-                    f = str(save_dir / f'train_batch{ni}.jpg')  # filename
-                    result = plot_images(images=imgs, targets=targets, paths=paths, fname=f)
-                    # if tb_writer and result is not None:
-                    # tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
-                    # tb_writer.add_graph(model, imgs)  # add model to tensorboard
+                    f = save_dir / f'train_batch{ni}.jpg'  # filename
+                    plot_images(images=imgs, targets=targets, paths=paths, fname=f)
+                    # if tb_writer:
+                    #     tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
+                    #     tb_writer.add_graph(model, imgs)  # add model to tensorboard
+                elif ni == 3 and wandb:
+                    wandb.log({"Mosaics": [wandb.Image(str(x), caption=x.name) for x in save_dir.glob('train*.jpg')]})
 
             # end batch ------------------------------------------------------------------------------------------------
 
@@ -325,7 +329,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
                                                  save_dir=save_dir,
-                                                 plots=epoch == 0 or final_epoch,  # plot first and last
+                                                 plots=final_epoch,  # plot first and last
                                                  log_imgs=opt.log_imgs if wandb else 0)
 
             # Write
@@ -382,6 +386,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
         # Finish
         if not opt.evolve:
             plot_results(save_dir=save_dir)  # save as results.png
+            if wandb:
+                wandb.log({"Results": [wandb.Image(str(save_dir / x), caption=x) for x in
+                                       ['results.png', 'precision-recall_curve.png']]})
         logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
 
     dist.destroy_process_group() if rank not in [-1, 0] else None
@@ -395,9 +402,9 @@ if __name__ == '__main__':
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
-    parser.add_argument('--epochs', type=int, default=300)
+    parser.add_argument('--epochs', type=int, default=1)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[320, 320], help='[train, test] image sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
