@@ -75,7 +75,7 @@ def test(data,
     niou = iouv.numel()
 
     # Logging
-    log_imgs = min(log_imgs, 100)  # ceil
+    log_imgs, wandb = min(log_imgs, 100), None  # ceil
     try:
         import wandb  # Weights & Biases
     except ImportError:
@@ -132,6 +132,7 @@ def test(data,
                 continue
 
             # Append to text file
+            path = Path(paths[si])
             if save_txt:
                 gn = torch.tensor(shapes[si][0])[[1, 0, 1, 0]]  # normalization gain whwh
                 x = pred.clone()
@@ -139,18 +140,18 @@ def test(data,
                 for *xyxy, conf, cls in x:
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                     line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                    with open(str(save_dir / 'labels' / Path(paths[si]).stem) + '.txt', 'a') as f:
+                    with open(save_dir / 'labels' / (path.stem + '.txt'), 'a') as f:
                         f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
             # W&B logging
-            if len(wandb_images) < log_imgs:
+            if plots and len(wandb_images) < log_imgs:
                 box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
                              "class_id": int(cls),
                              "box_caption": "%s %.3f" % (names[cls], conf),
                              "scores": {"class_score": conf},
-                             "domain": "pixel"} for *xyxy, conf, cls in pred.clone().tolist()]
+                             "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
                 boxes = {"predictions": {"box_data": box_data, "class_labels": names}}
-                wandb_images.append(wandb.Image(img[si], boxes=boxes))
+                wandb_images.append(wandb.Image(img[si], boxes=boxes, caption=path.name))
 
             # Clip boxes to image bounds
             clip_coords(pred, (height, width))
@@ -158,13 +159,13 @@ def test(data,
             # Append to pycocotools JSON dictionary
             if save_json:
                 # [{"image_id": 42, "category_id": 18, "bbox": [258.15, 41.29, 348.26, 243.78], "score": 0.236}, ...
-                image_id = Path(paths[si]).stem
+                image_id = int(path.stem) if path.stem.isnumeric() else path.stem
                 box = pred[:, :4].clone()  # xyxy
                 scale_coords(img[si].shape[1:], box, shapes[si][0], shapes[si][1])  # to original shape
                 box = xyxy2xywh(box)  # xywh
                 box[:, :2] -= box[:, 2:] / 2  # xy center to top-left corner
                 for p, b in zip(pred.tolist(), box.tolist()):
-                    jdict.append({'image_id': int(image_id) if image_id.isnumeric() else image_id,
+                    jdict.append({'image_id': image_id,
                                   'category_id': coco91class[int(p[5])] if is_coco else int(p[5]),
                                   'bbox': [round(x, 3) for x in b],
                                   'score': round(p[4], 5)})
@@ -203,15 +204,11 @@ def test(data,
             stats.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), tcls))
 
         # Plot images
-        if plots and batch_i < 1:
+        if plots and batch_i < 3:
             f = save_dir / f'test_batch{batch_i}_labels.jpg'  # filename
-            plot_images(img, targets, paths, str(f), names)  # labels
+            plot_images(img, targets, paths, f, names)  # labels
             f = save_dir / f'test_batch{batch_i}_pred.jpg'
-            plot_images(img, output_to_target(output, width, height), paths, str(f), names)  # predictions
-
-    # W&B logging
-    if wandb_images:
-        wandb.log({"outputs": wandb_images})
+            plot_images(img, output_to_target(output, width, height), paths, f, names)  # predictions
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
@@ -222,6 +219,11 @@ def test(data,
         nt = np.bincount(stats[3].astype(np.int64), minlength=nc)  # number of targets per class
     else:
         nt = torch.zeros(1)
+
+    # W&B logging
+    if plots and wandb:
+        wandb.log({"Images": wandb_images})
+        wandb.log({"Validation": [wandb.Image(str(x), caption=x.name) for x in sorted(save_dir.glob('test*.jpg'))]})
 
     # Print results
     pf = '%20s' + '%12.3g' * 6  # print format
