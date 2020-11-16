@@ -19,6 +19,9 @@ from scipy.signal import butter, filtfilt
 from utils.general import xywh2xyxy, xyxy2xywh
 from utils.metrics import fitness
 
+# Settings
+matplotlib.use('Agg')  # for writing to files only
+
 
 def color_list():
     # Return first 10 plt colors as (r,g,b) https://stackoverflow.com/questions/51350872/python-from-color-name-to-rgb
