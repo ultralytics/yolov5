@@ -131,11 +131,11 @@ class autoShape(nn.Module):
 
     def forward(self, imgs, size=640, augment=False, profile=False):
         # supports inference from various sources. For height=720, width=1280, RGB images example inputs are:
-        #   opencv:     x = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(720,1280,3)
-        #   PIL:        x = Image.open('image.jpg')  # HWC x(720,1280,3)
-        #   numpy:      x = np.zeros((720,1280,3))  # HWC
-        #   torch:      x = torch.zeros(16,3,720,1280)  # BCHW
-        #   multiple:   x = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
+        #   opencv:     imgs = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(720,1280,3)
+        #   PIL:        imgs = Image.open('image.jpg')  # HWC x(720,1280,3)
+        #   numpy:      imgs = np.zeros((720,1280,3))  # HWC
+        #   torch:      imgs = torch.zeros(16,3,720,1280)  # BCHW
+        #   multiple:   imgs = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
 
         p = next(self.model.parameters())  # for device and type
         if isinstance(imgs, torch.Tensor):  # torch
