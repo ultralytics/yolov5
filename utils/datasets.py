@@ -344,7 +344,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             for p in path if isinstance(path, list) else [path]:
                 p = Path(p)  # os-agnostic
                 if p.is_dir():  # dir
-                    f += glob.glob(str(p / '**.*'), recursive=True)
+                    f += glob.glob(str(p / '**' / '*.*'), recursive=True)
                 elif p.is_file():  # file
                     with open(p, 'r') as t:
                         t = t.read().splitlines()
