@@ -42,7 +42,7 @@ def create(name, pretrained, channels, classes):
             model.load_state_dict(state_dict, strict=False)  # load
             if len(ckpt['model'].names) == classes:
                 model.names = ckpt['model'].names  # set class names attribute
-            # model = model.autoshape()  # for autoshaping of PIL/cv2/np inputs and NMS
+            # model = model.autoshape()  # for PIL/cv2/np inputs and NMS
         return model
 
     except Exception as e:
