@@ -1,5 +1,5 @@
 <a href="https://apps.apple.com/app/id1452689527" target="_blank">
-<img src="https://user-images.githubusercontent.com/26833433/82944393-f7644d80-9f4f-11ea-8b87-1a5b04f555f1.jpg" width="1000"></a>
+<img src="https://user-images.githubusercontent.com/26833433/98699617-a1595a00-2377-11eb-8145-fc674eb9b1a7.jpg" width="1000"></a>
 &nbsp
 
 ![CI CPU testing](https://github.com/ultralytics/yolov5/workflows/CI%20CPU%20testing/badge.svg)
@@ -46,15 +46,16 @@ $ pip install -r requirements.txt
 
 ## Tutorials
 
-* [Train Custom Data](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data) (🚀  recommended)
-* [Weights & Biases Logging](https://github.com/ultralytics/yolov5/issues/1289) (🚀  NEW)
+* [Train Custom Data](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data)&nbsp; 🚀 RECOMMENDED
+* [Weights & Biases Logging](https://github.com/ultralytics/yolov5/issues/1289)&nbsp; 🌟 NEW
 * [Multi-GPU Training](https://github.com/ultralytics/yolov5/issues/475)
-* [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)
+* [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)&nbsp; ⭐ NEW
 * [ONNX and TorchScript Export](https://github.com/ultralytics/yolov5/issues/251)
 * [Test-Time Augmentation (TTA)](https://github.com/ultralytics/yolov5/issues/303)
 * [Model Ensembling](https://github.com/ultralytics/yolov5/issues/318)
 * [Model Pruning/Sparsity](https://github.com/ultralytics/yolov5/issues/304)
 * [Hyperparameter Evolution](https://github.com/ultralytics/yolov5/issues/607)
+* [Transfer Learning with Frozen Layers](https://github.com/ultralytics/yolov5/issues/1314)&nbsp; ⭐ NEW
 * [TensorRT Deployment](https://github.com/wang-xinyu/tensorrtx)
 
 
@@ -87,7 +88,7 @@ To run inference on example images in `data/images`:
 $ python detect.py --source data/images --weights yolov5s.pt --conf 0.25
 
 Namespace(agnostic_nms=False, augment=False, classes=None, conf_thres=0.25, device='', img_size=640, iou_thres=0.45, output='runs/detect', save_conf=False, save_txt=False, source='data/images', update=False, view_img=False, weights='yolov5s.pt')
-Using CUDA device0 _CudaDeviceProperties(name='Tesla V100-SXM2-16GB', total_memory=16160MB)
+Using torch 1.7.0+cu101 CUDA:0 (Tesla V100-SXM2-16GB, 16130MB)
 
 Downloading https://github.com/ultralytics/yolov5/releases/download/v3.0/yolov5s.pt to yolov5s.pt... 100%|██████████████| 14.5M/14.5M [00:00<00:00, 21.3MB/s]
 
@@ -95,7 +96,7 @@ Fusing layers...
 Model Summary: 140 layers, 7.45958e+06 parameters, 0 gradients
 image 1/2 data/images/bus.jpg: 640x480 4 persons, 1 buss, 1 skateboards, Done. (0.013s)
 image 2/2 data/images/zidane.jpg: 384x640 2 persons, 2 ties, Done. (0.013s)
-Results saved to runs/detect/exp0
+Results saved to runs/detect/exp
 Done. (0.124s)
 ```
 <img src="https://user-images.githubusercontent.com/26833433/97107365-685a8d80-16c7-11eb-8c2e-83aac701d8b9.jpeg" width="500">  
