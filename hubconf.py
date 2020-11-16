@@ -14,7 +14,7 @@ from models.yolo import Model
 from utils.general import set_logging
 from utils.google_utils import attempt_download
 
-dependencies = ['torch', 'yaml', 'pillow']
+dependencies = ['torch', 'PyYAML>=5.3', 'Pillow']
 set_logging()
 
 
