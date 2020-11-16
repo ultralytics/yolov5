@@ -6,7 +6,7 @@ Usage:
 """
 
 dependencies = ['torch', 'yaml']
-import os
+from pathlib import Path
 
 import torch
 
@@ -29,7 +29,7 @@ def create(name, pretrained, channels, classes):
     Returns:
         pytorch model
     """
-    config = os.path.join(os.path.dirname(__file__), 'models', f'{name}.yaml')  # model.yaml path
+    config = Path(__file__).parent / 'models' / f'{name}.yaml'  # model.yaml path
     try:
         model = Model(config, channels, classes)
         if pretrained:

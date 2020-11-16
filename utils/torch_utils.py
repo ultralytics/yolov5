@@ -1,7 +1,10 @@
+# PyTorch utils
+
 import logging
 import math
 import os
 import time
+from contextlib import contextmanager
 from copy import deepcopy
 
 import torch
@@ -13,10 +16,21 @@ import torchvision
 logger = logging.getLogger(__name__)
 
 
-def init_torch_seeds(seed=0):
-    torch.manual_seed(seed)
+@contextmanager
+def torch_distributed_zero_first(local_rank: int):
+    """
+    Decorator to make all processes in distributed training wait for each local_master to do something.
+    """
+    if local_rank not in [-1, 0]:
+        torch.distributed.barrier()
+    yield
+    if local_rank == 0:
+        torch.distributed.barrier()
 
+
+def init_torch_seeds(seed=0):
     # Speed-reproducibility tradeoff https://pytorch.org/docs/stable/notes/randomness.html
+    torch.manual_seed(seed)
     if seed == 0:  # slower, more reproducible
         cudnn.deterministic = True
         cudnn.benchmark = False
@@ -104,8 +118,6 @@ def prune(model, amount=0.3):
 
 def fuse_conv_and_bn(conv, bn):
     # Fuse convolution and batchnorm layers https://tehnokv.com/posts/fusing-batchnorm-and-conv/
-
-    # init
     fusedconv = nn.Conv2d(conv.in_channels,
                           conv.out_channels,
                           kernel_size=conv.kernel_size,
@@ -127,8 +139,8 @@ def fuse_conv_and_bn(conv, bn):
     return fusedconv
 
 
-def model_info(model, verbose=False):
-    # Plots a line-by-line description of a PyTorch model
+def model_info(model, verbose=False, img_size=640):
+    # Model information. img_size may be int or list, i.e. img_size=640 or img_size=[640, 320]
     n_p = sum(x.numel() for x in model.parameters())  # number parameters
     n_g = sum(x.numel() for x in model.parameters() if x.requires_grad)  # number gradients
     if verbose:
@@ -140,13 +152,14 @@ def model_info(model, verbose=False):
 
     try:  # FLOPS
         from thop import profile
-        flops = profile(deepcopy(model), inputs=(torch.zeros(1, 3, 64, 64),), verbose=False)[0] / 1E9 * 2
-        fs = ', %.1f GFLOPS' % (flops * 100)  # 640x640 FLOPS
-    except ImportError:
+        stride = int(model.stride.max())
+        flops = profile(deepcopy(model), inputs=(torch.zeros(1, 3, stride, stride),), verbose=False)[0] / 1E9 * 2
+        img_size = img_size if isinstance(img_size, list) else [img_size, img_size]  # expand if int/float
+        fs = ', %.1f GFLOPS' % (flops * img_size[0] / stride * img_size[1] / stride)  # 640x640 FLOPS
+    except (ImportError, Exception):
         fs = ''
 
-    logger.info(
-        'Model Summary: %g layers, %g parameters, %g gradients%s' % (len(list(model.parameters())), n_p, n_g, fs))
+    logger.info(f"Model Summary: {len(list(model.modules()))} layers, {n_p} parameters, {n_g} gradients{fs}")
 
 
 def load_classifier(name='resnet101', n=2):
