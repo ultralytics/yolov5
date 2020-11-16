@@ -5,15 +5,16 @@ Usage:
     model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True, channels=3, classes=80)
 """
 
-dependencies = ['torch', 'yaml']
 from pathlib import Path
 
 import torch
+from PIL import Image
 
 from models.yolo import Model
 from utils.general import set_logging
 from utils.google_utils import attempt_download
 
+dependencies = ['torch', 'yaml', 'pillow']
 set_logging()
 
 
@@ -41,7 +42,7 @@ def create(name, pretrained, channels, classes):
             model.load_state_dict(state_dict, strict=False)  # load
             if len(ckpt['model'].names) == classes:
                 model.names = ckpt['model'].names  # set class names attribute
-            # model = model.autoshape()  # for autoshaping of PIL/cv2/np inputs and NMS
+            # model = model.autoshape()  # for PIL/cv2/np inputs and NMS
         return model
 
     except Exception as e:
@@ -108,11 +109,10 @@ def yolov5x(pretrained=False, channels=3, classes=80):
 
 if __name__ == '__main__':
     model = create(name='yolov5s', pretrained=True, channels=3, classes=80)  # example
-    model = model.fuse().eval().autoshape()  # for autoshaping of PIL/cv2/np inputs and NMS
+    model = model.fuse().autoshape()  # for PIL/cv2/np inputs and NMS
 
     # Verify inference
-    from PIL import Image
-
-    img = Image.open('data/images/zidane.jpg')
-    y = model(img)
-    print(y[0].shape)
+    imgs = [Image.open(x) for x in Path('data/images').glob('*.jpg')]
+    results = model(imgs)
+    results.show()
+    results.print()

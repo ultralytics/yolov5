@@ -142,7 +142,7 @@ def coco80_to_coco91_class():  # converts 80-index (val2014) to 91-index (paper)
 
 def xyxy2xywh(x):
     # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right
-    y = torch.zeros_like(x) if isinstance(x, torch.Tensor) else np.zeros_like(x)
+    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[:, 0] = (x[:, 0] + x[:, 2]) / 2  # x center
     y[:, 1] = (x[:, 1] + x[:, 3]) / 2  # y center
     y[:, 2] = x[:, 2] - x[:, 0]  # width
@@ -152,7 +152,7 @@ def xyxy2xywh(x):
 
 def xywh2xyxy(x):
     # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
-    y = torch.zeros_like(x) if isinstance(x, torch.Tensor) else np.zeros_like(x)
+    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[:, 0] = x[:, 0] - x[:, 2] / 2  # top left x
     y[:, 1] = x[:, 1] - x[:, 3] / 2  # top left y
     y[:, 2] = x[:, 0] + x[:, 2] / 2  # bottom right x
@@ -280,7 +280,7 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, 
     multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
 
     t = time.time()
-    output = [None] * prediction.shape[0]
+    output = [torch.zeros(0, 6)] * prediction.shape[0]
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
         # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
