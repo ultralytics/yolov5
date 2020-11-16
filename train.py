@@ -54,6 +54,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
         yaml.dump(vars(opt), f, sort_keys=False)
 
     # Configure
+    plots = not opt.evolve  # create plots
     cuda = device.type != 'cpu'
     init_seeds(2 + rank)
     with open(opt.data) as f:
@@ -122,7 +123,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
     # Logging
     if wandb and wandb.run is None:
-        opt.hyp = hyp
+        opt.hyp = hyp  # add hyperparameters
         wandb_run = wandb.init(config=opt, resume="allow",
                                project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
                                name=save_dir.stem,
@@ -165,7 +166,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
         logger.info('Using SyncBatchNorm()')
 
-    # Exponential moving average
+    # EMA
     ema = ModelEMA(model) if rank in [-1, 0] else None
 
     # DDP mode
@@ -192,11 +193,12 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             c = torch.tensor(labels[:, 0])  # classes
             # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
             # model._initialize_biases(cf.to(device))
-            plot_labels(labels, save_dir=save_dir)
-            if tb_writer:
-                tb_writer.add_histogram('classes', c, 0)
-            if wandb:
-                wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in save_dir.glob('*labels*.png')]})
+            if plots:
+                plot_labels(labels, save_dir=save_dir)
+                if tb_writer:
+                    tb_writer.add_histogram('classes', c, 0)
+                if wandb:
+                    wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in save_dir.glob('*labels*.png')]})
 
             # Anchors
             if not opt.noautoanchor:
@@ -300,16 +302,17 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 pbar.set_description(s)
 
                 # Plot
-                if ni < 3:
+                if plots and ni < 3:
                     f = save_dir / f'train_batch{ni}.jpg'  # filename
                     plot_images(images=imgs, targets=targets, paths=paths, fname=f)
                     # if tb_writer:
                     #     tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
                     #     tb_writer.add_graph(model, imgs)  # add model to tensorboard
-                elif ni == 3 and wandb:
+                elif plots and ni == 3 and wandb:
                     wandb.log({"Mosaics": [wandb.Image(str(x), caption=x.name) for x in save_dir.glob('train*.jpg')]})
 
             # end batch ------------------------------------------------------------------------------------------------
+        # end epoch ----------------------------------------------------------------------------------------------------
 
         # Scheduler
         lr = [x['lr'] for x in optimizer.param_groups]  # for tensorboard
@@ -329,7 +332,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
                                                  save_dir=save_dir,
-                                                 plots=final_epoch,  # plot first and last
+                                                 plots=plots and final_epoch,
                                                  log_imgs=opt.log_imgs if wandb else 0)
 
             # Write
@@ -384,7 +387,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                     strip_optimizer(f2)  # strip optimizer
                     os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket else None  # upload
         # Finish
-        if not opt.evolve:
+        if plots:
             plot_results(save_dir=save_dir)  # save as results.png
             if wandb:
                 wandb.log({"Results": [wandb.Image(str(save_dir / x), caption=x) for x in
@@ -449,7 +452,7 @@ if __name__ == '__main__':
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
         opt.name = 'evolve' if opt.evolve else opt.name
-        opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok)  # increment run
+        opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
 
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
