@@ -349,7 +349,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                         t = t.read().splitlines()
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
                 elif p.is_dir():  # dir
-                    f += glob.glob(f"{p}{os.sep}**{os.sep}*.*", recursive=True)
+                    f += glob.glob(f"{p}{os.sep}**.*", recursive=True)
                 else:
                     raise Exception('%s does not exist' % p)
             self.img_files = sorted([x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in img_formats])
