@@ -342,19 +342,19 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         try:
             f = []  # image files
             for p in path if isinstance(path, list) else [path]:
-                p = str(Path(p))  # os-agnostic
-                parent = str(Path(p).parent) + os.sep
-                if os.path.isfile(p):  # file
+                p = Path(p)  # os-agnostic
+                parent = str(p.parent) + os.sep
+                if p.is_file():  # file
                     with open(p, 'r') as t:
                         t = t.read().splitlines()
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
-                elif os.path.isdir(p):  # folder
-                    f += glob.iglob(p + os.sep + '*.*')
+                elif p.is_dir():  # dir
+                    f += glob.glob(f"{p}{os.sep}**{os.sep}*.*", recursive=True)
                 else:
                     raise Exception('%s does not exist' % p)
             self.img_files = sorted(
                 [x.replace('/', os.sep) for x in f if os.path.splitext(x)[-1].lower() in img_formats])
-            assert len(self.img_files) > 0, 'No images found'
+            assert self.img_files, 'No images found'
         except Exception as e:
             raise Exception('Error loading data from %s: %s\nSee %s' % (path, e, help_url))
 
