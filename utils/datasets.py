@@ -23,8 +23,8 @@ from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
 help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
-img_formats = ['.bmp', '.jpg', '.jpeg', '.png', '.tif', '.tiff', '.dng']
-vid_formats = ['.mov', '.avi', '.mp4', '.mpg', '.mpeg', '.m4v', '.wmv', '.mkv']
+img_formats = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng']  # acceptable image suffixes
+vid_formats = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
 
 # Get orientation exif tag
 for orientation in ExifTags.TAGS.keys():
@@ -125,8 +125,8 @@ class LoadImages:  # for inference
         else:
             raise Exception('ERROR: %s does not exist' % p)
 
-        images = [x for x in files if os.path.splitext(x)[-1].lower() in img_formats]
-        videos = [x for x in files if os.path.splitext(x)[-1].lower() in vid_formats]
+        images = [x for x in files if x.split('.')[-1].lower() in img_formats]
+        videos = [x for x in files if x.split('.')[-1].lower() in vid_formats]
         ni, nv = len(images), len(videos)
 
         self.img_size = img_size
@@ -337,24 +337,23 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         def img2label_paths(img_paths):
             # Define label paths as a function of image paths
             sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
-            return [x.replace(sa, sb, 1).replace(os.path.splitext(x)[-1], '.txt') for x in img_paths]
+            return [x.replace(sa, sb, 1).replace(x.split('.')[-1], 'txt') for x in img_paths]
 
         try:
             f = []  # image files
             for p in path if isinstance(path, list) else [path]:
-                p = str(Path(p))  # os-agnostic
-                parent = str(Path(p).parent) + os.sep
-                if os.path.isfile(p):  # file
+                p = Path(p)  # os-agnostic
+                if p.is_dir():  # dir
+                    f += glob.glob(str(p / '**' / '*.*'), recursive=True)
+                elif p.is_file():  # file
                     with open(p, 'r') as t:
                         t = t.read().splitlines()
+                        parent = str(p.parent) + os.sep
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
-                elif os.path.isdir(p):  # folder
-                    f += glob.iglob(p + os.sep + '*.*')
                 else:
                     raise Exception('%s does not exist' % p)
-            self.img_files = sorted(
-                [x.replace('/', os.sep) for x in f if os.path.splitext(x)[-1].lower() in img_formats])
-            assert len(self.img_files) > 0, 'No images found'
+            self.img_files = sorted([x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in img_formats])
+            assert self.img_files, 'No images found'
         except Exception as e:
             raise Exception('Error loading data from %s: %s\nSee %s' % (path, e, help_url))
 
