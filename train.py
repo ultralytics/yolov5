@@ -34,6 +34,13 @@ from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_di
 
 logger = logging.getLogger(__name__)
 
+# W&B
+try:
+    import wandb
+except ImportError:
+    wandb = None
+    logger.info("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")
+
 
 def train(hyp, opt, device, tb_writer=None, wandb=None):
     logger.info(f'Hyperparameters {hyp}')
@@ -475,18 +482,11 @@ if __name__ == '__main__':
     # Train
     logger.info(opt)
     if not opt.evolve:
-        tb_writer, wandb = None, None  # init loggers
+        tb_writer = None  # init loggers
         if opt.global_rank in [-1, 0]:
             # Tensorboard
             logger.info(f'Start Tensorboard with "tensorboard --logdir {opt.project}", view at http://localhost:6006/')
             tb_writer = SummaryWriter(opt.save_dir)  # runs/train/exp
-
-            # W&B
-            try:
-                import wandb
-            except ImportError:
-                logger.info("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")
-
         train(hyp, opt, device, tb_writer, wandb)
 
     # Evolve hyperparameters (optional)
