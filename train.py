@@ -484,9 +484,7 @@ if __name__ == '__main__':
             # W&B
             try:
                 import wandb
-
-                assert os.environ.get('WANDB_DISABLED') != 'true'
-            except (ImportError, AssertionError):
+            except ImportError:
                 logger.info("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")
 
         train(hyp, opt, device, tb_writer, wandb)
