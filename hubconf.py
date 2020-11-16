@@ -8,7 +8,6 @@ Usage:
 from pathlib import Path
 
 import torch
-from PIL import Image
 
 from models.yolo import Model
 from utils.general import set_logging
@@ -112,6 +111,8 @@ if __name__ == '__main__':
     model = model.fuse().autoshape()  # for PIL/cv2/np inputs and NMS
 
     # Verify inference
+    from PIL import Image
+
     imgs = [Image.open(x) for x in Path('data/images').glob('*.jpg')]
     results = model(imgs)
     results.show()
