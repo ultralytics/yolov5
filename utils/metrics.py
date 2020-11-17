@@ -103,10 +103,10 @@ def compute_ap(recall, precision):
 
 
 def plot_pr_curve(px, py, ap, save_dir='.', names=()):
-    fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+    fig, ax = plt.subplots(1, 1, figsize=(9, 6))
     py = np.stack(py, axis=1)
 
-    if 0 < len(names) < 10:  # show mAP in legend if < 10 classes
+    if 0 < len(names) < 21:  # show mAP in legend if < 10 classes
         for i, y in enumerate(py.T):
             ax.plot(px, y, linewidth=1, label=f'{names[i]} %.3f' % ap[i, 0])  # plot(recall, precision)
     else:
@@ -117,6 +117,6 @@ def plot_pr_curve(px, py, ap, save_dir='.', names=()):
     ax.set_ylabel('Precision')
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    plt.legend()
+    plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
     fig.tight_layout()
     fig.savefig(Path(save_dir) / 'precision_recall_curve.png', dpi=250)
