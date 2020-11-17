@@ -1,5 +1,7 @@
 # Model validation metrics
 
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -10,7 +12,7 @@ def fitness(x):
     return (x[:, :4] * w).sum(1)
 
 
-def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, fname='precision-recall_curve.png'):
+def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='precision-recall_curve.png', names=[]):
     """ Compute the average precision, given the recall and precision curves.
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
     # Arguments
@@ -19,7 +21,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, fname='precision-re
         pred_cls:  Predicted object classes (nparray).
         target_cls:  True object classes (nparray).
         plot:  Plot precision-recall curve at mAP@0.5
-        fname:  Plot filename
+        save_dir:  Plot save directory
     # Returns
         The average precision as computed in py-faster-rcnn.
     """
@@ -66,17 +68,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, fname='precision-re
     f1 = 2 * p * r / (p + r + 1e-16)
 
     if plot:
-        py = np.stack(py, axis=1)
-        fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-        ax.plot(px, py, linewidth=0.5, color='grey')  # plot(recall, precision)
-        ax.plot(px, py.mean(1), linewidth=2, color='blue', label='all classes %.3f mAP@0.5' % ap[:, 0].mean())
-        ax.set_xlabel('Recall')
-        ax.set_ylabel('Precision')
-        ax.set_xlim(0, 1)
-        ax.set_ylim(0, 1)
-        plt.legend()
-        fig.tight_layout()
-        fig.savefig(fname, dpi=200)
+        plot_pr_curve(px, py, ap, save_dir, names)
 
     return p, r, ap, f1, unique_classes.astype('int32')
 
@@ -108,3 +100,23 @@ def compute_ap(recall, precision):
         ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])  # area under curve
 
     return ap, mpre, mrec
+
+
+def plot_pr_curve(px, py, ap, save_dir='.', names=()):
+    fig, ax = plt.subplots(1, 1, figsize=(9, 6))
+    py = np.stack(py, axis=1)
+
+    if 0 < len(names) < 21:  # show mAP in legend if < 10 classes
+        for i, y in enumerate(py.T):
+            ax.plot(px, y, linewidth=1, label=f'{names[i]} %.3f' % ap[i, 0])  # plot(recall, precision)
+    else:
+        ax.plot(px, py, linewidth=1, color='grey')  # plot(recall, precision)
+
+    ax.plot(px, py.mean(1), linewidth=3, color='blue', label='all classes %.3f mAP@0.5' % ap[:, 0].mean())
+    ax.set_xlabel('Recall')
+    ax.set_ylabel('Precision')
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+    fig.tight_layout()
+    fig.savefig(Path(save_dir) / 'precision_recall_curve.png', dpi=250)
