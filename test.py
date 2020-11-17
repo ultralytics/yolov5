@@ -221,7 +221,7 @@ def test(data,
         nt = torch.zeros(1)
 
     # W&B logging
-    if plots and wandb:
+    if plots and wandb and wandb.run:
         wandb.log({"Images": wandb_images})
         wandb.log({"Validation": [wandb.Image(str(x), caption=x.name) for x in sorted(save_dir.glob('test*.jpg'))]})
 
