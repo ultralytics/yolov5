@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import yaml
-from PIL import Image
+from PIL import Image, ImageDraw
 from scipy.signal import butter, filtfilt
 
 from utils.general import xywh2xyxy, xyxy2xywh
@@ -266,17 +266,31 @@ def plot_labels(labels, save_dir=''):
     # plot dataset labels
     c, b = labels[:, 0], labels[:, 1:].transpose()  # classes, boxes
     nc = int(c.max() + 1)  # number of classes
+    colors = color_list()
 
     fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
     ax = ax.ravel()
     ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
     ax[0].set_xlabel('classes')
-    ax[1].scatter(b[0], b[1], c=hist2d(b[0], b[1], 90), cmap='jet')
-    ax[1].set_xlabel('x')
-    ax[1].set_ylabel('y')
-    ax[2].scatter(b[2], b[3], c=hist2d(b[2], b[3], 90), cmap='jet')
-    ax[2].set_xlabel('width')
-    ax[2].set_ylabel('height')
+    ax[2].scatter(b[0], b[1], c=hist2d(b[0], b[1], 90), cmap='jet')
+    ax[2].set_xlabel('x')
+    ax[2].set_ylabel('y')
+    ax[3].scatter(b[2], b[3], c=hist2d(b[2], b[3], 90), cmap='jet')
+    ax[3].set_xlabel('width')
+    ax[3].set_ylabel('height')
+
+    # rectangles
+    labels[:, 1:3] = 0.5  # center
+    labels[:, 1:] = xywh2xyxy(labels[:, 1:]) * 2000
+    img = Image.fromarray(np.ones((2000, 2000, 3), dtype=np.uint8) * 255)
+    for cls, *box in labels[:1000]:
+        ImageDraw.Draw(img).rectangle(box, width=1, outline=colors[int(cls) % 10])  # plot
+    ax[1].imshow(img)
+    ax[1].axis('off')
+
+    for a in [0, 1, 2, 3]:
+        for s in ['top', 'right', 'left', 'bottom']:
+            ax[a].spines[s].set_visible(False)
     plt.savefig(Path(save_dir) / 'labels.png', dpi=200)
     plt.close()
 
