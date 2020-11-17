@@ -18,6 +18,12 @@ from utils.metrics import ap_per_class
 from utils.plots import plot_images, output_to_target
 from utils.torch_utils import select_device, time_synchronized
 
+try:
+    import wandb
+except ImportError:
+    wandb = None
+    logger.info("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")
+
 
 def test(data,
          weights=None,
@@ -221,6 +227,11 @@ def test(data,
         nt = torch.zeros(1)
 
     # W&B logging
+    if wandb and wandb.run is None:
+        wandb_run = wandb.init(config=opt, resume="allow",
+                               project='YOLOv5' if opt.project == 'runs/test' else Path(opt.project).stem,
+                               name=save_dir.stem,
+                               id=ckpt.get('wandb_id') if 'ckpt' in locals() else None)
     if plots and wandb and wandb.run:
         wandb.log({"Images": wandb_images})
         wandb.log({"Validation": [wandb.Image(str(x), caption=x.name) for x in sorted(save_dir.glob('test*.jpg'))]})
