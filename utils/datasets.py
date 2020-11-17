@@ -337,7 +337,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         def img2label_paths(img_paths):
             # Define label paths as a function of image paths
             sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
-            return [x.replace(sa, sb, 1).replace(x.split('.')[-1], 'txt') for x in img_paths]
+            return [x.replace(sa, sb, 1).replace('.' + x.split('.')[-1], '.txt') for x in img_paths]
 
         try:
             f = []  # image files
