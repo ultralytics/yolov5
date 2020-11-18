@@ -115,7 +115,7 @@ def detect(save_img=False):
 
             # Stream results
             if view_img:
-                cv2.imshow(p, im0)
+                cv2.imshow(str(p), im0)
                 if cv2.waitKey(1) == ord('q'):  # q to quit
                     raise StopIteration
 
