@@ -142,9 +142,9 @@ def test(data,
                 wandb_images.append(wandb.Image(img[si], boxes=boxes, caption=path.name))
 
             # Autolabel
+            gn = torch.tensor(shapes[si][0])[[1, 0, 1, 0]]  # normalization gain whwh
             pred[:, :4] = scale_coords(img[si].shape[1:], pred[:, :4], shapes[si][0], shapes[si][1])  # to original
             if save_txt:
-                gn = torch.tensor(shapes[si][0])[[1, 0, 1, 0]]  # normalization gain whwh
                 for *xyxy, conf, cls in pred.tolist():
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                     line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
@@ -170,7 +170,7 @@ def test(data,
                 tcls_tensor = labels[:, 0]
 
                 # target boxes
-                tbox = xywh2xyxy(labels[:, 1:5]) * torch.tensor(shapes[si][0], device=device)[[1, 0, 1, 0]]
+                tbox = xywh2xyxy(labels[:, 1:5]) * gn
 
                 # Per target class
                 for cls in torch.unique(tcls_tensor):
