@@ -12,7 +12,7 @@ from tqdm import tqdm
 from models.experimental import attempt_load
 from utils.datasets import create_dataloader
 from utils.general import coco80_to_coco91_class, check_dataset, check_file, check_img_size, box_iou, \
-    non_max_suppression, scale_coords, xyxy2xywh, xywh2xyxy, clip_coords, set_logging, increment_path
+    non_max_suppression, scale_coords, xyxy2xywh, xywh2xyxy, set_logging, increment_path
 from utils.loss import compute_loss
 from utils.metrics import ap_per_class
 from utils.plots import plot_images, output_to_target
@@ -101,7 +101,6 @@ def test(data,
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
         targets = targets.to(device)
         nb, _, height, width = img.shape  # batch size, channels, height, width
-        whwh = torch.Tensor([width, height, width, height]).to(device)
 
         # Disable gradients
         with torch.no_grad():
@@ -124,24 +123,13 @@ def test(data,
             labels = targets[targets[:, 0] == si, 1:]
             nl = len(labels)
             tcls = labels[:, 0].tolist() if nl else []  # target class
+            path = Path(paths[si])
             seen += 1
 
             if len(pred) == 0:
                 if nl:
                     stats.append((torch.zeros(0, niou, dtype=torch.bool), torch.Tensor(), torch.Tensor(), tcls))
                 continue
-
-            # Append to text file
-            path = Path(paths[si])
-            if save_txt:
-                gn = torch.tensor(shapes[si][0])[[1, 0, 1, 0]]  # normalization gain whwh
-                x = pred.clone()
-                x[:, :4] = scale_coords(img[si].shape[1:], x[:, :4], shapes[si][0], shapes[si][1])  # to original
-                for *xyxy, conf, cls in x:
-                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                    line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                    with open(save_dir / 'labels' / (path.stem + '.txt'), 'a') as f:
-                        f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
             # W&B logging
             if plots and len(wandb_images) < log_imgs:
@@ -150,19 +138,24 @@ def test(data,
                              "box_caption": "%s %.3f" % (names[cls], conf),
                              "scores": {"class_score": conf},
                              "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
-                boxes = {"predictions": {"box_data": box_data, "class_labels": names}}
+                boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # in inference-space
                 wandb_images.append(wandb.Image(img[si], boxes=boxes, caption=path.name))
 
-            # Clip boxes to image bounds
-            clip_coords(pred, (height, width))
+            # Autolabel
+            pred[:, :4] = scale_coords(img[si].shape[1:], pred[:, :4], shapes[si][0], shapes[si][1])  # to original
+            if save_txt:
+                gn = torch.tensor(shapes[si][0])[[1, 0, 1, 0]]  # normalization gain whwh
+                for *xyxy, conf, cls in pred.tolist():
+                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                    line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
+                    with open(save_dir / 'labels' / (path.stem + '.txt'), 'a') as f:
+                        f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
             # Append to pycocotools JSON dictionary
             if save_json:
                 # [{"image_id": 42, "category_id": 18, "bbox": [258.15, 41.29, 348.26, 243.78], "score": 0.236}, ...
                 image_id = int(path.stem) if path.stem.isnumeric() else path.stem
-                box = pred[:, :4].clone()  # xyxy
-                scale_coords(img[si].shape[1:], box, shapes[si][0], shapes[si][1])  # to original shape
-                box = xyxy2xywh(box)  # xywh
+                box = xyxy2xywh(pred[:, :4].clone())  # xywh
                 box[:, :2] -= box[:, 2:] / 2  # xy center to top-left corner
                 for p, b in zip(pred.tolist(), box.tolist()):
                     jdict.append({'image_id': image_id,
@@ -177,7 +170,7 @@ def test(data,
                 tcls_tensor = labels[:, 0]
 
                 # target boxes
-                tbox = xywh2xyxy(labels[:, 1:5]) * whwh
+                tbox = xywh2xyxy(labels[:, 1:5]) * torch.tensor(shapes[si][0], device=device)[[1, 0, 1, 0]]
 
                 # Per target class
                 for cls in torch.unique(tcls_tensor):

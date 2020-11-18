@@ -148,6 +148,8 @@ class autoShape(nn.Module):
         batch = range(len(imgs))  # batch size
         for i in batch:
             imgs[i] = np.array(imgs[i])  # to numpy
+            if imgs[i].shape[0] < 5:  # image in CHW
+                imgs[i] = imgs[i].transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
             imgs[i] = imgs[i][:, :, :3] if imgs[i].ndim == 3 else np.tile(imgs[i][:, :, None], 3)  # enforce 3ch input
             s = imgs[i].shape[:2]  # HWC
             shape0.append(s)  # image shape
@@ -184,6 +186,7 @@ class Detections:
         gn = [torch.Tensor([*[im.shape[i] for i in [1, 0, 1, 0]], 1., 1.]) for im in imgs]  # normalization gains
         self.xyxyn = [x / g for x, g in zip(self.xyxy, gn)]  # xyxy normalized
         self.xywhn = [x / g for x, g in zip(self.xywh, gn)]  # xywh normalized
+        self.n = len(self.pred)
 
     def display(self, pprint=False, show=False, save=False):
         colors = color_list()
@@ -215,6 +218,17 @@ class Detections:
 
     def save(self):
         self.display(save=True)  # save results
+
+    def __len__(self):
+        return self.n
+
+    def tolist(self):
+        # return a list of Detections objects, i.e. 'for result in results.tolist():'
+        x = [Detections([self.imgs[i]], [self.pred[i]], self.names) for i in range(self.n)]
+        for d in x:
+            for k in ['imgs', 'pred', 'xyxy', 'xyxyn', 'xywh', 'xywhn']:
+                setattr(d, k, getattr(d, k)[0])  # pop out of list
+        return x
 
 
 class Flatten(nn.Module):
