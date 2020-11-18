@@ -133,9 +133,9 @@ def test(data,
                 continue
 
             # Predictions
-            clip_coords(pred, (height, width))
+            # clip_coords(pred, (height, width))
             predn = pred.clone()
-            scale_coords(img[si].shape[1:], predn[:, :4], shapes[si][0], shapes[si][1])  # native image-space
+            scale_coords(img[si].shape[1:], predn[:, :4], shapes[si][0], shapes[si][1])  # native-space pred
 
             # Append to text file
             if save_txt:
@@ -153,7 +153,7 @@ def test(data,
                              "box_caption": "%s %.3f" % (names[cls], conf),
                              "scores": {"class_score": conf},
                              "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
-                boxes = {"predictions": {"box_data": box_data, "class_labels": names}}
+                boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
                 wandb_images.append(wandb.Image(img[si], boxes=boxes, caption=path.name))
 
             # Append to pycocotools JSON dictionary
@@ -176,6 +176,7 @@ def test(data,
 
                 # target boxes
                 tbox = xywh2xyxy(labels[:, 1:5]) * whwh
+                scale_coords(img[si].shape[1:], tbox, shapes[si][0], shapes[si][1])  # native-space labels
 
                 # Per target class
                 for cls in torch.unique(tcls_tensor):
