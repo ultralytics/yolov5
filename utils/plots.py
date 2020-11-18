@@ -268,8 +268,21 @@ def plot_labels(labels, save_dir=''):
     nc = int(c.max() + 1)  # number of classes
     colors = color_list()
 
-    fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
-    ax = ax.ravel()
+    # seaborn correlogram
+    try:
+        import seaborn as sns
+        import pandas as pd
+        x = pd.DataFrame(b.transpose(), columns=['x', 'y', 'width', 'height'])
+        sns.pairplot(x, corner=True, diag_kind='hist', kind='scatter', markers='o',
+                     plot_kws=dict(s=3, edgecolor=None, linewidth=1, alpha=0.02),
+                     diag_kws=dict(bins=50))
+        plt.savefig(Path(save_dir) / 'labels_correlogram.png', dpi=200)
+        plt.close()
+    except Exception as e:
+        pass
+
+    # matplotlib labels
+    ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)[1].ravel()
     ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
     ax[0].set_xlabel('classes')
     ax[2].scatter(b[0], b[1], c=hist2d(b[0], b[1], 90), cmap='jet')
@@ -293,19 +306,6 @@ def plot_labels(labels, save_dir=''):
             ax[a].spines[s].set_visible(False)
     plt.savefig(Path(save_dir) / 'labels.png', dpi=200)
     plt.close()
-
-    # seaborn correlogram
-    try:
-        import seaborn as sns
-        import pandas as pd
-        x = pd.DataFrame(b.transpose(), columns=['x', 'y', 'width', 'height'])
-        sns.pairplot(x, corner=True, diag_kind='hist', kind='scatter', markers='o',
-                     plot_kws=dict(s=3, edgecolor=None, linewidth=1, alpha=0.02),
-                     diag_kws=dict(bins=50))
-        plt.savefig(Path(save_dir) / 'labels_correlogram.png', dpi=200)
-        plt.close()
-    except Exception as e:
-        pass
 
 
 def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots import *; plot_evolution()
