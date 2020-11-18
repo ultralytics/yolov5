@@ -142,11 +142,11 @@ def test(data,
                 wandb_images.append(wandb.Image(img[si], boxes=boxes, caption=path.name))
 
             # Autolabel
-            gn = torch.tensor(shapes[si][0])[[1, 0, 1, 0]]  # normalization gain whwh
+            gn = torch.tensor(shapes[si][0], device=device)[[1, 0, 1, 0]]  # normalization gain whwh
             pred[:, :4] = scale_coords(img[si].shape[1:], pred[:, :4], shapes[si][0], shapes[si][1])  # to original
             if save_txt:
                 for *xyxy, conf, cls in pred.tolist():
-                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn.cpu()).view(-1).tolist()  # normalized xywh
                     line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                     with open(save_dir / 'labels' / (path.stem + '.txt'), 'a') as f:
                         f.write(('%g ' * len(line)).rstrip() % line + '\n')
