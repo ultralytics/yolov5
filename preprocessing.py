@@ -3,6 +3,7 @@ from glob import glob
 from sklearn.model_selection import train_test_split
 
 img_list = glob("./data/export/images/*.jpg")
+img_list = [path.replace('data/', '') for path in img_list]
 print(len(img_list))
 
 train_img_list, val_img_list = train_test_split(img_list, test_size=0.2, random_state=2000)
