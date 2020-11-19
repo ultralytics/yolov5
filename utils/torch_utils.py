@@ -153,7 +153,8 @@ def model_info(model, verbose=False, img_size=640):
     try:  # FLOPS
         from thop import profile
         stride = int(model.stride.max())
-        flops = profile(deepcopy(model), inputs=(torch.zeros(1, 3, stride, stride),), verbose=False)[0] / 1E9 * 2
+        img = torch.zeros((1, 3, stride, stride), device=next(model.parameters()).device)  # input
+        flops = profile(deepcopy(model), inputs=(img,), verbose=False)[0] / 1E9 * 2  # stride FLOPS
         img_size = img_size if isinstance(img_size, list) else [img_size, img_size]  # expand if int/float
         fs = ', %.1f GFLOPS' % (flops * img_size[0] / stride * img_size[1] / stride)  # 640x640 FLOPS
     except (ImportError, Exception):
