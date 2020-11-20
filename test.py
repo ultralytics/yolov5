@@ -322,4 +322,4 @@ if __name__ == '__main__':
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')
-        # utils.general.plot_study_txt(f, x)  # plot
+        # utils.plots.plot_study_txt(f, x)  # plot
