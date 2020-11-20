@@ -67,7 +67,7 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
             k: kmeans evolved anchors
 
         Usage:
-            from utils.general import *; _ = kmean_anchors()
+            from utils.autoanchor import *; _ = kmean_anchors()
     """
     thr = 1. / thr
 

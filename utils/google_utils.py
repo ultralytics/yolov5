@@ -22,6 +22,7 @@ def attempt_download(weights):
 
     msg = weights + ' missing, try downloading from https://github.com/ultralytics/yolov5/releases/'
     models = ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']  # available models
+    redundant = False  # offer second download option
 
     if file in models and not os.path.isfile(weights):
         # Google Drive
@@ -40,6 +41,7 @@ def attempt_download(weights):
             assert os.path.exists(weights) and os.path.getsize(weights) > 1E6  # check
         except Exception as e:  # GCP
             print('Download error: %s' % e)
+            assert redundant, 'No secondary mirror'
             url = 'https://storage.googleapis.com/ultralytics/yolov5/ckpt/' + file
             print('Downloading %s to %s...' % (url, weights))
             r = os.system('curl -L %s -o %s' % (url, weights))  # torch.hub.download_url_to_file(url, weights)
