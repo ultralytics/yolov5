@@ -177,7 +177,7 @@ class ConfusionMatrix:
         plt.figure(figsize=(12, 9))
         sn.color_palette("magma", as_cmap=True)
         sn.set(font_scale=1.0)  # for label size
-        sn.heatmap(df_cm, annot=self.nc < 25, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True)
+        sn.heatmap(df_cm, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True)
         plt.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
 
     def print(self):
