@@ -177,12 +177,13 @@ class ConfusionMatrix:
         df_cm = pd.DataFrame(array, range(self.nc + 1), range(self.nc + 1))
 
         plt.figure(figsize=(12, 9))
+        plt.tight_layout()
         sn.color_palette("magma", as_cmap=True)
         sn.set(font_scale=1.0)  # for label size
         sn.heatmap(df_cm, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True,
                    xticklabels=names + ['background FN'] if names else "auto",
                    yticklabels=names + ['background FP'] if names else "auto")
-        plt.tight_layout()
+
         plt.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
 
     def print(self):
