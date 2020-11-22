@@ -224,7 +224,7 @@ def test(data,
 
     # Plots
     if plots:
-        confusion_matrix.plot(save_dir=save_dir)
+        confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
         if wandb and wandb.run:
             wandb.log({"Images": wandb_images})
             wandb.log({"Validation": [wandb.Image(str(x), caption=x.name) for x in sorted(save_dir.glob('test*.jpg'))]})
