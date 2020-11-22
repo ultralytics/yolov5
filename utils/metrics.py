@@ -137,18 +137,20 @@ class ConfusionMatrix:
             matches = matches[matches[:, 2].argsort()[::-1]]
             matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
         else:
-            matches = np.zeros((0, 1))
+            matches = np.zeros((0, 3))
 
+        n = matches.shape[0] > 0
+        m0, m1, _ = matches.transpose().astype(np.uint16)
         for i, gc in enumerate(gt_classes):
-            if matches.shape[0] and matches[matches[:, 0] == i].shape[0] == 1:
-                dc = detection_classes[int(matches[matches[:, 0] == i, 1][0])]
+            j = m0 == i
+            if n and sum(j) == 1:
+                dc = detection_classes[m1[j]]
                 self.matrix[gc, dc] += 1
             else:
                 self.matrix[gc, self.nc] += 1  # background
 
-
         for i, dc in enumerate(detection_classes):
-            if matches.shape[0] and matches[matches[:, 1] == i].shape[0] == 0:
+            if n and not any(m1 == i):
                 self.matrix[self.nc, dc] += 1
 
     def matrix(self):
