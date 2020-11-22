@@ -14,7 +14,7 @@ from utils.datasets import create_dataloader
 from utils.general import coco80_to_coco91_class, check_dataset, check_file, check_img_size, box_iou, \
     non_max_suppression, scale_coords, xyxy2xywh, xywh2xyxy, set_logging, increment_path
 from utils.loss import compute_loss
-from utils.metrics import ap_per_class
+from utils.metrics import ap_per_class, ConfusionMatrix
 from utils.plots import plot_images, output_to_target
 from utils.torch_utils import select_device, time_synchronized
 
@@ -89,6 +89,7 @@ def test(data,
         dataloader = create_dataloader(path, imgsz, batch_size, model.stride.max(), opt, pad=0.5, rect=True)[0]
 
     seen = 0
+    confusion_matrix = ConfusionMatrix(num_classes=nc)
     names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
     coco91class = coco80_to_coco91_class()
     s = ('%20s' + '%12s' * 6) % ('Class', 'Images', 'Targets', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
@@ -135,6 +136,9 @@ def test(data,
             # Predictions
             predn = pred.clone()
             scale_coords(img[si].shape[1:], predn[:, :4], shapes[si][0], shapes[si][1])  # native-space pred
+
+            # Confusion Matrix
+            confusion_matrix.process_batch(pred, labels)
 
             # Append to text file
             if save_txt:
