@@ -130,33 +130,31 @@ class ConfusionMatrix:
         all_ious = general.box_iou(labels[:, 1:], detections[:, :4])
         want_idx = torch.where(all_ious > self.iou_thres)
 
-        all_matches = []
+        matches = []
         for i in range(want_idx[0].shape[0]):
-            all_matches.append([want_idx[0][i], want_idx[1][i], all_ious[want_idx[0][i], want_idx[1][i]]])
+            matches.append([want_idx[0][i], want_idx[1][i], all_ious[want_idx[0][i], want_idx[1][i]]])
 
-        if all_matches:
-            all_matches = np.array(all_matches)
-            if all_matches.shape[0]:  # if there is match
-                all_matches = all_matches[all_matches[:, 2].argsort()[::-1]]
-                all_matches = all_matches[np.unique(all_matches[:, 1], return_index=True)[1]]
-                all_matches = all_matches[all_matches[:, 2].argsort()[::-1]]
-                all_matches = all_matches[np.unique(all_matches[:, 0], return_index=True)[1]]
+        if matches:
+            matches = np.array(matches)
+            if matches.shape[0]:  # if there is match
+                matches = matches[matches[:, 2].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
+                matches = matches[matches[:, 2].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
         else:
-            all_matches = torch.zeros([0, 1])
+            matches = torch.zeros([0, 1])
 
         for i, label in enumerate(labels):
-            if all_matches.shape[0] and all_matches[all_matches[:, 0] == i].shape[0] == 1:
-                gt_class = gt_classes[i]
-                detection_class = detection_classes[int(all_matches[all_matches[:, 0] == i, 1][0])]
-                self.matrix[gt_class, detection_class] += 1
+            gti = gt_classes[i]
+            if matches.shape[0] and matches[matches[:, 0] == i].shape[0] == 1:
+                c = detection_classes[int(matches[matches[:, 0] == i, 1][0])]
+                self.matrix[gti, c] += 1
             else:
-                gt_class = gt_classes[i]
-                self.matrix[gt_class, self.nc] += 1
+                self.matrix[gti, self.nc] += 1
 
         for i, detection in enumerate(detections):
-            if all_matches.shape[0] and all_matches[all_matches[:, 1] == i].shape[0] == 0:
-                detection_class = detection_classes[i]
-                self.matrix[self.nc, detection_class] += 1
+            if matches.shape[0] and matches[matches[:, 1] == i].shape[0] == 0:
+                self.matrix[self.nc, detection_classes[i]] += 1
 
     def matrix(self):
         return self.matrix
