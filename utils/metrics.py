@@ -174,7 +174,6 @@ class ConfusionMatrix:
             df_cm = pd.DataFrame(array, range(self.nc + 1), range(self.nc + 1))
 
             plt.figure(figsize=(12, 9))
-            sn.color_palette("magma", as_cmap=True)
             sn.set(font_scale=1.0)  # for label size
             g = sn.heatmap(df_cm, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True,
                            xticklabels=names + ['background FN'] if names else "auto",
