@@ -163,9 +163,9 @@ class ConfusionMatrix:
             array = self.matrix / (self.matrix.sum(0).reshape(1, self.nc + 1) + 1E-6)  # normalize
             array[array < 0.005] = np.nan  # don't annotate (would appear as 0.00)
 
-            fig = plt.figure(figsize=(12, 9))
-            sn.set(font_scale=1.0)  # for label size
-            sn.heatmap(array, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True,
+            fig, ax = plt.figure(figsize=(12, 9))
+            # sn.set(font_scale=1.0)  # for label size
+            sn.heatmap(array, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True, ax=ax,
                        xticklabels=names + ['background FN'] if names else "auto",
                        yticklabels=names + ['background FP'] if names else "auto").set_facecolor((1, 1, 1))
             fig.tight_layout()
