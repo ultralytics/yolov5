@@ -142,7 +142,7 @@ class ConfusionMatrix:
         else:
             matches = np.zeros((0, 1))
 
-        for i, label in enumerate(labels):
+        for i in range(len(labels)):
             gti = gt_classes[i]
             if matches.shape[0] and matches[matches[:, 0] == i].shape[0] == 1:
                 c = detection_classes[int(matches[matches[:, 0] == i, 1][0])]
@@ -150,7 +150,7 @@ class ConfusionMatrix:
             else:
                 self.matrix[gti, self.nc] += 1
 
-        for i, detection in enumerate(detections):
+        for i in range(len(detections)):
             if matches.shape[0] and matches[matches[:, 1] == i].shape[0] == 0:
                 self.matrix[self.nc, detection_classes[i]] += 1
 
