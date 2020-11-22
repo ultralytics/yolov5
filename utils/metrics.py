@@ -107,7 +107,7 @@ def compute_ap(recall, precision):
 
 class ConfusionMatrix:
     # https://github.com/kaanakan/object_detection_confusion_matrix
-    def __init__(self, nc, CONF_THRESHOLD=0.0, IOU_THRESHOLD=0.45):
+    def __init__(self, nc, CONF_THRESHOLD=0.25, IOU_THRESHOLD=0.45):
         self.matrix = np.zeros((nc + 1, nc + 1))
         self.nc = nc  # number of classes
         self.CONF_THRESHOLD = CONF_THRESHOLD
@@ -171,12 +171,13 @@ class ConfusionMatrix:
         #          [0, 0, 0, 13, 0, 0],
         #          [0, 0, 0, 0, 15, 0],
         #          [0, 0, 1, 0, 0, 15]]
+        array = self.matrix / (self.matrix.sum(0).reshape(1, self.nc + 1) + 1E-6)
 
-        df_cm = pd.DataFrame(self.matrix, range(self.nc + 1), range(self.nc + 1))
-        plt.figure(figsize=(10, 7))
+        df_cm = pd.DataFrame(array, range(self.nc+1), range(self.nc+1))
+        plt.figure(figsize=(12, 9))
         sn.color_palette("magma", as_cmap=True)
-        sn.set(font_scale=1.4)  # for label size
-        sn.heatmap(df_cm, annot=True, annot_kws={"size": 16}, cmap='Blues')  # font size
+        sn.set(font_scale=1.0)  # for label size
+        sn.heatmap(df_cm, annot=self.nc < 20, annot_kws={"size": 12}, cmap='Blues', square=True)  # font size
         plt.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
 
     def print(self):
