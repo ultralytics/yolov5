@@ -106,12 +106,12 @@ def compute_ap(recall, precision):
 
 
 class ConfusionMatrix:
-    # https://github.com/kaanakan/object_detection_confusion_matrix
-    def __init__(self, nc, CONF_THRESHOLD=0.25, IOU_THRESHOLD=0.45):
+    # From https://github.com/kaanakan/object_detection_confusion_matrix
+    def __init__(self, nc, conf=0.25, iou_thres=0.45):
         self.matrix = np.zeros((nc + 1, nc + 1))
         self.nc = nc  # number of classes
-        self.CONF_THRESHOLD = CONF_THRESHOLD
-        self.IOU_THRESHOLD = IOU_THRESHOLD
+        self.conf = conf
+        self.iou_thres = iou_thres
 
     def process_batch(self, detections, labels):
         """
@@ -123,12 +123,12 @@ class ConfusionMatrix:
         Returns:
             None, updates confusion matrix accordingly
         """
-        detections = detections[detections[:, 4] > self.CONF_THRESHOLD]
+        detections = detections[detections[:, 4] > self.conf]
         gt_classes = labels[:, 0].int()
         detection_classes = detections[:, 5].int()
 
         all_ious = general.box_iou(labels[:, 1:], detections[:, :4])
-        want_idx = torch.where(all_ious > self.IOU_THRESHOLD)
+        want_idx = torch.where(all_ious > self.iou_thres)
 
         all_matches = []
         for i in range(want_idx[0].shape[0]):
@@ -136,7 +136,7 @@ class ConfusionMatrix:
 
         if all_matches:
             all_matches = np.array(all_matches)
-            if all_matches.shape[0] > 0:  # if there is match
+            if all_matches.shape[0]:  # if there is match
                 all_matches = all_matches[all_matches[:, 2].argsort()[::-1]]
                 all_matches = all_matches[np.unique(all_matches[:, 1], return_index=True)[1]]
                 all_matches = all_matches[all_matches[:, 2].argsort()[::-1]]
@@ -145,13 +145,13 @@ class ConfusionMatrix:
             all_matches = torch.zeros([0, 1])
 
         for i, label in enumerate(labels):
-            if all_matches.shape[0] > 0 and all_matches[all_matches[:, 0] == i].shape[0] == 1:
+            if all_matches.shape[0] and all_matches[all_matches[:, 0] == i].shape[0] == 1:
                 gt_class = gt_classes[i]
                 detection_class = detection_classes[int(all_matches[all_matches[:, 0] == i, 1][0])]
-                self.matrix[(gt_class), detection_class] += 1
+                self.matrix[gt_class, detection_class] += 1
             else:
                 gt_class = gt_classes[i]
-                self.matrix[(gt_class), self.nc] += 1
+                self.matrix[gt_class, self.nc] += 1
 
         for i, detection in enumerate(detections):
             if all_matches.shape[0] and all_matches[all_matches[:, 1] == i].shape[0] == 0:
