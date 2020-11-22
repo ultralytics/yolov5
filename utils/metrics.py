@@ -165,19 +165,19 @@ class ConfusionMatrix:
         import seaborn as sn
         import pandas as pd
 
+        array = self.matrix / (self.matrix.sum(0).reshape(1, self.nc + 1) + 1E-6)
         # array = [[13, 1, 1, 0, 2, 0],
         #          [3, 9, 6, 0, 1, 0],
         #          [0, 0, 16, 2, 0, 0],
         #          [0, 0, 0, 13, 0, 0],
         #          [0, 0, 0, 0, 15, 0],
         #          [0, 0, 1, 0, 0, 15]]
-        array = self.matrix / (self.matrix.sum(0).reshape(1, self.nc + 1) + 1E-6)
 
-        df_cm = pd.DataFrame(array, range(self.nc+1), range(self.nc+1))
+        df_cm = pd.DataFrame(array, range(self.nc + 1), range(self.nc + 1))
         plt.figure(figsize=(12, 9))
         sn.color_palette("magma", as_cmap=True)
         sn.set(font_scale=1.0)  # for label size
-        sn.heatmap(df_cm, annot=self.nc < 20, annot_kws={"size": 12}, cmap='Blues', square=True)  # font size
+        sn.heatmap(df_cm, annot=self.nc < 25, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True)
         plt.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
 
     def print(self):
