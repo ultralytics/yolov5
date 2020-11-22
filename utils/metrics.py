@@ -161,9 +161,10 @@ class ConfusionMatrix:
     def matrix(self):
         return self.matrix
 
-    def plot(self, save_dir=''):
+    def plot(self, save_dir='', names=[]):
         import seaborn as sn
         import pandas as pd
+        names = names + ['background'] if names else "auto"
 
         array = self.matrix / (self.matrix.sum(0).reshape(1, self.nc + 1) + 1E-6)  # normalize
         # array = [[13, 1, 1, 0, 2, 0],
@@ -178,7 +179,8 @@ class ConfusionMatrix:
         plt.figure(figsize=(12, 9))
         sn.color_palette("magma", as_cmap=True)
         sn.set(font_scale=1.0)  # for label size
-        sn.heatmap(df_cm, annot=self.nc < 930, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True)
+        sn.heatmap(df_cm, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True,
+                   xticklabels=names, yticklabels=names)
         plt.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
 
     def print(self):
