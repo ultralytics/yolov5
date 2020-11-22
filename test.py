@@ -137,9 +137,6 @@ def test(data,
             predn = pred.clone()
             scale_coords(img[si].shape[1:], predn[:, :4], shapes[si][0], shapes[si][1])  # native-space pred
 
-            # Confusion Matrix
-            confusion_matrix.process_batch(pred, labels)
-
             # Append to text file
             if save_txt:
                 gn = torch.tensor(shapes[si][0])[[1, 0, 1, 0]]  # normalization gain whwh
@@ -180,6 +177,9 @@ def test(data,
                 # target boxes
                 tbox = xywh2xyxy(labels[:, 1:5])
                 scale_coords(img[si].shape[1:], tbox, shapes[si][0], shapes[si][1])  # native-space labels
+
+                # Confusion Matrix
+                confusion_matrix.process_batch(pred, torch.cat((labels[:, 0:1], tbox), 1))
 
                 # Per target class
                 for cls in torch.unique(tcls_tensor):
@@ -222,10 +222,12 @@ def test(data,
     else:
         nt = torch.zeros(1)
 
-    # W&B logging
-    if plots and wandb and wandb.run:
-        wandb.log({"Images": wandb_images})
-        wandb.log({"Validation": [wandb.Image(str(x), caption=x.name) for x in sorted(save_dir.glob('test*.jpg'))]})
+    # Plots
+    if plots:
+        confusion_matrix.plot(save_dir=save_dir)
+        if wandb and wandb.run:
+            wandb.log({"Images": wandb_images})
+            wandb.log({"Validation": [wandb.Image(str(x), caption=x.name) for x in sorted(save_dir.glob('test*.jpg'))]})
 
     # Print results
     pf = '%20s' + '%12.3g' * 6  # print format
