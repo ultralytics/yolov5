@@ -127,12 +127,10 @@ class ConfusionMatrix:
         gt_classes = labels[:, 0].int()
         detection_classes = detections[:, 5].int()
 
-        all_ious = general.box_iou(labels[:, 1:], detections[:, :4])
-        want_idx = torch.where(all_ious > self.iou_thres)
-
         matches = []
-        for i in range(want_idx[0].shape[0]):
-            matches.append([want_idx[0][i], want_idx[1][i], all_ious[want_idx[0][i], want_idx[1][i]]])
+        iou = general.box_iou(labels[:, 1:], detections[:, :4])
+        for g1, g2 in zip(*torch.where(iou > self.iou_thres)):
+            matches.append([g1, g2, iou[g1, g2]])
 
         if matches:
             matches = np.array(matches)
@@ -142,7 +140,7 @@ class ConfusionMatrix:
                 matches = matches[matches[:, 2].argsort()[::-1]]
                 matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
         else:
-            matches = torch.zeros([0, 1])
+            matches = np.zeros((0, 1))
 
         for i, label in enumerate(labels):
             gti = gt_classes[i]
