@@ -157,30 +157,33 @@ class ConfusionMatrix:
     def matrix(self):
         return self.matrix
 
-    def plot(self, save_dir='', names=[]):
-        import seaborn as sn
-        import pandas as pd
+    def plot(self, save_dir='', names=()):
+        try:
+            import seaborn as sn
+            import pandas as pd
 
-        array = self.matrix / (self.matrix.sum(0).reshape(1, self.nc + 1) + 1E-6)  # normalize
-        # array = [[13, 1, 1, 0, 2, 0],
-        #          [3, 9, 6, 0, 1, 0],
-        #          [0, 0, 16, 2, 0, 0],
-        #          [0, 0, 0, 13, 0, 0],
-        #          [0, 0, 0, 0, 15, 0],
-        #          [0, 0, 1, 0, 0, 15]]  # example
+            array = self.matrix / (self.matrix.sum(0).reshape(1, self.nc + 1) + 1E-6)  # normalize
+            # array = [[13, 1, 1, 0, 2, 0],
+            #          [3, 9, 6, 0, 1, 0],
+            #          [0, 0, 16, 2, 0, 0],
+            #          [0, 0, 0, 13, 0, 0],
+            #          [0, 0, 0, 0, 15, 0],
+            #          [0, 0, 1, 0, 0, 15]]  # example
 
-        array[array < 0.005] = np.nan  # don't annotate (will appear as 0.0)
-        df_cm = pd.DataFrame(array, range(self.nc + 1), range(self.nc + 1))
+            array[array < 0.005] = np.nan  # don't annotate (will appear as 0.0)
+            df_cm = pd.DataFrame(array, range(self.nc + 1), range(self.nc + 1))
 
-        plt.figure(figsize=(12, 9))
-        sn.color_palette("magma", as_cmap=True)
-        sn.set(font_scale=1.0)  # for label size
-        g = sn.heatmap(df_cm, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True,
-                       xticklabels=names + ['background FN'] if names else "auto",
-                       yticklabels=names + ['background FP'] if names else "auto")
-        g.set_facecolor((1, 1, 1))
-        plt.tight_layout()
-        plt.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
+            plt.figure(figsize=(12, 9))
+            sn.color_palette("magma", as_cmap=True)
+            sn.set(font_scale=1.0)  # for label size
+            g = sn.heatmap(df_cm, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True,
+                           xticklabels=names + ['background FN'] if names else "auto",
+                           yticklabels=names + ['background FP'] if names else "auto")
+            g.set_facecolor((1, 1, 1))
+            plt.tight_layout()
+            plt.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
+        except Exception as e:
+            pass
 
     def print(self):
         for i in range(self.nc + 1):
