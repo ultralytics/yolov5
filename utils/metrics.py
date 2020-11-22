@@ -106,7 +106,7 @@ def compute_ap(recall, precision):
 
 class ConfusionMatrix:
     # https://github.com/kaanakan/object_detection_confusion_matrix
-    def __init__(self, num_classes, CONF_THRESHOLD=0.3, IOU_THRESHOLD=0.5):
+    def __init__(self, num_classes, CONF_THRESHOLD=0.0, IOU_THRESHOLD=0.45):
         self.matrix = np.zeros((num_classes + 1, num_classes + 1))
         self.num_classes = num_classes
         self.CONF_THRESHOLD = CONF_THRESHOLD
@@ -123,8 +123,8 @@ class ConfusionMatrix:
             None, updates confusion matrix accordingly
         """
         detections = detections[detections[:, 4] > self.CONF_THRESHOLD]
-        gt_classes = labels[:, 0].astype(np.int16)
-        detection_classes = detections[:, 5].astype(np.int16)
+        gt_classes = labels[:, 0].int()
+        detection_classes = detections[:, 5].int()
 
         all_ious = general.box_iou(labels[:, 1:], detections[:, :4])
         want_idx = np.where(all_ious > self.IOU_THRESHOLD)
@@ -157,10 +157,29 @@ class ConfusionMatrix:
                 detection_class = detection_classes[i]
                 self.matrix[self.num_classes, detection_class] += 1
 
-    def return_matrix(self):
+    def matrix(self):
         return self.matrix
 
-    def print_matrix(self):
+    def plot(self, save_dir=''):
+        import seaborn as sn
+        import pandas as pd
+
+        # array = [[13, 1, 1, 0, 2, 0],
+        #          [3, 9, 6, 0, 1, 0],
+        #          [0, 0, 16, 2, 0, 0],
+        #          [0, 0, 0, 13, 0, 0],
+        #          [0, 0, 0, 0, 15, 0],
+        #          [0, 0, 1, 0, 0, 15]]
+
+        array = self.matrix.numpy()
+        df_cm = pd.DataFrame(array, range(6), range(6))
+        plt.figure(figsize=(10,7))
+        sn.color_palette("magma", as_cmap=True)
+        sn.set(font_scale=1.4)  # for label size
+        sn.heatmap(df_cm, annot=True, annot_kws={"size": 16}, cmap='Blues')  # font size
+        plt.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
+
+    def print(self):
         for i in range(self.num_classes + 1):
             print(' '.join(map(str, self.matrix[i])))
 
