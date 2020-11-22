@@ -4,6 +4,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 
 from . import general
 
@@ -106,9 +107,9 @@ def compute_ap(recall, precision):
 
 class ConfusionMatrix:
     # https://github.com/kaanakan/object_detection_confusion_matrix
-    def __init__(self, num_classes, CONF_THRESHOLD=0.0, IOU_THRESHOLD=0.45):
-        self.matrix = np.zeros((num_classes + 1, num_classes + 1))
-        self.num_classes = num_classes
+    def __init__(self, nc, CONF_THRESHOLD=0.0, IOU_THRESHOLD=0.45):
+        self.matrix = np.zeros((nc + 1, nc + 1))
+        self.nc = nc  # number of classes
         self.CONF_THRESHOLD = CONF_THRESHOLD
         self.IOU_THRESHOLD = IOU_THRESHOLD
 
@@ -127,21 +128,21 @@ class ConfusionMatrix:
         detection_classes = detections[:, 5].int()
 
         all_ious = general.box_iou(labels[:, 1:], detections[:, :4])
-        want_idx = np.where(all_ious > self.IOU_THRESHOLD)
+        want_idx = torch.where(all_ious > self.IOU_THRESHOLD)
 
         all_matches = []
         for i in range(want_idx[0].shape[0]):
             all_matches.append([want_idx[0][i], want_idx[1][i], all_ious[want_idx[0][i], want_idx[1][i]]])
 
-        all_matches = np.array(all_matches)
-        if all_matches.shape[0] > 0:  # if there is match
-            all_matches = all_matches[all_matches[:, 2].argsort()[::-1]]
-
-            all_matches = all_matches[np.unique(all_matches[:, 1], return_index=True)[1]]
-
-            all_matches = all_matches[all_matches[:, 2].argsort()[::-1]]
-
-            all_matches = all_matches[np.unique(all_matches[:, 0], return_index=True)[1]]
+        if all_matches:
+            all_matches = np.array(all_matches)
+            if all_matches.shape[0] > 0:  # if there is match
+                all_matches = all_matches[all_matches[:, 2].argsort()[::-1]]
+                all_matches = all_matches[np.unique(all_matches[:, 1], return_index=True)[1]]
+                all_matches = all_matches[all_matches[:, 2].argsort()[::-1]]
+                all_matches = all_matches[np.unique(all_matches[:, 0], return_index=True)[1]]
+        else:
+            all_matches = torch.zeros([0, 1])
 
         for i, label in enumerate(labels):
             if all_matches.shape[0] > 0 and all_matches[all_matches[:, 0] == i].shape[0] == 1:
@@ -150,12 +151,12 @@ class ConfusionMatrix:
                 self.matrix[(gt_class), detection_class] += 1
             else:
                 gt_class = gt_classes[i]
-                self.matrix[(gt_class), self.num_classes] += 1
+                self.matrix[(gt_class), self.nc] += 1
 
         for i, detection in enumerate(detections):
             if all_matches.shape[0] and all_matches[all_matches[:, 1] == i].shape[0] == 0:
                 detection_class = detection_classes[i]
-                self.matrix[self.num_classes, detection_class] += 1
+                self.matrix[self.nc, detection_class] += 1
 
     def matrix(self):
         return self.matrix
@@ -171,16 +172,15 @@ class ConfusionMatrix:
         #          [0, 0, 0, 0, 15, 0],
         #          [0, 0, 1, 0, 0, 15]]
 
-        array = self.matrix.cpu().numpy()
-        df_cm = pd.DataFrame(array, range(6), range(6))
-        plt.figure(figsize=(10,7))
+        df_cm = pd.DataFrame(self.matrix, range(self.nc + 1), range(self.nc + 1))
+        plt.figure(figsize=(10, 7))
         sn.color_palette("magma", as_cmap=True)
         sn.set(font_scale=1.4)  # for label size
         sn.heatmap(df_cm, annot=True, annot_kws={"size": 16}, cmap='Blues')  # font size
         plt.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
 
     def print(self):
-        for i in range(self.num_classes + 1):
+        for i in range(self.nc + 1):
             print(' '.join(map(str, self.matrix[i])))
 
 
