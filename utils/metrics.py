@@ -171,7 +171,7 @@ class ConfusionMatrix:
         #          [0, 0, 0, 0, 15, 0],
         #          [0, 0, 1, 0, 0, 15]]
 
-        array = self.matrix.numpy()
+        array = self.matrix.cpu().numpy()
         df_cm = pd.DataFrame(array, range(6), range(6))
         plt.figure(figsize=(10,7))
         sn.color_palette("magma", as_cmap=True)
