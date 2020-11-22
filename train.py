@@ -397,7 +397,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             plot_results(save_dir=save_dir)  # save as results.png
             if wandb:
                 files = ['results.png', 'precision_recall_curve.png', 'confusion_matrix.png']
-                wandb.log({"Results": [wandb.Image(str(save_dir / f), caption=f) for f in files]})
+                wandb.log({"Results": [wandb.Image(str(save_dir / f), caption=f) for f in files
+                                       if (save_dir / f).exists()]})
         logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
     else:
         dist.destroy_process_group()
