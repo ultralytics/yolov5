@@ -128,10 +128,6 @@ class ConfusionMatrix:
         detection_classes = detections[:, 5].int()
         iou = general.box_iou(labels[:, 1:], detections[:, :4])
 
-        # matches = []
-        # for g1, g2 in zip(*torch.where(iou > self.iou_thres)):
-        #     matches.append([g1, g2, iou[g1, g2]])
-
         x = torch.where(iou > self.iou_thres)
         if x[0].shape[0]:
             matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy()
@@ -148,7 +144,8 @@ class ConfusionMatrix:
                 dc = detection_classes[int(matches[matches[:, 0] == i, 1][0])]
                 self.matrix[gc, dc] += 1
             else:
-                self.matrix[gc, self.nc] += 1
+                self.matrix[gc, self.nc] += 1  # background
+
 
         for i, dc in enumerate(detection_classes):
             if matches.shape[0] and matches[matches[:, 1] == i].shape[0] == 0:
