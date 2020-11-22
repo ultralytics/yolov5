@@ -126,33 +126,33 @@ class ConfusionMatrix:
         detections = detections[detections[:, 4] > self.conf]
         gt_classes = labels[:, 0].int()
         detection_classes = detections[:, 5].int()
-
-        matches = []
         iou = general.box_iou(labels[:, 1:], detections[:, :4])
-        for g1, g2 in zip(*torch.where(iou > self.iou_thres)):
-            matches.append([g1, g2, iou[g1, g2]])
 
-        if matches:
-            matches = np.array(matches)
-            if matches.shape[0]:  # if there is match
-                matches = matches[matches[:, 2].argsort()[::-1]]
-                matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
-                matches = matches[matches[:, 2].argsort()[::-1]]
-                matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
+        # matches = []
+        # for g1, g2 in zip(*torch.where(iou > self.iou_thres)):
+        #     matches.append([g1, g2, iou[g1, g2]])
+
+        x = torch.where(iou > self.iou_thres)
+        if x[0].shape[0]:
+            matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).numpy()
+
+            matches = matches[matches[:, 2].argsort()[::-1]]
+            matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
+            matches = matches[matches[:, 2].argsort()[::-1]]
+            matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
         else:
             matches = np.zeros((0, 1))
 
-        for i in range(len(labels)):
-            gti = gt_classes[i]
+        for i, gc in enumerate(gt_classes):
             if matches.shape[0] and matches[matches[:, 0] == i].shape[0] == 1:
-                c = detection_classes[int(matches[matches[:, 0] == i, 1][0])]
-                self.matrix[gti, c] += 1
+                dc = detection_classes[int(matches[matches[:, 0] == i, 1][0])]
+                self.matrix[gc, dc] += 1
             else:
-                self.matrix[gti, self.nc] += 1
+                self.matrix[gc, self.nc] += 1
 
-        for i in range(len(detections)):
+        for i, dc in enumerate(detection_classes):
             if matches.shape[0] and matches[matches[:, 1] == i].shape[0] == 0:
-                self.matrix[self.nc, detection_classes[i]] += 1
+                self.matrix[self.nc, dc] += 1
 
     def matrix(self):
         return self.matrix
