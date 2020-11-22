@@ -178,11 +178,11 @@ class ConfusionMatrix:
 
         plt.figure(figsize=(12, 9))
         sn.color_palette("magma", as_cmap=True)
-        sn.set_style("white", {'figure.facecolor': 'white'})
         sn.set(font_scale=1.0)  # for label size
-        sn.heatmap(df_cm, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True,
-                   xticklabels=names + ['background FN'] if names else "auto",
-                   yticklabels=names + ['background FP'] if names else "auto")
+        g = sn.heatmap(df_cm, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True,
+                       xticklabels=names + ['background FN'] if names else "auto",
+                       yticklabels=names + ['background FP'] if names else "auto")
+        g.set_facecolor((1, 1, 1))
         plt.tight_layout()
         plt.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
 
