@@ -131,11 +131,11 @@ class ConfusionMatrix:
         x = torch.where(iou > self.iou_thres)
         if x[0].shape[0]:
             matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy()
-
-            matches = matches[matches[:, 2].argsort()[::-1]]
-            matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
-            matches = matches[matches[:, 2].argsort()[::-1]]
-            matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
+            if x[0].shape[0] > 1:
+                matches = matches[matches[:, 2].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
+                matches = matches[matches[:, 2].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
         else:
             matches = np.zeros((0, 3))
 
@@ -147,11 +147,12 @@ class ConfusionMatrix:
                 dc = detection_classes[m1[j]]
                 self.matrix[gc, dc] += 1
             else:
-                self.matrix[gc, self.nc] += 1  # background
+                self.matrix[gc, self.nc] += 1  # background FP
 
-        for i, dc in enumerate(detection_classes):
-            if n and not any(m1 == i):
-                self.matrix[self.nc, dc] += 1
+        if n:
+            for i, dc in enumerate(detection_classes):
+                if not any(m1 == i):
+                    self.matrix[self.nc, dc] += 1  # background FN
 
     def matrix(self):
         return self.matrix
