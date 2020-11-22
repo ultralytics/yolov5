@@ -172,7 +172,7 @@ class ConfusionMatrix:
         #          [0, 0, 0, 13, 0, 0],
         #          [0, 0, 0, 0, 15, 0],
         #          [0, 0, 1, 0, 0, 15]]  # example
-        array[array == 0] = np.nan  # don't annotate 0.0
+        array[array < 0.005] = np.nan  # don't annotate (will appear as 0.0)
         df_cm = pd.DataFrame(array, range(self.nc + 1), range(self.nc + 1))
 
         plt.figure(figsize=(12, 9))
