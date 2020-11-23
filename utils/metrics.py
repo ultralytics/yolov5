@@ -106,7 +106,7 @@ def compute_ap(recall, precision):
 
 
 class ConfusionMatrix:
-    # From https://github.com/kaanakan/object_detection_confusion_matrix
+    # Updated version of https://github.com/kaanakan/object_detection_confusion_matrix
     def __init__(self, nc, conf=0.25, iou_thres=0.45):
         self.matrix = np.zeros((nc + 1, nc + 1))
         self.nc = nc  # number of classes
@@ -164,10 +164,13 @@ class ConfusionMatrix:
             array[array < 0.005] = np.nan  # don't annotate (would appear as 0.00)
 
             fig = plt.figure(figsize=(12, 9))
-            # sn.set(font_scale=1.0)  # for label size
+            sn.set(font_scale=1.0 if self.nc < 50 else 0.8)  # for label size
+            ticklabels = (0 < len(names) < 99) and len(names) == self.nc  # apply names to ticklabels
             sn.heatmap(array, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True,
-                       xticklabels=names + ['background FN'] if names else "auto",
-                       yticklabels=names + ['background FP'] if names else "auto").set_facecolor((1, 1, 1))
+                       xticklabels=names + ['background FN'] if ticklabels else "auto",
+                       yticklabels=names + ['background FP'] if ticklabels else "auto").set_facecolor((1, 1, 1))
+            fig.axes[0].set_xlabel('True')
+            fig.axes[0].set_ylabel('Predicted')
             fig.tight_layout()
             fig.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
         except Exception as e:
