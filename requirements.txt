@@ -16,8 +16,9 @@ tqdm>=4.41.0
 # logging -------------------------------------
 # wandb
 
-# coco ----------------------------------------
-# pycocotools>=2.0
+# plotting ------------------------------------
+seaborn
+pandas
 
 # export --------------------------------------
 # coremltools==4.0
@@ -26,4 +27,4 @@ tqdm>=4.41.0
 
 # extras --------------------------------------
 # thop  # FLOPS computation
-# seaborn  # plotting
+# pycocotools>=2.0  # COCO mAP

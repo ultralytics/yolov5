@@ -14,7 +14,7 @@ from utils.datasets import create_dataloader
 from utils.general import coco80_to_coco91_class, check_dataset, check_file, check_img_size, box_iou, \
     non_max_suppression, scale_coords, xyxy2xywh, xywh2xyxy, set_logging, increment_path
 from utils.loss import compute_loss
-from utils.metrics import ap_per_class
+from utils.metrics import ap_per_class, ConfusionMatrix
 from utils.plots import plot_images, output_to_target
 from utils.torch_utils import select_device, time_synchronized
 
@@ -89,6 +89,7 @@ def test(data,
         dataloader = create_dataloader(path, imgsz, batch_size, model.stride.max(), opt, pad=0.5, rect=True)[0]
 
     seen = 0
+    confusion_matrix = ConfusionMatrix(nc=nc)
     names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
     coco91class = coco80_to_coco91_class()
     s = ('%20s' + '%12s' * 6) % ('Class', 'Images', 'Targets', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
@@ -176,6 +177,8 @@ def test(data,
                 # target boxes
                 tbox = xywh2xyxy(labels[:, 1:5])
                 scale_coords(img[si].shape[1:], tbox, shapes[si][0], shapes[si][1])  # native-space labels
+                if plots:
+                    confusion_matrix.process_batch(pred, torch.cat((labels[:, 0:1], tbox), 1))
 
                 # Per target class
                 for cls in torch.unique(tcls_tensor):
@@ -218,10 +221,12 @@ def test(data,
     else:
         nt = torch.zeros(1)
 
-    # W&B logging
-    if plots and wandb and wandb.run:
-        wandb.log({"Images": wandb_images})
-        wandb.log({"Validation": [wandb.Image(str(x), caption=x.name) for x in sorted(save_dir.glob('test*.jpg'))]})
+    # Plots
+    if plots:
+        confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
+        if wandb and wandb.run:
+            wandb.log({"Images": wandb_images})
+            wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]})
 
     # Print results
     pf = '%20s' + '%12.3g' * 6  # print format
