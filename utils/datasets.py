@@ -904,18 +904,19 @@ def flatten_recursive(path='../coco128'):
         shutil.copyfile(file, new_path / Path(file).name)
 
 
-def autosplit(path='../coco128', weights=(0.9, 0.1, 0.0)):  # from utils.datasets import *; autosplit()
-    """ Autosplit a dataset into train/val/test splits and save *.txt files
+def autosplit(path='../coco128', weights=(0.9, 0.1, 0.0)):  # from utils.datasets import *; autosplit('../coco128')
+    """ Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
     # Arguments
         path:       Path to images directory
         weights:    Train, val, test weights (list)
     """
     path = Path(path)  # images dir
     files = list(path.rglob('*.*'))
-    indices = random.choices([0, 1, 2], weights=weights, k=len(files))  # assign each image to a split
+    n = len(files)  # number of files
+    indices = random.choices([0, 1, 2], weights=weights, k=n)  # assign each image to a split
     txt = ['autosplit_train.txt', 'autosplit_val.txt', 'autosplit_test.txt']  # 3 txt files
     [(path / x).unlink() for x in txt if (path / x).exists()]  # remove existing
-    for i, img in tqdm(zip(indices, files)):
+    for i, img in tqdm(zip(indices, files), total=n):
         if img.suffix[1:] in img_formats:
             with open(path / txt[i], 'a') as f:
                 f.write(str(img) + '\n')  # add image to txt file
