@@ -108,8 +108,7 @@ import torch
 from PIL import Image
 
 # Model
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True).fuse().eval()  # yolov5s.pt
-model = model.autoshape()  # for autoshaping of PIL/cv2/np inputs and NMS
+model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True).autoshape()  # for PIL/cv2/np inputs and NMS
 
 # Images
 img1 = Image.open('zidane.jpg')
