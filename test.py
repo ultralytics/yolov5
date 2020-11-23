@@ -101,9 +101,8 @@ def test(data,
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
         targets = targets.to(device)
         nb, _, height, width = img.shape  # batch size, channels, height, width
-        whwh = torch.Tensor([width, height, width, height]).to(device)
+        targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)
 
-        # Disable gradients
         with torch.no_grad():
             # Run model
             t = time_synchronized()
@@ -111,12 +110,13 @@ def test(data,
             t0 += time_synchronized() - t
 
             # Compute loss
-            if training:  # if model has loss hyperparameters
+            if training:
                 loss += compute_loss([x.float() for x in train_out], targets, model)[1][:3]  # box, obj, cls
 
             # Run NMS
             t = time_synchronized()
-            output = non_max_suppression(inf_out, conf_thres=conf_thres, iou_thres=iou_thres)
+            lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_txt else []  # for autolabelling
+            output = non_max_suppression(inf_out, conf_thres=conf_thres, iou_thres=iou_thres, labels=lb)
             t1 += time_synchronized() - t
 
         # Statistics per image
@@ -174,7 +174,7 @@ def test(data,
                 tcls_tensor = labels[:, 0]
 
                 # target boxes
-                tbox = xywh2xyxy(labels[:, 1:5]) * whwh
+                tbox = xywh2xyxy(labels[:, 1:5])
                 scale_coords(img[si].shape[1:], tbox, shapes[si][0], shapes[si][1])  # native-space labels
 
                 # Per target class
@@ -264,7 +264,8 @@ def test(data,
 
     # Return results
     if not training:
-        print('Results saved to %s' % save_dir)
+        s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
+        print(f"Results saved to {save_dir}{s}")
     model.float()  # for training
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
