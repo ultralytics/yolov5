@@ -70,9 +70,7 @@ class QFocalLoss(nn.Module):
         self.loss_fcn.reduction = 'none'  # required to apply FL to each element
 
     def forward(self, pred, true):
-        p_loss = self.loss_fcn(pred, true)
-        n_loss = self.loss_fcn(-pred, 1 - true)
-        loss = (true) * p_loss + (1 - true) * n_loss
+        loss = self.loss_fcn(pred, true)
         
         pred_prob = torch.sigmoid(pred)  # prob from logits
         alpha_factor = true * self.alpha + (1 - true) * (1 - self.alpha)
