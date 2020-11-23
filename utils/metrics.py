@@ -165,10 +165,10 @@ class ConfusionMatrix:
 
             fig = plt.figure(figsize=(12, 9))
             sn.set(font_scale=1.0 if self.nc < 50 else 0.8)  # for label size
-            ticklabels = (0 < len(names) < 99) and len(names) == self.nc  # apply names to ticklabels
+            labels = (0 < len(names) < 99) and len(names) == self.nc  # apply names to ticklabels
             sn.heatmap(array, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True,
-                       xticklabels=names + ['background FN'] if ticklabels else "auto",
-                       yticklabels=names + ['background FP'] if ticklabels else "auto").set_facecolor((1, 1, 1))
+                       xticklabels=names + ['background FN'] if labels else "auto",
+                       yticklabels=names + ['background FP'] if labels else "auto").set_facecolor((1, 1, 1))
             fig.axes[0].set_xlabel('True')
             fig.axes[0].set_ylabel('Predicted')
             fig.tight_layout()
