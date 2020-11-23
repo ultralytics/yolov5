@@ -64,7 +64,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='precision
             # AP from recall-precision curve
             for j in range(tp.shape[1]):
                 ap[ci, j], mpre, mrec = compute_ap(recall[:, j], precision[:, j])
-                if j == 0:
+                if plot and (j == 0):
                     py.append(np.interp(px, mrec, mpre))  # precision at mAP@0.5
 
     # Compute F1 score (harmonic mean of precision and recall)
