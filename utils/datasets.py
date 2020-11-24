@@ -1,6 +1,7 @@
 # Dataset utils and dataloaders
 
 import glob
+import logging
 import math
 import os
 import random
@@ -20,6 +21,8 @@ from tqdm import tqdm
 
 from utils.general import xyxy2xywh, xywh2xyxy
 from utils.torch_utils import torch_distributed_zero_first
+
+logger = logging.getLogger(__name__)
 
 # Parameters
 help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
@@ -165,14 +168,14 @@ class LoadImages:  # for inference
                     ret_val, img0 = self.cap.read()
 
             self.frame += 1
-            print('video %g/%g (%g/%g) %s: ' % (self.count + 1, self.nf, self.frame, self.nframes, path), end='')
+            logger.debug('video %g/%g (%g/%g) %s: ', self.count + 1, self.nf, self.frame, self.nframes, path)
 
         else:
             # Read image
             self.count += 1
             img0 = cv2.imread(path)  # BGR
             assert img0 is not None, 'Image Not Found ' + path
-            print('image %g/%g %s: ' % (self.count, self.nf, path), end='')
+            logger.debug('image %g/%g %s: ', self.count, self.nf, path)
 
         # Padded resize
         img = letterbox(img0, new_shape=self.img_size)[0]
@@ -234,7 +237,7 @@ class LoadWebcam:  # for inference
         # Print
         assert ret_val, 'Camera Error %s' % self.pipe
         img_path = 'webcam.jpg'
-        print('webcam %g: ' % self.count, end='')
+        logger.debug('webcam %g: ', self.count)
 
         # Padded resize
         img = letterbox(img0, new_shape=self.img_size)[0]
@@ -265,7 +268,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
         self.sources = sources
         for i, s in enumerate(sources):
             # Start the thread to read frames from the video stream
-            print('%g/%g: %s... ' % (i + 1, n, s), end='')
+            logger.debug('%g/%g: %s... ', i + 1, n, s)
             cap = cv2.VideoCapture(eval(s) if s.isnumeric() else s)
             assert cap.isOpened(), 'Failed to open %s' % s
             w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -273,15 +276,14 @@ class LoadStreams:  # multiple IP or RTSP cameras
             fps = cap.get(cv2.CAP_PROP_FPS) % 100
             _, self.imgs[i] = cap.read()  # guarantee first frame
             thread = Thread(target=self.update, args=([i, cap]), daemon=True)
-            print(' success (%gx%g at %.2f FPS).' % (w, h, fps))
+            logger.debug(' success (%gx%g at %.2f FPS).', w, h, fps)
             thread.start()
-        print('')  # newline
 
         # check for common shapes
         s = np.stack([letterbox(x, new_shape=self.img_size)[0].shape for x in self.imgs], 0)  # inference shapes
         self.rect = np.unique(s, axis=0).shape[0] == 1  # rect inference if all shapes equal
         if not self.rect:
-            print('WARNING: Different stream shapes detected. For optimal performance supply similarly-shaped streams.')
+            logger.warning('WARNING: Different stream shapes detected. For optimal performance supply similarly-shaped streams.')
 
     def update(self, index, cap):
         # Read next stream frame in a daemon thread
@@ -418,7 +420,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 assert (l >= 0).all(), 'negative labels: %s' % file
                 assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels: %s' % file
                 if np.unique(l, axis=0).shape[0] < l.shape[0]:  # duplicate rows
-                    nd += 1  # print('WARNING: duplicate rows in %s' % self.label_files[i])  # duplicate rows
+                    nd += 1  # logger.warning('WARNING: duplicate rows in %s', self.label_files[i])  # duplicate rows
                 if single_cls:
                     l[:, 0] = 0  # force dataset into single-class mode
                 self.labels[i] = l
@@ -455,7 +457,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                         b[[1, 3]] = np.clip(b[[1, 3]], 0, h)
                         assert cv2.imwrite(f, img[b[1]:b[3], b[0]:b[2]]), 'Failure extracting classifier boxes'
             else:
-                ne += 1  # print('empty labels for image %s' % self.img_files[i])  # file empty
+                ne += 1  # logger.info('empty labels for image %s', self.img_files[i])  # file empty
                 # os.system("rm '%s' '%s'" % (self.img_files[i], self.label_files[i]))  # remove
 
             if rank in [-1, 0]:
@@ -463,7 +465,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                     cache_path, nf, nm, ne, nd, n)
         if nf == 0:
             s = 'WARNING: No labels found in %s. See %s' % (os.path.dirname(file) + os.sep, help_url)
-            print(s)
+            logger.info(s)
             assert not augment, '%s. Can not train without labels.' % s
 
         # Cache images into memory for faster training (WARNING: large datasets may exceed system RAM)
@@ -496,7 +498,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                     l = np.zeros((0, 5), dtype=np.float32)
                 x[img] = [l, shape]
             except Exception as e:
-                print('WARNING: Ignoring corrupted image and/or label %s: %s' % (img, e))
+                logger.warning('WARNING: Ignoring corrupted image and/or label %s: %s', img, e)
 
         x['hash'] = get_hash(self.label_files + self.img_files)
         torch.save(x, path)  # save for next time
@@ -507,7 +509,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
     # def __iter__(self):
     #     self.count = -1
-    #     print('ran dataset iter')
+    #     logger.info('ran dataset iter')
     #     #self.shuffled_vector = np.random.permutation(self.nF) if self.augment else np.arange(self.nF)
     #     return self
 
