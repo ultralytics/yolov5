@@ -86,25 +86,12 @@ def plot_wh_methods():  # from utils.plots import *; plot_wh_methods()
     fig.savefig('comparison.png', dpi=200)
 
 
-def output_to_target(output, width, height):
+def output_to_target(output):
     # Convert model output to target format [batch_id, class_id, x, y, w, h, conf]
-    if isinstance(output, torch.Tensor):
-        output = output.cpu().numpy()
-
     targets = []
     for i, o in enumerate(output):
-        if o is not None:
-            for pred in o:
-                box = pred[:4]
-                w = (box[2] - box[0]) / width
-                h = (box[3] - box[1]) / height
-                x = box[0] / width + w / 2
-                y = box[1] / height + h / 2
-                conf = pred[4]
-                cls = int(pred[5])
-
-                targets.append([i, cls, x, y, w, h, conf])
-
+        for *box, conf, cls in o.cpu().numpy():
+            targets.append([i, cls, *list(*xyxy2xywh(np.array(box)[None])), conf])
     return np.array(targets)
 
 
@@ -153,9 +140,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
             labels = image_targets.shape[1] == 6  # labels if no conf column
             conf = None if labels else image_targets[:, 6]  # check for confidence presence (label vs pred)
 
-            boxes[[0, 2]] *= w
             boxes[[0, 2]] += block_x
-            boxes[[1, 3]] *= h
             boxes[[1, 3]] += block_y
             for j, box in enumerate(boxes.T):
                 cls = int(classes[j])
