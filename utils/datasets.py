@@ -443,7 +443,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 assert (shape[0] > 9) & (shape[1] > 9), 'image size <10 pixels'
 
                 # verify labels
-                l = []
                 if os.path.isfile(lb_file):
                     nf += 1  # label found
                     with open(lb_file, 'r') as f:
@@ -458,6 +457,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                         l = np.zeros((0, 5), dtype=np.float32)
                 else:
                     nm += 1  # label missing
+                    l = np.zeros((0, 5), dtype=np.float32)
                 x[im_file] = [l, shape]
             except Exception as e:
                 nc += 1
@@ -470,7 +470,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             print(f'WARNING: No labels found in {path}. See {help_url}')
 
         x['hash'] = get_hash(self.label_files + self.img_files)
-        x['results'] = [nf, nm, ne, nc, i]
+        x['results'] = [nf, nm, ne, nc, i + 1]
         torch.save(x, path)  # save for next time
         logging.info(f"New cache created: {path}")
         return x
