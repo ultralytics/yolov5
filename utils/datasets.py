@@ -443,7 +443,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 assert (shape[0] > 9) & (shape[1] > 9), 'image size <10 pixels'
 
                 # verify labels
-                l = np.zeros((0, 5), dtype=np.float32)
                 if os.path.isfile(lb_file):
                     nf += 1  # label found
                     with open(lb_file, 'r') as f:
@@ -455,8 +454,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                         assert np.unique(l, axis=0).shape[0] == l.shape[0], 'duplicate labels'
                     else:
                         ne += 1  # label empty
+                        l = np.zeros((0, 5), dtype=np.float32)
                 else:
                     nm += 1  # label missing
+                    l = np.zeros((0, 5), dtype=np.float32)
                 x[im_file] = [l, shape]
             except Exception as e:
                 nc += 1
