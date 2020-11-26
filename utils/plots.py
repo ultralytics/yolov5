@@ -140,7 +140,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
             labels = image_targets.shape[1] == 6  # labels if no conf column
             conf = None if labels else image_targets[:, 6]  # check for confidence presence (label vs pred)
 
-            if boxes.max() <= 1:  # if normalized
+            if boxes.shape[1] and boxes.max() <= 1:  # if normalized
                 boxes[[0, 2]] *= w  # scale to pixels
                 boxes[[1, 3]] *= h
             boxes[[0, 2]] += block_x
@@ -224,7 +224,7 @@ def plot_study_txt(f='study.txt', x=None):  # from utils.plots import *; plot_st
     ax = ax.ravel()
 
     fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
-    for f in ['study/study_coco_yolov5%s.txt' % x for x in ['s', 'm', 'l', 'x']]:
+    for f in ['study/study_coco_%s.txt' % x for x in ['yolov5s', 'yolov5m', 'yolov5l', 'yolov5x']]:
         y = np.loadtxt(f, dtype=np.float32, usecols=[0, 1, 2, 3, 7, 8, 9], ndmin=2).T
         x = np.arange(y.shape[1]) if x is None else np.array(x)
         s = ['P', 'R', 'mAP@.5', 'mAP@.5:.95', 't_inference (ms/img)', 't_NMS (ms/img)', 't_total (ms/img)']
@@ -368,7 +368,7 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
                     y[y == 0] = np.nan  # don't show zero loss values
                     # y /= y[0]  # normalize
                 label = labels[fi] if len(labels) else f.stem
-                ax[i].plot(x, y, marker='.', label=label, linewidth=1, markersize=6)
+                ax[i].plot(x, y, marker='.', label=label, linewidth=2, markersize=8)
                 ax[i].set_title(s[i])
                 # if i in [5, 6, 7]:  # share train and val loss y axes
                 #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
