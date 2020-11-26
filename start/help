@@ -5,3 +5,5 @@ python train.py --img 640 --batch 16 --epochs 350 --data /alex_data/sl.yaml --we
 
 #to check result NN (best.pt) run:
 python detect.py --source /alex_data/sl_test/ --weights best.pt --conf 0.4
+
+python detect_sl.py --source /alex_data/sl_lemon_test/ --weights best.pt

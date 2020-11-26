@@ -1,5 +1,5 @@
 # Start FROM Nvidia PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
-FROM nvcr.io/nvidia/pytorch:20.09-py3
+FROM supervisely/base-py-cuda-10-1
 
 # Install dependencies
 RUN pip install --upgrade pip
@@ -17,6 +17,17 @@ RUN pip install tensorboard>=2.2
 RUN pip install torch>=1.6.0
 RUN pip install torchvision>=0.7.0
 RUN pip install tqdm>=4.41.0
+
+
+RUN pip install simplejson
+RUN conda install -c conda-forge python-json-logger
+RUN pip install prettytable
+RUN pip install shapely
+RUN pip install pascal_voc_writer
+RUN pip install requests_toolbelt
+RUN pip install bidict
+RUN pip install sk-video
+
 
 WORKDIR /alex_work
 # Create working directory
