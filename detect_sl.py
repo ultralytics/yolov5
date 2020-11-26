@@ -15,6 +15,7 @@ from utils.general import (
     xyxy2xywh, plot_one_box, strip_optimizer, set_logging)
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 import supervisely_lib as sly
+from supervisely_lib.annotation.tag_meta import TagValueType
 import numpy as np
 
 
@@ -71,12 +72,13 @@ def detect(save_img=False):
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
 
     #create meta
+    tag_meta = sly.TagMeta('confidence', TagValueType.ANY_NUMBER)
     obj_classes = []
     for class_name, class_color in zip(names, colors):
         obj_classes.append(sly.ObjClass(class_name, sly.Rectangle, class_color))
 
     new_collection = sly.ObjClassCollection(obj_classes)
-    new_meta = sly.ProjectMeta(new_collection)
+    new_meta = sly.ProjectMeta(new_collection, sly.TagMetaCollection([tag_meta]))
     api.project.update_meta(new_project.id, new_meta.to_json())
 
     for dataset in datasets:
@@ -120,7 +122,9 @@ def detect(save_img=False):
                             top, left , bottom, right = int(xyxy[1]), int(xyxy[0]), int(xyxy[3]), int(xyxy[2])
                             new_geom = sly.Rectangle(top, left , bottom, right)
                             new_obj_class = new_collection.get(names[int(cls)])
-                            new_label = sly.Label(new_geom, new_obj_class)
+                            tag = sly.Tag(tag_meta, round(float(conf), 2)) #tensor.item()
+                            new_tag = sly.TagCollection([tag])
+                            new_label = sly.Label(new_geom, new_obj_class, new_tag)
                             ann = ann.add_label(new_label)
 
                     res_anns.append(ann)
@@ -148,7 +152,7 @@ if __name__ == '__main__':
     parser.add_argument('--update', action='store_true', help='update all models')
     opt = parser.parse_args()
     #print(opt)
-    
+
     api = sly.Api.from_env()
     workspace_id = 23821
     project_id = 103137
