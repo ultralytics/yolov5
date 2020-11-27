@@ -5,6 +5,7 @@ import json
 import yaml
 import train, test
 import subprocess
+from pprint import pprint
 from glob import glob
 from sklearn.model_selection import train_test_split
 from utils import general_utils as g_utils
@@ -72,24 +73,60 @@ def main_generate(ini, logger=None):
     label_path = os.path.join(_project_folder_, ini['label_path'])
     g_utils.folder_exists(label_path, create_=True)
 
-    img_path = os.path.join(_project_folder_, ini['img_path'])
-    img_fnames = sorted(g_utils.get_filenames(img_path, extensions=g_utils.IMG_EXTENSIONS))
-    logger.info(" [GENERATE] # Total file number to be processed: {:d}.".format(len(img_fnames)))
+    raw_path = os.path.join(_project_folder_, ini['raw_path'])
+    ann_path = os.path.join(_project_folder_, ini['ann_path'])
+    raw_fnames = sorted(g_utils.get_filenames(raw_path, extensions=g_utils.IMG_EXTENSIONS))
+    ann_fnames = sorted(g_utils.get_filenames(ann_path, extensions=g_utils.META_EXTENSION))
+    logger.info(" [GENERATE] # Total file number to be processed: {:d}.".format(len(raw_fnames)))
 
-    for idx, img_fname in enumerate(img_fnames):
-        logger.info(" [GENERATE-YOLO] # Processing {} ({:d}/{:d})".format(img_fname, (idx + 1), len(img_fnames)))
+    for idx, raw_fname in enumerate(raw_fnames):
+        logger.info(" [GENERATE] # Processing {} ({:d}/{:d})".format(raw_fname, (idx + 1), len(raw_fnames)))
 
-        _, img_core_name, img_ext = g_utils.split_fname(img_fname)
-        img = g_utils.imread(img_fname, color_fmt='RGB')
+        _, raw_core_name, raw_ext = g_utils.split_fname(raw_fname)
+        img = g_utils.imread(raw_fname, color_fmt='RGB')
         h, w, c = img.shape
 
-        # Save object info to COCO format
-        rst_fpath = os.path.join(_project_folder_, ini['label_path'] + img_core_name + '.txt')
-        class_no, x_center, y_center, width, height = str(0), str((w/2) / w), str((h/2) / h), str(w/w), str(h/h)
-        with open(rst_fpath, 'w') as f:
-            strResult = "{} {} {} {} {}\r\n".format(class_no, x_center, y_center, width, height)
-            f.write(strResult)
-        pass
+        # Load json
+        ann_fname = ann_fnames[idx]
+        _, ann_core_name, _ = g_utils.split_fname(ann_fname)
+        if ann_core_name == raw_core_name + raw_ext:
+            with open(ann_fname) as json_file:
+                json_data = json.load(json_file)
+                objects = json_data['objects']
+                # pprint.pprint(objects)
+
+        # Extract crop position
+        object_names = ini['object_names'].replace(' ', '').split(',')
+        object_type = ini['object_type']
+        for obj in objects:
+            object_name = obj['classTitle']
+
+            if object_name not in object_names:
+                continue
+
+            if object_type == 'problem':
+                if object_name == 'problem_intro':
+                    class_num = 0
+                elif object_name == 'problem_whole':
+                    class_num = 1
+                elif object_name == 'problem_text':
+                    class_num = 2
+            elif object_type == 'graph':
+                class_num = 0
+
+            [x1, y1], [x2, y2] = obj['points']['exterior']
+            x_min, y_min, x_max, y_max = int(min(x1, x2)), int(min(y1, y2)), int(max(x1, x2)), int(max(y1, y2))
+            if x_max - x_min <= 0 or y_max - y_min <= 0:
+                continue
+
+            # Save object info to COCO format
+            rst_fpath = os.path.join(_project_folder_, ini['label_path'] + raw_core_name + '.txt')
+            class_no, x_center, y_center, width, height = \
+                str(class_num), str(((x_max+x_min)/2) / w), str(((y_max+y_min)/2) / h), str((x_max-x_min)/w), str((y_max-y_min)/h)
+            with open(rst_fpath, 'a') as f:
+                strResult = "{} {} {} {} {}\r\n".format(class_no, x_center, y_center, width, height)
+                f.write(strResult)
+            pass
 
     logger.info(" # {} in {} mode finished.".format(_this_basename_, OP_MODE))
     return True
@@ -108,7 +145,17 @@ def main_split(ini, logger=None):
         if ans.lower() != 'y':
             sys.exit()
 
+
+    # Apply symbolic link for img path
+    raw_path = os.path.join(_project_folder_, ini['raw_path'])
     img_path = os.path.join(_project_folder_, ini['img_path'])
+    g_utils.folder_exists(img_path, create_=True)
+
+    img_fnames = sorted(g_utils.get_filenames(img_path, extensions=g_utils.IMG_EXTENSIONS))
+    if len(img_fnames) == 0:
+        sym_cmd = "ln -s {} {}".format(raw_path + '*', img_path) # to all files
+        subprocess.call(sym_cmd, shell=True)
+
     img_fnames = sorted(g_utils.get_filenames(img_path, extensions=g_utils.IMG_EXTENSIONS))
 
     test_ratio = float(ini['test_ratio'])
@@ -132,17 +179,16 @@ def main_split(ini, logger=None):
     with open(ref_yaml_path, 'r') as f:
         data = yaml.safe_load(f)
 
-
     data['train'] = os.path.join(_project_folder_, ini['train_path'])
     data['val'] = os.path.join(_project_folder_, ini['val_path'])
-    data['names'][0] = ini['object_name']
+    data['names'] = ini['object_names'].replace(' ', '').split(',')
+    data['nc'] = len(data['names'])
 
     # Save yaml file
     rst_yaml_path = os.path.join(_project_folder_, ini['rst_yaml_path'])
     with open(rst_yaml_path, 'w') as f:
         yaml.dump(data, f)
-        print(data)
-
+        pprint(data)
 
     logger.info(" # {} in {} mode finished.".format(_this_basename_, OP_MODE))
     return True
@@ -203,7 +249,7 @@ def parse_arguments(argv):
 
 SELF_TEST_ = True
 TARGET = 'GRAPH' # PROBLEM / GRAPH
-OP_MODE = 'TRAIN_TEST' # CROP / GENERATE / SPLIT / TRAIN_TEST
+OP_MODE = 'TRAIN_TEST' # GENERATE / SPLIT / TRAIN_TEST (CROP은 별도의 기능)
 if TARGET == 'PROBLEM':
     INI_FNAME = _this_basename_ + "_problem.ini"
 elif TARGET == 'GRAPH':
