@@ -9,6 +9,7 @@ from pathlib import Path
 import tensorflow as tf
 import torch
 import torch.nn as nn
+import yaml
 
 if tf.__version__.startswith('1'):
     tf.enable_eager_execution()
@@ -18,7 +19,7 @@ import numpy as np
 
 from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat, autopad
 from models.experimental import MixConv2d, CrossConv, C3
-from utils.general import make_divisible, check_file
+from utils.general import make_divisible, check_file, check_dataset
 from models.yolo import Detect
 from utils.datasets import LoadImages
 from utils.google_utils import attempt_download
@@ -332,6 +333,20 @@ class tf_Model():
         return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
 
 
+def representative_dataset_gen():
+    # Representative dataset for use with converter.representative_dataset
+    n = 0
+    for path, img, im0s, vid_cap in dataset:
+        # Get sample input data as a numpy array in a method of your choosing.
+        n += 1
+        input = np.transpose(img, [1, 2, 0])
+        input = np.expand_dims(input, axis=0).astype(np.float32)
+        input /= 255.0
+        yield [input]
+        if n >= opt.ncalib:
+            break
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg', type=str, default='yolov5s.yaml', help='cfg path')
@@ -339,7 +354,7 @@ if __name__ == "__main__":
     parser.add_argument('--img-size', nargs='+', type=int, default=[320, 320], help='image size')  # height, width
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--no-tfl-detect', action='store_true', help='remove Detect() from TFLite model')
-    parser.add_argument('--source', type=str, default='../data/images', help='source')
+    parser.add_argument('--source', type=str, default='../data/coco128.yaml', help='dir of images or data.yaml file')
     parser.add_argument('--ncalib', type=int, default=100, help='number of calibration images')
     parser.add_argument('--tfl-int8', action='store_true', dest='tfl_int8', help='export TFLite int8 model')
     parser.add_argument('--tf-nms', action='store_true', dest='tf_nms', help='TF NMS (without TFLite export)')
@@ -416,7 +431,16 @@ if __name__ == "__main__":
                 print("Don't export Detect module")
                 m.training = True
                 keras_model = keras.Model(inputs=inputs, outputs=tf_model.predict(inputs))
-            # fp32 TFLite model export
+
+            # Representative Dataset
+            if opt.source.endswith('.yaml'):
+                with open(check_file(opt.source)) as f:
+                    data = yaml.load(f, Loader=yaml.FullLoader)  # data dict
+                    check_dataset(data)  # check
+                opt.source = data['train']
+            dataset = LoadImages(opt.source, img_size=opt.img_size, auto=False)
+
+            # fp32 TFLite model export ---------------------------------------------------------------------------------
             # converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
             # converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
             # converter.allow_custom_ops = False
@@ -425,10 +449,11 @@ if __name__ == "__main__":
             # f = opt.weights.replace('.pt', '.tflite')  # filename
             # open(f, "wb").write(tflite_model)
 
-            # fp16 TFLite model export
+            # fp16 TFLite model export ---------------------------------------------------------------------------------
             converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
             converter.optimizations = [tf.lite.Optimize.DEFAULT]
-            converter.target_spec.supported_types = [tf.float16]
+            # converter.representative_dataset = representative_dataset_gen
+            # converter.target_spec.supported_types = [tf.float16]
             converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
             converter.allow_custom_ops = False
             converter.experimental_new_converter = True
@@ -437,32 +462,10 @@ if __name__ == "__main__":
             open(f, "wb").write(tflite_model)
             print('\nTFLite export success, saved as %s' % f)
 
-            # int8 TFLite model export
+            # int8 TFLite model export ---------------------------------------------------------------------------------
             if opt.tfl_int8:
                 converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
                 converter.optimizations = [tf.lite.Optimize.DEFAULT]
-
-                # # Download COCO128
-                # with open(check_file('coco128.yaml')) as f:
-                #     data_dict = yaml.load(f, Loader=yaml.FullLoader)  # data dict
-                #     check_dataset(data_dict)  # check
-
-                dataset = LoadImages(opt.source, img_size=opt.img_size, auto=False)
-
-
-                def representative_dataset_gen():
-                    n = 0
-                    for path, img, im0s, vid_cap in dataset:
-                        # Get sample input data as a numpy array in a method of your choosing.
-                        n += 1
-                        input = np.transpose(img, [1, 2, 0])
-                        input = np.expand_dims(input, axis=0).astype(np.float32)
-                        input /= 255.0
-                        yield [input]
-                        if n >= opt.ncalib:
-                            break
-
-
                 converter.representative_dataset = representative_dataset_gen
                 converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
                 converter.inference_input_type = tf.uint8  # or tf.int8
