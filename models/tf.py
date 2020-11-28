@@ -18,9 +18,10 @@ import numpy as np
 
 from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat, autopad
 from models.experimental import MixConv2d, CrossConv, C3
-from utils.general import make_divisible
+from utils.general import make_divisible, check_file
 from models.yolo import Detect
 from utils.datasets import LoadImages
+from utils.google_utils import attempt_download
 
 logger = logging.getLogger(__name__)
 
@@ -334,8 +335,8 @@ class tf_Model():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default='./models/yolov5s.yaml', help='cfg path')
-    parser.add_argument('--weights', type=str, default='./weights/yolov5s.pt', help='weights path')
+    parser.add_argument('--cfg', type=str, default='yolov5s.yaml', help='cfg path')
+    parser.add_argument('--weights', type=str, default='yolov5s.pt', help='weights path')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')  # height, width
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--no-tfl-detect', action='store_true', help='remove Detect() from TFLite model')
@@ -348,6 +349,7 @@ if __name__ == "__main__":
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
     parser.add_argument('--score-thres', type=float, default=0.4, help='score threshold for NMS')
     opt = parser.parse_args()
+    opt.cfg = check_file(opt.cfg)  # check file
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
 
@@ -355,6 +357,7 @@ if __name__ == "__main__":
     img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size(1,3,320,192) iDetection
 
     # Load PyTorch model
+    attempt_download(opt.weights)
     model = torch.load(opt.weights, map_location=torch.device('cpu'))['model'].float()  # .fuse()
     model.eval()
     model.model[-1].export = False  # set Detect() layer export=True
@@ -441,6 +444,7 @@ if __name__ == "__main__":
                 converter.optimizations = [tf.lite.Optimize.DEFAULT]
                 dataset = LoadImages(opt.source, img_size=opt.img_size, auto=False)
 
+
                 def representative_dataset_gen():
                     n = 0
                     for path, img, im0s, vid_cap in dataset:
@@ -452,6 +456,7 @@ if __name__ == "__main__":
                         yield [input]
                         if n >= opt.ncalib:
                             break
+
 
                 converter.representative_dataset = representative_dataset_gen
                 converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
