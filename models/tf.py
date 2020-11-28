@@ -329,18 +329,17 @@ class tf_Model():
         # conf = x[..., 4:5]
         # cls = x[..., 5:]
         # return [conf * cls, xyxy]  # output only first tensor, [1,6300,80], [1,6300,4]
-        # return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
-        return x
+        return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg', type=str, default='yolov5s.yaml', help='cfg path')
     parser.add_argument('--weights', type=str, default='yolov5s.pt', help='weights path')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')  # height, width
+    parser.add_argument('--img-size', nargs='+', type=int, default=[320, 320], help='image size')  # height, width
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--no-tfl-detect', action='store_true', help='remove Detect() from TFLite model')
-    parser.add_argument('--source', type=str, default='data/images', help='source')
+    parser.add_argument('--source', type=str, default='../data/images', help='source')
     parser.add_argument('--ncalib', type=int, default=100, help='number of calibration images')
     parser.add_argument('--tfl-int8', action='store_true', dest='tfl_int8', help='export TFLite int8 model')
     parser.add_argument('--tf-nms', action='store_true', dest='tf_nms', help='TF NMS (without TFLite export)')
@@ -442,6 +441,12 @@ if __name__ == "__main__":
             if opt.tfl_int8:
                 converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
                 converter.optimizations = [tf.lite.Optimize.DEFAULT]
+
+                # # Download COCO128
+                # with open(check_file('coco128.yaml')) as f:
+                #     data_dict = yaml.load(f, Loader=yaml.FullLoader)  # data dict
+                #     check_dataset(data_dict)  # check
+
                 dataset = LoadImages(opt.source, img_size=opt.img_size, auto=False)
 
 
