@@ -1,28 +1,26 @@
 import argparse
+import logging
+import os
+import sys
+import traceback
 from copy import deepcopy
 from pathlib import Path
-import sys, traceback
-import os
-import logging
 
+import tensorflow as tf
 import torch
 import torch.nn as nn
-import tensorflow as tf
+
 if tf.__version__.startswith('1'):
     tf.enable_eager_execution()
 from tensorflow import keras
-from tensorflow.keras import layers
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 import numpy as np
 
 from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat, autopad
 from models.experimental import MixConv2d, CrossConv, C3
 from utils.general import make_divisible
-from utils.torch_utils import (
-    time_synchronized, fuse_conv_and_bn, model_info, scale_img, initialize_weights, select_device)
 from models.yolo import Detect
 from utils.datasets import LoadImages
-
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +30,10 @@ class tf_BN(keras.layers.Layer):
     def __init__(self, w=None):
         super(tf_BN, self).__init__()
         self.bn = keras.layers.BatchNormalization(
-                beta_initializer=keras.initializers.Constant(w.bias.numpy()),
-                gamma_initializer=keras.initializers.Constant(w.weight.numpy()),
-                moving_mean_initializer=keras.initializers.Constant(w.running_mean.numpy()),
-                moving_variance_initializer=keras.initializers.Constant(w.running_var.numpy()))
+            beta_initializer=keras.initializers.Constant(w.bias.numpy()),
+            gamma_initializer=keras.initializers.Constant(w.weight.numpy()),
+            moving_mean_initializer=keras.initializers.Constant(w.running_mean.numpy()),
+            moving_variance_initializer=keras.initializers.Constant(w.running_var.numpy()))
 
     def call(self, inputs):
         return self.bn(inputs)
@@ -52,7 +50,8 @@ class tf_Pad(keras.layers.Layer):
 
 class tf_Conv(keras.layers.Layer):
     # Standard convolution
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):  # ch_in, ch_out, weights, kernel, stride, padding, groups
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):
+        # ch_in, ch_out, weights, kernel, stride, padding, groups
         super(tf_Conv, self).__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
         assert isinstance(k, int), "Convolution with multiple kernels are not allowed."
@@ -61,38 +60,38 @@ class tf_Conv(keras.layers.Layer):
         # see https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
         if s == 1:
             self.conv = keras.layers.Conv2D(
-                    c2, k, s, 'SAME', use_bias=False,
-                    kernel_initializer=
-                            keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()))
+                c2, k, s, 'SAME', use_bias=False,
+                kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()))
         else:
             self.pad = tf_Pad(autopad(k, p))
             self.conv = keras.Sequential([
-                self.pad, 
+                self.pad,
                 keras.layers.Conv2D(
                     c2, k, s, 'VALID', use_bias=False,
-                    kernel_initializer=
-                            keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()))
+                    kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()))
             ])
 
-        self.bn = tf_BN(w.bn)
+        self.bn = tf_BN(w.bn) if hasattr(w, 'bn') else tf.identity
 
         # YOLOv5 v3 uses Hardswish for activations
         if isinstance(w.act, nn.LeakyReLU):
             self.act = (lambda x: keras.activations.relu(x, alpha=0.1)) if act else tf.identity
-        elif isinstance(w.act, nn.Hardswish): 
-            self.act = (lambda x: x * tf.nn.relu6(x+3) * 0.166666667) if act else tf.identity
+        elif isinstance(w.act, nn.Hardswish):
+            self.act = (lambda x: x * tf.nn.relu6(x + 3) * 0.166666667) if act else tf.identity
 
     def call(self, inputs):
-        return self.act(self.bn(self.conv(inputs)))
+        return self.act(self.bn(self.conv(inputs))) if hasattr(self, 'bn') else self.act(self.conv(inputs))
 
 
 class tf_Focus(keras.layers.Layer):
     # Focus wh information into c-space
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):  # ch_in, ch_out, kernel, stride, padding, groups
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):
+        # ch_in, ch_out, kernel, stride, padding, groups
         super(tf_Focus, self).__init__()
         self.conv = tf_Conv(c1 * 4, c2, k, s, p, g, act, w.conv)
 
     def call(self, inputs):  # x(b,w,h,c) -> y(b,w/2,h/2,4c)
+        # inputs = inputs / 255.  # normalize 0-255 to 0-1
         return self.conv(tf.concat([inputs[:, ::2, ::2, :],
                                     inputs[:, 1::2, ::2, :],
                                     inputs[:, ::2, 1::2, :],
@@ -118,12 +117,9 @@ class tf_Conv2d(keras.layers.Layer):
         super(tf_Conv2d, self).__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
         self.conv = keras.layers.Conv2D(
-                c2, k, s, 'VALID', use_bias=bias,
-                kernel_initializer=
-                        keras.initializers.Constant(w.weight.permute(2, 3, 1, 0).numpy()),
-                bias_initializer=
-                        keras.initializers.Constant(w.bias.numpy()) if bias else None,
-                )
+            c2, k, s, 'VALID', use_bias=bias,
+            kernel_initializer=keras.initializers.Constant(w.weight.permute(2, 3, 1, 0).numpy()),
+            bias_initializer=keras.initializers.Constant(w.bias.numpy()) if bias else None, )
 
     def call(self, inputs):
         return self.conv(inputs)
@@ -131,7 +127,8 @@ class tf_Conv2d(keras.layers.Layer):
 
 class tf_BottleneckCSP(keras.layers.Layer):
     # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, w=None):  # ch_in, ch_out, number, shortcut, groups, expansion
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, w=None):
+        # ch_in, ch_out, number, shortcut, groups, expansion
         super(tf_BottleneckCSP, self).__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = tf_Conv(c1, c_, 1, 1, w=w.cv1)
@@ -172,12 +169,11 @@ class tf_Detect(keras.layers.Layer):
         self.na = len(anchors[0]) // 2  # number of anchors
         self.grid = [tf.zeros(1)] * self.nl  # init grid
         self.anchors = tf.convert_to_tensor(w.anchors.numpy(), dtype=tf.float32)
-        self.anchor_grid = tf.reshape(
-                tf.convert_to_tensor(w.anchor_grid.numpy(), dtype=tf.float32),
-                [self.nl, 1, -1, 1, 2])
+        self.anchor_grid = tf.reshape(tf.convert_to_tensor(w.anchor_grid.numpy(), dtype=tf.float32),
+                                      [self.nl, 1, -1, 1, 2])
         self.m = [tf_Conv2d(x, self.no * self.na, 1, w=w.m[i]) for i, x in enumerate(ch)]
         self.export = False  # onnx export
-        self.training = True # set to False after building model
+        self.training = True  # set to False after building model
         for i in range(self.nl):
             ny, nx = opt.img_size[0] // self.stride[i], opt.img_size[1] // self.stride[i]
             self.grid[i] = self._make_grid(nx, ny)
@@ -269,7 +265,7 @@ def parse_model(d, ch, model):  # model_dict, input_channels(3)
 
         tf_m = eval('tf_' + m_str.replace('nn.', ''))
         m_ = keras.Sequential([tf_m(*args, w=model.model[i][j]) for j in range(n)]) if n > 1 \
-                else tf_m(*args, w=model.model[i])  # module
+            else tf_m(*args, w=model.model[i])  # module
 
         torch_m_ = nn.Sequential(*[m(*args) for _ in range(n)]) if n > 1 else m(*args)  # module
         t = str(m)[8:-2].replace('__main__.', '')  # module type
@@ -280,18 +276,6 @@ def parse_model(d, ch, model):  # model_dict, input_channels(3)
         layers.append(m_)
         ch.append(c2)
     return keras.Sequential(layers), sorted(save)
-
-
-def tf_check_anchor_order(m):
-    # Check anchor order against stride order for YOLOv5 Detect() module m, and correct if necessary
-    a = tf.reshape(tf.math.reduce_prod(m.anchor_grid, -1), [-1])
-    da = a[-1] - a[0]  # delta a
-    ds = m.stride[-1] - m.stride[0]  # delta s
-    # Add numpy() in comparison for TensorFlow v1.15
-    if tf.math.sign(da).numpy() != tf.math.sign(ds).numpy():  # same order
-        print('Reversing anchor order')
-        m.anchors[:] = tf.reverse(m.anchors, 0)
-        m.anchor_grid[:] = tf.reverse(m.anchor_grid, [0])
 
 
 class tf_Model():
@@ -311,11 +295,6 @@ class tf_Model():
             self.yaml['nc'] = nc  # override yaml value
         self.model, self.savelist = parse_model(deepcopy(self.yaml), ch=[ch], model=model)  # model, savelist, ch_out
 
-        # Build strides, anchors
-        m = self.model.layers[-1]  # Detect()
-        if isinstance(m, tf_Detect):
-            tf_check_anchor_order(m)
-
     def predict(self, inputs, profile=False):
         y = []  # outputs
         x = inputs
@@ -326,24 +305,30 @@ class tf_Model():
             x = m(x)  # run
             y.append(x if m.i in self.savelist else None)  # save output
 
+        # Boxes
+        xy = x[0][:, :, 0:2]
+        wh = x[0][:, :, 2:4]
+        x1 = xy[:, :, 0:1] - wh[:, :, 0:1] / 2
+        x2 = xy[:, :, 0:1] + wh[:, :, 0:1] / 2
+        y1 = xy[:, :, 1:2] - wh[:, :, 1:2] / 2
+        y2 = xy[:, :, 1:2] + wh[:, :, 1:2] / 2
+        xyxy = tf.concat([x1, y1, x2, y2], 2)
+
         # Add TensorFlow NMS
         if opt.tf_nms:
-            xy = x[0][:, :, 0:2]
-            wh = x[0][:, :, 2:4]
-            x1 = xy[:, :, 0:1] - wh[:, :, 0:1] / 2
-            x2 = xy[:, :, 0:1] + wh[:, :, 0:1] / 2
-            y1 = xy[:, :, 1:2] - wh[:, :, 1:2] / 2
-            y2 = xy[:, :, 1:2] + wh[:, :, 1:2] / 2
-            xyxy = tf.concat([x1, y1, x2, y2], 2)
             boxes = tf.expand_dims(xyxy, 2)
             probs = x[0][:, :, 4:5]
             classes = x[0][:, :, 5:]
             scores = probs * classes
             nms = tf.image.combined_non_max_suppression(
-                    boxes, scores, opt.topk_per_class, opt.topk_all, opt.iou_thres, opt.score_thres,
-                    clip_boxes=False)
+                boxes, scores, opt.topk_per_class, opt.topk_all, opt.iou_thres, opt.score_thres, clip_boxes=False)
             return nms, x[1]
 
+        # x = x[0]
+        # conf = x[..., 4:5]
+        # cls = x[..., 5:]
+        # return [conf * cls, xyxy]  # output only first tensor, [1,6300,80], [1,6300,4]
+        # return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
         return x
 
 
@@ -351,13 +336,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg', type=str, default='./models/yolov5s.yaml', help='cfg path')
     parser.add_argument('--weights', type=str, default='./weights/yolov5s.pt', help='weights path')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')  # height, width
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
-    parser.add_argument('--no-tfl-detect', action='store_true', dest='no_tfl_detect', help='remove Detect module in TFLite model')
-    parser.add_argument('--source', type=str, default='/dataset/coco/coco2017/train2017', help='source')  # file/folder, 0 for webcam
-    parser.add_argument('--ncalib', type=int, default=100, help='number of calibration images')  # file/folder, 0 for webcam
+    parser.add_argument('--no-tfl-detect', action='store_true', help='remove Detect() from TFLite model')
+    parser.add_argument('--source', type=str, default='data/images', help='source')
+    parser.add_argument('--ncalib', type=int, default=100, help='number of calibration images')
     parser.add_argument('--tfl-int8', action='store_true', dest='tfl_int8', help='export TFLite int8 model')
-    parser.add_argument('--tf-nms', action='store_true', dest='tf_nms', help='add TensorFlow NMS (without TFLite export)')
+    parser.add_argument('--tf-nms', action='store_true', dest='tf_nms', help='TF NMS (without TFLite export)')
     parser.add_argument('--topk-per-class', type=int, default=100, help='topk per class to keep in NMS')
     parser.add_argument('--topk-all', type=int, default=100, help='topk for all classes to keep in NMS')
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
@@ -370,7 +355,7 @@ if __name__ == "__main__":
     img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size(1,3,320,192) iDetection
 
     # Load PyTorch model
-    model = torch.load(opt.weights, map_location=torch.device('cpu'))['model'].float()
+    model = torch.load(opt.weights, map_location=torch.device('cpu'))['model'].float()  # .fuse()
     model.eval()
     model.model[-1].export = False  # set Detect() layer export=True
     y = model(img)  # dry run
@@ -404,7 +389,7 @@ if __name__ == "__main__":
         # https://github.com/leimao/Frozen_Graph_TensorFlow
         full_model = tf.function(lambda x: keras_model(x))
         full_model = full_model.get_concrete_function(
-                    tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype))
+            tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype))
 
         frozen_func = convert_variables_to_constants_v2(full_model)
         frozen_func.graph.as_graph_def()
@@ -482,4 +467,3 @@ if __name__ == "__main__":
         except Exception as e:
             print('\nTFLite export failure: %s' % e)
             traceback.print_exc(file=sys.stdout)
-
