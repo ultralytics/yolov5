@@ -261,7 +261,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
 
         if os.path.isfile(sources):
             with open(sources, 'r') as f:
-                sources = [x.strip() for x in f.read().splitlines() if len(x.strip())]
+                sources = [x.strip() for x in f.read().strip().splitlines() if len(x.strip())]
         else:
             sources = [sources]
 
@@ -353,7 +353,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                     f += glob.glob(str(p / '**' / '*.*'), recursive=True)
                 elif p.is_file():  # file
                     with open(p, 'r') as t:
-                        t = t.read().splitlines()
+                        t = t.read().strip().splitlines()
                         parent = str(p.parent) + os.sep
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
                 else:
