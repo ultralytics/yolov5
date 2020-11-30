@@ -140,7 +140,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
     s = 3 / no  # output count scaling
     lbox *= h['box'] * s
-    lobj *= h['obj'] * s * (1.4 if no == 4 else 1.)
+    lobj *= h['obj'] * s * (1.4 if no == 4 else 1.) * 0.8  # to compensate for 4/3 additional targets
     lcls *= h['cls'] * s
     bs = tobj.shape[0]  # batch size
 
@@ -160,7 +160,7 @@ def build_targets(p, targets, model):
     g = 0.5  # bias
     off = torch.tensor([[0, 0],
                         [1, 0], [0, 1], [-1, 0], [0, -1],  # j,k,l,m
-                        # [1, 1], [1, -1], [-1, 1], [-1, -1],  # jk,jm,lk,lm
+                        [1, 1], [1, -1], [-1, 1], [-1, -1],  # jk,jm,lk,lm
                         ], device=targets.device).float() * g  # offsets
 
     for i in range(det.nl):
