@@ -181,7 +181,7 @@ def build_targets(p, targets, model):
             gxi = gain[[2, 3]] - gxy  # inverse
             j, k = ((gxy % 1. < g) & (gxy > 1.)).T
             l, m = ((gxi % 1. < g) & (gxi > 1.)).T
-            j = torch.stack((torch.ones_like(j), j, k, l, m))
+            j = torch.stack((torch.ones_like(j), j, k, l, m, j & k, j & m, l & k, l & m))
             t = t.repeat((off.shape[0], 1, 1))[j]
             offsets = (torch.zeros_like(gxy)[None] + off[:, None])[j]
         else:
