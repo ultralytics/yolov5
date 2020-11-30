@@ -432,14 +432,6 @@ if __name__ == "__main__":
                 m.training = True
                 keras_model = keras.Model(inputs=inputs, outputs=tf_model.predict(inputs))
 
-            # Representative Dataset
-            if opt.source.endswith('.yaml'):
-                with open(check_file(opt.source)) as f:
-                    data = yaml.load(f, Loader=yaml.FullLoader)  # data dict
-                    check_dataset(data)  # check
-                opt.source = data['train']
-            dataset = LoadImages(opt.source, img_size=opt.img_size, auto=False)
-
             # fp32 TFLite model export ---------------------------------------------------------------------------------
             # converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
             # converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
@@ -464,6 +456,14 @@ if __name__ == "__main__":
 
             # int8 TFLite model export ---------------------------------------------------------------------------------
             if opt.tfl_int8:
+                # Representative Dataset
+                if opt.source.endswith('.yaml'):
+                    with open(check_file(opt.source)) as f:
+                        data = yaml.load(f, Loader=yaml.FullLoader)  # data dict
+                        check_dataset(data)  # check
+                    opt.source = data['train']
+                dataset = LoadImages(opt.source, img_size=opt.img_size, auto=False)
+
                 converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
                 converter.optimizations = [tf.lite.Optimize.DEFAULT]
                 converter.representative_dataset = representative_dataset_gen
