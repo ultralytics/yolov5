@@ -3,6 +3,7 @@ import glob
 import json
 import os
 from pathlib import Path
+from threading import Thread
 
 import numpy as np
 import torch
@@ -178,7 +179,9 @@ def test(data,
                 tbox = xywh2xyxy(labels[:, 1:5])
                 scale_coords(img[si].shape[1:], tbox, shapes[si][0], shapes[si][1])  # native-space labels
                 if plots:
-                    confusion_matrix.process_batch(pred, torch.cat((labels[:, 0:1], tbox), 1))
+                    # confusion_matrix.process_batch(pred, torch.cat((labels[:, 0:1], tbox), 1))
+                    Thread(target=confusion_matrix.process_batch,
+                           args=(pred, torch.cat((labels[:, 0:1], tbox), 1)), daemon=True).start()
 
                 # Per target class
                 for cls in torch.unique(tcls_tensor):
@@ -206,10 +209,10 @@ def test(data,
 
         # Plot images
         if plots and batch_i < 3:
-            f = save_dir / f'test_batch{batch_i}_labels.jpg'  # filename
-            plot_images(img, targets, paths, f, names)  # labels
-            f = save_dir / f'test_batch{batch_i}_pred.jpg'
-            plot_images(img, output_to_target(output), paths, f, names)  # predictions
+            f = save_dir / f'test_batch{batch_i}_labels.jpg'  # labels
+            Thread(target=plot_images, args=(img, targets, paths, f, names), daemon=True).start()
+            f = save_dir / f'test_batch{batch_i}_pred.jpg'  # predictions
+            Thread(target=plot_images, args=(img, output_to_target(output), paths, f, names), daemon=True).start()
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy

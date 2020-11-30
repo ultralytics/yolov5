@@ -250,7 +250,7 @@ def plot_study_txt(path='', x=None):  # from utils.plots import *; plot_study_tx
     plt.savefig('test_study.png', dpi=300)
 
 
-def plot_labels(labels, save_dir=''):
+def plot_labels(labels, save_dir=Path(''), loggers=None):
     # plot dataset labels
     c, b = labels[:, 0], labels[:, 1:].transpose()  # classes, boxes
     nc = int(c.max() + 1)  # number of classes
@@ -264,7 +264,7 @@ def plot_labels(labels, save_dir=''):
         sns.pairplot(x, corner=True, diag_kind='hist', kind='scatter', markers='o',
                      plot_kws=dict(s=3, edgecolor=None, linewidth=1, alpha=0.02),
                      diag_kws=dict(bins=50))
-        plt.savefig(Path(save_dir) / 'labels_correlogram.png', dpi=200)
+        plt.savefig(save_dir / 'labels_correlogram.png', dpi=200)
         plt.close()
     except Exception as e:
         pass
@@ -292,8 +292,13 @@ def plot_labels(labels, save_dir=''):
     for a in [0, 1, 2, 3]:
         for s in ['top', 'right', 'left', 'bottom']:
             ax[a].spines[s].set_visible(False)
-    plt.savefig(Path(save_dir) / 'labels.png', dpi=200)
+    plt.savefig(save_dir / 'labels.png', dpi=200)
     plt.close()
+
+    # loggers
+    for k, v in loggers.items() or {}:
+        if k == 'wandb' and v:
+            v.log({"Labels": [v.Image(str(x), caption=x.name) for x in save_dir.glob('*labels*.png')]})
 
 
 def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots import *; plot_evolution()

@@ -1,12 +1,13 @@
 import argparse
 import logging
-import math
 import os
 import random
 import time
 from pathlib import Path
+from threading import Thread
 from warnings import warn
 
+import math
 import numpy as np
 import torch.distributed as dist
 import torch.nn as nn
@@ -134,6 +135,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                                project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
                                name=save_dir.stem,
                                id=ckpt.get('wandb_id') if 'ckpt' in locals() else None)
+    loggers = {'wandb': wandb}  # loggers dict
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
@@ -201,11 +203,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
             # model._initialize_biases(cf.to(device))
             if plots:
-                plot_labels(labels, save_dir=save_dir)
+                Thread(target=plot_labels, args=(labels, save_dir, loggers), daemon=True).start()
                 if tb_writer:
                     tb_writer.add_histogram('classes', c, 0)
-                if wandb:
-                    wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in save_dir.glob('*labels*.png')]})
 
             # Anchors
             if not opt.noautoanchor:
@@ -311,7 +311,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 # Plot
                 if plots and ni < 3:
                     f = save_dir / f'train_batch{ni}.jpg'  # filename
-                    plot_images(images=imgs, targets=targets, paths=paths, fname=f)
+                    Thread(target=plot_images, args=(imgs, targets, paths, f), daemon=True).start()
                     # if tb_writer:
                     #     tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
                     #     tb_writer.add_graph(model, imgs)  # add model to tensorboard
