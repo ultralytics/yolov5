@@ -3,6 +3,7 @@ import glob
 import json
 import os
 from pathlib import Path
+from threading import Thread
 
 import numpy as np
 import torch
@@ -206,10 +207,10 @@ def test(data,
 
         # Plot images
         if plots and batch_i < 3:
-            f = save_dir / f'test_batch{batch_i}_labels.jpg'  # filename
-            plot_images(img, targets, paths, f, names)  # labels
-            f = save_dir / f'test_batch{batch_i}_pred.jpg'
-            plot_images(img, output_to_target(output), paths, f, names)  # predictions
+            f = save_dir / f'test_batch{batch_i}_labels.jpg'  # labels
+            Thread(target=plot_images, args=(img, targets, paths, f, names), daemon=True).start()
+            f = save_dir / f'test_batch{batch_i}_pred.jpg'  # predictions
+            Thread(target=plot_images, args=(img, output_to_target(output), paths, f, names), daemon=True).start()
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
@@ -220,13 +221,6 @@ def test(data,
         nt = np.bincount(stats[3].astype(np.int64), minlength=nc)  # number of targets per class
     else:
         nt = torch.zeros(1)
-
-    # Plots
-    if plots:
-        confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        if wandb and wandb.run:
-            wandb.log({"Images": wandb_images})
-            wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]})
 
     # Print results
     pf = '%20s' + '%12.3g' * 6  # print format
@@ -241,6 +235,13 @@ def test(data,
     t = tuple(x / seen * 1E3 for x in (t0, t1, t0 + t1)) + (imgsz, imgsz, batch_size)  # tuple
     if not training:
         print('Speed: %.1f/%.1f/%.1f ms inference/NMS/total per %gx%g image at batch-size %g' % t)
+
+    # Plots
+    if plots:
+        confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
+        if wandb and wandb.run:
+            wandb.log({"Images": wandb_images})
+            wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]})
 
     # Save JSON
     if save_json and len(jdict):
