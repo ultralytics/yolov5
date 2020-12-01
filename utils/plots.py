@@ -141,9 +141,12 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
             labels = image_targets.shape[1] == 6  # labels if no conf column
             conf = None if labels else image_targets[:, 6]  # check for confidence presence (label vs pred)
 
-            if boxes.shape[1] and boxes.max() <= 1:  # if normalized
-                boxes[[0, 2]] *= w  # scale to pixels
-                boxes[[1, 3]] *= h
+            if boxes.shape[1]:
+                if boxes.max() <= 1:  # if normalized
+                    boxes[[0, 2]] *= w  # scale to pixels
+                    boxes[[1, 3]] *= h
+                elif scale_factor < 1: # absolute coords need scale if image scales
+                    boxes *= scale_factor
             boxes[[0, 2]] += block_x
             boxes[[1, 3]] += block_y
             for j, box in enumerate(boxes.T):
