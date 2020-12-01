@@ -81,6 +81,7 @@ def test(data,
         import wandb  # Weights & Biases
     except ImportError:
         log_imgs = 0
+
     # Dataloader
     if not training:
         img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
