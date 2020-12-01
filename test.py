@@ -81,7 +81,6 @@ def test(data,
         import wandb  # Weights & Biases
     except ImportError:
         log_imgs = 0
-
     # Dataloader
     if not training:
         img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
@@ -240,7 +239,7 @@ def test(data,
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
         if wandb and wandb.run:
-            wandb.log({"Images": wandb_images})
+            wandb.log({"Debug Bounding Boxes/Images": wandb_images})
             wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]})
 
     # Save JSON
