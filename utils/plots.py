@@ -265,14 +265,13 @@ def plot_labels(labels, save_dir=Path(''), loggers=None):
         sns.pairplot(x, corner=True, diag_kind='hist', kind='scatter', markers='o',
                      plot_kws=dict(s=3, edgecolor=None, linewidth=1, alpha=0.02),
                      diag_kws=dict(bins=50))
-        matplotlib.use('svg')
-        plt.savefig(save_dir / 'labels_correlogram.png', dpi=200)
-        matplotlib.use('Agg')
+        plt.savefig(save_dir / 'labels_correlogram.jpg', dpi=200)
         plt.close()
     except Exception as e:
         pass
 
     # matplotlib labels
+    matplotlib.use('svg')  # faster
     ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)[1].ravel()
     ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
     ax[0].set_xlabel('classes')
@@ -296,15 +295,14 @@ def plot_labels(labels, save_dir=Path(''), loggers=None):
         for s in ['top', 'right', 'left', 'bottom']:
             ax[a].spines[s].set_visible(False)
 
-    matplotlib.use('svg')
-    plt.savefig(save_dir / 'labels.png', dpi=200)
+    plt.savefig(save_dir / 'labels.jpg', dpi=200)
     matplotlib.use('Agg')
     plt.close()
 
     # loggers
     for k, v in loggers.items() or {}:
         if k == 'wandb' and v:
-            v.log({"Labels": [v.Image(str(x), caption=x.name) for x in save_dir.glob('*labels*.png')]})
+            v.log({"Labels": [v.Image(str(x), caption=x.name) for x in save_dir.glob('*labels*.jpg')]})
 
 
 def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots import *; plot_evolution()
