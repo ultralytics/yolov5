@@ -171,7 +171,7 @@ class ConfusionMatrix:
                        yticklabels=names + ['background FP'] if labels else "auto").set_facecolor((1, 1, 1))
             fig.axes[0].set_xlabel('True')
             fig.axes[0].set_ylabel('Predicted')
-            fig.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250, backend='svg')
+            fig.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250, backend='ps')
         except Exception as e:
             pass
 
@@ -198,4 +198,4 @@ def plot_pr_curve(px, py, ap, save_dir='.', names=()):
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
-    fig.savefig(Path(save_dir) / 'precision_recall_curve.png', dpi=250)
+    fig.savefig(Path(save_dir) / 'precision_recall_curve.png', dpi=250, backend='ps')
