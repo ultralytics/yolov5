@@ -31,7 +31,8 @@ def detect(save_img=False):
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
-    suffix = Path(weights[0]).suffix
+    weights = weights[0] if isinstance(weights, list) else weights
+    suffix = Path(weights).suffix
     if suffix == '.pt':
         backend = 'pytorch'
         model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -63,7 +64,7 @@ def detect(save_img=False):
 
             graph = tf.Graph()
             graph_def = graph.as_graph_def()
-            graph_def.ParseFromString(open(weights[0], 'rb').read())
+            graph_def.ParseFromString(open(weights, 'rb').read())
             frozen_func = wrap_frozen_graph(graph_def=graph_def, inputs="x:0", outputs="Identity:0")
 
         elif suffix == '.tflite':
@@ -78,7 +79,7 @@ def detect(save_img=False):
 
         else:
             backend = 'saved_model'
-            model = keras.models.load_model(weights[0])
+            model = keras.models.load_model(weights)
 
     # Second-stage classifier
     classify = False
