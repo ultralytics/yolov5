@@ -73,7 +73,7 @@ def plot_wh_methods():  # from utils.plots import *; plot_wh_methods()
     ya = np.exp(x)
     yb = torch.sigmoid(torch.from_numpy(x)).numpy() * 2
 
-    fig = plt.figure(figsize=(6, 3), dpi=150)
+    fig = plt.figure(figsize=(6, 3), tight_layout=True)
     plt.plot(x, ya, '.-', label='YOLOv3')
     plt.plot(x, yb ** 2, '.-', label='YOLOv5 ^2')
     plt.plot(x, yb ** 1.6, '.-', label='YOLOv5 ^1.6')
@@ -83,7 +83,6 @@ def plot_wh_methods():  # from utils.plots import *; plot_wh_methods()
     plt.ylabel('output')
     plt.grid()
     plt.legend()
-    fig.tight_layout()
     fig.savefig('comparison.png', dpi=200)
 
 
@@ -145,7 +144,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
                 if boxes.max() <= 1:  # if normalized
                     boxes[[0, 2]] *= w  # scale to pixels
                     boxes[[1, 3]] *= h
-                elif scale_factor < 1: # absolute coords need scale if image scales
+                elif scale_factor < 1:  # absolute coords need scale if image scales
                     boxes *= scale_factor
             boxes[[0, 2]] += block_x
             boxes[[1, 3]] += block_y
@@ -188,7 +187,6 @@ def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=''):
     plt.grid()
     plt.xlim(0, epochs)
     plt.ylim(0)
-    plt.tight_layout()
     plt.savefig(Path(save_dir) / 'LR.png', dpi=200)
 
 
@@ -353,7 +351,7 @@ def plot_results_overlay(start=0, stop=0):  # from utils.plots import *; plot_re
 
 def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
     # Plot training 'results*.txt'. from utils.plots import *; plot_results(save_dir='runs/train/exp')
-    fig, ax = plt.subplots(2, 5, figsize=(12, 6))
+    fig, ax = plt.subplots(2, 5, figsize=(12, 6), tight_layout=True)
     ax = ax.ravel()
     s = ['Box', 'Objectness', 'Classification', 'Precision', 'Recall',
          'val Box', 'val Objectness', 'val Classification', 'mAP@0.5', 'mAP@0.5:0.95']
@@ -383,6 +381,5 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
         except Exception as e:
             print('Warning: Plotting error for %s; %s' % (f, e))
 
-    fig.tight_layout()
     ax[1].legend()
     fig.savefig(Path(save_dir) / 'results.png', dpi=200)
