@@ -265,7 +265,9 @@ def plot_labels(labels, save_dir=Path(''), loggers=None):
         sns.pairplot(x, corner=True, diag_kind='hist', kind='scatter', markers='o',
                      plot_kws=dict(s=3, edgecolor=None, linewidth=1, alpha=0.02),
                      diag_kws=dict(bins=50))
-        plt.savefig(save_dir / 'labels_correlogram.png', dpi=200, backend='ps')
+        matplotlib.use('svg')
+        plt.savefig(save_dir / 'labels_correlogram.png', dpi=200)
+        matplotlib.use('Agg')
         plt.close()
     except Exception as e:
         pass
@@ -293,7 +295,10 @@ def plot_labels(labels, save_dir=Path(''), loggers=None):
     for a in [0, 1, 2, 3]:
         for s in ['top', 'right', 'left', 'bottom']:
             ax[a].spines[s].set_visible(False)
-    plt.savefig(save_dir / 'labels.png', dpi=200, backend='ps')
+
+    matplotlib.use('svg')
+    plt.savefig(save_dir / 'labels.png', dpi=200)
+    matplotlib.use('Agg')
     plt.close()
 
     # loggers
@@ -382,4 +387,4 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
             print('Warning: Plotting error for %s; %s' % (f, e))
 
     ax[1].legend()
-    fig.savefig(Path(save_dir) / 'results.png', dpi=200, backend='ps')
+    fig.savefig(Path(save_dir) / 'results.png', dpi=200)
