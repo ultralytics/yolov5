@@ -21,7 +21,7 @@ from utils.metrics import fitness
 
 # Settings
 matplotlib.rc('font', **{'size': 11})
-matplotlib.use('svg')  # for writing to files only
+matplotlib.use('Agg')  # for writing to files only
 
 
 def color_list():
@@ -73,7 +73,7 @@ def plot_wh_methods():  # from utils.plots import *; plot_wh_methods()
     ya = np.exp(x)
     yb = torch.sigmoid(torch.from_numpy(x)).numpy() * 2
 
-    fig = plt.figure(figsize=(6, 3), dpi=150)
+    fig = plt.figure(figsize=(6, 3), tight_layout=True)
     plt.plot(x, ya, '.-', label='YOLOv3')
     plt.plot(x, yb ** 2, '.-', label='YOLOv5 ^2')
     plt.plot(x, yb ** 1.6, '.-', label='YOLOv5 ^1.6')
@@ -83,7 +83,6 @@ def plot_wh_methods():  # from utils.plots import *; plot_wh_methods()
     plt.ylabel('output')
     plt.grid()
     plt.legend()
-    fig.tight_layout()
     fig.savefig('comparison.png', dpi=200)
 
 
@@ -145,7 +144,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
                 if boxes.max() <= 1:  # if normalized
                     boxes[[0, 2]] *= w  # scale to pixels
                     boxes[[1, 3]] *= h
-                elif scale_factor < 1: # absolute coords need scale if image scales
+                elif scale_factor < 1:  # absolute coords need scale if image scales
                     boxes *= scale_factor
             boxes[[0, 2]] += block_x
             boxes[[1, 3]] += block_y
@@ -188,7 +187,6 @@ def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=''):
     plt.grid()
     plt.xlim(0, epochs)
     plt.ylim(0)
-    plt.tight_layout()
     plt.savefig(Path(save_dir) / 'LR.png', dpi=200)
 
 
@@ -267,12 +265,13 @@ def plot_labels(labels, save_dir=Path(''), loggers=None):
         sns.pairplot(x, corner=True, diag_kind='hist', kind='scatter', markers='o',
                      plot_kws=dict(s=3, edgecolor=None, linewidth=1, alpha=0.02),
                      diag_kws=dict(bins=50))
-        plt.savefig(save_dir / 'labels_correlogram.png', dpi=200)
+        plt.savefig(save_dir / 'labels_correlogram.jpg', dpi=200)
         plt.close()
     except Exception as e:
         pass
 
     # matplotlib labels
+    matplotlib.use('svg')  # faster
     ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)[1].ravel()
     ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
     ax[0].set_xlabel('classes')
@@ -295,13 +294,15 @@ def plot_labels(labels, save_dir=Path(''), loggers=None):
     for a in [0, 1, 2, 3]:
         for s in ['top', 'right', 'left', 'bottom']:
             ax[a].spines[s].set_visible(False)
-    plt.savefig(save_dir / 'labels.png', dpi=200)
+
+    plt.savefig(save_dir / 'labels.jpg', dpi=200)
+    matplotlib.use('Agg')
     plt.close()
 
     # loggers
     for k, v in loggers.items() or {}:
         if k == 'wandb' and v:
-            v.log({"Labels": [v.Image(str(x), caption=x.name) for x in save_dir.glob('*labels*.png')]})
+            v.log({"Labels": [v.Image(str(x), caption=x.name) for x in save_dir.glob('*labels*.jpg')]})
 
 
 def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots import *; plot_evolution()
@@ -353,7 +354,7 @@ def plot_results_overlay(start=0, stop=0):  # from utils.plots import *; plot_re
 
 def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
     # Plot training 'results*.txt'. from utils.plots import *; plot_results(save_dir='runs/train/exp')
-    fig, ax = plt.subplots(2, 5, figsize=(12, 6))
+    fig, ax = plt.subplots(2, 5, figsize=(12, 6), tight_layout=True)
     ax = ax.ravel()
     s = ['Box', 'Objectness', 'Classification', 'Precision', 'Recall',
          'val Box', 'val Objectness', 'val Classification', 'mAP@0.5', 'mAP@0.5:0.95']
@@ -383,6 +384,5 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
         except Exception as e:
             print('Warning: Plotting error for %s; %s' % (f, e))
 
-    fig.tight_layout()
     ax[1].legend()
     fig.savefig(Path(save_dir) / 'results.png', dpi=200)

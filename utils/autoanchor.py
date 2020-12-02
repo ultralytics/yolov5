@@ -124,13 +124,12 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
     # k, d = [None] * 20, [None] * 20
     # for i in tqdm(range(1, 21)):
     #     k[i-1], d[i-1] = kmeans(wh / s, i)  # points, mean distance
-    # fig, ax = plt.subplots(1, 2, figsize=(14, 7))
+    # fig, ax = plt.subplots(1, 2, figsize=(14, 7), tight_layout=True)
     # ax = ax.ravel()
     # ax[0].plot(np.arange(1, 21), np.array(d) ** 2, marker='.')
     # fig, ax = plt.subplots(1, 2, figsize=(14, 7))  # plot wh
     # ax[0].hist(wh[wh[:, 0]<100, 0],400)
     # ax[1].hist(wh[wh[:, 1]<100, 1],400)
-    # fig.tight_layout()
     # fig.savefig('wh.png', dpi=200)
 
     # Evolve
