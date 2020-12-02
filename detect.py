@@ -5,6 +5,7 @@ from pathlib import Path
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
+import yaml
 from numpy import random
 
 from models.experimental import attempt_load
@@ -30,10 +31,54 @@ def detect(save_img=False):
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
-    model = attempt_load(weights, map_location=device)  # load FP32 model
-    imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
-    if half:
-        model.half()  # to FP16
+    suffix = Path(weights[0]).suffix
+    if suffix == '.pt':
+        backend = 'pytorch'
+        model = attempt_load(weights, map_location=device)  # load FP32 model
+        imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
+        names = model.module.names if hasattr(model, 'module') else model.names  # class names
+        if half:
+            model.half()  # to FP16
+    else:
+        import tensorflow as tf
+        from tensorflow import keras
+
+        with open('data/coco.yaml') as f:
+            names = yaml.load(f, Loader=yaml.FullLoader)['names']  # class names (assume COCO)
+
+        if suffix == '.pb':
+            backend = 'graph_def'
+
+            # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
+            # https://github.com/leimao/Frozen_Graph_TensorFlow
+            def wrap_frozen_graph(graph_def, inputs, outputs):
+                def _imports_graph_def():
+                    tf.compat.v1.import_graph_def(graph_def, name="")
+
+                wrapped_import = tf.compat.v1.wrap_function(_imports_graph_def, [])
+                import_graph = wrapped_import.graph
+                return wrapped_import.prune(
+                    tf.nest.map_structure(import_graph.as_graph_element, inputs),
+                    tf.nest.map_structure(import_graph.as_graph_element, outputs))
+
+            graph = tf.Graph()
+            graph_def = graph.as_graph_def()
+            graph_def.ParseFromString(open(weights[0], 'rb').read())
+            frozen_func = wrap_frozen_graph(graph_def=graph_def, inputs="x:0", outputs="Identity:0")
+
+        elif suffix == '.tflite':
+            backend = 'tflite'
+            # Load TFLite model and allocate tensors
+            interpreter = tf.lite.Interpreter(model_path=opt.weights[0])
+            interpreter.allocate_tensors()
+
+            # Get input and output tensors
+            input_details = interpreter.get_input_details()
+            output_details = interpreter.get_output_details()
+
+        else:
+            backend = 'saved_model'
+            model = keras.models.load_model(weights[0])
 
     # Second-stage classifier
     classify = False
@@ -46,29 +91,40 @@ def detect(save_img=False):
     if webcam:
         view_img = True
         cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(source, img_size=imgsz)
+        dataset = LoadStreams(source, img_size=imgsz, auto=backend == 'pytorch')
     else:
         save_img = True
-        dataset = LoadImages(source, img_size=imgsz)
+        dataset = LoadImages(source, img_size=imgsz, auto=backend == 'pytorch')
 
     # Get names and colors
-    names = model.module.names if hasattr(model, 'module') else model.names
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in names]
 
     # Run inference
     t0 = time.time()
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
-    _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
+    _ = model(img.half() if half else img) if (device.type != 'cpu' and backend == 'pytorch') else None  # run once
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
-        img = img.half() if half else img.float()  # uint8 to fp16/32
+        img = img.half() if half and backend == 'pytorch' else img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
         if img.ndimension() == 3:
             img = img.unsqueeze(0)
 
         # Inference
         t1 = time_synchronized()
-        pred = model(img, augment=opt.augment)[0]
+        if backend == 'pytorch':
+            pred = model(img, augment=opt.augment)[0]
+        else:
+            if backend == 'saved_model':
+                pred = model(img.permute(0, 2, 3, 1).cpu().numpy(), training=False)[0].numpy()
+            elif backend == 'graph_def':
+                pred = frozen_func(x=tf.constant(img.permute(0, 2, 3, 1).cpu().numpy())).numpy()
+            elif backend == 'tflite':
+                input_data = img.permute(0, 2, 3, 1).cpu().numpy()
+                interpreter.set_tensor(input_details[0]['index'], input_data)
+                interpreter.invoke()
+                pred = interpreter.get_tensor(output_details[0]['index'])
+            pred = torch.tensor(pred)
 
         # Apply NMS
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
