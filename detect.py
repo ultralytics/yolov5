@@ -70,7 +70,7 @@ def detect(save_img=False):
         elif suffix == '.tflite':
             backend = 'tflite'
             # Load TFLite model and allocate tensors
-            interpreter = tf.lite.Interpreter(model_path=opt.weights[0])
+            interpreter = tf.lite.Interpreter(model_path=weights)
             interpreter.allocate_tensors()
 
             # Get input and output tensors
