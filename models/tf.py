@@ -6,22 +6,19 @@ import traceback
 from copy import deepcopy
 from pathlib import Path
 
+import numpy as np
 import tensorflow as tf
 import torch
 import torch.nn as nn
 import yaml
-
-if tf.__version__.startswith('1'):
-    tf.enable_eager_execution()
 from tensorflow import keras
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
-import numpy as np
 
 from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat, autopad
 from models.experimental import MixConv2d, CrossConv, C3
-from utils.general import make_divisible, check_file, check_dataset
 from models.yolo import Detect
 from utils.datasets import LoadImages
+from utils.general import make_divisible, check_file, check_dataset
 from utils.google_utils import attempt_download
 
 logger = logging.getLogger(__name__)
@@ -57,22 +54,13 @@ class tf_Conv(keras.layers.Layer):
         super(tf_Conv, self).__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
         assert isinstance(k, int), "Convolution with multiple kernels are not allowed."
-
         # TensorFlow convolution padding is inconsistent with PyTorch (e.g. k=3 s=2 'SAME' padding)
         # see https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
-        if s == 1:
-            self.conv = keras.layers.Conv2D(
-                c2, k, s, 'SAME', use_bias=False,
-                kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()))
-        else:
-            self.pad = tf_Pad(autopad(k, p))
-            self.conv = keras.Sequential([
-                self.pad,
-                keras.layers.Conv2D(
-                    c2, k, s, 'VALID', use_bias=False,
-                    kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()))
-            ])
 
+        conv = keras.layers.Conv2D(
+            c2, k, s, 'SAME' if s == 1 else 'VALID', use_bias=False,
+            kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()))
+        self.conv = conv if s == 1 else keras.Sequential([tf_Pad(autopad(k, p)), conv])
         self.bn = tf_BN(w.bn) if hasattr(w, 'bn') else tf.identity
 
         # YOLOv5 v3 uses Hardswish for activations
@@ -82,7 +70,7 @@ class tf_Conv(keras.layers.Layer):
             self.act = (lambda x: x * tf.nn.relu6(x + 3) * 0.166666667) if act else tf.identity
 
     def call(self, inputs):
-        return self.act(self.bn(self.conv(inputs))) if hasattr(self, 'bn') else self.act(self.conv(inputs))
+        return self.act(self.bn(self.conv(inputs)))
 
 
 class tf_Focus(keras.layers.Layer):
@@ -307,18 +295,9 @@ class tf_Model():
             x = m(x)  # run
             y.append(x if m.i in self.savelist else None)  # save output
 
-        # Boxes
-        xy = x[0][:, :, 0:2]
-        wh = x[0][:, :, 2:4]
-        x1 = xy[:, :, 0:1] - wh[:, :, 0:1] / 2
-        x2 = xy[:, :, 0:1] + wh[:, :, 0:1] / 2
-        y1 = xy[:, :, 1:2] - wh[:, :, 1:2] / 2
-        y2 = xy[:, :, 1:2] + wh[:, :, 1:2] / 2
-        xyxy = tf.concat([x1, y1, x2, y2], 2)
-
         # Add TensorFlow NMS
         if opt.tf_nms:
-            boxes = tf.expand_dims(xyxy, 2)
+            boxes = tf.expand_dims(xywh2xyxy(x[0][..., :4]), 2)
             probs = x[0][:, :, 4:5]
             classes = x[0][:, :, 5:]
             scores = probs * classes
@@ -326,11 +305,18 @@ class tf_Model():
                 boxes, scores, opt.topk_per_class, opt.topk_all, opt.iou_thres, opt.score_thres, clip_boxes=False)
             return nms, x[1]
 
-        # x = x[0]
-        # conf = x[..., 4:5]
-        # cls = x[..., 5:]
-        # return [conf * cls, xyxy]  # output only first tensor, [1,6300,80], [1,6300,4]
         return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
+        # x = x[0][0]  # [x(1,6300,85), ...] to x(6300,85)
+        # xywh = x[..., :4]  # x(6300,4) boxes
+        # conf = x[..., 4:5]  # x(6300,1) confidences
+        # cls = tf.reshape(tf.cast(tf.argmax(x[..., 5:], axis=1), tf.float32), (-1, 1))  # x(6300,1)  classes
+        # return tf.concat([conf, cls, xywh], 1)
+
+
+def xywh2xyxy(xywh):
+    # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+    x, y, w, h = tf.split(xywh, num_or_size_splits=4, axis=-1)
+    return tf.concat([x - w / 2, y - h / 2, x + w / 2, y + h / 2], axis=-1)
 
 
 def representative_dataset_gen():
@@ -421,10 +407,8 @@ if __name__ == "__main__":
         print('TensorFlow GraphDef export failure: %s' % e)
         traceback.print_exc(file=sys.stdout)
 
-    # NMS doesn't support TFLite export
-
+    # TFLite model export
     if not opt.tf_nms:
-        # TFLite model export
         try:
             print('\nStarting TFLite export with TensorFlow %s...' % tf.__version__)
             if opt.no_tfl_detect:
