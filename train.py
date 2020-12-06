@@ -22,6 +22,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 import test  # import test.py to get mAP after each epoch
+from models.experimental import attempt_load
 from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.datasets import create_dataloader
@@ -193,9 +194,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     # Process 0
     if rank in [-1, 0]:
         ema.updates = start_epoch * nb // accumulate  # set EMA updates
-        testloader = create_dataloader(test_path, imgsz_test, total_batch_size, gs, opt,
+        testloader = create_dataloader(test_path, imgsz_test, total_batch_size, gs, opt,  # testloader
                                        hyp=hyp, cache=opt.cache_images and not opt.notest, rect=True,
-                                       rank=-1, world_size=opt.world_size, workers=opt.workers)[0]  # testloader
+                                       rank=-1, world_size=opt.world_size, workers=opt.workers, pad=0.5)[0]
 
         if not opt.resume:
             labels = np.concatenate(dataset.labels, 0)
@@ -385,7 +386,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
     if rank in [-1, 0]:
         # Strip optimizers
-        for f in [wdir / 'last.pt', wdir / 'best.pt']:
+        for f in [last, best]:
             if f.exists():  # is *.pt
                 strip_optimizer(f)  # strip optimizer
                 os.system('gsutil cp %s gs://%s/weights' % (f, opt.bucket)) if opt.bucket else None  # upload
@@ -397,20 +398,20 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 files = ['results.png', 'precision_recall_curve.png', 'confusion_matrix.png']
                 wandb.log({"Results": [wandb.Image(str(save_dir / f), caption=f) for f in files
                                        if (save_dir / f).exists()]})
-
-        # Test
-        if opt.data.endswith('coco.yaml') and nc == 80:  # if COCO
-            test.test(opt.data,
-                      batch_size=total_batch_size,
-                      imgsz=imgsz_test,
-                      weights=wdir / 'best.pt' if (wdir / 'best.pt').exists() else wdir / 'last.pt',
-                      single_cls=opt.single_cls,
-                      dataloader=testloader,
-                      save_dir=save_dir,
-                      save_json=True,  # use pycocotools
-                      plots=False)
-
         logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
+
+        # Test best.pt
+        if opt.data.endswith('coco.yaml') and nc == 80:  # if COCO
+            results, _, _ = test.test(opt.data,
+                                      batch_size=total_batch_size,
+                                      imgsz=imgsz_test,
+                                      model=attempt_load(best if best.exists() else last, device).half(),
+                                      single_cls=opt.single_cls,
+                                      dataloader=testloader,
+                                      save_dir=save_dir,
+                                      save_json=True,  # use pycocotools
+                                      plots=False)
+
     else:
         dist.destroy_process_group()
 
