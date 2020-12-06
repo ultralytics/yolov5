@@ -385,21 +385,31 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
     if rank in [-1, 0]:
         # Strip optimizers
-        n = opt.name if opt.name.isnumeric() else ''
-        fresults, flast, fbest = save_dir / f'results{n}.txt', wdir / f'last{n}.pt', wdir / f'best{n}.pt'
-        for f1, f2 in zip([wdir / 'last.pt', wdir / 'best.pt', results_file], [flast, fbest, fresults]):
-            if f1.exists():
-                os.rename(f1, f2)  # rename
-                if str(f2).endswith('.pt'):  # is *.pt
-                    strip_optimizer(f2)  # strip optimizer
-                    os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket else None  # upload
-        # Finish
+        for f in [wdir / 'last.pt', wdir / 'best.pt']:
+            if f.exists():  # is *.pt
+                strip_optimizer(f)  # strip optimizer
+                os.system('gsutil cp %s gs://%s/weights' % (f, opt.bucket)) if opt.bucket else None  # upload
+
+        # Plots
         if plots:
             plot_results(save_dir=save_dir)  # save as results.png
             if wandb:
                 files = ['results.png', 'precision_recall_curve.png', 'confusion_matrix.png']
                 wandb.log({"Results": [wandb.Image(str(save_dir / f), caption=f) for f in files
                                        if (save_dir / f).exists()]})
+
+        # Test
+        if opt.data.endswith('coco.yaml') and nc == 80:  # if COCO
+            test.test(opt.data,
+                      batch_size=total_batch_size,
+                      imgsz=imgsz_test,
+                      weights=wdir / 'best.pt' if (wdir / 'best.pt').exists() else wdir / 'last.pt',
+                      single_cls=opt.single_cls,
+                      dataloader=testloader,
+                      save_dir=save_dir,
+                      save_json=True,  # use pycocotools
+                      plots=False)
+
         logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
     else:
         dist.destroy_process_group()
