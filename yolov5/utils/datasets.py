@@ -307,8 +307,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                     f += glob.iglob(p + os.sep + '*.*')
                 else:
                     raise Exception('%s does not exist' % p)
-            self.img_files = sorted(
-                [x.replace('/', os.sep) for x in f if os.path.splitext(x)[-1].lower() in img_formats])
+            self.img_files = sorted([x.replace('/', os.sep) for x in f])
         except Exception as e:
             raise Exception('Error loading data from %s: %s\nSee %s' % (path, e, help_url))
 
@@ -329,8 +328,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.stride = stride
 
         # Define labels
-        self.label_files = [x.replace('images', 'labels').replace(os.path.splitext(x)[-1], '.txt') for x in
-                            self.img_files]
+        self.label_files = [f"{x.replace('images', 'annotations')}.txt" for x in self.img_files]
 
         # Check cache
         cache_path = str(Path(self.label_files[0]).parent) + '.cache'  # cached labels
