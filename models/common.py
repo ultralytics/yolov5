@@ -167,8 +167,7 @@ class autoShape(nn.Module):
 
         # Post-process
         for i in batch:
-            if y[i] is not None:
-                y[i][:, :4] = scale_coords(shape1, y[i][:, :4], shape0[i])
+            scale_coords(shape1, y[i][:, :4], shape0[i])
 
         return Detections(imgs, y, self.names)
 
