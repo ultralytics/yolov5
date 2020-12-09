@@ -77,18 +77,17 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='precision
 
 
 def compute_ap(recall, precision):
-    """ Compute the average precision, given the recall and precision curves.
-    Source: https://github.com/rbgirshick/py-faster-rcnn.
+    """ Compute the average precision, given the recall and precision curves
     # Arguments
-        recall:    The recall curve (list).
-        precision: The precision curve (list).
+        recall:    The recall curve (list)
+        precision: The precision curve (list)
     # Returns
-        The average precision as computed in py-faster-rcnn.
+        Average precision, precision curve, recall curve
     """
 
     # Append sentinel values to beginning and end
-    mrec = recall  # np.concatenate(([0.], recall, [recall[-1] + 1E-3]))
-    mpre = precision  # np.concatenate(([0.], precision, [0.]))
+    mrec = np.concatenate(([0.], recall, [recall[-1] + 0.01]))
+    mpre = np.concatenate(([1.], precision, [0.]))
 
     # Compute the precision envelope
     mpre = np.flip(np.maximum.accumulate(np.flip(mpre)))
