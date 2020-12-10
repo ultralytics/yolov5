@@ -1,7 +1,10 @@
 # Start FROM Nvidia PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
 FROM nvcr.io/nvidia/pytorch:20.10-py3
 
-# Install dependencies
+# Install linux packages
+RUN apt install screen
+
+# Install python dependencies
 RUN pip install --upgrade pip
 # COPY requirements.txt .
 # RUN pip install -r requirements.txt
