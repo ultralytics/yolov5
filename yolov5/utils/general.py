@@ -20,6 +20,7 @@ import yaml
 from scipy.cluster.vq import kmeans
 from scipy.signal import butter, filtfilt
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 from yolov5.utils.torch_utils import init_seeds, is_parallel
 
