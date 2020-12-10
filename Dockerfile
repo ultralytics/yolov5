@@ -2,7 +2,7 @@
 FROM nvcr.io/nvidia/pytorch:20.10-py3
 
 # Install linux packages
-RUN apt install screen
+RUN apt update && apt install -y screen
 
 # Install python dependencies
 RUN pip install --upgrade pip
