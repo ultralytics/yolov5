@@ -10,8 +10,8 @@ import os
 
 import torch
 
-from models.yolo import Model
-from utils.google_utils import attempt_download
+from yolov5.models.yolo import Model
+from yolov5.utils.google_utils import attempt_download
 
 
 def create(name, pretrained, channels, classes):
