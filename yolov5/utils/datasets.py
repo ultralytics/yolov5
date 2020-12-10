@@ -328,7 +328,12 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.stride = stride
 
         # Define labels
-        self.label_files = [f"{x.replace('images', 'annotations')}.txt" for x in self.img_files]
+        self.label_files = [
+            f"{x.replace('images', 'annotations')}.txt"
+            if len(x.split(".")) == 1  # If there's no image extension
+            else x.replace('images', 'annotations').replace(x.split(".")[-1], 'txt')  # If there's an image extension
+            for x in self.img_files
+        ]
 
         # Check cache
         cache_path = str(Path(self.label_files[0]).parent) + '.cache'  # cached labels
