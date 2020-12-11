@@ -82,11 +82,12 @@ def profile(x, ops, n=100, device=torch.device('cuda:0' if torch.cuda.is_availab
     #     m2 = nn.SiLU()
     #     profile(x, [m1, m2], n=100)  # profile speed over 100 iterations
 
+    x = x.to(device)
     x.requires_grad = True
     print(torch.__version__, device.type, torch.cuda.get_device_properties(0) if device.type == 'cuda' else '')
     print(f"\n{'Params':>12s}{'FLOPS':>12s}{'forward (ms)':>16s}{'backward (ms)':>16s}{'input':>24s}{'output':>24s}")
     for m in ops if isinstance(ops, list) else [ops]:
-        x, m = x.to(device), m.to(device) if hasattr(m, 'to') else m
+        m = m.to(device) if hasattr(m, 'to') else m
         dtf, dtb, t = 0., 0., [0., 0., 0.]  # dt forward, backward
         try:
             flops = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2  # GFLOPS
