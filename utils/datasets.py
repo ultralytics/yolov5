@@ -138,7 +138,7 @@ class LoadImages:  # for inference
         self.files = images + videos
         self.nf = ni + nv  # number of files
         self.video_flag = [False] * ni + [True] * nv
-        self.mode = 'images'
+        self.mode = 'image'
         if any(videos):
             self.new_video(videos[0])  # new video
         else:
@@ -256,7 +256,7 @@ class LoadWebcam:  # for inference
 
 class LoadStreams:  # multiple IP or RTSP cameras
     def __init__(self, sources='streams.txt', img_size=640):
-        self.mode = 'images'
+        self.mode = 'stream'
         self.img_size = img_size
 
         if os.path.isfile(sources):
