@@ -97,6 +97,11 @@ def make_divisible(x, divisor):
     return math.ceil(x / divisor) * divisor
 
 
+def clean_str(s):
+    # Cleans a string by replacing special characters with underscore _
+    return re.sub(pattern="[|@#!·$%&()=?¿^*;:,¨´><+]", repl="_", string=s)
+
+
 def labels_to_class_weights(labels, nc=80):
     # Get class weights (inverse frequency) from training labels
     if labels[0] is None:  # no labels loaded
