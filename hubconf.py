@@ -129,7 +129,7 @@ def custom(path_or_model='path/to/model.pt'):
 
 if __name__ == '__main__':
     model = create(name='yolov5s', pretrained=True, channels=3, classes=80)  # pretrained example
-    # model = custom(model='path/to/model.pt')  # custom example
+    # model = custom(path_or_model='path/to/model.pt')  # custom example
     model = model.autoshape()  # for PIL/cv2/np inputs and NMS
 
     # Verify inference
