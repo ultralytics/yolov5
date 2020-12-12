@@ -106,19 +106,18 @@ def yolov5x(pretrained=False, channels=3, classes=80):
     return create('yolov5x', pretrained, channels, classes)
 
 
-def custom(model='path/to/model.pt'):
+def custom(path_or_model='path/to/model.pt'):
     """YOLOv5-custom model from https://github.com/ultralytics/yolov5
 
-    Arguments (3 format options):
-        model (str): 'path/to/model.pt'
-        model (dict): torch.load('path/to/model.pt')
-        model (nn.Module): 'torch.load('path/to/model.pt')['model']
+    Arguments (3 options):
+        path_or_model (str): 'path/to/model.pt'
+        path_or_model (dict): torch.load('path/to/model.pt')
+        path_or_model (nn.Module): torch.load('path/to/model.pt')['model']
 
     Returns:
         pytorch model
     """
-    if isinstance(model, str):
-        model = torch.load(model)  # load checkpoint
+    model = torch.load(path_or_model) if isinstance(path_or_model, str) else path_or_model  # load checkpoint
     if isinstance(model, dict):
         model = model['model']  # load model
 
