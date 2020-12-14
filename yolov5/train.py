@@ -146,11 +146,6 @@ def train(hyp, opt, device, tb_writer=None):
     if cuda and rank == -1 and torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)
 
-    # SyncBatchNorm
-    if opt.sync_bn and cuda and rank != -1:
-        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
-        logger.info('Using SyncBatchNorm()')
-
     # Exponential moving average
     ema = ModelEMA(model) if rank in [-1, 0] else None
 
@@ -400,7 +395,6 @@ if __name__ == '__main__':
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
-    parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
     opt = parser.parse_args()
