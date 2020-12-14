@@ -321,7 +321,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         # Define labels
         self.label_files = [
-            f"{x.replace('images', 'annotations')}.txt"
+            f"{x}.txt"
             if len(x.split(".")) == 1  # If there's no image extension
             else x.replace('images', 'annotations').replace(x.split(".")[-1], 'txt')  # If there's an image extension
             for x in self.img_files
