@@ -39,8 +39,9 @@ def train(hyp, opt, device, tb_writer=None):
     last = wdir + 'last.pt'
     best = wdir + 'best.pt'
     results_file = str(log_dir / 'results.txt')
-    epochs, batch_size, total_batch_size, weights, rank = \
-        opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
+    rank = -1
+    epochs, batch_size, total_batch_size, weights = \
+        opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights
 
     # Save run settings
     with open(log_dir / 'hyp.yaml', 'w') as f:
@@ -402,10 +403,8 @@ if __name__ == '__main__':
     # Set DDP variables
     opt.total_batch_size = opt.batch_size
     opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
-    opt.global_rank = int(os.environ['RANK']) if 'RANK' in os.environ else -1
-    set_logging(opt.global_rank)
-    if opt.global_rank in [-1, 0]:
-        check_git_status()
+    set_logging(-1)
+    check_git_status()
 
     # Resume
     if opt.resume:  # resume an interrupted run
@@ -431,9 +430,8 @@ if __name__ == '__main__':
     # Train
     if not opt.evolve:
         tb_writer = None
-        if opt.global_rank in [-1, 0]:
-            logger.info('Start Tensorboard with "tensorboard --logdir %s", view at http://localhost:6006/' % opt.logdir)
-            tb_writer = SummaryWriter(log_dir=increment_dir(Path(opt.logdir) / 'exp', opt.name))  # runs/exp
+        logger.info('Start Tensorboard with "tensorboard --logdir %s", view at http://localhost:6006/' % opt.logdir)
+        tb_writer = SummaryWriter(log_dir=increment_dir(Path(opt.logdir) / 'exp', opt.name))  # runs/exp
 
         train(hyp, opt, device, tb_writer)
 
