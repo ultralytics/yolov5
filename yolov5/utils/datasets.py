@@ -54,7 +54,6 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
                                       augment=augment,  # augment images
                                       hyp=hyp,  # augmentation hyperparameters
                                       cache_images=cache,
-                                      single_cls=opt.single_cls,
                                       stride=int(stride),
                                       pad=pad,
                                       rank=rank)
@@ -292,7 +291,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, image_weights=False,
-                 cache_images=False, single_cls=False, stride=32, pad=0.0, rank=-1):
+                 cache_images=False, stride=32, rank=-1):
         try:
             f = []  # image files
             for p in path if isinstance(path, list) else [path]:
@@ -361,8 +360,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels: %s' % file
                 if np.unique(l, axis=0).shape[0] < l.shape[0]:  # duplicate rows
                     nd += 1  # print('WARNING: duplicate rows in %s' % self.label_files[i])  # duplicate rows
-                if single_cls:
-                    l[:, 0] = 0  # force dataset into single-class mode
                 self.labels[i] = l
                 nf += 1  # file found
 

@@ -57,7 +57,7 @@ def train(hyp, opt, device, tb_writer=None):
         check_dataset(data_dict)  # check
     train_path = data_dict['train']
     test_path = data_dict['val']
-    nc, names = (1, ['item']) if opt.single_cls else (int(data_dict['nc']), data_dict['names'])  # number classes, names
+    nc, names = (int(data_dict['nc']), data_dict['names'])  # number classes, names
     assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)  # check
 
     # Model
@@ -309,7 +309,6 @@ def train(hyp, opt, device, tb_writer=None):
                                              batch_size=total_batch_size,
                                              imgsz=imgsz_test,
                                              model=ema.ema.module if hasattr(ema.ema, 'module') else ema.ema,
-                                             single_cls=opt.single_cls,
                                              dataloader=testloader,
                                              save_dir=log_dir)
 
@@ -381,7 +380,6 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
-    parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
     parser.add_argument('--logdir', type=str, default='runs/', help='logging directory')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')

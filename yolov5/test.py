@@ -25,7 +25,6 @@ def test(data,
          conf_thres=0.001,
          iou_thres=0.6,  # for NMS
          save_json=False,
-         single_cls=False,
          augment=False,
          verbose=False,
          model=None,
@@ -70,7 +69,7 @@ def test(data,
     with open(data) as f:
         data = yaml.load(f, Loader=yaml.FullLoader)  # model dict
     check_dataset(data)  # check
-    nc = 1 if single_cls else int(data['nc'])  # number of classes
+    nc = int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
     niou = iouv.numel()
 
@@ -257,7 +256,6 @@ if __name__ == '__main__':
     parser.add_argument('--save-json', action='store_true', help='save a cocoapi-compatible JSON results file')
     parser.add_argument('--task', default='val', help="'val', 'test', 'study'")
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--single-cls', action='store_true', help='treat as single-class dataset')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--merge', action='store_true', help='use Merge NMS')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
@@ -275,7 +273,6 @@ if __name__ == '__main__':
              opt.conf_thres,
              opt.iou_thres,
              opt.save_json,
-             opt.single_cls,
              opt.augment,
              opt.verbose)
 
