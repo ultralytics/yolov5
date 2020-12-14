@@ -1,9 +1,9 @@
 import argparse
+import logging
 import math
 import os
 import random
 import time
-import logging
 from pathlib import Path
 
 import numpy as np
@@ -14,11 +14,8 @@ import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 import yaml
 from torch.cuda import amp
-from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-
-import test  # import test.py to get mAP after each epoch
 from yolov5.models.yolo import Model
 from yolov5.utils.datasets import create_dataloader
 from yolov5.utils.general import (
@@ -27,6 +24,8 @@ from yolov5.utils.general import (
     check_git_status, check_img_size, increment_dir, print_mutation, plot_evolution, set_logging)
 from yolov5.utils.google_utils import attempt_download
 from yolov5.utils.torch_utils import init_seeds, ModelEMA, select_device, intersect_dicts
+
+import test  # import test.py to get mAP after each epoch
 
 logger = logging.getLogger(__name__)
 
@@ -319,8 +318,6 @@ def train(hyp, opt, device, tb_writer=None):
             # Write
             with open(results_file, 'a') as f:
                 f.write(s + '%10.4g' * 7 % results + '\n')  # P, R, mAP, F1, test_losses=(GIoU, obj, cls)
-            if len(opt.name) and opt.bucket:
-                os.system('gsutil cp %s gs://%s/results/results%s.txt' % (results_file, opt.bucket, opt.name))
 
             # Tensorboard
             if tb_writer:
@@ -363,7 +360,6 @@ def train(hyp, opt, device, tb_writer=None):
                 os.rename(f1, f2)  # rename
                 ispt = f2.endswith('.pt')  # is *.pt
                 strip_optimizer(f2) if ispt else None  # strip optimizer
-                os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket and ispt else None  # upload
         # Finish
         if not opt.evolve:
             plot_results(save_dir=log_dir)  # save as results.png
@@ -389,7 +385,6 @@ if __name__ == '__main__':
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
-    parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
@@ -464,8 +459,6 @@ if __name__ == '__main__':
         opt.notest, opt.nosave = True, True  # only test/save final epoch
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
         yaml_file = Path('runs/evolve/hyp_evolved.yaml')  # save best result here
-        if opt.bucket:
-            os.system('gsutil cp gs://%s/evolve.txt .' % opt.bucket)  # download evolve.txt if exists
 
         for _ in range(100):  # generations to evolve
             if os.path.exists('evolve.txt'):  # if evolve.txt exists: select best hyps and mutate
@@ -503,7 +496,7 @@ if __name__ == '__main__':
             results = train(hyp.copy(), opt, device)
 
             # Write mutation results
-            print_mutation(hyp.copy(), results, yaml_file, opt.bucket)
+            print_mutation(hyp.copy(), results, yaml_file)
 
         # Plot results
         plot_evolution(yaml_file)
