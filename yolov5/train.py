@@ -396,7 +396,6 @@ if __name__ == '__main__':
     opt.total_batch_size = opt.batch_size
     opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
     set_logging(-1)
-    check_git_status()
 
     # Resume
     if opt.resume:  # resume an interrupted run
