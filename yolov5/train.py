@@ -391,4 +391,4 @@ def train(weights: str, cfg: str, data: str, hyp: str, epochs: int = 2, batch_si
 
 if __name__ == '__main__':
     train(weights='weights/yolov5s.pt', cfg='data/yolov5s.yaml', data='data/dataset.yaml', hyp='data/hyp.finetune.yaml',
-          workers=1, img_size=[224, 224])
+          workers=1, img_size=[224, 224], epochs=20)
