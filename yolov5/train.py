@@ -1,4 +1,4 @@
-import argparse
+import logging
 import logging
 import math
 import os
@@ -16,15 +16,16 @@ import yaml
 from torch.cuda import amp
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+
 from yolov5.models.yolo import Model
+from yolov5.test import test
 from yolov5.utils.datasets import create_dataloader
 from yolov5.utils.general import (
     torch_distributed_zero_first, labels_to_class_weights, plot_labels, check_anchors, labels_to_image_weights,
     compute_loss, plot_images, fitness, strip_optimizer, plot_results, get_latest_run, check_dataset, check_file,
-    check_img_size, increment_dir, print_mutation, plot_evolution, set_logging)
+    check_img_size, increment_dir, set_logging)
 from yolov5.utils.google_utils import attempt_download
 from yolov5.utils.torch_utils import init_seeds, ModelEMA, select_device, intersect_dicts
-from yolov5.test import test
 
 logger = logging.getLogger(__name__)
 
@@ -59,12 +60,7 @@ def train(weights: str, cfg: str, data: str, hyp: str, epochs: int = 2, batch_si
     # Resume
     if resume:  # resume an interrupted run
         ckpt = resume if isinstance(resume, str) else get_latest_run()
-        # TODO: replace "opt load"
-        # assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
-        # with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
-        #     opt = argparse.Namespace(**yaml.load(f, Loader=yaml.FullLoader))  # replace
-        # opt.cfg, opt.weights, opt.resume = '', ckpt, True
-        # logger.info('Resuming training from %s' % ckpt)
+        assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
 
     else:
         hyp = hyp or ('data/hyp.finetune.yaml' if weights else 'data/hyp.scratch.yaml')
