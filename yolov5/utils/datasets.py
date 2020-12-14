@@ -53,16 +53,13 @@ def create_dataloader(path, imgsz, batch_size, stride, hyp=None, augment=False,
         dataset = LoadImagesAndLabels(path, imgsz, batch_size,
                                       augment=augment,  # augment images
                                       hyp=hyp,  # augmentation hyperparameters
-                                      stride=int(stride),
-                                      rank=rank)
+                                      stride=int(stride))
 
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count() // world_size, batch_size if batch_size > 1 else 0, workers])  # number of workers
-    train_sampler = torch.utils.data.distributed.DistributedSampler(dataset) if rank != -1 else None
     dataloader = torch.utils.data.DataLoader(dataset,
                                              batch_size=batch_size,
                                              num_workers=nw,
-                                             sampler=train_sampler,
                                              pin_memory=True,
                                              collate_fn=LoadImagesAndLabels.collate_fn)
     return dataloader, dataset
