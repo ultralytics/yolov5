@@ -184,8 +184,7 @@ def train(hyp, opt, device, tb_writer=None):
             tb_writer.add_histogram('classes', c, 0)
 
         # Check anchors
-        if not opt.noautoanchor:
-            check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
+        check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
 
     # Start training
     t0 = time.time()
@@ -382,7 +381,6 @@ if __name__ == '__main__':
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
-    parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
