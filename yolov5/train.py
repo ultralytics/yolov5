@@ -305,14 +305,13 @@ def train(hyp, opt, device, tb_writer=None):
             if ema:
                 ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride'])
             final_epoch = epoch + 1 == epochs
-            if not opt.notest or final_epoch:  # Calculate mAP
-                results, maps, times = test.test(opt.data,
-                                                 batch_size=total_batch_size,
-                                                 imgsz=imgsz_test,
-                                                 model=ema.ema.module if hasattr(ema.ema, 'module') else ema.ema,
-                                                 single_cls=opt.single_cls,
-                                                 dataloader=testloader,
-                                                 save_dir=log_dir)
+            results, maps, times = test.test(opt.data,
+                                             batch_size=total_batch_size,
+                                             imgsz=imgsz_test,
+                                             model=ema.ema.module if hasattr(ema.ema, 'module') else ema.ema,
+                                             single_cls=opt.single_cls,
+                                             dataloader=testloader,
+                                             save_dir=log_dir)
 
             # Write
             with open(results_file, 'a') as f:
@@ -333,14 +332,12 @@ def train(hyp, opt, device, tb_writer=None):
                 best_fitness = fi
 
             # Save model
-            save = (not opt.nosave) or (final_epoch and not opt.evolve)
-            if save:
-                with open(results_file, 'r') as f:  # create checkpoint
-                    ckpt = {'epoch': epoch,
-                            'best_fitness': best_fitness,
-                            'training_results': f.read(),
-                            'model': ema.ema.module if hasattr(ema, 'module') else ema.ema,
-                            'optimizer': None if final_epoch else optimizer.state_dict()}
+            with open(results_file, 'r') as f:  # create checkpoint
+                ckpt = {'epoch': epoch,
+                        'best_fitness': best_fitness,
+                        'training_results': f.read(),
+                        'model': ema.ema.module if hasattr(ema, 'module') else ema.ema,
+                        'optimizer': None if final_epoch else optimizer.state_dict()}
 
                 # Save last, best and delete
                 torch.save(ckpt, last)
@@ -379,8 +376,6 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
-    parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
-    parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
@@ -452,7 +447,6 @@ if __name__ == '__main__':
                 'fliplr': (1, 0.0, 1.0),  # image flip left-right (probability)
                 'mixup': (1, 0.0, 1.0)}  # image mixup (probability)
 
-        opt.notest, opt.nosave = True, True  # only test/save final epoch
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
         yaml_file = Path('runs/evolve/hyp_evolved.yaml')  # save best result here
 
