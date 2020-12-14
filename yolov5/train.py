@@ -21,7 +21,7 @@ from yolov5.utils.datasets import create_dataloader
 from yolov5.utils.general import (
     torch_distributed_zero_first, labels_to_class_weights, plot_labels, check_anchors, labels_to_image_weights,
     compute_loss, plot_images, fitness, strip_optimizer, plot_results, get_latest_run, check_dataset, check_file,
-    check_git_status, check_img_size, increment_dir, print_mutation, plot_evolution, set_logging)
+    check_img_size, increment_dir, print_mutation, plot_evolution, set_logging)
 from yolov5.utils.google_utils import attempt_download
 from yolov5.utils.torch_utils import init_seeds, ModelEMA, select_device, intersect_dicts
 
@@ -33,10 +33,10 @@ logger = logging.getLogger(__name__)
 def train(hyp, opt, device, tb_writer=None):
     logger.info(f'Hyperparameters {hyp}')
     log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
-    wdir = str(log_dir / 'weights') + os.sep  # weights directory
-    os.makedirs(wdir, exist_ok=True)
-    last = wdir + 'last.pt'
-    best = wdir + 'best.pt'
+    weights_directory = str(log_dir / 'weights') + os.sep  # weights directory
+    os.makedirs(weights_directory, exist_ok=True)
+    weights_last = weights_directory + 'last.pt'
+    weights_best = weights_directory + 'best.pt'
     results_file = str(log_dir / 'results.txt')
     rank = -1
     epochs, batch_size, total_batch_size, weights = \
@@ -339,24 +339,23 @@ def train(hyp, opt, device, tb_writer=None):
                         'optimizer': None if final_epoch else optimizer.state_dict()}
 
                 # Save last, best and delete
-                torch.save(ckpt, last)
+                torch.save(ckpt, weights_last)
                 if best_fitness == fi:
-                    torch.save(ckpt, best)
+                    torch.save(ckpt, weights_best)
                 del ckpt
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training
 
     if rank in [-1, 0]:
         # Strip optimizers
-        fresults, flast, fbest = 'results.txt', wdir + 'last.pt', wdir + 'best.pt'
-        for f1, f2 in zip([wdir + 'last.pt', wdir + 'best.pt', 'results.txt'], [flast, fbest, fresults]):
+        fresults, flast, fbest = 'results.txt', weights_directory + 'last.pt', weights_directory + 'best.pt'
+        for f1, f2 in zip([weights_directory + 'last.pt', weights_directory + 'best.pt', 'results.txt'], [flast, fbest, fresults]):
             if os.path.exists(f1):
                 os.rename(f1, f2)  # rename
                 ispt = f2.endswith('.pt')  # is *.pt
                 strip_optimizer(f2) if ispt else None  # strip optimizer
         # Finish
-        if not opt.evolve:
-            plot_results(save_dir=log_dir)  # save as results.png
+        plot_results(save_dir=log_dir)  # save as results.png
         logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
 
     dist.destroy_process_group() if rank not in [-1, 0] else None
@@ -374,7 +373,6 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
-    parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
@@ -409,81 +407,8 @@ if __name__ == '__main__':
         hyp = yaml.load(f, Loader=yaml.FullLoader)  # load hyps
 
     # Train
-    if not opt.evolve:
-        tb_writer = None
-        logger.info('Start Tensorboard with "tensorboard --logdir %s", view at http://localhost:6006/' % opt.logdir)
-        tb_writer = SummaryWriter(log_dir=increment_dir(Path(opt.logdir) / 'exp', opt.name))  # runs/exp
+    tb_writer = None
+    logger.info('Start Tensorboard with "tensorboard --logdir %s", view at http://localhost:6006/' % opt.logdir)
+    tb_writer = SummaryWriter(log_dir=increment_dir(Path(opt.logdir) / 'exp', opt.name))  # runs/exp
 
-        train(hyp, opt, device, tb_writer)
-
-    # Evolve hyperparameters (optional)
-    else:
-        # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit, upper_limit)
-        meta = {'lr0': (1, 1e-5, 1e-1),  # initial learning rate (SGD=1E-2, Adam=1E-3)
-                'momentum': (0.1, 0.6, 0.98),  # SGD momentum/Adam beta1
-                'weight_decay': (1, 0.0, 0.001),  # optimizer weight decay
-                'giou': (1, 0.02, 0.2),  # GIoU loss gain
-                'cls': (1, 0.2, 4.0),  # cls loss gain
-                'cls_pw': (1, 0.5, 2.0),  # cls BCELoss positive_weight
-                'obj': (1, 0.2, 4.0),  # obj loss gain (scale with pixels)
-                'obj_pw': (1, 0.5, 2.0),  # obj BCELoss positive_weight
-                'iou_t': (0, 0.1, 0.7),  # IoU training threshold
-                'anchor_t': (1, 2.0, 8.0),  # anchor-multiple threshold
-                'fl_gamma': (0, 0.0, 2.0),  # focal loss gamma (efficientDet default gamma=1.5)
-                'hsv_h': (1, 0.0, 0.1),  # image HSV-Hue augmentation (fraction)
-                'hsv_s': (1, 0.0, 0.9),  # image HSV-Saturation augmentation (fraction)
-                'hsv_v': (1, 0.0, 0.9),  # image HSV-Value augmentation (fraction)
-                'degrees': (1, 0.0, 45.0),  # image rotation (+/- deg)
-                'translate': (1, 0.0, 0.9),  # image translation (+/- fraction)
-                'scale': (1, 0.0, 0.9),  # image scale (+/- gain)
-                'shear': (1, 0.0, 10.0),  # image shear (+/- deg)
-                'perspective': (1, 0.0, 0.001),  # image perspective (+/- fraction), range 0-0.001
-                'flipud': (0, 0.0, 1.0),  # image flip up-down (probability)
-                'fliplr': (1, 0.0, 1.0),  # image flip left-right (probability)
-                'mixup': (1, 0.0, 1.0)}  # image mixup (probability)
-
-        # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
-        yaml_file = Path('runs/evolve/hyp_evolved.yaml')  # save best result here
-
-        for _ in range(100):  # generations to evolve
-            if os.path.exists('evolve.txt'):  # if evolve.txt exists: select best hyps and mutate
-                # Select parent(s)
-                parent = 'single'  # parent selection method: 'single' or 'weighted'
-                x = np.loadtxt('evolve.txt', ndmin=2)
-                n = min(5, len(x))  # number of previous results to consider
-                x = x[np.argsort(-fitness(x))][:n]  # top n mutations
-                w = fitness(x) - fitness(x).min()  # weights
-                if parent == 'single' or len(x) == 1:
-                    # x = x[random.randint(0, n - 1)]  # random selection
-                    x = x[random.choices(range(n), weights=w)[0]]  # weighted selection
-                elif parent == 'weighted':
-                    x = (x * w.reshape(n, 1)).sum(0) / w.sum()  # weighted combination
-
-                # Mutate
-                mp, s = 0.9, 0.2  # mutation probability, sigma
-                npr = np.random
-                npr.seed(int(time.time()))
-                g = np.array([x[0] for x in meta.values()])  # gains 0-1
-                ng = len(meta)
-                v = np.ones(ng)
-                while all(v == 1):  # mutate until a change occurs (prevent duplicates)
-                    v = (g * (npr.random(ng) < mp) * npr.randn(ng) * npr.random() * s + 1).clip(0.3, 3.0)
-                for i, k in enumerate(hyp.keys()):  # plt.hist(v.ravel(), 300)
-                    hyp[k] = float(x[i + 7] * v[i])  # mutate
-
-            # Constrain to limits
-            for k, v in meta.items():
-                hyp[k] = max(hyp[k], v[1])  # lower limit
-                hyp[k] = min(hyp[k], v[2])  # upper limit
-                hyp[k] = round(hyp[k], 5)  # significant digits
-
-            # Train mutation
-            results = train(hyp.copy(), opt, device)
-
-            # Write mutation results
-            print_mutation(hyp.copy(), results, yaml_file)
-
-        # Plot results
-        plot_evolution(yaml_file)
-        print('Hyperparameter evolution complete. Best results saved as: %s\nCommand to train a new model with these '
-              'hyperparameters: $ python train.py --hyp %s' % (yaml_file, yaml_file))
+    train(hyp, opt, device, tb_writer)
