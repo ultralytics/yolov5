@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 def train(weights: str, cfg: str, data: str, hyp: str, epochs: int = 2, batch_size: int = 16,
-          img_size: list = [640, 640], resume: bool = False, device: str = 'cpu', adam: bool = False,
+          img_size: list = [640, 640], resume: bool = False, device_str: str = 'cpu', adam: bool = False,
           logdir: str = 'runs/', workers: int = 8):
     """
     :param weights: initial weights path
@@ -42,12 +42,12 @@ def train(weights: str, cfg: str, data: str, hyp: str, epochs: int = 2, batch_si
     :param batch_size:
     :param img_size:
     :param resume: if bool True, resume to latest run, if string, resume to specified path
-    :param device: 'cpu' or '0'
+    :param device_str: 'cpu' or '0'
     :param adam:
     :param logdir:
     :param workers:
     """
-    device = select_device(device, batch_size=batch_size)
+    device = select_device(device_str, batch_size=batch_size)
 
     logger.info('Start Tensorboard with "tensorboard --logdir %s", view at http://localhost:6006/' % logdir)
     tb_writer = SummaryWriter(log_dir=increment_dir(Path(logdir) / 'exp'))  # runs/exp
@@ -328,10 +328,11 @@ def train(weights: str, cfg: str, data: str, hyp: str, epochs: int = 2, batch_si
             final_epoch = epoch + 1 == epochs
             results, maps, times = test(data,
                                         batch_size=total_batch_size,
-                                        imgsz=imgsz_test,
+                                        image_size=imgsz_test,
                                         model=ema.ema.module if hasattr(ema.ema, 'module') else ema.ema,
                                         dataloader=testloader,
-                                        save_dir=log_dir)
+                                        save_dir=log_dir,
+                                        device_str=device_str)
 
             # Write
             with open(results_file, 'a') as f:
