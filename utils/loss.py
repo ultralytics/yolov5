@@ -92,8 +92,8 @@ def compute_loss(p, targets, model):  # predictions, targets, model
     h = model.hyp  # hyperparameters
 
     # Define criteria
-    BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([h['cls_pw']])).to(device)
-    BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([h['obj_pw']])).to(device)
+    BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['cls_pw']], device=device))  # weight=model.class_weights)
+    BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['obj_pw']], device=device))
 
     # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
     cp, cn = smooth_BCE(eps=0.0)
@@ -119,7 +119,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
             # Regression
             pxy = ps[:, :2].sigmoid() * 2. - 0.5
             pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anchors[i]
-            pbox = torch.cat((pxy, pwh), 1).to(device)  # predicted box
+            pbox = torch.cat((pxy, pwh), 1)  # predicted box
             iou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, CIoU=True)  # iou(prediction, target)
             lbox += (1.0 - iou).mean()  # iou loss
 
