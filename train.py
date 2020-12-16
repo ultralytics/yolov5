@@ -402,15 +402,18 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
         # Test best.pt
         if opt.data.endswith('coco.yaml') and nc == 80:  # if COCO
-            results, _, _ = test.test(opt.data,
-                                      batch_size=total_batch_size,
-                                      imgsz=imgsz_test,
-                                      model=attempt_load(best if best.exists() else last, device).half(),
-                                      single_cls=opt.single_cls,
-                                      dataloader=testloader,
-                                      save_dir=save_dir,
-                                      save_json=True,  # use pycocotools
-                                      plots=False)
+            for conf, iou, save_json in ([0.25, 0.45, False], [0.001, 0.65, True]):  # speed, mAP tests
+                results, _, _ = test.test(opt.data,
+                                          batch_size=total_batch_size,
+                                          imgsz=imgsz_test,
+                                          conf_thres=conf,
+                                          iou_thres=iou,
+                                          model=attempt_load(best if best.exists() else last, device).half(),
+                                          single_cls=opt.single_cls,
+                                          dataloader=testloader,
+                                          save_dir=save_dir,
+                                          save_json=save_json,
+                                          plots=False)
 
     else:
         dist.destroy_process_group()
