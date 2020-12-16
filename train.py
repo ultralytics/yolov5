@@ -387,7 +387,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     if rank in [-1, 0]:
         # Strip optimizers
         final = best if best.exists() else last  # final model
-        (strip_optimizer(f) for f in [last, best] if f.exists())  # strip optimizers
+        for f in [last, best]:
+            if f.exists():
+                strip_optimizer(f)  # strip optimizers
         if opt.bucket:
             os.system(f'gsutil cp {final} gs://{opt.bucket}/weights')  # upload
 
@@ -399,7 +401,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 wandb.log({"Results": [wandb.Image(str(save_dir / f), caption=f) for f in files
                                        if (save_dir / f).exists()]})
                 if opt.log_artifacts:
-                    wandb.log_artifact(wandb.Artifact('model', type=model).add_file(final))
+                    wandb.log_artifact(artifact_or_path=str(final), type='model', name=save_dir.stem)
 
         # Test best.pt
         logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
