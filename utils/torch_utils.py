@@ -81,8 +81,8 @@ def profile(x, ops, n=100, device=None):
     #     m1 = lambda x: x * torch.sigmoid(x)
     #     m2 = nn.SiLU()
     #     profile(x, [m1, m2], n=100)  # profile speed over 100 iterations
-    
-    device = device or torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')    
+
+    device = device or torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     x = x.to(device)
     x.requires_grad = True
     print(torch.__version__, device.type, torch.cuda.get_device_properties(0) if device.type == 'cuda' else '')
@@ -99,8 +99,11 @@ def profile(x, ops, n=100, device=None):
             t[0] = time_synchronized()
             y = m(x)
             t[1] = time_synchronized()
-            _ = y.sum().backward()
-            t[2] = time_synchronized()
+            try:
+                _ = y.sum().backward()
+                t[2] = time_synchronized()
+            except:  # no backward method
+                t[2] = float('nan')
             dtf += (t[1] - t[0]) * 1000 / n  # ms per op forward
             dtb += (t[2] - t[1]) * 1000 / n  # ms per op backward
 
