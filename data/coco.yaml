@@ -35,4 +35,5 @@ names: ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 't
 #     print(i, x)
 
 
-# python train.py --data coco.yaml --batch 24 --weights '' --cfg yolov5l.yaml --epochs 300 --project ../paper --name yolov5l3b --device 1
+# python train.py --data coco.yaml --batch 24 --weights '' --cfg yolov5l.yaml --epochs 300 --project ../paper --name yolov5lc3_03cls --hyp hyp.scratch_03cls.yaml --device 0
+# python train.py --data coco.yaml --batch 24 --weights '' --cfg yolov5l.yaml --epochs 300 --project ../paper --name yolov5lc3_08cls --hyp hyp.scratch_08cls.yaml --device 1
