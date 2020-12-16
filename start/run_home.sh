@@ -9,7 +9,7 @@ docker run \
     --shm-size='1G' \
     -e PYTHONUNBUFFERED='1' \
     -e SERVER_ADDRESS='https://app.supervise.ly' \
-    -e API_TOKEN='HKPFXmLJaQ4e1ZLzDbCv2WHEsbjjLOAZE7kKb14JKZFZVpQDC1YH0rYfJSPpL34y0wO4LuGrSXn6l7z1RU5TeZw6UIpkONOCP8LmijEcBYrfJ12NP2T76RbS75Xvx2fm' \
+    -e API_TOKEN='P78DuO37grwKNbGikDso72gphdCICDsiTXflvSGVEiendUhnJz93Pm48KKPAlgh2k68TPIAR7LPW1etGPiATM1ZOQL8iFVfWjt8gUphxps3IOSicrm6m0gv2cQh3lfww' \
     -v ${PWD}/..:/alex_work \
     -v ${PWD}/../../alex_data:/alex_data \
     -v /home/andrew/alex_work/supervisely_py/supervisely_lib:/alex_work/supervisely_lib \
