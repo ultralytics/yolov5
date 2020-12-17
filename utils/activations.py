@@ -5,8 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-# Swish https://arxiv.org/pdf/1905.02244.pdf ---------------------------------------------------------------------------
-class Swish(nn.Module):  #
+# SiLU https://arxiv.org/pdf/1905.02244.pdf ----------------------------------------------------------------------------
+class SiLU(nn.Module):  # export-friendly version of nn.SiLU()
     @staticmethod
     def forward(x):
         return x * torch.sigmoid(x)
