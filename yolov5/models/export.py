@@ -8,8 +8,8 @@ import argparse
 
 import torch
 
-from yolov5.utils.google_utils import attempt_download
 from yolov5.utils.general import set_logging
+from yolov5.utils.google_utils import attempt_download
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
