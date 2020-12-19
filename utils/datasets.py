@@ -19,7 +19,7 @@ from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils.general import xyxy2xywh, xywh2xyxy
+from utils.general import xyxy2xywh, xywh2xyxy, clean_str
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
@@ -267,7 +267,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
 
         n = len(sources)
         self.imgs = [None] * n
-        self.sources = sources
+        self.sources = [clean_str(x) for x in sources]  # clean source names for later
         for i, s in enumerate(sources):
             # Start the thread to read frames from the video stream
             print('%g/%g: %s... ' % (i + 1, n, s), end='')

@@ -2,6 +2,7 @@
 
 import glob
 import logging
+import math
 import os
 import platform
 import random
@@ -11,7 +12,6 @@ import time
 from pathlib import Path
 
 import cv2
-import math
 import numpy as np
 import torch
 import torchvision
@@ -95,6 +95,11 @@ def check_dataset(dict):
 def make_divisible(x, divisor):
     # Returns x evenly divisible by divisor
     return math.ceil(x / divisor) * divisor
+
+
+def clean_str(s):
+    # Cleans a string by replacing special characters with underscore _
+    return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
 
 
 def labels_to_class_weights(labels, nc=80):
