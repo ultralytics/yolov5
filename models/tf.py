@@ -339,6 +339,7 @@ if __name__ == "__main__":
     parser.add_argument('--weights', type=str, default='yolov5s.pt', help='weights path')
     parser.add_argument('--img-size', nargs='+', type=int, default=[320, 320], help='image size')  # height, width
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
+    parser.add_argument('--dynamic-batch-size', action='store_true', help='dynamic batch size')
     parser.add_argument('--no-tfl-detect', action='store_true', help='remove Detect() from TFLite model')
     parser.add_argument('--source', type=str, default='../data/coco128.yaml', help='dir of images or data.yaml file')
     parser.add_argument('--ncalib', type=int, default=100, help='number of calibration images')
@@ -375,7 +376,7 @@ if __name__ == "__main__":
         m.training = False
         y = tf_model.predict(img)
 
-        inputs = keras.Input(shape=(*opt.img_size, 3))
+        inputs = keras.Input(shape=(*opt.img_size, 3), batch_size=None if opt.dynamic_batch_size else opt.batch_size)
         keras_model = keras.Model(inputs=inputs, outputs=tf_model.predict(inputs))
         keras_model.summary()
         path = opt.weights.replace('.pt', '_saved_model')  # filename
