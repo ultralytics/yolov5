@@ -77,18 +77,17 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='precision
 
 
 def compute_ap(recall, precision):
-    """ Compute the average precision, given the recall and precision curves.
-    Source: https://github.com/rbgirshick/py-faster-rcnn.
+    """ Compute the average precision, given the recall and precision curves
     # Arguments
-        recall:    The recall curve (list).
-        precision: The precision curve (list).
+        recall:    The recall curve (list)
+        precision: The precision curve (list)
     # Returns
-        The average precision as computed in py-faster-rcnn.
+        Average precision, precision curve, recall curve
     """
 
     # Append sentinel values to beginning and end
-    mrec = recall  # np.concatenate(([0.], recall, [recall[-1] + 1E-3]))
-    mpre = precision  # np.concatenate(([0.], precision, [0.]))
+    mrec = np.concatenate(([0.], recall, [recall[-1] + 0.01]))
+    mpre = np.concatenate(([1.], precision, [0.]))
 
     # Compute the precision envelope
     mpre = np.flip(np.maximum.accumulate(np.flip(mpre)))
@@ -163,7 +162,7 @@ class ConfusionMatrix:
             array = self.matrix / (self.matrix.sum(0).reshape(1, self.nc + 1) + 1E-6)  # normalize
             array[array < 0.005] = np.nan  # don't annotate (would appear as 0.00)
 
-            fig = plt.figure(figsize=(12, 9))
+            fig = plt.figure(figsize=(12, 9), tight_layout=True)
             sn.set(font_scale=1.0 if self.nc < 50 else 0.8)  # for label size
             labels = (0 < len(names) < 99) and len(names) == self.nc  # apply names to ticklabels
             sn.heatmap(array, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True,
@@ -171,7 +170,6 @@ class ConfusionMatrix:
                        yticklabels=names + ['background FP'] if labels else "auto").set_facecolor((1, 1, 1))
             fig.axes[0].set_xlabel('True')
             fig.axes[0].set_ylabel('Predicted')
-            fig.tight_layout()
             fig.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
         except Exception as e:
             pass
@@ -184,7 +182,7 @@ class ConfusionMatrix:
 # Plots ----------------------------------------------------------------------------------------------------------------
 
 def plot_pr_curve(px, py, ap, save_dir='.', names=()):
-    fig, ax = plt.subplots(1, 1, figsize=(9, 6))
+    fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
     py = np.stack(py, axis=1)
 
     if 0 < len(names) < 21:  # show mAP in legend if < 10 classes
@@ -199,5 +197,4 @@ def plot_pr_curve(px, py, ap, save_dir='.', names=()):
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
-    fig.tight_layout()
     fig.savefig(Path(save_dir) / 'precision_recall_curve.png', dpi=250)

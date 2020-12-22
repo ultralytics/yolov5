@@ -1,16 +1,18 @@
 # Plotting utils
 
 import glob
+import math
 import os
 import random
 from copy import copy
 from pathlib import Path
 
 import cv2
-import math
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import seaborn as sns
 import torch
 import yaml
 from PIL import Image, ImageDraw
@@ -73,7 +75,7 @@ def plot_wh_methods():  # from utils.plots import *; plot_wh_methods()
     ya = np.exp(x)
     yb = torch.sigmoid(torch.from_numpy(x)).numpy() * 2
 
-    fig = plt.figure(figsize=(6, 3), dpi=150)
+    fig = plt.figure(figsize=(6, 3), tight_layout=True)
     plt.plot(x, ya, '.-', label='YOLOv3')
     plt.plot(x, yb ** 2, '.-', label='YOLOv5 ^2')
     plt.plot(x, yb ** 1.6, '.-', label='YOLOv5 ^1.6')
@@ -83,7 +85,6 @@ def plot_wh_methods():  # from utils.plots import *; plot_wh_methods()
     plt.ylabel('output')
     plt.grid()
     plt.legend()
-    fig.tight_layout()
     fig.savefig('comparison.png', dpi=200)
 
 
@@ -141,9 +142,12 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
             labels = image_targets.shape[1] == 6  # labels if no conf column
             conf = None if labels else image_targets[:, 6]  # check for confidence presence (label vs pred)
 
-            if boxes.shape[1] and boxes.max() <= 1:  # if normalized
-                boxes[[0, 2]] *= w  # scale to pixels
-                boxes[[1, 3]] *= h
+            if boxes.shape[1]:
+                if boxes.max() <= 1.01:  # if normalized with tolerance 0.01
+                    boxes[[0, 2]] *= w  # scale to pixels
+                    boxes[[1, 3]] *= h
+                elif scale_factor < 1:  # absolute coords need scale if image scales
+                    boxes *= scale_factor
             boxes[[0, 2]] += block_x
             boxes[[1, 3]] += block_y
             for j, box in enumerate(boxes.T):
@@ -185,7 +189,6 @@ def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=''):
     plt.grid()
     plt.xlim(0, epochs)
     plt.ylim(0)
-    plt.tight_layout()
     plt.savefig(Path(save_dir) / 'LR.png', dpi=200)
 
 
@@ -250,35 +253,26 @@ def plot_study_txt(path='', x=None):  # from utils.plots import *; plot_study_tx
     plt.savefig('test_study.png', dpi=300)
 
 
-def plot_labels(labels, save_dir=''):
+def plot_labels(labels, save_dir=Path(''), loggers=None):
     # plot dataset labels
+    print('Plotting labels... ')
     c, b = labels[:, 0], labels[:, 1:].transpose()  # classes, boxes
     nc = int(c.max() + 1)  # number of classes
     colors = color_list()
+    x = pd.DataFrame(b.transpose(), columns=['x', 'y', 'width', 'height'])
 
     # seaborn correlogram
-    try:
-        import seaborn as sns
-        import pandas as pd
-        x = pd.DataFrame(b.transpose(), columns=['x', 'y', 'width', 'height'])
-        sns.pairplot(x, corner=True, diag_kind='hist', kind='scatter', markers='o',
-                     plot_kws=dict(s=3, edgecolor=None, linewidth=1, alpha=0.02),
-                     diag_kws=dict(bins=50))
-        plt.savefig(Path(save_dir) / 'labels_correlogram.png', dpi=200)
-        plt.close()
-    except Exception as e:
-        pass
+    sns.pairplot(x, corner=True, diag_kind='auto', kind='hist', diag_kws=dict(bins=50), plot_kws=dict(pmax=0.9))
+    plt.savefig(save_dir / 'labels_correlogram.jpg', dpi=200)
+    plt.close()
 
     # matplotlib labels
+    matplotlib.use('svg')  # faster
     ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)[1].ravel()
     ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
     ax[0].set_xlabel('classes')
-    ax[2].scatter(b[0], b[1], c=hist2d(b[0], b[1], 90), cmap='jet')
-    ax[2].set_xlabel('x')
-    ax[2].set_ylabel('y')
-    ax[3].scatter(b[2], b[3], c=hist2d(b[2], b[3], 90), cmap='jet')
-    ax[3].set_xlabel('width')
-    ax[3].set_ylabel('height')
+    sns.histplot(x, x='x', y='y', ax=ax[2], bins=50, pmax=0.9)
+    sns.histplot(x, x='width', y='height', ax=ax[3], bins=50, pmax=0.9)
 
     # rectangles
     labels[:, 1:3] = 0.5  # center
@@ -292,8 +286,15 @@ def plot_labels(labels, save_dir=''):
     for a in [0, 1, 2, 3]:
         for s in ['top', 'right', 'left', 'bottom']:
             ax[a].spines[s].set_visible(False)
-    plt.savefig(Path(save_dir) / 'labels.png', dpi=200)
+
+    plt.savefig(save_dir / 'labels.jpg', dpi=200)
+    matplotlib.use('Agg')
     plt.close()
+
+    # loggers
+    for k, v in loggers.items() or {}:
+        if k == 'wandb' and v:
+            v.log({"Labels": [v.Image(str(x), caption=x.name) for x in save_dir.glob('*labels*.jpg')]})
 
 
 def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots import *; plot_evolution()
@@ -318,6 +319,38 @@ def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots impo
         print('%15s: %.3g' % (k, mu))
     plt.savefig('evolve.png', dpi=200)
     print('\nPlot saved as evolve.png')
+
+
+def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
+    # Plot iDetection '*.txt' per-image logs. from utils.plots import *; profile_idetection()
+    ax = plt.subplots(2, 4, figsize=(12, 6), tight_layout=True)[1].ravel()
+    s = ['Images', 'Free Storage (GB)', 'RAM Usage (GB)', 'Battery', 'dt_raw (ms)', 'dt_smooth (ms)', 'real-world FPS']
+    files = list(Path(save_dir).glob('frames*.txt'))
+    for fi, f in enumerate(files):
+        try:
+            results = np.loadtxt(f, ndmin=2).T[:, 90:-30]  # clip first and last rows
+            n = results.shape[1]  # number of rows
+            x = np.arange(start, min(stop, n) if stop else n)
+            results = results[:, x]
+            t = (results[0] - results[0].min())  # set t0=0s
+            results[0] = x
+            for i, a in enumerate(ax):
+                if i < len(results):
+                    label = labels[fi] if len(labels) else f.stem.replace('frames_', '')
+                    a.plot(t, results[i], marker='.', label=label, linewidth=1, markersize=5)
+                    a.set_title(s[i])
+                    a.set_xlabel('time (s)')
+                    # if fi == len(files) - 1:
+                    #     a.set_ylim(bottom=0)
+                    for side in ['top', 'right']:
+                        a.spines[side].set_visible(False)
+                else:
+                    a.remove()
+        except Exception as e:
+            print('Warning: Plotting error for %s; %s' % (f, e))
+
+    ax[1].legend()
+    plt.savefig(Path(save_dir) / 'idetection_profile.png', dpi=200)
 
 
 def plot_results_overlay(start=0, stop=0):  # from utils.plots import *; plot_results_overlay()
@@ -345,7 +378,7 @@ def plot_results_overlay(start=0, stop=0):  # from utils.plots import *; plot_re
 
 def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
     # Plot training 'results*.txt'. from utils.plots import *; plot_results(save_dir='runs/train/exp')
-    fig, ax = plt.subplots(2, 5, figsize=(12, 6))
+    fig, ax = plt.subplots(2, 5, figsize=(12, 6), tight_layout=True)
     ax = ax.ravel()
     s = ['Box', 'Objectness', 'Classification', 'Precision', 'Recall',
          'val Box', 'val Objectness', 'val Classification', 'mAP@0.5', 'mAP@0.5:0.95']
@@ -375,6 +408,5 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
         except Exception as e:
             print('Warning: Plotting error for %s; %s' % (f, e))
 
-    fig.tight_layout()
     ax[1].legend()
     fig.savefig(Path(save_dir) / 'results.png', dpi=200)

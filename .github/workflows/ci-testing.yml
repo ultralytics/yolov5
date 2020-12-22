@@ -2,9 +2,12 @@ name: CI CPU testing
 
 on:  # https://help.github.com/en/actions/reference/events-that-trigger-workflows
   push:
+    branches: [ master ]
   pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ master ]
   schedule:
-    - cron: "0 0 * * *"
+    - cron: '0 0 * * *'  # Runs at 00:00 UTC every day
 
 jobs:
   cpu-tests:

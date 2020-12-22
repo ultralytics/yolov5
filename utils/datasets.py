@@ -19,7 +19,7 @@ from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils.general import xyxy2xywh, xywh2xyxy
+from utils.general import xyxy2xywh, xywh2xyxy, clean_str
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
@@ -138,7 +138,7 @@ class LoadImages:  # for inference
         self.files = images + videos
         self.nf = ni + nv  # number of files
         self.video_flag = [False] * ni + [True] * nv
-        self.mode = 'images'
+        self.mode = 'image'
         self.auto = auto
         if any(videos):
             self.new_video(videos[0])  # new video
@@ -257,18 +257,18 @@ class LoadWebcam:  # for inference
 
 class LoadStreams:  # multiple IP or RTSP cameras
     def __init__(self, sources='streams.txt', img_size=640, auto=True):
-        self.mode = 'images'
+        self.mode = 'stream'
         self.img_size = img_size
 
         if os.path.isfile(sources):
             with open(sources, 'r') as f:
-                sources = [x.strip() for x in f.read().splitlines() if len(x.strip())]
+                sources = [x.strip() for x in f.read().strip().splitlines() if len(x.strip())]
         else:
             sources = [sources]
 
         n = len(sources)
         self.imgs = [None] * n
-        self.sources = sources
+        self.sources = [clean_str(x) for x in sources]  # clean source names for later
         self.auto = auto
         for i, s in enumerate(sources):
             # Start the thread to read frames from the video stream
@@ -355,7 +355,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                     f += glob.glob(str(p / '**' / '*.*'), recursive=True)
                 elif p.is_file():  # file
                     with open(p, 'r') as t:
-                        t = t.read().splitlines()
+                        t = t.read().strip().splitlines()
                         parent = str(p.parent) + os.sep
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
                 else:
@@ -452,7 +452,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 if os.path.isfile(lb_file):
                     nf += 1  # label found
                     with open(lb_file, 'r') as f:
-                        l = np.array([x.split() for x in f.read().splitlines()], dtype=np.float32)  # labels
+                        l = np.array([x.split() for x in f.read().strip().splitlines()], dtype=np.float32)  # labels
                     if len(l):
                         assert l.shape[1] == 5, 'labels require 5 columns each'
                         assert (l >= 0).all(), 'negative labels'
@@ -899,7 +899,7 @@ def extract_boxes(path='../coco128/'):  # from utils.datasets import *; extract_
             lb_file = Path(img2label_paths([str(im_file)])[0])
             if Path(lb_file).exists():
                 with open(lb_file, 'r') as f:
-                    lb = np.array([x.split() for x in f.read().splitlines()], dtype=np.float32)  # labels
+                    lb = np.array([x.split() for x in f.read().strip().splitlines()], dtype=np.float32)  # labels
 
                 for j, x in enumerate(lb):
                     c = int(x[0])  # class

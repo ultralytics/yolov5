@@ -5,6 +5,7 @@ import os
 import random
 import time
 from pathlib import Path
+from threading import Thread
 from warnings import warn
 
 import numpy as np
@@ -21,6 +22,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 import test  # import test.py to get mAP after each epoch
+from models.experimental import attempt_load
 from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.datasets import create_dataloader
@@ -69,7 +71,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
         check_dataset(data_dict)  # check
     train_path = data_dict['train']
     test_path = data_dict['val']
-    nc, names = (1, ['item']) if opt.single_cls else (int(data_dict['nc']), data_dict['names'])  # number classes, names
+    nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
+    names = ['item'] if opt.single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
     assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)  # check
 
     # Model
@@ -134,6 +137,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                                project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
                                name=save_dir.stem,
                                id=ckpt.get('wandb_id') if 'ckpt' in locals() else None)
+    loggers = {'wandb': wandb}  # loggers dict
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
@@ -191,9 +195,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     # Process 0
     if rank in [-1, 0]:
         ema.updates = start_epoch * nb // accumulate  # set EMA updates
-        testloader = create_dataloader(test_path, imgsz_test, total_batch_size, gs, opt,
+        testloader = create_dataloader(test_path, imgsz_test, total_batch_size, gs, opt,  # testloader
                                        hyp=hyp, cache=opt.cache_images and not opt.notest, rect=True,
-                                       rank=-1, world_size=opt.world_size, workers=opt.workers)[0]  # testloader
+                                       rank=-1, world_size=opt.world_size, workers=opt.workers, pad=0.5)[0]
 
         if not opt.resume:
             labels = np.concatenate(dataset.labels, 0)
@@ -201,11 +205,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
             # model._initialize_biases(cf.to(device))
             if plots:
-                plot_labels(labels, save_dir=save_dir)
+                plot_labels(labels, save_dir, loggers)
                 if tb_writer:
                     tb_writer.add_histogram('classes', c, 0)
-                if wandb:
-                    wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in save_dir.glob('*labels*.png')]})
 
             # Anchors
             if not opt.noautoanchor:
@@ -216,7 +218,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     model.nc = nc  # attach number of classes to model
     model.hyp = hyp  # attach hyperparameters to model
     model.gr = 1.0  # iou loss ratio (obj_loss = 1.0 or iou)
-    model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device)  # attach class weights
+    model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device) * nc  # attach class weights
     model.names = names
 
     # Start training
@@ -237,7 +239,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
         if opt.image_weights:
             # Generate indices
             if rank in [-1, 0]:
-                cw = model.class_weights.cpu().numpy() * (1 - maps) ** 2  # class weights
+                cw = model.class_weights.cpu().numpy() * (1 - maps) ** 2 / nc  # class weights
                 iw = labels_to_image_weights(dataset.labels, nc=nc, class_weights=cw)  # image weights
                 dataset.indices = random.choices(range(dataset.n), weights=iw, k=dataset.n)  # rand weighted idx
             # Broadcast if DDP
@@ -311,7 +313,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 # Plot
                 if plots and ni < 3:
                     f = save_dir / f'train_batch{ni}.jpg'  # filename
-                    plot_images(images=imgs, targets=targets, paths=paths, fname=f)
+                    Thread(target=plot_images, args=(imgs, targets, paths, f), daemon=True).start()
                     # if tb_writer:
                     #     tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
                     #     tb_writer.add_graph(model, imgs)  # add model to tensorboard
@@ -329,7 +331,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
         if rank in [-1, 0]:
             # mAP
             if ema:
-                ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride'])
+                ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
                 results, maps, times = test.test(opt.data,
@@ -385,22 +387,39 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
     if rank in [-1, 0]:
         # Strip optimizers
-        n = opt.name if opt.name.isnumeric() else ''
-        fresults, flast, fbest = save_dir / f'results{n}.txt', wdir / f'last{n}.pt', wdir / f'best{n}.pt'
-        for f1, f2 in zip([wdir / 'last.pt', wdir / 'best.pt', results_file], [flast, fbest, fresults]):
-            if f1.exists():
-                os.rename(f1, f2)  # rename
-                if str(f2).endswith('.pt'):  # is *.pt
-                    strip_optimizer(f2)  # strip optimizer
-                    os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket else None  # upload
-        # Finish
+        final = best if best.exists() else last  # final model
+        for f in [last, best]:
+            if f.exists():
+                strip_optimizer(f)  # strip optimizers
+        if opt.bucket:
+            os.system(f'gsutil cp {final} gs://{opt.bucket}/weights')  # upload
+
+        # Plots
         if plots:
             plot_results(save_dir=save_dir)  # save as results.png
             if wandb:
                 files = ['results.png', 'precision_recall_curve.png', 'confusion_matrix.png']
                 wandb.log({"Results": [wandb.Image(str(save_dir / f), caption=f) for f in files
                                        if (save_dir / f).exists()]})
+                if opt.log_artifacts:
+                    wandb.log_artifact(artifact_or_path=str(final), type='model', name=save_dir.stem)
+
+        # Test best.pt
         logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
+        if opt.data.endswith('coco.yaml') and nc == 80:  # if COCO
+            for conf, iou, save_json in ([0.25, 0.45, False], [0.001, 0.65, True]):  # speed, mAP tests
+                results, _, _ = test.test(opt.data,
+                                          batch_size=total_batch_size,
+                                          imgsz=imgsz_test,
+                                          conf_thres=conf,
+                                          iou_thres=iou,
+                                          model=attempt_load(final, device).half(),
+                                          single_cls=opt.single_cls,
+                                          dataloader=testloader,
+                                          save_dir=save_dir,
+                                          save_json=save_json,
+                                          plots=False)
+
     else:
         dist.destroy_process_group()
 
@@ -429,11 +448,12 @@ if __name__ == '__main__':
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
-    parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
+    parser.add_argument('--single-cls', action='store_true', help='train multi-class data as single-class')
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--log-imgs', type=int, default=16, help='number of images for W&B logging, max 100')
+    parser.add_argument('--log-artifacts', action='store_true', help='log artifacts, i.e. final trained model')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
     parser.add_argument('--project', default='runs/train', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')

@@ -106,9 +106,31 @@ def yolov5x(pretrained=False, channels=3, classes=80):
     return create('yolov5x', pretrained, channels, classes)
 
 
+def custom(path_or_model='path/to/model.pt'):
+    """YOLOv5-custom model from https://github.com/ultralytics/yolov5
+
+    Arguments (3 options):
+        path_or_model (str): 'path/to/model.pt'
+        path_or_model (dict): torch.load('path/to/model.pt')
+        path_or_model (nn.Module): torch.load('path/to/model.pt')['model']
+
+    Returns:
+        pytorch model
+    """
+    model = torch.load(path_or_model) if isinstance(path_or_model, str) else path_or_model  # load checkpoint
+    if isinstance(model, dict):
+        model = model['model']  # load model
+
+    hub_model = Model(model.yaml).to(next(model.parameters()).device)  # create
+    hub_model.load_state_dict(model.float().state_dict())  # load state_dict
+    hub_model.names = model.names  # class names
+    return hub_model
+
+
 if __name__ == '__main__':
-    model = create(name='yolov5s', pretrained=True, channels=3, classes=80)  # example
-    model = model.fuse().autoshape()  # for PIL/cv2/np inputs and NMS
+    model = create(name='yolov5s', pretrained=True, channels=3, classes=80)  # pretrained example
+    # model = custom(path_or_model='path/to/model.pt')  # custom example
+    model = model.autoshape()  # for PIL/cv2/np inputs and NMS
 
     # Verify inference
     from PIL import Image

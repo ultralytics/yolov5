@@ -17,7 +17,7 @@ def gsutil_getsize(url=''):
 
 def attempt_download(weights):
     # Attempt to download pretrained weights if not found locally
-    weights = weights.strip().replace("'", '')
+    weights = str(weights).strip().replace("'", '')
     file = Path(weights).name.lower()
 
     msg = weights + ' missing, try downloading from https://github.com/ultralytics/yolov5/releases/'
@@ -53,7 +53,7 @@ def attempt_download(weights):
             return
 
 
-def gdrive_download(id='1n_oKgR81BJtqk75b00eAjdv03qVCQn2f', name='coco128.zip'):
+def gdrive_download(id='1uH2BylpFxHKEGXKL6wJJlsgMU2YEjxuc', name='tmp.zip'):
     # Downloads a file from Google Drive. from utils.google_utils import *; gdrive_download()
     t = time.time()
 
