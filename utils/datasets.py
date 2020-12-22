@@ -616,7 +616,7 @@ def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
     #         img[:, :, i] = cv2.equalizeHist(img[:, :, i])
 
 
-def load_mosaic(self, index):
+def load_mosaic4(self, index):
     # loads images in a mosaic
 
     labels4 = []
@@ -672,6 +672,80 @@ def load_mosaic(self, index):
                                        border=self.mosaic_border)  # border to remove
 
     return img4, labels4
+
+
+def load_mosaic(self, index):
+    # loads images in a 9-mosaic
+
+    labels9 = []
+    s = self.img_size
+    indices = [index] + [self.indices[random.randint(0, self.n - 1)] for _ in range(8)]  # 8 additional image indices
+    for i, index in enumerate(indices):
+        # Load image
+        img, _, (h, w) = load_image(self, index)
+
+        # place img in img9
+        if i == 0:  # center
+            img9 = np.full((s * 3, s * 3, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
+            h0, w0 = h, w
+            c = s, s, s + w, s + h  # xmin, ymin, xmax, ymax (base) coordinates
+        elif i == 1:  # top
+            c = s, s - h, s + w, s
+        elif i == 2:  # top right
+            c = s + wp, s - h, s + wp + w, s
+        elif i == 3:  # right
+            c = s + w0, s, s + w0 + w, s + h
+        elif i == 4:  # bottom right
+            c = s + w0, s + hp, s + w0 + w, s + hp + h
+        elif i == 5:  # bottom
+            c = s + w0 - w, s + h0, s + w0, s + h0 + h
+        elif i == 6:  # bottom left
+            c = s + w0 - wp - w, s + h0, s + w0 - wp, s + h0 + h
+        elif i == 7:  # left
+            c = s - w, s + h0 - h, s, s + h0
+        elif i == 8:  # top left
+            c = s - w, s + h0 - hp - h, s, s + h0 - hp
+
+        padx, pady = c[:2]
+        x1, y1, x2, y2 = [max(x, 0) for x in c]  # allocate coords
+
+        # Labels
+        x = self.labels[index]
+        labels = x.copy()
+        if x.size > 0:  # Normalized xywh to pixel xyxy format
+            labels[:, 1] = w * (x[:, 1] - x[:, 3] / 2) + padx
+            labels[:, 2] = h * (x[:, 2] - x[:, 4] / 2) + pady
+            labels[:, 3] = w * (x[:, 1] + x[:, 3] / 2) + padx
+            labels[:, 4] = h * (x[:, 2] + x[:, 4] / 2) + pady
+        labels9.append(labels)
+
+        # Image
+        img9[y1:y2, x1:x2] = img[y1 - pady:, x1 - padx:]  # img9[ymin:ymax, xmin:xmax]
+        hp, wp = h, w  # height, width previous
+
+    # Offset
+    yc, xc = [int(random.uniform(0, s)) for x in self.mosaic_border]  # mosaic center x, y
+    img9 = img9[yc:yc + 2 * s, xc:xc + 2 * s]
+
+    # Concat/clip labels
+    if len(labels9):
+        labels9 = np.concatenate(labels9, 0)
+        labels9[:, [1, 3]] -= xc
+        labels9[:, [2, 4]] -= yc
+
+        np.clip(labels9[:, 1:], 0, 2 * s, out=labels9[:, 1:])  # use with random_perspective
+        # img9, labels9 = replicate(img9, labels9)  # replicate
+
+    # Augment
+    img9, labels9 = random_perspective(img9, labels9,
+                                       degrees=self.hyp['degrees'],
+                                       translate=self.hyp['translate'],
+                                       scale=self.hyp['scale'],
+                                       shear=self.hyp['shear'],
+                                       perspective=self.hyp['perspective'],
+                                       border=self.mosaic_border)  # border to remove
+
+    return img9, labels9
 
 
 def replicate(img, labels):
