@@ -101,7 +101,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             v.requires_grad = False
 
     # Optimizer
-    nbs = 16  # nominal batch size
+    nbs = 64  # nominal batch size
     accumulate = max(round(nbs / total_batch_size), 1)  # accumulate loss before optimizing
     hyp['weight_decay'] *= total_batch_size * accumulate / nbs  # scale weight_decay
 
