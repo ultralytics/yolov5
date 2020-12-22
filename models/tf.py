@@ -183,6 +183,9 @@ class tf_Detect(keras.layers.Layer):
                 y = tf.sigmoid(x[i])
                 xy = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
                 wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]
+                # Normalize xywh to 0-1 to reduce calibration error
+                xy /= tf.constant([[opt.img_size[1], opt.img_size[0]]], dtype=tf.float32)
+                wh /= tf.constant([[opt.img_size[1], opt.img_size[0]]], dtype=tf.float32)
                 y = tf.concat([xy, wh, y[..., 4:]], -1)
                 z.append(tf.reshape(y, [opt.batch_size, 3 * ny * nx, self.no]))
 
@@ -448,7 +451,6 @@ if __name__ == "__main__":
                         check_dataset(data)  # check
                     opt.source = data['train']
                 dataset = LoadImages(opt.source, img_size=opt.img_size, auto=False)
-
                 converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
                 converter.optimizations = [tf.lite.Optimize.DEFAULT]
                 converter.representative_dataset = representative_dataset_gen
