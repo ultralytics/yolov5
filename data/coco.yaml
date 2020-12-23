@@ -38,9 +38,12 @@ names: ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 't
 # python train.py --data coco.yaml --batch 24 --weights '' --cfg yolov5l.yaml --epochs 300 --project ../paper --name yolov5lc3_03cls --hyp hyp.scratch_03cls.yaml --device 0
 # python train.py --data coco.yaml --batch 24 --weights '' --cfg yolov5l.yaml --epochs 300 --project ../paper --name yolov5lc3_08cls --hyp hyp.scratch_08cls.yaml --device 1
 # python train.py --data coco.yaml --batch 6 --img 1280 640 --epochs 75 --weights '' --cfg yolov5l.yaml --project ../paper --name yolov5l_1280 --hyp hyp.scratch_09scale.yaml --device 0
-# python train.py --data coco.yaml --batch 6 --img 1280 640 --epochs 75 --weights '' --cfg yolov5l-p6.yaml --project ../paper --name yolov5lp6_1280 --hyp hyp.scratch_09scale.yaml --device 1
+# python train.py --data coco.yaml --batch 6 --img 1280 640 --epochs 75 --weights '' --cfg yolov5l-p6_33.yaml --project ../paper --name yolov5lp6_1280 --hyp hyp.scratch_09scale.yaml --device 1
 
 
 # python train.py --data coco.yaml --batch 24 --weights '' --cfg yolov5l.yaml --epochs 300 --project ../paper --name yolov5lc3_03cls --hyp hyp.scratch_03cls.yaml --device 0
 # python train.py --data coco.yaml --batch 24 --weights '' --cfg yolov5l.yaml --epochs 300 --project ../paper --name yolov5lc3_08cls --hyp hyp.scratch_08cls.yaml --device 1
 # python train.py --data coco.yaml --batch 6 --img 1280 640 --epochs 75 --weights '' --cfg yolov5l.yaml --project ../paper --name yolov5l_1280 --hyp hyp.scratch_09scale.yaml --device 0
+
+# python train.py --data coco.yaml --batch 48 --weights '' --cfg yolov5m.yaml --epochs 300 --project ../v4 --name yolov5m --hyp hyp.scratch.yaml --device 0
+# python -m torch.distributed.launch --nproc_per_node 2 train.py --data coco.yaml --batch 16 --weights '' --cfg yolov5x.yaml --epochs 300 --project ../v4 --name yolov5x --hyp hyp.scratch.yaml
