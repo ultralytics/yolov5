@@ -1,13 +1,13 @@
 # Start FROM Nvidia PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
-FROM nvcr.io/nvidia/pytorch:20.10-py3
+FROM nvcr.io/nvidia/pytorch:20.12-py3
 
 # Install linux packages
-RUN apt update && apt install -y screen
+RUN apt update && apt install -y screen libgl1-mesa-glx
 
 # Install python dependencies
 RUN pip install --upgrade pip
-# COPY requirements.txt .
-# RUN pip install -r requirements.txt
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 RUN pip install gsutil
 
 # Create working directory
