@@ -53,10 +53,9 @@ def attempt_download(weights):
             return
 
 
-def gdrive_download(id='1uH2BylpFxHKEGXKL6wJJlsgMU2YEjxuc', name='tmp.zip'):
-    # Downloads a file from Google Drive. from utils.google_utils import *; gdrive_download()
+def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', name='tmp.zip'):
+    # Downloads a file from Google Drive. from yolov5.utils.google_utils import *; gdrive_download()
     t = time.time()
-
     print('Downloading https://drive.google.com/uc?export=download&id=%s as %s... ' % (id, name), end='')
     os.remove(name) if os.path.exists(name) else None  # remove existing
     os.remove('cookie') if os.path.exists('cookie') else None
