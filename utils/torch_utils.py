@@ -58,10 +58,10 @@ def select_device(device='', batch_size=None):
             assert batch_size % ng == 0, f'batch-size {batch_size} not multiple of GPU count {ng}'
         x = [torch.cuda.get_device_properties(i) for i in range(ng)]
         s = f'Using torch {torch.__version__} '
-        for i, d in enumerate(device.split(',')):
+        for i, d in enumerate((device or '0').split(',')):
             if i == 1:
                 s = ' ' * len(s)
-            logger.info(f"{s}CUDA:{d} ({x[i].name}, {x[i].total_memory / c:d}MB)")
+            logger.info(f"{s}CUDA:{d} ({x[i].name}, {x[i].total_memory / c}MB)")
     else:
         logger.info(f'Using torch {torch.__version__} CPU')
 
