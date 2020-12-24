@@ -28,3 +28,13 @@ pandas
 # extras --------------------------------------
 thop  # FLOPS computation
 pycocotools>=2.0  # COCO mAP
+
+# pytest
+mock
+pytest
+pytest-cov
+pytest-mock
+
+# tox -----------------------------------------
+tox
+tox-conda
