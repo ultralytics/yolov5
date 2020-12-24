@@ -43,7 +43,7 @@ import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
 import org.tensorflow.lite.examples.detection.tflite.Classifier;
 import org.tensorflow.lite.examples.detection.tflite.DetectorFactory;
-import org.tensorflow.lite.examples.detection.tflite.YoloV5ClassifierDetect;
+import org.tensorflow.lite.examples.detection.tflite.YoloV5Classifier;
 import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
 
 /**
@@ -62,7 +62,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     OverlayView trackingOverlay;
     private Integer sensorOrientation;
 
-    private YoloV5ClassifierDetect detector;
+    private YoloV5Classifier detector;
 
     private long lastProcessingTimeMs;
     private Bitmap rgbFrameBitmap = null;

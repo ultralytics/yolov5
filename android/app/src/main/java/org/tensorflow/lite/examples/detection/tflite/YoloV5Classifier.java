@@ -22,6 +22,7 @@ import android.os.Build;
 import android.util.Log;
 
 import org.tensorflow.lite.Interpreter;
+import org.tensorflow.lite.Tensor;
 import org.tensorflow.lite.examples.detection.MainActivity;
 import org.tensorflow.lite.examples.detection.env.Logger;
 import org.tensorflow.lite.examples.detection.env.Utils;
@@ -121,14 +122,29 @@ public class YoloV5Classifier implements Classifier {
         } else {
             numBytesPerChannel = 4; // Floating point
         }
+        d.INPUT_SIZE = inputSize;
         d.imgData = ByteBuffer.allocateDirect(1 * d.INPUT_SIZE * d.INPUT_SIZE * 3 * numBytesPerChannel);
         d.imgData.order(ByteOrder.nativeOrder());
         d.intValues = new int[d.INPUT_SIZE * d.INPUT_SIZE];
-        d.INPUT_SIZE = inputSize;
+
         d.output_box = (int) ((Math.pow((inputSize / 32), 2) + Math.pow((inputSize / 16), 2) + Math.pow((inputSize / 8), 2)) * 3);
 //        d.OUTPUT_WIDTH = output_width;
 //        d.MASKS = masks;
 //        d.ANCHORS = anchors;
+        if (d.isModelQuantized){
+            Tensor inpten = d.tfLite.getInputTensor(0);
+            d.inp_scale = inpten.quantizationParams().getScale();
+            d.inp_zero_point = inpten.quantizationParams().getZeroPoint();
+            Tensor oupten = d.tfLite.getOutputTensor(0);
+            d.oup_scale = oupten.quantizationParams().getScale();
+            d.oup_zero_point = oupten.quantizationParams().getZeroPoint();
+        }
+
+        int[] shape = d.tfLite.getOutputTensor(0).shape();
+        int numClass = shape[shape.length - 1];
+        d.numClass = numClass;
+        d.outData = ByteBuffer.allocateDirect(d.output_box * (numClass + 5) * numBytesPerChannel);
+        d.outData.order(ByteOrder.nativeOrder());
         return d;
     }
 
@@ -165,7 +181,7 @@ public class YoloV5Classifier implements Classifier {
 
     @Override
     public void setUseNNAPI(boolean isChecked) {
-        if (tfLite != null) tfLite.setUseNNAPI(isChecked);
+//        if (tfLite != null) tfLite.setUseNNAPI(isChecked);
     }
 
     private void recreateInterpreter() {
@@ -242,9 +258,14 @@ public class YoloV5Classifier implements Classifier {
     private int[] intValues;
 
     private ByteBuffer imgData;
+    private ByteBuffer outData;
 
     private Interpreter tfLite;
-
+    private float inp_scale;
+    private int inp_zero_point;
+    private float oup_scale;
+    private int oup_zero_point;
+    private int numClass;
     private YoloV5Classifier() {
     }
 
@@ -331,39 +352,65 @@ public class YoloV5Classifier implements Classifier {
      * Writes Image data into a {@code ByteBuffer}.
      */
     protected ByteBuffer convertBitmapToByteBuffer(Bitmap bitmap) {
-        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(4 * BATCH_SIZE * INPUT_SIZE * INPUT_SIZE * PIXEL_SIZE);
-        byteBuffer.order(ByteOrder.nativeOrder());
-        int[] intValues = new int[INPUT_SIZE * INPUT_SIZE];
+//        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(4 * BATCH_SIZE * INPUT_SIZE * INPUT_SIZE * PIXEL_SIZE);
+//        byteBuffer.order(ByteOrder.nativeOrder());
+//        int[] intValues = new int[INPUT_SIZE * INPUT_SIZE];
         bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
         int pixel = 0;
+
+        imgData.rewind();
         for (int i = 0; i < INPUT_SIZE; ++i) {
             for (int j = 0; j < INPUT_SIZE; ++j) {
-                final int val = intValues[pixel++];
-                byteBuffer.putFloat(((val >> 16) & 0xFF) / 255.0f);
-                byteBuffer.putFloat(((val >> 8) & 0xFF) / 255.0f);
-                byteBuffer.putFloat((val & 0xFF) / 255.0f);
+                int pixelValue = intValues[i * INPUT_SIZE + j];
+                if (isModelQuantized) {
+                    // Quantized model
+                    imgData.put((byte) ((((pixelValue >> 16) & 0xFF) - IMAGE_MEAN) / IMAGE_STD / inp_scale + inp_zero_point));
+                    imgData.put((byte) ((((pixelValue >> 8) & 0xFF) - IMAGE_MEAN) / IMAGE_STD / inp_scale + inp_zero_point));
+                    imgData.put((byte) (((pixelValue & 0xFF) - IMAGE_MEAN) / IMAGE_STD / inp_scale + inp_zero_point));
+                } else { // Float model
+                    imgData.putFloat((((pixelValue >> 16) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+                    imgData.putFloat((((pixelValue >> 8) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+                    imgData.putFloat(((pixelValue & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+                }
             }
         }
-        return byteBuffer;
+        return imgData;
     }
 
     public ArrayList<Recognition> recognizeImage(Bitmap bitmap) {
-        ByteBuffer byteBuffer = convertBitmapToByteBuffer(bitmap);
+        ByteBuffer byteBuffer_ = convertBitmapToByteBuffer(bitmap);
 
         Map<Integer, Object> outputMap = new HashMap<>();
 
-        float[][][] outbuf = new float[1][output_box][labels.size() + 5];
-        outputMap.put(0, outbuf);
+//        float[][][] outbuf = new float[1][output_box][labels.size() + 5];
+        outData.rewind();
+        outputMap.put(0, outData);
         Log.d("YoloV5Classifier", "mObjThresh: " + getObjThresh());
 
-        Object[] inputArray = {byteBuffer};
+        Object[] inputArray = {imgData};
         tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
+
+        ByteBuffer byteBuffer = (ByteBuffer) outputMap.get(0);
+        byteBuffer.rewind();
 
         ArrayList<Recognition> detections = new ArrayList<Recognition>();
 
-        float[][][] out = (float[][][]) outputMap.get(0);
-
+        float[][][] out = new float[1][output_box][numClass + 5];
         Log.d("YoloV5Classifier", "out[0] detect start");
+        for (int i = 0; i < output_box; ++i) {
+            for (int j = 0; j < numClass + 5; ++j) {
+                if (isModelQuantized){
+                    out[0][i][j] = oup_scale * (((int) byteBuffer.get() & 0xFF) - oup_zero_point);
+                }
+                else {
+                    out[0][i][j] = byteBuffer.getFloat();
+                }
+            }
+            // Denormalize xywh
+            for (int j = 0; j < 4; ++j) {
+                out[0][i][j] *= getInputSize();
+            }
+        }
         for (int i = 0; i < output_box; ++i){
             final int offset = 0;
             final float confidence = out[0][i][4];

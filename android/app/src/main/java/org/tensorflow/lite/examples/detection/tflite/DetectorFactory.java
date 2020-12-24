@@ -5,7 +5,7 @@ import android.content.res.AssetManager;
 import java.io.IOException;
 
 public class DetectorFactory {
-    public static YoloV5ClassifierDetect getDetector(
+    public static YoloV5Classifier getDetector(
             final AssetManager assetManager,
             final String modelFilename)
             throws IOException {
@@ -29,8 +29,8 @@ public class DetectorFactory {
         else if (modelFilename.equals("yolov5s-fp16.tflite")) {
             labelFilename = "file:///android_asset/coco.txt";
             isQuantized = false;
-            inputSize = 640;
-            output_width = new int[]{80, 40, 20};
+            inputSize = 320;
+            output_width = new int[]{40, 20, 10};
             masks = new int[][]{{0, 1, 2}, {3, 4, 5}, {6, 7, 8}};
             anchors = new int[]{
                     10,13, 16,30, 33,23, 30,61, 62,45, 59,119, 116,90, 156,198, 373,326
@@ -39,15 +39,15 @@ public class DetectorFactory {
         else if (modelFilename.equals("yolov5s-int8.tflite")) {
             labelFilename = "file:///android_asset/coco.txt";
             isQuantized = true;
-            inputSize = 640;
-            output_width = new int[]{80, 40, 20};
+            inputSize = 320;
+            output_width = new int[]{40, 20, 10};
             masks = new int[][]{{0, 1, 2}, {3, 4, 5}, {6, 7, 8}};
             anchors = new int[]{
                     10,13, 16,30, 33,23, 30,61, 62,45, 59,119, 116,90, 156,198, 373,326
             };
         }
-        return YoloV5ClassifierDetect.create(assetManager, modelFilename, labelFilename, isQuantized,
-                inputSize, output_width, masks, anchors);
+        return YoloV5Classifier.create(assetManager, modelFilename, labelFilename, isQuantized,
+                inputSize);
     }
 
 }
