@@ -14,8 +14,8 @@ import yaml
 from tensorflow import keras
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
-from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat, autopad
-from models.experimental import MixConv2d, CrossConv, C3
+from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat, autopad, C3
+from models.experimental import MixConv2d, CrossConv
 from models.yolo import Detect
 from utils.datasets import LoadImages
 from utils.general import make_divisible, check_file, check_dataset
