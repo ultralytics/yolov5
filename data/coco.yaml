@@ -41,8 +41,10 @@ names: [ 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', '
 # python train.py --data coco.yaml --batch 6 --img 1280 640 --epochs 75 --weights '' --cfg yolov5l-p6_33.yaml --project ../paper --name yolov5lp6_1280 --hyp hyp.scratch_09scale.yaml --device 1
 
 # python train.py --data coco.yaml --batch 24 --weights '' --cfg yolov5l-p6_33.yaml --epochs 300 --project ../v4 --name yolov5l-p6_640 --hyp hyp.scratch.yaml --log-artifacts --device 0
-# python -m torch.distributed.launch --nproc_per_node 4 train.py --data coco.yaml --batch 24 --weights '' yolov5l-p6_33.yaml --epochs 300 --project ../v4 --name yolov5l-p6_1280 --hyp hyp.scratch_15obj.yaml --img 1280 --log-artifacts
-# python -m torch.distributed.launch --nproc_per_node 8 train.py --data coco.yaml --batch 20 --weights '' yolov5l-p6_33.yaml --epochs 300 --project ../v4 --name yolov5l-p6_1920 --hyp hyp.scratch_34obj.yaml --img 1920 --log-artifacts
+# python -m torch.distributed.launch --nproc_per_node 4 train.py --data coco.yaml --batch 24 --weights '' --cfg yolov5l-p6_33.yaml --epochs 300 --project ../v4 --name yolov5l-p6_1280 --hyp hyp.scratch_15obj.yaml --img 1280 --log-artifacts
+
+# python -m torch.distributed.launch --nproc_per_node 2 train.py --data coco.yaml --batch 28 --weights '' --cfg yolov5x-p6.yaml --epochs 300 --project ../v4 --name yolov5x-p6_640 --hyp hyp.scratch.yaml --img 640 --log-artifacts
+# python -m torch.distributed.launch --nproc_per_node 8 train.py --data coco.yaml --batch 28 --weights '' --cfg yolov5x-p6.yaml --epochs 300 --project ../v4 --name yolov5x-p6_1280 --hyp hyp.scratch_15obj.yaml --img 1280 --log-artifacts
 
 # python train.py --data coco.yaml --batch 24 --weights '' --cfg yolov5l.yaml --epochs 300 --project ../paper --name yolov5lc3_03cls --hyp hyp.scratch_03cls.yaml --device 0
 # python train.py --data coco.yaml --batch 24 --weights '' --cfg yolov5l.yaml --epochs 300 --project ../paper --name yolov5lc3_08cls --hyp hyp.scratch_08cls.yaml --device 1
