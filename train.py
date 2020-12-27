@@ -458,7 +458,7 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='runs/train', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
-    parser.add_argument('--gr', default=1.0, help='model.gr obj loss ratio')
+    parser.add_argument('--gr', type=float, default=1.0, help='model.gr obj loss ratio')
     opt = parser.parse_args()
 
     # Set DDP variables
