@@ -42,7 +42,7 @@ def create(name, pretrained, channels, classes, autoshape):
             if len(ckpt['model'].names) == classes:
                 model.names = ckpt['model'].names  # set class names attribute
             if autoshape:
-                model = model.autoshape()  # for PIL/cv2/np inputs and NMS
+                model = model.autoshape()  # for file/URI/PIL/cv2/np inputs and NMS
         return model
 
     except Exception as e:
@@ -131,7 +131,6 @@ def custom(path_or_model='path/to/model.pt', autoshape=True):
 if __name__ == '__main__':
     model = create(name='yolov5s', pretrained=True, channels=3, classes=80, autoshape=True)  # pretrained example
     # model = custom(path_or_model='path/to/model.pt')  # custom example
-    # model = model.autoshape()  # for PIL/cv2/np inputs and NMS
 
     # Verify inference
     from PIL import Image
