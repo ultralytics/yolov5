@@ -28,4 +28,4 @@ pandas
 # extras --------------------------------------
 thop  # FLOPS computation
 pycocotools>=2.0  # COCO mAP
-git+git://github.com/lilohuang/PyTurboJPEG.git
+# git+git://github.com/lilohuang/PyTurboJPEG.git
