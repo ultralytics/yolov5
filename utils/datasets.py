@@ -79,7 +79,7 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
                         num_workers=nw,
                         sampler=sampler,
                         pin_memory=True,
-                        collate_fn=LoadImagesAndLabels.collate_fn)
+                        collate_fn=LoadImagesAndLabels.collate_fn4 if augment else LoadImagesAndLabels.collate_fn)
     return dataloader, dataset
 
 
@@ -573,6 +573,13 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
     @staticmethod
     def collate_fn(batch):
+        img, label, path, shapes = zip(*batch)  # transposed
+        for i, l in enumerate(label):
+            l[:, 0] = i  # add target image index for build_targets()
+        return torch.stack(img, 0), torch.cat(label, 0), path, shapes
+
+    @staticmethod
+    def collate_fn4(batch):
         img, label, path, shapes = zip(*batch)  # transposed
         for i, l in enumerate(label):
             l[:, 0] = i  # add target image index for build_targets()
