@@ -27,6 +27,14 @@ help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 img_formats = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng']  # acceptable image suffixes
 vid_formats = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
 logger = logging.getLogger(__name__)
+turbojpeg_flag = True
+
+try:
+    from turbojpeg import TurboJPEG
+except ImportError:
+    turbojpeg_flag = False
+    raise ImportError("turbojpeg is not installed, now disable this feature.")
+
 
 # Get orientation exif tag
 for orientation in ExifTags.TAGS.keys():
@@ -116,8 +124,7 @@ class _RepeatSampler(object):
         while True:
             yield from iter(self.sampler)
 
-
-class LoadImages:  # for inference
+class LoadImage:
     def __init__(self, path, img_size=640):
         p = str(Path(path))  # os-agnostic
         p = os.path.abspath(p)  # absolute path
@@ -175,7 +182,101 @@ class LoadImages:  # for inference
         else:
             # Read image
             self.count += 1
-            img0 = cv2.imread(path)  # BGR
+            if turbojpeg_flag and (os.path.splitext(path)[1] == '.jpg' or os.path.splitext(path)[1] == '.jpeg' or os.path.splitext(path)[1] == '.JPG' or os.path.splitext(path)[1] == '.JPEG'):
+                jpeg = TurboJPEG()
+                in_file = open(path, 'rb')
+                img0 = jpeg.decode(in_file.read())
+                in_file.close()
+            else:
+                img0 = cv2.imread(path)  # BGR
+            assert img0 is not None, 'Image Not Found ' + path
+            print('image %g/%g %s: ' % (self.count, self.nf, path), end='')
+
+        # Padded resize
+        img = letterbox(img0, new_shape=self.img_size)[0]
+
+        # Convert
+        img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
+        img = np.ascontiguousarray(img)
+
+        return path, img, img0, self.cap
+
+    def new_video(self, path):
+        self.frame = 0
+        self.cap = cv2.VideoCapture(path)
+        self.nframes = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    def __len__(self):
+        return self.nf  # number of files
+
+
+
+class LoadImages_v1:  # for inference
+    def __init__(self, path, img_size=640):
+        p = str(Path(path))  # os-agnostic
+        p = os.path.abspath(p)  # absolute path
+        if '*' in p:
+            files = sorted(glob.glob(p, recursive=True))  # glob
+        elif os.path.isdir(p):
+            files = sorted(glob.glob(os.path.join(p, '*.*')))  # dir
+        elif os.path.isfile(p):
+            files = [p]  # files
+        else:
+            raise Exception('ERROR: %s does not exist' % p)
+
+        images = [x for x in files if x.split('.')[-1].lower() in img_formats]
+        videos = [x for x in files if x.split('.')[-1].lower() in vid_formats]
+        ni, nv = len(images), len(videos)
+
+        self.img_size = img_size
+        self.files = images + videos
+        self.nf = ni + nv  # number of files
+        self.video_flag = [False] * ni + [True] * nv
+        self.mode = 'image'
+        if any(videos):
+            self.new_video(videos[0])  # new video
+        else:
+            self.cap = None
+        assert self.nf > 0, 'No images or videos found in %s. Supported formats are:\nimages: %s\nvideos: %s' % \
+                            (p, img_formats, vid_formats)
+
+    def __iter__(self):
+        self.count = 0
+        return self
+
+    def __next__(self):
+        if self.count == self.nf:
+            raise StopIteration
+        path = self.files[self.count]
+
+        if self.video_flag[self.count]:
+            # Read video
+            self.mode = 'video'
+            ret_val, img0 = self.cap.read()
+            if not ret_val:
+                self.count += 1
+                self.cap.release()
+                if self.count == self.nf:  # last video
+                    raise StopIteration
+                else:
+                    path = self.files[self.count]
+                    self.new_video(path)
+                    ret_val, img0 = self.cap.read()
+
+            self.frame += 1
+            print('video %g/%g (%g/%g) %s: ' % (self.count + 1, self.nf, self.frame, self.nframes, path), end='')
+
+        else:
+            # Read image
+            self.count += 1
+            if turbojpeg_flag and (os.path.splitext(path)[1] == '.jpg' or os.path.splitext(path)[1] == '.jpeg' or os.path.splitext(path)[1] == '.JPG' or os.path.splitext(path)[1] == '.JPEG'):
+                jpeg = TurboJPEG()
+                in_file = open(path, 'rb')
+                img0 = jpeg.decode(in_file.read())
+                in_file.close()
+            else:
+                img0 = cv2.imread(path)  # BGR
+
             assert img0 is not None, 'Image Not Found ' + path
             print('image %g/%g %s: ' % (self.count, self.nf, path), end='')
 
@@ -585,7 +686,14 @@ def load_image(self, index):
     img = self.imgs[index]
     if img is None:  # not cached
         path = self.img_files[index]
-        img = cv2.imread(path)  # BGR
+        if turbojpeg_flag and (os.path.splitext(path)[1] == '.jpg' or os.path.splitext(path)[1] == '.jpeg' or os.path.splitext(path)[1] == '.JPG' or os.path.splitext(path)[1] == '.JPEG'):
+            jpeg = TurboJPEG()
+            in_file = open(path, 'rb')
+            img = jpeg.decode(in_file.read())
+            in_file.close()
+        else:
+            img = cv2.imread(path)  # BGR
+        # img = cv2.imread(path)  # BGR
         assert img is not None, 'Image Not Found ' + path
         h0, w0 = img.shape[:2]  # orig hw
         r = self.img_size / max(h0, w0)  # resize image to img_size
@@ -890,7 +998,13 @@ def extract_boxes(path='../coco128/'):  # from utils.datasets import *; extract_
     for im_file in tqdm(files, total=n):
         if im_file.suffix[1:] in img_formats:
             # image
-            im = cv2.imread(str(im_file))[..., ::-1]  # BGR to RGB
+            if turbojpeg_flag and (os.path.splitext(path)[1] == '.jpg' or os.path.splitext(path)[1] == '.jpeg' or os.path.splitext(path)[1] == '.JPG' or os.path.splitext(path)[1] == '.JPEG'):
+                jpeg = TurboJPEG()
+                in_file = open(str(im_file), 'rb')
+                im = jpeg.decode(in_file.read())[..., ::-1]
+                in_file.close()
+            else:
+                im = cv2.imread(str(im_file))[..., ::-1]  # BGR to RGB
             h, w = im.shape[:2]
 
             # labels
