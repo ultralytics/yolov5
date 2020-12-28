@@ -211,7 +211,7 @@ class LoadImage:
 
 
 
-class LoadImages_v1:  # for inference
+class LoadImages:  # for inference
     def __init__(self, path, img_size=640):
         p = str(Path(path))  # os-agnostic
         p = os.path.abspath(p)  # absolute path
