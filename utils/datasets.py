@@ -33,7 +33,7 @@ try:
     from turbojpeg import TurboJPEG
 except ImportError:
     turbojpeg_flag = False
-    raise ImportError("turbojpeg is not installed, now disable this feature.")
+    print(ImportError("turbojpeg is not installed, now disable this feature."))
 
 
 # Get orientation exif tag
