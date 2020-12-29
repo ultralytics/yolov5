@@ -21,7 +21,7 @@ def attempt_download(weights):
     file = Path(weights).name.lower()
 
     msg = weights + ' missing, try downloading from https://github.com/ultralytics/yolov5/releases/'
-    models = ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']  # available models
+    models = ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov5s4.pt', 'yolov5m4.pt', 'yolov5l4.pt', 'yolov5x4.pt']  # available models
     redundant = False  # offer second download option
 
     if file in models and not os.path.isfile(weights):
