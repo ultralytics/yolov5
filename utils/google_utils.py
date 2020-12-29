@@ -6,6 +6,7 @@ import subprocess
 import time
 from pathlib import Path
 
+import requests
 import torch
 
 
@@ -21,21 +22,14 @@ def attempt_download(weights):
     file = Path(weights).name.lower()
 
     msg = weights + ' missing, try downloading from https://github.com/ultralytics/yolov5/releases/'
-    models = ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov5s4.pt', 'yolov5m4.pt', 'yolov5l4.pt', 'yolov5x4.pt']  # available models
+    models = ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov5s4.pt', 'yolov5m4.pt', 'yolov5l4.pt',
+              'yolov5x4.pt']  # available models
     redundant = False  # offer second download option
 
     if file in models and not os.path.isfile(weights):
-        # Google Drive
-        # d = {'yolov5s.pt': '1R5T6rIyy3lLwgFXNms8whc-387H0tMQO',
-        #      'yolov5m.pt': '1vobuEExpWQVpXExsJ2w-Mbf3HJjWkQJr',
-        #      'yolov5l.pt': '1hrlqD1Wdei7UT4OgT785BEk1JwnSvNEV',
-        #      'yolov5x.pt': '1mM8aZJlWTxOg7BZJvNUMrTnA2AbeCVzS'}
-        # r = gdrive_download(id=d[file], name=weights) if file in d else 1
-        # if r == 0 and os.path.exists(weights) and os.path.getsize(weights) > 1E6:  # check
-        #    return
-
         try:  # GitHub
-            url = 'https://github.com/ultralytics/yolov5/releases/download/v3.1/' + file
+            tag = requests.get('https://api.github.com/repos/ultralytics/yolov5/releases/latest').json()['tag_name']
+            url = f'https://github.com/ultralytics/yolov5/releases/download/{tag}/{file}'
             print('Downloading %s to %s...' % (url, weights))
             torch.hub.download_url_to_file(url, weights)
             assert os.path.exists(weights) and os.path.getsize(weights) > 1E6  # check
