@@ -18,7 +18,7 @@ import torch
 from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
-
+import platform
 from utils.general import xyxy2xywh, xywh2xyxy, clean_str
 from utils.torch_utils import torch_distributed_zero_first
 
@@ -31,6 +31,10 @@ turbojpeg_flag = True
 
 try:
     from turbojpeg import TurboJPEG
+    if platform.system() == "Windows":
+        jpeg = TurboJPEG("./turbojpeg.dll")
+    else:
+        jpeg = TurboJPEG()
 except ImportError:
     turbojpeg_flag = False
     raise ImportError("turbojpeg is not installed, now disable this feature.")
@@ -183,7 +187,6 @@ class LoadImage:
             # Read image
             self.count += 1
             if turbojpeg_flag and (os.path.splitext(path)[1] == '.jpg' or os.path.splitext(path)[1] == '.jpeg' or os.path.splitext(path)[1] == '.JPG' or os.path.splitext(path)[1] == '.JPEG'):
-                jpeg = TurboJPEG()
                 in_file = open(path, 'rb')
                 img0 = jpeg.decode(in_file.read())
                 in_file.close()
@@ -270,7 +273,6 @@ class LoadImages_v1:  # for inference
             # Read image
             self.count += 1
             if turbojpeg_flag and (os.path.splitext(path)[1] == '.jpg' or os.path.splitext(path)[1] == '.jpeg' or os.path.splitext(path)[1] == '.JPG' or os.path.splitext(path)[1] == '.JPEG'):
-                jpeg = TurboJPEG()
                 in_file = open(path, 'rb')
                 img0 = jpeg.decode(in_file.read())
                 in_file.close()
@@ -687,7 +689,6 @@ def load_image(self, index):
     if img is None:  # not cached
         path = self.img_files[index]
         if turbojpeg_flag and (os.path.splitext(path)[1] == '.jpg' or os.path.splitext(path)[1] == '.jpeg' or os.path.splitext(path)[1] == '.JPG' or os.path.splitext(path)[1] == '.JPEG'):
-            jpeg = TurboJPEG()
             in_file = open(path, 'rb')
             img = jpeg.decode(in_file.read())
             in_file.close()
@@ -999,7 +1000,6 @@ def extract_boxes(path='../coco128/'):  # from utils.datasets import *; extract_
         if im_file.suffix[1:] in img_formats:
             # image
             if turbojpeg_flag and (os.path.splitext(path)[1] == '.jpg' or os.path.splitext(path)[1] == '.jpeg' or os.path.splitext(path)[1] == '.JPG' or os.path.splitext(path)[1] == '.JPEG'):
-                jpeg = TurboJPEG()
                 in_file = open(str(im_file), 'rb')
                 im = jpeg.decode(in_file.read())[..., ::-1]
                 in_file.close()
