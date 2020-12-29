@@ -12,7 +12,6 @@ anchors:
 # normal n=12, img_size=1280, metric_all=0.281/0.714-mean/best, past_thr=0.468-mean: 19,27,  44,40,  38,94,  96,68,  86,152,  180,137,  140,301,  303,264,  238,542,  436,615,  739,380,  925,792
 # scale 0.9 n=12, img_size=1280, metric_all=0.267/0.705-mean/best, past_thr=0.467-mean: 6,9,  17,15,  16,36,  35,30,  33,61,  73,51,  60,118,  140,104,  126,225,  273,207,  262,398,  595,454
 
-
 # YOLOv5 backbone
 backbone:
   # [from, number, module, args]
