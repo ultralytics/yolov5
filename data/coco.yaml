@@ -35,6 +35,10 @@ names: [ 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', '
 #     print(i, x)
 
 
+# python -m torch.distributed.launch --nproc_per_node 2 train.py --batch-size 80 --data coco128.yaml --epochs 50 --weights yolov5s.pt
+# python -m torch.distributed.launch --nproc_per_node 4 train.py --resume
+
+
 # python train.py --data coco.yaml --batch 24 --weights '' --cfg yolov5l.yaml --epochs 300 --project ../paper --name yolov5lc3_03cls --hyp hyp.scratch_03cls.yaml --device 0
 # python train.py --data coco.yaml --batch 24 --weights '' --cfg yolov5l.yaml --epochs 300 --project ../paper --name yolov5lc3_08cls --hyp hyp.scratch_08cls.yaml --device 1
 # python train.py --data coco.yaml --batch 6 --img 1280 640 --epochs 75 --weights '' --cfg yolov5l.yaml --project ../paper --name yolov5l_1280 --hyp hyp.scratch_09scale.yaml --device 0
