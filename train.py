@@ -166,6 +166,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
     # Image sizes
     gs = int(max(model.stride))  # grid size (max stride)
+    nl = model.model[-1].nl  # number of detection layers (used for scaling hyp['obj'])
     imgsz, imgsz_test = [check_img_size(x, gs) for x in opt.img_size]  # verify imgsz are gs-multiples
 
     # DP mode
@@ -215,7 +216,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
 
     # Model parameters
-    hyp['cls'] *= nc / 80.  # scale coco-tuned hyp['cls'] to current dataset
+    hyp['cls'] *= nc / 80.  # scale hyp['cls'] to class count
+    hyp['obj'] *= imgsz ** 2 / 640. ** 2 * 3. / nl  # scale hyp['obj'] to image size and output layers
     model.nc = nc  # attach number of classes to model
     model.hyp = hyp  # attach hyperparameters to model
     model.gr = opt.gr  # iou loss ratio (obj_loss = 1.0 or iou)
