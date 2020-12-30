@@ -102,7 +102,10 @@ def detect(save_img=False):
 
     elif backend == 'tflite':
         # Load TFLite model and allocate tensors.
-        interpreter = tf.lite.Interpreter(model_path=opt.weights[0])
+        interpreter = tf.lite.Interpreter(
+            model_path=opt.weights[0],
+            experimental_delegates=
+                [tf.lite.experimental.load_delegate('libedgetpu.so.1')] if opt.edgetpu else None)
         interpreter.allocate_tensors()
 
         # Get input and output tensors.
@@ -327,6 +330,8 @@ if __name__ == '__main__':
     parser.add_argument('--tfl-detect', action='store_true', help='add Detect module in TFLite')
     parser.add_argument('--cfg', type=str, default='./models/yolov5s.yaml', help='cfg path')
     parser.add_argument('--tfl-int8', action='store_true', help='use int8 quantized TFLite model')
+    parser.add_argument('--no-tf-nms', action='store_true', help='dont proceed NMS due to model w/ TensorFlow NMS')
+    parser.add_argument('--edgetpu', action='store_true', help='inference with Edge TPU')
     opt = parser.parse_args()
     print(opt)
     check_requirements()
