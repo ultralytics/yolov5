@@ -492,7 +492,6 @@ if __name__ == '__main__':
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
     if opt.local_rank != -1:
-        os.environ['OMP_NUM_THREADS'] = '1'  # avoid default twarning
         assert torch.cuda.device_count() > opt.local_rank
         torch.cuda.set_device(opt.local_rank)
         device = torch.device('cuda', opt.local_rank)
