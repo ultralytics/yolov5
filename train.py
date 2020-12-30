@@ -220,7 +220,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     hyp['obj'] *= imgsz ** 2 / 640. ** 2 * 3. / nl  # scale hyp['obj'] to image size and output layers
     model.nc = nc  # attach number of classes to model
     model.hyp = hyp  # attach hyperparameters to model
-    model.gr = opt.gr  # iou loss ratio (obj_loss = 1.0 or iou)
+    model.gr = 1.0  # iou loss ratio (obj_loss = 1.0 or iou)
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device) * nc  # attach class weights
     model.names = names
 
@@ -463,7 +463,6 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='runs/train', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
-    parser.add_argument('--gr', type=float, default=1.0, help='model.gr obj loss ratio')
     parser.add_argument('--quad', action='store_true', help='quad dataloader')
     opt = parser.parse_args()
 
