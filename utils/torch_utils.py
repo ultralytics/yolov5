@@ -56,7 +56,6 @@ def select_device(device='', batch_size=None):
         ng = torch.cuda.device_count()
         if ng > 1 and batch_size:  # check that batch_size is compatible with device_count
             assert batch_size % ng == 0, 'batch-size %g not multiple of GPU count %g' % (batch_size, ng)
-            os.environ['OMP_NUM_THREADS'] = '1'  # avoid default twarning
         x = [torch.cuda.get_device_properties(i) for i in range(ng)]
         s = f'Using torch {torch.__version__} '
         for i in range(0, ng):
