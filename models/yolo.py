@@ -78,7 +78,7 @@ class Model(nn.Module):
         if nc and nc != self.yaml['nc']:
             logger.info('Overriding model.yaml nc=%g with nc=%g' % (self.yaml['nc'], nc))
             self.yaml['nc'] = nc  # override yaml value
-        self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch])  # model, savelist, ch_out
+        self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch])  # model, savelist
         self.names = [str(i) for i in range(self.yaml['nc'])]  # default names
         # print([x.shape for x in self.forward(torch.zeros(1, ch, 64, 64))])
 
