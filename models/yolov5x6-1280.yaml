@@ -4,7 +4,11 @@ depth_multiple: 1.33  # model depth multiple
 width_multiple: 1.25  # layer channel multiple
 
 # anchors
-anchors: 3
+anchors:
+  - [ 19,27,  44,40,  38,94 ]  # P3/8
+  - [ 96,68,  86,152,  180,137 ]  # P4/16
+  - [ 140,301,  303,264,  238,542 ]  # P5/32
+  - [ 436,615,  739,380,  925,792 ]  # P6/64
 
 # YOLOv5 backbone
 backbone:
