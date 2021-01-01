@@ -44,6 +44,18 @@ except ImportError:
 
 
 def train(hyp, opt, device, tb_writer=None, wandb=None):
+    """Train model
+
+    Args:
+        hyp ([type]): Hyperparameters
+        opt (namespace): Options from YAML configuration
+        device ([type]): [description]
+        tb_writer ([type], optional): [description]. Defaults to None.
+        wandb ([type], optional): [description]. Defaults to None.
+
+    Returns:
+        [type]: [description]
+    """
     logger.info(f'Hyperparameters {hyp}')
     save_dir, epochs, batch_size, total_batch_size, weights, rank = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank

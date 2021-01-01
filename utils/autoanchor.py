@@ -8,7 +8,11 @@ from tqdm import tqdm
 
 
 def check_anchor_order(m):
-    # Check anchor order against stride order for YOLOv5 Detect() module m, and correct if necessary
+    """Check anchor order against stride order for YOLOv5 Detect() module m, and correct if necessary.
+
+    Args:
+        m ([type]): [description]
+    """
     a = m.anchor_grid.prod(-1).view(-1)  # anchor area
     da = a[-1] - a[0]  # delta a
     ds = m.stride[-1] - m.stride[0]  # delta s
@@ -19,7 +23,17 @@ def check_anchor_order(m):
 
 
 def check_anchors(dataset, model, thr=4.0, imgsz=640):
-    # Check anchor fit to data, recompute if necessary
+    """Check anchor fit to data, recompute if necessary.
+
+    Args:
+        dataset ([type]): [description]
+        model ([type]): [description]
+        thr (float, optional): [description]. Defaults to 4.0.
+        imgsz (int, optional): [description]. Defaults to 640.
+
+    Returns:
+        [type]: [description]
+    """
     print('\nAnalyzing anchors... ', end='')
     m = model.module.model[-1] if hasattr(model, 'module') else model.model[-1]  # Detect()
     shapes = imgsz * dataset.shapes / dataset.shapes.max(1, keepdims=True)
@@ -53,9 +67,9 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
 
 
 def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=1000, verbose=True):
-    """ Creates kmeans-evolved anchors from training dataset
+    """ Creates kmeans-evolved anchors from training dataset.
 
-        Arguments:
+        Args:
             path: path to dataset *.yaml, or a loaded dataset
             n: number of anchors
             img_size: image size used for training
@@ -71,17 +85,36 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
     """
     thr = 1. / thr
 
-    def metric(k, wh):  # compute metrics
+    def metric(k, wh):
+        """ Compute metrics.
+
+        Args:
+            k ([type]): [description]
+            wh ([type]): [description]
+        """
         r = wh[:, None] / k[None]
         x = torch.min(r, 1. / r).min(2)[0]  # ratio metric
         # x = wh_iou(wh, torch.tensor(k))  # iou metric
         return x, x.max(1)[0]  # x, best_x
 
-    def anchor_fitness(k):  # mutation fitness
+    def anchor_fitness(k):
+        """Mutation fitness.
+
+        Args:
+            k ([type]): [description]
+        """
         _, best = metric(torch.tensor(k, dtype=torch.float32), wh)
         return (best * (best > thr).float()).mean()  # fitness
 
     def print_results(k):
+        """[summary]
+
+        Args:
+            k ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
         k = k[np.argsort(k.prod(1))]  # sort small to large
         x, best = metric(k, wh0)
         bpr, aat = (best > thr).float().mean(), (x > thr).float().mean() * n  # best possible recall, anch > thr
@@ -92,7 +125,15 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
             print('%i,%i' % (round(x[0]), round(x[1])), end=',  ' if i < len(k) - 1 else '\n')  # use in *.cfg
         return k
 
-    if isinstance(path, str):  # *.yaml file
+    if isinstance(path, str):
+        """[summary]
+
+        Args:
+            str ([type]): [description]
+            best ([type], optional): [description]. Defaults to metric(k, wh0)bpr.
+            aat (tuple, optional): [description]. Defaults to (best > thr).float().mean().
+        """
+        # *.yaml file
         with open(path) as f:
             data_dict = yaml.load(f, Loader=yaml.FullLoader)  # model dict
         from utils.datasets import LoadImagesAndLabels

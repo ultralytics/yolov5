@@ -35,12 +35,26 @@ for orientation in ExifTags.TAGS.keys():
 
 
 def get_hash(files):
-    # Returns a single hash value of a list of files
+    """Returns a single hash value of a list of files.
+
+    Args:
+        files ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     return sum(os.path.getsize(f) for f in files if os.path.isfile(f))
 
 
 def exif_size(img):
-    # Returns exif-corrected PIL size
+    """Returns exif-corrected PIL size.
+
+    Args:
+        img ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     s = img.size  # (width, height)
     try:
         rotation = dict(img._getexif().items())[orientation]
@@ -56,6 +70,27 @@ def exif_size(img):
 
 def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False,
                       rank=-1, world_size=1, workers=8, image_weights=False):
+    """[summary]
+
+    Args:
+        path ([type]): [description]
+        imgsz ([type]): [description]
+        batch_size ([type]): [description]
+        stride ([type]): [description]
+        opt ([type]): [description]
+        hyp ([type], optional): [description]. Defaults to None.
+        augment (bool, optional): [description]. Defaults to False.
+        cache (bool, optional): [description]. Defaults to False.
+        pad (float, optional): [description]. Defaults to 0.0.
+        rect (bool, optional): [description]. Defaults to False.
+        rank (int, optional): [description]. Defaults to -1.
+        world_size (int, optional): [description]. Defaults to 1.
+        workers (int, optional): [description]. Defaults to 8.
+        image_weights (bool, optional): [description]. Defaults to False.
+
+    Returns:
+        [type]: [description]
+    """
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
     with torch_distributed_zero_first(rank):
         dataset = LoadImagesAndLabels(path, imgsz, batch_size,
@@ -90,14 +125,26 @@ class InfiniteDataLoader(torch.utils.data.dataloader.DataLoader):
     """
 
     def __init__(self, *args, **kwargs):
+        """[summary]
+        """
         super().__init__(*args, **kwargs)
         object.__setattr__(self, 'batch_sampler', _RepeatSampler(self.batch_sampler))
         self.iterator = super().__iter__()
 
     def __len__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         return len(self.batch_sampler.sampler)
 
     def __iter__(self):
+        """[summary]
+
+        Yields:
+            [type]: [description]
+        """
         for i in range(len(self)):
             yield next(self.iterator)
 
@@ -110,15 +157,37 @@ class _RepeatSampler(object):
     """
 
     def __init__(self, sampler):
+        """[summary]
+
+        Args:
+            sampler ([type]): [description]
+        """
         self.sampler = sampler
 
     def __iter__(self):
+        """[summary]
+
+        Yields:
+            [type]: [description]
+        """
         while True:
             yield from iter(self.sampler)
 
 
 class LoadImages:  # for inference
+    """[summary]
+    """
+
     def __init__(self, path, img_size=640):
+        """[summary]
+
+        Args:
+            path ([type]): [description]
+            img_size (int, optional): [description]. Defaults to 640.
+
+        Raises:
+            Exception: [description]
+        """
         p = str(Path(path))  # os-agnostic
         p = os.path.abspath(p)  # absolute path
         if '*' in p:
@@ -147,10 +216,24 @@ class LoadImages:  # for inference
                             (p, img_formats, vid_formats)
 
     def __iter__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         self.count = 0
         return self
 
     def __next__(self):
+        """[summary]
+
+        Raises:
+            StopIteration: [description]
+            StopIteration: [description]
+
+        Returns:
+            [type]: [description]
+        """
         if self.count == self.nf:
             raise StopIteration
         path = self.files[self.count]
@@ -189,33 +272,67 @@ class LoadImages:  # for inference
         return path, img, img0, self.cap
 
     def new_video(self, path):
+        """[summary]
+
+        Args:
+            path ([type]): [description]
+        """
         self.frame = 0
         self.cap = cv2.VideoCapture(path)
         self.nframes = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     def __len__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         return self.nf  # number of files
 
 
 class LoadWebcam:  # for inference
+    """[summary]
+    """
+
     def __init__(self, pipe='0', img_size=640):
+        """[summary]
+
+        Example:
+            pipe = 'rtsp://192.168.1.64/1'  # IP camera
+            pipe = 'rtsp://username:password@192.168.1.64/1'  # IP camera with login
+            pipe = 'http://wmccpinetop.axiscam.net/mjpg/video.mjpg'  # IP golf camera
+
+        Args:
+            pipe (str, optional): [description]. Defaults to '0'.
+            img_size (int, optional): [description]. Defaults to 640.
+        """
         self.img_size = img_size
 
         if pipe.isnumeric():
             pipe = eval(pipe)  # local camera
-        # pipe = 'rtsp://192.168.1.64/1'  # IP camera
-        # pipe = 'rtsp://username:password@192.168.1.64/1'  # IP camera with login
-        # pipe = 'http://wmccpinetop.axiscam.net/mjpg/video.mjpg'  # IP golf camera
 
         self.pipe = pipe
         self.cap = cv2.VideoCapture(pipe)  # video capture object
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)  # set buffer size
 
     def __iter__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         self.count = -1
         return self
 
     def __next__(self):
+        """[summary]
+
+        Raises:
+            StopIteration: [description]
+
+        Returns:
+            [type]: [description]
+        """
         self.count += 1
         if cv2.waitKey(1) == ord('q'):  # q to quit
             self.cap.release()
@@ -251,11 +368,25 @@ class LoadWebcam:  # for inference
         return img_path, img, img0, None
 
     def __len__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         return 0
 
 
-class LoadStreams:  # multiple IP or RTSP cameras
+class LoadStreams:
+    """Load Streams multiple IP or RTSP cameras.
+    """
+
     def __init__(self, sources='streams.txt', img_size=640):
+        """[summary]
+
+        Args:
+            sources (str, optional): [description]. Defaults to 'streams.txt'.
+            img_size (int, optional): [description]. Defaults to 640.
+        """
         self.mode = 'stream'
         self.img_size = img_size
 
@@ -289,7 +420,12 @@ class LoadStreams:  # multiple IP or RTSP cameras
             print('WARNING: Different stream shapes detected. For optimal performance supply similarly-shaped streams.')
 
     def update(self, index, cap):
-        # Read next stream frame in a daemon thread
+        """Read next stream frame in a daemon thread
+
+        Args:
+            index ([type]): [description]
+            cap ([type]): [description]
+        """
         n = 0
         while cap.isOpened():
             n += 1
@@ -301,10 +437,23 @@ class LoadStreams:  # multiple IP or RTSP cameras
             time.sleep(0.01)  # wait time
 
     def __iter__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         self.count = -1
         return self
 
     def __next__(self):
+        """[summary]
+
+        Raises:
+            StopIteration: [description]
+
+        Returns:
+            [type]: [description]
+        """
         self.count += 1
         img0 = self.imgs.copy()
         if cv2.waitKey(1) == ord('q'):  # q to quit
@@ -324,18 +473,56 @@ class LoadStreams:  # multiple IP or RTSP cameras
         return self.sources, img, img0, None
 
     def __len__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         return 0  # 1E12 frames = 32 streams at 30 FPS for 30 years
 
 
 def img2label_paths(img_paths):
-    # Define label paths as a function of image paths
+    """Define label paths as a function of image paths.
+
+    Args:
+        img_paths ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
     return [x.replace(sa, sb, 1).replace('.' + x.split('.')[-1], '.txt') for x in img_paths]
 
 
-class LoadImagesAndLabels(Dataset):  # for training/testing
+class LoadImagesAndLabels(Dataset):
+    """Load Images and Labels for training/testing.
+
+    Args:
+        Dataset ([type]): [description]
+    """
+
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
                  cache_images=False, single_cls=False, stride=32, pad=0.0, rank=-1):
+        """[summary]
+
+        Args:
+            path ([type]): [description]
+            img_size (int, optional): [description]. Defaults to 640.
+            batch_size (int, optional): [description]. Defaults to 16.
+            augment (bool, optional): [description]. Defaults to False.
+            hyp ([type], optional): [description]. Defaults to None.
+            rect (bool, optional): [description]. Defaults to False.
+            image_weights (bool, optional): [description]. Defaults to False.
+            cache_images (bool, optional): [description]. Defaults to False.
+            single_cls (bool, optional): [description]. Defaults to False.
+            stride (int, optional): [description]. Defaults to 32.
+            pad (float, optional): [description]. Defaults to 0.0.
+            rank (int, optional): [description]. Defaults to -1.
+
+        Raises:
+            Exception: [description]
+            Exception: [description]
+        """
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -434,7 +621,14 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 pbar.desc = 'Caching images (%.1fGB)' % (gb / 1E9)
 
     def cache_labels(self, path=Path('./labels.cache')):
-        # Cache dataset labels, check images and read shapes
+        """Cache dataset labels, check images and read shapes.
+
+        Args:
+            path ([type], optional): [description]. Defaults to Path('./labels.cache').
+
+        Returns:
+            [type]: [description]
+        """
         x = {}  # dict
         nm, nf, ne, nc = 0, 0, 0, 0  # number missing, found, empty, duplicate
         pbar = tqdm(zip(self.img_files, self.label_files), desc='Scanning images', total=len(self.img_files))
@@ -480,6 +674,11 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         return x
 
     def __len__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         return len(self.img_files)
 
     # def __iter__(self):
@@ -489,6 +688,14 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
     #     return self
 
     def __getitem__(self, index):
+        """[summary]
+
+        Args:
+            index ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
         index = self.indices[index]  # linear, shuffled, or image_weights
 
         hyp = self.hyp
@@ -581,7 +788,14 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
 def load_image(self, index):
-    # loads 1 image from dataset, returns img, original hw, resized hw
+    """Loads 1 image from dataset.
+
+    Args:
+        index ([type]): [description]
+
+    Returns:
+        [type]:  img, original hw, resized hw
+    """
     img = self.imgs[index]
     if img is None:  # not cached
         path = self.img_files[index]
@@ -598,6 +812,17 @@ def load_image(self, index):
 
 
 def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
+    """[summary]
+
+    Args:
+        img ([type]): [description]
+        hgain (float, optional): [description]. Defaults to 0.5.
+        sgain (float, optional): [description]. Defaults to 0.5.
+        vgain (float, optional): [description]. Defaults to 0.5.
+
+    Returns:
+        [type]: [description]
+    """
     r = np.random.uniform(-1, 1, 3) * [hgain, sgain, vgain] + 1  # random gains
     hue, sat, val = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2HSV))
     dtype = img.dtype  # uint8
@@ -617,7 +842,14 @@ def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
 
 
 def load_mosaic(self, index):
-    # loads images in a mosaic
+    """Loads images in a mosaic
+
+    Args:
+        index ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
 
     labels4 = []
     s = self.img_size
@@ -675,7 +907,15 @@ def load_mosaic(self, index):
 
 
 def replicate(img, labels):
-    # Replicate labels
+    """Replicate labels
+
+    Args:
+        img ([type]): [description]
+        labels ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     h, w = img.shape[:2]
     boxes = labels[:, 1:].astype(int)
     x1, y1, x2, y2 = boxes.T
@@ -692,7 +932,20 @@ def replicate(img, labels):
 
 
 def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
-    # Resize image to a 32-pixel-multiple rectangle https://github.com/ultralytics/yolov3/issues/232
+    """Resize image to a 32-pixel-multiple rectangle.
+        https://github.com/ultralytics/yolov3/issues/232
+
+    Args:
+        img ([type]): [description]
+        new_shape (tuple, optional): [description]. Defaults to (640, 640).
+        color (tuple, optional): [description]. Defaults to (114, 114, 114).
+        auto (bool, optional): [description]. Defaults to True.
+        scaleFill (bool, optional): [description]. Defaults to False.
+        scaleup (bool, optional): [description]. Defaults to True.
+
+    Returns:
+        [type]: [description]
+    """
     shape = img.shape[:2]  # current shape [height, width]
     if isinstance(new_shape, int):
         new_shape = (new_shape, new_shape)
@@ -725,6 +978,21 @@ def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scale
 
 
 def random_perspective(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0, border=(0, 0)):
+    """[summary]
+
+    Args:
+        img ([type]): [description]
+        targets (tuple, optional): [description]. Defaults to ().
+        degrees (int, optional): [description]. Defaults to 10.
+        translate (float, optional): [description]. Defaults to .1.
+        scale (float, optional): [description]. Defaults to .1.
+        shear (int, optional): [description]. Defaults to 10.
+        perspective (float, optional): [description]. Defaults to 0.0.
+        border (tuple, optional): [description]. Defaults to (0, 0).
+
+    Returns:
+        [type]: [description]
+    """
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
     # targets = [cls, xyxy]
 
@@ -811,8 +1079,17 @@ def random_perspective(img, targets=(), degrees=10, translate=.1, scale=.1, shea
     return img, targets
 
 
-def box_candidates(box1, box2, wh_thr=2, ar_thr=20, area_thr=0.1):  # box1(4,n), box2(4,n)
-    # Compute candidate boxes: box1 before augment, box2 after augment, wh_thr (pixels), aspect_ratio_thr, area_ratio
+def box_candidates(box1, box2, wh_thr=2, ar_thr=20, area_thr=0.1):
+    """Compute candidate boxes.
+
+    Args:
+        box1 ([type]): box1 before augment
+        box2 ([type]): box2 after augment
+        wh_thr (int, optional): wh_thr (pixels). Defaults to 2.
+        ar_thr (int, optional): aspect_ratio_thr. Defaults to 20.
+        area_thr (float, optional): area_ratio. Defaults to 0.1.
+    """
+      # box1(4,n), box2(4,n)
     w1, h1 = box1[2] - box1[0], box1[3] - box1[1]
     w2, h2 = box2[2] - box2[0], box2[3] - box2[1]
     ar = np.maximum(w2 / (h2 + 1e-16), h2 / (w2 + 1e-16))  # aspect ratio
@@ -820,11 +1097,29 @@ def box_candidates(box1, box2, wh_thr=2, ar_thr=20, area_thr=0.1):  # box1(4,n),
 
 
 def cutout(image, labels):
-    # Applies image cutout augmentation https://arxiv.org/abs/1708.04552
+    """Applies image cutout augmentation
+        https://arxiv.org/abs/1708.04552
+
+    Args:
+        image ([type]): [description]
+        labels ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     h, w = image.shape[:2]
 
     def bbox_ioa(box1, box2):
-        # Returns the intersection over box2 area given box1, box2. box1 is 4, box2 is nx4. boxes are x1y1x2y2
+        """Returns the intersection over box2 area given box1, box2.
+            boxes are x1y1x2y2
+
+        Args:
+            box1 ([type]): box1 is 4
+            box2 ([type]): box2 is nx4
+
+        Returns:
+            [type]: [description]
+        """
         box2 = box2.transpose()
 
         # Get the coordinates of bounding boxes
@@ -866,23 +1161,37 @@ def cutout(image, labels):
 
 
 def create_folder(path='./new'):
-    # Create folder
+    """Create folder.
+
+    Args:
+        path (str, optional): [description]. Defaults to './new'.
+    """
     if os.path.exists(path):
         shutil.rmtree(path)  # delete output folder
     os.makedirs(path)  # make new output folder
 
 
 def flatten_recursive(path='../coco128'):
-    # Flatten a recursive directory by bringing all files to top level
+    """Flatten a recursive directory by bringing all files to top level.
+
+    Args:
+        path (str, optional): [description]. Defaults to '../coco128'.
+    """
     new_path = Path(path + '_flat')
     create_folder(new_path)
     for file in tqdm(glob.glob(str(Path(path)) + '/**/*.*', recursive=True)):
         shutil.copyfile(file, new_path / Path(file).name)
 
 
-def extract_boxes(path='../coco128/'):  # from utils.datasets import *; extract_boxes('../coco128')
-    # Convert detection dataset into classification dataset, with one directory per class
+def extract_boxes(path='../coco128/'):
+    """Convert detection dataset into classification dataset, with one directory per class.
 
+    Example:
+        from utils.datasets import *; extract_boxes('../coco128')
+
+    Args:
+        path (str, optional): [description]. Defaults to '../coco128/'.
+    """
     path = Path(path)  # images dir
     shutil.rmtree(path / 'classifier') if (path / 'classifier').is_dir() else None  # remove existing
     files = list(path.rglob('*.*'))

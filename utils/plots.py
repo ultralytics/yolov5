@@ -27,15 +27,37 @@ matplotlib.use('Agg')  # for writing to files only
 
 
 def color_list():
-    # Return first 10 plt colors as (r,g,b) https://stackoverflow.com/questions/51350872/python-from-color-name-to-rgb
+    """ Return first 10 plt colors as (r,g,b).
+        https://stackoverflow.com/questions/51350872/python-from-color-name-to-rgb
+
+    Returns:
+        [type]: [description]
+    """
     def hex2rgb(h):
+        """Hex2RGB.
+
+        Args:
+            h ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
         return tuple(int(h[1 + i:1 + i + 2], 16) for i in (0, 2, 4))
 
     return [hex2rgb(h) for h in plt.rcParams['axes.prop_cycle'].by_key()['color']]
 
 
 def hist2d(x, y, n=100):
-    # 2d histogram used in labels.png and evolve.png
+    """2d histogram used in labels.png and evolve.png.
+
+    Args:
+        x ([type]): [description]
+        y ([type]): [description]
+        n (int, optional): [description]. Defaults to 100.
+
+    Returns:
+        [type]: [description]
+    """
     xedges, yedges = np.linspace(x.min(), x.max(), n), np.linspace(y.min(), y.max(), n)
     hist, xedges, yedges = np.histogram2d(x, y, (xedges, yedges))
     xidx = np.clip(np.digitize(x, xedges) - 1, 0, hist.shape[0] - 1)
@@ -44,8 +66,30 @@ def hist2d(x, y, n=100):
 
 
 def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
-    # https://stackoverflow.com/questions/28536191/how-to-filter-smooth-with-scipy-numpy
+    """Butterworth Lowpass Forward-Backward Filter.
+
+        https://stackoverflow.com/questions/28536191/how-to-filter-smooth-with-scipy-numpy
+
+    Args:
+        data ([type]): [description]
+        cutoff (int, optional): [description]. Defaults to 1500.
+        fs (int, optional): [description]. Defaults to 50000.
+        order (int, optional): [description]. Defaults to 5.
+
+    Returns:
+        [type]: [description]
+    """
     def butter_lowpass(cutoff, fs, order):
+        """Butterworth lowpass filter.
+
+        Args:
+            cutoff ([type]): [description]
+            fs ([type]): [description]
+            order ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
         nyq = 0.5 * fs
         normal_cutoff = cutoff / nyq
         return butter(order, normal_cutoff, btype='low', analog=False)
@@ -55,9 +99,19 @@ def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
 
 
 def plot_one_box(x, img, color=None, label=None, line_thickness=None):
-    # Plots one bounding box on image img
+    """Plots one bounding box on image img.
+
+    Args:
+        x ([type]): [description]
+        img ([type]): [description]
+        color ([type], optional): [description]. Defaults to None.
+        label ([type], optional): [description]. Defaults to None.
+        line_thickness ([type], optional): [description]. Defaults to None.
+    """
     tl = line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1  # line/font thickness
-    color = color or [random.randint(0, 255) for _ in range(3)]
+    min_color = 0
+    max_color = 255
+    color = color or [random.randint(min_color, max_color) for _ in range(3)]
     c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
     cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
     if label:
@@ -68,9 +122,14 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None):
         cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
 
 
-def plot_wh_methods():  # from utils.plots import *; plot_wh_methods()
-    # Compares the two methods for width-height anchor multiplication
-    # https://github.com/ultralytics/yolov3/issues/168
+def plot_wh_methods():
+    """Compares the two methods for width-height anchor multiplication.
+
+        https://github.com/ultralytics/yolov3/issues/168
+
+        Example:
+            from utils.plots import *; plot_wh_methods()
+    """
     x = np.arange(-4.0, 4.0, .1)
     ya = np.exp(x)
     yb = torch.sigmoid(torch.from_numpy(x)).numpy() * 2
@@ -89,7 +148,14 @@ def plot_wh_methods():  # from utils.plots import *; plot_wh_methods()
 
 
 def output_to_target(output):
-    # Convert model output to target format [batch_id, class_id, x, y, w, h, conf]
+    """Convert model output to target format [batch_id, class_id, x, y, w, h, conf].
+
+    Args:
+        output ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     targets = []
     for i, o in enumerate(output):
         for *box, conf, cls in o.cpu().numpy():
@@ -98,8 +164,20 @@ def output_to_target(output):
 
 
 def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max_size=640, max_subplots=16):
-    # Plot image grid with labels
+    """Plot image grid with labels.
 
+    Args:
+        images ([type]): [description]
+        targets ([type]): [description]
+        paths ([type], optional): [description]. Defaults to None.
+        fname (str, optional): [description]. Defaults to 'images.jpg'.
+        names ([type], optional): [description]. Defaults to None.
+        max_size (int, optional): [description]. Defaults to 640.
+        max_subplots (int, optional): [description]. Defaults to 16.
+
+    Returns:
+        [type]: [description]
+    """
     if isinstance(images, torch.Tensor):
         images = images.cpu().float().numpy()
     if isinstance(targets, torch.Tensor):
@@ -177,7 +255,14 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
 
 
 def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=''):
-    # Plot LR simulating training for full epochs
+    """Plot LR simulating training for full epochs.
+
+    Args:
+        optimizer ([type]): [description]
+        scheduler ([type]): [description]
+        epochs (int, optional): [description]. Defaults to 300.
+        save_dir (str, optional): [description]. Defaults to ''.
+    """
     optimizer, scheduler = copy(optimizer), copy(scheduler)  # do not modify originals
     y = []
     for _ in range(epochs):
@@ -192,8 +277,12 @@ def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=''):
     plt.savefig(Path(save_dir) / 'LR.png', dpi=200)
 
 
-def plot_test_txt():  # from utils.plots import *; plot_test()
-    # Plot test.txt histograms
+def plot_test_txt():
+    """Plot test.txt histograms.
+
+       Example:
+        from utils.plots import *; plot_test_txt()
+    """
     x = np.loadtxt('test.txt', dtype=np.float32)
     box = xyxy2xywh(x[:, :4])
     cx, cy = box[:, 0], box[:, 1]
@@ -209,8 +298,12 @@ def plot_test_txt():  # from utils.plots import *; plot_test()
     plt.savefig('hist1d.png', dpi=200)
 
 
-def plot_targets_txt():  # from utils.plots import *; plot_targets_txt()
-    # Plot targets.txt histograms
+def plot_targets_txt():
+    """Plot targets.txt histograms.
+
+       Example:
+        from utils.plots import *; plot_targets_txt()
+    """
     x = np.loadtxt('targets.txt', dtype=np.float32).T
     s = ['x targets', 'y targets', 'width targets', 'height targets']
     fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
@@ -222,8 +315,16 @@ def plot_targets_txt():  # from utils.plots import *; plot_targets_txt()
     plt.savefig('targets.jpg', dpi=200)
 
 
-def plot_study_txt(path='', x=None):  # from utils.plots import *; plot_study_txt()
-    # Plot study.txt generated by test.py
+def plot_study_txt(path='', x=None):
+    """Plot study.txt generated by test.py.
+
+    Example:
+        from utils.plots import *; plot_study_txt()
+
+    Args:
+        path (str, optional): Path to study_coco_{x}.
+        x ([type], optional): Can be one of yolov5s, yolov5m, yolov5l, yolov5x. Defaults to None.
+    """
     fig, ax = plt.subplots(2, 4, figsize=(10, 6), tight_layout=True)
     ax = ax.ravel()
 
@@ -254,7 +355,13 @@ def plot_study_txt(path='', x=None):  # from utils.plots import *; plot_study_tx
 
 
 def plot_labels(labels, save_dir=Path(''), loggers=None):
-    # plot dataset labels
+    """plot dataset labels.
+
+    Args:
+        labels ([type]): [description]
+        save_dir ([type], optional): [description]. Defaults to Path('').
+        loggers ([type], optional): [description]. Defaults to None.
+    """
     print('Plotting labels... ')
     c, b = labels[:, 0], labels[:, 1:].transpose()  # classes, boxes
     nc = int(c.max() + 1)  # number of classes
@@ -297,8 +404,15 @@ def plot_labels(labels, save_dir=Path(''), loggers=None):
             v.log({"Labels": [v.Image(str(x), caption=x.name) for x in save_dir.glob('*labels*.jpg')]})
 
 
-def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots import *; plot_evolution()
-    # Plot hyperparameter evolution results in evolve.txt
+def plot_evolution(yaml_file='data/hyp.finetune.yaml'):
+    """Plot hyperparameter evolution results in evolve.txt.
+
+    Example:
+        from utils.plots import *; plot_evolution()
+
+    Args:
+        yaml_file (str, optional): Path to YAML File for hyperparameter VOC finetuning. Defaults to 'data/hyp.finetune.yaml'.
+    """
     with open(yaml_file) as f:
         hyp = yaml.load(f, Loader=yaml.FullLoader)
     x = np.loadtxt('evolve.txt', ndmin=2)
@@ -322,7 +436,17 @@ def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots impo
 
 
 def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
-    # Plot iDetection '*.txt' per-image logs. from utils.plots import *; profile_idetection()
+    """Plot iDetection '*.txt' per-image logs.
+
+    Example:
+        from utils.plots import *; profile_idetection()
+
+    Args:
+        start (int, optional): [description]. Defaults to 0.
+        stop (int, optional): [description]. Defaults to 0.
+        labels (tuple, optional): [description]. Defaults to ().
+        save_dir (str, optional): [description]. Defaults to ''.
+    """
     ax = plt.subplots(2, 4, figsize=(12, 6), tight_layout=True)[1].ravel()
     s = ['Images', 'Free Storage (GB)', 'RAM Usage (GB)', 'Battery', 'dt_raw (ms)', 'dt_smooth (ms)', 'real-world FPS']
     files = list(Path(save_dir).glob('frames*.txt'))
@@ -353,8 +477,16 @@ def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
     plt.savefig(Path(save_dir) / 'idetection_profile.png', dpi=200)
 
 
-def plot_results_overlay(start=0, stop=0):  # from utils.plots import *; plot_results_overlay()
-    # Plot training 'results*.txt', overlaying train and val losses
+def plot_results_overlay(start=0, stop=0):
+    """Plot training 'results*.txt', overlaying train and val losses.
+
+    Example:
+        from utils.plots import *; plot_results_overlay()
+
+    Args:
+        start (int, optional): [description]. Defaults to 0.
+        stop (int, optional): [description]. Defaults to 0.
+    """
     s = ['train', 'train', 'train', 'Precision', 'mAP@0.5', 'val', 'val', 'val', 'Recall', 'mAP@0.5:0.95']  # legends
     t = ['Box', 'Objectness', 'Classification', 'P-R', 'mAP-F1']  # titles
     for f in sorted(glob.glob('results*.txt') + glob.glob('../../Downloads/results*.txt')):
@@ -377,7 +509,18 @@ def plot_results_overlay(start=0, stop=0):  # from utils.plots import *; plot_re
 
 
 def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
-    # Plot training 'results*.txt'. from utils.plots import *; plot_results(save_dir='runs/train/exp')
+    """Plot training 'results*.txt'.
+
+    Example: from utils.plots import *; plot_results(save_dir='runs/train/exp')
+
+    Args:
+        start (int, optional): [description]. Defaults to 0.
+        stop (int, optional): [description]. Defaults to 0.
+        bucket (str, optional): [description]. Defaults to ''.
+        id (tuple, optional): [description]. Defaults to ().
+        labels (tuple, optional): [description]. Defaults to ().
+        save_dir (str, optional): [description]. Defaults to ''.
+    """
     fig, ax = plt.subplots(2, 5, figsize=(12, 6), tight_layout=True)
     ax = ax.ravel()
     s = ['Box', 'Objectness', 'Classification', 'Precision', 'Recall',

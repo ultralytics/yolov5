@@ -10,7 +10,14 @@ from . import general
 
 
 def fitness(x):
-    # Model fitness as a weighted combination of metrics
+    """Model fitness as a weighted combination of metrics.
+
+    Args:
+        x ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     w = [0.0, 0.0, 0.1, 0.9]  # weights for [P, R, mAP@0.5, mAP@0.5:0.95]
     return (x[:, :4] * w).sum(1)
 
@@ -105,9 +112,22 @@ def compute_ap(recall, precision):
 
 
 class ConfusionMatrix:
-    # Updated version of https://github.com/kaanakan/object_detection_confusion_matrix
+    """Confusion Matrix.
+        Updated version of https://github.com/kaanakan/object_detection_confusion_matrix
+
+    Returns:
+        [type]: [description]
+    """
+
     def __init__(self, nc, conf=0.25, iou_thres=0.45):
-        self.matrix = np.zeros((nc + 1, nc + 1))
+        """[summary]
+
+        Args:
+            nc ([type]): [description]
+            conf (float, optional): [description]. Defaults to 0.25.
+            iou_thres (float, optional): [description]. Defaults to 0.45.
+        """
+        self.matrix = np.zeros((nc + 1, nc + 1)) # type: ignore
         self.nc = nc  # number of classes
         self.conf = conf
         self.iou_thres = iou_thres
@@ -143,7 +163,7 @@ class ConfusionMatrix:
         for i, gc in enumerate(gt_classes):
             j = m0 == i
             if n and sum(j) == 1:
-                self.matrix[gc, detection_classes[m1[j]]] += 1  # correct
+                self.matrix[gc, detection_classes[m1[j]]] += 1  # correct # type: ignore
             else:
                 self.matrix[gc, self.nc] += 1  # background FP
 
@@ -153,9 +173,20 @@ class ConfusionMatrix:
                     self.matrix[self.nc, dc] += 1  # background FN
 
     def matrix(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         return self.matrix
 
     def plot(self, save_dir='', names=()):
+        """[summary]
+
+        Args:
+            save_dir (str, optional): [description]. Defaults to ''.
+            names (tuple, optional): [description]. Defaults to ().
+        """
         try:
             import seaborn as sn
 
@@ -175,6 +206,8 @@ class ConfusionMatrix:
             pass
 
     def print(self):
+        """[summary]
+        """
         for i in range(self.nc + 1):
             print(' '.join(map(str, self.matrix[i])))
 
@@ -182,6 +215,15 @@ class ConfusionMatrix:
 # Plots ----------------------------------------------------------------------------------------------------------------
 
 def plot_pr_curve(px, py, ap, save_dir='.', names=()):
+    """[summary]
+
+    Args:
+        px ([type]): [description]
+        py ([type]): [description]
+        ap ([type]): [description]
+        save_dir (str, optional): [description]. Defaults to '.'.
+        names (tuple, optional): [description]. Defaults to ().
+    """
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
     py = np.stack(py, axis=1)
 

@@ -25,10 +25,27 @@ except ImportError:
 
 
 class Detect(nn.Module):
+    """[summary]
+
+    Args:
+        nn (module): torch.nn
+
+    Returns:
+        [type]: [description]
+    """
+
     stride = None  # strides computed during build
     export = False  # onnx export
 
-    def __init__(self, nc=80, anchors=(), ch=()):  # detection layer
+    def __init__(self, nc=80, anchors=(), ch=()):
+        """Init.
+
+        Args:
+            nc (int, optional): [description]. Defaults to 80.
+            anchors (tuple, optional): [description]. Defaults to ().
+            ch (tuple, optional): [description]. Defaults to ().
+        """
+        # Detection layer.
         super(Detect, self).__init__()
         self.nc = nc  # number of classes
         self.no = nc + 5  # number of outputs per anchor
@@ -41,6 +58,14 @@ class Detect(nn.Module):
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
 
     def forward(self, x):
+        """[summary]
+
+        Args:
+            x (torch.Tensor): Tensor activated element-wise
+
+        Returns:
+            [type]: [description]
+        """
         # x = x.copy()  # for profiling
         z = []  # inference output
         self.training |= self.export
@@ -62,12 +87,34 @@ class Detect(nn.Module):
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
+        """[summary]
+
+        Args:
+            nx (int, optional): [description]. Defaults to 20.
+            ny (int, optional): [description]. Defaults to 20.
+
+        Returns:
+            [type]: [description]
+        """
         yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
         return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
 
 
 class Model(nn.Module):
-    def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None):  # model, input channels, number of classes
+    """[summary]
+
+    Args:
+        nn (module): torch.nn
+    """
+    def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None):
+        """Init.
+
+        Args:
+            cfg (str, optional): [description]. Defaults to 'yolov5s.yaml'.
+            ch (int, optional): [description]. Defaults to 3.
+            nc ([type], optional): [description]. Defaults to None.
+        """
+        # model, input channels, number of classes
         super(Model, self).__init__()
         if isinstance(cfg, dict):
             self.yaml = cfg  # model dict
@@ -103,6 +150,16 @@ class Model(nn.Module):
         logger.info('')
 
     def forward(self, x, augment=False, profile=False):
+        """[summary]
+
+        Args:
+            x (torch.Tensor): Tensor activated element-wise
+            augment (bool, optional): [description]. Defaults to False.
+            profile (bool, optional): [description]. Defaults to False.
+
+        Returns:
+            [type]: [description]
+        """
         if augment:
             img_size = x.shape[-2:]  # height, width
             s = [1, 0.83, 0.67]  # scales
@@ -123,6 +180,15 @@ class Model(nn.Module):
             return self.forward_once(x, profile)  # single-scale inference, train
 
     def forward_once(self, x, profile=False):
+        """[summary]
+
+        Args:
+            x (torch.Tensor): Tensor activated element-wise
+            profile (bool, optional): [description]. Defaults to False.
+
+        Returns:
+            [type]: [description]
+        """
         y, dt = [], []  # outputs
         for m in self.model:
             if m.f != -1:  # if not from previous layer
@@ -143,8 +209,13 @@ class Model(nn.Module):
             print('%.1fms total' % sum(dt))
         return x
 
-    def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
-        # https://arxiv.org/abs/1708.02002 section 3.3
+    def _initialize_biases(self, cf=None):
+        """Initialize biases into Detect().
+            https://arxiv.org/abs/1708.02002 section 3.3
+
+        Args:
+            cf ([type], optional): class frequency. Defaults to None.
+        """
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
         m = self.model[-1]  # Detect() module
         for mi, s in zip(m.m, m.stride):  # from
@@ -154,6 +225,8 @@ class Model(nn.Module):
             mi.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
 
     def _print_biases(self):
+        """[summary]
+        """
         m = self.model[-1]  # Detect() module
         for mi in m.m:  # from
             b = mi.bias.detach().view(m.na, -1).T  # conv.bias(255) to (3,85)
@@ -164,7 +237,8 @@ class Model(nn.Module):
     #         if type(m) is Bottleneck:
     #             print('%10.3g' % (m.w.detach().sigmoid() * 2))  # shortcut weights
 
-    def fuse(self):  # fuse model Conv2d() + BatchNorm2d() layers
+    def fuse(self):
+        """Fuse model Conv2d() + BatchNorm2d() layers."""
         print('Fusing layers... ')
         for m in self.model.modules():
             if type(m) is Conv and hasattr(m, 'bn'):
@@ -174,7 +248,12 @@ class Model(nn.Module):
         self.info()
         return self
 
-    def nms(self, mode=True):  # add or remove NMS module
+    def nms(self, mode=True):
+        """Add or remove Non-max Suppression (NMS) module.
+
+        Args:
+            mode (bool, optional): True to add, False to remove. Defaults to True.
+        """
         present = type(self.model[-1]) is NMS  # last layer is NMS
         if mode and not present:
             print('Adding NMS... ')
@@ -188,17 +267,31 @@ class Model(nn.Module):
             self.model = self.model[:-1]  # remove
         return self
 
-    def autoshape(self):  # add autoShape module
+    def autoshape(self):
+        """Add autoShape module.
+        """
         print('Adding autoShape... ')
         m = autoShape(self)  # wrap model
         copy_attr(m, self, include=('yaml', 'nc', 'hyp', 'names', 'stride'), exclude=())  # copy attributes
         return m
 
-    def info(self, verbose=False, img_size=640):  # print model information
+    def info(self, verbose=False, img_size=640):
+        """Print model information.
+
+        Args:
+            verbose (bool, optional): [description]. Defaults to False.
+            img_size (int, optional): [description]. Defaults to 640.
+        """
         model_info(self, verbose, img_size)
 
 
-def parse_model(d, ch):  # model_dict, input_channels(3)
+def parse_model(d, ch):
+    """Model_dict, input_channels(3).
+
+    Args:
+        d ([type]): [description]
+        ch ([type]): [description]
+    """
     logger.info('\n%3s%18s%3s%10s  %-40s%-30s' % ('', 'from', 'n', 'params', 'module', 'arguments'))
     anchors, nc, gd, gw = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple']
     na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors

@@ -1,4 +1,8 @@
-# This file contains experimental modules
+"""Experimental modules.
+
+Returns:
+    [type]: [description]
+"""
 
 import numpy as np
 import torch
@@ -9,9 +13,24 @@ from utils.google_utils import attempt_download
 
 
 class CrossConv(nn.Module):
-    # Cross Convolution Downsample
+    """Cross Convolution Downsample.
+
+    Args:
+        nn (module): torch.nn
+    """
+
     def __init__(self, c1, c2, k=3, s=1, g=1, e=1.0, shortcut=False):
-        # ch_in, ch_out, kernel, stride, groups, expansion, shortcut
+        """[summary]
+
+        Args:
+            c1 (any): ch_in
+            c2 (any): ch_out
+            k (int, optional): kernel. Defaults to 3.
+            s (int, optional): stride. Defaults to 1.
+            g (int, optional): groups. Defaults to 1.
+            e (float, optional): expansion. Defaults to 1.0.
+            shortcut (bool, optional): shortcut. Defaults to False.
+        """
         super(CrossConv, self).__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, c_, (1, k), (1, s))
@@ -19,11 +38,24 @@ class CrossConv(nn.Module):
         self.add = shortcut and c1 == c2
 
     def forward(self, x):
+        """[summary]
+
+        Args:
+            x (torch.Tensor): Tensor activated element-wise
+
+        Returns:
+            [type]: [description]
+        """
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
 
 class Sum(nn.Module):
-    # Weighted sum of 2 or more layers https://arxiv.org/abs/1911.09070
+    """Weighted sum of 2 or more layers.
+     https://arxiv.org/abs/1911.09070
+
+    Args:
+        nn (module): torch.nn
+    """
     def __init__(self, n, weight=False):  # n: number of inputs
         super(Sum, self).__init__()
         self.weight = weight  # apply weights boolean
@@ -32,6 +64,14 @@ class Sum(nn.Module):
             self.w = nn.Parameter(-torch.arange(1., n) / 2, requires_grad=True)  # layer weights
 
     def forward(self, x):
+        """[summary]
+
+        Args:
+            x (torch.Tensor): Tensor activated element-wise
+
+        Returns:
+            [type]: [description]
+        """
         y = x[0]  # no weight
         if self.weight:
             w = torch.sigmoid(self.w) * 2
@@ -44,20 +84,52 @@ class Sum(nn.Module):
 
 
 class GhostConv(nn.Module):
-    # Ghost Convolution https://github.com/huawei-noah/ghostnet
-    def __init__(self, c1, c2, k=1, s=1, g=1, act=True):  # ch_in, ch_out, kernel, stride, groups
+    """Ghost Convolution.
+        https://github.com/huawei-noah/ghostnet
+
+    Args:
+        nn (module): torch.nn
+    """
+
+    def __init__(self, c1, c2, k=1, s=1, g=1, act=True):
+        """[summary]
+
+        Example:
+            ch_in, ch_out, kernel, stride, groups
+
+        Args:
+            c1 (any): ch_in
+            c2 (any): ch_out
+            k (int, optional): kernel. Defaults to 1.
+            s (int, optional): stride. Defaults to 1.
+            g (int, optional): groups. Defaults to 1.
+            act (bool, optional): [description]. Defaults to True.
+        """
         super(GhostConv, self).__init__()
         c_ = c2 // 2  # hidden channels
         self.cv1 = Conv(c1, c_, k, s, None, g, act)
         self.cv2 = Conv(c_, c_, 5, 1, None, c_, act)
 
     def forward(self, x):
+        """[summary]
+
+        Args:
+            x (torch.Tensor): Tensor activated element-wise
+
+        Returns:
+            [type]: [description]
+        """
         y = self.cv1(x)
         return torch.cat([y, self.cv2(y)], 1)
 
 
 class GhostBottleneck(nn.Module):
-    # Ghost Bottleneck https://github.com/huawei-noah/ghostnet
+    """Ghost Bottleneck.
+        https://github.com/huawei-noah/ghostnet
+
+    Args:
+        nn (module): torch.nn
+    """
     def __init__(self, c1, c2, k, s):
         super(GhostBottleneck, self).__init__()
         c_ = c2 // 2
@@ -72,7 +144,12 @@ class GhostBottleneck(nn.Module):
 
 
 class MixConv2d(nn.Module):
-    # Mixed Depthwise Conv https://arxiv.org/abs/1907.09595
+    """Mixed Depthwise Conv 
+        https://arxiv.org/abs/1907.09595
+
+    Args:
+        nn (module): torch.nn
+    """
     def __init__(self, c1, c2, k=(1, 3), s=1, equal_ch=True):
         super(MixConv2d, self).__init__()
         groups = len(k)
@@ -96,11 +173,27 @@ class MixConv2d(nn.Module):
 
 
 class Ensemble(nn.ModuleList):
-    # Ensemble of models
+    """Ensemble of models.
+
+    Args:
+        nn (module): torch.nn
+    """
+
     def __init__(self):
+        """Init.
+        """
         super(Ensemble, self).__init__()
 
     def forward(self, x, augment=False):
+        """[summary]
+
+        Args:
+            x (torch.Tensor): Tensor activated element-wise
+            augment (bool, optional): [description]. Defaults to False.
+
+        Returns:
+            [type]: [description]
+        """
         y = []
         for module in self:
             y.append(module(x, augment)[0])
@@ -111,7 +204,15 @@ class Ensemble(nn.ModuleList):
 
 
 def attempt_load(weights, map_location=None):
-    # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a
+    """Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a.
+
+    Args:
+        weights ([type]): [description]
+        map_location ([type], optional): [description]. Defaults to None.
+
+    Returns:
+        [type]: [description]
+    """
     model = Ensemble()
     for w in weights if isinstance(weights, list) else [weights]:
         attempt_download(w)

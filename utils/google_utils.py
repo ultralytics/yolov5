@@ -10,13 +10,24 @@ import torch
 
 
 def gsutil_getsize(url=''):
-    # gs://bucket/file size https://cloud.google.com/storage/docs/gsutil/commands/du
+    """[summary]
+        gs://bucket/file size https://cloud.google.com/storage/docs/gsutil/commands/du
+    Args:
+        url (str, optional): [description]. Defaults to ''.
+
+    Returns:
+        [type]: [description]
+    """
     s = subprocess.check_output('gsutil du %s' % url, shell=True).decode('utf-8')
     return eval(s.split(' ')[0]) if len(s) else 0  # bytes
 
 
 def attempt_download(weights):
-    # Attempt to download pretrained weights if not found locally
+    """Attempt to download pretrained weights if not found locally.
+
+    Args:
+        weights ([type]): [description]
+    """
     weights = str(weights).strip().replace("'", '')
     file = Path(weights).name.lower()
 
@@ -54,7 +65,15 @@ def attempt_download(weights):
 
 
 def gdrive_download(id='1uH2BylpFxHKEGXKL6wJJlsgMU2YEjxuc', name='tmp.zip'):
-    # Downloads a file from Google Drive. from utils.google_utils import *; gdrive_download()
+    """Downloads a file from Google Drive. from utils.google_utils import *; gdrive_download()
+
+    Args:
+        id (str, optional): [description]. Defaults to '1uH2BylpFxHKEGXKL6wJJlsgMU2YEjxuc'.
+        name (str, optional): [description]. Defaults to 'tmp.zip'.
+
+    Returns:
+        [type]: [description]
+    """
     t = time.time()
 
     print('Downloading https://drive.google.com/uc?export=download&id=%s as %s... ' % (id, name), end='')
@@ -88,6 +107,14 @@ def gdrive_download(id='1uH2BylpFxHKEGXKL6wJJlsgMU2YEjxuc', name='tmp.zip'):
 
 
 def get_token(cookie="./cookie"):
+    """[summary]
+
+    Args:
+        cookie (str, optional): [description]. Defaults to "./cookie".
+
+    Returns:
+        [type]: [description]
+    """
     with open(cookie) as f:
         for line in f:
             if "download" in line:

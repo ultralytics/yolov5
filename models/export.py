@@ -1,7 +1,16 @@
-"""Exports a YOLOv5 *.pt model to ONNX and TorchScript formats
+"""
+Exports a YOLOv5 .pt formatted model to ONNX and TorchScript formats.
 
 Usage:
     $ export PYTHONPATH="$PWD" && python models/export.py --weights ./weights/yolov5s.pt --img 640 --batch 1
+
+Arguments:
+    weights (str): Weights path. yolov5/model/ weights.  Defaults to './yolov5s.pt' #
+    img-size (int): Image height, Width. Defaults to [640, 640]
+    batch-size (int): Batch size. Defaults to 1.
+
+Visualization:
+    https://github.com/lutzroeder/netron
 """
 
 import argparse

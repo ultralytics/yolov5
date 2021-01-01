@@ -28,25 +28,43 @@ cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with Py
 
 
 def set_logging(rank=-1):
+    """[summary]
+
+    Args:
+        rank (int, optional): [description]. Defaults to -1.
+    """
     logging.basicConfig(
         format="%(message)s",
         level=logging.INFO if rank in [-1, 0] else logging.WARN)
 
 
 def init_seeds(seed=0):
+    """[summary]
+
+    Args:
+        seed (int, optional): [description]. Defaults to 0.
+    """
     random.seed(seed)
     np.random.seed(seed)
     init_torch_seeds(seed)
 
 
 def get_latest_run(search_dir='.'):
-    # Return path to most recent 'last.pt' in /runs (i.e. to --resume from)
+    """Return path to most recent 'last.pt' in /runs (i.e. to --resume from).
+
+    Args:
+        search_dir (str, optional): [description]. Defaults to '.'.
+
+    Returns:
+        [type]: [description]
+    """
     last_list = glob.glob(f'{search_dir}/**/last*.pt', recursive=True)
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
 def check_git_status():
-    # Suggest 'git pull' if repo is out of date
+    """Suggest 'git pull' if repo is out of date
+    """
     if platform.system() in ['Linux', 'Darwin'] and not os.path.isfile('/.dockerenv'):
         s = subprocess.check_output('if [ -d .git ]; then git fetch && git status -uno; fi', shell=True).decode('utf-8')
         if 'Your branch is behind' in s:
@@ -54,7 +72,15 @@ def check_git_status():
 
 
 def check_img_size(img_size, s=32):
-    # Verify img_size is a multiple of stride s
+    """Verify img_size is a multiple of stride s.
+
+    Args:
+        img_size ([type]): Image size.
+        s (int, optional): Stride. Defaults to 32.
+
+    Returns:
+        [type]: [description]
+    """
     new_size = make_divisible(img_size, int(s))  # ceil gs-multiple
     if new_size != img_size:
         print('WARNING: --img-size %g must be multiple of max stride %g, updating to %g' % (img_size, s, new_size))
@@ -62,7 +88,14 @@ def check_img_size(img_size, s=32):
 
 
 def check_file(file):
-    # Search for file if not found
+    """Search for file if not found.
+
+    Args:
+        file ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     if os.path.isfile(file) or file == '':
         return file
     else:
@@ -73,7 +106,17 @@ def check_file(file):
 
 
 def check_dataset(dict):
-    # Download dataset if not found locally
+    """Download dataset if not found locally.
+
+    Args:
+        dict ([type]): [description]
+
+    Raises:
+        Exception: [description]
+
+    Returns:
+        [type]: [description]
+    """
     val, s = dict.get('val'), dict.get('download')
     if val and len(val):
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
@@ -93,17 +136,40 @@ def check_dataset(dict):
 
 
 def make_divisible(x, divisor):
-    # Returns x evenly divisible by divisor
+    """Returns x evenly divisible by divisor.
+
+    Args:
+        x ([type]): [description]
+        divisor ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     return math.ceil(x / divisor) * divisor
 
 
 def clean_str(s):
-    # Cleans a string by replacing special characters with underscore _
+    """Cleans a string by replacing special characters with underscore _
+
+    Args:
+        s ([type]): string
+
+    Returns:
+        [type]: Clean string
+    """
     return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
 
 
 def labels_to_class_weights(labels, nc=80):
-    # Get class weights (inverse frequency) from training labels
+    """Get class weights (inverse frequency) from training labels.
+
+    Args:
+        labels ([type]): [description]
+        nc (int, optional): [description]. Defaults to 80.
+
+    Returns:
+        [type]: [description]
+    """
     if labels[0] is None:  # no labels loaded
         return torch.Tensor()
 
@@ -122,19 +188,34 @@ def labels_to_class_weights(labels, nc=80):
 
 
 def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
-    # Produces image weights based on class_weights and image contents
+    """Produces image weights based on class_weights and image contents.
+
+    Args:
+        labels ([type]): [description]
+        nc (int, optional): [description]. Defaults to 80.
+        class_weights ([type], optional): [description]. Defaults to np.ones(80).
+
+    Returns:
+        [type]: [description]
+    """
     class_counts = np.array([np.bincount(x[:, 0].astype(np.int), minlength=nc) for x in labels])
     image_weights = (class_weights.reshape(1, nc) * class_counts).sum(1)
     # index = random.choices(range(n), weights=image_weights, k=1)  # weight image sample
     return image_weights
 
 
-def coco80_to_coco91_class():  # converts 80-index (val2014) to 91-index (paper)
-    # https://tech.amikelive.com/node-718/what-object-categories-labels-are-in-coco-dataset/
-    # a = np.loadtxt('data/coco.names', dtype='str', delimiter='\n')
-    # b = np.loadtxt('data/coco_paper.names', dtype='str', delimiter='\n')
-    # x1 = [list(a[i] == b).index(True) + 1 for i in range(80)]  # darknet to coco
-    # x2 = [list(b[i] == a).index(True) if any(b[i] == a) else None for i in range(91)]  # coco to darknet
+def coco80_to_coco91_class():
+    """Converts 80-index (val2014) to 91-index 
+        (paper)https://tech.amikelive.com/node-718/what-object-categories-labels-are-in-coco-dataset/
+    
+    Example:
+        a = np.loadtxt('data/coco.names', dtype='str', delimiter='\n')
+        b = np.loadtxt('data/coco_paper.names', dtype='str', delimiter='\n')
+        x1 = [list(a[i] == b).index(True) + 1 for i in range(80)]  # darknet to coco
+        x2 = [list(b[i] == a).index(True) if any(b[i] == a) else None for i in range(91)]  # coco to darknet
+    Returns:
+        [type]: [description]
+    """
     x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 28, 31, 32, 33, 34,
          35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
          64, 65, 67, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90]
@@ -142,7 +223,14 @@ def coco80_to_coco91_class():  # converts 80-index (val2014) to 91-index (paper)
 
 
 def xyxy2xywh(x):
-    # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right
+    """Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right.
+
+    Args:
+        x ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[:, 0] = (x[:, 0] + x[:, 2]) / 2  # x center
     y[:, 1] = (x[:, 1] + x[:, 3]) / 2  # y center
@@ -152,7 +240,14 @@ def xyxy2xywh(x):
 
 
 def xywh2xyxy(x):
-    # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+    """Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+
+    Args:
+        x ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[:, 0] = x[:, 0] - x[:, 2] / 2  # top left x
     y[:, 1] = x[:, 1] - x[:, 3] / 2  # top left y
@@ -162,7 +257,17 @@ def xywh2xyxy(x):
 
 
 def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
-    # Rescale coords (xyxy) from img1_shape to img0_shape
+    """Rescale coords (xyxy) from img1_shape to img0_shape
+
+    Args:
+        img1_shape ([type]): [description]
+        coords ([type]): [description]
+        img0_shape ([type]): [description]
+        ratio_pad ([type], optional): [description]. Defaults to None.
+
+    Returns:
+        [type]: [description]
+    """
     if ratio_pad is None:  # calculate from img0_shape
         gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
         pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
@@ -178,7 +283,12 @@ def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
 
 
 def clip_coords(boxes, img_shape):
-    # Clip bounding xyxy bounding boxes to image shape (height, width)
+    """Clip bounding xyxy bounding boxes to image shape (height, width).
+
+    Args:
+        boxes ([type]): [description]
+        img_shape ([type]): [description]
+    """
     boxes[:, 0].clamp_(0, img_shape[1])  # x1
     boxes[:, 1].clamp_(0, img_shape[0])  # y1
     boxes[:, 2].clamp_(0, img_shape[1])  # x2
@@ -186,7 +296,20 @@ def clip_coords(boxes, img_shape):
 
 
 def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-9):
-    # Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
+    """Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
+
+    Args:
+        box1 ([type]): [description]
+        box2 ([type]): [description]
+        x1y1x2y2 (bool, optional): [description]. Defaults to True.
+        GIoU (bool, optional): [description]. Defaults to False.
+        DIoU (bool, optional): [description]. Defaults to False.
+        CIoU (bool, optional): [description]. Defaults to False.
+        eps ([type], optional): [description]. Defaults to 1e-9.
+
+    Returns:
+        [type]: [description]
+    """
     box2 = box2.T
 
     # Get the coordinates of bounding boxes
@@ -256,7 +379,15 @@ def box_iou(box1, box2):
 
 
 def wh_iou(wh1, wh2):
-    # Returns the nxm IoU matrix. wh1 is nx2, wh2 is mx2
+    """Returns the nxm IoU matrix. wh1 is nx2, wh2 is mx2.
+
+    Args:
+        wh1 ([type]): [description]
+        wh2 ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     wh1 = wh1[:, None]  # [N,1,2]
     wh2 = wh2[None]  # [1,M,2]
     inter = torch.min(wh1, wh2).prod(2)  # [N,M]
@@ -352,8 +483,15 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     return output
 
 
-def strip_optimizer(f='weights/best.pt', s=''):  # from utils.general import *; strip_optimizer()
-    # Strip optimizer from 'f' to finalize training, optionally save as 's'
+def strip_optimizer(f='weights/best.pt', s=''):
+    """Strip optimizer from 'f' to finalize training, optionally save as 's'.
+
+    Example:
+        from utils.general import *; strip_optimizer()
+    Args:
+        f (str, optional): [description]. Defaults to 'weights/best.pt'.
+        s (str, optional): [description]. Defaults to ''.
+    """
     x = torch.load(f, map_location=torch.device('cpu'))
     x['optimizer'] = None
     x['training_results'] = None
@@ -367,7 +505,14 @@ def strip_optimizer(f='weights/best.pt', s=''):  # from utils.general import *; 
 
 
 def print_mutation(hyp, results, yaml_file='hyp_evolved.yaml', bucket=''):
-    # Print mutation results to evolve.txt (for use with train.py --evolve)
+    """Print mutation results to evolve.txt (for use with train.py --evolve).
+
+    Args:
+        hyp ([type]): [description]
+        results ([type]): [description]
+        yaml_file (str, optional): [description]. Defaults to 'hyp_evolved.yaml'.
+        bucket (str, optional): [description]. Defaults to ''.
+    """
     a = '%10s' * len(hyp) % tuple(hyp.keys())  # hyperparam keys
     b = '%10.3g' * len(hyp) % tuple(hyp.values())  # hyperparam values
     c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
@@ -398,7 +543,17 @@ def print_mutation(hyp, results, yaml_file='hyp_evolved.yaml', bucket=''):
 
 
 def apply_classifier(x, model, img, im0):
-    # applies a second stage classifier to yolo outputs
+    """Applies a second stage classifier to yolo outputs.
+
+    Args:
+        x ([type]): [description]
+        model ([type]): [description]
+        img ([type]): [description]
+        im0 ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     im0 = [im0] if isinstance(im0, np.ndarray) else im0
     for i, d in enumerate(x):  # per image
         if d is not None and len(d):
@@ -433,7 +588,16 @@ def apply_classifier(x, model, img, im0):
 
 
 def increment_path(path, exist_ok=True, sep=''):
-    # Increment path, i.e. runs/exp --> runs/exp{sep}0, runs/exp{sep}1 etc.
+    """Increment path, i.e. runs/exp --> runs/exp{sep}0, runs/exp{sep}1 etc.
+
+    Args:
+        path ([type]): [description]
+        exist_ok (bool, optional): [description]. Defaults to True.
+        sep (str, optional): [description]. Defaults to ''.
+
+    Returns:
+        [type]: [description]
+    """
     path = Path(path)  # os-agnostic
     if (path.exists() and exist_ok) or (not path.exists()):
         return str(path)

@@ -16,6 +16,14 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
 def detect(save_img=False):
+    """Detection inference.
+
+    Args:
+        save_img (bool, optional): Save image. Defaults to False.
+
+    Raises:
+        StopIteration: Stop iteration if q pressed during streaming.
+    """
     source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://'))
