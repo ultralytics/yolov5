@@ -1,3 +1,5 @@
+    """Yolo Detect and Model
+    """
 import argparse
 import logging
 import math
@@ -150,7 +152,7 @@ class Model(nn.Module):
         logger.info('')
 
     def forward(self, x, augment=False, profile=False):
-        """[summary]
+        """Forward.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -180,7 +182,7 @@ class Model(nn.Module):
             return self.forward_once(x, profile)  # single-scale inference, train
 
     def forward_once(self, x, profile=False):
-        """[summary]
+        """Forward Once.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -211,6 +213,7 @@ class Model(nn.Module):
 
     def _initialize_biases(self, cf=None):
         """Initialize biases into Detect().
+
             https://arxiv.org/abs/1708.02002 section 3.3
 
         Args:
@@ -225,8 +228,7 @@ class Model(nn.Module):
             mi.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
 
     def _print_biases(self):
-        """[summary]
-        """
+        """Print Biases."""
         m = self.model[-1]  # Detect() module
         for mi in m.m:  # from
             b = mi.bias.detach().view(m.na, -1).T  # conv.bias(255) to (3,85)
@@ -269,6 +271,9 @@ class Model(nn.Module):
 
     def autoshape(self):
         """Add autoShape module.
+
+        Returns:
+            [type]: [description]
         """
         print('Adding autoShape... ')
         m = autoShape(self)  # wrap model

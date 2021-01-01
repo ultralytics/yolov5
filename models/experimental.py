@@ -1,8 +1,4 @@
-"""Experimental modules.
-
-Returns:
-    [type]: [description]
-"""
+"""Experimental modules."""
 
 import numpy as np
 import torch
@@ -38,7 +34,7 @@ class CrossConv(nn.Module):
         self.add = shortcut and c1 == c2
 
     def forward(self, x):
-        """[summary]
+        """Forward.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -64,7 +60,7 @@ class Sum(nn.Module):
             self.w = nn.Parameter(-torch.arange(1., n) / 2, requires_grad=True)  # layer weights
 
     def forward(self, x):
-        """[summary]
+        """Forward.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -111,7 +107,7 @@ class GhostConv(nn.Module):
         self.cv2 = Conv(c_, c_, 5, 1, None, c_, act)
 
     def forward(self, x):
-        """[summary]
+        """Forward.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -125,6 +121,7 @@ class GhostConv(nn.Module):
 
 class GhostBottleneck(nn.Module):
     """Ghost Bottleneck.
+
         https://github.com/huawei-noah/ghostnet
 
     Args:
@@ -140,6 +137,14 @@ class GhostBottleneck(nn.Module):
                                       Conv(c1, c2, 1, 1, act=False)) if s == 2 else nn.Identity()
 
     def forward(self, x):
+        """Forward.
+
+        Args:
+            x (torch.Tensor): Tensor activated element-wise
+
+        Returns:
+            [type]: [description]
+        """
         return self.conv(x) + self.shortcut(x)
 
 
@@ -169,6 +174,14 @@ class MixConv2d(nn.Module):
         self.act = nn.LeakyReLU(0.1, inplace=True)
 
     def forward(self, x):
+        """Forward.
+
+        Args:
+            x (torch.Tensor): Tensor activated element-wise
+
+        Returns:
+            [type]: [description]
+        """
         return x + self.act(self.bn(torch.cat([m(x) for m in self.m], 1)))
 
 
@@ -185,7 +198,7 @@ class Ensemble(nn.ModuleList):
         super(Ensemble, self).__init__()
 
     def forward(self, x, augment=False):
-        """[summary]
+        """Forward.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
