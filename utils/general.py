@@ -28,7 +28,7 @@ cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with Py
 
 
 def set_logging(rank=-1):
-    """[summary]
+    """Set logging.
 
     Args:
         rank (int, optional): [description]. Defaults to -1.
@@ -39,10 +39,10 @@ def set_logging(rank=-1):
 
 
 def init_seeds(seed=0):
-    """[summary]
+    """Init random, numpy random, torch seeds.
 
     Args:
-        seed (int, optional): [description]. Defaults to 0.
+        seed (int, optional): Random number seed. Defaults to 0.
     """
     random.seed(seed)
     np.random.seed(seed)
@@ -53,7 +53,7 @@ def get_latest_run(search_dir='.'):
     """Return path to most recent 'last.pt' in /runs (i.e. to --resume from).
 
     Args:
-        search_dir (str, optional): [description]. Defaults to '.'.
+        search_dir (str, optional): Search directory and subfolders for **/last*.pt. Defaults to '.'.
 
     Returns:
         [type]: [description]
@@ -63,8 +63,7 @@ def get_latest_run(search_dir='.'):
 
 
 def check_git_status():
-    """Suggest 'git pull' if repo is out of date
-    """
+    """Suggest 'git pull' if repo is out of date."""
     if platform.system() in ['Linux', 'Darwin'] and not os.path.isfile('/.dockerenv'):
         s = subprocess.check_output('if [ -d .git ]; then git fetch && git status -uno; fi', shell=True).decode('utf-8')
         if 'Your branch is behind' in s:
@@ -91,7 +90,7 @@ def check_file(file):
     """Search for file if not found.
 
     Args:
-        file ([type]): [description]
+        file (path): File path.
 
     Returns:
         [type]: [description]

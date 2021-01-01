@@ -70,7 +70,7 @@ def exif_size(img):
 
 def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False,
                       rank=-1, world_size=1, workers=8, image_weights=False):
-    """[summary]
+    """Create Dataloader.
 
     Args:
         path ([type]): [description]
@@ -125,22 +125,22 @@ class InfiniteDataLoader(torch.utils.data.dataloader.DataLoader):
     """
 
     def __init__(self, *args, **kwargs):
-        """[summary]
+        """Init
         """
         super().__init__(*args, **kwargs)
         object.__setattr__(self, 'batch_sampler', _RepeatSampler(self.batch_sampler))
         self.iterator = super().__iter__()
 
     def __len__(self):
-        """[summary]
+        """Length
 
         Returns:
-            [type]: [description]
+            Length of batch sampler.sampler
         """
         return len(self.batch_sampler.sampler)
 
     def __iter__(self):
-        """[summary]
+        """Iterator.
 
         Yields:
             [type]: [description]
@@ -157,7 +157,7 @@ class _RepeatSampler(object):
     """
 
     def __init__(self, sampler):
-        """[summary]
+        """Init.
 
         Args:
             sampler ([type]): [description]
@@ -165,7 +165,7 @@ class _RepeatSampler(object):
         self.sampler = sampler
 
     def __iter__(self):
-        """[summary]
+        """Iterator.
 
         Yields:
             [type]: [description]
@@ -174,19 +174,19 @@ class _RepeatSampler(object):
             yield from iter(self.sampler)
 
 
-class LoadImages:  # for inference
-    """[summary]
+class LoadImages:
+    """Load Images for inference.
     """
 
     def __init__(self, path, img_size=640):
-        """[summary]
+        """Init.
 
         Args:
-            path ([type]): [description]
-            img_size (int, optional): [description]. Defaults to 640.
+            path (str): Path to images and/or videos.
+            img_size (int, optional): Image size. Defaults to 640.
 
         Raises:
-            Exception: [description]
+            Exception: General exception.
         """
         p = str(Path(path))  # os-agnostic
         p = os.path.abspath(p)  # absolute path
@@ -216,16 +216,16 @@ class LoadImages:  # for inference
                             (p, img_formats, vid_formats)
 
     def __iter__(self):
-        """[summary]
+        """Iterator.
 
         Returns:
-            [type]: [description]
+            LoadImages: LoadImages with count = 0.
         """
         self.count = 0
         return self
 
     def __next__(self):
-        """[summary]
+        """Next iteration.
 
         Raises:
             StopIteration: [description]
@@ -272,7 +272,7 @@ class LoadImages:  # for inference
         return path, img, img0, self.cap
 
     def new_video(self, path):
-        """[summary]
+        """New Video Capture.
 
         Args:
             path ([type]): [description]
@@ -282,20 +282,20 @@ class LoadImages:  # for inference
         self.nframes = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     def __len__(self):
-        """[summary]
+        """Number of files.
 
         Returns:
-            [type]: [description]
+            int: Number of files.
         """
-        return self.nf  # number of files
+        return self.nf
 
 
-class LoadWebcam:  # for inference
-    """[summary]
+class LoadWebcam:
+    """Load Webcam for inference.
     """
 
     def __init__(self, pipe='0', img_size=640):
-        """[summary]
+        """Init.
 
         Example:
             pipe = 'rtsp://192.168.1.64/1'  # IP camera
@@ -316,7 +316,7 @@ class LoadWebcam:  # for inference
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)  # set buffer size
 
     def __iter__(self):
-        """[summary]
+        """Iterator.
 
         Returns:
             [type]: [description]
@@ -325,7 +325,7 @@ class LoadWebcam:  # for inference
         return self
 
     def __next__(self):
-        """[summary]
+        """Next iterator.
 
         Raises:
             StopIteration: [description]
@@ -368,10 +368,10 @@ class LoadWebcam:  # for inference
         return img_path, img, img0, None
 
     def __len__(self):
-        """[summary]
+        """Length
 
         Returns:
-            [type]: [description]
+            int: always 0.
         """
         return 0
 
@@ -381,7 +381,7 @@ class LoadStreams:
     """
 
     def __init__(self, sources='streams.txt', img_size=640):
-        """[summary]
+        """Init.
 
         Args:
             sources (str, optional): [description]. Defaults to 'streams.txt'.
@@ -437,7 +437,7 @@ class LoadStreams:
             time.sleep(0.01)  # wait time
 
     def __iter__(self):
-        """[summary]
+        """Iterator.
 
         Returns:
             [type]: [description]
@@ -446,7 +446,7 @@ class LoadStreams:
         return self
 
     def __next__(self):
-        """[summary]
+        """Next Iterator.
 
         Raises:
             StopIteration: [description]
@@ -473,10 +473,10 @@ class LoadStreams:
         return self.sources, img, img0, None
 
     def __len__(self):
-        """[summary]
+        """Length.
 
         Returns:
-            [type]: [description]
+            int: Always 0.
         """
         return 0  # 1E12 frames = 32 streams at 30 FPS for 30 years
 
@@ -503,7 +503,7 @@ class LoadImagesAndLabels(Dataset):
 
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
                  cache_images=False, single_cls=False, stride=32, pad=0.0, rank=-1):
-        """[summary]
+        """Init.
 
         Args:
             path ([type]): [description]
@@ -674,10 +674,10 @@ class LoadImagesAndLabels(Dataset):
         return x
 
     def __len__(self):
-        """[summary]
+        """Length.
 
         Returns:
-            [type]: [description]
+            int: Count of img files
         """
         return len(self.img_files)
 
@@ -688,7 +688,7 @@ class LoadImagesAndLabels(Dataset):
     #     return self
 
     def __getitem__(self, index):
-        """[summary]
+        """Get item.
 
         Args:
             index ([type]): [description]
@@ -812,7 +812,7 @@ def load_image(self, index):
 
 
 def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
-    """[summary]
+    """Augment HSV.
 
     Args:
         img ([type]): [description]
@@ -978,7 +978,7 @@ def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scale
 
 
 def random_perspective(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0, border=(0, 0)):
-    """[summary]
+    """Random perspective.
 
     Args:
         img ([type]): [description]

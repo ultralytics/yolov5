@@ -16,7 +16,7 @@ class CrossConv(nn.Module):
     """
 
     def __init__(self, c1, c2, k=3, s=1, g=1, e=1.0, shortcut=False):
-        """[summary]
+        """Init.
 
         Args:
             c1 (any): ch_in
@@ -88,7 +88,7 @@ class GhostConv(nn.Module):
     """
 
     def __init__(self, c1, c2, k=1, s=1, g=1, act=True):
-        """[summary]
+        """Init.
 
         Example:
             ch_in, ch_out, kernel, stride, groups

@@ -120,7 +120,7 @@ class ConfusionMatrix:
     """
 
     def __init__(self, nc, conf=0.25, iou_thres=0.45):
-        """[summary]
+        """Init.
 
         Args:
             nc ([type]): [description]
@@ -173,15 +173,15 @@ class ConfusionMatrix:
                     self.matrix[self.nc, dc] += 1  # background FN
 
     def matrix(self):
-        """[summary]
+        """Matrix.
 
         Returns:
-            [type]: [description]
+            ConfusionMatrix: ConfusionMatrix
         """
         return self.matrix
 
     def plot(self, save_dir='', names=()):
-        """[summary]
+        """Plot.
 
         Args:
             save_dir (str, optional): [description]. Defaults to ''.
@@ -206,7 +206,7 @@ class ConfusionMatrix:
             pass
 
     def print(self):
-        """[summary]
+        """Print matrix.
         """
         for i in range(self.nc + 1):
             print(' '.join(map(str, self.matrix[i])))
@@ -215,13 +215,13 @@ class ConfusionMatrix:
 # Plots ----------------------------------------------------------------------------------------------------------------
 
 def plot_pr_curve(px, py, ap, save_dir='.', names=()):
-    """[summary]
+    """Plot Precision Recall Curve.
 
     Args:
         px ([type]): [description]
         py ([type]): [description]
         ap ([type]): [description]
-        save_dir (str, optional): [description]. Defaults to '.'.
+        save_dir (str, optional): Save folder path for precision_recall_curve.png Defaults to '.'.
         names (tuple, optional): [description]. Defaults to ().
     """
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)

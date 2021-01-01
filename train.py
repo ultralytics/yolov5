@@ -47,14 +47,14 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     """Train model
 
     Args:
-        hyp ([type]): Hyperparameters
-        opt (namespace): Options from YAML configuration
-        device ([type]): [description]
-        tb_writer ([type], optional): [description]. Defaults to None.
-        wandb ([type], optional): [description]. Defaults to None.
+        hyp ([type]): Hyperparameters.
+        opt (namespace): Options from YAML configuration.
+        device ([type]): cuda device, i.e. 0 or 0,1,2,3 or cpu.
+        tb_writer ([type], optional): Tensorboard Summary Writer. Defaults to None.
+        wandb ([type], optional): Weights & Biases logger. Defaults to None.
 
     Returns:
-        [type]: [description]
+        tuple: Results.
     """
     logger.info(f'Hyperparameters {hyp}')
     save_dir, epochs, batch_size, total_batch_size, weights, rank = \
