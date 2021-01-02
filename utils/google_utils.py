@@ -23,12 +23,12 @@ def attempt_download(weights):
 
     msg = weights + ' missing, try downloading from https://github.com/ultralytics/yolov5/releases/'
     response = requests.get('https://api.github.com/repos/ultralytics/yolov5/releases/latest').json()  # github api
-    assets = [x['name'] for x in response['assets']]  # release assets
+    assets = [x['name'] for x in response['assets']]  # release assets, i.e. ['yolov5s.pt', 'yolov5m.pt', ...]
     redundant = False  # second download option
 
     if file in assets and not os.path.isfile(weights):
         try:  # GitHub
-            tag = response['tag_name']  # 'v1.0'
+            tag = response['tag_name']  # i.e. 'v1.0'
             url = f'https://github.com/ultralytics/yolov5/releases/download/{tag}/{file}'
             print('Downloading %s to %s...' % (url, weights))
             torch.hub.download_url_to_file(url, weights)
