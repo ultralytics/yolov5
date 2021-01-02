@@ -127,7 +127,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     # https://pytorch.org/docs/stable/_modules/torch/optim/lr_scheduler.html#OneCycleLR
-    lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - hyp['lrf']) + hyp['lrf']  # cosine
+    lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - hyp['lrf']) + hyp['lrf']  # cosine 1->hyp['lrf']
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # plot_lr_scheduler(optimizer, scheduler, epochs)
 
