@@ -21,6 +21,7 @@ from utils.torch_utils import select_device, time_synchronized
 
 def test(data,
          weights=None,
+         ni=None,
          batch_size=32,
          imgsz=640,
          conf_thres=0.001,
@@ -111,7 +112,7 @@ def test(data,
 
             # Compute loss
             if training:
-                loss += compute_loss([x.float() for x in train_out], targets, model)[1][:3]  # box, obj, cls
+                loss += compute_loss([x.float() for x in train_out], targets, model, ni=ni)[1][:3]  # box, obj, cls
 
             # Run NMS
             targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)  # to pixels

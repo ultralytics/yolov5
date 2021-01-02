@@ -85,7 +85,7 @@ class QFocalLoss(nn.Module):
             return loss
 
 
-def compute_loss(p, targets, model):  # predictions, targets, model
+def compute_loss(p, targets, model, ni=None):  # predictions, targets, model, number of iter
     device = targets.device
     lcls, lbox, lobj = torch.zeros(1, device=device), torch.zeros(1, device=device), torch.zeros(1, device=device)
     tcls, tbox, indices, anchors = build_targets(p, targets, model)  # targets
@@ -120,7 +120,26 @@ def compute_loss(p, targets, model):  # predictions, targets, model
             pxy = ps[:, :2].sigmoid() * 2. - 0.5
             pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anchors[i]
             pbox = torch.cat((pxy, pwh), 1)  # predicted box
-            iou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, CIoU=True)  # iou(prediction, target)
+
+            # Experimental: use regloss schedule (ARLoss(nonlinear): instabilities in early training)
+            if 'regloss_schedule' in h.keys():
+                loss_parameter = {
+                    "IoU": {},
+                    "DIoU": {"DIoU": True},
+                    "GIoU": {"GIoU": True},
+                    "CIoU": {"CIoU": True},
+                    "ARLoss_DIoU": {"DIoU": True, "ARLoss": h["arloss"]},
+                    "ARLoss_GIoU": {"GIoU": True, "ARLoss": h["arloss"]},
+                    "ARLoss_CIoU": {"CIoU": True, "ARLoss": h["arloss"]}
+                }
+                if ni < h['regloss_schedule'][1]:
+                    iou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, **loss_parameter[h["regloss_schedule"][0]])  # iou(prediction, target)
+                else:
+                    iou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, **loss_parameter[h["regloss_schedule"][2]])  # iou(prediction, target)
+            else:
+                iou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, CIoU=True,
+                               ARLoss=h.get("arloss", []))  # iou(prediction, target)
+
             lbox += (1.0 - iou).mean()  # iou loss
 
             # Objectness

@@ -31,3 +31,8 @@ flipud: 0.0  # image flip up-down (probability)
 fliplr: 0.5  # image flip left-right (probability)
 mosaic: 1.0  # image mosaic (probability)
 mixup: 0.0  # image mixup (probability)
+arloss: ["linear", 0.5] # parameters of area ratio loss [type:linear/nonlinear, alph: range 0-1] such as ["nonlinear",0.3]
+
+## loss schedule: ["name_loss",nepoch,"name_loss"],such as one stage(niter:[0-50)) use CIOU,two stage(niter:50-end) use ARLoss
+## name_loss: "IoU","DIoU","GIoU","CIoU","ARLoss_DIoU","ARLoss_GIoU","ARLoss_CIoU"
+# regloss_schedule: ["CIoU",100,"ARLoss_CIoU"]     # <----- use regloss_schedule by uncomment

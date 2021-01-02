@@ -185,7 +185,7 @@ def clip_coords(boxes, img_shape):
     boxes[:, 3].clamp_(0, img_shape[0])  # y2
 
 
-def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-9):
+def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, ARLoss=[], eps=1e-9):
     # Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
     box2 = box2.T
 
@@ -208,7 +208,23 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
     w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
     union = w1 * h1 + w2 * h2 - inter + eps
 
-    iou = inter / union
+
+    # Area Ratio Loss(experimental): proposed by greyman-seu(zhuyangkun@seu.edu.cn).
+    if ARLoss:
+        predict_area = w1 * h1 + eps
+        gt_area = w2 * h2 + eps
+
+        ARtype = ARLoss[0]
+        alph = ARLoss[1]
+
+        if ARtype == "linear":
+            iou = alph * (inter / gt_area) + (1 - alph)*(inter / predict_area)
+            # iou = alph * (inter / gt_area) + (1 - alph)*((inter+eps) / predict_area)
+        elif ARtype == "nonlinear":
+            iou = alph * (inter / gt_area) ** 2 + (1 - alph)*(inter / predict_area) ** 2
+    else:
+        iou = inter / union
+
     if GIoU or DIoU or CIoU:
         cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)  # convex (smallest enclosing box) width
         ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)  # convex height

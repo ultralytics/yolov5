@@ -215,6 +215,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
     # Model parameters
     hyp['cls'] *= nc / 80.  # scale coco-tuned hyp['cls'] to current dataset
+    if 'regloss_schedule' in hyp.keys():
+        assert len(hyp['regloss_schedule']) >= 3, 'should be [name_loss, nepoch, name_loss]'
+        hyp['regloss_schedule'][1] = round(hyp['regloss_schedule'][1] * nb)
     model.nc = nc  # attach number of classes to model
     model.hyp = hyp  # attach hyperparameters to model
     model.gr = 1.0  # iou loss ratio (obj_loss = 1.0 or iou)
@@ -287,7 +290,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             # Forward
             with amp.autocast(enabled=cuda):
                 pred = model(imgs)  # forward
-                loss, loss_items = compute_loss(pred, targets.to(device), model)  # loss scaled by batch_size
+                loss, loss_items = compute_loss(pred, targets.to(device), model, ni=ni)  # loss scaled by batch_size
                 if rank != -1:
                     loss *= opt.world_size  # gradient averaged between devices in DDP mode
 
@@ -335,6 +338,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
                 results, maps, times = test.test(opt.data,
+                                                 ni=ni,
                                                  batch_size=total_batch_size,
                                                  imgsz=imgsz_test,
                                                  model=ema.ema,
@@ -430,7 +434,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
+    parser.add_argument('--weights', type=str, default='', help='initial weights path') #yolov5s.pt
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
