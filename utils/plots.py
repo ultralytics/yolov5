@@ -190,6 +190,7 @@ def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=''):
     plt.xlim(0, epochs)
     plt.ylim(0)
     plt.savefig(Path(save_dir) / 'LR.png', dpi=200)
+    plt.close()
 
 
 def plot_test_txt():  # from utils.plots import *; plot_test()

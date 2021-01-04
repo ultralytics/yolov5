@@ -102,6 +102,11 @@ def clean_str(s):
     return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
 
 
+def one_cycle(y1=0.0, y2=1.0, steps=100):
+    # lambda function for sinusoidal ramp from y1 to y2
+    return lambda x: ((1 - math.cos(x * math.pi / steps)) / 2) * (y2 - y1) + y1
+
+
 def labels_to_class_weights(labels, nc=80):
     # Get class weights (inverse frequency) from training labels
     if labels[0] is None:  # no labels loaded
