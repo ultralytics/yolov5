@@ -31,7 +31,7 @@ from yolov5.utils.torch_utils import init_seeds, ModelEMA, select_device, inters
 logger = logging.getLogger(__name__)
 
 
-def train(hyp, opt, device, tb_writer=None):
+def train(hyp, opt, device, tb_writer=None, metric_weights=None):
     logger.info(f'Hyperparameters {hyp}')
     log_dir = Path(tb_writer.log_dir) if tb_writer else Path(opt.logdir) / 'evolve'  # logging directory
     wdir = str(log_dir / 'weights') + os.sep  # weights directory
@@ -340,7 +340,8 @@ def train(hyp, opt, device, tb_writer=None):
                     tb_writer.add_scalar(tag, x, epoch)
 
             # Update best mAP
-            fi = fitness(np.array(results).reshape(1, -1))  # fitness_i = weighted combination of [P, R, mAP, F1]
+            fi = fitness(np.array(results).reshape(1, -1),
+                         weights=metric_weights)  # fitness_i = weighted combination of [P, R, mAP, F1]
             if fi > best_fitness:
                 best_fitness = fi
 
