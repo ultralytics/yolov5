@@ -140,7 +140,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
     s = 3 / no  # output count scaling
     lbox *= h['box'] * s
-    lobj *= h['obj']  # * s * (1.4 if no == 4 else 1.)
+    lobj *= h['obj']
     lcls *= h['cls'] * s
     bs = tobj.shape[0]  # batch size
 
