@@ -644,7 +644,7 @@ def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
 
 
 def load_mosaic(self, index):
-    # loads images in a mosaic
+    # loads images in a 4-mosaic
 
     labels4 = []
     s = self.img_size
