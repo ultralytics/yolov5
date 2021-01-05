@@ -110,6 +110,7 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
         print('WARNING: Extremely small objects found. '
               '%g of %g labels are < 3 pixels in width or height.' % (i, len(wh0)))
     wh = wh0[(wh0 >= 2.0).any(1)]  # filter > 2 pixels
+    # wh = wh * (np.random.rand(wh.shape[0], 1) * 0.9 + 0.1)  # multiply by random scale 0-1
 
     # Kmeans calculation
     print('Running kmeans for %g anchors on %g points...' % (n, len(wh)))

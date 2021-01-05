@@ -281,6 +281,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     # Settings
     min_wh, max_wh = 2, 4096  # (pixels) minimum and maximum box width and height
     max_det = 300  # maximum number of detections per image
+    max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
     time_limit = 10.0  # seconds to quit after
     redundant = True  # require redundant detections
     multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
@@ -328,13 +329,12 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
         # if not torch.isfinite(x).all():
         #     x = x[torch.isfinite(x).all(1)]
 
-        # If none remain process next image
+        # Check shape
         n = x.shape[0]  # number of boxes
-        if not n:
+        if not n:  # no boxes
             continue
-
-        # Sort by confidence
-        # x = x[x[:, 4].argsort(descending=True)]
+        elif n > max_nms:  # excess boxes
+            x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence
 
         # Batched NMS
         c = x[:, 5:6] * (0 if agnostic else max_wh)  # classes
@@ -352,6 +352,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
 
         output[xi] = x[i]
         if (time.time() - t) > time_limit:
+            print(f'WARNING: NMS time limit {time_limit}s exceeded')
             break  # time limit exceeded
 
     return output

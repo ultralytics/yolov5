@@ -1,17 +1,13 @@
 import argparse
 import logging
-import math
 import sys
 from copy import deepcopy
 from pathlib import Path
 
-import torch
-import torch.nn as nn
-
 sys.path.append('./')  # to run '$ python *.py' files in subdirectories
 logger = logging.getLogger(__name__)
 
-from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, C3, Concat, NMS, autoShape
+from models.common import *
 from models.experimental import MixConv2d, CrossConv
 from utils.autoanchor import check_anchor_order
 from utils.general import make_divisible, check_file, set_logging
@@ -89,7 +85,7 @@ class Model(nn.Module):
         # Build strides, anchors
         m = self.model[-1]  # Detect()
         if isinstance(m, Detect):
-            s = 128  # 2x min stride
+            s = 256  # 2x min stride
             m.stride = torch.tensor([s / x.shape[-2] for x in self.forward(torch.zeros(1, ch, s, s))])  # forward
             m.anchors /= m.stride.view(-1, 1, 1)
             check_anchor_order(m)
@@ -109,7 +105,7 @@ class Model(nn.Module):
             f = [None, 3, None]  # flips (2-ud, 3-lr)
             y = []  # outputs
             for si, fi in zip(s, f):
-                xi = scale_img(x.flip(fi) if fi else x, si)
+                xi = scale_img(x.flip(fi) if fi else x, si, gs=int(self.stride.max()))
                 yi = self.forward_once(xi)[0]  # forward
                 # cv2.imwrite('img%g.jpg' % s, 255 * xi[0].numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
                 yi[..., :4] /= si  # de-scale
@@ -242,13 +238,17 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         elif m is nn.BatchNorm2d:
             args = [ch[f]]
         elif m is Concat:
-            c2 = sum([ch[-1 if x == -1 else x + 1] for x in f])
+            c2 = sum([ch[x if x < 0 else x + 1] for x in f])
         elif m is Detect:
             args.append([ch[x + 1] for x in f])
             if isinstance(args[1], int):  # number of anchors
                 args[1] = [list(range(args[1] * 2))] * len(f)
+        elif m is Contract:
+            c2 = ch[f if f < 0 else f + 1] * args[0] ** 2
+        elif m is Expand:
+            c2 = ch[f if f < 0 else f + 1] // args[0] ** 2
         else:
-            c2 = ch[f]
+            c2 = ch[f if f < 0 else f + 1]
 
         m_ = nn.Sequential(*[m(*args) for _ in range(n)]) if n > 1 else m(*args)  # module
         t = str(m)[8:-2].replace('__main__.', '')  # module type

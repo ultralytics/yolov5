@@ -104,6 +104,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     nbs = 64  # nominal batch size
     accumulate = max(round(nbs / total_batch_size), 1)  # accumulate loss before optimizing
     hyp['weight_decay'] *= total_batch_size * accumulate / nbs  # scale weight_decay
+    logger.info(f"Scaled weight_decay = {hyp['weight_decay']}")
 
     pg0, pg1, pg2 = [], [], []  # optimizer parameter groups
     for k, v in model.named_modules():
@@ -164,7 +165,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
         del ckpt, state_dict
 
     # Image sizes
-    gs = int(max(model.stride))  # grid size (max stride)
+    gs = int(model.stride.max())  # grid size (max stride)
+    nl = model.model[-1].nl  # number of detection layers (used for scaling hyp['obj'])
     imgsz, imgsz_test = [check_img_size(x, gs) for x in opt.img_size]  # verify imgsz are gs-multiples
 
     # DP mode
@@ -187,7 +189,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
                                             hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank,
                                             world_size=opt.world_size, workers=opt.workers,
-                                            image_weights=opt.image_weights)
+                                            image_weights=opt.image_weights, quad=opt.quad)
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
     nb = len(dataloader)  # number of batches
     assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (mlc, nc, opt.data, nc - 1)
@@ -214,7 +216,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
 
     # Model parameters
-    hyp['cls'] *= nc / 80.  # scale coco-tuned hyp['cls'] to current dataset
+    hyp['cls'] *= nc / 80.  # scale hyp['cls'] to class count
+    hyp['obj'] *= imgsz ** 2 / 640. ** 2 * 3. / nl  # scale hyp['obj'] to image size and output layers
     model.nc = nc  # attach number of classes to model
     model.hyp = hyp  # attach hyperparameters to model
     model.gr = 1.0  # iou loss ratio (obj_loss = 1.0 or iou)
@@ -290,6 +293,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 loss, loss_items = compute_loss(pred, targets.to(device), model)  # loss scaled by batch_size
                 if rank != -1:
                     loss *= opt.world_size  # gradient averaged between devices in DDP mode
+                if opt.quad:
+                    loss *= 4.
 
             # Backward
             scaler.scale(loss).backward()
@@ -458,10 +463,10 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='runs/train', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+    parser.add_argument('--quad', action='store_true', help='quad dataloader')
     opt = parser.parse_args()
 
     # Set DDP variables
-    opt.total_batch_size = opt.batch_size
     opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
     opt.global_rank = int(os.environ['RANK']) if 'RANK' in os.environ else -1
     set_logging(opt.global_rank)
@@ -486,6 +491,7 @@ if __name__ == '__main__':
         opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
 
     # DDP mode
+    opt.total_batch_size = opt.batch_size
     device = select_device(opt.device, batch_size=opt.batch_size)
     if opt.local_rank != -1:
         assert torch.cuda.device_count() > opt.local_rank
