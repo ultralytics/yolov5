@@ -28,7 +28,7 @@ from utils.autoanchor import check_anchors
 from utils.datasets import create_dataloader
 from utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds, \
     fitness, strip_optimizer, get_latest_run, check_dataset, check_file, check_git_status, check_img_size, \
-    print_mutation, set_logging, one_cycle
+    check_requirements, print_mutation, set_logging, one_cycle
 from utils.google_utils import attempt_download
 from utils.loss import compute_loss
 from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
@@ -472,6 +472,7 @@ if __name__ == '__main__':
     set_logging(opt.global_rank)
     if opt.global_rank in [-1, 0]:
         check_git_status()
+        check_requirements()
 
     # Resume
     if opt.resume:  # resume an interrupted run
