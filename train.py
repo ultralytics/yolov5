@@ -134,10 +134,11 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     # Logging
     if rank in [-1, 0] and wandb and wandb.run is None:
         opt.hyp = hyp  # add hyperparameters
+        wandb_ID = wandb.util.generate_id()
         wandb_run = wandb.init(config=opt, resume="allow",
                                project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
                                name=save_dir.stem,
-                               id=ckpt.get('wandb_id') if 'ckpt' in locals() else None)
+                               id=wandb_ID)
     loggers = {'wandb': wandb}  # loggers dict
 
     # Resume
