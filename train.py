@@ -134,7 +134,13 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     # Logging
     if rank in [-1, 0] and wandb and wandb.run is None:
         opt.hyp = hyp  # add hyperparameters
-        wandb_ID = wandb.util.generate_id()
+        
+        # check whether wandb_ID is unique
+        temp_ID = ckpt.get('wandb_id') if 'ckpt' in locals() else None
+        if temp_ID == '3hdht16b':
+                wandb_ID = wandb.util.generate_id()
+        else:
+                wandb_ID = temp_ID
         wandb_run = wandb.init(config=opt, resume="allow",
                                project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
                                name=save_dir.stem,
