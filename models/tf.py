@@ -63,11 +63,13 @@ class tf_Conv(keras.layers.Layer):
         self.conv = conv if s == 1 else keras.Sequential([tf_Pad(autopad(k, p)), conv])
         self.bn = tf_BN(w.bn) if hasattr(w, 'bn') else tf.identity
 
-        # YOLOv5 v3 uses Hardswish for activations
+        # YOLOv5 activations
         if isinstance(w.act, nn.LeakyReLU):
             self.act = (lambda x: keras.activations.relu(x, alpha=0.1)) if act else tf.identity
         elif isinstance(w.act, nn.Hardswish):
             self.act = (lambda x: x * tf.nn.relu6(x + 3) * 0.166666667) if act else tf.identity
+        elif isinstance(w.act, nn.SiLU):
+            self.act = (lambda x: keras.activations.swish(x)) if act else tf.identity
 
     def call(self, inputs):
         return self.act(self.bn(self.conv(inputs)))
@@ -133,6 +135,21 @@ class tf_BottleneckCSP(keras.layers.Layer):
         y1 = self.cv3(self.m(self.cv1(inputs)))
         y2 = self.cv2(inputs)
         return self.cv4(self.act(self.bn(tf.concat((y1, y2), axis=3))))
+
+
+class tf_C3(keras.layers.Layer):
+    # CSP Bottleneck with 3 convolutions
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, w=None):
+        # ch_in, ch_out, number, shortcut, groups, expansion
+        super(tf_C3, self).__init__()
+        c_ = int(c2 * e)  # hidden channels
+        self.cv1 = tf_Conv(c1, c_, 1, 1, w=w.cv1)
+        self.cv2 = tf_Conv(c1, c_, 1, 1, w=w.cv2)
+        self.cv3 = tf_Conv(2 * c_, c2, 1, 1, w=w.cv3)
+        self.m = keras.Sequential([tf_Bottleneck(c_, c_, shortcut, g, e=1.0, w=w.m[j]) for j in range(n)])
+
+    def call(self, inputs):
+        return self.cv3(tf.concat((self.m(self.cv1(inputs)), self.cv2(inputs)), axis=3))
 
 
 class tf_SPP(keras.layers.Layer):
