@@ -165,7 +165,7 @@ public class YoloV5Classifier implements Classifier {
 
     @Override
     public void setUseNNAPI(boolean isChecked) {
-        if (tfLite != null) tfLite.setUseNNAPI(isChecked);
+//        if (tfLite != null) tfLite.setUseNNAPI(isChecked);
     }
 
     private void recreateInterpreter() {
