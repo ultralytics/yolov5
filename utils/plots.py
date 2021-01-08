@@ -246,7 +246,7 @@ def plot_study_txt(path='study/', x=None):  # from utils.plots import *; plot_st
 
     ax2.grid()
     ax2.set_xlim(0, 30)
-    ax2.set_ylim(28, 50)
+    ax2.set_ylim(29, 51)
     ax2.set_yticks(np.arange(30, 55, 5))
     ax2.set_xlabel('GPU Speed (ms/img)')
     ax2.set_ylabel('COCO AP val')

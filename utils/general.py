@@ -53,6 +53,14 @@ def check_git_status():
             print(s[s.find('Your branch is behind'):s.find('\n\n')] + '\n')
 
 
+def check_requirements(file='requirements.txt'):
+    # Check installed dependencies meet requirements
+    import pkg_resources
+    requirements = pkg_resources.parse_requirements(Path(file).open())
+    requirements = [x.name + ''.join(*x.specs) if len(x.specs) else x.name for x in requirements]
+    pkg_resources.require(requirements)  # DistributionNotFound or VersionConflict exception if requirements not met
+
+
 def check_img_size(img_size, s=32):
     # Verify img_size is a multiple of stride s
     new_size = make_divisible(img_size, int(s))  # ceil gs-multiple
@@ -361,8 +369,8 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
 def strip_optimizer(f='weights/best.pt', s=''):  # from utils.general import *; strip_optimizer()
     # Strip optimizer from 'f' to finalize training, optionally save as 's'
     x = torch.load(f, map_location=torch.device('cpu'))
-    x['optimizer'] = None
-    x['training_results'] = None
+    for key in 'optimizer', 'training_results', 'wandb_id':
+        x[key] = None
     x['epoch'] = -1
     x['model'].half()  # to FP16
     for p in x['model'].parameters():
