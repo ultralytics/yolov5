@@ -36,8 +36,12 @@ def detect(save_img=False):
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
+    with open('data/coco.yaml') as f:
+        names = yaml.load(f, Loader=yaml.FullLoader)['names']  # class names (assume COCO)
+
     if weights[0].split('.')[-1] == 'pt':
         backend = 'pytorch'
+        names = model.module.names if hasattr(model, 'module') else model.names  # class names
     elif weights[0].split('.')[-1] == 'pb':
         backend = 'graph_def'
     elif weights[0].split('.')[-1] == 'tflite':
@@ -231,13 +235,12 @@ def detect(save_img=False):
                 output_data = interpreter.get_tensor(output_details[0]['index'])
                 pred = torch.tensor(output_data)
             else:
-                import yaml
                 yaml_file = Path(opt.cfg).name
                 with open(opt.cfg) as f:
-                    yaml = yaml.load(f, Loader=yaml.FullLoader)
+                    cfg = yaml.load(f, Loader=yaml.FullLoader)
 
-                anchors = yaml['anchors']
-                nc = yaml['nc']
+                anchors = cfg['anchors']
+                nc = cfg['nc']
                 nl = len(anchors)
                 x = [torch.tensor(interpreter.get_tensor(output_details[i]['index']), device=device) for i in range(nl)]
                 if opt.tfl_int8:
