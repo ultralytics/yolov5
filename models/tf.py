@@ -201,8 +201,8 @@ class tf_Detect(keras.layers.Layer):
                 xy = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
                 wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]
                 # Normalize xywh to 0-1 to reduce calibration error
-                xy /= tf.constant([[opt.img_size[1], opt.img_size[0]]], dtype=tf.float32)
-                wh /= tf.constant([[opt.img_size[1], opt.img_size[0]]], dtype=tf.float32)
+                # xy /= tf.constant([[opt.img_size[1], opt.img_size[0]]], dtype=tf.float32)
+                # wh /= tf.constant([[opt.img_size[1], opt.img_size[0]]], dtype=tf.float32)
                 y = tf.concat([xy, wh, y[..., 4:]], -1)
                 z.append(tf.reshape(y, [opt.batch_size, 3 * ny * nx, self.no]))
 
@@ -325,7 +325,7 @@ class tf_Model():
                 boxes, scores, opt.topk_per_class, opt.topk_all, opt.iou_thres, opt.score_thres, clip_boxes=False)
             return nms, x[1]
 
-        return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
+        return x  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
         # x = x[0][0]  # [x(1,6300,85), ...] to x(6300,85)
         # xywh = x[..., :4]  # x(6300,4) boxes
         # conf = x[..., 4:5]  # x(6300,1) confidences
