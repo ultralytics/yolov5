@@ -216,8 +216,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
 
     # Model parameters
-    hyp['cls'] *= nc / 80.  # scale hyp['cls'] to class count
-    hyp['obj'] *= imgsz ** 2 / 640. ** 2 * 3. / nl  # scale hyp['obj'] to image size and output layers
+    hyp['box'] *= 3. / nl  # scale to layers
+    hyp['cls'] *= nc / 80. * 3. / nl  # scale to classes and layers
+    hyp['obj'] *= (imgsz / 640) ** 2 * 3. / nl  # scale to image size and layers
     model.nc = nc  # attach number of classes to model
     model.hyp = hyp  # attach hyperparameters to model
     model.gr = 1.0  # iou loss ratio (obj_loss = 1.0 or iou)

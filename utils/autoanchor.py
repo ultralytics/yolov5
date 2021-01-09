@@ -6,6 +6,8 @@ import yaml
 from scipy.cluster.vq import kmeans
 from tqdm import tqdm
 
+from utils.general import colorstr
+
 
 def check_anchor_order(m):
     # Check anchor order against stride order for YOLOv5 Detect() module m, and correct if necessary
@@ -20,7 +22,8 @@ def check_anchor_order(m):
 
 def check_anchors(dataset, model, thr=4.0, imgsz=640):
     # Check anchor fit to data, recompute if necessary
-    print('\nAnalyzing anchors... ', end='')
+    prefix = colorstr('blue', 'bold', 'autoanchor') + ': '
+    print(f'\n{prefix}Analyzing anchors... ', end='')
     m = model.module.model[-1] if hasattr(model, 'module') else model.model[-1]  # Detect()
     shapes = imgsz * dataset.shapes / dataset.shapes.max(1, keepdims=True)
     scale = np.random.uniform(0.9, 1.1, size=(shapes.shape[0], 1))  # augment scale
@@ -35,7 +38,7 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
         return bpr, aat
 
     bpr, aat = metric(m.anchor_grid.clone().cpu().view(-1, 2))
-    print('anchors/target = %.2f, Best Possible Recall (BPR) = %.4f' % (aat, bpr), end='')
+    print(f'anchors/target = {aat:.2f}, Best Possible Recall (BPR) = {bpr:.4f}', end='')
     if bpr < 0.98:  # threshold to recompute
         print('. Attempting to improve anchors, please wait...')
         na = m.anchor_grid.numel() // 2  # number of anchors
@@ -46,9 +49,9 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
             m.anchor_grid[:] = new_anchors.clone().view_as(m.anchor_grid)  # for inference
             m.anchors[:] = new_anchors.clone().view_as(m.anchors) / m.stride.to(m.anchors.device).view(-1, 1, 1)  # loss
             check_anchor_order(m)
-            print('New anchors saved to model. Update model *.yaml to use these anchors in the future.')
+            print(f'{prefix}New anchors saved to model. Update model *.yaml to use these anchors in the future.')
         else:
-            print('Original anchors better than new anchors. Proceeding with original anchors.')
+            print(f'{prefix}Original anchors better than new anchors. Proceeding with original anchors.')
     print('')  # newline
 
 
@@ -70,6 +73,7 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
             from utils.autoanchor import *; _ = kmean_anchors()
     """
     thr = 1. / thr
+    prefix = colorstr('blue', 'bold', 'autoanchor') + ': '
 
     def metric(k, wh):  # compute metrics
         r = wh[:, None] / k[None]
@@ -85,9 +89,9 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
         k = k[np.argsort(k.prod(1))]  # sort small to large
         x, best = metric(k, wh0)
         bpr, aat = (best > thr).float().mean(), (x > thr).float().mean() * n  # best possible recall, anch > thr
-        print('thr=%.2f: %.4f best possible recall, %.2f anchors past thr' % (thr, bpr, aat))
-        print('n=%g, img_size=%s, metric_all=%.3f/%.3f-mean/best, past_thr=%.3f-mean: ' %
-              (n, img_size, x.mean(), best.mean(), x[x > thr].mean()), end='')
+        print(f'{prefix}thr={thr:.2f}: {bpr:.4f} best possible recall, {aat:.2f} anchors past thr')
+        print(f'{prefix}n={n}, img_size={img_size}, metric_all={x.mean():.3f}/{best.mean():.3f}-mean/best, '
+              f'past_thr={x[x > thr].mean():.3f}-mean: ', end='')
         for i, x in enumerate(k):
             print('%i,%i' % (round(x[0]), round(x[1])), end=',  ' if i < len(k) - 1 else '\n')  # use in *.cfg
         return k
@@ -107,13 +111,12 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
     # Filter
     i = (wh0 < 3.0).any(1).sum()
     if i:
-        print('WARNING: Extremely small objects found. '
-              '%g of %g labels are < 3 pixels in width or height.' % (i, len(wh0)))
+        print(f'{prefix}WARNING: Extremely small objects found. {i} of {len(wh0)} labels are < 3 pixels in size.')
     wh = wh0[(wh0 >= 2.0).any(1)]  # filter > 2 pixels
     # wh = wh * (np.random.rand(wh.shape[0], 1) * 0.9 + 0.1)  # multiply by random scale 0-1
 
     # Kmeans calculation
-    print('Running kmeans for %g anchors on %g points...' % (n, len(wh)))
+    print(f'{prefix}Running kmeans for {n} anchors on {len(wh)} points...')
     s = wh.std(0)  # sigmas for whitening
     k, dist = kmeans(wh / s, n, iter=30)  # points, mean distance
     k *= s
@@ -136,7 +139,7 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
     # Evolve
     npr = np.random
     f, sh, mp, s = anchor_fitness(k), k.shape, 0.9, 0.1  # fitness, generations, mutation prob, sigma
-    pbar = tqdm(range(gen), desc='Evolving anchors with Genetic Algorithm')  # progress bar
+    pbar = tqdm(range(gen), desc=f'{prefix}Evolving anchors with Genetic Algorithm:')  # progress bar
     for _ in pbar:
         v = np.ones(sh)
         while (v == 1).all():  # mutate until a change occurs (prevent duplicates)
@@ -145,7 +148,7 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
         fg = anchor_fitness(kg)
         if fg > f:
             f, k = fg, kg.copy()
-            pbar.desc = 'Evolving anchors with Genetic Algorithm: fitness = %.4f' % f
+            pbar.desc = f'{prefix}Evolving anchors with Genetic Algorithm: fitness = {f:.4f}'
             if verbose:
                 print_results(k)
 
