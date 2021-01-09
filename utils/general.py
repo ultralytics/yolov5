@@ -115,8 +115,8 @@ def one_cycle(y1=0.0, y2=1.0, steps=100):
     return lambda x: ((1 - math.cos(x * math.pi / steps)) / 2) * (y2 - y1) + y1
 
 
-def colorful(*input):
-    # Colors a string https://en.wikipedia.org/wiki/ANSI_escape_code, i.e.  colorful('blue', 'hello world')
+def colorstr(*input):
+    # Colors a string https://en.wikipedia.org/wiki/ANSI_escape_code, i.e.  colorstr('blue', 'hello world')
     *prefix, str = input  # color arguments, string
     colors = {'black': '\033[30m',  # basic colors
               'red': '\033[31m',
