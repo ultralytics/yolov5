@@ -105,7 +105,6 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
     # Losses
     nt = 0  # number of targets
-    no = len(p)  # number of outputs
     balance = [4.0, 1.0, 0.3, 0.1, 0.03]  # P3-P7
     for i, pi in enumerate(p):  # layer index, layer predictions
         b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
@@ -138,10 +137,9 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
         lobj += BCEobj(pi[..., 4], tobj) * balance[i]  # obj loss
 
-    s = 3 / no  # output count scaling
-    lbox *= h['box'] * s
+    lbox *= h['box']
     lobj *= h['obj']
-    lcls *= h['cls'] * s
+    lcls *= h['cls']
     bs = tobj.shape[0]  # batch size
 
     loss = lbox + lobj + lcls
