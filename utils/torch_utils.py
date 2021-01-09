@@ -61,9 +61,9 @@ def select_device(device='', batch_size=None):
             p = torch.cuda.get_device_properties(i)
             s += f"{'' if i == 0 else space}CUDA:{d} ({p.name}, {p.total_memory / 1024 ** 2}MB)\n"  # bytes to MB
     else:
-        s += 'CPU'
+        s += 'CPU\n'
 
-    logger.info(f'{s}\n')  # skip a line
+    logger.info(s)  # skip a line
     return torch.device('cuda:0' if cuda else 'cpu')
 
 
