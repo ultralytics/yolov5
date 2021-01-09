@@ -3,9 +3,11 @@
 import logging
 import math
 import os
+import subprocess
 import time
 from contextlib import contextmanager
 from copy import deepcopy
+from pathlib import Path
 
 import torch
 import torch.backends.cudnn as cudnn
@@ -41,9 +43,17 @@ def init_torch_seeds(seed=0):
         cudnn.benchmark, cudnn.deterministic = True, False
 
 
+def git_describe():
+    # return human-readable git description, i.e. v5.0-5-g3e25f1e https://git-scm.com/docs/git-describe
+    if Path('.git').exists():
+        return subprocess.check_output('git describe --tags --long', shell=True).decode('utf-8')[:-1]
+    else:
+        return ''
+
+
 def select_device(device='', batch_size=None):
     # device = 'cpu' or '0' or '0,1,2,3'
-    s = f'Using torch {torch.__version__} '  # string
+    s = f'YOLOv5 {git_describe()} torch {torch.__version__} '  # string
     cpu = device.lower() == 'cpu'
     if cpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force torch.cuda.is_available() = False
