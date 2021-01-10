@@ -44,6 +44,7 @@ def attempt_download(file):
                 if not file.exists() or file.stat().st_size < 1E6:  # check
                     file.unlink(missing_ok=True)  # remove partial downloads
                     print(f'ERROR: Download failure: {msg}')
+                print('')
                 return
 
 
