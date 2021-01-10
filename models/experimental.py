@@ -2,7 +2,7 @@
 
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn
 
 from models.common import Conv, DWConv
 from utils.google_utils import attempt_download
@@ -34,7 +34,7 @@ class CrossConv(nn.Module):
         self.add = shortcut and c1 == c2
 
     def forward(self, x):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -47,12 +47,20 @@ class CrossConv(nn.Module):
 
 class Sum(nn.Module):
     """Weighted sum of 2 or more layers.
+
      https://arxiv.org/abs/1911.09070
 
     Args:
         nn (module): torch.nn
     """
+
     def __init__(self, n, weight=False):  # n: number of inputs
+        """Init.
+
+        Args:
+            n ([type]): [description]
+            weight (bool, optional): [description]. Defaults to False.
+        """
         super(Sum, self).__init__()
         self.weight = weight  # apply weights boolean
         self.iter = range(n - 1)  # iter object
@@ -60,7 +68,7 @@ class Sum(nn.Module):
             self.w = nn.Parameter(-torch.arange(1., n) / 2, requires_grad=True)  # layer weights
 
     def forward(self, x):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -81,6 +89,7 @@ class Sum(nn.Module):
 
 class GhostConv(nn.Module):
     """Ghost Convolution.
+
         https://github.com/huawei-noah/ghostnet
 
     Args:
@@ -107,7 +116,7 @@ class GhostConv(nn.Module):
         self.cv2 = Conv(c_, c_, 5, 1, None, c_, act)
 
     def forward(self, x):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -127,7 +136,16 @@ class GhostBottleneck(nn.Module):
     Args:
         nn (module): torch.nn
     """
+
     def __init__(self, c1, c2, k, s):
+        """Init.
+
+        Args:
+            c1 ([type]): [description]
+            c2 ([type]): [description]
+            k ([type]): [description]
+            s ([type]): [description]
+        """
         super(GhostBottleneck, self).__init__()
         c_ = c2 // 2
         self.conv = nn.Sequential(GhostConv(c1, c_, 1, 1),  # pw
@@ -137,7 +155,7 @@ class GhostBottleneck(nn.Module):
                                       Conv(c1, c2, 1, 1, act=False)) if s == 2 else nn.Identity()
 
     def forward(self, x):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -149,13 +167,24 @@ class GhostBottleneck(nn.Module):
 
 
 class MixConv2d(nn.Module):
-    """Mixed Depthwise Conv 
+    """Mixed Depthwise Conv.
+
         https://arxiv.org/abs/1907.09595
 
     Args:
         nn (module): torch.nn
     """
+
     def __init__(self, c1, c2, k=(1, 3), s=1, equal_ch=True):
+        """Init.
+
+        Args:
+            c1 ([type]): [description]
+            c2 ([type]): [description]
+            k (tuple, optional): [description]. Defaults to (1, 3).
+            s (int, optional): [description]. Defaults to 1.
+            equal_ch (bool, optional): [description]. Defaults to True.
+        """
         super(MixConv2d, self).__init__()
         groups = len(k)
         if equal_ch:  # equal c_ per group
@@ -174,7 +203,7 @@ class MixConv2d(nn.Module):
         self.act = nn.LeakyReLU(0.1, inplace=True)
 
     def forward(self, x):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -193,12 +222,11 @@ class Ensemble(nn.ModuleList):
     """
 
     def __init__(self):
-        """Init.
-        """
+        """Init."""
         super(Ensemble, self).__init__()
 
     def forward(self, x, augment=False):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -217,7 +245,7 @@ class Ensemble(nn.ModuleList):
 
 
 def attempt_load(weights, map_location=None):
-    """Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a.
+    """Load an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a.
 
     Args:
         weights ([type]): [description]

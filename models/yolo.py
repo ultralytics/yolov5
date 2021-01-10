@@ -1,5 +1,4 @@
-    """Yolo Detect and Model
-    """
+"""Yolo Detect and Model."""
 import argparse
 import logging
 import sys
@@ -23,13 +22,10 @@ except ImportError:
 
 
 class Detect(nn.Module):
-    """[summary]
+    """Detect.
 
     Args:
         nn (module): torch.nn
-
-    Returns:
-        [type]: [description]
     """
 
     stride = None  # strides computed during build
@@ -56,7 +52,7 @@ class Detect(nn.Module):
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
 
     def forward(self, x):
-        """[summary]
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -85,21 +81,21 @@ class Detect(nn.Module):
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
-        """[summary]
+        """Make Mesh Grid
 
         Args:
-            nx (int, optional): [description]. Defaults to 20.
-            ny (int, optional): [description]. Defaults to 20.
+            nx (int, optional): The ending value for the set of points for x. Defaults to 20.
+            ny (int, optional): The ending value for the set of points for y. Defaults to 20.
 
         Returns:
-            [type]: [description]
+            float: Concatenated sequence of tensors as float.
         """
         yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
         return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
 
 
 class Model(nn.Module):
-    """[summary]
+    """Model.
 
     Args:
         nn (module): torch.nn
@@ -108,8 +104,8 @@ class Model(nn.Module):
         """Init.
 
         Args:
-            cfg (str, optional): [description]. Defaults to 'yolov5s.yaml'.
-            ch (int, optional): [description]. Defaults to 3.
+            cfg (str, optional): Model definition in yaml format. Defaults to 'yolov5s.yaml'.
+            ch (int, optional): Channel. Defaults to 3.
             nc ([type], optional): [description]. Defaults to None.
         """
         # model, input channels, number of classes
@@ -148,7 +144,7 @@ class Model(nn.Module):
         logger.info('')
 
     def forward(self, x, augment=False, profile=False):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -291,7 +287,7 @@ def parse_model(d, ch):
 
     Args:
         d ([type]): [description]
-        ch ([type]): [description]
+        ch (int): Channel
     """
     logger.info('\n%3s%18s%3s%10s  %-40s%-30s' % ('', 'from', 'n', 'params', 'module', 'arguments'))
     anchors, nc, gd, gw = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple']

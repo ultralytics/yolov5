@@ -1,4 +1,4 @@
-# Loss functions
+"""Loss functions."""
 
 import torch
 import torch.nn as nn
@@ -7,8 +7,8 @@ from utils.general import bbox_iou
 from utils.torch_utils import is_parallel
 
 
-def smooth_BCE(eps=0.1):
-    """[summary]
+def smooth_BCE(eps=0.1):  # noqa N802
+    """Smooth BCE.
 
         https://github.com/ultralytics/yolov3/issues/238#issuecomment-598028441
 
@@ -17,7 +17,6 @@ def smooth_BCE(eps=0.1):
 
     Returns:
         positive, negative label smoothing BCE targets
-    
     """
     return 1.0 - 0.5 * eps, 0.5 * eps
 
@@ -33,7 +32,7 @@ class BCEBlurWithLogitsLoss(nn.Module):
     """
 
     def __init__(self, alpha=0.05):
-        """[summary]
+        """Init.
 
         Args:
             alpha (float, optional): [description]. Defaults to 0.05.
@@ -43,7 +42,7 @@ class BCEBlurWithLogitsLoss(nn.Module):
         self.alpha = alpha
 
     def forward(self, pred, true):
-        """[summary]
+        """Forward propagation.
 
         Args:
             pred ([type]): [description]
@@ -63,7 +62,7 @@ class BCEBlurWithLogitsLoss(nn.Module):
 
 class FocalLoss(nn.Module):
     """Wraps focal loss around existing loss_fcn().
-    
+
     Example: criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
 
     Args:
@@ -74,7 +73,7 @@ class FocalLoss(nn.Module):
     """
 
     def __init__(self, loss_fcn, gamma=1.5, alpha=0.25):
-        """[summary]
+        """Init.
 
         Args:
             loss_fcn ([type]): [description]
@@ -89,7 +88,7 @@ class FocalLoss(nn.Module):
         self.loss_fcn.reduction = 'none'  # required to apply FL to each element
 
     def forward(self, pred, true):
-        """[summary]
+        """Forward propagation.
 
         Args:
             pred ([type]): [description]
@@ -113,22 +112,21 @@ class FocalLoss(nn.Module):
             return loss.mean()
         elif self.reduction == 'sum':
             return loss.sum()
-        else:  # 'none'
-            return loss
+        return loss
 
 
 class QFocalLoss(nn.Module):
-    """Wraps Quality focal loss around existing loss_fcn(), i.e. criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
+    """Wraps Quality focal loss around existing loss_fcn().
+    
+    Example:
+        criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
 
     Args:
         nn (module): torch.nn
-
-    Returns:
-        [type]: [description]
     """
 
     def __init__(self, loss_fcn, gamma=1.5, alpha=0.25):
-        """[summary]
+        """Init.
 
         Args:
             loss_fcn ([type]): [description]
@@ -143,7 +141,7 @@ class QFocalLoss(nn.Module):
         self.loss_fcn.reduction = 'none'  # required to apply FL to each element
 
     def forward(self, pred, true):
-        """[summary]
+        """Forward propagation.
 
         Args:
             pred ([type]): [description]
@@ -167,13 +165,16 @@ class QFocalLoss(nn.Module):
             return loss
 
 
-def compute_loss(p, targets, model):  # predictions, targets, model
-    """[summary]
+def compute_loss(p, targets, model):
+    """Compute loss.
+
+    Example:
+        compute_loss(predictions, targets, model)
 
     Args:
-        p ([type]): [description]
-        targets ([type]): [description]
-        model ([type]): [description]
+        p ([type]): Predictions.
+        targets ([type]): Targets.
+        model ([type]): Model.
 
     Returns:
         [type]: [description]
@@ -184,8 +185,8 @@ def compute_loss(p, targets, model):  # predictions, targets, model
     h = model.hyp  # hyperparameters
 
     # Define criteria
-    BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['cls_pw']], device=device))  # weight=model.class_weights)
-    BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['obj_pw']], device=device))
+    BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['cls_pw']], device=device))  # weight=model.class_weights)  # noqa N806
+    BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['obj_pw']], device=device))  # noqa N806
 
     # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
     cp, cn = smooth_BCE(eps=0.0)
@@ -193,11 +194,11 @@ def compute_loss(p, targets, model):  # predictions, targets, model
     # Focal loss
     g = h['fl_gamma']  # focal loss gamma
     if g > 0:
-        BCEcls, BCEobj = FocalLoss(BCEcls, g), FocalLoss(BCEobj, g)
+        BCEcls, BCEobj = FocalLoss(BCEcls, g), FocalLoss(BCEobj, g)  # noqa N806
 
     # Losses
     nt = 0  # number of targets
-    balance = [4.0, 1.0, 0.3, 0.1, 0.03]  # P3-P7
+    balance = [4.0, 1.0, 0.3, 0.1, 0.03]  # P3-P7 # noqa SC100
     for i, pi in enumerate(p):  # layer index, layer predictions
         b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
         tobj = torch.zeros_like(pi[..., 0], device=device)  # target obj

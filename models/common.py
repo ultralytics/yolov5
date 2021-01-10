@@ -70,7 +70,7 @@ class Conv(nn.Module):
         self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
 
     def forward(self, x):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -119,7 +119,7 @@ class Bottleneck(nn.Module):
         self.add = shortcut and c1 == c2
 
     def forward(self, x):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -137,9 +137,6 @@ class BottleneckCSP(nn.Module):
 
     Args:
         nn (module): torch.nn
-
-    Returns:
-        [type]: [description]
     """
 
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
@@ -164,7 +161,7 @@ class BottleneckCSP(nn.Module):
         self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)])
 
     def forward(self, x):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -182,9 +179,6 @@ class C3(nn.Module):
 
     Args:
         nn (module): torch.nn
-
-    Returns:
-        [type]: [description]
     """
 
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
@@ -207,7 +201,7 @@ class C3(nn.Module):
         # self.m = nn.Sequential(*[CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)])
 
     def forward(self, x):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -223,9 +217,6 @@ class SPP(nn.Module):
 
     Args:
         nn (module): torch.nn
-
-    Returns:
-        [type]: [description]
     """
 
     def __init__(self, c1, c2, k=(5, 9, 13)):
@@ -243,7 +234,7 @@ class SPP(nn.Module):
         self.m = nn.ModuleList([nn.MaxPool2d(kernel_size=x, stride=1, padding=x // 2) for x in k])
 
     def forward(self, x):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -260,9 +251,6 @@ class Focus(nn.Module):
 
     Args:
         nn (module): torch.nn
-
-    Returns:
-        [type]: [description]
     """
 
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):
@@ -281,7 +269,7 @@ class Focus(nn.Module):
         self.conv = Conv(c1 * 4, c2, k, s, p, g, act)
 
     def forward(self, x):
-        """Forward.
+        """Forward Propagation.
 
         Example: x(b,c,w,h) -> y(b,4c,w/2,h/2)
 
@@ -297,8 +285,13 @@ class Focus(nn.Module):
 
 
 class Contract(nn.Module):
-    # Contract width-height into channels, i.e. x(1,64,80,80) to x(1,256,40,40)
+    """Contract width-height into channels.
+
+        Example: i.e. x(1,64,80,80) to x(1,256,40,40)
+    """
+
     def __init__(self, gain=2):
+        """Init."""
         super().__init__()
         self.gain = gain
 
@@ -311,18 +304,34 @@ class Contract(nn.Module):
 
 
 class Expand(nn.Module):
-    # Expand channels into width-height, i.e. x(1,64,80,80) to x(1,16,160,160)
+    """Expand channels into width-height.
+
+        Args:
+            nn (module): torch.nn
+
+        Example:
+            x(1,64,80,80) to x(1,16,160,160)
+    """
+
     def __init__(self, gain=2):
+        """Init."""
         super().__init__()
         self.gain = gain
 
     def forward(self, x):
+        """Forward Propagation.
+
+        Args:
+            x ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
         N, C, H, W = x.size()  # assert C / s ** 2 == 0, 'Indivisible gain'
         s = self.gain
         x = x.view(N, s, s, C // s ** 2, H, W)  # x(1,2,2,16,80,80)
         x = x.permute(0, 3, 4, 1, 5, 2).contiguous()  # x(1,16,80,2,80,2)
         return x.view(N, C // s ** 2, H * s, W * s)  # x(1,16,160,160)
-
 
 
 class Concat(nn.Module):
@@ -344,7 +353,7 @@ class Concat(nn.Module):
         self.d = dimension
 
     def forward(self, x):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -360,9 +369,6 @@ class NMS(nn.Module):
 
     Args:
         nn (module): torch.nn
-
-    Returns:
-        [type]: [description]
     """
     conf = 0.25  # confidence threshold
     iou = 0.45  # IoU threshold
@@ -373,7 +379,7 @@ class NMS(nn.Module):
         super(NMS, self).__init__()
 
     def forward(self, x):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -384,14 +390,11 @@ class NMS(nn.Module):
         return non_max_suppression(x[0], conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)
 
 
-class autoShape(nn.Module):    
-"""Input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS.
+class autoShape(nn.Module):
+    """Input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS.
 
     Args:
         nn (module): torch.nn
-
-    Returns:
-        [type]: [description]
     """
     img_size = 640  # inference size (pixels)
     conf = 0.25  # NMS confidence threshold
@@ -412,7 +415,7 @@ class autoShape(nn.Module):
         return self
 
     def forward(self, imgs, size=640, augment=False, profile=False):
-        """Forward.
+        """Forward Propagation.
 
         Supports inference from various sources. For height=720, width=1280, RGB images example inputs are:
            opencv:     imgs = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(720,1280,3)
@@ -468,11 +471,7 @@ class autoShape(nn.Module):
 
 
 class Detections:
-    """Detections class for YOLOv5 inference results.
-
-    Returns:
-        [type]: [description]
-    """
+    """Detections class for YOLOv5 inference results."""
 
     def __init__(self, imgs, pred, names=None):
         """Init.
@@ -564,14 +563,11 @@ class Flatten(nn.Module):
 
     Args:
         nn (module): torch.nn
-
-    Returns:
-        [type]: [description]
     """
 
     @staticmethod
     def forward(x):
-        """Forward.
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -589,9 +585,6 @@ class Classify(nn.Module):
 
     Args:
         nn (module): torch.nn
-
-    Returns:
-        [type]: [description]
     """
 
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1):
@@ -611,7 +604,7 @@ class Classify(nn.Module):
         self.flat = nn.Flatten()
 
     def forward(self, x):
-        """Forward.
+        """Forward Propagation.
 
             if list, concatenates the given sequence of seq tensors in the given dimension.
 

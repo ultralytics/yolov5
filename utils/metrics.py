@@ -1,8 +1,8 @@
-# Model validation metrics
+"""Model validation metrics."""
 
 from pathlib import Path
 
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 import numpy as np
 import torch
 
@@ -23,19 +23,22 @@ def fitness(x):
 
 
 def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='precision-recall_curve.png', names=[]):
-    """ Compute the average precision, given the recall and precision curves.
+    """Compute the average precision, given the recall and precision curves.
+
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
-    # Arguments
-        tp:  True positives (nparray, nx1 or nx10).
-        conf:  Objectness value from 0-1 (nparray).
-        pred_cls:  Predicted object classes (nparray).
-        target_cls:  True object classes (nparray).
-        plot:  Plot precision-recall curve at mAP@0.5
-        save_dir:  Plot save directory
-    # Returns
+
+    Args:
+        tp ([type]): True positives (nparray, nx1 or nx10).
+        conf ([type]): Objectness value from 0-1 (nparray).
+        pred_cls ([type]): Predicted object classes (nparray).
+        target_cls ([type]): True object classes (nparray).
+        plot (bool, optional): Plot precision-recall curve at mAP@0.5. Defaults to False.
+        save_dir (str, optional): Plot save directory. Defaults to 'precision-recall_curve.png'.
+        names (list, optional): [description]. Defaults to [].
+
+    Returns:
         The average precision as computed in py-faster-rcnn.
     """
-
     # Sort by objectness
     i = np.argsort(-conf)
     tp, conf, pred_cls = tp[i], conf[i], pred_cls[i]
@@ -84,14 +87,15 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='precision
 
 
 def compute_ap(recall, precision):
-    """ Compute the average precision, given the recall and precision curves
-    # Arguments
-        recall:    The recall curve (list)
-        precision: The precision curve (list)
-    # Returns
-        Average precision, precision curve, recall curve
-    """
+    """Compute the average precision, given the recall and precision curves.
 
+    Args:
+        recall ([type]):    The recall curve (list)
+        precision ([type]): The precision curve (list)
+
+    Returns:
+        [type]: Average precision, precision curve, recall curve
+    """
     # Append sentinel values to beginning and end
     mrec = np.concatenate(([0.], recall, [recall[-1] + 0.01]))
     mpre = np.concatenate(([1.], precision, [0.]))
@@ -113,10 +117,8 @@ def compute_ap(recall, precision):
 
 class ConfusionMatrix:
     """Confusion Matrix.
-        Updated version of https://github.com/kaanakan/object_detection_confusion_matrix
 
-    Returns:
-        [type]: [description]
+    Updated version of https://github.com/kaanakan/object_detection_confusion_matrix
     """
 
     def __init__(self, nc, conf=0.25, iou_thres=0.45):
@@ -127,20 +129,20 @@ class ConfusionMatrix:
             conf (float, optional): [description]. Defaults to 0.25.
             iou_thres (float, optional): [description]. Defaults to 0.45.
         """
-        self.matrix = np.zeros((nc + 1, nc + 1)) # type: ignore
+        self.matrix = np.zeros((nc + 1, nc + 1))  # type: ignore
         self.nc = nc  # number of classes
         self.conf = conf
         self.iou_thres = iou_thres
 
     def process_batch(self, detections, labels):
-        """
-        Return intersection-over-union (Jaccard index) of boxes.
+        """Return intersection-over-union (Jaccard index) of boxes.
+
         Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
-        Arguments:
-            detections (Array[N, 6]), x1, y1, x2, y2, conf, class
-            labels (Array[M, 5]), class, x1, y1, x2, y2
-        Returns:
-            None, updates confusion matrix accordingly
+        Updates confusion matrix accordingly.
+
+        Args:
+            detections (Array[N, 6]): x1, y1, x2, y2, conf, class
+            labels (Array[M, 5]): class, x1, y1, x2, y2
         """
         detections = detections[detections[:, 4] > self.conf]
         gt_classes = labels[:, 0].int()
@@ -202,12 +204,11 @@ class ConfusionMatrix:
             fig.axes[0].set_xlabel('True')
             fig.axes[0].set_ylabel('Predicted')
             fig.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
-        except Exception as e:
+        except Exception:
             pass
 
     def print(self):
-        """Print matrix.
-        """
+        """Print matrix."""
         for i in range(self.nc + 1):
             print(' '.join(map(str, self.matrix[i])))
 

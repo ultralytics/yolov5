@@ -1,4 +1,4 @@
-# Plotting utils
+"""Plotting utils."""
 
 import glob
 import math
@@ -9,7 +9,7 @@ from pathlib import Path
 
 import cv2
 import matplotlib
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -27,7 +27,8 @@ matplotlib.use('Agg')  # for writing to files only
 
 
 def color_list():
-    """ Return first 10 plt colors as (r,g,b).
+    """Return first 10 plt colors as (r,g,b).
+
         https://stackoverflow.com/questions/51350872/python-from-color-name-to-rgb
 
     Returns:
@@ -99,7 +100,7 @@ def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
 
 
 def plot_one_box(x, img, color=None, label=None, line_thickness=None):
-    """Plots one bounding box on image img.
+    """Plot one bounding box on image img.
 
     Args:
         x ([type]): [description]
@@ -108,7 +109,7 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None):
         label ([type], optional): [description]. Defaults to None.
         line_thickness ([type], optional): [description]. Defaults to None.
     """
-    tl = line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1  # line/font thickness
+    tl = line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1  # line/font thickness #noqa S311
     color = color or [random.randint(0, 255) for _ in range(3)]
     c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
     cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
@@ -301,7 +302,7 @@ def plot_targets_txt():
     """Plot targets.txt histograms.
 
        Example:
-        from utils.plots import *; plot_targets_txt()
+       from utils.plots import *; plot_targets_txt()
     """
     x = np.loadtxt('targets.txt', dtype=np.float32).T
     s = ['x targets', 'y targets', 'width targets', 'height targets']
@@ -510,7 +511,8 @@ def plot_results_overlay(start=0, stop=0):
 def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
     """Plot training 'results*.txt'.
 
-    Example: from utils.plots import *; plot_results(save_dir='runs/train/exp')
+    Example:
+        from utils.plots import *; plot_results(save_dir='runs/train/exp')
 
     Args:
         start (int, optional): [description]. Defaults to 0.
@@ -528,6 +530,7 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
         # files = ['https://storage.googleapis.com/%s/results%g.txt' % (bucket, x) for x in id]
         files = ['results%g.txt' % x for x in id]
         c = ('gsutil cp ' + '%s ' * len(files) + '.') % tuple('gs://%s/results%g.txt' % (bucket, x) for x in id)
+        # TODO Possible injection detected, security issue, S605
         os.system(c)
     else:
         files = list(Path(save_dir).glob('results*.txt'))

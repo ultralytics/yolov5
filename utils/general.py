@@ -1,4 +1,4 @@
-# General utils
+"""General utils."""
 
 import glob
 import logging
@@ -71,7 +71,11 @@ def check_git_status():
 
 
 def check_requirements(file='requirements.txt'):
-    # Check installed dependencies meet requirements
+    """Check installed dependencies meet requirements.
+
+    Args:
+        file (str, optional): [description]. Defaults to 'requirements.txt'.
+    """
     import pkg_resources
     requirements = pkg_resources.parse_requirements(Path(file).open())
     requirements = [x.name + ''.join(*x.specs) if len(x.specs) else x.name for x in requirements]
@@ -116,13 +120,10 @@ def check_dataset(dict):
     """Download dataset if not found locally.
 
     Args:
-        dict ([type]): [description]
+        dict (dict of str): [description]
 
     Raises:
-        Exception: [description]
-
-    Returns:
-        [type]: [description]
+        Exception: Dataset not found.
     """
     val, s = dict.get('val'), dict.get('download')
     if val and len(val):
@@ -143,11 +144,11 @@ def check_dataset(dict):
 
 
 def make_divisible(x, divisor):
-    """Returns x evenly divisible by divisor.
+    """Return x evenly divisible by divisor.
 
     Args:
-        x ([type]): [description]
-        divisor ([type]): [description]
+        x ([type]): x
+        divisor ([type]): Divisor.
 
     Returns:
         [type]: [description]
@@ -156,25 +157,45 @@ def make_divisible(x, divisor):
 
 
 def clean_str(s):
-    """Cleans a string by replacing special characters with underscore _
+    """Clean a string by replacing special characters with _ underscore.
 
     Args:
-        s ([type]): string
+        s (str): string
 
     Returns:
-        [type]: Clean string
+        str: Clean string
     """
     return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
 
 
 def one_cycle(y1=0.0, y2=1.0, steps=100):
-    # lambda function for sinusoidal ramp from y1 to y2
+    """Lambda function for sinusoidal ramp from y1 to y2.
+
+    Args:
+        y1 (float, optional): [description]. Defaults to 0.0.
+        y2 (float, optional): [description]. Defaults to 1.0.
+        steps (int, optional): [description]. Defaults to 100.
+
+    Returns:
+        [type]: [description]
+    """
     return lambda x: ((1 - math.cos(x * math.pi / steps)) / 2) * (y2 - y1) + y1
 
 
 def colorstr(*input):
-    # Colors a string https://en.wikipedia.org/wiki/ANSI_escape_code, i.e.  colorstr('blue', 'hello world')
-    *prefix, str = input  # color arguments, string
+    """Colors a string.
+
+    https://en.wikipedia.org/wiki/ANSI_escape_code
+
+    Args:
+        input (str): Color arguments.
+    Example:
+        colorstr('blue', 'hello world')
+
+    Returns:
+        [type]: [description]
+    """
+    *prefix, str = input
     colors = {'black': '\033[30m',  # basic colors
               'red': '\033[31m',
               'green': '\033[32m',
@@ -196,6 +217,7 @@ def colorstr(*input):
               'undelrine': '\033[4m'}
 
     return ''.join(colors[x] for x in prefix) + str + colors['end']
+
 
 def labels_to_class_weights(labels, nc=80):
     """Get class weights (inverse frequency) from training labels.
@@ -406,12 +428,19 @@ def wh_iou(wh1, wh2):
 
 
 def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, labels=()):
-    """Performs Non-Maximum Suppression (NMS) on inference results
+    """Performs Non-Maximum Suppression (NMS) on inference results.
+
+    Args:
+        prediction ([type]): [description]
+        conf_thres (float, optional): [description]. Defaults to 0.25.
+        iou_thres (float, optional): [description]. Defaults to 0.45.
+        classes ([type], optional): [description]. Defaults to None.
+        agnostic (bool, optional): [description]. Defaults to False.
+        labels (tuple, optional): [description]. Defaults to ().
 
     Returns:
-         detections with shape: nx6 (x1, y1, x2, y2, conf, cls)
+        [type]: detections with shape: nx6 (x1, y1, x2, y2, conf, cls)
     """
-
     nc = prediction.shape[2] - 5  # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
 
@@ -495,14 +524,15 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     return output
 
 
-def strip_optimizer(f='weights/best.pt', s=''):  
+def strip_optimizer(f='weights/best.pt', s=''):
     """Strip optimizer from 'f' to finalize training, optionally save as 's'.
 
-    Example:
-        from utils.general import *; strip_optimizer()
     Args:
         f (str, optional): [description]. Defaults to 'weights/best.pt'.
         s (str, optional): [description]. Defaults to ''.
+
+    Example:
+        from utils.general import *; strip_optimizer()
     """
     x = torch.load(f, map_location=torch.device('cpu'))
     for key in 'optimizer', 'training_results', 'wandb_id':

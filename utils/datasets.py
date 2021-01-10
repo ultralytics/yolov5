@@ -1,4 +1,4 @@
-# Dataset utils and dataloaders
+"""Dataset utils and dataloaders."""
 
 import glob
 import logging
@@ -120,20 +120,19 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
 
 
 class InfiniteDataLoader(torch.utils.data.dataloader.DataLoader):
-    """ Dataloader that reuses workers
+    """Dataloader that reuses workers.
 
     Uses same syntax as vanilla DataLoader
     """
 
     def __init__(self, *args, **kwargs):
-        """Init
-        """
+        """Init."""
         super().__init__(*args, **kwargs)
         object.__setattr__(self, 'batch_sampler', _RepeatSampler(self.batch_sampler))
         self.iterator = super().__iter__()
 
     def __len__(self):
-        """Length
+        """Length.
 
         Returns:
             Length of batch sampler.sampler
@@ -151,7 +150,7 @@ class InfiniteDataLoader(torch.utils.data.dataloader.DataLoader):
 
 
 class _RepeatSampler(object):
-    """ Sampler that repeats forever
+    """Sampler that repeats forever.
 
     Args:
         sampler (Sampler)
@@ -283,7 +282,7 @@ class LoadImages:
         self.nframes = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     def __len__(self):
-        return self.nf  # number of files
+        """Length.
 
         Returns:
             int: Number of files.
@@ -292,10 +291,9 @@ class LoadImages:
 
 
 class LoadWebcam:
-    """Load Webcam for inference.
-    """
+    """Load Webcam for inference."""
 
-class LoadWebcam:  # for inference
+
     def __init__(self, pipe='0', img_size=640):
         """Init.
 
@@ -305,8 +303,8 @@ class LoadWebcam:  # for inference
             pipe = 'http://wmccpinetop.axiscam.net/mjpg/video.mjpg'  # IP golf camera
 
         Args:
-            pipe (str, optional): [description]. Defaults to '0'.
-            img_size (int, optional): [description]. Defaults to 640.
+            pipe(str, optional): [description]. Defaults to '0'.
+            img_size(int, optional): [description]. Defaults to 640.
         """
         self.img_size = img_size
 
@@ -389,8 +387,8 @@ class LoadStreams:
         """Init.
 
         Args:
-            sources (str, optional): [description]. Defaults to 'streams.txt'.
-            img_size (int, optional): [description]. Defaults to 640.
+            sources(str, optional): [description]. Defaults to 'streams.txt'.
+            img_size(int, optional): [description]. Defaults to 640.
         """
         self.mode = 'stream'
         self.img_size = img_size

@@ -309,7 +309,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 if opt.quad:
                     loss *= 4.
 
-            # Backward
+            # Backward Propagation.
             scaler.scale(loss).backward()
 
             # Optimize

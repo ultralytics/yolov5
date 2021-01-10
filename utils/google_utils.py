@@ -1,4 +1,4 @@
-# Google utils: https://cloud.google.com/storage/docs/reference/libraries
+"""Google utils: https://cloud.google.com/storage/docs/reference/libraries"""
 
 import os
 import platform
@@ -11,8 +11,10 @@ import torch
 
 
 def gsutil_getsize(url=''):
-    """[summary]
+    """Gsutil Get Size.
+
         gs://bucket/file size https://cloud.google.com/storage/docs/gsutil/commands/du
+
     Args:
         url (str, optional): [description]. Defaults to ''.
 
@@ -61,7 +63,18 @@ def attempt_download(weights):
 
 
 def gdrive_download(id='1uH2BylpFxHKEGXKL6wJJlsgMU2YEjxuc', name='tmp.zip'):
-    # Downloads a file from Google Drive. from utils.google_utils import *; gdrive_download()
+    """Downloads a file from Google Drive.
+
+    Example:
+        from utils.google_utils import *; gdrive_download()
+
+    Args:
+        id (str, optional): [description]. Defaults to '1uH2BylpFxHKEGXKL6wJJlsgMU2YEjxuc'.
+        name (str, optional): [description]. Defaults to 'tmp.zip'.
+
+    Returns:
+        [type]: [description]
+    """
     t = time.time()
 
     print('Downloading https://drive.google.com/uc?export=download&id=%s as %s... ' % (id, name), end='')
@@ -95,7 +108,7 @@ def gdrive_download(id='1uH2BylpFxHKEGXKL6wJJlsgMU2YEjxuc', name='tmp.zip'):
 
 
 def get_token(cookie="./cookie"):
-    """[summary]
+    """Get token.
 
     Args:
         cookie (str, optional): [description]. Defaults to "./cookie".

@@ -1,4 +1,4 @@
-# Auto-anchor utils
+"""Auto-anchor utils."""
 
 import numpy as np
 import torch
@@ -7,6 +7,7 @@ from scipy.cluster.vq import kmeans
 from tqdm import tqdm
 
 from utils.general import colorstr
+
 
 def check_anchor_order(m):
     """Check anchor order against stride order for YOLOv5 Detect() module m, and correct if necessary.
@@ -31,9 +32,6 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
         model ([type]): [description]
         thr (float, optional): [description]. Defaults to 4.0.
         imgsz (int, optional): [description]. Defaults to 640.
-
-    Returns:
-        [type]: [description]
     """
     prefix = colorstr('blue', 'bold', 'autoanchor') + ': '
     print(f'\n{prefix}Analyzing anchors... ', end='')
@@ -69,32 +67,35 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
 
 
 def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=1000, verbose=True):
-    """ Creates kmeans-evolved anchors from training dataset
+    """Creates kmeans-evolved anchors from training dataset.
 
-        Arguments:
-            path: path to dataset *.yaml, or a loaded dataset
-            n: number of anchors
-            img_size: image size used for training
-            thr: anchor-label wh ratio threshold hyperparameter hyp['anchor_t'] used for training, default=4.0
-            gen: generations to evolve anchors using genetic algorithm
-            verbose: print all results
+    Args:
+        path: path to dataset *.yaml, or a loaded dataset
+        n: number of anchors
+        img_size: image size used for training
+        thr: anchor-label wh ratio threshold hyperparameter hyp['anchor_t'] used for training, default=4.0
+        gen: generations to evolve anchors using genetic algorithm
+        verbose: print all results
 
-        Return:
-            k: kmeans evolved anchors
+    Returns:
+        k: kmeans evolved anchors
 
-        Usage:
-            from utils.autoanchor import *; _ = kmean_anchors()
+    Usage:
+        from utils.autoanchor import *; _ = kmean_anchors()
     """
     thr = 1. / thr
     prefix = colorstr('blue', 'bold', 'autoanchor') + ': '
+
     def metric(k, wh):
-        """ Compute metrics.
+        """Compute metrics.
 
         Args:
             k ([type]): [description]
             wh ([type]): [description]
-        """
 
+        Returns:
+            [type]: [description]
+        """
         r = wh[:, None] / k[None]
         x = torch.min(r, 1. / r).min(2)[0]  # ratio metric
         # x = wh_iou(wh, torch.tensor(k))  # iou metric
@@ -105,12 +106,15 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
 
         Args:
             k ([type]): [description]
+
+        Returns:
+            [type]: [description]
         """
         _, best = metric(torch.tensor(k, dtype=torch.float32), wh)
         return (best * (best > thr).float()).mean()  # fitness
 
     def print_results(k):
-        """[summary]
+        """Print Results.
 
         Args:
             k ([type]): [description]
@@ -129,13 +133,6 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
         return k
 
     if isinstance(path, str):
-        """[summary]
-
-        Args:
-            str ([type]): [description]
-            best ([type], optional): [description]. Defaults to metric(k, wh0)bpr.
-            aat (tuple, optional): [description]. Defaults to (best > thr).float().mean().
-        """
         # *.yaml file
         with open(path) as f:
             data_dict = yaml.load(f, Loader=yaml.FullLoader)  # model dict

@@ -1,13 +1,14 @@
-# Activation functions
+"""Activation functions."""
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
+from torch import nn as nn
+from torch.nn import functional as F
 
 
-# SiLU https://arxiv.org/pdf/1905.02244.pdf ----------------------------------------------------------------------------
 class SiLU(nn.Module):
     """Export-friendly version of nn.SiLU().
+
+    SiLU https://arxiv.org/pdf/1905.02244.pdf
 
     Args:
         nn (module): torch.nn
@@ -15,7 +16,7 @@ class SiLU(nn.Module):
 
     @staticmethod
     def forward(x):
-        """[summary]
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -35,7 +36,7 @@ class Hardswish(nn.Module):
 
     @staticmethod
     def forward(x):
-        """[summary]
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -48,7 +49,7 @@ class Hardswish(nn.Module):
 
 
 class MemoryEfficientSwish(nn.Module):
-    """[summary]
+    """Memory Efficient Swish.
 
     Args:
         nn (module): torch.nn
@@ -56,8 +57,9 @@ class MemoryEfficientSwish(nn.Module):
     Returns:
         [type]: [description]
     """
+
     class F(torch.autograd.Function):
-        """[summary]
+        """F.
 
         Args:
             torch ([type]): [description]
@@ -68,7 +70,7 @@ class MemoryEfficientSwish(nn.Module):
 
         @staticmethod
         def forward(ctx, x):
-            """[summary]
+            """Forward Propagation.
 
             Args:
                 ctx ([Type]): A special container object to save
@@ -83,7 +85,7 @@ class MemoryEfficientSwish(nn.Module):
 
         @staticmethod
         def backward(ctx, grad_output):
-            """[summary]
+            """Backward Propagation.
 
             Args:
                 ctx ([type]): [description]
@@ -97,7 +99,7 @@ class MemoryEfficientSwish(nn.Module):
             return grad_output * (sx * (1 + x * (1 - sx)))
 
     def forward(self, x):
-        """[summary]
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -107,22 +109,19 @@ class MemoryEfficientSwish(nn.Module):
         """
         return self.F.apply(x)
 
-# Mish https://github.com/digantamisra98/Mish --------------------------------------------------------------------------
+
 class Mish(nn.Module):
-    """Mish. 
-    
-    https://github.com/digantamisra98/Mis
+    """Mish. Self Regularized Non-Monotonic Activation Function.
+
+    https://github.com/digantamisra98/Mish
 
     Args:
         nn (module): torch.nn
-
-    Returns:
-        [type]: [description]
     """
 
     @staticmethod
     def forward(x):
-        """[summary]
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -134,27 +133,22 @@ class Mish(nn.Module):
 
 
 class MemoryEfficientMish(nn.Module):
-    """[summary]
+    """Memory Efficient Mish.
 
     Args:
         nn (module): torch.nn
-
-    Returns:
-        [type]: [description]
     """
+
     class F(torch.autograd.Function):
         """[summary]
 
         Args:
             torch ([type]): [description]
-
-        Returns:
-            [type]: [description]
         """
 
         @staticmethod
         def forward(ctx, x):
-            """[summary]
+            """Forward Propagation.
 
             Args:
                 ctx ([type]): [description]
@@ -168,7 +162,7 @@ class MemoryEfficientMish(nn.Module):
 
         @staticmethod
         def backward(ctx, grad_output):
-            """[summary]
+            """Backward Propagation.
 
             Args:
                 ctx ([type]): [description]
@@ -183,7 +177,7 @@ class MemoryEfficientMish(nn.Module):
             return grad_output * (fx + x * sx * (1 - fx * fx))
 
     def forward(self, x):
-        """[summary]
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
@@ -205,7 +199,7 @@ class FReLU(nn.Module):
     """
 
     def __init__(self, c1, k=3):
-        """[summary]
+        """Init.
 
         Args:
             c1 (torch.Tensor): ch_in
@@ -216,7 +210,7 @@ class FReLU(nn.Module):
         self.bn = nn.BatchNorm2d(c1)
 
     def forward(self, x):
-        """[summary]
+        """Forward Propagation.
 
         Args:
             x (torch.Tensor): Tensor activated element-wise
