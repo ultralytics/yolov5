@@ -105,7 +105,8 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
     # Losses
     nt = 0  # number of targets
-    balance = [4.0, 1.0, 0.3, 0.1, 0.03]  # P3-P7
+    no = len(p)  # number of outputs
+    balance = {3: [3.67, 1.0, 0.43], 4: [3.78, 1.0, 0.39, 0.22], 5: [3.88, 1.0, 0.37, 0.17, 0.10]}[no]  # P3-P7
     for i, pi in enumerate(p):  # layer index, layer predictions
         b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
         tobj = torch.zeros_like(pi[..., 0], device=device)  # target obj
