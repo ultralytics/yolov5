@@ -45,6 +45,13 @@ python3 detect.py --weight weights/yolov5s-fp16.tflite --img 320 --tfl-detect
 PYTHONPATH=. python3  models/tf.py --weight weights/yolov5s.pt --cfg models/yolov5s.yaml --img 320 --no-tfl-detect --tfl-int8 --source /data/dataset/coco/coco2017/train2017 --ncalib 100
 python3 detect.py --weight weights/yolov5s-int8.tflite --img 320 --tfl-int8 --tfl-detect
 ```
+- Convert full int8 TFLite model to **Edge TPU** and verify it with
+```
+# need Edge TPU runtime https://coral.ai/software/#edgetpu-runtime
+edgetpu_compiler -s -a -o edgetpu weights/yolov5s-int8.tflite
+python3 detect.py --weight edgetpu/yolov5s-int8_edgetpu.tflite --edgetpu --tfl-int8 --tfl-detect --img 320
+```
+
 
 ### 4. Put TFLite models in `assets` folder of Android project, and change 
 - `inputSize` to `--img`
