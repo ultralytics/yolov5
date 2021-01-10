@@ -64,10 +64,18 @@ def get_latest_run(search_dir='.'):
 
 def check_git_status():
     """Suggest 'git pull' if repo is out of date."""
-    if platform.system() in ['Linux', 'Darwin'] and not os.path.isfile('/.dockerenv'):
+    if Path('.git').exists() and platform.system() in ['Linux', 'Darwin'] and not Path('/.dockerenv').is_file():
         s = subprocess.check_output('if [ -d .git ]; then git fetch && git status -uno; fi', shell=True).decode('utf-8')
         if 'Your branch is behind' in s:
             print(s[s.find('Your branch is behind'):s.find('\n\n')] + '\n')
+
+
+def check_requirements(file='requirements.txt'):
+    # Check installed dependencies meet requirements
+    import pkg_resources
+    requirements = pkg_resources.parse_requirements(Path(file).open())
+    requirements = [x.name + ''.join(*x.specs) if len(x.specs) else x.name for x in requirements]
+    pkg_resources.require(requirements)  # DistributionNotFound or VersionConflict exception if requirements not met
 
 
 def check_img_size(img_size, s=32):
@@ -159,6 +167,36 @@ def clean_str(s):
     return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
 
 
+def one_cycle(y1=0.0, y2=1.0, steps=100):
+    # lambda function for sinusoidal ramp from y1 to y2
+    return lambda x: ((1 - math.cos(x * math.pi / steps)) / 2) * (y2 - y1) + y1
+
+
+def colorstr(*input):
+    # Colors a string https://en.wikipedia.org/wiki/ANSI_escape_code, i.e.  colorstr('blue', 'hello world')
+    *prefix, str = input  # color arguments, string
+    colors = {'black': '\033[30m',  # basic colors
+              'red': '\033[31m',
+              'green': '\033[32m',
+              'yellow': '\033[33m',
+              'blue': '\033[34m',
+              'magenta': '\033[35m',
+              'cyan': '\033[36m',
+              'white': '\033[37m',
+              'bright_black': '\033[90m',  # bright colors
+              'bright_red': '\033[91m',
+              'bright_green': '\033[92m',
+              'bright_yellow': '\033[93m',
+              'bright_blue': '\033[94m',
+              'bright_magenta': '\033[95m',
+              'bright_cyan': '\033[96m',
+              'bright_white': '\033[97m',
+              'end': '\033[0m',  # misc
+              'bold': '\033[1m',
+              'undelrine': '\033[4m'}
+
+    return ''.join(colors[x] for x in prefix) + str + colors['end']
+
 def labels_to_class_weights(labels, nc=80):
     """Get class weights (inverse frequency) from training labels.
 
@@ -203,18 +241,12 @@ def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
     return image_weights
 
 
-def coco80_to_coco91_class():
-    """Converts 80-index (val2014) to 91-index 
-        (paper)https://tech.amikelive.com/node-718/what-object-categories-labels-are-in-coco-dataset/
-    
-    Example:
-        a = np.loadtxt('data/coco.names', dtype='str', delimiter='\n')
-        b = np.loadtxt('data/coco_paper.names', dtype='str', delimiter='\n')
-        x1 = [list(a[i] == b).index(True) + 1 for i in range(80)]  # darknet to coco
-        x2 = [list(b[i] == a).index(True) if any(b[i] == a) else None for i in range(91)]  # coco to darknet
-    Returns:
-        [type]: [description]
-    """
+def coco80_to_coco91_class():  # converts 80-index (val2014) to 91-index (paper)
+    # https://tech.amikelive.com/node-718/what-object-categories-labels-are-in-coco-dataset/
+    # a = np.loadtxt('data/coco.names', dtype='str', delimiter='\n')
+    # b = np.loadtxt('data/coco_paper.names', dtype='str', delimiter='\n')
+    # x1 = [list(a[i] == b).index(True) + 1 for i in range(80)]  # darknet to coco
+    # x2 = [list(b[i] == a).index(True) if any(b[i] == a) else None for i in range(91)]  # coco to darknet
     x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 28, 31, 32, 33, 34,
          35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
          64, 65, 67, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90]
@@ -239,14 +271,7 @@ def xyxy2xywh(x):
 
 
 def xywh2xyxy(x):
-    """Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
-
-    Args:
-        x ([type]): [description]
-
-    Returns:
-        [type]: [description]
-    """
+    # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[:, 0] = x[:, 0] - x[:, 2] / 2  # top left x
     y[:, 1] = x[:, 1] - x[:, 3] / 2  # top left y
@@ -295,20 +320,7 @@ def clip_coords(boxes, img_shape):
 
 
 def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-9):
-    """Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
-
-    Args:
-        box1 ([type]): [description]
-        box2 ([type]): [description]
-        x1y1x2y2 (bool, optional): [description]. Defaults to True.
-        GIoU (bool, optional): [description]. Defaults to False.
-        DIoU (bool, optional): [description]. Defaults to False.
-        CIoU (bool, optional): [description]. Defaults to False.
-        eps ([type], optional): [description]. Defaults to 1e-9.
-
-    Returns:
-        [type]: [description]
-    """
+    # Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
     box2 = box2.T
 
     # Get the coordinates of bounding boxes
@@ -406,6 +418,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     # Settings
     min_wh, max_wh = 2, 4096  # (pixels) minimum and maximum box width and height
     max_det = 300  # maximum number of detections per image
+    max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
     time_limit = 10.0  # seconds to quit after
     redundant = True  # require redundant detections
     multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
@@ -453,13 +466,12 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
         # if not torch.isfinite(x).all():
         #     x = x[torch.isfinite(x).all(1)]
 
-        # If none remain process next image
+        # Check shape
         n = x.shape[0]  # number of boxes
-        if not n:
+        if not n:  # no boxes
             continue
-
-        # Sort by confidence
-        # x = x[x[:, 4].argsort(descending=True)]
+        elif n > max_nms:  # excess boxes
+            x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence
 
         # Batched NMS
         c = x[:, 5:6] * (0 if agnostic else max_wh)  # classes
@@ -477,12 +489,13 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
 
         output[xi] = x[i]
         if (time.time() - t) > time_limit:
+            print(f'WARNING: NMS time limit {time_limit}s exceeded')
             break  # time limit exceeded
 
     return output
 
 
-def strip_optimizer(f='weights/best.pt', s=''):
+def strip_optimizer(f='weights/best.pt', s=''):  
     """Strip optimizer from 'f' to finalize training, optionally save as 's'.
 
     Example:
@@ -492,8 +505,8 @@ def strip_optimizer(f='weights/best.pt', s=''):
         s (str, optional): [description]. Defaults to ''.
     """
     x = torch.load(f, map_location=torch.device('cpu'))
-    x['optimizer'] = None
-    x['training_results'] = None
+    for key in 'optimizer', 'training_results', 'wandb_id':
+        x[key] = None
     x['epoch'] = -1
     x['model'].half()  # to FP16
     for p in x['model'].parameters():

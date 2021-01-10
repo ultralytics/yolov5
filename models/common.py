@@ -1,7 +1,7 @@
 """Modules common to various models."""
 import math
-
 import numpy as np
+import requests
 import torch
 from torch import nn
 from PIL import Image, ImageDraw
@@ -67,7 +67,7 @@ class Conv(nn.Module):
         super(Conv, self).__init__()
         self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False)
         self.bn = nn.BatchNorm2d(c2)
-        self.act = nn.Hardswish() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
 
     def forward(self, x):
         """Forward.
@@ -293,6 +293,37 @@ class Focus(nn.Module):
         """
         return self.conv(torch.cat([x[..., ::2, ::2], x[..., 1::2, ::2], x[..., ::2, 1::2], x[..., 1::2, 1::2]], 1))
 
+        # return self.conv(self.contract(x))
+
+
+class Contract(nn.Module):
+    # Contract width-height into channels, i.e. x(1,64,80,80) to x(1,256,40,40)
+    def __init__(self, gain=2):
+        super().__init__()
+        self.gain = gain
+
+    def forward(self, x):
+        N, C, H, W = x.size()  # assert (H / s == 0) and (W / s == 0), 'Indivisible gain'
+        s = self.gain
+        x = x.view(N, C, H // s, s, W // s, s)  # x(1,64,40,2,40,2)
+        x = x.permute(0, 3, 5, 1, 2, 4).contiguous()  # x(1,2,2,64,40,40)
+        return x.view(N, C * s * s, H // s, W // s)  # x(1,256,40,40)
+
+
+class Expand(nn.Module):
+    # Expand channels into width-height, i.e. x(1,64,80,80) to x(1,16,160,160)
+    def __init__(self, gain=2):
+        super().__init__()
+        self.gain = gain
+
+    def forward(self, x):
+        N, C, H, W = x.size()  # assert C / s ** 2 == 0, 'Indivisible gain'
+        s = self.gain
+        x = x.view(N, s, s, C // s ** 2, H, W)  # x(1,2,2,16,80,80)
+        x = x.permute(0, 3, 4, 1, 5, 2).contiguous()  # x(1,16,80,2,80,2)
+        return x.view(N, C // s ** 2, H * s, W * s)  # x(1,16,160,160)
+
+
 
 class Concat(nn.Module):
     """Concatenate a list of tensors along dimension.
@@ -303,7 +334,6 @@ class Concat(nn.Module):
     Returns:
         [type]: [description]
     """
-
     def __init__(self, dimension=1):
         """Init.
 
@@ -334,7 +364,6 @@ class NMS(nn.Module):
     Returns:
         [type]: [description]
     """
-
     conf = 0.25  # confidence threshold
     iou = 0.45  # IoU threshold
     classes = None  # (optional list) filter by class
@@ -355,8 +384,8 @@ class NMS(nn.Module):
         return non_max_suppression(x[0], conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)
 
 
-class autoShape(nn.Module):
-    """Input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS.
+class autoShape(nn.Module):    
+"""Input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS.
 
     Args:
         nn (module): torch.nn
@@ -364,7 +393,6 @@ class autoShape(nn.Module):
     Returns:
         [type]: [description]
     """
-
     img_size = 640  # inference size (pixels)
     conf = 0.25  # NMS confidence threshold
     iou = 0.45  # NMS IoU threshold
@@ -378,6 +406,10 @@ class autoShape(nn.Module):
         """
         super(autoShape, self).__init__()
         self.model = model.eval()
+
+    def autoshape(self):
+        print('autoShape already enabled, skipping... ')  # model already converted to model.autoshape()
+        return self
 
     def forward(self, imgs, size=640, augment=False, profile=False):
         """Forward.
@@ -403,22 +435,23 @@ class autoShape(nn.Module):
             return self.model(imgs.to(p.device).type_as(p), augment, profile)  # inference
 
         # Pre-process
-        if not isinstance(imgs, list):
-            imgs = [imgs]
+        n, imgs = (len(imgs), imgs) if isinstance(imgs, list) else (1, [imgs])  # number of images, list of images
         shape0, shape1 = [], []  # image and inference shapes
-        batch = range(len(imgs))  # batch size
-        for i in batch:
-            imgs[i] = np.array(imgs[i])  # to numpy
-            if imgs[i].shape[0] < 5:  # image in CHW
-                imgs[i] = imgs[i].transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
-            imgs[i] = imgs[i][:, :, :3] if imgs[i].ndim == 3 else np.tile(imgs[i][:, :, None], 3)  # enforce 3ch input
-            s = imgs[i].shape[:2]  # HWC
+        for i, im in enumerate(imgs):
+            if isinstance(im, str):  # filename or uri
+                im = Image.open(requests.get(im, stream=True).raw if im.startswith('http') else im)  # open
+            im = np.array(im)  # to numpy
+            if im.shape[0] < 5:  # image in CHW
+                im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
+            im = im[:, :, :3] if im.ndim == 3 else np.tile(im[:, :, None], 3)  # enforce 3ch input
+            s = im.shape[:2]  # HWC
             shape0.append(s)  # image shape
             g = (size / max(s))  # gain
             shape1.append([y * g for y in s])
+            imgs[i] = im  # update
         shape1 = [make_divisible(x, int(self.stride.max())) for x in np.stack(shape1, 0).max(0)]  # inference shape
-        x = [letterbox(imgs[i], new_shape=shape1, auto=False)[0] for i in batch]  # pad
-        x = np.stack(x, 0) if batch[-1] else x[0][None]  # stack
+        x = [letterbox(im, new_shape=shape1, auto=False)[0] for im in imgs]  # pad
+        x = np.stack(x, 0) if n > 1 else x[0][None]  # stack
         x = np.ascontiguousarray(x.transpose((0, 3, 1, 2)))  # BHWC to BCHW
         x = torch.from_numpy(x).to(p.device).type_as(p) / 255.  # uint8 to fp16/32
 
@@ -428,7 +461,7 @@ class autoShape(nn.Module):
         y = non_max_suppression(y, conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)  # NMS
 
         # Post-process
-        for i in batch:
+        for i in range(n):
             scale_coords(shape1, y[i][:, :4], shape0[i])
 
         return Detections(imgs, y, self.names)
@@ -575,7 +608,7 @@ class Classify(nn.Module):
         super(Classify, self).__init__()
         self.aap = nn.AdaptiveAvgPool2d(1)  # to x(b,c1,1,1)
         self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g)  # to x(b,c2,1,1)
-        self.flat = Flatten()
+        self.flat = nn.Flatten()
 
     def forward(self, x):
         """Forward.
@@ -588,5 +621,5 @@ class Classify(nn.Module):
         Returns:
             [type]: flatten result to x(b,c2)
         """
-        z = torch.cat([self.aap(y) for y in (x if isinstance(x, list) else [x])], 1)
-        return self.flat(self.conv(z))
+        z = torch.cat([self.aap(y) for y in (x if isinstance(x, list) else [x])], 1)  # cat if list
+        return self.flat(self.conv(z))  # flatten to x(b,c2)

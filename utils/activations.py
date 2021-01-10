@@ -107,6 +107,7 @@ class MemoryEfficientSwish(nn.Module):
         """
         return self.F.apply(x)
 
+# Mish https://github.com/digantamisra98/Mish --------------------------------------------------------------------------
 class Mish(nn.Module):
     """Mish. 
     
@@ -193,6 +194,7 @@ class MemoryEfficientMish(nn.Module):
         return self.F.apply(x)
 
 
+# FReLU https://arxiv.org/abs/2007.11824 -------------------------------------------------------------------------------
 class FReLU(nn.Module):
     """Funnel Activation.
 

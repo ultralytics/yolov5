@@ -197,8 +197,7 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
     # Losses
     nt = 0  # number of targets
-    no = len(p)  # number of outputs
-    balance = [4.0, 1.0, 0.4] if no == 3 else [4.0, 1.0, 0.4, 0.1]  # P3-5 or P3-6
+    balance = [4.0, 1.0, 0.3, 0.1, 0.03]  # P3-P7
     for i, pi in enumerate(p):  # layer index, layer predictions
         b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
         tobj = torch.zeros_like(pi[..., 0], device=device)  # target obj
@@ -230,10 +229,9 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
         lobj += BCEobj(pi[..., 4], tobj) * balance[i]  # obj loss
 
-    s = 3 / no  # output count scaling
-    lbox *= h['box'] * s
-    lobj *= h['obj'] * s * (1.4 if no == 4 else 1.)
-    lcls *= h['cls'] * s
+    lbox *= h['box']
+    lobj *= h['obj']
+    lcls *= h['cls']
     bs = tobj.shape[0]  # batch size
 
     loss = lbox + lobj + lcls
