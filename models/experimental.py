@@ -141,10 +141,10 @@ class GhostBottleneck(nn.Module):
         """Init.
 
         Args:
-            c1 ([type]): [description]
-            c2 ([type]): [description]
-            k ([type]): [description]
-            s ([type]): [description]
+            c1 ([type]): ch_in.
+            c2 ([type]): ch_out.
+            k ([type]): kernel.
+            s ([type]): stride.
         """
         super(GhostBottleneck, self).__init__()
         c_ = c2 // 2
@@ -179,11 +179,11 @@ class MixConv2d(nn.Module):
         """Init.
 
         Args:
-            c1 ([type]): [description]
-            c2 ([type]): [description]
-            k (tuple, optional): [description]. Defaults to (1, 3).
-            s (int, optional): [description]. Defaults to 1.
-            equal_ch (bool, optional): [description]. Defaults to True.
+            c1 ([type]): ch_in.
+            c2 ([type]): ch_out.
+            k (tuple, optional): kernel. Defaults to (1, 3).
+            s (int, optional): stride. Defaults to 1.
+            equal_ch (bool, optional): equal ch. Defaults to True.
         """
         super(MixConv2d, self).__init__()
         groups = len(k)
@@ -248,8 +248,8 @@ def attempt_load(weights, map_location=None):
     """Load an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a.
 
     Args:
-        weights ([type]): [description]
-        map_location ([type], optional): [description]. Defaults to None.
+        weights ([type]): weights.
+        map_location ([type], optional): map location.. Defaults to None.
 
     Returns:
         [type]: [description]
