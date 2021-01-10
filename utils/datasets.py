@@ -590,7 +590,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         s = torch.tensor([[1, 1, .5, .5, .5, .5]])  # scale
         for i in range(n):  # zidane torch.zeros(16,3,720,1280)  # BCHW
             i *= 4
-            if random.random() < 0.0:
+            if random.random() < 0.1:
                 im = F.interpolate(img[i].unsqueeze(0).float(), scale_factor=2., mode='bilinear', align_corners=False)[
                     0].type(img[i].type())
                 l = label[i]
