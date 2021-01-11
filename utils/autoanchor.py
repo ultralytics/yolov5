@@ -22,7 +22,7 @@ def check_anchor_order(m):
 
 def check_anchors(dataset, model, thr=4.0, imgsz=640):
     # Check anchor fit to data, recompute if necessary
-    prefix = colorstr('blue', 'bold', 'autoanchor') + ': '
+    prefix = colorstr('blue', 'bold', 'autoanchor: ')
     print(f'\n{prefix}Analyzing anchors... ', end='')
     m = model.module.model[-1] if hasattr(model, 'module') else model.model[-1]  # Detect()
     shapes = imgsz * dataset.shapes / dataset.shapes.max(1, keepdims=True)
