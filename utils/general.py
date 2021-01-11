@@ -25,6 +25,7 @@ from utils.torch_utils import init_torch_seeds
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
 np.set_printoptions(linewidth=320, formatter={'float_kind': '{:11.5g}'.format})  # format short g, %precision=5
 cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with PyTorch DataLoader)
+os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max threads
 
 
 def set_logging(rank=-1):
@@ -117,7 +118,7 @@ def one_cycle(y1=0.0, y2=1.0, steps=100):
 
 def colorstr(*input):
     # Colors a string https://en.wikipedia.org/wiki/ANSI_escape_code, i.e.  colorstr('blue', 'hello world')
-    *prefix, str = input  # color arguments, string
+    *prefix, string = input  # color arguments, string
     colors = {'black': '\033[30m',  # basic colors
               'red': '\033[31m',
               'green': '\033[32m',
@@ -136,9 +137,9 @@ def colorstr(*input):
               'bright_white': '\033[97m',
               'end': '\033[0m',  # misc
               'bold': '\033[1m',
-              'undelrine': '\033[4m'}
+              'underline': '\033[4m'}
 
-    return ''.join(colors[x] for x in prefix) + str + colors['end']
+    return ''.join(colors[x] for x in prefix) + f'{string}' + colors['end']
 
 
 def labels_to_class_weights(labels, nc=80):

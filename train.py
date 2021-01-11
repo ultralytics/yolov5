@@ -28,7 +28,7 @@ from utils.autoanchor import check_anchors
 from utils.datasets import create_dataloader
 from utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds, \
     fitness, strip_optimizer, get_latest_run, check_dataset, check_file, check_git_status, check_img_size, \
-    check_requirements, print_mutation, set_logging, one_cycle
+    check_requirements, print_mutation, set_logging, one_cycle, colorstr
 from utils.google_utils import attempt_download
 from utils.loss import compute_loss
 from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
@@ -44,7 +44,7 @@ except ImportError:
 
 
 def train(hyp, opt, device, tb_writer=None, wandb=None):
-    logger.info(f'Hyperparameters {hyp}')
+    logger.info(colorstr('blue', 'bold', 'Hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
     save_dir, epochs, batch_size, total_batch_size, weights, rank = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
 
@@ -233,9 +233,10 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
-    logger.info('Image sizes %g train, %g test\n'
-                'Using %g dataloader workers\nLogging results to %s\n'
-                'Starting training for %g epochs...' % (imgsz, imgsz_test, dataloader.num_workers, save_dir, epochs))
+    logger.info(f'Image sizes {imgsz} train, {imgsz_test} test\n'
+                f'Using {dataloader.num_workers} dataloader workers\n'
+                f'Logging results to {save_dir}\n'
+                f'Starting training for {epochs} epochs...')
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
 
