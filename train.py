@@ -36,12 +36,6 @@ from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_di
 
 logger = logging.getLogger(__name__)
 
-try:
-    import wandb
-except ImportError:
-    wandb = None
-    logger.info("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")
-
 
 def train(hyp, opt, device, tb_writer=None, wandb=None):
     logger.info(colorstr('blue', 'bold', 'Hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
@@ -514,6 +508,11 @@ if __name__ == '__main__':
 
     # Train
     logger.info(opt)
+    try:
+        import wandb
+    except ImportError:
+        wandb = None
+        logger.info("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")
     if not opt.evolve:
         tb_writer = None  # init loggers
         if opt.global_rank in [-1, 0]:
