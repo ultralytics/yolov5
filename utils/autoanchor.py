@@ -22,7 +22,7 @@ def check_anchor_order(m):
 
 def check_anchors(dataset, model, thr=4.0, imgsz=640):
     # Check anchor fit to data, recompute if necessary
-    prefix = colorstr('blue', 'bold', 'autoanchor') + ': '
+    prefix = colorstr('autoanchor: ')
     print(f'\n{prefix}Analyzing anchors... ', end='')
     m = model.module.model[-1] if hasattr(model, 'module') else model.model[-1]  # Detect()
     shapes = imgsz * dataset.shapes / dataset.shapes.max(1, keepdims=True)
@@ -73,7 +73,7 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
             from utils.autoanchor import *; _ = kmean_anchors()
     """
     thr = 1. / thr
-    prefix = colorstr('blue', 'bold', 'autoanchor') + ': '
+    prefix = colorstr('autoanchor: ')
 
     def metric(k, wh):  # compute metrics
         r = wh[:, None] / k[None]
