@@ -27,8 +27,10 @@ from yolov5.utils.general import (
     check_git_status, check_img_size, increment_dir, print_mutation, plot_evolution, set_logging)
 from yolov5.utils.google_utils import attempt_download
 from yolov5.utils.torch_utils import init_seeds, ModelEMA, select_device, intersect_dicts
+import pandas as pd
 
 logger = logging.getLogger(__name__)
+import streamlit as st
 
 
 def train(hyp, opt, device, tb_writer=None, metric_weights=None):
@@ -208,9 +210,15 @@ def train(hyp, opt, device, tb_writer=None, metric_weights=None):
     logger.info('Using %g dataloader workers' % dataloader.num_workers)
     logger.info('Starting training for %g epochs...' % epochs)
     # torch.autograd.set_detect_anomaly(True)
+    my_bar = st.progress(0)
+    results_dict = {'Epoch': '', 'Precision': '', 'Recall': '', 'mAP': '', 'F1': ''}
+    results_df = pd.DataFrame([results_dict])
+    results_table = st.table(results_df)
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
-
+        my_bar.progress(int(epoch / epochs * 100))
+        if epoch == epochs - 1:
+            my_bar.progress(100)
         # Update image weights (optional)
         if dataset.image_weights:
             # Generate indices
@@ -286,7 +294,6 @@ def train(hyp, opt, device, tb_writer=None, metric_weights=None):
                 optimizer.zero_grad()
                 if ema:
                     ema.update(model)
-
             # Print
             if rank in [-1, 0]:
                 mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
@@ -294,7 +301,6 @@ def train(hyp, opt, device, tb_writer=None, metric_weights=None):
                 s = ('%10s' * 2 + '%10.4g' * 6) % (
                     '%g/%g' % (epoch, epochs - 1), mem, *mloss, targets.shape[0], imgs.shape[-1])
                 pbar.set_description(s)
-
                 # Plot
                 if ni < 3:
                     f = str(log_dir / ('train_batch%g.jpg' % ni))  # filename
@@ -323,7 +329,11 @@ def train(hyp, opt, device, tb_writer=None, metric_weights=None):
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
                                                  save_dir=log_dir)
-
+                results_dict_2 = {'Epoch': str(epoch), 'Precision': str(round(results[0], 2)),
+                                  'Recall': str(round(results[1], 2)),
+                                  'mAP': str(round(results[2], 2)), 'F1': str(round(results[3], 2))}
+                results_df_2 = pd.DataFrame([results_dict_2])
+                results_table.add_rows(results_df_2)
             # Write
             with open(results_file, 'a') as f:
                 f.write(s + '%10.4g' * 7 % results + '\n')  # P, R, mAP, F1, test_losses=(GIoU, obj, cls)
