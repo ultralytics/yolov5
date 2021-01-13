@@ -61,9 +61,10 @@ def check_git_status():
     s = colorstr('github: ')
     try:
         if Path('.git').exists() and check_online():
-            url = subprocess.check_output('git config --get remote.origin.url', shell=True).decode('utf-8')[:-1]
-            cmd = 'git rev-list $(git rev-parse --abbrev-ref HEAD)..origin/master --count'  # commits behind
-            n = int(subprocess.check_output(cmd, shell=True))
+            url = subprocess.check_output(
+                'git fetch && git config --get remote.origin.url', shell=True).decode('utf-8')[:-1]
+            n = int(subprocess.check_output(
+                'git rev-list $(git rev-parse --abbrev-ref HEAD)..origin/master --count', shell=True))  # commits behind
             if n > 0:
                 s += f"⚠️ WARNING: code is out of date by {n} {'commits' if n > 1 else 'commmit'}. " \
                      f"Use 'git pull' to update or 'git clone {url}' to download latest."
