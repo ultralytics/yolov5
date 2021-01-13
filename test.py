@@ -7,7 +7,7 @@ from threading import Thread
 import numpy as np
 import torch
 import yaml
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from models.experimental import attempt_load
 from utils.datasets import create_dataloader
