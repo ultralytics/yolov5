@@ -4,7 +4,6 @@ import glob
 import logging
 import math
 import os
-import platform
 import random
 import re
 import subprocess
@@ -35,6 +34,7 @@ def set_logging(rank=-1):
 
 
 def init_seeds(seed=0):
+    # Initialize random number generator (RNG) seeds
     random.seed(seed)
     np.random.seed(seed)
     init_torch_seeds(seed)
@@ -46,12 +46,33 @@ def get_latest_run(search_dir='.'):
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
+def check_online():
+    # Check internet connectivity
+    import socket
+    try:
+        socket.create_connection(("1.1.1.1", 53))  # check host accesability
+        return True
+    except OSError:
+        return False
+
+
 def check_git_status():
-    # Suggest 'git pull' if repo is out of date
-    if Path('.git').exists() and platform.system() in ['Linux', 'Darwin'] and not Path('/.dockerenv').is_file():
-        s = subprocess.check_output('if [ -d .git ]; then git fetch && git status -uno; fi', shell=True).decode('utf-8')
-        if 'Your branch is behind' in s:
-            print(s[s.find('Your branch is behind'):s.find('\n\n')] + '\n')
+    # Suggest 'git pull' if YOLOv5 is out of date
+    print(colorstr('github: '), end='')
+    try:
+        if Path('.git').exists() and check_online():
+            url = subprocess.check_output(
+                'git fetch && git config --get remote.origin.url', shell=True).decode('utf-8')[:-1]
+            n = int(subprocess.check_output(
+                'git rev-list $(git rev-parse --abbrev-ref HEAD)..origin/master --count', shell=True))  # commits behind
+            if n > 0:
+                s = f"⚠️ WARNING: code is out of date by {n} {'commits' if n > 1 else 'commmit'}. " \
+                    f"Use 'git pull' to update or 'git clone {url}' to download latest."
+            else:
+                s = f'up to date with {url} ✅'
+    except Exception as e:
+        s = str(e)
+    print(s)
 
 
 def check_requirements(file='requirements.txt'):

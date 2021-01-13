@@ -6,7 +6,6 @@ import random
 import time
 from pathlib import Path
 from threading import Thread
-from warnings import warn
 
 import numpy as np
 import torch.distributed as dist
@@ -38,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 def train(hyp, opt, device, tb_writer=None, wandb=None):
-    logger.info(colorstr('Hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
+    logger.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
     save_dir, epochs, batch_size, total_batch_size, weights, rank = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
 
@@ -502,10 +501,6 @@ if __name__ == '__main__':
     # Hyperparameters
     with open(opt.hyp) as f:
         hyp = yaml.load(f, Loader=yaml.FullLoader)  # load hyps
-        if 'box' not in hyp:
-            warn('Compatibility: %s missing "box" which was renamed from "giou" in %s' %
-                 (opt.hyp, 'https://github.com/ultralytics/yolov5/pull/1120'))
-            hyp['box'] = hyp.pop('giou')
 
     # Train
     logger.info(opt)
