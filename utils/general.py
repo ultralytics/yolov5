@@ -57,7 +57,7 @@ def check_online():
 
 
 def check_git_status():
-    # Suggest 'git pull' if code is out of date
+    # Suggest 'git pull' if YOLOv5 is out of date
     print(colorstr('github: '), end='')
     try:
         if Path('.git').exists() and check_online():
