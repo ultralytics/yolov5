@@ -62,7 +62,7 @@ def check_git_status():
     try:
         if Path('.git').exists() and check_online():
             url = subprocess.check_output('git config --get remote.origin.url', shell=True).decode('utf-8')[:-1]
-            cmd = 'git rev-list origin/master..$(git rev-parse --abbrev-ref HEAD) --count'
+            cmd = 'git rev-list $(git rev-parse --abbrev-ref HEAD)..origin/master --count'  # commits behind
             n = int(subprocess.check_output(cmd, shell=True))
             if n > 0:
                 s += f"⚠️ WARNING: code is out of date by {n} {'commits' if n > 1 else 'commmit'}. " \
