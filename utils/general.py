@@ -57,10 +57,20 @@ def check_online():
 
 def check_git_status():
     # Suggest 'git pull' if repo is out of date
-    if Path('.git').exists() and check_online():
-        s = subprocess.check_output('git fetch && git status -uno', shell=True).decode('utf-8')
-        if 'Your branch is behind' in s:
-            print(s[s.find('Your branch is behind'):s.find('\n\n')] + '\n')
+    s = colorstr('github: ')
+    try:
+        if Path('.git').exists() and check_online():
+            url = subprocess.check_output('git config --get remote.origin.url', shell=True).decode('utf-8')[:-1]
+            cmd = 'git rev-list origin/master..$(git rev-parse --abbrev-ref HEAD) --count'
+            n = int(subprocess.check_output(cmd, shell=True))
+            if n > 0:
+                s += f"⚠️ WARNING: code is out of date by {n} {'commits' if n > 1 else 'commmit'}. " \
+                     f"Use 'git pull' to update or 'git clone {url}' to download latest."
+            else:
+                s += f'up to date with {url} ✅'
+    except Exception as e:
+        s += str(e)
+    print(s)
 
 
 def check_requirements(file='requirements.txt'):
