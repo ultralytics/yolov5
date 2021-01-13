@@ -4,7 +4,6 @@ import glob
 import logging
 import math
 import os
-import platform
 import random
 import re
 import subprocess
@@ -46,10 +45,20 @@ def get_latest_run(search_dir='.'):
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
+def check_online():
+    # Check internet connectivity
+    import socket
+    try:
+        socket.create_connection(("1.1.1.1", 53))  # check host accesability
+        return True
+    except OSError:
+        return False
+
+
 def check_git_status():
     # Suggest 'git pull' if repo is out of date
-    if Path('.git').exists() and platform.system() in ['Linux', 'Darwin'] and not Path('/.dockerenv').is_file():
-        s = subprocess.check_output('if [ -d .git ]; then git fetch && git status -uno; fi', shell=True).decode('utf-8')
+    if Path('.git').exists() and check_online():
+        s = subprocess.check_output('git fetch && git status -uno', shell=True).decode('utf-8')
         if 'Your branch is behind' in s:
             print(s[s.find('Your branch is behind'):s.find('\n\n')] + '\n')
 
