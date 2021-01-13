@@ -57,7 +57,7 @@ def check_online():
 
 
 def check_git_status():
-    # Suggest 'git pull' if YOLOv5 is out of date
+    # Recommend 'git pull' if code is out of date
     print(colorstr('github: '), end='')
     try:
         if Path('.git').exists() and check_online():
@@ -66,13 +66,12 @@ def check_git_status():
             n = int(subprocess.check_output(
                 'git rev-list $(git rev-parse --abbrev-ref HEAD)..origin/master --count', shell=True))  # commits behind
             if n > 0:
-                s = f"⚠️ WARNING: code is out of date by {n} {'commits' if n > 1 else 'commmit'}. " \
-                    f"Use 'git pull' to update or 'git clone {url}' to download latest."
+                print(f"⚠️ WARNING: code is out of date by {n} {'commits' if n > 1 else 'commmit'}. "
+                      f"Use 'git pull' to update or 'git clone {url}' to download latest.")
             else:
-                s = f'up to date with {url} ✅'
+                print(f'up to date with {url} ✅')
     except Exception as e:
-        s = str(e)
-    print(s)
+        print(e)
 
 
 def check_requirements(file='requirements.txt'):
