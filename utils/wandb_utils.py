@@ -167,21 +167,3 @@ class WandbLogger():
             if self.log_dict:
                 wandb.log(self.log_dict)
             wandb.run.finish()
-            
-    # !!!!! WIP !!!!
-    def add_to_training_progress(self, pred, class_map, class_dict_list, epoch, index):
-        # Painfully slow!!! investigate. 1) pred too large? replace class map dicts with calss variable?
-        if self.wandb_run and self.result_table and self.testset_artifact:
-            box_data = []
-            testset_table = self.testset_artifact.get("val").data
-            for *xyxy, conf, cls in pred.tolist():
-                if conf >= 0.175: # Arbitrary conf, make this an argparse
-                    box_data.append({"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
-                                     "class_id": int(cls),
-                                     "box_caption": "%s %.3f" % (class_map[cls], conf),
-                                     "scores": {"class_score": conf},
-                                     "domain": "pixel"})
-            boxes = {"predictions": {"box_data": box_data, "class_labels": class_map}}  # inference-space
-            self.result_table.add_data(epoch,
-                                  index,
-                                  wandb.Image(testset_table[index][1], boxes=boxes, classes=class_dict_list))
