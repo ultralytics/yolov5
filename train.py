@@ -253,7 +253,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
         # b = int(random.uniform(0.25 * imgsz, 0.75 * imgsz + gs) // gs * gs)
         # dataset.mosaic_border = [b - imgsz, -b]  # height, width borders
 
-        mloss = torch.zeros(4, device=device)  # mean losses
+        mloss = torch.zeros(13, device=device)  # mean losses
         if rank != -1:
             dataloader.sampler.set_epoch(epoch)
         pbar = enumerate(dataloader)
@@ -350,14 +350,19 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
             # Write
             with open(results_file, 'a') as f:
-                f.write(s + '%10.4g' * 7 % results + '\n')  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
+                f.write(
+                    s + '%10.4g' * len(results) % results + '\n')  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
             if len(opt.name) and opt.bucket:
                 os.system('gsutil cp %s gs://%s/results/results%s.txt' % (results_file, opt.bucket, opt.name))
 
             # Log
-            tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
+            tags = ['train/box_loss3', 'train/box_loss4', 'train/box_loss5', 'train/box_loss6',  # train loss
+                    'train/obj_loss3', 'train/obj_loss4', 'train/obj_loss5', 'train/obj_loss6',  # train loss
+                    'train/cls_loss3', 'train/cls_loss4', 'train/cls_loss5', 'train/cls_loss6',  # train loss
                     'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
-                    'val/box_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
+                    'val/box_loss3', 'val/box_loss4', 'val/box_loss5', 'val/box_loss6',  # train loss
+                    'val/obj_loss3', 'val/obj_loss4', 'val/obj_loss5', 'val/obj_loss6',  # train loss
+                    'val/cls_loss3', 'val/cls_loss4', 'val/cls_loss5', 'val/cls_loss6',  # train loss
                     'x/lr0', 'x/lr1', 'x/lr2']  # params
             for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
                 if tb_writer:
