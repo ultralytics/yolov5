@@ -227,7 +227,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
-    compute_loss2 = ComputeLoss(model)
+    compute_loss = ComputeLoss(model)  # init loss class
     logger.info(f'Image sizes {imgsz} train, {imgsz_test} test\n'
                 f'Using {dataloader.num_workers} dataloader workers\n'
                 f'Logging results to {save_dir}\n'
@@ -287,8 +287,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             # Forward
             with amp.autocast(enabled=cuda):
                 pred = model(imgs)  # forward
-                # loss, loss_items = compute_loss(pred, targets.to(device), model)  # loss scaled by batch_size
-                loss, loss_items = compute_loss2(pred, targets.to(device))  # loss scaled by batch_size
+                loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
                 if rank != -1:
                     loss *= opt.world_size  # gradient averaged between devices in DDP mode
                 if opt.quad:
@@ -309,7 +308,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             if rank in [-1, 0]:
                 mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
                 mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
-                s = f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1], *compute_loss2.balance
+                s = f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1], *compute_loss.balance
                 s = ('%10s' * 2 + '%10.4g' * (len(s) - 2)) % s
                 pbar.set_description(s)
 
