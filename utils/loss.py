@@ -87,7 +87,7 @@ class QFocalLoss(nn.Module):
 
 class ComputeLoss:
     # Compute losses
-    def __init__(self, model, autobalance=True):
+    def __init__(self, model, autobalance=False):
         super(ComputeLoss, self).__init__()
         device = next(model.parameters()).device  # get model device
         h = model.hyp  # hyperparameters
@@ -105,8 +105,8 @@ class ComputeLoss:
             BCEcls, BCEobj = FocalLoss(BCEcls, g), FocalLoss(BCEobj, g)
 
         det = model.module.model[-1] if is_parallel(model) else model.model[-1]  # Detect() module
-        # self.balance = {3: [3.67, 1.0, 0.43], 4: [3.78, 1.0, 0.39, 0.22], 5: [3.88, 1.0, 0.37, 0.17, 0.10]}[det.nl]
-        self.balance = [1.0] * det.nl
+        self.balance = {3: [3.67, 1.0, 0.43], 4: [3.78, 1.0, 0.39, 0.22], 5: [3.88, 1.0, 0.37, 0.17, 0.10]}[det.nl]
+        # self.balance = [1.0] * det.nl
         self.ssi = (det.stride == 16).nonzero(as_tuple=False).item()  # stride 16 index
         self.BCEcls, self.BCEobj, self.gr, self.hyp, self.autobalance = BCEcls, BCEobj, model.gr, h, autobalance
         for k in 'na', 'nc', 'nl', 'anchors':
@@ -147,11 +147,12 @@ class ComputeLoss:
                 #     [file.write('%11.5g ' * 4 % tuple(x) + '\n') for x in torch.cat((txy[i], twh[i]), 1)]
 
             obji = self.BCEobj(pi[..., 4], tobj)
-            self.balance[i] = self.balance[i] * 0.9999 + 0.0001 / obji.detach().item()
-
             lobj += obji * self.balance[i]  # obj loss
+            if self.autobalance:
+                self.balance[i] = self.balance[i] * 0.9999 + 0.0001 / obji.detach().item()
 
-        self.balance = [x / self.balance[self.ssi] for x in self.balance]
+        if self.autobalance:
+            self.balance = [x / self.balance[self.ssi] for x in self.balance]
         lbox *= self.hyp['box']
         lobj *= self.hyp['obj']
         lcls *= self.hyp['cls']
