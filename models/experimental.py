@@ -123,8 +123,10 @@ def attempt_load(weights, map_location=None):
             m.inplace = True  # pytorch 1.7.0 compatibility
         elif type(m) is Conv:
             m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatibility
-        elif hasattr(m, 'bn') and hasattr(m.bn, 'num_features') and type(m.bn) is nn.SyncBatchNorm:
-            m.bn = nn.BatchNorm2d(m.bn.num_features)  # assign bn
+        elif hasattr(m, 'bn') and type(m.bn) is nn.SyncBatchNorm:  # convert SyncBatchNorm to BatchNorm2d
+            bn2d = nn.BatchNorm2d(num_features=m.bn.num_features)
+            bn2d.load_state_dict(m.bn.state_dict())
+            m.bn = bn2d
 
     if len(model) == 1:
         return model[-1]  # return model
