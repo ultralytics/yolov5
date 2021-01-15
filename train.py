@@ -227,7 +227,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
-    compute_loss = ComputeLoss(model)  # init loss class
+    compute_loss = ComputeLoss(model, autobalance=opt.autobalance)  # init loss class
     logger.info(f'Image sizes {imgsz} train, {imgsz_test} test\n'
                 f'Using {dataloader.num_workers} dataloader workers\n'
                 f'Logging results to {save_dir}\n'
@@ -468,6 +468,7 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--quad', action='store_true', help='quad dataloader')
+    parser.add_argument('--autobalance', action='store_true', help='autobalance')
     opt = parser.parse_args()
 
     # Set DDP variables

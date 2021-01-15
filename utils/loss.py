@@ -105,7 +105,8 @@ class ComputeLoss:
             BCEcls, BCEobj = FocalLoss(BCEcls, g), FocalLoss(BCEobj, g)
 
         det = model.module.model[-1] if is_parallel(model) else model.model[-1]  # Detect() module
-        self.balance = {3: [3.67, 1.0, 0.43], 4: [3.78, 1.0, 0.39, 0.22], 5: [3.88, 1.0, 0.37, 0.17, 0.10]}[det.nl]
+        # self.balance = {3: [3.67, 1.0, 0.43], 4: [3.78, 1.0, 0.39, 0.22], 5: [3.88, 1.0, 0.37, 0.17, 0.10]}[det.nl]
+        self.balance = {3: [3.67, 1.0, 0.43], 4: [4.0, 1.0, 0.4, 0.1], 5: [3.88, 1.0, 0.37, 0.17, 0.10]}[det.nl]
         # self.balance = [1.0] * det.nl
         self.ssi = (det.stride == 16).nonzero(as_tuple=False).item()  # stride 16 index
         self.BCEcls, self.BCEobj, self.gr, self.hyp, self.autobalance = BCEcls, BCEobj, model.gr, h, autobalance
@@ -114,7 +115,8 @@ class ComputeLoss:
 
     def __call__(self, p, targets):  # predictions, targets, model
         device = targets.device
-        lcls, lbox, lobj = torch.zeros(self.nl, device=device), torch.zeros(self.nl, device=device), torch.zeros(self.nl, device=device)
+        lcls, lbox, lobj = torch.zeros(self.nl, device=device), torch.zeros(self.nl, device=device), torch.zeros(
+            self.nl, device=device)
         tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets
 
         # Losses
@@ -154,7 +156,7 @@ class ComputeLoss:
         if self.autobalance:
             self.balance = [x / self.balance[self.ssi] for x in self.balance]
         lbox *= self.hyp['box']
-        lobj *= self.hyp['obj']
+        lobj *= self.hyp['obj'] * 1.4
         lcls *= self.hyp['cls']
         bs = tobj.shape[0]  # batch size
 
