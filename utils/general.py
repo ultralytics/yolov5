@@ -60,7 +60,7 @@ def check_git_status():
     # Recommend 'git pull' if code is out of date
     print(colorstr('github: '), end='')
     try:
-        if Path('.git').exists() and check_online():
+        if Path('.git').exists() and not Path('/.dockerenv').exists() and check_online():
             url = subprocess.check_output(
                 'git fetch && git config --get remote.origin.url', shell=True).decode('utf-8')[:-1]
             n = int(subprocess.check_output(
