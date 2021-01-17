@@ -8,15 +8,14 @@ import logging
 import tqdm
 import torch
 import json
-from utils.general import xywh2xyxy
+from utils.general import colorstr, xywh2xyxy
 logger = logging.getLogger(__name__)
-
 
 try:
     import wandb
 except ImportError:
     wandb = None
-    print("Install Weights & Biases for experiment logging via 'pip install wandb' (recommended)")
+    print(f"{colorstr('wandb: ')}Install Weights & Biases for YOLOv5 logging with 'pip install wandb' (recommended)")
 
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
