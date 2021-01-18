@@ -33,12 +33,39 @@ def train(api: sly.Api, task_id, context, state, app_logger):
     sly.fs.clean_dir(yolov5_format_dir)  # useful for debug
     filter_and_transform_labels(project_dir, META, train_classes, train_split, val_split, yolov5_format_dir)
 
-    # sys.argv.append('--weights')
-    # sys.argv.append("maxim")
-    # import train
-    # train.main()
 
-    # upload results to team files
+    # define input params for script train.py
+    # Out[4]: Namespace(adam=False, batch_size=64, bucket='', cache_images=False, cfg='yolov5s.yaml', data='coco128.yaml',
+    #                   device='', epochs=300, evolve=False, exist_ok=False, hyp='data/hyp.scratch.yaml',
+    #                   image_weights=False, img_size=[640, 640], local_rank=-1, log_artifacts=False, log_imgs=16,
+    #                   multi_scale=False, name='exp', noautoanchor=False, nosave=False, notest=False,
+    #                   project='runs/train', quad=False, rect=False, resume=False, single_cls=False, sync_bn=False,
+    #                   weights='yolov5s.pt', workers=8)
+
+    data_path = os.path.join(yolov5_format_dir, 'data_config.yaml')
+    sys.argv.extend(["--data", data_path])
+
+    cfg = f"{state['modelSize']}.yaml"
+    sys.argv.extend(["--cfg", cfg])
+
+    weights = "" # random
+    if state["modelWeightsOptions"] == 1:
+        weights = state["pretrainedWeights"]
+    elif state["modelWeightsOptions"] == 2:
+        weights = state["weightsPath"]
+    sys.argv.extend(["--weights", weights])
+
+    sys.argv.extend(["--epochs", state["epochs"]])
+    sys.argv.extend(["--batch-size", state["batchSize"]])
+    sys.argv.extend(["--img-size", state["imgSize"]])
+    sys.argv.extend(["--multi-scale", state["multiScale"]])
+    sys.argv.extend(["--single-cls", state["singleClass"]])
+    sys.argv.extend(["--device", state["device"]])
+
+    import train
+    train.main()
+
+    #@TODO: upload results to team files
 
 
 def main():
@@ -64,5 +91,6 @@ def main():
     my_app.run(template_path, data, state)
 
 
+#@TODO: train == val - handle case in data_config.yaml to avoid data duplication
 if __name__ == "__main__":
     sly.main_wrapper("main", main)

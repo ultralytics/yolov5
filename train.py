@@ -464,6 +464,7 @@ def main():
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--quad', action='store_true', help='quad dataloader')
     opt = parser.parse_args()
+    print("Input arguments:", opt)
 
     # Set DDP variables
     opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1

@@ -153,10 +153,6 @@
                    description="Image is resized to square">
             <el-input-number v-model="state.imgSize" :min="64"></el-input-number>
         </sly-field>
-        <sly-field title="Input image size (in pixels)"
-                   description="Image is resized to square">
-            <el-input-number v-model="state.imgSize" :min="64"></el-input-number>
-        </sly-field>
         <sly-field title="Multi-scale"
                    description="Vary image size +/- 50%">
             <el-checkbox v-model="state.multiScale">Multi-scale</el-checkbox>
@@ -173,12 +169,17 @@
 
     <sly-card class="mt15" title="6. Training progress">
         <el-button type="primary"
-                   :disabled="state.selectedClasses.length === 0"
+                   :disabled="state.selectedClasses.length === 0 ||
+                              (state.modelWeightsOptions === 2 && state.weightsPath === '')
+                             "
                    @click="command('train')">
             Start training
         </el-button>
         <div v-show="state.selectedClasses.length === 0" class="mt10" style="color: red">
             0 training classes are selected
+        </div>
+        <div v-show="state.modelWeightsOptions === 2 && state.weightsPath === ''" style="color: red">
+            Path to model weights is not defined
         </div>
         <sly-logs class="mt15" :task-id="data.taskId"></sly-logs>
     </sly-card>
