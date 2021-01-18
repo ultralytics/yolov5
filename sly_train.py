@@ -22,14 +22,16 @@ META = None
 @sly.timeit
 def train(api: sly.Api, task_id, context, state, app_logger):
     project_dir = os.path.join(my_app.data_dir, "sly_project")
-    sly.fs.clean_dir(project_dir)  # useful only for debug
+    sly.fs.mkdir(project_dir)
+    sly.fs.clean_dir(project_dir)  # useful for debug
     sly.download_project_optimized(api, project_dir, PROJECT_ID, cache=my_app.cache, logger=app_logger)
 
     train_split, val_split = train_val_split(project_dir, state)
     train_classes = state["selectedClasses"]
     yolov5_format_dir = os.path.join(my_app.data_dir, "train_data")
     sly.fs.mkdir(yolov5_format_dir)
-    filter_and_transform_labels(project_dir, train_split, val_split, train_classes, yolov5_format_dir)
+    sly.fs.clean_dir(yolov5_format_dir)  # useful for debug
+    filter_and_transform_labels(project_dir, META, train_classes, train_split, val_split, yolov5_format_dir)
 
     # sys.argv.append('--weights')
     # sys.argv.append("maxim")
@@ -37,6 +39,7 @@ def train(api: sly.Api, task_id, context, state, app_logger):
     # train.main()
 
     # upload results to team files
+
 
 def main():
     sly.logger.info("Script arguments", extra={
@@ -49,6 +52,7 @@ def main():
     state = {}
 
     data["taskId"] = my_app.task_id
+    global PROJECT, META
     PROJECT, META = init_input_project(my_app.public_api, PROJECT_ID, data)
     init_classes_stats(my_app.public_api, PROJECT_ID, META, data, state)
 

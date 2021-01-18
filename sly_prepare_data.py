@@ -1,4 +1,5 @@
 import os
+import yaml
 import supervisely_lib as sly
 
 
@@ -44,6 +45,11 @@ def _create_data_config(output_dir, meta: sly.ProjectMeta):
     sly.fs.mkdir(data_yaml["val"])
     sly.fs.mkdir(data_yaml["labels_train"])
     sly.fs.mkdir(data_yaml["labels_val"])
+
+    config_path = os.path.join(output_dir, 'data_config.yaml')
+    with open(config_path, 'w') as f:
+        _ = yaml.dump(data_yaml, f, default_flow_style=None)
+
     return data_yaml
 
 
@@ -51,39 +57,40 @@ def transform_annotation(ann, class_names, save_path):
     yolov5_ann = []
     for label in ann.labels:
         yolov5_ann.append(transform_label(class_names, ann.img_size, label))
-    if len(yolov5_ann) > 0:
-        with open(save_path, 'w') as file:
-            file.write("\n".join(yolov5_ann))
+
+    with open(save_path, 'w') as file:
+        file.write("\n".join(yolov5_ann))
+
+    if len(yolov5_ann) == 0:
         return True
     return False
+
+
+def _process_split(project, class_names, images_dir, labels_dir, split):
+    for dataset_name, item_name in split:
+        dataset = project.datasets.get(dataset_name)
+        ann_path = dataset.get_ann_path(item_name)
+        ann_json = sly.json.load_json_file(ann_path)
+        ann = sly.Annotation.from_json(ann_json, project.meta)
+
+        save_ann_path = os.path.join(labels_dir, f"{dataset_name}_{sly.fs.get_file_name(item_name)}.txt")
+        empty = transform_annotation(ann, class_names, save_ann_path)
+
+        img_path = dataset.get_img_path(item_name)
+        save_img_path = os.path.join(images_dir, item_name)
+        sly.fs.copy_file(img_path, save_img_path)
+
+        if empty:
+            sly.logger.warning(f"Empty annotation dataset={dataset_name} image={item_name}")
 
 
 def filter_and_transform_labels(input_dir, META, train_classes,
                                 train_split, val_split,
                                 output_dir):
     new_meta = _transform_non_rectangle_classes(META, train_classes)
-    data_yaml = _create_data_config(output_dir)
+    data_yaml = _create_data_config(output_dir, META)
 
     project = sly.Project(input_dir, sly.OpenMode.READ)
-    for dataset_name, item_name in train_split:
-        dataset = project.datasets.get(dataset_name)
-        ann_path = dataset.get_ann_path(item_name)
-        ann_json = sly.json.load_json_file(ann_path)
-        ann = sly.Annotation.from_json(ann_json, project.meta)
-
-        save_ann_path = os.path.join(data_yaml["labels_train"], f"{dataset_name}_{sly.fs.get_file_name(item_name)}.txt")
-        not_empty = transform_annotation(ann, data_yaml["names"], save_ann_path)
-        if not_empty:
-            img_path = dataset.get_img_path(item_name)
-            save_img_path = os.path.join(data_yaml["train"], item_name)
-            sly.fs.copy_file(img_path, save_img_path)
-
-
-    #project = sly.Project(input_dir, sly.OpenMode.READ)
-    # for dataset in project:
-    #     for item_name in dataset:
-    #         ann_path = dataset.get_ann_path(item_name)
-    #         ann_json = sly.json.load_json_file(ann_path)
-    #         ann = sly.Annotation.from_json(ann_json, project.meta)
-    #         for label in labels:
+    _process_split(project, data_yaml["names"], data_yaml["train"], data_yaml["labels_train"], train_split)
+    _process_split(project, data_yaml["names"], data_yaml["val"], data_yaml["labels_val"], val_split)
 
