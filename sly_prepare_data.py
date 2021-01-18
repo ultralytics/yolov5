@@ -3,20 +3,6 @@ import yaml
 import supervisely_lib as sly
 
 
-def _transform_non_rectangle_classes(META: sly.ProjectMeta, train_classes):
-    new_classes = []
-    for class_name in train_classes:
-        obj_class = META.get_obj_class(class_name)
-        obj_class: sly.ObjClass
-        if obj_class is None:
-            raise KeyError(f"Class {class_name} not found")
-        if obj_class.geometry_type == sly.Rectangle:
-            new_classes.append(obj_class.clone())
-        else:
-            new_classes.append(obj_class.clone(geometry_type=sly.Rectangle))
-    return sly.ProjectMeta(obj_classes=sly.ObjClassCollection(new_classes))
-
-
 def transform_label(class_names, img_size, label: sly.Label):
     class_number = class_names.index(label.obj_class.name)
     rect_geometry = label.geometry.to_bbox()
@@ -56,7 +42,8 @@ def _create_data_config(output_dir, meta: sly.ProjectMeta):
 def transform_annotation(ann, class_names, save_path):
     yolov5_ann = []
     for label in ann.labels:
-        yolov5_ann.append(transform_label(class_names, ann.img_size, label))
+        if label.obj_class.name in class_names:
+            yolov5_ann.append(transform_label(class_names, ann.img_size, label))
 
     with open(save_path, 'w') as file:
         file.write("\n".join(yolov5_ann))
@@ -87,7 +74,6 @@ def _process_split(project, class_names, images_dir, labels_dir, split):
 def filter_and_transform_labels(input_dir, META, train_classes,
                                 train_split, val_split,
                                 output_dir):
-    new_meta = _transform_non_rectangle_classes(META, train_classes)
     data_yaml = _create_data_config(output_dir, META)
 
     project = sly.Project(input_dir, sly.OpenMode.READ)
