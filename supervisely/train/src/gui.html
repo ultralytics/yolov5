@@ -162,6 +162,9 @@
 
     <sly-card class="mt15" title="Training progress">
         <el-button type="primary" :disabled="state.selectedClasses.length === 0">Start training</el-button>
+        <div v-show="state.selectedClasses.length === 0" class="mt10" style="color: red">
+            0 training classes are selected
+        </div>
         <sly-logs class="mt15" :task-id="data.taskId"></sly-logs>
     </sly-card>
 </div>
