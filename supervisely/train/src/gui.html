@@ -40,7 +40,7 @@
               subtitle="Define how to split your data to train/val subsets">
         <el-radio-group class="mb15" v-model="state.splitMethod">
             <el-radio :label="1">Random</el-radio>
-            <el-radio :label="2">Based on image tags</el-radio>
+            <el-radio :label="2" disabled>Based on image tags (not implemented yet)</el-radio>
             <el-radio :label="3">Train = Val</el-radio>
         </el-radio-group>
 
@@ -78,7 +78,6 @@
             </el-table>
         </div>
         <div v-show="state.splitMethod===2">
-            <div>{{state.trainTag}}</div>
             <sly-field title="Train tag" description="all images with this tag are considered as training set">
                 <sly-select-tag
                         :project-id="data.projectId"
@@ -93,6 +92,7 @@
                         :options="{'showLabel': false}">
                 </sly-select-tag>
             </sly-field>
+            <div style="color: blue">If image does not have such tags, it will be assigned to training set</div>
         </div>
         <div v-show="state.splitMethod===3">
             <span style="color: green">All images are in both training and validation sets</span>
@@ -161,7 +161,11 @@
     </sly-card>
 
     <sly-card class="mt15" title="Training progress">
-        <el-button type="primary" :disabled="state.selectedClasses.length === 0">Start training</el-button>
+        <el-button type="primary"
+                   :disabled="state.selectedClasses.length === 0"
+                   @click="command('train')">
+            Start training
+        </el-button>
         <div v-show="state.selectedClasses.length === 0" class="mt10" style="color: red">
             0 training classes are selected
         </div>
