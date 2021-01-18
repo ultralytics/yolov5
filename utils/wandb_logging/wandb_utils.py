@@ -2,12 +2,16 @@ from datetime import datetime
 import shutil
 from pathlib import Path
 import os
+from os.path import dirname
 import stat
 import logging
 
 import tqdm
 import torch
 import json
+import sys
+# Add utils/ to path 
+sys.path.append(dirname(dirname(dirname(os.path.abspath(__file__)))))
 from utils.general import colorstr, xywh2xyxy
 logger = logging.getLogger(__name__)
 

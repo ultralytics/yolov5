@@ -7,12 +7,13 @@ from pathlib import Path
 from threading import Thread
 from warnings import warn
 
+import numpy as np
 import torch
 import yaml
 import wandb
-from utils.wandb_utils import WandbLogger
+from wandb_utils import WandbLogger
 
-from utils.general import check_dataset
+from utils.general import check_dataset, colorstr
 from utils.torch_utils import torch_distributed_zero_first
 from utils.datasets import create_dataloader
 
@@ -33,13 +34,17 @@ def create_dataset_artifact(opt):
     nc, names = (1, ['item']) if opt.single_cls else (int(data_dict['nc']), data_dict['names'])
     imgsz, batch_size = opt.img_size, opt.batch_size
     assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)  # check
-    trainloader = create_dataloader(train_path, imgsz, batch_size, 32, opt,
-                                            hyp=hyp, cache=opt.cache_images, rect=opt.rect, rank=-1,
-                                            world_size=1, workers=opt.workers)[0]
+    trainloader, trainset = create_dataloader(train_path, imgsz, batch_size, stride=32, opt=opt,
+                                            hyp=hyp, cache=False, rect=opt.rect, rank=-1,
+                                            world_size=opt.world_size, workers=opt.workers,
+                                            image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '))
+    mlc = np.concatenate(trainset.labels, 0)[:, 0].max()  # max label class
+    assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (mlc, nc, opt.data, nc - 1)
     
-    testloader = create_dataloader(test_path, imgsz, batch_size, 32, opt,  # testloader
-                                       hyp=hyp, cache=opt.cache_images, rect=True,
-                                       rank=-1, world_size=1, workers=opt.workers, pad=0.5)[0]
+    testloader = create_dataloader(test_path, imgsz, batch_size, stride=32, opt=opt,  # testloader
+                                       hyp=hyp, cache=False, rect=True, rank=-1,
+                                       world_size=opt.world_size, workers=opt.workers,
+                                       pad=0.5, prefix=colorstr('val: '))[0]
     names_to_ids = {k: v for k, v in enumerate(names)}
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -62,21 +67,14 @@ if __name__ == '__main__':
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
-    parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
     parser.add_argument('--project', type=str, default='yolov5', help='name of W&B Project')
     parser.add_argument('--img-size', nargs='+', type=int, default=640, help='[train, test] image sizes')
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
+    parser.add_argument('--quad', action='store_true', help='quad dataloader')
     parser.add_argument('--overwrite_config', action='store_true', help='replace the origin data config file')
     opt = parser.parse_args()
+    opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
 
     create_dataset_artifact(opt)
-        
-
-
-
-
-
-    
-    
