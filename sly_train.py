@@ -84,6 +84,19 @@ def init_tag_split(state):
     state["valTagName"] = ""
 
 
+def init_model_settings(data, state):
+    data["modelSizes"] = [
+        {"label": "yolov5s", "config": "yolov5s.yaml", "params": "7.3M"},
+        {"label": "yolov5m", "config": "yolov5m.yaml", "params": "21.4M"},
+        {"label": "yolov5l", "config": "yolov5l.yaml", "params": "47.0M"},
+        {"label": "yolov5x", "config": "yolov5x.yaml", "params": "87.7M"},
+    ]
+    state["modelSize"] = data["modelSizes"][0]["label"]
+    state["modelWeightsOptions"] = 1
+    state["pretrainedWeights"] = f'{data["modelSizes"][0]["label"]}.pt'
+    state["weightsPath"] = ""
+
+
 def main():
     sly.logger.info("Script arguments", extra={
         "context.teamId": TEAM_ID,
@@ -98,6 +111,8 @@ def main():
     init_classes_stats(my_app.public_api, data, state)
     state["splitMethod"] = 1
     init_random_split(data, state)
+    init_tag_split(state)
+    init_model_settings(data, state)
 
     #my_app.run(initial_events=[{"command": "yolov5_sly_converter"}])
     template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')
