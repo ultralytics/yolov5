@@ -24,11 +24,16 @@ META = None
 #     pass
 
 
-def init_classes_stats(api: sly.Api, data, state):
+def init_input_project(api: sly.Api, data):
     global PROJECT, META
     PROJECT = api.project.get_info_by_id(PROJECT_ID)
     META = sly.ProjectMeta.from_json(api.project.get_meta(PROJECT_ID))
+    data["projectId"] = PROJECT_ID
+    data["projectName"] = PROJECT.name
+    data["projectPreviewUrl"] = api.image.preview_url(PROJECT.reference_image_url, 100, 100)
 
+
+def init_classes_stats(api: sly.Api, data, state):
     stats = api.project.get_stats(PROJECT_ID)
     class_images = {}
     for item in stats["images"]["objectClasses"]:
@@ -48,19 +53,51 @@ def init_classes_stats(api: sly.Api, data, state):
     state["classes"] = len(classes_json) * [True]
 
 
+def init_random_split(data, state):
+    data["randomSplit"] = [
+        {"name": "train", "type": "success"},
+        {"name": "val", "type": "primary"},
+        {"name": "total", "type": "gray"},
+    ]
+    data["totalImagesCount"] = PROJECT.items_count
+
+    train_percent = 80
+    train_count = int(PROJECT.items_count / 100 * train_percent)
+    state["randomSplit"] = {
+        "count": {
+            "total": PROJECT.items_count,
+            "train": train_count,
+            "val": PROJECT.items_count - train_count
+        },
+        "percent": {
+            "total": 100,
+            "train": train_percent,
+            "val": 100 - train_percent
+        },
+        "shareImagesBetweenSplits": False,
+        "sliderDisabled": False,
+    }
+
+
+def init_tag_split(state):
+    state["trainTagName"] = ""
+    state["valTagName"] = ""
+
+
 def main():
-    # sly.logger.info("Script arguments", extra={
-    #     "context.teamId": TEAM_ID,
-    #     "context.workspaceId": WORKSPACE_ID,
-    #     "modal.state.slyFolder": INPUT_DIR,
-    #     "modal.state.slyFile": INPUT_FILE,
-    #     "CONFIG_DIR": os.environ.get("CONFIG_DIR", None)
-    # })
+    sly.logger.info("Script arguments", extra={
+        "context.teamId": TEAM_ID,
+        "context.workspaceId": WORKSPACE_ID,
+        "modal.state.slyProjectId": PROJECT_ID,
+    })
 
     data = {}
     state = {}
 
+    init_input_project(my_app.public_api, data)
     init_classes_stats(my_app.public_api, data, state)
+    state["splitMethod"] = 1
+    init_random_split(data, state)
 
     #my_app.run(initial_events=[{"command": "yolov5_sly_converter"}])
     template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')

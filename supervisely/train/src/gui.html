@@ -1,30 +1,101 @@
 <div>
-    <sly-card title="Training classes" subtitle="Select classes, that should be used for training. Training supports
-                                                 only classes of shape Rectangle, other shapes are transformed to it
-                                                 automatically.">
-        <template>
-            <el-table
-                    class="ultra-table"
-                    :data="data.classes"
-                    style="width: 100%"
-                    max-height="600"
-                    @selection-change="
-                    (val) => {
-                        state.selectedClasses = val.map(x => x.title);
-                    }
-                    "
-            >
-                <el-table-column type="selection" width="55"></el-table-column>
-                <el-table-column label="Name" prop="title" sortable>
+    <sly-card title="Input Project" style="width: 40%">
+        <sly-field title="" description="Project">
+            <a slot="title" target="_blank"
+               :href="`/projects/${data.projectId}/datasets`">{{data.projectName}}</a>
+            <sly-icon slot="icon" :options="{ imageUrl: `${data.projectPreviewUrl}` }"/>
+        </sly-field>
+    </sly-card>
+
+    <sly-card class="mt15"
+              title="Training classes"
+              subtitle="Select classes, that should be used for training. Training supports only classes of shape
+                        Rectangle, other shapes are transformed to it automatically.">
+        <el-table
+                class="ultra-table"
+                :data="data.classes"
+                style="width: 100%"
+                max-height="600"
+                @selection-change="
+                (val) => {
+                    state.selectedClasses = val.map(x => x.title);
+                }
+                "
+        >
+            <el-table-column type="selection" width="55"></el-table-column>
+            <el-table-column label="Name" prop="title" sortable>
+                <template scope="scope">
+                    <i class="zmdi zmdi-circle mr5" :style="{color: scope.row.color}"></i>
+                    {{ scope.row.title }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="shape" label="Shape" sortable width="180"></el-table-column>
+            <el-table-column prop="imagesCount" label="Images count" sortable width="150"></el-table-column>
+            <el-table-column prop="objectsCount" label="Objects count" sortable width="180"></el-table-column>
+        </el-table>
+    </sly-card>
+
+    <sly-card class="mt15"
+              title="Train / Validation splits"
+              subtitle="Define how to split your data to train/val subsets">
+        <el-radio-group class="mb15" v-model="state.splitMethod">
+            <el-radio :label="1">Random</el-radio>
+            <el-radio :label="2">Based on image tags</el-radio>
+            <el-radio :label="3">Train = Val</el-radio>
+        </el-radio-group>
+
+        <div v-show="state.splitMethod===1">
+            <el-table :data="data.randomSplit">
+                <el-table-column label="Info" width="180">
                     <template scope="scope">
-                        <i class="zmdi zmdi-circle mr5" :style="{color: scope.row.color}"></i>
-                        {{ scope.row.title }}
+                        <el-tag :type="scope.row.type">
+                            <i v-if="scope.row.name !== 'total'" class="zmdi zmdi-tag mr5"></i>{{scope.row.name}}
+                        </el-tag>
                     </template>
                 </el-table-column>
-                <el-table-column prop="shape" label="Shape" sortable width="180"></el-table-column>
-                <el-table-column prop="imagesCount" label="Images count" sortable width="150"></el-table-column>
-                <el-table-column prop="objectsCount" label="Objects count" sortable width="180"></el-table-column>
+                <el-table-column label="Number of images" width="180">
+                    <template scope="scope">
+                        <span style="margin-left: 10px">{{state.randomSplit.count[scope.row.name]}}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column label="Percent of images">
+                    <template scope="scope">
+                        <div v-if="scope.row.name !== 'train'">
+                            <span style="margin-left: 10px">{{state.randomSplit.percent[scope.row.name]}}%</span>
+                        </div>
+
+                        <el-slider v-if="scope.row.name === 'train'"
+                                   v-model="state.randomSplit.percent.train"
+                                   :disabled="state.randomSplit.sliderDisabled"
+                                   show-input :min="1" :max="100"
+                                   style="flex:1; max-width: 99%; margin-left: 15px;"
+                                   @input="state.randomSplit.count.train = parseInt(data.totalImagesCount * state.randomSplit.percent.train / 100, 10);
+                                           state.randomSplit.count.val = data.totalImagesCount - state.randomSplit.count.train;
+                                           state.randomSplit.percent.val = 100 - state.randomSplit.percent.train"
+                        ></el-slider>
+                    </template>
+                </el-table-column>
             </el-table>
-        </template>
+        </div>
+        <div v-show="state.splitMethod===2">
+            <div>{{state.trainTag}}</div>
+            <sly-field title="Train tag" description="all images with this tag are considered as training set">
+                <sly-select-tag
+                        :project-id="data.projectId"
+                        :tags.sync="state.trainTagName"
+                        :options="{'showLabel': false}">
+                </sly-select-tag>
+            </sly-field>
+            <sly-field title="Validation tag" description="all images with this tag are considered as validation set">
+                <sly-select-tag
+                        :project-id="data.projectId"
+                        :tags.sync="state.valTagName"
+                        :options="{'showLabel': false}">
+                </sly-select-tag>
+            </sly-field>
+        </div>
+        <div v-show="state.splitMethod===3">
+            <span style="color: green">All images are in both training and validation sets</span>
+        </div>
     </sly-card>
 </div>
