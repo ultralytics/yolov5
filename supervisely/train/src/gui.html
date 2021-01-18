@@ -127,4 +127,41 @@
             </div>
         </sly-field>
     </sly-card>
+
+    <sly-card class="mt15"
+              title="Traning hyperparameters">
+        <sly-field title="Number of epochs">
+            <el-input-number v-model="state.epochs" :min="1" :max="10000"></el-input-number>
+        </sly-field>
+        <sly-field title="Batch size"
+                   description="total batch size for all GPUs. Use the largest batch size your GPU allows.
+                                For example: 16 / 24 / 40 / 64 (batch sizes shown for 16 GB devices)">
+            <el-input-number v-model="state.batchSize" :min="6"></el-input-number>
+        </sly-field>
+        <sly-field title="Input image size (in pixels)"
+                   description="Image is resized to square">
+            <el-input-number v-model="state.imgSize" :min="64"></el-input-number>
+        </sly-field>
+        <sly-field title="Input image size (in pixels)"
+                   description="Image is resized to square">
+            <el-input-number v-model="state.imgSize" :min="64"></el-input-number>
+        </sly-field>
+        <sly-field title="Multi-scale"
+                   description="Vary image size +/- 50%">
+            <el-checkbox v-model="state.multiScale">Multi-scale</el-checkbox>
+        </sly-field>
+        <sly-field title="Single class"
+                   description="Train multi-class data as single-class">
+            <el-checkbox v-model="state.singleClass">Single class</el-checkbox>
+        </sly-field>
+        <sly-field title="Device"
+                   description="cuda device, i.e. 0 or 0,1,2,3 or cpu">
+            <el-input v-model="state.device" style="width:250px;"></el-input>
+        </sly-field>
+    </sly-card>
+
+    <sly-card class="mt15" title="Training progress">
+        <el-button type="primary" :disabled="state.selectedClasses.length === 0">Start training</el-button>
+        <sly-logs class="mt15" :task-id="data.taskId"></sly-logs>
+    </sly-card>
 </div>

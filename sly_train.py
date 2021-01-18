@@ -97,6 +97,15 @@ def init_model_settings(data, state):
     state["weightsPath"] = ""
 
 
+def init_training_hyperparameters(state):
+    state["epochs"] = 300
+    state["batchSize"] = 16
+    state["imgSize"] = 640
+    state["multiScale"] = True
+    state["singleClass"] = False
+    state["device"] = '0'
+
+
 def main():
     sly.logger.info("Script arguments", extra={
         "context.teamId": TEAM_ID,
@@ -107,12 +116,14 @@ def main():
     data = {}
     state = {}
 
+    data["taskId"] = my_app.task_id
     init_input_project(my_app.public_api, data)
     init_classes_stats(my_app.public_api, data, state)
     state["splitMethod"] = 1
     init_random_split(data, state)
     init_tag_split(state)
     init_model_settings(data, state)
+    init_training_hyperparameters(state)
 
     #my_app.run(initial_events=[{"command": "yolov5_sly_converter"}])
     template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')
