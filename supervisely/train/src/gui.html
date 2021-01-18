@@ -2,17 +2,29 @@
     <sly-card title="Training classes" subtitle="Select classes, that should be used for training. Training supports
                                                  only classes of shape Rectangle, other shapes are transformed to it
                                                  automatically.">
-        <table>
-            <tbody>
-            <tr v-for="(objClass, index) in data.classes">
-                <td>
-                    <el-checkbox class="small" v-model="state.classes[index]"></el-checkbox>
-                </td>
-                <td><i class="zmdi zmdi-circle ml5 mr5" :style="{color: objClass.color}"></i></td>
-                <td>{{objClass.title}}</td>
-                <td><span class="ml5" style="color: #777777"><i class="zmdi zmdi-shape mr5"></i>{{objClass.shape}}</span></td>
-            </tr>
-            </tbody>
-        </table>
+        <template>
+            <el-table
+                    class="ultra-table"
+                    :data="data.classes"
+                    style="width: 100%"
+                    max-height="600"
+                    @selection-change="
+                    (val) => {
+                        state.selectedClasses = val.map(x => x.title);
+                    }
+                    "
+            >
+                <el-table-column type="selection" width="55"></el-table-column>
+                <el-table-column label="Name" prop="title" sortable>
+                    <template scope="scope">
+                        <i class="zmdi zmdi-circle mr5" :style="{color: scope.row.color}"></i>
+                        {{ scope.row.title }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="shape" label="Shape" sortable width="180"></el-table-column>
+                <el-table-column prop="imagesCount" label="Images count" sortable width="150"></el-table-column>
+                <el-table-column prop="objectsCount" label="Objects count" sortable width="180"></el-table-column>
+            </el-table>
+        </template>
     </sly-card>
 </div>
