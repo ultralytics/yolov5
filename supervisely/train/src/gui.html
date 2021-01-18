@@ -1,14 +1,25 @@
 <div>
-    <sly-card title="Input Project" style="width: 40%">
-        <sly-field title="" description="Project">
-            <a slot="title" target="_blank"
-               :href="`/projects/${data.projectId}/datasets`">{{data.projectName}}</a>
-            <sly-icon slot="icon" :options="{ imageUrl: `${data.projectPreviewUrl}` }"/>
-        </sly-field>
-    </sly-card>
+
+    <div class="fflex" style="align-items: stretch">
+        <sly-card title="1. Input Project"
+                  subtitle="This project will be used for training"
+                  class="mr15"
+                  style="width: 50%;">
+            <sly-field title="" description="Project">
+                <a slot="title" target="_blank"
+                   :href="`/projects/${data.projectId}/datasets`">{{data.projectName}}</a>
+                <sly-icon slot="icon" :options="{ imageUrl: `${data.projectPreviewUrl}` }"/>
+            </sly-field>
+        </sly-card>
+        <sly-card title="7. Training artifacts"
+                  subtitle="Checkpoints, logs and other visualizations"
+                  style="width: 50%">
+            <div>Link to the directory with training artifacts will be here</div>
+        </sly-card>
+    </div>
 
     <sly-card class="mt15"
-              title="Training classes"
+              title="2. Training classes"
               subtitle="Select classes, that should be used for training. Training supports only classes of shape
                         Rectangle, other shapes are transformed to it automatically.">
         <el-table
@@ -36,7 +47,7 @@
     </sly-card>
 
     <sly-card class="mt15"
-              title="Train / Validation splits"
+              title="3. Train / Validation splits"
               subtitle="Define how to split your data to train/val subsets">
         <el-radio-group class="mb15" v-model="state.splitMethod">
             <el-radio :label="1">Random</el-radio>
@@ -100,7 +111,7 @@
     </sly-card>
 
     <sly-card class="mt15"
-              title="Model settings">
+              title="4. Model settings">
         <sly-field title="Model size" description="more params => better performace and slower inference time">
             <el-select v-model="state.modelSize"
                        style="width:250px;"
@@ -129,7 +140,7 @@
     </sly-card>
 
     <sly-card class="mt15"
-              title="Traning hyperparameters">
+              title="5. Traning hyperparameters">
         <sly-field title="Number of epochs">
             <el-input-number v-model="state.epochs" :min="1" :max="10000"></el-input-number>
         </sly-field>
@@ -160,7 +171,7 @@
         </sly-field>
     </sly-card>
 
-    <sly-card class="mt15" title="Training progress">
+    <sly-card class="mt15" title="6. Training progress">
         <el-button type="primary"
                    :disabled="state.selectedClasses.length === 0"
                    @click="command('train')">

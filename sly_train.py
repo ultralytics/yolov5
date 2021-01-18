@@ -5,6 +5,7 @@ import supervisely_lib as sly
 from sly_train_val_split import train_val_split
 from sly_init_ui import init_input_project, init_classes_stats, init_random_split, init_model_settings, \
      init_training_hyperparameters
+from sly_prepare_data import filter_and_transform_labels
 
 my_app = sly.AppService()
 
@@ -26,13 +27,15 @@ def train(api: sly.Api, task_id, context, state, app_logger):
 
     train_split, val_split = train_val_split(project_dir, state)
     train_classes = state["selectedClasses"]
+    yolov5_format_dir = os.path.join(my_app.data_dir, "train_data")
+    filter_and_transform_labels(project_dir, train_split, val_split, train_classes, yolov5_format_dir)
 
+    sys.argv.append('--weights')
+    sys.argv.append("maxim")
+    import train
+    train.main()
 
-    # sys.argv.append('--weights')
-    # sys.argv.append("maxim")
-    # import train
-    # train.main()
-
+    # upload results to team files
 
 def main():
     sly.logger.info("Script arguments", extra={
