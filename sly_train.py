@@ -57,7 +57,7 @@ def train(api: sly.Api, task_id, context, state, app_logger):
 
     sys.argv.extend(["--epochs", state["epochs"]])
     sys.argv.extend(["--batch-size", state["batchSize"]])
-    sys.argv.extend(["--img-size", state["imgSize"]])
+    sys.argv.extend(["--img-size", f'{state["imgSize"]},{state["imgSize"]}'])
     sys.argv.extend(["--multi-scale", state["multiScale"]])
     sys.argv.extend(["--single-cls", state["singleClass"]])
     sys.argv.extend(["--device", state["device"]])
