@@ -1,3 +1,18 @@
 <div>
-    123
+    <sly-card title="Training classes" subtitle="Select classes, that should be used for training. Training supports
+                                                 only classes of shape Rectangle, other shapes are transformed to it
+                                                 automatically.">
+        <table>
+            <tbody>
+            <tr v-for="(objClass, index) in data.classes">
+                <td>
+                    <el-checkbox class="small" v-model="state.classes[index]"></el-checkbox>
+                </td>
+                <td><i class="zmdi zmdi-circle ml5 mr5" :style="{color: objClass.color}"></i></td>
+                <td>{{objClass.title}}</td>
+                <td><span class="ml5" style="color: #777777"><i class="zmdi zmdi-shape mr5"></i>{{objClass.shape}}</span></td>
+            </tr>
+            </tbody>
+        </table>
+    </sly-card>
 </div>
