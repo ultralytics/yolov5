@@ -1,12 +1,7 @@
 import os
 import sys
 import supervisely_lib as sly
-
-
-#sys.argv.append('--weights')
-#sys.argv.append("maxim")
-#import train
-#train.main()
+from sly_prepare_data import download_project
 
 my_app = sly.AppService()
 
@@ -17,11 +12,6 @@ PROJECT_ID = int(os.environ['modal.state.slyProjectId'])
 
 PROJECT = None
 META = None
-
-#@my_app.callback("yolov5_sly_converter")
-#@sly.timeit
-# def yolov5_sly_converter(api: sly.Api, task_id, context, state, app_logger):
-#     pass
 
 
 def init_input_project(api: sly.Api, data):
@@ -106,6 +96,21 @@ def init_training_hyperparameters(state):
     state["device"] = '0'
 
 
+@my_app.callback("train")
+@sly.timeit
+def train(api: sly.Api, task_id, context, state, app_logger):
+    # todo: download data and convert
+    data_dir = os.path.join(my_app.data_dir, 'data')
+    download_project(api, data_dir)
+
+    sly.download_project()
+
+    # sys.argv.append('--weights')
+    # sys.argv.append("maxim")
+    # import train
+    # train.main()
+
+
 def main():
     sly.logger.info("Script arguments", extra={
         "context.teamId": TEAM_ID,
@@ -125,7 +130,6 @@ def main():
     init_model_settings(data, state)
     init_training_hyperparameters(state)
 
-    #my_app.run(initial_events=[{"command": "yolov5_sly_converter"}])
     template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')
     my_app.run(template_path, data, state)
 

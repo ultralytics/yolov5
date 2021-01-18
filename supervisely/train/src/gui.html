@@ -15,7 +15,7 @@
                 class="ultra-table"
                 :data="data.classes"
                 style="width: 100%"
-                max-height="600"
+                max-height="500"
                 @selection-change="
                 (val) => {
                     state.selectedClasses = val.map(x => x.title);
@@ -151,7 +151,7 @@
             <el-checkbox v-model="state.multiScale">Multi-scale</el-checkbox>
         </sly-field>
         <sly-field title="Single class"
-                   description="Train multi-class data as single-class">
+                   description="Train multi-class data as single-class (merge all classes to a single one)">
             <el-checkbox v-model="state.singleClass">Single class</el-checkbox>
         </sly-field>
         <sly-field title="Device"
