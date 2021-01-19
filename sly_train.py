@@ -40,7 +40,7 @@ def train(api: sly.Api, task_id, context, state, app_logger):
     import train
     train.main()
 
-    api.file.upload_directory(TEAM_ID, local_artifacts_dir, remote_artifacts_dir)
+    api.file.upload_directory(TEAM_ID, local_artifacts_dir, remote_artifacts_dir, )
 
 
 def main():

@@ -34,14 +34,12 @@ def init_script_arguments(state, yolov5_format_dir, app_data_dir, input_project_
     local_artifacts_dir = os.path.join(training_dir, experiment_name)
     _exp_index = 1
     while sly.fs.dir_exists(local_artifacts_dir):
-        experiment_name = "{}_{:3d}".format(task_id)
+        experiment_name = "{}_{:03d}".format(task_id, _exp_index)
         local_artifacts_dir = os.path.join(training_dir, experiment_name)
+        _exp_index += 1
 
     sys.argv.extend(["--project", training_dir])
     sys.argv.extend(["--name", experiment_name])
 
-
     remote_artifacts_dir = os.path.join("/yolov5_train", input_project_name, experiment_name)
-    sly.fs.mkdir(local_artifacts_dir)
-    sly.fs.clean_dir(local_artifacts_dir)  # useful for debug
     return local_artifacts_dir, remote_artifacts_dir
