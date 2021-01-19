@@ -20,7 +20,7 @@ from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils.general import xyxy2xywh, xywh2xyxy, clean_str
+from utils.general import xyxy2xywh, xywh2xyxy, xywhn2xyxy, clean_str
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
@@ -515,16 +515,9 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             img, ratio, pad = letterbox(img, shape, auto=False, scaleup=self.augment)
             shapes = (h0, w0), ((h / h0, w / w0), pad)  # for COCO mAP rescaling
 
-            # Load labels
-            labels = []
-            x = self.labels[index]
-            if x.size > 0:
-                # Normalized xywh to pixel xyxy format
-                labels = x.copy()
-                labels[:, 1] = ratio[0] * w * (x[:, 1] - x[:, 3] / 2) + pad[0]  # pad width
-                labels[:, 2] = ratio[1] * h * (x[:, 2] - x[:, 4] / 2) + pad[1]  # pad height
-                labels[:, 3] = ratio[0] * w * (x[:, 1] + x[:, 3] / 2) + pad[0]
-                labels[:, 4] = ratio[1] * h * (x[:, 2] + x[:, 4] / 2) + pad[1]
+            labels = self.labels[index].copy()
+            if labels.size:  # normalized xywh to pixel xyxy format
+                labels[:, 1:] = xywhn2xyxy(labels[:, 1:], ratio[0] * w, ratio[1] * h, padw=pad[0], padh=pad[1])
 
         if self.augment:
             # Augment imagespace
@@ -674,13 +667,9 @@ def load_mosaic(self, index):
         padh = y1a - y1b
 
         # Labels
-        x = self.labels[index]
-        labels = x.copy()
-        if x.size > 0:  # Normalized xywh to pixel xyxy format
-            labels[:, 1] = w * (x[:, 1] - x[:, 3] / 2) + padw
-            labels[:, 2] = h * (x[:, 2] - x[:, 4] / 2) + padh
-            labels[:, 3] = w * (x[:, 1] + x[:, 3] / 2) + padw
-            labels[:, 4] = h * (x[:, 2] + x[:, 4] / 2) + padh
+        labels = self.labels[index].copy()
+        if labels.size:
+            labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padw, padh)  # normalized xywh to pixel xyxy format
         labels4.append(labels)
 
     # Concat/clip labels
@@ -737,13 +726,9 @@ def load_mosaic9(self, index):
         x1, y1, x2, y2 = [max(x, 0) for x in c]  # allocate coords
 
         # Labels
-        x = self.labels[index]
-        labels = x.copy()
-        if x.size > 0:  # Normalized xywh to pixel xyxy format
-            labels[:, 1] = w * (x[:, 1] - x[:, 3] / 2) + padx
-            labels[:, 2] = h * (x[:, 2] - x[:, 4] / 2) + pady
-            labels[:, 3] = w * (x[:, 1] + x[:, 3] / 2) + padx
-            labels[:, 4] = h * (x[:, 2] + x[:, 4] / 2) + pady
+        labels = self.labels[index].copy()
+        if labels.size:
+            labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padx, pady)  # normalized xywh to pixel xyxy format
         labels9.append(labels)
 
         # Image
