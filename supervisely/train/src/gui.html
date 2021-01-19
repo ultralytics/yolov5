@@ -186,9 +186,10 @@
 
     <pre>{{data.vis}}</pre>
     <sly-card class="mt15" title="6. Training progress">
-        <!--    :options='{"enableZoom": false; "syncViews": false, "showPreview": true, "selectable": false}'-->
         <sly-grid-gallery v-show="data.vis.content.layout.length > 0"
                           :content="data.vis.content"
+                          style="width:100%;"
+                          :options="{enableZoom: false, syncViews: false, showPreview: true, selectable: true}"
         >
             <template v-slot:card-footer="{ annotation }">
                 <div style="color: blue">{{annotation.name}}</div>
