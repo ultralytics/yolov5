@@ -183,4 +183,16 @@
         </div>
         <sly-logs class="mt15" :task-id="data.taskId"></sly-logs>
     </sly-card>
+
+    <pre>{{data.vis}}</pre>
+    <sly-card class="mt15" title="6. Training progress">
+        <!--    :options='{"enableZoom": false; "syncViews": false, "showPreview": true, "selectable": false}'-->
+        <sly-grid-gallery v-show="data.vis.content.layout.length > 0"
+                          :content="data.vis.content"
+        >
+            <template v-slot:card-footer="{ annotation }">
+                <div style="color: blue">{{annotation.name}}</div>
+            </template>
+        </sly-grid-gallery>
+    </sly-card>
 </div>

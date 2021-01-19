@@ -18,6 +18,14 @@ PROJECT_ID = int(os.environ['modal.state.slyProjectId'])
 PROJECT = None
 META = None
 
+CNT_GRID_COLUMNS = 3
+empty_gallery = {
+    "content": {
+        "projectMeta": {},
+        "annotations": {},
+        "layout": []
+    }
+}
 
 @my_app.callback("train")
 @sly.timeit
@@ -40,7 +48,30 @@ def train(api: sly.Api, task_id, context, state, app_logger):
     import train
     train.main()
 
-    api.file.upload_directory(TEAM_ID, local_artifacts_dir, remote_artifacts_dir, )
+    uploaded_files = api.file.upload_directory(TEAM_ID, local_artifacts_dir, remote_artifacts_dir)
+
+    grid_layout = [[] for i in range(CNT_GRID_COLUMNS)]
+    grid_data = {}
+    for idx, file_info in enumerate(uploaded_files):
+        print(file_info)
+        if sly.image.has_valid_ext(file_info.name):
+            grid_layout[idx % CNT_GRID_COLUMNS].append(str(idx))
+            grid_data[idx] = {
+                "url": file_info.full_storage_url,
+                "name": file_info.name,
+                "figures": []
+            }
+
+    vis = {
+        "content": {
+            "projectMeta": sly.ProjectMeta().to_json(),
+            "annotations": grid_data,
+            "layout": grid_layout
+        },
+    }
+
+    api.app.set_field(task_id, "data.vis", vis)
+    my_app.stop()
 
 
 def main():
@@ -64,6 +95,7 @@ def main():
 
     state["started"] = False
     state["epochs"] = 1  # @TODO: uncomment for debug
+    data["vis"] = empty_gallery
 
     template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')
     my_app.run(template_path, data, state)
