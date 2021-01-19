@@ -6,6 +6,7 @@ from sly_train_val_split import train_val_split
 from sly_init_ui import init_input_project, init_classes_stats, init_random_split, init_model_settings, \
      init_training_hyperparameters
 from sly_prepare_data import filter_and_transform_labels
+from sly_train_utils import init_script_arguments
 
 my_app = sly.AppService()
 
@@ -33,35 +34,13 @@ def train(api: sly.Api, task_id, context, state, app_logger):
     sly.fs.clean_dir(yolov5_format_dir)  # useful for debug
     filter_and_transform_labels(project_dir, META, train_classes, train_split, val_split, yolov5_format_dir)
 
-    data_path = os.path.join(yolov5_format_dir, 'data_config.yaml')
-    sys.argv.extend(["--data", data_path])
-
-    cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models', f"{state['modelSize']}.yaml")
-    sys.argv.extend(["--cfg", cfg])
-
-    hyp = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data/hyp.scratch.yaml')
-    sys.argv.extend(["--hyp", hyp])
-
-    weights = "" # random
-    if state["modelWeightsOptions"] == 1:
-        weights = state["pretrainedWeights"]
-    elif state["modelWeightsOptions"] == 2:
-        weights = state["weightsPath"]
-    sys.argv.extend(["--weights", weights])
-
-    sys.argv.extend(["--epochs", str(state["epochs"])])
-    sys.argv.extend(["--batch-size", str(state["batchSize"])])
-    sys.argv.extend(["--img-size", str(state["imgSize"]), str(state["imgSize"])])
-    if state["multiScale"]:
-        sys.argv.append("--multi-scale")
-    if state["singleClass"]:
-        sys.argv.append("--single-cls")
-    sys.argv.extend(["--device", state["device"]])
+    local_artifacts_dir, remote_artifacts_dir = \
+        init_script_arguments(state, yolov5_format_dir, my_app.data_dir, PROJECT.name, task_id)
 
     import train
     train.main()
 
-    #@TODO: upload results to team files
+    api.file.upload_directory(TEAM_ID, local_artifacts_dir, remote_artifacts_dir)
 
 
 def main():
@@ -84,7 +63,7 @@ def main():
     init_training_hyperparameters(state)
 
     state["started"] = False
-    state["epochs"] = 10  # @TODO: uncomment for debug
+    state["epochs"] = 1  # @TODO: uncomment for debug
 
     template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')
     my_app.run(template_path, data, state)
