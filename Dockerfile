@@ -7,8 +7,7 @@ RUN apt update && apt install -y screen libgl1-mesa-glx
 # Install python dependencies
 RUN pip install --upgrade pip
 COPY requirements.txt .
-RUN pip install -r requirements.txt gsutil wandb
-RUN wandb disabled
+RUN pip install -r requirements.txt gsutil
 
 # Create working directory
 RUN mkdir -p /usr/src/app
