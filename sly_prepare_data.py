@@ -60,7 +60,7 @@ def _process_split(project, class_names, images_dir, labels_dir, split):
         ann_json = sly.json.load_json_file(ann_path)
         ann = sly.Annotation.from_json(ann_json, project.meta)
 
-        save_ann_path = os.path.join(labels_dir, f"{dataset_name}_{sly.fs.get_file_name(item_name)}.txt")
+        save_ann_path = os.path.join(labels_dir, f"{sly.fs.get_file_name(item_name)}.txt")
         empty = transform_annotation(ann, class_names, save_ann_path)
 
         img_path = dataset.get_img_path(item_name)

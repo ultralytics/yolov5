@@ -170,9 +170,9 @@
     <sly-card class="mt15" title="6. Training progress">
         <el-button type="primary"
                    :disabled="state.selectedClasses.length === 0 ||
-                              (state.modelWeightsOptions === 2 && state.weightsPath === '')
-                             "
-                   @click="command('train')">
+                              (state.modelWeightsOptions === 2 && state.weightsPath === '') ||
+                              state.started === true"
+                   @click="state.started = true; command('train')">
             Start training
         </el-button>
         <div v-show="state.selectedClasses.length === 0" class="mt10" style="color: red">

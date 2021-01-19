@@ -1,4 +1,6 @@
 # pip install -r requirements.txt
+supervisely==6.1.46
+opencv-python==4.5.1.48
 
 # base ----------------------------------------
 Cython

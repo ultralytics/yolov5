@@ -472,7 +472,7 @@ def main():
     set_logging(opt.global_rank)
     if opt.global_rank in [-1, 0]:
         check_git_status()
-        check_requirements()
+        #check_requirements(file=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'requirements.txt'))
 
     # Resume
     if opt.resume:  # resume an interrupted run
