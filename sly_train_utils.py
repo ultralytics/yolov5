@@ -65,6 +65,8 @@ def init_script_arguments(state, yolov5_format_dir, app_data_dir, input_project_
 def send_epoch_log(epoch, epochs):
     fields = [
         {"field": "data.progressName", "payload": "Epoch"},
+        {"field": "data.currentProgressLabel", "payload": epoch},
+        {"field": "data.totalProgressLabel", "payload": epochs},
         {"field": "data.currentProgress", "payload": epoch},
         {"field": "data.totalProgress", "payload": epochs},
     ]

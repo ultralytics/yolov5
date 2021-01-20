@@ -183,7 +183,7 @@
         </div>
 
         <div v-if="data.progressName.length > 0" class="mt10">
-            <div style="color: blue">{{data.progressName}}: {{data.currentProgress}} / {{data.totalProgress}}</div>
+            <div style="color: blue">{{data.progressName}}: {{data.currentProgressLabel}} / {{data.totalProgressLabel}}</div>
             <el-progress :percentage="Math.round(data.currentProgress * 100 / data.totalProgress)"></el-progress>
         </div>
         <el-collapse class="mt15" v-model="state.activeNames">

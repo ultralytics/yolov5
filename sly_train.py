@@ -1,6 +1,7 @@
 import os
 import sys
 import supervisely_lib as sly
+from supervisely_lib._utils import sizeof_fmt
 
 from sly_train_val_split import train_val_split
 from sly_init_ui import init_input_project, init_classes_stats, init_random_split, init_model_settings, \
@@ -45,6 +46,8 @@ def train(api: sly.Api, task_id, context, state, app_logger):
         progress.iters_done_report(count)
         fields = [
             {"field": "data.progressName", "payload": progress.message},
+            {"field": "data.currentProgressLabel", "payload": progress.current},
+            {"field": "data.totalProgressLabel", "payload": progress.total},
             {"field": "data.currentProgress", "payload": progress.current},
             {"field": "data.totalProgress", "payload": progress.total},
         ]
@@ -70,6 +73,8 @@ def train(api: sly.Api, task_id, context, state, app_logger):
         progress.iters_done_report(count)
         fields = [
             {"field": "data.progressName", "payload": progress.message},
+            {"field": "data.currentProgressLabel", "payload": progress.current},
+            {"field": "data.totalProgressLabel", "payload": progress.total},
             {"field": "data.currentProgress", "payload": progress.current},
             {"field": "data.totalProgress", "payload": progress.total},
         ]
@@ -79,27 +84,38 @@ def train(api: sly.Api, task_id, context, state, app_logger):
     import train
     train.main()
 
-    # uploaded_files = api.file.upload_directory(TEAM_ID, local_artifacts_dir, remote_artifacts_dir)
-    #
-    # grid_layout = [[] for i in range(CNT_GRID_COLUMNS)]
-    # grid_data = {}
-    # for idx, file_info in enumerate(uploaded_files):
-    #     print(file_info)
-    #     if sly.image.has_valid_ext(file_info.name):
-    #         grid_layout[idx % CNT_GRID_COLUMNS].append(str(idx))
-    #         grid_data[idx] = {
-    #             "url": file_info.full_storage_url,
-    #             "name": file_info.name,
-    #             "figures": []
-    #         }
-    # vis = {
-    #     "content": {
-    #         "projectMeta": sly.ProjectMeta().to_json(),
-    #         "annotations": grid_data,
-    #         "layout": grid_layout
-    #     },
-    # }
-    # api.app.set_field(task_id, "data.vis", vis)
+    progress = sly.Progress("Download data (using cache)", PROJECT.items_count * 2, ext_logger=app_logger)
+
+    upload_progress = [None]
+    def _print_progress(monitor, upload_progress):
+        if len(upload_progress) == 0:
+            upload_progress.append(sly.Progress(message="Upload {!r}".format(local_path),
+                                                total_cnt=monitor.len,
+                                                ext_logger=app_logger,
+                                                is_size=True))
+        upload_progress[0].set_current_value(monitor.bytes_read)
+        progress = upload_progress[0]
+        if progress.need_report():
+            fields = [
+                {"field": "data.progressName", "payload": progress.message},
+                {"field": "data.currentProgressLabel", "payload": sizeof_fmt(progress.current)},
+                {"field": "data.totalProgressLabel", "payload": sizeof_fmt(progress.total)},
+                {"field": "data.currentProgress", "payload": progress.current},
+                {"field": "data.totalProgress", "payload": progress.total},
+            ]
+            api.app.set_fields(task_id, fields)
+
+    local_files = sly.fs.list_files_recursively(local_artifacts_dir)
+    for local_path in local_files:
+        if sly.image.has_valid_ext(local_path):
+            continue
+        upload_progress.pop(0)
+        remote_path = os.path.join(remote_artifacts_dir, local_path.replace(local_artifacts_dir, '').lstrip("/"))
+        api.file.upload(TEAM_ID, local_path, remote_path, lambda m: _print_progress(m, upload_progress))
+
+    progress = sly.Progress("Finished, app will be stopped automatically", 1, ext_logger=app_logger)
+    progress_cb(1)
+
     my_app.stop()
 
 
@@ -123,8 +139,8 @@ def main():
     init_training_hyperparameters(state)
 
     state["started"] = False
-    state["epochs"] = 10  # @TODO: uncomment for debug
-    state["activeNames"] = ["logs", "labels"]
+    state["epochs"] = 2  # @TODO: uncomment for debug
+    state["activeNames"] = ["logs", "labels", "train"]
     data["vis"] = empty_gallery
     data["labelsVis"] = empty_gallery
 
