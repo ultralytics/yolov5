@@ -110,25 +110,3 @@ def _upload_data_vis(field, paths, cnt_columns):
         {"field": f"{field}.content.layout", "payload": grid_layout},
     ]
     api.app.set_fields(task_id, fields)
-
-
-def _upload_data_vis_backup(paths):
-    annotations = {}
-    grid_layout = [[] for i in range(CNT_GRID_COLUMNS)]
-    _paths = [str(path) for path in paths]
-    _paths.sort()
-    for idx, file_path in enumerate(_paths):
-        remote_file_path = os.path.join(remote_artifacts_dir, file_path.replace(local_artifacts_dir, '').lstrip("/"))
-        file_info = api.file.upload(TEAM_ID, file_path, remote_file_path)
-        annotations[file_info.name] = {
-            "url": file_info.full_storage_url,
-            "name": file_info.name,
-            "figures": []
-        }
-        grid_layout[idx % CNT_GRID_COLUMNS].append(file_info.name)
-
-    fields = [
-        {"field": "data.vis.content.annotations", "payload": annotations, "append": True, "recursive": True},
-        {"field": "data.vis.content.layout", "payload": grid_layout, "append": True, "recursive": True},
-    ]
-    api.app.set_fields(task_id, fields)
