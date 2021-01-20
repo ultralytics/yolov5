@@ -37,7 +37,7 @@ from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_di
 logger = logging.getLogger(__name__)
 
 
-def train(hyp, opt, device, tb_writer=None, wandb=None):
+def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
     logger.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
     save_dir, epochs, batch_size, total_batch_size, weights, rank = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
@@ -351,7 +351,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                                                  save_dir=save_dir,
                                                  plots=plots and final_epoch,
                                                  log_imgs=opt.log_imgs if wandb else 0,
-                                                 compute_loss=compute_loss)
+                                                 compute_loss=compute_loss,
+                                                 opt_sly=opt.sly)
 
             # Write
             with open(results_file, 'a') as f:
@@ -437,7 +438,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                                           dataloader=testloader,
                                           save_dir=save_dir,
                                           save_json=save_json,
-                                          plots=False)
+                                          plots=False,
+                                          opt_sly=opt.sly)
 
     else:
         dist.destroy_process_group()

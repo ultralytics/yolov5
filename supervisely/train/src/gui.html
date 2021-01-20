@@ -214,6 +214,17 @@
                     </template>
                 </sly-grid-gallery>
             </el-collapse-item>
+            <el-collapse-item title="Predictions visualization" name="pred">
+                <sly-grid-gallery v-show="data.predVis.content.layout.length > 0"
+                                  :content="data.predVis.content"
+                                  style="width:100%;"
+                                  :options="{enableZoom: false, syncViews: false, showPreview: true, selectable: true}"
+                >
+                    <template v-slot:card-footer="{ annotation }">
+                        <div style="color: blue">{{annotation.name}}</div>
+                    </template>
+                </sly-grid-gallery>
+            </el-collapse-item>
         </el-collapse>
     </sly-card>
 

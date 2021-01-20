@@ -82,6 +82,12 @@ def upload_label_vis():
     _upload_data_vis("data.labelsVis", paths, len(paths))
 
 
+def upload_pred_vis():
+    print(">?>>>>>>>>>>>?>?>?>-----------------------")
+    paths = [x for x in Path(local_artifacts_dir).glob('test*.jpg') if x.exists()]
+    _upload_data_vis("data.predVis", paths, 2)
+
+
 def upload_train_data_vis():
     paths = [x for x in Path(local_artifacts_dir).glob('train*.jpg') if x.exists()]
     cnt_columns = len(paths)

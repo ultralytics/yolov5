@@ -140,9 +140,10 @@ def main():
 
     state["started"] = False
     state["epochs"] = 2  # @TODO: uncomment for debug
-    state["activeNames"] = ["logs", "labels", "train"]
+    state["activeNames"] = ["logs", "labels", "train", "pred"]
     data["vis"] = empty_gallery
     data["labelsVis"] = empty_gallery
+    data["predVis"] = empty_gallery
 
     data["progressName"] = ""
     data["currentProgress"] = 0
@@ -156,5 +157,6 @@ def main():
 #@TODO: --hyp file - (scratch or finetune ...) - all params to advanced settings in UI
 #@TODO: disable all widget when start :disabled="state.started === True"
 #@TODO: save direct link to session in directory
+#@TODO: Double progress: progress bar iterations, progress bar upload
 if __name__ == "__main__":
     sly.main_wrapper("main", main)
