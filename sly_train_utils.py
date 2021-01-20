@@ -85,7 +85,7 @@ def upload_train_data_vis():
     cnt_columns = len(paths)
     if cnt_columns > 3 and cnt_columns <= 9:
         cnt_columns = 3
-    else:
+    elif cnt_columns > 9:
         cnt_columns = 5
     _upload_data_vis("data.vis", paths, cnt_columns)
 

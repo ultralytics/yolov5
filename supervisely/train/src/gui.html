@@ -191,7 +191,7 @@
                 <sly-logs class="mt15" :task-id="data.taskId"></sly-logs>
             </el-collapse-item>
             <el-collapse-item title="Labels stats visualization" name="labels">
-                <pre>{{data.labelsVis}}</pre>
+<!--                <pre>{{data.labelsVis}}</pre>-->
                 <sly-grid-gallery v-show="data.labelsVis.content.layout.length > 0"
                                   :content="data.labelsVis.content"
                                   style="width:100%;"
@@ -203,7 +203,7 @@
                 </sly-grid-gallery>
             </el-collapse-item>
             <el-collapse-item title="Train batches visualization" name="train">
-                <pre>{{data.vis}}</pre>
+<!--                <pre>{{data.vis}}</pre>-->
                 <sly-grid-gallery v-show="data.vis.content.layout.length > 0"
                                   :content="data.vis.content"
                                   style="width:100%;"
