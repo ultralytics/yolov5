@@ -19,6 +19,7 @@ from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+from sly_train_utils import send_metrics
 
 import test  # import test.py to get mAP after each epoch
 from models.experimental import attempt_load
@@ -204,6 +205,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 plot_labels(labels, save_dir, loggers)
                 if tb_writer:
                     tb_writer.add_histogram('classes', c, 0)
+                #@TODO: sly.upload_data_vis()
 
             # Anchors
             if not opt.noautoanchor:
@@ -364,6 +366,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                     tb_writer.add_scalar(tag, x, epoch)  # tensorboard
                 if wandb:
                     wandb.log({tag: x})  # W&B
+                if opt.sly:
+                    send_metrics(epoch, tag, x)
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
@@ -463,6 +467,8 @@ def main():
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--quad', action='store_true', help='quad dataloader')
+    parser.add_argument('--sly', action='store_true', help='for Supervisely App integration')
+
     opt = parser.parse_args()
     print("Input arguments:", opt)
 

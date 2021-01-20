@@ -181,10 +181,16 @@
         <div v-show="state.modelWeightsOptions === 2 && state.weightsPath === ''" style="color: red">
             Path to model weights is not defined
         </div>
+
+        <div v-if="data.progressName.length > 0" class="mt10">
+            <div style="color: blue">{{data.progressName}}: {{data.currentProgress}} / {{data.totalProgress}}</div>
+            <el-progress :percentage="Math.round(data.currentProgress * 100 / data.totalProgress)"></el-progress>
+        </div>
+
         <sly-logs class="mt15" :task-id="data.taskId"></sly-logs>
     </sly-card>
 
-    <sly-card class="mt15" title="6. Training progress">
+    <sly-card class="mt15" title="Visualizations">
         <sly-grid-gallery v-show="data.vis.content.layout.length > 0"
                           :content="data.vis.content"
                           style="width:100%;"

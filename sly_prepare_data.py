@@ -53,30 +53,32 @@ def transform_annotation(ann, class_names, save_path):
     return False
 
 
-def _process_split(project, class_names, images_dir, labels_dir, split):
-    for dataset_name, item_name in split:
-        dataset = project.datasets.get(dataset_name)
-        ann_path = dataset.get_ann_path(item_name)
-        ann_json = sly.json.load_json_file(ann_path)
-        ann = sly.Annotation.from_json(ann_json, project.meta)
+def _process_split(project, class_names, images_dir, labels_dir, split, progress_cb):
+    for batch in sly.batched(split, batch_size=max(int(len(split) / 50), 10)):
+        for dataset_name, item_name in batch:
+            dataset = project.datasets.get(dataset_name)
+            ann_path = dataset.get_ann_path(item_name)
+            ann_json = sly.json.load_json_file(ann_path)
+            ann = sly.Annotation.from_json(ann_json, project.meta)
 
-        save_ann_path = os.path.join(labels_dir, f"{sly.fs.get_file_name(item_name)}.txt")
-        empty = transform_annotation(ann, class_names, save_ann_path)
+            save_ann_path = os.path.join(labels_dir, f"{sly.fs.get_file_name(item_name)}.txt")
+            empty = transform_annotation(ann, class_names, save_ann_path)
+            if empty:
+                sly.logger.warning(f"Empty annotation dataset={dataset_name} image={item_name}")
 
-        img_path = dataset.get_img_path(item_name)
-        save_img_path = os.path.join(images_dir, item_name)
-        sly.fs.copy_file(img_path, save_img_path)
+            img_path = dataset.get_img_path(item_name)
+            save_img_path = os.path.join(images_dir, item_name)
+            sly.fs.copy_file(img_path, save_img_path)
 
-        if empty:
-            sly.logger.warning(f"Empty annotation dataset={dataset_name} image={item_name}")
+        progress_cb(len(batch))
 
 
 def filter_and_transform_labels(input_dir, META, train_classes,
                                 train_split, val_split,
-                                output_dir):
+                                output_dir, progress_cb):
     data_yaml = _create_data_config(output_dir, META)
 
     project = sly.Project(input_dir, sly.OpenMode.READ)
-    _process_split(project, data_yaml["names"], data_yaml["train"], data_yaml["labels_train"], train_split)
-    _process_split(project, data_yaml["names"], data_yaml["val"], data_yaml["labels_val"], val_split)
+    _process_split(project, data_yaml["names"], data_yaml["train"], data_yaml["labels_train"], train_split, progress_cb)
+    _process_split(project, data_yaml["names"], data_yaml["val"], data_yaml["labels_val"], val_split, progress_cb)
 

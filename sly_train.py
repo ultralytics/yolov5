@@ -7,6 +7,7 @@ from sly_init_ui import init_input_project, init_classes_stats, init_random_spli
      init_training_hyperparameters
 from sly_prepare_data import filter_and_transform_labels
 from sly_train_utils import init_script_arguments
+import sly_train_utils
 
 my_app = sly.AppService()
 
@@ -30,17 +31,34 @@ empty_gallery = {
 @my_app.callback("train")
 @sly.timeit
 def train(api: sly.Api, task_id, context, state, app_logger):
+    sly_train_utils.task_id = task_id
+    sly_train_utils.api = api
+
     project_dir = os.path.join(my_app.data_dir, "sly_project")
     sly.fs.mkdir(project_dir)
     sly.fs.clean_dir(project_dir)  # useful for debug
-    sly.download_project_optimized(api, project_dir, PROJECT_ID, cache=my_app.cache, logger=app_logger)
+
+    progress = sly.Progress("Download data (using cache)", PROJECT.items_count * 2, ext_logger=app_logger)
+    def progress_cb(count):
+        progress.iters_done_report(count)
+        fields = [
+            {"field": "data.progressName", "payload": progress.message},
+            {"field": "data.currentProgress", "payload": progress.current},
+            {"field": "data.totalProgress", "payload": progress.total},
+        ]
+        api.app.set_fields(task_id, fields)
+    progress_cb(0)
+    sly.download_project_optimized(api, project_dir, PROJECT_ID, cache=my_app.cache, progress_cb=progress_cb)
 
     train_split, val_split = train_val_split(project_dir, state)
     train_classes = state["selectedClasses"]
     yolov5_format_dir = os.path.join(my_app.data_dir, "train_data")
     sly.fs.mkdir(yolov5_format_dir)
     sly.fs.clean_dir(yolov5_format_dir)  # useful for debug
-    filter_and_transform_labels(project_dir, META, train_classes, train_split, val_split, yolov5_format_dir)
+
+    progress = sly.Progress("Convert Supervisely to YOLOv5 format", len(train_split) + len(val_split), ext_logger=app_logger)
+    progress_cb(0)
+    filter_and_transform_labels(project_dir, META, train_classes, train_split, val_split, yolov5_format_dir, progress_cb)
 
     local_artifacts_dir, remote_artifacts_dir = \
         init_script_arguments(state, yolov5_format_dir, my_app.data_dir, PROJECT.name, task_id)
@@ -61,7 +79,6 @@ def train(api: sly.Api, task_id, context, state, app_logger):
                 "name": file_info.name,
                 "figures": []
             }
-
     vis = {
         "content": {
             "projectMeta": sly.ProjectMeta().to_json(),
@@ -69,7 +86,6 @@ def train(api: sly.Api, task_id, context, state, app_logger):
             "layout": grid_layout
         },
     }
-
     api.app.set_field(task_id, "data.vis", vis)
     my_app.stop()
 
@@ -96,6 +112,10 @@ def main():
     state["started"] = False
     state["epochs"] = 1  # @TODO: uncomment for debug
     data["vis"] = empty_gallery
+
+    data["progressName"] = ""
+    data["currentProgress"] = 0
+    data["totalProgress"] = 0
 
     template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')
     my_app.run(template_path, data, state)

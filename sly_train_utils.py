@@ -2,6 +2,9 @@ import os
 import sys
 import supervisely_lib as sly
 
+task_id = None
+api: sly.Api = None
+
 
 def init_script_arguments(state, yolov5_format_dir, app_data_dir, input_project_name, task_id):
     data_path = os.path.join(yolov5_format_dir, 'data_config.yaml')
@@ -41,5 +44,15 @@ def init_script_arguments(state, yolov5_format_dir, app_data_dir, input_project_
     sys.argv.extend(["--project", training_dir])
     sys.argv.extend(["--name", experiment_name])
 
+    sys.argv.append("--sly")
+
     remote_artifacts_dir = os.path.join("/yolov5_train", input_project_name, experiment_name)
     return local_artifacts_dir, remote_artifacts_dir
+
+
+def send_metrics(epoch, name, value):
+    print(epoch, name, value)
+
+
+def upload_data_vis():
+    pass
