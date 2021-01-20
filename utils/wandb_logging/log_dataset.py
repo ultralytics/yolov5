@@ -1,7 +1,6 @@
 import argparse
 import os
 
-import numpy as np
 import torch
 import yaml
 
@@ -20,23 +19,18 @@ def create_dataset_artifact(opt):
     # Hyperparameters
     with open(opt.hyp) as f:
         hyp = yaml.load(f, Loader=yaml.SafeLoader)  # load hyps
-
     with torch_distributed_zero_first(-1):
         check_dataset(data_dict)  # check
-    train_path = data_dict['train']
-    test_path = data_dict['val']
+
     nc, names = (1, ['item']) if opt.single_cls else (int(data_dict['nc']), data_dict['names'])
     imgsz, batch_size = opt.img_size, opt.batch_size
-    assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)  # check
-    trainloader, trainset = create_dataloader(train_path, imgsz, batch_size, stride=32, opt=opt,
+    trainloader, trainset = create_dataloader(data_dict['train'], imgsz, batch_size, stride=32, opt=opt,
                                               hyp=hyp, cache=False, rect=opt.rect, rank=-1,
                                               world_size=opt.world_size, workers=opt.workers,
                                               image_weights=opt.image_weights, quad=opt.quad,
                                               prefix=colorstr('train: '))
-    mlc = np.concatenate(trainset.labels, 0)[:, 0].max()  # max label class
-    assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (mlc, nc, opt.data, nc - 1)
 
-    testloader = create_dataloader(test_path, imgsz, batch_size, stride=32, opt=opt,  # testloader
+    testloader = create_dataloader(data_dict['val'], imgsz, batch_size, stride=32, opt=opt,  # testloader
                                    hyp=hyp, cache=False, rect=True, rank=-1,
                                    world_size=opt.world_size, workers=opt.workers,
                                    pad=0.5, prefix=colorstr('val: '))[0]
