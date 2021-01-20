@@ -21,11 +21,11 @@ WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
 def create_dataset_artifact(opt):
     with open(opt.data) as f:
-        data_dict = yaml.load(f, Loader=yaml.FullLoader)  # data dict
+        data_dict = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
     wandb_logger = WandbLogger(opt, '', None, data_dict, job_type='create_dataset')
     # Hyperparameters
     with open(opt.hyp) as f:
-        hyp = yaml.load(f, Loader=yaml.FullLoader)  # load hyps
+        hyp = yaml.load(f, Loader=yaml.SafeLoader)  # load hyps
 
     with torch_distributed_zero_first(-1):
         check_dataset(data_dict)  # check
