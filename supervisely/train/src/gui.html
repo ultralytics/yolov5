@@ -186,19 +186,35 @@
             <div style="color: blue">{{data.progressName}}: {{data.currentProgress}} / {{data.totalProgress}}</div>
             <el-progress :percentage="Math.round(data.currentProgress * 100 / data.totalProgress)"></el-progress>
         </div>
-
-        <sly-logs class="mt15" :task-id="data.taskId"></sly-logs>
+        <el-collapse class="mt15" v-model="state.activeNames">
+            <el-collapse-item title="Logs" name="logs">
+                <sly-logs class="mt15" :task-id="data.taskId"></sly-logs>
+            </el-collapse-item>
+            <el-collapse-item title="Labels stats visualization" name="labels">
+                <pre>{{data.labelsVis}}</pre>
+                <sly-grid-gallery v-show="data.labelsVis.content.layout.length > 0"
+                                  :content="data.labelsVis.content"
+                                  style="width:100%;"
+                                  :options="{enableZoom: false, syncViews: false, showPreview: true, selectable: true}"
+                >
+                    <template v-slot:card-footer="{ annotation }">
+                        <div style="color: blue">{{annotation.name}}</div>
+                    </template>
+                </sly-grid-gallery>
+            </el-collapse-item>
+            <el-collapse-item title="Train batches visualization" name="train">
+                <pre>{{data.vis}}</pre>
+                <sly-grid-gallery v-show="data.vis.content.layout.length > 0"
+                                  :content="data.vis.content"
+                                  style="width:100%;"
+                                  :options="{enableZoom: false, syncViews: false, showPreview: true, selectable: true}"
+                >
+                    <template v-slot:card-footer="{ annotation }">
+                        <div style="color: blue">{{annotation.name}}</div>
+                    </template>
+                </sly-grid-gallery>
+            </el-collapse-item>
+        </el-collapse>
     </sly-card>
 
-    <sly-card class="mt15" title="Visualizations">
-        <sly-grid-gallery v-show="data.vis.content.layout.length > 0"
-                          :content="data.vis.content"
-                          style="width:100%;"
-                          :options="{enableZoom: false, syncViews: false, showPreview: true, selectable: true}"
-        >
-            <template v-slot:card-footer="{ annotation }">
-                <div style="color: blue">{{annotation.name}}</div>
-            </template>
-        </sly-grid-gallery>
-    </sly-card>
 </div>

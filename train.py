@@ -19,7 +19,7 @@ from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-from sly_train_utils import send_metrics
+from sly_train_utils import send_metrics, send_epoch_log, upload_label_vis, upload_train_data_vis
 
 import test  # import test.py to get mAP after each epoch
 from models.experimental import attempt_load
@@ -203,9 +203,10 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             # model._initialize_biases(cf.to(device))
             if plots:
                 plot_labels(labels, save_dir, loggers)
+                if opt.sly:
+                    upload_label_vis()
                 if tb_writer:
                     tb_writer.add_histogram('classes', c, 0)
-                #@TODO: sly.upload_data_vis()
 
             # Anchors
             if not opt.noautoanchor:
@@ -324,6 +325,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 elif plots and ni == 10 and wandb:
                     wandb.log({"Mosaics": [wandb.Image(str(x), caption=x.name) for x in save_dir.glob('train*.jpg')
                                            if x.exists()]})
+                elif plots and ni == 10 and opt.sly:
+                    upload_train_data_vis()
 
             # end batch ------------------------------------------------------------------------------------------------
         # end epoch ----------------------------------------------------------------------------------------------------
@@ -357,6 +360,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 os.system('gsutil cp %s gs://%s/results/results%s.txt' % (results_file, opt.bucket, opt.name))
 
             # Log
+            if opt.sly:
+                send_epoch_log(epoch, epochs)
+                metrics = {}
             tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
                     'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
                     'val/box_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
@@ -367,7 +373,12 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 if wandb:
                     wandb.log({tag: x})  # W&B
                 if opt.sly:
-                    send_metrics(epoch, tag, x)
+                    if torch.is_tensor(x):
+                        x = x.cpu().numpy()
+                    metrics[tag] = x
+
+            if opt.sly:
+                send_metrics(epoch, epochs, metrics)
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]

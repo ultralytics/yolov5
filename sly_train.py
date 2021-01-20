@@ -22,17 +22,19 @@ META = None
 CNT_GRID_COLUMNS = 3
 empty_gallery = {
     "content": {
-        "projectMeta": {},
+        "projectMeta": sly.ProjectMeta().to_json(),
         "annotations": {},
         "layout": []
     }
 }
+
 
 @my_app.callback("train")
 @sly.timeit
 def train(api: sly.Api, task_id, context, state, app_logger):
     sly_train_utils.task_id = task_id
     sly_train_utils.api = api
+    sly_train_utils.TEAM_ID = TEAM_ID
 
     project_dir = os.path.join(my_app.data_dir, "sly_project")
     sly.fs.mkdir(project_dir)
@@ -63,30 +65,41 @@ def train(api: sly.Api, task_id, context, state, app_logger):
     local_artifacts_dir, remote_artifacts_dir = \
         init_script_arguments(state, yolov5_format_dir, my_app.data_dir, PROJECT.name, task_id)
 
+    progress = sly.Progress("YOLOv5: Scanning data ", 1, ext_logger=app_logger)
+    def progress_cb(count):
+        progress.iters_done_report(count)
+        fields = [
+            {"field": "data.progressName", "payload": progress.message},
+            {"field": "data.currentProgress", "payload": progress.current},
+            {"field": "data.totalProgress", "payload": progress.total},
+        ]
+        api.app.set_fields(task_id, fields)
+    progress_cb(1)
+
     import train
     train.main()
 
-    uploaded_files = api.file.upload_directory(TEAM_ID, local_artifacts_dir, remote_artifacts_dir)
-
-    grid_layout = [[] for i in range(CNT_GRID_COLUMNS)]
-    grid_data = {}
-    for idx, file_info in enumerate(uploaded_files):
-        print(file_info)
-        if sly.image.has_valid_ext(file_info.name):
-            grid_layout[idx % CNT_GRID_COLUMNS].append(str(idx))
-            grid_data[idx] = {
-                "url": file_info.full_storage_url,
-                "name": file_info.name,
-                "figures": []
-            }
-    vis = {
-        "content": {
-            "projectMeta": sly.ProjectMeta().to_json(),
-            "annotations": grid_data,
-            "layout": grid_layout
-        },
-    }
-    api.app.set_field(task_id, "data.vis", vis)
+    # uploaded_files = api.file.upload_directory(TEAM_ID, local_artifacts_dir, remote_artifacts_dir)
+    #
+    # grid_layout = [[] for i in range(CNT_GRID_COLUMNS)]
+    # grid_data = {}
+    # for idx, file_info in enumerate(uploaded_files):
+    #     print(file_info)
+    #     if sly.image.has_valid_ext(file_info.name):
+    #         grid_layout[idx % CNT_GRID_COLUMNS].append(str(idx))
+    #         grid_data[idx] = {
+    #             "url": file_info.full_storage_url,
+    #             "name": file_info.name,
+    #             "figures": []
+    #         }
+    # vis = {
+    #     "content": {
+    #         "projectMeta": sly.ProjectMeta().to_json(),
+    #         "annotations": grid_data,
+    #         "layout": grid_layout
+    #     },
+    # }
+    # api.app.set_field(task_id, "data.vis", vis)
     my_app.stop()
 
 
@@ -110,8 +123,10 @@ def main():
     init_training_hyperparameters(state)
 
     state["started"] = False
-    state["epochs"] = 1  # @TODO: uncomment for debug
+    state["epochs"] = 10  # @TODO: uncomment for debug
+    state["activeNames"] = ["logs", "labels"]
     data["vis"] = empty_gallery
+    data["labelsVis"] = empty_gallery
 
     data["progressName"] = ""
     data["currentProgress"] = 0
@@ -124,5 +139,6 @@ def main():
 #@TODO: train == val - handle case in data_config.yaml to avoid data duplication
 #@TODO: --hyp file - (scratch or finetune ...) - all params to advanced settings in UI
 #@TODO: disable all widget when start :disabled="state.started === True"
+#@TODO: save direct link to session in directory
 if __name__ == "__main__":
     sly.main_wrapper("main", main)
