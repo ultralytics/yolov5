@@ -41,6 +41,5 @@ if __name__ == '__main__':
     parser.add_argument('--project', type=str, default='yolov5', help='name of W&B Project')
     parser.add_argument('--overwrite_config', action='store_true', help='replace the origin data config file')
     opt = parser.parse_args()
-    opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
 
     create_dataset_artifact(opt)
