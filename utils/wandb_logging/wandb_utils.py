@@ -54,17 +54,17 @@ class WandbLogger():
             self.download_dataset_artifact(data_dict['val'], opt.artifact_alias)
         self.result_artifact, self.result_table, self.weights = None, None, None
         if self.train_artifact_path is not None:
-            train_path = Path(self.train_artifact_path) / '/data/images/'
-            data_dict['train'] = train_path
+            train_path = Path(self.train_artifact_path) / 'data/images/'
+            data_dict['train'] = str(train_path)
         if self.test_artifact_path is not None:
-            test_path = Path(self.test_artifact_path) / '/data/images/'
-            data_dict['val'] = test_path
+            test_path = Path(self.test_artifact_path) / 'data/images/'
+            data_dict['val'] = str(test_path)
             self.result_artifact = wandb.Artifact("run_" + wandb.run.id + "_progress", "evaluation")
             self.result_table = wandb.Table(["epoch", "id", "prediction", "avg_confidence"])
         if opt.resume_from_artifact:
             modeldir, _ = self.download_model_artifact(opt.resume_from_artifact)
             if modeldir:
-                self.weights = Path(modeldir) / "/best.pt"
+                self.weights = Path(modeldir) / "best.pt"
                 opt.weights = self.weights
 
     def download_dataset_artifact(self, path, alias):
@@ -74,8 +74,8 @@ class WandbLogger():
                 logger.error('Error: W&B dataset artifact doesn\'t exist')
                 raise ValueError('Artifact doesn\'t exist')
             datadir = dataset_artifact.download()
-            labels_zip = Path(datadir) / "/data/labels.zip"
-            shutil.unpack_archive(labels_zip, Path(datadir) / '/data/labels', 'zip')
+            labels_zip = Path(datadir) / "data/labels.zip"
+            shutil.unpack_archive(labels_zip, Path(datadir) / 'data/labels', 'zip')
             print("Downloaded dataset to : ", datadir)
             return datadir, dataset_artifact
         return None, None
