@@ -19,7 +19,6 @@ from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-from sly_train_utils import send_metrics, send_epoch_log, upload_label_vis, upload_train_data_vis
 
 import test  # import test.py to get mAP after each epoch
 from models.experimental import attempt_load
@@ -33,6 +32,9 @@ from utils.google_utils import attempt_download
 from utils.loss import ComputeLoss
 from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first
+
+from sly_train_utils import send_epoch_log, upload_label_vis, upload_train_data_vis
+from sly_metrics_utils import send_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -375,7 +377,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
                     wandb.log({tag: x})  # W&B
                 if opt.sly:
                     if torch.is_tensor(x):
-                        x = x.cpu().numpy()
+                        x = float(x.cpu().numpy())
                     metrics[tag] = x
 
             if opt.sly:

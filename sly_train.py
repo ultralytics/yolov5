@@ -10,6 +10,7 @@ from sly_prepare_data import filter_and_transform_labels
 from sly_train_utils import init_script_arguments
 import sly_train_utils
 from sly_metrics_utils import init_metrics
+import sly_metrics_utils
 
 my_app = sly.AppService()
 
@@ -33,16 +34,19 @@ empty_gallery = {
 @my_app.callback("train")
 @sly.timeit
 def train(api: sly.Api, task_id, context, state, app_logger):
+    api.app.set_field(task_id, "state.activeNames", ["logs", "labels", "train", "pred", "metrics"])
+
     sly_train_utils.task_id = task_id
     sly_train_utils.api = api
     sly_train_utils.TEAM_ID = TEAM_ID
+    sly_metrics_utils.task_id = task_id
+    sly_metrics_utils.api = api
 
     project_dir = os.path.join(my_app.data_dir, "sly_project")
     sly.fs.mkdir(project_dir)
     sly.fs.clean_dir(project_dir)  # useful for debug
 
     progress = sly.Progress("Download data (using cache)", PROJECT.items_count * 2, ext_logger=app_logger)
-
     def progress_cb(count):
         progress.iters_done_report(count)
         fields = [
@@ -146,8 +150,10 @@ def main():
     init_training_hyperparameters(state)
 
     state["started"] = False
-    state["epochs"] = 2  # @TODO: uncomment for debug
-    state["activeNames"] = ["logs", "labels", "train", "pred", "metrics"]
+    state["epochs"] = 5  # @TODO: uncomment for debug
+    #state["activeNames"] = ["logs", "labels", "train", "pred", "metrics"]
+    state["activeNames"] = []
+
     data["vis"] = empty_gallery
     data["labelsVis"] = empty_gallery
     data["predVis"] = empty_gallery
@@ -162,7 +168,7 @@ def main():
     template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')
     my_app.run(template_path, data, state)
 
-
+# @TODO: не скипать загрузку results.png
 # @TODO: train == val - handle case in data_config.yaml to avoid data duplication
 # @TODO: --hyp file - (scratch or finetune ...) - all params to advanced settings in UI
 # @TODO: disable all widget when start :disabled="state.started === True"

@@ -1,4 +1,8 @@
+import json
 import supervisely_lib as sly
+
+task_id = None
+api: sly.Api = None
 
 chart_train_style = {
     "name": "train",
@@ -72,32 +76,68 @@ def init_chart(title, names, colors, xs, ys):
 
 
 def init_metrics(data):
+    demo_x = [[], []] #[[1, 2, 3, 4], [2, 4, 6, 8]]
+    demo_y = [[], []] #[[10, 15, 13, 17], [16, 5, 11, 9]]
     data["mBox"] = init_chart("Box",
                               names=["train", "val"],
                               colors=[[0, 0, 255], [255, 128, 0]],
-                              xs=[[1, 2, 3, 4], [2, 4, 6, 8]],
-                              ys=[[10, 15, 13, 17], [16, 5, 11, 9]])
+                              xs=demo_x,
+                              ys=demo_y)
 
     data["mObjectness"] = init_chart("Objectness",
                                      names=["train", "val"],
                                      colors=[[0, 0, 255], [255, 128, 0]],
-                                     xs=[[1, 2, 3, 4], [2, 4, 6, 8]],
-                                     ys=[[10, 15, 13, 17], [16, 5, 11, 9]])
+                                     xs=demo_x,
+                                     ys=demo_y)
 
     data["mClassification"] = init_chart("Classification",
                                          names=["train", "val"],
                                          colors=[[0, 0, 255], [255, 128, 0]],
-                                         xs=[[1, 2, 3, 4], [2, 4, 6, 8]],
-                                         ys=[[10, 15, 13, 17], [16, 5, 11, 9]])
+                                         xs=demo_x,
+                                         ys=demo_y)
 
     data["mPR"] = init_chart("Precision / Recall",
                              names=["precision", "recall"],
                              colors=[[255, 0, 255], [127, 0, 255]],
-                             xs=[[1, 2, 3, 4], [2, 4, 6, 8]],
-                             ys=[[10, 15, 13, 17], [16, 5, 11, 9]])
+                             xs=demo_x,
+                             ys=demo_y)
 
     data["mMAP"] = init_chart("mAP",
                               names=["mAP@0.5", "mAP@0.5:0.95"],
                               colors=[[255, 0, 255], [0, 255, 255]],
-                              xs=[[1, 2, 3, 4], [2, 4, 6, 8]],
-                              ys=[[10, 15, 13, 17], [16, 5, 11, 9]])
+                              xs=demo_x,
+                              ys=demo_y)
+
+
+def send_metrics(epoch, epochs, metrics):
+    sly.logger.debug(f"Metrics: epoch {epoch} / {epochs}", extra={"metrics": metrics})
+
+    # print(json.dumps(api.app.get_field(task_id, "data.mBox.data"), indent=4))
+    fields = [
+        {"field": "data.mBox.data[0].x", "payload": epoch, "append": True},
+        {"field": "data.mBox.data[1].x", "payload": epoch, "append": True},
+        {"field": "data.mBox.data[0].y", "payload": metrics["train/box_loss"], "append": True},
+        {"field": "data.mBox.data[1].y", "payload": metrics["val/box_loss"], "append": True},
+
+        {"field": "data.mObjectness.data[0].x", "payload": epoch, "append": True},
+        {"field": "data.mObjectness.data[1].x", "payload": epoch, "append": True},
+        {"field": "data.mObjectness.data[0].y", "payload": metrics["train/obj_loss"], "append": True},
+        {"field": "data.mObjectness.data[1].y", "payload": metrics["val/obj_loss"], "append": True},
+
+        {"field": "data.mClassification.data[0].x", "payload": epoch, "append": True},
+        {"field": "data.mClassification.data[1].x", "payload": epoch, "append": True},
+        {"field": "data.mClassification.data[0].y", "payload": metrics["train/cls_loss"], "append": True},
+        {"field": "data.mClassification.data[1].y", "payload": metrics["val/cls_loss"], "append": True},
+
+        {"field": "data.mPR.data[0].x", "payload": epoch, "append": True},
+        {"field": "data.mPR.data[1].x", "payload": epoch, "append": True},
+        {"field": "data.mPR.data[0].y", "payload": metrics["metrics/precision"], "append": True},
+        {"field": "data.mPR.data[1].y", "payload": metrics["metrics/recall"], "append": True},
+
+        {"field": "data.mMAP.data[0].x", "payload": epoch, "append": True},
+        {"field": "data.mMAP.data[1].x", "payload": epoch, "append": True},
+        {"field": "data.mMAP.data[0].y", "payload": metrics["metrics/mAP_0.5"], "append": True},
+        {"field": "data.mMAP.data[1].y", "payload": metrics["metrics/mAP_0.5:0.95"], "append": True},
+    ]
+    api.app.set_fields(task_id, fields)
+

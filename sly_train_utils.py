@@ -73,10 +73,6 @@ def send_epoch_log(epoch, epochs):
     api.app.set_fields(task_id, fields)
 
 
-def send_metrics(epoch, epochs, metrics):
-    sly.logger.info(f"Metrics: epoch {epoch} / {epochs}", extra={"metrics": metrics})
-
-
 def upload_label_vis():
     paths = [x for x in Path(local_artifacts_dir).glob('labels*.jpg') if x.exists()]
     _upload_data_vis("data.labelsVis", paths, len(paths))
