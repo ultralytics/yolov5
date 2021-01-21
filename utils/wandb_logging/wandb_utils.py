@@ -54,17 +54,17 @@ class WandbLogger():
             self.download_dataset_artifact(data_dict['val'], opt.artifact_alias)
         self.result_artifact, self.result_table, self.weights = None, None, None
         if self.train_artifact_path is not None:
-            train_path = self.train_artifact_path + '/data/images/'
+            train_path = Path(self.train_artifact_path) / '/data/images/'
             data_dict['train'] = train_path
         if self.test_artifact_path is not None:
-            test_path = self.test_artifact_path + '/data/images/'
+            test_path = Path(self.test_artifact_path) / '/data/images/'
             data_dict['val'] = test_path
             self.result_artifact = wandb.Artifact("run_" + wandb.run.id + "_progress", "evaluation")
             self.result_table = wandb.Table(["epoch", "id", "prediction", "avg_confidence"])
         if opt.resume_from_artifact:
             modeldir, _ = self.download_model_artifact(opt.resume_from_artifact)
             if modeldir:
-                self.weights = modeldir + "/best.pt"
+                self.weights = Path(modeldir) / "/best.pt"
                 opt.weights = self.weights
 
     def download_dataset_artifact(self, path, alias):
@@ -74,8 +74,8 @@ class WandbLogger():
                 logger.error('Error: W&B dataset artifact doesn\'t exist')
                 raise ValueError('Artifact doesn\'t exist')
             datadir = dataset_artifact.download()
-            labels_zip = datadir + "/data/labels.zip"
-            shutil.unpack_archive(labels_zip, datadir + '/data/labels', 'zip')
+            labels_zip = Path(datadir) / "/data/labels.zip"
+            shutil.unpack_archive(labels_zip, Path(datadir) / '/data/labels', 'zip')
             print("Downloaded dataset to : ", datadir)
             return datadir, dataset_artifact
         return None, None
@@ -112,41 +112,37 @@ class WandbLogger():
             wandb.log_artifact(model_artifact)
         print("Saving model artifact on epoch ", epoch + 1)
 
-    def log_dataset_artifact(self, dataloader, device, class_to_id, name='dataset'):
+    def log_dataset_artifact(self, dataloader, class_to_id, name='dataset'):
         artifact = wandb.Artifact(name=name, type="dataset")
-        image_path = dataloader.dataset.path
+        image_path = dataloader.path
         artifact.add_dir(image_path, name='data/images')
         table = wandb.Table(
             columns=["id", "train_image", "Classes"]
         )
         id_count = 0
         class_set = wandb.Classes([{'id': id, 'name': name} for id, name in class_to_id.items()])
-        for batch_i, (img, targets, paths, shapes) in enumerate(dataloader):
-            targets = targets.to(device)
-            nb, _, height, width = img.shape  # batch size, channels, height, width
-            targets[:, 2:] = (xywh2xyxy(targets[:, 2:].view(-1, 4)))
-            for si, _ in enumerate(img):
-                height, width = shapes[si][0]
-                labels = targets[targets[:, 0] == si]
-                labels[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)
-                labels = labels[:, 1:]
-                box_data = []
-                img_classes = {}
-                for cls, *xyxy in labels.tolist():
-                    class_id = int(cls)
-                    box_data.append({"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
-                                     "class_id": class_id,
-                                     "box_caption": "%s" % (class_to_id[class_id]),
-                                     "scores": {"acc": 1},
-                                     "domain": "pixel"})
-                    img_classes[class_id] = class_to_id[class_id]
-                boxes = {"ground_truth": {"box_data": box_data, "class_labels": class_to_id}}  # inference-space
-                table.add_data(id_count, wandb.Image(paths[si], classes=class_set, boxes=boxes),
-                               json.dumps(img_classes))
-                id_count = id_count + 1
+        for si, (img, labels, paths, shapes) in enumerate(dataloader):
+            _, height, width = img.shape  # batch size, channels, height, width
+            labels[:, 2:] = (xywh2xyxy(labels[:, 2:].view(-1, 4)))
+            height, width = shapes[0]
+            labels[:, 2:] *= torch.Tensor([width, height, width, height])
+            labels = labels[:, 1:]
+            box_data = []
+            img_classes = {}
+            for cls, *xyxy in labels.tolist():
+                class_id = int(cls)
+                box_data.append({"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
+                                 "class_id": class_id,
+                                 "box_caption": "%s" % (class_to_id[class_id]),
+                                 "scores": {"acc": 1},
+                                 "domain": "pixel"})
+                img_classes[class_id] = class_to_id[class_id]
+            boxes = {"ground_truth": {"box_data": box_data, "class_labels": class_to_id}}  # inference-space
+            table.add_data(id_count, wandb.Image(paths, classes=class_set, boxes=boxes),
+                           json.dumps(img_classes))
+            id_count = id_count + 1
         artifact.add(table, name)
         label_path = image_path.replace('images', 'labels')
-        # Workaround for: Unable to log empty txt files via artifacts
         if not os.path.isfile(name + '_labels.zip'):  # make_archive won't check if file exists
             shutil.make_archive(name + '_labels', 'zip', label_path)
         artifact.add_file(name + '_labels.zip', name='data/labels.zip')
