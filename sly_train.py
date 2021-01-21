@@ -118,10 +118,10 @@ def train(api: sly.Api, task_id, context, state, app_logger):
 
     local_files = sly.fs.list_files_recursively(local_artifacts_dir)
     for local_path in local_files:
-        if sly.image.has_valid_ext(local_path):
+        remote_path = os.path.join(remote_artifacts_dir, local_path.replace(local_artifacts_dir, '').lstrip("/"))
+        if api.file.exists(TEAM_ID, remote_path):
             continue
         upload_progress.pop(0)
-        remote_path = os.path.join(remote_artifacts_dir, local_path.replace(local_artifacts_dir, '').lstrip("/"))
         api.file.upload(TEAM_ID, local_path, remote_path, lambda m: _print_progress(m, upload_progress))
 
     progress = sly.Progress("Finished, app is stopped automatically", 1, ext_logger=app_logger)
@@ -150,8 +150,6 @@ def main():
     init_training_hyperparameters(state)
 
     state["started"] = False
-    state["epochs"] = 5  # @TODO: uncomment for debug
-    #state["activeNames"] = ["logs", "labels", "train", "pred", "metrics"]
     state["activeNames"] = []
 
     data["vis"] = empty_gallery
@@ -164,14 +162,12 @@ def main():
 
     init_metrics(data)
 
-
     template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')
     my_app.run(template_path, data, state)
 
-# @TODO: не скипать загрузку results.png
 # @TODO: train == val - handle case in data_config.yaml to avoid data duplication
 # @TODO: --hyp file - (scratch or finetune ...) - all params to advanced settings in UI
-# @TODO: disable all widget when start :disabled="state.started === True"
+# @TODO: disable all widgets when start :disabled="state.started === True"
 # @TODO: save direct link to session in directory
 # @TODO: Double progress: progress bar iterations, progress bar upload
 # @TODO: sync views for labels/pred

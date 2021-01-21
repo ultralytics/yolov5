@@ -61,7 +61,7 @@ def init_chart(title, names, colors, xs, ys):
             "title": {
                 "text": f"<b>{title}</b>",
                 "xanchor": "left",
-                'y': 0.93,
+                'y': 0.97,
                 'x': 0.03,
                 "font": {
                     "size": 14,
