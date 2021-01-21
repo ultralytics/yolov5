@@ -70,6 +70,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
     nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if opt.single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
     assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)  # check
+    colors = data_dict.get('colors', None)
 
     # Model
     pretrained = weights.endswith('.pt')
@@ -223,6 +224,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
     model.gr = 1.0  # iou loss ratio (obj_loss = 1.0 or iou)
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device) * nc  # attach class weights
     model.names = names
+    model.colors = colors
 
     # Start training
     t0 = time.time()
@@ -341,7 +343,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
         if rank in [-1, 0]:
             # mAP
             if ema:
-                ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride', 'class_weights'])
+                ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'colors', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
                 results, maps, times = test.test(opt.data,
