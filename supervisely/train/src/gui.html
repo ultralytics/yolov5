@@ -183,15 +183,19 @@
         </div>
 
         <div v-if="data.progressName.length > 0" class="mt10">
-            <div style="color: blue">{{data.progressName}}: {{data.currentProgressLabel}} / {{data.totalProgressLabel}}</div>
+            <div style="color: blue">{{data.progressName}}: {{data.currentProgressLabel}} /
+                {{data.totalProgressLabel}}
+            </div>
             <el-progress :percentage="Math.round(data.currentProgress * 100 / data.totalProgress)"></el-progress>
         </div>
+        <!--        style="width: 50%; height: 300px;"-->
+
         <el-collapse class="mt15" v-model="state.activeNames">
             <el-collapse-item title="Logs" name="logs">
                 <sly-logs class="mt15" :task-id="data.taskId"></sly-logs>
             </el-collapse-item>
             <el-collapse-item title="Labels stats visualization" name="labels">
-<!--                <pre>{{data.labelsVis}}</pre>-->
+                <!--                <pre>{{data.labelsVis}}</pre>-->
                 <sly-grid-gallery v-show="data.labelsVis.content.layout.length > 0"
                                   :content="data.labelsVis.content"
                                   style="width:100%;"
@@ -203,7 +207,6 @@
                 </sly-grid-gallery>
             </el-collapse-item>
             <el-collapse-item title="Train batches visualization" name="train">
-<!--                <pre>{{data.vis}}</pre>-->
                 <sly-grid-gallery v-show="data.vis.content.layout.length > 0"
                                   :content="data.vis.content"
                                   style="width:100%;"
@@ -213,6 +216,25 @@
                         <div style="color: blue">{{annotation.name}}</div>
                     </template>
                 </sly-grid-gallery>
+            </el-collapse-item>
+            <el-collapse-item title="Metrics" name="metrics">
+                <div class="fflex">
+                    <div class="fflex" style="width: 33%; flex-direction: column">
+                        <span>123</span>
+                        <sly-plotly class="mr15" :content="data.mBox" style="height: 300px"></sly-plotly>
+                    </div>
+                    <div class="fflex" style="width: 33%">
+                        <sly-plotly class="mr15" :content="data.mObjectness" style="height: 300px"></sly-plotly>
+                    </div>
+                    <div class="fflex" style="width: 33%">
+                        <sly-plotly :content="data.mClassification" style="height: 300px"></sly-plotly>
+                    </div>
+                </div>
+                <div class="fflex mt15">
+                    <sly-plotly class="mr15" :content="data.mPR" style="width: 33%; height: 300px"></sly-plotly>
+                    <sly-plotly class="mr15" :content="data.mMAP" style="width: 33%; height: 300px"></sly-plotly>
+                    <div style="width: 33%; height: 300px"></div>
+                </div>
             </el-collapse-item>
             <el-collapse-item title="Predictions visualization" name="pred">
                 <sly-grid-gallery v-show="data.predVis.content.layout.length > 0"

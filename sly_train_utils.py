@@ -74,7 +74,7 @@ def send_epoch_log(epoch, epochs):
 
 
 def send_metrics(epoch, epochs, metrics):
-    sly.logger.info(f"Metrics: epoch {epoch} / {epochs}", extra={"metrics":  metrics})
+    sly.logger.info(f"Metrics: epoch {epoch} / {epochs}", extra={"metrics": metrics})
 
 
 def upload_label_vis():
@@ -83,7 +83,6 @@ def upload_label_vis():
 
 
 def upload_pred_vis():
-    print(">?>>>>>>>>>>>?>?>?>-----------------------")
     paths = [x for x in Path(local_artifacts_dir).glob('test*.jpg') if x.exists()]
     _upload_data_vis("data.predVis", paths, 2)
 

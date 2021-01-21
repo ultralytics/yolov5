@@ -41,7 +41,6 @@ def test(data,
          compute_loss=None,
          opt_sly=False):
 
-    print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa = ", opt_sly)
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
