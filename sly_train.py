@@ -158,6 +158,8 @@ def main():
     template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')
     my_app.run(template_path, data, state)
 
+#@TODO: save colors to model
+#@TODO: start charts - wrong size
 # @TODO: train == val - handle case in data_config.yaml to avoid data duplication
 # @TODO: --hyp file - (scratch or finetune ...) - all params to advanced settings in UI
 # @TODO: disable all widgets when start :disabled="state.started === True"
