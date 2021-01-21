@@ -52,7 +52,7 @@
         <el-radio-group class="mb15" v-model="state.splitMethod">
             <el-radio :label="1">Random</el-radio>
             <el-radio :label="2" disabled>Based on image tags (not implemented yet)</el-radio>
-            <el-radio :label="3">Train = Val</el-radio>
+            <el-radio :label="3" disabled>Train = Val (not implemented yet)</el-radio>
         </el-radio-group>
 
         <div v-show="state.splitMethod===1">
@@ -230,15 +230,28 @@
                 </div>
             </el-collapse-item>
             <el-collapse-item title="Predictions visualization" name="pred">
+<!--                <div v-for="(v, k) in data.labelsVis">-->
+<!--                    <sly-grid-gallery v-show="v.content.layout.length > 0"-->
+<!--                                  :content="v.content"-->
+<!--                                  style="width:100%;"-->
+<!--                                  :options="{enableZoom: true, syncViews: true, showPreview: true, selectable: false}"-->
+<!--                    >-->
+<!--                        <template v-slot:card-footer="{ annotation }">-->
+<!--                            <div style="color: blue">{{annotation.name}}</div>-->
+<!--                        </template>-->
+<!--                    </sly-grid-gallery>-->
+<!--                </div>-->
+
                 <sly-grid-gallery v-show="data.predVis.content.layout.length > 0"
                                   :content="data.predVis.content"
                                   style="width:100%;"
-                                  :options="{enableZoom: false, syncViews: false, showPreview: true, selectable: true}"
-                >
+                                  :options="{enableZoom: true, syncViews: true, showPreview: true, selectable: false}"
+                    >
                     <template v-slot:card-footer="{ annotation }">
                         <div style="color: blue">{{annotation.name}}</div>
                     </template>
                 </sly-grid-gallery>
+
             </el-collapse-item>
         </el-collapse>
     </sly-card>

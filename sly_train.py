@@ -7,7 +7,7 @@ from sly_train_val_split import train_val_split
 from sly_init_ui import init_input_project, init_classes_stats, init_random_split, init_model_settings, \
     init_training_hyperparameters
 from sly_prepare_data import filter_and_transform_labels
-from sly_train_utils import init_script_arguments
+from sly_train_utils import init_script_arguments, empty_gallery
 import sly_train_utils
 from sly_metrics_utils import init_metrics
 import sly_metrics_utils
@@ -22,13 +22,6 @@ PROJECT = None
 META = None
 
 CNT_GRID_COLUMNS = 3
-empty_gallery = {
-    "content": {
-        "projectMeta": sly.ProjectMeta().to_json(),
-        "annotations": {},
-        "layout": []
-    }
-}
 
 
 @my_app.callback("train")
@@ -153,7 +146,7 @@ def main():
     state["activeNames"] = []
 
     data["vis"] = empty_gallery
-    data["labelsVis"] = empty_gallery
+    data["labelsVis"] = empty_gallery #{} #empty_gallery
     data["predVis"] = empty_gallery
 
     data["progressName"] = ""

@@ -10,6 +10,15 @@ local_artifacts_dir = None
 remote_artifacts_dir = None
 
 
+empty_gallery = {
+    "content": {
+        "projectMeta": sly.ProjectMeta().to_json(),
+        "annotations": {},
+        "layout": []
+    }
+}
+
+
 def init_script_arguments(state, yolov5_format_dir, app_data_dir, input_project_name, task_id):
     global local_artifacts_dir, remote_artifacts_dir
     data_path = os.path.join(yolov5_format_dir, 'data_config.yaml')
@@ -75,7 +84,10 @@ def send_epoch_log(epoch, epochs):
 
 def upload_label_vis():
     paths = [x for x in Path(local_artifacts_dir).glob('labels*.jpg') if x.exists()]
-    _upload_data_vis("data.labelsVis", paths, len(paths))
+    #for idx, batch in enumerate(sly.batched(paths, 2)):
+        #api.task.set_field(task_id, "data.labelsVis", {str(idx): empty_gallery}, append=True)
+        #_upload_data_vis(f"data.labelsVis.{idx}", batch, len(batch))
+    _upload_data_vis(f"data.labelsVis", paths, len(paths))
 
 
 def upload_pred_vis():
