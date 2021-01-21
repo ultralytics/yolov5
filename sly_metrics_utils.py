@@ -30,7 +30,7 @@ chart_layout = {
     "legend": {
         "orientation": "h",
         "yanchor": "bottom",
-        "y": 1.01,
+        "y": 0.99,
         "xanchor": "right",
         "x": 1
     }
@@ -54,7 +54,17 @@ def init_chart(title, names, colors, xs, ys):
     chart = {
         "data": data,
         "layout": {
-            "title": title,
+            "title": {
+                "text": f"<b>{title}</b>",
+                "xanchor": "left",
+                'y': 0.93,
+                'x': 0.03,
+                "font": {
+                    "size": 14,
+                    "color": "rgb(96, 96, 96)",
+                    #"color": "rgb(0, 150, 0)",
+                }
+            },
             **chart_layout
         }
     }

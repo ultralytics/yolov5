@@ -219,16 +219,9 @@
             </el-collapse-item>
             <el-collapse-item title="Metrics" name="metrics">
                 <div class="fflex">
-                    <div class="fflex" style="width: 33%; flex-direction: column">
-                        <span>123</span>
-                        <sly-plotly class="mr15" :content="data.mBox" style="height: 300px"></sly-plotly>
-                    </div>
-                    <div class="fflex" style="width: 33%">
-                        <sly-plotly class="mr15" :content="data.mObjectness" style="height: 300px"></sly-plotly>
-                    </div>
-                    <div class="fflex" style="width: 33%">
-                        <sly-plotly :content="data.mClassification" style="height: 300px"></sly-plotly>
-                    </div>
+                    <sly-plotly class="mr15" :content="data.mBox" style="height: 300px"></sly-plotly>
+                    <sly-plotly class="mr15" :content="data.mObjectness" style="height: 300px"></sly-plotly>
+                    <sly-plotly :content="data.mClassification" style="height: 300px"></sly-plotly>
                 </div>
                 <div class="fflex mt15">
                     <sly-plotly class="mr15" :content="data.mPR" style="width: 33%; height: 300px"></sly-plotly>
