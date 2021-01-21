@@ -59,7 +59,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     cuda = device.type != 'cpu'
     init_seeds(2 + rank)
     with open(opt.data) as f:
-        data_dict = yaml.load(f, Loader=yaml.FullLoader)  # data dict
+        data_dict = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
     with torch_distributed_zero_first(rank):
         check_dataset(data_dict)  # check
     train_path = data_dict['train']
@@ -190,7 +190,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     # Process 0
     if rank in [-1, 0]:
         ema.updates = start_epoch * nb // accumulate  # set EMA updates
-        testloader = create_dataloader(test_path, imgsz_test, total_batch_size, gs, opt,  # testloader
+        testloader = create_dataloader(test_path, imgsz_test, batch_size * 2, gs, opt,  # testloader
                                        hyp=hyp, cache=opt.cache_images and not opt.notest, rect=True, rank=-1,
                                        world_size=opt.world_size, workers=opt.workers,
                                        pad=0.5, prefix=colorstr('val: '))[0]
@@ -338,7 +338,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
                 results, maps, times = test.test(opt.data,
-                                                 batch_size=total_batch_size,
+                                                 batch_size=batch_size * 2,
                                                  imgsz=imgsz_test,
                                                  model=ema.ema,
                                                  single_cls=opt.single_cls,
@@ -485,7 +485,7 @@ if __name__ == '__main__':
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         apriori = opt.global_rank, opt.local_rank
         with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
-            opt = argparse.Namespace(**yaml.load(f, Loader=yaml.FullLoader))  # replace
+            opt = argparse.Namespace(**yaml.load(f, Loader=yaml.SafeLoader))  # replace
         opt.cfg, opt.weights, opt.resume, opt.batch_size, opt.global_rank, opt.local_rank = '', ckpt, True, opt.total_batch_size, *apriori  # reinstate
         logger.info('Resuming training from %s' % ckpt)
     else:
@@ -509,7 +509,7 @@ if __name__ == '__main__':
 
     # Hyperparameters
     with open(opt.hyp) as f:
-        hyp = yaml.load(f, Loader=yaml.FullLoader)  # load hyps
+        hyp = yaml.load(f, Loader=yaml.SafeLoader)  # load hyps
 
     # Train
     logger.info(opt)

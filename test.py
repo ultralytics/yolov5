@@ -68,7 +68,7 @@ def test(data,
     model.eval()
     is_coco = data.endswith('coco.yaml')  # is COCO dataset
     with open(data) as f:
-        data = yaml.load(f, Loader=yaml.FullLoader)  # model dict
+        data = yaml.load(f, Loader=yaml.SafeLoader)  # model dict
     check_dataset(data)  # check
     nc = 1 if single_cls else int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
@@ -324,7 +324,7 @@ if __name__ == '__main__':
     elif opt.task == 'study':  # run over a range of settings and save/plot
         for weights in opt.weights:  # ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
             f = 'study_%s_%s.txt' % (Path(opt.data).stem, Path(weights).stem)  # filename to save to
-            x = list(range(320, 1344, 64))  # x axis
+            x = list(range(256, 1408, 128))  # x axis
             y = []  # y axis
             for i in x:  # img-size
                 print('\nRunning %s point %s...' % (f, i))
