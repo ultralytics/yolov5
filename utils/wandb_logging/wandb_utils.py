@@ -142,10 +142,11 @@ class WandbLogger():
                            json.dumps(img_classes))
             id_count = id_count + 1
         artifact.add(table, name)
-        label_path = image_path.replace('images', 'labels')
-        if not os.path.isfile(name + '_labels.zip'):  # make_archive won't check if file exists
-            shutil.make_archive(name + '_labels', 'zip', label_path)
-        artifact.add_file(name + '_labels.zip', name='data/labels.zip')
+        labels_path = image_path.replace('images', 'labels')
+        labels_zipped_path = Path(labels_path).parent / (name + '_labels.zip')
+        if not os.path.isfile(labels_zipped_path):  # make_archive won't check if file exists
+            shutil.make_archive(Path(labels_path).parent / (name + '_labels'), 'zip', labels_path)
+        artifact.add_file(str(labels_zipped_path), name='data/labels.zip')
         wandb.log_artifact(artifact)
         print("Saving data to W&B...")
 
