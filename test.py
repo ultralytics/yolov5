@@ -37,7 +37,6 @@ def test(data,
          plots=True,
          log_imgs=0,  # number of logged images
          compute_loss=None):
-
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -227,7 +226,7 @@ def test(data,
     print(pf % ('all', seen, nt.sum(), mp, mr, map50, map))
 
     # Print results per class
-    if (verbose or (nc <= 20 and not training)) and nc > 1 and len(stats):
+    if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
         for i, c in enumerate(ap_class):
             print(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
 
