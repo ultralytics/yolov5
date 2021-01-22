@@ -248,7 +248,7 @@ class Detections:
             if pred is not None:
                 for c in pred[:, -1].unique():
                     n = (pred[:, -1] == c).sum()  # detections per class
-                    str += f'{n} {self.names[int(c)]}s, '  # add to string
+                    str += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
                 if show or save or render:
                     img = Image.fromarray(img.astype(np.uint8)) if isinstance(img, np.ndarray) else img  # from np
                     for *box, conf, cls in pred:  # xyxy, confidence, class
