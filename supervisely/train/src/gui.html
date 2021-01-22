@@ -220,12 +220,12 @@
                 </sly-grid-gallery>
             </el-collapse-item>
             <el-collapse-item title="Metrics" name="metrics">
-                <div class="fflex">
+                <div class="fflex" v-if="state.activeNames.includes('metrics')">
                     <sly-plotly class="mr15" :content="data.mBox" style="height: 300px"></sly-plotly>
                     <sly-plotly class="mr15" :content="data.mObjectness" style="height: 300px"></sly-plotly>
                     <sly-plotly :content="data.mClassification" style="height: 300px"></sly-plotly>
                 </div>
-                <div class="fflex mt15">
+                <div class="fflex mt15" v-if="state.activeNames.includes('metrics')">
                     <sly-plotly class="mr15" :content="data.mPR" style="width: 33%; height: 300px"></sly-plotly>
                     <sly-plotly class="mr15" :content="data.mMAP" style="width: 33%; height: 300px"></sly-plotly>
                     <div style="width: 33%; height: 300px"></div>
@@ -235,7 +235,8 @@
                 <sly-grid-gallery v-show="data.predVis.content.layout.length > 0"
                                   :content="data.predVis.content"
                                   style="width:100%;"
-                                  :options="{enableZoom: true, syncViews: true, showPreview: true, selectable: false}"
+                                  :options="{enableZoom: true, syncViews: true, showPreview: true, selectable: false,
+                                  syncViewsBindings:data.syncBindings}"
                     >
                     <template v-slot:card-footer="{ annotation }">
                         <div style="color: blue">{{annotation.name}}</div>

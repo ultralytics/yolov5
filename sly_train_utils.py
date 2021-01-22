@@ -87,14 +87,17 @@ def send_epoch_log(epoch, epochs):
 
 def upload_label_vis():
     paths = [x for x in Path(local_artifacts_dir).glob('labels*.jpg') if x.exists()]
-    #for idx, batch in enumerate(sly.batched(paths, 2)):
-        #api.task.set_field(task_id, "data.labelsVis", {str(idx): empty_gallery}, append=True)
-        #_upload_data_vis(f"data.labelsVis.{idx}", batch, len(batch))
     _upload_data_vis(f"data.labelsVis", paths, len(paths))
 
 
 def upload_pred_vis():
     paths = [x for x in Path(local_artifacts_dir).glob('test*.jpg') if x.exists()]
+    _paths = [str(path) for path in paths]
+    _paths.sort()
+    sync_bindings = []
+    for batch in sly.batched(_paths, 2):
+        sync_bindings.append([sly.fs.get_file_name_with_ext(batch[0]), sly.fs.get_file_name_with_ext(batch[1])])
+    api.task.set_field(task_id, "data.syncBindings", sync_bindings)
     _upload_data_vis("data.predVis", paths, 2)
 
 

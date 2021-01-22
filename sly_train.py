@@ -152,6 +152,7 @@ def main():
     data["progressName"] = ""
     data["currentProgress"] = 0
     data["totalProgress"] = 0
+    data["syncBindings"] = []
 
     init_metrics(data)
 
@@ -159,12 +160,10 @@ def main():
     my_app.run(template_path, data, state)
 
 # @TODO: add files for remote debug (docker-compose.yaml)
-# @TODO: start charts - wrong size
 # @TODO: train == val - handle case in data_config.yaml to avoid data duplication
 # @TODO: --hyp file - (scratch or finetune ...) - all params to advanced settings in UI
 # @TODO: disable all widgets when start :disabled="state.started === True"
 # @TODO: save direct link to session in directory
 # @TODO: Double progress: progress bar iterations, progress bar upload
-# @TODO: sync views for labels/pred
 if __name__ == "__main__":
     sly.main_wrapper("main", main)
