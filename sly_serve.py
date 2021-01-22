@@ -1,5 +1,4 @@
 import os
-import numpy as np
 import json
 import supervisely_lib as sly
 
@@ -12,7 +11,7 @@ WORKSPACE_ID = int(os.environ['context.workspaceId'])
 image_id = 725268
 
 meta: sly.ProjectMeta = None
-REMOTE_PATH = "/yolov5_train/coco128_002/2278_001/weights/best.pt"
+REMOTE_PATH = "/yolov5_train/coco128_002/2278/weights/best.pt"
 DEVICE_STR = "cpu"
 model = None
 half = None
@@ -32,8 +31,10 @@ def get_output_classes_and_tags(api: sly.Api, task_id, context, state, app_logge
 def get_session_info(api: sly.Api, task_id, context, state, app_logger):
     info = {
         "app": "YOLO v5 serve",
-        "model": REMOTE_PATH,
-        "device": "???"
+        "weights": REMOTE_PATH,
+        "device": str(device),
+        "half": str(half),
+        "input_size": imgsz
     }
     request_id = context["request_id"]
     my_app.send_response(request_id, data=info)
@@ -54,27 +55,33 @@ def inference_image_id(api: sly.Api, task_id, context, state, app_logger):
 
 def debug_inference():
     image = sly.image.read("./data/images/bus.jpg")  # RGB
-    ann = inference(model, half, device, image, imgsz, meta, debug_visualization=True)
+    ann = inference(model, half, device, imgsz, image, meta, debug_visualization=True)
     print(json.dumps(ann, indent=4))
 
 
-def main():
-    global model, half, device, imgsz
+@my_app.callback("preprocess")
+@sly.timeit
+def preprocess(api: sly.Api, task_id, context, state, app_logger):
+    global model, half, device, imgsz, meta
 
     # download weights
     local_path = os.path.join(my_app.data_dir, sly.fs.get_file_name_with_ext(REMOTE_PATH))
-    my_app.public_api.file.download(TEAM_ID, REMOTE_PATH, local_path)
+    api.file.download(TEAM_ID, REMOTE_PATH, local_path)
 
     # load model on device
-    model, half, device, imgsz = load_model(local_path, imgsz=640, device=DEVICE_STR)
-    construct_model_meta(model)
+    model, half, device, imgsz = load_model(local_path, device=DEVICE_STR)
+    meta = construct_model_meta(model)
 
     debug_inference()
 
-    x = 10
-    x += 1
 
-#@TODO: add arguments to labeling inference (make a fork)
+def main():
+    my_app.run(initial_events=[{"command": "preprocess"}])
+
+
+#@TODO: add pretrained models
+#@TODO: download progress bar
+#@TODO: add arguments to labeling inference (make a fork from NN labeling app)
 #@TODO: alex - test bbox coordinates
 #@TODO: augment argument before deploy
 #@TODO: log input arguments

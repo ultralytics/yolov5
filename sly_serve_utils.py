@@ -2,14 +2,15 @@ import torch
 import numpy as np
 import supervisely_lib as sly
 
+
 from utils.torch_utils import select_device
 from models.experimental import attempt_load
-from utils.general import check_img_size, check_requirements, non_max_suppression, apply_classifier, scale_coords, \
-    xyxy2xywh, strip_optimizer, set_logging, increment_path
+from utils.general import check_img_size, non_max_suppression, scale_coords
 from utils.datasets import letterbox
 
 
 CONFIDENCE = "confidence"
+IMG_SIZE = 640
 
 
 def construct_model_meta(model):
@@ -39,7 +40,16 @@ def load_model(weights_path, imgsz=640, device='cpu'):
 
     # Load model
     model = attempt_load(weights_path, map_location=device)  # load FP32 model
+
+    if hasattr(model, 'module') and hasattr(model.module, 'img_size'):
+        imgsz = model.module.img_size[0]
+    elif hasattr(model, 'img_size'):
+        imgsz = model.img_size[0]
+    else:
+        sly.logger.warning(f"Image size is not found in model checkpoint. Use default: {IMG_SIZE}")
+        imgsz = IMG_SIZE
     imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
+
     if half:
         model.half()  # to FP16
 
@@ -49,7 +59,7 @@ def load_model(weights_path, imgsz=640, device='cpu'):
     return model, half, device, imgsz
 
 
-def inference(model, half, device, image: np.ndarray, imgsz, meta: sly.ProjectMeta, conf_thres=0.25, iou_thres=0.45,
+def inference(model, half, device, imgsz, image: np.ndarray, meta: sly.ProjectMeta, conf_thres=0.25, iou_thres=0.45,
               augment=False, agnostic_nms=False, debug_visualization=False) -> sly.Annotation:
     names = model.module.names if hasattr(model, 'module') else model.names
 
@@ -87,7 +97,7 @@ def inference(model, half, device, image: np.ndarray, imgsz, meta: sly.ProjectMe
 
     if debug_visualization is True:
         # visualize for debug purposes
-        vis = np.zeros((height, width, 3), np.uint8)
+        vis = np.copy(img0)
         ann.draw_contour(vis, thickness=2)
         sly.image.write("vis.jpg", vis)
 
