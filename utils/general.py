@@ -4,6 +4,7 @@ import glob
 import logging
 import math
 import os
+import platform
 import random
 import re
 import subprocess
@@ -65,14 +66,15 @@ def check_git_status():
         assert check_online(), 'skipping check (offline)'
 
         cmd = 'git fetch && git config --get remote.origin.url'  # github repo url
-        url = subprocess.check_output(cmd, shell=True).decode()[:-1]
-        cmd = 'git rev-list $(git rev-parse --abbrev-ref HEAD)..origin/master --count'  # commits behind
-        n = int(subprocess.check_output(cmd, shell=True))
+        url = subprocess.check_output(cmd, shell=True).decode().rstrip()
+        branch = subprocess.check_output('git branch --show-current', shell=True).decode().rstrip()  # current
+        n = int(subprocess.check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
         if n > 0:
-            print(f"⚠️ WARNING: code is out of date by {n} {'commits' if n > 1 else 'commmit'}. "
-                  f"Use 'git pull' to update or 'git clone {url}' to download latest.")
+            s = f"⚠️ WARNING: code is out of date by {n} {'commits' if n > 1 else 'commmit'}. " \
+                f"Use 'git pull' to update or 'git clone {url}' to download latest."
         else:
-            print(f'up to date with {url} ✅')
+            s = f'up to date with {url} ✅'
+        print(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)
     except Exception as e:
         print(e)
 
