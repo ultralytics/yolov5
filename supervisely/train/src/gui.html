@@ -184,13 +184,16 @@
                 </sly-field>
             </el-tab-pane>
             <el-tab-pane label="Advanced" name="Advanced">
-                <div>Not implemented yet</div>
-<!--                <div class="fflex">-->
-<!--                    <el-button type="text">train-from-scratch params</el-button>-->
-<!--                    <el-button type="text">train-finetune params</el-button>-->
-<!--                </div>-->
-<!--                <div class="mb15">Edit settings in YAML format:</div>-->
-<!--                <sly-editor v-model="state.hyp" :options="{height: '550px', mode: 'ace/mode/yaml'}"></sly-editor>-->
+                <div class="fflex">
+                    <div class="mr15">Training hyperparameters templates:</div>
+                    <el-radio-group v-model="state.hypRadio">
+                        <el-radio label="scratch">scratch</el-radio>
+                        <el-radio label="finetune">finetune</el-radio>
+                    </el-radio-group>
+                    <el-button class="ml15" type="default" size="small" @click="command('restore_hyp')">Restore Defaults</el-button>
+                </div>
+                <div class="mb15">Edit settings in YAML format:</div>
+                <sly-editor v-model="state.hyp[state.hypRadio]" :options="{height: '565px', mode: 'ace/mode/yaml'}"></sly-editor>
             </el-tab-pane>
         </el-tabs>
     </sly-card>

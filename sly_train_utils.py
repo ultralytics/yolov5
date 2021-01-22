@@ -1,5 +1,6 @@
 import os
 import sys
+import yaml
 from pathlib import Path
 import supervisely_lib as sly
 
@@ -27,7 +28,15 @@ def init_script_arguments(state, yolov5_format_dir, app_data_dir, input_project_
     cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models', f"{state['modelSize']}.yaml")
     sys.argv.extend(["--cfg", cfg])
 
-    hyp = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data/hyp.scratch.yaml')
+    try:
+        hyp_content = yaml.safe_load(state["hyp"][state["hypRadio"]])
+        hyp = os.path.join(app_data_dir, 'hyp.custom.yaml')
+        with open(hyp, 'w') as f:
+            f.write(state["hyp"][state["hypRadio"]])
+    except yaml.YAMLError as e:
+        sly.logger.error(repr(e))
+        api.app.set_field(task_id, "state.started", False)
+        return
     sys.argv.extend(["--hyp", hyp])
 
     weights = ""  # random

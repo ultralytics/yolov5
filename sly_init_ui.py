@@ -84,7 +84,15 @@ def init_training_hyperparameters(state):
     state["device"] = '0'
     state["workers"] = 8
     state["activeTabName"] = "General"
+    state["hyp"] = {
+        "scratch": _load_file('data/hyp.scratch.yaml'),
+        "finetune": _load_file('data/hyp.finetune.yaml'),
+    }
+    state["hypRadio"] = "scratch"
 
-    hyp_path = os.path.join(str(pathlib.Path(__file__).parent.absolute()), 'data/hyp.scratch.yaml')
-    with open(hyp_path, 'r') as file:
-        state["hyp"] = file.read()
+
+def _load_file(relative_path):
+    file_path = os.path.join(str(pathlib.Path(__file__).parent.absolute()), relative_path)
+    with open(file_path, 'r') as file:
+        data = file.read()
+    return data

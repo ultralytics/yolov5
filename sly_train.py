@@ -5,7 +5,7 @@ from supervisely_lib._utils import sizeof_fmt
 
 from sly_train_val_split import train_val_split
 from sly_init_ui import init_input_project, init_classes_stats, init_random_split, init_model_settings, \
-    init_training_hyperparameters
+    init_training_hyperparameters, _load_file as load_hyp
 from sly_prepare_data import filter_and_transform_labels
 from sly_train_utils import init_script_arguments, empty_gallery
 import sly_train_utils
@@ -22,6 +22,15 @@ PROJECT = None
 META = None
 
 CNT_GRID_COLUMNS = 3
+
+
+@my_app.callback("restore_hyp")
+@sly.timeit
+def restore_hyp(api: sly.Api, task_id, context, state, app_logger):
+    api.task.set_field(task_id, "state.hyp", {
+        "scratch": load_hyp('data/hyp.scratch.yaml'),
+        "finetune": load_hyp('data/hyp.finetune.yaml'),
+    })
 
 
 @my_app.callback("train")
@@ -170,7 +179,6 @@ def main():
 
 # @TODO: add files for remote debug (docker-compose.yaml)
 # @TODO: train == val - handle case in data_config.yaml to avoid data duplication
-# @TODO: --hyp file - (scratch or finetune ...) - all params to advanced settings in UI
 # @TODO: Double progress: progress bar iterations, progress bar upload
 if __name__ == "__main__":
     sly.main_wrapper("main", main)
