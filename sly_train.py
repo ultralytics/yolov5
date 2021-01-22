@@ -120,6 +120,13 @@ def train(api: sly.Api, task_id, context, state, app_logger):
     progress = sly.Progress("Finished, app is stopped automatically", 1, ext_logger=app_logger)
     progress_cb(1)
 
+    file_info = api.file.get_info_by_path(TEAM_ID, os.path.join(remote_artifacts_dir, 'results.png'))
+    fields = [
+        {"field": "data.outputUrl", "payload": api.file.get_url(file_info.id)},
+        {"field": "data.outputName", "payload": remote_artifacts_dir},
+    ]
+    api.app.set_fields(task_id, fields)
+
     my_app.stop()
 
 
@@ -153,6 +160,8 @@ def main():
     data["currentProgress"] = 0
     data["totalProgress"] = 0
     data["syncBindings"] = []
+    data["outputUrl"] = ""
+    data["outputName"] = ""
 
     init_metrics(data)
 
@@ -162,8 +171,6 @@ def main():
 # @TODO: add files for remote debug (docker-compose.yaml)
 # @TODO: train == val - handle case in data_config.yaml to avoid data duplication
 # @TODO: --hyp file - (scratch or finetune ...) - all params to advanced settings in UI
-# @TODO: disable all widgets when start :disabled="state.started === True"
-# @TODO: save direct link to session in directory
 # @TODO: Double progress: progress bar iterations, progress bar upload
 if __name__ == "__main__":
     sly.main_wrapper("main", main)
