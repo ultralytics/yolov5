@@ -1,3 +1,5 @@
+import pathlib
+import os
 import supervisely_lib as sly
 
 
@@ -81,3 +83,8 @@ def init_training_hyperparameters(state):
     state["singleClass"] = False
     state["device"] = '0'
     state["workers"] = 8
+    state["activeTabName"] = "General"
+
+    hyp_path = os.path.join(str(pathlib.Path(__file__).parent.absolute()), 'data/hyp.scratch.yaml')
+    with open(hyp_path, 'r') as file:
+        state["hyp"] = file.read()

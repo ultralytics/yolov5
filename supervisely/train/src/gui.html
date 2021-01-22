@@ -152,34 +152,47 @@
 
     <sly-card class="mt15"
               title="5. Traning hyperparameters">
-        <sly-field title="Number of epochs">
-            <el-input-number v-model="state.epochs" :min="1" :max="10000"></el-input-number>
-        </sly-field>
-        <sly-field title="Batch size"
-                   description="total batch size for all GPUs. Use the largest batch size your GPU allows.
+        <el-tabs v-model="state.activeTabName">
+            <el-tab-pane label="General" name="General">
+                <sly-field title="Number of epochs">
+                    <el-input-number v-model="state.epochs" :min="1" :max="10000"></el-input-number>
+                </sly-field>
+                <sly-field title="Batch size"
+                           description="total batch size for all GPUs. Use the largest batch size your GPU allows.
                                 For example: 16 / 24 / 40 / 64 (batch sizes shown for 16 GB devices)">
-            <el-input-number v-model="state.batchSize" :min="6"></el-input-number>
-        </sly-field>
-        <sly-field title="Input image size (in pixels)"
-                   description="Image is resized to square">
-            <el-input-number v-model="state.imgSize" :min="64"></el-input-number>
-        </sly-field>
-        <sly-field title="Multi-scale"
-                   description="Vary image size +/- 50%">
-            <el-checkbox v-model="state.multiScale">Multi-scale</el-checkbox>
-        </sly-field>
-        <sly-field title="Single class"
-                   description="Train multi-class data as single-class (merge all classes to a single one)">
-            <el-checkbox v-model="state.singleClass">Single class</el-checkbox>
-        </sly-field>
-        <sly-field title="Device"
-                   description="Cuda device, i.e. 0 or 0,1,2,3 or cpu">
-            <el-input v-model="state.device" style="width:250px;"></el-input>
-        </sly-field>
-        <sly-field title="Number of workers"
-                   description="Maximum number of dataloader workers, use 0 for debug">
-            <el-input-number v-model="state.workers" :min="0"></el-input-number>
-        </sly-field>
+                    <el-input-number v-model="state.batchSize" :min="6"></el-input-number>
+                </sly-field>
+                <sly-field title="Input image size (in pixels)"
+                           description="Image is resized to square">
+                    <el-input-number v-model="state.imgSize" :min="64"></el-input-number>
+                </sly-field>
+                <sly-field title="Multi-scale"
+                           description="Vary image size +/- 50%">
+                    <el-checkbox v-model="state.multiScale">Multi-scale</el-checkbox>
+                </sly-field>
+                <sly-field title="Single class"
+                           description="Train multi-class data as single-class (merge all classes to a single one)">
+                    <el-checkbox v-model="state.singleClass">Single class</el-checkbox>
+                </sly-field>
+                <sly-field title="Device"
+                           description="Cuda device, i.e. 0 or 0,1,2,3 or cpu">
+                    <el-input v-model="state.device" style="width:250px;"></el-input>
+                </sly-field>
+                <sly-field title="Number of workers"
+                           description="Maximum number of dataloader workers, use 0 for debug">
+                    <el-input-number v-model="state.workers" :min="0"></el-input-number>
+                </sly-field>
+            </el-tab-pane>
+            <el-tab-pane label="Advanced" name="Advanced">
+                <div>Not implemented yet</div>
+<!--                <div class="fflex">-->
+<!--                    <el-button type="text">train-from-scratch params</el-button>-->
+<!--                    <el-button type="text">train-finetune params</el-button>-->
+<!--                </div>-->
+<!--                <div class="mb15">Edit settings in YAML format:</div>-->
+<!--                <sly-editor v-model="state.hyp" :options="{height: '550px', mode: 'ace/mode/yaml'}"></sly-editor>-->
+            </el-tab-pane>
+        </el-tabs>
     </sly-card>
 
     <sly-card class="mt15" title="6. Training progress">
@@ -203,6 +216,15 @@
             </div>
             <el-progress :percentage="Math.round(data.currentProgress * 100 / data.totalProgress)"></el-progress>
         </div>
+
+        <sly-field v-if="data.outputUrl.length > 0"
+                   title="Training artifacts"
+                   description="Training artifacts has been uploaded to Team Files">
+            <a slot="title" target="_blank" :href="`${data.outputUrl}`">{{data.outputName}}</a>
+            <sly-icon slot="icon" :options="{ color: '#33c94c', bgColor: '#d9f7e4', rounded: false }">
+                <i class="zmdi zmdi-receipt"></i>
+            </sly-icon>
+        </sly-field>
 
         <el-collapse class="mt15" v-model="state.activeNames">
             <el-collapse-item title="Logs" name="logs">
