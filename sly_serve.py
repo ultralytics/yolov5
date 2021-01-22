@@ -45,9 +45,15 @@ def get_session_info(api: sly.Api, task_id, context, state, app_logger):
 def inference_image_id(api: sly.Api, task_id, context, state, app_logger):
     app_logger.debug("Input data", extra={"state": state})
     image_id = state["image_id"]
-    debug_visualization = state.get("debug_visualization", False)
+    debug_visualization = state.get("debugVisualization", False)
+    conf_thres = state.get("confThres", 0.25)
+    iou_thres = state.get("iouThres", 0.45)
+    augment = state.get("augment", True)
+
     image = api.image.download_np(image_id)  # RGB image
-    ann_json = inference(image, debug_visualization)
+    ann_json = inference(model, half, device, imgsz, image, meta,
+                         conf_thres=conf_thres, iou_thres=iou_thres, augment=augment,
+                         debug_visualization=debug_visualization)
 
     request_id = context["request_id"]
     my_app.send_response(request_id, data=ann_json)
