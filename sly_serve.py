@@ -12,7 +12,7 @@ WORKSPACE_ID = int(os.environ['context.workspaceId'])
 image_id = 725268
 
 meta: sly.ProjectMeta = None
-REMOTE_PATH = "/yolov5_train/coco128_002/2278_072/weights/best.pt"
+REMOTE_PATH = "/yolov5_train/coco128_002/2278_001/weights/best.pt"
 DEVICE_STR = "cpu"
 model = None
 half = None
@@ -74,12 +74,10 @@ def main():
     x = 10
     x += 1
 
-
+#@TODO: add arguments to labeling inference (make a fork)
 #@TODO: alex - test bbox coordinates
 #@TODO: augment argument before deploy
 #@TODO: log input arguments
-#@TODO: save image size to model
-#@TODO: save colors to model
 #@TODO: fix serve template - debug_inference
 #@TODO: or another app serve_cpu?
 #@TODO: deploy on custom device: cpu/gpu

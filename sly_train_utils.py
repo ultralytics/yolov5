@@ -46,6 +46,9 @@ def init_script_arguments(state, yolov5_format_dir, app_data_dir, input_project_
         sys.argv.append("--single-cls")
     sys.argv.extend(["--device", state["device"]])
 
+    if "workers" in state:
+        sys.argv.extend(["--workers", str(state["workers"])])
+
     training_dir = os.path.join(app_data_dir, 'experiment', input_project_name)
     experiment_name = str(task_id)
     local_artifacts_dir = os.path.join(training_dir, experiment_name)

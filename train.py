@@ -225,6 +225,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device) * nc  # attach class weights
     model.names = names
     model.colors = colors
+    model.img_size = opt.img_size
 
     # Start training
     t0 = time.time()
@@ -343,7 +344,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
         if rank in [-1, 0]:
             # mAP
             if ema:
-                ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'colors', 'stride', 'class_weights'])
+                ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'colors', 'img_size', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
                 results, maps, times = test.test(opt.data,
