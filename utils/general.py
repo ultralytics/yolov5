@@ -64,10 +64,10 @@ def check_git_status():
         assert not Path('/workspace').exists(), 'skipping check (Docker image)'  # not Path('/.dockerenv').exists()
         assert check_online(), 'skipping check (offline)'
 
-        cmd = 'git fetch && git config --get remote.origin.url'  # github repo url
-        url = subprocess.check_output(cmd, shell=True).decode()[:-1]
-        cmd = 'git rev-list ${git branch --show-current}..origin/master --count'  # commits behind
-        n = int(subprocess.check_output(cmd, shell=True))
+        cmd = 'git fetch && git config --get remote.origin.url'
+        url = subprocess.check_output(cmd, shell=True).decode().rstrip()  # github repo url
+        branch = subprocess.check_output('git branch --show-current', shell=True).decode().rstrip()  # current branch
+        n = int(subprocess.check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
         if n > 0:
             print(f"⚠️ WARNING: code is out of date by {n} {'commits' if n > 1 else 'commmit'}. "
                   f"Use 'git pull' to update or 'git clone {url}' to download latest.")
