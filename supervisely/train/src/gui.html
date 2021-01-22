@@ -165,6 +165,10 @@
                    description="Cuda device, i.e. 0 or 0,1,2,3 or cpu">
             <el-input v-model="state.device" style="width:250px;"></el-input>
         </sly-field>
+        <sly-field title="Number of workers"
+                   description="Maximum number of dataloader workers, use 0 for debug">
+            <el-input-number v-model="state.workers" :min="0"></el-input-number>
+        </sly-field>
     </sly-card>
 
     <sly-card class="mt15" title="6. Training progress">
@@ -188,8 +192,6 @@
             </div>
             <el-progress :percentage="Math.round(data.currentProgress * 100 / data.totalProgress)"></el-progress>
         </div>
-        <!--        style="width: 50%; height: 300px;"-->
-
         <el-collapse class="mt15" v-model="state.activeNames">
             <el-collapse-item title="Logs" name="logs">
                 <sly-logs class="mt15" :task-id="data.taskId"></sly-logs>
@@ -230,18 +232,6 @@
                 </div>
             </el-collapse-item>
             <el-collapse-item title="Predictions visualization" name="pred">
-<!--                <div v-for="(v, k) in data.labelsVis">-->
-<!--                    <sly-grid-gallery v-show="v.content.layout.length > 0"-->
-<!--                                  :content="v.content"-->
-<!--                                  style="width:100%;"-->
-<!--                                  :options="{enableZoom: true, syncViews: true, showPreview: true, selectable: false}"-->
-<!--                    >-->
-<!--                        <template v-slot:card-footer="{ annotation }">-->
-<!--                            <div style="color: blue">{{annotation.name}}</div>-->
-<!--                        </template>-->
-<!--                    </sly-grid-gallery>-->
-<!--                </div>-->
-
                 <sly-grid-gallery v-show="data.predVis.content.layout.length > 0"
                                   :content="data.predVis.content"
                                   style="width:100%;"

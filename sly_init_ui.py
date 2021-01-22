@@ -80,3 +80,4 @@ def init_training_hyperparameters(state):
     state["multiScale"] = False
     state["singleClass"] = False
     state["device"] = '0'
+    state["workers"] = 8

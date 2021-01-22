@@ -133,8 +133,6 @@ def main():
     data = {}
     state = {}
 
-    state["workers"] = 0  # only for debug
-
     data["taskId"] = my_app.task_id
     global PROJECT, META
     PROJECT, META = init_input_project(my_app.public_api, PROJECT_ID, data)
@@ -160,8 +158,8 @@ def main():
     template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')
     my_app.run(template_path, data, state)
 
-#@TODO: num workers argument from UI
-#@TODO: start charts - wrong size
+# @TODO: add files for remote debug (docker-compose.yaml)
+# @TODO: start charts - wrong size
 # @TODO: train == val - handle case in data_config.yaml to avoid data duplication
 # @TODO: --hyp file - (scratch or finetune ...) - all params to advanced settings in UI
 # @TODO: disable all widgets when start :disabled="state.started === True"
