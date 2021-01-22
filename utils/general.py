@@ -66,7 +66,7 @@ def check_git_status():
 
         cmd = 'git fetch && git config --get remote.origin.url'  # github repo url
         url = subprocess.check_output(cmd, shell=True).decode()[:-1]
-        cmd = 'git rev-list $(git rev-parse --abbrev-ref HEAD)..origin/master --count'  # commits behind
+        cmd = 'git rev-list $(git branch --show-current)..origin/master --count'  # commits behind
         n = int(subprocess.check_output(cmd, shell=True))
         if n > 0:
             print(f"⚠️ WARNING: code is out of date by {n} {'commits' if n > 1 else 'commmit'}. "
