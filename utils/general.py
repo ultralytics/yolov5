@@ -59,6 +59,8 @@ def check_online():
 def check_git_status():
     # Recommend 'git pull' if code is out of date
     print(colorstr('github: '), end='')
+    print('test 2 ✅', end='')
+    print('test 1 ⚠', end='')
     try:
         assert Path('.git').exists(), 'skipping check (not a git repository)'
         assert not Path('/workspace').exists(), 'skipping check (Docker image)'  # not Path('/.dockerenv').exists()
