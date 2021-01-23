@@ -132,8 +132,7 @@ class WandbLogger():
                                  "domain": "pixel"})
                 img_classes[class_id] = class_to_id[class_id]
             boxes = {"ground_truth": {"box_data": box_data, "class_labels": class_to_id}}  # inference-space
-            table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes),
-                           json.dumps(img_classes))
+            table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes), json.dumps(img_classes))
         artifact.add(table, name)
         labels_path = image_path.replace('images', 'labels')
         labels_zipped_path = Path(labels_path).parent / (name + '_labels.zip')
