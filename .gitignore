@@ -18,14 +18,12 @@
 *.MOV
 *.avi
 *.data
-*.json
 
 *.cfg
 !cfg/yolov3*.cfg
 
 storage.googleapis.com
 runs/*
-data/*
 !data/images/zidane.jpg
 !data/images/bus.jpg
 !data/coco.names
@@ -250,3 +248,5 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+supervisely_lib

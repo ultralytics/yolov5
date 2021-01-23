@@ -17,6 +17,8 @@ from utils.metrics import ap_per_class, ConfusionMatrix
 from utils.plots import plot_images, output_to_target, plot_study_txt
 from utils.torch_utils import select_device, time_synchronized
 
+from sly_train_utils import upload_pred_vis
+
 
 def test(data,
          weights=None,
@@ -36,7 +38,8 @@ def test(data,
          save_conf=False,  # save auto-label confidences
          plots=True,
          log_imgs=0,  # number of logged images
-         compute_loss=None):
+         compute_loss=None,
+         opt_sly=False):
 
     # Initialize/load model and set device
     training = model is not None
@@ -242,6 +245,8 @@ def test(data,
         if wandb and wandb.run:
             wandb.log({"Images": wandb_images})
             wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]})
+        if opt_sly:
+            upload_pred_vis()
 
     # Save JSON
     if save_json and len(jdict):

@@ -33,10 +33,13 @@ from utils.loss import ComputeLoss
 from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first
 
+from sly_train_utils import send_epoch_log, upload_label_vis, upload_train_data_vis
+from sly_metrics_utils import send_metrics
+
 logger = logging.getLogger(__name__)
 
 
-def train(hyp, opt, device, tb_writer=None, wandb=None):
+def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
     logger.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
     save_dir, epochs, batch_size, total_batch_size, weights, rank = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
@@ -67,6 +70,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if opt.single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
     assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)  # check
+    colors = data_dict.get('colors', None)
 
     # Model
     pretrained = weights.endswith('.pt')
@@ -202,6 +206,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             # model._initialize_biases(cf.to(device))
             if plots:
                 plot_labels(labels, save_dir, loggers)
+                if opt.sly:
+                    upload_label_vis()
                 if tb_writer:
                     tb_writer.add_histogram('classes', c, 0)
 
@@ -218,6 +224,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     model.gr = 1.0  # iou loss ratio (obj_loss = 1.0 or iou)
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device) * nc  # attach class weights
     model.names = names
+    model.colors = colors
+    model.img_size = opt.img_size
 
     # Start training
     t0 = time.time()
@@ -322,6 +330,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 elif plots and ni == 10 and wandb:
                     wandb.log({"Mosaics": [wandb.Image(str(x), caption=x.name) for x in save_dir.glob('train*.jpg')
                                            if x.exists()]})
+                elif plots and ni == 10 and opt.sly:
+                    upload_train_data_vis()
 
             # end batch ------------------------------------------------------------------------------------------------
         # end epoch ----------------------------------------------------------------------------------------------------
@@ -334,7 +344,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
         if rank in [-1, 0]:
             # mAP
             if ema:
-                ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride', 'class_weights'])
+                ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'colors', 'img_size', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
                 results, maps, times = test.test(opt.data,
@@ -346,7 +356,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                                                  save_dir=save_dir,
                                                  plots=plots and final_epoch,
                                                  log_imgs=opt.log_imgs if wandb else 0,
-                                                 compute_loss=compute_loss)
+                                                 compute_loss=compute_loss,
+                                                 opt_sly=opt.sly)
 
             # Write
             with open(results_file, 'a') as f:
@@ -355,6 +366,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 os.system('gsutil cp %s gs://%s/results/results%s.txt' % (results_file, opt.bucket, opt.name))
 
             # Log
+            if opt.sly:
+                send_epoch_log(epoch, epochs)
+                metrics = {}
             tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
                     'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
                     'val/box_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
@@ -364,6 +378,13 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                     tb_writer.add_scalar(tag, x, epoch)  # tensorboard
                 if wandb:
                     wandb.log({tag: x})  # W&B
+                if opt.sly:
+                    if torch.is_tensor(x):
+                        x = float(x.cpu().numpy())
+                    metrics[tag] = x
+
+            if opt.sly:
+                send_metrics(epoch, epochs, metrics)
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
@@ -422,7 +443,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                                           dataloader=testloader,
                                           save_dir=save_dir,
                                           save_json=save_json,
-                                          plots=False)
+                                          plots=False,
+                                          opt_sly=opt.sly)
 
     else:
         dist.destroy_process_group()
@@ -432,7 +454,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     return results
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
@@ -463,7 +485,10 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--quad', action='store_true', help='quad dataloader')
+    parser.add_argument('--sly', action='store_true', help='for Supervisely App integration')
+
     opt = parser.parse_args()
+    print("Input arguments:", opt)
 
     # Set DDP variables
     opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
@@ -471,7 +496,7 @@ if __name__ == '__main__':
     set_logging(opt.global_rank)
     if opt.global_rank in [-1, 0]:
         check_git_status()
-        check_requirements()
+        #check_requirements(file=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'requirements.txt'))
 
     # Resume
     if opt.resume:  # resume an interrupted run
@@ -601,3 +626,6 @@ if __name__ == '__main__':
         plot_evolution(yaml_file)
         print(f'Hyperparameter evolution complete. Best results saved as: {yaml_file}\n'
               f'Command to train a new model with these hyperparameters: $ python train.py --hyp {yaml_file}')
+
+if __name__ == '__main__':
+    main()
