@@ -15,5 +15,9 @@
   "isolate": true,
   "headless": true,
   "need_gpu": true,
-  "gui_template": "supervisely/train/src/gui.html"
+  "gui_template": "supervisely/train/src/gui.html",
+  "context_menu": {
+    "target": ["images_project"],
+    "context_category": "Neural Networks"
+  }
 }
