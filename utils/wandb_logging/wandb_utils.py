@@ -109,13 +109,13 @@ class WandbLogger():
             wandb.log_artifact(model_artifact)
         print("Saving model artifact on epoch ", epoch + 1)
 
-    def log_dataset_artifact(self, dataloader, class_to_id, name='dataset'):
+    def log_dataset_artifact(self, dataset, class_to_id, name='dataset'):
         artifact = wandb.Artifact(name=name, type="dataset")
-        image_path = dataloader.path
+        image_path = dataset.path
         artifact.add_dir(image_path, name='data/images')
         table = wandb.Table(columns=["id", "train_image", "Classes"])
         class_set = wandb.Classes([{'id': id, 'name': name} for id, name in class_to_id.items()])
-        for si, (img, labels, paths, shapes) in enumerate(dataloader):
+        for si, (img, labels, paths, shapes) in enumerate(dataset):
             _, height, width = img.shape  # batch size, channels, height, width
             labels[:, 2:] = (xywh2xyxy(labels[:, 2:].view(-1, 4)))
             height, width = shapes[0]
