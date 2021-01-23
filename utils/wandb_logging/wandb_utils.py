@@ -9,11 +9,9 @@ from pathlib import Path
 
 import torch
 
-# Add utils/ to path
-sys.path.append(dirname(dirname(dirname(os.path.abspath(__file__)))))
-from utils.general import colorstr, xywh2xyxy
+sys.path.append(dirname(dirname(dirname(os.path.abspath(__file__)))))  # add utils/ to path
 
-logger = logging.getLogger(__name__)
+from utils.general import colorstr, xywh2xyxy
 
 try:
     import wandb
@@ -22,6 +20,7 @@ except ImportError:
     print(f"{colorstr('wandb: ')}Install Weights & Biases for YOLOv5 logging with 'pip install wandb' (recommended)")
 
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
+logger = logging.getLogger(__name__)
 
 
 def remove_prefix(from_string, prefix):
@@ -31,14 +30,12 @@ def remove_prefix(from_string, prefix):
 class WandbLogger():
     def __init__(self, opt, name, run_id, data_dict, job_type='Training'):
         self.wandb = wandb
-        if self.wandb:
-            self.wandb_run = wandb.init(config=opt, resume="allow",
-                                        project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
-                                        name=name,
-                                        job_type=job_type,
-                                        id=run_id)
-        else:
-            self.wandb_run = None
+        self.wandb_run = wandb.init(config=opt, resume="allow",
+                                    project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
+                                    name=name,
+                                    job_type=job_type,
+                                    id=run_id) if self.wandb else None
+
         if job_type == 'Training':
             self.setup_training(opt, data_dict)
             if opt.bbox_interval == -1:
