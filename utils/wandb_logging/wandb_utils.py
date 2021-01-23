@@ -124,13 +124,13 @@ class WandbLogger():
             box_data = []
             img_classes = {}
             for cls, *xyxy in labels.tolist():
-                class_id = int(cls)
+                cls = int(cls)
                 box_data.append({"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
-                                 "class_id": class_id,
-                                 "box_caption": "%s" % (class_to_id[class_id]),
+                                 "class_id": cls,
+                                 "box_caption": "%s" % (class_to_id[cls]),
                                  "scores": {"acc": 1},
                                  "domain": "pixel"})
-                img_classes[class_id] = class_to_id[class_id]
+                img_classes[cls] = class_to_id[cls]
             boxes = {"ground_truth": {"box_data": box_data, "class_labels": class_to_id}}  # inference-space
             table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes), json.dumps(img_classes))
         artifact.add(table, name)
