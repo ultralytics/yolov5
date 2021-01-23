@@ -113,10 +113,7 @@ class WandbLogger():
         artifact = wandb.Artifact(name=name, type="dataset")
         image_path = dataloader.path
         artifact.add_dir(image_path, name='data/images')
-        table = wandb.Table(
-            columns=["id", "train_image", "Classes"]
-        )
-        id_count = 0
+        table = wandb.Table(columns=["id", "train_image", "Classes"])
         class_set = wandb.Classes([{'id': id, 'name': name} for id, name in class_to_id.items()])
         for si, (img, labels, paths, shapes) in enumerate(dataloader):
             _, height, width = img.shape  # batch size, channels, height, width
@@ -135,9 +132,8 @@ class WandbLogger():
                                  "domain": "pixel"})
                 img_classes[class_id] = class_to_id[class_id]
             boxes = {"ground_truth": {"box_data": box_data, "class_labels": class_to_id}}  # inference-space
-            table.add_data(id_count, wandb.Image(paths, classes=class_set, boxes=boxes),
+            table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes),
                            json.dumps(img_classes))
-            id_count = id_count + 1
         artifact.add(table, name)
         labels_path = image_path.replace('images', 'labels')
         labels_zipped_path = Path(labels_path).parent / (name + '_labels.zip')
