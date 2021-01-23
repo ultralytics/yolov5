@@ -14,9 +14,9 @@ def create_dataset_artifact(opt):
         data = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
     logger = WandbLogger(opt, '', None, data, job_type='create_dataset')
     nc, names = (1, ['item']) if opt.single_cls else (int(data['nc']), data['names'])
-    names_to_ids = {k: v for k, v in enumerate(names)}
-    logger.log_dataset_artifact(LoadImagesAndLabels(data['train']), names_to_ids, name='train')  # trainset
-    logger.log_dataset_artifact(LoadImagesAndLabels(data['val']), names_to_ids, name='val')  # valset
+    names = {k: v for k, v in enumerate(names)}  # to index dictionary
+    logger.log_dataset_artifact(LoadImagesAndLabels(data['train']), names, name='train')  # trainset
+    logger.log_dataset_artifact(LoadImagesAndLabels(data['val']), names, name='val')  # valset
 
     # Update data.yaml with artifact links
     data['train'] = WANDB_ARTIFACT_PREFIX + str(Path(opt.project) / 'train')
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
-    parser.add_argument('--project', type=str, default='yolov5', help='name of W&B Project')
+    parser.add_argument('--project', type=str, default='YOLOv5', help='name of W&B Project')
     parser.add_argument('--overwrite_config', action='store_true', help='overwrite data.yaml')
     opt = parser.parse_args()
 
