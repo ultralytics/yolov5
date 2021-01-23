@@ -16,5 +16,4 @@
   "headless": true,
   "need_gpu": true,
   "gui_template": "supervisely/train/src/gui.html",
-  "123": 123
 }
