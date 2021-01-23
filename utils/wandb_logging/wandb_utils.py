@@ -120,10 +120,9 @@ class WandbLogger():
             labels[:, 2:] = (xywh2xyxy(labels[:, 2:].view(-1, 4)))
             height, width = shapes[0]
             labels[:, 2:] *= torch.Tensor([width, height, width, height])
-            labels = labels[:, 1:]
             box_data = []
             img_classes = {}
-            for cls, *xyxy in labels.tolist():
+            for cls, *xyxy in labels[:, 1:].tolist():
                 cls = int(cls)
                 box_data.append({"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
                                  "class_id": cls,
@@ -135,10 +134,10 @@ class WandbLogger():
             table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes), json.dumps(img_classes))
         artifact.add(table, name)
         labels_path = image_path.replace('images', 'labels')
-        labels_zipped_path = Path(labels_path).parent / (name + '_labels.zip')
-        if not os.path.isfile(labels_zipped_path):  # make_archive won't check if file exists
-            shutil.make_archive(Path(labels_path).parent / (name + '_labels'), 'zip', labels_path)
-        artifact.add_file(str(labels_zipped_path), name='data/labels.zip')
+        zip_path = Path(labels_path).parent / (name + '_labels.zip')
+        if not zip_path.is_file():  # make_archive won't check if file exists
+            shutil.make_archive(zip_path.with_suffix(''), 'zip', labels_path)
+        artifact.add_file(str(zip_path), name='data/labels.zip')
         wandb.log_artifact(artifact)
         print("Saving data to W&B...")
 
