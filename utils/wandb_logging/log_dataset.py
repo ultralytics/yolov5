@@ -1,14 +1,10 @@
 import argparse
-import os
 from pathlib import Path
 
-import torch
 import yaml
 
+from utils.datasets import LoadImagesAndLabels
 from wandb_utils import WandbLogger
-from utils.datasets import create_dataloader, LoadImagesAndLabels
-from utils.general import check_dataset, colorstr
-from utils.torch_utils import torch_distributed_zero_first
 
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
