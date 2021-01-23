@@ -2,6 +2,7 @@
 
 import glob
 import logging
+import math
 import os
 import platform
 import random
@@ -11,7 +12,6 @@ import time
 from pathlib import Path
 
 import cv2
-import math
 import numpy as np
 import torch
 import torchvision
@@ -25,6 +25,7 @@ from utils.torch_utils import init_torch_seeds
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
 np.set_printoptions(linewidth=320, formatter={'float_kind': '{:11.5g}'.format})  # format short g, %precision=5
 cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with PyTorch DataLoader)
+os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max threads
 
 
 def set_logging(rank=-1):
@@ -34,6 +35,7 @@ def set_logging(rank=-1):
 
 
 def init_seeds(seed=0):
+    # Initialize random number generator (RNG) seeds
     random.seed(seed)
     np.random.seed(seed)
     init_torch_seeds(seed)
@@ -45,12 +47,44 @@ def get_latest_run(search_dir='.'):
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
+def check_online():
+    # Check internet connectivity
+    import socket
+    try:
+        socket.create_connection(("1.1.1.1", 53))  # check host accesability
+        return True
+    except OSError:
+        return False
+
+
 def check_git_status():
-    # Suggest 'git pull' if repo is out of date
-    if platform.system() in ['Linux', 'Darwin'] and not os.path.isfile('/.dockerenv'):
-        s = subprocess.check_output('if [ -d .git ]; then git fetch && git status -uno; fi', shell=True).decode('utf-8')
-        if 'Your branch is behind' in s:
-            print(s[s.find('Your branch is behind'):s.find('\n\n')] + '\n')
+    # Recommend 'git pull' if code is out of date
+    print(colorstr('github: '), end='')
+    try:
+        assert Path('.git').exists(), 'skipping check (not a git repository)'
+        assert not Path('/workspace').exists(), 'skipping check (Docker image)'  # not Path('/.dockerenv').exists()
+        assert check_online(), 'skipping check (offline)'
+
+        cmd = 'git fetch && git config --get remote.origin.url'
+        url = subprocess.check_output(cmd, shell=True).decode().strip().rstrip('.git')  # github repo url
+        branch = subprocess.check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
+        n = int(subprocess.check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
+        if n > 0:
+            s = f"⚠️ WARNING: code is out of date by {n} commit{'s' * (n > 1)}. " \
+                f"Use 'git pull' to update or 'git clone {url}' to download latest."
+        else:
+            s = f'up to date with {url} ✅'
+        print(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)
+    except Exception as e:
+        print(e)
+
+
+def check_requirements(file='requirements.txt'):
+    # Check installed dependencies meet requirements
+    import pkg_resources
+    requirements = pkg_resources.parse_requirements(Path(file).open())
+    requirements = [x.name + ''.join(*x.specs) if len(x.specs) else x.name for x in requirements]
+    pkg_resources.require(requirements)  # DistributionNotFound or VersionConflict exception if requirements not met
 
 
 def check_img_size(img_size, s=32):
@@ -95,6 +129,41 @@ def check_dataset(dict):
 def make_divisible(x, divisor):
     # Returns x evenly divisible by divisor
     return math.ceil(x / divisor) * divisor
+
+
+def clean_str(s):
+    # Cleans a string by replacing special characters with underscore _
+    return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
+
+
+def one_cycle(y1=0.0, y2=1.0, steps=100):
+    # lambda function for sinusoidal ramp from y1 to y2
+    return lambda x: ((1 - math.cos(x * math.pi / steps)) / 2) * (y2 - y1) + y1
+
+
+def colorstr(*input):
+    # Colors a string https://en.wikipedia.org/wiki/ANSI_escape_code, i.e.  colorstr('blue', 'hello world')
+    *args, string = input if len(input) > 1 else ('blue', 'bold', input[0])  # color arguments, string
+    colors = {'black': '\033[30m',  # basic colors
+              'red': '\033[31m',
+              'green': '\033[32m',
+              'yellow': '\033[33m',
+              'blue': '\033[34m',
+              'magenta': '\033[35m',
+              'cyan': '\033[36m',
+              'white': '\033[37m',
+              'bright_black': '\033[90m',  # bright colors
+              'bright_red': '\033[91m',
+              'bright_green': '\033[92m',
+              'bright_yellow': '\033[93m',
+              'bright_blue': '\033[94m',
+              'bright_magenta': '\033[95m',
+              'bright_cyan': '\033[96m',
+              'bright_white': '\033[97m',
+              'end': '\033[0m',  # misc
+              'bold': '\033[1m',
+              'underline': '\033[4m'}
+    return ''.join(colors[x] for x in args) + f'{string}' + colors['end']
 
 
 def labels_to_class_weights(labels, nc=80):
@@ -153,6 +222,16 @@ def xywh2xyxy(x):
     y[:, 1] = x[:, 1] - x[:, 3] / 2  # top left y
     y[:, 2] = x[:, 0] + x[:, 2] / 2  # bottom right x
     y[:, 3] = x[:, 1] + x[:, 3] / 2  # bottom right y
+    return y
+
+
+def xywhn2xyxy(x, w=640, h=640, padw=32, padh=32):
+    # Convert nx4 boxes from [x, y, w, h] normalized to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
+    y[:, 0] = w * (x[:, 0] - x[:, 2] / 2) + padw  # top left x
+    y[:, 1] = h * (x[:, 1] - x[:, 3] / 2) + padh  # top left y
+    y[:, 2] = w * (x[:, 0] + x[:, 2] / 2) + padw  # bottom right x
+    y[:, 3] = h * (x[:, 1] + x[:, 3] / 2) + padh  # bottom right y
     return y
 
 
@@ -258,7 +337,7 @@ def wh_iou(wh1, wh2):
     return inter / (wh1.prod(2) + wh2.prod(2) - inter)  # iou = inter / (area1 + area2 - inter)
 
 
-def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, classes=None, agnostic=False, labels=()):
+def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, labels=()):
     """Performs Non-Maximum Suppression (NMS) on inference results
 
     Returns:
@@ -271,6 +350,7 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, classes=None,
     # Settings
     min_wh, max_wh = 2, 4096  # (pixels) minimum and maximum box width and height
     max_det = 300  # maximum number of detections per image
+    max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
     time_limit = 10.0  # seconds to quit after
     redundant = True  # require redundant detections
     multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
@@ -311,20 +391,19 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, classes=None,
             x = torch.cat((box, conf, j.float()), 1)[conf.view(-1) > conf_thres]
 
         # Filter by class
-        if classes:
+        if classes is not None:
             x = x[(x[:, 5:6] == torch.tensor(classes, device=x.device)).any(1)]
 
         # Apply finite constraint
         # if not torch.isfinite(x).all():
         #     x = x[torch.isfinite(x).all(1)]
 
-        # If none remain process next image
+        # Check shape
         n = x.shape[0]  # number of boxes
-        if not n:
+        if not n:  # no boxes
             continue
-
-        # Sort by confidence
-        # x = x[x[:, 4].argsort(descending=True)]
+        elif n > max_nms:  # excess boxes
+            x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence
 
         # Batched NMS
         c = x[:, 5:6] * (0 if agnostic else max_wh)  # classes
@@ -342,6 +421,7 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, classes=None,
 
         output[xi] = x[i]
         if (time.time() - t) > time_limit:
+            print(f'WARNING: NMS time limit {time_limit}s exceeded')
             break  # time limit exceeded
 
     return output
@@ -350,8 +430,8 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, classes=None,
 def strip_optimizer(f='weights/best.pt', s=''):  # from utils.general import *; strip_optimizer()
     # Strip optimizer from 'f' to finalize training, optionally save as 's'
     x = torch.load(f, map_location=torch.device('cpu'))
-    x['optimizer'] = None
-    x['training_results'] = None
+    for key in 'optimizer', 'training_results', 'wandb_id':
+        x[key] = None
     x['epoch'] = -1
     x['model'].half()  # to FP16
     for p in x['model'].parameters():

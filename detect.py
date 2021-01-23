@@ -9,8 +9,8 @@ from numpy import random
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
-from utils.general import check_img_size, non_max_suppression, apply_classifier, scale_coords, xyxy2xywh, \
-    strip_optimizer, set_logging, increment_path
+from utils.general import check_img_size, check_requirements, non_max_suppression, apply_classifier, scale_coords, \
+    xyxy2xywh, strip_optimizer, set_logging, increment_path
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
@@ -81,12 +81,13 @@ def detect(save_img=False):
         # Process detections
         for i, det in enumerate(pred):  # detections per image
             if webcam:  # batch_size >= 1
-                p, s, im0 = Path(path[i]), '%g: ' % i, im0s[i].copy()
+                p, s, im0, frame = path[i], '%g: ' % i, im0s[i].copy(), dataset.count
             else:
-                p, s, im0 = Path(path), '', im0s
+                p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
 
-            save_path = str(save_dir / p.name)
-            txt_path = str(save_dir / 'labels' / p.stem) + ('_%g' % dataset.frame if dataset.mode == 'video' else '')
+            p = Path(p)  # to Path
+            save_path = str(save_dir / p.name)  # img.jpg
+            txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
             s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             if len(det):
@@ -96,7 +97,7 @@ def detect(save_img=False):
                 # Print results
                 for c in det[:, -1].unique():
                     n = (det[:, -1] == c).sum()  # detections per class
-                    s += '%g %ss, ' % (n, names[int(c)])  # add to string
+                    s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
@@ -107,23 +108,21 @@ def detect(save_img=False):
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
                     if save_img or view_img:  # Add bbox to image
-                        label = '%s %.2f' % (names[int(cls)], conf)
+                        label = f'{names[int(cls)]} {conf:.2f}'
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
 
             # Print time (inference + NMS)
-            print('%sDone. (%.3fs)' % (s, t2 - t1))
+            print(f'{s}Done. ({t2 - t1:.3f}s)')
 
             # Stream results
             if view_img:
                 cv2.imshow(str(p), im0)
-                if cv2.waitKey(1) == ord('q'):  # q to quit
-                    raise StopIteration
 
             # Save results (image with detections)
             if save_img:
-                if dataset.mode == 'images':
+                if dataset.mode == 'image':
                     cv2.imwrite(save_path, im0)
-                else:
+                else:  # 'video'
                     if vid_path != save_path:  # new video
                         vid_path = save_path
                         if isinstance(vid_writer, cv2.VideoWriter):
@@ -140,7 +139,7 @@ def detect(save_img=False):
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
         print(f"Results saved to {save_dir}{s}")
 
-    print('Done. (%.3fs)' % (time.time() - t0))
+    print(f'Done. ({time.time() - t0:.3f}s)')
 
 
 if __name__ == '__main__':
@@ -163,6 +162,7 @@ if __name__ == '__main__':
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     opt = parser.parse_args()
     print(opt)
+    check_requirements()
 
     with torch.no_grad():
         if opt.update:  # update all models (to fix SourceChangeWarning)

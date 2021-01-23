@@ -1,11 +1,13 @@
 # Start FROM Nvidia PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
-FROM nvcr.io/nvidia/pytorch:20.10-py3
+FROM nvcr.io/nvidia/pytorch:20.12-py3
 
-# Install dependencies
+# Install linux packages
+RUN apt update && apt install -y screen libgl1-mesa-glx
+
+# Install python dependencies
 RUN pip install --upgrade pip
-# COPY requirements.txt .
-# RUN pip install -r requirements.txt
-RUN pip install gsutil
+COPY requirements.txt .
+RUN pip install -r requirements.txt gsutil
 
 # Create working directory
 RUN mkdir -p /usr/src/app
@@ -40,10 +42,10 @@ COPY . /usr/src/app
 # sudo docker kill $(sudo docker ps -a -q --filter ancestor=ultralytics/yolov5:latest)
 
 # Bash into running container
-# sudo docker container exec -it ba65811811ab bash
+# sudo docker exec -it 5a9b5863d93d bash
 
 # Bash into stopped container
-# sudo docker commit 092b16b25c5b usr/resume && sudo docker run -it --gpus all --ipc=host -v "$(pwd)"/coco:/usr/src/coco --entrypoint=sh usr/resume
+# id=5a9b5863d93d && sudo docker start $id && sudo docker exec -it $id bash
 
 # Send weights to GCP
 # python -c "from utils.general import *; strip_optimizer('runs/train/exp0_*/weights/best.pt', 'tmp.pt')" && gsutil cp tmp.pt gs://*.pt

@@ -1,0 +1,12 @@
+version: 2
+updates:
+- package-ecosystem: pip
+  directory: "/"
+  schedule:
+    interval: weekly
+    time: "04:00"
+  open-pull-requests-limit: 10
+  reviewers:
+  - glenn-jocher
+  labels:
+  - dependencies
