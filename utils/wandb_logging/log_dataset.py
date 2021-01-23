@@ -14,8 +14,8 @@ def create_dataset_artifact(opt):
         data_dict = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
     wandb_logger = WandbLogger(opt, '', None, data_dict, job_type='create_dataset')
     nc, names = (1, ['item']) if opt.single_cls else (int(data_dict['nc']), data_dict['names'])
-    trainset = LoadImagesAndLabels(data_dict['train'], rect=opt.rect)
-    testset = LoadImagesAndLabels(data_dict['val'], rect=opt.rect)
+    trainset = LoadImagesAndLabels(data_dict['train'])
+    testset = LoadImagesAndLabels(data_dict['val'])
     names_to_ids = {k: v for k, v in enumerate(names)}
     wandb_logger.log_dataset_artifact(trainset, names_to_ids, name='train')
     wandb_logger.log_dataset_artifact(testset, names_to_ids, name='val')
@@ -33,7 +33,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
-    parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--project', type=str, default='yolov5', help='name of W&B Project')
     parser.add_argument('--overwrite_config', action='store_true', help='replace the origin data config file')
     opt = parser.parse_args()
