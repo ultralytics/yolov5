@@ -6,7 +6,7 @@ matplotlib>=3.2.2
 numpy>=1.18.5
 opencv-python>=4.1.2
 Pillow
-PyYAML==5.4.1
+PyYAML>=5.3.1
 scipy>=1.4.1
 tensorboard>=2.2
 torch>=1.7.0
