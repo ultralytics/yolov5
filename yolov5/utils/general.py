@@ -20,7 +20,7 @@ import yaml
 from scipy.cluster.vq import kmeans
 from scipy.signal import butter, filtfilt
 from tqdm import tqdm
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 from yolov5.utils.torch_utils import init_seeds, is_parallel
 
@@ -999,18 +999,18 @@ def plot_wh_methods():  # from utils.general import *; plot_wh_methods()
     ya = np.exp(x)
     yb = torch.sigmoid(torch.from_numpy(x)).numpy() * 2
 
-    fig = plt.figure(figsize=(6, 3), dpi=150)
-    plt.plot(x, ya, '.-', label='YOLOv3')
-    plt.plot(x, yb ** 2, '.-', label='YOLOv5 ^2')
-    plt.plot(x, yb ** 1.6, '.-', label='YOLOv5 ^1.6')
-    plt.xlim(left=-4, right=4)
-    plt.ylim(bottom=0, top=6)
-    plt.xlabel('input')
-    plt.ylabel('output')
-    plt.grid()
-    plt.legend()
-    fig.tight_layout()
-    fig.savefig('comparison.png', dpi=200)
+    # fig = plt.figure(figsize=(6, 3), dpi=150)
+    # plt.plot(x, ya, '.-', label='YOLOv3')
+    # plt.plot(x, yb ** 2, '.-', label='YOLOv5 ^2')
+    # plt.plot(x, yb ** 1.6, '.-', label='YOLOv5 ^1.6')
+    # plt.xlim(left=-4, right=4)
+    # plt.ylim(bottom=0, top=6)
+    # plt.xlabel('input')
+    # plt.ylabel('output')
+    # plt.grid()
+    # plt.legend()
+    # fig.tight_layout()
+    # fig.savefig('comparison.png', dpi=200)
 
 
 def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max_size=640, max_subplots=16):
@@ -1043,7 +1043,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
     mosaic = np.full((int(ns * h), int(ns * w), 3), 255, dtype=np.uint8)
 
     # Fix class - colour map
-    prop_cycle = plt.rcParams['axes.prop_cycle']
+    # prop_cycle = plt.rcParams['axes.prop_cycle']
     # https://stackoverflow.com/questions/51350872/python-from-color-name-to-rgb
     hex2rgb = lambda h: tuple(int(h[1 + i:1 + i + 2], 16) for i in (0, 2, 4))
     color_lut = [hex2rgb(h) for h in prop_cycle.by_key()['color']]
@@ -1073,11 +1073,11 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
             boxes[[1, 3]] += block_y
             for j, box in enumerate(boxes.T):
                 cls = int(classes[j])
-                color = color_lut[cls % len(color_lut)]
+                # color = color_lut[cls % len(color_lut)]
                 cls = names[cls] if names else cls
                 if gt or conf[j] > 0.3:  # 0.3 conf thresh
                     label = '%s' % cls if gt else '%s %.1f' % (cls, conf[j])
-                    plot_one_box(box, mosaic, label=label, color=color, line_thickness=tl)
+                    # plot_one_box(box, mosaic, label=label, color=color, line_thickness=tl)
 
         # Draw image filename labels
         if paths is not None:
@@ -1103,14 +1103,14 @@ def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=''):
     for _ in range(epochs):
         scheduler.step()
         y.append(optimizer.param_groups[0]['lr'])
-    plt.plot(y, '.-', label='LR')
-    plt.xlabel('epoch')
-    plt.ylabel('LR')
-    plt.grid()
-    plt.xlim(0, epochs)
-    plt.ylim(0)
-    plt.tight_layout()
-    plt.savefig(Path(save_dir) / 'LR.png', dpi=200)
+    # plt.plot(y, '.-', label='LR')
+    # plt.xlabel('epoch')
+    # plt.ylabel('LR')
+    # plt.grid()
+    # plt.xlim(0, epochs)
+    # plt.ylim(0)
+    # plt.tight_layout()
+    # plt.savefig(Path(save_dir) / 'LR.png', dpi=200)
 
 
 def plot_test_txt():  # from utils.general import *; plot_test()
@@ -1119,60 +1119,61 @@ def plot_test_txt():  # from utils.general import *; plot_test()
     box = xyxy2xywh(x[:, :4])
     cx, cy = box[:, 0], box[:, 1]
 
-    fig, ax = plt.subplots(1, 1, figsize=(6, 6), tight_layout=True)
-    ax.hist2d(cx, cy, bins=600, cmax=10, cmin=0)
-    ax.set_aspect('equal')
-    plt.savefig('hist2d.png', dpi=300)
+    # fig, ax = plt.subplots(1, 1, figsize=(6, 6), tight_layout=True)
+    # ax.hist2d(cx, cy, bins=600, cmax=10, cmin=0)
+    # ax.set_aspect('equal')
+    # plt.savefig('hist2d.png', dpi=300)
 
-    fig, ax = plt.subplots(1, 2, figsize=(12, 6), tight_layout=True)
-    ax[0].hist(cx, bins=600)
-    ax[1].hist(cy, bins=600)
-    plt.savefig('hist1d.png', dpi=200)
+    # fig, ax = plt.subplots(1, 2, figsize=(12, 6), tight_layout=True)
+    # ax[0].hist(cx, bins=600)
+    # ax[1].hist(cy, bins=600)
+    # plt.savefig('hist1d.png', dpi=200)
 
 
 def plot_targets_txt():  # from utils.general import *; plot_targets_txt()
     # Plot targets.txt histograms
     x = np.loadtxt('targets.txt', dtype=np.float32).T
     s = ['x targets', 'y targets', 'width targets', 'height targets']
-    fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
-    ax = ax.ravel()
-    for i in range(4):
-        ax[i].hist(x[i], bins=100, label='%.3g +/- %.3g' % (x[i].mean(), x[i].std()))
-        ax[i].legend()
-        ax[i].set_title(s[i])
-    plt.savefig('targets.jpg', dpi=200)
+    # fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
+    # ax = ax.ravel()
+    # for i in range(4):
+    #     ax[i].hist(x[i], bins=100, label='%.3g +/- %.3g' % (x[i].mean(), x[i].std()))
+    #     ax[i].legend()
+    #     ax[i].set_title(s[i])
+    # # plt.savefig('targets.jpg', dpi=200)
 
 
 def plot_study_txt(f='study.txt', x=None):  # from utils.general import *; plot_study_txt()
+    pass
     # Plot study.txt generated by test.py
-    fig, ax = plt.subplots(2, 4, figsize=(10, 6), tight_layout=True)
-    ax = ax.ravel()
+    # fig, ax = plt.subplots(2, 4, figsize=(10, 6), tight_layout=True)
+    # ax = ax.ravel()
 
-    fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
-    for f in ['study/study_coco_yolov5%s.txt' % x for x in ['s', 'm', 'l', 'x']]:
-        y = np.loadtxt(f, dtype=np.float32, usecols=[0, 1, 2, 3, 7, 8, 9], ndmin=2).T
-        x = np.arange(y.shape[1]) if x is None else np.array(x)
-        s = ['P', 'R', 'mAP@.5', 'mAP@.5:.95', 't_inference (ms/img)', 't_NMS (ms/img)', 't_total (ms/img)']
-        for i in range(7):
-            ax[i].plot(x, y[i], '.-', linewidth=2, markersize=8)
-            ax[i].set_title(s[i])
+    # fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
+    # for f in ['study/study_coco_yolov5%s.txt' % x for x in ['s', 'm', 'l', 'x']]:
+    #     y = np.loadtxt(f, dtype=np.float32, usecols=[0, 1, 2, 3, 7, 8, 9], ndmin=2).T
+    #     x = np.arange(y.shape[1]) if x is None else np.array(x)
+    #     s = ['P', 'R', 'mAP@.5', 'mAP@.5:.95', 't_inference (ms/img)', 't_NMS (ms/img)', 't_total (ms/img)']
+    #     for i in range(7):
+    #         ax[i].plot(x, y[i], '.-', linewidth=2, markersize=8)
+    #         ax[i].set_title(s[i])
 
-        j = y[3].argmax() + 1
-        ax2.plot(y[6, :j], y[3, :j] * 1E2, '.-', linewidth=2, markersize=8,
-                 label=Path(f).stem.replace('study_coco_', '').replace('yolo', 'YOLO'))
+    #     j = y[3].argmax() + 1
+    #     ax2.plot(y[6, :j], y[3, :j] * 1E2, '.-', linewidth=2, markersize=8,
+    #              label=Path(f).stem.replace('study_coco_', '').replace('yolo', 'YOLO'))
 
-    ax2.plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [34.6, 40.5, 43.0, 47.5, 49.7, 51.5],
-             'k.-', linewidth=2, markersize=8, alpha=.25, label='EfficientDet')
+    # ax2.plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [34.6, 40.5, 43.0, 47.5, 49.7, 51.5],
+    #          'k.-', linewidth=2, markersize=8, alpha=.25, label='EfficientDet')
 
-    ax2.grid()
-    ax2.set_xlim(0, 30)
-    ax2.set_ylim(28, 50)
-    ax2.set_yticks(np.arange(30, 55, 5))
-    ax2.set_xlabel('GPU Speed (ms/img)')
-    ax2.set_ylabel('COCO AP val')
-    ax2.legend(loc='lower right')
-    plt.savefig('study_mAP_latency.png', dpi=300)
-    plt.savefig(f.replace('.txt', '.png'), dpi=300)
+    # ax2.grid()
+    # ax2.set_xlim(0, 30)
+    # ax2.set_ylim(28, 50)
+    # ax2.set_yticks(np.arange(30, 55, 5))
+    # ax2.set_xlabel('GPU Speed (ms/img)')
+    # ax2.set_ylabel('COCO AP val')
+    # ax2.legend(loc='lower right')
+    # plt.savefig('study_mAP_latency.png', dpi=300)
+    # plt.savefig(f.replace('.txt', '.png'), dpi=300)
 
 
 def plot_labels(labels, save_dir=''):
@@ -1180,18 +1181,18 @@ def plot_labels(labels, save_dir=''):
     c, b = labels[:, 0], labels[:, 1:].transpose()  # classes, boxes
     nc = int(c.max() + 1)  # number of classes
 
-    fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
-    ax = ax.ravel()
-    ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
-    ax[0].set_xlabel('classes')
-    ax[1].scatter(b[0], b[1], c=hist2d(b[0], b[1], 90), cmap='jet')
-    ax[1].set_xlabel('x')
-    ax[1].set_ylabel('y')
-    ax[2].scatter(b[2], b[3], c=hist2d(b[2], b[3], 90), cmap='jet')
-    ax[2].set_xlabel('width')
-    ax[2].set_ylabel('height')
-    plt.savefig(Path(save_dir) / 'labels.png', dpi=200)
-    plt.close()
+    # fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
+    # ax = ax.ravel()
+    # ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
+    # ax[0].set_xlabel('classes')
+    # ax[1].scatter(b[0], b[1], c=hist2d(b[0], b[1], 90), cmap='jet')
+    # ax[1].set_xlabel('x')
+    # ax[1].set_ylabel('y')
+    # ax[2].scatter(b[2], b[3], c=hist2d(b[2], b[3], 90), cmap='jet')
+    # ax[2].set_xlabel('width')
+    # ax[2].set_ylabel('height')
+    # plt.savefig(Path(save_dir) / 'labels.png', dpi=200)
+    # plt.close()
 
 
 def plot_evolution(yaml_file='runs/evolve/hyp_evolved.yaml'):  # from utils.general import *; plot_evolution()
@@ -1201,78 +1202,79 @@ def plot_evolution(yaml_file='runs/evolve/hyp_evolved.yaml'):  # from utils.gene
     x = np.loadtxt('evolve.txt', ndmin=2)
     f = fitness(x)
     # weights = (f - f.min()) ** 2  # for weighted results
-    plt.figure(figsize=(10, 10), tight_layout=True)
-    for i, (k, v) in enumerate(hyp.items()):
-        y = x[:, i + 7]
-        # mu = (y * weights).sum() / weights.sum()  # best weighted result
-        mu = y[f.argmax()]  # best single result
-        plt.subplot(5, 5, i + 1)
-        plt.scatter(y, f, c=hist2d(y, f, 20), cmap='viridis', alpha=.8, edgecolors='none')
-        plt.plot(mu, f.max(), 'k+', markersize=15)
-        plt.title('%s = %.3g' % (k, mu), fontdict={'size': 9})  # limit to 40 characters
-        if i % 5 != 0:
-            plt.yticks([])
-        print('%15s: %.3g' % (k, mu))
-    plt.savefig('evolve.png', dpi=200)
-    print('\nPlot saved as evolve.png')
+    # plt.figure(figsize=(10, 10), tight_layout=True)
+    # for i, (k, v) in enumerate(hyp.items()):
+    #     y = x[:, i + 7]
+    #     # mu = (y * weights).sum() / weights.sum()  # best weighted result
+    #     mu = y[f.argmax()]  # best single result
+    #     plt.subplot(5, 5, i + 1)
+    #     plt.scatter(y, f, c=hist2d(y, f, 20), cmap='viridis', alpha=.8, edgecolors='none')
+    #     plt.plot(mu, f.max(), 'k+', markersize=15)
+    #     plt.title('%s = %.3g' % (k, mu), fontdict={'size': 9})  # limit to 40 characters
+    #     if i % 5 != 0:
+    #         plt.yticks([])
+    #     print('%15s: %.3g' % (k, mu))
+    # plt.savefig('evolve.png', dpi=200)
+    # print('\nPlot saved as evolve.png')
 
 
 def plot_results_overlay(start=0, stop=0):  # from utils.general import *; plot_results_overlay()
     # Plot training 'results*.txt', overlaying train and val losses
     s = ['train', 'train', 'train', 'Precision', 'mAP@0.5', 'val', 'val', 'val', 'Recall', 'mAP@0.5:0.95']  # legends
     t = ['GIoU', 'Objectness', 'Classification', 'P-R', 'mAP-F1']  # titles
-    for f in sorted(glob.glob('results*.txt') + glob.glob('../../Downloads/results*.txt')):
-        results = np.loadtxt(f, usecols=[2, 3, 4, 8, 9, 12, 13, 14, 10, 11], ndmin=2).T
-        n = results.shape[1]  # number of rows
-        x = range(start, min(stop, n) if stop else n)
-        fig, ax = plt.subplots(1, 5, figsize=(14, 3.5), tight_layout=True)
-        ax = ax.ravel()
-        for i in range(5):
-            for j in [i, i + 5]:
-                y = results[j, x]
-                ax[i].plot(x, y, marker='.', label=s[j])
-                # y_smooth = butter_lowpass_filtfilt(y)
-                # ax[i].plot(x, np.gradient(y_smooth), marker='.', label=s[j])
+    # for f in sorted(glob.glob('results*.txt') + glob.glob('../../Downloads/results*.txt')):
+    #     results = np.loadtxt(f, usecols=[2, 3, 4, 8, 9, 12, 13, 14, 10, 11], ndmin=2).T
+    #     n = results.shape[1]  # number of rows
+    #     x = range(start, min(stop, n) if stop else n)
+    #     fig, ax = plt.subplots(1, 5, figsize=(14, 3.5), tight_layout=True)
+    #     ax = ax.ravel()
+    #     for i in range(5):
+    #         for j in [i, i + 5]:
+    #             y = results[j, x]
+    #             ax[i].plot(x, y, marker='.', label=s[j])
+    #             # y_smooth = butter_lowpass_filtfilt(y)
+    #             # ax[i].plot(x, np.gradient(y_smooth), marker='.', label=s[j])
 
-            ax[i].set_title(t[i])
-            ax[i].legend()
-            ax[i].set_ylabel(f) if i == 0 else None  # add filename
-        fig.savefig(f.replace('.txt', '.png'), dpi=200)
+    #         ax[i].set_title(t[i])
+    #         ax[i].legend()
+    #         ax[i].set_ylabel(f) if i == 0 else None  # add filename
+    #     fig.savefig(f.replace('.txt', '.png'), dpi=200)
 
 
 def plot_results(start=0, stop=0, bucket='', id=(), labels=(),
                  save_dir=''):  # from utils.general import *; plot_results()
+    pass
     # Plot training 'results*.txt' as seen in https://github.com/ultralytics/yolov5#reproduce-our-training
-    fig, ax = plt.subplots(2, 5, figsize=(12, 6))
-    ax = ax.ravel()
-    s = ['GIoU', 'Objectness', 'Classification', 'Precision', 'Recall',
-         'val GIoU', 'val Objectness', 'val Classification', 'mAP@0.5', 'mAP@0.5:0.95']
-    if bucket:
-        # os.system('rm -rf storage.googleapis.com')
-        # files = ['https://storage.googleapis.com/%s/results%g.txt' % (bucket, x) for x in id]
-        files = ['results%g.txt' % x for x in id]
-        c = ('gsutil cp ' + '%s ' * len(files) + '.') % tuple('gs://%s/results%g.txt' % (bucket, x) for x in id)
-        os.system(c)
-    else:
-        files = glob.glob(str(Path(save_dir) / 'results*.txt')) + glob.glob('../../Downloads/results*.txt')
-    for fi, f in enumerate(files):
-        try:
-            results = np.loadtxt(f, usecols=[2, 3, 4, 8, 9, 12, 13, 14, 10, 11], ndmin=2).T
-            n = results.shape[1]  # number of rows
-            x = range(start, min(stop, n) if stop else n)
-            for i in range(10):
-                y = results[i, x]
-                if i in [0, 1, 2, 5, 6, 7]:
-                    y[y == 0] = np.nan  # dont show zero loss values
-                    # y /= y[0]  # normalize
-                label = labels[fi] if len(labels) else Path(f).stem
-                ax[i].plot(x, y, marker='.', label=label, linewidth=2, markersize=8)
-                ax[i].set_title(s[i])
-                # if i in [5, 6, 7]:  # share train and val loss y axes
-                #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
-        except Exception as e:
-            print('Warning: Plotting error for %s; %s' % (f, e))
+    # fig, ax = plt.subplots(2, 5, figsize=(12, 6))
+    # ax = ax.ravel()
+    # s = ['GIoU', 'Objectness', 'Classification', 'Precision', 'Recall',
+    #      'val GIoU', 'val Objectness', 'val Classification', 'mAP@0.5', 'mAP@0.5:0.95']
+    # if bucket:
+    #     # os.system('rm -rf storage.googleapis.com')
+    #     # files = ['https://storage.googleapis.com/%s/results%g.txt' % (bucket, x) for x in id]
+    #     files = ['results%g.txt' % x for x in id]
+    #     c = ('gsutil cp ' + '%s ' * len(files) + '.') % tuple('gs://%s/results%g.txt' % (bucket, x) for x in id)
+    #     os.system(c)
+    # else:
+    #     files = glob.glob(str(Path(save_dir) / 'results*.txt')) + glob.glob('../../Downloads/results*.txt')
+    # for fi, f in enumerate(files):
+    #     try:
+    #         results = np.loadtxt(f, usecols=[2, 3, 4, 8, 9, 12, 13, 14, 10, 11], ndmin=2).T
+    #         n = results.shape[1]  # number of rows
+    #         x = range(start, min(stop, n) if stop else n)
+    #         for i in range(10):
+    #             y = results[i, x]
+    #             if i in [0, 1, 2, 5, 6, 7]:
+    #                 y[y == 0] = np.nan  # dont show zero loss values
+    #                 # y /= y[0]  # normalize
+    #             label = labels[fi] if len(labels) else Path(f).stem
+    #             ax[i].plot(x, y, marker='.', label=label, linewidth=2, markersize=8)
+    #             ax[i].set_title(s[i])
+    #             # if i in [5, 6, 7]:  # share train and val loss y axes
+    #             #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
+    #     except Exception as e:
+    #         print('Warning: Plotting error for %s; %s' % (f, e))
 
-    fig.tight_layout()
-    ax[1].legend()
-    fig.savefig(Path(save_dir) / 'results.png', dpi=200)
+    # fig.tight_layout()
+    # ax[1].legend()
+    # fig.savefig(Path(save_dir) / 'results.png', dpi=200)
