@@ -13,7 +13,6 @@
   "icon": "https://i.imgur.com/MjJyCNj.png",
   "icon_background": "#FFFFFF",
   "isolate": true,
-  "headless": true,
   "need_gpu": true,
   "gui_template": "supervisely/train/src/gui.html",
   "context_menu": {
