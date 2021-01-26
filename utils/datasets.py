@@ -446,7 +446,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 im.verify()  # PIL verify
                 shape = exif_size(im)  # image size
                 assert (shape[0] > 9) & (shape[1] > 9), f'image size {shape} <10 pixels'
-                assert im.format.lower() in img_formats, f'invalid format {im.format}'
+                assert im.format.lower() in img_formats, f'invalid image format {im.format}'
 
                 # verify labels
                 if os.path.isfile(lb_file):
