@@ -137,5 +137,5 @@ if __name__ == '__main__':
 
     imgs = [Image.open(x) for x in Path('data/images').glob('*.jpg')]
     results = model(imgs)
-    results.show()
     results.print()
+    results.save()

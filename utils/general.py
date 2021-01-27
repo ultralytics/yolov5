@@ -4,6 +4,7 @@ import glob
 import logging
 import math
 import os
+import platform
 import random
 import re
 import subprocess
@@ -60,16 +61,20 @@ def check_git_status():
     # Recommend 'git pull' if code is out of date
     print(colorstr('github: '), end='')
     try:
-        if Path('.git').exists() and check_online():
-            url = subprocess.check_output(
-                'git fetch && git config --get remote.origin.url', shell=True).decode('utf-8')[:-1]
-            n = int(subprocess.check_output(
-                'git rev-list $(git rev-parse --abbrev-ref HEAD)..origin/master --count', shell=True))  # commits behind
-            if n > 0:
-                print(f"⚠️ WARNING: code is out of date by {n} {'commits' if n > 1 else 'commmit'}. "
-                      f"Use 'git pull' to update or 'git clone {url}' to download latest.")
-            else:
-                print(f'up to date with {url} ✅')
+        assert Path('.git').exists(), 'skipping check (not a git repository)'
+        assert not Path('/workspace').exists(), 'skipping check (Docker image)'  # not Path('/.dockerenv').exists()
+        assert check_online(), 'skipping check (offline)'
+
+        cmd = 'git fetch && git config --get remote.origin.url'
+        url = subprocess.check_output(cmd, shell=True).decode().strip().rstrip('.git')  # github repo url
+        branch = subprocess.check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
+        n = int(subprocess.check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
+        if n > 0:
+            s = f"⚠️ WARNING: code is out of date by {n} commit{'s' * (n > 1)}. " \
+                f"Use 'git pull' to update or 'git clone {url}' to download latest."
+        else:
+            s = f'up to date with {url} ✅'
+        print(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)
     except Exception as e:
         print(e)
 
@@ -217,6 +222,16 @@ def xywh2xyxy(x):
     y[:, 1] = x[:, 1] - x[:, 3] / 2  # top left y
     y[:, 2] = x[:, 0] + x[:, 2] / 2  # bottom right x
     y[:, 3] = x[:, 1] + x[:, 3] / 2  # bottom right y
+    return y
+
+
+def xywhn2xyxy(x, w=640, h=640, padw=32, padh=32):
+    # Convert nx4 boxes from [x, y, w, h] normalized to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
+    y[:, 0] = w * (x[:, 0] - x[:, 2] / 2) + padw  # top left x
+    y[:, 1] = h * (x[:, 1] - x[:, 3] / 2) + padh  # top left y
+    y[:, 2] = w * (x[:, 0] + x[:, 2] / 2) + padw  # bottom right x
+    y[:, 3] = h * (x[:, 1] + x[:, 3] / 2) + padh  # bottom right y
     return y
 
 
