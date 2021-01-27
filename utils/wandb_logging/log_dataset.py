@@ -3,8 +3,8 @@ from pathlib import Path
 
 import yaml
 
-from utils.datasets import LoadImagesAndLabels
 from wandb_utils import WandbLogger
+from utils.datasets import LoadImagesAndLabels
 
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
