@@ -5,11 +5,11 @@ This branch provides detection and Android code complement to branch `tf-only-ex
 **Because this branch persistently rebases to master branch of ultralytics/yolov5, use `git pull --rebase` instead of `git pull`.**
 
 ## Usage
-### 1. Git clone `yolov5` and checkout `tf-android`
+### 1. Git clone `yolov5` and checkout `tf-android-tfl-detect`
 ```
 git clone https://github.com/zldrobit/yolov5.git
 cd yolov5
-git checkout tf-android
+git checkout tf-android-tfl-detect
 ```
 and download pretrained weights from 
 ```
@@ -48,6 +48,7 @@ python3 detect.py --weight weights/yolov5s-int8.tflite --img 320 --tfl-int8 --tf
 - Convert full int8 TFLite model to **Edge TPU** and verify it with
 ```
 # need Edge TPU runtime https://coral.ai/software/#edgetpu-runtime
+# and Edge TPU compiler https://coral.ai/software/#debian-packages
 edgetpu_compiler -s -a -o edgetpu weights/yolov5s-int8.tflite
 python3 detect.py --weight edgetpu/yolov5s-int8_edgetpu.tflite --edgetpu --tfl-int8 --tfl-detect --img 320
 ```
