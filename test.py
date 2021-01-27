@@ -239,8 +239,8 @@ def test(data,
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
         if wandb and wandb.run:
-            wandb.log({"Images": wandb_images})
-            wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]})
+            val_batches = [wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]
+            wandb.log({"Images": wandb_images, "Validation": val_batches}, commit=False)
 
     # Save JSON
     if save_json and len(jdict):
