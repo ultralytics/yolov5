@@ -364,7 +364,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 if tb_writer:
                     tb_writer.add_scalar(tag, x, epoch)  # tensorboard
                 if wandb:
-                    wandb.log({tag: x}, step=epoch, commit=True)  # W&B
+                    wandb.log({tag: x}, step=epoch)  # W&B
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
