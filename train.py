@@ -321,7 +321,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                     #     tb_writer.add_graph(model, imgs)  # add model to tensorboard
                 elif plots and ni == 10 and wandb:
                     wandb.log({"Mosaics": [wandb.Image(str(x), caption=x.name) for x in save_dir.glob('train*.jpg')
-                                           if x.exists()]})
+                                           if x.exists()]}, step=epoch + 1)
 
             # end batch ------------------------------------------------------------------------------------------------
         # end epoch ----------------------------------------------------------------------------------------------------
@@ -364,7 +364,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 if tb_writer:
                     tb_writer.add_scalar(tag, x, epoch)  # tensorboard
                 if wandb:
-                    wandb.log({tag: x}, step=epoch)  # W&B
+                    wandb.log({tag: x}, step=epoch + 1)  # W&B
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
