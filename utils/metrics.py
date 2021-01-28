@@ -35,11 +35,11 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='precision
 
     # Find unique classes
     unique_classes = np.unique(target_cls)
+    nc = unique_classes.shape[0]  # number of classes, number of detections
 
     # Create Precision-Recall curve and compute AP for each class
     px, py = np.linspace(0, 1, 1000), []  # for plotting
-    s = [unique_classes.shape[0], tp.shape[1]]  # number class, number iou thresholds (i.e. 10 for mAP0.5...0.95)
-    ap, p, r = np.zeros(s), np.zeros(s + [1000]), np.zeros(s + [1000])
+    ap, p, r = np.zeros((nc, tp.shape[1])), np.zeros((nc, 1000)), np.zeros((nc, 1000))
     for ci, c in enumerate(unique_classes):
         i = pred_cls == c
         n_l = (target_cls == c).sum()  # number of labels
@@ -54,16 +54,16 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='precision
 
             # Recall
             recall = tpc / (n_l + 1e-16)  # recall curve
-            r[ci, 0] = np.interp(-px, -conf[i], recall[:, 0], left=0)  # negative x, xp because xp decreases
+            r[ci] = np.interp(-px, -conf[i], recall[:, 0], left=0)  # negative x, xp because xp decreases
 
             # Precision
             precision = tpc / (tpc + fpc)  # precision curve
-            p[ci, 0] = np.interp(-px, -conf[i], precision[:, 0], left=1)  # p at pr_score
+            p[ci] = np.interp(-px, -conf[i], precision[:, 0], left=1)  # p at pr_score
 
             # AP from recall-precision curve
             for j in range(tp.shape[1]):
                 ap[ci, j], mpre, mrec = compute_ap(recall[:, j], precision[:, j])
-                if plot and (j == 0):
+                if plot and j == 0:
                     py.append(np.interp(px, mrec, mpre))  # precision at mAP@0.5
 
     # Compute F1 score (harmonic mean of precision and recall)
@@ -71,9 +71,9 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='precision
 
     if plot:
         plot_pr_curve(px, py, ap, save_dir, names)
-        plot_mc_curve(px, f1[:, 0].T, Path(save_dir) / 'F1_curve.png', names, ylabel='F1')
-        plot_mc_curve(px, p[:, 0].T, Path(save_dir) / 'P_curve.png', names, ylabel='Precision')
-        plot_mc_curve(px, r[:, 0].T, Path(save_dir) / 'R_curve.png', names, ylabel='Recall')
+        plot_mc_curve(px, f1, Path(save_dir) / 'F1_curve.png', names, ylabel='F1')
+        plot_mc_curve(px, p, Path(save_dir) / 'P_curve.png', names, ylabel='Precision')
+        plot_mc_curve(px, r, Path(save_dir) / 'R_curve.png', names, ylabel='Recall')
 
     return p, r, ap, f1, unique_classes.astype('int32')
 
@@ -208,12 +208,12 @@ def plot_mc_curve(px, py, save_dir='.', names=(), xlabel='Confidence', ylabel='M
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
 
     if 0 < len(names) < 21:  # display per-class legend if < 21 classes
-        for i, y in enumerate(py.T):
+        for i, y in enumerate(py):
             ax.plot(px, y, linewidth=1, label=f'{names[i]}')  # plot(confidence, metric)
     else:
-        ax.plot(px, py, linewidth=1, color='grey')  # plot(confidence, metric)
+        ax.plot(px, py.T, linewidth=1, color='grey')  # plot(confidence, metric)
 
-    y = py.mean(1)
+    y = py.mean(0)
     ax.plot(px, y, linewidth=3, color='blue', label=f'all classes {y.max():.2f} at {px[y.argmax()]:.3f}')
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
