@@ -15,7 +15,7 @@ def fitness(x):
     return (x[:, :4] * w).sum(1)
 
 
-def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='precision-recall_curve.png', names=[]):
+def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names=()):
     """ Compute the average precision, given the recall and precision curves.
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
     # Arguments
@@ -66,16 +66,16 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='precision
                 if plot and j == 0:
                     py.append(np.interp(px, mrec, mpre))  # precision at mAP@0.5
 
-    # Compute F1 score (harmonic mean of precision and recall)
+    # Compute F1 (harmonic mean of precision and recall)
     f1 = 2 * p * r / (p + r + 1e-16)
-
     if plot:
-        plot_pr_curve(px, py, ap, save_dir, names)
+        plot_pr_curve(px, py, ap, Path(save_dir) / 'PR_curve.png', names)
         plot_mc_curve(px, f1, Path(save_dir) / 'F1_curve.png', names, ylabel='F1')
         plot_mc_curve(px, p, Path(save_dir) / 'P_curve.png', names, ylabel='Precision')
         plot_mc_curve(px, r, Path(save_dir) / 'R_curve.png', names, ylabel='Recall')
 
-    return p, r, ap, f1, unique_classes.astype('int32')
+    i = f1.mean(0).argmax()  # max F1 index
+    return p[:, i], r[:, i], ap, f1[:, i], unique_classes.astype('int32')
 
 
 def compute_ap(recall, precision):
@@ -183,7 +183,7 @@ class ConfusionMatrix:
 
 # Plots ----------------------------------------------------------------------------------------------------------------
 
-def plot_pr_curve(px, py, ap, save_dir='.', names=()):
+def plot_pr_curve(px, py, ap, save_dir='pr_curve.png', names=()):
     # Precision-recall curve
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
     py = np.stack(py, axis=1)
@@ -200,10 +200,10 @@ def plot_pr_curve(px, py, ap, save_dir='.', names=()):
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
-    fig.savefig(Path(save_dir) / 'precision_recall_curve.png', dpi=250)
+    fig.savefig(Path(save_dir), dpi=250)
 
 
-def plot_mc_curve(px, py, save_dir='.', names=(), xlabel='Confidence', ylabel='Metric'):
+def plot_mc_curve(px, py, save_dir='mc_curve.png', names=(), xlabel='Confidence', ylabel='Metric'):
     # Metric-confidence curve
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
 
@@ -220,4 +220,4 @@ def plot_mc_curve(px, py, save_dir='.', names=(), xlabel='Confidence', ylabel='M
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
-    fig.savefig(save_dir, dpi=250)
+    fig.savefig(Path(save_dir), dpi=250)
