@@ -403,7 +403,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
         if plots:
             plot_results(save_dir=save_dir)  # save as results.png
             if wandb:
-                files = ['results.png', 'precision_recall_curve.png', 'confusion_matrix.png']
+                files = ['results.png', 'confusion_matrix.png', *[f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R')]]
                 wandb.log({"Results": [wandb.Image(str(save_dir / f), caption=f) for f in files
                                        if (save_dir / f).exists()]})
                 if opt.log_artifacts:
