@@ -58,7 +58,7 @@ class GhostConv(nn.Module):
 
 class GhostBottleneck(nn.Module):
     # Ghost Bottleneck https://github.com/huawei-noah/ghostnet
-    def __init__(self, c1, c2, k, s):
+    def __init__(self, c1, c2, k=3, s=1):  # ch_in, ch_out, kernel, stride
         super(GhostBottleneck, self).__init__()
         c_ = c2 // 2
         self.conv = nn.Sequential(GhostConv(c1, c_, 1, 1),  # pw
