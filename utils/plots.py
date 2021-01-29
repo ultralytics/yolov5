@@ -31,7 +31,7 @@ def color_list():
     def hex2rgb(h):
         return tuple(int(h[1 + i:1 + i + 2], 16) for i in (0, 2, 4))
 
-    return [hex2rgb(h) for h in plt.rcParams['axes.prop_cycle'].by_key()['color']]
+    return [hex2rgb(h) for h in matplotlib.colors.TABLEAU_COLORS.values()]  # or BASE_ (8), CSS4_ (148), XKCD_ (949)
 
 
 def hist2d(x, y, n=100):
