@@ -4,15 +4,13 @@ import os
 import shutil
 import sys
 from datetime import datetime
-from os.path import dirname
 from pathlib import Path
 
 import torch
 
-sys.path.append(dirname(dirname(dirname(os.path.abspath(__file__)))))  # add utils/ to path
-
+sys.path.append(str(Path(__file__).parent.parent.parent))  # add utils/ to path
 from utils.general import colorstr, xywh2xyxy
-
+from utils.datasets import img2label_paths
 try:
     import wandb
 except ImportError:
@@ -20,7 +18,6 @@ except ImportError:
     print(f"{colorstr('wandb: ')}Install Weights & Biases for YOLOv5 logging with 'pip install wandb' (recommended)")
 
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
-logger = logging.getLogger(__name__)
 
 
 def remove_prefix(from_string, prefix):
@@ -67,9 +64,7 @@ class WandbLogger():
     def download_dataset_artifact(self, path, alias):
         if path.startswith(WANDB_ARTIFACT_PREFIX):
             dataset_artifact = wandb.use_artifact(remove_prefix(path, WANDB_ARTIFACT_PREFIX) + ":" + alias)
-            if dataset_artifact is None:
-                logger.error('Error: W&B dataset artifact doesn\'t exist')
-                raise ValueError('Artifact doesn\'t exist')
+            assert dataset_artifact is not None, "'Error: W&B dataset artifact doesn\'t exist'"
             datadir = dataset_artifact.download()
             labels_zip = Path(datadir) / "data/labels.zip"
             shutil.unpack_archive(labels_zip, Path(datadir) / 'data/labels', 'zip')
@@ -79,9 +74,7 @@ class WandbLogger():
 
     def download_model_artifact(self, name):
         model_artifact = wandb.use_artifact(name + ":latest")
-        if model_artifact is None:
-            logger.error('Error: W&B model artifact doesn\'t exist')
-            raise ValueError('Artifact doesn\'t exist')
+        assert model_artifact is not None, 'Error: W&B model artifact doesn\'t exist'
         modeldir = model_artifact.download()
         print("Downloaded model to : ", modeldir)
         return modeldir, model_artifact
@@ -98,15 +91,6 @@ class WandbLogger():
         model_artifact.add_file(str(path / 'last.pt'), name='last.pt')
         model_artifact.add_file(str(path / 'best.pt'), name='best.pt')
         wandb.log_artifact(model_artifact)
-
-        if epoch + 1 == opt.epochs:
-            model_artifact = wandb.Artifact('final_model', type='model', metadata={
-                'run_id': wandb.run.id,
-                'datetime': datetime_suffix
-            })
-            model_artifact.add_file(str(path / 'last.pt'), name='last.pt')
-            model_artifact.add_file(str(path / 'best.pt'), name='best.pt')
-            wandb.log_artifact(model_artifact)
         print("Saving model artifact on epoch ", epoch + 1)
 
     def log_dataset_artifact(self, dataset, class_to_id, name='dataset'):
@@ -116,9 +100,8 @@ class WandbLogger():
         table = wandb.Table(columns=["id", "train_image", "Classes"])
         class_set = wandb.Classes([{'id': id, 'name': name} for id, name in class_to_id.items()])
         for si, (img, labels, paths, shapes) in enumerate(dataset):
-            _, height, width = img.shape  # batch size, channels, height, width
-            labels[:, 2:] = (xywh2xyxy(labels[:, 2:].view(-1, 4)))
             height, width = shapes[0]
+            labels[:, 2:] = (xywh2xyxy(labels[:, 2:].view(-1, 4)))
             labels[:, 2:] *= torch.Tensor([width, height, width, height])
             box_data = []
             img_classes = {}
@@ -133,7 +116,7 @@ class WandbLogger():
             boxes = {"ground_truth": {"box_data": box_data, "class_labels": class_to_id}}  # inference-space
             table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes), json.dumps(img_classes))
         artifact.add(table, name)
-        labels_path = image_path.replace('images', 'labels')
+        labels_path = 'labels'.join(image_path.rsplit('images', 1))
         zip_path = Path(labels_path).parent / (name + '_labels.zip')
         if not zip_path.is_file():  # make_archive won't check if file exists
             shutil.make_archive(zip_path.with_suffix(''), 'zip', labels_path)
