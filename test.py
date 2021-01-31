@@ -320,20 +320,20 @@ if __name__ == '__main__':
              save_conf=opt.save_conf,
              )
 
+    elif opt.task == 'speed':  # speed benchmarks
+        for w in opt.weights:
+            test(opt.data, w, opt.batch_size, opt.img_size, 0.25, 0.45, save_json=False, plots=False)
+
     elif opt.task == 'study':  # run over a range of settings and save/plot
         x = list(range(256, 1536 + 128, 128))  # x axis
         for w in opt.weights:
-            f = 'study_%s_%s.txt' % (Path(opt.data).stem, Path(w).stem)  # filename to save to
+            f = f'study_{Path(opt.data).stem}_{Path(w).stem}.txt'  # filename to save to
             y = []  # y axis
             for i in x:  # img-size
-                print('\nRunning %s point %s...' % (f, i))
+                print(f'\nRunning {f} point {i}...')
                 r, _, t = test(opt.data, w, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json,
                                plots=False)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')
-        plot_study_txt(f, x)  # plot
-
-    elif opt.task == 'speed':  # speed benchmarks
-        for w in opt.weights:
-            test(opt.data, w, opt.batch_size, opt.img_size, 0.25, 0.45, save_json=False, plots=False)
+        plot_study_txt('.', x)  # plot
