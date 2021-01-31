@@ -321,9 +321,9 @@ if __name__ == '__main__':
              )
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
+        x = list(range(256, 1536 + 128, 128))  # x axis
         for w in opt.weights:
             f = 'study_%s_%s.txt' % (Path(opt.data).stem, Path(w).stem)  # filename to save to
-            x = list(range(256, 1536 + 128, 128))  # x axis
             y = []  # y axis
             for i in x:  # img-size
                 print('\nRunning %s point %s...' % (f, i))
