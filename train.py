@@ -234,6 +234,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 f'Starting training for {epochs} epochs...')
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
+        torch.backends.cudnn.benchmark = True
 
         # Update image weights (optional)
         if opt.image_weights:

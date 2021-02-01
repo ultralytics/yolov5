@@ -40,6 +40,7 @@ def test(data,
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
+        torch.backends.cudnn.benchmark = False
         device = next(model.parameters()).device  # get model device
 
     else:  # called directly
