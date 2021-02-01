@@ -627,5 +627,6 @@ def main():
         print(f'Hyperparameter evolution complete. Best results saved as: {yaml_file}\n'
               f'Command to train a new model with these hyperparameters: $ python train.py --hyp {yaml_file}')
 
+#--data coco128.yaml --cfg yolov5s.yaml --weights yolov5s.pt --batch-size 64
 if __name__ == '__main__':
     main()

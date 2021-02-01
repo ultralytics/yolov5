@@ -1,0 +1,11 @@
+# object confidence threshold (for debug 0.001)
+conf_thres: 0.25
+
+# IOU threshold for NMS (for debug 0.6)
+iou_thres: 0.45
+
+# augmented inference
+augment: False
+
+# save image with predictions (for developers)
+debug_visualization: False

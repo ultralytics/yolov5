@@ -1,0 +1,23 @@
+{
+  "name": "Serve YOLOv5",
+  "type": "app",
+  "categories": [
+    "yolov5",
+    "neural network",
+    "detection"
+  ],
+  "description": "Deploy model as REST API service",
+  "docker_image": "supervisely/base-pytorch:6.0.19",
+  "main_script": "sly_serve.py",
+  "task_location": "application_sessions",
+  "icon": "https://i.imgur.com/2ZMNMku.png",
+  "icon_background": "#ffeb3b",
+  "isolate": true,
+  "need_gpu": true,
+  "headless": true,
+  "context_menu": {
+    "target": ["files_file"],
+    "context_root": "Neural Networks",
+    "context_category": "YOLO v5"
+  }
+}

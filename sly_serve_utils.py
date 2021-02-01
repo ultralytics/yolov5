@@ -75,12 +75,12 @@ def inference(model, half, device, imgsz, image: np.ndarray, meta: sly.ProjectMe
     if img.ndimension() == 3:
         img = img.unsqueeze(0)
 
-    pred = model(img, augment=augment)[0]
+    inf_out = model(img, augment=augment)[0]
 
     # Apply NMS
     labels = []
-    pred = non_max_suppression(pred, conf_thres, iou_thres, agnostic=agnostic_nms)
-    for i, det in enumerate(pred):
+    output = non_max_suppression(inf_out, conf_thres=conf_thres, iou_thres=iou_thres, agnostic=agnostic_nms)
+    for i, det in enumerate(output):
         if det is not None and len(det):
             det[:, :4] = scale_coords(img.shape[2:], det[:, :4], img0.shape).round()
 
@@ -93,7 +93,7 @@ def inference(model, half, device, imgsz, image: np.ndarray, meta: sly.ProjectMe
                 labels.append(label)
 
     height, width = img0.shape[:2]
-    ann = sly.Annotation(img_size=(width, height), labels=labels)
+    ann = sly.Annotation(img_size=(height, width), labels=labels)
 
     if debug_visualization is True:
         # visualize for debug purposes

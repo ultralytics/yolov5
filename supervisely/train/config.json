@@ -7,7 +7,7 @@
     "detection"
   ],
   "description": "Dashboard to configure and monitor training",
-  "docker_image": "ultralytics/yolov5:v4.0",
+  "docker_image": "supervisely/base-pytorch:6.0.19",
   "main_script": "sly_train.py",
   "task_location": "workspace_tasks",
   "icon": "https://i.imgur.com/MjJyCNj.png",
@@ -16,8 +16,8 @@
   "need_gpu": true,
   "gui_template": "supervisely/train/src/gui.html",
   "context_menu": {
-    "context_root": "Neural networks",
     "target": ["images_project"],
-    "_context_category": "Neural Networks"
+    "context_root": "Neural Networks",
+    "context_category": "YOLO v5"
   }
 }
