@@ -54,7 +54,7 @@ head:
 
     [ -1, 1, Conv, [ 768, 3, 2 ] ],
     [ [ -1, 12 ], 1, Concat, [ 1 ] ],  # cat head P6
-    [ -1, 3, C3, [ 1024, False ] ],  # 32 (P5/64-xlarge)
+    [ -1, 3, C3, [ 1024, False ] ],  # 32 (P6/64-xlarge)
 
     [ [ 23, 26, 29, 32 ], 1, Detect, [ nc, anchors ] ],  # Detect(P3, P4, P5, P6)
   ]
