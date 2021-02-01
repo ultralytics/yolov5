@@ -10,7 +10,7 @@
   "docker_image": "supervisely/base-pytorch:6.0.19",
   "main_script": "sly_train.py",
   "task_location": "workspace_tasks",
-  "icon": "https://i.imgur.com/MjJyCNj.png",
+  "icon": "https://img.icons8.com/color/100/000000/graduation-cap.png",
   "icon_background": "#FFFFFF",
   "isolate": true,
   "need_gpu": true,
