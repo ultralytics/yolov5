@@ -25,7 +25,7 @@ setup(
     author="zara",
     author_email='',
     url='https://github.com/zaraalaverdyan-planorama/yolov5',
-    packages=['yolov5'],
+    packages=find_packages(),
     install_requires=REQUIREMENTS,
     classifiers=[
         'License :: OSI Approved :: MIT License',
