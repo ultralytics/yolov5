@@ -348,7 +348,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.mosaic = self.augment and not self.rect  # load 4 images at a time into a mosaic (only during training)
         self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
-
+        self.path = path
+        
         try:
             f = []  # image files
             for p in path if isinstance(path, list) else [path]:
