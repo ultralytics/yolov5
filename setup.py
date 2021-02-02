@@ -26,18 +26,9 @@ setup(
     author_email='',
     url='https://github.com/zaraalaverdyan-planorama/yolov5',
     packages=find_packages(),
-    package_dir={'packyou':
-                 'packyou'},
-    include_package_data=True,
     install_requires=REQUIREMENTS,
-    license="MIT license",
-    zip_safe=False,
-    keywords='packyou',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
-        'Natural Language :: English',
         'Programming Language :: Python :: 3.8',
     ],
 )
