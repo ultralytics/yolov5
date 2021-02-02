@@ -1,5 +1,4 @@
 import json
-import logging
 import shutil
 import sys
 from datetime import datetime
@@ -9,7 +8,7 @@ import torch
 
 sys.path.append(str(Path(__file__).parent.parent.parent))  # add utils/ to path
 from utils.general import colorstr, xywh2xyxy
-from utils.datasets import img2label_paths
+
 try:
     import wandb
 except ImportError:
