@@ -18,7 +18,7 @@ TEST_REQUIREMENTS = [
 ]
 
 setup(
-    name='yolov5',
+    name='yolov5-pkg',
     version='0',
     description="Downloads or clones a python project from github and allows to import it from anywhere. Very useful when the repo is not a package",
     long_description='yolo5 package',
