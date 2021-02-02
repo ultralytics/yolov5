@@ -204,7 +204,7 @@ class tf_Detect(keras.layers.Layer):
                 # xy /= tf.constant([[opt.img_size[1], opt.img_size[0]]], dtype=tf.float32)
                 # wh /= tf.constant([[opt.img_size[1], opt.img_size[0]]], dtype=tf.float32)
                 y = tf.concat([xy, wh, y[..., 4:]], -1)
-                z.append(tf.reshape(y, [opt.batch_size, 3 * ny * nx, self.no]))
+                z.append(tf.reshape(y, [-1, 3 * ny * nx, self.no]))
 
         return x if self.training else (tf.concat(z, 1), x)
 
