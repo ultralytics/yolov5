@@ -18,14 +18,14 @@ TEST_REQUIREMENTS = [
 ]
 
 setup(
-    name='yolov5pkg',
+    name='yolov5pkg2',
     version='0',
     description="Downloads or clones a python project from github and allows to import it from anywhere. Very useful when the repo is not a package",
     long_description='yolo5 package',
     author="zara",
     author_email='',
     url='https://github.com/zaraalaverdyan-planorama/yolov5',
-    packages=find_packages(),
+    packages=['yolov5'],
     install_requires=REQUIREMENTS,
     classifiers=[
         'License :: OSI Approved :: MIT License',
