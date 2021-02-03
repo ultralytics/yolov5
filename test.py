@@ -74,7 +74,7 @@ def test(data,
 
     # Logging
     testset_table, result_table, log_imgs = None, None, 0
-    if wandb_logger.wandb:
+    if wandb_logger and wandb_logger.wandb:
         import wandb
         log_imgs = min(wandb.config.log_imgs, 100)
         class_set = wandb.Classes([{'id':id , 'name':name} for id,name in names.items()])
@@ -259,7 +259,7 @@ def test(data,
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        if wandb_logger.wandb:
+        if wandb_logger and wandb_logger.wandb:
             val_batches = [wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]
             wandb_logger.log({"Validation": val_batches})
     if wandb_images:
