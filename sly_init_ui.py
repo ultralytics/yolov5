@@ -72,7 +72,10 @@ def init_model_settings(data, state):
     state["modelSize"] = data["modelSizes"][0]["label"]
     state["modelWeightsOptions"] = 1
     state["pretrainedWeights"] = f'{data["modelSizes"][0]["label"]}.pt'
-    state["weightsPath"] = ""
+
+    # @TODO: for debug
+    state["weightsPath"] = "/yolov5_train/coco128_002/2390/weights/best.pt"
+    #state["weightsPath"] = ""
 
 
 def init_training_hyperparameters(state):

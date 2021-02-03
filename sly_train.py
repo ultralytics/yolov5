@@ -78,8 +78,17 @@ def train(api: sly.Api, task_id, context, state, app_logger):
     local_artifacts_dir, remote_artifacts_dir = \
         init_script_arguments(state, yolov5_format_dir, my_app.data_dir, PROJECT.name, task_id)
 
-    progress = sly.Progress("YOLOv5: Scanning data ", 1, ext_logger=app_logger)
+    # download initial weights from team files
+    if state["modelWeightsOptions"] == 2:  # transfer learning from custom weights
+        weights_path_remote = state["weightsPath"]
+        weights_path_local = os.path.join(my_app.data_dir, sly.fs.get_file_name_with_ext(weights_path_remote))
+        file_info = api.file.get_info_by_path(TEAM_ID, weights_path_remote)
+        cache_path = my_app.cache.get_storage_path(file_info.hash)
+        if cache_path is None:
+            api.file.download(TEAM_ID, weights_path_remote, weights_path_local)  # TODO: progress bar
+            my_app.cache.write_object(weights_path_local, file_info.hash)
 
+    progress = sly.Progress("YOLOv5: Scanning data ", 1, ext_logger=app_logger)
     def progress_cb(count):
         progress.iters_done_report(count)
         fields = [
@@ -177,8 +186,49 @@ def main():
     template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')
     my_app.run(template_path, data, state)
 
+
+from functools import partial
+def func(a, b, progress):
+    print("a = ", a)
+    print("b = ", b)
+    progress.iters_done_report(1)
+
+
+def update_progress(count, api, task_id, progress):
+    progress.iters_done_report(count)
+    if progress.need_report():  # @TODO: decrease number of updates
+        fields = [
+            {"field": "data.progressName", "payload": progress.message},
+            {"field": "data.currentProgressLabel", "payload": progress.current_label},
+            {"field": "data.totalProgressLabel", "payload": progress.total_label},
+            {"field": "data.currentProgress", "payload": progress.current},
+            {"field": "data.totalProgress", "payload": progress.total},
+        ]
+        api.app.set_fields(task_id, fields)
+
+
+def debug_download_progress():
+    team_id = 7
+    remote_path = "/yolov5_train/coco128_002/2390/weights/best.pt"
+    sly.fs.ensure_base_path(remote_path)
+    sly.fs.silent_remove(remote_path)
+    #my_app.public_api.file.download(team_id, remote_path, remote_path, my_app.cache, progress_cb)
+
+    file_info = my_app.public_api.file.get_info_by_path(team_id, remote_path)
+    progress = sly.Progress("doing", file_info.sizeb, is_size=True)
+    progress_cb = partial(update_progress, api=my_app.public_api, task_id=my_app.task_id, progress=progress)
+    my_app.public_api.file.download(team_id, remote_path, remote_path, None, progress_cb)
+    print(sly.fs.file_exists(remote_path))
+    pass
+
+
+# @TODO: как поставить ограничение на номер версии инстанса?
+# @TODO: download project optimized - cache_path + rename - fix bug
+# @TODO: download progress bar for weights in SDK
 # @TODO: add files for remote debug (docker-compose.yaml)
 # @TODO: train == val - handle case in data_config.yaml to avoid data duplication
 # @TODO: Double progress: progress bar iterations, progress bar upload
 if __name__ == "__main__":
-    sly.main_wrapper("main", main)
+    debug_download_progress()
+
+    #sly.main_wrapper("main", main)
