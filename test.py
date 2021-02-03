@@ -64,7 +64,7 @@ def test(data,
         model.half()
     # Configure
     model.eval()
-    if isinstance(data, str)
+    if isinstance(data, str):
         with open(data) as f:
             data = yaml.load(f, Loader=yaml.SafeLoader)
     check_dataset(data)  # check
