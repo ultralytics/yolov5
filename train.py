@@ -61,10 +61,20 @@ def train(hyp, opt, device, tb_writer=None):
     init_seeds(2 + rank)
     with open(opt.data) as f:
         data_dict = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
+    is_coco = opt.data.endswith('coco.yaml')
     nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if opt.single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
     assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)  # check
-
+    # Logging- Doing this before checking the dataset. In case artifact links are being used, they need to be downloaded
+    if rank in [-1, 0]:
+        opt.hyp = hyp  # add hyperparameters
+        run_id = ckpt.get('wandb_id') if 'ckpt' in locals() else None
+        wandb_logger = WandbLogger(opt, Path(opt.save_dir).stem, run_id, data_dict)
+        if wandb_logger.wandb:
+            import wandb
+            weights = str(wandb_logger.weights) if opt.resume_from_artifact else weights
+    loggers = {'wandb': wandb_logger.wandb}  # loggers dict
+    
     # Model
     pretrained = weights.endswith('.pt')
     if pretrained:
@@ -81,15 +91,7 @@ def train(hyp, opt, device, tb_writer=None):
         logger.info('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))  # report
     else:
         model = Model(opt.cfg, ch=3, nc=nc).to(device)  # create
-    
-    # Logging- Doing this before checking the dataset. In case artifact links are being used, they need to be downloaded
-    if rank in [-1, 0]:
-        opt.hyp = hyp  # add hyperparameters
-        run_id = ckpt.get('wandb_id') if 'ckpt' in locals() else None
-        wandb_logger = WandbLogger(opt, Path(opt.save_dir).stem, run_id, data_dict)
-        if wandb_logger.wandb:
-            import wandb
-    loggers = {'wandb': wandb_logger.wandb}  # loggers dict
+        
     with torch_distributed_zero_first(rank):
         check_dataset(data_dict)  # check
     train_path = data_dict['train']
@@ -153,6 +155,8 @@ def train(hyp, opt, device, tb_writer=None):
         start_epoch = ckpt['epoch'] + 1
         if opt.resume:
             assert start_epoch > 0, '%s training to %g epochs is finished, nothing to resume.' % (weights, epochs)
+        if opt.resume_from_artifact:
+            assert start_epoch < epochs, '%s training to %g epochs is finished, nothing to resume.' % (weights, epochs)
         if epochs < start_epoch:
             logger.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
                         (weights, ckpt['epoch'], epochs))
@@ -341,8 +345,8 @@ def train(hyp, opt, device, tb_writer=None):
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
                 wandb_logger.current_epoch = epoch + 1
-                results, maps, times = test.test(opt.data,
-                                                 batch_size=batch_size * 2,
+                results, maps, times = test.test(data_dict,
+                                                 batch_size=total_batch_size,
                                                  imgsz=imgsz_test,
                                                  model=ema.ema,
                                                  single_cls=opt.single_cls,
@@ -351,7 +355,8 @@ def train(hyp, opt, device, tb_writer=None):
                                                  verbose=nc < 50 and final_epoch,
                                                  plots=plots and final_epoch,
                                                  wandb_logger=wandb_logger,
-                                                 compute_loss=compute_loss)
+                                                 compute_loss=compute_loss,
+                                                 is_coco=is_coco)
 
             # Write
             with open(results_file, 'a') as f:
@@ -397,7 +402,7 @@ def train(hyp, opt, device, tb_writer=None):
         wandb_logger.end_epoch()
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training
-    
+    if rank in [-1, 0]: 
         # Plots
         if plots:
             plot_results(save_dir=save_dir)  # save as results.png
@@ -409,8 +414,8 @@ def train(hyp, opt, device, tb_writer=None):
         logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
         if opt.data.endswith('coco.yaml') and nc == 80:  # if COCO
             for conf, iou, save_json in ([0.25, 0.45, False], [0.001, 0.65, True]):  # speed, mAP tests
-                results, _, _ = test.test(opt.data,
-                                          batch_size=batch_size * 2,
+                results, _, _ = test.test(data_dict,
+                                          batch_size=total_batch_size,
                                           imgsz=imgsz_test,
                                           conf_thres=conf,
                                           iou_thres=iou,
@@ -419,14 +424,9 @@ def train(hyp, opt, device, tb_writer=None):
                                           dataloader=testloader,
                                           save_dir=save_dir,
                                           save_json=save_json,
-                                          plots=False)
-
-    else:
-        dist.destroy_process_group()
-
-    wandb_logger.finish_run()
-
-    if rank in [-1, 0]:
+                                          plots=False,
+                                          is_coco=is_coco)
+        wandb_logger.finish_run()
         # Strip optimizers
         final = best if best.exists() else last  # final model
         for f in [last, best]:
@@ -434,6 +434,8 @@ def train(hyp, opt, device, tb_writer=None):
                 strip_optimizer(f)  # strip optimizers
         if opt.bucket:
             os.system(f'gsutil cp {final} gs://{opt.bucket}/weights')  # upload
+    else:
+        dist.destroy_process_group()
     torch.cuda.empty_cache()
     return results
 
