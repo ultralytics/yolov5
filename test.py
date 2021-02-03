@@ -74,8 +74,8 @@ def test(data,
     names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
 
     # Logging
+    testset_table, result_table, log_imgs = None, None, 0
     if wandb_logger.wandb:
-        testset_table, result_table, log_imgs = None, None, 0
         import wandb
         log_imgs = min(wandb.config.log_imgs, 100)
         class_set = wandb.Classes([{'id':id , 'name':name} for id,name in names.items()])
