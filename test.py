@@ -35,7 +35,7 @@ def test(data,
          save_hybrid=False,  # for hybrid auto-labelling
          save_conf=False,  # save auto-label confidences
          plots=True,
-         log_imgs=0,  # number of logged images
+         wandb_logger=None,
          compute_loss=None):
     # Initialize/load model and set device
     training = model is not None
@@ -72,13 +72,17 @@ def test(data,
     nc = 1 if single_cls else int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
     niou = iouv.numel()
+    names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
 
     # Logging
-    log_imgs, wandb = min(log_imgs, 100), None  # ceil
-    try:
-        import wandb  # Weights & Biases
-    except ImportError:
-        log_imgs = 0
+    if wandb_logger.wandb:
+        testset_table, result_table, log_imgs = None, None, 0
+        import wandb
+        log_imgs = min(wandb.config.log_imgs, 100)
+        class_set = wandb.Classes([{'id':id , 'name':name} for id,name in names.items()])
+        if wandb_logger.test_artifact_path:
+            testset_table=wandb_logger.testset_artifact.get("val")
+            result_table=wandb_logger.result_table
 
     # Dataloader
     if not training:
@@ -90,7 +94,6 @@ def test(data,
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
-    names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
     coco91class = coco80_to_coco91_class()
     s = ('%20s' + '%12s' * 6) % ('Class', 'Images', 'Targets', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
     p, r, f1, mp, mr, map50, map, t0, t1 = 0., 0., 0., 0., 0., 0., 0., 0., 0.
@@ -146,15 +149,35 @@ def test(data,
                     with open(save_dir / 'labels' / (path.stem + '.txt'), 'a') as f:
                         f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-            # W&B logging
-            if plots and len(wandb_images) < log_imgs:
-                box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
-                             "class_id": int(cls),
-                             "box_caption": "%s %.3f" % (names[cls], conf),
-                             "scores": {"class_score": conf},
-                             "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
+            # W&B logging - Media Panel Plots
+            if len(wandb_images) < log_imgs and wandb_logger.current_epoch>0: # Check for test operation
+                if wandb_logger.current_epoch % wandb.config.bbox_interval==0:
+                    box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
+                                 "class_id": int(cls),
+                                 "box_caption": "%s %.3f" % (names[cls], conf),
+                                 "scores": {"class_score": conf},
+                                 "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
+                    boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
+                    wandb_images.append(wandb.Image(img[si], boxes=boxes, caption=path.name))
+            # W&B logging - DSVIZ
+            if testset_table and result_table:
+                box_data = []
+                total_conf = 0
+                for *xyxy, conf, cls in predn.tolist():
+                    if conf >= 0.175: # Arbitrary conf
+                        box_data.append({"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
+                                         "class_id": int(cls),
+                                         "box_caption": "%s" % (names[cls]),
+                                         "scores": {"class_score": conf},
+                                         "domain": "pixel"})
+                        total_conf = total_conf + conf
                 boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
-                wandb_images.append(wandb.Image(img[si], boxes=boxes, caption=path.name))
+                id = batch_i*batch_size + si
+                result_table.add_data(wandb_logger.current_epoch,
+                                      id,
+                                      wandb.Image(testset_table.data[id][1], boxes=boxes,classes=class_set,caption=path.name),
+                                      total_conf / max(1,len(box_data))
+                                     )
 
             # Append to pycocotools JSON dictionary
             if save_json:
@@ -238,10 +261,12 @@ def test(data,
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        if wandb and wandb.run:
+        if wandb_logger.wandb:
             val_batches = [wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]
-            wandb.log({"Images": wandb_images, "Validation": val_batches}, commit=False)
-
+            wandb_logger.log({"Validation": val_batches})
+    if wandb_images:
+        wandb_logger.log({"Bounding Box Debugger/Images": wandb_images})
+        wandb_images = []
     # Save JSON
     if save_json and len(jdict):
         w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
