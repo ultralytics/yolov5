@@ -33,10 +33,9 @@ class WandbLogger():
 
         if job_type == 'Training':
             self.setup_training(opt, data_dict)
+            self.current_epoch = 0
             if opt.bbox_interval == -1:
                 opt.bbox_interval = (opt.epochs // 10) if opt.epochs > 10 else opt.epochs
-            if opt.save_period == -1:
-                opt.save_period = (opt.epochs // 10) if opt.epochs > 10 else opt.epochs
 
     def setup_training(self, opt, data_dict):
         self.log_dict = {}
@@ -78,6 +77,7 @@ class WandbLogger():
         return modeldir, model_artifact
 
     def log_model(self, path, opt, epoch):
+        print("Logging model, ", epoch)
         datetime_suffix = datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
         model_artifact = wandb.Artifact('run_' + wandb.run.id + '_model', type='model', metadata={
             'original_url': str(path),
