@@ -77,7 +77,6 @@ class WandbLogger():
         return modeldir, model_artifact
 
     def log_model(self, path, opt, epoch):
-        print("Logging model, ", epoch)
         datetime_suffix = datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
         model_artifact = wandb.Artifact('run_' + wandb.run.id + '_model', type='model', metadata={
             'original_url': str(path),
