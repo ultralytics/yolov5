@@ -37,7 +37,8 @@ def detect(save_img=False):
     if suffix == '.pt':
         backend = 'pytorch'
         model = attempt_load(weights, map_location=device)  # load FP32 model
-        imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
+        stride = int(model.stride.max())  # model stride
+        imgsz = check_img_size(imgsz, s=stride)  # check img_size
         names = model.module.names if hasattr(model, 'module') else model.names  # class names
         if half:
             model.half()  # to FP16
@@ -93,18 +94,18 @@ def detect(save_img=False):
     if webcam:
         view_img = True
         cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(source, img_size=imgsz, auto=backend == 'pytorch')
+        dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=backend == 'pytorch')
     else:
         save_img = True
-        dataset = LoadImages(source, img_size=imgsz, auto=backend == 'pytorch')
+        dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=backend == 'pytorch')
 
     # Get names and colors
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in names]
 
     # Run inference
+    if device.type != 'cpu':
+        model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
-    img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
-    _ = model(img.half() if half else img) if (device.type != 'cpu' and backend == 'pytorch') else None  # run once
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
         img = img.half() if half and backend == 'pytorch' else img.float()  # uint8 to fp16/32
@@ -165,7 +166,7 @@ def detect(save_img=False):
                 # Print results
                 for c in det[:, -1].unique():
                     n = (det[:, -1] == c).sum()  # detections per class
-                    s += f'{n} {names[int(c)]}s, '  # add to string
+                    s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):

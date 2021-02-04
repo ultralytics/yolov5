@@ -20,7 +20,7 @@ from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils.general import xyxy2xywh, xywh2xyxy, clean_str
+from utils.general import xyxy2xywh, xywh2xyxy, xywhn2xyxy, clean_str
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
@@ -56,7 +56,7 @@ def exif_size(img):
 
 
 def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False,
-                      rank=-1, world_size=1, workers=8, image_weights=False, quad=False):
+                      rank=-1, world_size=1, workers=8, image_weights=False, quad=False, prefix=''):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
     with torch_distributed_zero_first(rank):
         dataset = LoadImagesAndLabels(path, imgsz, batch_size,
@@ -67,8 +67,8 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
                                       single_cls=opt.single_cls,
                                       stride=int(stride),
                                       pad=pad,
-                                      rank=rank,
-                                      image_weights=image_weights)
+                                      image_weights=image_weights,
+                                      prefix=prefix)
 
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count() // world_size, batch_size if batch_size > 1 else 0, workers])  # number of workers
@@ -119,7 +119,7 @@ class _RepeatSampler(object):
 
 
 class LoadImages:  # for inference
-    def __init__(self, path, img_size=640, auto=True):
+    def __init__(self, path, img_size=640, stride=32, auto=True):
         p = str(Path(path))  # os-agnostic
         p = os.path.abspath(p)  # absolute path
         if '*' in p:
@@ -129,13 +129,14 @@ class LoadImages:  # for inference
         elif os.path.isfile(p):
             files = [p]  # files
         else:
-            raise Exception('ERROR: %s does not exist' % p)
+            raise Exception(f'ERROR: {p} does not exist')
 
         images = [x for x in files if x.split('.')[-1].lower() in img_formats]
         videos = [x for x in files if x.split('.')[-1].lower() in vid_formats]
         ni, nv = len(images), len(videos)
 
         self.img_size = img_size
+        self.stride = stride
         self.files = images + videos
         self.nf = ni + nv  # number of files
         self.video_flag = [False] * ni + [True] * nv
@@ -145,8 +146,8 @@ class LoadImages:  # for inference
             self.new_video(videos[0])  # new video
         else:
             self.cap = None
-        assert self.nf > 0, 'No images or videos found in %s. Supported formats are:\nimages: %s\nvideos: %s' % \
-                            (p, img_formats, vid_formats)
+        assert self.nf > 0, f'No images or videos found in {p}. ' \
+                            f'Supported formats are:\nimages: {img_formats}\nvideos: {vid_formats}'
 
     def __iter__(self):
         self.count = 0
@@ -172,17 +173,17 @@ class LoadImages:  # for inference
                     ret_val, img0 = self.cap.read()
 
             self.frame += 1
-            print('video %g/%g (%g/%g) %s: ' % (self.count + 1, self.nf, self.frame, self.nframes, path), end='')
+            print(f'video {self.count + 1}/{self.nf} ({self.frame}/{self.nframes}) {path}: ', end='')
 
         else:
             # Read image
             self.count += 1
             img0 = cv2.imread(path)  # BGR
             assert img0 is not None, 'Image Not Found ' + path
-            print('image %g/%g %s: ' % (self.count, self.nf, path), end='')
+            print(f'image {self.count}/{self.nf} {path}: ', end='')
 
         # Padded resize
-        img = letterbox(img0, new_shape=self.img_size, auto=self.auto)[0]
+        img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
 
         # Convert
         img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
@@ -200,8 +201,9 @@ class LoadImages:  # for inference
 
 
 class LoadWebcam:  # for inference
-    def __init__(self, pipe='0', img_size=640):
+    def __init__(self, pipe='0', img_size=640, stride=32):
         self.img_size = img_size
+        self.stride = stride
 
         if pipe.isnumeric():
             pipe = eval(pipe)  # local camera
@@ -239,12 +241,12 @@ class LoadWebcam:  # for inference
                         break
 
         # Print
-        assert ret_val, 'Camera Error %s' % self.pipe
+        assert ret_val, f'Camera Error {self.pipe}'
         img_path = 'webcam.jpg'
-        print('webcam %g: ' % self.count, end='')
+        print(f'webcam {self.count}: ', end='')
 
         # Padded resize
-        img = letterbox(img0, new_shape=self.img_size)[0]
+        img = letterbox(img0, self.img_size, stride=self.stride)[0]
 
         # Convert
         img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
@@ -257,9 +259,10 @@ class LoadWebcam:  # for inference
 
 
 class LoadStreams:  # multiple IP or RTSP cameras
-    def __init__(self, sources='streams.txt', img_size=640, auto=True):
+    def __init__(self, sources='streams.txt', img_size=640, stride=32, auto=True):
         self.mode = 'stream'
         self.img_size = img_size
+        self.stride = stride
 
         if os.path.isfile(sources):
             with open(sources, 'r') as f:
@@ -273,20 +276,20 @@ class LoadStreams:  # multiple IP or RTSP cameras
         self.auto = auto
         for i, s in enumerate(sources):
             # Start the thread to read frames from the video stream
-            print('%g/%g: %s... ' % (i + 1, n, s), end='')
+            print(f'{i + 1}/{n}: {s}... ', end='')
             cap = cv2.VideoCapture(eval(s) if s.isnumeric() else s)
-            assert cap.isOpened(), 'Failed to open %s' % s
+            assert cap.isOpened(), f'Failed to open {s}'
             w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             fps = cap.get(cv2.CAP_PROP_FPS) % 100
             _, self.imgs[i] = cap.read()  # guarantee first frame
             thread = Thread(target=self.update, args=([i, cap]), daemon=True)
-            print(' success (%gx%g at %.2f FPS).' % (w, h, fps))
+            print(f' success ({w}x{h} at {fps:.2f} FPS).')
             thread.start()
         print('')  # newline
 
         # check for common shapes
-        s = np.stack([letterbox(x, new_shape=self.img_size, auto=self.auto)[0].shape for x in self.imgs], 0)  # inference shapes
+        s = np.stack([letterbox(x, self.img_size, stride=self.stride, auto=self.auto)[0].shape for x in self.imgs], 0)  # shapes
         self.rect = np.unique(s, axis=0).shape[0] == 1  # rect inference if all shapes equal
         if not self.rect:
             print('WARNING: Different stream shapes detected. For optimal performance supply similarly-shaped streams.')
@@ -315,7 +318,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             raise StopIteration
 
         # Letterbox
-        img = [letterbox(x, new_shape=self.img_size, auto=self.rect and self.auto)[0] for x in img0]
+        img = [letterbox(x, self.img_size, stride=self.stride, auto=self.rect and self.auto)[0] for x in img0]
 
         # Stack
         img = np.stack(img, 0)
@@ -338,7 +341,7 @@ def img2label_paths(img_paths):
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-                 cache_images=False, single_cls=False, stride=32, pad=0.0, rank=-1):
+                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -347,7 +350,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.mosaic = self.augment and not self.rect  # load 4 images at a time into a mosaic (only during training)
         self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
-
+        self.path = path
+        
         try:
             f = []  # image files
             for p in path if isinstance(path, list) else [path]:
@@ -360,11 +364,11 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                         parent = str(p.parent) + os.sep
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
                 else:
-                    raise Exception('%s does not exist' % p)
+                    raise Exception(f'{prefix}{p} does not exist')
             self.img_files = sorted([x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in img_formats])
-            assert self.img_files, 'No images found'
+            assert self.img_files, f'{prefix}No images found'
         except Exception as e:
-            raise Exception('Error loading data from %s: %s\nSee %s' % (path, e, help_url))
+            raise Exception(f'{prefix}Error loading data from {path}: {e}\nSee {help_url}')
 
         # Check cache
         self.label_files = img2label_paths(self.img_files)  # labels
@@ -372,15 +376,15 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         if cache_path.is_file():
             cache = torch.load(cache_path)  # load
             if cache['hash'] != get_hash(self.label_files + self.img_files) or 'results' not in cache:  # changed
-                cache = self.cache_labels(cache_path)  # re-cache
+                cache = self.cache_labels(cache_path, prefix)  # re-cache
         else:
-            cache = self.cache_labels(cache_path)  # cache
+            cache = self.cache_labels(cache_path, prefix)  # cache
 
         # Display cache
         [nf, nm, ne, nc, n] = cache.pop('results')  # found, missing, empty, corrupted, total
         desc = f"Scanning '{cache_path}' for images and labels... {nf} found, {nm} missing, {ne} empty, {nc} corrupted"
-        tqdm(None, desc=desc, total=n, initial=n)
-        assert nf > 0 or not augment, f'No labels found in {cache_path}. Can not train without labels. See {help_url}'
+        tqdm(None, desc=prefix + desc, total=n, initial=n)
+        assert nf > 0 or not augment, f'{prefix}No labels in {cache_path}. Can not train without labels. See {help_url}'
 
         # Read cache
         cache.pop('hash')  # remove hash
@@ -434,9 +438,9 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             for i, x in pbar:
                 self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
                 gb += self.imgs[i].nbytes
-                pbar.desc = 'Caching images (%.1fGB)' % (gb / 1E9)
+                pbar.desc = f'{prefix}Caching images ({gb / 1E9:.1f}GB)'
 
-    def cache_labels(self, path=Path('./labels.cache')):
+    def cache_labels(self, path=Path('./labels.cache'), prefix=''):
         # Cache dataset labels, check images and read shapes
         x = {}  # dict
         nm, nf, ne, nc = 0, 0, 0, 0  # number missing, found, empty, duplicate
@@ -447,7 +451,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 im = Image.open(im_file)
                 im.verify()  # PIL verify
                 shape = exif_size(im)  # image size
-                assert (shape[0] > 9) & (shape[1] > 9), 'image size <10 pixels'
+                assert (shape[0] > 9) & (shape[1] > 9), f'image size {shape} <10 pixels'
+                assert im.format.lower() in img_formats, f'invalid image format {im.format}'
 
                 # verify labels
                 if os.path.isfile(lb_file):
@@ -468,18 +473,18 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 x[im_file] = [l, shape]
             except Exception as e:
                 nc += 1
-                print('WARNING: Ignoring corrupted image and/or label %s: %s' % (im_file, e))
+                print(f'{prefix}WARNING: Ignoring corrupted image and/or label {im_file}: {e}')
 
-            pbar.desc = f"Scanning '{path.parent / path.stem}' for images and labels... " \
+            pbar.desc = f"{prefix}Scanning '{path.parent / path.stem}' for images and labels... " \
                         f"{nf} found, {nm} missing, {ne} empty, {nc} corrupted"
 
         if nf == 0:
-            print(f'WARNING: No labels found in {path}. See {help_url}')
+            print(f'{prefix}WARNING: No labels found in {path}. See {help_url}')
 
         x['hash'] = get_hash(self.label_files + self.img_files)
         x['results'] = [nf, nm, ne, nc, i + 1]
         torch.save(x, path)  # save for next time
-        logging.info(f"New cache created: {path}")
+        logging.info(f'{prefix}New cache created: {path}')
         return x
 
     def __len__(self):
@@ -517,16 +522,9 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             img, ratio, pad = letterbox(img, shape, auto=False, scaleup=self.augment)
             shapes = (h0, w0), ((h / h0, w / w0), pad)  # for COCO mAP rescaling
 
-            # Load labels
-            labels = []
-            x = self.labels[index]
-            if x.size > 0:
-                # Normalized xywh to pixel xyxy format
-                labels = x.copy()
-                labels[:, 1] = ratio[0] * w * (x[:, 1] - x[:, 3] / 2) + pad[0]  # pad width
-                labels[:, 2] = ratio[1] * h * (x[:, 2] - x[:, 4] / 2) + pad[1]  # pad height
-                labels[:, 3] = ratio[0] * w * (x[:, 1] + x[:, 3] / 2) + pad[0]
-                labels[:, 4] = ratio[1] * h * (x[:, 2] + x[:, 4] / 2) + pad[1]
+            labels = self.labels[index].copy()
+            if labels.size:  # normalized xywh to pixel xyxy format
+                labels[:, 1:] = xywhn2xyxy(labels[:, 1:], ratio[0] * w, ratio[1] * h, padw=pad[0], padh=pad[1])
 
         if self.augment:
             # Augment imagespace
@@ -639,10 +637,16 @@ def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
     img_hsv = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val))).astype(dtype)
     cv2.cvtColor(img_hsv, cv2.COLOR_HSV2BGR, dst=img)  # no return needed
 
-    # Histogram equalization
-    # if random.random() < 0.2:
-    #     for i in range(3):
-    #         img[:, :, i] = cv2.equalizeHist(img[:, :, i])
+
+def hist_equalize(img, clahe=True, bgr=False):
+    # Equalize histogram on BGR image 'img' with img.shape(n,m,3) and range 0-255
+    yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV if bgr else cv2.COLOR_RGB2YUV)
+    if clahe:
+        c = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        yuv[:, :, 0] = c.apply(yuv[:, :, 0])
+    else:
+        yuv[:, :, 0] = cv2.equalizeHist(yuv[:, :, 0])  # equalize Y channel histogram
+    return cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR if bgr else cv2.COLOR_YUV2RGB)  # convert YUV image to RGB
 
 
 def load_mosaic(self, index):
@@ -676,13 +680,9 @@ def load_mosaic(self, index):
         padh = y1a - y1b
 
         # Labels
-        x = self.labels[index]
-        labels = x.copy()
-        if x.size > 0:  # Normalized xywh to pixel xyxy format
-            labels[:, 1] = w * (x[:, 1] - x[:, 3] / 2) + padw
-            labels[:, 2] = h * (x[:, 2] - x[:, 4] / 2) + padh
-            labels[:, 3] = w * (x[:, 1] + x[:, 3] / 2) + padw
-            labels[:, 4] = h * (x[:, 2] + x[:, 4] / 2) + padh
+        labels = self.labels[index].copy()
+        if labels.size:
+            labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padw, padh)  # normalized xywh to pixel xyxy format
         labels4.append(labels)
 
     # Concat/clip labels
@@ -739,13 +739,9 @@ def load_mosaic9(self, index):
         x1, y1, x2, y2 = [max(x, 0) for x in c]  # allocate coords
 
         # Labels
-        x = self.labels[index]
-        labels = x.copy()
-        if x.size > 0:  # Normalized xywh to pixel xyxy format
-            labels[:, 1] = w * (x[:, 1] - x[:, 3] / 2) + padx
-            labels[:, 2] = h * (x[:, 2] - x[:, 4] / 2) + pady
-            labels[:, 3] = w * (x[:, 1] + x[:, 3] / 2) + padx
-            labels[:, 4] = h * (x[:, 2] + x[:, 4] / 2) + pady
+        labels = self.labels[index].copy()
+        if labels.size:
+            labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padx, pady)  # normalized xywh to pixel xyxy format
         labels9.append(labels)
 
         # Image
@@ -794,8 +790,8 @@ def replicate(img, labels):
     return img, labels
 
 
-def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
-    # Resize image to a 32-pixel-multiple rectangle https://github.com/ultralytics/yolov3/issues/232
+def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
+    # Resize and pad image while meeting stride-multiple constraints
     shape = img.shape[:2]  # current shape [height, width]
     if isinstance(new_shape, int):
         new_shape = (new_shape, new_shape)
@@ -810,7 +806,7 @@ def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scale
     new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
     dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]  # wh padding
     if auto:  # minimum rectangle
-        dw, dh = np.mod(dw, 32), np.mod(dh, 32)  # wh padding
+        dw, dh = np.mod(dw, stride), np.mod(dh, stride)  # wh padding
     elif scaleFill:  # stretch
         dw, dh = 0.0, 0.0
         new_unpad = (new_shape[1], new_shape[0])
