@@ -126,8 +126,9 @@
         <sly-field title="Weights initialization" description="Define how model is initialized before training">
             <el-radio-group class="mb15" v-model="state.modelWeightsOptions">
                 <el-radio :label="1">Pretrained on COCO</el-radio>
-                <el-radio :label="2">Your custom model</el-radio>
-<!--                <el-radio :label="3">Random (not recommended)</el-radio>-->
+                <el-radio :label="2">From custom model</el-radio>
+                <el-radio :label="3" :disabled="true">Resume training (not implemented yet)</el-radio>
+                <!--<el-radio :label="3">Random (not recommended)</el-radio>-->
             </el-radio-group>
             <div v-show="state.modelWeightsOptions === 1">
                 <sly-field title="Model size" description="more params => better performace and slower inference time">
@@ -142,10 +143,12 @@
                         </el-option>
                     </el-select>
                 </sly-field>
-<!--                <el-input v-model="state.pretrainedWeights" :disabled="true" style="width:250px;"></el-input>-->
+                <!--<el-input v-model="state.pretrainedWeights" :disabled="true" style="width:250px;"></el-input>-->
             </div>
             <div v-show="state.modelWeightsOptions === 2">
-                <el-input v-model="state.weightsPath" placeholder="Path to .pt file in Team Files"></el-input>
+                <sly-field title="Path to file" description="Copy path in Team Files">
+                    <el-input v-model="state.weightsPath" placeholder="Path to .pt file in Team Files"></el-input>
+                </sly-field>
             </div>
         </sly-field>
     </sly-card>
@@ -190,10 +193,13 @@
                         <el-radio label="scratch">scratch</el-radio>
                         <el-radio label="finetune">finetune</el-radio>
                     </el-radio-group>
-                    <el-button class="ml15" type="default" size="small" @click="command('restore_hyp')">Restore Defaults</el-button>
+                    <el-button class="ml15" type="default" size="small" @click="command('restore_hyp')">Restore
+                        Defaults
+                    </el-button>
                 </div>
                 <div class="mb15">Edit settings in YAML format:</div>
-                <sly-editor v-model="state.hyp[state.hypRadio]" :options="{height: '565px', mode: 'ace/mode/yaml'}"></sly-editor>
+                <sly-editor v-model="state.hyp[state.hypRadio]"
+                            :options="{height: '565px', mode: 'ace/mode/yaml'}"></sly-editor>
             </el-tab-pane>
         </el-tabs>
     </sly-card>

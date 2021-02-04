@@ -136,6 +136,6 @@ def main():
 
 # @TODO: train == val - handle case in data_config.yaml to avoid data duplication
 # @TODO: continue training
-# @TODO: compare model size and custom checkpoint
+# @TODO: fix upload directory (number of progress updates)
 if __name__ == "__main__":
     sly.main_wrapper("main", main)
