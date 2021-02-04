@@ -14,7 +14,7 @@
         <sly-card title="7. Training artifacts"
                   subtitle="Checkpoints, logs and other visualizations"
                   style="width: 50%">
-            <div style="color: orange" v-if="data.outputUrl.length === 0">
+            <div style="color: #20a0ff" v-if="data.outputUrl.length === 0">
                 Link to the directory with training artifacts will be here
             </div>
 
@@ -114,7 +114,7 @@
                         :options="{'showLabel': false}">
                 </sly-select-tag>
             </sly-field>
-            <div style="color: blue">If image does not have such tags, it will be assigned to training set</div>
+            <div>If image does not have such tags, it will be assigned to training set</div>
         </div>
         <div v-show="state.splitMethod===3">
             <span style="color: green">All images are in both training and validation sets</span>
@@ -214,7 +214,7 @@
         </div>
 
         <div v-if="data.progressName.length > 0" class="mt10">
-            <div style="color: blue">{{data.progressName}}: {{data.currentProgressLabel}} /
+            <div style="color: #20a0ff">{{data.progressName}}: {{data.currentProgressLabel}} /
                 {{data.totalProgressLabel}}
             </div>
             <el-progress :percentage="Math.round(data.currentProgress * 100 / data.totalProgress)"></el-progress>
@@ -241,7 +241,7 @@
                                   :options="{enableZoom: false, syncViews: false, showPreview: true, selectable: true}"
                 >
                     <template v-slot:card-footer="{ annotation }">
-                        <div style="color: blue">{{annotation.name}}</div>
+                        <div style="color: #20a0ff">{{annotation.name}}</div>
                     </template>
                 </sly-grid-gallery>
             </el-collapse-item>
@@ -252,7 +252,7 @@
                                   :options="{enableZoom: false, syncViews: false, showPreview: true, selectable: true}"
                 >
                     <template v-slot:card-footer="{ annotation }">
-                        <div style="color: blue">{{annotation.name}}</div>
+                        <div style="color: #20a0ff">{{annotation.name}}</div>
                     </template>
                 </sly-grid-gallery>
             </el-collapse-item>
@@ -276,7 +276,7 @@
                                   syncViewsBindings:data.syncBindings}"
                 >
                     <template v-slot:card-footer="{ annotation }">
-                        <div style="color: blue">{{annotation.name}}</div>
+                        <div style="color: #20a0ff">{{annotation.name}}</div>
                     </template>
                 </sly-grid-gallery>
 

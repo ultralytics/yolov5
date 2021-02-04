@@ -1,8 +1,6 @@
-import json
 import supervisely_lib as sly
+import sly_train_globals as globals
 
-task_id = None
-api: sly.Api = None
 
 chart_train_style = {
     "name": "train",
@@ -112,7 +110,6 @@ def init_metrics(data):
 def send_metrics(epoch, epochs, metrics):
     sly.logger.debug(f"Metrics: epoch {epoch} / {epochs}", extra={"metrics": metrics})
 
-    # print(json.dumps(api.app.get_field(task_id, "data.mBox.data"), indent=4))
     fields = [
         {"field": "data.mBox.data[0].x", "payload": epoch, "append": True},
         {"field": "data.mBox.data[1].x", "payload": epoch, "append": True},
@@ -139,5 +136,5 @@ def send_metrics(epoch, epochs, metrics):
         {"field": "data.mMAP.data[0].y", "payload": metrics["metrics/mAP_0.5"], "append": True},
         {"field": "data.mMAP.data[1].y", "payload": metrics["metrics/mAP_0.5:0.95"], "append": True},
     ]
-    api.app.set_fields(task_id, fields)
+    globals.api.app.set_fields(globals.task_id, fields)
 

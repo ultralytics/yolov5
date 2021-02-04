@@ -19,5 +19,6 @@
     "target": ["images_project"],
     "context_root": "Neural Networks",
     "context_category": "YOLO v5"
-  }
+  },
+  "instance_version": "6.3.2"
 }
