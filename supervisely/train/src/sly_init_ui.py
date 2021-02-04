@@ -2,6 +2,7 @@ import supervisely_lib as sly
 
 from sly_utils import load_file_as_string
 import sly_train_globals as globals
+import sly_metrics_utils as metrics
 
 
 empty_gallery = {
@@ -136,3 +137,4 @@ def init(data, state):
     init_galleries(data)
     init_progress(data)
     init_output(data)
+    metrics.init(data)

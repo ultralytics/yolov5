@@ -123,26 +123,26 @@
 
     <sly-card class="mt15"
               title="4. Model settings">
-        <sly-field title="Model size" description="more params => better performace and slower inference time">
-            <el-select v-model="state.modelSize"
-                       style="width:250px;"
-                       @change="() => state.pretrainedWeights = `${state.modelSize}.pt`">
-                <el-option
-                        v-for="item in data.modelSizes"
-                        :key="item.label"
-                        :label="`${item.label} (${item.params} params)`"
-                        :value="item.label">
-                </el-option>
-            </el-select>
-        </sly-field>
         <sly-field title="Weights initialization" description="Define how model is initialized before training">
             <el-radio-group class="mb15" v-model="state.modelWeightsOptions">
                 <el-radio :label="1">Pretrained on COCO</el-radio>
                 <el-radio :label="2">Your custom model</el-radio>
-                <el-radio :label="3">Random (not recommended)</el-radio>
+<!--                <el-radio :label="3">Random (not recommended)</el-radio>-->
             </el-radio-group>
             <div v-show="state.modelWeightsOptions === 1">
-                <el-input v-model="state.pretrainedWeights" :disabled="true" style="width:250px;"></el-input>
+                <sly-field title="Model size" description="more params => better performace and slower inference time">
+                    <el-select v-model="state.modelSize"
+                               style="width:250px;"
+                               @change="() => state.pretrainedWeights = `${state.modelSize}.pt`">
+                        <el-option
+                                v-for="item in data.modelSizes"
+                                :key="item.label"
+                                :label="`${item.label} (${item.params} params)`"
+                                :value="item.label">
+                        </el-option>
+                    </el-select>
+                </sly-field>
+<!--                <el-input v-model="state.pretrainedWeights" :disabled="true" style="width:250px;"></el-input>-->
             </div>
             <div v-show="state.modelWeightsOptions === 2">
                 <el-input v-model="state.weightsPath" placeholder="Path to .pt file in Team Files"></el-input>

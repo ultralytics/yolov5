@@ -73,7 +73,7 @@ def init_chart(title, names, colors, xs, ys):
     return chart
 
 
-def init_metrics(data):
+def init(data):
     demo_x = [[], []] #[[1, 2, 3, 4], [2, 4, 6, 8]]
     demo_y = [[], []] #[[10, 15, 13, 17], [16, 5, 11, 9]]
     data["mBox"] = init_chart("Box",

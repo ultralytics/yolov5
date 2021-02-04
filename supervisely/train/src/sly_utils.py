@@ -26,8 +26,8 @@ def _update_progress_ui(api: sly.Api, task_id, progress: sly.Progress):
         api.app.set_fields(task_id, fields)
 
 
-def get_progress_cb(message, total):
-    progress = sly.Progress(message, total)
+def get_progress_cb(message, total, is_size=False):
+    progress = sly.Progress(message, total, is_size=is_size)
     progress_cb = partial(update_progress, api=globals.api, task_id=globals.task_id, progress=progress)
     progress_cb(0)
     return progress_cb

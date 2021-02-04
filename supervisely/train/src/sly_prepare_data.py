@@ -15,9 +15,14 @@ def transform_label(class_names, img_size, label: sly.Label):
     return result
 
 
-def _create_data_config(output_dir, meta: sly.ProjectMeta):
-    class_names = [obj_class.name for obj_class in meta.obj_classes]
-    class_colors = [obj_class.color for obj_class in meta.obj_classes]
+def _create_data_config(output_dir, meta: sly.ProjectMeta, keep_classes):
+    class_names = []
+    class_colors = []
+    for obj_class in meta.obj_classes:
+        if obj_class.name in keep_classes:
+            class_names.append(obj_class.name)
+            class_colors.append(obj_class.color)
+
     data_yaml = {
         "train": os.path.join(output_dir, "images/train"),
         "val": os.path.join(output_dir, "images/val"),
@@ -73,12 +78,12 @@ def _process_split(project, class_names, images_dir, labels_dir, split, progress
         progress_cb(len(batch))
 
 
-def filter_and_transform_labels(input_dir, META, train_classes,
+def filter_and_transform_labels(input_dir, train_classes,
                                 train_split, val_split,
                                 output_dir, progress_cb):
-    data_yaml = _create_data_config(output_dir, META)
-
     project = sly.Project(input_dir, sly.OpenMode.READ)
+    data_yaml = _create_data_config(output_dir, project.meta, train_classes)
+
     _process_split(project, data_yaml["names"], data_yaml["train"], data_yaml["labels_train"], train_split, progress_cb)
     _process_split(project, data_yaml["names"], data_yaml["val"], data_yaml["labels_val"], val_split, progress_cb)
 
