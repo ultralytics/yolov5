@@ -95,8 +95,8 @@ def init_training_hyperparameters(state):
     state["workers"] = 8
     state["activeTabName"] = "General"
     state["hyp"] = {
-        "scratch": load_file_as_string('data/hyp.scratch.yaml'),
-        "finetune": load_file_as_string('data/hyp.finetune.yaml'),
+        "scratch": load_file_as_string('../../../data/hyp.scratch.yaml'),
+        "finetune": load_file_as_string('../../../data/hyp.finetune.yaml'),
     }
     state["hypRadio"] = "scratch"
 

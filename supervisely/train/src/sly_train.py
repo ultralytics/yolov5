@@ -4,7 +4,8 @@ import supervisely_lib as sly
 
 from sly_train_globals import init_project_info_and_meta, \
                               my_app, api, task_id, \
-                              project_id, project_info, project_meta
+                              team_id, workspace_id, project_id, \
+                              project_info, project_meta
 
 from supervisely_lib._utils import sizeof_fmt
 
@@ -117,9 +118,9 @@ def train(api: sly.Api, task_id, context, state, app_logger):
 
 def main():
     sly.logger.info("Script arguments", extra={
-        "context.teamId": globals.TEAM_ID,
-        "context.workspaceId": globals.WORKSPACE_ID,
-        "modal.state.slyProjectId": globals.PROJECT_ID,
+        "context.teamId": team_id,
+        "context.workspaceId": workspace_id,
+        "modal.state.slyProjectId": project_id,
     })
 
     data = {}
@@ -131,8 +132,8 @@ def main():
     ui.init(data, state)
     init_metrics(data)
 
-    template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')
-    globals.app.run(template_path, data, state)
+    #template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')
+    my_app.run(data=data, state=state)
 
 
 # @TODO: train == val - handle case in data_config.yaml to avoid data duplication
