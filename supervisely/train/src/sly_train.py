@@ -113,7 +113,7 @@ def train(api: sly.Api, task_id, context, state, app_logger):
     ]
     api.app.set_fields(task_id, fields)
 
-    globals.app.stop()
+    my_app.stop()
 
 
 def main():

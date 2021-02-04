@@ -133,5 +133,6 @@ def init(data, state):
     init_model_settings(data, state)
     init_training_hyperparameters(state)
     init_start_state(state)
+    init_galleries(data)
     init_progress(data)
     init_output(data)
