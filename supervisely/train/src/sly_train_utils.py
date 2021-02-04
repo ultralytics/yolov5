@@ -82,12 +82,12 @@ def send_epoch_log(epoch, epochs):
 
 
 def upload_label_vis():
-    paths = [x for x in Path(local_artifacts_dir).glob('labels*.jpg') if x.exists()]
+    paths = [x for x in Path(g.local_artifacts_dir).glob('labels*.jpg') if x.exists()]
     _upload_data_vis(f"data.labelsVis", paths, len(paths))
 
 
 def upload_pred_vis():
-    paths = [x for x in Path(local_artifacts_dir).glob('test*.jpg') if x.exists()]
+    paths = [x for x in Path(g.local_artifacts_dir).glob('test*.jpg') if x.exists()]
     _paths = [str(path) for path in paths]
     _paths.sort()
     sync_bindings = []
@@ -98,7 +98,7 @@ def upload_pred_vis():
 
 
 def upload_train_data_vis():
-    paths = [x for x in Path(local_artifacts_dir).glob('train*.jpg') if x.exists()]
+    paths = [x for x in Path(g.local_artifacts_dir).glob('train*.jpg') if x.exists()]
     cnt_columns = len(paths)
     if cnt_columns > 3 and cnt_columns <= 9:
         cnt_columns = 3
@@ -113,7 +113,7 @@ def _upload_data_vis(field, paths, cnt_columns):
     _paths = [str(path) for path in paths]
     _paths.sort()
     for idx, file_path in enumerate(_paths):
-        remote_file_path = os.path.join(remote_artifacts_dir, file_path.replace(local_artifacts_dir, '').lstrip("/"))
+        remote_file_path = os.path.join(g.remote_artifacts_dir, file_path.replace(g.local_artifacts_dir, '').lstrip("/"))
         file_info = api.file.upload(team_id, file_path, remote_file_path)
         annotations[file_info.name] = {
             "url": file_info.full_storage_url,
