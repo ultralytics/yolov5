@@ -1,19 +1,26 @@
-import pathlib
-import os
 import supervisely_lib as sly
 
-
-def init_input_project(api: sly.Api, PROJECT_ID, data):
-    PROJECT = api.project.get_info_by_id(PROJECT_ID)
-    META = sly.ProjectMeta.from_json(api.project.get_meta(PROJECT_ID))
-    data["projectId"] = PROJECT_ID
-    data["projectName"] = PROJECT.name
-    data["projectPreviewUrl"] = api.image.preview_url(PROJECT.reference_image_url, 100, 100)
-    return PROJECT, META
+from sly_utils import load_file_as_string
+import sly_train_globals as globals
 
 
-def init_classes_stats(api: sly.Api, PROJECT_ID, META, data, state):
-    stats = api.project.get_stats(PROJECT_ID)
+empty_gallery = {
+    "content": {
+        "projectMeta": sly.ProjectMeta().to_json(),
+        "annotations": {},
+        "layout": []
+    }
+}
+
+
+def init_input_project(data, project_info):
+    data["projectId"] = globals.project_id
+    data["projectName"] = project_info.name
+    data["projectPreviewUrl"] = globals.api.image.preview_url(project_info.reference_image_url, 100, 100)
+
+
+def init_classes_stats(data, state, project_meta):
+    stats = globals.api.project.get_stats(globals.project_id)
     class_images = {}
     for item in stats["images"]["objectClasses"]:
         class_images[item["objectClass"]["name"]] = item["total"]
@@ -21,7 +28,7 @@ def init_classes_stats(api: sly.Api, PROJECT_ID, META, data, state):
     for item in stats["objects"]["items"]:
         class_objects[item["objectClass"]["name"]] = item["total"]
 
-    classes_json = META.obj_classes.to_json()
+    classes_json = project_meta.obj_classes.to_json()
     for obj_class in classes_json:
         obj_class["imagesCount"] = class_images[obj_class["title"]]
         obj_class["objectsCount"] = class_objects[obj_class["title"]]
@@ -88,14 +95,43 @@ def init_training_hyperparameters(state):
     state["workers"] = 8
     state["activeTabName"] = "General"
     state["hyp"] = {
-        "scratch": _load_file('data/hyp.scratch.yaml'),
-        "finetune": _load_file('data/hyp.finetune.yaml'),
+        "scratch": load_file_as_string('data/hyp.scratch.yaml'),
+        "finetune": load_file_as_string('data/hyp.finetune.yaml'),
     }
     state["hypRadio"] = "scratch"
 
 
-def _load_file(relative_path):
-    file_path = os.path.join(str(pathlib.Path(__file__).parent.absolute()), relative_path)
-    with open(file_path, 'r') as file:
-        data = file.read()
-    return data
+def init_start_state(state):
+    state["started"] = False
+    state["activeNames"] = []
+
+
+def init_galleries(data):
+    data["vis"] = empty_gallery
+    data["labelsVis"] = empty_gallery
+    data["predVis"] = empty_gallery
+    data["syncBindings"] = []
+
+
+def init_progress(data):
+    data["progressName"] = ""
+    data["currentProgress"] = 0
+    data["totalProgress"] = 0
+    data["currentProgressLabel"] = ""
+    data["totalProgressLabel"] = ""
+
+
+def init_output(data):
+    data["outputUrl"] = ""
+    data["outputName"] = ""
+
+
+def init(data, state):
+    init_input_project(data, globals.project_info)
+    init_classes_stats(data, state, globals.project_meta)
+    init_random_split(globals.project_info, data, state)
+    init_model_settings(data, state)
+    init_training_hyperparameters(state)
+    init_start_state(state)
+    init_progress(data)
+    init_output(data)

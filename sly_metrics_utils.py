@@ -137,4 +137,3 @@ def send_metrics(epoch, epochs, metrics):
         {"field": "data.mMAP.data[1].y", "payload": metrics["metrics/mAP_0.5:0.95"], "append": True},
     ]
     globals.api.app.set_fields(globals.task_id, fields)
-

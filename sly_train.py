@@ -2,34 +2,39 @@ import os
 import sys
 import supervisely_lib as sly
 
-import sly_train_globals as globals
+from sly_train_globals import init_project_info_and_meta, \
+                              my_app, api, task_id, \
+                              project_id, project_info, project_meta
+
 from supervisely_lib._utils import sizeof_fmt
 
 
 from sly_train_val_split import train_val_split
-from sly_init_ui import init_input_project, init_classes_stats, init_random_split, init_model_settings, \
-    init_training_hyperparameters, _load_file as load_hyp
+import sly_init_ui as ui
+# from sly_init_ui import init_input_project, init_classes_stats, init_random_split, init_model_settings, \
+#     init_training_hyperparameters, _load_file as load_hyp
 from sly_prepare_data import filter_and_transform_labels
-from sly_train_utils import init_script_arguments, empty_gallery
+from sly_train_utils import init_script_arguments
 from sly_metrics_utils import init_metrics
 from sly_utils import update_progress, get_progress_cb
+import sly_utils
 
 
 PROJECT = None
 META = None
-CNT_GRID_COLUMNS = 3
+#CNT_GRID_COLUMNS = 3
 
 
-@globals.app.callback("restore_hyp")
+@my_app.callback("restore_hyp")
 @sly.timeit
 def restore_hyp(api: sly.Api, task_id, context, state, app_logger):
     api.task.set_field(task_id, "state.hyp", {
-        "scratch": load_hyp('data/hyp.scratch.yaml'),
-        "finetune": load_hyp('data/hyp.finetune.yaml'),
+        "scratch": sly_utils.load_file_as_string("data/hyp.scratch.yaml"),
+        "finetune": sly_utils.load_file_as_string("data/hyp.finetune.yaml"),
     })
 
 
-@globals.app.callback("train")
+@my_app.callback("train")
 @sly.timeit
 def train(api: sly.Api, task_id, context, state, app_logger):
     api.app.set_field(task_id, "state.activeNames", ["logs", "labels", "train", "pred", "metrics"])
@@ -89,9 +94,9 @@ def train(api: sly.Api, task_id, context, state, app_logger):
             ]
             api.app.set_fields(task_id, fields)
 
-    local_files = sly.fs.list_files_recursively(local_artifacts_dir)
+    local_files = sly.fs.list_files_recursively(globals.local_artifacts_dir)
     for local_path in local_files:
-        remote_path = os.path.join(remote_artifacts_dir, local_path.replace(local_artifacts_dir, '').lstrip("/"))
+        remote_path = os.path.join(globals.remote_artifacts_dir, local_path.replace(globals.local_artifacts_dir, '').lstrip("/"))
         if api.file.exists(globals.TEAM_ID, remote_path):
             continue
         upload_progress.pop(0)
@@ -100,14 +105,14 @@ def train(api: sly.Api, task_id, context, state, app_logger):
     progress = sly.Progress("Finished, app is stopped automatically", 1)
     progress_cb(1)
 
-    file_info = api.file.get_info_by_path(globals.TEAM_ID, os.path.join(remote_artifacts_dir, 'results.png'))
+    file_info = api.file.get_info_by_path(globals.TEAM_ID, os.path.join(globals.remote_artifacts_dir, 'results.png'))
     fields = [
         {"field": "data.outputUrl", "payload": api.file.get_url(file_info.id)},
-        {"field": "data.outputName", "payload": remote_artifacts_dir},
+        {"field": "data.outputName", "payload": globals.remote_artifacts_dir},
     ]
     api.app.set_fields(task_id, fields)
 
-    globals.my_app.stop()
+    globals.app.stop()
 
 
 def main():
@@ -119,30 +124,11 @@ def main():
 
     data = {}
     state = {}
+    data["taskId"] = task_id
 
-    data["taskId"] = globals.app.task_id
-    global PROJECT, META
-    PROJECT, META = init_input_project(globals.app.public_api, globals.PROJECT_ID, data)
-    init_classes_stats(globals.app.public_api, globals.PROJECT_ID, META, data, state)
-
-    init_random_split(PROJECT, data, state)
-    init_model_settings(data, state)
-    init_training_hyperparameters(state)
-
-    state["started"] = False
-    state["activeNames"] = []
-
-    data["vis"] = empty_gallery
-    data["labelsVis"] = empty_gallery #{} #empty_gallery
-    data["predVis"] = empty_gallery
-
-    data["progressName"] = ""
-    data["currentProgress"] = 0
-    data["totalProgress"] = 0
-    data["syncBindings"] = []
-    data["outputUrl"] = ""
-    data["outputName"] = ""
-
+    # read project information and meta (classes + tags)
+    init_project_info_and_meta()
+    ui.init(data, state)
     init_metrics(data)
 
     template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')

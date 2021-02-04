@@ -7,13 +7,7 @@ import supervisely_lib as sly
 import sly_train_globals as globals
 
 
-empty_gallery = {
-    "content": {
-        "projectMeta": sly.ProjectMeta().to_json(),
-        "annotations": {},
-        "layout": []
-    }
-}
+
 
 
 def init_script_arguments(state, yolov5_format_dir, input_project_name):

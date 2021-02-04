@@ -1,4 +1,6 @@
 from functools import partial
+import os
+import pathlib
 import supervisely_lib as sly
 import sly_train_globals as globals
 
@@ -30,6 +32,12 @@ def get_progress_cb(message, total):
     progress_cb(0)
     return progress_cb
 
+
+def load_file_as_string(relative_path):
+    file_path = os.path.join(str(pathlib.Path(__file__).parent.absolute()), relative_path)
+    with open(file_path, 'r') as file:
+        data = file.read()
+    return data
 
 # from functools import partial
 # def func(a, b, progress):
