@@ -22,17 +22,17 @@ root_project_path = str(Path(os.path.realpath(__file__)).parents[3])
 sly.logger.info(f"Root project directory: {root_project_path}")
 
 # Print the current working directory
-print("Current working directory: {0}".format(os.getcwd()))
+# print("Current working directory: {0}".format(os.getcwd()))
+#
+# # Change the current working directory
+# os.chdir(root_project_path)
+#
+# # Print the current working directory
+# print("Current working directory: {0}".format(os.getcwd()))
 
-# Change the current working directory
-os.chdir(root_project_path)
-
-# Print the current working directory
-print("Current working directory: {0}".format(os.getcwd()))
-
-import time
-while True:
-    time.sleep(10)
+# import time
+# while True:
+#     time.sleep(10)
 
 sys.path.append(root_project_path)
 import train as train_yolov5
@@ -45,6 +45,8 @@ pp = pprint.PrettyPrinter(indent=4)
 from inspect import getmembers, isfunction
 print("list of methods in original test.py")
 pp.pprint(getmembers(test, isfunction))
+print("list of methods in original test.py")
+pp.pprint(getmembers(train_yolov5, isfunction))
 print("Check imports: ", test.test_original)
 
 
