@@ -21,7 +21,7 @@ from sly_utils import get_progress_cb, load_file_as_string, upload_artifacts
 root_project_path = str(Path(os.path.realpath(__file__)).parents[3])
 sly.logger.info(f"Root project directory: {root_project_path}")
 sys.path.append(root_project_path)
-import train
+import train as train_yolov5
 
 
 @my_app.callback("restore_hyp")
@@ -71,7 +71,7 @@ def train(api: sly.Api, task_id, context, state, app_logger):
 
     # start train script
     get_progress_cb("YOLOv5: Scanning data ", 1)(1)
-    train.main()
+    train_yolov5.main()
 
     # upload artifacts directory to Team Files
     upload_artifacts(g.local_artifacts_dir, g.remote_artifacts_dir)
