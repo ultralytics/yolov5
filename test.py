@@ -17,9 +17,11 @@ from utils.metrics import ap_per_class, ConfusionMatrix
 from utils.plots import plot_images, output_to_target, plot_study_txt
 from utils.torch_utils import select_device, time_synchronized
 
+print("-----------> 0")
+
 from supervisely.train.src.sly_train_utils import upload_pred_vis
 
-
+print("-----------> 1")
 def test_original(data,
          weights=None,
          batch_size=32,
@@ -285,7 +287,7 @@ def test_original(data,
         maps[c] = ap[i]
     return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
 
-
+print("-----------> 2")
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='test.py')
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
