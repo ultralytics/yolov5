@@ -5,8 +5,8 @@ import time
 from pathlib import Path
 import supervisely_lib as sly
 
-import sly_train_globals as g
-from sly_train_globals import my_app, api, task_id, team_id
+import supervisely.train.src.sly_train_globals as g
+from supervisely.train.src.sly_train_globals import my_app, api, task_id, team_id
 
 
 def init_script_arguments(state, yolov5_format_dir, input_project_name):
