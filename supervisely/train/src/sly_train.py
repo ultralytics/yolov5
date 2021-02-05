@@ -17,10 +17,6 @@ from sly_train_utils import init_script_arguments
 from sly_utils import get_progress_cb, load_file_as_string, upload_artifacts
 
 
-PROJECT = None
-META = None
-
-
 @my_app.callback("restore_hyp")
 @sly.timeit
 def restore_hyp(api: sly.Api, task_id, context, state, app_logger):
@@ -99,7 +95,6 @@ def main():
     # init data for UI widgets
     ui.init(data, state)
 
-    #template_path = os.path.join(os.path.dirname(sys.argv[0]), 'supervisely/train/src/gui.html')
     my_app.run(data=data, state=state)
 
 
