@@ -30,6 +30,10 @@ os.chdir(root_project_path)
 # Print the current working directory
 print("Current working directory: {0}".format(os.getcwd()))
 
+import time
+while True:
+    time.sleep(10)
+
 sys.path.append(root_project_path)
 import train as train_yolov5
 import test
