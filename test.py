@@ -20,7 +20,7 @@ from utils.torch_utils import select_device, time_synchronized
 from supervisely.train.src.sly_train_utils import upload_pred_vis
 
 
-def test(data,
+def test_original(data,
          weights=None,
          batch_size=32,
          imgsz=640,

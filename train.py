@@ -347,7 +347,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
                 ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'colors', 'img_size', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
-                results, maps, times = test.test(opt.data,
+                results, maps, times = test.test_original(opt.data,
                                                  batch_size=total_batch_size,
                                                  imgsz=imgsz_test,
                                                  model=ema.ema,
@@ -433,7 +433,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
         logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
         if opt.data.endswith('coco.yaml') and nc == 80:  # if COCO
             for conf, iou, save_json in ([0.25, 0.45, False], [0.001, 0.65, True]):  # speed, mAP tests
-                results, _, _ = test.test(opt.data,
+                results, _, _ = test.test_original(opt.data,
                                           batch_size=total_batch_size,
                                           imgsz=imgsz_test,
                                           conf_thres=conf,

@@ -23,7 +23,7 @@ sly.logger.info(f"Root project directory: {root_project_path}")
 sys.path.append(root_project_path)
 import train as train_yolov5
 import test
-print("Check imports: ", test.test)
+print("Check imports: ", test.test_original)
 
 
 @my_app.callback("restore_hyp")
