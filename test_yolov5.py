@@ -22,7 +22,7 @@ print("-----------> 0")
 from supervisely.train.src.sly_train_utils import upload_pred_vis
 
 print("-----------> 1")
-def test_original(data,
+def test(data,
          weights=None,
          batch_size=32,
          imgsz=640,
@@ -315,7 +315,7 @@ if __name__ == '__main__':
     check_requirements()
 
     if opt.task in ['val', 'test']:  # run normally
-        test_original(opt.data,
+        test(opt.data,
              opt.weights,
              opt.batch_size,
              opt.img_size,
@@ -337,7 +337,7 @@ if __name__ == '__main__':
             y = []  # y axis
             for i in x:  # img-size
                 print('\nRunning %s point %s...' % (f, i))
-                r, _, t = test_original(opt.data, weights, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json,
+                r, _, t = test(opt.data, weights, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json,
                                plots=False)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
