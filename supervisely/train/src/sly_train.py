@@ -33,7 +33,7 @@ sly.logger.info(f"Root project directory: {root_project_path}")
 # import time
 # while True:
 #     time.sleep(10)
-
+import time
 sys.path.append(root_project_path)
 import train as train_yolov5
 import test
@@ -45,8 +45,10 @@ pp = pprint.PrettyPrinter(indent=4)
 from inspect import getmembers, isfunction
 print("list of methods in original test.py")
 pp.pprint(getmembers(test, isfunction))
+time.sleep(10)
 print("list of methods in original train.py")
 pp.pprint(getmembers(train_yolov5, isfunction))
+time.sleep(10)
 print("Check imports: ", test.test_original)
 
 
