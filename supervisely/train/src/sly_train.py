@@ -36,7 +36,7 @@ sly.logger.info(f"Root project directory: {root_project_path}")
 import time
 sys.path.append(root_project_path)
 import train as train_yolov5
-import test
+import test_yolov5 as test
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
