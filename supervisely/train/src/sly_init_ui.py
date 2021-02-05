@@ -88,13 +88,13 @@ def init_model_settings(data, state):
 
 
 def init_training_hyperparameters(state):
-    state["epochs"] = 1  # 300
+    state["epochs"] = 300
     state["batchSize"] = 16
     state["imgSize"] = 640
     state["multiScale"] = False
     state["singleClass"] = False
     state["device"] = '0'
-    state["workers"] = 0  # 0 - for debug
+    state["workers"] = 8  # 0 - for debug
     state["activeTabName"] = "General"
     state["hyp"] = {
         "scratch": load_file_as_string('../../../data/hyp.scratch.yaml'),
