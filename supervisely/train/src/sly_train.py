@@ -19,6 +19,7 @@ from sly_train_utils import init_script_arguments
 from sly_utils import get_progress_cb, load_file_as_string, upload_artifacts
 
 root_project_path = str(Path(os.path.realpath(__file__)).parents[3])
+sly.logger(f"Root project directory: {root_project_path}")
 sys.path.append(root_project_path)
 import train
 
