@@ -1,3 +1,4 @@
+import os
 import supervisely_lib as sly
 
 from sly_utils import load_file_as_string
@@ -93,7 +94,7 @@ def init_training_hyperparameters(state):
     state["multiScale"] = False
     state["singleClass"] = False
     state["device"] = '0'
-    state["workers"] = 8
+    state["workers"] = 0  # 0 - for debug
     state["activeTabName"] = "General"
     state["hyp"] = {
         "scratch": load_file_as_string('../../../data/hyp.scratch.yaml'),
@@ -138,3 +139,13 @@ def init(data, state):
     init_progress(data)
     init_output(data)
     metrics.init(data)
+
+
+def set_output():
+    file_info = globals.api.file.get_info_by_path(globals.team_id,
+                                                  os.path.join(globals.remote_artifacts_dir, 'results.png'))
+    fields = [
+        {"field": "data.outputUrl", "payload": globals.api.file.get_url(file_info.id)},
+        {"field": "data.outputName", "payload": globals.remote_artifacts_dir},
+    ]
+    globals.api.app.set_fields(globals.task_id, fields)

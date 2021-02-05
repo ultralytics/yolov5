@@ -1,6 +1,7 @@
 import os
 import sys
 import yaml
+import time
 from pathlib import Path
 import supervisely_lib as sly
 
@@ -87,14 +88,26 @@ def upload_label_vis():
 
 
 def upload_pred_vis():
-    paths = [x for x in Path(g.local_artifacts_dir).glob('test*.jpg') if x.exists()]
-    _paths = [str(path) for path in paths]
-    _paths.sort()
-    sync_bindings = []
-    for batch in sly.batched(_paths, 2):
-        sync_bindings.append([sly.fs.get_file_name_with_ext(batch[0]), sly.fs.get_file_name_with_ext(batch[1])])
-    api.task.set_field(task_id, "data.syncBindings", sync_bindings)
-    _upload_data_vis("data.predVis", paths, 2)
+    submitted = False
+    for i in range(5):
+        paths = [x for x in Path(g.local_artifacts_dir).glob('test*.jpg') if x.exists()]
+        if len(paths) % 2 != 0:
+            time.sleep(3)  # wait while thread in YOLOv5 script produce visualization: test batch + prediction
+            continue
+        _paths = [str(path) for path in paths]
+        _paths.sort()
+        sync_bindings = []
+        for batch in sly.batched(_paths, 2):
+            sync_bindings.append([sly.fs.get_file_name_with_ext(batch[0]), sly.fs.get_file_name_with_ext(batch[1])])
+        api.task.set_field(task_id, "data.syncBindings", sync_bindings)
+        _upload_data_vis("data.predVis", paths, 2)
+        submitted = True
+        break
+
+    if submitted is False:
+        sly.logger.warn("Test batch visualizations (labels + predictions) are not ready, see them in artifacts "
+                        "directory after training ")
+        pass
 
 
 def upload_train_data_vis():
