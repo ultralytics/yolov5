@@ -149,3 +149,5 @@ def set_output():
         {"field": "data.outputName", "payload": globals.remote_artifacts_dir},
     ]
     globals.api.app.set_fields(globals.task_id, fields)
+    globals.api.task.set_output_report(globals.task_id, file_info.id, globals.remote_artifacts_dir)
+
