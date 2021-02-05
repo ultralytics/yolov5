@@ -27,6 +27,7 @@ import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 from inspect import getmembers, isfunction
+print("list of methods in original test.py")
 pp.pprint(getmembers(test, isfunction))
 print("Check imports: ", test.test_original)
 
