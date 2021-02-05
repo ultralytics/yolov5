@@ -7,7 +7,7 @@
     "detection"
   ],
   "description": "Dashboard to configure and monitor training",
-  "docker_image": "supervisely/base-pytorch:6.0.19",
+  "docker_image": "supervisely/base-pytorch:6.0.20",
   "main_script": "supervisely/train/src/sly_train.py",
   "gui_template": "supervisely/train/src/gui.html",
   "task_location": "workspace_tasks",
