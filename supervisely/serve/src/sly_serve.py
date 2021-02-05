@@ -4,7 +4,7 @@ import yaml
 import supervisely_lib as sly
 
 from sly_serve_utils import construct_model_meta, load_model, inference
-from sly_init_ui import _load_file as load_hyp
+from supervisely.train.src.sly_utils import load_file_as_string as load_hyp
 
 my_app = sly.AppService()
 
@@ -104,11 +104,9 @@ def main():
 #@TODO: add pretrained models
 #@TODO: download progress bar
 #@TODO: add arguments to labeling inference (make a fork from NN labeling app)
-#@TODO: alex - test bbox coordinates
-#@TODO: augment argument before deploy
+#@TODO: augment before deploy
 #@TODO: log input arguments
 #@TODO: fix serve template - debug_inference
-#@TODO: or another app serve_cpu?
 #@TODO: deploy on custom device: cpu/gpu
 if __name__ == "__main__":
     sly.main_wrapper("main", main)
