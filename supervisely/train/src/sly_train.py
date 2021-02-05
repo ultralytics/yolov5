@@ -109,5 +109,6 @@ def main():
 # @TODO: fix upload directory (number of progress updates)
 # @TODO: repeat dataset (for small lemons)
 # @TODO: chart refresh freezes page
+# @TODO: adam or SGD opt?
 if __name__ == "__main__":
     sly.main_wrapper("main", main)
