@@ -76,19 +76,19 @@ def init_chart(title, names, colors, xs, ys):
 def init(data):
     demo_x = [[], []] #[[1, 2, 3, 4], [2, 4, 6, 8]]
     demo_y = [[], []] #[[10, 15, 13, 17], [16, 5, 11, 9]]
-    data["mBox"] = init_chart("Box",
+    data["mBox"] = init_chart("Box Loss",
                               names=["train", "val"],
                               colors=[[0, 0, 255], [255, 128, 0]],
                               xs=demo_x,
                               ys=demo_y)
 
-    data["mObjectness"] = init_chart("Objectness",
+    data["mObjectness"] = init_chart("Objectness Loss",
                                      names=["train", "val"],
                                      colors=[[0, 0, 255], [255, 128, 0]],
                                      xs=demo_x,
                                      ys=demo_y)
 
-    data["mClassification"] = init_chart("Classification",
+    data["mClassification"] = init_chart("Classification Loss",
                                          names=["train", "val"],
                                          colors=[[0, 0, 255], [255, 128, 0]],
                                          xs=demo_x,
