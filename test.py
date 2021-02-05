@@ -313,7 +313,7 @@ if __name__ == '__main__':
     check_requirements()
 
     if opt.task in ['val', 'test']:  # run normally
-        test(opt.data,
+        test_original(opt.data,
              opt.weights,
              opt.batch_size,
              opt.img_size,
@@ -335,7 +335,7 @@ if __name__ == '__main__':
             y = []  # y axis
             for i in x:  # img-size
                 print('\nRunning %s point %s...' % (f, i))
-                r, _, t = test(opt.data, weights, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json,
+                r, _, t = test_original(opt.data, weights, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json,
                                plots=False)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
