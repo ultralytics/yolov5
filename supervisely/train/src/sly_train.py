@@ -20,11 +20,23 @@ from sly_utils import get_progress_cb, load_file_as_string, upload_artifacts
 
 root_project_path = str(Path(os.path.realpath(__file__)).parents[3])
 sly.logger.info(f"Root project directory: {root_project_path}")
+
+# Print the current working directory
+print("Current working directory: {0}".format(os.getcwd()))
+
+# Change the current working directory
+os.chdir(root_project_path)
+
+# Print the current working directory
+print("Current working directory: {0}".format(os.getcwd()))
+
 sys.path.append(root_project_path)
 import train as train_yolov5
 import test
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
+
+
 
 from inspect import getmembers, isfunction
 print("list of methods in original test.py")
