@@ -22,8 +22,8 @@ root_project_path = str(Path(os.path.realpath(__file__)).parents[3])
 sly.logger.info(f"Root project directory: {root_project_path}")
 sys.path.append(root_project_path)
 import train as train_yolov5
-import test
-print("Check imports: ", test.test_original)
+import test as test_yolov5
+print("Check imports: ", test_yolov5.test_original)
 
 
 @my_app.callback("restore_hyp")
