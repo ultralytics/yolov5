@@ -1,4 +1,6 @@
 import os
+import sys
+from pathlib import Path
 import supervisely_lib as sly
 
 from sly_train_globals import init_project_info_and_meta, \
@@ -15,6 +17,10 @@ import sly_init_ui as ui
 from sly_prepare_data import filter_and_transform_labels
 from sly_train_utils import init_script_arguments
 from sly_utils import get_progress_cb, load_file_as_string, upload_artifacts
+
+root_project_path = str(Path(os.path.realpath(__file__)).parents[3])
+sys.path.append(root_project_path)
+import train
 
 
 @my_app.callback("restore_hyp")
@@ -64,7 +70,6 @@ def train(api: sly.Api, task_id, context, state, app_logger):
 
     # start train script
     get_progress_cb("YOLOv5: Scanning data ", 1)(1)
-    import train
     train.main()
 
     # upload artifacts directory to Team Files
