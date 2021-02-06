@@ -414,7 +414,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
         if opt.data.endswith('coco.yaml') and nc == 80:  # if COCO
             for conf, iou, save_json in ([0.25, 0.45, False], [0.001, 0.65, True]):  # speed, mAP tests
                 results, _, _ = test.test(opt.data,
-                                          batch_size=total_batch_size,
+                                          batch_size=batch_size * 2,
                                           imgsz=imgsz_test,
                                           conf_thres=conf,
                                           iou_thres=iou,
