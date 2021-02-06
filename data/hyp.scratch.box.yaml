@@ -11,9 +11,9 @@ warmup_epochs: 3.0  # warmup epochs (fractions ok)
 warmup_momentum: 0.8  # warmup initial momentum
 warmup_bias_lr: 0.1  # warmup initial bias lr
 box: 0.05  # box loss gain
-cls: 0.3  # cls loss gain
+cls: 0.0  # cls loss gain
 cls_pw: 1.0  # cls BCELoss positive_weight
-obj: 0.7  # obj loss gain (scale with pixels)
+obj: 0.0  # obj loss gain (scale with pixels)
 obj_pw: 1.0  # obj BCELoss positive_weight
 iou_t: 0.20  # IoU training threshold
 anchor_t: 4.0  # anchor-multiple threshold
