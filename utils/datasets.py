@@ -120,8 +120,7 @@ class _RepeatSampler(object):
 
 class LoadImages:  # for inference
     def __init__(self, path, img_size=640, stride=32):
-        p = str(Path(path))  # os-agnostic
-        p = os.path.abspath(p)  # absolute path
+        p = str(Path(path).absolute())  # os-agnostic absolute path
         if '*' in p:
             files = sorted(glob.glob(p, recursive=True))  # glob
         elif os.path.isdir(p):
@@ -349,28 +348,31 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
         self.path = path
-        
+
         try:
             f = []  # image files
             for p in path if isinstance(path, list) else [path]:
                 p = Path(p)  # os-agnostic
                 if p.is_dir():  # dir
                     f += glob.glob(str(p / '**' / '*.*'), recursive=True)
+                    # f = list(p.rglob('**/*.*'))  # pathlib
                 elif p.is_file():  # file
                     with open(p, 'r') as t:
                         t = t.read().strip().splitlines()
                         parent = str(p.parent) + os.sep
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
+                        # f += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
                 else:
                     raise Exception(f'{prefix}{p} does not exist')
             self.img_files = sorted([x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in img_formats])
+            # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in img_formats])  # pathlib
             assert self.img_files, f'{prefix}No images found'
         except Exception as e:
             raise Exception(f'{prefix}Error loading data from {path}: {e}\nSee {help_url}')
 
         # Check cache
         self.label_files = img2label_paths(self.img_files)  # labels
-        cache_path = Path(self.label_files[0]).parent.with_suffix('.cache')  # cached labels
+        cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')  # cached labels
         if cache_path.is_file():
             cache = torch.load(cache_path)  # load
             if cache['hash'] != get_hash(self.label_files + self.img_files) or 'results' not in cache:  # changed
