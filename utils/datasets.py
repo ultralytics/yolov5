@@ -513,7 +513,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 img = (img * r + img2 * (1 - r)).astype(np.uint8)
                 labels = np.concatenate((labels, labels2), 0)
 
-            img, labels = pad_image(img, labels, pad=32.)  # experiment
+            img, labels = pad_image(img, labels, pad=32)  # experiment
 
         else:
             # Load image
@@ -920,7 +920,7 @@ def box_candidates(box1, box2, wh_thr=2, ar_thr=20, area_thr=0.1, eps=1e-16):  #
     return (w2 > wh_thr) & (h2 > wh_thr) & (w2 * h2 / (w1 * h1 + eps) > area_thr) & (ar < ar_thr)  # candidates
 
 
-def pad_image(img, labels, pad=32.):
+def pad_image(img, labels, pad=32):
     # pads an image, img(640,640,3), labels(n,5) xyxy pixel format
     img = np.pad(img, pad_width=((pad, pad), (pad, pad), (0, 0)), mode='constant', constant_values=114)
     labels[:, 1:] += pad
