@@ -18,8 +18,8 @@ f1=VOCtrainval_06-Nov-2007.zip # 446MB, 5012 images
 f2=VOCtest_06-Nov-2007.zip     # 438MB, 4953 images
 f3=VOCtrainval_11-May-2012.zip # 1.95GB, 17126 images
 for f in $f3 $f2 $f1; do
-  echo 'Downloading' $url$f '...' && curl -L $url$f -o $f # download, (unzip, remove in background)
-  unzip -q $f -d $d && rm $f &
+  echo 'Downloading' $url$f '...' 
+  curl -L $url$f -o $f && unzip -q $f -d $d && rm $f & # download, unzip, remove in background
 done
 wait # finish background tasks
 
