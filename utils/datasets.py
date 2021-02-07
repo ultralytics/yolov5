@@ -513,6 +513,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 img = (img * r + img2 * (1 - r)).astype(np.uint8)
                 labels = np.concatenate((labels, labels2), 0)
 
+            img, labels = pad_image(img, labels, pad=32.)  # experiment
+
         else:
             # Load image
             img, (h0, w0), (h, w) = load_image(self, index)
@@ -916,6 +918,13 @@ def box_candidates(box1, box2, wh_thr=2, ar_thr=20, area_thr=0.1, eps=1e-16):  #
     w2, h2 = box2[2] - box2[0], box2[3] - box2[1]
     ar = np.maximum(w2 / (h2 + eps), h2 / (w2 + eps))  # aspect ratio
     return (w2 > wh_thr) & (h2 > wh_thr) & (w2 * h2 / (w1 * h1 + eps) > area_thr) & (ar < ar_thr)  # candidates
+
+
+def pad_image(img, labels, pad=32.):
+    # pads an image, img(640,640,3), labels(n,5) xyxy pixel format
+    img = np.pad(img, pad_width=((pad, pad), (pad, pad), (0, 0)), mode='constant', constant_values=114)
+    labels[:, 1:] += pad
+    return img, labels
 
 
 def cutout(image, labels):
