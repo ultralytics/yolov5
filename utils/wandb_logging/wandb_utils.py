@@ -4,10 +4,12 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from tqdm import tqdm
 import torch
 
 sys.path.append(str(Path(__file__).parent.parent.parent))  # add utils/ to path
 from utils.general import colorstr, xywh2xyxy
+from utils.datasets import img2label_paths
 
 try:
     import wandb
@@ -64,8 +66,7 @@ class WandbLogger():
             assert dataset_artifact is not None, "'Error: W&B dataset artifact doesn\'t exist'"
             datadir = dataset_artifact.download()
             labels_zip = Path(datadir) / "data/labels.zip"
-            shutil.unpack_archive(labels_zip, Path(datadir) / 'data/labels', 'zip')
-            print("Downloaded dataset to : ", datadir)
+            shutil.unpack_archive(labels_zip, Path(datadir) / 'data/labels', 'zip') if labels_zip.exists() else None
             return datadir, dataset_artifact
         return None, None
 
@@ -73,7 +74,6 @@ class WandbLogger():
         model_artifact = wandb.use_artifact(name + ":latest")
         assert model_artifact is not None, 'Error: W&B model artifact doesn\'t exist'
         modeldir = model_artifact.download()
-        print("Downloaded model to : ", modeldir)
         return modeldir, model_artifact
 
     def log_model(self, path, opt, epoch):
@@ -92,16 +92,19 @@ class WandbLogger():
 
     def log_dataset_artifact(self, dataset, class_to_id, name='dataset'):
         artifact = wandb.Artifact(name=name, type="dataset")
-        image_path = dataset.path
-        artifact.add_dir(image_path, name='data/images')
+        for img_file in [dataset.path] if Path(dataset.path).is_dir() else dataset.img_files:
+            if Path(img_file).is_dir():
+                artifact.add_dir(img_file, name='data/images')
+            else:
+                artifact.add_file(img_file, name='data/images/'+Path(img_file).name)
+                label_file = Path(img2label_paths([img_file])[0])
+                artifact.add_file(str(label_file), name='data/labels/'+label_file.name) if label_file.exists() else None
         table = wandb.Table(columns=["id", "train_image", "Classes"])
         class_set = wandb.Classes([{'id': id, 'name': name} for id, name in class_to_id.items()])
-        for si, (img, labels, paths, shapes) in enumerate(dataset):
+        for si, (img, labels, paths, shapes) in enumerate(tqdm(dataset)):
             height, width = shapes[0]
-            labels[:, 2:] = (xywh2xyxy(labels[:, 2:].view(-1, 4)))
-            labels[:, 2:] *= torch.Tensor([width, height, width, height])
-            box_data = []
-            img_classes = {}
+            labels[:, 2:] = (xywh2xyxy(labels[:, 2:].view(-1, 4))) * torch.Tensor([width, height, width, height])
+            box_data, img_classes = [], {}
             for cls, *xyxy in labels[:, 1:].tolist():
                 cls = int(cls)
                 box_data.append({"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
@@ -113,13 +116,13 @@ class WandbLogger():
             boxes = {"ground_truth": {"box_data": box_data, "class_labels": class_to_id}}  # inference-space
             table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes), json.dumps(img_classes))
         artifact.add(table, name)
-        labels_path = 'labels'.join(image_path.rsplit('images', 1))
-        zip_path = Path(labels_path).parent / (name + '_labels.zip')
-        if not zip_path.is_file():  # make_archive won't check if file exists
-            shutil.make_archive(zip_path.with_suffix(''), 'zip', labels_path)
-        artifact.add_file(str(zip_path), name='data/labels.zip')
+        if Path(dataset.path).is_dir():
+            labels_path = 'labels'.join(dataset.path.rsplit('images', 1))
+            zip_path = Path(labels_path).parent / (name + '_labels.zip')
+            if not zip_path.is_file():  # make_archive won't check if file exists
+                shutil.make_archive(zip_path.with_suffix(''), 'zip', labels_path)
+            artifact.add_file(str(zip_path), name='data/labels.zip')
         wandb.log_artifact(artifact)
-        print("Saving data to W&B...")
 
     def log(self, log_dict):
         if self.wandb_run:
