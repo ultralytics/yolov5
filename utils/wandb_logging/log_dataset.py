@@ -15,12 +15,12 @@ def create_dataset_artifact(opt):
     logger = WandbLogger(opt, '', None, data, job_type='create_dataset')
     nc, names = (1, ['item']) if opt.single_cls else (int(data['nc']), data['names'])
     names = {k: v for k, v in enumerate(names)}  # to index dictionary
-    logger.log_dataset_artifact(LoadImagesAndLabels(data['train']), names, name='train')  # trainset
-    logger.log_dataset_artifact(LoadImagesAndLabels(data['val']), names, name='val')  # valset
-
-    # Update data.yaml with artifact links
-    data['train'] = WANDB_ARTIFACT_PREFIX + str(Path(opt.project) / 'train')
-    data['val'] = WANDB_ARTIFACT_PREFIX + str(Path(opt.project) / 'val')
+    logger.log_dataset_artifact(LoadImagesAndLabels(data['train']), names, name='train') if data.get('train') else None
+    logger.log_dataset_artifact(LoadImagesAndLabels(data['val']), names, name='val')  if data.get('val') else None
+    if data.get('train'):
+        data['train'] = WANDB_ARTIFACT_PREFIX + str(Path(opt.project) / 'train')
+    if data.get('val'):
+        data['val'] = WANDB_ARTIFACT_PREFIX + str(Path(opt.project) / 'val')
     path = opt.data if opt.overwrite_config else opt.data.replace('.', '_wandb.')  # updated data.yaml path
     data.pop('download', None)  # download via artifact instead of predefined field 'download:'
     with open(path, 'w') as f:
