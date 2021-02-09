@@ -20,7 +20,8 @@ from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils.general import xyxy2xywh, xywh2xyxy, xywhn2xyxy, clean_str
+from utils.general import xyxy2xywh, xywh2xyxy, xywhn2xyxy, xyn2xy, segment2box, segments2boxes, resample_segments, \
+    clean_str
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
@@ -381,14 +382,14 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             cache = self.cache_labels(cache_path, prefix)  # cache
 
         # Display cache
-        [nf, nm, ne, nc, n] = cache.pop('results')  # found, missing, empty, corrupted, total
+        nf, nm, ne, nc, n = cache.pop('results')  # found, missing, empty, corrupted, total
         desc = f"Scanning '{cache_path}' for images and labels... {nf} found, {nm} missing, {ne} empty, {nc} corrupted"
         tqdm(None, desc=prefix + desc, total=n, initial=n)
         assert nf > 0 or not augment, f'{prefix}No labels in {cache_path}. Can not train without labels. See {help_url}'
 
         # Read cache
         cache.pop('hash')  # remove hash
-        labels, shapes = zip(*cache.values())
+        labels, shapes, self.segments = zip(*cache.values())
         self.labels = list(labels)
         self.shapes = np.array(shapes, dtype=np.float64)
         self.img_files = list(cache.keys())  # update
@@ -451,6 +452,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 im = Image.open(im_file)
                 im.verify()  # PIL verify
                 shape = exif_size(im)  # image size
+                segments = []  # instance segments
                 assert (shape[0] > 9) & (shape[1] > 9), f'image size {shape} <10 pixels'
                 assert im.format.lower() in img_formats, f'invalid image format {im.format}'
 
@@ -458,7 +460,13 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 if os.path.isfile(lb_file):
                     nf += 1  # label found
                     with open(lb_file, 'r') as f:
-                        l = np.array([x.split() for x in f.read().strip().splitlines()], dtype=np.float32)  # labels
+                        l = [x.split() for x in f.read().strip().splitlines()]
+                        if any([len(x) >= 9 for x in l]):  # is segment
+                            classes = np.array([x[0] for x in l], dtype=np.float32)
+                            segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in l]  # (cls, xy1...)
+                            l = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
+                            segments = resample_segments(segments)  # upsample
+                        l = np.array(l, dtype=np.float32)
                     if len(l):
                         assert l.shape[1] == 5, 'labels require 5 columns each'
                         assert (l >= 0).all(), 'negative labels'
@@ -470,7 +478,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 else:
                     nm += 1  # label missing
                     l = np.zeros((0, 5), dtype=np.float32)
-                x[im_file] = [l, shape]
+                x[im_file] = [l, shape, segments]
             except Exception as e:
                 nc += 1
                 print(f'{prefix}WARNING: Ignoring corrupted image and/or label {im_file}: {e}')
@@ -652,7 +660,7 @@ def hist_equalize(img, clahe=True, bgr=False):
 def load_mosaic(self, index):
     # loads images in a 4-mosaic
 
-    labels4 = []
+    labels4, segments4 = [], []
     s = self.img_size
     yc, xc = [int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border]  # mosaic center x, y
     indices = [index] + [self.indices[random.randint(0, self.n - 1)] for _ in range(3)]  # 3 additional image indices
@@ -680,19 +688,21 @@ def load_mosaic(self, index):
         padh = y1a - y1b
 
         # Labels
-        labels = self.labels[index].copy()
+        labels, segments = self.labels[index].copy(), self.segments[index].copy()
         if labels.size:
             labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padw, padh)  # normalized xywh to pixel xyxy format
+            segments = [xyn2xy(x, w, h, padw, padh) for x in segments]
         labels4.append(labels)
+        segments4.extend(segments)
 
     # Concat/clip labels
-    if len(labels4):
-        labels4 = np.concatenate(labels4, 0)
-        np.clip(labels4[:, 1:], 0, 2 * s, out=labels4[:, 1:])  # use with random_perspective
-        # img4, labels4 = replicate(img4, labels4)  # replicate
+    labels4 = np.concatenate(labels4, 0)
+    for x in (labels4[:, 1:], *segments4):
+        np.clip(x, 0, 2 * s, out=x)  # clip when using random_perspective()
+    # img4, labels4 = replicate(img4, labels4)  # replicate
 
     # Augment
-    img4, labels4 = random_perspective(img4, labels4,
+    img4, labels4 = random_perspective(img4, labels4, segments4,
                                        degrees=self.hyp['degrees'],
                                        translate=self.hyp['translate'],
                                        scale=self.hyp['scale'],
@@ -823,7 +833,8 @@ def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scale
     return img, ratio, (dw, dh)
 
 
-def random_perspective(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0, border=(0, 0)):
+def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0,
+                       border=(0, 0)):
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
     # targets = [cls, xyxy]
 
@@ -875,37 +886,45 @@ def random_perspective(img, targets=(), degrees=10, translate=.1, scale=.1, shea
     # Transform label coordinates
     n = len(targets)
     if n:
-        # warp points
-        xy = np.ones((n * 4, 3))
-        xy[:, :2] = targets[:, [1, 2, 3, 4, 1, 4, 3, 2]].reshape(n * 4, 2)  # x1y1, x2y2, x1y2, x2y1
-        xy = xy @ M.T  # transform
-        if perspective:
-            xy = (xy[:, :2] / xy[:, 2:3]).reshape(n, 8)  # rescale
-        else:  # affine
-            xy = xy[:, :2].reshape(n, 8)
+        use_segments = any(x.any() for x in segments)
+        new = np.zeros((n, 4))
+        if use_segments:  # warp segments
+            for i, segment in enumerate(segments):
+                xy = np.ones((len(segment), 3))
+                xy[:, :2] = segment
+                xy = xy @ M.T  # transform
+                if perspective:
+                    xy = xy[:, :2] / xy[:, 2:3]  # rescale
+                else:  # affine
+                    xy = xy[:, :2]
 
-        # create new boxes
-        x = xy[:, [0, 2, 4, 6]]
-        y = xy[:, [1, 3, 5, 7]]
-        xy = np.concatenate((x.min(1), y.min(1), x.max(1), y.max(1))).reshape(4, n).T
+                # clip
+                # np.clip(xy[:, 0], 0, width, out=xy[:, 0])
+                # np.clip(xy[:, 1], 0, height, out=xy[:, 1])
+                new[i] = segment2box(xy, width, height)
 
-        # # apply angle-based reduction of bounding boxes
-        # radians = a * math.pi / 180
-        # reduction = max(abs(math.sin(radians)), abs(math.cos(radians))) ** 0.5
-        # x = (xy[:, 2] + xy[:, 0]) / 2
-        # y = (xy[:, 3] + xy[:, 1]) / 2
-        # w = (xy[:, 2] - xy[:, 0]) * reduction
-        # h = (xy[:, 3] - xy[:, 1]) * reduction
-        # xy = np.concatenate((x - w / 2, y - h / 2, x + w / 2, y + h / 2)).reshape(4, n).T
+        else:  # warp boxes
+            xy = np.ones((n * 4, 3))
+            xy[:, :2] = targets[:, [1, 2, 3, 4, 1, 4, 3, 2]].reshape(n * 4, 2)  # x1y1, x2y2, x1y2, x2y1
+            xy = xy @ M.T  # transform
+            if perspective:
+                xy = (xy[:, :2] / xy[:, 2:3]).reshape(n, 8)  # rescale
+            else:  # affine
+                xy = xy[:, :2].reshape(n, 8)
 
-        # clip boxes
-        xy[:, [0, 2]] = xy[:, [0, 2]].clip(0, width)
-        xy[:, [1, 3]] = xy[:, [1, 3]].clip(0, height)
+            # create new boxes
+            x = xy[:, [0, 2, 4, 6]]
+            y = xy[:, [1, 3, 5, 7]]
+            new = np.concatenate((x.min(1), y.min(1), x.max(1), y.max(1))).reshape(4, n).T
+
+            # clip boxes
+            new[:, [0, 2]] = new[:, [0, 2]].clip(0, width)
+            new[:, [1, 3]] = new[:, [1, 3]].clip(0, height)
 
         # filter candidates
-        i = box_candidates(box1=targets[:, 1:5].T * s, box2=xy.T)
+        i = box_candidates(box1=targets[:, 1:5].T * s, box2=new.T, area_thr=0.01 if use_segments else 0.10)
         targets = targets[i]
-        targets[:, 1:5] = xy[i]
+        targets[:, 1:5] = new[i]
 
     return img, targets
 
