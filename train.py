@@ -329,7 +329,10 @@ def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
                     "epoch": epoch,
                     "epochs_count": epochs - 1,
                     "gpu_mem": mem,
-                    "mbox_loss": mloss[0], "mobj_loss": mloss[1], "mcls_loss": mloss[2], "mtotal_loss": mloss[3],
+                    "mbox_loss": float(mloss[0].cpu().numpy()),
+                    "mobj_loss": float(mloss[1].cpu().numpy()),
+                    "mcls_loss": float(mloss[2].cpu().numpy()),
+                    "mtotal_loss": float(mloss[3].cpu().numpy()),
                     "targets": targets.shape[0],
                     "img_size": imgs.shape[-1]
                 })
