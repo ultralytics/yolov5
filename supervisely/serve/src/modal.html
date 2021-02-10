@@ -1,8 +1,8 @@
 <div>
     <sly-field title="Choose model" description="Use custom weights or pretrained checkpoints">
         <el-radio-group class="mb15" v-model="state.modelWeightsOptions">
-            <el-radio :label="pretrained">Pretrained on COCO</el-radio>
-            <el-radio :label="custom">Custom model</el-radio>
+            <el-radio label="pretrained">Pretrained on COCO</el-radio>
+            <el-radio label="custom">Custom model</el-radio>
         </el-radio-group>
         <div v-show="state.modelWeightsOptions === pretrained">
             <sly-field title="Model size" description="more params => better performance">
