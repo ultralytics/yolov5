@@ -38,11 +38,13 @@ from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_di
 from supervisely.train.src.sly_train_utils import send_epoch_log, upload_label_vis, upload_train_data_vis
 from supervisely.train.src.sly_metrics import send_metrics
 
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
+import supervisely_lib as sly
+from supervisely_lib import logger
 
 
 def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
-    logger.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
+    logger.info('hyperparameters', extra=hyp)
     save_dir, epochs, batch_size, total_batch_size, weights, rank = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
 
@@ -267,9 +269,10 @@ def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
         if rank != -1:
             dataloader.sampler.set_epoch(epoch)
         pbar = enumerate(dataloader)
-        logger.info(('\n' + '%10s' * 8) % ('Epoch', 'gpu_mem', 'box', 'obj', 'cls', 'total', 'targets', 'img_size'))
+        #logger.info(('\n' + '%10s' * 8) % ('Epoch', 'gpu_mem', 'box', 'obj', 'cls', 'total', 'targets', 'img_size'))
         if rank in [-1, 0]:
-            pbar = tqdm(pbar, total=nb)  # progress bar
+            #pbar = tqdm(pbar, total=nb)  # progress bar
+            pass
         optimizer.zero_grad()
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
             ni = i + nb * epoch  # number integrated batches (since train start)
@@ -320,7 +323,17 @@ def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
                 mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
                 s = ('%10s' * 2 + '%10.4g' * 6) % (
                     '%g/%g' % (epoch, epochs - 1), mem, *mloss, targets.shape[0], imgs.shape[-1])
-                pbar.set_description(s)
+                #pbar.set_description(s)
+                #'Epoch', 'gpu_mem', 'box', 'obj', 'cls', 'total', 'targets', 'img_size'
+                logger.info("Training", extra={
+                    "epoch": epoch,
+                    "epochs_count": epochs - 1,
+                    "gpu_mem": mem,
+                    "mbox_loss": mloss[0], "mobj_loss": mloss[1], "mcls_loss": mloss[2], "mtotal_loss": mloss[3],
+                    "targets": targets.shape[0],
+                    "img_size": imgs.shape[-1]
+                })
+
 
                 # Plot
                 if plots and ni < 3:
@@ -538,12 +551,12 @@ def main():
         import wandb
     except ImportError:
         wandb = None
-        prefix = colorstr('wandb: ')
-        logger.info(f"{prefix}Install Weights & Biases for YOLOv5 logging with 'pip install wandb' (recommended)")
+        #prefix = colorstr('wandb: ')
+        #logger.info(f"{prefix}Install Weights & Biases for YOLOv5 logging with 'pip install wandb' (recommended)")
     if not opt.evolve:
         tb_writer = None  # init loggers
         if opt.global_rank in [-1, 0]:
-            logger.info(f'Start Tensorboard with "tensorboard --logdir {opt.project}", view at http://localhost:6006/')
+            #logger.info(f'Start Tensorboard with "tensorboard --logdir {opt.project}", view at http://localhost:6006/')
             tb_writer = SummaryWriter(opt.save_dir)  # Tensorboard
         train(hyp, opt, device, tb_writer, wandb)
 
