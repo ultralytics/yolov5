@@ -4,7 +4,7 @@
             <el-radio label="pretrained">Pretrained on COCO</el-radio>
             <el-radio label="custom">Custom model</el-radio>
         </el-radio-group>
-        <div v-show="state.modelWeightsOptions === pretrained">
+        <div v-show="state.modelWeightsOptions === 'pretrained'">
             <sly-field title="Model size" description="more params => better performance">
                 <el-select v-model="state.modelSize" style="width:250px;">
                     <el-option key="yolov5s.pt" label="yolov5s.pt (7.3M params)" value="yolov5s.pt"></el-option>
@@ -14,7 +14,7 @@
                 </el-select>
             </sly-field>
         </div>
-        <div v-show="state.modelWeightsOptions === custom">
+        <div v-show="state.modelWeightsOptions === 'custom'">
             <sly-field title="Weights path" description="Copy path in Team Files">
                 <el-input v-model="state.weightsPath" placeholder="Path to .pt file in Team Files"></el-input>
             </sly-field>
