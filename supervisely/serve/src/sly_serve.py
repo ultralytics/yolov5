@@ -71,7 +71,7 @@ def get_custom_inference_settings(api: sly.Api, task_id, context, state, app_log
 def inference_image_id(api: sly.Api, task_id, context, state, app_logger):
     app_logger.debug("Input data", extra={"state": state})
     image_id = state["image_id"]
-    settings = yaml.safe_load(state["settings"])
+    settings = state["settings"]
 
     rect = None
     if "rectangle" in state:
