@@ -34,6 +34,7 @@ imgsz = None
 settings_path = os.path.join(root_source_path, "supervisely/serve/custom_settings.yaml")
 sly.logger.info(f"Custom inference settings path: {settings_path}")
 with open(settings_path, 'r') as file:
+    default_settings_str = file.read()
     default_settings = yaml.safe_load(file.read())
 
 
@@ -62,7 +63,7 @@ def get_session_info(api: sly.Api, task_id, context, state, app_logger):
 @sly.timeit
 def get_custom_inference_settings(api: sly.Api, task_id, context, state, app_logger):
     request_id = context["request_id"]
-    my_app.send_response(request_id, data={"settings": default_settings})
+    my_app.send_response(request_id, data={"settings": default_settings_str})
 
 
 @my_app.callback("inference_image_id")
@@ -70,7 +71,7 @@ def get_custom_inference_settings(api: sly.Api, task_id, context, state, app_log
 def inference_image_id(api: sly.Api, task_id, context, state, app_logger):
     app_logger.debug("Input data", extra={"state": state})
     image_id = state["image_id"]
-    settings = state["settings"]
+    settings = yaml.safe_load(state["settings"])
 
     rect = None
     if "rectangle" in state:
