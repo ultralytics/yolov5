@@ -93,7 +93,7 @@ def init_training_hyperparameters(state):
     state["multiScale"] = False
     state["singleClass"] = False
     state["device"] = '0'
-    state["workers"] = 0  #8 # 0 - for debug
+    state["workers"] = 8 # 0 - for debug
     state["activeTabName"] = "General"
     state["hyp"] = {
         "scratch": globals.scratch_str,
