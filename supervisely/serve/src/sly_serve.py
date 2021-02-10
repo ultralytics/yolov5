@@ -4,6 +4,11 @@ import yaml
 import pathlib
 import sys
 import supervisely_lib as sly
+
+root_source_path = str(pathlib.Path(sys.argv[0]).parents[3])
+sly.logger.info(f"Root source directory: {root_source_path}")
+sys.path.append(root_source_path)
+
 from nn_utils import construct_model_meta, load_model, inference
 
 my_app = sly.AppService()
