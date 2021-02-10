@@ -103,6 +103,7 @@ def main():
 
 # @TODO: chart names
 # @TODO: fix upload directory (number of progress updates)
+#@TODO: upload progress не работает
 
 # New features:
 # @TODO: adam or SGD opt?
