@@ -35,7 +35,7 @@ settings_path = os.path.join(root_source_path, "supervisely/serve/custom_setting
 sly.logger.info(f"Custom inference settings path: {settings_path}")
 with open(settings_path, 'r') as file:
     default_settings_str = file.read()
-    default_settings = yaml.safe_load(file.read())
+    default_settings = yaml.safe_load(default_settings_str)
 
 
 @my_app.callback("get_output_classes_and_tags")
