@@ -31,10 +31,8 @@ device = None
 imgsz = None
 
 
-script_path = pathlib.Path(sys.argv[0])
-root_app_dir = script_path.parent.parent.absolute()
-sly.logger.info(f"Root app directory: {root_app_dir}")
-settings_path = os.path.join(root_app_dir, "custom_settings.yaml")
+settings_path = os.path.join(root_source_path, "supervisely/serve/custom_settings.yaml")
+sly.logger.info(f"Custom inference settings path: {settings_path}")
 with open(settings_path, 'r') as file:
     default_settings = yaml.safe_load(file.read())
 
