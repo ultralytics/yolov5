@@ -13,7 +13,8 @@
   "modal_template_state": {
     "modelWeightsOptions": "pretrained",
     "modelSize": "yolov5s.pt",
-    "device": "0"
+    "device": "0",
+    "weightsPath": ""
   },
   "task_location": "application_sessions",
   "icon": "https://i.imgur.com/2U6HufM.png",
