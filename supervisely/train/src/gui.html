@@ -265,28 +265,30 @@
                 <div class="fflex" v-if="state.activeNames.includes('metrics')">
                     <sly-line-chart
                             style="width: 33%;"
-                            :options.sync="data.lcOptions"
-                            :content="data.mBox">
+                            :options.sync="data.mBox.options"
+                            :content="data.mBox.series">
                     </sly-line-chart>
                     <sly-line-chart
                             style="width: 33%;"
-                            :options.sync="data.lcOptions"
-                            :content="data.mObjectness">
+                            :options.sync="data.mObjectness.options"
+                            :content="data.mObjectness.series">
                     </sly-line-chart>
                     <sly-line-chart
                             style="width: 33%;"
-                            :options.sync="data.lcOptions"
-                            :content="data.mClassification">
+                            :options.sync="data.mClassification.options"
+                            :content="data.mClassification.series">
                     </sly-line-chart>
                 </div>
                 <div class="fflex mt15" v-if="state.activeNames.includes('metrics')">
                     <sly-line-chart
                             style="width: 33%;"
-                            :content="data.mPR">
+                            :options.sync="data.mPR.options"
+                            :content="data.mPR.series">
                     </sly-line-chart>
                     <sly-line-chart
                             style="width: 33%;"
-                            :content="data.mMAP">
+                            :options.sync="data.mMAP.options"
+                            :content="data.mMAP.series">
                     </sly-line-chart>
                     <div style="width: 33%;"></div>
                 </div>
