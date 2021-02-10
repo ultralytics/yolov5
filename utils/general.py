@@ -51,7 +51,7 @@ def check_online():
     # Check internet connectivity
     import socket
     try:
-        socket.create_connection(("1.1.1.1", 53))  # check host accesability
+        socket.create_connection(("1.1.1.1", 443), 5)  # check host accesability
         return True
     except OSError:
         return False
