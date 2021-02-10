@@ -87,7 +87,7 @@ def init_model_settings(data, state):
 
 
 def init_training_hyperparameters(state):
-    state["epochs"] = 300
+    state["epochs"] = 10
     state["batchSize"] = 16
     state["imgSize"] = 640
     state["multiScale"] = False
