@@ -1,0 +1,26 @@
+<div>
+    <sly-field title="Choose model" description="Use custom weights or pretrained checkpoints">
+        <el-radio-group class="mb15" v-model="state.modelWeightsOptions">
+            <el-radio :label="pretrained">Pretrained on COCO</el-radio>
+            <el-radio :label="custom">Custom model</el-radio>
+        </el-radio-group>
+        <div v-show="state.modelWeightsOptions === 1">
+            <sly-field title="Model size" description="more params => better performance">
+                <el-select v-model="state.modelSize" style="width:250px;">
+                    <el-option key="yolov5s.pt" label="yolov5s.pt (7.3M params)" value="yolov5s.pt"></el-option>
+                    <el-option key="yolov5m.pt" label="yolov5m.pt (21.4M params)" value="yolov5m.pt"></el-option>
+                    <el-option key="yolov5l.pt" label="yolov5l.pt (47.0M params)" value="yolov5l.pt"></el-option>
+                    <el-option key="yolov5x.pt" label="yolov5x.pt (87.7M params)" value="yolov5x.pt"></el-option>
+                </el-select>
+            </sly-field>
+        </div>
+        <div v-show="state.modelWeightsOptions === 2">
+            <sly-field title="Weights path" description="Copy path in Team Files">
+                <el-input v-model="state.weightsPath" placeholder="Path to .pt file in Team Files"></el-input>
+            </sly-field>
+        </div>
+    </sly-field>
+    <sly-field title="Choose Device" description="Cuda device number (i.e. 0, 1, 2 or 3) or cpu">
+        <el-input v-model="state.device" style="width:250px;"></el-input>
+    </sly-field>
+</div>

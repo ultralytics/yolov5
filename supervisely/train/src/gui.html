@@ -131,7 +131,7 @@
                 <!--<el-radio :label="3">Random (not recommended)</el-radio>-->
             </el-radio-group>
             <div v-show="state.modelWeightsOptions === 1">
-                <sly-field title="Model size" description="more params => better performace and slower inference time">
+                <sly-field title="Model size" description="more params => better performance and slower inference time">
                     <el-select v-model="state.modelSize"
                                style="width:250px;"
                                @change="() => state.pretrainedWeights = `${state.modelSize}.pt`">
@@ -263,14 +263,32 @@
             </el-collapse-item>
             <el-collapse-item title="Metrics" name="metrics">
                 <div class="fflex" v-if="state.activeNames.includes('metrics')">
-                    <sly-plotly class="mr15" :content="data.mBox" style="height: 300px"></sly-plotly>
-                    <sly-plotly class="mr15" :content="data.mObjectness" style="height: 300px"></sly-plotly>
-                    <sly-plotly :content="data.mClassification" style="height: 300px"></sly-plotly>
+                    <sly-line-chart
+                            style="width: 33%;"
+                            :options.sync="data.lcOptions"
+                            :content="data.mBox">
+                    </sly-line-chart>
+                    <sly-line-chart
+                            style="width: 33%;"
+                            :options.sync="data.lcOptions"
+                            :content="data.mObjectness">
+                    </sly-line-chart>
+                    <sly-line-chart
+                            style="width: 33%;"
+                            :options.sync="data.lcOptions"
+                            :content="data.mClassification">
+                    </sly-line-chart>
                 </div>
                 <div class="fflex mt15" v-if="state.activeNames.includes('metrics')">
-                    <sly-plotly class="mr15" :content="data.mPR" style="width: 33%; height: 300px"></sly-plotly>
-                    <sly-plotly class="mr15" :content="data.mMAP" style="width: 33%; height: 300px"></sly-plotly>
-                    <div style="width: 33%; height: 300px"></div>
+                    <sly-line-chart
+                            style="width: 33%;"
+                            :content="data.mPR">
+                    </sly-line-chart>
+                    <sly-line-chart
+                            style="width: 33%;"
+                            :content="data.mMAP">
+                    </sly-line-chart>
+                    <div style="width: 33%;"></div>
                 </div>
             </el-collapse-item>
             <el-collapse-item title="Predictions visualization" name="pred">

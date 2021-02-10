@@ -1,26 +1,37 @@
 import os
 import json
 import yaml
+import pathlib
+import sys
 import supervisely_lib as sly
-
-from sly_serve_utils import construct_model_meta, load_model, inference
-from supervisely.train.src.sly_utils import load_file_as_string as load_hyp
+from nn_utils import construct_model_meta, load_model, inference
 
 my_app = sly.AppService()
 
 TEAM_ID = int(os.environ['context.teamId'])
 WORKSPACE_ID = int(os.environ['context.workspaceId'])
-image_id = 725268
 
 meta: sly.ProjectMeta = None
-REMOTE_PATH = os.environ['modal.state.slyFile']
 
-DEVICE_STR = "cpu"
+modelWeightsOptions = os.environ['modal.state.modelWeightsOptions']
+pretrained_weights = os.environ['modal.state.modelSize']
+custom_weights = os.environ['modal.state.weightsPath']
+
+
+DEVICE_STR = os.environ['modal.state.device']
+final_weights = None
 model = None
 half = None
 device = None
 imgsz = None
-default_settings = yaml.safe_load(load_hyp("supervisely/serve/custom_settings.yaml"))
+
+
+script_path = pathlib.Path(sys.argv[0])
+root_app_dir = script_path.parent.parent.absolute()
+sly.logger.info(f"Root app directory: {root_app_dir}")
+settings_path = os.path.join(root_app_dir, "custom_settings.yaml")
+with open(settings_path, 'r') as file:
+    default_settings = yaml.safe_load(file.read())
 
 
 @my_app.callback("get_output_classes_and_tags")
@@ -34,8 +45,8 @@ def get_output_classes_and_tags(api: sly.Api, task_id, context, state, app_logge
 @sly.timeit
 def get_session_info(api: sly.Api, task_id, context, state, app_logger):
     info = {
-        "app": "YOLO v5 serve",
-        "weights": REMOTE_PATH,
+        "app": "YOLOv5 serve",
+        "weights": final_weights,
         "device": str(device),
         "half": str(half),
         "input_size": imgsz
@@ -47,9 +58,8 @@ def get_session_info(api: sly.Api, task_id, context, state, app_logger):
 @my_app.callback("get_custom_inference_settings")
 @sly.timeit
 def get_custom_inference_settings(api: sly.Api, task_id, context, state, app_logger):
-    settings = load_hyp("supervisely/serve/custom_settings.yaml")
     request_id = context["request_id"]
-    my_app.send_response(request_id, data={"settings": settings})
+    my_app.send_response(request_id, data={"settings": default_settings})
 
 
 @my_app.callback("inference_image_id")
@@ -58,6 +68,11 @@ def inference_image_id(api: sly.Api, task_id, context, state, app_logger):
     app_logger.debug("Input data", extra={"state": state})
     image_id = state["image_id"]
     settings = state["settings"]
+
+    rect = None
+    if "rectangle" in state:
+        top, left, bottom, right = state["rectangle"]
+        rect = sly.Rectangle(top, left, bottom, right)
 
     for key, value in default_settings.items():
         if key not in settings:
@@ -69,6 +84,8 @@ def inference_image_id(api: sly.Api, task_id, context, state, app_logger):
     augment = settings.get("augment", default_settings["augment"])
 
     image = api.image.download_np(image_id)  # RGB image
+    if rect is not None:
+        image = sly.image.crop(image, rect)
     ann_json = inference(model, half, device, imgsz, image, meta,
                          conf_thres=conf_thres, iou_thres=iou_thres, augment=augment,
                          debug_visualization=debug_visualization)
@@ -86,27 +103,42 @@ def debug_inference():
 @my_app.callback("preprocess")
 @sly.timeit
 def preprocess(api: sly.Api, task_id, context, state, app_logger):
-    global model, half, device, imgsz, meta
+    global model, half, device, imgsz, meta, final_weights
 
     # download weights
-    local_path = os.path.join(my_app.data_dir, sly.fs.get_file_name_with_ext(REMOTE_PATH))
-    api.file.download(TEAM_ID, REMOTE_PATH, local_path)
+    progress = sly.Progress("Downloading weights", 1, is_size=True, need_info_log=True)
+    local_path = os.path.join(my_app.data_dir, "weights.pt")
+    if modelWeightsOptions == "pretrained":
+        url = os.path.join("https://github.com/ultralytics/yolov5/releases/download/v4.0/", pretrained_weights)
+        final_weights = url
+        sly.fs.download(url, local_path, my_app.cache, progress)
+    elif modelWeightsOptions == "custom":
+        final_weights = custom_weights
+        file_info = api.file.get_info_by_path(TEAM_ID, custom_weights)
+        progress.set(current=0, total=file_info.sizeb)
+        api.file.download(TEAM_ID, custom_weights, local_path, my_app.cache, progress.iters_done_report)
+    else:
+        raise ValueError("Unknown weights option {!r}".format(modelWeightsOptions))
 
     # load model on device
     model, half, device, imgsz = load_model(local_path, device=DEVICE_STR)
     meta = construct_model_meta(model)
+    sly.logger.info("Model has been successfully deployed")
 
 
 def main():
+    sly.logger.info("Script arguments", extra={
+        "context.teamId": TEAM_ID,
+        "context.workspaceId": WORKSPACE_ID,
+        "modal.state.modelWeightsOptions": modelWeightsOptions,
+        "modal.state.modelSize": pretrained_weights,
+        "modal.state.weightsPath": custom_weights
+    })
+
     my_app.run(initial_events=[{"command": "preprocess"}])
 
 
-#@TODO: add pretrained models
-#@TODO: download progress bar
-#@TODO: add arguments to labeling inference (make a fork from NN labeling app)
-#@TODO: augment before deploy
-#@TODO: log input arguments
-#@TODO: fix serve template - debug_inference
-#@TODO: deploy on custom device: cpu/gpu
+#@TODO: augment inference
+#@TODO: https://pypi.org/project/cachetools/
 if __name__ == "__main__":
     sly.main_wrapper("main", main)

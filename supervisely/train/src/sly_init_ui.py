@@ -1,9 +1,8 @@
 import os
 import supervisely_lib as sly
 
-from sly_utils import load_file_as_string
 import sly_train_globals as globals
-import sly_metrics_utils as metrics
+import sly_metrics as metrics
 
 
 empty_gallery = {
@@ -97,8 +96,8 @@ def init_training_hyperparameters(state):
     state["workers"] = 8  # 0 - for debug
     state["activeTabName"] = "General"
     state["hyp"] = {
-        "scratch": load_file_as_string('../../../data/hyp.scratch.yaml'),
-        "finetune": load_file_as_string('../../../data/hyp.finetune.yaml'),
+        "scratch": globals.scratch_str,
+        "finetune": globals.finetune_str,
     }
     state["hypRadio"] = "scratch"
 

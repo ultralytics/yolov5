@@ -1,11 +1,10 @@
 import os
-import sys
-from pathlib import Path
 import supervisely_lib as sly
 
 from sly_train_globals import init_project_info_and_meta, \
                               my_app, task_id, \
-                              team_id, workspace_id, project_id
+                              team_id, workspace_id, project_id, \
+                              root_source_path, scratch_str, finetune_str
 
 # to import correct values
 # project_info, project_meta, \
@@ -16,20 +15,18 @@ from sly_train_val_split import train_val_split
 import sly_init_ui as ui
 from sly_prepare_data import filter_and_transform_labels
 from sly_train_utils import init_script_arguments
-from sly_utils import get_progress_cb, load_file_as_string, upload_artifacts
+from sly_utils import get_progress_cb, upload_artifacts
 
-root_project_path = str(Path(os.path.realpath(__file__)).parents[3])
-sly.logger.info(f"Root project directory: {root_project_path}")
-sys.path.append(root_project_path)
 
 import train as train_yolov5
+
 
 @my_app.callback("restore_hyp")
 @sly.timeit
 def restore_hyp(api: sly.Api, task_id, context, state, app_logger):
     api.task.set_field(task_id, "state.hyp", {
-        "scratch": load_file_as_string("data/hyp.scratch.yaml"),
-        "finetune": load_file_as_string("data/hyp.finetune.yaml"),
+        "scratch": scratch_str,
+        "finetune": finetune_str,
     })
 
 
@@ -104,11 +101,13 @@ def main():
     my_app.run(data=data, state=state)
 
 
+# @TODO: chart names
+# @TODO: fix upload directory (number of progress updates)
+
+# New features:
+# @TODO: adam or SGD opt?
 # @TODO: train == val - handle case in data_config.yaml to avoid data duplication
 # @TODO: resume training
-# @TODO: fix upload directory (number of progress updates)
 # @TODO: repeat dataset (for small lemons)
-# @TODO: chart refresh freezes page
-# @TODO: adam or SGD opt?
 if __name__ == "__main__":
     sly.main_wrapper("main", main)

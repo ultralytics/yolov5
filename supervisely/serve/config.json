@@ -7,19 +7,20 @@
     "detection"
   ],
   "description": "Deploy model as REST API service",
-  "docker_image": "supervisely/base-pytorch:6.0.19",
-  "main_script": "sly_serve.py",
+  "docker_image": "supervisely/base-pytorch:6.0.21",
+  "main_script": "supervisely/serve/src/sly_serve.py",
+  "modal_template": "supervisely/serve/src/modal.html",
+  "modal_template_state": {
+    "modelWeightsOptions": "pretrained",
+    "modelSize": "yolov5s.pt",
+    "device": "0"
+  },
   "task_location": "application_sessions",
   "icon": "https://i.imgur.com/2U6HufM.png",
   "icon_cover": true,
   "isolate": true,
   "need_gpu": true,
   "headless": true,
-  "context_menu": {
-    "target": ["files_file"],
-    "context_root": "Neural Networks",
-    "context_category": "YOLO v5"
-  },
   "instance_version": "6.3.2",
   "session_tags": [
     "deployed_nn"
