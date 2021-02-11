@@ -242,7 +242,7 @@ class Detections:
         self.xywhn = [x / g for x, g in zip(self.xywh, gn)]  # xywh normalized
         self.n = len(self.pred)
 
-    def display(self, pprint=False, show=False, save=False, render=False, save_dir=''):
+    def display(self, pprint=False, show=False, save=False, render=False, save_dir='', save_orig_name=False):
         colors = color_list()
         for i, (img, pred) in enumerate(zip(self.imgs, self.pred)):
             str = f'image {i + 1}/{len(self.pred)}: {img.shape[0]}x{img.shape[1]} '
@@ -260,7 +260,10 @@ class Detections:
             if show:
                 img.show(f'image {i}')  # show
             if save:
-                f = Path(save_dir) / f'results{i}.jpg'
+                if save_orig_name:
+                    f = Path(save_dir) / f'results{i}.jpg'
+                else:
+                    f = Path(save_dir) / f'results_{img.name}.jpg'
                 img.save(f)  # save
                 print(f"{'Saving' * (i == 0)} {f},", end='' if i < self.n - 1 else ' done.\n')
             if render:
@@ -272,8 +275,8 @@ class Detections:
     def show(self):
         self.display(show=True)  # show results
 
-    def save(self, save_dir=''):
-        self.display(save=True, save_dir=save_dir)  # save results
+    def save(self, save_dir='', save_orig_name=False):
+        self.display(save=True, save_dir=save_dir, save_orig_name=save_orig_name)  # save results
 
     def render(self):
         self.display(render=True)  # render results
