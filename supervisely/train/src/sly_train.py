@@ -104,6 +104,7 @@ def main():
 # @TODO: change task output - icon + change text report -> directory
 # @TODO: change pip requirements to quickly skip them (already installed)
 # @TODO: progress epochs to tasks list
+# @TODO: handle soft stop event
 
 # New features:
 # @TODO: adam or SGD opt?
