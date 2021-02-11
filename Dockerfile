@@ -39,13 +39,13 @@ COPY . /usr/src/app
 # sudo docker kill $(sudo docker ps -q)
 
 # Kill all image-based
-# sudo docker kill $(sudo docker ps -a -q --filter ancestor=ultralytics/yolov5:latest)
+# sudo docker kill $(sudo docker ps -qa --filter ancestor=ultralytics/yolov5:latest)
 
 # Bash into running container
 # sudo docker exec -it 5a9b5863d93d bash
 
 # Bash into stopped container
-# id=5a9b5863d93d && sudo docker start $id && sudo docker exec -it $id bash
+# id=$(sudo docker ps -qa) && sudo docker start $id && sudo docker exec -it $id bash
 
 # Send weights to GCP
 # python -c "from utils.general import *; strip_optimizer('runs/train/exp0_*/weights/best.pt', 'tmp.pt')" && gsutil cp tmp.pt gs://*.pt
