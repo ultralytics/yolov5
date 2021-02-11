@@ -12,7 +12,7 @@ def init_chart(title, names, xs, ys, smoothing=None):
     result = {
         "options": {
             "title": title,
-            "groupKey": "my-synced-charts",
+            #"groupKey": "my-synced-charts",
         },
         "series": series
     }
