@@ -143,6 +143,7 @@ def main():
 
 
 #@TODO: augment inference
+#@TODO  tasks page??? Serve YOLOv5
 #@TODO: https://pypi.org/project/cachetools/
 if __name__ == "__main__":
     sly.main_wrapper("main", main)
