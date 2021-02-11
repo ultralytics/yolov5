@@ -1,6 +1,7 @@
 # This file contains modules common to various models
 
 import math
+from pathlib import Path
 
 import numpy as np
 import requests
@@ -241,7 +242,7 @@ class Detections:
         self.xywhn = [x / g for x, g in zip(self.xywh, gn)]  # xywh normalized
         self.n = len(self.pred)
 
-    def display(self, pprint=False, show=False, save=False, render=False):
+    def display(self, pprint=False, show=False, save=False, render=False, save_dir=''):
         colors = color_list()
         for i, (img, pred) in enumerate(zip(self.imgs, self.pred)):
             str = f'image {i + 1}/{len(self.pred)}: {img.shape[0]}x{img.shape[1]} '
@@ -259,7 +260,7 @@ class Detections:
             if show:
                 img.show(f'image {i}')  # show
             if save:
-                f = f'results{i}.jpg'
+                f = Path(save_dir) / f'results{i}.jpg'
                 img.save(f)  # save
                 print(f"{'Saving' * (i == 0)} {f},", end='' if i < self.n - 1 else ' done.\n')
             if render:
@@ -271,8 +272,8 @@ class Detections:
     def show(self):
         self.display(show=True)  # show results
 
-    def save(self):
-        self.display(save=True)  # save results
+    def save(self, save_dir=''):
+        self.display(save=True, save_dir=save_dir)  # save results
 
     def render(self):
         self.display(render=True)  # render results
