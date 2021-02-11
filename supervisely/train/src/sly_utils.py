@@ -10,7 +10,7 @@ def update_progress(count, api: sly.Api, task_id, progress: sly.Progress):
     _update_progress_ui(api, task_id, progress)
 
 
-def _update_progress_ui(api: sly.Api, task_id, progress: sly.Progress):
+def _update_progress_ui(api: sly.Api, task_id, progress: sly.Progress, stdout_print=False):
     if progress.need_report():
         fields = [
             {"field": "data.progressName", "payload": progress.message},
@@ -20,6 +20,8 @@ def _update_progress_ui(api: sly.Api, task_id, progress: sly.Progress):
             {"field": "data.totalProgress", "payload": progress.total},
         ]
         api.app.set_fields(task_id, fields)
+        if stdout_print is True:
+            progress.report_if_needed()
 
 
 def get_progress_cb(message, total, is_size=False):
@@ -30,8 +32,8 @@ def get_progress_cb(message, total, is_size=False):
 
 
 def update_uploading_progress(count, api: sly.Api, task_id, progress: sly.Progress):
-    progress.set_current_value(count)
-    _update_progress_ui(api, task_id, progress)
+    progress.iters_done(count - progress.current)
+    _update_progress_ui(api, task_id, progress, stdout_print=True)
 
 
 def upload_artifacts(local_dir, remote_dir):

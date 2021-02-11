@@ -33,7 +33,7 @@ def restore_hyp(api: sly.Api, task_id, context, state, app_logger):
 @my_app.callback("train")
 @sly.timeit
 def train(api: sly.Api, task_id, context, state, app_logger):
-    api.app.set_field(task_id, "state.activeNames", ["logs", "labels", "train", "pred", "metrics"])
+    api.app.set_field(task_id, "state.activeNames", ["labels", "train", "pred", "metrics"]) #"logs",
 
     # prepare directory for original Supervisely project
     project_dir = os.path.join(my_app.data_dir, "sly_project")
@@ -73,7 +73,7 @@ def train(api: sly.Api, task_id, context, state, app_logger):
     # upload artifacts directory to Team Files
     upload_artifacts(g.local_artifacts_dir, g.remote_artifacts_dir)
 
-    # show path to the artifact directory in Team Files
+    # show path to the artifacts directory in Team Files
     ui.set_output()
 
     # stop application
