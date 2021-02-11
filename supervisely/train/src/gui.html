@@ -236,9 +236,9 @@
         </sly-field>
 
         <el-collapse class="mt15" v-model="state.activeNames">
-            <el-collapse-item title="Logs" name="logs">
-                <sly-logs class="mt15" :task-id="data.taskId"></sly-logs>
-            </el-collapse-item>
+<!--            <el-collapse-item title="Logs" name="logs">-->
+<!--                <sly-logs class="mt15" :task-id="data.taskId"></sly-logs>-->
+<!--            </el-collapse-item>-->
             <el-collapse-item title="Labels stats visualization" name="labels">
                 <sly-grid-gallery v-show="data.labelsVis.content.layout.length > 0"
                                   :content="data.labelsVis.content"
