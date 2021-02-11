@@ -101,7 +101,6 @@ def main():
     my_app.run(data=data, state=state)
 
 
-# @TODO: chart names
 # @TODO: fix upload directory (number of progress updates)
 #@TODO: upload progress не работает
 

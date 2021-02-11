@@ -127,7 +127,7 @@
             <el-radio-group class="mb15" v-model="state.modelWeightsOptions">
                 <el-radio :label="1">Pretrained on COCO</el-radio>
                 <el-radio :label="2">From custom model</el-radio>
-                <el-radio :label="3" :disabled="true">Resume training (not implemented yet)</el-radio>
+<!--                <el-radio :label="3" :disabled="true">Resume training (not implemented yet)</el-radio>-->
                 <!--<el-radio :label="3">Random (not recommended)</el-radio>-->
             </el-radio-group>
             <div v-show="state.modelWeightsOptions === 1">
