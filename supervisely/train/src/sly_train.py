@@ -101,8 +101,8 @@ def main():
     my_app.run(data=data, state=state)
 
 
-# @TODO: fix upload directory (number of progress updates)
-#@TODO: upload progress не работает
+# @TODO: change task output - icon + change text report -> directory
+# @TODO: change pip requirements to quickly skip them (already installed)
 
 # New features:
 # @TODO: adam or SGD opt?
