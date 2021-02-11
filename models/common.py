@@ -77,6 +77,57 @@ class Transformer(nn.Module):
         return x
 
 
+class TransformerLayer(nn.Module):
+    def __init__(self, c, num_heads):
+        super().__init__()
+
+        self.ln1 = nn.LayerNorm(c)
+        self.q = nn.Linear(c, c)
+        self.k = nn.Linear(c, c)
+        self.v = nn.Linear(c, c)
+        self.ma = nn.MultiheadAttention(embed_dim=c, num_heads=num_heads)
+        self.ln2 = nn.LayerNorm(c)
+        self.fc1 = nn.Linear(c, c)
+        self.fc2 = nn.Linear(c, c)
+        self.act = nn.SiLU()
+
+    def forward(self, x):
+        x_ = self.ln1(x)
+        x = self.ma(self.q(x_), self.k(x_), self.v(x_))[0] + x
+        x = self.ln2(x)
+        x = self.fc2(self.act(self.fc1(x))) + x
+        return x
+
+
+class TransformerBlock(nn.Module):
+    def __init__(self, c1, c2, num_heads, num_layers):
+        super().__init__()
+
+        self.conv = None
+        if c1 != c2:
+            self.conv = Conv(c1, c2)
+        self.linear = nn.Linear(c2, c2)
+        self.tr = nn.Sequential(*[TransformerLayer(c2, num_heads) for _ in range(num_layers)])
+        self.c2 = c2
+
+    def forward(self, x):
+        if self.conv is not None:
+            x = self.conv(x)
+        b, _, w, h = x.shape
+        p = x.flatten(2)
+        p = p.unsqueeze(0)
+        p = p.transpose(0, 3)
+        p = p.squeeze(3)
+        e = self.linear(p)
+        x = p + e
+
+        x = self.tr(x)
+        x = x.unsqueeze(3)
+        x = x.transpose(0, 3)
+        x = x.reshape(b, self.c2, w, h)
+        return x
+
+
 class Bottleneck(nn.Module):
     # Standard bottleneck
     def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, shortcut, groups, expansion
@@ -136,6 +187,13 @@ class C3T(C3):
         super().__init__(c1, c2, n, shortcut, g, e)
         c_ = int(c2 * e)
         self.m = nn.Sequential(*[BoT(c_, c_, shortcut, g, e=1.0) for _ in range(n)])
+
+
+class C3TR(C3):
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
+        super().__init__(c1, c2, n, shortcut, g, e)
+        c_ = int(c2 * e)
+        self.m = TransformerBlock(c_, c_, 4, n)
 
 
 class SPP(nn.Module):
