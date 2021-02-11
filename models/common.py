@@ -264,6 +264,7 @@ class Detections:
                     f = Path(save_dir) / f'results{i}.jpg'
                 else:
                     f = Path(save_dir) / f'results_{img.name}.jpg'
+                    print(f)
                 img.save(f)  # save
                 print(f"{'Saving' * (i == 0)} {f},", end='' if i < self.n - 1 else ' done.\n')
             if render:
