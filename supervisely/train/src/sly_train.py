@@ -101,7 +101,6 @@ def main():
     my_app.run(data=data, state=state)
 
 
-# @TODO: change task output - icon + change text report -> directory
 # @TODO: change pip requirements to quickly skip them (already installed)
 # @TODO: progress epochs to tasks list
 # @TODO: handle soft stop event

@@ -71,7 +71,8 @@ def init_script_arguments(state, yolov5_format_dir, input_project_name):
     g.remote_artifacts_dir = remote_artifacts_dir
 
 
-def send_epoch_log(epoch, epochs):
+def send_epoch_log(epoch, epochs, progress):
+    progress.set_current_value(epoch)
     fields = [
         {"field": "data.progressName", "payload": "Epoch"},
         {"field": "data.currentProgressLabel", "payload": epoch},

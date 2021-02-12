@@ -244,6 +244,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
                 f'Using {dataloader.num_workers} dataloader workers\n'
                 f'Logging results to {save_dir}\n'
                 f'Starting training for {epochs} epochs...')
+    sly_epoch_progress = sly.Progress("Epoch", epochs)
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
 
@@ -385,7 +386,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None, opt_sly=False):
 
             # Log
             if opt.sly:
-                send_epoch_log(epoch, epochs)
+                send_epoch_log(epoch, epochs, sly_epoch_progress)
                 metrics = {}
             tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
                     'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
