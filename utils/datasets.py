@@ -376,7 +376,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')  # cached labels
         if cache_path.is_file():
             cache = torch.load(cache_path)  # load
-            if cache['hash'] != get_hash(self.label_files + self.img_files) or 'segments' not in cache:  # changed
+            if cache['hash'] != get_hash(self.label_files + self.img_files) or 'version' not in cache:  # changed
                 cache = self.cache_labels(cache_path, prefix)  # re-cache
         else:
             cache = self.cache_labels(cache_path, prefix)  # cache
@@ -389,7 +389,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         # Read cache
         cache.pop('hash')  # remove hash
-        cache.pop('segments')  # remove segments boolean
+        cache.pop('version')  # remove version
         labels, shapes, self.segments = zip(*cache.values())
         self.labels = list(labels)
         self.shapes = np.array(shapes, dtype=np.float64)
@@ -491,7 +491,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         x['hash'] = get_hash(self.label_files + self.img_files)
         x['results'] = nf, nm, ne, nc, i + 1
-        x['segments'] = True  # supports segments
+        x['version'] = 0.1  # cache version
         torch.save(x, path)  # save for next time
         logging.info(f'{prefix}New cache created: {path}')
         return x
