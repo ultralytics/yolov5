@@ -893,31 +893,23 @@ def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, s
                 xy = np.ones((len(segment), 3))
                 xy[:, :2] = segment
                 xy = xy @ M.T  # transform
-                if perspective:
-                    xy = xy[:, :2] / xy[:, 2:3]  # rescale
-                else:  # affine
-                    xy = xy[:, :2]
+                xy = xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2]  # perspective rescale or affine
 
                 # clip
-                # np.clip(xy[:, 0], 0, width, out=xy[:, 0])
-                # np.clip(xy[:, 1], 0, height, out=xy[:, 1])
                 new[i] = segment2box(xy, width, height)
 
         else:  # warp boxes
             xy = np.ones((n * 4, 3))
             xy[:, :2] = targets[:, [1, 2, 3, 4, 1, 4, 3, 2]].reshape(n * 4, 2)  # x1y1, x2y2, x1y2, x2y1
             xy = xy @ M.T  # transform
-            if perspective:
-                xy = (xy[:, :2] / xy[:, 2:3]).reshape(n, 8)  # rescale
-            else:  # affine
-                xy = xy[:, :2].reshape(n, 8)
+            xy = (xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2]).reshape(n, 8)  # perspective rescale or affine
 
             # create new boxes
             x = xy[:, [0, 2, 4, 6]]
             y = xy[:, [1, 3, 5, 7]]
             new = np.concatenate((x.min(1), y.min(1), x.max(1), y.max(1))).reshape(4, n).T
 
-            # clip boxes
+            # clip
             new[:, [0, 2]] = new[:, [0, 2]].clip(0, width)
             new[:, [1, 3]] = new[:, [1, 3]].clip(0, height)
 
