@@ -1,5 +1,5 @@
 # pip install -r requirements.txt
-supervisely==6.1.51
+supervisely==6.1.52
 
 # base ----------------------------------------
 PyYAML==5.4.1
