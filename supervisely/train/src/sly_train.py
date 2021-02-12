@@ -102,7 +102,6 @@ def main():
 
 
 # @TODO: change pip requirements to quickly skip them (already installed)
-# @TODO: progress epochs to tasks list
 # @TODO: handle soft stop event
 
 # New features:
