@@ -189,11 +189,10 @@ class autoShape(nn.Module):
         #   numpy:           = np.zeros((720,1280,3))  # HWC
         #   torch:           = torch.zeros(16,3,720,1280)  # BCHW
         #   multiple:        = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
-
+        orig_imgs = imgs
         p = next(self.model.parameters())  # for device and type
         if isinstance(imgs, torch.Tensor):  # torch
             return self.model(imgs.to(p.device).type_as(p), augment, profile)  # inference
-
         # Pre-process
         n, imgs = (len(imgs), imgs) if isinstance(imgs, list) else (1, [imgs])  # number of images, list of images
         shape0, shape1 = [], []  # image and inference shapes
@@ -224,16 +223,17 @@ class autoShape(nn.Module):
         for i in range(n):
             scale_coords(shape1, y[i][:, :4], shape0[i])
 
-        return Detections(imgs, y, self.names)
+        return Detections(imgs, y, self.names, orig_imgs)
 
 
 class Detections:
     # detections class for YOLOv5 inference results
-    def __init__(self, imgs, pred, names=None):
+    def __init__(self, imgs, pred, names=None, orig_imgs=None):
         super(Detections, self).__init__()
         d = pred[0].device  # device
         gn = [torch.tensor([*[im.shape[i] for i in [1, 0, 1, 0]], 1., 1.], device=d) for im in imgs]  # normalizations
         self.imgs = imgs  # list of images as numpy arrays
+        self.orig_imgs = imgs # list of original names
         self.pred = pred  # list of tensors pred[0] = (xyxy, conf, cls)
         self.names = names  # class names
         self.xyxy = pred  # xyxy pixels
@@ -261,9 +261,9 @@ class Detections:
                 img.show(f'image {i}')  # show
             if save:
                 if save_orig_name:
-                    f = Path(save_dir) / f'results{i}.jpg'
+                    f = Path(save_dir) / f'results{orig_imgs[i]}.jpg'
                 else:
-                    f = Path(save_dir) / f'results_{img.name}.jpg'
+                    f = Path(save_dir) / f'results_{i}.jpg'
                     print(f)
                 img.save(f)  # save
                 print(f"{'Saving' * (i == 0)} {f},", end='' if i < self.n - 1 else ' done.\n')
