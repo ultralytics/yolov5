@@ -2,7 +2,7 @@
     <sly-card title="1. Input Project" subtitle="This project will be used for training">
         <sly-field title="" description="Project">
             <a slot="title" target="_blank"
-               :href="`/projects/${data.projectId}/datasets`">{{data.projectName}} ({{data.projectImagesCount}})</a>
+               :href="`/projects/${data.projectId}/datasets`">{{data.projectName}} ({{data.projectImagesCount}} images)</a>
             <sly-icon slot="icon" :options="{ imageUrl: `${data.projectPreviewUrl}` }"/>
         </sly-field>
     </sly-card>
