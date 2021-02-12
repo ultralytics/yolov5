@@ -21,8 +21,8 @@ seaborn>=0.11.0
 pandas
 
 # export --------------------------------------
-# coremltools==4.0
-# onnx>=1.8.0
+# coremltools>=4.1
+# onnx>=1.8.1
 # scikit-learn==0.19.2  # for coreml quantization
 
 # extras --------------------------------------
