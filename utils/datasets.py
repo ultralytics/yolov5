@@ -376,7 +376,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')  # cached labels
         if cache_path.is_file():
             cache = torch.load(cache_path)  # load
-            if cache['hash'] != get_hash(self.label_files + self.img_files) or 'results' not in cache:  # changed
+            if cache['hash'] != get_hash(self.label_files + self.img_files) or 'segments' not in cache:  # changed
                 cache = self.cache_labels(cache_path, prefix)  # re-cache
         else:
             cache = self.cache_labels(cache_path, prefix)  # cache
@@ -489,7 +489,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             print(f'{prefix}WARNING: No labels found in {path}. See {help_url}')
 
         x['hash'] = get_hash(self.label_files + self.img_files)
-        x['results'] = [nf, nm, ne, nc, i + 1]
+        x['results'] = nf, nm, ne, nc, i + 1
+        x['segments'] = True  # supports segments
         torch.save(x, path)  # save for next time
         logging.info(f'{prefix}New cache created: {path}')
         return x
