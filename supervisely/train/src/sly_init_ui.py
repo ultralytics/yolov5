@@ -138,7 +138,7 @@ def init(data, state):
     init_galleries(data)
     init_progress(data)
     init_output(data)
-    metrics.init(data)
+    metrics.init(data, state)
 
 
 def set_output():

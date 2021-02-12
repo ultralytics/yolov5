@@ -231,6 +231,24 @@
                 </sly-grid-gallery>
             </el-collapse-item>
             <el-collapse-item title="Metrics" name="metrics">
+                <sly-field title="Smoothing"
+                           description="Change the smoothing of line charts">
+                    <sly-icon slot="icon" :options="{ color: '#006ad4', bgColor: '#bbe2ff', rounded: false }">
+                        <i class="zmdi zmdi-trending-up"></i>
+                    </sly-icon>
+                    <el-slider
+                            :value="state.smoothing"
+                            :min="0" :max="1" :step="0.1" show-input
+                            style="width: 450px;"
+                            @input="(val)=>{
+                                state.smoothing = val;
+                                data.mBox.options.smoothingWeight = val;
+                                data.mObjectness.options.smoothingWeight = val;
+                                data.mClassification.options.smoothingWeight = val;
+                            }"
+                    >
+                    </el-slider>
+                </sly-field>
                 <div class="fflex" v-if="state.activeNames.includes('metrics')">
                     <sly-line-chart
                             style="width: 33%;"

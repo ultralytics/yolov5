@@ -21,7 +21,7 @@ def init_chart(title, names, xs, ys, smoothing=None):
     return result
 
 
-def init(data):
+def init(data, state):
     demo_x = [[], []] #[[1, 2, 3, 4], [2, 4, 6, 8]]
     demo_y = [[], []] #[[10, 15, 13, 17], [16, 5, 11, 9]]
     data["mBox"] = init_chart("Box Loss",
@@ -51,6 +51,7 @@ def init(data):
                               names=["mAP@0.5", "mAP@0.5:0.95"],
                               xs=demo_x,
                               ys=demo_y)
+    state["smoothing"] = 0.6
 
 
 def send_metrics(epoch, epochs, metrics):
