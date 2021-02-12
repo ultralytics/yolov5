@@ -17,6 +17,7 @@ empty_gallery = {
 def init_input_project(data, project_info):
     data["projectId"] = globals.project_id
     data["projectName"] = project_info.name
+    data["projectImagesCount"] = project_info.items_count
     data["projectPreviewUrl"] = globals.api.image.preview_url(project_info.reference_image_url, 100, 100)
 
 
@@ -148,5 +149,5 @@ def set_output():
         {"field": "data.outputName", "payload": globals.remote_artifacts_dir},
     ]
     globals.api.app.set_fields(globals.task_id, fields)
-    globals.api.task.set_output_report(globals.task_id, file_info.id, globals.remote_artifacts_dir)
+    globals.api.task.set_output_directory(globals.task_id, file_info.id, globals.remote_artifacts_dir)
 
