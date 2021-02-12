@@ -66,36 +66,53 @@ def get_custom_inference_settings(api: sly.Api, task_id, context, state, app_log
     my_app.send_response(request_id, data={"settings": default_settings_str})
 
 
-@my_app.callback("inference_image_id")
+@my_app.callback("inference_image_url")
 @sly.timeit
-def inference_image_id(api: sly.Api, task_id, context, state, app_logger):
+def inference_image_url(api: sly.Api, task_id, context, state, app_logger):
     app_logger.debug("Input data", extra={"state": state})
-    image_id = state["image_id"]
+    image_url = state["image_url"]
     settings = state["settings"]
 
     rect = None
     if "rectangle" in state:
         top, left, bottom, right = state["rectangle"]
         rect = sly.Rectangle(top, left, bottom, right)
-
     for key, value in default_settings.items():
         if key not in settings:
             app_logger.warn("Field {!r} not found in inference settings. Use default value {!r}".format(key, value))
-
     debug_visualization = settings.get("debug_visualization", default_settings["debug_visualization"])
     conf_thres = settings.get("conf_thres", default_settings["conf_thres"])
     iou_thres = settings.get("iou_thres", default_settings["iou_thres"])
     augment = settings.get("augment", default_settings["augment"])
 
-    image = api.image.download_np(image_id)  # RGB image
+    ext = sly.fs.get_file_ext(image_url)
+    if ext == "":
+        ext = ".jpg"
+    local_image_path = os.path.join(my_app.data_dir, sly.rand_str(15) + ext)
+    sly.fs.download(image_url, local_image_path)
+
+    #image = api.image.download_np(image_id)  # RGB image
+    image = sly.image.read(local_image_path)  # RGB image
     if rect is not None:
         image = sly.image.crop(image, rect)
     ann_json = inference(model, half, device, imgsz, image, meta,
                          conf_thres=conf_thres, iou_thres=iou_thres, augment=augment,
                          debug_visualization=debug_visualization)
 
+    sly.fs.silent_remove(local_image_path)
+
     request_id = context["request_id"]
     my_app.send_response(request_id, data=ann_json)
+
+
+@my_app.callback("inference_image_id")
+@sly.timeit
+def inference_image_id(api: sly.Api, task_id, context, state, app_logger):
+    app_logger.debug("Input data", extra={"state": state})
+    image_id = state["image_id"]
+    image_info = api.image.get_info_by_id(image_id)
+    state["image_url"] = image_info.full_storage_url
+    inference_image_url(api, task_id, context, state, app_logger)
 
 
 def debug_inference():
