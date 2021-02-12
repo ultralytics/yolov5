@@ -236,7 +236,7 @@ def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
 
 
 def xyn2xy(x, w=640, h=640, padw=0, padh=0):
-    # Convert (n,2) normalized segments into (n,2) segments
+    # Convert normalized segments into pixel segments, shape (n,2)
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[:, 0] = w * x[:, 0] + padw  # top left x
     y[:, 1] = h * x[:, 1] + padh  # top left y
@@ -244,7 +244,7 @@ def xyn2xy(x, w=640, h=640, padw=0, padh=0):
 
 
 def segment2box(segment, width=640, height=640):
-    # Convert 1 segment label to 1 box labels, i.e. (xy1, xy2, ...) to (xyxy)
+    # Convert 1 segment label to 1 box label, applying inside-image constraint, i.e. (xy1, xy2, ...) to (xyxy)
     x, y = segment.T  # segment xy
     inside = (x >= 0) & (y >= 0) & (x <= width) & (y <= height)
     x, y, = x[inside], y[inside]
