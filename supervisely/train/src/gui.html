@@ -100,7 +100,8 @@
     </sly-card>
 
     <sly-card class="mt15"
-              title="4. Model settings">
+              title="4. Model settings"
+              subtitle="Choose model size or how weights should be initialized">
         <sly-field title="Weights initialization" description="Define how model is initialized before training">
             <el-radio-group class="mb15" v-model="state.modelWeightsOptions">
                 <el-radio :label="1">Pretrained on COCO</el-radio>
@@ -132,7 +133,8 @@
     </sly-card>
 
     <sly-card class="mt15"
-              title="5. Traning hyperparameters">
+              title="5. Traning hyperparameters"
+              subtitle="Define basic settings and advanced options (learning rate, augmentations, ...)">
         <el-tabs v-model="state.activeTabName">
             <el-tab-pane label="General" name="General">
                 <sly-field title="Number of epochs">
@@ -182,7 +184,9 @@
         </el-tabs>
     </sly-card>
 
-    <sly-card class="mt15" title="6. Training progress">
+    <sly-card class="mt15"
+              title="6. Training progress"
+              subtitle="Task progress, detailed logs, metrics charts, and other visualizations">
         <el-button type="primary"
                    :disabled="state.selectedClasses.length === 0 ||
                               (state.modelWeightsOptions === 2 && state.weightsPath === '') ||
