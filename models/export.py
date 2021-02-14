@@ -74,7 +74,7 @@ if __name__ == '__main__':
             torch.onnx.export(model, img, f, verbose=False, opset_version=12, input_names=['images'],
                               output_names=['output'], dynamic_axes={'images': {0: 'batch_size', 2: 'image_width',
                                                                                 3: 'image_height'},
-                                                                     'output': {0: 'batch_size', 2: 'op1', 3: 'op2'}})
+                                                                     'output': {0: 'batch_size', 1: 'op1', 2: 'op2'}})
         else:
             torch.onnx.export(model, img, f, verbose=False, opset_version=12, input_names=['images'],
                               output_names=['classes', 'boxes'] if y is None else ['output'])
