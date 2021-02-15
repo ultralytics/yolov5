@@ -110,9 +110,9 @@ class Model(nn.Module):
                 # cv2.imwrite(f'img_{si}.jpg', 255 * xi[0].cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
                 yi[..., :4] /= si  # de-scale
                 if fi == 2:
-                    yi[..., 1] = img_size[0] - yi[..., 1]  # de-flip ud
+                    yi[..., 1] = img_size[0] - 1 - yi[..., 1]  # de-flip ud
                 elif fi == 3:
-                    yi[..., 0] = img_size[1] - yi[..., 0]  # de-flip lr
+                    yi[..., 0] = img_size[1] - 1 - yi[..., 0]  # de-flip lr
                 y.append(yi)
             return torch.cat(y, 1), None  # augmented inference, train
         else:
