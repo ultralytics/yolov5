@@ -14,7 +14,7 @@ box: 0.05  # box loss gain
 cls: 0.3  # cls loss gain
 cls_pw: 1.0  # cls BCELoss positive_weight
 obj: 0.7  # obj loss gain (scale with pixels)
-obj_pw: 0.8  # obj BCELoss positive_weight
+obj_pw: 0.75  # obj BCELoss positive_weight
 iou_t: 0.20  # IoU training threshold
 anchor_t: 4.0  # anchor-multiple threshold
 # anchors: 3  # anchors per output layer (0 to ignore)
