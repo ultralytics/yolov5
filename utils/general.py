@@ -47,6 +47,11 @@ def get_latest_run(search_dir='.'):
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
+def isdocker():
+    # Is environment a Docker container
+    return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
+
+
 def check_online():
     # Check internet connectivity
     import socket
@@ -62,7 +67,7 @@ def check_git_status():
     print(colorstr('github: '), end='')
     try:
         assert Path('.git').exists(), 'skipping check (not a git repository)'
-        assert not Path('/workspace').exists(), 'skipping check (Docker image)'  # not Path('/.dockerenv').exists()
+        assert not isdocker(), 'skipping check (Docker image)'
         assert check_online(), 'skipping check (offline)'
 
         cmd = 'git fetch && git config --get remote.origin.url'
@@ -98,13 +103,14 @@ def check_img_size(img_size, s=32):
 def check_imshow():
     # Check if environment supports image displays
     try:
+        assert not isdocker(), 'cv2.imshow() is disabled in Docker environments'
         cv2.imshow('test', np.zeros((1, 1, 3)))
         cv2.waitKey(1)
         cv2.destroyAllWindows()
         cv2.waitKey(1)
         return True
     except Exception as e:
-        print(f'WARNING: Environment does not support cv2.imshow() or PIL Image.show() image previews\n{e}')
+        print(f'WARNING: Environment does not support cv2.imshow() or PIL Image.show() image displays\n{e}')
         return False
 
 
