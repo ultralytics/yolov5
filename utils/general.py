@@ -95,6 +95,19 @@ def check_img_size(img_size, s=32):
     return new_size
 
 
+def check_imshow():
+    # Check if environment supports image displays
+    try:
+        cv2.imshow('test', np.zeros((1, 1, 3)))
+        cv2.waitKey(1)
+        cv2.destroyAllWindows()
+        cv2.waitKey(1)
+        return True
+    except Exception as e:
+        print(f'WARNING: Environment does not support cv2.imshow() or PIL Image.show() image previews\n{e}')
+        return False
+
+
 def check_file(file):
     # Search for file if not found
     if os.path.isfile(file) or file == '':
