@@ -49,7 +49,7 @@ def get_latest_run(search_dir='.'):
 
 def isdocker():
     # Is environment a Docker container
-    return Path('/workspace').exists()
+    return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
 
 
 def check_online():
@@ -67,7 +67,7 @@ def check_git_status():
     print(colorstr('github: '), end='')
     try:
         assert Path('.git').exists(), 'skipping check (not a git repository)'
-        assert not isdocker(), 'skipping check (Docker image)'  # not Path('/.dockerenv').exists()
+        assert not isdocker(), 'skipping check (Docker image)'
         assert check_online(), 'skipping check (offline)'
 
         cmd = 'git fetch && git config --get remote.origin.url'
