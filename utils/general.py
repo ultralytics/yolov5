@@ -103,8 +103,8 @@ def check_imshow():
         cv2.destroyAllWindows()
         cv2.waitKey(1)
         return True
-    except:
-        print('WARNING: Environment does not support cv2.imshow() or PIL.Image.show() image displays')
+    except Exception as e:
+        print(f'WARNING: Environment does not support cv2.imshow() or PIL Image.show() image previews.\n{e}')
         return False
 
 
