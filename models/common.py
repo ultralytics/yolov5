@@ -196,10 +196,11 @@ class autoShape(nn.Module):
 
         # Pre-process
         n, imgs = (len(imgs), imgs) if isinstance(imgs, list) else (1, [imgs])  # number of images, list of images
-        shape0, shape1 = [], []  # image and inference shapes
+        shape0, shape1, files = [], [], []  # image and inference shapes, filenames
         for i, im in enumerate(imgs):
             if isinstance(im, str):  # filename or uri
                 im = Image.open(requests.get(im, stream=True).raw if im.startswith('http') else im)  # open
+            files.append(Path(im.filename).with_suffix('.jpg').name if isinstance(im, Image.Image) else f'image{i}.jpg')
             im = np.array(im)  # to numpy
             if im.shape[0] < 5:  # image in CHW
                 im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
@@ -224,18 +225,19 @@ class autoShape(nn.Module):
         for i in range(n):
             scale_coords(shape1, y[i][:, :4], shape0[i])
 
-        return Detections(imgs, y, self.names)
+        return Detections(imgs, y, files, self.names)
 
 
 class Detections:
     # detections class for YOLOv5 inference results
-    def __init__(self, imgs, pred, names=None):
+    def __init__(self, imgs, pred, files, names=None):
         super(Detections, self).__init__()
         d = pred[0].device  # device
         gn = [torch.tensor([*[im.shape[i] for i in [1, 0, 1, 0]], 1., 1.], device=d) for im in imgs]  # normalizations
         self.imgs = imgs  # list of images as numpy arrays
         self.pred = pred  # list of tensors pred[0] = (xyxy, conf, cls)
         self.names = names  # class names
+        self.files = files  # image filenames
         self.xyxy = pred  # xyxy pixels
         self.xywh = [xyxy2xywh(x) for x in pred]  # xywh pixels
         self.xyxyn = [x / g for x, g in zip(self.xyxy, gn)]  # xyxy normalized
@@ -258,9 +260,9 @@ class Detections:
             if pprint:
                 print(str.rstrip(', '))
             if show:
-                img.show(f'image {i}')  # show
+                img.show(self.files[i])  # show
             if save:
-                f = Path(save_dir) / f'results{i}.jpg'
+                f = Path(save_dir) / self.files[i]
                 img.save(f)  # save
                 print(f"{'Saving' * (i == 0)} {f},", end='' if i < self.n - 1 else ' done.\n')
             if render:
@@ -272,7 +274,8 @@ class Detections:
     def show(self):
         self.display(show=True)  # show results
 
-    def save(self, save_dir=''):
+    def save(self, save_dir='results/'):
+        Path(save_dir).mkdir(exist_ok=True)
         self.display(save=True, save_dir=save_dir)  # save results
 
     def render(self):

@@ -300,7 +300,8 @@ class LoadStreams:  # multiple IP or RTSP cameras
             # _, self.imgs[index] = cap.read()
             cap.grab()
             if n == 4:  # read every 4th frame
-                _, self.imgs[index] = cap.retrieve()
+                success, im = cap.retrieve()
+                self.imgs[index] = im if success else self.imgs[index] * 0
                 n = 0
             time.sleep(0.01)  # wait time
 
