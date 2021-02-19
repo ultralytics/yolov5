@@ -199,8 +199,8 @@ class autoShape(nn.Module):
         shape0, shape1, files = [], [], []  # image and inference shapes, filenames
         for i, im in enumerate(imgs):
             if isinstance(im, str):  # filename or uri
-                im = Image.open(requests.get(im, stream=True).raw if im.startswith('http') else im)  # open
-            files.append(Path(im.filename).with_suffix('.jpg').name if isinstance(im, Image.Image) else f'image{i}.jpg')
+                im, f = Image.open(requests.get(im, stream=True).raw if im.startswith('http') else im), im  # open
+            files.append(Path(f).with_suffix('.jpg').name if isinstance(im, Image.Image) else f'image{i}.jpg')
             im = np.array(im)  # to numpy
             if im.shape[0] < 5:  # image in CHW
                 im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
