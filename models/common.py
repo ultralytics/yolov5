@@ -202,6 +202,7 @@ class autoShape(nn.Module):
                 im, f = Image.open(requests.get(im, stream=True).raw if im.startswith('http') else im), im  # open
                 im.filename = f  # for uri
             files.append(Path(im.filename).with_suffix('.jpg').name if isinstance(im, Image.Image) else f'image{i}.jpg')
+            im = np.array(im)  # to numpy
             if im.shape[0] < 5:  # image in CHW
                 im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
             im = im[:, :, :3] if im.ndim == 3 else np.tile(im[:, :, None], 3)  # enforce 3ch input
@@ -253,7 +254,7 @@ class Detections:
                     n = (pred[:, -1] == c).sum()  # detections per class
                     str += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
                 if show or save or render:
-                    img = Image.fromarray(img.astype(np.uint8)) if isinstance(img, np.ndarray) else img  # from np
+                    img = Image.fromarray(img) if isinstance(img, np.ndarray) else img  # from np
                     for *box, conf, cls in pred:  # xyxy, confidence, class
                         # str += '%s %.2f, ' % (names[int(cls)], conf)  # label
                         ImageDraw.Draw(img).rectangle(box, width=4, outline=colors[int(cls) % 10])  # plot
