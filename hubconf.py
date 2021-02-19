@@ -133,9 +133,14 @@ if __name__ == '__main__':
     # model = custom(path_or_model='path/to/model.pt')  # custom example
 
     # Verify inference
+    import numpy as np
     from PIL import Image
 
-    imgs = [Image.open(x) for x in Path('data/images').glob('*.jpg')]
-    results = model(imgs)
+    imgs = [Image.open('data/images/bus.jpg'),  # PIL
+            'data/images/zidane.jpg',  # filename
+            'https://github.com/ultralytics/yolov5/raw/master/data/images/bus.jpg',  # URI
+            np.zeros((640, 480, 3))]  # numpy
+
+    results = model(imgs)  # batched inference
     results.print()
     results.save()
