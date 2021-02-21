@@ -399,7 +399,7 @@ def train(hyp, opt, device, tb_writer=None):
                     if ((epoch+1) % opt.save_period==0 or final_epoch) and opt.save_period != -1:
                         wandb_logger.log_model(last.parent, opt, epoch)
                 del ckpt
-        wandb_logger.end_epoch()
+        wandb_logger.end_epoch(best_result = best_fitness==fi)
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training
     if rank in [-1, 0]: 
