@@ -129,19 +129,19 @@ class WandbLogger():
             for key, value in log_dict.items():
                 self.log_dict[key] = value
 
-    def end_epoch(self):
+    def end_epoch(self, best_result=False):
         if self.wandb_run and self.log_dict:
             wandb.log(self.log_dict)
-        self.log_dict = {}
+            self.log_dict = {}
+        if self.result_artifact:
+            train_results = wandb.JoinedTable(self.testset_artifact.get("val"), self.result_table, "id")
+            self.result_artifact.add(train_results, 'result')
+            wandb.log_artifact(self.result_artifact, aliases=['best'] if best_result else None)
+            self.result_table = wandb.Table(["epoch", "id", "prediction", "avg_confidence"])
+            self.result_artifact = wandb.Artifact("run_" + wandb.run.id + "_progress", "evaluation")
 
     def finish_run(self):
         if self.wandb_run:
-            if self.result_artifact:
-                print("Add Training Progress Artifact")
-                self.result_artifact.add(self.result_table, 'result')
-                train_results = wandb.JoinedTable(self.testset_artifact.get("val"), self.result_table, "id")
-                self.result_artifact.add(train_results, 'joined_result')
-                wandb.log_artifact(self.result_artifact)
             if self.log_dict:
                 wandb.log(self.log_dict)
             wandb.run.finish()
