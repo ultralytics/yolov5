@@ -72,8 +72,8 @@ if __name__ == '__main__':
         f = opt.weights.replace('.pt', '.onnx')  # filename
         torch.onnx.export(model, img, f, verbose=False, opset_version=12, input_names=['images'],
                           output_names=['classes', 'boxes'] if y is None else ['output'],
-                          dynamic_axes={'images': {0: 'batch_size', 2: 'image_width', 3: 'image_height'},
-                                        'output': {0: 'batch_size', 1: 'op1', 2: 'op2'}} if opt.dynamic else None)
+                          dynamic_axes={'images': {0: 'batch_size', 2: 'image_height', 3: 'image_width'},
+                                        'output': {0: 'batch_size', 1: 'anchors', 2: 'grid_y', 3: 'grid_x', 4: 'output'}} if opt.dynamic else None)
 
         # Checks
         onnx_model = onnx.load(f)  # load onnx model
