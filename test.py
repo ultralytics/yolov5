@@ -52,7 +52,8 @@ def test(data,
 
         # Load model
         model = attempt_load(weights, map_location=device)  # load FP32 model
-        imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
+        gs = max(int(model.stride.max()), 32)  # grid size (max stride)
+        imgsz = check_img_size(imgsz, s=gs)  # check img_size
 
         # Multi-GPU disabled, incompatible with .half() https://github.com/ultralytics/yolov5/issues/99
         # if device.type != 'cpu' and torch.cuda.device_count() > 1:
@@ -85,7 +86,7 @@ def test(data,
         if device.type != 'cpu':
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
         path = data['test'] if opt.task == 'test' else data['val']  # path to val/test images
-        dataloader = create_dataloader(path, imgsz, batch_size, model.stride.max(), opt, pad=0.5, rect=True,
+        dataloader = create_dataloader(path, imgsz, batch_size, gs, opt, pad=0.5, rect=True,
                                        prefix=colorstr('test: ' if opt.task == 'test' else 'val: '))[0]
 
     seen = 0
