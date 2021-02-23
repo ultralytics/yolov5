@@ -29,7 +29,7 @@ def remove_prefix(from_string, prefix):
 
 class WandbLogger():
     def __init__(self, opt, name, run_id, data_dict, job_type='Training'):
-        self.wandb = wandb
+        self.wandb, self.wandb_run = wandb, None
         # Incorporate dataset creation in training script requires workarounds such as using 2 runs as we need
         # to wait for dataset artifact to get uploaded before the training starts.
         if opt.upload_dataset:
