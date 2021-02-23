@@ -72,7 +72,7 @@ def train(hyp, opt, device, tb_writer=None):
         wandb_logger = WandbLogger(opt, Path(opt.save_dir).stem, run_id, data_dict)
         if wandb_logger.wandb:
             import wandb
-            weights = str(wandb_logger.weights) if opt.resume_from_artifact else weights
+            weights = opt.weights # WandbLogger might update weights path 
     loggers = {'wandb': wandb_logger.wandb}  # loggers dict
     
     # Model
@@ -155,8 +155,6 @@ def train(hyp, opt, device, tb_writer=None):
         start_epoch = ckpt['epoch'] + 1
         if opt.resume:
             assert start_epoch > 0, '%s training to %g epochs is finished, nothing to resume.' % (weights, epochs)
-        if opt.resume_from_artifact:
-            assert start_epoch < epochs, '%s training to %g epochs is finished, nothing to resume.' % (weights, epochs)
         if epochs < start_epoch:
             logger.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
                         (weights, ckpt['epoch'], epochs))
@@ -470,7 +468,7 @@ if __name__ == '__main__':
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--quad', action='store_true', help='quad dataloader')
     parser.add_argument('--linear-lr', action='store_true', help='linear LR')
-    parser.add_argument('--log-imgs', type=int, default=16, help='number of images for W&B logging, max 100')
+    parser.add_argument('--upload_dataset', action='store_true', help='Upload you dataset as interactive W&B artifact table')
     parser.add_argument('--bbox_interval', type=int, default=-1, help='Set bounding-box image logging interval for W&B')
     parser.add_argument('--save_period', type=int, default=-1, help='Save model artifact after every "save_period" epoch')
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')

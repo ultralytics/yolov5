@@ -74,13 +74,13 @@ def test(data,
     names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
 
     # Logging
-    testset_table, result_table, log_imgs = None, None, 0
+    val_table, result_table, log_imgs = None, None, 0
     if wandb_logger and wandb_logger.wandb:
         import wandb
-        log_imgs = min(wandb.config.log_imgs, 100)
+        log_imgs = min(wandb_logger.log_imgs, 100)
         class_set = wandb.Classes([{'id':id , 'name':name} for id,name in names.items()])
-        if wandb_logger.test_artifact_path:
-            testset_table=wandb_logger.testset_artifact.get("val")
+        if wandb_logger.val_artifact:
+            val_table=wandb_logger.val_artifact.get("val")
             result_table=wandb_logger.result_table
 
     # Dataloader
@@ -159,7 +159,7 @@ def test(data,
                     boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
                     wandb_images.append(wandb.Image(img[si], boxes=boxes, caption=path.name))
             # W&B logging - DSVIZ
-            if testset_table and result_table:
+            if val_table and result_table:
                 box_data = []
                 total_conf = 0
                 for *xyxy, conf, cls in predn.tolist():
@@ -174,7 +174,7 @@ def test(data,
                 id = batch_i*batch_size + si
                 result_table.add_data(wandb_logger.current_epoch,
                                       id,
-                                      wandb.Image(testset_table.data[id][1], boxes=boxes,classes=class_set,caption=path.name),
+                                      wandb.Image(val_table.data[id][1], boxes=boxes,classes=class_set,caption=path.name),
                                       total_conf / max(1,len(box_data))
                                      )
 
