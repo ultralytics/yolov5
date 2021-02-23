@@ -2,7 +2,7 @@
 FROM nvcr.io/nvidia/pytorch:20.12-py3
 
 # Install linux packages
-RUN apt update && apt install -y screen libgl1-mesa-glx
+RUN apt update && apt install -y zip screen libgl1-mesa-glx
 
 # Install python dependencies
 RUN python -m pip install --upgrade pip
