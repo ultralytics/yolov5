@@ -89,17 +89,15 @@ To run inference on example images in `data/images`:
 ```bash
 $ python detect.py --source data/images --weights yolov5s.pt --conf 0.25
 
-Namespace(agnostic_nms=False, augment=False, classes=None, conf_thres=0.25, device='', img_size=640, iou_thres=0.45, save_conf=False, save_dir='runs/detect', save_txt=False, source='data/images/', update=False, view_img=False, weights=['yolov5s.pt'])
-Using torch 1.7.0+cu101 CUDA:0 (Tesla V100-SXM2-16GB, 16130MB)
-
-Downloading https://github.com/ultralytics/yolov5/releases/download/v3.1/yolov5s.pt to yolov5s.pt... 100%|██████████████| 14.5M/14.5M [00:00<00:00, 21.3MB/s]
+Namespace(agnostic_nms=False, augment=False, classes=None, conf_thres=0.25, device='', exist_ok=False, img_size=640, iou_thres=0.45, name='exp', project='runs/detect', save_conf=False, save_txt=False, source='data/images/', update=False, view_img=False, weights=['yolov5s.pt'])
+YOLOv5 v4.0-96-g83dc1b4 torch 1.7.0+cu101 CUDA:0 (Tesla V100-SXM2-16GB, 16160.5MB)
 
 Fusing layers... 
-Model Summary: 232 layers, 7459581 parameters, 0 gradients
-image 1/2 data/images/bus.jpg: 640x480 4 persons, 1 buss, 1 skateboards, Done. (0.012s)
-image 2/2 data/images/zidane.jpg: 384x640 2 persons, 2 ties, Done. (0.012s)
-Results saved to runs/detect/exp
-Done. (0.113s)
+Model Summary: 224 layers, 7266973 parameters, 0 gradients, 17.0 GFLOPS
+image 1/2 /content/yolov5/data/images/bus.jpg: 640x480 4 persons, 1 bus, Done. (0.010s)
+image 2/2 /content/yolov5/data/images/zidane.jpg: 384x640 2 persons, 1 tie, Done. (0.011s)
+Results saved to runs/detect/exp2
+Done. (0.103s)
 ```
 <img src="https://user-images.githubusercontent.com/26833433/97107365-685a8d80-16c7-11eb-8c2e-83aac701d8b9.jpeg" width="500">  
 
@@ -108,18 +106,17 @@ Done. (0.113s)
 To run **batched inference** with YOLOv5 and [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36):
 ```python
 import torch
-from PIL import Image
 
 # Model
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
 
 # Images
-img1 = Image.open('zidane.jpg')
-img2 = Image.open('bus.jpg')
-imgs = [img1, img2]  # batched list of images
+dir = 'https://github.com/ultralytics/yolov5/raw/master/data/images/'
+imgs = [dir + f for f in ('zidane.jpg', 'bus.jpg')]  # batched list of images
 
 # Inference
-result = model(imgs)
+results = model(imgs)
+results.print()  # or .show(), .save()
 ```
 
 
