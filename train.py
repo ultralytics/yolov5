@@ -149,7 +149,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
         # EMA
         if ema and ckpt.get('ema'):
-            ema.ema.load_state_dict(ckpt['ema'][0].float().statedict())
+            ema.ema.load_state_dict(ckpt['ema'][0].float().state_dict())
             ema.updates = ckpt['ema'][1]
 
         # Results
