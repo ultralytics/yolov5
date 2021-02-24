@@ -393,7 +393,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 if best_fitness == fi:
                     torch.save(ckpt, best)
                 del ckpt
-                model.float(), ema.ema.float()
+
+            model.float(), ema.ema.float()
 
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training
