@@ -148,8 +148,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             best_fitness = ckpt['best_fitness']
 
         # EMA
-        if ckpt.get('ema'):
-            pass
+        if ema and ckpt.get('ema'):
+            ema.ema.load_statedict(ckpt['ema'][0].float().to(device).statedict())
+            ema.updates = ckpt['ema'][1]
 
         # Results
         if ckpt.get('training_results') is not None:
