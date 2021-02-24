@@ -2,10 +2,13 @@
 # Usage: $ python utils/aws/resume.py
 
 import os
+import sys
 from pathlib import Path
 
 import torch
 import yaml
+
+sys.path.append('./')  # to run '$ python *.py' files in subdirectories
 
 port = 0  # --master_port
 path = Path('').resolve()
