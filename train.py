@@ -136,6 +136,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                                id=ckpt.get('wandb_id') if 'ckpt' in locals() else None)
     loggers = {'wandb': wandb}  # loggers dict
 
+    # EMA
+    ema = ModelEMA(model) if rank in [-1, 0] else None
+
     # Resume
     start_epoch, best_fitness = 0, 0.0
     if pretrained:
@@ -143,6 +146,10 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
         if ckpt['optimizer'] is not None:
             optimizer.load_state_dict(ckpt['optimizer'])
             best_fitness = ckpt['best_fitness']
+
+        # EMA
+        if ckpt.get('ema'):
+            pass
 
         # Results
         if ckpt.get('training_results') is not None:
@@ -172,9 +179,6 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
     if opt.sync_bn and cuda and rank != -1:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
         logger.info('Using SyncBatchNorm()')
-
-    # EMA
-    ema = ModelEMA(model) if rank in [-1, 0] else None
 
     # DDP mode
     if cuda and rank != -1:
@@ -378,7 +382,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
                         'training_results': results_file.read_text(),
-                        'model': ema.ema,
+                        'model': model,
+                        'ema': (ema.ema, ema.updates),
                         'optimizer': None if final_epoch else optimizer.state_dict(),
                         'wandb_id': wandb_run.id if wandb else None}
 
@@ -441,7 +446,7 @@ if __name__ == '__main__':
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[128, 128], help='[train, test] image sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
