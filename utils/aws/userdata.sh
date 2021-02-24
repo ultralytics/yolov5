@@ -21,6 +21,6 @@ else
     echo "restarting container $i: $id"
     docker start $id
     # docker exec -it $id python train.py --resume # single-GPU
-    docker exec -d $id python -m torch.distributed.launch --nproc_per_node 8 --master_port $i train.py --resume # multi-GPU
+    docker exec -d $id python utils/aws/resume.py
   done <<<"$list"
 fi
