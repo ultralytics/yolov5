@@ -146,8 +146,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
         # Results
         if ckpt.get('training_results') is not None:
-            with open(results_file, 'w') as file:
-                file.write(ckpt['training_results'])  # write results.txt
+            results_file.write_text(ckpt['training_results'])  # write results.txt
 
         # Epochs
         start_epoch = ckpt['epoch'] + 1
@@ -375,15 +374,13 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 best_fitness = fi
 
             # Save model
-            save = (not opt.nosave) or (final_epoch and not opt.evolve)
-            if save:
-                with open(results_file, 'r') as f:  # create checkpoint
-                    ckpt = {'epoch': epoch,
-                            'best_fitness': best_fitness,
-                            'training_results': f.read(),
-                            'model': ema.ema,
-                            'optimizer': None if final_epoch else optimizer.state_dict(),
-                            'wandb_id': wandb_run.id if wandb else None}
+            if (not opt.nosave) or (final_epoch and not opt.evolve):  # if save
+                ckpt = {'epoch': epoch,
+                        'best_fitness': best_fitness,
+                        'training_results': results_file.read_text(),
+                        'model': ema.ema,
+                        'optimizer': None if final_epoch else optimizer.state_dict(),
+                        'wandb_id': wandb_run.id if wandb else None}
 
                 # Save last, best and delete
                 torch.save(ckpt, last)
