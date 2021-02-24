@@ -4,6 +4,7 @@ import math
 import os
 import random
 import time
+from copy import deepcopy
 from pathlib import Path
 from threading import Thread
 
@@ -383,7 +384,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
                         'training_results': results_file.read_text(),
-                        'model': model,
+                        'model': deepcopy(model).half(),
                         'ema': (ema.ema, ema.updates),
                         'optimizer': optimizer.state_dict(),
                         'wandb_id': wandb_run.id if wandb else None}
