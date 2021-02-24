@@ -385,7 +385,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                         'training_results': results_file.read_text(),
                         'model': model,
                         'ema': (ema.ema, ema.updates),
-                        'optimizer': None if final_epoch else optimizer.state_dict(),
+                        'optimizer': optimizer.state_dict(),
                         'wandb_id': wandb_run.id if wandb else None}
 
                 # Save last, best and delete
