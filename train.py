@@ -352,7 +352,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                                                  compute_loss=compute_loss)
 
             # Write
-            results_file.write_text(s + '%10.4g' * 7 % results + '\n')  # write metrics, val_loss
+            with open(results_file, 'a') as f:
+                f.write(s + '%10.4g' * 7 % results + '\n')  # append metrics, val_loss
             if len(opt.name) and opt.bucket:
                 os.system('gsutil cp %s gs://%s/results/results%s.txt' % (results_file, opt.bucket, opt.name))
 
