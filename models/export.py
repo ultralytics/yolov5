@@ -24,6 +24,7 @@ if __name__ == '__main__':
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')  # height, width
     parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
+    parser.add_argument('--skip-last-layer', action='store_true', help='skip export of last (detect) layer')
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
@@ -31,7 +32,8 @@ if __name__ == '__main__':
     t = time.time()
 
     # Load PyTorch model
-    model = attempt_load(opt.weights, map_location=torch.device('cpu'))  # load FP32 model
+    device = torch.device("cuda:0") if torch.cuda.is_available() else "cpu"
+    model = attempt_load(opt.weights, map_location=device)  # load FP32 model
     labels = model.names
 
     # Checks
@@ -39,7 +41,7 @@ if __name__ == '__main__':
     opt.img_size = [check_img_size(x, gs) for x in opt.img_size]  # verify img_size are gs-multiples
 
     # Input
-    img = torch.zeros(opt.batch_size, 3, *opt.img_size)  # image size(1,3,320,192) iDetection
+    img = torch.zeros(opt.batch_size, 3, *opt.img_size).to(device)  # image size(1,3,320,192) iDetection
 
     # Update model
     for k, m in model.named_modules():
@@ -51,7 +53,10 @@ if __name__ == '__main__':
                 m.act = SiLU()
         # elif isinstance(m, models.yolo.Detect):
         #     m.forward = m.forward_export  # assign forward (optional)
-    model.model[-1].export = True  # set Detect() layer export=True
+    if opt.skip_last_layer:
+        model.model[-1].export = False  # set Detect() layer export=False
+    else:
+        model.model[-1].export = True  # set Detect() layer export=True
     y = model(img)  # dry run
 
     # TorchScript export
