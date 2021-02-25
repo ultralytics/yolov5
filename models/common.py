@@ -280,7 +280,7 @@ class Detections:
                 buffered = BytesIO()
                 img.save(buffered, format="JPEG")
                 img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-                print(img_base64)
+                return img_base64
 
 
     def print(self):
@@ -300,7 +300,7 @@ class Detections:
         return self.imgs
 
     def tobase64(self):
-        self.display(base_64=True)
+        return self.display(base_64=True)
 
     def __len__(self):
         return self.n
