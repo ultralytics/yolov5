@@ -53,7 +53,10 @@ def get_session_info(api: sly.Api, task_id, context, state, app_logger):
         "weights": final_weights,
         "device": str(device),
         "half": str(half),
-        "input_size": imgsz
+        "input_size": imgsz,
+        "session_id": task_id,
+        "classes_count": len(meta.obj_classes),
+        "rags_count": len(meta.tag_metas),
     }
     request_id = context["request_id"]
     my_app.send_response(request_id, data=info)
@@ -66,11 +69,8 @@ def get_custom_inference_settings(api: sly.Api, task_id, context, state, app_log
     my_app.send_response(request_id, data={"settings": default_settings_str})
 
 
-@my_app.callback("inference_image_url")
-@sly.timeit
-def inference_image_url(api: sly.Api, task_id, context, state, app_logger):
-    app_logger.debug("Input data", extra={"state": state})
-    image_url = state["image_url"]
+def inference_image_path(image_path, context, state, app_logger):
+    app_logger.debug("Input path", extra={"path": image_path})
     settings = state["settings"]
 
     rect = None
@@ -85,20 +85,28 @@ def inference_image_url(api: sly.Api, task_id, context, state, app_logger):
     iou_thres = settings.get("iou_thres", default_settings["iou_thres"])
     augment = settings.get("augment", default_settings["augment"])
 
-    ext = sly.fs.get_file_ext(image_url)
-    if ext == "":
-        ext = ".jpg"
-    local_image_path = os.path.join(my_app.data_dir, sly.rand_str(15) + ext)
-    sly.fs.download(image_url, local_image_path)
-
-    #image = api.image.download_np(image_id)  # RGB image
-    image = sly.image.read(local_image_path)  # RGB image
+    image = sly.image.read(image_path)  # RGB image
     if rect is not None:
         image = sly.image.crop(image, rect)
     ann_json = inference(model, half, device, imgsz, image, meta,
                          conf_thres=conf_thres, iou_thres=iou_thres, augment=augment,
                          debug_visualization=debug_visualization)
+    return ann_json
 
+
+@my_app.callback("inference_image_url")
+@sly.timeit
+def inference_image_url(api: sly.Api, task_id, context, state, app_logger):
+    app_logger.debug("Input data", extra={"state": state})
+
+    image_url = state["image_url"]
+    ext = sly.fs.get_file_ext(image_url)
+    if ext == "":
+        ext = ".jpg"
+    local_image_path = os.path.join(my_app.data_dir, sly.rand_str(15) + ext)
+
+    sly.fs.download(image_url, local_image_path)
+    ann_json = inference_image_path(local_image_path, context, state, app_logger)
     sly.fs.silent_remove(local_image_path)
 
     request_id = context["request_id"]
@@ -113,6 +121,27 @@ def inference_image_id(api: sly.Api, task_id, context, state, app_logger):
     image_info = api.image.get_info_by_id(image_id)
     state["image_url"] = image_info.full_storage_url
     inference_image_url(api, task_id, context, state, app_logger)
+
+
+@my_app.callback("inference_batch_ids")
+@sly.timeit
+def inference_batch_ids(api: sly.Api, task_id, context, state, app_logger):
+    app_logger.debug("Input data", extra={"state": state})
+    ids = state["batch_ids"]
+    infos = api.image.get_info_by_id_batch(ids)
+    paths = []
+    for info in infos:
+        paths.append(os.path.join(my_app.data_dir, sly.rand_str(10) + info.name))
+    api.image.download_paths(infos[0].dataset_id, ids, paths)
+
+    results = []
+    for image_path in paths:
+        ann_json = inference_image_path(image_path, context, state, app_logger)
+        results.append(ann_json)
+        sly.fs.silent_remove(image_path)
+
+    request_id = context["request_id"]
+    my_app.send_response(request_id, data=results)
 
 
 def debug_inference():
