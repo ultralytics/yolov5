@@ -9,7 +9,6 @@ from tqdm import tqdm
 import torch
 
 sys.path.append(str(Path(__file__).parent.parent.parent))  # add utils/ to path
-print(str(Path(__file__).parent.parent.parent))
 from utils.general import colorstr, xywh2xyxy
 from utils.datasets import img2label_paths
 from utils.datasets import LoadImagesAndLabels
@@ -26,49 +25,74 @@ WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 def remove_prefix(from_string, prefix):
     return from_string[len(prefix):]
 
+def get_id_and_model_name(run_path):
+    # It's more elegant to stick to 1 wandb.init call, but as useful config data is overwritten in the WandbLogger's wandb.init call 
+    if run_path.startswith(WANDB_ARTIFACT_PREFIX):
+        run_path = Path(remove_prefix(run_path, WANDB_ARTIFACT_PREFIX))
+        run_id = run_path.stem
+        model_artifact_name = WANDB_ARTIFACT_PREFIX + 'run_' + run_id + '_model'
+        assert wandb, 'install wandb to resume wandb runs'
+        run = wandb.init(id=run_id, resume='allow') # Resume wandb-artifact:// runs here| workaround for not overwriting wandb.config
+        return run, model_artifact_name
+    return None, None
 
 class WandbLogger():
     def __init__(self, opt, name, run_id, data_dict, job_type='Training'):
-        self.wandb, self.wandb_run = wandb, None
-        # Incorporate dataset creation in training script requires workarounds such as using 2 runs as we need
-        # to wait for dataset artifact to get uploaded before the training starts.
-        if opt.upload_dataset:
-            assert wandb, 'Install wandb to upload dataset'
-            wandb.init(config=data_dict, 
-                       project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
-                       name=name,
-                       job_type="Dataset Creation")
-            path = self.create_dataset_artifact(opt.data, 
-                                                opt.single_cls,
-                                                'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
-            wandb.finish() # Finish dataset creation run.
-            print("Using ", path, " to train")
-            with open(path) as f:
-                wandb_data_dict = yaml.load(f, Loader=yaml.SafeLoader)  
-                data_dict = wandb_data_dict
-            print("Data dict =>" , data_dict)
-        if self.wandb:
-            self.wandb_run = wandb.init(config=opt, resume="allow",
+        # Pre-training routine -- check for --resume and --upload_dataset
+        self.job_type = job_type
+        self.wandb, self.wandb_run = wandb, None 
+        run, model_artifact_name = self.check_resume(opt)
+        if run:
+            opt.resume = model_artifact_name
+            opt.save_period = run.config.save_period
+        data_dict = self.check_and_upload_dataset(opt, name, data_dict, job_type)
+        if self.wandb and not self.wandb_run:
+            opt.data_dict = data_dict
+            self.wandb_run = wandb.init(config=opt, 
+                                        resume="allow",
                                         project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
                                         name=name,
                                         job_type=job_type,
                                         id=run_id) if not wandb.run else wandb.run
-            self.wandb_run.config.data_dict = data_dict
         if job_type == 'Training':
             self.setup_training(opt, data_dict)
-            self.current_epoch = 0
-            self.log_imgs = 16 
-            if opt.bbox_interval == -1:
-                opt.bbox_interval = (opt.epochs // 10) if opt.epochs > 10 else opt.epochs
-
-
+    
+    def check_resume(self, opt):
+        if self.job_type == 'Training':
+            if isinstance(opt.resume, str):
+                return get_id_and_model_name(opt.resume)
+        return None, None
+        
+    def check_and_upload_dataset(self, opt, name, data_dict, job_type):
+        if job_type == 'Training':
+            if opt.upload_dataset:
+                assert wandb, 'Install wandb to upload dataset'
+                wandb.init(config=data_dict, 
+                           project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
+                           name=name,
+                           job_type="Dataset Creation")
+                config_path = self.create_dataset_artifact(opt.data, 
+                                                    opt.single_cls,
+                                                    'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
+                wandb.finish() # Finish dataset creation run| ensures the dataset has uploaded completely
+                print("Using ", config_path, " to train")
+                with open(config_path) as f:
+                    wandb_data_dict = yaml.load(f, Loader=yaml.SafeLoader)
+                return wandb_data_dict
+        return data_dict
+                
     def setup_training(self, opt, data_dict):
         self.log_dict = {}
+        self.current_epoch = 0
+        self.log_imgs = 16 
+        if opt.bbox_interval == -1:
+            opt.bbox_interval = (opt.epochs // 10) if opt.epochs > 10 else opt.epochs
         if opt.resume:
-            modeldir, _ = self.download_model_artifact(opt.resume_from_artifact)
+            modeldir, _ = self.download_model_artifact(opt.resume)
+            print("Modeldir of ", modeldir, " => ", opt.resume)
             if modeldir:
                 self.weights = Path(modeldir) / "best.pt"
-                opt.weights = self.weights
+                opt.weights = str(self.weights)
             data_dict = self.wandb_run.config.data_dict # Advantage: Eliminates the need for config file to resume
                 
         self.train_artifact_path, self.train_artifact = \
@@ -188,7 +212,7 @@ class WandbLogger():
         if self.result_artifact:
             train_results = wandb.JoinedTable(self.val_artifact.get("val"), self.result_table, "id")
             self.result_artifact.add(train_results, 'result')
-            wandb.log_artifact(self.result_artifact, aliases=['best'] if best_result else None)
+            wandb.log_artifact(self.result_artifact, aliases=['epoch '+ str(self.current_epoch),'best' if best_result else ''])
             self.result_table = wandb.Table(["epoch", "id", "prediction", "avg_confidence"])
             self.result_artifact = wandb.Artifact("run_" + wandb.run.id + "_progress", "evaluation")
 

@@ -32,7 +32,7 @@ from utils.google_utils import attempt_download
 from utils.loss import ComputeLoss
 from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first
-from utils.wandb_logging.wandb_utils import WandbLogger
+from utils.wandb_logging.wandb_utils import WandbLogger, get_id_and_model_name
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +73,7 @@ def train(hyp, opt, device, tb_writer=None):
         if wandb_logger.wandb:
             import wandb
             weights = opt.weights # WandbLogger might update weights path 
+            print('Weights ==>', weights)
     loggers = {'wandb': wandb_logger.wandb}  # loggers dict
     
     # Model
@@ -486,12 +487,16 @@ if __name__ == '__main__':
     # Resume
     if opt.resume:  # resume an interrupted run
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
-        assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
-        apriori = opt.global_rank, opt.local_rank
-        with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
-            opt = argparse.Namespace(**yaml.load(f, Loader=yaml.SafeLoader))  # replace
-        opt.cfg, opt.weights, opt.resume, opt.batch_size, opt.global_rank, opt.local_rank = '', ckpt, True, opt.total_batch_size, *apriori  # reinstate
-        logger.info('Resuming training from %s' % ckpt)
+        wandb_run, _ = get_id_and_model_name(opt.resume)
+        assert os.path.isfile(ckpt) or wandb_run, 'ERROR: --resume checkpoint does not exist'
+        if not wandb_run: #resuming from local checkpoint
+            apriori = opt.global_rank, opt.local_rank
+            with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
+                opt = argparse.Namespace(**yaml.load(f, Loader=yaml.SafeLoader))  # replace
+            opt.cfg, opt.weights, opt.resume, opt.batch_size, opt.global_rank, opt.local_rank = '', ckpt, True, opt.total_batch_size, *apriori  # reinstate
+            logger.info('Resuming training from %s' % ckpt)
+        else:
+            opt.save_dir = increment_path(Path(opt.project) / ('run_'+wandb_run.id), exist_ok=opt.exist_ok) # Resume run from wandb
     else:
         # opt.hyp = opt.hyp or ('hyp.finetune.yaml' if opt.weights else 'hyp.scratch.yaml')
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
