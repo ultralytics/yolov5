@@ -269,6 +269,7 @@ def test(data,
             print(f'pycocotools unable to run: {e}')
 
     # Return results
+    model.float()  # for training
     if not training:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
         print(f"Results saved to {save_dir}{s}")
