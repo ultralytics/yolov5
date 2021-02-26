@@ -37,7 +37,7 @@ App deploys model (pretrained on COCO or custom one) as REST API service.
    Training app saves results to the directory: `/yolov5_train/<training project name>/<session id>/weights`. 
    For example: `/yolov5_train/lemons_annotated/2577/weights/best.pt`
 
-<img src="https://i.imgur.com/VkSS58q.gif"/>
+<img src="https://i.imgur.com/VkSS58q.gif" width="800"/>
 
 2. Paste path to modal window
 
@@ -52,4 +52,4 @@ change what agent should be used for deploy.
 
 5. Wait until you see following message in logs: `Model has been successfully deployed`
 
-<img src="https://i.imgur.com/wKs7zw0.png"/>
+<img src="https://i.imgur.com/wKs7zw0.png" width="800"/>
