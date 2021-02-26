@@ -45,7 +45,7 @@ App deploys model (pretrained on COCO or custom one) as REST API service.
 
 Then
 
-3. **Choose device (optional)**: for GPU just provide device id (`0` or `1` or ...), or type `cpu`. Also in advanced section you can 
+3. Choose device (optional): for GPU just provide device id (`0` or `1` or ...), or type `cpu`. Also in advanced section you can 
 change what agent should be used for deploy.
 
 4. Press `Run` button.
