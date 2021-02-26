@@ -41,21 +41,25 @@ class WandbLogger():
         # Pre-training routine -- check for --resume and --upload_dataset
         self.job_type = job_type
         self.wandb, self.wandb_run = wandb, None 
-        run, model_artifact_name = self.check_resume(opt)
-        if run:
-            opt.resume = model_artifact_name
-            opt.save_period = run.config.save_period
-        data_dict = self.check_and_upload_dataset(opt, name, data_dict, job_type)
-        if self.wandb and not self.wandb_run:
-            opt.data_dict = data_dict
-            self.wandb_run = wandb.init(config=opt, 
-                                        resume="allow",
-                                        project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
-                                        name=name,
-                                        job_type=job_type,
-                                        id=run_id) if not wandb.run else wandb.run
-        if job_type == 'Training':
-            self.setup_training(opt, data_dict)
+        if self.job_type == 'Training':
+            run, model_artifact_name = self.check_resume(opt)
+            if run:
+                opt.resume = model_artifact_name
+                opt.save_period = run.config.save_period
+            if opt.upload_dataset:
+                data_dict = self.check_and_upload_dataset(opt, name, data_dict, job_type)
+            if self.wandb and not self.wandb_run:
+                opt.data_dict = data_dict
+                self.wandb_run = wandb.init(config=opt, 
+                                            resume="allow",
+                                            project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
+                                            name=name,
+                                            job_type=job_type,
+                                            id=run_id) if not wandb.run else wandb.run
+                self.setup_training(opt, data_dict)
+        if self.job_type == 'Dataset Creation':
+            self.data_dict = self.check_and_upload_dataset(opt, name, data_dict, job_type)
+
     
     def check_resume(self, opt):
         if self.job_type == 'Training':
@@ -64,22 +68,19 @@ class WandbLogger():
         return None, None
         
     def check_and_upload_dataset(self, opt, name, data_dict, job_type):
-        if job_type == 'Training':
-            if opt.upload_dataset:
-                assert wandb, 'Install wandb to upload dataset'
-                wandb.init(config=data_dict, 
-                           project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
-                           name=name,
-                           job_type="Dataset Creation")
-                config_path = self.create_dataset_artifact(opt.data, 
-                                                    opt.single_cls,
-                                                    'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
-                wandb.finish() # Finish dataset creation run| ensures the dataset has uploaded completely
-                print("Using ", config_path, " to train")
-                with open(config_path) as f:
-                    wandb_data_dict = yaml.load(f, Loader=yaml.SafeLoader)
-                return wandb_data_dict
-        return data_dict
+        assert wandb, 'Install wandb to upload dataset'
+        run = wandb.init(config=data_dict, 
+                   project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
+                   name=name,
+                   job_type="Dataset Creation") if not wandb.run else wandb.run
+        config_path = self.create_dataset_artifact(opt.data, 
+                                            opt.single_cls,
+                                            'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
+        wandb.finish() # Finish dataset creation run| ensures the dataset has uploaded completely before training starts
+        print("Created dataset config file ", config_path)
+        with open(config_path) as f:
+            wandb_data_dict = yaml.load(f, Loader=yaml.SafeLoader)
+        return wandb_data_dict
                 
     def setup_training(self, opt, data_dict):
         self.log_dict = {}
@@ -89,7 +90,6 @@ class WandbLogger():
             opt.bbox_interval = (opt.epochs // 10) if opt.epochs > 10 else opt.epochs
         if opt.resume:
             modeldir, _ = self.download_model_artifact(opt.resume)
-            print("Modeldir of ", modeldir, " => ", opt.resume)
             if modeldir:
                 self.weights = Path(modeldir) / "best.pt"
                 opt.weights = str(self.weights)
