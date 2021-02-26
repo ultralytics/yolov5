@@ -73,7 +73,6 @@ def train(hyp, opt, device, tb_writer=None):
         if wandb_logger.wandb:
             import wandb
             weights = opt.weights # WandbLogger might update weights path 
-            print('Weights ==>', weights)
     loggers = {'wandb': wandb_logger.wandb}  # loggers dict
     
     # Model
