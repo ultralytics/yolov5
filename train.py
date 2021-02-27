@@ -33,7 +33,7 @@ from utils.google_utils import attempt_download
 from utils.loss import ComputeLoss
 from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, is_parallel
-from utils.wandb_logging.wandb_utils import WandbLogger, get_id_and_model_name
+from utils.wandb_logging.wandb_utils import WandbLogger, get_id_and_model_name, check_wandb_config_file
 
 logger = logging.getLogger(__name__)
 
@@ -554,7 +554,8 @@ if __name__ == '__main__':
     parser.add_argument('--resume_from_artifact', type=str, default=None,
                         help='name of model artifact to resume training                            from.overwirtes local --weights file')
     opt = parser.parse_args()
-
+    
+    opt.data = check_wandb_config_file(opt.data)
     # Set DDP variables
     opt.world_size = int(os.environ['WORLD_SIZE']
                          ) if 'WORLD_SIZE' in os.environ else 1

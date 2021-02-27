@@ -25,6 +25,11 @@ WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 def remove_prefix(from_string, prefix):
     return from_string[len(prefix):]
 
+def check_wandb_config_file(data_config_file):
+    wandb_config = data_config_file.replace('.', '_wandb.')  # updated data.yaml path
+    if Path(wandb_config).is_file():
+        return wandb_config
+    return data_config_file
 
 def get_id_and_model_name(run_path):
     # It's more elegant to stick to 1 wandb.init call, but as useful config data is overwritten in the WandbLogger's wandb.init call
@@ -128,9 +133,6 @@ class WandbLogger():
                 remove_prefix(path, WANDB_ARTIFACT_PREFIX) + ":" + alias)
             assert dataset_artifact is not None, "'Error: W&B dataset artifact doesn\'t exist'"
             datadir = dataset_artifact.download()
-            labels_zip = Path(datadir) / "data/labels.zip"
-            shutil.unpack_archive(labels_zip, Path(
-                datadir) / 'data/labels', 'zip') if labels_zip.exists() else None
             return datadir, dataset_artifact
         return None, None
 
@@ -193,6 +195,8 @@ class WandbLogger():
         for img_file in [dataset.path] if Path(dataset.path).is_dir() else dataset.img_files:
             if Path(img_file).is_dir():
                 artifact.add_dir(img_file, name='data/images')
+                labels_path = 'labels'.join(dataset.path.rsplit('images', 1))
+                artifact.add_dir(labels_path, name='data/labels')
             else:
                 artifact.add_file(
                     img_file, name='data/images/'+Path(img_file).name)
@@ -220,13 +224,6 @@ class WandbLogger():
             table.add_data(si, wandb.Image(
                 paths, classes=class_set, boxes=boxes), json.dumps(img_classes))
         artifact.add(table, name)
-        if Path(dataset.path).is_dir():
-            labels_path = 'labels'.join(dataset.path.rsplit('images', 1))
-            zip_path = Path(labels_path).parent / (name + '_labels.zip')
-            if not zip_path.is_file():  # make_archive won't check if file exists
-                shutil.make_archive(
-                    zip_path.with_suffix(''), 'zip', labels_path)
-            artifact.add_file(str(zip_path), name='data/labels.zip')
         wandb.log_artifact(artifact)
         return artifact
 
