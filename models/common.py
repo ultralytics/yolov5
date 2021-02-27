@@ -83,20 +83,19 @@ class TransformerLayer(nn.Module):
         super().__init__()
 
         self.ln1 = nn.LayerNorm(c)
-        self.q = nn.Linear(c, c)
-        self.k = nn.Linear(c, c)
-        self.v = nn.Linear(c, c)
+        self.q = nn.Linear(c, c, bias=False)
+        self.k = nn.Linear(c, c, bias=False)
+        self.v = nn.Linear(c, c, bias=False)
         self.ma = nn.MultiheadAttention(embed_dim=c, num_heads=num_heads)
         self.ln2 = nn.LayerNorm(c)
-        self.fc1 = nn.Linear(c, c)
-        self.fc2 = nn.Linear(c, c)
-        self.act = nn.SiLU()
+        self.fc1 = nn.Linear(c, c, bias=False)
+        self.fc2 = nn.Linear(c, c, bias=False)
 
     def forward(self, x):
         x_ = self.ln1(x)
         x = self.ma(self.q(x_), self.k(x_), self.v(x_))[0] + x
         x = self.ln2(x)
-        x = self.fc2(self.act(self.fc1(x))) + x
+        x = self.fc2(self.fc1(x)) + x
         return x
 
 
