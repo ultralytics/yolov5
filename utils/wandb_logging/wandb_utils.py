@@ -103,8 +103,8 @@ class WandbLogger():
             if modeldir:
                 self.weights = Path(modeldir) / "last.pt"
                 opt.weights = str(self.weights)
-        # Advantage: Eliminates the need for config file to resume
-        data_dict = self.wandb_run.config.data_dict
+            # Advantage: Eliminates the need for config file to resume
+            data_dict = self.wandb_run.config.data_dict
         self.train_artifact_path, self.train_artifact = \
             self.download_dataset_artifact(
                 data_dict.get('train'), opt.artifact_alias)
