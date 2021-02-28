@@ -51,7 +51,7 @@ def resume_and_get_id(opt):
 
 class WandbLogger():
     def __init__(self, opt, name, run_id, data_dict, job_type='Training'):
-        # Pre-training routine -- check for --resume and --upload_dataset
+        # Pre-training routine --
         self.job_type = job_type
         self.wandb, self.wandb_run = wandb, None if not wandb else wandb.run
         if self.job_type == 'Training':
@@ -159,8 +159,8 @@ class WandbLogger():
             'datetime': datetime_suffix,
             'total_epochs': opt.epochs
         })
-        model_artifact.add_file(str(path / 'last.pt'), name='last.pt', aliases=['epoch ' + str(self.current_epoch), 'best' if best_model else ''])
-        wandb.log_artifact(model_artifact)
+        model_artifact.add_file(str(path / 'last.pt'), name='last.pt')
+        wandb.log_artifact(model_artifact, aliases=['epoch ' + str(self.current_epoch), 'best' if best_model else ''])
         print("Saving model artifact on epoch ", epoch + 1)
 
     def create_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False):

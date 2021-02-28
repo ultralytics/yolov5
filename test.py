@@ -155,7 +155,7 @@ def test(data,
                     boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
                     wandb_images.append(wandb.Image(img[si], boxes=boxes, caption=path.name))
             # W&B logging - DSVIZ
-            if wandb_logger.wandb:
+            if wandb_logger and wandb_logger.wandb:
                 if wandb_logger.val_table and wandb_logger.result_table:
                     box_data = []
                     total_conf = 0
