@@ -44,6 +44,7 @@ def resume_and_get_id(opt):
             assert wandb, 'install wandb to resume wandb runs'
             # Resume wandb-artifact:// runs here| workaround for not overwriting wandb.config
             run = wandb.init(id=run_id, project=project, resume='allow')
+            opt = run.config.opt
             opt.resume_from_artifact = model_artifact_name
             return run
         opt.resume_from_artifact = ''
@@ -75,7 +76,7 @@ class WandbLogger():
 
     def check_and_upload_dataset(self, opt, name, data_dict, job_type):
         assert wandb, 'Install wandb to upload dataset'
-        os.environ['WANDB_SILENT'] = 'true' #Reduce verbosity for dataset creation job 
+        #os.environ['WANDB_SILENT'] = 'true' #Reduce verbosity for dataset creation job 
         run = wandb.init(config=data_dict,
                          project='YOLOv5' if opt.project == 'runs/train' else Path(
                              opt.project).stem,
@@ -85,7 +86,7 @@ class WandbLogger():
                                                    opt.single_cls,
                                                    'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
         wandb.finish()  # Finish dataset creation run| ensures the dataset has uploaded completely before training starts
-        os.environ['WANDB_SILENT'] = 'false'
+        #os.environ['WANDB_SILENT'] = 'false'
         print("Created dataset config file ", config_path)
         with open(config_path) as f:
             wandb_data_dict = yaml.load(f, Loader=yaml.SafeLoader)
@@ -104,7 +105,7 @@ class WandbLogger():
                 self.weights = Path(modeldir) / "last.pt"
                 opt.weights = str(self.weights)
             # Advantage: Eliminates the need for config file to resume
-            data_dict = self.wandb_run.config.data_dict
+            data_dict = dict(self.wandb_run.config.data_dict)
         self.train_artifact_path, self.train_artifact = \
             self.download_dataset_artifact(
                 data_dict.get('train'), opt.artifact_alias)
@@ -112,7 +113,7 @@ class WandbLogger():
             self.download_dataset_artifact(
                 data_dict.get('val'), opt.artifact_alias)
 
-        self.result_artifact, self.result_table, self.weights = None, None, None
+        self.result_artifact, self.result_table, self.val_table, self.weights = None, None, None, None
         if self.train_artifact_path is not None:
             train_path = Path(self.train_artifact_path) / 'data/images/'
             data_dict['train'] = str(train_path)
@@ -123,6 +124,7 @@ class WandbLogger():
                 "run_" + wandb.run.id + "_progress", "evaluation")
             self.result_table = wandb.Table(
                 ["epoch", "id", "prediction", "avg_confidence"])
+            self.val_table = self.val_artifact.get("val")
         return data_dict
 
     def download_dataset_artifact(self, path, alias):
@@ -142,6 +144,7 @@ class WandbLogger():
             modeldir = model_artifact.download()
             epochs_trained = model_artifact.metadata.get('epochs_trained')
             total_epochs = model_artifact.metadata.get('total_epochs')
+            opt.save_period =  model_artifact.metadata.get('save_period')
             assert epochs_trained < total_epochs,  'training to %g epochs is finished, nothing to resume.' % (
                 total_epochs)
             return modeldir, model_artifact
@@ -235,7 +238,7 @@ class WandbLogger():
             self.log_dict = {}
             if self.result_artifact:
                 train_results = wandb.JoinedTable(
-                    self.val_artifact.get("val"), self.result_table, "id")
+                    self.val_table, self.result_table, "id")
                 self.result_artifact.add(train_results, 'result')
                 wandb.log_artifact(self.result_artifact, aliases=[
                                    'epoch ' + str(self.current_epoch), 'best' if best_result else ''])
