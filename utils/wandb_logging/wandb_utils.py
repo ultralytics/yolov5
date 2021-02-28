@@ -6,7 +6,9 @@ import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
+import argparse
 import yaml
+import os
 
 from tqdm import tqdm
 import torch
@@ -26,34 +28,33 @@ def remove_prefix(from_string, prefix):
     return from_string[len(prefix):]
 
 def check_wandb_config_file(data_config_file):
-    wandb_config = data_config_file.replace('.', '_wandb.')  # updated data.yaml path
+    wandb_config = '_wandb.'.join(data_config_file.rsplit('.', 1))  # updated data.yaml path
     if Path(wandb_config).is_file():
         return wandb_config
     return data_config_file
 
-def get_id_and_model_name(run_path):
+def resume_and_get_id(opt):
     # It's more elegant to stick to 1 wandb.init call, but as useful config data is overwritten in the WandbLogger's wandb.init call
-    if run_path.startswith(WANDB_ARTIFACT_PREFIX):
-        run_path = Path(remove_prefix(run_path, WANDB_ARTIFACT_PREFIX))
-        run_id = run_path.stem
-        model_artifact_name = WANDB_ARTIFACT_PREFIX + 'run_' + run_id + '_model'
-        assert wandb, 'install wandb to resume wandb runs'
-        # Resume wandb-artifact:// runs here| workaround for not overwriting wandb.config
-        run = wandb.init(id=run_id, resume='allow')
-        return run, model_artifact_name
-    return None, None
-
+    if isinstance(opt.resume,str):
+        if opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
+            run_path = Path(remove_prefix(opt.resume, WANDB_ARTIFACT_PREFIX))
+            run_id = run_path.stem
+            project = run_path.parent.stem
+            model_artifact_name = WANDB_ARTIFACT_PREFIX + 'run_' + run_id + '_model'
+            assert wandb, 'install wandb to resume wandb runs'
+            # Resume wandb-artifact:// runs here| workaround for not overwriting wandb.config
+            run = wandb.init(id=run_id, project=project, resume='allow')
+            opt.resume_from_artifact = model_artifact_name
+            return run
+        opt.resume_from_artifact = ''
+    return None
 
 class WandbLogger():
     def __init__(self, opt, name, run_id, data_dict, job_type='Training'):
         # Pre-training routine -- check for --resume and --upload_dataset
         self.job_type = job_type
-        self.wandb, self.wandb_run = wandb, None
+        self.wandb, self.wandb_run = wandb, None if not wandb else wandb.run
         if self.job_type == 'Training':
-            run, model_artifact_name = self.check_resume(opt)
-            if run:
-                opt.resume = model_artifact_name
-                opt.save_period = run.config.save_period
             if opt.upload_dataset:
                 data_dict = self.check_and_upload_dataset(
                     opt, name, data_dict, job_type)
@@ -66,19 +67,15 @@ class WandbLogger():
                                             name=name,
                                             job_type=job_type,
                                             id=run_id) if not wandb.run else wandb.run
-                self.setup_training(opt, data_dict)
+                self.wandb_run.config.opt = vars(opt)
+            self.data_dict = self.setup_training(opt, data_dict)
         if self.job_type == 'Dataset Creation':
             self.data_dict = self.check_and_upload_dataset(
                 opt, name, data_dict, job_type)
 
-    def check_resume(self, opt):
-        if self.job_type == 'Training':
-            if isinstance(opt.resume, str):
-                return get_id_and_model_name(opt.resume)
-        return None, None
-
     def check_and_upload_dataset(self, opt, name, data_dict, job_type):
         assert wandb, 'Install wandb to upload dataset'
+        os.environ['WANDB_SILENT'] = 'true' #Reduce verbosity for dataset creation job 
         run = wandb.init(config=data_dict,
                          project='YOLOv5' if opt.project == 'runs/train' else Path(
                              opt.project).stem,
@@ -88,6 +85,7 @@ class WandbLogger():
                                                    opt.single_cls,
                                                    'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
         wandb.finish()  # Finish dataset creation run| ensures the dataset has uploaded completely before training starts
+        os.environ['WANDB_SILENT'] = 'false'
         print("Created dataset config file ", config_path)
         with open(config_path) as f:
             wandb_data_dict = yaml.load(f, Loader=yaml.SafeLoader)
@@ -100,14 +98,13 @@ class WandbLogger():
         if opt.bbox_interval == -1:
             opt.bbox_interval = (
                 opt.epochs // 10) if opt.epochs > 10 else opt.epochs
-        if opt.resume:
-            modeldir, _ = self.download_model_artifact(opt.resume)
+        if opt.resume_from_artifact:
+            modeldir, _ = self.download_model_artifact(opt)
             if modeldir:
-                self.weights = Path(modeldir) / "best.pt"
+                self.weights = Path(modeldir) / "last.pt"
                 opt.weights = str(self.weights)
-            # Advantage: Eliminates the need for config file to resume
-            data_dict = self.wandb_run.config.data_dict
-
+        # Advantage: Eliminates the need for config file to resume
+        data_dict = self.wandb_run.config.data_dict
         self.train_artifact_path, self.train_artifact = \
             self.download_dataset_artifact(
                 data_dict.get('train'), opt.artifact_alias)
@@ -126,6 +123,7 @@ class WandbLogger():
                 "run_" + wandb.run.id + "_progress", "evaluation")
             self.result_table = wandb.Table(
                 ["epoch", "id", "prediction", "avg_confidence"])
+        return data_dict
 
     def download_dataset_artifact(self, path, alias):
         if path.startswith(WANDB_ARTIFACT_PREFIX):
@@ -136,10 +134,10 @@ class WandbLogger():
             return datadir, dataset_artifact
         return None, None
 
-    def download_model_artifact(self, name):
-        if name.startswith(WANDB_ARTIFACT_PREFIX):
-            model_artifact = wandb.use_artifact(
-                remove_prefix(name, WANDB_ARTIFACT_PREFIX) + ":latest")
+    def download_model_artifact(self, opt):
+        if opt.resume_from_artifact.startswith(WANDB_ARTIFACT_PREFIX):
+            model_artifact_name = 'run_' + Path(opt.resume).stem + '_model'
+            model_artifact = wandb.use_artifact(model_artifact_name + ":latest")
             assert model_artifact is not None, 'Error: W&B model artifact doesn\'t exist'
             modeldir = model_artifact.download()
             epochs_trained = model_artifact.metadata.get('epochs_trained')
@@ -179,8 +177,7 @@ class WandbLogger():
                 str(Path(project) / 'train')
         if data.get('val'):
             data['val'] = WANDB_ARTIFACT_PREFIX + str(Path(project) / 'val')
-        path = data_file if overwrite_config else data_file.replace(
-            '.', '_wandb.')  # updated data.yaml path
+        path = data_file if overwrite_config else '_wandb.'.join(data_file.rsplit('.', 1))  # updated data.yaml path
         # download via artifact instead of predefined field 'download:'
         data.pop('download', None)
         with open(path, 'w') as f:

@@ -33,7 +33,7 @@ from utils.google_utils import attempt_download
 from utils.loss import ComputeLoss
 from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, is_parallel
-from utils.wandb_logging.wandb_utils import WandbLogger, get_id_and_model_name, check_wandb_config_file
+from utils.wandb_logging.wandb_utils import WandbLogger, resume_and_get_id, check_wandb_config_file
 
 logger = logging.getLogger(__name__)
 
@@ -64,22 +64,22 @@ def train(hyp, opt, device, tb_writer=None):
     with open(opt.data) as f:
         data_dict = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
     is_coco = opt.data.endswith('coco.yaml')
-    nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
-    names = ['item'] if opt.single_cls and len(
-        data_dict['names']) != 1 else data_dict['names']  # class names
-    assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (
-        len(names), nc, opt.data)  # check
-    # Logging- Doing this before checking the dataset. In case artifact links are being used, they need to be downloaded
+    # Logging- Doing this before checking the dataset. Might update data_dict
     if rank in [-1, 0]:
         opt.hyp = hyp  # add hyperparameters
         run_id = ckpt.get('wandb_id') if 'ckpt' in locals() else None
         wandb_logger = WandbLogger(
             opt, Path(opt.save_dir).stem, run_id, data_dict)
+        data_dict = wandb_logger.data_dict
         if wandb_logger.wandb:
             import wandb
             weights = opt.weights  # WandbLogger might update weights path
     loggers = {'wandb': wandb_logger.wandb}  # loggers dict
-
+    nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
+    names = ['item'] if opt.single_cls and len(
+        data_dict['names']) != 1 else data_dict['names']  # class names
+    assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (
+        len(names), nc, opt.data)  # check
     # Model
     pretrained = weights.endswith('.pt')
     if pretrained:
@@ -165,12 +165,10 @@ def train(hyp, opt, device, tb_writer=None):
         if ckpt['optimizer'] is not None:
             optimizer.load_state_dict(ckpt['optimizer'])
             best_fitness = ckpt['best_fitness']
-
         # EMA
         if ema and ckpt.get('ema'):
             ema.ema.load_state_dict(ckpt['ema'][0].float().state_dict())
             ema.updates = ckpt['ema'][1]
-
         # Results
         if ckpt.get('training_results') is not None:
             results_file.write_text(
@@ -555,7 +553,6 @@ if __name__ == '__main__':
                         help='name of model artifact to resume training                            from.overwirtes local --weights file')
     opt = parser.parse_args()
     
-    opt.data = check_wandb_config_file(opt.data)
     # Set DDP variables
     opt.world_size = int(os.environ['WORLD_SIZE']
                          ) if 'WORLD_SIZE' in os.environ else 1
@@ -566,28 +563,26 @@ if __name__ == '__main__':
         check_requirements()
 
     # Resume
-    if opt.resume:  # resume an interrupted run
+    wandb_run = resume_and_get_id(opt)
+    if opt.resume and (not wandb_run):  # resume an interrupted run
         # specified or most recent path
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()
-        wandb_run, _ = get_id_and_model_name(opt.resume)
         assert os.path.isfile(
             ckpt) or wandb_run, 'ERROR: --resume checkpoint does not exist'
-        if not wandb_run:  # resuming from local checkpoint
-            apriori = opt.global_rank, opt.local_rank
-            with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
-                opt = argparse.Namespace(
-                    **yaml.load(f, Loader=yaml.SafeLoader))  # replace
-            opt.cfg, opt.weights, opt.resume, opt.batch_size, opt.global_rank, opt.local_rank = '', ckpt, True, opt.total_batch_size, *apriori  # reinstate
-            logger.info('Resuming training from %s' % ckpt)
-        else:
-            opt.save_dir = increment_path(Path(
-                opt.project) / ('run_'+wandb_run.id), exist_ok=opt.exist_ok)  # Resume run from wandb
+        apriori = opt.global_rank, opt.local_rank
+        with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
+            opt = argparse.Namespace(
+                **yaml.load(f, Loader=yaml.SafeLoader))  # replace
+        opt.cfg, opt.weights, opt.resume, opt.batch_size, opt.global_rank, opt.local_rank = '', ckpt, True, opt.total_batch_size, *apriori  # reinstate
+        logger.info('Resuming training from %s' % ckpt)
     else:
         # opt.hyp = opt.hyp or ('hyp.finetune.yaml' if opt.weights else 'hyp.scratch.yaml')
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(
             opt.cfg), check_file(opt.hyp)  # check files
         assert len(opt.cfg) or len(
             opt.weights), 'either --cfg or --weights must be specified'
+        print(opt.data)
+        opt.data = check_wandb_config_file(opt.data) #check if wandb config is present
         # extend to 2 sizes (train, test)
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))
         opt.name = 'evolve' if opt.evolve else opt.name
@@ -607,8 +602,9 @@ if __name__ == '__main__':
         opt.batch_size = opt.total_batch_size // opt.world_size
 
     # Hyperparameters
-    with open(opt.hyp) as f:
-        hyp = yaml.load(f, Loader=yaml.SafeLoader)  # load hyps
+    if not isinstance(opt.hyp, dict):
+        with open(opt.hyp) as f:
+            hyp = yaml.load(f, Loader=yaml.SafeLoader)  # load hyps
 
     # Train
     logger.info(opt)
