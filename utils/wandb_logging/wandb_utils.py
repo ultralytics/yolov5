@@ -160,7 +160,7 @@ class WandbLogger():
             'total_epochs': opt.epochs
         })
         model_artifact.add_file(str(path / 'last.pt'), name='last.pt')
-        wandb.log_artifact(model_artifact, aliases=['epoch ' + str(self.current_epoch), 'best' if best_model else ''])
+        wandb.log_artifact(model_artifact, aliases=['epoch ' + str(self.current_epoch), 'best' if best_model else '', 'latest'])
         print("Saving model artifact on epoch ", epoch + 1)
 
     def create_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False):
