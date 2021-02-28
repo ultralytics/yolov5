@@ -44,7 +44,6 @@ def resume_and_get_id(opt):
             assert wandb, 'install wandb to resume wandb runs'
             # Resume wandb-artifact:// runs here| workaround for not overwriting wandb.config
             run = wandb.init(id=run_id, project=project, resume='allow')
-            opt = run.config.opt
             opt.resume_from_artifact = model_artifact_name
             return run
         opt.resume_from_artifact = ''
@@ -104,6 +103,7 @@ class WandbLogger():
             if modeldir:
                 self.weights = Path(modeldir) / "last.pt"
                 opt.weights = str(self.weights)
+                opt.save_period = self.wandb_run.config.save_period
             # Advantage: Eliminates the need for config file to resume
             data_dict = dict(self.wandb_run.config.data_dict)
         self.train_artifact_path, self.train_artifact = \
@@ -144,13 +144,12 @@ class WandbLogger():
             modeldir = model_artifact.download()
             epochs_trained = model_artifact.metadata.get('epochs_trained')
             total_epochs = model_artifact.metadata.get('total_epochs')
-            opt.save_period =  model_artifact.metadata.get('save_period')
             assert epochs_trained < total_epochs,  'training to %g epochs is finished, nothing to resume.' % (
                 total_epochs)
             return modeldir, model_artifact
         return None, None
 
-    def log_model(self, path, opt, epoch):
+    def log_model(self, path, opt, epoch, best_model=False):
         datetime_suffix = datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
         model_artifact = wandb.Artifact('run_' + wandb.run.id + '_model', type='model', metadata={
             'original_url': str(path),
@@ -160,8 +159,7 @@ class WandbLogger():
             'datetime': datetime_suffix,
             'total_epochs': opt.epochs
         })
-        model_artifact.add_file(str(path / 'last.pt'), name='last.pt')
-        model_artifact.add_file(str(path / 'best.pt'), name='best.pt')
+        model_artifact.add_file(str(path / 'last.pt'), name='last.pt', aliases=['epoch ' + str(self.current_epoch), 'best' if best_model else ''])
         wandb.log_artifact(model_artifact)
         print("Saving model artifact on epoch ", epoch + 1)
 

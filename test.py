@@ -155,24 +155,25 @@ def test(data,
                     boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
                     wandb_images.append(wandb.Image(img[si], boxes=boxes, caption=path.name))
             # W&B logging - DSVIZ
-            if wandb_logger.val_table and wandb_logger.result_table:
-                box_data = []
-                total_conf = 0
-                for *xyxy, conf, cls in predn.tolist():
-                    if conf >= 0.175: # Arbitrary conf
-                        box_data.append({"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
-                                         "class_id": int(cls),
-                                         "box_caption": "%s" % (names[cls]),
-                                         "scores": {"class_score": conf},
-                                         "domain": "pixel"})
-                        total_conf = total_conf + conf
-                boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
-                id = batch_i*batch_size + si
-                wandb_logger.result_table.add_data(wandb_logger.current_epoch,
-                                      id,
-                                      wandb.Image(wandb_logger.val_table.data[id][1], boxes=boxes,classes=class_set,caption=path.name),
-                                      total_conf / max(1,len(box_data))
-                                     )
+            if wandb_logger.wandb:
+                if wandb_logger.val_table and wandb_logger.result_table:
+                    box_data = []
+                    total_conf = 0
+                    for *xyxy, conf, cls in predn.tolist():
+                        if conf >= 0.175: # Arbitrary conf
+                            box_data.append({"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
+                                            "class_id": int(cls),
+                                            "box_caption": "%s" % (names[cls]),
+                                            "scores": {"class_score": conf},
+                                            "domain": "pixel"})
+                            total_conf = total_conf + conf
+                    boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
+                    id = batch_i*batch_size + si
+                    wandb_logger.result_table.add_data(wandb_logger.current_epoch,
+                                        id,
+                                        wandb.Image(wandb_logger.val_table.data[id][1], boxes=boxes,classes=class_set,caption=path.name),
+                                        total_conf / max(1,len(box_data))
+                                        )
 
             # Append to pycocotools JSON dictionary
             if save_json:
