@@ -146,7 +146,7 @@ def test(data,
 
             # W&B logging - Media Panel Plots
             if len(wandb_images) < log_imgs and wandb_logger.current_epoch>0: # Check for test operation
-                if wandb_logger.current_epoch % wandb.config.bbox_interval==0:
+                if wandb_logger.current_epoch % wandb_logger.bbox_interval==0:
                     box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
                                  "class_id": int(cls),
                                  "box_caption": "%s %.3f" % (names[cls], conf),
@@ -261,6 +261,7 @@ def test(data,
             val_batches = [wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]
             wandb_logger.log({"Validation": val_batches})
     if wandb_images:
+        print("Logging images in epoch ===>", wandb_logger.current_epoch)
         wandb_logger.log({"Bounding Box Debugger/Images": wandb_images})
         wandb_images = []
     # Save JSON

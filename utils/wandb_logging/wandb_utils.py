@@ -92,18 +92,14 @@ class WandbLogger():
         return wandb_data_dict
 
     def setup_training(self, opt, data_dict):
-        self.log_dict = {}
-        self.current_epoch = 0
-        self.log_imgs = 16
-        if opt.bbox_interval == -1:
-            opt.bbox_interval = (
-                opt.epochs // 10) if opt.epochs > 10 else opt.epochs
+        self.log_dict, self.current_epoch, self.log_imgs = {}, 0, 16 # Logging Constants
+        self.bbox_interval = opt.bbox_interval
         if opt.resume_from_artifact:
             modeldir, _ = self.download_model_artifact(opt)
             if modeldir:
                 self.weights = Path(modeldir) / "last.pt"
-                opt.weights = str(self.weights)
-                opt.save_period = self.wandb_run.config.save_period
+                config = self.wandb_run.config
+                opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval = str(self.weights), config.save_period, config.total_batch_size, config.bbox_interval
             # Advantage: Eliminates the need for config file to resume
             data_dict = dict(self.wandb_run.config.data_dict)
         self.train_artifact_path, self.train_artifact = \
@@ -125,6 +121,9 @@ class WandbLogger():
             self.result_table = wandb.Table(
                 ["epoch", "id", "prediction", "avg_confidence"])
             self.val_table = self.val_artifact.get("val")
+        if opt.bbox_interval == -1:
+            self.bbox_interval = opt.bbox_interval = (opt.epochs // 10) if opt.epochs > 10 else opt.epochs
+        
         return data_dict
 
     def download_dataset_artifact(self, path, alias):
@@ -149,7 +148,7 @@ class WandbLogger():
             return modeldir, model_artifact
         return None, None
 
-    def log_model(self, path, opt, epoch, best_model=False):
+    def log_model(self, path, opt, epoch, fitness_score, best_model=False):
         datetime_suffix = datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
         model_artifact = wandb.Artifact('run_' + wandb.run.id + '_model', type='model', metadata={
             'original_url': str(path),
@@ -160,7 +159,7 @@ class WandbLogger():
             'total_epochs': opt.epochs
         })
         model_artifact.add_file(str(path / 'last.pt'), name='last.pt')
-        wandb.log_artifact(model_artifact, aliases=['epoch ' + str(self.current_epoch), 'best' if best_model else '', 'latest'])
+        wandb.log_artifact(model_artifact, aliases=['latest', 'epoch ' + str(self.current_epoch), 'best' if best_model else ''])
         print("Saving model artifact on epoch ", epoch + 1)
 
     def create_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False):
@@ -238,8 +237,7 @@ class WandbLogger():
                 train_results = wandb.JoinedTable(
                     self.val_table, self.result_table, "id")
                 self.result_artifact.add(train_results, 'result')
-                wandb.log_artifact(self.result_artifact, aliases=[
-                                   'epoch ' + str(self.current_epoch), 'best' if best_result else ''])
+                wandb.log_artifact(self.result_artifact, aliases=['latest', 'epoch ' + str(self.current_epoch), ('best' if best_result else '')])
                 self.result_table = wandb.Table(
                     ["epoch", "id", "prediction", "avg_confidence"])
                 self.result_artifact = wandb.Artifact(
