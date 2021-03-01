@@ -211,7 +211,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
 
         n = max(round(n * gd), 1) if n > 1 else n  # depth gain
         if m in [Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP,
-                 C3, C3T, C3TR]:
+                 C3, C3TR]:
             c1, c2 = ch[f], args[0]
 
             # Normal
@@ -233,7 +233,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             #     c2 = make_divisible(c2, 8) if c2 != no else c2
 
             args = [c1, c2, *args[1:]]
-            if m in [BottleneckCSP, C3, C3T, C3TR]:
+            if m in [BottleneckCSP, C3, C3TR]:
                 args.insert(2, n)
                 n = 1
         elif m is nn.BatchNorm2d:

@@ -41,43 +41,6 @@ class Conv(nn.Module):
         return self.act(self.conv(x))
 
 
-class Transformer(nn.Module):
-    def __init__(self, c1, c2, num_heads):
-        super(Transformer, self).__init__()
-
-        self.linear = nn.Linear(c1, c1)
-        self.ln1 = nn.LayerNorm(c1)
-        self.q = nn.Linear(c1, c1)
-        self.k = nn.Linear(c1, c1)
-        self.v = nn.Linear(c1, c1)
-        self.ma = nn.MultiheadAttention(embed_dim=c1, num_heads=num_heads)
-        self.ln2 = nn.LayerNorm(c1)
-        self.fc1 = nn.Linear(c1, c2)
-        self.fc2 = nn.Linear(c2, c2)
-        self.gelu = nn.GELU()
-        self.c2 = c2
-
-    def forward(self, x):
-        b, _, w, h = x.shape
-        p = x.flatten(2)
-        p = p.unsqueeze(0)
-        p = p.transpose(0, 3)
-        p = p.squeeze(3)
-        e = self.linear(p)
-        x = p + e
-
-        x_ = self.ln1(x)
-        x = self.ma(self.q(x_), self.k(x_), self.v(x_))[0] + x
-        x = self.ln2(x)
-        x = self.fc1(x)
-        x = self.gelu(x)
-        x = self.fc2(x)
-        x = x.unsqueeze(3)
-        x = x.transpose(0, 3)
-        x = x.reshape(b, self.c2, w, h)
-        return x
-
-
 class TransformerLayer(nn.Module):
     def __init__(self, c, num_heads):
         super().__init__()
@@ -180,13 +143,6 @@ class C3(nn.Module):
 
     def forward(self, x):
         return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))
-
-
-class C3T(C3):
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
-        super().__init__(c1, c2, n, shortcut, g, e)
-        c_ = int(c2 * e)
-        self.m = nn.Sequential(*[BoT(c_, c_, shortcut, g, e=1.0) for _ in range(n)])
 
 
 class C3TR(C3):
