@@ -1,9 +1,11 @@
 import argparse
+import queue
 import time
 from pathlib import Path
 
 import cv2
 import torch
+import numpy as np
 import torch.backends.cudnn as cudnn
 from numpy import random
 
@@ -60,6 +62,10 @@ def detect(save_img=False):
     if device.type != 'cpu':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
+
+    total_cans = 0
+    n_frame_avg = 3 # Number of frames being averaged. This should be equal to number of regions per frame
+    detection_q = queue.Queue(maxsize=n_frame_avg) # Initialize frame queue (FIFO) with max size of n_frame_avg
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -101,19 +107,39 @@ def detect(save_img=False):
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Write results
+                detections = []
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
+                        
+                        detection_ = line[1:] # x,y,w,h
+                        detections.append(detection_) # Appending detections for one frame
+                        
                         with open(txt_path + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
                     if save_img or view_img:  # Add bbox to image
                         label = f'{names[int(cls)]} {conf:.2f}'
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
+            
+            # Count Cans
+            detections = torch.Tensor(detections) # Detections of one frame
+            if detection_q.full():
+                # If queue is full, pop the oldest detections and add the latest detections (first in first out)
+                _ = detection_q.get()
+                detection_q.put(detections)
+            else: detection_q.put(detections)
+            
+            if detection_q.full():
+                # Only starts counting when the queue is full
+                num_cans = counter(detection_q) 
+                total_cans += num_cans
+                print(f'{num_cans} Cans passed')
 
-            # Print time (inference + NMS)
-            print(f'{s}Done. ({t2 - t1:.3f}s)')
+
+            # Print time (inference + NMS + counting)
+            print(f'{s}Done. ({t2 - t1:.3f}s)\n')
 
             # Stream results
             if view_img:
@@ -142,10 +168,35 @@ def detect(save_img=False):
         print(f"Results saved to {save_dir}{s}")
 
     print(f'Done. ({time.time() - t0:.3f}s)')
+    print(f'Total number of cans: {total_cans}')
 
+def counter(q):
+    # Region parameters (replace with experimanted values)
+    splits = [0.0, 0.2, 0.5, 1.0]
+    # r_bottom, r_top = 0.0, 0.2
+    # b_bottom, b_top = 0.2, 0.5
+    # g_bottom, g_top = 0.5, 1.0
+    n_detections = []
+    print()
+    for i, detection in enumerate(list(q.queue)):
+        total_n_cans_in_frame_i = detection.shape[0]
+        # Number of detections that are in certain region
+        n_detections_region_i = torch.sum(np.logical_and(splits[i] < detection[:, 1], detection[:, 1] < splits[i+1])) 
+        n_detections.append(n_detections_region_i)
+        # For debugging
+        print(f"n_detections_region_{i}: {n_detections_region_i}")
+
+    # Average (switch to other rounding methods if desired)
+    num_cans = int(np.round(np.average(n_detections)))
+    return num_cans
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    # Counting (Im lazy go figure youself :P)
+    # parser.add_argument('--splits', type=list, default=[0.0, 0.5, 0.8, 1.0], help='list that split an image into \
+    #                                                                                 multiple counting regions')
+
+    # Detection
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='data/images', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
@@ -173,3 +224,8 @@ if __name__ == '__main__':
                 strip_optimizer(opt.weights)
         else:
             detect()
+
+# Run docker container: 
+# sudo docker run --ipc=host -v path/to/yolov5-Can-Counter:/usr/src/app  --gpus all -it ultralytics/yolov5:latest
+# Run can counting program: 
+# python detect.py --weights ptah/to/weight --source path/to/video --save-txt
