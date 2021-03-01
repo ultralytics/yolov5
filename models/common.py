@@ -104,13 +104,6 @@ class Bottleneck(nn.Module):
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
 
-class BoT(Bottleneck):
-    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):
-        super().__init__(c1, c2, shortcut, g, e)
-        c_ = int(c2 * e)
-        self.cv2 = Transformer(c_, c2, 4)
-
-
 class BottleneckCSP(nn.Module):
     # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
