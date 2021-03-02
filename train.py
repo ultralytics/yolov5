@@ -67,18 +67,15 @@ def train(hyp, opt, device, tb_writer=None):
     if rank in [-1, 0]:
         opt.hyp = hyp  # add hyperparameters
         run_id = ckpt.get('wandb_id') if 'ckpt' in locals() else None
-        wandb_logger = WandbLogger(
-            opt, Path(opt.save_dir).stem, run_id, data_dict)
+        wandb_logger = WandbLogger(opt, Path(opt.save_dir).stem, run_id, data_dict)
         data_dict = wandb_logger.data_dict
         if wandb_logger.wandb:
             import wandb
             weights = opt.weights  # WandbLogger might update weights path
     loggers = {'wandb': wandb_logger.wandb}  # loggers dict
     nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
-    names = ['item'] if opt.single_cls and len(
-        data_dict['names']) != 1 else data_dict['names']  # class names
-    assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (
-        len(names), nc, opt.data)  # check
+    names = ['item'] if opt.single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
+    assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)  # check
     # Model
     pretrained = weights.endswith('.pt')
     if pretrained:
@@ -113,8 +110,7 @@ def train(hyp, opt, device, tb_writer=None):
     nbs = 64  # nominal batch size
     # accumulate loss before optimizing
     accumulate = max(round(nbs / total_batch_size), 1)
-    hyp['weight_decay'] *= total_batch_size * \
-        accumulate / nbs  # scale weight_decay
+    hyp['weight_decay'] *= total_batch_size * accumulate / nbs  # scale weight_decay
     logger.info(f"Scaled weight_decay = {hyp['weight_decay']}")
     pg0, pg1, pg2 = [], [], []  # optimizer parameter groups
     for k, v in model.named_modules():
@@ -126,14 +122,11 @@ def train(hyp, opt, device, tb_writer=None):
             pg1.append(v.weight)  # apply decay
 
     if opt.adam:
-        optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(
-            hyp['momentum'], 0.999))  # adjust beta1 to momentum
+        optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
     else:
-        optimizer = optim.SGD(
-            pg0, lr=hyp['lr0'], momentum=hyp['momentum'], nesterov=True)
+        optimizer = optim.SGD(pg0, lr=hyp['lr0'], momentum=hyp['momentum'], nesterov=True)
     # add pg1 with weight_decay
-    optimizer.add_param_group(
-        {'params': pg1, 'weight_decay': hyp['weight_decay']})
+    optimizer.add_param_group({'params': pg1, 'weight_decay': hyp['weight_decay']})
     optimizer.add_param_group({'params': pg2})  # add pg2 (biases)
     logger.info('Optimizer groups: %g .bias, %g conv.weight, %g other' % (len(pg2), len(pg1), len(pg0)))
     del pg0, pg1, pg2
@@ -141,9 +134,9 @@ def train(hyp, opt, device, tb_writer=None):
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     # https://pytorch.org/docs/stable/_modules/torch/optim/lr_scheduler.html#OneCycleLR
     if opt.linear_lr:
-        def lf(x): return (1 - x / (epochs - 1)) * 1.0 - hyp['lrf']) + hyp['lrf']  # linear
+        lf = lambda x: (1 - x / (epochs - 1)) * (1.0 - hyp['lrf']) + hyp['lrf']  # linear
     else:
-        lf=one_cycle(1, hyp['lrf'], epochs)  # cosine 1->hyp['lrf']
+        lf = one_cycle(1, hyp['lrf'], epochs)  # cosine 1->hyp['lrf']
     scheduler=lr_scheduler.LambdaLR(optimizer, lr_lambda = lf)
     # plot_lr_scheduler(optimizer, scheduler, epochs)
     # EMA
@@ -201,15 +194,13 @@ def train(hyp, opt, device, tb_writer=None):
                                             image_weights = opt.image_weights, quad = opt.quad, prefix = colorstr('train: '))
     mlc=np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
     nb=len(dataloader)  # number of batches
-    assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (
-        mlc, nc, opt.data, nc - 1)
+    assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (mlc, nc, opt.data, nc - 1)
 
     # Process 0
     if rank in [-1, 0]:
         testloader=create_dataloader(test_path, imgsz_test, batch_size * 2, gs, opt,  # testloader
                                        hyp = hyp, cache = opt.cache_images and not opt.notest, rect = True, rank = -1,
                                        world_size = opt.world_size, workers = opt.workers,pad = 0.5, prefix = colorstr('val: '))[0]
-
         if not opt.resume:
             labels=np.concatenate(dataset.labels, 0)
             c=torch.tensor(labels[:, 0])  # classes
@@ -227,13 +218,11 @@ def train(hyp, opt, device, tb_writer=None):
     # Model parameters
     hyp['box'] *= 3. / nl  # scale to layers
     hyp['cls'] *= nc / 80. * 3. / nl  # scale to classes and layers
-    # scale to image size and layers
-    hyp['obj'] *= (imgsz / 640) ** 2 * 3. / nl
+    hyp['obj'] *= (imgsz / 640) ** 2 * 3. / nl # scale to image size and layers
     model.nc=nc  # attach number of classes to model
     model.hyp=hyp  # attach hyperparameters to model
     model.gr=1.0  # iou loss ratio (obj_loss = 1.0 or iou)
-    model.class_weights=labels_to_class_weights(
-        dataset.labels, nc).to(device) * nc  # attach class weights
+    model.class_weights=labels_to_class_weights(dataset.labels, nc).to(device) * nc  # attach class weights
     model.names=names
 
     # Start training
@@ -281,7 +270,6 @@ def train(hyp, opt, device, tb_writer=None):
         for i, (imgs, targets, paths, _) in pbar:
             ni=i + nb * epoch  # number integrated batches (since train start)
             imgs=imgs.to(device, non_blocking = True).float() / 255.0  # uint8 to float32, 0-255 to 0.0-1.0
-
             # Warmup
             if ni <= nw:
                 xi=[0, nw]  # x interp
@@ -289,7 +277,7 @@ def train(hyp, opt, device, tb_writer=None):
                 accumulate=max(1, np.interp(i, xi, [1, nbs / total_batch_size]).round())
                 for j, x in enumerate(optimizer.param_groups):
                     # bias lr falls from 0.1 to lr0, all other lrs rise from 0.0 to lr0
-                    x['lr']=np.interp(ni, xi, [hyp['warmup_bias_lr'] if j == 2 else 0.0, x['initial_lr'] * lf(epoch)])
+                    x['lr'] = np.interp(ni, xi, [hyp['warmup_bias_lr'] if j == 2 else 0.0, x['initial_lr'] * lf(epoch)])
                     if 'momentum' in x:
                         x['momentum']=np.interp(ni, xi, [hyp['warmup_momentum'], hyp['momentum']])
 
