@@ -99,8 +99,6 @@ class ComputeLoss:
         # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
         self.cp, self.cn = smooth_BCE(eps=h.get('label_smoothing', 0.0))
 
-        print(h.get('label_smoothing', 0.0), self.cp, self.cn)
-
         # Focal loss
         g = h['fl_gamma']  # focal loss gamma
         if g > 0:
