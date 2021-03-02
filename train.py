@@ -239,14 +239,12 @@ def train(hyp, opt, device, tb_writer=None):
     # Start training
     t0=time.time()
     # number of warmup iterations, max(3 epochs, 1k iterations)
-    nw=max(round(hyp['warmup_epochs'] * nb), 1000)
-    # nw = min(nw, (epochs - start_epoch) / 2 * nb)  # limit warmup to < 1/2 of training
+    nw=max(round(hyp['warmup_epochs'] * nb), 1000)  # nw = min(nw, (epochs - start_epoch) / 2 * nb)  # limit warmup to < 1/2 of training
     maps=np.zeros(nc)  # mAP per class
-    # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
-    results=(0, 0, 0, 0, 0, 0, 0)
+    results=(0, 0, 0, 0, 0, 0, 0) # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch=start_epoch - 1  # do not move
-    scaler=amp.GradScaler(enabled = cuda)
-    compute_loss=ComputeLoss(model)  # init loss class
+    scaler = amp.GradScaler(enabled = cuda)
+    compute_loss = ComputeLoss(model)  # init loss class
     logger.info(f'Image sizes {imgsz} train, {imgsz_test} test\n' f'Using {dataloader.num_workers} dataloader workers\n'
                 f'Logging results to {save_dir}\n'f'Starting training for {epochs} epochs...')
     # epoch ------------------------------------------------------------------
@@ -257,9 +255,9 @@ def train(hyp, opt, device, tb_writer=None):
         if opt.image_weights:
             # Generate indices
             if rank in [-1, 0]:
-                cw=model.class_weights.cpu().numpy() * (1 - maps) ** 2 / nc  # class weights
-                iw= labels_to_image_weights(dataset.labels, nc = nc, class_weights = cw)  # image weights
-                dataset.indices= random.choices(range(dataset.n), weights = iw, k = dataset.n)  # rand weighted idx
+                cw = model.class_weights.cpu().numpy() * (1 - maps) ** 2 / nc  # class weights
+                iw = labels_to_image_weights(dataset.labels, nc = nc, class_weights = cw)  # image weights
+                dataset.indices = random.choices(range(dataset.n), weights = iw, k = dataset.n)  # rand weighted idx
             # Broadcast if DDP
             if rank != -1:
                 indices=(torch.tensor(dataset.indices) if rank == 0 else torch.zeros(dataset.n)).int()
@@ -297,8 +295,8 @@ def train(hyp, opt, device, tb_writer=None):
 
             # Multi-scale
             if opt.multi_scale:
-                sz=random.randrange(imgsz * 0.5, imgsz * 1.5 + gs) // gs * gs  # size
-                sf=sz / max(imgs.shape[2:])  # scale factor
+                sz = random.randrange(imgsz * 0.5, imgsz * 1.5 + gs) // gs * gs  # size
+                sf = sz / max(imgs.shape[2:])  # scale factor
                 if sf != 1:
                     # new shape (stretched to gs-multiple)
                     ns=[math.ceil(x * sf / gs) * gs for x in imgs.shape[2:]]
@@ -306,7 +304,7 @@ def train(hyp, opt, device, tb_writer=None):
 
             # Forward
             with amp.autocast(enabled = cuda):
-                pred=model(imgs)  # forward
+                pred = model(imgs)  # forward
                 loss, loss_items=compute_loss(pred, targets.to(device))  # loss scaled by batch_size
                 if rank != -1:
                     loss *= opt.world_size  # gradient averaged between devices in DDP mode
@@ -326,8 +324,8 @@ def train(hyp, opt, device, tb_writer=None):
 
             # Print
             if rank in [-1, 0]:
-                mloss=(mloss * i + loss_items) / (i + 1)  # update mean losses
-                mem='%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
+                mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
+                mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
                 s=('%10s' * 2 + '%10.4g' * 6) % ('%g/%g' % (epoch, epochs - 1), mem, *mloss, targets.shape[0], imgs.shape[-1])
                 pbar.set_description(s)
 
@@ -421,8 +419,7 @@ def train(hyp, opt, device, tb_writer=None):
             if wandb_logger.wandb:
                 files = ['results.png', 'confusion_matrix.png', *
                          [f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R')]]
-                wandb_logger.log({"Results": [wandb.Image(str(save_dir / f), caption=f) for f in files
-                                              if (save_dir / f).exists()]})
+                wandb_logger.log({"Results": [wandb.Image(str(save_dir / f), caption=f) for f in files if (save_dir / f).exists()]})
         # Test best.pt
         logger.info('%g epochs completed in %.3f hours.\n' %
                     (epoch - start_epoch + 1, (time.time() - t0) / 3600))
@@ -505,8 +502,7 @@ if __name__ == '__main__':
     if opt.resume and (not wandb_run):  # resume an interrupted run
         # specified or most recent path
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()
-        assert os.path.isfile(
-            ckpt) or wandb_run, 'ERROR: --resume checkpoint does not exist'
+        assert os.path.isfile(ckpt) or wandb_run, 'ERROR: --resume checkpoint does not exist'
         apriori = opt.global_rank, opt.local_rank
         with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
             opt = argparse.Namespace(**yaml.load(f, Loader=yaml.SafeLoader))  # replace
@@ -514,17 +510,14 @@ if __name__ == '__main__':
         logger.info('Resuming training from %s' % ckpt)
     else:
         # opt.hyp = opt.hyp or ('hyp.finetune.yaml' if opt.weights else 'hyp.scratch.yaml')
-        opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(
-            opt.cfg), check_file(opt.hyp)  # check files
-        assert len(opt.cfg) or len(
-            opt.weights), 'either --cfg or --weights must be specified'
+        opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
+        assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         print(opt.data)
         opt.data = check_wandb_config_file(opt.data) #check if wandb config is present
         # extend to 2 sizes (train, test)
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))
         opt.name = 'evolve' if opt.evolve else opt.name
-        opt.save_dir = increment_path(Path(
-            opt.project) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
+        opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
 
     # DDP mode
     opt.total_batch_size = opt.batch_size
@@ -611,7 +604,8 @@ if __name__ == '__main__':
                     # x = x[random.randint(0, n - 1)]  # random selection
                     x = x[random.choices(range(n), weights=w)[0]]  # weighted selection
                 elif parent == 'weighted':
-                    x = (x * w.reshape(n, 1)).sum(0) / w.sum()  # weighted combination
+                    x = (x * w.reshape(n, 1)).sum(0) / \
+w.sum()  # weighted combination
                 # Mutate
                 mp, s = 0.8, 0.2  # mutation probability, sigma
                 npr = np.random
