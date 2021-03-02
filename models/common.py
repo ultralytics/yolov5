@@ -1,6 +1,5 @@
 # This file contains modules common to various models
 
-import base64
 import math
 from pathlib import Path
 
@@ -9,7 +8,6 @@ import requests
 import torch
 import torch.nn as nn
 from PIL import Image
-from io import BytesIO
 
 from utils.datasets import letterbox
 from utils.general import non_max_suppression, make_divisible, scale_coords, xyxy2xywh
@@ -253,7 +251,7 @@ class Detections:
         self.t = ((times[i + 1] - times[i]) * 1000 / self.n for i in range(3))  # timestamps (ms)
         self.s = shape  # inference BCHW shape
 
-    def display(self, pprint=False, show=False, save=False, render=False, save_dir='', base_64=False):
+    def display(self, pprint=False, show=False, save=False, render=False, save_dir=''):
         colors = color_list()
         for i, (img, pred) in enumerate(zip(self.imgs, self.pred)):
             str = f'image {i + 1}/{len(self.pred)}: {img.shape[0]}x{img.shape[1]} '
@@ -261,7 +259,7 @@ class Detections:
                 for c in pred[:, -1].unique():
                     n = (pred[:, -1] == c).sum()  # detections per class
                     str += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
-                if show or save or render or base_64:
+                if show or save or render:
                     for *box, conf, cls in pred:  # xyxy, confidence, class
                         label = f'{self.names[int(cls)]} {conf:.2f}'
                         plot_one_box(box, img, label=label, color=colors[int(cls) % 10])
@@ -276,12 +274,6 @@ class Detections:
                 print(f"{'Saving' * (i == 0)} {f},", end='' if i < self.n - 1 else ' done.\n')
             if render:
                 self.imgs[i] = np.asarray(img)
-            if base_64:
-                buffered = BytesIO()
-                img.save(buffered, format="JPEG")
-                img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-                return img_base64
-
 
     def print(self):
         self.display(pprint=True)  # print results
@@ -298,9 +290,6 @@ class Detections:
     def render(self):
         self.display(render=True)  # render results
         return self.imgs
-
-    def tobase64(self):
-        return self.display(base_64=True)
 
     def __len__(self):
         return self.n
