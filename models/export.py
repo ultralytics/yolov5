@@ -8,6 +8,8 @@ import argparse
 import sys
 import time
 
+from utils.torch_utils import select_device
+
 sys.path.append('./')  # to run '$ python *.py' files in subdirectories
 
 import torch
@@ -25,6 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--skip-last-layer', action='store_true', help='skip export of last (detect) layer')
+    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
@@ -32,7 +35,7 @@ if __name__ == '__main__':
     t = time.time()
 
     # Load PyTorch model
-    device = torch.device("cuda:0") if torch.cuda.is_available() else "cpu"
+    device = select_device(opt.device)
     model = attempt_load(opt.weights, map_location=device)  # load FP32 model
     labels = model.names
 
