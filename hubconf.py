@@ -120,7 +120,7 @@ def custom(path_or_model='path/to/model.pt', autoshape=True):
     """
     model = torch.load(path_or_model) if isinstance(path_or_model, str) else path_or_model  # load checkpoint
     if isinstance(model, dict):
-        model = model['model']  # load model
+        model = model['ema' if model.get('ema') else 'model']  # load model
 
     hub_model = Model(model.yaml).to(next(model.parameters()).device)  # create
     hub_model.load_state_dict(model.float().state_dict())  # load state_dict

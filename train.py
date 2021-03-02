@@ -151,8 +151,8 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
         # EMA
         if ema and ckpt.get('ema'):
-            ema.ema.load_state_dict(ckpt['ema'][0].float().state_dict())
-            ema.updates = ckpt['ema'][1]
+            ema.ema.load_state_dict(ckpt['ema'].float().state_dict())
+            ema.updates = ckpt['updates']
 
         # Results
         if ckpt.get('training_results') is not None:
@@ -383,9 +383,9 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
                         'training_results': results_file.read_text(),
-                        'model': ema.ema if final_epoch else deepcopy(
-                            model.module if is_parallel(model) else model).half(),
-                        'ema': (deepcopy(ema.ema).half(), ema.updates),
+                        'model': deepcopy(model.module if is_parallel(model) else model).half(),
+                        'ema': deepcopy(ema.ema).half(),
+                        'updates': ema.updates,
                         'optimizer': optimizer.state_dict(),
                         'wandb_id': wandb_run.id if wandb else None}
 
