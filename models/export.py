@@ -88,7 +88,7 @@ if __name__ == '__main__':
         import coremltools as ct
 
         print('\nStarting CoreML export with coremltools %s...' % ct.__version__)
-        # convert model from torchscript and apply pixel scaling as per detect.py
+        # convert model from torchscript and apply pixel scaling as per haohan_count.py
         model = ct.convert(ts, inputs=[ct.ImageType(name='image', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
         f = opt.weights.replace('.pt', '.mlmodel')  # filename
         model.save(f)
