@@ -21,19 +21,20 @@
 
 # Overview
 
-App deploys YOLO v5 model (pretrained on COCO or custom one) as REST API service. This is the simplest way how any model can be integrated into Supervisely Platform. 
+App deploys YOLO v5 model (pretrained on COCO or custom one) as REST API service. Serve app is the simplest way how any model can be integrated into Supervisely. Once model is deployed, user gets the following benefits:
 
-Serve app is the simplest way how any model can be integrated into Supervisely. Once model is deployed, user gets the following benefits:
-- model can be used directly in labeling interface (images, videos)
-- 2
-- 3
+1. Use out of the box apps for inference
+   - model can be used directly in [labeling interface](https://ecosystem.supervise.ly/apps/supervisely-ecosystem%252Fnn-image-labeling%252Fannotation-tool) (images, videos)
+   - model can be applied to [images project or dataset](https://ecosystem.supervise.ly/apps/supervisely-ecosystem%252Fnn-image-labeling%252Fproject-dataset)
+2. Apps from Supervisely Ecosystem can use NN predictions: for visualization, for analysis, performance evaluation, etc ...
+3. Communicate with NN in custom python script (see section <a href="#For-developers">for developers</a>)
+4. App illustrates how to use NN weights. For example: you can train model in Supervisely, download its weights and use them the way you want.
 
+Watch usage demo:
 
-Developer just has to implement 3 methods:
-- 1
-- 2
-- 3...
-
+<a data-key="sly-embeded-video-link" href="https://youtu.be/cMBhn1Erluk" data-video-code="cMBhn1Erluk">
+    <img src="https://i.imgur.com/UlEMeem.png" alt="SLY_EMBEDED_VIDEO_LINK"  style="max-width:100%;">
+</a>
 
 
 # How To Run
@@ -69,9 +70,16 @@ change what agent should be used for deploy.
 
 # For developers
 
-This python example illustrates available methods of the deployed model. Now you can integrate network predictions to your python script. Also this is the way how other Supervisely Apps can communicate with NNs.
+This python example illustrates available methods of the deployed model. Now you can integrate network predictions to your python script. This is the way how other Supervisely Apps can communicate with NNs. And also you can use serving app as an example - how to use download NN weights outside Supervisely.
 
-## Python Example
+To implement serving app developer has just to define four methods:
+- function [`get_session_info`](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/sly_serve.py#L50) information about deployed model - just returns python dictionary with any useful information
+- function [`construct_model_meta`](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/nn_utils.py#L16) - returns model output classes and tags in [Supervisely format](https://docs.supervise.ly/data-organization/00_ann_format_navi)
+- function [`load_model`](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/nn_utils.py#L37) - how to load model to the device (cpu or/and gpu) - [link](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/sly_serve.py#L165)
+- function [`inference`](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/nn_utils.py#L62)  - how to apply model to the image and how to convert predictions to [Supervisely format](https://docs.supervise.ly/data-organization/00_ann_format_navi)
+
+
+## Python Example: how to communicate with deployed model 
 ```python
 import json
 import yaml
