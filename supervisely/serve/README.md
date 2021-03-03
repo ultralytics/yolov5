@@ -329,6 +329,19 @@ Prediction for image id (full image):
 :-------------------------:|:-----------------------------------:
 <img src="https://i.imgur.com/RQDrH4B.jpg" style="max-height: 300px; width: auto;"/>  |  <img src="https://i.imgur.com/yYujbI0.jpg" style="max-height: 300px; width: auto;"/>
 
+XXX:
+<table>
+  <tr>
+    <th>03_input_id.jpg</th>
+    <th>03_prediction_id.jpg</th>
+  </tr>
+  <tr>
+    <td><img src="https://i.imgur.com/RQDrH4B.jpg" style="max-height: 300px; width: auto;"/></td>
+    <td><img src="https://i.imgur.com/yYujbI0.jpg" style="max-height: 300px; width: auto;"/></td>
+  </tr>
+</table>
+
+
 Prediction for image id (ROI - red rectangle):
 
 04_input_id_roi.jpg  |  04_prediction_id_roi.jpg
