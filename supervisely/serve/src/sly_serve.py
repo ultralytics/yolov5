@@ -88,6 +88,15 @@ def inference_image_path(image_path, context, state, app_logger):
 
     image = sly.image.read(image_path)  # RGB image
     if rect is not None:
+        canvas_rect = sly.Rectangle.from_size(image.shape[:2])
+        results = rect.crop(canvas_rect)
+        if len(results) != 1:
+            return {
+                "message": "roi rectangle out of image bounds",
+                "roi": state["rectangle"],
+                "img_size": {"height": image.shape[0], "width": image.shape[1]}
+            }
+        rect = results[0]
         image = sly.image.crop(image, rect)
     ann_json = inference(model, half, device, imgsz, image, meta,
                          conf_thres=conf_thres, iou_thres=iou_thres, augment=augment,

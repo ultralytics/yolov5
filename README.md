@@ -1,4 +1,4 @@
-# YOLOv5 integration into Supervisely:
+# YOLOv5 integration into Supervisely
 
 - [train app](./supervisely/train/README.md)
 
