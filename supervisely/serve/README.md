@@ -24,8 +24,9 @@
 App deploys YOLO v5 model (pretrained on COCO or custom one) as REST API service. Serve app is the simplest way how any model can be integrated into Supervisely. Once model is deployed, user gets the following benefits:
 
 1. Use out of the box apps for inference
-   - model can be used directly in [labeling interface](https://ecosystem.supervise.ly/apps/supervisely-ecosystem%252Fnn-image-labeling%252Fannotation-tool) (images, videos)
-   - model can be applied to [images project or dataset](https://ecosystem.supervise.ly/apps/supervisely-ecosystem%252Fnn-image-labeling%252Fproject-dataset)
+   - used directly in [labeling interface](https://ecosystem.supervise.ly/apps/supervisely-ecosystem%252Fnn-image-labeling%252Fannotation-tool) (images, videos)
+   - apply to [images project or dataset](https://ecosystem.supervise.ly/apps/supervisely-ecosystem%252Fnn-image-labeling%252Fproject-dataset)
+   - apply to videos (coming soon)
 2. Apps from Supervisely Ecosystem can use NN predictions: for visualization, for analysis, performance evaluation, etc ...
 3. Communicate with NN in custom python script (see section <a href="#For-developers">for developers</a>)
 4. App illustrates how to use NN weights. For example: you can train model in Supervisely, download its weights and use them the way you want.
