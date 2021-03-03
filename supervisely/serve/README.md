@@ -325,15 +325,6 @@ Image URL + ROI  |  02_prediction_url_roi.jpg
 
 Prediction for image id (full image):
 
-03_input_id.jpg  |  03_prediction_id.jpg
-:-------------------------:|:-----------------------------------:
-<img src="https://i.imgur.com/RQDrH4B.jpg" style="max-height: 300px; width: auto;"/>  |  <img src="https://i.imgur.com/yYujbI0.jpg" style="max-height: 300px; width: auto;"/>
-
-XXX:
-
-
-
-xxx2
 <table>
   <tr>
     <th>03_input_id.jpg</th>
@@ -348,15 +339,38 @@ xxx2
 
 Prediction for image id (ROI - red rectangle):
 
-04_input_id_roi.jpg  |  04_prediction_id_roi.jpg
-:-------------------------:|:-----------------------------------:
-<img src="https://i.imgur.com/2XlEZQK.jpg" style="max-height: 300px; width: auto;"/>  |  <img src="https://i.imgur.com/1U7413M.jpg" style="max-height: 300px; width: auto;"/>
+<table>
+  <tr>
+    <th>04_input_id_roi.jpg</th>
+    <th>04_prediction_id_roi.jpg</th>
+  </tr>
+  <tr>
+    <td><img src="https://i.imgur.com/2XlEZQK.jpg" height="300"/></td>
+    <td><img src="https://i.imgur.com/1U7413M.jpg" height="300"/></td>
+  </tr>
+</table>
 
 Prediction for batch of images ids:
 
-Image ID  |  Prediction
-:-------------------------:|:-----------------------------------:
-<img src="https://i.imgur.com/4Lh9tAm.jpg" style="max-height: 300px; width: auto;"/>  |  <img src="https://i.imgur.com/emsah1q.jpg" style="max-height: 300px; width: auto;"/>
-<img src="https://i.imgur.com/UqiV5Ka.jpg" style="max-height: 300px; width: auto;"/>  |  <img src="https://i.imgur.com/GhoKKCl.jpg" style="max-height: 300px; width: auto;"/>
-<img src="https://i.imgur.com/8GjoNDH.jpg" style="max-height: 300px; width: auto;"/>  |  <img src="https://i.imgur.com/yzinXD6.jpg" style="max-height: 300px; width: auto;"/>
-<img src="https://i.imgur.com/xOydF3B.jpg" style="max-height: 300px; width: auto;"/>  |  <img src="https://i.imgur.com/YFNmIPY.jpg" style="max-height: 300px; width: auto;"/>
+<table>
+  <tr>
+    <th>Image ID</th>
+    <th>Prediction</th>
+  </tr>
+  <tr>
+    <td><img src="https://i.imgur.com/4Lh9tAm.jpg" height="300"/></td>
+    <td><img src="https://i.imgur.com/emsah1q.jpg" height="300"/></td>
+  </tr>
+  <tr>
+    <td><img src="https://i.imgur.com/UqiV5Ka.jpg" height="300"/></td>
+    <td><img src="https://i.imgur.com/GhoKKCl.jpg" height="300"/></td>
+  </tr>
+  <tr>
+    <td><img src="https://i.imgur.com/8GjoNDH.jpg"/></td>
+    <td><img src="https://i.imgur.com/yzinXD6.jpg"/></td>
+  </tr>
+  <tr>
+    <td><img src="https://i.imgur.com/xOydF3B.jpg" height="300"/></td>
+    <td><img src="https://i.imgur.com/YFNmIPY.jpg" height="300"/></td>
+  </tr>
+</table>
