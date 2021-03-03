@@ -95,7 +95,7 @@ class WandbLogger():
     def setup_training(self, opt, data_dict):
         self.log_dict, self.current_epoch, self.log_imgs = {}, 0, 16  # Logging Constants
         self.bbox_interval = opt.bbox_interval
-        if opt.resume_from_artifact:
+        if opt.resume:
             modeldir, _ = self.download_model_artifact(opt)
             if modeldir:
                 self.weights = Path(modeldir) / "last.pt"
