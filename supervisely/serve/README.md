@@ -1,11 +1,10 @@
 <div align="center" markdown>
-<img src="https://i.imgur.com/CH8PfN5.png"/>
+<img src="https://i.imgur.com/1qXIdqs.png"/>
 
 # Serve YOLOv5
 
 <p align="center">
   <a href="#Overview">Overview</a> •
-  <a href="#How-To-Run">How To Run</a> •
   <a href="#How-To-Use">How To Use</a> •
   <a href="#Result-JSON-Format">For Developers</a>
 </p>
@@ -22,7 +21,20 @@
 
 # Overview
 
-App deploys model (pretrained on COCO or custom one) as REST API service.
+App deploys YOLO v5 model (pretrained on COCO or custom one) as REST API service. This is the simplest way how any model can be integrated into Supervisely Platform. 
+
+Serve app is the simplest way how any model can be integrated into Supervisely. Once model is deployed, user gets the following benefits:
+- model can be used directly in labeling interface (images, videos)
+- 2
+- 3
+
+
+Developer just has to implement 3 methods:
+- 1
+- 2
+- 3...
+
+
 
 # How To Run
 

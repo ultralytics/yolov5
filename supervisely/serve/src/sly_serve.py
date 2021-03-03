@@ -71,12 +71,13 @@ def get_custom_inference_settings(api: sly.Api, task_id, context, state, app_log
 
 def inference_image_path(image_path, context, state, app_logger):
     app_logger.debug("Input path", extra={"path": image_path})
-    settings = state["settings"]
 
     rect = None
     if "rectangle" in state:
         top, left, bottom, right = state["rectangle"]
         rect = sly.Rectangle(top, left, bottom, right)
+
+    settings = state.get("settings", {})
     for key, value in default_settings.items():
         if key not in settings:
             app_logger.warn("Field {!r} not found in inference settings. Use default value {!r}".format(key, value))
