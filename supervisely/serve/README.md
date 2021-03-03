@@ -330,14 +330,18 @@ Prediction for image id (full image):
 <img src="https://i.imgur.com/RQDrH4B.jpg" style="max-height: 300px; width: auto;"/>  |  <img src="https://i.imgur.com/yYujbI0.jpg" style="max-height: 300px; width: auto;"/>
 
 XXX:
+
+
+
+xxx2
 <table>
   <tr>
     <th>03_input_id.jpg</th>
     <th>03_prediction_id.jpg</th>
   </tr>
   <tr>
-    <td><img src="https://i.imgur.com/RQDrH4B.jpg" style="max-height: 300px; width: auto;"/></td>
-    <td><img src="https://i.imgur.com/yYujbI0.jpg" style="max-height: 300px; width: auto;"/></td>
+    <td><img src="https://i.imgur.com/RQDrH4B.jpg" height="300"/></td>
+    <td><img src="https://i.imgur.com/yYujbI0.jpg" height="300"/></td>
   </tr>
 </table>
 
