@@ -1,12 +1,11 @@
 import argparse
 import json
-import os
-from pathlib import Path
-from threading import Thread
-
 import numpy as np
+import os
 import torch
 import yaml
+from pathlib import Path
+from threading import Thread
 from tqdm import tqdm
 
 from models.experimental import attempt_load
@@ -78,7 +77,7 @@ def test(data,
     if wandb_logger and wandb_logger.wandb:
         import wandb
         log_imgs = min(wandb_logger.log_imgs, 100)
-        class_set = wandb.Classes([{'id':id , 'name':name} for id,name in names.items()])
+        class_set = wandb.Classes([{'id': id, 'name': name} for id, name in names.items()])
     # Dataloader
     if not training:
         if device.type != 'cpu':
@@ -145,8 +144,8 @@ def test(data,
                         f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
             # W&B logging - Media Panel Plots
-            if len(wandb_images) < log_imgs and wandb_logger.current_epoch>0: # Check for test operation
-                if wandb_logger.current_epoch % wandb_logger.bbox_interval==0:
+            if len(wandb_images) < log_imgs and wandb_logger.current_epoch > 0:  # Check for test operation
+                if wandb_logger.current_epoch % wandb_logger.bbox_interval == 0:
                     box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
                                  "class_id": int(cls),
                                  "box_caption": "%s %.3f" % (names[cls], conf),
@@ -160,20 +159,22 @@ def test(data,
                     box_data = []
                     total_conf = 0
                     for *xyxy, conf, cls in predn.tolist():
-                        if conf >= 0.175: # Arbitrary conf
-                            box_data.append({"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
-                                            "class_id": int(cls),
-                                            "box_caption": "%s" % (names[cls]),
-                                            "scores": {"class_score": conf},
-                                            "domain": "pixel"})
+                        if conf >= 0.175:  # Arbitrary conf
+                            box_data.append(
+                                {"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
+                                 "class_id": int(cls),
+                                 "box_caption": "%s" % (names[cls]),
+                                 "scores": {"class_score": conf},
+                                 "domain": "pixel"})
                             total_conf = total_conf + conf
                     boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
-                    id = batch_i*batch_size + si
+                    id = batch_i * batch_size + si
                     wandb_logger.result_table.add_data(wandb_logger.current_epoch,
-                                        id,
-                                        wandb.Image(wandb_logger.val_table.data[id][1], boxes=boxes,classes=class_set,caption=path.name),
-                                        total_conf / max(1,len(box_data))
-                                        )
+                                                       id,
+                                                       wandb.Image(wandb_logger.val_table.data[id][1], boxes=boxes,
+                                                                   classes=class_set, caption=path.name),
+                                                       total_conf / max(1, len(box_data))
+                                                       )
 
             # Append to pycocotools JSON dictionary
             if save_json:
