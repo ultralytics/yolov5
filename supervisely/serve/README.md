@@ -6,7 +6,7 @@
 <p align="center">
   <a href="#Overview">Overview</a> •
   <a href="#How-To-Use">How To Use</a> •
-  <a href="#Result-JSON-Format">For Developers</a>
+  <a href="#For-Developers">For Developers</a>
 </p>
 
 [![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervise.ly/apps/supervisely-ecosystem/yolov5/supervisely/serve)
@@ -68,7 +68,7 @@ change what agent should be used for deploy.
 <img src="https://i.imgur.com/wKs7zw0.png" width="800"/>
 
 
-# For developers
+# For Developers
 
 This python example illustrates available methods of the deployed model. Now you can integrate network predictions to your python script. This is the way how other Supervisely Apps can communicate with NNs. And also you can use serving app as an example - how to use download NN weights outside Supervisely.
 
@@ -311,13 +311,13 @@ Model inference settings:
 
 Prediction for image URL (full image):
 
-Image URL  |  01_prediction_url.jpg
+Image URL  |  `01_prediction_url.jpg`
 :-------------------------:|:-----------------------------------:
 <img src="https://i.imgur.com/tEkCb69.jpg" style="max-height: 300px; width: auto;"/>  |  <img src="https://i.imgur.com/9OOoXn3.jpg" style="max-height: 300px; width: auto;"/>
 
 Prediction for image URL (ROI - red rectangle):
 
-Image URL + ROI  |  02_prediction_url_roi.jpg
+Image URL + ROI  |  `02_prediction_url_roi.jpg`
 :-------------------------:|:-----------------------------------:
 <img src="https://i.imgur.com/tEkCb69.jpg" style="max-height: 300px; width: auto;"/>  |  <img src="https://i.imgur.com/iSKS17L.jpg" style="max-height: 300px; width: auto;"/>
 
