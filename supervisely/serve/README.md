@@ -74,7 +74,7 @@ change what agent should be used for deploy.
 This python example illustrates available methods of the deployed model. Now you can integrate network predictions to your python script. This is the way how other Supervisely Apps can communicate with NNs. And also you can use serving app as an example - how to use download NN weights outside Supervisely.
 
 To implement serving app developer has just to define four methods:
-- function [`get_session_info`](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/sly_serve.py#L50) information about deployed model - just returns python dictionary with any useful information
+- function [`get_session_info`](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/sly_serve.py#L50) - information about deployed model (returns python dictionary with any useful information)
 - function [`construct_model_meta`](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/nn_utils.py#L16) - returns model output classes and tags in [Supervisely format](https://docs.supervise.ly/data-organization/00_ann_format_navi)
 - function [`load_model`](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/nn_utils.py#L37) - how to load model to the device (cpu or/and gpu) - [link](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/sly_serve.py#L165)
 - function [`inference`](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/serve/src/nn_utils.py#L62)  - how to apply model to the image and how to convert predictions to [Supervisely format](https://docs.supervise.ly/data-organization/00_ann_format_navi)
