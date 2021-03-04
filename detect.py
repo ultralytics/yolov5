@@ -128,7 +128,7 @@ def detect(save_img=False):
                                 'x': int(xyxy[0]),
                                 'y': int(xyxy[1])
                             },
-                            'bottomLeftCoord': {
+                            'bottomRightCoord': {
                                 'x': int(xyxy[2]),
                                 'y': int(xyxy[3])
                             }
