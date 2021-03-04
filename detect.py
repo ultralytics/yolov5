@@ -1,11 +1,12 @@
 import argparse
 import time
 from pathlib import Path
-
+import json
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
+import socket
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
@@ -15,8 +16,17 @@ from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
+def get_prediction_string(xyxy, gn, conf, cls):
+    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) /
+            gn).view(-1).tolist()  # normalized xywh
+    line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
+    return ('%g ' * len(line)).rstrip() % line + '\n'
+
+
 def detect(save_img=False):
     source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
+    output_udp, udp_port, udp_address = opt.output_udp, opt.udp_port, opt.udp_address
+    udp_client_socket = None
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://'))
 
@@ -40,7 +50,8 @@ def detect(save_img=False):
     classify = False
     if classify:
         modelc = load_classifier(name='resnet101', n=2)  # initialize
-        modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
+        modelc.load_state_dict(torch.load(
+            'weights/resnet101.pt', map_location=device)['model']).to(device).eval()
 
     # Set Dataloader
     vid_path, vid_writer = None, None
@@ -79,6 +90,7 @@ def detect(save_img=False):
         if classify:
             pred = apply_classifier(pred, modelc, img, im0s)
 
+        yolo_detections = []
         # Process detections
         for i, det in enumerate(pred):  # detections per image
             if webcam:  # batch_size >= 1
@@ -103,10 +115,26 @@ def detect(save_img=False):
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
-                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                        line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
+                        line = get_prediction_string(xyxy, gn, conf, cls)
                         with open(txt_path + '.txt', 'a') as f:
-                            f.write(('%g ' * len(line)).rstrip() % line + '\n')
+                            f.write(line)
+
+                    if output_udp:
+                        line = get_prediction_string(xyxy, gn, conf, cls)
+                        detection_result = {
+                            'yoloLabelFormat' : line[:-1],
+                            'label': f"{names[int(cls)]} {conf:.2f}",
+                            'topLeftCoord': {
+                                'x': int(xyxy[0]),
+                                'y': int(xyxy[1])
+                            },
+                            'bottomLeftCoord': {
+                                'x': int(xyxy[2]),
+                                'y': int(xyxy[3])
+                            }
+                        }
+
+                        yolo_detections.append(detection_result)
 
                     if save_img or view_img:  # Add bbox to image
                         label = f'{names[int(cls)]} {conf:.2f}'
@@ -136,6 +164,18 @@ def detect(save_img=False):
                         h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
                     vid_writer.write(im0)
+        if output_udp:
+            if udp_client_socket is None:
+                udp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            output = {
+                'id': str(p),
+                'originalImageSize': {
+                    'height': im0.shape[0],
+                    'width': im0.shape[1]
+                },
+                'detections': yolo_detections
+            }
+            udp_client_socket.sendto(json.dumps(output).encode(), (udp_address, udp_port))
 
     if save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
@@ -154,6 +194,9 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='display results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    parser.add_argument('--output-udp', action='store_true', help='outputs the labels to a udp client socket')
+    parser.add_argument('--udp-port', type=int, default=6969, help='udp port the datagram is send to')
+    parser.add_argument('--udp-address', type=str, default="127.0.0.1", help='udp address the datagram is send to')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --class 0, or --class 0 2 3')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
