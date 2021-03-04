@@ -15,8 +15,8 @@ f1='tracking_train1_v1.1.tar.gz' # 43G
 f2='tracking_train2_v1.1.tar.gz' # 52G
 f3='tracking_train3_v1.1.tar.gz' # 46G
 f4='tracking_train4_v1.1.tar.gz' # 9.8G
-f2='tracking_val_v1.1.tar.gz'    # 57G
-f3='tracking_test_v1.1.tar.gz'   # 49G (optional)
+f5='tracking_val_v1.1.tar.gz'    # 57G
+f6='tracking_test_v1.1.tar.gz'   # 49G (optional)
 mkdir $p
 mkdir $d
 for f in $f1 $f2 $f3 $f4 $f5 $f6; do
