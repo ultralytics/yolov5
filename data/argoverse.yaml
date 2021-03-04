@@ -1,0 +1,27 @@
+# Argoverse dataset (ring-front-center camera) https://www.argoverse.org/data.html
+# Train command: python train.py --data argoverse.yaml
+# Default dataset location is next to /yolov5:
+#   /parent_folder
+#     /argoverse
+#     /yolov5
+
+
+# download command/URL (optional)
+download: bash data/scripts/get_argoverse.sh
+
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+train: ../argoverse/Argoverse-1.1/tracking/train/ 
+val: ../argoverse/Argoverse-1.1/tracking/val/  
+test: ../argoverse/Argoverse-1.1/tracking/test/
+
+# number of classes
+nc: 8
+
+# class names
+names: [ 'person',  'bicycle',  'car',  'motorcycle',  'bus',  'truck',  'traffic_light',  'stop_sign' ]
+
+# Print classes
+# with open('data/coco.yaml') as f:
+#   d = yaml.load(f, Loader=yaml.FullLoader)  # dict
+#   for i, x in enumerate(d['names']):
+#     print(i, x)
