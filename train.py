@@ -214,6 +214,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
             # Anchors
             if not opt.noautoanchor:
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
+            model.half().float()  # pre-reduce anchor precision 
 
     # Model parameters
     hyp['box'] *= 3. / nl  # scale to layers
