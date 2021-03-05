@@ -5,8 +5,8 @@ FROM nvcr.io/nvidia/pytorch:21.02-py3
 RUN apt update && apt install -y zip htop screen libgl1-mesa-glx
 
 # Install python dependencies
-RUN python -m pip install --upgrade pip
 COPY requirements.txt .
+RUN python -m pip install --upgrade pip
 RUN pip install --no-cache -r requirements.txt gsutil notebook
 
 # Create working directory
@@ -16,11 +16,8 @@ WORKDIR /usr/src/app
 # Copy contents
 COPY . /usr/src/app
 
-# Copy weights
-#RUN python3 -c "from models import *; \
-#attempt_download('weights/yolov5s.pt'); \
-#attempt_download('weights/yolov5m.pt'); \
-#attempt_download('weights/yolov5l.pt')"
+# Set environment variables
+ENV HOME=/usr/src/app
 
 
 # ---------------------------------------------------  Extras Below  ---------------------------------------------------
