@@ -7,7 +7,7 @@ RUN apt update && apt install -y zip htop screen libgl1-mesa-glx
 # Install python dependencies
 RUN python -m pip install --upgrade pip
 COPY requirements.txt .
-RUN pip install -r requirements.txt gsutil
+RUN pip install --no-cache -r requirements.txt gsutil notebook
 
 # Create working directory
 RUN mkdir -p /usr/src/app
