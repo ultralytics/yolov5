@@ -17,12 +17,13 @@ def _split_random(project_dir, train_count, val_count):
     train_items = items[:train_count]
     val_items = items[train_count:]
     if len(val_items) != val_count:
-        sly.logger.warn("Incorrect train/val random split", extra={
+        sly.logger.warn("Issue in train/val random split in GUI", extra={
             "train_count": train_count,
             "val_count": val_count,
-            "items_count": len(items)
+            "items_count": len(items),
+            "train_count + val_count": train_count + val_count
         })
-        raise RuntimeError("Incorrect train/val random split")
+        #raise RuntimeError("Incorrect train/val random split")
     return train_items, val_items
 
 
