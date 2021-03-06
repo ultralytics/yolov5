@@ -26,7 +26,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')
     parser.add_argument('--grid', action='store_true', help='export Detect() layer grid')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
