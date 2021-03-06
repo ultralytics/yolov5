@@ -1,11 +1,12 @@
 import argparse
 import json
-import numpy as np
 import os
-import torch
-import yaml
 from pathlib import Path
 from threading import Thread
+
+import numpy as np
+import torch
+import yaml
 from tqdm import tqdm
 
 from models.experimental import attempt_load
