@@ -57,8 +57,8 @@ class TransformerLayer(nn.Module):
     def forward(self, x):
         x_ = self.ln1(x)
         x = self.ma(self.q(x_), self.k(x_), self.v(x_))[0] + x
-        x = self.ln2(x)
-        x = self.fc2(self.fc1(x)) + x
+        x_ = self.ln2(x)
+        x = self.fc2(self.fc1(x_)) + x
         return x
 
 
