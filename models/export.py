@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')  # height, width
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')
-    parser.add_argument('--skip-grid', action='store_true', help='skip Detect() layer grid computation')
+    parser.add_argument('--no-grid', action='store_true', help='no Detect() layer grid computation')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
@@ -55,7 +55,7 @@ if __name__ == '__main__':
                 m.act = SiLU()
         # elif isinstance(m, models.yolo.Detect):
         #     m.forward = m.forward_export  # assign forward (optional)
-    model.model[-1].export = not opt.skip_grid  # set Detect() layer export Boolean
+    model.model[-1].export = not opt.no_grid  # set Detect() layer grid export
     y = model(img)  # dry run
 
     # TorchScript export
