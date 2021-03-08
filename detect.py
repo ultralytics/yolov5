@@ -25,7 +25,7 @@ def get_prediction_string(xyxy, gn, conf, cls):
 
 def detect(save_img=False):
     source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
-    output_udp, udp_port, udp_address = opt.output_udp, opt.udp_port, opt.udp_address
+    output_udp, udp_port, udp_address, disable_qt_window = opt.output_udp, opt.udp_port, opt.udp_address, opt.disable_qt_window
     udp_client_socket = None
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://'))
@@ -56,7 +56,8 @@ def detect(save_img=False):
     # Set Dataloader
     vid_path, vid_writer = None, None
     if webcam:
-        view_img = check_imshow()
+        if not disable_qt_window:
+            view_img = check_imshow()
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadStreams(source, img_size=imgsz, stride=stride)
     else:
@@ -90,9 +91,10 @@ def detect(save_img=False):
         if classify:
             pred = apply_classifier(pred, modelc, img, im0s)
 
-        yolo_detections = []
         # Process detections
         for i, det in enumerate(pred):  # detections per image
+            yolo_detections = []
+
             if webcam:  # batch_size >= 1
                 p, s, im0, frame = path[i], '%g: ' % i, im0s[i].copy(), dataset.count
             else:
@@ -144,7 +146,7 @@ def detect(save_img=False):
             print(f'{s}Done. ({t2 - t1:.3f}s)')
 
             # Stream results
-            if view_img:
+            if view_img and not disable_qt_window:
                 cv2.imshow(str(p), im0)
                 cv2.waitKey(1)  # 1 millisecond
 
@@ -164,18 +166,19 @@ def detect(save_img=False):
                         h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
                     vid_writer.write(im0)
-        if output_udp:
-            if udp_client_socket is None:
-                udp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            output = {
-                'id': str(p),
-                'originalImageSize': {
-                    'height': im0.shape[0],
-                    'width': im0.shape[1]
-                },
-                'detections': yolo_detections
-            }
-            udp_client_socket.sendto(json.dumps(output).encode(), (udp_address, udp_port))
+                    
+            if output_udp:
+                if udp_client_socket is None:
+                    udp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                output = {
+                    'id': str(p),
+                    'originalImageSize': {
+                        'height': im0.shape[0],
+                        'width': im0.shape[1]
+                    },
+                    'detections': yolo_detections
+                }
+                udp_client_socket.sendto(json.dumps(output).encode(), (udp_address, udp_port))
 
     if save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
@@ -197,6 +200,7 @@ if __name__ == '__main__':
     parser.add_argument('--output-udp', action='store_true', help='outputs the labels to a udp client socket')
     parser.add_argument('--udp-port', type=int, default=6969, help='udp port the datagram is send to')
     parser.add_argument('--udp-address', type=str, default="127.0.0.1", help='udp address the datagram is send to')
+    parser.add_argument('--disable-qt-window', action='store_true', help='Does not show the video stream in a qt window, allows to run headless')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --class 0, or --class 0 2 3')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
