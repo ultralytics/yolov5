@@ -55,7 +55,7 @@ class WandbLogger():
         self.job_type = job_type
         self.wandb, self.wandb_run = wandb, None if not wandb else wandb.run
         if self.job_type == 'Training':
-            if opt.upload_dataset:
+            if opt.upload_dataset and not opt.resume:
                 data_dict = self.check_and_upload_dataset(
                     opt, name, data_dict, job_type)
             if self.wandb and not self.wandb_run:
