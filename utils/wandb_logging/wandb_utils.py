@@ -44,9 +44,8 @@ def resume_and_get_id(opt):
             assert wandb, 'install wandb to resume wandb runs'
             # Resume wandb-artifact:// runs here| workaround for not overwriting wandb.config
             run = wandb.init(id=run_id, project=project, resume='allow')
-            opt.resume_from_artifact = model_artifact_name
+            opt.resume = model_artifact_name
             return run
-        opt.resume_from_artifact = ''
     return None
 
 
@@ -95,7 +94,7 @@ class WandbLogger():
     def setup_training(self, opt, data_dict):
         self.log_dict, self.current_epoch, self.log_imgs = {}, 0, 16  # Logging Constants
         self.bbox_interval = opt.bbox_interval
-        if opt.resume:
+        if isinstance(opt.resume,str):
             modeldir, _ = self.download_model_artifact(opt)
             if modeldir:
                 self.weights = Path(modeldir) / "last.pt"
@@ -138,7 +137,7 @@ class WandbLogger():
         return None, None
 
     def download_model_artifact(self, opt):
-        if opt.resume_from_artifact.startswith(WANDB_ARTIFACT_PREFIX):
+        if opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
             model_artifact_name = 'run_' + Path(opt.resume).stem + '_model'
             model_artifact = wandb.use_artifact(model_artifact_name + ":latest")
             assert model_artifact is not None, 'Error: W&B model artifact doesn\'t exist'
