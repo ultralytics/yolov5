@@ -171,7 +171,7 @@ def detect(save_img=False):
                 if udp_client_socket is None:
                     udp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 output = {
-                    'id': str(p),
+                    'path': str(p),
                     'originalImageSize': {
                         'height': im0.shape[0],
                         'width': im0.shape[1]
