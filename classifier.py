@@ -93,8 +93,7 @@ def train():
         model = torchvision.models.__dict__[opt.model](pretrained=True)
         model.fc = nn.Linear(model.fc.weight.shape[1], nc)
 
-    # print(model)
-
+    # print(model)  # debug
     model_info(model)
 
     # Optimizer
@@ -147,7 +146,7 @@ def train():
         # Scheduler
         scheduler.step()
 
-        # # Update best fitness
+        # Best fitness
         if fitness > best_fitness:
             best_fitness = fitness
 
@@ -167,7 +166,7 @@ def train():
 
     # Train complete
     if final_epoch:
-        print(f'Training Complete. Results saved to {save_dir}.')
+        print(f'Training complete. Results saved to {save_dir}.')
 
     # Show predictions
     # images, labels = iter(testloader).next()
