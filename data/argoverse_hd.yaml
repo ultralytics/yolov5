@@ -19,9 +19,3 @@ nc: 8
 
 # class names
 names: [ 'person',  'bicycle',  'car',  'motorcycle',  'bus',  'truck',  'traffic_light',  'stop_sign' ]
-
-# Print classes
-# with open('data/coco.yaml') as f:
-#   d = yaml.load(f, Loader=yaml.FullLoader)  # dict
-#   for i, x in enumerate(d['names']):
-#     print(i, x)
