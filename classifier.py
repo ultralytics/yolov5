@@ -55,7 +55,7 @@ def train():
     trainform = T.Compose([T.RandomGrayscale(p=0.01),
                            T.RandomHorizontalFlip(p=0.5),
                            T.RandomAffine(degrees=1, translate=(.2, .2), scale=(1 / 1.5, 1.5),
-                                          shear=(-1, 1, -1, 1), fillcolor=(114, 114, 114)),
+                                          shear=(-1, 1, -1, 1), fill=(114, 114, 114)),
                            # T.Resize([128, 128]),
                            T.ToTensor(),
                            T.Normalize((0.5, 0.5, 0.5), (0.25, 0.25, 0.25))])  # PILImage from [0, 1] to [-1, 1]
