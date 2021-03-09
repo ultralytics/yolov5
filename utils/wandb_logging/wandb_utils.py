@@ -108,7 +108,7 @@ class WandbLogger():
             self.result_artifact = wandb.Artifact("run_" + wandb.run.id + "_progress", "evaluation")
             self.result_table = wandb.Table(["epoch", "id", "prediction", "avg_confidence"])
         if opt.bbox_interval == -1:
-            self.bbox_interval = opt.bbox_interval = (opt.epochs // 10) if opt.epochs > 10 else opt.epochs
+            self.bbox_interval = opt.bbox_interval = (opt.epochs // 10) if opt.epochs > 10 else 1
         return data_dict
 
     def download_dataset_artifact(self, path, alias):

@@ -263,7 +263,6 @@ def test(data,
             val_batches = [wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]
             wandb_logger.log({"Validation": val_batches})
     if wandb_images:
-        print("Logging images in epoch ===>", wandb_logger.current_epoch)
         wandb_logger.log({"Bounding Box Debugger/Images": wandb_images})
         wandb_images = []
     # Save JSON
