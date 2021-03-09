@@ -1,3 +1,6 @@
+# YOLOv5 classifier training
+# Usage: python classifier.py --model yolov5s --data mnist --epochs 10 --img 128
+
 import argparse
 import logging
 import math
