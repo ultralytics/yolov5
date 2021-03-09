@@ -72,7 +72,7 @@ def train(hyp, opt, device, tb_writer=None):
         data_dict = wandb_logger.data_dict
         if wandb_logger.wandb:
             import wandb
-            weights = opt.weights  # WandbLogger might update weights path
+            weights, epochs = opt.weights, opt.epochs  # WandbLogger might update weights, epochs if resuming
     loggers = {'wandb': wandb_logger.wandb}  # loggers dict
     nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if opt.single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
