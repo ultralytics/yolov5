@@ -8,50 +8,58 @@
 #     /yolov5
 
 # Download/unzip images
-p='../argoverse/'
-d='../argoverse/Argoverse-1.1/' # unzip directory
-url=https://s3.amazonaws.com/argoai-argoverse/
-f1='tracking_train1_v1.1.tar.gz' # 43G
-f2='tracking_train2_v1.1.tar.gz' # 52G
-f3='tracking_train3_v1.1.tar.gz' # 46G
-f4='tracking_train4_v1.1.tar.gz' # 9.8G
-f5='tracking_val_v1.1.tar.gz'    # 57G
-f6='tracking_test_v1.1.tar.gz'   # 49G (optional)
-mkdir $p
+d='../argoverse/' # unzip directory
 mkdir $d
-for f in $f1 $f2 $f3 $f4 $f5 $f6; do
-  echo 'Downloading' $url$f '...'
-  wget $url$f -O $f && tar -xvzf $f -C $d && rm $f & # download, unzip, remove in background
-done
+url=https://argoverse-hd.s3.us-east-2.amazonaws.com/
+f=Argoverse-HD-Full.zip
+wget $url$f -O $f && unzip $f -d $d && rm $f & # download, unzip, remove in background
 wait # finish background tasks
 
-old_dir='../argoverse/Argoverse-1.1/argoverse-tracking/'
-new_dir='../argoverse/Argoverse-1.1/images/'
-mv $old_dir $new_dir
+cd ../argoverse/Argoverse-1.1/
+ln -s tracking images
 
-# move all train files to single folder
-mkdir '../argoverse/Argoverse-1.1/images/train'
-mv ../argoverse/Argoverse-1.1/images/train1/* '../argoverse/Argoverse-1.1/images/train/' && rm -r ../argoverse/Argoverse-1.1/images/train1/
-mv ../argoverse/Argoverse-1.1/images/train2/* '../argoverse/Argoverse-1.1/images/train/' && rm -r ../argoverse/Argoverse-1.1/images/train2/
-mv ../argoverse/Argoverse-1.1/images/train3/* '../argoverse/Argoverse-1.1/images/train/' && rm -r ../argoverse/Argoverse-1.1/images/train3/
-mv ../argoverse/Argoverse-1.1/images/train4/* '../argoverse/Argoverse-1.1/images/train/' && rm -r ../argoverse/Argoverse-1.1/images/train4/
+cd ../Argoverse-HD/annotations/
 
-# get all images from ring_front_center camera and delete the rest
-for split in "train" "test" "val"; do 
-  for d in ../argoverse/Argoverse-1.1/images/$split/*; do
-      if [ -d "$d" ]; then
-          for f in $d/ring_front_center/*; do
-              mv $f ../argoverse/Argoverse-1.1/images/$split/ && rm -rf $d
-          done
-      fi
-  done
-done
+python3 - "$@" <<END
+import json
+from pathlib import Path
+annotation_files = ["train.json", "val.json"]
+print("Converting annotations to yolov5 format...")
 
-# Download labels
-labels_url = 'https://github.com/karthiksharma98/sap-starterkit/releases/download/yolov5-labels/'
-labels_file = 'labels.zip'
-mkdir '../argoverse/Argoverse-1.1/labels'
-wget $labels_url -O $labels_file && unzip $labels_file -d ../argoverse/Argoverse-1.1/labels/ && rm $labels_file 
+for val in annotation_files:
+    a = json.load(open(val, "rb"))
+
+    label_dict = {}
+    for annot in a['annotations']:
+        img_id = annot['image_id']
+        img_name = a['images'][img_id]['name']
+        img_label_name = img_name[:-3] + "txt"
+
+        obj_class = annot['category_id']
+        x_center, y_center, width, height = annot['bbox']
+        x_center = x_center / 1920.0
+        width = width / 1920.0
+        y_center = y_center / 1200.0
+        height = height / 1200.0
+
+        img_dir = "./labels/" + a['seq_dirs'][a['images'][annot['image_id']]['sid']]
+
+        Path(img_dir).mkdir(parents=True, exist_ok=True)
+
+        if img_dir + "/" + img_label_name not in label_dict:
+            label_dict[img_dir + "/" + img_label_name] = []
+
+        label_dict[img_dir + "/" + img_label_name].append(f"{obj_class} {x_center} {y_center} {width} {height}\n")
+        
+    for filename in label_dict:
+        with open(filename, "w") as file:
+            for string in label_dict[filename]:
+                file.write(string)
+
+END
+
+mv ./labels ../../Argoverse-1.1/
+
 
 
 
