@@ -1,9 +1,10 @@
 import argparse
 import logging
+import math
 import os
+from copy import deepcopy
 from pathlib import Path
 
-import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,7 +17,7 @@ from tqdm import tqdm
 
 from models.common import Classify
 from utils.general import set_logging, check_file, increment_path
-from utils.torch_utils import model_info, select_device
+from utils.torch_utils import model_info, select_device, is_parallel
 
 # Settings
 logger = logging.getLogger(__name__)
@@ -33,12 +34,18 @@ def imshow(img):
 
 
 def train():
-    data, bs, epochs, nw = opt.data, opt.batch_size, opt.epochs, opt.workers
+    save_dir, data, bs, epochs, nw = Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, opt.workers
+
+    # Directories
+    wdir = save_dir / 'weights'
+    wdir.mkdir(parents=True, exist_ok=True)  # make dir
+    last, best = wdir / 'last.pt', wdir / 'best.pt'
 
     # Download Dataset
     if not Path(f'../{data}').is_dir():
-        f = 'tmp.zip'
-        torch.hub.download_url_to_file(f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip', f)
+        url, f = f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip', 'tmp.zip'
+        print(f'Downloading {url}...')
+        torch.hub.download_url_to_file(url, f)
         os.system(f'unzip -q {f} -d ../ && rm {f}')  # unzip
 
     # Transforms
@@ -102,6 +109,7 @@ def train():
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()  # loss function
     # scaler = amp.GradScaler(enabled=cuda)
+    best_fitness = 0.
     print(f"\n{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'accuracy':12s}")
     for epoch in range(epochs):  # loop over the dataset multiple times
         mloss = 0.  # mean loss
@@ -129,10 +137,28 @@ def train():
 
             # Test
             if i == len(pbar) - 1:
-                test(model, testloader, names, criterion, pbar=pbar)  # test
+                fitness = test(model, testloader, names, criterion, pbar=pbar)  # test
 
-        # Test
+        # Scheduler
         scheduler.step()
+
+        # # Update best fitness
+        if fitness > best_fitness:
+            best_fitness = fitness
+
+        # Save model
+        final_epoch = epoch + 1 == epochs
+        if (not opt.nosave) or final_epoch:
+            ckpt = {'epoch': epoch,
+                    'best_fitness': best_fitness,
+                    'model': deepcopy(model.module if is_parallel(model) else model).half(),
+                    'optimizer': None}
+
+            # Save last, best and delete
+            torch.save(ckpt, last)
+            if best_fitness == fitness:
+                torch.save(ckpt, best)
+            del ckpt
 
     # Show predictions
     # images, labels = iter(testloader).next()
@@ -161,22 +187,26 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     if pbar:
         pbar.desc += f"{loss / len(dataloader):<12.3g}{correct.mean().item():<12.3g}"
 
+    accuracy = correct.mean().item()
     if verbose:  # all classes
         print('%10s' * 3 % ('class', 'number', 'accuracy'))
-        print('%10s%10s%10.5g' % ('all', correct.shape[0], correct.mean().item()))
+        print('%10s%10s%10.5g' % ('all', correct.shape[0], accuracy))
         for i, c in enumerate(names):
             t = correct[targets == i]
             print('%10s%10s%10.5g' % (c, t.shape[0], t.mean().item()))
+
+    return accuracy
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='yolov5s', help='initial weights path')
-    parser.add_argument('--data', type=str, default='cifar100', help='cifar10, cifar100 or mnist')
+    parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100 or mnist')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=20)
     parser.add_argument('--batch-size', type=int, default=128, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[128, 128], help='[train, test] image sizes')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[32, 32], help='[train, test] image sizes')
+    parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
