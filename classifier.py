@@ -114,6 +114,7 @@ def train():
     criterion = nn.CrossEntropyLoss()  # loss function
     # scaler = amp.GradScaler(enabled=cuda)
     best_fitness = 0.
+    print(f'Starting training for {epochs} epochs...')
     print(f"\n{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'accuracy':12s}")
     for epoch in range(epochs):  # loop over the dataset multiple times
         mloss = 0.  # mean loss
@@ -163,6 +164,10 @@ def train():
             if best_fitness == fitness:
                 torch.save(ckpt, best)
             del ckpt
+
+    # Train complete
+    if final_epoch:
+        print(f'Training Complete. Results saved to {save_dir}.')
 
     # Show predictions
     # images, labels = iter(testloader).next()
