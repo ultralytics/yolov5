@@ -90,8 +90,8 @@ class WandbLogger():
             if modeldir:
                 self.weights = Path(modeldir) / "last.pt"
                 config = self.wandb_run.config
-                opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval = str(
-                    self.weights), config.save_period, config.total_batch_size, config.bbox_interval
+                opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs = str(
+                    self.weights), config.save_period, config.total_batch_size, config.bbox_interval, config.epochs
             data_dict = dict(self.wandb_run.config.data_dict) # Advantage: Eliminates the need for config file to resume
         if 'val_artifact' not in self.__dict__: # If --upload_dataset is set, use the existing artifact, don't download
             self.train_artifact_path, self.train_artifact = self.download_dataset_artifact(data_dict.get('train'), opt.artifact_alias)
