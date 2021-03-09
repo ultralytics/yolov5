@@ -53,7 +53,7 @@ class WandbLogger():
     def __init__(self, opt, name, run_id, data_dict, job_type='Training'):
         # Pre-training routine --
         self.job_type = job_type
-        self.wandb, self.wandb_run = wandb, None if not wandb else wandb.run
+        self.wandb, self.wandb_run, self.data_dict = wandb, None if not wandb else wandb.run, data_dict
         if self.wandb:
             self.wandb_run = wandb.init(config=opt,
                                         resume="allow",
