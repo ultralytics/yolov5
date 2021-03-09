@@ -174,7 +174,6 @@ class WandbLogger():
 
     def log_dataset_artifact(self, dataset, class_to_id, name='dataset'):
         # TODO: Explore multiprocessing to slpit this loop parallely| This is essential for speeding up the the logging
-        # Process. We might need support for sorting wandb.Table object as if table is populated parallely.
         artifact = wandb.Artifact(name=name, type="dataset")
         for img_file in [dataset.path] if Path(dataset.path).is_dir() else dataset.img_files:
             if Path(img_file).is_dir():
