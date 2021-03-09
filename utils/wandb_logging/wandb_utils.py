@@ -55,10 +55,11 @@ class WandbLogger():
         self.job_type = job_type
         self.wandb, self.wandb_run = wandb, None if not wandb else wandb.run
         if self.job_type == 'Training':
+            wandb_data_dict = None
             if opt.upload_dataset and not opt.resume:
-                data_dict = self.check_and_upload_dataset(opt, name, data_dict, job_type)
+                wandb_data_dict = self.check_and_upload_dataset(opt, name, data_dict, job_type)
             if self.wandb and not self.wandb_run:
-                opt.data_dict = data_dict
+                opt.data_dict = wandb_data_dict if wandb_data_dict else data_dict
                 self.wandb_run = wandb.init(config=opt,
                                             resume="allow",
                                             project='YOLOv5' if opt.project == 'runs/train' else Path(
@@ -77,11 +78,11 @@ class WandbLogger():
                          project='YOLOv5' if opt.project == 'runs/train' else Path(
                          opt.project).stem,
                          name=name,
-                         job_type="Dataset Creation") if not wandb.run else wandb.run
+                         job_type=job_type) if not wandb.run else wandb.run
         config_path = self.create_dataset_artifact(opt.data,
                                                    opt.single_cls,
                                                    'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
-        wandb.finish()  # Finish dataset creation run| ensures the dataset has uploaded completely before training starts
+        run.finish()
         print("Created dataset config file ", config_path)
         with open(config_path) as f:
             wandb_data_dict = yaml.load(f, Loader=yaml.SafeLoader)
@@ -97,26 +98,23 @@ class WandbLogger():
                 config = self.wandb_run.config
                 opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval = str(
                     self.weights), config.save_period, config.total_batch_size, config.bbox_interval
-            # Advantage: Eliminates the need for config file to resume
-            data_dict = dict(self.wandb_run.config.data_dict)
-        self.train_artifact_path, self.train_artifact = self.download_dataset_artifact(data_dict.get('train'), opt.artifact_alias)
-        self.val_artifact_path, self.val_artifact = self.download_dataset_artifact(data_dict.get('val'), opt.artifact_alias)
-
-        self.result_artifact, self.result_table, self.val_table, self.weights = None, None, None, None
-        if self.train_artifact_path is not None:
-            train_path = Path(self.train_artifact_path) / 'data/images/'
-            data_dict['train'] = str(train_path)
-        if self.val_artifact_path is not None:
-            val_path = Path(self.val_artifact_path) / 'data/images/'
-            data_dict['val'] = str(val_path)
-            self.result_artifact = wandb.Artifact(
-                "run_" + wandb.run.id + "_progress", "evaluation")
-            self.result_table = wandb.Table(
-                ["epoch", "id", "prediction", "avg_confidence"])
-            self.val_table = self.val_artifact.get("val")
+            data_dict = dict(self.wandb_run.config.data_dict) # Advantage: Eliminates the need for config file to resume
+        if 'val_artifact' not in self.__dict__: # If --upload_dataset is set, use the existing artifact, don't download
+            self.train_artifact_path, self.train_artifact = self.download_dataset_artifact(data_dict.get('train'), opt.artifact_alias)
+            self.val_artifact_path, self.val_artifact = self.download_dataset_artifact(data_dict.get('val'), opt.artifact_alias)
+            self.result_artifact, self.result_table, self.val_table, self.weights = None, None, None, None
+            if self.train_artifact_path is not None:
+                train_path = Path(self.train_artifact_path) / 'data/images/'
+                data_dict['train'] = str(train_path)
+            if self.val_artifact_path is not None:
+                val_path = Path(self.val_artifact_path) / 'data/images/'
+                data_dict['val'] = str(val_path)
+                self.val_table = self.val_artifact.get("val")
+        if self.val_artifact is not None:
+            self.result_artifact = wandb.Artifact("run_" + wandb.run.id + "_progress", "evaluation")
+            self.result_table = wandb.Table(["epoch", "id", "prediction", "avg_confidence"])
         if opt.bbox_interval == -1:
             self.bbox_interval = opt.bbox_interval = (opt.epochs // 10) if opt.epochs > 10 else opt.epochs
-
         return data_dict
 
     def download_dataset_artifact(self, path, alias):
@@ -159,9 +157,9 @@ class WandbLogger():
             data = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
         nc, names = (1, ['item']) if single_cls else (int(data['nc']), data['names'])
         names = {k: v for k, v in enumerate(names)}  # to index dictionary
-        self.train_artifact = self.log_dataset_artifact(LoadImagesAndLabels(
+        self.train_artifact, self.train_table = self.log_dataset_artifact(LoadImagesAndLabels(
             data['train']), names, name='train') if data.get('train') else None
-        self.val_artifact = self.log_dataset_artifact(LoadImagesAndLabels(
+        self.val_artifact, self.val_table = self.log_dataset_artifact(LoadImagesAndLabels(
             data['val']), names, name='val') if data.get('val') else None
         if data.get('train'):
             data['train'] = WANDB_ARTIFACT_PREFIX + str(Path(project) / 'train')
@@ -206,7 +204,7 @@ class WandbLogger():
             table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes), json.dumps(img_classes))
         artifact.add(table, name)
         wandb.log_artifact(artifact)
-        return artifact
+        return artifact, table
 
     def log(self, log_dict):
         if self.wandb_run:
