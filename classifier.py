@@ -63,7 +63,7 @@ def train():
     testform = T.Compose(trainform.transforms[-2:])
 
     # Dataloaders
-    trainset = torchvision.datasets.ImageFolder(root=f'../{data}/train', transformd=trainform)
+    trainset = torchvision.datasets.ImageFolder(root=f'../{data}/train', transform=trainform)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=nw)
     testset = torchvision.datasets.ImageFolder(root=f'../{data}/test', transform=testform)
     testloader = torch.utils.data.DataLoader(testset, batch_size=bs, shuffle=False, num_workers=nw)
