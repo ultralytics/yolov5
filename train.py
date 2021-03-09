@@ -67,7 +67,7 @@ def train(hyp, opt, device, tb_writer=None):
     # Logging- Doing this before checking the dataset. Might update data_dict
     if rank in [-1, 0]:
         opt.hyp = hyp  # add hyperparameters
-        run_id = ckpt.get('wandb_id') if 'ckpt' in locals() else None
+        run_id = torch.load(weights).get('wandb_id') if weights.endswith('.pt') else None
         wandb_logger = WandbLogger(opt, Path(opt.save_dir).stem, run_id, data_dict)
         data_dict = wandb_logger.data_dict
         if wandb_logger.wandb:
@@ -502,7 +502,7 @@ if __name__ == '__main__':
         # opt.hyp = opt.hyp or ('hyp.finetune.yaml' if opt.weights else 'hyp.scratch.yaml')
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
-        #opt.data = check_wandb_config_file(opt.data)  # check if wandb config is present
+        #opt.data = check_wandb_config_file(opt.data)  # check wandb config is present. Glenn we should not do this. Might confuse users
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
         opt.name = 'evolve' if opt.evolve else opt.name
         opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
