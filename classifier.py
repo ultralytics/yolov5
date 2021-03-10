@@ -232,7 +232,6 @@ if __name__ == '__main__':
     device = select_device(opt.device, batch_size=opt.batch_size)
     cuda = device.type != 'cpu'
     opt.hyp = check_file(opt.hyp)  # check files
-    opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 if 1
     opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
 
     train()
