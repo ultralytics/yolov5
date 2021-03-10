@@ -10,7 +10,6 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
@@ -59,9 +58,8 @@ def train():
                                           shear=(-1, 1, -1, 1), fill=(114, 114, 114)),
                            # T.Resize([imgsz, imgsz]),  # very slow
                            T.ToTensor(),
-                           lambda x: F.interpolate(x, size=(imgsz, imgsz), mode='bilinear', align_corners=False),
                            T.Normalize((0.5, 0.5, 0.5), (0.25, 0.25, 0.25))])  # PILImage from [0, 1] to [-1, 1]
-    testform = T.Compose(trainform.transforms[-3:])
+    testform = T.Compose(trainform.transforms[-2:])
 
     # Dataloaders
     trainset = torchvision.datasets.ImageFolder(root=f'../{data}/train', transform=trainform)
@@ -124,8 +122,7 @@ def train():
         model.train()
         pbar = tqdm(enumerate(trainloader), total=len(trainloader))  # progress bar
         for i, (images, labels) in pbar:
-            images, labels = images.to(device), labels.to(device)
-            # images = F.interpolate(images, scale_factor=imgsz/images.shape[2], mode='bilinear', align_corners=False)
+            images, labels = resize(images.to(device)), labels.to(device)
 
             # Forward
             with amp.autocast(enabled=cuda):
@@ -185,7 +182,7 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     pred, targets, loss = [], [], 0
     with torch.no_grad():
         for images, labels in dataloader:
-            images, labels = images.to(device), labels.to(device)
+            images, labels = resize(images.to(device)), labels.to(device)
             # images = F.interpolate(images, scale_factor=4, mode='bilinear', align_corners=False)
             y = model(images)
             pred.append(torch.max(y, 1)[1])
@@ -233,5 +230,6 @@ if __name__ == '__main__':
     cuda = device.type != 'cpu'
     opt.hyp = check_file(opt.hyp)  # check files
     opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
+    resize = torch.nn.Upsample(size=(opt.img_size, opt.img_size), mode='bilinear', align_corners=False)  # image resize
 
     train()
