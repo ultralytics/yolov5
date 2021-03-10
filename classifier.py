@@ -213,7 +213,7 @@ if __name__ == '__main__':
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=20)
     parser.add_argument('--batch-size', type=int, default=128, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', type=int, default=32, help='train, test image sizes (pixels)')
+    parser.add_argument('--img-size', type=int, default=64, help='train, test image sizes (pixels)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
