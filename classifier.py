@@ -37,8 +37,8 @@ def imshow(img):
 
 
 def train():
-    save_dir, data, bs, epochs, nw = Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, \
-                                     min(os.cpu_count(), opt.workers)
+    save_dir, data, bs, epochs, nw, imgsz = Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, \
+                                            min(os.cpu_count(), opt.workers), opt.img_size
 
     # Directories
     wdir = save_dir / 'weights'
@@ -111,10 +111,13 @@ def train():
     # Train
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()  # loss function
-    # scaler = amp.GradScaler(enabled=cuda)
     best_fitness = 0.
-    print(f'\nStarting training for {epochs} epochs...')
-    print(f"{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'accuracy':12s}")
+    # scaler = amp.GradScaler(enabled=cuda)
+    print(f'Image sizes {imgsz} train, {imgsz} test\n'
+          f'Using {nw} dataloader workers\n'
+          f'Logging results to {save_dir}\n'
+          f'Starting training for {epochs} epochs...\n\n'
+          f"{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'accuracy':12s}")
     for epoch in range(epochs):  # loop over the dataset multiple times
         mloss = 0.  # mean loss
         model.train()
