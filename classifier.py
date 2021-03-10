@@ -113,7 +113,7 @@ def train():
     criterion = nn.CrossEntropyLoss()  # loss function
     best_fitness = 0.
     # scaler = amp.GradScaler(enabled=cuda)
-    print(f'Image sizes {imgsz} train, {imgsz} test\n'
+    print(f'Image sizes {imgsz[0]} train, {imgsz[1]} test\n'
           f'Using {nw} dataloader workers\n'
           f'Logging results to {save_dir}\n'
           f'Starting training for {epochs} epochs...\n\n'
