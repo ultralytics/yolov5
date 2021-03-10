@@ -113,8 +113,8 @@ def train():
     criterion = nn.CrossEntropyLoss()  # loss function
     # scaler = amp.GradScaler(enabled=cuda)
     best_fitness = 0.
-    print(f'Starting training for {epochs} epochs...')
-    print(f"\n{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'accuracy':12s}")
+    print(f'\nStarting training for {epochs} epochs...')
+    print(f"{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'accuracy':12s}")
     for epoch in range(epochs):  # loop over the dataset multiple times
         mloss = 0.  # mean loss
         model.train()
@@ -197,11 +197,11 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
 
     accuracy = correct.mean().item()
     if verbose:  # all classes
-        print('%10s' * 3 % ('class', 'number', 'accuracy'))
-        print('%10s%10s%10.5g' % ('all', correct.shape[0], accuracy))
+        print(f"{'class':10s}{'number':10s}{'accuracy':10s}")
+        print(f"{'all':10s}{correct.shape[0]:10s}{accuracy:10.5g}")
         for i, c in enumerate(names):
             t = correct[targets == i]
-            print('%10s%10s%10.5g' % (c, t.shape[0], t.mean().item()))
+            print(f"{c:10s}{t.shape[0]:10s}{t.mean().item():10.5g}")
 
     return accuracy
 
