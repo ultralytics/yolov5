@@ -183,7 +183,6 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     with torch.no_grad():
         for images, labels in dataloader:
             images, labels = resize(images.to(device)), labels.to(device)
-            # images = F.interpolate(images, scale_factor=4, mode='bilinear', align_corners=False)
             y = model(images)
             pred.append(torch.max(y, 1)[1])
             targets.append(labels)
