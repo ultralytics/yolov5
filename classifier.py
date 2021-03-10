@@ -58,8 +58,8 @@ def train():
                            T.RandomAffine(degrees=1, translate=(.2, .2), scale=(1 / 1.5, 1.5),
                                           shear=(-1, 1, -1, 1), fill=(114, 114, 114)),
                            # T.Resize([imgsz, imgsz]),  # very slow
-                           lambda x: F.interpolate(x, size=(imgsz, imgsz), mode='bilinear', align_corners=False),
                            T.ToTensor(),
+                           lambda x: F.interpolate(x, size=(imgsz, imgsz), mode='bilinear', align_corners=False),
                            T.Normalize((0.5, 0.5, 0.5), (0.25, 0.25, 0.25))])  # PILImage from [0, 1] to [-1, 1]
     testform = T.Compose(trainform.transforms[-3:])
 
