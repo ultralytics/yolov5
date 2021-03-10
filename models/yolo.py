@@ -2,13 +2,12 @@ import argparse
 import logging
 import sys
 from copy import deepcopy
-from pathlib import Path
 
 sys.path.append('./')  # to run '$ python *.py' files in subdirectories
 logger = logging.getLogger(__name__)
 
 from models.common import *
-from models.experimental import MixConv2d, CrossConv
+from models.experimental import *
 from utils.autoanchor import check_anchor_order
 from utils.general import make_divisible, check_file, set_logging
 from utils.torch_utils import time_synchronized, fuse_conv_and_bn, model_info, scale_img, initialize_weights, \
@@ -50,7 +49,7 @@ class Detect(nn.Module):
                     self.grid[i] = self._make_grid(nx, ny).to(x[i].device)
 
                 y = x[i].sigmoid()
-                y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self.grid[i].to(x[i].device)) * self.stride[i]  # xy
+                y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
                 y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
                 z.append(y.view(bs, -1, self.no))
 
@@ -63,7 +62,7 @@ class Detect(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None):  # model, input channels, number of classes
+    def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None, anchors=None):  # model, input channels, number of classes
         super(Model, self).__init__()
         if isinstance(cfg, dict):
             self.yaml = cfg  # model dict
@@ -76,8 +75,11 @@ class Model(nn.Module):
         # Define model
         ch = self.yaml['ch'] = self.yaml.get('ch', ch)  # input channels
         if nc and nc != self.yaml['nc']:
-            logger.info('Overriding model.yaml nc=%g with nc=%g' % (self.yaml['nc'], nc))
+            logger.info(f"Overriding model.yaml nc={self.yaml['nc']} with nc={nc}")
             self.yaml['nc'] = nc  # override yaml value
+        if anchors:
+            logger.info(f'Overriding model.yaml anchors with anchors={anchors}')
+            self.yaml['anchors'] = round(anchors)  # override yaml value
         self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch])  # model, savelist
         self.names = [str(i) for i in range(self.yaml['nc'])]  # default names
         # print([x.shape for x in self.forward(torch.zeros(1, ch, 64, 64))])
@@ -107,7 +109,7 @@ class Model(nn.Module):
             for si, fi in zip(s, f):
                 xi = scale_img(x.flip(fi) if fi else x, si, gs=int(self.stride.max()))
                 yi = self.forward_once(xi)[0]  # forward
-                # cv2.imwrite('img%g.jpg' % s, 255 * xi[0].numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
+                # cv2.imwrite(f'img_{si}.jpg', 255 * xi[0].cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
                 yi[..., :4] /= si  # de-scale
                 if fi == 2:
                     yi[..., 1] = img_size[0] - yi[..., 1]  # de-flip ud
@@ -210,45 +212,30 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
                 pass
 
         n = max(round(n * gd), 1) if n > 1 else n  # depth gain
-        if m in [Conv, Bottleneck, SPP, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP, C3]:
+        if m in [Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP,
+                 C3]:
             c1, c2 = ch[f], args[0]
-
-            # Normal
-            # if i > 0 and args[0] != no:  # channel expansion factor
-            #     ex = 1.75  # exponential (default 2.0)
-            #     e = math.log(c2 / ch[1]) / math.log(2)
-            #     c2 = int(ch[1] * ex ** e)
-            # if m != Focus:
-
-            c2 = make_divisible(c2 * gw, 8) if c2 != no else c2
-
-            # Experimental
-            # if i > 0 and args[0] != no:  # channel expansion factor
-            #     ex = 1 + gw  # exponential (default 2.0)
-            #     ch1 = 32  # ch[1]
-            #     e = math.log(c2 / ch1) / math.log(2)  # level 1-n
-            #     c2 = int(ch1 * ex ** e)
-            # if m != Focus:
-            #     c2 = make_divisible(c2, 8) if c2 != no else c2
+            if c2 != no:  # if not output
+                c2 = make_divisible(c2 * gw, 8)
 
             args = [c1, c2, *args[1:]]
             if m in [BottleneckCSP, C3]:
-                args.insert(2, n)
+                args.insert(2, n)  # number of repeats
                 n = 1
         elif m is nn.BatchNorm2d:
             args = [ch[f]]
         elif m is Concat:
-            c2 = sum([ch[x if x < 0 else x + 1] for x in f])
+            c2 = sum([ch[x] for x in f])
         elif m is Detect:
-            args.append([ch[x + 1] for x in f])
+            args.append([ch[x] for x in f])
             if isinstance(args[1], int):  # number of anchors
                 args[1] = [list(range(args[1] * 2))] * len(f)
         elif m is Contract:
-            c2 = ch[f if f < 0 else f + 1] * args[0] ** 2
+            c2 = ch[f] * args[0] ** 2
         elif m is Expand:
-            c2 = ch[f if f < 0 else f + 1] // args[0] ** 2
+            c2 = ch[f] // args[0] ** 2
         else:
-            c2 = ch[f if f < 0 else f + 1]
+            c2 = ch[f]
 
         m_ = nn.Sequential(*[m(*args) for _ in range(n)]) if n > 1 else m(*args)  # module
         t = str(m)[8:-2].replace('__main__.', '')  # module type
@@ -257,6 +244,8 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         logger.info('%3s%18s%3s%10.0f  %-40s%-30s' % (i, f, n, np, t, args))  # print
         save.extend(x % i for x in ([f] if isinstance(f, int) else f) if x != -1)  # append to savelist
         layers.append(m_)
+        if i == 0:
+            ch = []
         ch.append(c2)
     return nn.Sequential(*layers), sorted(save)
 
