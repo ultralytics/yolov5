@@ -12,8 +12,8 @@ d='../argoverse/' # unzip directory
 mkdir $d
 url=https://argoverse-hd.s3.us-east-2.amazonaws.com/
 f=Argoverse-HD-Full.zip
-wget $url$f -O $f && unzip -q $f -d $d && rm $f & # download, unzip, remove in background
-wait # finish background tasks
+wget $url$f -O $f && unzip -q $f -d $d && rm $f &# download, unzip, remove in background
+wait                                              # finish background tasks
 
 cd ../argoverse/Argoverse-1.1/
 ln -s tracking images
@@ -23,6 +23,7 @@ cd ../Argoverse-HD/annotations/
 python3 - "$@" <<END
 import json
 from pathlib import Path
+
 annotation_files = ["train.json", "val.json"]
 print("Converting annotations to YOLOv5 format...")
 
@@ -37,10 +38,10 @@ for val in annotation_files:
 
         obj_class = annot['category_id']
         x_center, y_center, width, height = annot['bbox']
-        x_center = x_center / 1920.0
-        width = width / 1920.0
-        y_center = y_center / 1200.0
-        height = height / 1200.0
+        x_center = (x_center + width / 2) / 1920.  # offset and scale
+        y_center = (y_center + height / 2) / 1200.  # offset and scale
+        width /= 1920.  # scale
+        height /= 1200.  # scale
 
         img_dir = "./labels/" + a['seq_dirs'][a['images'][annot['image_id']]['sid']]
 
@@ -50,7 +51,7 @@ for val in annotation_files:
             label_dict[img_dir + "/" + img_label_name] = []
 
         label_dict[img_dir + "/" + img_label_name].append(f"{obj_class} {x_center} {y_center} {width} {height}\n")
-        
+
     for filename in label_dict:
         with open(filename, "w") as file:
             for string in label_dict[filename]:
@@ -59,7 +60,3 @@ for val in annotation_files:
 END
 
 mv ./labels ../../Argoverse-1.1/
-
-
-
-
