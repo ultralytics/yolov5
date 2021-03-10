@@ -57,10 +57,10 @@ def train():
                            T.RandomHorizontalFlip(p=0.5),
                            T.RandomAffine(degrees=1, translate=(.2, .2), scale=(1 / 1.5, 1.5),
                                           shear=(-1, 1, -1, 1), fill=(114, 114, 114)),
-                           # T.Resize([128, 128]),
+                           T.Resize([imgsz[0], imgsz[0]]),
                            T.ToTensor(),
                            T.Normalize((0.5, 0.5, 0.5), (0.25, 0.25, 0.25))])  # PILImage from [0, 1] to [-1, 1]
-    testform = T.Compose(trainform.transforms[-2:])
+    testform = T.Compose(trainform.transforms[-3:])
 
     # Dataloaders
     trainset = torchvision.datasets.ImageFolder(root=f'../{data}/train', transform=trainform)
@@ -124,7 +124,7 @@ def train():
         pbar = tqdm(enumerate(trainloader), total=len(trainloader))  # progress bar
         for i, (images, labels) in pbar:
             images, labels = images.to(device), labels.to(device)
-            images = F.interpolate(images, scale_factor=4, mode='bilinear', align_corners=False)
+            # images = F.interpolate(images, scale_factor=imgsz[0]/images.shape[2], mode='bilinear', align_corners=False)
 
             # Forward
             with amp.autocast(enabled=cuda):
@@ -185,7 +185,7 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     with torch.no_grad():
         for images, labels in dataloader:
             images, labels = images.to(device), labels.to(device)
-            images = F.interpolate(images, scale_factor=4, mode='bilinear', align_corners=False)
+            # images = F.interpolate(images, scale_factor=4, mode='bilinear', align_corners=False)
             y = model(images)
             pred.append(torch.max(y, 1)[1])
             targets.append(labels)
