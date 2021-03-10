@@ -57,7 +57,8 @@ def train():
                            T.RandomHorizontalFlip(p=0.5),
                            T.RandomAffine(degrees=1, translate=(.2, .2), scale=(1 / 1.5, 1.5),
                                           shear=(-1, 1, -1, 1), fill=(114, 114, 114)),
-                           T.Resize([imgsz[0], imgsz[0]]),
+                           # T.Resize([imgsz, imgsz]),  # very slow
+                           lambda x: F.interpolate(x, size=(imgsz, imgsz), mode='bilinear', align_corners=False),
                            T.ToTensor(),
                            T.Normalize((0.5, 0.5, 0.5), (0.25, 0.25, 0.25))])  # PILImage from [0, 1] to [-1, 1]
     testform = T.Compose(trainform.transforms[-3:])
@@ -113,7 +114,7 @@ def train():
     criterion = nn.CrossEntropyLoss()  # loss function
     best_fitness = 0.
     # scaler = amp.GradScaler(enabled=cuda)
-    print(f'Image sizes {imgsz[0]} train, {imgsz[1]} test\n'
+    print(f'Image sizes {imgsz} train, {imgsz} test\n'
           f'Using {nw} dataloader workers\n'
           f'Logging results to {save_dir}\n'
           f'Starting training for {epochs} epochs...\n\n'
@@ -124,7 +125,7 @@ def train():
         pbar = tqdm(enumerate(trainloader), total=len(trainloader))  # progress bar
         for i, (images, labels) in pbar:
             images, labels = images.to(device), labels.to(device)
-            # images = F.interpolate(images, scale_factor=imgsz[0]/images.shape[2], mode='bilinear', align_corners=False)
+            # images = F.interpolate(images, scale_factor=imgsz/images.shape[2], mode='bilinear', align_corners=False)
 
             # Forward
             with amp.autocast(enabled=cuda):
@@ -216,7 +217,7 @@ if __name__ == '__main__':
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=20)
     parser.add_argument('--batch-size', type=int, default=128, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[32, 32], help='[train, test] image sizes')
+    parser.add_argument('--img-size', type=int, default=32, help='train, test image sizes (pixels)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
