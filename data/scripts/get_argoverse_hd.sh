@@ -12,7 +12,7 @@ d='../argoverse/' # unzip directory
 mkdir $d
 url=https://argoverse-hd.s3.us-east-2.amazonaws.com/
 f=Argoverse-HD-Full.zip
-wget $url$f -O $f && unzip $f -d $d && rm $f & # download, unzip, remove in background
+wget $url$f -O $f && unzip -q $f -d $d && rm $f & # download, unzip, remove in background
 wait # finish background tasks
 
 cd ../argoverse/Argoverse-1.1/
@@ -24,7 +24,7 @@ python3 - "$@" <<END
 import json
 from pathlib import Path
 annotation_files = ["train.json", "val.json"]
-print("Converting annotations to yolov5 format...")
+print("Converting annotations to YOLOv5 format...")
 
 for val in annotation_files:
     a = json.load(open(val, "rb"))
