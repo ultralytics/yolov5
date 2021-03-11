@@ -32,7 +32,8 @@ class tf_BN(keras.layers.Layer):
             beta_initializer=keras.initializers.Constant(w.bias.numpy()),
             gamma_initializer=keras.initializers.Constant(w.weight.numpy()),
             moving_mean_initializer=keras.initializers.Constant(w.running_mean.numpy()),
-            moving_variance_initializer=keras.initializers.Constant(w.running_var.numpy()))
+            moving_variance_initializer=keras.initializers.Constant(w.running_var.numpy()),
+            epsilon=w.eps)
 
     def call(self, inputs):
         return self.bn(inputs)
