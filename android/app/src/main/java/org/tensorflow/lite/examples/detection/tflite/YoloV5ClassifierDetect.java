@@ -131,7 +131,7 @@ public class YoloV5ClassifierDetect implements Classifier {
         d.outData = new ByteBuffer[masks.length];
 
         int[] shape = d.tfLite.getOutputTensor(0).shape();
-        int numClass = shape[shape.length - 1];
+        int numClass = shape[shape.length - 1] - 5;
         for (int i = 0; i < masks.length; ++i){
             d.outData[i] = ByteBuffer.allocateDirect(1 * d.OUTPUT_WIDTH[i] * d.OUTPUT_WIDTH[i] *
                     masks[i].length * (5 + numClass) * numBytesPerChannel);
