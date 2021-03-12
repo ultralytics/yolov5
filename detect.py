@@ -94,16 +94,16 @@ def detect(save_img=False):
     if webcam:
         view_img = True
         cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=backend == 'pytorch')
+        dataset = LoadStreams(source, img_size=imgsz, stride=stride if backend == 'pytorch' else None, auto=backend == 'pytorch')
     else:
         save_img = True
-        dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=backend == 'pytorch')
+        dataset = LoadImages(source, img_size=imgsz, stride=stride if backend == 'pytorch' else None, auto=backend == 'pytorch')
 
     # Get names and colors
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in names]
 
     # Run inference
-    if device.type != 'cpu':
+    if device.type != 'cpu' and backend == 'pytorch':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
     for path, img, im0s, vid_cap in dataset:
