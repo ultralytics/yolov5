@@ -95,6 +95,32 @@ class MixConv2d(nn.Module):
         return x + self.act(self.bn(torch.cat([m(x) for m in self.m], 1)))
 
 
+class Involution(nn.Module):
+    # Involution module https://arxiv.org/abs/2103.06255
+    def __init__(self, ch, k, s):  # ch_in, kernel, stride
+        super(Involution, self).__init__()
+        reduction_ratio = 4
+        self.gch = 16  # group channels
+
+        self.nk = k ** 2  # number of kernel elements
+        self.stride = s
+        self.c1 = ch
+        c2 = ch // reduction_ratio
+        self.groups = self.c1 // self.gch
+        self.cv1 = Conv(c1=ch, c2=c2, k=1)
+        self.cv2 = nn.Conv2d(c2, k ** 2 * self.groups, 1)
+        if s > 1:
+            self.avgpool = nn.AvgPool2d(s, s)
+        self.unfold = nn.Unfold(k, 1, (k - 1) // 2, s)
+
+    def forward(self, x):
+        weight = self.cv2(self.cv1(x if self.stride == 1 else self.avgpool(x)))
+        b, c, h, w = weight.shape  # BCHW
+        weight = weight.view(b, self.groups, 1, self.nk, h, w)
+        x = self.unfold(x).view(b, self.groups, self.gch, self.nk, h, w)
+        return (weight * x).sum(3).view(b, self.c1, h, w)
+
+
 class Ensemble(nn.ModuleList):
     # Ensemble of models
     def __init__(self):
