@@ -289,7 +289,7 @@ def plot_labels(labels, names=(), save_dir=Path(''), loggers=None):
     ax[0].set_ylabel('instances')
     if 0 < len(names) < 30:
         ax[0].set_xticks(range(len(names)))
-        ax[0].set_xticklabels(names, rotation=90)
+        ax[0].set_xticklabels(names, rotation=90, fontsize=10)
     else:
         ax[0].set_xlabel('classes')
     sns.histplot(x, x='x', y='y', ax=ax[2], bins=50, pmax=0.9)
