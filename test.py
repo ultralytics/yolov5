@@ -85,9 +85,9 @@ def test(data,
     if not training:
         if device.type != 'cpu':
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
-        path = data['test'] if opt.task == 'test' else data['val']  # path to val/test images
-        dataloader = create_dataloader(path, imgsz, batch_size, gs, opt, pad=0.5, rect=True,
-                                       prefix=colorstr('test: ' if opt.task == 'test' else 'val: '))[0]
+        task = opt.task if opt.task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
+        dataloader = create_dataloader(data[task], imgsz, batch_size, gs, opt, pad=0.5, rect=True,
+                                       prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
@@ -305,7 +305,7 @@ if __name__ == '__main__':
     print(opt)
     check_requirements()
 
-    if opt.task in ['val', 'test']:  # run normally
+    if opt.task in ('train', 'val', 'test'):  # run normally
         test(opt.data,
              opt.weights,
              opt.batch_size,
