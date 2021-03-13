@@ -12,7 +12,7 @@ d='../argoverse/' # unzip directory
 mkdir $d
 url=https://argoverse-hd.s3.us-east-2.amazonaws.com/
 f=Argoverse-HD-Full.zip
-wget $url$f -O $f && unzip -q $f -d $d && rm $f &# download, unzip, remove in background
+curl -L $url$f -o $f && unzip -q $f -d $d && rm $f &# download, unzip, remove in background
 wait                                              # finish background tasks
 
 cd ../argoverse/Argoverse-1.1/
