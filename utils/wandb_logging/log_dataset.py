@@ -14,6 +14,7 @@ def create_dataset_artifact(opt):
         data = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
     logger = WandbLogger(opt, '', None, data, job_type='Dataset Creation')
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')

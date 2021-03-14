@@ -22,6 +22,7 @@ except ImportError:
 
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
+
 def remove_prefix(from_string, prefix):
     return from_string[len(prefix):]
 
@@ -57,8 +58,7 @@ class WandbLogger():
         if self.wandb:
             self.wandb_run = wandb.init(config=opt,
                                         resume="allow",
-                                        project='YOLOv5' if opt.project == 'runs/train' else Path(
-                                        opt.project).stem,
+                                        project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
                                         name=name,
                                         job_type=job_type,
                                         id=run_id) if not wandb.run else wandb.run
@@ -85,14 +85,14 @@ class WandbLogger():
     def setup_training(self, opt, data_dict):
         self.log_dict, self.current_epoch, self.log_imgs = {}, 0, 16  # Logging Constants
         self.bbox_interval = opt.bbox_interval
-        if isinstance(opt.resume,str):
+        if isinstance(opt.resume, str):
             modeldir, _ = self.download_model_artifact(opt)
             if modeldir:
                 self.weights = Path(modeldir) / "last.pt"
                 config = self.wandb_run.config
                 opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs = str(
                     self.weights), config.save_period, config.total_batch_size, config.bbox_interval, config.epochs
-            data_dict = dict(self.wandb_run.config.data_dict) # Advantage: Eliminates the need for config file to resume
+            data_dict = dict(self.wandb_run.config.data_dict) # eliminates the need for config file to resume
         if 'val_artifact' not in self.__dict__: # If --upload_dataset is set, use the existing artifact, don't download
             self.train_artifact_path, self.train_artifact = self.download_dataset_artifact(data_dict.get('train'), opt.artifact_alias)
             self.val_artifact_path, self.val_artifact = self.download_dataset_artifact(data_dict.get('val'), opt.artifact_alias)
