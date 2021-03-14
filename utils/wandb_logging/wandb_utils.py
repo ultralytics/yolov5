@@ -162,8 +162,7 @@ class WandbLogger():
         data.pop('download', None)
         with open(path, 'w') as f:
             yaml.dump(data, f)
-        print("New Config file => ", path)
-        '''
+        ''' #TODO: update
         if self.job_type == 'Training': # builds correct artifact pipeline graph
             self.val_artifact.wait()
             self.train_artifact.wait()
