@@ -1,11 +1,12 @@
 import argparse
 import json
-import numpy as np
 import os
-import torch
-import yaml
 from pathlib import Path
 from threading import Thread
+
+import numpy as np
+import torch
+import yaml
 from tqdm import tqdm
 
 from models.experimental import attempt_load
@@ -41,6 +42,7 @@ def test(data,
     training = model is not None
     if training:  # called by train.py
         device = next(model.parameters()).device  # get model device
+
     else:  # called directly
         set_logging()
         device = select_device(opt.device, batch_size=batch_size)
@@ -57,10 +59,12 @@ def test(data,
         # Multi-GPU disabled, incompatible with .half() https://github.com/ultralytics/yolov5/issues/99
         # if device.type != 'cpu' and torch.cuda.device_count() > 1:
         #     model = nn.DataParallel(model)
+
     # Half
     half = device.type != 'cpu'  # half precision only supported on CUDA
     if half:
         model.half()
+
     # Configure
     model.eval()
     if isinstance(data, str):
@@ -71,7 +75,6 @@ def test(data,
     nc = 1 if single_cls else int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
     niou = iouv.numel()
-    names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
 
     # Logging
     log_imgs = 0
@@ -87,6 +90,7 @@ def test(data,
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
+    names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
     coco91class = coco80_to_coco91_class()
     s = ('%20s' + '%12s' * 6) % ('Class', 'Images', 'Labels', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
     p, r, f1, mp, mr, map50, map, t0, t1 = 0., 0., 0., 0., 0., 0., 0., 0., 0.
