@@ -432,8 +432,10 @@ def train(hyp, opt, device, tb_writer=None):
                 strip_optimizer(f)  # strip optimizers
         if opt.bucket:
             os.system(f'gsutil cp {final} gs://{opt.bucket}/weights')  # upload
-        if wandb_logger.wandb:  # save the stripped model
-            wandb_logger.wandb.log_artifact(str(final), type='model', name='final_model_' + wandb_logger.wandb_run.id)
+        if wandb_logger.wandb:  # Log the stripped model
+            wandb_logger.wandb.log_artifact(str(final), type='model',
+                                            name='run_' + wandb_logger.wandb_run.id + '_model',
+                                            aliases=['last', 'best', 'stripped'])
     else:
         dist.destroy_process_group()
     torch.cuda.empty_cache()

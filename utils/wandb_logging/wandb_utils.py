@@ -91,11 +91,14 @@ class WandbLogger():
                 self.weights = Path(modeldir) / "last.pt"
                 config = self.wandb_run.config
                 opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs, opt.hyp = str(
-                    self.weights), config.save_period, config.total_batch_size, config.bbox_interval, config.epochs, config.opt['hyp']
-            data_dict = dict(self.wandb_run.config.data_dict) # eliminates the need for config file to resume
-        if 'val_artifact' not in self.__dict__: # If --upload_dataset is set, use the existing artifact, don't download
-            self.train_artifact_path, self.train_artifact = self.download_dataset_artifact(data_dict.get('train'), opt.artifact_alias)
-            self.val_artifact_path, self.val_artifact = self.download_dataset_artifact(data_dict.get('val'), opt.artifact_alias)
+                    self.weights), config.save_period, config.total_batch_size, config.bbox_interval, config.epochs, \
+                                                                                                       config.opt['hyp']
+            data_dict = dict(self.wandb_run.config.data_dict)  # eliminates the need for config file to resume
+        if 'val_artifact' not in self.__dict__:  # If --upload_dataset is set, use the existing artifact, don't download
+            self.train_artifact_path, self.train_artifact = self.download_dataset_artifact(data_dict.get('train'),
+                                                                                           opt.artifact_alias)
+            self.val_artifact_path, self.val_artifact = self.download_dataset_artifact(data_dict.get('val'),
+                                                                                       opt.artifact_alias)
             self.result_artifact, self.result_table, self.val_table, self.weights = None, None, None, None
             if self.train_artifact_path is not None:
                 train_path = Path(self.train_artifact_path) / 'data/images/'
@@ -141,7 +144,8 @@ class WandbLogger():
             'fitness_score': fitness_score
         })
         model_artifact.add_file(str(path / 'last.pt'), name='last.pt')
-        wandb.log_artifact(model_artifact, aliases=['latest', 'epoch ' + str(self.current_epoch), 'best' if best_model else ''])
+        wandb.log_artifact(model_artifact,
+                           aliases=['latest', 'epoch ' + str(self.current_epoch), 'best' if best_model else ''])
         print("Saving model artifact on epoch ", epoch + 1)
 
     def create_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False):
@@ -181,7 +185,8 @@ class WandbLogger():
             else:
                 artifact.add_file(img_file, name='data/images/' + Path(img_file).name)
                 label_file = Path(img2label_paths([img_file])[0])
-                artifact.add_file(str(label_file), name='data/labels/' + label_file.name) if label_file.exists() else None
+                artifact.add_file(str(label_file),
+                                  name='data/labels/' + label_file.name) if label_file.exists() else None
         table = wandb.Table(columns=["id", "train_image", "Classes"])
         class_set = wandb.Classes([{'id': id, 'name': name} for id, name in class_to_id.items()])
         for si, (img, labels, paths, shapes) in enumerate(tqdm(dataset)):
@@ -201,6 +206,28 @@ class WandbLogger():
         artifact.add(table, name)
         wandb.log_artifact(artifact)
         return artifact, table
+
+    def log_training_progress(self, predn, names, batch_size, batch_i, si):
+        if self.val_table and self.result_table:
+            class_set = wandb.Classes([{'id': id, 'name': name} for id, name in names.items()])
+            box_data = []
+            total_conf = 0
+            for *xyxy, conf, cls in predn.tolist():
+                if conf >= 0.25:
+                    box_data.append(
+                        {"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
+                         "class_id": int(cls),
+                         "box_caption": "%s" % (names[cls]),
+                         "scores": {"class_score": conf},
+                         "domain": "pixel"})
+                    total_conf = total_conf + conf
+            boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
+            id = batch_i * batch_size + si
+            self.result_table.add_data(self.current_epoch,
+                                       id,
+                                       wandb.Image(self.val_table.data[id][1], boxes=boxes, classes=class_set),
+                                       total_conf / max(1, len(box_data))
+                                       )
 
     def log(self, log_dict):
         if self.wandb_run:

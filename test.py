@@ -1,12 +1,11 @@
 import argparse
 import json
-import os
-from pathlib import Path
-from threading import Thread
-
 import numpy as np
+import os
 import torch
 import yaml
+from pathlib import Path
+from threading import Thread
 from tqdm import tqdm
 
 from models.experimental import attempt_load
@@ -75,10 +74,9 @@ def test(data,
     names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
 
     # Logging
-    val_table, result_table, log_imgs = None, None, 0
+    log_imgs = 0
     if wandb_logger and wandb_logger.wandb:
         log_imgs = min(wandb_logger.log_imgs, 100)
-        class_set = wandb_logger.wandb.Classes([{'id': id, 'name': name} for id, name in names.items()])
     # Dataloader
     if not training:
         if device.type != 'cpu':
@@ -154,28 +152,7 @@ def test(data,
                                  "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
                     boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
                     wandb_images.append(wandb_logger.wandb.Image(img[si], boxes=boxes, caption=path.name))
-            # W&B logging - DSVIZ
-            if wandb_logger and wandb_logger.wandb:
-                if wandb_logger.val_table and wandb_logger.result_table:
-                    box_data = []
-                    total_conf = 0
-                    for *xyxy, conf, cls in predn.tolist():
-                        if conf >= 0.25:
-                            box_data.append(
-                                {"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
-                                 "class_id": int(cls),
-                                 "box_caption": "%s" % (names[cls]),
-                                 "scores": {"class_score": conf},
-                                 "domain": "pixel"})
-                            total_conf = total_conf + conf
-                    boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
-                    id = batch_i * batch_size + si
-                    wandb_logger.result_table.add_data(wandb_logger.current_epoch,
-                                                       id,
-                                                       wandb_logger.wandb.Image(wandb_logger.val_table.data[id][1], boxes=boxes,
-                                                                   classes=class_set, caption=path.name),
-                                                       total_conf / max(1, len(box_data))
-                                                       )
+                wandb_logger.log_training_progress(predn, names, batch_size, batch_i, si)  # logs dsviz tables
 
             # Append to pycocotools JSON dictionary
             if save_json:
