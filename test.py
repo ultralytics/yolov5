@@ -160,7 +160,7 @@ def test(data,
                     box_data = []
                     total_conf = 0
                     for *xyxy, conf, cls in predn.tolist():
-                        if conf >= 0.175:  # Arbitrary conf
+                        if conf >= 0.25:
                             box_data.append(
                                 {"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
                                  "class_id": int(cls),
