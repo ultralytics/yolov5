@@ -51,7 +51,7 @@ def create(name, pretrained, channels, classes, autoshape):
         raise Exception(s) from e
 
 
-def yolov5s(pretrained=False, channels=3, classes=80, autoshape=True):
+def yolov5s(pretrained=True, channels=3, classes=80, autoshape=True):
     """YOLOv5-small model from https://github.com/ultralytics/yolov5
 
     Arguments:
@@ -65,7 +65,7 @@ def yolov5s(pretrained=False, channels=3, classes=80, autoshape=True):
     return create('yolov5s', pretrained, channels, classes, autoshape)
 
 
-def yolov5m(pretrained=False, channels=3, classes=80, autoshape=True):
+def yolov5m(pretrained=True, channels=3, classes=80, autoshape=True):
     """YOLOv5-medium model from https://github.com/ultralytics/yolov5
 
     Arguments:
@@ -79,7 +79,7 @@ def yolov5m(pretrained=False, channels=3, classes=80, autoshape=True):
     return create('yolov5m', pretrained, channels, classes, autoshape)
 
 
-def yolov5l(pretrained=False, channels=3, classes=80, autoshape=True):
+def yolov5l(pretrained=True, channels=3, classes=80, autoshape=True):
     """YOLOv5-large model from https://github.com/ultralytics/yolov5
 
     Arguments:
@@ -93,7 +93,7 @@ def yolov5l(pretrained=False, channels=3, classes=80, autoshape=True):
     return create('yolov5l', pretrained, channels, classes, autoshape)
 
 
-def yolov5x(pretrained=False, channels=3, classes=80, autoshape=True):
+def yolov5x(pretrained=True, channels=3, classes=80, autoshape=True):
     """YOLOv5-xlarge model from https://github.com/ultralytics/yolov5
 
     Arguments:

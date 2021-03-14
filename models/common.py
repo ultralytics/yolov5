@@ -12,6 +12,7 @@ from PIL import Image
 from utils.datasets import letterbox
 from utils.general import non_max_suppression, make_divisible, scale_coords, xyxy2xywh
 from utils.plots import color_list, plot_one_box
+from utils.torch_utils import time_synchronized
 
 
 def autopad(k, p=None):  # kernel, padding
@@ -190,6 +191,7 @@ class autoShape(nn.Module):
         #   torch:           = torch.zeros(16,3,720,1280)  # BCHW
         #   multiple:        = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
 
+        t = [time_synchronized()]
         p = next(self.model.parameters())  # for device and type
         if isinstance(imgs, torch.Tensor):  # torch
             return self.model(imgs.to(p.device).type_as(p), augment, profile)  # inference
@@ -216,22 +218,25 @@ class autoShape(nn.Module):
         x = np.stack(x, 0) if n > 1 else x[0][None]  # stack
         x = np.ascontiguousarray(x.transpose((0, 3, 1, 2)))  # BHWC to BCHW
         x = torch.from_numpy(x).to(p.device).type_as(p) / 255.  # uint8 to fp16/32
+        t.append(time_synchronized())
 
         # Inference
         with torch.no_grad():
             y = self.model(x, augment, profile)[0]  # forward
-        y = non_max_suppression(y, conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)  # NMS
+        t.append(time_synchronized())
 
         # Post-process
+        y = non_max_suppression(y, conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)  # NMS
         for i in range(n):
             scale_coords(shape1, y[i][:, :4], shape0[i])
+        t.append(time_synchronized())
 
-        return Detections(imgs, y, files, self.names)
+        return Detections(imgs, y, files, t, self.names, x.shape)
 
 
 class Detections:
     # detections class for YOLOv5 inference results
-    def __init__(self, imgs, pred, files, names=None):
+    def __init__(self, imgs, pred, files, times, names=None, shape=None):
         super(Detections, self).__init__()
         d = pred[0].device  # device
         gn = [torch.tensor([*[im.shape[i] for i in [1, 0, 1, 0]], 1., 1.], device=d) for im in imgs]  # normalizations
@@ -244,6 +249,8 @@ class Detections:
         self.xyxyn = [x / g for x, g in zip(self.xyxy, gn)]  # xyxy normalized
         self.xywhn = [x / g for x, g in zip(self.xywh, gn)]  # xywh normalized
         self.n = len(self.pred)
+        self.t = ((times[i + 1] - times[i]) * 1000 / self.n for i in range(3))  # timestamps (ms)
+        self.s = shape  # inference BCHW shape
 
     def display(self, pprint=False, show=False, save=False, render=False, save_dir=''):
         colors = color_list()
@@ -271,6 +278,7 @@ class Detections:
 
     def print(self):
         self.display(pprint=True)  # print results
+        print(f'Speed: %.1f/%.1f/%.1f ms pre-process/inference/NMS per image at shape {tuple(self.s)}' % tuple(self.t))
 
     def show(self):
         self.display(show=True)  # show results
