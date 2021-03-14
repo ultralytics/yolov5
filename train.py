@@ -411,8 +411,7 @@ def train(hyp, opt, device, tb_writer=None):
                 wandb_logger.log({"Results": [wandb.Image(str(save_dir / f), caption=f) for f in files
                                               if (save_dir / f).exists()]})
         # Test best.pt
-        logger.info('%g epochs completed in %.3f hours.\n' %
-                    (epoch - start_epoch + 1, (time.time() - t0) / 3600))
+        logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
         if opt.data.endswith('coco.yaml') and nc == 80:  # if COCO
             for m in (last, best) if best.exists() else (last):  # speed, mAP tests
                 results, _, _ = test.test(opt.data,
