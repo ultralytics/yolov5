@@ -489,7 +489,7 @@ if __name__ == '__main__':
     # Resume
     wandb_run = resume_and_get_id(opt)
     if opt.resume and (not wandb_run):  # resume an interrupted run
-        ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  ## specified or most recent path
+        ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
         assert os.path.isfile(ckpt) or wandb_run, 'ERROR: --resume checkpoint does not exist'
         apriori = opt.global_rank, opt.local_rank
         with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
