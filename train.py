@@ -1,10 +1,15 @@
+
 import argparse
 import logging
 import math
-import numpy as np
 import os
 import random
 import time
+from copy import deepcopy
+from pathlib import Path
+from threading import Thread
+
+import numpy as np
 import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,9 +17,6 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 import yaml
-from copy import deepcopy
-from pathlib import Path
-from threading import Thread
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
@@ -147,6 +149,7 @@ def train(hyp, opt, device, tb_writer=None):
         if ckpt['optimizer'] is not None:
             optimizer.load_state_dict(ckpt['optimizer'])
             best_fitness = ckpt['best_fitness']
+
         # EMA
         if ema and ckpt.get('ema'):
             ema.ema.load_state_dict(ckpt['ema'].float().state_dict())
@@ -271,6 +274,7 @@ def train(hyp, opt, device, tb_writer=None):
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
             ni = i + nb * epoch  # number integrated batches (since train start)
             imgs = imgs.to(device, non_blocking=True).float() / 255.0  # uint8 to float32, 0-255 to 0.0-1.0
+
             # Warmup
             if ni <= nw:
                 xi = [0, nw]  # x interp
@@ -388,6 +392,7 @@ def train(hyp, opt, device, tb_writer=None):
                         'updates': ema.updates,
                         'optimizer': optimizer.state_dict(),
                         'wandb_id': wandb_logger.wandb_run.id if wandb_logger.wandb else None}
+
                 # Save last, best and delete
                 torch.save(ckpt, last)
                 if best_fitness == fi:
@@ -398,6 +403,7 @@ def train(hyp, opt, device, tb_writer=None):
                             last.parent, opt, epoch, fi, best_model=best_fitness == fi)
                 del ckpt
         wandb_logger.end_epoch(best_result=best_fitness == fi)
+        
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training
     if rank in [-1, 0]:
