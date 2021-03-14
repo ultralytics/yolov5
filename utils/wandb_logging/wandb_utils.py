@@ -90,8 +90,8 @@ class WandbLogger():
             if modeldir:
                 self.weights = Path(modeldir) / "last.pt"
                 config = self.wandb_run.config
-                opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs = str(
-                    self.weights), config.save_period, config.total_batch_size, config.bbox_interval, config.epochs
+                opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs, opt.hyp = str(
+                    self.weights), config.save_period, config.total_batch_size, config.bbox_interval, config.epochs, config.opt['hyp']
             data_dict = dict(self.wandb_run.config.data_dict) # eliminates the need for config file to resume
         if 'val_artifact' not in self.__dict__: # If --upload_dataset is set, use the existing artifact, don't download
             self.train_artifact_path, self.train_artifact = self.download_dataset_artifact(data_dict.get('train'), opt.artifact_alias)
@@ -132,14 +132,13 @@ class WandbLogger():
         return None, None
 
     def log_model(self, path, opt, epoch, fitness_score, best_model=False):
-        datetime_suffix = datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
         model_artifact = wandb.Artifact('run_' + wandb.run.id + '_model', type='model', metadata={
             'original_url': str(path),
             'epochs_trained': epoch + 1,
             'save period': opt.save_period,
             'project': opt.project,
-            'datetime': datetime_suffix,
-            'total_epochs': opt.epochs
+            'total_epochs': opt.epochs,
+            'fitness_score': fitness_score
         })
         model_artifact.add_file(str(path / 'last.pt'), name='last.pt')
         wandb.log_artifact(model_artifact, aliases=['latest', 'epoch ' + str(self.current_epoch), 'best' if best_model else ''])

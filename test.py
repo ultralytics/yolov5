@@ -77,9 +77,8 @@ def test(data,
     # Logging
     val_table, result_table, log_imgs = None, None, 0
     if wandb_logger and wandb_logger.wandb:
-        import wandb
         log_imgs = min(wandb_logger.log_imgs, 100)
-        class_set = wandb.Classes([{'id': id, 'name': name} for id, name in names.items()])
+        class_set = wandb_logger.wandb.Classes([{'id': id, 'name': name} for id, name in names.items()])
     # Dataloader
     if not training:
         if device.type != 'cpu':
@@ -154,7 +153,7 @@ def test(data,
                                  "scores": {"class_score": conf},
                                  "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
                     boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
-                    wandb_images.append(wandb.Image(img[si], boxes=boxes, caption=path.name))
+                    wandb_images.append(wandb_logger.wandb.Image(img[si], boxes=boxes, caption=path.name))
             # W&B logging - DSVIZ
             if wandb_logger and wandb_logger.wandb:
                 if wandb_logger.val_table and wandb_logger.result_table:
@@ -173,7 +172,7 @@ def test(data,
                     id = batch_i * batch_size + si
                     wandb_logger.result_table.add_data(wandb_logger.current_epoch,
                                                        id,
-                                                       wandb.Image(wandb_logger.val_table.data[id][1], boxes=boxes,
+                                                       wandb_logger.wandb.Image(wandb_logger.val_table.data[id][1], boxes=boxes,
                                                                    classes=class_set, caption=path.name),
                                                        total_conf / max(1, len(box_data))
                                                        )
@@ -261,11 +260,10 @@ def test(data,
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
         if wandb_logger and wandb_logger.wandb:
-            val_batches = [wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]
+            val_batches = [wandb_logger.wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]
             wandb_logger.log({"Validation": val_batches})
     if wandb_images:
         wandb_logger.log({"Bounding Box Debugger/Images": wandb_images})
-        wandb_images = []
 
     # Save JSON
     if save_json and len(jdict):

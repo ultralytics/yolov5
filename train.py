@@ -1,14 +1,10 @@
 import argparse
 import logging
 import math
+import numpy as np
 import os
 import random
 import time
-from copy import deepcopy
-from pathlib import Path
-from threading import Thread
-
-import numpy as np
 import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,6 +12,9 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 import yaml
+from copy import deepcopy
+from pathlib import Path
+from threading import Thread
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
@@ -71,8 +70,7 @@ def train(hyp, opt, device, tb_writer=None):
         wandb_logger = WandbLogger(opt, Path(opt.save_dir).stem, run_id, data_dict)
         data_dict = wandb_logger.data_dict
         if wandb_logger.wandb:
-            import wandb
-            weights, epochs = opt.weights, opt.epochs  # WandbLogger might update weights, epochs if resuming
+            weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp  # WandbLogger might update weights, epochs if resuming
     loggers = {'wandb': wandb_logger.wandb}  # loggers dict
     nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if opt.single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
@@ -328,7 +326,7 @@ def train(hyp, opt, device, tb_writer=None):
                     #     tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
                     #     tb_writer.add_graph(model, imgs)  # add model to tensorboard
                 elif plots and ni == 10 and wandb_logger.wandb:
-                    wandb_logger.log({"Mosaics": [wandb.Image(str(x), caption=x.name) for x in
+                    wandb_logger.log({"Mosaics": [wandb_logger.wandb.Image(str(x), caption=x.name) for x in
                                                   save_dir.glob('train*.jpg') if x.exists()]})
 
             # end batch ------------------------------------------------------------------------------------------------
@@ -395,7 +393,7 @@ def train(hyp, opt, device, tb_writer=None):
                 if best_fitness == fi:
                     torch.save(ckpt, best)
                 if wandb_logger.wandb:
-                    if ((epoch + 1) % opt.save_period == 0 or final_epoch) and opt.save_period != -1:
+                    if ((epoch + 1) % opt.save_period == 0 and not final_epoch) and opt.save_period != -1:
                         wandb_logger.log_model(
                             last.parent, opt, epoch, fi, best_model=best_fitness == fi)
                 del ckpt
@@ -408,7 +406,7 @@ def train(hyp, opt, device, tb_writer=None):
             plot_results(save_dir=save_dir)  # save as results.png
             if wandb_logger.wandb:
                 files = ['results.png', 'confusion_matrix.png', *[f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R')]]
-                wandb_logger.log({"Results": [wandb.Image(str(save_dir / f), caption=f) for f in files
+                wandb_logger.log({"Results": [wandb_logger.wandb.Image(str(save_dir / f), caption=f) for f in files
                                               if (save_dir / f).exists()]})
         # Test best.pt
         logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
@@ -423,10 +421,9 @@ def train(hyp, opt, device, tb_writer=None):
                                           single_cls=opt.single_cls,
                                           dataloader=testloader,
                                           save_dir=save_dir,
-                                          save_json=save_json,
+                                          save_json=True,
                                           plots=False,
                                           is_coco=is_coco)
-        wandb_logger.finish_run()
 
         # Strip optimizers
         final = best if best.exists() else last  # final model
@@ -435,9 +432,12 @@ def train(hyp, opt, device, tb_writer=None):
                 strip_optimizer(f)  # strip optimizers
         if opt.bucket:
             os.system(f'gsutil cp {final} gs://{opt.bucket}/weights')  # upload
+        if wandb_logger.wandb:  # save the stripped model
+            wandb_logger.wandb.log_artifact(str(final), type='model', name='final_model_' + wandb_logger.wandb_run.id)
     else:
         dist.destroy_process_group()
     torch.cuda.empty_cache()
+    wandb_logger.finish_run()
     return results
 
 
@@ -488,7 +488,7 @@ if __name__ == '__main__':
 
     # Resume
     wandb_run = resume_and_get_id(opt)
-    if opt.resume and (not wandb_run):  # resume an interrupted run
+    if opt.resume and not wandb_run:  # resume an interrupted run
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         apriori = opt.global_rank, opt.local_rank
@@ -516,9 +516,8 @@ if __name__ == '__main__':
         opt.batch_size = opt.total_batch_size // opt.world_size
 
     # Hyperparameters
-    if not isinstance(opt.hyp, dict):
-        with open(opt.hyp) as f:
-            hyp = yaml.load(f, Loader=yaml.SafeLoader)  # load hyps
+    with open(opt.hyp) as f:
+        hyp = yaml.load(f, Loader=yaml.SafeLoader)  # load hyps
 
     # Train
     logger.info(opt)
