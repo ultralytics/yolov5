@@ -129,7 +129,7 @@ def custom(path_or_model='path/to/model.pt', autoshape=True):
 
 
 if __name__ == '__main__':
-    model = create(name='yolov5s', channels=3, classes=80, autoshape=True)  # pretrained example
+    model = create(name='yolov5s', pretrained=True, channels=3, classes=80, autoshape=True)  # pretrained example
     # model = custom(path_or_model='path/to/model.pt')  # custom example
 
     # Verify inference
