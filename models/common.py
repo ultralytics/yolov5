@@ -168,7 +168,6 @@ class NMS(nn.Module):
 
 class autoShape(nn.Module):
     # input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS
-    img_size = 640  # inference size (pixels)
     conf = 0.25  # NMS confidence threshold
     iou = 0.45  # NMS IoU threshold
     classes = None  # (optional list) filter by class
@@ -278,7 +277,8 @@ class Detections:
 
     def print(self):
         self.display(pprint=True)  # print results
-        print(f'Speed: %.1f/%.1f/%.1f ms pre-process/inference/NMS per image at shape {tuple(self.s)}' % tuple(self.t))
+        print(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' %
+              tuple(self.t))                      
 
     def show(self):
         self.display(show=True)  # show results
