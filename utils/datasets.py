@@ -1033,15 +1033,13 @@ def extract_boxes(path='../coco128/'):  # from utils.datasets import *; extract_
                     assert cv2.imwrite(str(f), im[b[1]:b[3], b[0]:b[2]]), f'box failure in {f}'
 
 
-def autosplit(path='../coco128', weights=(0.9, 0.1, 0.0), annotated_only=False, bg_imgs_path=None, bg_imgs_ratio=0.05): # from utils.datasets import *; autosplit('../coco128')
+def autosplit(path='../coco128', weights=(0.9, 0.1, 0.0), annotated_only=False): # from utils.datasets import *; autosplit('../coco128')
 
     """ Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
     # Arguments
         path:           Path to images directory
         weights:        Train, val, test weights (list)
-        annotated_only: Only use images with an annotated txt file associated to create the dataset
-        bg_imgs_path:   Path to background images to introduce inside the dataset (to reduce FPs)
-        bg_imgs_ratio:  Ratio of background images to add according to the number of images in each split
+        annotated_only: Only use images with an annotated txt file
     """
 
     path = Path(path)  # images dir
@@ -1058,27 +1056,9 @@ def autosplit(path='../coco128', weights=(0.9, 0.1, 0.0), annotated_only=False, 
     if annotated_only:
         print("Only annotated images with a .txt file associated will be used to create the dataset")
 
-    bg_dataset_sizes = [0, 0, 0] # calculate num of bg images needed for each split
     for i, img in tqdm(zip(indices, files), total=n):
         # in case we want to use only annotated files
-        if not annotated_only or (annotated_only and (img.parent / (img.stem + ".txt")).exists()):
-            with open(path / txt[i], 'a') as f:
-                f.write(str(img) + '\n')  # add image to txt file
-            bg_dataset_sizes[i] += bg_imgs_ratio
-
-    # automatically fill our dataset with background images
-    if bg_imgs_path:
-        assert 0 < bg_imgs_ratio <= 0.1, "We recommend a background images ratio between 0% (0) and 10% (0.1)"
-        bg_path = Path(bg_imgs_path)
-        bg_files = sum([list(bg_path.rglob(f"*.{img_ext}")) for img_ext in img_formats], [])
-
-        print("Filling the dataset with some background images...")
-
-        # keep only the number of bg images needed
-        bg_files = random.sample(bg_files, round(sum(bg_dataset_sizes)))
-        bg_indices = random.choices([0, 1, 2], weights=weights, k=len(bg_files))
-
-        for i, img in tqdm(zip(bg_indices, bg_files), total=len(bg_files)):
+        if not annotated_only or (annotated_only and Path(img2label_paths([str(img)])[0]).exists()):
             with open(path / txt[i], 'a') as f:
                 f.write(str(img) + '\n')  # add image to txt file
 
