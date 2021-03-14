@@ -430,7 +430,7 @@ def train(hyp, opt, device, tb_writer=None):
 
         # Strip optimizers
         final = best if best.exists() else last  # final model
-        for f in [last, best]:
+        for f in last, best:
             if f.exists():
                 strip_optimizer(f)  # strip optimizers
         if opt.bucket:
