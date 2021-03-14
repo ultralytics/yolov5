@@ -407,10 +407,9 @@ def train(hyp, opt, device, tb_writer=None):
         if plots:
             plot_results(save_dir=save_dir)  # save as results.png
             if wandb_logger.wandb:
-                files = ['results.png', 'confusion_matrix.png', *
-                [f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R')]]
-                wandb_logger.log(
-                    {"Results": [wandb.Image(str(save_dir / f), caption=f) for f in files if (save_dir / f).exists()]})
+                files = ['results.png', 'confusion_matrix.png', *[f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R')]]
+                wandb_logger.log({"Results": [wandb.Image(str(save_dir / f), caption=f) for f in files
+                                              if (save_dir / f).exists()]})
         # Test best.pt
         logger.info('%g epochs completed in %.3f hours.\n' %
                     (epoch - start_epoch + 1, (time.time() - t0) / 3600))
