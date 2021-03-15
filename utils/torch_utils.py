@@ -1,8 +1,8 @@
 # PyTorch utils
-
 import logging
 import math
 import os
+import platform
 import subprocess
 import time
 from contextlib import contextmanager
@@ -53,7 +53,7 @@ def git_describe():
 
 def select_device(device='', batch_size=None):
     # device = 'cpu' or '0' or '0,1,2,3'
-    s = f'YOLOv5 {git_describe()} torch {torch.__version__} '  # string
+    s = f'YOLOv5 🚀 {git_describe()} torch {torch.__version__} '  # string
     cpu = device.lower() == 'cpu'
     if cpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force torch.cuda.is_available() = False
@@ -73,7 +73,7 @@ def select_device(device='', batch_size=None):
     else:
         s += 'CPU\n'
 
-    logger.info(s)  # skip a line
+    logger.info(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)  # emoji-safe
     return torch.device('cuda:0' if cuda else 'cpu')
 
 
