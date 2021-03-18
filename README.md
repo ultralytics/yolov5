@@ -36,7 +36,7 @@ You should connect computer with GPU to your Supervisely account. If you already
 Once your computer is ready just add agent to your team and execute automatically generated running command in terminal. Watch how-to video:
 
 <a data-key="sly-embeded-video-link" href="https://youtu.be/aDqQiYycqyk" data-video-code="aDqQiYycqyk">
-    <img src="https://i.imgur.com/X9NTc5X.png" alt="SLY_EMBEDED_VIDEO_LINK"  style="max-width:50%;">
+    <img src="https://i.imgur.com/X9NTc5X.png" alt="SLY_EMBEDED_VIDEO_LINK"  style="width:50%;">
 </a>
 
 
