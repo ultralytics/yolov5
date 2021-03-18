@@ -2,11 +2,11 @@ This guide explains how to use [Supervisely](https://supervise.ly/) with YOLOv5.
 
 # Table of Contents
 
-1. [About Supervisely](#About-Supervisely)
+1. [About Supervisely](#-about-supervisely)
 2. [Prerequisites](#Prerequisites)
-3. [YOLOv5 Apps Collection](#YOLOv5-Apps-Collection)
+3. [YOLOv5 Apps Collection](#-yolo-v5-apps-collection)
 8. [For developers](#For-developers)
-9. [Contact & Questions & Suggestions](#Contact-&-Questions-&-Suggestions)
+9. [Contact & Questions & Suggestions](#contact--questions--suggestions)
 
 # 🔥 About Supervisely
 
