@@ -42,7 +42,7 @@ Once your computer is ready just add agent to your team and execute automaticall
 
 # 🎉 YOLO v5 Apps Collection
 
-YOLOv5 is one of the best available detectors. And we are proud to announce its full integrtion into [Supervisely Ecosystem](https://ecosystem.supervise.ly/). To learn more about how to use every app, please go to app's readme page (links are provided). Just add the appa to your team to start using them.
+YOLOv5 is one of the best available detectors. And we are proud to announce its full integrtion into [Supervisely Ecosystem](https://ecosystem.supervise.ly/). To learn more about how to use every app, please go to app's readme page (links are provided). Just add the apps to your team to start using them.
 
 <img src="https://i.imgur.com/az5sqvk.png"/>
 
