@@ -50,19 +50,19 @@ YOLOv5 is one of the best available detectors. And we are proud to announce its 
 
 1. [Train YOLOv5](https://ecosystem.supervise.ly/apps/supervisely-ecosystem%252Fyolov5%252Fsupervisely%252Ftrain) - start training on your custom data. Just run app from the context menu of your project, choose classes of interest, train/val splits, configure training metaparameters and augmentations, and monitor training metrics in realtime. App automatically converts all labels to rectangles. All training artifacts including model weights will be saved to Team Files and can be easily downloaded. 
 
-    <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/yolov5/tree/master/supervisely/train" src="https://i.imgur.com/RkVzrLC.png" width="350px"/>
+    <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/yolov5/supervisely/train" src="https://i.imgur.com/RkVzrLC.png" width="350px"/>
 
 2. [Serve YOLOv5](https://ecosystem.supervise.ly/apps/supervisely-ecosystem%252Fyolov5%252Fsupervisely%252Fserve) - serve model as Rest API service. You can run pretrained model, use custom model weights trained in Supervisely as well as weights trained outside (just upload weights file to Team Files). Thus other apps from Ecosystem can get predictions from the deployed model. Also developers can send inference requiests in a few lines of python code.
    
-    <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/yolov5/tree/master/supervisely/serve" src="https://i.imgur.com/DVONwK8.png" width="350px"/>
+    <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/yolov5/supervisely/serve" src="https://i.imgur.com/DVONwK8.png" width="350px"/>
 
 3. [Apply NN to images project ](https://ecosystem.supervise.ly/apps/supervisely-ecosystem%252Fnn-image-labeling%252Fproject-dataset) - app allows to play with different inference options and visualize predictions in real time.  Once you choose inference settings you can apply model to all images in your project to visually analise predictions and perform automatic data pre-labeling.   
    
-    <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/nn-image-labeling/tree/master/project-dataset" src="https://i.imgur.com/M2Tp8lE.png" width="350px"/> 
+    <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/nn-image-labeling/project-dataset" src="https://i.imgur.com/M2Tp8lE.png" width="350px"/> 
 
 4. [NN Image Labeling](https://ecosystem.supervise.ly/apps/supervisely-ecosystem%252Fnn-image-labeling%252Fannotation-tool) - integrate any deployd NN to Supervisely Image Labeling UI. Configure inference settings and model output classes. Press `Apply` button (or use hotkey) and detections with their confidences will immediately appear on the image. 
    
-    <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/nn-image-labeling/tree/master/annotation-tool" src="https://i.imgur.com/hYEucNt.png" width="350px"/> 
+    <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/nn-image-labeling/annotation-tool" src="https://i.imgur.com/hYEucNt.png" width="350px"/> 
 
 5. [Convert Supervisely to YOLO v5 format](https://ecosystem.supervise.ly/apps/convert-supervisely-to-yolov5-format) - export labeled images project in yolov5 compatible format. 
    
