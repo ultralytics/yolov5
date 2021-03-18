@@ -1,4 +1,4 @@
-This guide explains how to use Supervisely with YOLOv5.
+This guide explains how to use [Supervisely](https://supervise.ly/) with YOLOv5.
 
 # Table of Contents
 
@@ -8,9 +8,9 @@ This guide explains how to use Supervisely with YOLOv5.
 8. [For developers](#For-developers)
 9. [Contact & Questions & Suggestions](#Contact-&-Questions-&-Suggestions)
 
-# About Supervisely
+# 🔥 About Supervisely
 
-You can think of Supervisely as an Operating System available via Web Browser to help you solve Computer Vision tasks. The idea is to unify all the relevant tools that may be needed to make the development process as smooth and fast as possible. 
+You can think of [Supervisely](https://supervise.ly/) as an Operating System available via Web Browser to help you solve Computer Vision tasks. The idea is to unify all the relevant tools that may be needed to make the development process as smooth and fast as possible. 
 
 More concretely, Supervisely includes the following functionality:
  - Data labeling for images, videos, 3D point cloud and volumetric medical images (dicom)
