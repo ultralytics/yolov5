@@ -1,4 +1,4 @@
-This guide explains how to use [Supervisely](https://supervise.ly/) with YOLOv5.
+🚀 This guide explains how to use [**Supervisely**](https://supervise.ly/) with YOLOv5.
 
 # Table of Contents
 
