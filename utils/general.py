@@ -236,7 +236,7 @@ def xyxy2xywh(x):
 
 def xywh2xyxy(x):
     # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
-    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
+    y = x.clone() 
     y[:, 0] = x[:, 0] - x[:, 2] / 2  # top left x
     y[:, 1] = x[:, 1] - x[:, 3] / 2  # top left y
     y[:, 2] = x[:, 0] + x[:, 2] / 2  # bottom right x
@@ -246,7 +246,7 @@ def xywh2xyxy(x):
 
 def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
     # Convert nx4 boxes from [x, y, w, h] normalized to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
-    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
+    y = x.clone()
     y[:, 0] = w * (x[:, 0] - x[:, 2] / 2) + padw  # top left x
     y[:, 1] = h * (x[:, 1] - x[:, 3] / 2) + padh  # top left y
     y[:, 2] = w * (x[:, 0] + x[:, 2] / 2) + padw  # bottom right x
@@ -356,6 +356,11 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
     else:
         return iou  # IoU
 
+    
+def box_area(box):
+        # box = 4xn
+        return (box[2] - box[0]) * (box[3] - box[1])
+    
 
 def box_iou(box1, box2):
     # https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
@@ -370,9 +375,7 @@ def box_iou(box1, box2):
             IoU values for every element in boxes1 and boxes2
     """
 
-    def box_area(box):
-        # box = 4xn
-        return (box[2] - box[0]) * (box[3] - box[1])
+    
 
     area1 = box_area(box1.T)
     area2 = box_area(box2.T)
@@ -390,40 +393,46 @@ def wh_iou(wh1, wh2):
     return inter / (wh1.prod(2) + wh2.prod(2) - inter)  # iou = inter / (area1 + area2 - inter)
 
 
-def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False,
-                        labels=()):
-    """Runs Non-Maximum Suppression (NMS) on inference results
+def non_max_suppression(
+    prediction,
+    conf_thres: float = 0.1,
+    iou_thres: float = 0.6,
+    classes=torch.tensor(()),
+    agnostic: bool = False,
+    labels=torch.tensor(()),
+):
+    """Performs Non-Maximum Suppression (NMS) on inference results
 
     Returns:
-         list of detections, on (n,6) tensor per image [xyxy, conf, cls]
+         detections with shape: nx6 (x1, y1, x2, y2, conf, cls)
     """
 
-    nc = prediction.shape[2] - 5  # number of classes
+    nc = prediction[0].shape[1] - 5  # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
 
     # Settings
     min_wh, max_wh = 2, 4096  # (pixels) minimum and maximum box width and height
     max_det = 300  # maximum number of detections per image
-    max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
     time_limit = 10.0  # seconds to quit after
     redundant = True  # require redundant detections
-    multi_label &= nc > 1  # multiple labels per box (adds 0.5ms/img)
+    multi_label = nc > 1  # multiple labels per box (adds 0.5ms/img)
     merge = False  # use merge-NMS
 
-    t = time.time()
-    output = [torch.zeros((0, 6), device=prediction.device)] * prediction.shape[0]
+    # t = time.time()
+    output = [torch.zeros(0, 6)] * prediction.shape[0]
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
         # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
         x = x[xc[xi]]  # confidence
 
         # Cat apriori labels if autolabelling
-        if labels and len(labels[xi]):
+        if len(labels) and len(labels[xi]):
             l = labels[xi]
             v = torch.zeros((len(l), nc + 5), device=x.device)
             v[:, :4] = l[:, 1:5]  # box
             v[:, 4] = 1.0  # conf
-            v[range(len(l)), l[:, 0].long() + 5] = 1.0  # cls
+            inds = torch.arange(len(l))
+            v[inds, l[:, 0].long() + 5] = torch.tensor(1.0)  # cls
             x = torch.cat((x, v), 0)
 
         # If none remain process next image
@@ -438,26 +447,28 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
 
         # Detections matrix nx6 (xyxy, conf, cls)
         if multi_label:
-            i, j = (x[:, 5:] > conf_thres).nonzero(as_tuple=False).T
+            tmp = (x[:, 5:] > conf_thres).nonzero().T
+            i, j = tmp[0], tmp[1]
             x = torch.cat((box[i], x[i, j + 5, None], j[:, None].float()), 1)
         else:  # best class only
             conf, j = x[:, 5:].max(1, keepdim=True)
             x = torch.cat((box, conf, j.float()), 1)[conf.view(-1) > conf_thres]
 
         # Filter by class
-        if classes is not None:
+        if len(classes):
             x = x[(x[:, 5:6] == torch.tensor(classes, device=x.device)).any(1)]
 
         # Apply finite constraint
         # if not torch.isfinite(x).all():
         #     x = x[torch.isfinite(x).all(1)]
 
-        # Check shape
+        # If none remain process next image
         n = x.shape[0]  # number of boxes
-        if not n:  # no boxes
+        if not n:
             continue
-        elif n > max_nms:  # excess boxes
-            x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence
+
+        # Sort by confidence
+        # x = x[x[:, 4].argsort(descending=True)]
 
         # Batched NMS
         c = x[:, 5:6] * (0 if agnostic else max_wh)  # classes
@@ -474,9 +485,8 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
                 i = i[iou.sum(1) > 1]  # require redundancy
 
         output[xi] = x[i]
-        if (time.time() - t) > time_limit:
-            print(f'WARNING: NMS time limit {time_limit}s exceeded')
-            break  # time limit exceeded
+        # if (time.time() - t) > time_limit:
+        #     break  # time limit exceeded
 
     return output
 

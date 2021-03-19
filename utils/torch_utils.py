@@ -58,7 +58,8 @@ def select_device(device='', batch_size=None):
     if cpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force torch.cuda.is_available() = False
     elif device:  # non-cpu device requested
-        os.environ['CUDA_VISIBLE_DEVICES'] = device  # set environment variable
+        #os.environ['CUDA_VISIBLE_DEVICES'] = device  # set environment variable
+        print(torch.cuda.is_available(), '########################################')
         assert torch.cuda.is_available(), f'CUDA unavailable, invalid device {device} requested'  # check availability
 
     cuda = not cpu and torch.cuda.is_available()

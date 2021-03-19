@@ -11,6 +11,7 @@ import time
 sys.path.append('./')  # to run '$ python *.py' files in subdirectories
 
 import torch
+import numpy
 import torch.nn as nn
 
 import models
