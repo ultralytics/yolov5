@@ -12,7 +12,7 @@ from tqdm import tqdm
 sys.path.append(str(Path(__file__).parent.parent.parent))  # add utils/ to path
 from utils.datasets import LoadImagesAndLabels
 from utils.datasets import img2label_paths
-from utils.general import colorstr, xywh2xyxy
+from utils.general import colorstr, xywh2xyxy, check_dataset
 
 try:
     import wandb
@@ -74,6 +74,7 @@ class WandbLogger():
 
     def check_and_upload_dataset(self, opt):
         assert wandb, 'Install wandb to upload dataset'
+        check_dataset(self.data_dict)
         config_path = self.create_dataset_artifact(opt.data,
                                                    opt.single_cls,
                                                    'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
@@ -107,6 +108,7 @@ class WandbLogger():
                 val_path = Path(self.val_artifact_path) / 'data/images/'
                 data_dict['val'] = str(val_path)
                 self.val_table = self.val_artifact.get("val")
+                self.map_val_table_path()
         if self.val_artifact is not None:
             self.result_artifact = wandb.Artifact("run_" + wandb.run.id + "_progress", "evaluation")
             self.result_table = wandb.Table(["epoch", "id", "prediction", "avg_confidence"])
@@ -153,9 +155,9 @@ class WandbLogger():
             data = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
         nc, names = (1, ['item']) if single_cls else (int(data['nc']), data['names'])
         names = {k: v for k, v in enumerate(names)}  # to index dictionary
-        self.train_artifact, self.train_table = self.log_dataset_artifact(LoadImagesAndLabels(
+        self.train_artifact = self.log_dataset_artifact(LoadImagesAndLabels(
             data['train']), names, name='train') if data.get('train') else None
-        self.val_artifact, self.val_table = self.log_dataset_artifact(LoadImagesAndLabels(
+        self.val_artifact = self.log_dataset_artifact(LoadImagesAndLabels(
             data['val']), names, name='val') if data.get('val') else None
         if data.get('train'):
             data['train'] = WANDB_ARTIFACT_PREFIX + str(Path(project) / 'train')
@@ -165,14 +167,23 @@ class WandbLogger():
         data.pop('download', None)
         with open(path, 'w') as f:
             yaml.dump(data, f)
-        ''' #TODO: update
-        if self.job_type == 'Training': # builds correct artifact pipeline graph
-            self.val_artifact.wait()
-            self.train_artifact.wait()
+
+        if self.job_type == 'Training':  # builds correct artifact pipeline graph
             self.wandb_run.use_artifact(self.val_artifact)
             self.wandb_run.use_artifact(self.train_artifact)
-        '''
+            self.val_artifact.wait()
+            self.val_table = self.val_artifact.get('val')
+            self.map_val_table_path()
+        else:
+            self.wandb_run.log_artifact(self.train_artifact)
+            self.wandb_run.log_artifact(self.val_artifact)
         return path
+
+    def map_val_table_path(self):
+        self.val_table_map = {}
+        print("Mapping dataset")
+        for i, data in enumerate(tqdm(self.val_table.data)):
+            self.val_table_map[data[3]] = data[0]
 
     def log_dataset_artifact(self, dataset, class_to_id, name='dataset'):
         # TODO: Explore multiprocessing to slpit this loop parallely| This is essential for speeding up the the logging
@@ -187,7 +198,7 @@ class WandbLogger():
                 label_file = Path(img2label_paths([img_file])[0])
                 artifact.add_file(str(label_file),
                                   name='data/labels/' + label_file.name) if label_file.exists() else None
-        table = wandb.Table(columns=["id", "train_image", "Classes"])
+        table = wandb.Table(columns=["id", "train_image", "Classes", "name"])
         class_set = wandb.Classes([{'id': id, 'name': name} for id, name in class_to_id.items()])
         for si, (img, labels, paths, shapes) in enumerate(tqdm(dataset)):
             height, width = shapes[0]
@@ -202,12 +213,12 @@ class WandbLogger():
                                  "domain": "pixel"})
                 img_classes[cls] = class_to_id[cls]
             boxes = {"ground_truth": {"box_data": box_data, "class_labels": class_to_id}}  # inference-space
-            table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes), json.dumps(img_classes))
+            table.add_data(si, wandb.Image(img, classes=class_set, boxes=boxes), json.dumps(img_classes),
+                           Path(paths).name)
         artifact.add(table, name)
-        wandb.log_artifact(artifact)
-        return artifact, table
+        return artifact
 
-    def log_training_progress(self, predn, names, batch_size, batch_i, si):
+    def log_training_progress(self, predn, path, names):
         if self.val_table and self.result_table:
             class_set = wandb.Classes([{'id': id, 'name': name} for id, name in names.items()])
             box_data = []
@@ -217,12 +228,12 @@ class WandbLogger():
                     box_data.append(
                         {"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
                          "class_id": int(cls),
-                         "box_caption": "%s" % (names[cls]),
+                         "box_caption": "%s %.3f" % (names[cls], conf),
                          "scores": {"class_score": conf},
                          "domain": "pixel"})
                     total_conf = total_conf + conf
             boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
-            id = batch_i * batch_size + si
+            id = self.val_table_map[Path(path).name]
             self.result_table.add_data(self.current_epoch,
                                        id,
                                        wandb.Image(self.val_table.data[id][1], boxes=boxes, classes=class_set),
