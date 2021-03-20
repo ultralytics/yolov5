@@ -258,10 +258,11 @@ class LoadWebcam:  # for inference
 
 
 class LoadStreams:  # multiple IP or RTSP cameras
-    def __init__(self, sources='streams.txt', img_size=640, stride=32):
+    def __init__(self, sources='streams.txt', img_size=640, stride=32, skip_step=4):
         self.mode = 'stream'
         self.img_size = img_size
         self.stride = stride
+        self.skip_step = skip_step
 
         if os.path.isfile(sources):
             with open(sources, 'r') as f:
@@ -270,6 +271,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             sources = [sources]
 
         n = len(sources)
+        self.count = n
         self.imgs = [None] * n
         self.sources = [clean_str(x) for x in sources]  # clean source names for later
         for i, s in enumerate(sources):
@@ -281,7 +283,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             fps = cap.get(cv2.CAP_PROP_FPS) % 100
             _, self.imgs[i] = cap.read()  # guarantee first frame
-            thread = Thread(target=self.update, args=([i, cap]), daemon=True)
+            thread = Thread(target=self.update, args=([i, cap, self.skip_step]), daemon=True)
             print(f' success ({w}x{h} at {fps:.2f} FPS).')
             thread.start()
         print('')  # newline
@@ -292,14 +294,14 @@ class LoadStreams:  # multiple IP or RTSP cameras
         if not self.rect:
             print('WARNING: Different stream shapes detected. For optimal performance supply similarly-shaped streams.')
 
-    def update(self, index, cap):
+    def update(self, index, cap, skip_step):
         # Read next stream frame in a daemon thread
         n = 0
         while cap.isOpened():
             n += 1
             # _, self.imgs[index] = cap.read()
             cap.grab()
-            if n == 4:  # read every 4th frame
+            if n == skip_step:  # read every {skip_step}th frame
                 success, im = cap.retrieve()
                 self.imgs[index] = im if success else self.imgs[index] * 0
                 n = 0
