@@ -61,12 +61,13 @@ def detect(save_img=False):
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
 
-    prev_img = [None] * dataset.count
+    prev_img = [None] * dataset.count if webcam else [None]
     for path, img, im0s, vid_cap in dataset:
-        # Optimize repeated img
-        if (prev_img == img).all():
-            continue
-        prev_img = img
+        # Optimize repeated img for steams
+        if webcam:
+            if (prev_img == img).all():
+                continue
+            prev_img = img
 
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
