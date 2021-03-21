@@ -75,7 +75,7 @@ class WandbLogger():
     def check_and_upload_dataset(self, opt):
         assert wandb, 'Install wandb to upload dataset'
         check_dataset(self.data_dict)
-        config_path = self.create_dataset_artifact(opt.data,
+        config_path = self.log_dataset_artifact(opt.data,
                                                    opt.single_cls,
                                                    'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
         print("Created dataset config file ", config_path)
@@ -150,14 +150,14 @@ class WandbLogger():
                            aliases=['latest', 'epoch ' + str(self.current_epoch), 'best' if best_model else ''])
         print("Saving model artifact on epoch ", epoch + 1)
 
-    def create_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False):
+    def log_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False):
         with open(data_file) as f:
             data = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
         nc, names = (1, ['item']) if single_cls else (int(data['nc']), data['names'])
         names = {k: v for k, v in enumerate(names)}  # to index dictionary
-        self.train_artifact = self.log_dataset_artifact(LoadImagesAndLabels(
+        self.train_artifact = self.create_dataset_table(LoadImagesAndLabels(
             data['train']), names, name='train') if data.get('train') else None
-        self.val_artifact = self.log_dataset_artifact(LoadImagesAndLabels(
+        self.val_artifact = self.create_dataset_table(LoadImagesAndLabels(
             data['val']), names, name='val') if data.get('val') else None
         if data.get('train'):
             data['train'] = WANDB_ARTIFACT_PREFIX + str(Path(project) / 'train')
@@ -185,10 +185,10 @@ class WandbLogger():
         for i, data in enumerate(tqdm(self.val_table.data)):
             self.val_table_map[data[3]] = data[0]
 
-    def log_dataset_artifact(self, dataset, class_to_id, name='dataset'):
+    def create_dataset_table(self, dataset, class_to_id, name='dataset'):
         # TODO: Explore multiprocessing to slpit this loop parallely| This is essential for speeding up the the logging
         artifact = wandb.Artifact(name=name, type="dataset")
-        for img_file in [dataset.path] if Path(dataset.path).is_dir() else dataset.img_files:
+        for img_file in tqdm([dataset.path]) if Path(dataset.path).is_dir() else tqdm(dataset.img_files):
             if Path(img_file).is_dir():
                 artifact.add_dir(img_file, name='data/images')
                 labels_path = 'labels'.join(dataset.path.rsplit('images', 1))
