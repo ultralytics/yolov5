@@ -213,7 +213,7 @@ class WandbLogger():
                                  "domain": "pixel"})
                 img_classes[cls] = class_to_id[cls]
             boxes = {"ground_truth": {"box_data": box_data, "class_labels": class_to_id}}  # inference-space
-            table.add_data(si, wandb.Image(img, classes=class_set, boxes=boxes), json.dumps(img_classes),
+            table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes), json.dumps(img_classes),
                            Path(paths).name)
         artifact.add(table, name)
         return artifact
