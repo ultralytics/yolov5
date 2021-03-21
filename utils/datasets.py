@@ -385,7 +385,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         # Display cache
         nf, nm, ne, nc, n = cache.pop('results')  # found, missing, empty, corrupted, total
         if exists:
-            d = f"Scanning '{cache_path}' for images and labels... {nf} found, {nm} missing, {ne} empty, {nc} corrupted"
+            d = f"Scanning '{cache_path}' images and labels... {nf} found, {nm} missing, {ne} empty, {nc} corrupted"
             tqdm(None, desc=prefix + d, total=n, initial=n)  # display cache results
         assert nf > 0 or not augment, f'{prefix}No labels in {cache_path}. Can not train without labels. See {help_url}'
 
@@ -485,7 +485,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 nc += 1
                 print(f'{prefix}WARNING: Ignoring corrupted image and/or label {im_file}: {e}')
 
-            pbar.desc = f"{prefix}Scanning '{path.parent / path.stem}' for images and labels... " \
+            pbar.desc = f"{prefix}Scanning '{path.parent / path.stem}' images and labels... " \
                         f"{nf} found, {nm} missing, {ne} empty, {nc} corrupted"
 
         if nf == 0:
@@ -1032,20 +1032,24 @@ def extract_boxes(path='../coco128/'):  # from utils.datasets import *; extract_
                     b[[1, 3]] = np.clip(b[[1, 3]], 0, h)
                     assert cv2.imwrite(str(f), im[b[1]:b[3], b[0]:b[2]]), f'box failure in {f}'
 
-
-def autosplit(path='../coco128', weights=(0.9, 0.1, 0.0)):  # from utils.datasets import *; autosplit('../coco128')
+def autosplit(path='../coco128', weights=(0.9, 0.1, 0.0), annotated_only=False):
     """ Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
-    # Arguments
-        path:       Path to images directory
-        weights:    Train, val, test weights (list)
+    Usage: from utils.datasets import *; autosplit('../coco128')
+    Arguments
+        path:           Path to images directory
+        weights:        Train, val, test weights (list)
+        annotated_only: Only use images with an annotated txt file
     """
     path = Path(path)  # images dir
-    files = list(path.rglob('*.*'))
+    files = sum([list(path.rglob(f"*.{img_ext}")) for img_ext in img_formats], [])  # image files only
     n = len(files)  # number of files
     indices = random.choices([0, 1, 2], weights=weights, k=n)  # assign each image to a split
+
     txt = ['autosplit_train.txt', 'autosplit_val.txt', 'autosplit_test.txt']  # 3 txt files
     [(path / x).unlink() for x in txt if (path / x).exists()]  # remove existing
+
+    print(f'Autosplitting images from {path}' + ', using *.txt labeled images only' * annotated_only)
     for i, img in tqdm(zip(indices, files), total=n):
-        if img.suffix[1:] in img_formats:
+        if not annotated_only or Path(img2label_paths([str(img)])[0]).exists():  # check label
             with open(path / txt[i], 'a') as f:
                 f.write(str(img) + '\n')  # add image to txt file

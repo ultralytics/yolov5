@@ -79,7 +79,7 @@ def check_git_status():
                 f"Use 'git pull' to update or 'git clone {url}' to download latest."
         else:
             s = f'up to date with {url} ✅'
-        print(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)
+        print(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)  # emoji-safe
     except Exception as e:
         print(e)
 
