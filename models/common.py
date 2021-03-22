@@ -278,7 +278,7 @@ class Detections:
     def print(self):
         self.display(pprint=True)  # print results
         print(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' %
-              tuple(self.t))                      
+              tuple(self.t))
 
     def show(self):
         self.display(show=True)  # show results
