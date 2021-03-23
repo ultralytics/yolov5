@@ -87,13 +87,13 @@ def check_git_status():
 def check_requirements(file='requirements.txt', exclude=()):
     # Check installed dependencies meet requirements
     import pkg_resources
-    prefix = colorstr('red', 'bold', 'requirements:')  # red bold
     requirements = [f'{x.name}{x.specifier}' for x in pkg_resources.parse_requirements(Path(file).open())
                     if x.name not in exclude]
     for r in requirements:
         try:
             pkg_resources.require(r)  # DistributionNotFound or VersionConflict exception if requirements not met
         except Exception as e:
+            prefix = colorstr('red', 'bold', 'requirements:')  # red bold
             print(f"{prefix} {e.req} not found and is required by YOLOv5, attempting auto-install...")
             print(subprocess.check_output(f"pip install '{e.req}'", shell=True).decode())
 
