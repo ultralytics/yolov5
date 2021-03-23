@@ -164,7 +164,7 @@ if __name__ == '__main__':
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     opt = parser.parse_args()
     print(opt)
-    check_requirements()
+    check_requirements(exclude=('pycocotools', 'thop'))
 
     with torch.no_grad():
         if opt.update:  # update all models (to fix SourceChangeWarning)
