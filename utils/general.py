@@ -87,7 +87,7 @@ def check_git_status():
 def check_requirements(file='requirements.txt', exclude=()):
     # Check installed dependencies meet requirements
     import pkg_resources as pkg
-    prefix = colorstr('red', 'bold', 'requirements:')  # red bold
+    prefix = colorstr('red', 'bold', 'requirements:')
     file = Path(file)
     if not file.exists():
         print(f"{prefix} {file.resolve()} not found, check failed.")
