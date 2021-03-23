@@ -16,9 +16,9 @@ from utils.general import colorstr, xywh2xyxy, check_dataset
 
 try:
     import wandb
+    from wandb import init, finish
 except ImportError:
     wandb = None
-    print(f"{colorstr('wandb: ')}Install Weights & Biases for YOLOv5 logging with 'pip install wandb' (recommended)")
 
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
@@ -71,6 +71,9 @@ class WandbLogger():
                 self.data_dict = self.setup_training(opt, data_dict)
             if self.job_type == 'Dataset Creation':
                 self.data_dict = self.check_and_upload_dataset(opt)
+        else:
+            print(f"{colorstr('wandb: ')}Install Weights & Biases for YOLOv5 logging with 'pip install wandb' (recommended)")
+
 
     def check_and_upload_dataset(self, opt):
         assert wandb, 'Install wandb to upload dataset'
