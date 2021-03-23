@@ -104,7 +104,7 @@ def detect(save_img=False):
 
     # Run inference
     if device.type != 'cpu' and backend == 'pytorch':
-        model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
+        model(torch.zeros(1, 3, *imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
@@ -136,7 +136,10 @@ def detect(save_img=False):
                     pred = pred.astype(np.float32)
                     pred = (pred - zero_point) * scale
             # Denormalize xywh
-            pred[..., :4] *= opt.img_size
+            pred[..., 0] *= imgsz[1]  # x
+            pred[..., 1] *= imgsz[0]  # y
+            pred[..., 2] *= imgsz[1]  # w
+            pred[..., 3] *= imgsz[0]  # h
             pred = torch.tensor(pred)
 
         # Apply NMS
@@ -215,7 +218,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='data/images', help='source')  # file/folder, 0 for webcam
-    parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[320, 320], help='image size')  # height, width
     parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
@@ -231,6 +234,7 @@ if __name__ == '__main__':
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--tfl-int8', action='store_true', help='use int8 quantized TFLite model')
     opt = parser.parse_args()
+    opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
     check_requirements()
 
