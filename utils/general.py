@@ -89,7 +89,12 @@ def check_requirements(file='requirements.txt', exclude=()):
 
 def check_img_size(img_size, s=32):
     # Verify img_size is a multiple of stride s
-    new_size = make_divisible(img_size, int(s))  # ceil gs-multiple
+    if isinstance(img_size, int):
+        new_size = make_divisible(img_size, int(s))  # ceil gs-multiple
+    elif len(img_size) == 2:
+        new_size = [0, 0]
+        new_size[0] = make_divisible(img_size[0], int(s))
+        new_size[1] = make_divisible(img_size[1], int(s))
     if new_size != img_size:
         print('WARNING: --img-size %g must be multiple of max stride %g, updating to %g' % (img_size, s, new_size))
     return new_size
