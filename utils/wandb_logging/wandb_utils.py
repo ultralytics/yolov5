@@ -33,20 +33,23 @@ def check_wandb_config_file(data_config_file):
         return wandb_config
     return data_config_file
 
+def get_run_info(run_path):
+    run_path = Path(remove_prefix(run_path, WANDB_ARTIFACT_PREFIX))
+    run_id = run_path.stem
+    project = run_path.parent.stem
+    model_artifact_name = 'run_' + run_id + '_model'
+    return run_id, project, model_artifact_name
 
-def resume_and_get_id(opt):
-    # It's more elegant to stick to 1 wandb.init call, but as useful config data is overwritten in the WandbLogger's wandb.init call
+def check_wandb_resume(opt):
     if isinstance(opt.resume, str):
         if opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
-            run_path = Path(remove_prefix(opt.resume, WANDB_ARTIFACT_PREFIX))
-            run_id = run_path.stem
-            project = run_path.parent.stem
-            model_artifact_name = WANDB_ARTIFACT_PREFIX + 'run_' + run_id + '_model'
-            assert wandb, 'install wandb to resume wandb runs'
-            # Resume wandb-artifact:// runs here| workaround for not overwriting wandb.config
-            run = wandb.init(id=run_id, project=project, resume='allow')
-            opt.resume = model_artifact_name
-            return run
+            if opt.global_rank == 1: # For resuming DDP runs
+                run_id, project, model_artifact_name = get_run_info(opt.resume)
+                api = wandb.Api()
+                artifact = api.artifact(project + '/' + model_artifact_name + ':latest')
+                modeldir = artifact.download()
+                opt.weights = str(Path(modeldir) / "last.pt")
+            return True
     return None
 
 
@@ -55,13 +58,23 @@ class WandbLogger():
         # Pre-training routine --
         self.job_type = job_type
         self.wandb, self.wandb_run, self.data_dict = wandb, None if not wandb else wandb.run, data_dict
-        if self.wandb:
+        # It's more elegant to stick to 1 wandb.init call, but useful config data is overwritten in the WandbLogger's wandb.init call
+        if isinstance(opt.resume, str): # checks resume from artifact 
+            if opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
+                run_id, project, model_artifact_name = get_run_info(opt.resume)
+                model_artifact_name = WANDB_ARTIFACT_PREFIX + model_artifact_name
+                assert wandb, 'install wandb to resume wandb runs'
+                # Resume wandb-artifact:// runs here| workaround for not overwriting wandb.config
+                self.wandb_run = wandb.init(id=run_id, project=project, resume='allow')
+                opt.resume = model_artifact_name
+        elif self.wandb:
             self.wandb_run = wandb.init(config=opt,
                                         resume="allow",
                                         project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
                                         name=name,
                                         job_type=job_type,
-                                        id=run_id) if not wandb.run else wandb.run
+                                        id=run_id) if not wandb.run else wandb.run      
+        if self.wandb_run:
             if self.job_type == 'Training':
                 if not opt.resume:
                     wandb_data_dict = self.check_and_upload_dataset(opt) if opt.upload_dataset else data_dict
