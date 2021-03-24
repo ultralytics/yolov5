@@ -1,8 +1,8 @@
-"""File for accessing YOLOv5 via PyTorch Hub https://pytorch.org/hub/
+"""File for accessing YOLOv5 models via PyTorch Hub https://pytorch.org/hub/ultralytics_yolov5/
 
 Usage:
     import torch
-    model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True, channels=3, classes=80)
+    model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
 """
 
 from pathlib import Path
@@ -10,11 +10,12 @@ from pathlib import Path
 import torch
 
 from models.yolo import Model
-from utils.general import set_logging
+from utils.general import check_requirements, set_logging
 from utils.google_utils import attempt_download
 from utils.torch_utils import select_device
 
 dependencies = ['torch', 'yaml']
+check_requirements(exclude=('pycocotools', 'thop'))
 set_logging()
 
 
