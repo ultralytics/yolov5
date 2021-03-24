@@ -100,6 +100,7 @@ def check_requirements(file='requirements.txt', exclude=()):
         except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
             print(f"{prefix} {e.req} not found and is required by YOLOv5, attempting auto-install...")
             print(subprocess.check_output(f"pip install '{e.req}'", shell=True).decode())
+            print(f'Please restart runtime or rerun command for update to take effect.')
 
 
 def check_img_size(img_size, s=32):
