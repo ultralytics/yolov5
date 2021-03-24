@@ -1,4 +1,4 @@
-# General utils
+# YOLOv5 general utils
 
 import glob
 import logging
@@ -86,10 +86,20 @@ def check_git_status():
 
 def check_requirements(file='requirements.txt', exclude=()):
     # Check installed dependencies meet requirements
-    import pkg_resources
-    requirements = [f'{x.name}{x.specifier}' for x in pkg_resources.parse_requirements(Path(file).open())
-                    if x.name not in exclude]
-    pkg_resources.require(requirements)  # DistributionNotFound or VersionConflict exception if requirements not met
+    import pkg_resources as pkg
+    prefix = colorstr('red', 'bold', 'requirements:')
+    file = Path(file)
+    if not file.exists():
+        print(f"{prefix} {file.resolve()} not found, check failed.")
+        return
+
+    requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(file.open()) if x.name not in exclude]
+    for r in requirements:
+        try:
+            pkg.require(r)
+        except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
+            print(f"{prefix} {e.req} not found and is required by YOLOv5, attempting auto-install...")
+            print(subprocess.check_output(f"pip install '{e.req}'", shell=True).decode())
 
 
 def check_img_size(img_size, s=32):
