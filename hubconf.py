@@ -1,4 +1,4 @@
-"""File for accessing YOLOv5 models via PyTorch Hub https://pytorch.org/hub/
+"""File for accessing YOLOv5 models via PyTorch Hub https://pytorch.org/hub/ultralytics_yolov5/
 
 Usage:
     import torch
