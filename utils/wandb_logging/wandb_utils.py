@@ -23,7 +23,7 @@ except ImportError:
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
 
-def remove_prefix(from_string, prefix):
+def remove_prefix(from_string, prefix=WANDB_ARTIFACT_PREFIX):
     return from_string[len(prefix):]
 
 
@@ -41,9 +41,10 @@ def get_run_info(run_path):
     return run_id, project, model_artifact_name
 
 def check_wandb_resume(opt):
+    process_wandb_config_ddp_mode(opt) if opt.global_rank not in [-1, 0] else None
     if isinstance(opt.resume, str):
         if opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
-            if opt.global_rank == 1: # For resuming DDP runs
+            if opt.global_rank not in [-1, 0]: # For resuming DDP runs
                 run_id, project, model_artifact_name = get_run_info(opt.resume)
                 api = wandb.Api()
                 artifact = api.artifact(project + '/' + model_artifact_name + ':latest')
@@ -52,6 +53,30 @@ def check_wandb_resume(opt):
             return True
     return None
 
+def process_wandb_config_ddp_mode(opt):
+    with open(opt.data) as f:
+        data_dict = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
+    train_dir, val_dir = None, None
+    if data_dict['train'].startswith(WANDB_ARTIFACT_PREFIX):
+        api = wandb.Api()
+        train_artifact = api.artifact(remove_prefix(data_dict['train']) + ':' + opt.artifact_alias)
+        train_dir = train_artifact.download()
+        train_path = Path(train_dir) / 'data/images/'
+        data_dict['train'] = str(train_path)
+        
+    if data_dict['val'].startswith(WANDB_ARTIFACT_PREFIX):
+        api = wandb.Api()
+        val_artifact = api.artifact(remove_prefix(data_dict['val']) + ':' + opt.artifact_alias)
+        val_dir = val_artifact.download()
+        val_path = Path(val_dir) / 'data/images/'
+        data_dict['val'] = str(val_path)
+    if train_dir or val_dir:
+        ddp_data_path = str(Path(val_dir) / 'wandb_local_data.yaml') 
+        with open(ddp_data_path, 'w') as f:
+            yaml.dump(data_dict, f)
+        opt.data = ddp_data_path
+    
+        
 
 class WandbLogger():
     def __init__(self, opt, name, run_id, data_dict, job_type='Training'):
