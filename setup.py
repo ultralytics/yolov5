@@ -74,7 +74,7 @@ modules = setuptools.find_packages(include=[MODULE_NAME, f"{MODULE_NAME}.*"])
 
 setuptools.setup(
     name=MODULE_NAME,
-    version="0.1.0",
+    version="0.1.1",
     author="nanovare",
     author_email="vincent@nanovare.com, robin@nanovare.com",
     description="yolov5 modifications for nanovare",
