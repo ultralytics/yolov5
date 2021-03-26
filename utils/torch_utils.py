@@ -45,9 +45,10 @@ def init_torch_seeds(seed=0):
 
 def git_describe():
     # return human-readable git description, i.e. v5.0-5-g3e25f1e https://git-scm.com/docs/git-describe
-    if Path('.git').exists():
-        return subprocess.check_output('git describe --tags --long --always', shell=True).decode('utf-8')[:-1]
-    else:
+    s = f'git -C {Path(__file__).resolve().parent} describe --tags --long --always'
+    try:
+        return subprocess.check_output(s, shell=True).decode()[:-1]
+    except subprocess.CalledProcessError as e:
         return ''
 
 
