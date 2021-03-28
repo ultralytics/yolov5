@@ -9,14 +9,9 @@ model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
 
 
 def yolo(img):
-    img.save("test_image_hack.png")
-    img = Image.open("test_image_hack.png")
     results = model(img)  # inference
-    os.remove("test_image_hack.png")
-
     results.render()  # updates results.imgs with boxes and labels
-    for img in results.imgs:
-        return Image.fromarray(img)
+    return Image.fromarray(results.imgs[0])  # return annotated PIL Image
 
 
 inputs = gr.inputs.Image(type='pil', label="Original Image")
