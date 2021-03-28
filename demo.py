@@ -18,7 +18,7 @@ inputs = gr.inputs.Image(type='pil', label="Original Image")
 outputs = gr.outputs.Image(type="pil", label="Output Image")
 
 title = "YOLOv5"
-description = "YOLOv5 demo for object detection. Upload an image or click an example image to use. " \
+description = "YOLOv5s demo for object detection. Upload an image or click an example image to use. " \
               "Source code: https://github.com/ultralytics/yolov5"
 article = "YOLOv5 is a family of compound-scaled object detection models trained on the COCO dataset, and includes " \
           "simple functionality for Test Time Augmentation (TTA), model ensembling, hyperparameter evolution, " \
