@@ -3,9 +3,14 @@ import os
 import gradio as gr
 import torch
 from PIL import Image
+import urllib
 
 # Model
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s', force_reload=True)
+
+
+urllib.urlretrieve("https://user-images.githubusercontent.com/81195143/112767464-f0c9bb00-8fe4-11eb-9df0-e6edef249294.jpg", "bird.jpg")
+urllib.urlretrieve("https://user-images.githubusercontent.com/81195143/112767474-f7f0c900-8fe4-11eb-9581-6d9dab42b126.jpg", "fox.jpg")
 
 
 def yolo(img):
@@ -34,8 +39,8 @@ article = "<p style='text-align: center'>YOLOv5 is a family of compound-scaled o
           "<a href='https://apps.apple.com/app/id1452689527'>iOS App</a> | <a href='https://pytorch.org/hub/ultralytics_yolov5'>PyTorch Hub</a></p>"
 
 examples = [
-    ['https://i.imgur.com/uKNwQM6.jpg'],
-    ['https://i.imgur.com/e0YUa5m.jpg']
+    ['bird.jpg'],
+    ['fox.jpg']
 ]
 gr.Interface(yolo, inputs, outputs, title=title, description=description, article=article, examples=examples).launch(
     debug=True)
