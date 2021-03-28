@@ -3,14 +3,14 @@ import os
 import gradio as gr
 import torch
 from PIL import Image
-import urllib
+
+import urllib.request
+urllib.request.urlretrieve('https://user-images.githubusercontent.com/81195143/112767464-f0c9bb00-8fe4-11eb-9df0-e6edef249294.jpg', 'bird.jpg')
+urllib.request.urlretrieve('https://user-images.githubusercontent.com/81195143/112767474-f7f0c900-8fe4-11eb-9581-6d9dab42b126.jpg', 'fox.jpg')
+
 
 # Model
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s', force_reload=True)
-
-
-urllib.urlretrieve("https://user-images.githubusercontent.com/81195143/112767464-f0c9bb00-8fe4-11eb-9df0-e6edef249294.jpg", "bird.jpg")
-urllib.urlretrieve("https://user-images.githubusercontent.com/81195143/112767474-f7f0c900-8fe4-11eb-9581-6d9dab42b126.jpg", "fox.jpg")
 
 
 def yolo(img):
