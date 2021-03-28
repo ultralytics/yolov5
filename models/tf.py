@@ -6,6 +6,8 @@ import traceback
 from copy import deepcopy
 from pathlib import Path
 
+sys.path.append('./')  # to run '$ python *.py' files in subdirectories
+
 import numpy as np
 import tensorflow as tf
 import torch
