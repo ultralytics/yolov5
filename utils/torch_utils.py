@@ -55,7 +55,8 @@ def git_describe(path=Path(__file__).parent):  # path must be a directory
     # return human-readable git description, i.e. v5.0-5-g3e25f1e https://git-scm.com/docs/git-describe
     s = f'git -C {path} describe --tags --long --always'
     try:
-        return subprocess.check_output(s, shell=True).decode()[:-1]
+        r = subprocess.check_output(s, shell=True).decode()[:-1]
+        return '' if r.startswith('fatal: not a git repository') else r
     except subprocess.CalledProcessError as e:
         return ''
 
