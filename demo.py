@@ -34,8 +34,8 @@ article = "<p style='text-align: center'>YOLOv5 is a family of compound-scaled o
           "<a href='https://apps.apple.com/app/id1452689527'>iOS App</a> | <a href='https://pytorch.org/hub/ultralytics_yolov5'>PyTorch Hub</a></p>"
 
 examples = [
-    ['bird.jpg'],
-    ['fox.jpg']
+    ['https://user-images.githubusercontent.com/81195143/112767464-f0c9bb00-8fe4-11eb-9df0-e6edef249294.jpg'],
+    ['https://user-images.githubusercontent.com/81195143/112767474-f7f0c900-8fe4-11eb-9581-6d9dab42b126.jpg']
 ]
 gr.Interface(yolo, inputs, outputs, title=title, description=description, article=article, examples=examples).launch(
     debug=True)
