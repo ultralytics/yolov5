@@ -1,4 +1,4 @@
-# This file contains modules common to various models
+# YOLOv5 common modules
 
 import math
 from pathlib import Path
@@ -8,6 +8,7 @@ import requests
 import torch
 import torch.nn as nn
 from PIL import Image
+from torch.cuda import amp
 
 from utils.datasets import letterbox
 from utils.general import non_max_suppression, make_divisible, scale_coords, xyxy2xywh
@@ -219,17 +220,17 @@ class autoShape(nn.Module):
         x = torch.from_numpy(x).to(p.device).type_as(p) / 255.  # uint8 to fp16/32
         t.append(time_synchronized())
 
-        # Inference
-        with torch.no_grad():
+        with torch.no_grad(), amp.autocast(enabled=p.device.type != 'cpu'):
+            # Inference
             y = self.model(x, augment, profile)[0]  # forward
-        t.append(time_synchronized())
+            t.append(time_synchronized())
 
-        # Post-process
-        y = non_max_suppression(y, conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)  # NMS
-        for i in range(n):
-            scale_coords(shape1, y[i][:, :4], shape0[i])
-        t.append(time_synchronized())
+            # Post-process
+            y = non_max_suppression(y, conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)  # NMS
+            for i in range(n):
+                scale_coords(shape1, y[i][:, :4], shape0[i])
 
+        t.append(time_synchronized())
         return Detections(imgs, y, files, t, self.names, x.shape)
 
 
@@ -247,8 +248,8 @@ class Detections:
         self.xywh = [xyxy2xywh(x) for x in pred]  # xywh pixels
         self.xyxyn = [x / g for x, g in zip(self.xyxy, gn)]  # xyxy normalized
         self.xywhn = [x / g for x, g in zip(self.xywh, gn)]  # xywh normalized
-        self.n = len(self.pred)
-        self.t = ((times[i + 1] - times[i]) * 1000 / self.n for i in range(3))  # timestamps (ms)
+        self.n = len(self.pred)  # number of images (batch size)
+        self.t = tuple((times[i + 1] - times[i]) * 1000 / self.n for i in range(3))  # timestamps (ms)
         self.s = shape  # inference BCHW shape
 
     def display(self, pprint=False, show=False, save=False, render=False, save_dir=''):
@@ -277,8 +278,7 @@ class Detections:
 
     def print(self):
         self.display(pprint=True)  # print results
-        print(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' %
-              tuple(self.t))
+        print(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' % self.t)
 
     def show(self):
         self.display(show=True)  # show results
