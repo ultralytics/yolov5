@@ -78,3 +78,10 @@ jobs:
           python models/yolo.py --cfg models/${{ matrix.model }}.yaml  # inspect
           python models/export.py --img 128 --batch 1 --weights weights/${{ matrix.model }}.pt  # export
         shell: bash
+      
+      - name: Codecov
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.8' && matrix.model = 'yolov5s'}}
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
