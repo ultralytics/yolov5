@@ -19,16 +19,18 @@ def yolo(img):
   results.imgs # array of original images (as np array) passed to model for inference
   results.render()  # updates results.imgs with boxes and labels
   for img in results.imgs:
-      img_base64 = Image.fromarray(img)
-      return img_base64
+    return Image.fromarray(img)
 
 
 inputs =  gr.inputs.Image(type='pil', label="Original Image")
 outputs = gr.outputs.Image(type="pil",label="Output Image")
 
-title = "YOLOV5"
-description = "demo for YOLOv5 which takes in a single image for computing relative depth. To use it, simply upload your image, or click one of the examples to load them. Read more at the links below."
-article = "<p style='text-align: center'><a href='https://arxiv.org/abs/1907.01341v3'>Towards Robust Monocular Depth Estimation: Mixing Datasets for Zero-shot Cross-dataset Transfer</a> | <a href='https://github.com/intel-isl/MiDaS'>Github Repo</a></p>"
+title = "YOLOv5"
+description = "demo for YOLOv5 which takes in a single image for object detection. To use it, simply upload your image, or click one of the examples to load them. Read more at the links below."
+article = "<a href='https://github.com/ultralytics/yolov5'>Github Repo</a></p>"
 
-
-gr.Interface(yolo, inputs, outputs, title=title, description=description, article=article).launch(debug=True)
+examples = [
+    ['bird.jpg'],
+    ['fox.jpg']
+]
+gr.Interface(yolo, inputs, outputs, title=title, description=description, article=article, examples=examples).launch(debug=True)
