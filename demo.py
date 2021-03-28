@@ -9,6 +9,10 @@ model = torch.hub.load('ultralytics/yolov5', 'yolov5s', force_reload=True)
 
 
 def yolo(img):
+    basewidth = 512
+    wpercent = (basewidth/float(img.size[0]))
+    hsize = int((float(img.size[1])*float(wpercent)))
+    img = img.resize((basewidth,hsize), Image.ANTIALIAS)
     img.save("test_image_hack.png")
     img = Image.open("test_image_hack.png")
     results = model(img)  # inference
@@ -23,12 +27,11 @@ inputs = gr.inputs.Image(type='pil', label="Original Image")
 outputs = gr.outputs.Image(type="pil", label="Output Image")
 
 title = "YOLOv5"
-description = "YOLOv5 demo for object detection. Upload an image or click an example image to use. " \
-              "Source code: https://github.com/ultralytics/yolov5"
-article = "YOLOv5 is a family of compound-scaled object detection models trained on the COCO dataset, and includes " \
+description = "YOLOv5 demo for object detection. Upload an image or click an example image to use."
+article = "<p style='text-align: center'>YOLOv5 is a family of compound-scaled object detection models trained on the COCO dataset, and includes " \
           "simple functionality for Test Time Augmentation (TTA), model ensembling, hyperparameter evolution, " \
-          "and export to ONNX, CoreML and TFLite. Source code: https://github.com/ultralytics/yolov5, " \
-          "iOS App: https://apps.apple.com/app/id1452689527, PyTorch Hub: https://pytorch.org/hub/ultralytics_yolov5"
+          "and export to ONNX, CoreML and TFLite. <a href='https://github.com/ultralytics/yolov5'>Source code</a> |" \
+          "<a href='https://apps.apple.com/app/id1452689527'>iOS App</a> | <a href='https://pytorch.org/hub/ultralytics_yolov5'>PyTorch Hub</a></p>"
 
 examples = [
     ['bird.jpg'],
