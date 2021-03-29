@@ -1,13 +1,12 @@
 # YOLOv5 common modules
 
 import math
-from pathlib import Path
-
 import numpy as np
 import requests
 import torch
 import torch.nn as nn
 from PIL import Image
+from pathlib import Path
 from torch.cuda import amp
 
 from utils.datasets import letterbox
@@ -44,9 +43,9 @@ class Conv(nn.Module):
 
 
 class TransformerLayer(nn.Module):
+    # TODO: comment/source here ...
     def __init__(self, c, num_heads):
         super().__init__()
-
         self.ln1 = nn.LayerNorm(c)
         self.q = nn.Linear(c, c, bias=False)
         self.k = nn.Linear(c, c, bias=False)
@@ -65,9 +64,9 @@ class TransformerLayer(nn.Module):
 
 
 class TransformerBlock(nn.Module):
+    # TODO: comment/source here ...
     def __init__(self, c1, c2, num_heads, num_layers):
         super().__init__()
-
         self.conv = None
         if c1 != c2:
             self.conv = Conv(c1, c2)
@@ -141,6 +140,7 @@ class C3(nn.Module):
 
 
 class C3TR(C3):
+    # C3 module with TransformerBlock()
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
         super().__init__(c1, c2, n, shortcut, g, e)
         c_ = int(c2 * e)
