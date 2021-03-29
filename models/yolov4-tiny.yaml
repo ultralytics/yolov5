@@ -1,0 +1,47 @@
+# parameters
+nc: 80  # number of classes
+depth_multiple: 1.0  # expand model depth
+width_multiple: 1.0  # expand layer channels
+
+# anchors
+anchors:
+  - [10,14,  23,27,  37,58]  # P4/16
+  - [81,82,  135,169,  344,319]  # P5/32
+
+# CSPVoVNet backbone
+backbone:
+  # [from, number, module, args]
+  [[-1, 1, Conv, [32, 3, 2]],     # 0-P1/2
+   [-1, 1, Conv, [64, 3, 2]],     # 1-P2/4
+
+   [-1, 1, Conv, [64, 3, 1]],     # 2
+   [-1, 1, VoVCSP, [64]],         # 3
+   [[-2, -1], 1, Concat, [1]],    # 4
+   [-1, 1, nn.MaxPool2d, [2, 2]], # 5-P3/8
+
+   [-1, 1, Conv, [128, 3, 1]],    # 6
+   [-1, 1, VoVCSP, [128]],        # 7
+   [[-2, -1], 1, Concat, [1]],    # 8
+   [-1, 1, nn.MaxPool2d, [2, 2]], # 9-P4/16
+
+   [-1, 1, Conv, [256, 3, 1]],    # 10
+   [-1, 1, VoVCSP, [256]],        # 11
+   [[-2, -1], 1, Concat, [1]],    # 12
+   [-1, 1, nn.MaxPool2d, [2, 2]], # 13-P5/32
+
+   [-1, 1, Conv, [512, 3, 1]],    # 14
+  ]
+
+# yolov4-tiny head
+# na = len(anchors[0])
+head:
+  [[-1, 1, Conv, [256, 1, 1]],
+   [-1, 1, Conv, [512, 3, 1]],    # 16
+
+   [-2, 1, Conv, [128, 1, 1]],
+   [-1, 1, nn.Upsample, [None, 2, 'nearest']],
+   [[-1, 11], 1, Concat, [1]],
+   [-1, 1, Conv, [256, 3, 1]],    # 20
+
+   [[16, 20], 1, Detect, [nc, anchors]],   # Detect(P4, P5)
+  ]
