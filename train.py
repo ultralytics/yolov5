@@ -487,7 +487,7 @@ if __name__ == '__main__':
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
     parser.add_argument('--ar_thr', type=int, default=20, help="aspect ratio threhold for box candidates")
     parser.add_argument('--wh_thr', type=int, default=2, help="width threshold for dataset loader")
-    parser.add_argument('--area_thr', type=int, default=0.1, help="area threshold for dataset loader")
+    parser.add_argument('--area_thr', type=float, default=0.1, help="area threshold for dataset loader")
     opt = parser.parse_args()
 
     # Set DDP variables
