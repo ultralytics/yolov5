@@ -1,4 +1,4 @@
-# General utils
+# YOLOv5 general utils
 
 import glob
 import logging
@@ -52,6 +52,11 @@ def isdocker():
     return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
 
 
+def emojis(str=''):
+    # Return platform-dependent emoji-safe version of string
+    return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
+
+
 def check_online():
     # Check internet connectivity
     import socket
@@ -79,17 +84,34 @@ def check_git_status():
                 f"Use 'git pull' to update or 'git clone {url}' to download latest."
         else:
             s = f'up to date with {url} ✅'
-        print(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)  # emoji-safe
+        print(emojis(s))  # emoji-safe
     except Exception as e:
         print(e)
 
 
 def check_requirements(file='requirements.txt', exclude=()):
     # Check installed dependencies meet requirements
-    import pkg_resources
-    requirements = [f'{x.name}{x.specifier}' for x in pkg_resources.parse_requirements(Path(file).open())
-                    if x.name not in exclude]
-    pkg_resources.require(requirements)  # DistributionNotFound or VersionConflict exception if requirements not met
+    import pkg_resources as pkg
+    prefix = colorstr('red', 'bold', 'requirements:')
+    file = Path(file)
+    if not file.exists():
+        print(f"{prefix} {file.resolve()} not found, check failed.")
+        return
+
+    n = 0  # number of packages updates
+    requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(file.open()) if x.name not in exclude]
+    for r in requirements:
+        try:
+            pkg.require(r)
+        except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
+            n += 1
+            print(f"{prefix} {e.req} not found and is required by YOLOv5, attempting auto-update...")
+            print(subprocess.check_output(f"pip install '{e.req}'", shell=True).decode())
+
+    if n:  # if packages updated
+        s = f"{prefix} {n} package{'s' * (n > 1)} updated per {file.resolve()}\n" \
+            f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
+        print(emojis(s))  # emoji-safe
 
 
 def check_img_size(img_size, s=32):
@@ -267,7 +289,7 @@ def segment2box(segment, width=640, height=640):
     x, y = segment.T  # segment xy
     inside = (x >= 0) & (y >= 0) & (x <= width) & (y <= height)
     x, y, = x[inside], y[inside]
-    return np.array([x.min(), y.min(), x.max(), y.max()]) if any(x) else np.zeros((1, 4))  # cls, xyxy
+    return np.array([x.min(), y.min(), x.max(), y.max()]) if any(x) else np.zeros((1, 4))  # xyxy
 
 
 def segments2boxes(segments):

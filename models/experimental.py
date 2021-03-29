@@ -1,4 +1,4 @@
-# This file contains experimental modules
+# YOLOv5 experimental modules
 
 import numpy as np
 import torch
