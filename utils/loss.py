@@ -97,9 +97,7 @@ class ComputeLoss:
         BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['obj_pw']], device=device))
 
         # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
-        self.cp, self.cn = smooth_BCE(eps=h.get('label_smoothing', 0.0))
-
-        print(f'positive BCE target: {self.cp}, negative BCE target {self.cn}')
+        self.cp, self.cn = smooth_BCE(eps=h.get('label_smoothing', 0.0))  # positive, negative BCE targets
 
         # Focal loss
         g = h['fl_gamma']  # focal loss gamma
