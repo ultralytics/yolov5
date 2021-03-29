@@ -57,7 +57,7 @@ def exif_size(img):
 
 
 def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False,
-                      rank=-1, world_size=1, workers=8, image_weights=False, quad=False, prefix=''):
+                      rank=-1, ar_thr=20, wh_thr=2, area_thr=0.1, world_size=1, workers=8, image_weights=False, quad=False, prefix=''):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
     with torch_distributed_zero_first(rank):
         dataset = LoadImagesAndLabels(path, imgsz, batch_size,
@@ -69,7 +69,10 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
                                       stride=int(stride),
                                       pad=pad,
                                       image_weights=image_weights,
-                                      prefix=prefix)
+                                      prefix=prefix,
+                                      wh_thr=wh_thr,
+                                      area_thr=area_thr,
+                                      ar_thr=ar_thr)
 
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count() // world_size, batch_size if batch_size > 1 else 0, workers])  # number of workers
@@ -340,7 +343,7 @@ def img2label_paths(img_paths):
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
+                 cache_images=False, single_cls=False, stride=32, wh_thr=2, ar_thr=20, area_thr=0.1, pad=0.0, prefix=''):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -350,6 +353,9 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
         self.path = path
+        self.wh_thr = wh_thr
+        self.ar_thr = ar_thr
+        self.area_thr = area_thr
 
         try:
             f = []  # image files
@@ -547,7 +553,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                                                  translate=hyp['translate'],
                                                  scale=hyp['scale'],
                                                  shear=hyp['shear'],
-                                                 perspective=hyp['perspective'])
+                                                 perspective=hyp['perspective'],
+                                                 ar_thr=self.ar_thr,
+                                                 wh_thr=self.wh_thr,
+                                                 area_thr=self.area_thr)
 
             # Augment colorspace
             augment_hsv(img, hgain=hyp['hsv_h'], sgain=hyp['hsv_s'], vgain=hyp['hsv_v'])
@@ -713,7 +722,10 @@ def load_mosaic(self, index):
                                        scale=self.hyp['scale'],
                                        shear=self.hyp['shear'],
                                        perspective=self.hyp['perspective'],
-                                       border=self.mosaic_border)  # border to remove
+                                       border=self.mosaic_border,
+                                       ar_thr=self.ar_thr,
+                                       area_thr=self.area_thr,
+                                       wh_thr=self.wh_thr)  # border to remove
 
     return img4, labels4
 
@@ -787,7 +799,10 @@ def load_mosaic9(self, index):
                                        scale=self.hyp['scale'],
                                        shear=self.hyp['shear'],
                                        perspective=self.hyp['perspective'],
-                                       border=self.mosaic_border)  # border to remove
+                                       border=self.mosaic_border,
+                                       ar_thr=self.ar_thr,
+                                       area_thr=self.area_thr,
+                                       wh_thr=self.wh_thr)  # border to remove
 
     return img9, labels9
 
@@ -843,7 +858,7 @@ def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scale
 
 
 def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0,
-                       border=(0, 0)):
+                       border=(0, 0), ar_thr=20, wh_thr=2, area_thr=0.1):
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
     # targets = [cls, xyxy]
 
@@ -924,7 +939,7 @@ def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, s
             new[:, [1, 3]] = new[:, [1, 3]].clip(0, height)
 
         # filter candidates
-        i = box_candidates(box1=targets[:, 1:5].T * s, box2=new.T, area_thr=0.01 if use_segments else 0.10)
+        i = box_candidates(box1=targets[:, 1:5].T * s, box2=new.T, wh_thr=wh_thr, ar_thr=ar_thr, area_thr=0.01 if use_segments else area_thr)
         targets = targets[i]
         targets[:, 1:5] = new[i]
 

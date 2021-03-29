@@ -187,7 +187,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
-                                            hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank,
+                                            hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank, ar_thr=opt.ar_thr, wh_thr=opt.wh_thr, area_thr=opt.area_thr,
                                             world_size=opt.world_size, workers=opt.workers,
                                             image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '))
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
@@ -485,6 +485,9 @@ if __name__ == '__main__':
     parser.add_argument('--bbox_interval', type=int, default=-1, help='Set bounding-box image logging interval for W&B')
     parser.add_argument('--save_period', type=int, default=-1, help='Log model after every "save_period" epoch')
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
+    parser.add_argument('--ar_thr', type=int, default=20, help="aspect ratio threhold for box candidates")
+    parser.add_argument('--wh_thr', type=int, default=2, help="width threshold for dataset loader")
+    parser.add_argument('--area_thr', type=int, default=0.1, help="area threshold for dataset loader")
     opt = parser.parse_args()
 
     # Set DDP variables
