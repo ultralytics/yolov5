@@ -21,5 +21,6 @@ if __name__ == '__main__':
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     parser.add_argument('--project', type=str, default='YOLOv5', help='name of W&B Project')
     opt = parser.parse_args()
-
+    opt.resume = False # Explicitly disallow resume check for dataset upload Job
+    
     create_dataset_artifact(opt)
