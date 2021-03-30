@@ -34,13 +34,14 @@ from utils.loss import ComputeLoss
 from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, is_parallel
 from utils.wandb_logging.wandb_utils import WandbLogger, resume_and_get_id
+from utils import channel_extractors
 
 logger = logging.getLogger(__name__)
 
 
 # Magic numbers
 NUM_GENERATIONS = 300
-NUM_INPUT_CHANNELS = 3
+NUM_INPUT_CHANNELS = 1
 NOMINAL_BATCH_SIZE = 64
 
 
@@ -110,6 +111,9 @@ def train(hyp, opt, device, tb_writer=None):
             nc=nc,
             anchors=hyp.get('anchors'),
         ).to(device)  # create
+
+    logger.info('Model: ')
+    logger.info(str(model))
 
     # Download dataset if not found locally
     with torch_distributed_zero_first(rank):
@@ -209,17 +213,19 @@ def train(hyp, opt, device, tb_writer=None):
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
                                             hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank,
                                             world_size=opt.world_size, workers=opt.workers,
-                                            image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '))
+                                            image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '),
+                                            extract_one_channel_fn=opt.one_channel_extractor)
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
     nb = len(dataloader)  # number of batches
     assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (mlc, nc, opt.data, nc - 1)
 
     # Process 0
     if rank in [-1, 0]:
-        testloader = create_dataloader(test_path, imgsz_test, batch_size * 2, gs, opt,  # testloader
-                                       hyp=hyp, cache=opt.cache_images and not opt.notest, rect=True, rank=-1,
-                                       world_size=opt.world_size, workers=opt.workers,
-                                       pad=0.5, prefix=colorstr('val: '))[0]
+        testloader, _ = create_dataloader(test_path, imgsz_test, batch_size * 2, gs, opt,  # testloader
+                                          hyp=hyp, cache=opt.cache_images and not opt.notest, rect=True, rank=-1,
+                                          world_size=opt.world_size, workers=opt.workers,
+                                          pad=0.5, prefix=colorstr('val: '),
+                                          extract_one_channel_fn=opt.one_channel_extractor)
 
         if not opt.resume:
             labels = np.concatenate(dataset.labels, 0)
@@ -508,6 +514,7 @@ if __name__ == '__main__':
     parser.add_argument('--bbox_interval', type=int, default=-1, help='Set bounding-box image logging interval for W&B')
     parser.add_argument('--save_period', type=int, default=-1, help='Log model after every "save_period" epoch')
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
+    parser.add_argument('--one-channel-extractor', type=str, default="extract_red", help='how to extract the single channel image')  # noqa
     opt = parser.parse_args()
 
     # Set DDP variables
@@ -550,6 +557,9 @@ if __name__ == '__main__':
     # Hyperparameters
     with open(opt.hyp) as f:
         hyp = yaml.load(f, Loader=yaml.SafeLoader)  # load hyps
+
+    # One channel extractor
+    opt.one_channel_extractor = getattr(channel_extractors, opt.one_channel_extractor)
 
     # Train
     logger.info(opt)
