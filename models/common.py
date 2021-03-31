@@ -46,20 +46,16 @@ class TransformerLayer(nn.Module):
     # TODO: comment/source here ...
     def __init__(self, c, num_heads):
         super().__init__()
-        self.ln1 = nn.LayerNorm(c)
         self.q = nn.Linear(c, c, bias=False)
         self.k = nn.Linear(c, c, bias=False)
         self.v = nn.Linear(c, c, bias=False)
         self.ma = nn.MultiheadAttention(embed_dim=c, num_heads=num_heads)
-        self.ln2 = nn.LayerNorm(c)
         self.fc1 = nn.Linear(c, c, bias=False)
         self.fc2 = nn.Linear(c, c, bias=False)
 
     def forward(self, x):
-        x_ = self.ln1(x)
-        x = self.ma(self.q(x_), self.k(x_), self.v(x_))[0] + x
-        x_ = self.ln2(x)
-        x = self.fc2(self.fc1(x_)) + x
+        x = self.ma(self.q(x), self.k(x), self.v(x))[0] + x
+        x = self.fc2(self.fc1(x)) + x
         return x
 
 
