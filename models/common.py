@@ -1,12 +1,13 @@
 # YOLOv5 common modules
 
 import math
+from pathlib import Path
+
 import numpy as np
 import requests
 import torch
 import torch.nn as nn
 from PIL import Image
-from pathlib import Path
 from torch.cuda import amp
 
 from utils.datasets import letterbox
@@ -66,7 +67,7 @@ class TransformerBlock(nn.Module):
         self.conv = None
         if c1 != c2:
             self.conv = Conv(c1, c2)
-        self.linear = nn.Linear(c2, c2) # learnable position embedding
+        self.linear = nn.Linear(c2, c2)  # learnable position embedding
         self.tr = nn.Sequential(*[TransformerLayer(c2, num_heads) for _ in range(num_layers)])
         self.c2 = c2
 

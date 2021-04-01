@@ -1,10 +1,14 @@
 import argparse
 import logging
 import math
-import numpy as np
 import os
 import random
 import time
+from copy import deepcopy
+from pathlib import Path
+from threading import Thread
+
+import numpy as np
 import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,9 +16,6 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 import yaml
-from copy import deepcopy
-from pathlib import Path
-from threading import Thread
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
