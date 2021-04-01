@@ -43,7 +43,7 @@ class Conv(nn.Module):
 
 
 class TransformerLayer(nn.Module):
-    # Transformer layer described in https://arxiv.org/abs/2010.11929, with LayerNorm layers removed for better performance
+    # Transformer layer https://arxiv.org/abs/2010.11929 (LayerNorm layers removed for better performance)
     def __init__(self, c, num_heads):
         super().__init__()
         self.q = nn.Linear(c, c, bias=False)
@@ -60,7 +60,7 @@ class TransformerLayer(nn.Module):
 
 
 class TransformerBlock(nn.Module):
-    # Vision Transformer described in https://arxiv.org/abs/2010.11929
+    # Vision Transformer https://arxiv.org/abs/2010.11929
     def __init__(self, c1, c2, num_heads, num_layers):
         super().__init__()
         self.conv = None
