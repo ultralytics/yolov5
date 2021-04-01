@@ -93,6 +93,22 @@ class MixConv2d(nn.Module):
 
     def forward(self, x):
         return x + self.act(self.bn(torch.cat([m(x) for m in self.m], 1)))
+    
+    
+class VoVCSP(nn.Module):
+    # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
+        super(VoVCSP, self).__init__()
+        c_ = int(c2)  # hidden channels
+        self.cv1 = Conv(c1//2, c_//2, 3, 1)
+        self.cv2 = Conv(c_//2, c_//2, 3, 1)
+        self.cv3 = Conv(c_, c2, 1, 1)
+
+    def forward(self, x):
+        _, x1 = x.chunk(2, dim=1)
+        x1 = self.cv1(x1)
+        x2 = self.cv2(x1)
+        return self.cv3(torch.cat((x1,x2), dim=1))
 
 
 class Ensemble(nn.ModuleList):
