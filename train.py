@@ -1,14 +1,10 @@
 import argparse
 import logging
 import math
+import numpy as np
 import os
 import random
 import time
-from copy import deepcopy
-from pathlib import Path
-from threading import Thread
-
-import numpy as np
 import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,6 +12,9 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 import yaml
+from copy import deepcopy
+from pathlib import Path
+from threading import Thread
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
@@ -218,10 +217,9 @@ def train(hyp, opt, device, tb_writer=None):
 
     # DDP mode
     if cuda and rank != -1:
-        # `find_unused_parameters=True` should be passed for the incompatibility of nn.MultiheadAttention with DDP,
-        # according to https://github.com/pytorch/pytorch/issues/26698
-        find_unused_params = False if not [type(layer) for layer in model.modules() if isinstance(layer, nn.MultiheadAttention)] else True
-        model = DDP(model, device_ids=[opt.local_rank], output_device=opt.local_rank, find_unused_parameters=find_unused_params)
+        model = DDP(model, device_ids=[opt.local_rank], output_device=opt.local_rank,
+                    # nn.MultiheadAttention incompatibility with DDP https://github.com/pytorch/pytorch/issues/26698
+                    find_unused_parameters=any(isinstance(layer, nn.MultiheadAttention) for layer in model.modules()))
 
     # Model parameters
     hyp['box'] *= 3. / nl  # scale to layers
