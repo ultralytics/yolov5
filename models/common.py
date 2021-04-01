@@ -326,7 +326,7 @@ class Detections:
             if save:
                 f = self.files[i]
                 img.save(Path(save_dir) / f)  # save
-                print(f"{'Saved' * (i == 0)} {f},", end='' if i < self.n - 1 else f' to {save_dir}\n')
+                print(f"{'Saved' * (i == 0)} {f}", end=',' if i < self.n - 1 else f' to {save_dir}\n')
             if render:
                 self.imgs[i] = np.asarray(img)
 
