@@ -11,7 +11,7 @@ from PIL import Image
 from torch.cuda import amp
 
 from utils.datasets import letterbox
-from utils.general import non_max_suppression, make_divisible, scale_coords, xyxy2xywh
+from utils.general import non_max_suppression, make_divisible, scale_coords, increment_path, xyxy2xywh
 from utils.plots import color_list, plot_one_box
 from utils.torch_utils import time_synchronized
 
@@ -41,6 +41,52 @@ class Conv(nn.Module):
 
     def fuseforward(self, x):
         return self.act(self.conv(x))
+
+
+class TransformerLayer(nn.Module):
+    # Transformer layer https://arxiv.org/abs/2010.11929 (LayerNorm layers removed for better performance)
+    def __init__(self, c, num_heads):
+        super().__init__()
+        self.q = nn.Linear(c, c, bias=False)
+        self.k = nn.Linear(c, c, bias=False)
+        self.v = nn.Linear(c, c, bias=False)
+        self.ma = nn.MultiheadAttention(embed_dim=c, num_heads=num_heads)
+        self.fc1 = nn.Linear(c, c, bias=False)
+        self.fc2 = nn.Linear(c, c, bias=False)
+
+    def forward(self, x):
+        x = self.ma(self.q(x), self.k(x), self.v(x))[0] + x
+        x = self.fc2(self.fc1(x)) + x
+        return x
+
+
+class TransformerBlock(nn.Module):
+    # Vision Transformer https://arxiv.org/abs/2010.11929
+    def __init__(self, c1, c2, num_heads, num_layers):
+        super().__init__()
+        self.conv = None
+        if c1 != c2:
+            self.conv = Conv(c1, c2)
+        self.linear = nn.Linear(c2, c2)  # learnable position embedding
+        self.tr = nn.Sequential(*[TransformerLayer(c2, num_heads) for _ in range(num_layers)])
+        self.c2 = c2
+
+    def forward(self, x):
+        if self.conv is not None:
+            x = self.conv(x)
+        b, _, w, h = x.shape
+        p = x.flatten(2)
+        p = p.unsqueeze(0)
+        p = p.transpose(0, 3)
+        p = p.squeeze(3)
+        e = self.linear(p)
+        x = p + e
+
+        x = self.tr(x)
+        x = x.unsqueeze(3)
+        x = x.transpose(0, 3)
+        x = x.reshape(b, self.c2, w, h)
+        return x
 
 
 class Bottleneck(nn.Module):
@@ -88,6 +134,14 @@ class C3(nn.Module):
 
     def forward(self, x):
         return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))
+
+
+class C3TR(C3):
+    # C3 module with TransformerBlock()
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
+        super().__init__(c1, c2, n, shortcut, g, e)
+        c_ = int(c2 * e)
+        self.m = TransformerBlock(c_, c_, 4, n)
 
 
 class SPP(nn.Module):
@@ -204,7 +258,8 @@ class autoShape(nn.Module):
                 im, f = Image.open(requests.get(im, stream=True).raw if im.startswith('http') else im), im  # open
                 im.filename = f  # for uri
             files.append(Path(im.filename).with_suffix('.jpg').name if isinstance(im, Image.Image) else f'image{i}.jpg')
-            im = np.array(im)  # to numpy
+            if not isinstance(im, np.ndarray):
+                im = np.asarray(im)  # to numpy
             if im.shape[0] < 5:  # image in CHW
                 im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
             im = im[:, :, :3] if im.ndim == 3 else np.tile(im[:, :, None], 3)  # enforce 3ch input
@@ -270,9 +325,9 @@ class Detections:
             if show:
                 img.show(self.files[i])  # show
             if save:
-                f = Path(save_dir) / self.files[i]
-                img.save(f)  # save
-                print(f"{'Saving' * (i == 0)} {f},", end='' if i < self.n - 1 else ' done.\n')
+                f = self.files[i]
+                img.save(Path(save_dir) / f)  # save
+                print(f"{'Saved' * (i == 0)} {f}", end=',' if i < self.n - 1 else f' to {save_dir}\n')
             if render:
                 self.imgs[i] = np.asarray(img)
 
@@ -283,8 +338,9 @@ class Detections:
     def show(self):
         self.display(show=True)  # show results
 
-    def save(self, save_dir='results/'):
-        Path(save_dir).mkdir(exist_ok=True)
+    def save(self, save_dir='runs/hub/exp'):
+        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/hub/exp')  # increment save_dir
+        Path(save_dir).mkdir(parents=True, exist_ok=True)
         self.display(save=True, save_dir=save_dir)  # save results
 
     def render(self):
