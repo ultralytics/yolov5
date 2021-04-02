@@ -11,7 +11,7 @@ from PIL import Image
 from torch.cuda import amp
 
 from utils.datasets import letterbox
-from utils.general import non_max_suppression, make_divisible, scale_coords, xyxy2xywh
+from utils.general import non_max_suppression, make_divisible, scale_coords, increment_path, xyxy2xywh
 from utils.plots import color_list, plot_one_box
 from utils.torch_utils import time_synchronized
 
@@ -324,9 +324,9 @@ class Detections:
             if show:
                 img.show(self.files[i])  # show
             if save:
-                f = Path(save_dir) / self.files[i]
-                img.save(f)  # save
-                print(f"{'Saving' * (i == 0)} {f},", end='' if i < self.n - 1 else ' done.\n')
+                f = self.files[i]
+                img.save(Path(save_dir) / f)  # save
+                print(f"{'Saved' * (i == 0)} {f}", end=',' if i < self.n - 1 else f' to {save_dir}\n')
             if render:
                 self.imgs[i] = np.asarray(img)
 
@@ -337,8 +337,9 @@ class Detections:
     def show(self):
         self.display(show=True)  # show results
 
-    def save(self, save_dir='results/'):
-        Path(save_dir).mkdir(exist_ok=True)
+    def save(self, save_dir='runs/hub/exp'):
+        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/hub/exp')  # increment save_dir
+        Path(save_dir).mkdir(parents=True, exist_ok=True)
         self.display(save=True, save_dir=save_dir)  # save results
 
     def render(self):
