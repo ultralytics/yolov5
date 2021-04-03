@@ -479,6 +479,7 @@ if __name__ == "__main__":
                 converter.inference_output_type = tf.uint8  # or tf.int8
                 converter.allow_custom_ops = False
                 converter.experimental_new_converter = True
+                converter.experimental_new_quantizer = False
                 tflite_model = converter.convert()
                 f = opt.weights.replace('.pt', '-int8.tflite')  # filename
                 open(f, "wb").write(tflite_model)
