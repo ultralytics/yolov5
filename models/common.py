@@ -254,12 +254,12 @@ class autoShape(nn.Module):
         n, imgs = (len(imgs), imgs) if isinstance(imgs, list) else (1, [imgs])  # number of images, list of images
         shape0, shape1, files = [], [], []  # image and inference shapes, filenames
         for i, im in enumerate(imgs):
+            f = f'image{i}'  # filename
             if isinstance(im, str):  # filename or uri
-                im, f = Image.open(requests.get(im, stream=True).raw if im.startswith('http') else im), im  # open
-                im.filename = f  # for uri
-            files.append(Path(im.filename).with_suffix('.jpg').name if isinstance(im, Image.Image) else f'image{i}.jpg')
-            if not isinstance(im, np.ndarray):
-                im = np.asarray(im)  # to numpy
+                im, f = np.asarray(Image.open(requests.get(im, stream=True).raw if im.startswith('http') else im)), im
+            elif isinstance(im, Image.Image):  # PIL Image
+                im, f = np.asarray(im), getattr(im, 'filename', f)
+            files.append(Path(f).with_suffix('.jpg').name)
             if im.shape[0] < 5:  # image in CHW
                 im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
             im = im[:, :, :3] if im.ndim == 3 else np.tile(im[:, :, None], 3)  # enforce 3ch input
