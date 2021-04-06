@@ -57,14 +57,14 @@ def process_wandb_config_ddp_mode(opt):
     with open(opt.data) as f:
         data_dict = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
     train_dir, val_dir = None, None
-    if data_dict['train'].startswith(WANDB_ARTIFACT_PREFIX):
+    if isinstance(data_dict['train'], str) and data_dict['train'].startswith(WANDB_ARTIFACT_PREFIX):
         api = wandb.Api()
         train_artifact = api.artifact(remove_prefix(data_dict['train']) + ':' + opt.artifact_alias)
         train_dir = train_artifact.download()
         train_path = Path(train_dir) / 'data/images/'
         data_dict['train'] = str(train_path)
         
-    if data_dict['val'].startswith(WANDB_ARTIFACT_PREFIX):
+    if isinstance(data_dict['val'], str) and data_dict['val'].startswith(WANDB_ARTIFACT_PREFIX):
         api = wandb.Api()
         val_artifact = api.artifact(remove_prefix(data_dict['val']) + ':' + opt.artifact_alias)
         val_dir = val_artifact.download()
@@ -158,7 +158,7 @@ class WandbLogger():
         return data_dict
 
     def download_dataset_artifact(self, path, alias):
-        if path and path.startswith(WANDB_ARTIFACT_PREFIX):
+        if isinstance(path, str) and path.startswith(WANDB_ARTIFACT_PREFIX):
             dataset_artifact = wandb.use_artifact(remove_prefix(path, WANDB_ARTIFACT_PREFIX) + ":" + alias)
             assert dataset_artifact is not None, "'Error: W&B dataset artifact doesn\'t exist'"
             datadir = dataset_artifact.download()
@@ -229,7 +229,9 @@ class WandbLogger():
     def create_dataset_table(self, dataset, class_to_id, name='dataset'):
         # TODO: Explore multiprocessing to slpit this loop parallely| This is essential for speeding up the the logging
         artifact = wandb.Artifact(name=name, type="dataset")
-        for img_file in tqdm([dataset.path]) if Path(dataset.path).is_dir() else tqdm(dataset.img_files):
+        img_files = tqdm([dataset.path]) if isinstance(dataset.path, str) and Path(dataset.path).is_dir() else None
+        img_files = tqdm(dataset.img_files) if not img_files else img_files
+        for img_file in img_files:
             if Path(img_file).is_dir():
                 artifact.add_dir(img_file, name='data/images')
                 labels_path = 'labels'.join(dataset.path.rsplit('images', 1))
