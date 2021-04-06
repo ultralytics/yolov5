@@ -1,9 +1,11 @@
 # YOLOv5 common modules
 
 import math
+from copy import copy
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import requests
 import torch
 import torch.nn as nn
@@ -347,16 +349,26 @@ class Detections:
         self.display(render=True)  # render results
         return self.imgs
 
-    def __len__(self):
-        return self.n
+    def pandas(self):
+        # return detections as pandas DataFrames
+        new = copy(self)  # do not replace self
+        ca = 'xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name'  # xyxy columns
+        cb = 'xcenter', 'ycenter', 'width', 'height', 'confidence', 'class', 'name'  # xywh columns
+        for k, c in zip(['xyxy', 'xyxyn', 'xywh', 'xywhn'], [ca, ca, cb, cb]):
+            a = [[x + [self.names[int(x[5])]] for x in x.tolist()] for x in getattr(self, k)]  # updated attribute
+            setattr(new, k, [pd.DataFrame(x, columns=c) for x in a])
+        return new
 
     def tolist(self):
         # return a list of Detections objects, i.e. 'for result in results.tolist():'
-        x = [Detections([self.imgs[i]], [self.pred[i]], self.names) for i in range(self.n)]
+        x = [Detections([self.imgs[i]], [self.pred[i]], self.names, self.s) for i in range(self.n)]
         for d in x:
             for k in ['imgs', 'pred', 'xyxy', 'xyxyn', 'xywh', 'xywhn']:
                 setattr(d, k, getattr(d, k)[0])  # pop out of list
         return x
+
+    def __len__(self):
+        return self.n
 
 
 class Classify(nn.Module):
