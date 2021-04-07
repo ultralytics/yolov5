@@ -350,12 +350,12 @@ class Detections:
         return self.imgs
 
     def pandas(self):
-        # return detections as pandas DataFrames
+        # return detections as pandas DataFrames, i.e. print(results.pandas().xyxy[0])
         new = copy(self)  # return copy
         ca = 'xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name'  # xyxy columns
         cb = 'xcenter', 'ycenter', 'width', 'height', 'confidence', 'class', 'name'  # xywh columns
         for k, c in zip(['xyxy', 'xyxyn', 'xywh', 'xywhn'], [ca, ca, cb, cb]):
-            a = [[x + [self.names[int(x[5])]] for x in x.tolist()] for x in getattr(self, k)]  # updated attribute
+            a = [[x[:5] + [int(x[5]), self.names[int(x[5])]] for x in x.tolist()] for x in getattr(self, k)]  # update
             setattr(new, k, [pd.DataFrame(x, columns=c) for x in a])
         return new
 
