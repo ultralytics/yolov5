@@ -1,14 +1,15 @@
 # YOLOv5 common modules
 
 import math
+from copy import copy
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import requests
 import torch
 import torch.nn as nn
 from PIL import Image
-from torch.cuda import amp
 
 from utils.datasets import letterbox
 from utils.general import non_max_suppression, make_divisible, scale_coords, increment_path, xyxy2xywh
@@ -235,14 +236,16 @@ class autoShape(nn.Module):
         print('autoShape already enabled, skipping... ')  # model already converted to model.autoshape()
         return self
 
+    @torch.no_grad()
+    @torch.cuda.amp.autocast()
     def forward(self, imgs, size=640, augment=False, profile=False):
-        # Inference from various sources. For height=720, width=1280, RGB images example inputs are:
+        # Inference from various sources. For height=640, width=1280, RGB images example inputs are:
         #   filename:   imgs = 'data/samples/zidane.jpg'
         #   URI:             = 'https://github.com/ultralytics/yolov5/releases/download/v1.0/zidane.jpg'
-        #   OpenCV:          = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(720,1280,3)
-        #   PIL:             = Image.open('image.jpg')  # HWC x(720,1280,3)
-        #   numpy:           = np.zeros((720,1280,3))  # HWC
-        #   torch:           = torch.zeros(16,3,720,1280)  # BCHW
+        #   OpenCV:          = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(640,1280,3)
+        #   PIL:             = Image.open('image.jpg')  # HWC x(640,1280,3)
+        #   numpy:           = np.zeros((640,1280,3))  # HWC
+        #   torch:           = torch.zeros(16,3,320,640)  # BCHW (scaled to size=640, 0-1 values)
         #   multiple:        = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
 
         t = [time_synchronized()]
@@ -275,15 +278,14 @@ class autoShape(nn.Module):
         x = torch.from_numpy(x).to(p.device).type_as(p) / 255.  # uint8 to fp16/32
         t.append(time_synchronized())
 
-        with torch.no_grad(), amp.autocast(enabled=p.device.type != 'cpu'):
-            # Inference
-            y = self.model(x, augment, profile)[0]  # forward
-            t.append(time_synchronized())
+        # Inference
+        y = self.model(x, augment, profile)[0]  # forward
+        t.append(time_synchronized())
 
-            # Post-process
-            y = non_max_suppression(y, conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)  # NMS
-            for i in range(n):
-                scale_coords(shape1, y[i][:, :4], shape0[i])
+        # Post-process
+        y = non_max_suppression(y, conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)  # NMS
+        for i in range(n):
+            scale_coords(shape1, y[i][:, :4], shape0[i])
 
         t.append(time_synchronized())
         return Detections(imgs, y, files, t, self.names, x.shape)
@@ -347,16 +349,26 @@ class Detections:
         self.display(render=True)  # render results
         return self.imgs
 
-    def __len__(self):
-        return self.n
+    def pandas(self):
+        # return detections as pandas DataFrames, i.e. print(results.pandas().xyxy[0])
+        new = copy(self)  # return copy
+        ca = 'xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name'  # xyxy columns
+        cb = 'xcenter', 'ycenter', 'width', 'height', 'confidence', 'class', 'name'  # xywh columns
+        for k, c in zip(['xyxy', 'xyxyn', 'xywh', 'xywhn'], [ca, ca, cb, cb]):
+            a = [[x[:5] + [int(x[5]), self.names[int(x[5])]] for x in x.tolist()] for x in getattr(self, k)]  # update
+            setattr(new, k, [pd.DataFrame(x, columns=c) for x in a])
+        return new
 
     def tolist(self):
         # return a list of Detections objects, i.e. 'for result in results.tolist():'
-        x = [Detections([self.imgs[i]], [self.pred[i]], self.names) for i in range(self.n)]
+        x = [Detections([self.imgs[i]], [self.pred[i]], self.names, self.s) for i in range(self.n)]
         for d in x:
             for k in ['imgs', 'pred', 'xyxy', 'xyxyn', 'xywh', 'xywhn']:
                 setattr(d, k, getattr(d, k)[0])  # pop out of list
         return x
+
+    def __len__(self):
+        return self.n
 
 
 class Classify(nn.Module):
