@@ -270,6 +270,9 @@ def train(hyp, opt, device, tb_writer=None):
                     'quantized model may not run well with default activations'
                 )
             qat = True
+        # make sure that sparsity structure is held during EMA updates
+        if ema and manager.pruning_modifiers:
+            ema.pruning_manager = manager
 
     # Start training
     t0 = time.time()

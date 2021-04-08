@@ -284,6 +284,7 @@ class ModelEMA:
         self.updates = updates  # number of EMA updates
         self.decay = lambda x: decay * (1 - math.exp(-x / 2000))  # decay exponential ramp (to help early epochs)
         self.enabled = enabled
+        self.pruning_manager = None  # type: sparseml.pytorch.optim.ScheduledModifierManager
         for p in self.ema.parameters():
             p.requires_grad_(False)
 
@@ -322,5 +323,14 @@ class ModelEMA:
         if not self.enabled:
             return
 
+        # store pre-ema sparsity masks
+        if self.pruning_manager is not None:
+            pruning_dict = self.pruning_manager.state_dict()
+
         # Update EMA attributes
         copy_attr(self.ema, model, include, exclude)
+
+        # restore sparsity structure post-ema
+        if self.pruning_manager is not None:
+            self.pruning_manager.load_state_dict(pruning_dict)
+            del pruning_dict
