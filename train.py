@@ -64,6 +64,7 @@ def train(hyp, opt, device, tb_writer=None):
     # Configure
     plots = not opt.evolve  # create plots
     cuda = device.type != 'cpu'
+    half_precision = cuda and not opt.disable_amp
     init_seeds(2 + rank)
     with open(opt.data) as f:
         data_dict = yaml.safe_load(f)  # data dict
@@ -146,7 +147,7 @@ def train(hyp, opt, device, tb_writer=None):
     # plot_lr_scheduler(optimizer, scheduler, epochs)
 
     # EMA
-    ema = ModelEMA(model) if rank in [-1, 0] and not opt.disable_ema else None
+    ema = ModelEMA(model, enabled=not opt.disable_ema) if rank in [-1, 0] else None
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
@@ -158,8 +159,7 @@ def train(hyp, opt, device, tb_writer=None):
 
         # EMA
         if ema and ckpt.get('ema'):
-            ema.ema.load_state_dict(ckpt['ema'].float().state_dict())
-            ema.updates = ckpt['updates']
+            ema.load_state_dict(ckpt)
 
         # Results
         if ckpt.get('training_results') is not None:
@@ -219,7 +219,7 @@ def train(hyp, opt, device, tb_writer=None):
             # Anchors
             if not opt.noautoanchor:
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
-            if not opt.disable_amp:
+            if half_precision:
                 model.half().float()  # pre-reduce anchor precision
 
     # DDP mode
@@ -279,7 +279,7 @@ def train(hyp, opt, device, tb_writer=None):
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     if scheduler:
         scheduler.last_epoch = start_epoch - 1  # do not move
-    scaler = amp.GradScaler(enabled=(cuda and not opt.disable_amp))
+    scaler = amp.GradScaler(enabled=half_precision)
     compute_loss = ComputeLoss(model)  # init loss class
     logger.info(f'Image sizes {imgsz} train, {imgsz_test} test\n'
                 f'Using {dataloader.num_workers} dataloader workers\n'
@@ -339,7 +339,7 @@ def train(hyp, opt, device, tb_writer=None):
                     imgs = F.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
 
             # Forward
-            with amp.autocast(enabled=(cuda and not opt.disable_amp)):
+            with amp.autocast(enabled=half_precision):
                 pred = model(imgs)  # forward
                 loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
                 if rank != -1:
@@ -388,15 +388,14 @@ def train(hyp, opt, device, tb_writer=None):
         # DDP process 0 or single-GPU
         if rank in [-1, 0]:
             # mAP
-            if ema:
-                ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride', 'class_weights'])
+            ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
                 wandb_logger.current_epoch = epoch + 1
                 results, maps, times = test.test(data_dict,
                                                  batch_size=batch_size * 2,
                                                  imgsz=imgsz_test,
-                                                 model=ema.ema if ema else model,
+                                                 model=ema.ema if ema.enabled else model,
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
                                                  save_dir=save_dir,
@@ -405,7 +404,7 @@ def train(hyp, opt, device, tb_writer=None):
                                                  wandb_logger=wandb_logger,
                                                  compute_loss=compute_loss,
                                                  is_coco=is_coco,
-                                                 half_precision=not opt.disable_amp)
+                                                 half_precision=half_precision)
 
             # Write
             with open(results_file, 'a') as f:
@@ -438,11 +437,10 @@ def train(hyp, opt, device, tb_writer=None):
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
                         'training_results': results_file.read_text(),
-                        'model': ckpt_model.half() if not opt.disable_amp else ckpt_model,
-                        'ema': deepcopy(ema.ema).half() if ema else None,
-                        'updates': ema.updates if ema else None,
+                        'model': ckpt_model.half() if half_precision else ckpt_model,
                         'optimizer': optimizer.state_dict(),
                         'wandb_id': wandb_logger.wandb_run.id if wandb_logger.wandb else None}
+                ckpt.update(ema.state_dict(half_precision=half_precision))  # add EMA model and updates if enabled
 
                 # Save last, best and delete
                 torch.save(ckpt, last)
@@ -474,14 +472,14 @@ def train(hyp, opt, device, tb_writer=None):
                                           imgsz=imgsz_test,
                                           conf_thres=0.001,
                                           iou_thres=0.7,
-                                          model=test_model.half() if not opt.disable_amp else test_model,
+                                          model=test_model.half() if half_precision else test_model,
                                           single_cls=opt.single_cls,
                                           dataloader=testloader,
                                           save_dir=save_dir,
                                           save_json=True,
                                           plots=False,
                                           is_coco=is_coco,
-                                          half_precision=not opt.disable_amp)
+                                          half_precision=half_precision)
 
         # ONNX export
         if opt.export_onnx:
