@@ -43,8 +43,8 @@ class Conv(nn.Module):
         # self.act = nn.ReLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
         # self.act = nn.LeakyReLU(0.1) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
         # self.act = nn.Hardswish() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
-        self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
-        # self.act = Mish() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        # self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        self.act = Mish() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
 
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
