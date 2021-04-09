@@ -237,7 +237,7 @@ class autoShape(nn.Module):
         return self
 
     @torch.no_grad()
-    @torch.cuda.amp.autocast()
+    @torch.cuda.amp.autocast(torch.cuda.is_available())
     def forward(self, imgs, size=640, augment=False, profile=False):
         # Inference from various sources. For height=640, width=1280, RGB images example inputs are:
         #   filename:   imgs = 'data/samples/zidane.jpg'
