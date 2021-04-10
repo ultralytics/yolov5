@@ -1,10 +1,8 @@
 import argparse
-from pathlib import Path
 
 import yaml
 
 from wandb_utils import WandbLogger
-from utils.datasets import LoadImagesAndLabels
 
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
@@ -21,6 +19,6 @@ if __name__ == '__main__':
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     parser.add_argument('--project', type=str, default='YOLOv5', help='name of W&B Project')
     opt = parser.parse_args()
-    opt.resume = False # Explicitly disallow resume check for dataset upload Job
-    
+    opt.resume = False  # Explicitly disallow resume check for dataset upload job
+
     create_dataset_artifact(opt)
