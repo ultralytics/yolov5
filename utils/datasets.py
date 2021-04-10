@@ -13,6 +13,7 @@ from pathlib import Path
 from threading import Thread
 
 import cv2
+import pafy
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -275,7 +276,12 @@ class LoadStreams:  # multiple IP or RTSP cameras
         for i, s in enumerate(sources):
             # Start the thread to read frames from the video stream
             print(f'{i + 1}/{n}: {s}... ', end='')
-            cap = cv2.VideoCapture(eval(s) if s.isnumeric() else s)
+            url = eval(s) if s.isnumeric() else s
+            if 'youtube' in url:
+                video = pafy.new(url)
+                best = video.getbest(preftype="mp4")
+                url = best.url
+            cap = cv2.VideoCapture(url)
             assert cap.isOpened(), f'Failed to open {s}'
             w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
