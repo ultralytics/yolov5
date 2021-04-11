@@ -285,7 +285,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             self.fps = cap.get(cv2.CAP_PROP_FPS) % 100
-            
+
             _, self.imgs[i] = cap.read()  # guarantee first frame
             thread = Thread(target=self.update, args=([i, cap]), daemon=True)
             print(f' success ({w}x{h} at {self.fps:.2f} FPS).')
@@ -309,10 +309,10 @@ class LoadStreams:  # multiple IP or RTSP cameras
                 success, im = cap.retrieve()
                 if not success:
                     cap.release()
-                    raise StopIteration # This does not correctly throw in a thread
+                    raise StopIteration  # This does not correctly throw in a thread
                 self.imgs[index] = im if success else self.imgs[index] * 0
                 n = 0
-            time.sleep(1/self.fps) # wait time 
+            time.sleep(1 / self.fps)  # wait time
 
     def __iter__(self):
         self.count = -1
