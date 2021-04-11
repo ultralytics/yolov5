@@ -1,4 +1,4 @@
-"""File for accessing YOLOv5 models via PyTorch Hub https://pytorch.org/hub/ultralytics_yolov5/
+"""YOLOv5 PyTorch Hub models https://pytorch.org/hub/ultralytics_yolov5/
 
 Usage:
     import torch
@@ -31,9 +31,9 @@ def create(name, pretrained, channels, classes, autoshape):
     Returns:
         pytorch model
     """
-    config = Path(__file__).parent / 'models' / f'{name}.yaml'  # model.yaml path
     try:
-        model = Model(config, channels, classes)
+        cfg = list((Path(__file__).parent / 'models').rglob(f'{name}.yaml'))[0]  # model.yaml path
+        model = Model(cfg, channels, classes)
         if pretrained:
             fname = f'{name}.pt'  # checkpoint filename
             attempt_download(fname)  # download if not found locally
