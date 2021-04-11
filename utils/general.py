@@ -95,7 +95,6 @@ def check_requirements(requirements='requirements.txt', exclude=()):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
     import pkg_resources as pkg
     prefix = colorstr('red', 'bold', 'requirements:')
-
     if isinstance(requirements, (str, Path)):  # requirements.txt file
         file = Path(requirements)
         if not file.exists():
