@@ -276,7 +276,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             # Start the thread to read frames from the video stream
             print(f'{i + 1}/{n}: {s}... ', end='')
             url = eval(s) if s.isnumeric() else s
-            if 'youtube' or 'youtu.be' in url:
+            if 'youtube.com/' in url or 'youtu.be/' in url:
                 check_requirements(file=None, include=('pafy', 'youtube_dl'))
                 import pafy
                 video = pafy.new(url)
