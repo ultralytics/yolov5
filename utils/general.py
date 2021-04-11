@@ -144,12 +144,12 @@ def check_imshow():
 
 def check_file(file):
     # Search for file if not found
-    if os.path.isfile(file) or file == '':
+    if Path(file).is_file() or file == '':
         return file
     else:
         files = glob.glob('./**/' + file, recursive=True)  # find file
-        assert len(files), 'File Not Found: %s' % file  # assert file was found
-        assert len(files) == 1, "Multiple files match '%s', specify exact path: %s" % (file, files)  # assert unique
+        assert len(files), f'File Not Found: {file}'  # assert file was found
+        assert len(files) == 1, f"Multiple files match '{file}', specify exact path: {files}"  # assert unique
         return files[0]  # return file
 
 
