@@ -13,7 +13,6 @@ from pathlib import Path
 from threading import Thread
 
 import cv2
-import pafy
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -21,7 +20,7 @@ from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils.general import xyxy2xywh, xywh2xyxy, xywhn2xyxy, xyn2xy, segment2box, segments2boxes, resample_segments, \
+from utils.general import check_requirements, xyxy2xywh, xywh2xyxy, xywhn2xyxy, xyn2xy, segment2box, segments2boxes, resample_segments, \
     clean_str
 from utils.torch_utils import torch_distributed_zero_first
 
@@ -277,7 +276,9 @@ class LoadStreams:  # multiple IP or RTSP cameras
             # Start the thread to read frames from the video stream
             print(f'{i + 1}/{n}: {s}... ', end='')
             url = eval(s) if s.isnumeric() else s
-            if 'youtube' in url:
+            if 'youtube' or 'youtu.be' in url:
+                check_requirements(file=None, include=('pafy'))
+                import pafy
                 video = pafy.new(url)
                 best = video.getbest(preftype="mp4")
                 url = best.url

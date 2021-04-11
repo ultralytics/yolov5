@@ -91,18 +91,34 @@ def check_git_status():
         print(e)
 
 
-def check_requirements(file='requirements.txt', exclude=()):
+def check_requirements(file='requirements.txt', exclude=(), include=()):
     # Check installed dependencies meet requirements
     import pkg_resources as pkg
     prefix = colorstr('red', 'bold', 'requirements:')
-    file = Path(file)
-    if not file.exists():
-        print(f"{prefix} {file.resolve()} not found, check failed.")
-        return
+
+    if file is None:
+        if len(include) == 0:
+            print('No file or packages included, check failed.')
+            return
+        else:
+            iter_packages = pkg.parse_requirements(include)
+    else:
+        file = Path(file)
+        if not file.exists() and len(include) == 0:
+            print(f"{prefix} {file.resolve()} not found, check failed.")
+            return
+        elif file.exists() and len(include) == 0:
+            iter_packages = pkg.parse_requirements(file.open())
+        elif not file.exists and len(include) > 0:
+            iter_packages = pkg.parse_requirements(include)
+        else:        
+            iter_packages = zip(pkg.parse_requirements(include), pkg.parse_requirements(file.open()))
 
     n = 0  # number of packages updates
-    requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(file.open()) if x.name not in exclude]
+    requirements = [f'{x.name}{x.specifier}' for x in iter_packages if x.name not in exclude]
     for r in requirements:
+        print(r)
+        # input()
         try:
             pkg.require(r)
         except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
@@ -111,8 +127,12 @@ def check_requirements(file='requirements.txt', exclude=()):
             print(subprocess.check_output(f"pip install '{e.req}'", shell=True).decode())
 
     if n:  # if packages updated
-        s = f"{prefix} {n} package{'s' * (n > 1)} updated per {file.resolve()}\n" \
-            f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
+        if file is not None:
+            s = f"{prefix} {n} package{'s' * (n > 1)} updated per {file.resolve()}\n"
+        else: 
+            s = f"{prefix} {n} package{'s' * (n > 1)} updated per include\n" 
+        
+        s += f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
         print(emojis(s))  # emoji-safe
 
 
