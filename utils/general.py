@@ -117,8 +117,6 @@ def check_requirements(file='requirements.txt', exclude=(), include=()):
     n = 0  # number of packages updates
     requirements = [f'{x.name}{x.specifier}' for x in iter_packages if x.name not in exclude]
     for r in requirements:
-        print(r)
-        # input()
         try:
             pkg.require(r)
         except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
