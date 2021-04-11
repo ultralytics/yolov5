@@ -62,7 +62,7 @@ if __name__ == '__main__':
     try:
         print('\nStarting TorchScript export with torch %s...' % torch.__version__)
         f = opt.weights.replace('.pt', '.torchscript.pt')  # filename
-        ts = torch.jit.trace(model, img)
+        ts = torch.jit.trace(model, img, strict=False)
         ts.save(f)
         print('TorchScript export success, saved as %s' % f)
     except Exception as e:
