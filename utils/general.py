@@ -91,17 +91,20 @@ def check_git_status():
         print(e)
 
 
-def check_requirements(file='requirements.txt', exclude=()):
-    # Check installed dependencies meet requirements
+def check_requirements(requirements='requirements.txt', exclude=()):
+    # Check installed dependencies meet requirements (pass *.txt file or list of packages)
     import pkg_resources as pkg
     prefix = colorstr('red', 'bold', 'requirements:')
-    file = Path(file)
-    if not file.exists():
-        print(f"{prefix} {file.resolve()} not found, check failed.")
-        return
+    if isinstance(requirements, (str, Path)):  # requirements.txt file
+        file = Path(requirements)
+        if not file.exists():
+            print(f"{prefix} {file.resolve()} not found, check failed.")
+            return
+        requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(file.open()) if x.name not in exclude]
+    else:  # list or tuple of packages
+        requirements = [x for x in requirements if x not in exclude]
 
     n = 0  # number of packages updates
-    requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(file.open()) if x.name not in exclude]
     for r in requirements:
         try:
             pkg.require(r)
@@ -111,7 +114,8 @@ def check_requirements(file='requirements.txt', exclude=()):
             print(subprocess.check_output(f"pip install '{e.req}'", shell=True).decode())
 
     if n:  # if packages updated
-        s = f"{prefix} {n} package{'s' * (n > 1)} updated per {file.resolve()}\n" \
+        source = file.resolve() if 'file' in locals() else requirements
+        s = f"{prefix} {n} package{'s' * (n > 1)} updated per {source}\n" \
             f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
         print(emojis(s))  # emoji-safe
 
