@@ -277,7 +277,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             print(f'{i + 1}/{n}: {s}... ', end='')
             url = eval(s) if s.isnumeric() else s
             if 'youtube' or 'youtu.be' in url:
-                check_requirements(file=None, include=('pafy'))
+                check_requirements(file=None, include=('pafy', 'youtube_dl'))
                 import pafy
                 video = pafy.new(url)
                 best = video.getbest(preftype="mp4")
