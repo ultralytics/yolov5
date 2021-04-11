@@ -243,7 +243,7 @@ def plot_study_txt(path='', x=None):  # from utils.plots import *; plot_study_tx
     # ax = ax.ravel()
 
     fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
-    # for f in [Path(path) / f'study_coco_{x}.txt' for x in ['yolov5s', 'yolov5m', 'yolov5l', 'yolov5x']]:
+    # for f in [Path(path) / f'study_coco_{x}.txt' for x in ['yolov5s6', 'yolov5m6', 'yolov5l6', 'yolov5x6']]:
     for f in sorted(Path(path).glob('study*.txt')):
         y = np.loadtxt(f, dtype=np.float32, usecols=[0, 1, 2, 3, 7, 8, 9], ndmin=2).T
         x = np.arange(y.shape[1]) if x is None else np.array(x)
@@ -253,7 +253,7 @@ def plot_study_txt(path='', x=None):  # from utils.plots import *; plot_study_tx
         #     ax[i].set_title(s[i])
 
         j = y[3].argmax() + 1
-        ax2.plot(y[6, :j], y[3, :j] * 1E2, '.-', linewidth=2, markersize=8,
+        ax2.plot(y[6, 1:j], y[3, 1:j] * 1E2, '.-', linewidth=2, markersize=8,
                  label=f.stem.replace('study_coco_', '').replace('yolo', 'YOLO'))
 
     ax2.plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [34.6, 40.5, 43.0, 47.5, 49.7, 51.5],
@@ -261,7 +261,7 @@ def plot_study_txt(path='', x=None):  # from utils.plots import *; plot_study_tx
 
     ax2.grid(alpha=0.2)
     ax2.set_yticks(np.arange(20, 60, 5))
-    ax2.set_xlim(0, 30)
+    ax2.set_xlim(0, 57)
     ax2.set_ylim(30, 55)
     ax2.set_xlabel('GPU Speed (ms/img)')
     ax2.set_ylabel('COCO AP val')
