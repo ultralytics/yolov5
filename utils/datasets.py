@@ -279,9 +279,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             if 'youtube.com/' in url or 'youtu.be/' in url:
                 check_requirements(file=None, include=('pafy', 'youtube_dl'))
                 import pafy
-                video = pafy.new(url)
-                best = video.getbest(preftype="mp4")
-                url = best.url
+                url = pafy.new(url).getbest(preftype="mp4").url
             cap = cv2.VideoCapture(url)
             assert cap.isOpened(), f'Failed to open {s}'
             w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
