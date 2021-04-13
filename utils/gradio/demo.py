@@ -4,26 +4,26 @@ import gradio as gr
 import torch
 from PIL import Image
 
-import urllib.request
-urllib.request.urlretrieve('https://user-images.githubusercontent.com/81195143/112767464-f0c9bb00-8fe4-11eb-9df0-e6edef249294.jpg', 'bird.jpg')
-urllib.request.urlretrieve('https://user-images.githubusercontent.com/81195143/112767474-f7f0c900-8fe4-11eb-9581-6d9dab42b126.jpg', 'fox.jpg')
-
+# Images
+torch.hub.download_url_to_file('https://github.com/ultralytics/yolov5/raw/master/data/images/zidane.jpg', 'zidane.jpg')
+torch.hub.download_url_to_file('https://github.com/ultralytics/yolov5/raw/master/data/images/bus.jpg', 'bug.jpg')
 
 # Model
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s', force_reload=True)
 
 
 def yolo(img):
-    basewidth = 512
-    wpercent = (basewidth/float(img.size[0]))
-    hsize = int((float(img.size[1])*float(wpercent)))
-    img = img.resize((basewidth,hsize), Image.ANTIALIAS)
+    basewidth = 640
+    wpercent = (basewidth / float(img.size[0]))
+    hsize = int((float(img.size[1]) * float(wpercent)))
+    img = img.resize((basewidth, hsize), Image.ANTIALIAS)
     img.save("test_image_hack.png")
     img = Image.open("test_image_hack.png")
     results = model(img)  # inference
     os.remove("test_image_hack.png")
 
     results.render()  # updates results.imgs with boxes and labels
+
     for img in results.imgs:
         return Image.fromarray(img)
 
@@ -38,9 +38,6 @@ article = "<p style='text-align: center'>YOLOv5 is a family of compound-scaled o
           "and export to ONNX, CoreML and TFLite. <a href='https://github.com/ultralytics/yolov5'>Source code</a> |" \
           "<a href='https://apps.apple.com/app/id1452689527'>iOS App</a> | <a href='https://pytorch.org/hub/ultralytics_yolov5'>PyTorch Hub</a></p>"
 
-examples = [
-    ['bird.jpg'],
-    ['fox.jpg']
-]
+examples = [['zidane.jpg'], ['bug.jpg']]
 gr.Interface(yolo, inputs, outputs, title=title, description=description, article=article, examples=examples).launch(
     debug=True)
