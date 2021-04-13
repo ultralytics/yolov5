@@ -1,5 +1,3 @@
-import os
-
 import gradio as gr
 import torch
 from PIL import Image
@@ -9,23 +7,16 @@ torch.hub.download_url_to_file('https://github.com/ultralytics/yolov5/raw/master
 torch.hub.download_url_to_file('https://github.com/ultralytics/yolov5/raw/master/data/images/bus.jpg', 'bus.jpg')
 
 # Model
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s', force_reload=True)
+model = torch.hub.load('ultralytics/yolov5', 'yolov5s')  # force_reload=True to update
 
 
-def yolo(img):
-    basewidth = 640
-    wpercent = (basewidth / float(img.size[0]))
-    hsize = int((float(img.size[1]) * float(wpercent)))
-    img = img.resize((basewidth, hsize), Image.ANTIALIAS)
-    img.save("test_image_hack.png")
-    img = Image.open("test_image_hack.png")
-    results = model(img)  # inference
-    os.remove("test_image_hack.png")
+def yolo(im, size=640):
+    g = (size / max(im.size))  # gain
+    im = im.resize((int(x * g) for x in im.size), Image.ANTIALIAS)  # resize
 
+    results = model(im)  # inference
     results.render()  # updates results.imgs with boxes and labels
-
-    for img in results.imgs:
-        return Image.fromarray(img)
+    return Image.fromarray(results.imgs[0])
 
 
 inputs = gr.inputs.Image(type='pil', label="Original Image")
