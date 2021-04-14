@@ -3,9 +3,9 @@ Run a rest API exposing the yolov5s object detection model
 """
 import argparse
 import io
-from PIL import Image
 
 import torch
+from PIL import Image
 from flask import Flask, request
 
 app = Flask(__name__)
