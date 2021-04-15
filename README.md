@@ -121,19 +121,18 @@ Done. (0.103s)
 
 ### PyTorch Hub
 
-To run **batched inference** with YOLOv5 and [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36):
+Inference with YOLOv5 and [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36):
 ```python
 import torch
 
 # Model
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
 
-# Images
-dir = 'https://github.com/ultralytics/yolov5/raw/master/data/images/'
-imgs = [dir + f for f in ('zidane.jpg', 'bus.jpg')]  # batch of images
+# Image
+img = 'https://github.com/ultralytics/yolov5/raw/master/data/images/zidane.jpg'
 
 # Inference
-results = model(imgs)
+results = model(img)
 results.print()  # or .show(), .save()
 ```
 
