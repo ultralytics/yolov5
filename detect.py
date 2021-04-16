@@ -8,14 +8,16 @@ import torch.backends.cudnn as cudnn
 from numpy import random
 
 from models.experimental import attempt_load
-from utils.datasets import LoadStreams, LoadImages
-from utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
-    scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
+from utils.datasets import LoadImages, LoadStreams
+from utils.general import (apply_classifier, check_img_size, check_imshow,
+                           check_requirements, increment_path,
+                           non_max_suppression, scale_coords, set_logging,
+                           strip_optimizer, xyxy2xywh)
 from utils.plots import plot_one_box
-from utils.torch_utils import select_device, load_classifier, time_synchronized
+from utils.torch_utils import load_classifier, select_device, time_synchronized
 
 
-def detect(save_img=False):
+def detect(save_img=False, opt=opt):
     source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     save_img = not opt.nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
@@ -172,7 +174,7 @@ if __name__ == '__main__':
     with torch.no_grad():
         if opt.update:  # update all models (to fix SourceChangeWarning)
             for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
-                detect()
+                detect(opt=opt)
                 strip_optimizer(opt.weights)
         else:
-            detect()
+            detect(opt=opt)
