@@ -272,15 +272,15 @@ class LoadStreams:  # multiple IP or RTSP cameras
         n = len(sources)
         self.imgs = [None] * n
         self.sources = [clean_str(x) for x in sources]  # clean source names for later
-        for i, s in enumerate(sources):
-            # Start the thread to read frames from the video stream
+        for i, s in enumerate(sources):  # index, source
+            # Start thread to read frames from video stream
             print(f'{i + 1}/{n}: {s}... ', end='')
-            url = eval(s) if s.isnumeric() else s
-            if 'youtube.com/' in url or 'youtu.be/' in url:  # if source is YouTube video
+            if 'youtube.com/' in s or 'youtu.be/' in s:  # if source is YouTube video
                 check_requirements(('pafy', 'youtube_dl'))
                 import pafy
-                url = pafy.new(url).getbest(preftype="mp4").url
-            cap = cv2.VideoCapture(url)
+                s = pafy.new(s).getbest(preftype="mp4").url  # YouTube URL
+            s = eval(s) if s.isnumeric() else s  # i.e. s = '0' local webcam
+            cap = cv2.VideoCapture(s)
             assert cap.isOpened(), f'Failed to open {s}'
             w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
