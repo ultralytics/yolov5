@@ -121,7 +121,7 @@ def detect(save_img=False):
                         img_ = im1.astype(np.uint8)
                         crop_img=img_[y:y+ h, x:x + w]                          
                             
-                        #!!rescale image !!!
+                        #!!Generating new file path for each detected object in an image !!!
                         filename=p.name
                         filename_no_extesion=filename.split('.')[0]
                         extension=filename.split('.')[1]
