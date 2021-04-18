@@ -27,6 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')
     parser.add_argument('--grid', action='store_true', help='export Detect() layer grid')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--onnx-simplify', action='store_true', help='simplify the exported onnx model using onnxsim')
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
@@ -87,16 +88,20 @@ if __name__ == '__main__':
         # print(onnx.helper.printable_graph(model_onnx.graph))  # print
 
         # Simplify
-        try:
-            check_requirements(['onnx-simplifier'])
-            import onnxsim
+        if opt.onnx_simplify:
+            try:
+                check_requirements(['onnx-simplifier'])
+                import onnxsim
 
-            print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
-            model_onnx, check = onnxsim.simplify(model_onnx)
-            assert check, 'assert check failed'
-            onnx.save(model_onnx, f)
-        except Exception as e:
-            print(f'{prefix} simplifier failure: {e}')
+                print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
+                model_onnx, check = onnxsim.simplify(
+                    model_onnx,
+                    dynamic_input_shape=opt.dynamic,
+                    input_shapes={'images': list(img.shape)} if opt.dynamic else None)
+                assert check, 'assert check failed'
+                onnx.save(model_onnx, f)
+            except Exception as e:
+                print(f'{prefix} simplifier failure: {e}')
         print(f'{prefix} export success, saved as {f}')
     except Exception as e:
         print(f'{prefix} export failure: {e}')
