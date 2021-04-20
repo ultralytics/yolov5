@@ -591,14 +591,16 @@ def apply_classifier(x, model, img, im0):
     return x
 
 
-def increment_path(path, exist_ok=True, sep=''):
-    # Increment path, i.e. runs/exp --> runs/exp{sep}0, runs/exp{sep}1 etc.
+def increment_path(path, exist_ok=False, sep=''):
+    # Increment file or directory path, i.e. runs/exp --> runs/exp{sep}2, runs/exp{sep}3, ... etc.
     path = Path(path)  # os-agnostic
-    if (path.exists() and exist_ok) or (not path.exists()):
+    if not path.exists() or exist_ok:
         return str(path)
     else:
+        suffix = path.suffix
+        path = path.with_suffix('')
         dirs = glob.glob(f"{path}{sep}*")  # similar paths
         matches = [re.search(rf"%s{sep}(\d+)" % path.stem, d) for d in dirs]
         i = [int(m.groups()[0]) for m in matches if m]  # indices
         n = max(i) + 1 if i else 2  # increment number
-        return f"{path}{sep}{n}"  # update path
+        return f"{path}{sep}{n}{suffix}"  # update path
