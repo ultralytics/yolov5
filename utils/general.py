@@ -591,7 +591,7 @@ def apply_classifier(x, model, img, im0):
     return x
 
 
-def save_one_box(xyxy, im, file='image.jpg', gain=1.02, pad=10, square=False):
+def save_one_box(xyxy, im, file='image.jpg', gain=1.02, pad=10, square=False, BGR=False):
     # Save an image crop as {file} with crop size multiplied by {gain} and padded by {pad} pixels
     xyxy = torch.tensor(xyxy).view(-1, 4)
     b = xyxy2xywh(xyxy)  # boxes
@@ -601,7 +601,7 @@ def save_one_box(xyxy, im, file='image.jpg', gain=1.02, pad=10, square=False):
     xyxy = xywh2xyxy(b).long()
     clip_coords(xyxy, im.shape)
     crop = im[int(xyxy[0, 1]):int(xyxy[0, 3]), int(xyxy[0, 0]):int(xyxy[0, 2])]
-    cv2.imwrite(str(increment_path(file, mkdir=True).with_suffix('.jpg')), crop)
+    cv2.imwrite(str(increment_path(file, mkdir=True).with_suffix('.jpg')), crop if BGR else crop[..., ::-1])
 
 
 def increment_path(path, exist_ok=False, sep='', mkdir=False):
@@ -615,6 +615,7 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
         i = [int(m.groups()[0]) for m in matches if m]  # indices
         n = max(i) + 1 if i else 2  # increment number
         path = Path(f"{path}{sep}{n}{suffix}")  # update path
-    if mkdir:
-        (path.parent if path.is_file() else path).mkdir(parents=True, exist_ok=True)  # make directory
+    dir = path if path.suffix == '' else path.parent  # directory
+    if not dir.exists() and mkdir:
+        dir.mkdir(parents=True, exist_ok=True)  # make directory
     return path

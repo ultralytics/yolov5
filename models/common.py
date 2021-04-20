@@ -353,7 +353,7 @@ class Detections:
     def crop(self, save_dir='runs/hub/exp'):
         save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/hub/exp', mkdir=True)  # increment save_dir
         self.display(crop=True, save_dir=save_dir)  # crop results
-        print(f'Saved crops to {save_dir}\n')
+        print(f'Saved results to {save_dir}\n')
 
     def render(self):
         self.display(render=True)  # render results
