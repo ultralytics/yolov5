@@ -557,7 +557,7 @@ def print_mutation(hyp, results, yaml_file='hyp_evolved.yaml', bucket=''):
 
 
 def apply_classifier(x, model, img, im0):
-    # applies a second stage classifier to yolo outputs
+    # Apply a second stage classifier to yolo outputs
     im0 = [im0] if isinstance(im0, np.ndarray) else im0
     for i, d in enumerate(x):  # per image
         if d is not None and len(d):
@@ -591,8 +591,8 @@ def apply_classifier(x, model, img, im0):
     return x
 
 
-def save_one_box(xyxy, im, file='crop.jpg', gain=1.02, pad=10, square=False):
-    # save an image crop as filename.jpg (crop size multiplied by 'gain' and padded by 'pad' pixels)
+def save_one_box(xyxy, im, file='image.jpg', gain=1.02, pad=10, square=False):
+    # Save an image crop as {file} with crop size multiplied by {gain} and padded by {pad} pixels
     xyxy = torch.tensor(xyxy).view(-1, 4)
     b = xyxy2xywh(xyxy)  # boxes
     if square:
