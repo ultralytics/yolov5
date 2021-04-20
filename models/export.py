@@ -59,7 +59,7 @@ if __name__ == '__main__':
     model.model[-1].export = not opt.grid  # set Detect() layer grid export
     y = model(img)  # dry run
 
-    # TorchScript export
+    # TorchScript export -----------------------------------------------------------------------------------------------
     prefix = colorstr('TorchScript:')
     try:
         print(f'\n{prefix} starting export with torch {torch.__version__}...')
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 
-    # ONNX export
+    # ONNX export ------------------------------------------------------------------------------------------------------
     prefix = colorstr('ONNX:')
     try:
         import onnx
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 
-    # CoreML export
+    # CoreML export ----------------------------------------------------------------------------------------------------
     prefix = colorstr('CoreML:')
     try:
         import coremltools as ct
