@@ -591,6 +591,23 @@ def apply_classifier(x, model, img, im0):
     return x
 
 
+def save_one_box(xyxy, im, file='crop.jpg', gain=1.02, pad=10, square=False):
+    # save an image crop as filename.jpg (crop size multiplied by 'gain' and padded by 'pad' pixels)
+    xyxy = torch.tensor(xyxy).view(-1, 4)
+    b = xyxy2xywh(xyxy)  # boxes
+    if square:
+        b[:, 2:] = b[:, 2:].max(1)[0].unsqueeze(1)  # attempt rectangle to square
+    b[:, 2:] = b[:, 2:] * gain + pad  # box wh * gain + pad
+    xyxy = xywh2xyxy(b).long()
+    clip_coords(xyxy, im.shape)
+    crop = im[int(xyxy[0, 1]):int(xyxy[0, 3]), int(xyxy[0, 0]):int(xyxy[0, 2])]
+
+    file = Path(increment_path(file)).with_suffix('.jpg')
+    if not file.parent.exists():
+        file.parent.mkdir(parents=True, exist_ok=True)  # make dir
+    cv2.imwrite(str(file), crop)
+
+
 def increment_path(path, exist_ok=False, sep=''):
     # Increment file or directory path, i.e. runs/exp --> runs/exp{sep}2, runs/exp{sep}3, ... etc.
     path = Path(path)  # os-agnostic
