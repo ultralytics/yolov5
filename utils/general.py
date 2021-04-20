@@ -601,23 +601,20 @@ def save_one_box(xyxy, im, file='image.jpg', gain=1.02, pad=10, square=False):
     xyxy = xywh2xyxy(b).long()
     clip_coords(xyxy, im.shape)
     crop = im[int(xyxy[0, 1]):int(xyxy[0, 3]), int(xyxy[0, 0]):int(xyxy[0, 2])]
-
-    file = Path(increment_path(file)).with_suffix('.jpg')
-    if not file.parent.exists():
-        file.parent.mkdir(parents=True, exist_ok=True)  # make dir
-    cv2.imwrite(str(file), crop)
+    cv2.imwrite(str(increment_path(file, mkdir=True).with_suffix('.jpg')), crop)
 
 
-def increment_path(path, exist_ok=False, sep=''):
+def increment_path(path, exist_ok=False, sep='', mkdir=False):
     # Increment file or directory path, i.e. runs/exp --> runs/exp{sep}2, runs/exp{sep}3, ... etc.
     path = Path(path)  # os-agnostic
-    if not path.exists() or exist_ok:
-        return str(path)
-    else:
+    if path.exists() and not exist_ok:
         suffix = path.suffix
         path = path.with_suffix('')
         dirs = glob.glob(f"{path}{sep}*")  # similar paths
         matches = [re.search(rf"%s{sep}(\d+)" % path.stem, d) for d in dirs]
         i = [int(m.groups()[0]) for m in matches if m]  # indices
         n = max(i) + 1 if i else 2  # increment number
-        return f"{path}{sep}{n}{suffix}"  # update path
+        path = Path(f"{path}{sep}{n}{suffix}")  # update path
+    if mkdir:
+        (path.parent if path.is_file() else path).mkdir(parents=True, exist_ok=True)  # make directory
+    return path
