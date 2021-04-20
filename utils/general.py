@@ -557,7 +557,7 @@ def print_mutation(hyp, results, yaml_file='hyp_evolved.yaml', bucket=''):
 
 
 def apply_classifier(x, model, img, im0):
-    # applies a second stage classifier to yolo outputs
+    # Apply a second stage classifier to yolo outputs
     im0 = [im0] if isinstance(im0, np.ndarray) else im0
     for i, d in enumerate(x):  # per image
         if d is not None and len(d):
@@ -591,16 +591,31 @@ def apply_classifier(x, model, img, im0):
     return x
 
 
-def increment_path(path, exist_ok=False, sep=''):
+def save_one_box(xyxy, im, file='image.jpg', gain=1.02, pad=10, square=False, BGR=False):
+    # Save an image crop as {file} with crop size multiplied by {gain} and padded by {pad} pixels
+    xyxy = torch.tensor(xyxy).view(-1, 4)
+    b = xyxy2xywh(xyxy)  # boxes
+    if square:
+        b[:, 2:] = b[:, 2:].max(1)[0].unsqueeze(1)  # attempt rectangle to square
+    b[:, 2:] = b[:, 2:] * gain + pad  # box wh * gain + pad
+    xyxy = xywh2xyxy(b).long()
+    clip_coords(xyxy, im.shape)
+    crop = im[int(xyxy[0, 1]):int(xyxy[0, 3]), int(xyxy[0, 0]):int(xyxy[0, 2])]
+    cv2.imwrite(str(increment_path(file, mkdir=True).with_suffix('.jpg')), crop if BGR else crop[..., ::-1])
+
+
+def increment_path(path, exist_ok=False, sep='', mkdir=False):
     # Increment file or directory path, i.e. runs/exp --> runs/exp{sep}2, runs/exp{sep}3, ... etc.
     path = Path(path)  # os-agnostic
-    if not path.exists() or exist_ok:
-        return str(path)
-    else:
+    if path.exists() and not exist_ok:
         suffix = path.suffix
         path = path.with_suffix('')
         dirs = glob.glob(f"{path}{sep}*")  # similar paths
         matches = [re.search(rf"%s{sep}(\d+)" % path.stem, d) for d in dirs]
         i = [int(m.groups()[0]) for m in matches if m]  # indices
         n = max(i) + 1 if i else 2  # increment number
-        return f"{path}{sep}{n}{suffix}"  # update path
+        path = Path(f"{path}{sep}{n}{suffix}")  # update path
+    dir = path if path.suffix == '' else path.parent  # directory
+    if not dir.exists() and mkdir:
+        dir.mkdir(parents=True, exist_ok=True)  # make directory
+    return path
