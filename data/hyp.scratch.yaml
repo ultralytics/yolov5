@@ -31,3 +31,6 @@ flipud: 0.0  # image flip up-down (probability)
 fliplr: 0.5  # image flip left-right (probability)
 mosaic: 1.0  # image mosaic (probability)
 mixup: 0.0  # image mixup (probability)
+ar_thr: 20 # aspect ratio threshold for box candidates
+area_thr: 0.1 # area threshold for box candidates
+wh_thr: 2 # width/height threshold for box canda=idates

@@ -553,6 +553,9 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                                                  translate=hyp['translate'],
                                                  scale=hyp['scale'],
                                                  shear=hyp['shear'],
+                                                 ar_thr=hyp['ar_thr'],
+                                                 area_thr=hyp['area_thr'],
+                                                 wh_thr=hyp['wh_thr'],
                                                  perspective=hyp['perspective'])
 
             # Augment colorspace
@@ -718,6 +721,9 @@ def load_mosaic(self, index):
                                        translate=self.hyp['translate'],
                                        scale=self.hyp['scale'],
                                        shear=self.hyp['shear'],
+                                       ar_thr=self.hyp['ar_thr'],
+                                       area_thr=self.hyp['area_thr'],
+                                       wh_thr=self.hyp['wh_thr'],
                                        perspective=self.hyp['perspective'],
                                        border=self.mosaic_border)  # border to remove
 
@@ -793,6 +799,9 @@ def load_mosaic9(self, index):
                                        scale=self.hyp['scale'],
                                        shear=self.hyp['shear'],
                                        perspective=self.hyp['perspective'],
+                                       ar_thr=self.hyp['ar_thr'],
+                                       area_thr=self.hyp['area_thr'],
+                                       wh_thr=self.hyp['wh_thr'],
                                        border=self.mosaic_border)  # border to remove
 
     return img9, labels9
@@ -848,7 +857,7 @@ def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scale
     return img, ratio, (dw, dh)
 
 
-def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0,
+def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, scale=.1, shear=10, ar_thr=20, area_thr=0.1, wh_thr=2, perspective=0.0,
                        border=(0, 0)):
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
     # targets = [cls, xyxy]
@@ -930,7 +939,7 @@ def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, s
             new[:, [1, 3]] = new[:, [1, 3]].clip(0, height)
 
         # filter candidates
-        i = box_candidates(box1=targets[:, 1:5].T * s, box2=new.T, area_thr=0.01 if use_segments else 0.10)
+        i = box_candidates(box1=targets[:, 1:5].T * s, box2=new.T, ar_thr=ar_thr, wh_thr=wh_thr, area_thr=0.01 if use_segments else area_thr)
         targets = targets[i]
         targets[:, 1:5] = new[i]
 
