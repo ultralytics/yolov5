@@ -108,10 +108,10 @@ def detect():
                         with open(txt_path + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-                    if save_img or opt.save_crops or view_img:  # Add bbox to image
+                    if save_img or opt.save_crop or view_img:  # Add bbox to image
                         label = f'{names[int(cls)]} {conf:.2f}'
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
-                        if opt.save_crops:
+                        if opt.save_crop:
                             save_one_box(xyxy, im0s, file=save_dir / 'crops' / names[int(cls)] / f'{p.stem}.jpg')
 
             # Print time (inference + NMS)
@@ -159,7 +159,7 @@ if __name__ == '__main__':
     parser.add_argument('--view-img', action='store_true', help='display results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
-    parser.add_argument('--save-crops', action='store_false', help='save cropped prediction boxes')
+    parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
     parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --class 0, or --class 0 2 3')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
