@@ -30,6 +30,6 @@ names: [ 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', '
 
 # Print classes
 # with open('data/coco.yaml') as f:
-#   d = yaml.load(f, Loader=yaml.FullLoader)  # dict
+#   d = yaml.safe_load(f)  # dict
 #   for i, x in enumerate(d['names']):
 #     print(i, x)
