@@ -550,7 +550,7 @@ def print_mutation(hyp, results, yaml_file='hyp_evolved.yaml', bucket=''):
         results = tuple(x[0, :7])
         c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
         f.write('# Hyperparameter Evolution Results\n# Generations: %g\n# Metrics: ' % len(x) + c + '\n\n')
-        yaml.dump(hyp, f, sort_keys=False)
+        yaml.safe_dump(hyp, f, sort_keys=False)
 
     if bucket:
         os.system('gsutil cp evolve.txt %s gs://%s' % (yaml_file, bucket))  # upload

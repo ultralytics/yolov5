@@ -73,7 +73,7 @@ def process_wandb_config_ddp_mode(opt):
     if train_dir or val_dir:
         ddp_data_path = str(Path(val_dir) / 'wandb_local_data.yaml')
         with open(ddp_data_path, 'w') as f:
-            yaml.dump(data_dict, f)
+            yaml.safe_dump(data_dict, f)
         opt.data = ddp_data_path
 
 
@@ -206,7 +206,7 @@ class WandbLogger():
         path = data_file if overwrite_config else '_wandb.'.join(data_file.rsplit('.', 1))  # updated data.yaml path
         data.pop('download', None)
         with open(path, 'w') as f:
-            yaml.dump(data, f)
+            yaml.safe_dump(data, f)
 
         if self.job_type == 'Training':  # builds correct artifact pipeline graph
             self.wandb_run.use_artifact(self.val_artifact)
