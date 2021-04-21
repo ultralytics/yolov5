@@ -172,7 +172,6 @@ def check_dataset(dict):
                     print(f'Running {s} ...')
                     r = os.system(s)
                 else:  # python script
-                    print(s)
                     r = exec(s)  # return None
                 print('Dataset autodownload %s\n' % ('success' if r in (0, None) else 'failure'))  # print result
             else:
