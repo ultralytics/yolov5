@@ -47,7 +47,7 @@ class Conv(nn.Module):
         # self.act = Mish() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
         # self.act = AconC() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
         # self.act = MetaAconC() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
-        self.act = MetaAconC() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        self.act = AconC() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
 
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
