@@ -2,18 +2,18 @@
 
 import argparse
 import logging
-import sys
 from copy import deepcopy
 
-sys.path.append('./')  # to run '$ python *.py' files in subdirectories
 logger = logging.getLogger(__name__)
 
-from models.common import *
-from models.experimental import *
-from utils.autoanchor import check_anchor_order
-from utils.general import make_divisible, check_file, set_logging
-from utils.torch_utils import time_synchronized, fuse_conv_and_bn, model_info, scale_img, initialize_weights, \
-    select_device, copy_attr
+from yolov5.models.common import *
+from yolov5.models.experimental import *
+from yolov5.utils.autoanchor import check_anchor_order
+from yolov5.utils.general import check_file, make_divisible, set_logging
+from yolov5.utils.torch_utils import (copy_attr, fuse_conv_and_bn,
+                                      initialize_weights, model_info,
+                                      scale_img, select_device,
+                                      time_synchronized)
 
 try:
     import thop  # for FLOPS computation
