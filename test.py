@@ -38,7 +38,8 @@ def test(data,
          wandb_logger=None,
          compute_loss=None,
          half_precision=True,
-         is_coco=False):
+         is_coco=False,
+         opt=None):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -323,11 +324,12 @@ if __name__ == '__main__':
              save_txt=opt.save_txt | opt.save_hybrid,
              save_hybrid=opt.save_hybrid,
              save_conf=opt.save_conf,
+             opt=opt
              )
 
     elif opt.task == 'speed':  # speed benchmarks
         for w in opt.weights:
-            test(opt.data, w, opt.batch_size, opt.img_size, 0.25, 0.45, save_json=False, plots=False)
+            test(opt.data, w, opt.batch_size, opt.img_size, 0.25, 0.45, save_json=False, plots=False, opt=opt)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         # python test.py --task study --data coco.yaml --iou 0.7 --weights yolov5s.pt yolov5m.pt yolov5l.pt yolov5x.pt
@@ -338,7 +340,7 @@ if __name__ == '__main__':
             for i in x:  # img-size
                 print(f'\nRunning {f} point {i}...')
                 r, _, t = test(opt.data, w, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json,
-                               plots=False)
+                               plots=False, opt=opt)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')

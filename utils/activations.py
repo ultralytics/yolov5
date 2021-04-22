@@ -91,6 +91,9 @@ class MetaAconC(nn.Module):
 
     def forward(self, x):
         y = x.mean(dim=2, keepdims=True).mean(dim=3, keepdims=True)
-        beta = torch.sigmoid(self.bn2(self.fc2(self.bn1(self.fc1(y)))))
+        if x.shape[0] > 1:  # batch-size 1 bug https://github.com/nmaac/acon/issues/4
+            beta = torch.sigmoid(self.bn2(self.fc2(self.bn1(self.fc1(y)))))
+        else:
+            beta = torch.sigmoid(self.fc2(self.fc1(y)))
         dpx = (self.p1 - self.p2) * x
         return dpx * torch.sigmoid(beta * dpx) + self.p2 * x
