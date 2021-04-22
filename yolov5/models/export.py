@@ -8,16 +8,14 @@ import argparse
 import sys
 import time
 
-sys.path.append('./')  # to run '$ python *.py' files in subdirectories
-
 import torch
 import torch.nn as nn
 
-import models
-from models.experimental import attempt_load
-from utils.activations import Hardswish, SiLU
-from utils.general import colorstr, check_img_size, check_requirements, set_logging
-from utils.torch_utils import select_device
+import yolov5.models
+from yolov5.models.experimental import attempt_load
+from yolov5.utils.activations import Hardswish, SiLU
+from yolov5.utils.general import colorstr, check_img_size, check_requirements, set_logging
+from yolov5.utils.torch_utils import select_device
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
