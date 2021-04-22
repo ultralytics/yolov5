@@ -9,6 +9,8 @@ import random
 import re
 import subprocess
 import time
+from itertools import repeat
+from multiprocessing.pool import ThreadPool
 from pathlib import Path
 
 import cv2
@@ -161,16 +163,38 @@ def check_dataset(dict):
         if not all(x.exists() for x in val):
             print('\nWARNING: Dataset not found, nonexistent paths: %s' % [str(x) for x in val if not x.exists()])
             if s and len(s):  # download script
-                print('Downloading %s ...' % s)
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
+                    print(f'Downloading {s} ...')
                     torch.hub.download_url_to_file(s, f)
-                    r = os.system('unzip -q %s -d ../ && rm %s' % (f, f))  # unzip
-                else:  # bash script
+                    r = os.system(f'unzip -q {f} -d ../ && rm {f}')  # unzip
+                elif s.startswith('bash '):  # bash script
+                    print(f'Running {s} ...')
                     r = os.system(s)
-                print('Dataset autodownload %s\n' % ('success' if r == 0 else 'failure'))  # analyze return value
+                else:  # python script
+                    r = exec(s)  # return None
+                print('Dataset autodownload %s\n' % ('success' if r in (0, None) else 'failure'))  # print result
             else:
                 raise Exception('Dataset not found.')
+
+
+def download(url, dir='.', multi_thread=False):
+    # Multi-threaded file download function
+    def download_one(url, dir):
+        # Download 1 file
+        f = dir / Path(url).name  # filename
+        print(f'Downloading {url} to {f}...')
+        torch.hub.download_url_to_file(url, f, progress=True)  # download
+        if f.suffix == '.zip':
+            os.system(f'unzip -qo {f} -d {dir} && rm {f}')  # unzip -quiet -overwrite
+
+    dir = Path(dir)
+    dir.mkdir(parents=True, exist_ok=True)  # make directory
+    if multi_thread:
+        ThreadPool(8).imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # 8 threads
+    else:
+        for u in tuple(url) if isinstance(url, str) else url:
+            download_one(u, dir)
 
 
 def make_divisible(x, divisor):
