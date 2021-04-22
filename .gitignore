@@ -1,3 +1,6 @@
+# vscode
+.vscode
+
 # Repo-specific GitIgnore ----------------------------------------------------------------------------------------------
 *.jpg
 *.jpeg
@@ -26,8 +29,8 @@
 storage.googleapis.com
 runs/*
 data/*
-!data/images/zidane.jpg
-!data/images/bus.jpg
+!yolov5/data/images/zidane.jpg
+!yolov5/data/images/bus.jpg
 !data/coco.names
 !data/coco_paper.names
 !data/coco.data
