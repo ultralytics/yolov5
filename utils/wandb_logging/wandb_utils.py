@@ -1,12 +1,9 @@
-import argparse
 import json
-import os
-import shutil
 import sys
+from pathlib import Path
+
 import torch
 import yaml
-from datetime import datetime
-from pathlib import Path
 from tqdm import tqdm
 
 sys.path.append(str(Path(__file__).parent.parent.parent))  # add utils/ to path
@@ -33,6 +30,7 @@ def check_wandb_config_file(data_config_file):
         return wandb_config
     return data_config_file
 
+
 def get_run_info(run_path):
     run_path = Path(remove_prefix(run_path, WANDB_ARTIFACT_PREFIX))
     run_id = run_path.stem
@@ -40,11 +38,12 @@ def get_run_info(run_path):
     model_artifact_name = 'run_' + run_id + '_model'
     return run_id, project, model_artifact_name
 
+
 def check_wandb_resume(opt):
     process_wandb_config_ddp_mode(opt) if opt.global_rank not in [-1, 0] else None
     if isinstance(opt.resume, str):
         if opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
-            if opt.global_rank not in [-1, 0]: # For resuming DDP runs
+            if opt.global_rank not in [-1, 0]:  # For resuming DDP runs
                 run_id, project, model_artifact_name = get_run_info(opt.resume)
                 api = wandb.Api()
                 artifact = api.artifact(project + '/' + model_artifact_name + ':latest')
@@ -53,9 +52,10 @@ def check_wandb_resume(opt):
             return True
     return None
 
+
 def process_wandb_config_ddp_mode(opt):
     with open(opt.data) as f:
-        data_dict = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
+        data_dict = yaml.safe_load(f)  # data dict
     train_dir, val_dir = None, None
     if isinstance(data_dict['train'], str) and data_dict['train'].startswith(WANDB_ARTIFACT_PREFIX):
         api = wandb.Api()
@@ -63,7 +63,7 @@ def process_wandb_config_ddp_mode(opt):
         train_dir = train_artifact.download()
         train_path = Path(train_dir) / 'data/images/'
         data_dict['train'] = str(train_path)
-        
+
     if isinstance(data_dict['val'], str) and data_dict['val'].startswith(WANDB_ARTIFACT_PREFIX):
         api = wandb.Api()
         val_artifact = api.artifact(remove_prefix(data_dict['val']) + ':' + opt.artifact_alias)
@@ -71,12 +71,11 @@ def process_wandb_config_ddp_mode(opt):
         val_path = Path(val_dir) / 'data/images/'
         data_dict['val'] = str(val_path)
     if train_dir or val_dir:
-        ddp_data_path = str(Path(val_dir) / 'wandb_local_data.yaml') 
+        ddp_data_path = str(Path(val_dir) / 'wandb_local_data.yaml')
         with open(ddp_data_path, 'w') as f:
-            yaml.dump(data_dict, f)
+            yaml.safe_dump(data_dict, f)
         opt.data = ddp_data_path
-    
-        
+
 
 class WandbLogger():
     def __init__(self, opt, name, run_id, data_dict, job_type='Training'):
@@ -84,7 +83,7 @@ class WandbLogger():
         self.job_type = job_type
         self.wandb, self.wandb_run, self.data_dict = wandb, None if not wandb else wandb.run, data_dict
         # It's more elegant to stick to 1 wandb.init call, but useful config data is overwritten in the WandbLogger's wandb.init call
-        if isinstance(opt.resume, str): # checks resume from artifact 
+        if isinstance(opt.resume, str):  # checks resume from artifact
             if opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
                 run_id, project, model_artifact_name = get_run_info(opt.resume)
                 model_artifact_name = WANDB_ARTIFACT_PREFIX + model_artifact_name
@@ -98,7 +97,7 @@ class WandbLogger():
                                         project='YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem,
                                         name=name,
                                         job_type=job_type,
-                                        id=run_id) if not wandb.run else wandb.run      
+                                        id=run_id) if not wandb.run else wandb.run
         if self.wandb_run:
             if self.job_type == 'Training':
                 if not opt.resume:
@@ -110,18 +109,18 @@ class WandbLogger():
             if self.job_type == 'Dataset Creation':
                 self.data_dict = self.check_and_upload_dataset(opt)
         else:
-            print(f"{colorstr('wandb: ')}Install Weights & Biases for YOLOv5 logging with 'pip install wandb' (recommended)")
-
+            prefix = colorstr('wandb: ')
+            print(f"{prefix}Install Weights & Biases for YOLOv5 logging with 'pip install wandb' (recommended)")
 
     def check_and_upload_dataset(self, opt):
         assert wandb, 'Install wandb to upload dataset'
         check_dataset(self.data_dict)
         config_path = self.log_dataset_artifact(opt.data,
-                                                   opt.single_cls,
-                                                   'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
+                                                opt.single_cls,
+                                                'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
         print("Created dataset config file ", config_path)
         with open(config_path) as f:
-            wandb_data_dict = yaml.load(f, Loader=yaml.SafeLoader)
+            wandb_data_dict = yaml.safe_load(f)
         return wandb_data_dict
 
     def setup_training(self, opt, data_dict):
@@ -193,7 +192,7 @@ class WandbLogger():
 
     def log_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False):
         with open(data_file) as f:
-            data = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
+            data = yaml.safe_load(f)  # data dict
         nc, names = (1, ['item']) if single_cls else (int(data['nc']), data['names'])
         names = {k: v for k, v in enumerate(names)}  # to index dictionary
         self.train_artifact = self.create_dataset_table(LoadImagesAndLabels(
@@ -207,7 +206,7 @@ class WandbLogger():
         path = data_file if overwrite_config else '_wandb.'.join(data_file.rsplit('.', 1))  # updated data.yaml path
         data.pop('download', None)
         with open(path, 'w') as f:
-            yaml.dump(data, f)
+            yaml.safe_dump(data, f)
 
         if self.job_type == 'Training':  # builds correct artifact pipeline graph
             self.wandb_run.use_artifact(self.val_artifact)

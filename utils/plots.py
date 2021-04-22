@@ -54,32 +54,34 @@ def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
     return filtfilt(b, a, data)  # forward-backward filter
 
 
-def plot_one_box(x, img, color=None, label=None, line_thickness=3):
-    # Plots one bounding box on image img
-    tl = line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1  # line/font thickness
+def plot_one_box(x, im, color=None, label=None, line_thickness=3):
+    # Plots one bounding box on image 'im' using OpenCV
+    assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to plot_on_box() input image.'
+    tl = line_thickness or round(0.002 * (im.shape[0] + im.shape[1]) / 2) + 1  # line/font thickness
     color = color or [random.randint(0, 255) for _ in range(3)]
     c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
-    cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
+    cv2.rectangle(im, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
     if label:
         tf = max(tl - 1, 1)  # font thickness
         t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
         c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
-        cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)  # filled
-        cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
+        cv2.rectangle(im, c1, c2, color, -1, cv2.LINE_AA)  # filled
+        cv2.putText(im, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
 
 
-def plot_one_box_PIL(box, img, color=None, label=None, line_thickness=None):
-    img = Image.fromarray(img)
-    draw = ImageDraw.Draw(img)
-    line_thickness = line_thickness or max(int(min(img.size) / 200), 2)
+def plot_one_box_PIL(box, im, color=None, label=None, line_thickness=None):
+    # Plots one bounding box on image 'im' using PIL
+    im = Image.fromarray(im)
+    draw = ImageDraw.Draw(im)
+    line_thickness = line_thickness or max(int(min(im.size) / 200), 2)
     draw.rectangle(box, width=line_thickness, outline=tuple(color))  # plot
     if label:
-        fontsize = max(round(max(img.size) / 40), 12)
+        fontsize = max(round(max(im.size) / 40), 12)
         font = ImageFont.truetype("Arial.ttf", fontsize)
         txt_width, txt_height = font.getsize(label)
         draw.rectangle([box[0], box[1] - txt_height + 4, box[0] + txt_width, box[1]], fill=tuple(color))
         draw.text((box[0], box[1] - txt_height + 1), label, fill=(255, 255, 255), font=font)
-    return np.asarray(img)
+    return np.asarray(im)
 
 
 def plot_wh_methods():  # from utils.plots import *; plot_wh_methods()
@@ -243,7 +245,7 @@ def plot_study_txt(path='', x=None):  # from utils.plots import *; plot_study_tx
     # ax = ax.ravel()
 
     fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
-    # for f in [Path(path) / f'study_coco_{x}.txt' for x in ['yolov5s', 'yolov5m', 'yolov5l', 'yolov5x']]:
+    # for f in [Path(path) / f'study_coco_{x}.txt' for x in ['yolov5s6', 'yolov5m6', 'yolov5l6', 'yolov5x6']]:
     for f in sorted(Path(path).glob('study*.txt')):
         y = np.loadtxt(f, dtype=np.float32, usecols=[0, 1, 2, 3, 7, 8, 9], ndmin=2).T
         x = np.arange(y.shape[1]) if x is None else np.array(x)
@@ -253,7 +255,7 @@ def plot_study_txt(path='', x=None):  # from utils.plots import *; plot_study_tx
         #     ax[i].set_title(s[i])
 
         j = y[3].argmax() + 1
-        ax2.plot(y[6, :j], y[3, :j] * 1E2, '.-', linewidth=2, markersize=8,
+        ax2.plot(y[6, 1:j], y[3, 1:j] * 1E2, '.-', linewidth=2, markersize=8,
                  label=f.stem.replace('study_coco_', '').replace('yolo', 'YOLO'))
 
     ax2.plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [34.6, 40.5, 43.0, 47.5, 49.7, 51.5],
@@ -261,7 +263,7 @@ def plot_study_txt(path='', x=None):  # from utils.plots import *; plot_study_tx
 
     ax2.grid(alpha=0.2)
     ax2.set_yticks(np.arange(20, 60, 5))
-    ax2.set_xlim(0, 30)
+    ax2.set_xlim(0, 57)
     ax2.set_ylim(30, 55)
     ax2.set_xlabel('GPU Speed (ms/img)')
     ax2.set_ylabel('COCO AP val')
@@ -321,7 +323,7 @@ def plot_labels(labels, names=(), save_dir=Path(''), loggers=None):
 def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots import *; plot_evolution()
     # Plot hyperparameter evolution results in evolve.txt
     with open(yaml_file) as f:
-        hyp = yaml.load(f, Loader=yaml.SafeLoader)
+        hyp = yaml.safe_load(f)
     x = np.loadtxt('evolve.txt', ndmin=2)
     f = fitness(x)
     # weights = (f - f.min()) ** 2  # for weighted results
