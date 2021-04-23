@@ -114,6 +114,8 @@ def detect(save_img=False):
                         if not opt.hide_labels:
                             label = f'{names[c]} {conf:.2f}'
                         plot_one_box(xyxy, im0, label=label, color=colors[c], line_thickness=opt.line_thickness)
+                        if opt.save_crop:
+                            save_one_box(xyxy, im0s, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
             # Print time (inference + NMS)
             print(f'{s}Done. ({t2 - t1:.3f}s)')
