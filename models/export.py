@@ -112,7 +112,7 @@ if __name__ == '__main__':
     try:
         import coremltools as ct
 
-        print(f'{prefix} starting export with coremltools {onnx.__version__}...')
+        print(f'{prefix} starting export with coremltools {ct.__version__}...')
         # convert model from torchscript and apply pixel scaling as per detect.py
         model = ct.convert(ts, inputs=[ct.ImageType(name='image', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
         f = opt.weights.replace('.pt', '.mlmodel')  # filename
