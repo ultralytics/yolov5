@@ -112,7 +112,11 @@ def detect(save_img=False):
                     if save_img or opt.save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
                         if not opt.hide_labels:
-                            label = f'{names[c]} {conf:.2f}'
+                            if opt.hide_values:
+                                label = names[c]
+                            else:
+                                label = f'{names[c]} {conf:.2f}'
+
                         plot_one_box(xyxy, im0, label=label, color=colors[c], line_thickness=opt.line_thickness)
                         if opt.save_crop:
                             save_one_box(xyxy, im0s, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
@@ -172,6 +176,7 @@ if __name__ == '__main__':
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--line-thickness', default=3, type=int, help='thickness of the bounding boxes')
     parser.add_argument('--hide-labels', default=False, action='store_true', help='hide class labels on bounding boxes')
+    parser.add_argument('--hide-values', default=False, action='store_true', help='hide confidence values on bounding boxes')
     opt = parser.parse_args()
     print(opt)
     check_requirements(exclude=('pycocotools', 'thop'))
