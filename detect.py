@@ -101,7 +101,6 @@ def detect(opt):
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Write results
-                label = None
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
@@ -111,11 +110,7 @@ def detect(opt):
 
                     if save_img or opt.save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
-                        if not opt.hide_labels:
-                            if opt.hide_values:
-                                label = names[c]
-                            else:
-                                label = f'{names[c]} {conf:.2f}'
+                        label = None if opt.hide_labels else (names[c] if opt.hide_conf else f'{names[c]} {conf:.2f}')
 
                         plot_one_box(xyxy, im0, label=label, color=colors[c], line_thickness=opt.line_thickness)
                         if opt.save_crop:
@@ -175,9 +170,9 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='runs/detect', help='save results to project/name')
     parser.add_argument('--name', default='exp', help='save results to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
-    parser.add_argument('--line-thickness', default=3, type=int, help='thickness of the bounding boxes')
-    parser.add_argument('--hide-labels', default=False, action='store_true', help='hide class labels on bounding boxes')
-    parser.add_argument('--hide-values', default=False, action='store_true', help='hide confidence values on bounding boxes')
+    parser.add_argument('--line-thickness', default=3, type=int, help='bounding box thickness (pixels)')
+    parser.add_argument('--hide-labels', default=True, action='store_true', help='hide labels')
+    parser.add_argument('--hide-conf', default=True, action='store_true', help='hide confidences')
     opt = parser.parse_args()
     print(opt)
     check_requirements(exclude=('pycocotools', 'thop'))
