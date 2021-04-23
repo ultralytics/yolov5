@@ -58,7 +58,8 @@ if __name__ == '__main__':
         # elif isinstance(m, models.yolo.Detect):
         #     m.forward = m.forward_export  # assign forward (optional)
     model.model[-1].export = not opt.grid  # set Detect() layer grid export
-    y = model(img)  # dry run
+    for _ in range(2):
+        y = model(img)  # dry runs
 
     # TorchScript export -----------------------------------------------------------------------------------------------
     prefix = colorstr('TorchScript:')
@@ -80,7 +81,6 @@ if __name__ == '__main__':
         print(f'{prefix} starting export with onnx {onnx.__version__}...')
         f = opt.weights.replace('.pt', '.onnx')  # filename
         torch.onnx.export(model, img, f, verbose=False, opset_version=12, input_names=['images'],
-                          output_names=['classes', 'boxes'] if y is None else ['output'],
                           dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # size(1,3,640,640)
                                         'output': {0: 'batch', 2: 'y', 3: 'x'}} if opt.dynamic else None)
 
