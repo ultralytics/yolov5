@@ -58,7 +58,7 @@ if __name__ == '__main__':
         # elif isinstance(m, models.yolo.Detect):
         #     m.forward = m.forward_export  # assign forward (optional)
     model.model[-1].export = not opt.grid  # set Detect() layer grid export
-    for i in range(2):
+    for _ in range(2):
         y = model(img)  # dry runs
 
     # TorchScript export -----------------------------------------------------------------------------------------------
