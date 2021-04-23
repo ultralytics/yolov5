@@ -17,7 +17,7 @@ from torch.utils.mobile_optimizer import optimize_for_mobile
 import models
 from models.experimental import attempt_load
 from utils.activations import Hardswish, SiLU
-from utils.general import colorstr, check_img_size, check_requirements, set_logging
+from utils.general import colorstr, check_img_size, check_requirements, file_size, set_logging
 from utils.torch_utils import select_device
 
 if __name__ == '__main__':
@@ -60,6 +60,7 @@ if __name__ == '__main__':
     model.model[-1].export = not opt.grid  # set Detect() layer grid export
     for _ in range(2):
         y = model(img)  # dry runs
+    print(f"\n{colorstr('PyTorch:')} starting from {opt.weights} ({file_size(opt.weights):.1f} MB)")
 
     # TorchScript export -----------------------------------------------------------------------------------------------
     prefix = colorstr('TorchScript:')
@@ -69,7 +70,7 @@ if __name__ == '__main__':
         ts = torch.jit.trace(model, img, strict=False)
         ts = optimize_for_mobile(ts)  # https://pytorch.org/tutorials/recipes/script_optimized.html
         ts.save(f)
-        print(f'{prefix} export success, saved as {f}')
+        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 
@@ -103,7 +104,7 @@ if __name__ == '__main__':
                 onnx.save(model_onnx, f)
             except Exception as e:
                 print(f'{prefix} simplifier failure: {e}')
-        print(f'{prefix} export success, saved as {f}')
+        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 
@@ -117,7 +118,7 @@ if __name__ == '__main__':
         model = ct.convert(ts, inputs=[ct.ImageType(name='image', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
         f = opt.weights.replace('.pt', '.mlmodel')  # filename
         model.save(f)
-        print(f'{prefix} export success, saved as {f}')
+        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 

@@ -61,6 +61,11 @@ def emojis(str=''):
     return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
 
 
+def file_size(file):
+    # Return file size in MB
+    return Path(file).stat().st_size / 1e6
+
+
 def check_online():
     # Check internet connectivity
     import socket
