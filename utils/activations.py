@@ -94,13 +94,14 @@ class MetaAconC(nn.Module):
         self.p1 = nn.Parameter(torch.randn(1, c1, 1, 1))
         self.p2 = nn.Parameter(torch.randn(1, c1, 1, 1))
         self.fc1 = nn.Conv2d(c1, c2, k, s, bias=True)
-        self.bn1 = nn.BatchNorm2d(c2)
+        # self.bn1 = nn.BatchNorm2d(c2)
         self.fc2 = nn.Conv2d(c2, c1, k, s, bias=True)
-        self.bn2 = nn.BatchNorm2d(c1)
+        # self.bn2 = nn.BatchNorm2d(c1)
 
     # batch-size 1 bug https://github.com/nmaac/acon/issues/4
     def forward(self, x):
         y = x.mean(dim=2, keepdims=True).mean(dim=3, keepdims=True)
-        beta = torch.sigmoid(self.bn2(self.fc2(self.bn1(self.fc1(y)))))
+        # beta = torch.sigmoid(self.bn2(self.fc2(self.bn1(self.fc1(y)))))
+        beta = torch.sigmoid(self.fc2(self.fc1(y)))
         dpx = (self.p1 - self.p2) * x
         return dpx * torch.sigmoid(beta * dpx) + self.p2 * x
