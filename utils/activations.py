@@ -12,6 +12,15 @@ class SiLU(nn.Module):  # export-friendly version of nn.SiLU()
         return x * torch.sigmoid(x)
 
 
+class SiLU_beta(nn.Module):  # SiLU() with B term: y = x * sigmoid(B * x)
+    def __init__(self, c1):
+        super().__init__()
+        self.beta = nn.Parameter(torch.ones(1, c1, 1, 1))
+
+    def forward(self, x):
+        return x * torch.sigmoid(self.beta * x)
+
+
 class Hardswish(nn.Module):  # export-friendly version of nn.Hardswish()
     @staticmethod
     def forward(x):
@@ -84,16 +93,14 @@ class MetaAconC(nn.Module):
         c2 = max(r, c1 // r)
         self.p1 = nn.Parameter(torch.randn(1, c1, 1, 1))
         self.p2 = nn.Parameter(torch.randn(1, c1, 1, 1))
-        self.fc1 = nn.Conv2d(c1, c2, k, s, bias=False)
+        self.fc1 = nn.Conv2d(c1, c2, k, s, bias=True)
         self.bn1 = nn.BatchNorm2d(c2)
-        self.fc2 = nn.Conv2d(c2, c1, k, s, bias=False)
+        self.fc2 = nn.Conv2d(c2, c1, k, s, bias=True)
         self.bn2 = nn.BatchNorm2d(c1)
 
+    # batch-size 1 bug https://github.com/nmaac/acon/issues/4
     def forward(self, x):
         y = x.mean(dim=2, keepdims=True).mean(dim=3, keepdims=True)
-        if x.shape[0] > 1:  # batch-size 1 bug https://github.com/nmaac/acon/issues/4
-            beta = torch.sigmoid(self.bn2(self.fc2(self.bn1(self.fc1(y)))))
-        else:
-            beta = torch.sigmoid(self.fc2(self.fc1(y)))
+        beta = torch.sigmoid(self.bn2(self.fc2(self.bn1(self.fc1(y)))))
         dpx = (self.p1 - self.p2) * x
         return dpx * torch.sigmoid(beta * dpx) + self.p2 * x
