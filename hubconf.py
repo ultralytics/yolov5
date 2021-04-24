@@ -31,7 +31,7 @@ def create(name, pretrained, channels, classes, autoshape, verbose):
         pytorch model
     """
     try:
-        set_logging(verbose)
+        set_logging(verbose=verbose)
 
         cfg = list((Path(__file__).parent / 'models').rglob(f'{name}.yaml'))[0]  # model.yaml path
         model = Model(cfg, channels, classes)
@@ -67,7 +67,7 @@ def custom(path_or_model='path/to/model.pt', autoshape=True, verbose=True):
     Returns:
         pytorch model
     """
-    set_logging(verbose)
+    set_logging(verbose=verbose)
 
     model = torch.load(path_or_model) if isinstance(path_or_model, str) else path_or_model  # load checkpoint
     if isinstance(model, dict):
