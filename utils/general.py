@@ -32,10 +32,10 @@ cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with Py
 os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max threads
 
 
-def set_logging(rank=-1):
+def set_logging(rank=-1, verbose=True):
     logging.basicConfig(
         format="%(message)s",
-        level=logging.INFO if rank in [-1, 0] else logging.WARN)
+        level=logging.INFO if (verbose and rank in [-1, 0]) else logging.WARN)
 
 
 def init_seeds(seed=0):
@@ -70,7 +70,8 @@ def check_online():
     # Check internet connectivity
     import socket
     try:
-        socket.create_connection(("1.1.1.1", 443), 5)  # check host accesability
+        # check host accesability
+        socket.create_connection(("1.1.1.1", 443), 5)
         return True
     except OSError:
         return False
@@ -85,9 +86,12 @@ def check_git_status():
         assert check_online(), 'skipping check (offline)'
 
         cmd = 'git fetch && git config --get remote.origin.url'
-        url = subprocess.check_output(cmd, shell=True).decode().strip().rstrip('.git')  # github repo url
-        branch = subprocess.check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
-        n = int(subprocess.check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
+        url = subprocess.check_output(cmd, shell=True).decode(
+        ).strip().rstrip('.git')  # github repo url
+        branch = subprocess.check_output(
+            'git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
+        n = int(subprocess.check_output(
+            f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
         if n > 0:
             s = f"⚠️ WARNING: code is out of date by {n} commit{'s' * (n > 1)}. " \
                 f"Use 'git pull' to update or 'git clone {url}' to download latest."
@@ -107,7 +111,8 @@ def check_requirements(requirements='requirements.txt', exclude=()):
         if not file.exists():
             print(f"{prefix} {file.resolve()} not found, check failed.")
             return
-        requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(file.open()) if x.name not in exclude]
+        requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(
+            file.open()) if x.name not in exclude]
     else:  # list or tuple of packages
         requirements = [x for x in requirements if x not in exclude]
 
@@ -117,8 +122,10 @@ def check_requirements(requirements='requirements.txt', exclude=()):
             pkg.require(r)
         except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
             n += 1
-            print(f"{prefix} {e.req} not found and is required by YOLOv5, attempting auto-update...")
-            print(subprocess.check_output(f"pip install {e.req}", shell=True).decode())
+            print(
+                f"{prefix} {e.req} not found and is required by YOLOv5, attempting auto-update...")
+            print(subprocess.check_output(
+                f"pip install {e.req}", shell=True).decode())
 
     if n:  # if packages updated
         source = file.resolve() if 'file' in locals() else requirements
@@ -131,7 +138,8 @@ def check_img_size(img_size, s=32):
     # Verify img_size is a multiple of stride s
     new_size = make_divisible(img_size, int(s))  # ceil gs-multiple
     if new_size != img_size:
-        print('WARNING: --img-size %g must be multiple of max stride %g, updating to %g' % (img_size, s, new_size))
+        print('WARNING: --img-size %g must be multiple of max stride %g, updating to %g' %
+              (img_size, s, new_size))
     return new_size
 
 
@@ -145,7 +153,8 @@ def check_imshow():
         cv2.waitKey(1)
         return True
     except Exception as e:
-        print(f'WARNING: Environment does not support cv2.imshow() or PIL Image.show() image displays\n{e}')
+        print(
+            f'WARNING: Environment does not support cv2.imshow() or PIL Image.show() image displays\n{e}')
         return False
 
 
@@ -156,7 +165,9 @@ def check_file(file):
     else:
         files = glob.glob('./**/' + file, recursive=True)  # find file
         assert len(files), f'File Not Found: {file}'  # assert file was found
-        assert len(files) == 1, f"Multiple files match '{file}', specify exact path: {files}"  # assert unique
+        # assert unique
+        assert len(
+            files) == 1, f"Multiple files match '{file}', specify exact path: {files}"
         return files[0]  # return file
 
 
@@ -164,9 +175,11 @@ def check_dataset(dict):
     # Download dataset if not found locally
     val, s = dict.get('val'), dict.get('download')
     if val and len(val):
-        val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
+        val = [Path(x).resolve()
+               for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
-            print('\nWARNING: Dataset not found, nonexistent paths: %s' % [str(x) for x in val if not x.exists()])
+            print('\nWARNING: Dataset not found, nonexistent paths: %s' %
+                  [str(x) for x in val if not x.exists()])
             if s and len(s):  # download script
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
@@ -178,7 +191,8 @@ def check_dataset(dict):
                     r = os.system(s)
                 else:  # python script
                     r = exec(s)  # return None
-                print('Dataset autodownload %s\n' % ('success' if r in (0, None) else 'failure'))  # print result
+                print('Dataset autodownload %s\n' % (
+                    'success' if r in (0, None) else 'failure'))  # print result
             else:
                 raise Exception('Dataset not found.')
 
@@ -194,14 +208,17 @@ def download(url, dir='.', multi_thread=False):
         if f.suffix in ('.zip', '.gz'):
             print(f'Unzipping {f}...')
             if f.suffix == '.zip':
-                os.system(f'unzip -qo {f} -d {dir} && rm {f}')  # unzip -quiet -overwrite
+                # unzip -quiet -overwrite
+                os.system(f'unzip -qo {f} -d {dir} && rm {f}')
             elif f.suffix == '.gz':
-                os.system(f'tar xfz {f} --directory {f.parent} && rm {f}')  # unzip
+                # unzip
+                os.system(f'tar xfz {f} --directory {f.parent} && rm {f}')
 
     dir = Path(dir)
     dir.mkdir(parents=True, exist_ok=True)  # make directory
     if multi_thread:
-        ThreadPool(8).imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # 8 threads
+        ThreadPool(8).imap(lambda x: download_one(*x),
+                           zip(url, repeat(dir)))  # 8 threads
     else:
         for u in tuple(url) if isinstance(url, str) else url:
             download_one(u, dir)
@@ -224,7 +241,8 @@ def one_cycle(y1=0.0, y2=1.0, steps=100):
 
 def colorstr(*input):
     # Colors a string https://en.wikipedia.org/wiki/ANSI_escape_code, i.e.  colorstr('blue', 'hello world')
-    *args, string = input if len(input) > 1 else ('blue', 'bold', input[0])  # color arguments, string
+    # color arguments, string
+    *args, string = input if len(input) > 1 else ('blue', 'bold', input[0])
     colors = {'black': '\033[30m',  # basic colors
               'red': '\033[31m',
               'green': '\033[32m',
@@ -268,7 +286,8 @@ def labels_to_class_weights(labels, nc=80):
 
 def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
     # Produces image weights based on class_weights and image contents
-    class_counts = np.array([np.bincount(x[:, 0].astype(np.int), minlength=nc) for x in labels])
+    class_counts = np.array(
+        [np.bincount(x[:, 0].astype(np.int), minlength=nc) for x in labels])
     image_weights = (class_weights.reshape(1, nc) * class_counts).sum(1)
     # index = random.choices(range(n), weights=image_weights, k=1)  # weight image sample
     return image_weights
@@ -329,7 +348,8 @@ def segment2box(segment, width=640, height=640):
     x, y = segment.T  # segment xy
     inside = (x >= 0) & (y >= 0) & (x <= width) & (y <= height)
     x, y, = x[inside], y[inside]
-    return np.array([x.min(), y.min(), x.max(), y.max()]) if any(x) else np.zeros((1, 4))  # xyxy
+    # xyxy
+    return np.array([x.min(), y.min(), x.max(), y.max()]) if any(x) else np.zeros((1, 4))
 
 
 def segments2boxes(segments):
@@ -346,15 +366,18 @@ def resample_segments(segments, n=1000):
     for i, s in enumerate(segments):
         x = np.linspace(0, len(s) - 1, n)
         xp = np.arange(len(s))
-        segments[i] = np.concatenate([np.interp(x, xp, s[:, i]) for i in range(2)]).reshape(2, -1).T  # segment xy
+        segments[i] = np.concatenate(
+            [np.interp(x, xp, s[:, i]) for i in range(2)]).reshape(2, -1).T  # segment xy
     return segments
 
 
 def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
     # Rescale coords (xyxy) from img1_shape to img0_shape
     if ratio_pad is None:  # calculate from img0_shape
-        gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
-        pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
+        gain = min(img1_shape[0] / img0_shape[0],
+                   img1_shape[1] / img0_shape[1])  # gain  = old / new
+        pad = (img1_shape[1] - img0_shape[1] * gain) / \
+            2, (img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
     else:
         gain = ratio_pad[0][0]
         pad = ratio_pad[1]
@@ -399,7 +422,8 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
 
     iou = inter / union
     if GIoU or DIoU or CIoU:
-        cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)  # convex (smallest enclosing box) width
+        # convex (smallest enclosing box) width
+        cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)
         ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)  # convex height
         if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
             c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
@@ -408,7 +432,8 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
             if DIoU:
                 return iou - rho2 / c2  # DIoU
             elif CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
-                v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
+                v = (4 / math.pi ** 2) * \
+                    torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
                 with torch.no_grad():
                     alpha = v / (v - iou + (1 + eps))
                 return iou - (rho2 / c2 + v * alpha)  # CIoU
@@ -440,8 +465,10 @@ def box_iou(box1, box2):
     area2 = box_area(box2.T)
 
     # inter(N,M) = (rb(N,M,2) - lt(N,M,2)).clamp(0).prod(2)
-    inter = (torch.min(box1[:, None, 2:], box2[:, 2:]) - torch.max(box1[:, None, :2], box2[:, :2])).clamp(0).prod(2)
-    return inter / (area1[:, None] + area2 - inter)  # iou = inter / (area1 + area2 - inter)
+    inter = (torch.min(box1[:, None, 2:], box2[:, 2:]) -
+             torch.max(box1[:, None, :2], box2[:, :2])).clamp(0).prod(2)
+    # iou = inter / (area1 + area2 - inter)
+    return inter / (area1[:, None] + area2 - inter)
 
 
 def wh_iou(wh1, wh2):
@@ -449,7 +476,8 @@ def wh_iou(wh1, wh2):
     wh1 = wh1[:, None]  # [N,1,2]
     wh2 = wh2[None]  # [1,M,2]
     inter = torch.min(wh1, wh2).prod(2)  # [N,M]
-    return inter / (wh1.prod(2) + wh2.prod(2) - inter)  # iou = inter / (area1 + area2 - inter)
+    # iou = inter / (area1 + area2 - inter)
+    return inter / (wh1.prod(2) + wh2.prod(2) - inter)
 
 
 def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False,
@@ -464,7 +492,8 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     xc = prediction[..., 4] > conf_thres  # candidates
 
     # Settings
-    min_wh, max_wh = 2, 4096  # (pixels) minimum and maximum box width and height
+    # (pixels) minimum and maximum box width and height
+    min_wh, max_wh = 2, 4096
     max_det = 300  # maximum number of detections per image
     max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
     time_limit = 10.0  # seconds to quit after
@@ -473,7 +502,8 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     merge = False  # use merge-NMS
 
     t = time.time()
-    output = [torch.zeros((0, 6), device=prediction.device)] * prediction.shape[0]
+    output = [torch.zeros((0, 6), device=prediction.device)
+              ] * prediction.shape[0]
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
         # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
@@ -504,7 +534,8 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
             x = torch.cat((box[i], x[i, j + 5, None], j[:, None].float()), 1)
         else:  # best class only
             conf, j = x[:, 5:].max(1, keepdim=True)
-            x = torch.cat((box, conf, j.float()), 1)[conf.view(-1) > conf_thres]
+            x = torch.cat((box, conf, j.float()), 1)[
+                conf.view(-1) > conf_thres]
 
         # Filter by class
         if classes is not None:
@@ -519,11 +550,13 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
         if not n:  # no boxes
             continue
         elif n > max_nms:  # excess boxes
-            x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence
+            # sort by confidence
+            x = x[x[:, 4].argsort(descending=True)[:max_nms]]
 
         # Batched NMS
         c = x[:, 5:6] * (0 if agnostic else max_wh)  # classes
-        boxes, scores = x[:, :4] + c, x[:, 4]  # boxes (offset by class), scores
+        # boxes (offset by class), scores
+        boxes, scores = x[:, :4] + c, x[:, 4]
         i = torchvision.ops.nms(boxes, scores, iou_thres)  # NMS
         if i.shape[0] > max_det:  # limit detections
             i = i[:max_det]
@@ -531,7 +564,8 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
             # update boxes as boxes(i,4) = weights(i,n) * boxes(n,4)
             iou = box_iou(boxes[i], boxes) > iou_thres  # iou matrix
             weights = iou * scores[None]  # box weights
-            x[i, :4] = torch.mm(weights, x[:, :4]).float() / weights.sum(1, keepdim=True)  # merged boxes
+            x[i, :4] = torch.mm(weights, x[:, :4]).float(
+            ) / weights.sum(1, keepdim=True)  # merged boxes
             if redundant:
                 i = i[iou.sum(1) > 1]  # require redundancy
 
@@ -543,7 +577,8 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     return output
 
 
-def strip_optimizer(f='best.pt', s=''):  # from utils.general import *; strip_optimizer()
+# from utils.general import *; strip_optimizer()
+def strip_optimizer(f='best.pt', s=''):
     # Strip optimizer from 'f' to finalize training, optionally save as 's'
     x = torch.load(f, map_location=torch.device('cpu'))
     if x.get('ema'):
@@ -556,24 +591,28 @@ def strip_optimizer(f='best.pt', s=''):  # from utils.general import *; strip_op
         p.requires_grad = False
     torch.save(x, s or f)
     mb = os.path.getsize(s or f) / 1E6  # filesize
-    print(f"Optimizer stripped from {f},{(' saved as %s,' % s) if s else ''} {mb:.1f}MB")
+    print(
+        f"Optimizer stripped from {f},{(' saved as %s,' % s) if s else ''} {mb:.1f}MB")
 
 
 def print_mutation(hyp, results, yaml_file='hyp_evolved.yaml', bucket=''):
     # Print mutation results to evolve.txt (for use with train.py --evolve)
     a = '%10s' * len(hyp) % tuple(hyp.keys())  # hyperparam keys
     b = '%10.3g' * len(hyp) % tuple(hyp.values())  # hyperparam values
-    c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
+    # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
+    c = '%10.4g' * len(results) % results
     print('\n%s\n%s\nEvolved fitness: %s\n' % (a, b, c))
 
     if bucket:
         url = 'gs://%s/evolve.txt' % bucket
         if gsutil_getsize(url) > (os.path.getsize('evolve.txt') if os.path.exists('evolve.txt') else 0):
-            os.system('gsutil cp %s .' % url)  # download evolve.txt if larger than local
+            # download evolve.txt if larger than local
+            os.system('gsutil cp %s .' % url)
 
     with open('evolve.txt', 'a') as f:  # append result
         f.write(c + b + '\n')
-    x = np.unique(np.loadtxt('evolve.txt', ndmin=2), axis=0)  # load unique rows
+    x = np.unique(np.loadtxt('evolve.txt', ndmin=2),
+                  axis=0)  # load unique rows
     x = x[np.argsort(-fitness(x))]  # sort
     np.savetxt('evolve.txt', x, '%10.3g')  # save sort by fitness
 
@@ -582,12 +621,15 @@ def print_mutation(hyp, results, yaml_file='hyp_evolved.yaml', bucket=''):
         hyp[k] = float(x[0, i + 7])
     with open(yaml_file, 'w') as f:
         results = tuple(x[0, :7])
-        c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
-        f.write('# Hyperparameter Evolution Results\n# Generations: %g\n# Metrics: ' % len(x) + c + '\n\n')
+        # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
+        c = '%10.4g' * len(results) % results
+        f.write('# Hyperparameter Evolution Results\n# Generations: %g\n# Metrics: ' % len(
+            x) + c + '\n\n')
         yaml.safe_dump(hyp, f, sort_keys=False)
 
     if bucket:
-        os.system('gsutil cp evolve.txt %s gs://%s' % (yaml_file, bucket))  # upload
+        os.system('gsutil cp evolve.txt %s gs://%s' %
+                  (yaml_file, bucket))  # upload
 
 
 def apply_classifier(x, model, img, im0):
@@ -614,13 +656,17 @@ def apply_classifier(x, model, img, im0):
                 im = cv2.resize(cutout, (224, 224))  # BGR
                 # cv2.imwrite('test%i.jpg' % j, cutout)
 
-                im = im[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
-                im = np.ascontiguousarray(im, dtype=np.float32)  # uint8 to float32
+                # BGR to RGB, to 3x416x416
+                im = im[:, :, ::-1].transpose(2, 0, 1)
+                im = np.ascontiguousarray(
+                    im, dtype=np.float32)  # uint8 to float32
                 im /= 255.0  # 0 - 255 to 0.0 - 1.0
                 ims.append(im)
 
-            pred_cls2 = model(torch.Tensor(ims).to(d.device)).argmax(1)  # classifier prediction
-            x[i] = x[i][pred_cls1 == pred_cls2]  # retain matching class detections
+            pred_cls2 = model(torch.Tensor(ims).to(d.device)
+                              ).argmax(1)  # classifier prediction
+            # retain matching class detections
+            x[i] = x[i][pred_cls1 == pred_cls2]
 
     return x
 
@@ -630,12 +676,14 @@ def save_one_box(xyxy, im, file='image.jpg', gain=1.02, pad=10, square=False, BG
     xyxy = torch.tensor(xyxy).view(-1, 4)
     b = xyxy2xywh(xyxy)  # boxes
     if square:
-        b[:, 2:] = b[:, 2:].max(1)[0].unsqueeze(1)  # attempt rectangle to square
+        b[:, 2:] = b[:, 2:].max(1)[0].unsqueeze(
+            1)  # attempt rectangle to square
     b[:, 2:] = b[:, 2:] * gain + pad  # box wh * gain + pad
     xyxy = xywh2xyxy(b).long()
     clip_coords(xyxy, im.shape)
     crop = im[int(xyxy[0, 1]):int(xyxy[0, 3]), int(xyxy[0, 0]):int(xyxy[0, 2])]
-    cv2.imwrite(str(increment_path(file, mkdir=True).with_suffix('.jpg')), crop if BGR else crop[..., ::-1])
+    cv2.imwrite(str(increment_path(file, mkdir=True).with_suffix(
+        '.jpg')), crop if BGR else crop[..., ::-1])
 
 
 def increment_path(path, exist_ok=False, sep='', mkdir=False):
