@@ -184,14 +184,19 @@ def check_dataset(dict):
 
 
 def download(url, dir='.', multi_thread=False):
-    # Multi-threaded file download function
+    # Multi-threaded file download and unzip function
     def download_one(url, dir):
         # Download 1 file
         f = dir / Path(url).name  # filename
-        print(f'Downloading {url} to {f}...')
-        torch.hub.download_url_to_file(url, f, progress=True)  # download
+        if not f.exists():
+            print(f'Downloading {url} to {f}...')
+            torch.hub.download_url_to_file(url, f, progress=True)  # download
         if f.suffix == '.zip':
+            print(f'Unzipping {f}...')
             os.system(f'unzip -qo {f} -d {dir} && rm {f}')  # unzip -quiet -overwrite
+        elif f.suffix == '.gz':
+            print(f'Unzipping {f}...')
+            os.system(f'tar xfz {f} --directory {f.parent} && rm {f}')  # unzip
 
     dir = Path(dir)
     dir.mkdir(parents=True, exist_ok=True)  # make directory
