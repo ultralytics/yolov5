@@ -32,10 +32,10 @@ cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with Py
 os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max threads
 
 
-def set_logging(rank=-1):
+def set_logging(rank=-1, verbose=True):
     logging.basicConfig(
         format="%(message)s",
-        level=logging.INFO if rank in [-1, 0] else logging.WARN)
+        level=logging.INFO if (verbose and rank in [-1, 0]) else logging.WARN)
 
 
 def init_seeds(seed=0):
