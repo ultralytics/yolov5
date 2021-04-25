@@ -84,13 +84,15 @@ class MetaAconC(nn.Module):
         c2 = max(r, c1 // r)
         self.p1 = nn.Parameter(torch.randn(1, c1, 1, 1))
         self.p2 = nn.Parameter(torch.randn(1, c1, 1, 1))
-        self.fc1 = nn.Conv2d(c1, c2, k, s, bias=False)
-        self.bn1 = nn.BatchNorm2d(c2)
-        self.fc2 = nn.Conv2d(c2, c1, k, s, bias=False)
-        self.bn2 = nn.BatchNorm2d(c1)
+        self.fc1 = nn.Conv2d(c1, c2, k, s, bias=True)
+        self.fc2 = nn.Conv2d(c2, c1, k, s, bias=True)
+        # self.bn1 = nn.BatchNorm2d(c2)
+        # self.bn2 = nn.BatchNorm2d(c1)
 
     def forward(self, x):
         y = x.mean(dim=2, keepdims=True).mean(dim=3, keepdims=True)
-        beta = torch.sigmoid(self.bn2(self.fc2(self.bn1(self.fc1(y)))))
+        # batch-size 1 bug/instabilities https://github.com/ultralytics/yolov5/issues/2891
+        # beta = torch.sigmoid(self.bn2(self.fc2(self.bn1(self.fc1(y)))))  # bug/unstable
+        beta = torch.sigmoid(self.fc2(self.fc1(y)))  # bug patch BN layers removed
         dpx = (self.p1 - self.p2) * x
         return dpx * torch.sigmoid(beta * dpx) + self.p2 * x
