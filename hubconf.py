@@ -103,28 +103,28 @@ def yolov5x(pretrained=True, channels=3, classes=80, autoshape=True, verbose=Tru
 
 
 def yolov5s6(pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
-    # YOLOv5-small model https://github.com/ultralytics/yolov5
+    # YOLOv5-small-P6 model https://github.com/ultralytics/yolov5
     return create('yolov5s6', pretrained, channels, classes, autoshape, verbose)
 
 
 def yolov5m6(pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
-    # YOLOv5-medium model https://github.com/ultralytics/yolov5
+    # YOLOv5-medium-P6 model https://github.com/ultralytics/yolov5
     return create('yolov5m6', pretrained, channels, classes, autoshape, verbose)
 
 
 def yolov5l6(pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
-    # YOLOv5-large model https://github.com/ultralytics/yolov5
+    # YOLOv5-large-P6 model https://github.com/ultralytics/yolov5
     return create('yolov5l6', pretrained, channels, classes, autoshape, verbose)
 
 
 def yolov5x6(pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
-    # YOLOv5-xlarge model https://github.com/ultralytics/yolov5
+    # YOLOv5-xlarge-P6 model https://github.com/ultralytics/yolov5
     return create('yolov5x6', pretrained, channels, classes, autoshape, verbose)
 
 
 if __name__ == '__main__':
-    model = create(name='yolov5s', pretrained=True, channels=3, classes=80, autoshape=True, verbose=True)  # pretrained example
-    # model = custom(path_or_model='path/to/model.pt')  # custom example
+    model = create(name='yolov5s', pretrained=True, channels=3, classes=80, autoshape=True, verbose=True)  # pretrained
+    # model = custom(path_or_model='path/to/model.pt')  # custom
 
     # Verify inference
     import cv2
