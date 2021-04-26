@@ -10,8 +10,13 @@ def truncate(n, decimals=0):
     return int(n * multiplier) / multiplier
 
 
-# Download Object 365 from the Object 365 website and put in the same directory as this script
-coco = COCO("instances_train.json")
+# Create the following folder structure dataset/object365/images/train, dataset/object365/images/val, dataset/labels/images/train, dataset/labels/images/val
+
+# Download Object 365 from the Object 365 website And unpack all images in dataset/object365/images/train,Put The script and zhiyuan_objv2_train.json file in dataset/object365
+# Execute the script in dataset/object365v path
+
+
+coco = COCO("zhiyuan_objv2_train.json")
 cats = coco.loadCats(coco.getCatIds())
 nms = [cat["name"] for cat in cats]
 print("COCO categories: \n{}\n".format(" ".join(nms)))
@@ -35,13 +40,13 @@ for categoryId, cat in enumerate(nms):
         filename = fixed_path.replace(".jpg", ".txt")
 
         try:
-            # Test image for corruption
+            # Test image for missing images
             if fixed_path not in cash:
                 img = cv2.imread(f"images/train/{fixed_path}")
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 cash.add(fixed_path)
 
-            with open("/labels/train/" + filename, "a+") as myfile:
+            with open("labels/train/" + filename, "a+") as myfile:
                 for i in range(len(anns)):
                     xmin = anns[i]["bbox"][0]
                     ymin = anns[i]["bbox"][1]
@@ -61,7 +66,6 @@ for categoryId, cat in enumerate(nms):
 
                     # Note: This assumes a single-category dataset, and thus the "0" at the beginning of each line.
                     mystring = f"{categoryId} {truncate(x, 7)} {truncate(y, 7)} {truncate(w, 7)} {truncate(h, 7)}"
-                    # mystring = str(categoryId + " " + str(truncate(x, 7)) + " " + str(truncate(y, 7)) + " " + str(truncate(w, 7)) + " " + str(truncate(h, 7)))
                     myfile.write(mystring)
                     myfile.write("\n")
             myfile.close()
@@ -70,11 +74,11 @@ for categoryId, cat in enumerate(nms):
             print(e)
 
 current_dir = "images/train"
-myset = {2, 25, 4, 5}
+chances = 10  # 10% val set
 for fullpath in glob.iglob(os.path.join(current_dir, "*.jpg")):
     n = random.randint(1, 100)
-    if n in myset:
+    if n <= chances:
         title, ext = os.path.splitext(os.path.basename(fullpath))
         print(title)
-        shutil.move(f"../images/train/{title}.jpg", f"../images/val/{title}.jpg")
-        shutil.move(f"../labels/train/{title}.txt", f"../labels/val/{title}.txt")
+        shutil.move(f"images/train/{title}.jpg", f"images/val/{title}.jpg")
+        shutil.move(f"labels/train/{title}.txt", f"labels/val/{title}.txt")
