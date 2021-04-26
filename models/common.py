@@ -12,7 +12,7 @@ import torch.nn as nn
 from PIL import Image
 from torch.cuda import amp
 
-from utils.activations import AconC, MetaAconC, FReLU, SiLU_beta
+from utils.activations import AconC, MetaAconC, FReLU, SiLU_beta, FReLU_noBN_biasFalse, FReLU_noBN_biasTrue
 from utils.datasets import letterbox
 from utils.general import non_max_suppression, make_divisible, scale_coords, increment_path, xyxy2xywh, save_one_box
 from utils.plots import color_list, plot_one_box
@@ -45,10 +45,12 @@ class Conv(nn.Module):
         # self.act = nn.Hardswish() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
         # self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
         # self.act = Mish() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
-        # self.act = AconC() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
-        # self.act = MetaAconC() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
-        # self.act = SiLU_beta() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
-        self.act = MetaAconC(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        # self.act = FReLU(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        # self.act = AconC(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        # self.act = MetaAconC(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        # self.act = SiLU_beta(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        self.act = FReLU_noBN_biasFalse(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        # self.act = FReLU_noBN_biasTrue(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
 
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))

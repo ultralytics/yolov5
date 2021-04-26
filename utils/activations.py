@@ -64,6 +64,24 @@ class FReLU(nn.Module):
         return torch.max(x, self.bn(self.conv(x)))
 
 
+class FReLU_noBN_biasTrue(nn.Module):
+    def __init__(self, c1, k=3):  # ch_in, kernel
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c1, k, 1, 1, groups=c1, bias=True)
+
+    def forward(self, x):
+        return torch.max(x, self.conv(x))
+
+
+class FReLU_noBN_biasFalse(nn.Module):
+    def __init__(self, c1, k=3):  # ch_in, kernel
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c1, k, 1, 1, groups=c1, bias=False)
+
+    def forward(self, x):
+        return torch.max(x, self.conv(x))
+
+
 # ACON https://arxiv.org/pdf/2009.04759.pdf ----------------------------------------------------------------------------
 class AconC(nn.Module):
     r""" ACON activation (activate or not).
