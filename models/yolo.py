@@ -136,7 +136,7 @@ class Model(nn.Module):
                 dt.append((time_synchronized() - t) * 100)
                 if m == self.model[0]:
                     logger.info(f"{'time (ms)':>10s} {'GFLOPS':>10s} {'params':>10s}  {'module'}")
-                logger.info(f'{dt[-1]:10.1f} {o:10.1f} {m.np:10.0f}  {m.type}')
+                logger.info(f'{dt[-1]:10.2f} {o:10.2f} {m.np:10.0f}  {m.type}')
 
             x = m(x)  # run
             y.append(x if m.i in self.save else None)  # save output
