@@ -58,8 +58,8 @@ Model |size<br><sup>(pixels) |mAP<sup>val<br>0.5:0.95 |mAP<sup>test<br>0.5:0.95 
 ## Requirements
 
 Python 3.8 or later with all [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) dependencies installed, including `torch>=1.7`. To install run:
+<!-- $ sudo apt update && apt install -y libgl1-mesa-glx libsm6 libxext6 libxrender-dev -->
 ```bash
-$ sudo apt-get update && apt-get install -y libgl1-mesa-glx libsm6 libxext6 libxrender-dev
 $ pip install -r requirements.txt
 ```
 
