@@ -4,8 +4,9 @@ import argparse
 import logging
 import sys
 from copy import deepcopy
+from pathlib import Path
 
-sys.path.append('./')  # to run '$ python *.py' files in subdirectories
+sys.path.append(Path(__file__).parent.parent.absolute().__str__())  # to run '$ python *.py' files in subdirectories
 logger = logging.getLogger(__name__)
 
 from models.common import *
@@ -267,7 +268,7 @@ if __name__ == '__main__':
     # Create model
     model = Model(opt.cfg).to(device)
     model.train()
-                        
+
     # Profile
     # img = torch.rand(8 if torch.cuda.is_available() else 1, 3, 320, 320).to(device)
     # y = model(img, profile=True)
