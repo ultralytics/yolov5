@@ -90,11 +90,6 @@ def _rescale_coords_concat(y, flips, scale, img_size):
     y = coords[..., 1:2]
     wh = coords[..., 2:4]
 
-    print(coords.size())
-    print(x.shape)
-    print(y.shape)
-    print(wh.shape)
-
     if flips == 2:
         y = img_size[0] - y  # de-flip ud
     elif flips == 3:
