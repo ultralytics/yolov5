@@ -243,16 +243,13 @@ class WandbLogger():
         table = wandb.Table(columns=["id", "train_image", "Classes", "name"])
         class_set = wandb.Classes([{'id': id, 'name': name} for id, name in class_to_id.items()])
         for si, (img, labels, paths, shapes) in enumerate(tqdm(dataset)):
-            height, width = shapes[0]
-            labels[:, 2:] = (xywh2xyxy(labels[:, 2:].view(-1, 4))) * torch.Tensor([width, height, width, height])
             box_data, img_classes = [], {}
             for cls, *xyxy in labels[:, 1:].tolist():
                 cls = int(cls)
-                box_data.append({"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
+                box_data.append({"position": {"middle": [xyxy[0], xyxy[1]], "width": xyxy[2], "height": xyxy[3]},
                                  "class_id": cls,
                                  "box_caption": "%s" % (class_to_id[cls]),
-                                 "scores": {"acc": 1},
-                                 "domain": "pixel"})
+                                 "scores": {"acc": 1}})
                 img_classes[cls] = class_to_id[cls]
             boxes = {"ground_truth": {"box_data": box_data, "class_labels": class_to_id}}  # inference-space
             table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes), json.dumps(img_classes),
