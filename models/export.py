@@ -7,8 +7,9 @@ Usage:
 import argparse
 import sys
 import time
+from pathlib import Path
 
-sys.path.append('./')  # to run '$ python *.py' files in subdirectories
+sys.path.append(Path(__file__).parent.parent.absolute().__str__())  # to run '$ python *.py' files in subdirectories
 
 import torch
 import torch.nn as nn
