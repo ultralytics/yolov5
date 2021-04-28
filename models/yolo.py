@@ -53,17 +53,13 @@ class Detect(nn.Module):
                     self.grid[i] = self._make_grid(nx, ny).to(x[i].device)
 
                 y = x[i].sigmoid()
-
-                # Default behavior modifies the tensor in-place.
                 if self.inplace:
                     y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
                     y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
-                else:
+                else:  # for YOLOv5 on AWS Inferentia https://github.com/ultralytics/yolov5/pull/2953
                     xy = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
                     wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
-                    scores = y[..., 4:]
-                    y = torch.cat([xy, wh, scores], -1)
-
+                    y = torch.cat([xy, wh, y[..., 4:]], -1)
                 z.append(y.view(bs, -1, self.no))
 
         return x if self.training else (torch.cat(z, 1), x)
@@ -72,33 +68,6 @@ class Detect(nn.Module):
     def _make_grid(nx=20, ny=20):
         yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
         return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
-
-
-def _rescale_coords(y, flips, scale, img_size):
-    y[..., :4] /= scale  # de-scale
-    if flips == 2:
-        y[..., 1] = img_size[0] - y[..., 1]  # de-flip ud
-    elif flips == 3:
-        y[..., 0] = img_size[1] - y[..., 0]  # de-flip lr
-    return y
-
-
-def _rescale_coords_concat(y, flips, scale, img_size):
-    coords = y[..., :4] / scale  # de-scale
-    scores = y[..., 4:]
-
-    x = coords[..., 0:1]
-    y = coords[..., 1:2]
-    wh = coords[..., 2:4]
-
-    if flips == 2:
-        y = img_size[0] - y  # de-flip ud
-    elif flips == 3:
-        x = img_size[1] - x  # de-flip lr
-    else:
-        return torch.cat([coords, scores], -1)
-
-    return torch.cat([x, y, wh, scores], -1)
 
 
 class Model(nn.Module):
@@ -128,8 +97,8 @@ class Model(nn.Module):
         # Build strides, anchors
         m = self.model[-1]  # Detect()
         if isinstance(m, Detect):
-            m.inplace = self.inplace
             s = 256  # 2x min stride
+            m.inplace = self.inplace
             m.stride = torch.tensor([s / x.shape[-2] for x in self.forward(torch.zeros(1, ch, s, s))])  # forward
             m.anchors /= m.stride.view(-1, 1, 1)
             check_anchor_order(m)
@@ -157,10 +126,7 @@ class Model(nn.Module):
             xi = scale_img(x.flip(fi) if fi else x, si, gs=int(self.stride.max()))
             yi = self.forward_once(xi)[0]  # forward
             # cv2.imwrite(f'img_{si}.jpg', 255 * xi[0].cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
-            if self.inplace:
-                yi = _rescale_coords(yi, fi, si, img_size)
-            else:
-                yi = _rescale_coords_concat(yi, fi, si, img_size)
+            yi = self._descale_pred(yi, fi, si, img_size)
             y.append(yi)
         return torch.cat(y, 1), None  # augmented inference, train
 
@@ -186,6 +152,23 @@ class Model(nn.Module):
         if profile:
             logger.info('%.1fms total' % sum(dt))
         return x
+
+    def _descale_pred(self, p, flips, scale, img_size):
+        # de-scale predictions following augmented inference (inverse operation)
+        if self.inplace:
+            p[..., :4] /= scale  # de-scale
+            if flips == 2:
+                p[..., 1] = img_size[0] - p[..., 1]  # de-flip ud
+            elif flips == 3:
+                p[..., 0] = img_size[1] - p[..., 0]  # de-flip lr
+        else:
+            x, y, wh = p[..., 0:1] / scale, p[..., 1:2] / scale, p[..., 2:4] / scale  # de-scale
+            if flips == 2:
+                y = img_size[0] - y  # de-flip ud
+            elif flips == 3:
+                x = img_size[1] - x  # de-flip lr
+            p = torch.cat([x, y, wh, p[..., 4:]], -1)
+        return p
 
     def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
         # https://arxiv.org/abs/1708.02002 section 3.3
@@ -309,6 +292,7 @@ if __name__ == '__main__':
     # Create model
     model = Model(opt.cfg).to(device)
     model.train()
+
     # Profile
     # img = torch.rand(8 if torch.cuda.is_available() else 1, 3, 320, 320).to(device)
     # y = model(img, profile=True)
