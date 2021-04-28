@@ -23,8 +23,7 @@ from tqdm import tqdm
 
 from sparseml.pytorch.nn import replace_activations
 from sparseml.pytorch.optim import ScheduledModifierManager, ScheduledOptimizer
-from sparseml.pytorch.utils import PythonLogger, TensorBoardLogger, ModuleExporter
-from sparseml.pytorch.utils.quantization import skip_onnx_input_quantize
+from sparseml.pytorch.utils import PythonLogger, TensorBoardLogger
 
 import test  # import test.py to get mAP after each epoch
 from models.experimental import attempt_load
@@ -484,20 +483,6 @@ def train(hyp, opt, device, tb_writer=None):
                                           is_coco=is_coco,
                                           half_precision=half_precision)
 
-        # ONNX export
-        if opt.export_onnx:
-            try:
-                onnx_path = f'{save_dir}/model.onnx'
-                logger.info(f'training complete, exporting ONNX to {onnx_path}')
-                export_model = model.module if is_parallel_model(model) else model
-                export_model.model[-1].export = True  # do not export grid post-procesing
-                exporter = ModuleExporter(export_model, save_dir)
-                exporter.export_onnx(torch.randn(1, 3, imgsz, imgsz), convert_qat=True)
-                if qat:
-                    skip_onnx_input_quantize(onnx_path, onnx_path)
-            except Exception as e:
-                logger.warning(f'exception occured during ONNX export, model not exported to ONNX. error message {e}')
-
         # Strip optimizers
         final = best if best.exists() else last  # final model
         for f in last, best:
@@ -554,7 +539,6 @@ if __name__ == '__main__':
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
     parser.add_argument('--sparseml-recipe', type=str, default=None, help='Path to a SparseML sparsification recipe, see <TODO: Link Here> for more information')
     parser.add_argument('--use-leaky-relu', action='store_true', help='Override default SiLU activation with LeakyReLU')
-    parser.add_argument('--export-onnx', action='store_true', help='export final model to ONNX')
     parser.add_argument('--disable-amp', action='store_true', help='Disable FP16 half precision (enabled by default)')
     parser.add_argument('--disable-ema', action='store_true', help='Disable EMA model updates (enabled by default)')
     opt = parser.parse_args()

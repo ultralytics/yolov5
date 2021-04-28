@@ -15,11 +15,46 @@ import torch
 import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
+from sparseml.pytorch.optim import ScheduledModifierManager
+from sparseml.pytorch.utils import ModuleExporter
+from sparseml.pytorch.utils.quantization import skip_onnx_input_quantize
+
 import models
 from models.experimental import attempt_load
+from models.yolo import Model
 from utils.activations import Hardswish, SiLU
 from utils.general import colorstr, check_img_size, check_requirements, file_size, set_logging
-from utils.torch_utils import select_device
+from utils.google_utils import attempt_download
+from utils.torch_utils import select_device, intersect_dicts
+
+
+def load_model(opt, device):
+    attempt_download(opt.weights)
+    ckpt = torch.load(opt.weights, map_location=device)
+    is_picked_model = isinstance(ckpt['model'], nn.Module)
+
+    if not is_picked_model and not opt.cfg:
+        raise ValueError(f'{opt.weights} does not load a Module object and no Model cfg given to load into a Module')
+
+    if is_picked_model and not opt.cfg:
+        model = attempt_load(opt.weights, map_location=device)  # load FP32 model
+        state_dict = model.state_dict()
+    else:
+        model = Model(opt.cfg or ckpt['model'].yaml)
+        state_dict = ckpt['model'].float().state_dict() if is_picked_model else ckpt['model']
+
+    # apply any sparsity or quantization optimizations
+    if opt.sparseml_recipe:
+        if any([opt.grid, opt.dynamic, opt.simplify]):
+            raise ValueError("--grid, --dynamic, and --simplify not supported for exports with sparsification")
+        manager = ScheduledModifierManager.from_yaml(opt.sparseml_recipe)
+        for quant_mod in manager.quantization_modifiers:
+            quant_mod.enable_on_initialize = True
+        manager.initialize(model, None)
+
+    model.load_state_dict(state_dict, strict=True)  # load
+    model.float()
+    return model
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -30,6 +65,8 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')  # ONNX-only
     parser.add_argument('--simplify', action='store_true', help='simplify ONNX model')  # ONNX-only
+    parser.add_argument('--cfg', type=str, default='', help='optional model.yaml path')
+    parser.add_argument('--sparseml-recipe', type=str, default=None, help='optional path to sparsification recipe that was used to train this model')
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
@@ -38,7 +75,7 @@ if __name__ == '__main__':
 
     # Load PyTorch model
     device = select_device(opt.device)
-    model = attempt_load(opt.weights, map_location=device)  # load FP32 model
+    model = load_model(opt, device)  # load FP32 model
     labels = model.names
 
     # Checks
@@ -82,9 +119,19 @@ if __name__ == '__main__':
 
         print(f'{prefix} starting export with onnx {onnx.__version__}...')
         f = opt.weights.replace('.pt', '.onnx')  # filename
-        torch.onnx.export(model, img, f, verbose=False, opset_version=12, input_names=['images'],
-                          dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # size(1,3,640,640)
-                                        'output': {0: 'batch', 2: 'y', 3: 'x'}} if opt.dynamic else None)
+        if not opt.sparseml_recipe:
+            torch.onnx.export(model, img, f, verbose=False, opset_version=12, input_names=['images'],
+                              dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # size(1,3,640,640)
+                                            'output': {0: 'batch', 2: 'y', 3: 'x'}} if opt.dynamic else None)
+        else:
+            save_dir = "/".join(f.split("/")[:-1])
+            save_name = f.split("/")[-1]
+            exporter = ModuleExporter(model, save_dir)
+            exporter.export_onnx(img, convert_qat=True)
+            try:
+                skip_onnx_input_quantize(f, f)
+            except:
+                pass
 
         # Checks
         model_onnx = onnx.load(f)  # load onnx model
