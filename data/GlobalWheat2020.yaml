@@ -8,9 +8,9 @@
 
 # train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
 train: # 3422 images
-  - ../datasets/GlobalWheat2020/images/arvalis1
-  - ../datasets/GlobalWheat2020/images/arvalis2
-  - ../datasets/GlobalWheat2020/images/arvalis3
+  - ../datasets/GlobalWheat2020/images/arvalis_1
+  - ../datasets/GlobalWheat2020/images/arvalis_2
+  - ../datasets/GlobalWheat2020/images/arvalis_3
   - ../datasets/GlobalWheat2020/images/ethz_1
   - ../datasets/GlobalWheat2020/images/rres_1
   - ../datasets/GlobalWheat2020/images/inrae_1
