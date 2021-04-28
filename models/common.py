@@ -14,7 +14,7 @@ from torch.cuda import amp
 
 from utils.datasets import letterbox
 from utils.general import non_max_suppression, make_divisible, scale_coords, increment_path, xyxy2xywh, save_one_box
-from utils.plots import color_list, plot_one_box
+from utils.plots import colors, plot_one_box
 from utils.torch_utils import time_synchronized
 
 
@@ -312,7 +312,6 @@ class Detections:
         self.s = shape  # inference BCHW shape
 
     def display(self, pprint=False, show=False, save=False, crop=False, render=False, save_dir=Path('')):
-        colors = color_list()
         for i, (im, pred) in enumerate(zip(self.imgs, self.pred)):
             str = f'image {i + 1}/{len(self.pred)}: {im.shape[0]}x{im.shape[1]} '
             if pred is not None:
@@ -325,7 +324,7 @@ class Detections:
                         if crop:
                             save_one_box(box, im, file=save_dir / 'crops' / self.names[int(cls)] / self.files[i])
                         else:  # all others
-                            plot_one_box(box, im, label=label, color=colors[int(cls) % 10])
+                            plot_one_box(box, im, label=label, color=colors(cls))
 
             im = Image.fromarray(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im  # from np
             if pprint:
