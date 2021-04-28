@@ -24,15 +24,14 @@ def predict():
 
         img = Image.open(io.BytesIO(image_bytes))
 
-        results = model(img, size=640)
-        data = results.pandas().xyxy[0].to_json(orient="records")
-        return data
+        results = model(img, size=640)  # reduce size=320 for faster inference
+        return results.pandas().xyxy[0].to_json(orient="records")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Flask api exposing yolov5 model")
+    parser = argparse.ArgumentParser(description="Flask API exposing YOLOv5 model")
     parser.add_argument("--port", default=5000, type=int, help="port number")
     args = parser.parse_args()
 
-    model = torch.hub.load("ultralytics/yolov5", "yolov5s", force_reload=True).autoshape()  # force_reload to recache
+    model = torch.hub.load("ultralytics/yolov5", "yolov5s", force_reload=True)  # force_reload to recache
     app.run(host="0.0.0.0", port=args.port)  # debug=True causes Restarting with stat
