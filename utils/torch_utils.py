@@ -276,17 +276,38 @@ class ModelEMA:
     GPU assignment and distributed training wrappers.
     """
 
-    def __init__(self, model, decay=0.9999, updates=0):
+    def __init__(self, model, decay=0.9999, updates=0, enabled=True):
         # Create EMA
         self.ema = deepcopy(model.module if is_parallel(model) else model).eval()  # FP32 EMA
         # if next(model.parameters()).device.type != 'cpu':
         #     self.ema.half()  # FP16 EMA
         self.updates = updates  # number of EMA updates
         self.decay = lambda x: decay * (1 - math.exp(-x / 2000))  # decay exponential ramp (to help early epochs)
+        self.enabled = enabled
+        self.pruning_manager = None  # type: sparseml.pytorch.optim.ScheduledModifierManager
         for p in self.ema.parameters():
             p.requires_grad_(False)
 
+    def state_dict(self, half_precision=True):
+        if not self.enabled:
+            return {}
+
+        ema = deepcopy(self.ema)
+        return {
+            'ema': ema.half() if half_precision else ema,
+            'updates': self.updates,
+        }
+
+    def load_state_dict(self, state_dict):
+        if 'ema' in state_dict:
+            self.ema.load_state_dict(state_dict['ema'].float().state_dict())
+        if 'updates' in state_dict:
+            self.updates = state_dict['updates']
+
     def update(self, model):
+        if not self.enabled:
+            return
+
         # Update EMA parameters
         with torch.no_grad():
             self.updates += 1
@@ -299,5 +320,17 @@ class ModelEMA:
                     v += (1. - d) * msd[k].detach()
 
     def update_attr(self, model, include=(), exclude=('process_group', 'reducer')):
+        if not self.enabled:
+            return
+
+        # store pre-ema sparsity masks
+        if self.pruning_manager is not None:
+            pruning_dict = self.pruning_manager.state_dict()
+
         # Update EMA attributes
         copy_attr(self.ema, model, include, exclude)
+
+        # restore sparsity structure post-ema
+        if self.pruning_manager is not None:
+            self.pruning_manager.load_state_dict(pruning_dict)
+            del pruning_dict
