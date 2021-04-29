@@ -15,7 +15,7 @@ from utils.google_utils import attempt_download
 from utils.torch_utils import select_device
 
 dependencies = ['torch', 'yaml']
-check_requirements(Path(__file__).parent / 'requirements.txt', exclude=('pycocotools', 'thop'))
+check_requirements(Path(__file__).parent / 'requirements.txt', exclude=('tensorboard', 'pycocotools', 'thop'))
 
 
 def create(name, pretrained, channels, classes, autoshape, verbose):
