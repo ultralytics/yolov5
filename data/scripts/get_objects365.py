@@ -1,18 +1,18 @@
-import cv2
+# Objects365 https://www.objects365.org labels JSON to YOLO script
+# 1. Download Object 365 from the Object 365 website And unpack all images in datasets/object365/images
+# 2. Place this file and zhiyuan_objv2_train.json file in datasets/objects365
+# 3. Execute this file from datasets/object365 path
+# /datasets
+#     /objects365
+#         /images
+#         /labels
+
 from pycocotools.coco import COCO
-
-# Create the following folder structure:
-# datasets/object365/images/train, datasets/object365/images/val, datasets/labels/train, dataset/labels/val
-
-# Download Object 365 from the Object 365 website And unpack all images in datasets/object365/images/train,
-# Put The script and zhiyuan_objv2_train.json file in dataset/object365
-# Execute the script in datasets/object365 path
 
 coco = COCO("zhiyuan_objv2_train.json")
 cats = coco.loadCats(coco.getCatIds())
 nms = [cat["name"] for cat in cats]
 print("COCO categories: \n{}\n".format(" ".join(nms)))
-cash = set()
 for categoryId, cat in enumerate(nms):
     catIds = coco.getCatIds(catNms=[cat])
     imgIds = coco.getImgIds(catIds=catIds)
@@ -22,11 +22,6 @@ for categoryId, cat in enumerate(nms):
         width, height = im["width"], im["height"]
         path = im["file_name"].split("/")[-1]  # image filename
         try:
-            # Test image for missing images
-            if path not in cash:
-                img = cv2.cvtColor(cv2.imread(f"images/train/{path}"), cv2.COLOR_BGR2RGB)
-                cash.add(path)
-
             with open("labels/train/" + path.replace(".jpg", ".txt"), "a+") as file:
                 annIds = coco.getAnnIds(imgIds=im["id"], catIds=catIds, iscrowd=None)
                 for a in coco.loadAnns(annIds):
