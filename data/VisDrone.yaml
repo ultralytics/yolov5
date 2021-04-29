@@ -1,5 +1,5 @@
 # VisDrone2019-DET dataset https://github.com/VisDrone/VisDrone-Dataset
-# Train command: python train.py --data visdrone.yaml
+# Train command: python train.py --data VisDrone.yaml
 # Default dataset location is next to YOLOv5:
 #   /parent_folder
 #     /VisDrone
@@ -20,11 +20,7 @@ names: [ 'pedestrian', 'people', 'bicycle', 'car', 'van', 'truck', 'tricycle', '
 
 # download command/URL (optional) --------------------------------------------------------------------------------------
 download: |
-  import os
-  from pathlib import Path
-
-  from utils.general import download
-
+  from utils.general import download, os, Path
 
   def visdrone2yolo(dir):
       from PIL import Image
