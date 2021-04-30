@@ -25,6 +25,7 @@ except ImportError:
 class Detect(nn.Module):
     stride = None  # strides computed during build
     export = False  # onnx export
+    dynamic = False
 
     def __init__(self, nc=80, anchors=(), ch=()):  # detection layer
         super(Detect, self).__init__()
@@ -48,13 +49,15 @@ class Detect(nn.Module):
             x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
             if not self.training:  # inference
-                if self.grid[i].shape[2:4] != x[i].shape[2:4]:
+                if self.dynamic or self.grid[i].shape[2:4] != x[i].shape[2:4]:
                     self.grid[i] = self._make_grid(nx, ny).to(x[i].device)
 
                 y = x[i].sigmoid()
-                y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
-                y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
-                z.append(y.view(bs, -1, self.no))
+                xy = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
+                wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i].view(bs, self.na, 1, 1, 2)  # wh
+                rest = y[..., 4:]
+                y_ = torch.cat((xy, wh, rest), -1)
+                z.append(y_.view(bs, -1, self.no))
 
         return x if self.training else (torch.cat(z, 1), x)
 
