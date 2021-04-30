@@ -59,7 +59,7 @@ class Detect(nn.Module):
                 else:  # for YOLOv5 on AWS Inferentia https://github.com/ultralytics/yolov5/pull/2953
                     xy = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
                     wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
-                    y = torch.cat([xy, wh, y[..., 4:]], -1)
+                    y = torch.cat((xy, wh, y[..., 4:]), -1)
                 z.append(y.view(bs, -1, self.no))
 
         return x if self.training else (torch.cat(z, 1), x)
@@ -167,7 +167,7 @@ class Model(nn.Module):
                 y = img_size[0] - y  # de-flip ud
             elif flips == 3:
                 x = img_size[1] - x  # de-flip lr
-            p = torch.cat([x, y, wh, p[..., 4:]], -1)
+            p = torch.cat((x, y, wh, p[..., 4:]), -1)
         return p
 
     def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
