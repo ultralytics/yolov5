@@ -310,7 +310,7 @@ if __name__ == '__main__':
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
     print(opt)
-    check_requirements()
+    check_requirements(exclude=('tensorboard', 'pycocotools', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
         test(opt.data,

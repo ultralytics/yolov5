@@ -16,7 +16,6 @@ import seaborn as sns
 import torch
 import yaml
 from PIL import Image, ImageDraw, ImageFont
-from scipy.signal import butter, filtfilt
 
 from utils.general import xywh2xyxy, xyxy2xywh
 from utils.metrics import fitness
@@ -54,6 +53,8 @@ def hist2d(x, y, n=100):
 
 
 def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
+    from scipy.signal import butter, filtfilt
+
     # https://stackoverflow.com/questions/28536191/how-to-filter-smooth-with-scipy-numpy
     def butter_lowpass(cutoff, fs, order):
         nyq = 0.5 * fs
