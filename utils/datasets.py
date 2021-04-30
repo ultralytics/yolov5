@@ -19,6 +19,7 @@ import torch.nn.functional as F
 from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
+import platform
 
 from utils.general import check_requirements, xyxy2xywh, xywh2xyxy, xywhn2xyxy, xyn2xy, segment2box, segments2boxes, \
     resample_segments, clean_str
@@ -72,7 +73,10 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
                                       prefix=prefix)
 
     batch_size = min(batch_size, len(dataset))
-    nw = min([os.cpu_count() // world_size, batch_size if batch_size > 1 else 0, workers])  # number of workers
+    if platform.system() == "Windows":
+        nw = 0
+    else:
+        nw = min([os.cpu_count() // world_size, batch_size if batch_size >1 else 0, workers])  # number of workers
     sampler = torch.utils.data.distributed.DistributedSampler(dataset) if rank != -1 else None
     loader = torch.utils.data.DataLoader if image_weights else InfiniteDataLoader
     # Use torch.utils.data.DataLoader() if dataset.properties will update during training else InfiniteDataLoader()
@@ -356,6 +360,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
         self.path = path
+        self.cache = cache_images  # cache flag
 
         try:
             f = []  # image files
@@ -632,18 +637,41 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 def load_image(self, index):
     # loads 1 image from dataset, returns img, original hw, resized hw
     img = self.imgs[index]
-    if img is None:  # not cached
-        path = self.img_files[index]
-        img = cv2.imread(path)  # BGR
-        assert img is not None, 'Image Not Found ' + path
-        h0, w0 = img.shape[:2]  # orig hw
-        r = self.img_size / max(h0, w0)  # ratio
-        if r != 1:  # if sizes are not equal
-            img = cv2.resize(img, (int(w0 * r), int(h0 * r)),
-                             interpolation=cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR)
-        return img, (h0, w0), img.shape[:2]  # img, hw_original, hw_resized
+    if img is None:
+        if self.cache:
+            image, original_hw, resized_hw = imageresize(self, index)
+            # encode img
+            _, img_encode = cv2.imencode('.jpg', image)
+            # compress
+            img = np.frombuffer(img_encode, np.uint8)
+        else:
+            img, original_hw, resized_hw = imageresize(self, index)
+        #
+        return img, original_hw, resized_hw  # img, hw_original, hw_resized
     else:
-        return self.imgs[index], self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
+        # img, hw_original, hw_resized
+        if self.cache:
+            img_bin = self.imgs[index]
+            image = cv2.imdecode(img_bin, cv2.IMREAD_COLOR)
+        else:
+            image = self.imgs[index]
+        return image, self.img_hw0[index], self.img_hw[index]
+
+
+def imageresize(self, index):
+    # read image from date ,return img ,original hw, resized hw
+    path = self.img_files[index]
+    img = cv2.imread(path)  # BGR
+    assert img is not None, 'Image Not Found ' + path
+    h0, w0 = img.shape[:2]  # orig hw
+    resized_h, resized_w = h0, w0  # orig hw
+    r = self.img_size / max(h0, w0)  # resize image to img_size
+    if r != 1:  # always resize down, only resize up if training with augmentation
+        interp = cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR
+        img = cv2.resize(img, (int(w0 * r), int(h0 * r)), interpolation=interp)
+        resized_h, resized_w = img.shape[:2]
+    return img, (h0, w0), (resized_h, resized_w)
+
 
 
 def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
