@@ -58,7 +58,7 @@ if __name__ == '__main__':
                 m.act = SiLU()
         elif isinstance(m, models.yolo.Detect):
             m.inplace = opt.inplace
-            m.exp_dynamic = opt.dynamic
+            m.onnx_dynamic = opt.dynamic
             # m.forward = m.forward_export  # assign forward (optional)
 
     for _ in range(2):
