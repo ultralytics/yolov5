@@ -183,7 +183,7 @@ def check_dataset(dict):
                 raise Exception('Dataset not found.')
 
 
-def download(url, dir='.', multi_thread=False):
+def download(url, dir='.', threads=1):
     # Multi-threaded file download and unzip function
     def download_one(url, dir):
         # Download 1 file
@@ -200,8 +200,8 @@ def download(url, dir='.', multi_thread=False):
 
     dir = Path(dir)
     dir.mkdir(parents=True, exist_ok=True)  # make directory
-    if multi_thread:
-        ThreadPool(8).imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # 8 threads
+    if threads > 1:
+        ThreadPool(threads).imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # multi-threaded
     else:
         for u in tuple(url) if isinstance(url, str) else url:
             download_one(u, dir)
