@@ -56,11 +56,11 @@ if __name__ == '__main__':
                 m.act = Hardswish()
             elif isinstance(m.act, nn.SiLU):
                 m.act = SiLU()
-        # elif isinstance(m, models.yolo.Detect):
-        #     m.forward = m.forward_export  # assign forward (optional)
-    model.model[-1].export = not opt.grid  # set Detect() layer grid export
-    model.model[-1].exp_grid = opt.grid
-    model.model[-1].exp_dynamic = opt.dynamic
+        elif isinstance(m, models.yolo.Detect):
+            m.exp_grid = opt.grid
+            m.exp_dynamic = opt.dynamic
+            # m.forward = m.forward_export  # assign forward (optional)
+
     for _ in range(2):
         y = model(img)  # dry runs
     print(f"\n{colorstr('PyTorch:')} starting from {opt.weights} ({file_size(opt.weights):.1f} MB)")
