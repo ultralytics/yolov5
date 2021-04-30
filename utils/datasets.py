@@ -22,7 +22,7 @@ from tqdm import tqdm
 import platform
 
 from utils.general import check_requirements, xyxy2xywh, xywh2xyxy, xywhn2xyxy, xyn2xy, segment2box, segments2boxes, \
-    resample_segments, clean_str
+resample_segments, clean_str
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
@@ -641,9 +641,7 @@ def load_image(self, index):
         if self.cache:
             image, original_hw, resized_hw = imageresize(self, index)
             # encode img
-            _, img_encode = cv2.imencode('.jpg', image)
-            # compress
-            img = np.frombuffer(img_encode, np.uint8)
+            _, img = cv2.imencode('.jpg', image)
         else:
             img, original_hw, resized_hw = imageresize(self, index)
         #
