@@ -196,9 +196,9 @@ class WandbLogger():
         nc, names = (1, ['item']) if single_cls else (int(data['nc']), data['names'])
         names = {k: v for k, v in enumerate(names)}  # to index dictionary
         self.train_artifact = self.create_dataset_table(LoadImagesAndLabels(
-            data['train']), names, name='train') if data.get('train') else None
+            data['train'], rect=True, batch_size=1), names, name='train') if data.get('train') else None
         self.val_artifact = self.create_dataset_table(LoadImagesAndLabels(
-            data['val']), names, name='val') if data.get('val') else None
+            data['val'], rect=True, batch_size=1), names, name='val') if data.get('val') else None
         if data.get('train'):
             data['train'] = WANDB_ARTIFACT_PREFIX + str(Path(project) / 'train')
         if data.get('val'):
@@ -243,16 +243,12 @@ class WandbLogger():
         table = wandb.Table(columns=["id", "train_image", "Classes", "name"])
         class_set = wandb.Classes([{'id': id, 'name': name} for id, name in class_to_id.items()])
         for si, (img, labels, paths, shapes) in enumerate(tqdm(dataset)):
-            height, width = shapes[0]
-            labels[:, 2:] = (xywh2xyxy(labels[:, 2:].view(-1, 4))) * torch.Tensor([width, height, width, height])
             box_data, img_classes = [], {}
-            for cls, *xyxy in labels[:, 1:].tolist():
+            for cls, *xywh in labels[:, 1:].tolist():
                 cls = int(cls)
-                box_data.append({"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
+                box_data.append({"position": {"middle": [xywh[0], xywh[1]], "width": xywh[2], "height": xywh[3]},
                                  "class_id": cls,
-                                 "box_caption": "%s" % (class_to_id[cls]),
-                                 "scores": {"acc": 1},
-                                 "domain": "pixel"})
+                                 "box_caption": "%s" % (class_to_id[cls])})
                 img_classes[cls] = class_to_id[cls]
             boxes = {"ground_truth": {"box_data": box_data, "class_labels": class_to_id}}  # inference-space
             table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes), json.dumps(img_classes),
