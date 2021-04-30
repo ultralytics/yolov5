@@ -24,7 +24,6 @@ except ImportError:
 
 class Detect(nn.Module):
     stride = None  # strides computed during build
-    exp_grid = False
     exp_dynamic = False
 
     def __init__(self, nc=80, anchors=(), ch=(), inplace=True):  # detection layer
@@ -53,7 +52,7 @@ class Detect(nn.Module):
                     self.grid[i] = self._make_grid(nx, ny).to(x[i].device)
 
                 y = x[i].sigmoid()
-                if not self.exp_grid and self.inplace:
+                if self.inplace:
                     y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
                     y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
                 else:  # for YOLOv5 on AWS Inferentia https://github.com/ultralytics/yolov5/pull/2953
