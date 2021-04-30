@@ -7,22 +7,34 @@
 #         /images
 #         /labels
 
+
 from pycocotools.coco import COCO
 
-coco = COCO("zhiyuan_objv2_train.json")
-cats = coco.loadCats(coco.getCatIds())
-nms = [cat["name"] for cat in cats]
-print("COCO categories: \n{}\n".format(" ".join(nms)))
-for categoryId, cat in enumerate(nms):
+from utils.general import download, Path
+
+# Make Directories
+dir = Path('../datasets/objects365')  # dataset directory
+for p in 'images', 'labels':
+    (dir / p).mkdir(parents=True, exist_ok=True)
+    for q in 'train', 'val':
+        (dir / p / q).mkdir(parents=True, exist_ok=True)
+
+# Download
+url = "https://dorc.ks3-cn-beijing.ksyun.com/data-set/2020Objects365%E6%95%B0%E6%8D%AE%E9%9B%86/train/"
+download(url + 'zhiyuan_objv2_train.tar.gz', dir=dir, threads=8)  # annotations json
+download([url + f for f in [f'patch{i}.tar.gz' for i in range(51)]], dir=dir / 'images' / 'train', threads=8)
+
+# Labels
+coco = COCO(dir / 'zhiyuan_objv2_train.json')
+names = [x["name"] for x in coco.loadCats(coco.getCatIds())]
+for categoryId, cat in enumerate(names):
     catIds = coco.getCatIds(catNms=[cat])
     imgIds = coco.getImgIds(catIds=catIds)
-    print(cat)
-    # Create a subfolder in this directory called "labels". This is where the annotations will be saved in YOLO format
     for im in coco.loadImgs(imgIds):
         width, height = im["width"], im["height"]
-        path = im["file_name"].split("/")[-1]  # image filename
+        path = Path(im["file_name"])  # image filename
         try:
-            with open("labels/train/" + path.replace(".jpg", ".txt"), "a+") as file:
+            with open(dir / 'labels' / 'train' / path.with_suffix('.txt').name, 'a') as file:
                 annIds = coco.getAnnIds(imgIds=im["id"], catIds=catIds, iscrowd=None)
                 for a in coco.loadAnns(annIds):
                     x, y, w, h = a['bbox']  # bounding box in xywh (xy top-left corner)
