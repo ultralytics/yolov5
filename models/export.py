@@ -30,16 +30,25 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')  # ONNX-only
     parser.add_argument('--simplify', action='store_true', help='simplify ONNX model')  # ONNX-only
+    parser.add_argument('--half', action='store_true', help='export with half precision')
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
     set_logging()
     t = time.time()
 
+    if opt.device == "cpu" and opt.half:
+        print("You cannot export a fp16 model on CPU. Please specify a CUDA device and try again.")
+        sys.exit()
+
     # Load PyTorch model
     device = select_device(opt.device)
     model = attempt_load(opt.weights, map_location=device)  # load FP32 model
     labels = model.names
+
+    # Use fp16 for model if requested
+    if opt.half:
+        model = model.half()
 
     # Checks
     gs = int(max(model.stride))  # grid size (max stride)
@@ -47,6 +56,9 @@ if __name__ == '__main__':
 
     # Input
     img = torch.zeros(opt.batch_size, 3, *opt.img_size).to(device)  # image size(1,3,320,192) iDetection
+
+    if opt.half:
+        img = img.half()
 
     # Update model
     for k, m in model.named_modules():
