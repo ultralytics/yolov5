@@ -57,6 +57,7 @@ if __name__ == '__main__':
     # Input
     img = torch.zeros(opt.batch_size, 3, *opt.img_size).to(device)  # image size(1,3,320,192) iDetection
 
+    # Use fp16 for img if requested
     if opt.half:
         img = img.half()
 
