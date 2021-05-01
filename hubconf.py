@@ -18,7 +18,7 @@ dependencies = ['torch', 'yaml']
 check_requirements(Path(__file__).parent / 'requirements.txt', exclude=('tensorboard', 'pycocotools', 'thop'))
 
 
-def create(name, pretrained, channels=3, classes=80, autoshape=True, verbose=True):
+def create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
     """Creates a specified YOLOv5 model
 
     Arguments:
