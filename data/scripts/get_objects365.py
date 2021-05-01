@@ -22,7 +22,7 @@ for p in 'images', 'labels':
 # Download
 url = "https://dorc.ks3-cn-beijing.ksyun.com/data-set/2020Objects365%E6%95%B0%E6%8D%AE%E9%9B%86/train/"
 download([url + 'zhiyuan_objv2_train.tar.gz'], dir=dir)  # annotations json
-download([url + f for f in [f'patch{i}.tar.gz' for i in range(51)]], dir=dir / 'images' / 'train', threads=8)
+download([url + f for f in [f'patch{i}.tar.gz' for i in range(51)]], dir=dir / 'images' / 'train', curl=True, threads=8)
 
 # Labels
 coco = COCO(dir / 'zhiyuan_objv2_train.json')
