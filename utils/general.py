@@ -183,7 +183,7 @@ def check_dataset(dict):
                 raise Exception('Dataset not found.')
 
 
-def download(url, dir='.', threads=1):
+def download(url, dir='.', unzip=True, threads=1):
     # Multi-threaded file download and unzip function
     def download_one(url, dir):
         # Download 1 file
@@ -191,7 +191,7 @@ def download(url, dir='.', threads=1):
         if not f.exists():
             print(f'Downloading {url} to {f}...')
             torch.hub.download_url_to_file(url, f, progress=True)  # download
-        if f.suffix in ('.zip', '.gz'):
+        if unzip and f.suffix in ('.zip', '.gz'):
             print(f'Unzipping {f}...')
             if f.suffix == '.zip':
                 os.system(f'unzip -qo {f} -d {dir} && rm {f}')  # unzip -quiet -overwrite
