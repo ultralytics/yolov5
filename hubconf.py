@@ -62,7 +62,7 @@ def create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbos
 
 def custom(path='path/to/model.pt', autoshape=True, verbose=True):
     # YOLOv5 custom or local model
-    return create(path, autoshape, verbose)
+    return create(path, autoshape=autoshape, verbose=verbose)
 
 
 def yolov5s(pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
