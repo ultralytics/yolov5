@@ -56,8 +56,8 @@ def exif_size(img):
     return s
 
 
-def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False,
-                      rank=-1, world_size=1, workers=8, image_weights=False, quad=False, prefix=''):
+def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False,cache_bin=False, pad=0.0,
+                       rect=False,rank=-1, world_size=1, workers=8, image_weights=False, quad=False, prefix=''):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
     with torch_distributed_zero_first(rank):
         dataset = LoadImagesAndLabels(path, imgsz, batch_size,
@@ -65,6 +65,7 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
                                       hyp=hyp,  # augmentation hyperparameters
                                       rect=rect,  # rectangular training
                                       cache_images=cache,
+                                      cache_bin=cache_bin,
                                       single_cls=opt.single_cls,
                                       stride=int(stride),
                                       pad=pad,
@@ -346,7 +347,7 @@ def img2label_paths(img_paths):
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
+                 cache_images=False, cache_bin=False, single_cls=False, stride=32, pad=0.0, prefix=''):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -356,6 +357,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
         self.path = path
+        self.cache_bin = cache_bin  # cache images as bin
+        self.cache_images = cache_images  # cache images as bin
 
         try:
             f = []  # image files
@@ -440,7 +443,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         # Cache images into memory for faster training (WARNING: large datasets may exceed system RAM)
         self.imgs = [None] * n
-        if cache_images:
+        if self.cache_images or self.cache_bin:
             gb = 0  # Gigabytes of cached images
             self.img_hw0, self.img_hw = [None] * n, [None] * n
             results = ThreadPool(8).imap(lambda x: load_image(*x), zip(repeat(self), range(n)))  # 8 threads
@@ -632,18 +635,43 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 def load_image(self, index):
     # loads 1 image from dataset, returns img, original hw, resized hw
     img = self.imgs[index]
-    if img is None:  # not cached
-        path = self.img_files[index]
-        img = cv2.imread(path)  # BGR
-        assert img is not None, 'Image Not Found ' + path
-        h0, w0 = img.shape[:2]  # orig hw
-        r = self.img_size / max(h0, w0)  # ratio
-        if r != 1:  # if sizes are not equal
-            img = cv2.resize(img, (int(w0 * r), int(h0 * r)),
-                             interpolation=cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR)
-        return img, (h0, w0), img.shape[:2]  # img, hw_original, hw_resized
+    if img is None:
+        if self.cache_bin:
+            image, original_hw, resized_hw = imageresize(self, index)
+            # encode img
+            _, img = cv2.imencode('.jpg', image)
+        # elif self.cache_images:
+        #     image, original_hw, resized_hw = imageresize(self, index)
+        else:
+            img, original_hw, resized_hw = imageresize(self, index)
+        #
+        return img, original_hw, resized_hw  # img, hw_original, hw_resized
     else:
-        return self.imgs[index], self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
+        # img, hw_original, hw_resized
+        if self.cache_bin:
+            img_bin = self.imgs[index]
+            image = cv2.imdecode(img_bin, cv2.IMREAD_COLOR)
+        # elif self.cache_images:
+        #     image, original_hw, resized_hw = imageresize(self, index)
+        else:
+            image = self.imgs[index]
+        return image, self.img_hw0[index], self.img_hw[index]
+
+
+def imageresize(self, index):
+    # read image from date ,return img ,original hw, resized hw
+    path = self.img_files[index]
+    img = cv2.imread(path)  # BGR
+    assert img is not None, 'Image Not Found ' + path
+    h0, w0 = img.shape[:2]  # orig hw
+    resized_h, resized_w = h0, w0  # orig hw
+    r = self.img_size / max(h0, w0)  # resize image to img_size
+    if r != 1:  # always resize down, only resize up if training with augmentation
+        interp = cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR
+        img = cv2.resize(img, (int(w0 * r), int(h0 * r)), interpolation=interp)
+        resized_h, resized_w = img.shape[:2]
+    return img, (h0, w0), (resized_h, resized_w)
+
 
 
 def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
