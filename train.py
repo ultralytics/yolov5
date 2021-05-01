@@ -187,8 +187,8 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
-                                            hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank,
-                                            world_size=opt.world_size, workers=opt.workers,
+                                            hyp=hyp, augment=True, cache=opt.cache_images, cache_bin=opt.cache_images_bin, rect=opt.rect,
+                                            rank=rank,world_size=opt.world_size, workers=opt.workers,
                                             image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '))
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
     nb = len(dataloader)  # number of batches
@@ -197,8 +197,8 @@ def train(hyp, opt, device, tb_writer=None):
     # Process 0
     if rank in [-1, 0]:
         testloader = create_dataloader(test_path, imgsz_test, batch_size * 2, gs, opt,  # testloader
-                                       hyp=hyp, cache=opt.cache_images and not opt.notest, rect=True, rank=-1,
-                                       world_size=opt.world_size, workers=opt.workers,
+                                       hyp=hyp, cache=opt.cache_images and not opt.notest, cache_bin=opt.cache_images_bin and not opt.notest,
+                                       rect=True, rank=-1,world_size=opt.world_size, workers=opt.workers,
                                        pad=0.5, prefix=colorstr('val: '))[0]
 
         if not opt.resume:
@@ -469,7 +469,10 @@ if __name__ == '__main__':
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
-    parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
+    #"--cache-images" and "--cache-images-bin", you can only set one of them, not both at the same time
+    parser.add_argument('--cache-images', action='store_true', help='cache images for faster training,it need a lot of CPU memory')
+    parser.add_argument('--cache-images-bin', action='store_true',
+                        help='cache images as binary for slightly increase training speed ,a compromise between training speed and CPU memory')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
