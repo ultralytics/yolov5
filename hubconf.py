@@ -18,7 +18,7 @@ dependencies = ['torch', 'yaml']
 check_requirements(Path(__file__).parent / 'requirements.txt', exclude=('tensorboard', 'pycocotools', 'thop'))
 
 
-def create(name, pretrained, channels=3, classes=80, autoshape=True, verbose=True):
+def create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
     """Creates a specified YOLOv5 model
 
     Arguments:
@@ -106,9 +106,8 @@ def yolov5x6(pretrained=True, channels=3, classes=80, autoshape=True, verbose=Tr
 
 
 if __name__ == '__main__':
-    model = create(name='weights/yolov5s.pt', pretrained=True, channels=3, classes=80, autoshape=True,
-                   verbose=True)  # pretrained
-    # model = custom(path_or_model='path/to/model.pt')  # custom
+    model = create(name='yolov5s', pretrained=True, channels=3, classes=80, autoshape=True, verbose=True)  # pretrained
+    # model = custom(path='path/to/model.pt')  # custom
 
     # Verify inference
     import cv2
