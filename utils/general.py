@@ -183,15 +183,18 @@ def check_dataset(dict):
                 raise Exception('Dataset not found.')
 
 
-def download(url, dir='.', multi_thread=False):
+def download(url, dir='.', unzip=True, curl=False, threads=1):
     # Multi-threaded file download and unzip function
     def download_one(url, dir):
         # Download 1 file
         f = dir / Path(url).name  # filename
         if not f.exists():
             print(f'Downloading {url} to {f}...')
-            torch.hub.download_url_to_file(url, f, progress=True)  # download
-        if f.suffix in ('.zip', '.gz'):
+            if curl:
+                os.system(f"curl -L '{url}' -o '{f}' --retry 9 -C -")  # curl download, retry and resume on fail
+            else:
+                torch.hub.download_url_to_file(url, f, progress=True)  # torch download
+        if unzip and f.suffix in ('.zip', '.gz'):
             print(f'Unzipping {f}...')
             if f.suffix == '.zip':
                 os.system(f'unzip -qo {f} -d {dir} && rm {f}')  # unzip -quiet -overwrite
@@ -200,8 +203,8 @@ def download(url, dir='.', multi_thread=False):
 
     dir = Path(dir)
     dir.mkdir(parents=True, exist_ok=True)  # make directory
-    if multi_thread:
-        ThreadPool(8).imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # 8 threads
+    if threads > 1:
+        ThreadPool(threads).imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # multi-threaded
     else:
         for u in tuple(url) if isinstance(url, str) else url:
             download_one(u, dir)

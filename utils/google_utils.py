@@ -21,6 +21,7 @@ def attempt_download(file, repo='ultralytics/yolov5'):
     file = Path(str(file).strip().replace("'", ''))
 
     if not file.exists():
+        file.parent.mkdir(parents=True, exist_ok=True)  # make parent dir (if required)
         try:
             response = requests.get(f'https://api.github.com/repos/{repo}/releases/latest').json()  # github api
             assets = [x['name'] for x in response['assets']]  # release assets, i.e. ['yolov5s.pt', 'yolov5m.pt', ...]
@@ -47,7 +48,7 @@ def attempt_download(file, repo='ultralytics/yolov5'):
                 assert redundant, 'No secondary mirror'
                 url = f'https://storage.googleapis.com/{repo}/ckpt/{name}'
                 print(f'Downloading {url} to {file}...')
-                os.system(f'curl -L {url} -o {file}')  # torch.hub.download_url_to_file(url, weights)
+                os.system(f"curl -L '{url}' -o '{file}' --retry 3 -C -")  # curl download, retry and resume on fail
             finally:
                 if not file.exists() or file.stat().st_size < 1E6:  # check
                     file.unlink(missing_ok=True)  # remove partial downloads
