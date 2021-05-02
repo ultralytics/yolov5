@@ -28,41 +28,31 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--grid', action='store_true', help='export Detect() layer grid')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')  # ONNX-only
     parser.add_argument('--simplify', action='store_true', help='simplify ONNX model')  # ONNX-only
-    parser.add_argument('--half', action='store_true', help='export with half precision')
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
     set_logging()
     t = time.time()
 
-    # Check if fp16 export can be performed
-    if opt.device == "cpu" and opt.half:
-        print("You cannot export a fp16 model on CPU. Please specify a CUDA device and try again.")
-        sys.exit()
-
     # Load PyTorch model
     device = select_device(opt.device)
     model = attempt_load(opt.weights, map_location=device)  # load FP32 model
     labels = model.names
 
-    # Use fp16 for model if requested
-    if opt.half:
-        model = model.half()
-
     # Checks
     gs = int(max(model.stride))  # grid size (max stride)
     opt.img_size = [check_img_size(x, gs) for x in opt.img_size]  # verify img_size are gs-multiples
+    assert not (opt.device.lower() == "cpu" and opt.half), '--half only compatible with GPU export, i.e. use --device 0'
 
     # Input
     img = torch.zeros(opt.batch_size, 3, *opt.img_size).to(device)  # image size(1,3,320,192) iDetection
 
-    # Use fp16 for img if requested
-    if opt.half:
-        img = img.half()
-
     # Update model
+    if opt.half:
+        img, model = img.half(), model.half()  # to FP16
     for k, m in model.named_modules():
         m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatibility
         if isinstance(m, models.common.Conv):  # assign export-friendly activations
