@@ -26,9 +26,9 @@ if __name__ == '__main__':
     parser.add_argument('--weights', type=str, default='./yolov5s.pt', help='weights path')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')  # height, width
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
-    parser.add_argument('--grid', action='store_true', help='export Detect() layer grid')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
+    parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')  # ONNX-only
     parser.add_argument('--simplify', action='store_true', help='simplify ONNX model')  # ONNX-only
     opt = parser.parse_args()
@@ -60,9 +60,11 @@ if __name__ == '__main__':
                 m.act = Hardswish()
             elif isinstance(m.act, nn.SiLU):
                 m.act = SiLU()
-        # elif isinstance(m, models.yolo.Detect):
-        #     m.forward = m.forward_export  # assign forward (optional)
-    model.model[-1].export = not opt.grid  # set Detect() layer grid export
+        elif isinstance(m, models.yolo.Detect):
+            m.inplace = opt.inplace
+            m.onnx_dynamic = opt.dynamic
+            # m.forward = m.forward_export  # assign forward (optional)
+
     for _ in range(2):
         y = model(img)  # dry runs
     print(f"\n{colorstr('PyTorch:')} starting from {opt.weights} ({file_size(opt.weights):.1f} MB)")
