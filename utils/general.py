@@ -32,10 +32,10 @@ cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with Py
 os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max threads
 
 
-def set_logging(rank=-1):
+def set_logging(rank=-1, verbose=True):
     logging.basicConfig(
         format="%(message)s",
-        level=logging.INFO if rank in [-1, 0] else logging.WARN)
+        level=logging.INFO if (verbose and rank in [-1, 0]) else logging.WARN)
 
 
 def init_seeds(seed=0):
@@ -51,14 +51,28 @@ def get_latest_run(search_dir='.'):
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
-def isdocker():
+def is_docker():
     # Is environment a Docker container
     return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
+
+
+def is_colab():
+    # Is environment a Google Colab instance
+    try:
+        import google.colab
+        return True
+    except Exception as e:
+        return False
 
 
 def emojis(str=''):
     # Return platform-dependent emoji-safe version of string
     return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
+
+
+def file_size(file):
+    # Return file size in MB
+    return Path(file).stat().st_size / 1e6
 
 
 def check_online():
@@ -76,7 +90,7 @@ def check_git_status():
     print(colorstr('github: '), end='')
     try:
         assert Path('.git').exists(), 'skipping check (not a git repository)'
-        assert not isdocker(), 'skipping check (Docker image)'
+        assert not is_docker(), 'skipping check (Docker image)'
         assert check_online(), 'skipping check (offline)'
 
         cmd = 'git fetch && git config --get remote.origin.url'
@@ -112,8 +126,8 @@ def check_requirements(requirements='requirements.txt', exclude=()):
             pkg.require(r)
         except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
             n += 1
-            print(f"{prefix} {e.req} not found and is required by YOLOv5, attempting auto-update...")
-            print(subprocess.check_output(f"pip install {e.req}", shell=True).decode())
+            print(f"{prefix} {r} not found and is required by YOLOv5, attempting auto-update...")
+            print(subprocess.check_output(f"pip install '{r}'", shell=True).decode())
 
     if n:  # if packages updated
         source = file.resolve() if 'file' in locals() else requirements
@@ -133,7 +147,8 @@ def check_img_size(img_size, s=32):
 def check_imshow():
     # Check if environment supports image displays
     try:
-        assert not isdocker(), 'cv2.imshow() is disabled in Docker environments'
+        assert not is_docker(), 'cv2.imshow() is disabled in Docker environments'
+        assert not is_colab(), 'cv2.imshow() is disabled in Google Colab environments'
         cv2.imshow('test', np.zeros((1, 1, 3)))
         cv2.waitKey(1)
         cv2.destroyAllWindows()
@@ -178,20 +193,34 @@ def check_dataset(dict):
                 raise Exception('Dataset not found.')
 
 
-def download(url, dir='.', multi_thread=False):
-    # Multi-threaded file download function
+def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
+    # Multi-threaded file download and unzip function
     def download_one(url, dir):
         # Download 1 file
         f = dir / Path(url).name  # filename
-        print(f'Downloading {url} to {f}...')
-        torch.hub.download_url_to_file(url, f, progress=True)  # download
-        if f.suffix == '.zip':
-            os.system(f'unzip -qo {f} -d {dir} && rm {f}')  # unzip -quiet -overwrite
+        if not f.exists():
+            print(f'Downloading {url} to {f}...')
+            if curl:
+                os.system(f"curl -L '{url}' -o '{f}' --retry 9 -C -")  # curl download, retry and resume on fail
+            else:
+                torch.hub.download_url_to_file(url, f, progress=True)  # torch download
+        if unzip and f.suffix in ('.zip', '.gz'):
+            print(f'Unzipping {f}...')
+            if f.suffix == '.zip':
+                s = f'unzip -qo {f} -d {dir} && rm {f}'  # unzip -quiet -overwrite
+            elif f.suffix == '.gz':
+                s = f'tar xfz {f} --directory {f.parent}'  # unzip
+            if delete:  # delete zip file after unzip
+                s += f' && rm {f}'
+            os.system(s)
 
     dir = Path(dir)
     dir.mkdir(parents=True, exist_ok=True)  # make directory
-    if multi_thread:
-        ThreadPool(8).imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # 8 threads
+    if threads > 1:
+        pool = ThreadPool(threads)
+        pool.imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # multi-threaded
+        pool.close()
+        pool.join()
     else:
         for u in tuple(url) if isinstance(url, str) else url:
             download_one(u, dir)
@@ -452,6 +481,10 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
 
     nc = prediction.shape[2] - 5  # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
+
+    # Checks
+    assert 0 <= conf_thres <= 1, f'Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0'
+    assert 0 <= iou_thres <= 1, f'Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0'
 
     # Settings
     min_wh, max_wh = 2, 4096  # (pixels) minimum and maximum box width and height
