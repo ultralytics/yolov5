@@ -193,7 +193,7 @@ def check_dataset(dict):
                 raise Exception('Dataset not found.')
 
 
-def download(url, dir='.', unzip=True, curl=False, threads=1):
+def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
     # Multi-threaded file download and unzip function
     def download_one(url, dir):
         # Download 1 file
@@ -207,9 +207,12 @@ def download(url, dir='.', unzip=True, curl=False, threads=1):
         if unzip and f.suffix in ('.zip', '.gz'):
             print(f'Unzipping {f}...')
             if f.suffix == '.zip':
-                os.system(f'unzip -qo {f} -d {dir} && rm {f}')  # unzip -quiet -overwrite
+                s = f'unzip -qo {f} -d {dir} && rm {f}'  # unzip -quiet -overwrite
             elif f.suffix == '.gz':
-                os.system(f'tar xfz {f} --directory {f.parent} && rm {f}')  # unzip
+                s = f'tar xfz {f} --directory {f.parent}'  # unzip
+            if delete:  # delete zip file after unzip
+                s += f' && rm {f}'
+            os.system(s)
 
     dir = Path(dir)
     dir.mkdir(parents=True, exist_ok=True)  # make directory
