@@ -45,11 +45,11 @@ class Conv(nn.Module):
         # self.act = nn.Hardswish() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
         # self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
         # self.act = Mish() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
-        # self.act = FReLU(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        self.act = FReLU(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
         # self.act = AconC(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
         # self.act = MetaAconC(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
         # self.act = SiLU_beta(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
-        self.act = FReLU_noBN_biasFalse(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        # self.act = FReLU_noBN_biasFalse(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
         # self.act = FReLU_noBN_biasTrue(c2) if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
 
     def forward(self, x):
