@@ -12,7 +12,7 @@ import torch.nn as nn
 from PIL import Image
 from torch.cuda import amp
 
-from utils.activations import AconC, MetaAconC, FReLU, SiLU_beta, FReLU_noBN_biasFalse, FReLU_noBN_biasTrue
+from utils.activations import AconC, MetaAconC, FReLU
 from utils.datasets import letterbox
 from utils.general import non_max_suppression, make_divisible, scale_coords, increment_path, xyxy2xywh, save_one_box
 from utils.plots import colors, plot_one_box
