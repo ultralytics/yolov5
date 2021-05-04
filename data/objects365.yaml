@@ -87,7 +87,7 @@ download: |
   for cid, cat in enumerate(names):
       catIds = coco.getCatIds(catNms=[cat])
       imgIds = coco.getImgIds(catIds=catIds)
-      for im in tqdm(coco.loadImgs(imgIds), desc=f'Class {cid}/{len(names)} {cat}'):
+      for im in tqdm(coco.loadImgs(imgIds), desc=f'Class {cid + 1}/{len(names)} {cat}'):
           width, height = im["width"], im["height"]
           path = Path(im["file_name"])  # image filename
           try:
