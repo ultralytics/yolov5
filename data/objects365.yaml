@@ -6,7 +6,7 @@
 #     /yolov5
 
 # train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
-train: ../datasets/objects365/images/train  # 1.7 Million images
+train: ../datasets/objects365/images/train  # 1742289 images
 val: ../datasets/objects365/images/val # 5570 images
 
 # number of classes
@@ -72,9 +72,14 @@ download: |
 
   # Download
   url = "https://dorc.ks3-cn-beijing.ksyun.com/data-set/2020Objects365%E6%95%B0%E6%8D%AE%E9%9B%86/train/"
-  download([url + 'zhiyuan_objv2_train.tar.gz'], dir=dir)  # annotations json
+  download([url + 'zhiyuan_objv2_train.tar.gz'], dir=dir, delete=False)  # annotations json
   download([url + f for f in [f'patch{i}.tar.gz' for i in range(51)]], dir=dir / 'images' / 'train',
            curl=True, delete=False, threads=8)
+
+  # Move
+  train = dir / 'images' / 'train'
+  for f in tqdm(train.rglob('*.jpg'), desc=f'Moving images'):
+      f.rename(train / f.name)  # move to /images/train
 
   # Labels
   coco = COCO(dir / 'zhiyuan_objv2_train.json')
@@ -82,7 +87,7 @@ download: |
   for cid, cat in enumerate(names):
       catIds = coco.getCatIds(catNms=[cat])
       imgIds = coco.getImgIds(catIds=catIds)
-      for im in tqdm(coco.loadImgs(imgIds), desc=f'Class {cid}/{len(names)} {cat}'):
+      for im in tqdm(coco.loadImgs(imgIds), desc=f'Class {cid + 1}/{len(names)} {cat}'):
           width, height = im["width"], im["height"]
           path = Path(im["file_name"])  # image filename
           try:
