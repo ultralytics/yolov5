@@ -28,7 +28,10 @@ matplotlib.use('Agg')  # for writing to files only
 class Colors:
     # Ultralytics color palette https://ultralytics.com/
     def __init__(self):
-        self.palette = [self.hex2rgb(c) for c in matplotlib.colors.TABLEAU_COLORS.values()]
+        # hex = matplotlib.colors.TABLEAU_COLORS.values()
+        hex = ('FF3838', 'FF9D97', 'FF701F', 'F3D09A', 'FFF172', 'FFC804', 'B8E45A', '5AE499', '1A9334', '80FFF0',
+               '2C99A8', 'CCF3FF', '344593', '6473FF', '0018EC', '8438FF', '520085', 'CB38FF', 'FF95C8', 'FF37C7')
+        self.palette = [self.hex2rgb('#' + c) for c in hex]
         self.n = len(self.palette)
 
     def __call__(self, i, bgr=False):
