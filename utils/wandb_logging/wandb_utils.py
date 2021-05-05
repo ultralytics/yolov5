@@ -9,7 +9,7 @@ from tqdm import tqdm
 sys.path.append(str(Path(__file__).parent.parent.parent))  # add utils/ to path
 from utils.datasets import LoadImagesAndLabels
 from utils.datasets import img2label_paths
-from utils.general import colorstr, xywh2xyxy, check_dataset
+from utils.general import colorstr, xywh2xyxy, check_dataset, check_file
 
 try:
     import wandb
@@ -54,7 +54,7 @@ def check_wandb_resume(opt):
 
 
 def process_wandb_config_ddp_mode(opt):
-    with open(opt.data) as f:
+    with open(check_file(opt.data)) as f:
         data_dict = yaml.safe_load(f)  # data dict
     train_dir, val_dir = None, None
     if isinstance(data_dict['train'], str) and data_dict['train'].startswith(WANDB_ARTIFACT_PREFIX):
@@ -115,7 +115,7 @@ class WandbLogger():
     def check_and_upload_dataset(self, opt):
         assert wandb, 'Install wandb to upload dataset'
         check_dataset(self.data_dict)
-        config_path = self.log_dataset_artifact(opt.data,
+        config_path = self.log_dataset_artifact(check_file(opt.data),
                                                 opt.single_cls,
                                                 'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
         print("Created dataset config file ", config_path)
