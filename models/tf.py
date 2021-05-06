@@ -363,7 +363,6 @@ if __name__ == "__main__":
     parser.add_argument('--img-size', nargs='+', type=int, default=[320, 320], help='image size')  # height, width
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--dynamic-batch-size', action='store_true', help='dynamic batch size')
-    parser.add_argument('--no-tfl-detect', action='store_true', help='remove Detect() from TFLite model')
     parser.add_argument('--source', type=str, default='../data/coco128.yaml', help='dir of images or data.yaml file')
     parser.add_argument('--ncalib', type=int, default=100, help='number of calibration images')
     parser.add_argument('--tfl-int8', action='store_true', dest='tfl_int8', help='export TFLite int8 model')
@@ -435,10 +434,6 @@ if __name__ == "__main__":
     if not opt.tf_nms:
         try:
             print('\nStarting TFLite export with TensorFlow %s...' % tf.__version__)
-            if opt.no_tfl_detect:
-                print("Don't export Detect module")
-                m.training = True
-                keras_model = keras.Model(inputs=inputs, outputs=tf_model.predict(inputs))
 
             # fp32 TFLite model export ---------------------------------------------------------------------------------
             # converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
