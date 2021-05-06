@@ -75,8 +75,7 @@ if __name__ == '__main__':
         print(f'\n{prefix} starting export with torch {torch.__version__}...')
         f = opt.weights.replace('.pt', '.torchscript.pt')  # filename
         ts = torch.jit.trace(model, img, strict=False)
-        ts = optimize_for_mobile(ts)  # https://pytorch.org/tutorials/recipes/script_optimized.html
-        ts.save(f)
+        optimize_for_mobile(ts).save(f)  # https://pytorch.org/tutorials/recipes/script_optimized.html
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
         print(f'{prefix} export failure: {e}')
