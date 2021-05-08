@@ -242,6 +242,12 @@ def train(hyp, opt, device, tb_writer=None):
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
     compute_loss = ComputeLoss(model)  # init loss class
+
+    # init tensorboardx tags
+    train_tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss']
+    val_tags = ['val/box_loss', 'val/obj_loss', 'val/cls_loss']
+    lr_tags = ['x/lr0', 'x/lr1', 'x/lr2']
+
     logger.info(f'Image sizes {imgsz} train, {imgsz_test} test\n'
                 f'Using {dataloader.num_workers} dataloader workers\n'
                 f'Logging results to {save_dir}\n'
@@ -337,6 +343,19 @@ def train(hyp, opt, device, tb_writer=None):
                     wandb_logger.log({"Mosaics": [wandb_logger.wandb.Image(str(x), caption=x.name) for x in
                                                   save_dir.glob('train*.jpg') if x.exists()]})
 
+                # SEND RESULTS TO TBX
+                if ni % nb != 0 and ni % opt.tbx_report_train_every_n_batches == 1:
+                    # ni % nb != 0 condition to avoid double-logging anything, ... == 1 condition to log information (almost) right away
+                    for x, tag in zip(mloss[:-1], train_tags):
+                        tb_writer.add_scalar(tag, x, ni)
+
+                    # init tensorboardx 'lr' list
+                    lr = [x['lr'] for x in optimizer.param_groups]  # gather learning rates
+                    for x, tag in zip(lr, lr_tags):
+                        tb_writer.add_scalar(tag, x, ni)
+
+                # TODO: if we want to update val loss more frequently, do it here
+
             # end batch ------------------------------------------------------------------------------------------------
         # end epoch ----------------------------------------------------------------------------------------------------
 
@@ -371,13 +390,14 @@ def train(hyp, opt, device, tb_writer=None):
                 os.system('gsutil cp %s gs://%s/results/results%s.txt' % (results_file, opt.bucket, opt.name))
 
             # Log
-            tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
+            all_tbx_tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
                     'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
                     'val/box_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
                     'x/lr0', 'x/lr1', 'x/lr2']  # params
-            for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
+            for x, tag in zip(list(mloss[:-1]) + list(results) + lr, all_tbx_tags):
+                # TBX UPDATES
                 if tb_writer:
-                    tb_writer.add_scalar(tag, x, epoch)  # tensorboard
+                    tb_writer.add_scalar(tag, x, nb*(epoch+1))  # tensorboard
                 if wandb_logger.wandb:
                     wandb_logger.log({tag: x})  # W&B
 
@@ -489,6 +509,10 @@ if __name__ == '__main__':
     parser.add_argument('--bbox_interval', type=int, default=-1, help='Set bounding-box image logging interval for W&B')
     parser.add_argument('--save_period', type=int, default=-1, help='Log model after every "save_period" epoch')
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
+
+    # custom
+    parser.add_argument('--tbx-report-train-every-n-batches', type=int, default=1000,
+                        help='send tbx updated (training set) metrics after this many batches')
     opt = parser.parse_args()
 
     # Set DDP variables
