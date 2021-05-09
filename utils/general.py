@@ -16,6 +16,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pandas as pd
+import pkg_resources as pkg
 import torch
 import torchvision
 import yaml
@@ -107,10 +108,19 @@ def check_git_status():
         print(e)
 
 
+def check_python(minimum='3.7.0', required=True):
+    # Check current python version vs. required python version
+    current = platform.python_version()
+    result = pkg.parse_version(current) >= pkg.parse_version(minimum)
+    if required:
+        assert result, f'Python {minimum} required by YOLOv5, but Python {current} is currently installed'
+    return result
+
+
 def check_requirements(requirements='requirements.txt', exclude=()):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
-    import pkg_resources as pkg
     prefix = colorstr('red', 'bold', 'requirements:')
+    check_python()  # check python version
     if isinstance(requirements, (str, Path)):  # requirements.txt file
         file = Path(requirements)
         if not file.exists():
