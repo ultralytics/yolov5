@@ -36,3 +36,6 @@ flipud: 0.00856
 fliplr: 0.5
 mosaic: 1.0
 mixup: 0.243
+ar_thr: 20 # aspect ratio threshold for box candidates
+area_thr: 0.1 # area threshold for box candidates
+wh_thr: 2 # width/height threshold for box canda=idates
