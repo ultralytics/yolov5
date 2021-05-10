@@ -19,7 +19,7 @@ train: # 3422 images
 val: # 748 images (WARNING: train set contains ethz_1)
   - ../datasets/GlobalWheat2020/images/ethz_1
 
-test: # 1276
+test: # 1276 images
   - ../datasets/GlobalWheat2020/images/utokyo_1
   - ../datasets/GlobalWheat2020/images/utokyo_2
   - ../datasets/GlobalWheat2020/images/nau_1
