@@ -30,6 +30,7 @@ if __name__ == '__main__':
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--train', action='store_true', help='model.train() mode')
+    parser.add_argument('--optimize', action='store_true', help='optimize TorchScript for mobile')  # TorchScript-only
     parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')  # ONNX-only
     parser.add_argument('--simplify', action='store_true', help='simplify ONNX model')  # ONNX-only
     opt = parser.parse_args()
@@ -78,7 +79,7 @@ if __name__ == '__main__':
         print(f'\n{prefix} starting export with torch {torch.__version__}...')
         f = opt.weights.replace('.pt', '.torchscript.pt')  # filename
         ts = torch.jit.trace(model, img, strict=False)
-        optimize_for_mobile(ts).save(f)  # https://pytorch.org/tutorials/recipes/script_optimized.html
+        (optimize_for_mobile(ts) if opt.optimize else ts).save(f)
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
         print(f'{prefix} export failure: {e}')
@@ -123,7 +124,6 @@ if __name__ == '__main__':
         import coremltools as ct
 
         print(f'{prefix} starting export with coremltools {ct.__version__}...')
-        # convert model from torchscript and apply pixel scaling as per detect.py
         model = ct.convert(ts, inputs=[ct.ImageType(name='image', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
         f = opt.weights.replace('.pt', '.mlmodel')  # filename
         model.save(f)
