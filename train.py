@@ -373,6 +373,11 @@ def train(hyp, opt, device, tb_writer=None):
                     'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
                     'val/box_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
                     'x/lr0', 'x/lr1', 'x/lr2']  # params
+            if opt.mmdet_tags:
+                tags = ['train/loss_bbox', 'train/loss_obj', 'train/loss_cls',  # train loss
+                        'val/precision', 'val/recall', 'val/bbox_mAP_50', 'val/bbox_mAP',
+                        'val/loss_bbox', 'val/loss_obj', 'val/loss_cls',  # val loss
+                        'learning_rate_0', 'learning_rate_1', 'learning_rate_2']  # params
             for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
                 if tb_writer:
                     tb_writer.add_scalar(tag, x, epoch)  # tensorboard
@@ -487,6 +492,7 @@ if __name__ == '__main__':
     parser.add_argument('--bbox_interval', type=int, default=-1, help='Set bounding-box image logging interval for W&B')
     parser.add_argument('--save_period', type=int, default=-1, help='Log model after every "save_period" epoch')
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
+    parser.add_argument('--mmdet_tags', action='store_true', help='Log train/val tags in MMDetection format')
     opt = parser.parse_args()
 
     # Set DDP variables
