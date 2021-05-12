@@ -27,13 +27,13 @@ if __name__ == '__main__':
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')  # height, width
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--include', nargs='+', default=['torchscript', 'onnx', 'coreml'], help='include formats')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--train', action='store_true', help='model.train() mode')
     parser.add_argument('--optimize', action='store_true', help='optimize TorchScript for mobile')  # TorchScript-only
     parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')  # ONNX-only
     parser.add_argument('--simplify', action='store_true', help='simplify ONNX model')  # ONNX-only
-    parser.add_argument('--include', nargs='+', default=['onnx', 'torchscript', 'coreml'], help='include formats')
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     opt.include = [x.lower() for x in opt.include]
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     print(f"\n{colorstr('PyTorch:')} starting from {opt.weights} ({file_size(opt.weights):.1f} MB)")
 
     # TorchScript export -----------------------------------------------------------------------------------------------
-    if 'torchscript' in opt.include:
+    if 'torchscript' in opt.include or 'coreml' in opt.include:
         prefix = colorstr('TorchScript:')
         try:
             print(f'\n{prefix} starting export with torch {torch.__version__}...')
@@ -130,8 +130,7 @@ if __name__ == '__main__':
             import coremltools as ct
 
             print(f'{prefix} starting export with coremltools {ct.__version__}...')
-            model = ct.convert(ts, inputs=[ct.ImageType(name='image', shape=img.shape, scale=1 / 255.0,
-                                                        bias=[0, 0, 0])])
+            model = ct.convert(ts, inputs=[ct.ImageType('image', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
             f = opt.weights.replace('.pt', '.mlmodel')  # filename
             model.save(f)
             print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
