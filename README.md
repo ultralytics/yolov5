@@ -130,7 +130,7 @@ import torch
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
 
 # Image
-img = 'https://github.com/ultralytics/yolov5/raw/master/data/images/zidane.jpg'
+img = 'https://ultralytics.com/images/zidane.jpg'
 
 # Inference
 results = model(img)
