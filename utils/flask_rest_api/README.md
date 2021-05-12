@@ -1,5 +1,5 @@
 # Flask REST API
-[REST](https://en.wikipedia.org/wiki/Representational_state_transfer) [API](https://en.wikipedia.org/wiki/API)s are commonly used to expose Machine Learning (ML)  models to other services. This folder contains an example REST API created using Flask to expose the `yolov5s` model from [PyTorch Hub](https://pytorch.org/hub/ultralytics_yolov5/).
+[REST](https://en.wikipedia.org/wiki/Representational_state_transfer) [API](https://en.wikipedia.org/wiki/API)s are commonly used to expose Machine Learning (ML)  models to other services. This folder contains an example REST API created using Flask to expose the YOLOv5s model from [PyTorch Hub](https://pytorch.org/hub/ultralytics_yolov5/).
 
 ## Requirements
 
@@ -22,30 +22,47 @@ Then use [curl](https://curl.se/) to perform a request:
 $ curl -X POST -F image=@zidane.jpg 'http://localhost:5000/v1/object-detection/yolov5s'`
 ```
 
-The model inference results are returned:
+The model inference results are returned as a JSON response:
 
-```shell
-[{'class': 0,
-  'confidence': 0.8197850585,
-  'name': 'person',
-  'xmax': 1159.1403808594,
-  'xmin': 750.912902832,
-  'ymax': 711.2583007812,
-  'ymin': 44.0350036621},
- {'class': 0,
-  'confidence': 0.5667674541,
-  'name': 'person',
-  'xmax': 1065.5523681641,
-  'xmin': 116.0448303223,
-  'ymax': 713.8904418945,
-  'ymin': 198.4603881836},
- {'class': 27,
-  'confidence': 0.5661227107,
-  'name': 'tie',
-  'xmax': 516.7975463867,
-  'xmin': 416.6880187988,
-  'ymax': 717.0524902344,
-  'ymin': 429.2020568848}]
+```json
+[
+  {
+    "class": 0,
+    "confidence": 0.8900438547,
+    "height": 0.9318675399,
+    "name": "person",
+    "width": 0.3264600933,
+    "xcenter": 0.7438579798,
+    "ycenter": 0.5207948685
+  },
+  {
+    "class": 0,
+    "confidence": 0.8440024257,
+    "height": 0.7155083418,
+    "name": "person",
+    "width": 0.6546785235,
+    "xcenter": 0.427829951,
+    "ycenter": 0.6334488392
+  },
+  {
+    "class": 27,
+    "confidence": 0.3771208823,
+    "height": 0.3902671337,
+    "name": "tie",
+    "width": 0.0696444362,
+    "xcenter": 0.3675483763,
+    "ycenter": 0.7991207838
+  },
+  {
+    "class": 27,
+    "confidence": 0.3527112305,
+    "height": 0.1540903747,
+    "name": "tie",
+    "width": 0.0336618312,
+    "xcenter": 0.7814827561,
+    "ycenter": 0.5065554976
+  }
+]
 ```
 
 An example python script to perform inference using [requests](https://docs.python-requests.org/en/master/) is given in `example_request.py`
