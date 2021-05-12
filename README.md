@@ -72,7 +72,7 @@ $ pip install -r requirements.txt
 * [Supervisely Ecosystem](https://github.com/ultralytics/yolov5/issues/2518)&nbsp; 🌟 NEW
 * [Multi-GPU Training](https://github.com/ultralytics/yolov5/issues/475)
 * [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)&nbsp; ⭐ NEW
-* [ONNX and TorchScript Export](https://github.com/ultralytics/yolov5/issues/251)
+* [TorchScript, ONNX, CoreML Export](https://github.com/ultralytics/yolov5/issues/251) 🚀
 * [Test-Time Augmentation (TTA)](https://github.com/ultralytics/yolov5/issues/303)
 * [Model Ensembling](https://github.com/ultralytics/yolov5/issues/318)
 * [Model Pruning/Sparsity](https://github.com/ultralytics/yolov5/issues/304)
@@ -130,7 +130,7 @@ import torch
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
 
 # Image
-img = 'https://github.com/ultralytics/yolov5/raw/master/data/images/zidane.jpg'
+img = 'https://ultralytics.com/images/zidane.jpg'
 
 # Inference
 results = model(img)
