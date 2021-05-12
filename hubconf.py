@@ -9,16 +9,13 @@ from pathlib import Path
 
 import torch
 
-from models.yolo import Model, attempt_load
 from utils.general import check_requirements, set_logging
-from utils.google_utils import attempt_download
-from utils.torch_utils import select_device
 
 dependencies = ['torch', 'yaml']
 check_requirements(Path(__file__).parent / 'requirements.txt', exclude=('tensorboard', 'pycocotools', 'thop'))
 
 
-def create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
+def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
     """Creates a specified YOLOv5 model
 
     Arguments:
@@ -32,6 +29,10 @@ def create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbos
     Returns:
         YOLOv5 pytorch model
     """
+    from models.yolo import Model, attempt_load
+    from utils.google_utils import attempt_download
+    from utils.torch_utils import select_device
+
     set_logging(verbose=verbose)
     fname = Path(name).with_suffix('.pt')  # checkpoint filename
     try:
@@ -62,51 +63,51 @@ def create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbos
 
 def custom(path='path/to/model.pt', autoshape=True, verbose=True):
     # YOLOv5 custom or local model
-    return create(path, autoshape=autoshape, verbose=verbose)
+    return _create(path, autoshape=autoshape, verbose=verbose)
 
 
 def yolov5s(pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
     # YOLOv5-small model https://github.com/ultralytics/yolov5
-    return create('yolov5s', pretrained, channels, classes, autoshape, verbose)
+    return _create('yolov5s', pretrained, channels, classes, autoshape, verbose)
 
 
 def yolov5m(pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
     # YOLOv5-medium model https://github.com/ultralytics/yolov5
-    return create('yolov5m', pretrained, channels, classes, autoshape, verbose)
+    return _create('yolov5m', pretrained, channels, classes, autoshape, verbose)
 
 
 def yolov5l(pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
     # YOLOv5-large model https://github.com/ultralytics/yolov5
-    return create('yolov5l', pretrained, channels, classes, autoshape, verbose)
+    return _create('yolov5l', pretrained, channels, classes, autoshape, verbose)
 
 
 def yolov5x(pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
     # YOLOv5-xlarge model https://github.com/ultralytics/yolov5
-    return create('yolov5x', pretrained, channels, classes, autoshape, verbose)
+    return _create('yolov5x', pretrained, channels, classes, autoshape, verbose)
 
 
 def yolov5s6(pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
     # YOLOv5-small-P6 model https://github.com/ultralytics/yolov5
-    return create('yolov5s6', pretrained, channels, classes, autoshape, verbose)
+    return _create('yolov5s6', pretrained, channels, classes, autoshape, verbose)
 
 
 def yolov5m6(pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
     # YOLOv5-medium-P6 model https://github.com/ultralytics/yolov5
-    return create('yolov5m6', pretrained, channels, classes, autoshape, verbose)
+    return _create('yolov5m6', pretrained, channels, classes, autoshape, verbose)
 
 
 def yolov5l6(pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
     # YOLOv5-large-P6 model https://github.com/ultralytics/yolov5
-    return create('yolov5l6', pretrained, channels, classes, autoshape, verbose)
+    return _create('yolov5l6', pretrained, channels, classes, autoshape, verbose)
 
 
 def yolov5x6(pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
     # YOLOv5-xlarge-P6 model https://github.com/ultralytics/yolov5
-    return create('yolov5x6', pretrained, channels, classes, autoshape, verbose)
+    return _create('yolov5x6', pretrained, channels, classes, autoshape, verbose)
 
 
 if __name__ == '__main__':
-    model = create(name='yolov5s', pretrained=True, channels=3, classes=80, autoshape=True, verbose=True)  # pretrained
+    model = _create(name='yolov5s', pretrained=True, channels=3, classes=80, autoshape=True, verbose=True)  # pretrained
     # model = custom(path='path/to/model.pt')  # custom
 
     # Verify inference
