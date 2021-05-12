@@ -33,10 +33,10 @@ if __name__ == '__main__':
     parser.add_argument('--optimize', action='store_true', help='optimize TorchScript for mobile')  # TorchScript-only
     parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')  # ONNX-only
     parser.add_argument('--simplify', action='store_true', help='simplify ONNX model')  # ONNX-only
-    parser.add_argument('--exclude', action='append', default=[], help='exclude [onnx, torchscript, coreml] exports')
+    parser.add_argument('--include', nargs='+', default=['onnx', 'torchscript', 'coreml'], help='include formats')
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
-    opt.exclude = [x.lower() for x in opt.exclude]
+    opt.include = [x.lower() for x in opt.include]
     print(opt)
     set_logging()
     t = time.time()
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     print(f"\n{colorstr('PyTorch:')} starting from {opt.weights} ({file_size(opt.weights):.1f} MB)")
 
     # TorchScript export -----------------------------------------------------------------------------------------------
-    if 'torchscript' not in opt.exclude:
+    if 'torchscript' in opt.include:
         prefix = colorstr('TorchScript:')
         try:
             print(f'\n{prefix} starting export with torch {torch.__version__}...')
@@ -88,7 +88,7 @@ if __name__ == '__main__':
             print(f'{prefix} export failure: {e}')
 
     # ONNX export ------------------------------------------------------------------------------------------------------
-    if 'onnx' not in opt.exclude:
+    if 'onnx' in opt.include:
         prefix = colorstr('ONNX:')
         try:
             import onnx
@@ -124,7 +124,7 @@ if __name__ == '__main__':
             print(f'{prefix} export failure: {e}')
 
     # CoreML export ----------------------------------------------------------------------------------------------------
-    if 'coreml' not in opt.exclude:
+    if 'coreml' in opt.include:
         prefix = colorstr('CoreML:')
         try:
             import coremltools as ct
