@@ -1,7 +1,7 @@
-"""Exports a YOLOv5 *.pt model to ONNX and TorchScript formats
+"""Exports a YOLOv5 *.pt model to TorchScript, ONNX, CoreML formats
 
 Usage:
-    $ export PYTHONPATH="$PWD" && python models/export.py --weights yolov5s.pt --img 640 --batch 1
+    $ python path/to/models/export.py --weights yolov5s.pt --img 640 --batch 1
 """
 
 import argparse
