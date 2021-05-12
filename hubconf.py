@@ -5,14 +5,7 @@ Usage:
     model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
 """
 
-from pathlib import Path
-
 import torch
-
-from utils.general import check_requirements, set_logging
-
-dependencies = ['torch', 'yaml']
-check_requirements(Path(__file__).parent / 'requirements.txt', exclude=('tensorboard', 'pycocotools', 'thop'))
 
 
 def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True):
@@ -29,11 +22,16 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     Returns:
         YOLOv5 pytorch model
     """
+    from pathlib import Path
+
     from models.yolo import Model, attempt_load
+    from utils.general import check_requirements, set_logging
     from utils.google_utils import attempt_download
     from utils.torch_utils import select_device
 
+    check_requirements(Path(__file__).parent / 'requirements.txt', exclude=('tensorboard', 'pycocotools', 'thop'))
     set_logging(verbose=verbose)
+
     fname = Path(name).with_suffix('.pt')  # checkpoint filename
     try:
         if pretrained and channels == 3 and classes == 80:
