@@ -21,7 +21,7 @@ pandas
 
 # export --------------------------------------
 # coremltools>=4.1
-# onnx>=1.8.1
+# onnx>=1.9.0
 # scikit-learn==0.19.2  # for coreml quantization
 
 # extras --------------------------------------
