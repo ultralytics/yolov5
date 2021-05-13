@@ -1,0 +1,5 @@
+names:
+- graph
+nc: 1
+train: /home/motive/PycharmProjects/yolov5-private/data/graph_area/train.txt
+val: /home/motive/PycharmProjects/yolov5-private/data/graph_area/val.txt

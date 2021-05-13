@@ -1,0 +1,5 @@
+
+nc: 1
+train: ./data/train.txt
+val: ./data/val.txt
+names: ['pistol']
