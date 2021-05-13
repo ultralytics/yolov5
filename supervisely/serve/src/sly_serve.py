@@ -129,8 +129,12 @@ def inference_image_id(api: sly.Api, task_id, context, state, app_logger):
     app_logger.debug("Input data", extra={"state": state})
     image_id = state["image_id"]
     image_info = api.image.get_info_by_id(image_id)
-    state["image_url"] = image_info.full_storage_url
-    inference_image_url(api, task_id, context, state, app_logger)
+    image_path = os.path.join(my_app.data_dir, sly.rand_str(10) + image_info.name)
+    api.image.download_path(image_id, image_path)
+    ann_json = inference_image_path(image_path, context, state, app_logger)
+    sly.fs.silent_remove(image_path)
+    request_id = context["request_id"]
+    my_app.send_response(request_id, data=ann_json)
 
 
 @my_app.callback("inference_batch_ids")
