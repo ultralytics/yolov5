@@ -25,17 +25,16 @@ download: |
   from utils.general import np, pd, Path, download, xyxy2xywh
 
   # Download
-  dir = Path('../datasets')  # dataset directory
+  datasets = Path('../datasets')  # dataset directory
   urls = ['http://trax-geometry.s3.amazonaws.com/cvpr_challenge/SKU110K_fixed.tar.gz']
-  download(urls, dir=dir, delete=False)
+  download(urls, dir=datasets, delete=False)
 
   # Rename directories
-  new = (dir / 'SKU-110K')
-  if new.exists():
-      shutil.rmtree(new)
-  dir = (dir / 'SKU110K_fixed').rename(new)  # rename dir
+  dir = (datasets / 'SKU-110K')
+  if dir.exists():
+      shutil.rmtree(dir)
+  (datasets / 'SKU110K_fixed').rename(dir)  # rename dir
   (dir / 'labels').mkdir(parents=True, exist_ok=True)  # create labels dir
-  dir = (Path('../datasets') / 'SKU-110K')
 
   # Convert labels
   names = 'image', 'x1', 'y1', 'x2', 'y2', 'class', 'image_width', 'image_height'  # column names
