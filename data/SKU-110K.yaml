@@ -25,7 +25,7 @@ download: |
   from utils.general import np, pd, Path, download, xyxy2xywh
 
   # Download
-  datasets = Path('../datasets')  # dataset directory
+  datasets = Path('../datasets')  # download directory
   urls = ['http://trax-geometry.s3.amazonaws.com/cvpr_challenge/SKU110K_fixed.tar.gz']
   download(urls, dir=datasets, delete=False)
 
