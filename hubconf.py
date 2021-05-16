@@ -51,11 +51,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                     model.names = ckpt['model'].names  # set class names attribute
         if autoshape:
             model = model.autoshape()  # for file/URI/PIL/cv2/np inputs and NMS
-        if device is None:
-            device = select_device('0' if torch.cuda.is_available() else 'cpu')  # default to GPU if available
-        elif isinstance(device, str):
-            device = torch.device(device)
-
+        device = select_device('0' if torch.cuda.is_available() else 'cpu') if device is None else torch.device(device)
         return model.to(device)
 
     except Exception as e:
