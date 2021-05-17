@@ -215,13 +215,13 @@ class NMS(nn.Module):
     conf = 0.25  # confidence threshold
     iou = 0.45  # IoU threshold
     classes = None  # (optional list) filter by class
-    max_det = 300 # maximum number of detections per image
+    max_det = 300  # maximum number of detections per image
 
     def __init__(self):
         super(NMS, self).__init__()
 
     def forward(self, x):
-        return non_max_suppression(x[0], conf_thres=self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)
+        return non_max_suppression(x[0], self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)
 
 
 class AutoShape(nn.Module):
@@ -229,7 +229,7 @@ class AutoShape(nn.Module):
     conf = 0.25  # NMS confidence threshold
     iou = 0.45  # NMS IoU threshold
     classes = None  # (optional list) filter by class
-    max_det = 300 # maximum number of detections per image
+    max_det = 300  # maximum number of detections per image
 
     def __init__(self, model):
         super(AutoShape, self).__init__()
