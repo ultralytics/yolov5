@@ -8,5 +8,6 @@ from utils.google_utils import attempt_download
 
 for x in ['s', 'm', 'l', 'x']:
     attempt_download(f'yolov5{x}.pt')
+    attempt_download(f'yolov5{x}6.pt')
 
 EOF
