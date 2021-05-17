@@ -131,7 +131,7 @@
   "isolate": true,
   "need_gpu": true,
   "headless": true,
-  "instance_version": "6.3.2",
+  "instance_version": "6.4.15",
   "session_tags": [
     "deployed_nn"
   ]
