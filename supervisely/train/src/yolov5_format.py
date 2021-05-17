@@ -3,7 +3,7 @@ import yaml
 import supervisely_lib as sly
 
 
-def transform_label(class_names, img_size, label: sly.Label):
+def _transform_label(class_names, img_size, label: sly.Label):
     class_number = class_names.index(label.obj_class.name)
     rect_geometry = label.geometry.to_bbox()
     center = rect_geometry.center
@@ -15,13 +15,12 @@ def transform_label(class_names, img_size, label: sly.Label):
     return result
 
 
-def _create_data_config(output_dir, meta: sly.ProjectMeta, keep_classes):
+def _create_data_config(output_dir, meta: sly.ProjectMeta):
     class_names = []
     class_colors = []
     for obj_class in meta.obj_classes:
-        if obj_class.name in keep_classes:
-            class_names.append(obj_class.name)
-            class_colors.append(obj_class.color)
+        class_names.append(obj_class.name)
+        class_colors.append(obj_class.color)
 
     data_yaml = {
         "train": os.path.join(output_dir, "images/train"),
@@ -44,11 +43,11 @@ def _create_data_config(output_dir, meta: sly.ProjectMeta, keep_classes):
     return data_yaml
 
 
-def transform_annotation(ann, class_names, save_path):
+def _transform_annotation(ann, class_names, save_path):
     yolov5_ann = []
     for label in ann.labels:
         if label.obj_class.name in class_names:
-            yolov5_ann.append(transform_label(class_names, ann.img_size, label))
+            yolov5_ann.append(_transform_label(class_names, ann.img_size, label))
 
     with open(save_path, 'w') as file:
         file.write("\n".join(yolov5_ann))
@@ -67,9 +66,9 @@ def _process_split(project, class_names, images_dir, labels_dir, split, progress
             ann = sly.Annotation.from_json(ann_json, project.meta)
 
             save_ann_path = os.path.join(labels_dir, f"{sly.fs.get_file_name(item_name)}.txt")
-            empty = transform_annotation(ann, class_names, save_ann_path)
+            empty = _transform_annotation(ann, class_names, save_ann_path)
             if empty:
-                sly.logger.warning(f"Empty annotation dataset={dataset_name} image={item_name}")
+                sly.logger.warning(f"Empty annotation: dataset={dataset_name}, image={item_name}")
 
             img_path = dataset.get_img_path(item_name)
             save_img_path = os.path.join(images_dir, item_name)
@@ -78,12 +77,31 @@ def _process_split(project, class_names, images_dir, labels_dir, split, progress
         progress_cb(len(batch))
 
 
-def filter_and_transform_labels(input_dir, train_classes,
-                                train_split, val_split,
-                                output_dir, progress_cb):
-    project = sly.Project(input_dir, sly.OpenMode.READ)
-    data_yaml = _create_data_config(output_dir, project.meta, train_classes)
+def _transform_set(set_name, data_yaml, project_meta, items, progress_cb):
+    res_images_dir = data_yaml[set_name]
+    res_labels_dir = data_yaml[f"labels_{set_name}"]
+    classes_names = data_yaml["names"]
 
-    _process_split(project, data_yaml["names"], data_yaml["train"], data_yaml["labels_train"], train_split, progress_cb)
-    _process_split(project, data_yaml["names"], data_yaml["val"], data_yaml["labels_val"], val_split, progress_cb)
+    used_names = set()
+    for batch in sly.batched(items, batch_size=max(int(len(items) / 50), 10)):
+        for item in batch:
+            ann = sly.Annotation.load_json_file(item.ann_path, project_meta)
+            _item_name = sly._utils.generate_free_name(used_names, sly.fs.get_file_name(item.name))
+            used_names.add(_item_name)
 
+            _ann_name = f"{_item_name}.txt"
+            _img_name = f"{_item_name}{sly.fs.get_file_ext(item.img_path)}"
+
+            save_ann_path = os.path.join(res_labels_dir, _ann_name)
+            _transform_annotation(ann, classes_names, save_ann_path)
+            save_img_path = os.path.join(res_images_dir, _img_name)
+            sly.fs.copy_file(item.img_path, save_img_path)  # hardlink not working with yolov5 ds caches
+        progress_cb(len(batch))
+
+
+def transform(sly_project_dir, yolov5_output_dir, train_set, val_set, progress_cb):
+    project = sly.Project(sly_project_dir, sly.OpenMode.READ)
+    data_yaml = _create_data_config(yolov5_output_dir, project.meta)
+
+    _transform_set("train", data_yaml, project.meta, train_set, progress_cb)
+    _transform_set("val", data_yaml, project.meta, val_set, progress_cb)

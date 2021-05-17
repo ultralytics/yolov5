@@ -1,0 +1,115 @@
+<sly-card class="mt15"
+          title="6. Training progress"
+          subtitle="Task progress, detailed logs, metrics charts, and other visualizations">
+    <el-button type="primary"
+               :disabled="state.selectedClasses.length === 0 ||
+                              (state.modelWeightsOptions === 2 && state.weightsPath === '') ||
+                              state.started === true"
+               @click="state.started = true; command('train')">
+        Start training
+    </el-button>
+    <div v-show="state.selectedClasses.length === 0" class="mt10" style="color: red">
+        0 training classes are selected
+    </div>
+    <div v-show="state.modelWeightsOptions === 2 && state.weightsPath === ''" style="color: red">
+        Path to model weights is not defined
+    </div>
+    <div v-if="data.progressName.length > 0" class="mt10">
+        <div style="color: #20a0ff">{{data.progressName}}: {{data.currentProgressLabel}} /
+            {{data.totalProgressLabel}}
+        </div>
+        <el-progress :percentage="Math.round(data.currentProgress * 100 / data.totalProgress)"></el-progress>
+    </div>
+    <el-collapse class="mt15" v-model="state.activeNames">
+        <el-collapse-item title="Logs" name="logs">
+            <sly-logs class="mt15" :task-id="data.taskId"></sly-logs>
+        </el-collapse-item>
+        <el-collapse-item title="Labels stats visualization" name="labels">
+            <sly-grid-gallery v-show="data.labelsVis.content.layout.length > 0"
+                              :content="data.labelsVis.content"
+                              style="width:100%;"
+                              :options="{enableZoom: false, syncViews: false, showPreview: true, selectable: true}"
+            >
+                <template v-slot:card-footer="{ annotation }">
+<!--                    style="color: #20a0ff"-->
+                    <div>{{annotation.name}}</div>
+                </template>
+            </sly-grid-gallery>
+        </el-collapse-item>
+        <el-collapse-item title="Train batches visualization" name="train">
+            <sly-grid-gallery v-show="data.vis.content.layout.length > 0"
+                              :content="data.vis.content"
+                              style="width:100%;"
+                              :options="{enableZoom: false, syncViews: false, showPreview: true, selectable: true}"
+            >
+                <template v-slot:card-footer="{ annotation }">
+<!--                    style="color: #20a0ff"-->
+                    <div>{{annotation.name}}</div>
+                </template>
+            </sly-grid-gallery>
+        </el-collapse-item>
+        <el-collapse-item title="Metrics" name="metrics">
+            <sly-field title="Smoothing"
+                       description="Change the smoothing of line charts">
+                <sly-icon slot="icon" :options="{ color: '#006ad4', bgColor: '#bbe2ff', rounded: false }">
+                    <i class="zmdi zmdi-trending-up"></i>
+                </sly-icon>
+                <el-slider
+                        :value="state.smoothing"
+                        :min="0" :max="0.95" :step="0.05" show-input
+                        style="width: 450px;"
+                        @input="(val)=>{
+                                state.smoothing = val;
+                                data.mGIoU.options.smoothingWeight = val;
+                                data.mObjectness.options.smoothingWeight = val;
+                                data.mClassification.options.smoothingWeight = val;
+                            }"
+                >
+                </el-slider>
+            </sly-field>
+            <div class="fflex" v-if="state.activeNames.includes('metrics')">
+                <sly-line-chart
+                        style="width: 33%;"
+                        :options.sync="data.mGIoU.options"
+                        :content="data.mGIoU.series">
+                </sly-line-chart>
+                <sly-line-chart
+                        style="width: 33%;"
+                        :options.sync="data.mObjectness.options"
+                        :content="data.mObjectness.series">
+                </sly-line-chart>
+                <sly-line-chart
+                        style="width: 33%;"
+                        :options.sync="data.mClassification.options"
+                        :content="data.mClassification.series">
+                </sly-line-chart>
+            </div>
+            <div class="fflex mt15" v-if="state.activeNames.includes('metrics')">
+                <sly-line-chart
+                        style="width: 33%;"
+                        :options.sync="data.mPR.options"
+                        :content="data.mPR.series">
+                </sly-line-chart>
+                <sly-line-chart
+                        style="width: 33%;"
+                        :options.sync="data.mMAP.options"
+                        :content="data.mMAP.series">
+                </sly-line-chart>
+                <div style="width: 33%;"></div>
+            </div>
+        </el-collapse-item>
+        <el-collapse-item title="Predictions visualization" name="pred">
+            <sly-grid-gallery v-show="data.predVis.content.layout.length > 0"
+                              :content="data.predVis.content"
+                              style="width:100%;"
+                              :options="{enableZoom: true, syncViews: true, showPreview: true, selectable: false,
+                                  syncViewsBindings:data.syncBindings}"
+            >
+                <template v-slot:card-footer="{ annotation }">
+<!--                    style="color: #20a0ff"-->
+                    <div>{{annotation.name}}</div>
+                </template>
+            </sly-grid-gallery>
+        </el-collapse-item>
+    </el-collapse>
+</sly-card>

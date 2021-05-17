@@ -1,0 +1,14 @@
+<sly-card class="mt15" title="7. Training artifacts" subtitle="Checkpoints, logs and other visualizations">
+    <div style="color: #20a0ff" v-if="!data.outputUrl">
+        Link to the directory with training artifacts will be here once training is finished
+    </div>
+
+    <sly-field v-if="data.outputUrl"
+               title="Training artifacts"
+               description="Training artifacts has been uploaded to Team Files">
+        <a slot="title" target="_blank" :href="`${data.outputUrl}`">{{data.outputName}}</a>
+        <sly-icon slot="icon" :options="{ color: '#33c94c', bgColor: '#d9f7e4', rounded: false }">
+            <i class="zmdi zmdi-folder"></i>
+        </sly-icon>
+    </sly-field>
+</sly-card>

@@ -74,7 +74,7 @@ YOLOv5 is one of the best available detectors. And we are proud to announce its 
 
 # For Developers
 - you can use sources of [Serve YOLOv5 app](https://github.com/supervisely-ecosystem/yolov5/tree/master/supervisely/serve) as example of how to prepare weights, initialize model and apply it to a folder with images (or to images URLs)
-- This apps collection is based on the original YOLOv5 [release v4.0](https://github.com/ultralytics/yolov5/releases/tag/v4.0). Once a next official release is available, all apps will be synchronized with it and also released with the new versions. Before running any app you can choose what version to use. Also Supervisely Team will pull updates from original master branch from time to time.
+- This apps collection is based on the original YOLOv5 [release v5.0](https://github.com/ultralytics/yolov5/releases/tag/v5.0). Once a next official release is available, all apps will be synchronized with it and also released with the new versions. Before running any app you can choose what version to use. Also Supervisely Team will pull updates from original master branch from time to time.
 
 # Contact & Questions & Suggestions
 

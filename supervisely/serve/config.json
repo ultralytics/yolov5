@@ -10,11 +10,120 @@
   "docker_image": "supervisely/base-pytorch:6.0.21",
   "main_script": "supervisely/serve/src/sly_serve.py",
   "modal_template": "supervisely/serve/src/modal.html",
+  "modal_width": 700,
   "modal_template_state": {
     "modelWeightsOptions": "pretrained",
-    "modelSize": "yolov5s.pt",
+    "selectedModel": "YOLOv5s",
     "device": "0",
-    "weightsPath": ""
+    "weightsPath": "",
+    "models": [
+        {
+            "config": "",
+            "weightsUrl": "",
+            "Model": "YOLOv5s",
+            "Size": 640,
+            "mAP^val": 36.7,
+            "mAP^test": 36.7,
+            "mAP^val_0.5": 55.4,
+            "Speed": 2.0,
+            "Params": 7.3,
+            "FLOPS": 17.0
+        },
+        {
+            "config": "",
+            "weightsUrl": "",
+            "Model": "YOLOv5m",
+            "Size": 640,
+            "mAP^val": 44.5,
+            "mAP^test": 44.5,
+            "mAP^val_0.5": 63.1,
+            "Speed": 2.7,
+            "Params": 21.4,
+            "FLOPS": 51.3
+        },
+        {
+            "config": "",
+            "weightsUrl": "",
+            "Model": "YOLOv5l",
+            "Size": 640,
+            "mAP^val": 48.2,
+            "mAP^test": 48.2,
+            "mAP^val_0.5": 66.9,
+            "Speed": 3.8,
+            "Params": 47.0,
+            "FLOPS": 115.4
+        },
+        {
+            "config": "",
+            "weightsUrl": "",
+            "Model": "YOLOv5x",
+            "Size": 640,
+            "mAP^val": 50.4,
+            "mAP^test": 50.4,
+            "mAP^val_0.5": 68.8,
+            "Speed": 6.1,
+            "Params": 87.7,
+            "FLOPS": 218.8
+        },
+        {
+            "config": "",
+            "weightsUrl": "",
+            "Model": "YOLOv5s6",
+            "Size": 1280,
+            "mAP^val": 43.3,
+            "mAP^test": 43.3,
+            "mAP^val_0.5": 61.9,
+            "Speed": 4.3,
+            "Params": 12.7,
+            "FLOPS": 17.4
+        },
+        {
+            "config": "",
+            "weightsUrl": "",
+            "Model": "YOLOv5m6",
+            "Size": 1280,
+            "mAP^val": 50.5,
+            "mAP^test": 50.5,
+            "mAP^val_0.5": 68.7,
+            "Speed": 8.4,
+            "Params": 35.9,
+            "FLOPS": 52.4
+        },
+        {
+            "config": "",
+            "weightsUrl": "",
+            "Model": "YOLOv5l6",
+            "Size": 1280,
+            "mAP^val": 53.4,
+            "mAP^test": 53.4,
+            "mAP^val_0.5": 71.1,
+            "Speed": 12.3,
+            "Params": 77.2,
+            "FLOPS": 117.7
+        },
+        {
+            "config": "",
+            "weightsUrl": "",
+            "Model": "YOLOv5x6",
+            "Size": 1280,
+            "mAP^val": 54.4,
+            "mAP^test": 54.4,
+            "mAP^val_0.5": 72.0,
+            "Speed": 22.4,
+            "Params": 141.8,
+            "FLOPS": 222.9
+        }
+    ],
+    "modelColumns": [
+        {"key": "Model", "title": "Model", "subtitle": null},
+        {"key": "Size", "title": "Size", "subtitle": "(pixels)"},
+        {"key": "mAP^val", "title": "mAP<sub>val</sub>", "subtitle": "0.5:0.95"},
+        {"key": "mAP^test", "title": "mAP<sub>test</sub>", "subtitle": "0.5:0.95"},
+        {"key": "mAP^val_0.5", "title": "mAP<sub>val</sub>", "subtitle": "0.5"},
+        {"key": "Speed", "title": "Speed", "subtitle": "V100 (ms)"},
+        {"key": "Params", "title": "Params", "subtitle": "(M)"},
+        {"key": "FLOPS", "title": "FLOPS", "subtitle": "640 (B)"}
+    ]
   },
   "task_location": "application_sessions",
   "icon": "https://i.imgur.com/2U6HufM.png",

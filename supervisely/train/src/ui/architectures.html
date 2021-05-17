@@ -1,0 +1,46 @@
+<sly-card class="mt15"
+          title="4. Model settings"
+          subtitle="Choose model size or how weights should be initialized">
+    <el-tabs type="border-card" class="el-tabs-cards" v-model="state.weightsInitialization">
+        <el-tab-pane name="coco">
+            <el-radio slot="label" v-model="state.weightsInitialization" label="coco">
+                Pretrained on COCO
+                <div>Default pretrained checkpoints provided by authors of YOLOv5</div>
+            </el-radio>
+            <table class="beautiful-table">
+                <thead>
+                <tr>
+                    <th v-for="row in data.modelColumns">
+                        <div v-html="row['title']"></div>
+                        <div style="color: #7f858e; font-weight: normal; font-size: 12px;">
+                            {{row["subtitle"]}}
+                        </div>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="model in data.models">
+                    <td v-for="column in data.modelColumns">
+                        <div v-if="column.key === 'Model'">
+                            <el-radio class="radio" v-model="state.selectedModel" :label="model[column.key]">
+                                {{model[column.key]}}
+                            </el-radio>
+                        </div>
+                        <div v-else>
+                            {{model[column.key]}}
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </el-tab-pane>
+        <el-tab-pane name="custom">
+            <el-radio slot="label" v-model="state.weightsInitialization" label="custom">
+                Custom weights
+            </el-radio>
+            <sly-field title="Path to weights file" description="Copy path in Team Files">
+                <el-input v-model="state.weightsPath" placeholder="Path to .pt file in Team Files"></el-input>
+            </sly-field>
+        </el-tab-pane>
+    </el-tabs>
+</sly-card>

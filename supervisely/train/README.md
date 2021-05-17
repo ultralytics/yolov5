@@ -22,6 +22,11 @@
 
 Train YOLOv5 on your custom data. All annotations will be converted to the bounding boxes automatically. Configure Train / Validation splits, model and training hyperparameters. Run on any agent (with GPU) in your team. Monitor progress, metrics, logs and other visualizations withing a single dashboard.  
 
+
+Major releases:
+- **May 17, 2021**: [v5.0 release](https://github.com/supervisely-ecosystem/yolov5/tree/v5.0.0): merge updates from original YOLOv5 repo (including new model architectures), split data to train/val based on datasets or tags, update UI for settings, other fixes
+- **March 3, 2021**: [v4.0 release](https://github.com/supervisely-ecosystem/yolov5/tree/v4.0.9): YOLOv5 is integrated to Supervisely (train / serve / inference)
+
 # How To Use
 
 1. Add app to your team from Ecosystem
@@ -45,4 +50,4 @@ Watch short video for more details:
 
 # Screenshot
 
-<img src="https://i.imgur.com/vAbSv02.jpg"/>
+<img src="https://i.imgur.com/eiROUgb.png"/>

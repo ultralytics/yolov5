@@ -11,28 +11,23 @@ from sly_train_globals import my_app, api, task_id, team_id
 
 def init_script_arguments(state, yolov5_format_dir, input_project_name):
     global local_artifacts_dir, remote_artifacts_dir
+    sys.argv.append("--sly")
+
     data_path = os.path.join(yolov5_format_dir, 'data_config.yaml')
     sys.argv.extend(["--data", data_path])
 
-    try:
-        hyp_content = yaml.safe_load(state["hyp"][state["hypRadio"]])
-        hyp = os.path.join(my_app.data_dir, 'hyp.custom.yaml')
-        with open(hyp, 'w') as f:
-            f.write(state["hyp"][state["hypRadio"]])
-    except yaml.YAMLError as e:
-        sly.logger.error(repr(e))
-        api.app.set_field(task_id, "state.started", False)
-        return
+    hyp_content = yaml.safe_load(state["hyp"][state["hypRadio"]])
+    hyp = os.path.join(my_app.data_dir, 'hyp.custom.yaml')
+    with open(hyp, 'w') as f:
+        f.write(state["hyp"][state["hypRadio"]])
     sys.argv.extend(["--hyp", hyp])
 
-    weights = ""  # random (not tested)
-    if state["modelWeightsOptions"] == 1:
-        weights = state["pretrainedWeights"]
-        cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../models', f"{state['modelSize']}.yaml")
+    if state["weightsInitialization"] == "coco":
+        model_name = state['selectedModel'].lower()
+        _sub_path = "models/hub" if model_name.endswith('6') else "models"
+        cfg = os.path.join(g.root_source_dir, _sub_path, f"{model_name}.yaml")
         sys.argv.extend(["--cfg", cfg])
-    elif state["modelWeightsOptions"] == 2:
-        weights = state["weightsPath"]
-    sys.argv.extend(["--weights", weights])
+    sys.argv.extend(["--weights", state["weightsPath"]])
 
     sys.argv.extend(["--epochs", str(state["epochs"])])
     sys.argv.extend(["--batch-size", str(state["batchSize"])])
@@ -45,30 +40,12 @@ def init_script_arguments(state, yolov5_format_dir, input_project_name):
 
     if "workers" in state:
         sys.argv.extend(["--workers", str(state["workers"])])
+    if state["optimizer"] == "Adam":
+        sys.argv.append("--adam")
 
-    training_dir = os.path.join(my_app.data_dir, 'experiment', input_project_name)
-    experiment_name = str(task_id)
-    local_artifacts_dir = os.path.join(training_dir, experiment_name)
-    _exp_index = 1
-    while sly.fs.dir_exists(local_artifacts_dir):
-        experiment_name = "{}_{:03d}".format(task_id, _exp_index)
-        local_artifacts_dir = os.path.join(training_dir, experiment_name)
-        _exp_index += 1
-    g.local_artifacts_dir = local_artifacts_dir
-
-    sys.argv.extend(["--project", training_dir])
-    sys.argv.extend(["--name", experiment_name])
-
-    sys.argv.append("--sly")
-
-    remote_experiment_name = str(task_id)
-    remote_artifacts_dir = os.path.join("/yolov5_train", input_project_name, remote_experiment_name)
-    _exp_index = 1
-    while api.file.dir_exists(team_id, remote_artifacts_dir):
-        remote_experiment_name = "{}_{:03d}".format(task_id, _exp_index)
-        remote_artifacts_dir = os.path.join("/yolov5_train", input_project_name, remote_experiment_name)
-        _exp_index += 1
-    g.remote_artifacts_dir = remote_artifacts_dir
+    sys.argv.extend(["--metrics_period", str(state["metricsPeriod"])])
+    sys.argv.extend(["--project", g.runs_dir])
+    sys.argv.extend(["--name", g.experiment_name])
 
 
 def send_epoch_log(epoch, epochs, progress):

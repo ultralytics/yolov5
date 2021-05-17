@@ -24,19 +24,19 @@ def init_chart(title, names, xs, ys, smoothing=None):
 def init(data, state):
     demo_x = [[], []] #[[1, 2, 3, 4], [2, 4, 6, 8]]
     demo_y = [[], []] #[[10, 15, 13, 17], [16, 5, 11, 9]]
-    data["mBox"] = init_chart("Box Loss",
-                              names=["train", "val"],
-                              xs=demo_x,
-                              ys=demo_y,
-                              smoothing=0.6)
+    data["mGIoU"] = init_chart("GIoU",
+                               names=["train", "val"],
+                               xs=demo_x,
+                               ys=demo_y,
+                               smoothing=0.6)
 
-    data["mObjectness"] = init_chart("Obj Loss",
+    data["mObjectness"] = init_chart("Objectness",
                                      names=["train", "val"],
                                      xs=demo_x,
                                      ys=demo_y,
                                      smoothing=0.6)
 
-    data["mClassification"] = init_chart("Cls Loss",
+    data["mClassification"] = init_chart("Classification",
                                          names=["train", "val"],
                                          xs=demo_x,
                                          ys=demo_y,
@@ -54,23 +54,24 @@ def init(data, state):
     state["smoothing"] = 0.6
 
 
-def send_metrics(epoch, epochs, metrics):
-    sly.logger.debug(f"Metrics: epoch {epoch} / {epochs}", extra={"metrics": metrics})
+def send_metrics(epoch, epochs, metrics, log_period=1):
+    sly.logger.debug(f"Metrics: epoch {epoch + 1} / {epochs}", extra={"metrics": metrics})
 
-    fields = [
-        {"field": "data.mBox.series[0].data", "payload": [[epoch, metrics["train/box_loss"]]], "append": True},
-        {"field": "data.mBox.series[1].data", "payload": [[epoch, metrics["val/box_loss"]]], "append": True},
+    if epoch % log_period == 0 or epoch + 1 == epochs:
+        fields = [
+            {"field": "data.mGIoU.series[0].data", "payload": [[epoch, metrics["train/box_loss"]]], "append": True},
+            {"field": "data.mGIoU.series[1].data", "payload": [[epoch, metrics["val/box_loss"]]], "append": True},
 
-        {"field": "data.mObjectness.series[0].data", "payload": [[epoch, metrics["train/obj_loss"]]], "append": True},
-        {"field": "data.mObjectness.series[1].data", "payload": [[epoch, metrics["val/obj_loss"]]], "append": True},
+            {"field": "data.mObjectness.series[0].data", "payload": [[epoch, metrics["train/obj_loss"]]], "append": True},
+            {"field": "data.mObjectness.series[1].data", "payload": [[epoch, metrics["val/obj_loss"]]], "append": True},
 
-        {"field": "data.mClassification.series[0].data", "payload": [[epoch, metrics["train/cls_loss"]]], "append": True},
-        {"field": "data.mClassification.series[1].data", "payload": [[epoch, metrics["val/cls_loss"]]], "append": True},
+            {"field": "data.mClassification.series[0].data", "payload": [[epoch, metrics["train/cls_loss"]]], "append": True},
+            {"field": "data.mClassification.series[1].data", "payload": [[epoch, metrics["val/cls_loss"]]], "append": True},
 
-        {"field": "data.mPR.series[0].data", "payload": [[epoch, metrics["metrics/precision"]]], "append": True},
-        {"field": "data.mPR.series[1].data", "payload": [[epoch, metrics["metrics/recall"]]], "append": True},
+            {"field": "data.mPR.series[0].data", "payload": [[epoch, metrics["metrics/precision"]]], "append": True},
+            {"field": "data.mPR.series[1].data", "payload": [[epoch, metrics["metrics/recall"]]], "append": True},
 
-        {"field": "data.mMAP.series[0].data", "payload": [[epoch, metrics["metrics/mAP_0.5"]]], "append": True},
-        {"field": "data.mMAP.series[1].data", "payload": [[epoch, metrics["metrics/mAP_0.5:0.95"]]], "append": True},
-    ]
-    globals.api.app.set_fields(globals.task_id, fields)
+            {"field": "data.mMAP.series[0].data", "payload": [[epoch, metrics["metrics/mAP_0.5"]]], "append": True},
+            {"field": "data.mMAP.series[1].data", "payload": [[epoch, metrics["metrics/mAP_0.5:0.95"]]], "append": True},
+        ]
+        globals.api.app.set_fields(globals.task_id, fields)

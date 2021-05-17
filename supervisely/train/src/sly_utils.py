@@ -36,10 +36,20 @@ def update_uploading_progress(count, api: sly.Api, task_id, progress: sly.Progre
     _update_progress_ui(api, task_id, progress, stdout_print=True)
 
 
+def _save_link_to_ui(local_dir, app_url):
+    # save report to file *.lnk (link to report)
+    name = "open_app.lnk"
+    local_path = os.path.join(local_dir, name)
+    sly.fs.ensure_base_path(local_path)
+    with open(local_path, "w") as text_file:
+        print(app_url, file=text_file)
+
+
 def upload_artifacts(local_dir, remote_dir):
     def _gen_message(current, total):
         return f"Upload artifacts to Team Files [{current}/{total}] "
 
+    _save_link_to_ui(local_dir, globals.my_app.app_url)
     local_files = sly.fs.list_files_recursively(local_dir)
     total_size = sum([sly.fs.get_file_size(file_path) for file_path in local_files])
 

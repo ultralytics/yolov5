@@ -48,24 +48,25 @@ def load_model(weights_path, imgsz=640, device='cpu'):
     else:
         sly.logger.warning(f"Image size is not found in model checkpoint. Use default: {IMG_SIZE}")
         imgsz = IMG_SIZE
-    imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
+    stride = int(model.stride.max())  # model stride
+    imgsz = check_img_size(imgsz, s=stride)  # check img_size
 
     if half:
         model.half()  # to FP16
 
-    img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
-    _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
+    if device.type != 'cpu':
+        model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
 
-    return model, half, device, imgsz
+    return model, half, device, imgsz, stride
 
 
-def inference(model, half, device, imgsz, image: np.ndarray, meta: sly.ProjectMeta, conf_thres=0.25, iou_thres=0.45,
+def inference(model, half, device, imgsz, stride, image: np.ndarray, meta: sly.ProjectMeta, conf_thres=0.25, iou_thres=0.45,
               augment=False, agnostic_nms=False, debug_visualization=False) -> sly.Annotation:
     names = model.module.names if hasattr(model, 'module') else model.names
 
-    img0 = image
+    img0 = image # RGB
     # Padded resize
-    img = letterbox(img0, new_shape=imgsz)[0]
+    img = letterbox(img0, new_shape=imgsz, stride=stride)[0]
     img = img.transpose(2, 0, 1)  # to 3x416x416
     img = np.ascontiguousarray(img)
 

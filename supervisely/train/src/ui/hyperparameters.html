@@ -1,0 +1,75 @@
+<sly-card class="mt15"
+          title="5. Traning hyperparameters"
+          subtitle="Define general settings and advanced configuration (learning rate, augmentations, ...)">
+    <sly-field title="Number of epochs">
+        <el-input-number v-model="state.epochs" :min="1" :max="10000"></el-input-number>
+    </sly-field>
+    <sly-field title="Batch size"
+               description="total batch size for all GPUs. Use the largest batch size your GPU allows.
+                                For example: 16 / 24 / 40 / 64 (batch sizes shown for 16 GB devices)">
+        <el-input-number v-model="state.batchSize" :min="6"></el-input-number>
+    </sly-field>
+    <sly-field title="Input image size (in pixels)"
+               description="Image is resized to square">
+        <el-input-number v-model="state.imgSize" :min="64"></el-input-number>
+    </sly-field>
+    <sly-field title="Multi-scale"
+               description="Vary image size +/- 50%">
+        <el-checkbox v-model="state.multiScale">Multi-scale</el-checkbox>
+    </sly-field>
+    <sly-field title="Single class"
+               description="Train multi-class data as single-class (merge all classes to a single one)">
+        <el-checkbox v-model="state.singleClass">Single class</el-checkbox>
+    </sly-field>
+    <sly-field title="Device"
+               description="Cuda device, i.e. 0 or 0,1,2,3 or cpu, or keep empty to select automatically">
+        <el-input v-model="state.device" style="width:250px;"></el-input>
+    </sly-field>
+    <sly-field title="Number of workers"
+               description="Maximum number of dataloader workers, use 0 for debug">
+        <el-input-number v-model="state.workers" :min="0"></el-input-number>
+    </sly-field>
+    <sly-field title="Logging frequency"
+               description="How often metrics should be logged, increase if training data is small">
+        <div class="fflex">
+            <span class="mr5">Log metrics every </span>
+            <el-input-number v-model="state.metricsPeriod" :min="1" :max="state.epochs"></el-input-number>
+            <span class="ml5">epochs</span>
+        </div>
+    </sly-field>
+    <sly-field title="Optimizer"
+               description="Setup corresponding learning rate for Adam in additional configuration, default values are
+                            provided for SGD">
+        <el-select v-model="state.optimizer" placeholder="Select optimizer">
+            <el-option key="SGD" label="SGD" value="SGD"></el-option>
+            <el-option key="Adam" label="Adam" value="Adam"></el-option>
+        </el-select>
+    </sly-field>
+    <sly-field title="Additional configuration"
+               description="Tune learning rate, augmentations and others or just keep default values">
+        <el-tabs type="border-card" class="el-tabs-cards" v-model="state.hypRadio">
+            <el-tab-pane name="scratch">
+                <el-radio slot="label" v-model="state.hypRadio" label="scratch">
+                    Scratch mode
+                    <div>Recommended hyperparameters for training from scratch</div>
+                </el-radio>
+                <el-button class="ml15" type="text" @click="command('restore_hyp')">
+                    Restore Defaults
+                </el-button>
+                <sly-editor v-model="state.hyp[state.hypRadio]"
+                            :options="{height: '525px', mode: 'ace/mode/yaml'}"></sly-editor>
+            </el-tab-pane>
+            <el-tab-pane name="finetune">
+                <el-radio slot="label" v-model="state.hypRadio" label="finetune">
+                    Finetune mode
+                    <div>Recommended hyperparameters for model finutuning</div>
+                </el-radio>
+                <el-button class="ml15" type="text" @click="command('restore_hyp')">
+                    Restore Defaults
+                </el-button>
+                <sly-editor v-model="state.hyp[state.hypRadio]"
+                            :options="{height: '525px', mode: 'ace/mode/yaml'}"></sly-editor>
+            </el-tab-pane>
+        </el-tabs>
+    </sly-field>
+</sly-card>

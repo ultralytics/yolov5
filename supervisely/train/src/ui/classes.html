@@ -1,0 +1,27 @@
+<sly-card class="mt15"
+          title="2. Training classes"
+          subtitle="Select classes, that should be used for training. Training supports only classes of shape
+                        Rectangle, other shapes are transformed to it automatically.">
+    <el-table
+            class="ultra-table"
+            :data="data.classes"
+            style="width: 100%"
+            max-height="500"
+            @selection-change="
+                (val) => {
+                    state.selectedClasses = val.map(x => x.title);
+                }
+                "
+    >
+        <el-table-column type="selection" width="55"></el-table-column>
+        <el-table-column label="Name" prop="title" sortable>
+            <template scope="scope">
+                <i class="zmdi zmdi-circle mr5" :style="{color: scope.row.color}"></i>
+                {{ scope.row.title }}
+            </template>
+        </el-table-column>
+        <el-table-column prop="shape" label="Shape" sortable width="180"></el-table-column>
+        <el-table-column prop="imagesCount" label="Images count" sortable width="150"></el-table-column>
+        <el-table-column prop="objectsCount" label="Objects count" sortable width="180"></el-table-column>
+    </el-table>
+</sly-card>

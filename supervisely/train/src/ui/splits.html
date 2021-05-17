@@ -1,0 +1,133 @@
+<sly-card class="mt15"
+          title="3. Train / Validation splits"
+          subtitle="Define how to split your data to train/val subsets">
+    <el-tabs type="border-card" class="el-tabs-cards" v-model="state.splitMethod">
+        <el-tab-pane name="random">
+            <el-radio slot="label" v-model="state.splitMethod" label="random">
+                Random
+                <div>Shuffle data and split with defined probability</div>
+            </el-radio>
+            <el-table :data="data.randomSplit" class="ultra-table">
+                <el-table-column label="Info" width="180">
+                    <template scope="scope">
+                        <el-tag :type="scope.row.type">
+                            <i v-if="scope.row.name !== 'total'" class="zmdi zmdi-tag mr5"></i>{{scope.row.name}}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column label="Number of images" width="180">
+                    <template scope="scope">
+                        <span style="margin-left: 10px">{{state.randomSplit.count[scope.row.name]}}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column label="Percent of images">
+                    <template scope="scope">
+                        <div v-if="scope.row.name !== 'train'">
+                            <span style="margin-left: 10px">{{state.randomSplit.percent[scope.row.name]}}%</span>
+                        </div>
+
+                        <el-slider v-if="scope.row.name === 'train'"
+                                   v-model="state.randomSplit.percent.train"
+                                   :disabled="state.randomSplit.sliderDisabled"
+                                   show-input :min="1" :max="99"
+                                   style="flex:1; max-width: 99%; margin-left: 15px;"
+                                   @input="
+                                   state.randomSplit.count.train =
+                                   Math.min(parseInt(data.totalImagesCount * state.randomSplit.percent.train / 100, 10),
+                                            data.totalImagesCount - 1);
+                                   state.randomSplit.count.train = Math.max(state.randomSplit.count.train, 1)
+                                   state.randomSplit.count.val = data.totalImagesCount - state.randomSplit.count.train;
+                                   state.randomSplit.percent.val = 100 - state.randomSplit.percent.train"
+                        ></el-slider>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-tab-pane>
+        <el-tab-pane name="tags">
+            <el-radio slot="label" v-model="state.splitMethod" label="tags">
+                Based on image tags
+                <div>Images should have assigned train or val tag</div>
+            </el-radio>
+<!--            <sly-field title="Notice 1: How to create train/val splits based on tags"-->
+<!--                       description="Option 1: use app 'Assign train/val tags to images' from Ecosystem. Option 2: manually assign-->
+<!--                                    train/val tags to images. Option 3: use other way you want - python SDK, API, ...-->
+<!--                                    Please, contact tech support if your case is not covered">-->
+<!--                <sly-icon slot="icon" :options="{ color: '#fba607', bgColor: '#ffe9da', rounded: false }">-->
+<!--                    <i class="zmdi zmdi-help"></i>-->
+<!--                </sly-icon>-->
+<!--            </sly-field>-->
+            <sly-field title="Notice: How to make equal splits"
+                       description="Choose the same tag for train/validation to make splits equal. Can be used for debug
+                                    and for tiny projects">
+                <sly-icon slot="icon" :options="{ color: '#fba607', bgColor: '#ffe9da', rounded: false }">
+                    <i class="zmdi zmdi-info"></i>
+                </sly-icon>
+            </sly-field>
+            <sly-field title="Train tag" description="all images with this tag are considered as training set">
+                <sly-select-tag
+                        :project-id="data.projectId"
+                        :tags.sync="state.trainTagName"
+                        :options="{'showLabel': false}">
+                </sly-select-tag>
+            </sly-field>
+            <sly-field title="Validation tag"
+                       description="all images with this tag are considered as validation set">
+                <sly-select-tag
+                        :project-id="data.projectId"
+                        :tags.sync="state.valTagName"
+                        :options="{'showLabel': false}">
+                </sly-select-tag>
+            </sly-field>
+            <sly-field title="Images without selected tags"
+                       description="Choose what to do with untagged images">
+                <el-select v-model="state.untaggedImages" placeholder="Select" style="width: 280px;">
+                    <el-option key="ignore" label="ignore untagged images" value="ignore"></el-option>
+                    <el-option key="train" label="add untagged images to train set" value="train"></el-option>
+                    <el-option key="val" label="add untagged images to val set" value="val"></el-option>
+                </el-select>
+            </sly-field>
+        </el-tab-pane>
+        <el-tab-pane name="datasets">
+            <el-radio slot="label" v-model="state.splitMethod" label="datasets">
+                Based on datasets
+                <div>Select one or several datasets for every split</div>
+            </el-radio>
+            <sly-field title="Notice: How to make equal splits"
+                       description="Choose the same dataset(s) for train/validation to make splits equal. Can be used for debug
+                                    and for tiny projects">
+                <sly-icon slot="icon" :options="{ color: '#fba607', bgColor: '#ffe9da', rounded: false }">
+                    <i class="zmdi zmdi-info"></i>
+                </sly-icon>
+            </sly-field>
+            <sly-field title="Train dataset(s)"
+                       description="all images in selected dataset(s) are considered as training set">
+                <sly-select-dataset
+                        :project-id="data.projectId"
+                        :datasets.sync="state.trainDatasets"
+                        :options="{'multiple': true, 'showLabel': false}">
+                </sly-select-dataset>
+            </sly-field>
+            <sly-field title="Validation dataset(s)"
+                       description="all images in selected dataset(s) are considered as validation set">
+                <sly-select-dataset
+                        :project-id="data.projectId"
+                        :datasets.sync="state.valDatasets"
+                        :options="{'multiple': true, 'showLabel': false}">
+                </sly-select-dataset>
+            </sly-field>
+        </el-tab-pane>
+    </el-tabs>
+
+    <sly-field style="margin-top: 15px"
+               title="What to do with unlabeled images"
+               description="Sometimes unlabeled images may be used to reduce noise in predictions, sometimes it is
+               a mistake in training data">
+        <!--        <div class="mt5 mb5" v-if="data.unlabeledCount > 0">-->
+        <!--            ⚠️ There are {{data.unlabeledCount}} unlabeled images in project-->
+        <!--        </div>-->
+        <el-select v-model="state.unlabeledImages" placeholder="Select" style="width: 250px;">
+            <el-option key="keep" label="keep unlabeled images" value="keep"></el-option>
+            <el-option key="ignore" label="ignore unlabeled images" value="ignore"></el-option>
+        </el-select>
+    </sly-field>
+</sly-card>
