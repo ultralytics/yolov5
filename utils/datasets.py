@@ -172,7 +172,7 @@ class LoadImages:  # for inference
                     ret_val, img0 = self.cap.read()
 
             self.frame += 1
-            print(f'video {self.count + 1}/{self.nf} ({self.frame}/{self.nframes}) {path}: ', end='')
+            print(f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: ', end='')
 
         else:
             # Read image
@@ -193,7 +193,7 @@ class LoadImages:  # for inference
     def new_video(self, path):
         self.frame = 0
         self.cap = cv2.VideoCapture(path)
-        self.nframes = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     def __len__(self):
         return self.nf  # number of files
@@ -285,10 +285,11 @@ class LoadStreams:  # multiple IP or RTSP cameras
             w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             self.fps = cap.get(cv2.CAP_PROP_FPS) % 100
+            self.frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
             _, self.imgs[i] = cap.read()  # guarantee first frame
             thread = Thread(target=self.update, args=([i, cap]), daemon=True)
-            print(f' success ({w}x{h} at {self.fps:.2f} FPS).')
+            print(f" success ({f'{self.frames} frames ' if self.frames else ''}{w}x{h} at {self.fps:.2f} FPS).")
             thread.start()
         print('')  # newline
 
