@@ -34,6 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('--optimize', action='store_true', help='optimize TorchScript for mobile')  # TorchScript-only
     parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')  # ONNX-only
     parser.add_argument('--simplify', action='store_true', help='simplify ONNX model')  # ONNX-only
+    parser.add_argument('--opset-version', type=int, default=12, help='ONNX opset version')  # ONNX-only
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     opt.include = [x.lower() for x in opt.include]
@@ -95,7 +96,7 @@ if __name__ == '__main__':
 
             print(f'{prefix} starting export with onnx {onnx.__version__}...')
             f = opt.weights.replace('.pt', '.onnx')  # filename
-            torch.onnx.export(model, img, f, verbose=False, opset_version=12, input_names=['images'],
+            torch.onnx.export(model, img, f, verbose=False, opset_version=opt.opset_version, input_names=['images'],
                               dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # size(1,3,640,640)
                                             'output': {0: 'batch', 2: 'y', 3: 'x'}} if opt.dynamic else None)
 

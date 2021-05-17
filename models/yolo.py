@@ -215,9 +215,9 @@ class Model(nn.Module):
             self.model = self.model[:-1]  # remove
         return self
 
-    def autoshape(self):  # add autoShape module
-        logger.info('Adding autoShape... ')
-        m = autoShape(self)  # wrap model
+    def autoshape(self):  # add AutoShape module
+        logger.info('Adding AutoShape... ')
+        m = AutoShape(self)  # wrap model
         copy_attr(m, self, include=('yaml', 'nc', 'hyp', 'names', 'stride'), exclude=())  # copy attributes
         return m
 
