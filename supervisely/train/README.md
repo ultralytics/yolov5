@@ -28,6 +28,11 @@ Major releases:
 - **March 3, 2021**: [v4.0 release](https://github.com/supervisely-ecosystem/yolov5/tree/v4.0.9): YOLOv5 is integrated to Supervisely (train / serve / inference)
 
 # How To Use
+Watch short video for more details:
+
+<a data-key="sly-embeded-video-link" href="https://youtu.be/e47rWdgK-_M" data-video-code="e47rWdgK-_M">
+    <img src="https://i.imgur.com/sJdEEkN.png" alt="SLY_EMBEDED_VIDEO_LINK"  style="max-width:100%;">
+</a>
 
 1. Add app to your team from Ecosystem
 2. Be sure that you connected computer with GPU to your team by running Supervisely Agent on it 
@@ -38,15 +43,17 @@ Major releases:
    Save path is the following: ```"/yolov5_train/<input project name>/<task id>```
 
    For example: ```/yolov5_train/lemons-train/2712```
+   
+6. Also in this directory you can find file `open_app.lnk`. It is a link to the finished UI session. It can be opened at any time to 
+   get more details about training: options, hyperparameters, metrics and so on.
 
-
-
-Watch short video for more details:
-
-<a data-key="sly-embeded-video-link" href="https://youtu.be/e47rWdgK-_M" data-video-code="e47rWdgK-_M">
-    <img src="https://i.imgur.com/sJdEEkN.png" alt="SLY_EMBEDED_VIDEO_LINK"  style="max-width:100%;">
-</a>
-
+   <img src="https://i.imgur.com/fIgiKMJ.png"/>
+   
+   - go to `Team Files`
+   - open directory with training artifacts
+   - right click on file `open_app.lnk`
+   - open
+   
 
 # Screenshot
 
