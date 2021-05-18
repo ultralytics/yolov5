@@ -36,7 +36,7 @@ for orientation in ExifTags.TAGS.keys():
         break
 
 
-def get_hash(files):
+def get_hash(file):
     # Returns a single hash value of a list of files
     return sum(os.path.getsize(f) for f in files if os.path.isfile(f))
 
@@ -1017,7 +1017,7 @@ def extract_boxes(path='../coco128/'):  # from utils.datasets import *; extract_
     shutil.rmtree(path / 'classifier') if (path / 'classifier').is_dir() else None  # remove existing
     files = list(path.rglob('*.*'))
     n = len(files)  # number of files
-    for im_file in tqdm(files, total=n):
+    for im_file in tqdm(file, total=n):
         if im_file.suffix[1:] in img_formats:
             # image
             im = cv2.imread(str(im_file))[..., ::-1]  # BGR to RGB
@@ -1046,7 +1046,7 @@ def extract_boxes(path='../coco128/'):  # from utils.datasets import *; extract_
 
 
 def autosplit(path='../coco128', weights=(0.9, 0.1, 0.0), annotated_only=False):
-    """ Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
+    """ Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt file
     Usage: from utils.datasets import *; autosplit('../coco128')
     Arguments
         path:           Path to images directory
@@ -1062,7 +1062,7 @@ def autosplit(path='../coco128', weights=(0.9, 0.1, 0.0), annotated_only=False):
     [(path / x).unlink() for x in txt if (path / x).exists()]  # remove existing
 
     print(f'Autosplitting images from {path}' + ', using *.txt labeled images only' * annotated_only)
-    for i, img in tqdm(zip(indices, files), total=n):
+    for i, img in tqdm(zip(indices, file), total=n):
         if not annotated_only or Path(img2label_paths([str(img)])[0]).exists():  # check label
             with open(path / txt[i], 'a') as f:
                 f.write(str(img) + '\n')  # add image to txt file
