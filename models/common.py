@@ -13,8 +13,8 @@ from PIL import Image
 from torch.cuda import amp
 
 from utils.datasets import letterbox
-from utils.general import non_max_suppression, make_divisible, scale_coords, increment_path, xyxy2xywh, save_one_box
-from utils.plots import colors, plot_one_box
+from utils.general import non_max_suppression, make_divisible, scale_coords, increment_path, xyxy2xywh, save_one_box, xywh2xyxy, clip_coords
+from utils.plots import colors, plot_one_box, plot_one_box_PIL
 from utils.torch_utils import time_synchronized
 
 
@@ -340,6 +340,7 @@ class Detections:
             if render:
                 self.imgs[i] = np.asarray(im)
 
+    
     def print(self):
         self.display(pprint=True)  # print results
         print(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' % self.t)
@@ -356,6 +357,9 @@ class Detections:
         self.display(crop=True, save_dir=save_dir)  # crop results
         print(f'Saved results to {save_dir}\n')
 
+
+    
+
     def render(self):
         self.display(render=True)  # render results
         return self.imgs
@@ -370,6 +374,52 @@ class Detections:
             setattr(new, k, [pd.DataFrame(x, columns=c) for x in a])
         return new
 
+
+    def get_cropped_imgs(self):
+        """
+        Gets a list of cropped images that were within the bounds of the box. If no box was drawn then nothing is added to the list
+
+        
+        """
+        list_imgs = []
+        for i, (im, pred) in enumerate(zip(self.imgs, self.pred)):
+            #str = f'image {i + 1}/{len(self.pred)}: {im.shape[0]}x{im.shape[1]} '
+            if pred is not None:
+                for c in pred[:, -1].unique():
+                    n = (pred[:, -1] == c).sum()  # detections per class
+                    for *box, conf, cls in pred:
+                        list_imgs.append(get_cropped_box(box, im))
+        return list_imgs
+
+    def get_inferenced_imgs_as_numpy(self):
+        """
+
+        Returns a list of numpy images with an annotated bounded box around the objects of interest
+
+        Returns:
+        list(numpy.ndarray)
+        """
+        list_imgs = []
+        im_mod = None
+        for i, (im, pred) in enumerate(zip(self.imgs, self.pred)):
+            
+            if pred is not None:
+                for c in pred[:, -1].unique():
+                    n = (pred[:, -1] == c).sum()  # detections per class
+                    
+                    for *box, conf, cls in pred:
+                        im_mod = plot_one_box_PIL(box, im)
+                if (im_mod is not None):
+                    list_imgs.append(im_mod.astype(np.uint8)) if isinstance(im_mod, np.ndarray) else im_mod
+                else:
+                    list_imgs.append(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im
+            else:
+                list_imgs.append(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im
+                
+        return list_imgs
+
+
+
     def tolist(self):
         # return a list of Detections objects, i.e. 'for result in results.tolist():'
         x = [Detections([self.imgs[i]], [self.pred[i]], self.names, self.s) for i in range(self.n)]
@@ -378,8 +428,22 @@ class Detections:
                 setattr(d, k, getattr(d, k)[0])  # pop out of list
         return x
 
+
+
     def __len__(self):
         return self.n
+
+def get_cropped_box(xyxy, im, gain = 1.02, pad=10, square=False, BGR=False):
+    # Return the image as another image with crop size multiplied by {gain} and padded by {pad} pixels
+    xyxy = torch.tensor(xyxy).view(-1, 4)
+    b = xyxy2xywh(xyxy)  # boxes
+    if square:
+        b[:, 2:] = b[:, 2:].max(1)[0].unsqueeze(1)  # attempt rectangle to square
+    b[:, 2:] = b[:, 2:] * gain + pad  # box wh * gain + pad
+    xyxy = xywh2xyxy(b).long()
+    clip_coords(xyxy, im.shape)
+    crop = im[int(xyxy[0, 1]):int(xyxy[0, 3]), int(xyxy[0, 0]):int(xyxy[0, 2])]
+    return crop if BGR else crop[..., ::-1]
 
 
 class Classify(nn.Module):
