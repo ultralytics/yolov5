@@ -377,7 +377,7 @@ def train(hyp, opt, device, tb_writer=None):
                 tags = ['train/loss_bbox', 'train/loss_obj', 'train/loss_cls',  # train loss
                         'val/precision', 'val/recall', 'val/bbox_mAP_50', 'val/bbox_mAP',
                         'val/loss_bbox', 'val/loss_obj', 'val/loss_cls',  # val loss
-                        'learning_rate_0', 'learning_rate_1', 'learning_rate_2']  # params
+                        'learning_rate/lr0', 'learning_rate/lr0', 'learning_rate/lr0']  # params
             for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
                 if tb_writer:
                     tb_writer.add_scalar(tag, x, epoch)  # tensorboard
