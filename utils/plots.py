@@ -88,6 +88,7 @@ def plot_one_box_PIL(box, im, color=None, label=None, line_thickness=None):
     im = Image.fromarray(im)
     draw = ImageDraw.Draw(im)
     line_thickness = line_thickness or max(int(min(im.size) / 200), 2)
+    color = color or [random.randint(0, 2550 for _ in range(3)]
     draw.rectangle(box, width=line_thickness, outline=tuple(color))  # plot
     if label:
         fontsize = max(round(max(im.size) / 40), 12)
