@@ -1,0 +1,21 @@
+# Argoverse-HD dataset (ring-front-center camera) http://www.cs.cmu.edu/~mengtial/proj/streaming/
+# Train command: python train.py --data argoverse_hd.yaml
+# Default dataset location is next to YOLOv5:
+#   /parent_folder
+#     /argoverse
+#     /yolov5
+
+
+# download command/URL (optional)
+download: bash data/scripts/get_argoverse_hd.sh
+
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+train: ../argoverse/Argoverse-1.1/images/train/  # 39384 images
+val: ../argoverse/Argoverse-1.1/images/val/  # 15062 iamges
+test: ../argoverse/Argoverse-1.1/images/test/  # Submit to: https://eval.ai/web/challenges/challenge-page/800/overview
+
+# number of classes
+nc: 8
+
+# class names
+names: [ 'person',  'bicycle',  'car',  'motorcycle',  'bus',  'truck',  'traffic_light',  'stop_sign' ]
