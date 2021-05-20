@@ -215,26 +215,28 @@ class NMS(nn.Module):
     conf = 0.25  # confidence threshold
     iou = 0.45  # IoU threshold
     classes = None  # (optional list) filter by class
+    max_det = 1000  # maximum number of detections per image
 
     def __init__(self):
         super(NMS, self).__init__()
 
     def forward(self, x):
-        return non_max_suppression(x[0], conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)
+        return non_max_suppression(x[0], self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)
 
 
-class autoShape(nn.Module):
+class AutoShape(nn.Module):
     # input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS
     conf = 0.25  # NMS confidence threshold
     iou = 0.45  # NMS IoU threshold
     classes = None  # (optional list) filter by class
+    max_det = 1000  # maximum number of detections per image
 
     def __init__(self, model):
-        super(autoShape, self).__init__()
+        super(AutoShape, self).__init__()
         self.model = model.eval()
 
     def autoshape(self):
-        print('autoShape already enabled, skipping... ')  # model already converted to model.autoshape()
+        print('AutoShape already enabled, skipping... ')  # model already converted to model.autoshape()
         return self
 
     @torch.no_grad()
@@ -285,7 +287,7 @@ class autoShape(nn.Module):
             t.append(time_synchronized())
 
             # Post-process
-            y = non_max_suppression(y, conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)  # NMS
+            y = non_max_suppression(y, self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)  # NMS
             for i in range(n):
                 scale_coords(shape1, y[i][:, :4], shape0[i])
 
