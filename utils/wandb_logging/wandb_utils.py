@@ -187,8 +187,8 @@ class WandbLogger():
             modeldir = model_artifact.download()
             epochs_trained = model_artifact.metadata.get('epochs_trained')
             total_epochs = model_artifact.metadata.get('total_epochs')
-            assert epochs_trained < total_epochs, 'training to %g epochs is finished, nothing to resume.' % (
-                total_epochs)
+            is_finished = total_epochs is None
+            assert not is_finished, 'training is finished, can only resume incomplete runs.'
             return modeldir, model_artifact
         return None, None
 
