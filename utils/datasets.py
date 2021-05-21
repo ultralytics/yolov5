@@ -270,7 +270,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             sources = [sources]
 
         n = len(sources)
-        self.imgs = [None] * n
+        self.imgs, self.fps, self.frames, self.threads = [None] * n, [0] * n, [0] * n, [None] * n
         self.sources = [clean_str(x) for x in sources]  # clean source names for later
         for i, s in enumerate(sources):  # index, source
             # Start thread to read frames from video stream
@@ -284,13 +284,13 @@ class LoadStreams:  # multiple IP or RTSP cameras
             assert cap.isOpened(), f'Failed to open {s}'
             w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            self.fps = (cap.get(cv2.CAP_PROP_FPS) % 100) or 30.0  # assume 30 FPS if cap gets 0 FPS
-            self.frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            self.fps[i] = (cap.get(cv2.CAP_PROP_FPS) % 100) or 30.0  # assume 30 FPS if cap gets 0 FPS
+            self.frames[i] = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or float('inf')  # assume infinite stream if 0 len
 
             _, self.imgs[i] = cap.read()  # guarantee first frame
-            thread = Thread(target=self.update, args=([i, cap]), daemon=True)
-            print(f" success ({f'{self.frames} frames ' if self.frames else ''}{w}x{h} at {self.fps:.2f} FPS).")
-            thread.start()
+            self.threads[i] = Thread(target=self.update, args=([i, cap]), daemon=True)
+            print(f" success ({self.frames[i]} frames {w}x{h} at {self.fps[i]:.2f} FPS)")
+            self.threads[i].start()
         print('')  # newline
 
         # check for common shapes
@@ -299,18 +299,17 @@ class LoadStreams:  # multiple IP or RTSP cameras
         if not self.rect:
             print('WARNING: Different stream shapes detected. For optimal performance supply similarly-shaped streams.')
 
-    def update(self, index, cap):
-        # Read next stream frame in a daemon thread
-        n = 0
-        while cap.isOpened():
+    def update(self, i, cap):
+        # Read stream `i` frames in daemon thread
+        n, f = 0, self.frames[i]
+        while cap.isOpened() and n < f:
             n += 1
             # _, self.imgs[index] = cap.read()
             cap.grab()
-            if n == 4:  # read every 4th frame
+            if n % 4:  # read every 4th frame
                 success, im = cap.retrieve()
-                self.imgs[index] = im if success else self.imgs[index] * 0
-                n = 0
-            time.sleep(1 / self.fps)  # wait time
+                self.imgs[i] = im if success else self.imgs[i] * 0
+            time.sleep(1 / self.fps[i])  # wait time
 
     def __iter__(self):
         self.count = -1
@@ -318,12 +317,12 @@ class LoadStreams:  # multiple IP or RTSP cameras
 
     def __next__(self):
         self.count += 1
-        img0 = self.imgs.copy()
-        if cv2.waitKey(1) == ord('q'):  # q to quit
+        if not all(x.is_alive() for x in self.threads) or cv2.waitKey(1) == ord('q'):  # q to quit
             cv2.destroyAllWindows()
             raise StopIteration
 
         # Letterbox
+        img0 = self.imgs.copy()
         img = [letterbox(x, self.img_size, auto=self.rect, stride=self.stride)[0] for x in img0]
 
         # Stack
