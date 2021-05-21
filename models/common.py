@@ -351,10 +351,17 @@ class Detections:
         save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/hub/exp', mkdir=True)  # increment save_dir
         self.display(save=True, save_dir=save_dir)  # save results
 
-    def crop(self, save_dir='runs/hub/exp'):
-        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/hub/exp', mkdir=True)  # increment save_dir
-        self.display(crop=True, save_dir=save_dir)  # crop results
-        print(f'Saved results to {save_dir}\n')
+    def crop(self, save_dir='runs/hub/exp', save=False):
+        # Return all cropped objects with bounding box as an array of images
+        # Does not write to a directory if save is False
+        list_imgs = []
+        if save: save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/hub/exp', mkdir=True)  # increment save_dir only if saving
+        for i, (im, pred) in enumerate(zip(self.imgs, self.pred)):
+            if pred is not None:
+                for c in pred[:, -1].unique():
+                    for *box, conf, cls in pred:
+                        list_imgs.append(save_one_box(box, im, file=save_dir / 'crops' / self.names[int(cls)] / self.files[i], write=save))
+        return list_imgs
 
     def render(self):
         self.display(render=True)  # render results
@@ -377,7 +384,27 @@ class Detections:
             for k in ['imgs', 'pred', 'xyxy', 'xyxyn', 'xywh', 'xywhn']:
                 setattr(d, k, getattr(d, k)[0])  # pop out of list
         return x
-
+    
+    def get_inferenced_imgs_as_numpy(self, overlay=None):
+        # Returns a list of numpy images with an annotated bounded box around the objects of interest
+        # Parameters:
+        # overlay takes in a numpy array or nothing
+        # Returns:
+        # list(numpy.ndarray)
+        list_imgs = []
+        im_mod = None
+        for _, (im, pred) in enumerate(zip(self.imgs, self.pred)):
+            img_overlay = overlay if isinstance(overlay, np.ndarray) else im 
+            if pred is not None:
+                for _ in pred[:, -1].unique():
+                    for *box, _, cls in pred:
+                        im_mod = plot_one_box_PIL(box, img_overlay, color=colors(cls)) if im_mod is None else plot_one_box_PIL(box, im_mod, color=colors(cls))
+            if (im_mod is not None) and (pred is not None):
+                list_imgs.append(im_mod.astype(np.uint8)) if isinstance(im_mod, np.ndarray) else im_mod
+            else:
+                list_imgs.append(img_overlay.astype(np.uint8)) if isinstance(img_overlay, np.ndarray) else img_overlay
+        return list_imgs
+    
     def __len__(self):
         return self.n
 
