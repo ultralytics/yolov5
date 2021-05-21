@@ -525,6 +525,7 @@ if __name__ == '__main__':
         device = torch.device('cuda', opt.local_rank)
         dist.init_process_group(backend='nccl', init_method='env://')  # distributed backend
         assert opt.batch_size % opt.world_size == 0, '--batch-size must be multiple of CUDA device count'
+        assert not opt.image_weights, '--image-weights argument is not compatible with DDP training'
         opt.batch_size = opt.total_batch_size // opt.world_size
 
     # Hyperparameters
