@@ -35,6 +35,10 @@ from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, is_parallel
 from utils.wandb_logging.wandb_utils import WandbLogger, check_wandb_resume
 
+
+MASTER_VAL_NAME = "master_val"
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -96,7 +100,20 @@ def train(hyp, opt, device, tb_writer=None):
     with torch_distributed_zero_first(rank):
         check_dataset(data_dict)  # check
     train_path = data_dict['train']
-    test_path = data_dict['val']
+    # TODO: this should be a list of paths, not just a single path
+    val_paths = dict()
+    if type(data_dict['val']) == str:
+        val_paths[MASTER_VAL_NAME] = data_dict['val']
+    elif len(data_dict['val']) == 1:
+        val_paths[MASTER_VAL_NAME] = data_dict['val']
+    else:
+        if MASTER_VAL_NAME not in data_dict['val']:
+            raise ValueError(f"When you use multiple validation sets, one MUST be named '{MASTER_VAL_NAME}'. This is the val set" +
+                             f" we will use for early stopping/model selection. Your data yaml file ({opt.data}) does NOT " +
+                             "conform to this requirement. Please fix it.")
+        for k, v in data_dict['val'].items():
+            # in this case, the yaml file has several datasets under the key 'val'
+            val_paths[k] = v
 
     # Freeze
     freeze = []  # parameter names to freeze (full or partial)
@@ -196,10 +213,12 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Process 0
     if rank in [-1, 0]:
-        testloader = create_dataloader(test_path, imgsz_test, batch_size * 2, gs, opt,  # testloader
-                                       hyp=hyp, cache=opt.cache_images and not opt.notest, rect=True, rank=-1,
-                                       world_size=opt.world_size, workers=opt.workers,
-                                       pad=0.5, prefix=colorstr('val: '))[0]
+        val_loaders = dict()
+        for k, v in val_paths.items():
+            val_loaders[k] = create_dataloader(v, imgsz_test, batch_size * 2, gs, opt,
+                                           hyp=hyp, cache=opt.cache_images and not opt.notest, rect=True, rank=-1,
+                                           world_size=opt.world_size, workers=opt.workers,
+                                           pad=0.5, prefix=colorstr(f"val/{k}: "))[0]
 
         if not opt.resume:
             labels = np.concatenate(dataset.labels, 0)
@@ -242,6 +261,11 @@ def train(hyp, opt, device, tb_writer=None):
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
     compute_loss = ComputeLoss(model)  # init loss class
+
+    # init tensorboardx tags
+    train_tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss']
+    lr_tags = ['x/lr0', 'x/lr1', 'x/lr2']
+
     logger.info(f'Image sizes {imgsz} train, {imgsz_test} test\n'
                 f'Using {dataloader.num_workers} dataloader workers\n'
                 f'Logging results to {save_dir}\n'
@@ -337,6 +361,19 @@ def train(hyp, opt, device, tb_writer=None):
                     wandb_logger.log({"Mosaics": [wandb_logger.wandb.Image(str(x), caption=x.name) for x in
                                                   save_dir.glob('train*.jpg') if x.exists()]})
 
+                # SEND RESULTS TO TBX
+                if ni % nb != 0 and ni % opt.tbx_report_train_every_n_batches == 1:
+                    # ni % nb != 0 condition to avoid double-logging anything, ... == 1 condition to log information (almost) right away
+                    for x, tag in zip(mloss[:-1], train_tags):
+                        tb_writer.add_scalar(tag, x, ni)
+
+                    # init tensorboardx 'lr' list
+                    lr = [x['lr'] for x in optimizer.param_groups]  # gather learning rates
+                    for x, tag in zip(lr, lr_tags):
+                        tb_writer.add_scalar(tag, x, ni)
+
+                # TODO: if we want to update val loss more frequently, do it here
+
             # end batch ------------------------------------------------------------------------------------------------
         # end epoch ----------------------------------------------------------------------------------------------------
 
@@ -351,35 +388,51 @@ def train(hyp, opt, device, tb_writer=None):
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
                 wandb_logger.current_epoch = epoch + 1
-                results, maps, times = test.test(data_dict,
-                                                 batch_size=batch_size * 2,
-                                                 imgsz=imgsz_test,
-                                                 model=ema.ema,
-                                                 single_cls=opt.single_cls,
-                                                 dataloader=testloader,
-                                                 save_dir=save_dir,
-                                                 verbose=nc < 50 and final_epoch,
-                                                 plots=plots and final_epoch,
-                                                 wandb_logger=wandb_logger,
-                                                 compute_loss=compute_loss,
-                                                 is_coco=is_coco)
+                for val_loader_name in val_loaders.keys():
+                    temp_results, temp_maps, temp_times = test.test(data_dict,
+                                                     batch_size=batch_size * 2,
+                                                     imgsz=imgsz_test,
+                                                     model=ema.ema,
+                                                     single_cls=opt.single_cls,
+                                                     dataloader=val_loaders[val_loader_name],
+                                                     save_dir=save_dir,
+                                                     verbose=nc < 50 and final_epoch,
+                                                     plots=plots and final_epoch,
+                                                     wandb_logger=wandb_logger,
+                                                     compute_loss=compute_loss,
+                                                     is_coco=is_coco)
+                    if val_loader_name != MASTER_VAL_NAME:
+                        # Log tbx metrics for all non-master validation sets
+                        tbx_tags = ['precision', 'recall', 'mAP_0.5', 'mAP_0.5:0.95',
+                                    'box_loss', 'obj_loss', 'cls_loss']
+                        for x, tag in zip(list(temp_results), tbx_tags):
+                            if tb_writer:
+                                tb_writer.add_scalar(f"{val_loader_name}/{tag}", x, nb * (epoch + 1))
+                            if wandb_logger.wandb:
+                                wandb_logger.log({f"{val_loader_name}/{tag}": x})  # W&B
+                    else:
+                        results = temp_results
+                        maps = temp_maps
+                        times = temp_times
+
+            # Log
+            all_tbx_tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
+                            # IMPORTANT: when looking at tbx results, the metrics under 'metrics' are calculated on the MASTER VAL SET.
+                            'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+                            f"{MASTER_VAL_NAME}/box_loss", f"{MASTER_VAL_NAME}/obj_loss", f"{MASTER_VAL_NAME}/cls_loss",  # val loss
+                            'x/lr0', 'x/lr1', 'x/lr2']  # params
+            for x, tag in zip(list(mloss[:-1]) + list(results) + lr, all_tbx_tags):
+                # TBX UPDATES
+                if tb_writer:
+                    tb_writer.add_scalar(tag, x, nb * (epoch + 1))  # tensorboard
+                if wandb_logger.wandb:
+                    wandb_logger.log({tag: x})  # W&B
 
             # Write
             with open(results_file, 'a') as f:
                 f.write(s + '%10.4g' * 7 % results + '\n')  # append metrics, val_loss
             if len(opt.name) and opt.bucket:
                 os.system('gsutil cp %s gs://%s/results/results%s.txt' % (results_file, opt.bucket, opt.name))
-
-            # Log
-            tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
-                    'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
-                    'val/box_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
-                    'x/lr0', 'x/lr1', 'x/lr2']  # params
-            for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
-                if tb_writer:
-                    tb_writer.add_scalar(tag, x, epoch)  # tensorboard
-                if wandb_logger.wandb:
-                    wandb_logger.log({tag: x})  # W&B
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
@@ -429,7 +482,7 @@ def train(hyp, opt, device, tb_writer=None):
                                           iou_thres=0.7,
                                           model=attempt_load(m, device).half(),
                                           single_cls=opt.single_cls,
-                                          dataloader=testloader,
+                                          dataloader=val_loaders[MASTER_VAL_NAME],
                                           save_dir=save_dir,
                                           save_json=True,
                                           plots=False,
@@ -489,6 +542,10 @@ if __name__ == '__main__':
     parser.add_argument('--bbox_interval', type=int, default=-1, help='Set bounding-box image logging interval for W&B')
     parser.add_argument('--save_period', type=int, default=-1, help='Log model after every "save_period" epoch')
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
+
+    # custom
+    parser.add_argument('--tbx-report-train-every-n-batches', type=int, default=1000,
+                        help='send tbx updated (training set) metrics after this many batches')
     opt = parser.parse_args()
 
     # Set DDP variables
