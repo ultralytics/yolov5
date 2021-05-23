@@ -1,4 +1,5 @@
 # Dataset utils and dataloaders
+from typing import Optional, Tuple, List
 
 import glob
 import logging
@@ -20,6 +21,7 @@ from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+from utils.ScanState import ScanState
 from utils.general import check_requirements, xyxy2xywh, xywh2xyxy, xywhn2xyxy, xyn2xy, segment2box, segments2boxes, \
     resample_segments, clean_str
 from utils.torch_utils import torch_distributed_zero_first
@@ -36,10 +38,14 @@ for orientation in ExifTags.TAGS.keys():
         break
 
 
-def get_hash(files):
+def get_hash(files, labels, single_labelset):
     # Returns a single hash value of a list of files
-    return sum(os.path.getsize(f) for f in files if os.path.isfile(f))
-
+    img_hash = sum(os.path.getsize(f) for f in files if os.path.isfile(f))
+    if single_labelset:
+        label_hash = sum(os.path.getsize(f) for f in labels if os.path.isfile(f))
+    else:
+        label_hash = sum(os.path.getsize(tup[0]) + os.path.getsize(tup[1]) for tup in labels if (os.path.isfile(tup[0]) and os.path.isfile(tup[1])))
+    return img_hash + label_hash
 
 def exif_size(img):
     # Returns exif-corrected PIL size
@@ -69,7 +75,8 @@ def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=Fa
                                       stride=int(stride),
                                       pad=pad,
                                       image_weights=image_weights,
-                                      prefix=prefix)
+                                      prefix=prefix,
+                                      label_suffix=opt.label_suffix)
 
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count() // world_size, batch_size if batch_size > 1 else 0, workers])  # number of workers
@@ -338,15 +345,41 @@ class LoadStreams:  # multiple IP or RTSP cameras
         return 0  # 1E12 frames = 32 streams at 30 FPS for 30 years
 
 
-def img2label_paths(img_paths):
-    # Define label paths as a function of image paths
+def get_label_dir_from_img_dir(img_path: str, suffix_dir: Optional[str] = None):
     sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
-    return ['txt'.join(x.replace(sa, sb, 1).rsplit(x.split('.')[-1], 1)) for x in img_paths]
+    suffix = "" if suffix_dir is None or len(suffix_dir) == 0 else (os.sep + suffix_dir)
+    return img_path.replace(sa, sb, 1) + suffix
+
+
+def img2label_paths(img_paths, single_labelset: bool = True, suffix_dir: Optional[str] = None):
+    # Define label paths as a function of image paths
+
+    def insert_penultimate_dir(path, dir):
+        # transforms '.../file.txt' into '.../dir/file.txt'
+        segments = path.rsplit(os.sep, 1)
+        return segments[0] + os.sep + dir + os.sep + segments[1]
+
+    if single_labelset:
+        print("constructing label paths as single labelset")
+        # this will return a list of strings
+        sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
+        suffix = "" if suffix_dir is None or len(suffix_dir) == 0 else (os.sep + suffix_dir)
+
+        label_paths = ['txt'.join(x.replace(sa, sb, 1).rsplit(x.split('.')[-1], 1)) for x in img_paths]
+        if len(suffix) != 0:
+            return [insert_penultimate_dir(x, suffix) for x in label_paths]
+        return label_paths
+    else:
+        # this will return a list of tuples of strings. modal label files come first, amodal label files second.
+        sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
+        single_label_paths = ['txt'.join(x.replace(sa, sb, 1).rsplit(x.split('.')[-1], 1)) for x in img_paths]
+
+        return [(insert_penultimate_dir(path, 'modal') , insert_penultimate_dir(path, 'amodal'))for path in single_label_paths]
 
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
+                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix='', label_suffix: str = ''):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -359,32 +392,51 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         try:
             f = []  # image files
-            for p in path if isinstance(path, list) else [path]:
-                p = Path(p)  # os-agnostic
-                if p.is_dir():  # dir
-                    f += glob.glob(str(p / '**' / '*.*'), recursive=True)
-                    # f = list(p.rglob('**/*.*'))  # pathlib
-                elif p.is_file():  # file
-                    with open(p, 'r') as t:
-                        t = t.read().strip().splitlines()
-                        parent = str(p.parent) + os.sep
-                        f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
-                        # f += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
-                else:
-                    raise Exception(f'{prefix}{p} does not exist')
+
+            if isinstance(path, list):
+                raise ValueError("Support for this configuration has been removed to simplify this project." +
+                                 f" Cannot specify multiple directories ({path}) containing training set. Please move everything into" +
+                                 " a single directory and try again.")
+
+            subdirs = set(os.listdir(get_label_dir_from_img_dir(path, suffix_dir=label_suffix)))
+
+            if len(label_suffix) > 0:
+                self.single_labelset = True
+            elif 'modal' in subdirs and 'amodal' in subdirs:
+                self.single_labelset = False
+                print("found 'modal' and 'amodal' subdirs, using them.")
+            else:
+                self.single_labelset = True
+                print(f"Subdirectories 'modal' and 'amodal' do not exist under {path}. Assuming amodal labels are located directly in {get_label_dir_from_img_dir(path, label_suffix)}")
+
+            p = Path(path)  # os-agnostic
+            if p.is_dir():  # dir
+                f += glob.glob(str(p / '**' / '*.*'), recursive=True)
+                # f = list(p.rglob('**/*.*'))  # pathlib
+            elif p.is_file():  # file
+                with open(p, 'r') as t:
+                    t = t.read().strip().splitlines()
+                    parent = str(p.parent) + os.sep
+                    f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
+                    # f += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
+            else:
+                raise Exception(f'{prefix}{p} does not exist')
             self.img_files = sorted([x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in img_formats])
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in img_formats])  # pathlib
             assert self.img_files, f'{prefix}No images found'
         except Exception as e:
             raise Exception(f'{prefix}Error loading data from {path}: {e}\nSee {help_url}')
 
-        # TODO: looks like we should implement reading modal AND amodal labels here
         # Check cache
-        self.label_files = img2label_paths(self.img_files)  # labels
-        cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')  # cached labels
+        self.label_files = img2label_paths(self.img_files, self.single_labelset, suffix_dir=label_suffix)  # labels
+        if self.single_labelset:
+            label_dir_path = Path(self.label_files[0]).parent
+        else:
+            label_dir_path = Path(self.label_files[0][0]).parent.parent
+        cache_path = (p if p.is_file() else label_dir_path).with_suffix('.cache')  # cached labels
         if cache_path.is_file():
             cache, exists = torch.load(cache_path), True  # load
-            if cache['hash'] != get_hash(self.label_files + self.img_files) or 'version' not in cache:  # changed
+            if cache['hash'] != get_hash(self.img_files, self.label_files, self.single_labelset) or 'version' not in cache:  # changed
                 cache, exists = self.cache_labels(cache_path, prefix), False  # re-cache
         else:
             cache, exists = self.cache_labels(cache_path, prefix), False  # cache
@@ -399,16 +451,29 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         # Read cache
         cache.pop('hash')  # remove hash
         cache.pop('version')  # remove version
-        labels, shapes, self.segments = zip(*cache.values())
-        self.labels = list(labels)
-        self.shapes = np.array(shapes, dtype=np.float64)
+        if self.single_labelset:
+            labels, shapes, self.segments = zip(*cache.values())
+            self.labels = list(labels)
+            self.shapes = np.array(shapes, dtype=np.float64)
+        else:
+            labels, shapes, self.segments = [], [], []
+            for shape, x_dict in cache.values():
+                modal_label, modal_segment = x_dict['modal']
+                amodal_label, amodal_segment = x_dict['amodal']
+
+                labels.append({'modal': modal_label, 'amodal': amodal_label})
+                shapes.append(shape)
+                self.segments.append({'modal': modal_segment, 'amodal': amodal_segment})
+            self.labels = labels
+            self.shapes = np.array(shapes, dtype=np.float64)
+
         self.img_files = list(cache.keys())  # update
-        self.label_files = img2label_paths(cache.keys())  # update
+        self.label_files = img2label_paths(cache.keys(), self.single_labelset)  # update
         if single_cls:
             for x in self.labels:
                 x[:, 0] = 0
 
-        n = len(shapes)  # number of images
+        n = len(self.img_files)  # number of images
         bi = np.floor(np.arange(n) / batch_size).astype(np.int)  # batch index
         nb = bi[-1] + 1  # number of batches
         self.batch = bi  # batch index of image
@@ -457,38 +522,50 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         x = {}  # dict
         nm, nf, ne, nc = 0, 0, 0, 0  # number missing, found, empty, duplicate
         pbar = tqdm(zip(self.img_files, self.label_files), desc='Scanning images', total=len(self.img_files))
-        for i, (im_file, lb_file) in enumerate(pbar):
+        for i, (im_file, lb_obj) in enumerate(pbar):
+            if self.single_labelset:
+                lb_file = lb_obj
+            else:
+                modal_lb_file = lb_obj[0]
+                amodal_lb_file = lb_obj[1]
             try:
                 # verify images
                 im = Image.open(im_file)
                 im.verify()  # PIL verify
                 shape = exif_size(im)  # image size
-                segments = []  # instance segments
                 assert (shape[0] > 9) & (shape[1] > 9), f'image size {shape} <10 pixels'
                 assert im.format.lower() in img_formats, f'invalid image format {im.format}'
 
-                # verify labels
-                if os.path.isfile(lb_file):
-                    nf += 1  # label found
-                    with open(lb_file, 'r') as f:
-                        l = [x.split() for x in f.read().strip().splitlines()]
-                        if any([len(x) > 8 for x in l]):  # is segment
-                            classes = np.array([x[0] for x in l], dtype=np.float32)
-                            segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in l]  # (cls, xy1...)
-                            l = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
-                        l = np.array(l, dtype=np.float32)
-                    if len(l):
-                        assert l.shape[1] == 5, 'labels require 5 columns each'
-                        assert (l >= 0).all(), 'negative labels'
-                        assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels'
-                        assert np.unique(l, axis=0).shape[0] == l.shape[0], 'duplicate labels'
-                    else:
-                        ne += 1  # label empty
-                        l = np.zeros((0, 5), dtype=np.float32)
+                # read labels
+                if self.single_labelset:
+                    l, segments, scan_state = self.read_label_file(lb_file)
+                    if scan_state == ScanState.FOUND:
+                        nf += 1
+                    elif scan_state == ScanState.MISSING:
+                        nm += 1
+                    elif scan_state == ScanState.EMPTY:
+                        ne += 1
+                    x[im_file] = [l, shape, segments]
                 else:
-                    nm += 1  # label missing
-                    l = np.zeros((0, 5), dtype=np.float32)
-                x[im_file] = [l, shape, segments]
+                    x_dict = dict()
+                    n_found = 0
+                    n_missing = 0
+                    n_error = 0
+                    for lb_file, setname in zip([modal_lb_file, amodal_lb_file], ['modal', 'amodal']):
+                        l, segments, scan_state = self.read_label_file(lb_file)
+                        if scan_state == ScanState.FOUND:
+                            n_found += 1
+                        elif scan_state == ScanState.MISSING:
+                            n_missing += 1
+                        elif scan_state == ScanState.EMPTY:
+                            n_error += 1
+                        x_dict[setname] = [l, segments]  # shapes are the same between modal and amodal pairs
+                    x[im_file] = (shape, x_dict)
+                    nf += n_found//2
+                    nm += 0 if n_missing == 0 else 1
+                    ne += 0 if n_error == 0 else 1
+                    if n_missing != 0 and n_error != 0:
+                        print(f"Something strange has happened between modal and amodal labels. Look at {modal_lb_file} and {amodal_lb_file} closely.")
             except Exception as e:
                 nc += 1
                 print(f'{prefix}WARNING: Ignoring corrupted image and/or label {im_file}: {e}')
@@ -500,7 +577,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         if nf == 0:
             print(f'{prefix}WARNING: No labels found in {path}. See {help_url}')
 
-        x['hash'] = get_hash(self.label_files + self.img_files)
+        x['hash'] = get_hash(self.img_files, self.label_files, self.single_labelset)
         x['results'] = nf, nm, ne, nc, i + 1
         x['version'] = 0.1  # cache version
         try:
@@ -509,6 +586,30 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         except Exception as e:
             logging.info(f'{prefix}WARNING: Cache directory {path.parent} is not writeable: {e}')  # path not writeable
         return x
+
+    def read_label_file(self, lb_file: str) -> Tuple[np.ndarray, List[np.ndarray], ScanState]:
+        segments = []
+        if os.path.isfile(lb_file):
+            scan_state = ScanState.FOUND  # label found
+            with open(lb_file, 'r') as f:
+                l = [x.split() for x in f.read().strip().splitlines()]
+                if any([len(x) > 8 for x in l]):  # is segment
+                    classes = np.array([x[0] for x in l], dtype=np.float32)
+                    segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in l]  # (cls, xy1...)
+                    l = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
+                l = np.array(l, dtype=np.float32)
+            if len(l):
+                assert l.shape[1] == 5, 'labels require 5 columns each'
+                assert (l >= 0).all(), 'negative labels'
+                assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels'
+                assert np.unique(l, axis=0).shape[0] == l.shape[0], 'duplicate labels'
+            else:
+                scan_state = ScanState.EMPTY  # label empty
+                l = np.zeros((0, 5), dtype=np.float32)
+        else:
+            scan_state = ScanState.MISSING  # label missing
+            l = np.zeros((0, 5), dtype=np.float32)
+        return l, segments, scan_state
 
     def __len__(self):
         return len(self.img_files)
@@ -534,7 +635,11 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 img2, labels2 = load_mosaic(self, random.randint(0, self.n - 1))
                 r = np.random.beta(8.0, 8.0)  # mixup ratio, alpha=beta=8.0
                 img = (img * r + img2 * (1 - r)).astype(np.uint8)
-                labels = np.concatenate((labels, labels2), 0)
+                if self.single_labelset:
+                    labels = np.concatenate((labels, labels2), 0)
+                else:
+                    for setname in ['modal', 'amodal']:
+                        labels[setname] = np.concatenate((labels[setname], labels2[setname]), 0)
 
         else:
             # Load image
@@ -545,9 +650,16 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             img, ratio, pad = letterbox(img, shape, auto=False, scaleup=self.augment)
             shapes = (h0, w0), ((h / h0, w / w0), pad)  # for COCO mAP rescaling
 
-            labels = self.labels[index].copy()
-            if labels.size:  # normalized xywh to pixel xyxy format
-                labels[:, 1:] = xywhn2xyxy(labels[:, 1:], ratio[0] * w, ratio[1] * h, padw=pad[0], padh=pad[1])
+            if self.single_labelset:
+                labels = self.labels[index].copy()
+                if labels.size:  # normalized xywh to pixel xyxy format
+                    labels[:, 1:] = xywhn2xyxy(labels[:, 1:], ratio[0] * w, ratio[1] * h, padw=pad[0], padh=pad[1])
+            else:
+                labels = dict()
+                for setname in ['modal', 'amodal']:
+                    labels[setname] = self.labels[index][setname].copy()
+                    if labels[setname].size:  # normalized xywh to pixel xyxy format
+                        labels[setname][:, 1:] = xywhn2xyxy(labels[setname][:, 1:], ratio[0] * w, ratio[1] * h, padw=pad[0], padh=pad[1])
 
         if self.augment:
             # Augment imagespace
@@ -557,7 +669,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                                                  translate=hyp['translate'],
                                                  scale=hyp['scale'],
                                                  shear=hyp['shear'],
-                                                 perspective=hyp['perspective'])
+                                                 perspective=hyp['perspective'],
+                                                 single_labelset=self.single_labelset)
 
             # Augment colorspace
             augment_hsv(img, hgain=hyp['hsv_h'], sgain=hyp['hsv_s'], vgain=hyp['hsv_v'])
@@ -566,28 +679,54 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             # if random.random() < 0.9:
             #     labels = cutout(img, labels)
 
-        nL = len(labels)  # number of labels
-        if nL:
-            labels[:, 1:5] = xyxy2xywh(labels[:, 1:5])  # convert xyxy to xywh
-            labels[:, [2, 4]] /= img.shape[0]  # normalized height 0-1
-            labels[:, [1, 3]] /= img.shape[1]  # normalized width 0-1
+        if self.single_labelset:
+            nL = len(labels)  # number of labels
+            if nL:
+                labels[:, 1:5] = xyxy2xywh(labels[:, 1:5])  # convert xyxy to xywh
+                labels[:, [2, 4]] /= img.shape[0]  # normalized height 0-1
+                labels[:, [1, 3]] /= img.shape[1]  # normalized width 0-1
+        else:
+            for setname in ['modal', 'amodal']:
+                if len(labels[setname]):
+                    labels[setname][:, 1:5] = xyxy2xywh(labels[setname][:, 1:5])  # convert xyxy to xywh
+                    labels[setname][:, [2, 4]] /= img.shape[0]  # normalized height 0-1
+                    labels[setname][:, [1, 3]] /= img.shape[1]  # normalized width 0-1
+
+
 
         if self.augment:
             # flip up-down
             if random.random() < hyp['flipud']:
                 img = np.flipud(img)
-                if nL:
-                    labels[:, 2] = 1 - labels[:, 2]
+                if self.single_labelset:
+                    if nL:
+                        labels[:, 2] = 1 - labels[:, 2]
+                else:
+                    for setname in ['modal', 'amodal']:
+                        if len(labels[setname]):
+                            labels[setname][:, 2] = 1 - labels[setname][:, 2]
 
             # flip left-right
             if random.random() < hyp['fliplr']:
                 img = np.fliplr(img)
-                if nL:
-                    labels[:, 1] = 1 - labels[:, 1]
+                if self.single_labelset:
+                    if nL:
+                        labels[:, 1] = 1 - labels[:, 1]
+                else:
+                    for setname in ['modal', 'amodal']:
+                        if len(labels[setname]):
+                            labels[setname][:, 1] = 1 - labels[setname][:, 1]
 
-        labels_out = torch.zeros((nL, 6))
-        if nL:
-            labels_out[:, 1:] = torch.from_numpy(labels)
+        if self.single_labelset:
+            labels_out = torch.zeros((nL, 6))
+            if nL:
+                labels_out[:, 1:] = torch.from_numpy(labels)
+        else:
+            labels_out = dict()
+            for setname in ['modal', 'amodal']:
+                labels_out[setname] = torch.zeros((len(labels[setname]), 6))
+                if len(labels[setname]):
+                    labels_out[setname][:, 1:] = torch.from_numpy(labels[setname])
 
         # Convert
         img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
@@ -598,9 +737,23 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
     @staticmethod
     def collate_fn(batch):
         img, label, path, shapes = zip(*batch)  # transposed
-        for i, l in enumerate(label):
-            l[:, 0] = i  # add target image index for build_targets()
-        return torch.stack(img, 0), torch.cat(label, 0), path, shapes
+
+        if isinstance(label[0], dict):
+            # we're in the non-single-label use case
+            integrated_label = dict()
+            for setname in ['modal', 'amodal']:
+                tensors = []
+                for i in range(len(label)):
+                    label[i][setname][:, 0] = i  # add target image index for build_targets()
+                    tensors.append(label[i][setname])
+                integrated_label[setname] = torch.cat(tensors, 0)
+
+            return torch.stack(img, 0), integrated_label, path, shapes
+        else:
+            # the single-label use case
+            for i, l in enumerate(label):
+                l[:, 0] = i  # add target image index for build_targets()
+            return torch.stack(img, 0), torch.cat(label, 0), path, shapes
 
     @staticmethod
     def collate_fn4(batch):
@@ -675,7 +828,11 @@ def hist_equalize(img, clahe=True, bgr=False):
 def load_mosaic(self, index):
     # loads images in a 4-mosaic
 
-    labels4, segments4 = [], []
+    if self.single_labelset:
+        labels4, segments4 = [], []
+    else:
+        labels4 = {'modal': [], 'amodal': []}
+        segments4 = {'modal': [], 'amodal': []}
     s = self.img_size
     yc, xc = [int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border]  # mosaic center x, y
     indices = [index] + random.choices(self.indices, k=3)  # 3 additional image indices
@@ -703,18 +860,40 @@ def load_mosaic(self, index):
         padh = y1a - y1b
 
         # Labels
-        labels, segments = self.labels[index].copy(), self.segments[index].copy()
-        if labels.size:
-            labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padw, padh)  # normalized xywh to pixel xyxy format
-            segments = [xyn2xy(x, w, h, padw, padh) for x in segments]
-        labels4.append(labels)
-        segments4.extend(segments)
+        if self.single_labelset:
+            labels, segments = self.labels[index].copy(), self.segments[index].copy()
+            if labels.size:
+                labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padw, padh)  # normalized xywh to pixel xyxy format
+                segments = [xyn2xy(x, w, h, padw, padh) for x in segments]
+            labels4.append(labels)
+            segments4.extend(segments)
+        else:
+            for setname in ['modal', 'amodal']:
+                labels, segments = self.labels[index]['modal'].copy(), self.segments[index]['modal'].copy()
+                labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padw, padh)  # normalized xywh to pixel xyxy format
+                segments = [xyn2xy(x, w, h, padw, padh) for x in segments]
+
+                labels4[setname].append(labels)
+                segments4[setname].extend(segments)
 
     # Concat/clip labels
-    labels4 = np.concatenate(labels4, 0)
-    for x in (labels4[:, 1:], *segments4):
-        np.clip(x, 0, 2 * s, out=x)  # clip when using random_perspective()
-    # img4, labels4 = replicate(img4, labels4)  # replicate
+    if self.single_labelset:
+        labels4 = np.concatenate(labels4, 0)
+    else:
+        new_labels4 = dict()
+        new_labels4['modal'] = np.concatenate(labels4['modal'], 0)
+        new_labels4['amodal'] = np.concatenate(labels4['amodal'], 0)
+        labels4 = new_labels4
+
+    if self.single_labelset:
+        for x in (labels4[:, 1:], *segments4):
+            np.clip(x, 0, 2 * s, out=x)  # clip when using random_perspective()
+        # img4, labels4 = replicate(img4, labels4)  # replicate
+    else:
+        for setname in ['modal', 'amodal']:
+            for x in (labels4[setname][:, 1:], *segments4[setname]):
+                np.clip(x, 0, 2 * s, out=x)  # clip when using random_perspective()
+            # img4, labels4 = replicate(img4, labels4)  # replicate
 
     # Augment
     img4, labels4 = random_perspective(img4, labels4, segments4,
@@ -723,7 +902,8 @@ def load_mosaic(self, index):
                                        scale=self.hyp['scale'],
                                        shear=self.hyp['shear'],
                                        perspective=self.hyp['perspective'],
-                                       border=self.mosaic_border)  # border to remove
+                                       border=self.mosaic_border,
+                                       single_labelset=self.single_labelset)  # border to remove
 
     return img4, labels4
 
@@ -797,7 +977,8 @@ def load_mosaic9(self, index):
                                        scale=self.hyp['scale'],
                                        shear=self.hyp['shear'],
                                        perspective=self.hyp['perspective'],
-                                       border=self.mosaic_border)  # border to remove
+                                       border=self.mosaic_border,
+                                       single_labelset=self.single_labelset)  # border to remove
 
     return img9, labels9
 
@@ -853,7 +1034,7 @@ def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scale
 
 
 def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0,
-                       border=(0, 0)):
+                       border=(0, 0), single_labelset=True):
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
     # targets = [cls, xyxy]
 
@@ -903,6 +1084,15 @@ def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, s
     # ax[1].imshow(img2[:, :, ::-1])  # warped
 
     # Transform label coordinates
+    if single_labelset:
+        targets = transform_targets(targets, segments, perspective, width, height, s, M)
+    else:
+        for setname in ['modal', 'amodal']:
+            targets[setname] = transform_targets(targets[setname], segments[setname], perspective, width, height, s, M)
+
+    return img, targets
+
+def transform_targets(targets, segments, perspective, width, height, s, M):
     n = len(targets)
     if n:
         use_segments = any(x.any() for x in segments)
@@ -938,7 +1128,7 @@ def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, s
         targets = targets[i]
         targets[:, 1:5] = new[i]
 
-    return img, targets
+        return targets
 
 
 def box_candidates(box1, box2, wh_thr=2, ar_thr=20, area_thr=0.1, eps=1e-16):  # box1(4,n), box2(4,n)

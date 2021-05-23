@@ -207,7 +207,10 @@ def train(hyp, opt, device, tb_writer=None):
                                             hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank,
                                             world_size=opt.world_size, workers=opt.workers,
                                             image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '))
-    mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
+    if dataset.single_labelset:
+        mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class  # TODO: it's breaking here
+    else:
+        mlc = np.concatenate([dataset.labels[i]['amodal'] for i in range(len(dataset.labels))], 0)[:, 0].max()  # max label class, as taken from *amodal* labels
     nb = len(dataloader)  # number of batches
     assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (mlc, nc, opt.data, nc - 1)
 
@@ -221,7 +224,11 @@ def train(hyp, opt, device, tb_writer=None):
                                            pad=0.5, prefix=colorstr(f"val/{k}: "))[0]
 
         if not opt.resume:
-            labels = np.concatenate(dataset.labels, 0)
+            if dataset.single_labelset:
+                labels = np.concatenate(dataset.labels, 0)
+            else:
+                # use the class distribution from the amodal labels for this generated histogram
+                labels = np.concatenate([dataset.labels[i]['amodal'] for i in range(len(dataset.labels))], 0)
             c = torch.tensor(labels[:, 0])  # classes
             # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
             # model._initialize_biases(cf.to(device))
@@ -275,6 +282,8 @@ def train(hyp, opt, device, tb_writer=None):
 
         # Update image weights (optional)
         if opt.image_weights:
+            if not dataset.single_labelset:
+                raise NotImplementedError("We don't support image weighting in the modal/amodal label case yet, but it can be added.")
             # Generate indices
             if rank in [-1, 0]:
                 cw = model.class_weights.cpu().numpy() * (1 - maps) ** 2 / nc  # class weights
@@ -302,6 +311,14 @@ def train(hyp, opt, device, tb_writer=None):
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
             ni = i + nb * epoch  # number integrated batches (since train start)
             imgs = imgs.to(device, non_blocking=True).float() / 255.0  # uint8 to float32, 0-255 to 0.0-1.0
+
+            """
+            In the modal/amodal use case, 'targets' is a dictionary of tensors, so you should choose
+            targets['modal'] or targets['amodal'] depending on your needs.
+            """
+            # TODO: change this logic when ready!
+            if isinstance(targets, dict):
+                targets = targets['amodal']
 
             # Warmup
             if ni <= nw:
@@ -546,6 +563,14 @@ if __name__ == '__main__':
     # custom
     parser.add_argument('--tbx-report-train-every-n-batches', type=int, default=1000,
                         help='send tbx updated (training set) metrics after this many batches')
+
+    """
+    A use case for the following argument might be:
+    your images are located like .../images/.../*.png
+    but you want to use the single set of labels located like .../labels/.../amodal/*.txt
+    """
+    parser.add_argument('--label-suffix', type=str, default='',
+                        help='a suffix of interest to append to the target label path. Can be useful to avoid rearranging data.')
     opt = parser.parse_args()
 
     # Set DDP variables

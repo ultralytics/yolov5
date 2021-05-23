@@ -102,6 +102,15 @@ def test(data,
         img = img.to(device, non_blocking=True)
         img = img.half() if half else img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
+
+        """
+        In the modal/amodal use case, 'targets' is a dictionary of tensors, so you should choose
+        targets['modal'] or targets['amodal'] depending on your needs.
+        """
+        # TODO: change this logic when ready!
+        if isinstance(targets, dict):
+            targets = targets['amodal']
+
         targets = targets.to(device)
         nb, _, height, width = img.shape  # batch size, channels, height, width
 
@@ -306,6 +315,11 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='runs/test', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+
+    # custom
+    parser.add_argument('--label-suffix', type=str, default='',
+                        help='a suffix of interest to append to the target label path. Can be useful to avoid rearranging data.')
+
     opt = parser.parse_args()
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file

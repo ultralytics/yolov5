@@ -26,7 +26,18 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
     m = model.module.model[-1] if hasattr(model, 'module') else model.model[-1]  # Detect()
     shapes = imgsz * dataset.shapes / dataset.shapes.max(1, keepdims=True)
     scale = np.random.uniform(0.9, 1.1, size=(shapes.shape[0], 1))  # augment scale
-    wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(shapes * scale, dataset.labels)])).float()  # wh
+
+    if dataset.single_labelset:
+        labels = dataset.labels
+    else:
+        """
+        We use amodal labels to check goodness-of-fit for anchor boxes. Realistically, we may want to use separate anchor
+        boxes for modal and amodal labeling pieces, but that seems like a lot of work for questionable returns.
+        Leaving this as tech debt.
+        """
+        labels = [dataset.labels[i]['amodal'] for i in range(len(dataset.labels))]
+    wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(shapes * scale, labels)])).float()  # wh
+
 
     def metric(k):  # compute metric
         r = wh[:, None] / k[None]

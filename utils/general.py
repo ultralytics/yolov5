@@ -267,6 +267,11 @@ def colorstr(*input):
 
 
 def labels_to_class_weights(labels, nc=80):
+
+    if isinstance(labels[0], dict):
+        # if in modal/amodal use case, use amodal labels (end-result network output targets) to determine class weights
+        labels = [labels[i]['amodal'] for i in range(len(labels))]
+
     # Get class weights (inverse frequency) from training labels
     if labels[0] is None:  # no labels loaded
         return torch.Tensor()
@@ -286,6 +291,11 @@ def labels_to_class_weights(labels, nc=80):
 
 
 def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
+
+    if isinstance(labels[0], dict):
+        # if in modal/amodal use case, use amodal labels (end-result network output targets) to determine class counts
+        labels = [labels[i]['amodal'] for i in range(len(labels))]
+
     # Produces image weights based on class_weights and image contents
     class_counts = np.array([np.bincount(x[:, 0].astype(np.int), minlength=nc) for x in labels])
     image_weights = (class_weights.reshape(1, nc) * class_counts).sum(1)
