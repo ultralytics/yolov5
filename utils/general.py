@@ -137,7 +137,10 @@ def check_requirements(requirements='requirements.txt', exclude=()):
         except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
             n += 1
             print(f"{prefix} {r} not found and is required by YOLOv5, attempting auto-update...")
-            print(subprocess.check_output(f"pip install '{r}'", shell=True).decode())
+            try:
+                print(subprocess.check_output(f"pip install '{r}'", shell=True).decode())
+            except Exception as e:
+                print(f'{prefix} {e}')
 
     if n:  # if packages updated
         source = file.resolve() if 'file' in locals() else requirements
