@@ -278,59 +278,53 @@ class ModelEMA:
 
     def __init__(self, model, decay=0.9999, updates=0, enabled=True):
         # Create EMA
-        self.ema = deepcopy(model.module if is_parallel(model) else model).eval()  # FP32 EMA
+        self._model = model
+        self._ema = deepcopy(model.module if is_parallel(model) else model).eval()  # FP32 EMA
         # if next(model.parameters()).device.type != 'cpu':
         #     self.ema.half()  # FP16 EMA
         self.updates = updates  # number of EMA updates
         self.decay = lambda x: decay * (1 - math.exp(-x / 2000))  # decay exponential ramp (to help early epochs)
         self.enabled = enabled
-        self.pruning_manager = None  # type: sparseml.pytorch.optim.ScheduledModifierManager
-        for p in self.ema.parameters():
+        for p in self._ema.parameters():
             p.requires_grad_(False)
 
-    def state_dict(self, half_precision=True):
+    @property
+    def ema(self):
         if not self.enabled:
-            return {}
+            return deepcopy(self._model.module if is_parallel(self._model) else self._model).eval()
+        return self._ema
 
-        ema = deepcopy(self.ema)
+    def state_dict(self, pickle=True):
+        ema = deepcopy(self.ema).float()
         return {
-            'ema': ema.half() if half_precision else ema,
+            'ema': ema if pickle else ema.state_dict(),
             'updates': self.updates,
         }
 
     def load_state_dict(self, state_dict):
-        if 'ema' in state_dict:
-            self.ema.load_state_dict(state_dict['ema'].float().state_dict())
-        if 'updates' in state_dict:
-            self.updates = state_dict['updates']
+        if not self.enabled:
+            return
+        pickled = isinstance(state_dict['ema'], nn.Module)
+        self.ema.load_state_dict(state_dict['ema'].float().state_dict() if pickled else state_dict['ema'])
+        self.updates = state_dict['updates']
 
     def update(self, model):
+        self._model = model
         if not self.enabled:
             return
 
-        # Update EMA parameters
         with torch.no_grad():
+            msd = model.module.state_dict() if is_parallel(model) else model.state_dict()  # model state_dict
             self.updates += 1
             d = self.decay(self.updates)
 
-            msd = model.module.state_dict() if is_parallel(model) else model.state_dict()  # model state_dict
             for k, v in self.ema.state_dict().items():
                 if v.dtype.is_floating_point:
+                    mv = msd[k].detach()
                     v *= d
-                    v += (1. - d) * msd[k].detach()
+                    v += (1. - d) * mv
+                    v *= mv != 0  # preserve pruned parameters in model (equal to 0)
 
     def update_attr(self, model, include=(), exclude=('process_group', 'reducer')):
-        if not self.enabled:
-            return
-
-        # store pre-ema sparsity masks
-        if self.pruning_manager is not None:
-            pruning_dict = self.pruning_manager.state_dict()
-
         # Update EMA attributes
         copy_attr(self.ema, model, include, exclude)
-
-        # restore sparsity structure post-ema
-        if self.pruning_manager is not None:
-            self.pruning_manager.load_state_dict(pruning_dict)
-            del pruning_dict

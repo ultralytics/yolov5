@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 from models.common import *
 from models.experimental import *
+from utils.activations import replace_activations
 from utils.autoanchor import check_anchor_order
 from utils.general import make_divisible, check_file, set_logging
 from utils.torch_utils import time_synchronized, fuse_conv_and_bn, model_info, scale_img, initialize_weights, \
@@ -253,7 +254,15 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         if i == 0:
             ch = []
         ch.append(c2)
-    return nn.Sequential(*layers), sorted(save)
+
+    model = nn.Sequential(*layers)
+
+    # override all activations in model if provided in config
+    if 'act' in d:
+        logger.info(f'overriding activations in model to {d["act"]}')
+        replace_activations(model, d["act"])
+
+    return model, sorted(save)
 
 
 if __name__ == '__main__':
