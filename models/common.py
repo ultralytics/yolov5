@@ -352,16 +352,16 @@ class Detections:
         self.display(save=True, save_dir=save_dir)  # save results
 
     def crop(self, save_dir='runs/hub/exp', save=False):
-        # Return all cropped objects with bounding box as an array of images
+        # Return all cropped objects with bounding box as an dictionary where names map to cropped images
         # Does not write to a directory if save is False
-        list_imgs = []
+        dict_images = {}
         if save: save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/hub/exp', mkdir=True)  # increment save_dir only if saving
         for i, (im, pred) in enumerate(zip(self.imgs, self.pred)):
             if pred is not None:
                 for c in pred[:, -1].unique():
                     for *box, conf, cls in pred:
-                        list_imgs.append(save_one_box(box, im, file=save_dir / 'crops' / self.names[int(cls)] / self.files[i], write=save))
-        return list_imgs
+                        dict_images[self.names[int(cls)]] = save_one_box(box, im, file=save_dir / 'crops' / self.names[int(cls)] / self.files[i], write=save)
+        return dict_images
 
     def render(self):
         self.display(render=True)  # render results
