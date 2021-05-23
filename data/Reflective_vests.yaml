@@ -1,0 +1,13 @@
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+# 这里是基于SHWD的 安全帽(2类)+person(1类) 共3类进行，后面会加上工作服(反光衣2类) 攻击5类进行
+# train: /home/ailab/dataset/helmet_dataset/VOC2021/txt_yolov5/2021_train.txt
+# val: /home/ailab/dataset/helmet_dataset/VOC2021/txt_yolov5/2021_train.txt
+
+train: /home/epi/gary/mydata/reflective/VOC2021/images/
+val: /home/epi/gary/mydata/reflective/VOC2021/images/
+
+# number of classes
+nc: 2
+
+# class names 0-反光衣
+names: ['reflective_clothes', 'other_clothes']
