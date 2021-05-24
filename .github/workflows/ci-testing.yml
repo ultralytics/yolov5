@@ -2,21 +2,18 @@ name: CI CPU testing
 
 on:  # https://help.github.com/en/actions/reference/events-that-trigger-workflows
   push:
-    branches: [ master ]
+    branches: [ master, develop ]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ master ]
-  schedule:
-    - cron: '0 0 * * *'  # Runs at 00:00 UTC every day
+    branches: [ master, develop ]
 
 jobs:
   cpu-tests:
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: [3.8]
         model: ['yolov5s']  # models to test
 
