@@ -171,5 +171,5 @@ For business inquiries and professional support requests please visit us at http
 
 ## Sponsors:
 
-[[Paypal](https://www.paypal.com/donate?business=RBHMVN4AQGQE2&item_name=Donation&currency_code=BRL)] - Leonardo Haim Nigri
+[[Paypal](https://www.paypal.com/donate?business=RBHMVN4AQGQE2&item_name=Donation&currency_code=BRL)] - Leonardo H. Nigri
 or Donation Cryptocurrency Dogecoin , Waĺlet: D7RMk96j7BLzTcy1hVqF5fAtpA4khmsyvA
