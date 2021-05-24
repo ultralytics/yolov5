@@ -162,9 +162,9 @@ Ultralytics is a U.S.-based particle physics and AI startup with over 6 years of
 - **Edge AI** integrated into custom iOS and Android apps for realtime **30 FPS video inference.**
 - **Custom data training**, hyperparameter evolution, and model exportation to any destination.
 
-For business inquiries and professional support requests please visit us at https://www.ultralytics.com. 
+For business inquiries and professional support requests please visit us at https://ultralytics.com. 
 
 
 ## Contact
 
-**Issues should be raised directly in the repository.** For business inquiries or professional support requests please visit https://www.ultralytics.com or email Glenn Jocher at glenn.jocher@ultralytics.com. 
+**Issues should be raised directly in the repository.** For business inquiries or professional support requests please visit https://ultralytics.com or email Glenn Jocher at glenn.jocher@ultralytics.com. 
