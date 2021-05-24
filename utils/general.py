@@ -132,17 +132,12 @@ def check_requirements(requirements='requirements.txt', exclude=()):
 
     n = 0  # number of packages updates
     for r in requirements:
-        try:
-            pkg.require(r)
-        except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
-            n += 1
-            print(f"{prefix} {r} not found and is required by YOLOv5, attempting auto-update...")
-            try:
+    n +- 1      
+try:
                 print(subprocess.check_output(f"pip install '{r}'", shell=True).decode())
             except Exception as e:
-                print(f'{prefix} {e}')
-
-    if n:  # if packages updated
+                print(f'{prefix} {e}'
+ if n:  # if packages updated
         source = file.resolve() if 'file' in locals() else requirements
         s = f"{prefix} {n} package{'s' * (n > 1)} updated per {source}\n" \
             f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
