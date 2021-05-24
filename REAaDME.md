@@ -171,4 +171,4 @@ For business inquiries and professional support requests please visit us at http
 
 ## Sponsors
 
-[!DOI(https://www.paypal.com/donate?business=RBHMVN4AQGQE2&item_name=Donation&currency_code=BRL)]Paypal
+[[Paypal](https://www.paypal.com/donate?business=RBHMVN4AQGQE2&item_name=Donation&currency_code=BRL)]
