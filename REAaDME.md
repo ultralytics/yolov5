@@ -155,7 +155,7 @@ $ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 
 [![DOI](https://zenodo.org/badge/264818686.svg)](https://zenodo.org/badge/latestdoi/264818686)
 
 
-## About Us
+## About Us:
 
 Ultralytics is a U.S.-based particle physics and AI startup with over 6 years of expertise supporting government, academic and business clients. We offer a wide range of vision AI services, spanning from simple expert advice up to delivery of fully customized, end-to-end production solutions, including:
 - **Cloud-based AI** systems operating on **hundreds of HD video streams in realtime.**
@@ -165,10 +165,11 @@ Ultralytics is a U.S.-based particle physics and AI startup with over 6 years of
 For business inquiries and professional support requests please visit us at https://www.ultralytics.com. 
 
 
-## Contact
+## Contact:
 
-**Issues should be raised directly in the repository.** For business inquiries or professional support requests please visit https://www.ultralytics.com or email Glenn Jocher at glenn.jocher@ultralytics.com. 
+**Issues should be raised directly in the repository.** For business inquiries or professional support requests please visit https://www.ultralytics.com . 
 
-## Sponsors
+## Sponsors:
 
-[[Paypal](https://www.paypal.com/donate?business=RBHMVN4AQGQE2&item_name=Donation&currency_code=BRL)]
+[[Paypal](https://www.paypal.com/donate?business=RBHMVN4AQGQE2&item_name=Donation&currency_code=BRL)] - Leonardo Haim Nigri
+or Donation Cryptocurrency Dogecoin , Waĺlet: D7RMk96j7BLzTcy1hVqF5fAtpA4khmsyvA
