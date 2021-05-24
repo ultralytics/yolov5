@@ -5,6 +5,26 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+def is_activation(mod, act_types=None):
+    if not act_types:
+        act_types = (nn.ELU, nn.Hardshrink, nn.Hardsigmoid, nn.Hardtanh, nn.Hardswish, nn.LeakyReLU,
+                     nn.LogSigmoid, nn.PReLU, nn.ReLU, nn.ReLU6, nn.RReLU, nn.SELU, nn.CELU, nn.GELU,
+                     nn.Sigmoid, nn.SiLU, nn.Softplus, nn.Softshrink, nn.Softsign, nn.Tanh, nn.Tanhshrink,
+                     SiLU, Hardswish, Mish, MemoryEfficientMish, FReLU)
+
+    return isinstance(mod, act_types)
+
+
+def replace_activations(mod, act, act_types=None):
+    for name, child in mod.named_children():
+        if is_activation(child, act_types):
+            setattr(
+                mod,
+                name,
+                act if not isinstance(act, str) else eval(act),
+            )
+
+
 # SiLU https://arxiv.org/pdf/1606.08415.pdf ----------------------------------------------------------------------------
 class SiLU(nn.Module):  # export-friendly version of nn.SiLU()
     @staticmethod
