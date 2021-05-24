@@ -346,9 +346,9 @@ def train(hyp, opt, device, tb_writer=None):
                 if plots and ni < 3:
                     f = save_dir / f'train_batch{ni}.jpg'  # filename
                     Thread(target=plot_images, args=(imgs, targets, paths, f), daemon=True).start()
-                    # if tb_writer:
-                    #     tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
-                    #     tb_writer.add_graph(torch.jit.trace(model, imgs, strict=False), [])  # add model graph
+                    if tb_writer:
+                        tb_writer.add_graph(torch.jit.trace(model, imgs, strict=False), [])  # add model graph
+                        # tb_writer.add_image(f, result, dataformats='HWC', global_step=epoch)
                 elif plots and ni == 10 and wandb_logger.wandb:
                     wandb_logger.log({"Mosaics": [wandb_logger.wandb.Image(str(x), caption=x.name) for x in
                                                   save_dir.glob('train*.jpg') if x.exists()]})
@@ -385,8 +385,6 @@ def train(hyp, opt, device, tb_writer=None):
             # Write
             with open(results_file, 'a') as f:
                 f.write(s + '%10.4g' * 7 % results + '\n')  # append metrics, val_loss
-            if len(opt.name) and opt.bucket:
-                os.system('gsutil cp %s gs://%s/results/results%s.txt' % (results_file, opt.bucket, opt.name))
 
             # Log
             tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
@@ -436,7 +434,7 @@ def train(hyp, opt, device, tb_writer=None):
         # Test best.pt
         logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
         if opt.data.endswith('coco.yaml') and nc == 80:  # if COCO
-            for m in (last, best) if best.exists() else (last):  # speed, mAP tests
+            for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
                 test_model, _ = load_checkpoint('ensemble', m, device)
                 results, _, _ = test.test(opt.data,
                                           batch_size=batch_size * 2,
@@ -462,7 +460,7 @@ def train(hyp, opt, device, tb_writer=None):
         if wandb_logger.wandb and not opt.evolve:  # Log the stripped model
             wandb_logger.wandb.log_artifact(str(final), type='model',
                                             name='run_' + wandb_logger.wandb_run.id + '_model',
-                                            aliases=['last', 'best', 'stripped'])
+                                            aliases=['latest', 'best', 'stripped'])
         wandb_logger.finish_run()
     else:
         dist.destroy_process_group()
@@ -517,7 +515,7 @@ if __name__ == '__main__':
     set_logging(opt.global_rank)
     if opt.global_rank in [-1, 0]:
         check_git_status()
-        check_requirements()
+        check_requirements(exclude=('pycocotools', 'thop'))
 
     # Resume
     wandb_run = check_wandb_resume(opt)
@@ -546,6 +544,7 @@ if __name__ == '__main__':
         device = torch.device('cuda', opt.local_rank)
         dist.init_process_group(backend='nccl', init_method='env://')  # distributed backend
         assert opt.batch_size % opt.world_size == 0, '--batch-size must be multiple of CUDA device count'
+        assert not opt.image_weights, '--image-weights argument is not compatible with DDP training'
         opt.batch_size = opt.total_batch_size // opt.world_size
 
     # Hyperparameters

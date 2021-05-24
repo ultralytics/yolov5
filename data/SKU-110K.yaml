@@ -1,0 +1,52 @@
+# SKU-110K retail items dataset https://github.com/eg4000/SKU110K_CVPR19
+# Train command: python train.py --data SKU-110K.yaml
+# Default dataset location is next to YOLOv5:
+#   /parent_folder
+#     /datasets/SKU-110K
+#     /yolov5
+
+
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+train: ../datasets/SKU-110K/train.txt  # 8219 images
+val: ../datasets/SKU-110K/val.txt  # 588 images
+test: ../datasets/SKU-110K/test.txt  # 2936 images
+
+# number of classes
+nc: 1
+
+# class names
+names: [ 'object' ]
+
+
+# download command/URL (optional) --------------------------------------------------------------------------------------
+download: |
+  import shutil
+  from tqdm import tqdm
+  from utils.general import np, pd, Path, download, xyxy2xywh
+
+  # Download
+  datasets = Path('../datasets')  # download directory
+  urls = ['http://trax-geometry.s3.amazonaws.com/cvpr_challenge/SKU110K_fixed.tar.gz']
+  download(urls, dir=datasets, delete=False)
+
+  # Rename directories
+  dir = (datasets / 'SKU-110K')
+  if dir.exists():
+      shutil.rmtree(dir)
+  (datasets / 'SKU110K_fixed').rename(dir)  # rename dir
+  (dir / 'labels').mkdir(parents=True, exist_ok=True)  # create labels dir
+
+  # Convert labels
+  names = 'image', 'x1', 'y1', 'x2', 'y2', 'class', 'image_width', 'image_height'  # column names
+  for d in 'annotations_train.csv', 'annotations_val.csv', 'annotations_test.csv':
+      x = pd.read_csv(dir / 'annotations' / d, names=names).values  # annotations
+      images, unique_images = x[:, 0], np.unique(x[:, 0])
+      with open((dir / d).with_suffix('.txt').__str__().replace('annotations_', ''), 'w') as f:
+          f.writelines(f'./images/{s}\n' for s in unique_images)
+      for im in tqdm(unique_images, desc=f'Converting {dir / d}'):
+          cls = 0  # single-class dataset
+          with open((dir / 'labels' / im).with_suffix('.txt'), 'a') as f:
+              for r in x[images == im]:
+                  w, h = r[6], r[7]  # image width, height
+                  xywh = xyxy2xywh(np.array([[r[1] / w, r[2] / h, r[3] / w, r[4] / h]]))[0]  # instance
+                  f.write(f"{cls} {xywh[0]:.5f} {xywh[1]:.5f} {xywh[2]:.5f} {xywh[3]:.5f}\n")  # write label
