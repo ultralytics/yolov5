@@ -131,6 +131,7 @@ if __name__ == '__main__':
             import coremltools as ct
 
             print(f'{prefix} starting export with coremltools {ct.__version__}...')
+            assert opt.train, 'CoreML exports should be placed in model.train() mode with `python export.py --train`'
             model = ct.convert(ts, inputs=[ct.ImageType('image', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
             f = opt.weights.replace('.pt', '.mlmodel')  # filename
             model.save(f)
