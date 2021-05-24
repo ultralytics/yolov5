@@ -36,7 +36,7 @@ for val in annotation_files:
         img_name = a['images'][img_id]['name']
         img_label_name = img_name[:-3] + "txt"
 
-        obj_class = annot['category_id']
+        cls = annot['category_id']  # instance class id
         x_center, y_center, width, height = annot['bbox']
         x_center = (x_center + width / 2) / 1920.  # offset and scale
         y_center = (y_center + height / 2) / 1200.  # offset and scale
@@ -46,11 +46,10 @@ for val in annotation_files:
         img_dir = "./labels/" + a['seq_dirs'][a['images'][annot['image_id']]['sid']]
 
         Path(img_dir).mkdir(parents=True, exist_ok=True)
-
         if img_dir + "/" + img_label_name not in label_dict:
             label_dict[img_dir + "/" + img_label_name] = []
 
-        label_dict[img_dir + "/" + img_label_name].append(f"{obj_class} {x_center} {y_center} {width} {height}\n")
+        label_dict[img_dir + "/" + img_label_name].append(f"{cls} {x_center} {y_center} {width} {height}\n")
 
     for filename in label_dict:
         with open(filename, "w") as file:
