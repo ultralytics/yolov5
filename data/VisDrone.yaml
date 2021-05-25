@@ -1,0 +1,61 @@
+# VisDrone2019-DET dataset https://github.com/VisDrone/VisDrone-Dataset
+# Train command: python train.py --data VisDrone.yaml
+# Default dataset location is next to YOLOv5:
+#   /parent_folder
+#     /VisDrone
+#     /yolov5
+
+
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+train: ../VisDrone/VisDrone2019-DET-train/images  # 6471 images
+val: ../VisDrone/VisDrone2019-DET-val/images  # 548 images
+test: ../VisDrone/VisDrone2019-DET-test-dev/images  # 1610 images
+
+# number of classes
+nc: 10
+
+# class names
+names: [ 'pedestrian', 'people', 'bicycle', 'car', 'van', 'truck', 'tricycle', 'awning-tricycle', 'bus', 'motor' ]
+
+
+# download command/URL (optional) --------------------------------------------------------------------------------------
+download: |
+  from utils.general import download, os, Path
+
+  def visdrone2yolo(dir):
+      from PIL import Image
+      from tqdm import tqdm
+
+      def convert_box(size, box):
+          # Convert VisDrone box to YOLO xywh box
+          dw = 1. / size[0]
+          dh = 1. / size[1]
+          return (box[0] + box[2] / 2) * dw, (box[1] + box[3] / 2) * dh, box[2] * dw, box[3] * dh
+
+      (dir / 'labels').mkdir(parents=True, exist_ok=True)  # make labels directory
+      pbar = tqdm((dir / 'annotations').glob('*.txt'), desc=f'Converting {dir}')
+      for f in pbar:
+          img_size = Image.open((dir / 'images' / f.name).with_suffix('.jpg')).size
+          lines = []
+          with open(f, 'r') as file:  # read annotation.txt
+              for row in [x.split(',') for x in file.read().strip().splitlines()]:
+                  if row[4] == '0':  # VisDrone 'ignored regions' class 0
+                      continue
+                  cls = int(row[5]) - 1
+                  box = convert_box(img_size, tuple(map(int, row[:4])))
+                  lines.append(f"{cls} {' '.join(f'{x:.6f}' for x in box)}\n")
+                  with open(str(f).replace(os.sep + 'annotations' + os.sep, os.sep + 'labels' + os.sep), 'w') as fl:
+                      fl.writelines(lines)  # write label.txt
+
+
+  # Download
+  dir = Path('../VisDrone')  # dataset directory
+  urls = ['https://github.com/ultralytics/yolov5/releases/download/v1.0/VisDrone2019-DET-train.zip',
+          'https://github.com/ultralytics/yolov5/releases/download/v1.0/VisDrone2019-DET-val.zip',
+          'https://github.com/ultralytics/yolov5/releases/download/v1.0/VisDrone2019-DET-test-dev.zip',
+          'https://github.com/ultralytics/yolov5/releases/download/v1.0/VisDrone2019-DET-test-challenge.zip']
+  download(urls, dir=dir)
+
+  # Convert
+  for d in 'VisDrone2019-DET-train', 'VisDrone2019-DET-val', 'VisDrone2019-DET-test-dev':
+      visdrone2yolo(dir / d)  # convert VisDrone annotations to YOLO labels

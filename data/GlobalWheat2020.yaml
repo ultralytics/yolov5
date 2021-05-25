@@ -1,0 +1,55 @@
+# Global Wheat 2020 dataset http://www.global-wheat.com/
+# Train command: python train.py --data GlobalWheat2020.yaml
+# Default dataset location is next to YOLOv5:
+#   /parent_folder
+#     /datasets/GlobalWheat2020
+#     /yolov5
+
+
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+train: # 3422 images
+  - ../datasets/GlobalWheat2020/images/arvalis_1
+  - ../datasets/GlobalWheat2020/images/arvalis_2
+  - ../datasets/GlobalWheat2020/images/arvalis_3
+  - ../datasets/GlobalWheat2020/images/ethz_1
+  - ../datasets/GlobalWheat2020/images/rres_1
+  - ../datasets/GlobalWheat2020/images/inrae_1
+  - ../datasets/GlobalWheat2020/images/usask_1
+
+val: # 748 images (WARNING: train set contains ethz_1)
+  - ../datasets/GlobalWheat2020/images/ethz_1
+
+test: # 1276 images
+  - ../datasets/GlobalWheat2020/images/utokyo_1
+  - ../datasets/GlobalWheat2020/images/utokyo_2
+  - ../datasets/GlobalWheat2020/images/nau_1
+  - ../datasets/GlobalWheat2020/images/uq_1
+
+# number of classes
+nc: 1
+
+# class names
+names: [ 'wheat_head' ]
+
+
+# download command/URL (optional) --------------------------------------------------------------------------------------
+download: |
+  from utils.general import download, Path
+
+  # Download
+  dir = Path('../datasets/GlobalWheat2020')  # dataset directory
+  urls = ['https://zenodo.org/record/4298502/files/global-wheat-codalab-official.zip',
+          'https://github.com/ultralytics/yolov5/releases/download/v1.0/GlobalWheat2020_labels.zip']
+  download(urls, dir=dir)
+
+  # Make Directories
+  for p in 'annotations', 'images', 'labels':
+      (dir / p).mkdir(parents=True, exist_ok=True)
+
+  # Move
+  for p in 'arvalis_1', 'arvalis_2', 'arvalis_3', 'ethz_1', 'rres_1', 'inrae_1', 'usask_1', \
+           'utokyo_1', 'utokyo_2', 'nau_1', 'uq_1':
+      (dir / p).rename(dir / 'images' / p)  # move to /images
+      f = (dir / p).with_suffix('.json')  # json file
+      if f.exists():
+          f.rename((dir / 'annotations' / p).with_suffix('.json'))  # move to /annotations
