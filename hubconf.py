@@ -7,6 +7,9 @@ Usage:
 
 import torch
 
+from yolov5.models.experimental import attempt_load
+from yolov5.models.yolo import Model
+
 
 def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True, device=None):
     """Creates a specified YOLOv5 model
@@ -25,7 +28,6 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     """
     from pathlib import Path
 
-    from yolov5.models import Model, attempt_load
     from yolov5.utils.general import check_requirements, set_logging
     from yolov5.utils.google_utils import attempt_download
     from yolov5.utils.torch_utils import select_device
@@ -116,8 +118,8 @@ if __name__ == '__main__':
 
     imgs = ['data/images/zidane.jpg',  # filename
             'https://github.com/ultralytics/yolov5/releases/download/v1.0/zidane.jpg',  # URI
-            cv2.imread('data/images/bus.jpg')[:, :, ::-1],  # OpenCV
-            Image.open('data/images/bus.jpg'),  # PIL
+            cv2.imread('yolov5/data/images/bus.jpg')[:, :, ::-1],  # OpenCV
+            Image.open('yolov5/data/images/bus.jpg'),  # PIL
             np.zeros((320, 640, 3))]  # numpy
 
     results = model(imgs)  # batched inference

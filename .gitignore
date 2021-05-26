@@ -25,15 +25,15 @@
 
 storage.googleapis.com
 runs/*
-data/*
-!data/images/zidane.jpg
-!data/images/bus.jpg
-!data/coco.names
-!data/coco_paper.names
-!data/coco.data
-!data/coco_*.data
-!data/coco_*.txt
-!data/trainvalno5k.shapes
+yolov5/data/*
+!yolov5/data/images/zidane.jpg
+!yolov5/data/images/bus.jpg
+!yolov5/data/coco.names
+!yolov5/data/coco_paper.names
+!yolov5/data/coco.data
+!yolov5/data/coco_*.data
+!yolov5/data/coco_*.txt
+!yolov5/data/trainvalno5k.shapes
 !data/*.sh
 
 pycocotools/*
