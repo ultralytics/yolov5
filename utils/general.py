@@ -181,7 +181,7 @@ def check_file(file):
         url, file = file, Path(file).name
         print(f'Downloading {url} to {file}...')
         torch.hub.download_url_to_file(url, file)
-        assert file.exists() and file.stat().st_size > 1E6, f'File download failed: {url}'  # check
+        assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
         return file
     else:  # search
         files = glob.glob('./**/' + file, recursive=True)  # find file
