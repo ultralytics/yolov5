@@ -25,10 +25,10 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     """
     from pathlib import Path
 
-    from models.yolo import Model, attempt_load
-    from utils.general import check_requirements, set_logging
-    from utils.google_utils import attempt_download
-    from utils.torch_utils import select_device
+    from yolov5.models import Model, attempt_load
+    from yolov5.utils.general import check_requirements, set_logging
+    from yolov5.utils.google_utils import attempt_download
+    from yolov5.utils.torch_utils import select_device
 
     check_requirements(Path(__file__).parent / 'requirements.txt', exclude=('tensorboard', 'pycocotools', 'thop'))
     set_logging(verbose=verbose)

@@ -5,7 +5,7 @@ import torch
 import yaml
 from tqdm import tqdm
 
-from utils.general import colorstr
+from yolov5.utils.general import colorstr
 
 
 def check_anchor_order(m):
@@ -104,7 +104,7 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
     if isinstance(path, str):  # *.yaml file
         with open(path) as f:
             data_dict = yaml.safe_load(f)  # model dict
-        from utils.datasets import LoadImagesAndLabels
+        from yolov5.utils.datasets import LoadImagesAndLabels
         dataset = LoadImagesAndLabels(data_dict['train'], augment=True, rect=True)
     else:
         dataset = path  # dataset
