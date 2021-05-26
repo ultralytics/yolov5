@@ -250,3 +250,5 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+ultralytics_yolov5.egg-info

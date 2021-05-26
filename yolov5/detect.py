@@ -6,9 +6,11 @@ import cv2
 import torch
 import torch.backends.cudnn as cudnn
 
+from yolov5.models.experimental import attempt_load
 from yolov5.utils.datasets import LoadStreams, LoadImages
-from yolov5.utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
-    scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
+from yolov5.utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, \
+    apply_classifier, \
+    scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box, yolov5_in_syspath
 from yolov5.utils.plots import colors, plot_one_box
 from yolov5.utils.torch_utils import select_device, load_classifier, time_synchronized
 
@@ -41,7 +43,8 @@ def detect(opt):
     classify = False
     if classify:
         modelc = load_classifier(name='resnet101', n=2)  # initialize
-        modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
+        with yolov5_in_syspath():
+            modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
 
     # Set Dataloader
     vid_path, vid_writer = None, None
@@ -150,7 +153,7 @@ def detect(opt):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
-    parser.add_argument('--source', type=str, default='data/images', help='source')  # file/folder, 0 for webcam
+    parser.add_argument('--source', type=str, default='yolov5/data/images', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')

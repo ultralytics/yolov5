@@ -1,13 +1,6 @@
-# YOLOv5 YOLO-specific modules
-
 import argparse
 import logging
-import sys
 from copy import deepcopy
-from pathlib import Path
-
-sys.path.append(Path(__file__).parent.parent.absolute().__str__())  # to run '$ python *.py' files in subdirectories
-logger = logging.getLogger(__name__)
 
 from yolov5.models.common import *
 from yolov5.models.experimental import *
@@ -15,6 +8,8 @@ from yolov5.utils.autoanchor import check_anchor_order
 from yolov5.utils.general import make_divisible, check_file, set_logging
 from yolov5.utils.torch_utils import time_synchronized, fuse_conv_and_bn, model_info, scale_img, initialize_weights, \
     select_device, copy_attr
+
+logger = logging.getLogger(__name__)
 
 try:
     import thop  # for FLOPS computation
