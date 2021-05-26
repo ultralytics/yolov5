@@ -1,29 +1,31 @@
 # YOLOv5 general utils
 
-import glob
-import logging
-import math
-import os
-import platform
-import random
-import re
-import subprocess
-import time
-from itertools import repeat
-from multiprocessing.pool import ThreadPool
-from pathlib import Path
+ glob
+ logging
+ math
+ os
+ platform
+ random
+ re
+ subprocess
+ time 
+ itertools 
+ repeat multiprocessing.pool
+ ThreadPool
+ pathlib
+ Path
 
-import cv2
-import numpy as np
-import pandas as pd
-import pkg_resources as pkg
-import torch
-import torchvision
-import yaml
+ cv2
+ numpy np
+ pandas pd
+ pkg_resources pkg
+ torch
+ torchvision
+ yaml
 
-from utils.google_utils import gsutil_getsize
-from utils.metrics import fitness
-from utils.torch_utils import init_torch_seeds
+ utils.google_utils  gsutil_getsize
+ utils.metrics  fitness 
+ Utils.torch_utils  init_torch_seeds
 
 # Settings
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
