@@ -1,6 +1,7 @@
 # Dataset utils and dataloaders
 
 import glob
+import hashlib
 import logging
 import math
 import os
@@ -38,7 +39,10 @@ for orientation in ExifTags.TAGS.keys():
 
 def get_hash(paths):
     # Returns a single hash value of a list of paths (files or dirs)
-    return sum(os.path.getsize(p) for p in paths if os.path.exists(p))
+    size = sum(os.path.getsize(p) for p in paths if os.path.exists(p))  # sizes
+    h = hashlib.md5(str(size).encode())  # hash sizes
+    h.update(''.join(paths).encode())  # hash paths
+    return h.hexdigest()  # return hash
 
 
 def exif_size(img):
@@ -383,7 +387,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')  # cached labels
         if cache_path.is_file():
             cache, exists = torch.load(cache_path), True  # load
-            if cache['hash'] != get_hash(self.label_files + self.img_files + [str(cache_path.parent)]):  # changed
+            if cache['hash'] != get_hash(self.label_files + self.img_files):  # changed
                 cache, exists = self.cache_labels(cache_path, prefix), False  # re-cache
         else:
             cache, exists = self.cache_labels(cache_path, prefix), False  # cache
@@ -499,7 +503,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         if nf == 0:
             logging.info(f'{prefix}WARNING: No labels found in {path}. See {help_url}')
 
-        x['hash'] = get_hash(self.label_files + self.img_files + [str(path.parent)])
+        x['hash'] = get_hash(self.label_files + self.img_files)
         x['results'] = nf, nm, ne, nc, i + 1
         x['version'] = 0.2  # cache version
         try:
