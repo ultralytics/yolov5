@@ -13,7 +13,7 @@ tqdm>=4.41.0
 
 # logging -------------------------------------
 tensorboard>=2.4.1
-# wandb
+# wandb  # W&B https://wandb.ai
 
 # plotting ------------------------------------
 seaborn>=0.11.0
