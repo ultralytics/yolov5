@@ -207,7 +207,7 @@ def train(hyp, opt, device, tb_writer=None):
                                             world_size=opt.world_size, workers=opt.workers,
                                             image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '))
     if dataset.single_labelset:
-        mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class  # TODO: it's breaking here
+        mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
     else:
         mlc = np.concatenate([dataset.labels[i]['amodal'] for i in range(len(dataset.labels))], 0)[:, 0].max()  # max label class, as taken from *amodal* labels
     nb = len(dataloader)  # number of batches
