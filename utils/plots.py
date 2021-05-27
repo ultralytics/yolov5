@@ -153,6 +153,9 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
         if i == max_subplots:  # if last batch has fewer images than we expect
             break
 
+        # discard any input channels other than R, G, and B. This may not be necessary, but it won't be harmful.
+        img = img[0:3, :, :]
+
         block_x = int(w * (i // ns))
         block_y = int(h * (i % ns))
 

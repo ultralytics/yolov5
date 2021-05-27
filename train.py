@@ -100,7 +100,6 @@ def train(hyp, opt, device, tb_writer=None):
     with torch_distributed_zero_first(rank):
         check_dataset(data_dict)  # check
     train_path = data_dict['train']
-    # TODO: this should be a list of paths, not just a single path
     val_paths = dict()
     if type(data_dict['val']) == str:
         val_paths[MASTER_VAL_NAME] = data_dict['val']
