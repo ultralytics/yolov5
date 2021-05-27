@@ -10,6 +10,7 @@ README = (HERE / "README.md").read_text()
 setuptools.setup(
     name="ultralytics-yolov5",
     version='0.0.0',
+    description='Ultralytics YOLOv5 🚀 Python package, https://ultralytics.com',  # Optional
     long_description=README,
     long_description_content_type="text/markdown",
     url="https://github.com/ultralytics/yolov5",
