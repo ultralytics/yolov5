@@ -2,16 +2,15 @@ import pathlib
 import setuptools
 
 # The directory containing this file
-HERE = pathlib.Path(__file__).parent
+# HERE = pathlib.Path(__file__).parent
 
 # The text of the README file
-README = (HERE / "README.md").read_text()
+# README = (HERE / "README.md").read_text()
 
 setuptools.setup(
     name="ultralytics-yolov5",
     version='0.0.0',
     description='Ultralytics YOLOv5 🚀 Python package, https://ultralytics.com',  # Optional
-    long_description=README,
     long_description_content_type="text/markdown",
     url="https://github.com/ultralytics/yolov5",
     author="ultralytics",
@@ -27,7 +26,12 @@ setuptools.setup(
         "scipy>=1.4.1",
         "torch>=1.7.0",
         "torchvision>=0.8.1",
-        "tqdm>=4.41.0"
+        "tqdm>=4.41.0",
+        "tensorboard>=2.4.1",
+        "seaborn>=0.11.0",
+        "pandas",
+        "pycocotools>=2.0",
+        "thop"
     ],
     extras_require={
         'tests': [
