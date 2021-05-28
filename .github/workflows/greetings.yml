@@ -16,7 +16,7 @@ jobs:
             git remote add upstream https://github.com/ultralytics/yolov5.git
             git fetch upstream
             git checkout feature  # <----- replace 'feature' with local branch name
-            git rebase upstream/master
+            git rebase upstream/develop
             git push -u origin -f
             ```
             - ✅ Verify all Continuous Integration (CI) **checks are passing**.

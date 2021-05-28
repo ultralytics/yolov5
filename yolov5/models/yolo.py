@@ -1,3 +1,9 @@
+"""YOLOv5-specific modules
+
+Usage:
+    $ python path/to/models/yolo.py --cfg yolov5s.yaml
+"""
+
 import argparse
 import logging
 from copy import deepcopy
