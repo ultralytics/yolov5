@@ -695,6 +695,7 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     return path
 
 
+# Credits to https://github.com/fcakyon/yolov5-pip for coming up with this solution
 @contextlib.contextmanager
 def yolov5_in_syspath():
     """
