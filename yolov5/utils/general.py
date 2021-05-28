@@ -695,20 +695,17 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     return path
 
 
-# Credits to https://github.com/fcakyon/yolov5-pip for coming up with this solution
 @contextlib.contextmanager
 def yolov5_in_syspath():
-    """
-    Temporarily add yolov5 folder to `sys.path`.
+    """Temporarily add yolov5 folder to `sys.path`. Credit to https://github.com/fcakyon/yolov5-pip
 
-    torch.hub handles it in the same way: https://github.com/pytorch/pytorch/blob/75024e228ca441290b6a1c2e564300ad507d7af6/torch/hub.py#L387
-
+    torch.hub fix: https://github.com/pytorch/pytorch/blob/75024e228ca441290b6a1c2e564300ad507d7af6/torch/hub.py#L387
     Proper fix for: #22, #134, #353, #1155, #1389, #1680, #2531, #3071
     No need for such workarounds: #869, #1052, #2949
     """
-    yolov5_folder_dir = str(Path(__file__).parents[1].absolute())
+    yolov5_dir = str(Path(__file__).parents[1].absolute())
     try:
-        sys.path.insert(0, yolov5_folder_dir)
+        sys.path.insert(0, yolov5_dir)
         yield
     finally:
-        sys.path.remove(yolov5_folder_dir)
+        sys.path.remove(yolov5_dir)

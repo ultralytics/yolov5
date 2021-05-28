@@ -113,8 +113,7 @@ class Ensemble(nn.ModuleList):
 
 def attempt_load(weights, map_location=None, inplace=True):
     with yolov5_in_syspath():
-        # TODO:
-        from models.yolo import Detect, Model
+        from models.yolo import Detect, Model  # backward-compatibility fix
 
     # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a
     model = Ensemble()
