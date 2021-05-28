@@ -17,7 +17,7 @@ def gsutil_getsize(url=''):
 
 
 def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
-    # Attempts to download file from url or url2, checks and removes incomplete downloads < min_bytes
+    # Attempts to download file from url or url2, checks and removes incomplete downloads < min_size bytes
     file = Path(file)
     try:  # GitHub
         print(f'Downloading {url} to {file}...')
@@ -40,14 +40,15 @@ def attempt_download(file, repo='ultralytics/yolov5'):
     file = Path(str(file).strip().replace("'", ''))
 
     if not file.exists():
-        file.parent.mkdir(parents=True, exist_ok=True)  # make parent dir (if required)
-        name = file.name
-
         # URL specified
-        if str(file).startswith(('http://', 'https://')):  # download
-            safe_download(file=name, url=str(file), min_bytes=1E5)
+        name = file.name
+        if str(file).startswith(('http:/', 'https:/')):  # download
+            url = str(file).replace(':/', '://')  # Pathlib turns :// -> :/
+            safe_download(file=name, url=url, min_bytes=1E5)
+            return name
 
         # GitHub assets
+        file.parent.mkdir(parents=True, exist_ok=True)  # make parent dir (if required)
         try:
             response = requests.get(f'https://api.github.com/repos/{repo}/releases/latest').json()  # github api
             assets = [x['name'] for x in response['assets']]  # release assets, i.e. ['yolov5s.pt', 'yolov5m.pt', ...]
@@ -66,6 +67,8 @@ def attempt_download(file, repo='ultralytics/yolov5'):
                           url2=f'https://storage.googleapis.com/{repo}/ckpt/{name}',  # backup
                           min_bytes=1E5,
                           error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/')
+
+        return str(file)
 
 
 def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', file='tmp.zip'):
