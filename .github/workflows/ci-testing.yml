@@ -74,5 +74,5 @@ jobs:
 
           python hubconf.py  # hub
           # python -m yolov5.models.yolo --cfg models/${{ matrix.model }}.yaml  # inspect
-          # python -m yolov5.models.export --img 128 --batch 1 --weights weights/${{ matrix.model }}.pt  # export
+          python -m yolov5.models.export --img 128 --batch 1 --weights weights/${{ matrix.model }}.pt  # export
         shell: bash
