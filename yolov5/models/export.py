@@ -15,7 +15,8 @@ import torch
 import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
-from yolov5 import models
+from yolov5.models.common import Conv
+from yolov5.models.yolo import Detect
 from yolov5.models.experimental import attempt_load
 from yolov5.utils.activations import Hardswish, SiLU
 from yolov5.utils.general import colorstr, check_img_size, check_requirements, file_size, set_logging
@@ -62,12 +63,12 @@ if __name__ == '__main__':
         model.train()  # training mode (no grid construction in Detect layer)
     for k, m in model.named_modules():
         m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatibility
-        if isinstance(m, models.common.Conv):  # assign export-friendly activations
+        if isinstance(m, Conv):  # assign export-friendly activations
             if isinstance(m.act, nn.Hardswish):
                 m.act = Hardswish()
             elif isinstance(m.act, nn.SiLU):
                 m.act = SiLU()
-        elif isinstance(m, models.yolo.Detect):
+        elif isinstance(m, Detect):
             m.inplace = opt.inplace
             m.onnx_dynamic = opt.dynamic
             # m.forward = m.forward_export  # assign forward (optional)
