@@ -1,4 +1,3 @@
-import pathlib
 import setuptools
 
 # The directory containing this file

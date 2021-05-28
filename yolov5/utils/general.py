@@ -4,11 +4,11 @@ import glob
 import logging
 import math
 import os
-import sys
 import platform
 import random
 import re
 import subprocess
+import sys
 import time
 from itertools import repeat
 from multiprocessing.pool import ThreadPool
