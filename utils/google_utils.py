@@ -17,7 +17,7 @@ def gsutil_getsize(url=''):
 
 
 def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
-    # Attempts to download file from url or url2, checks and removes incomplete downloads < min_size bytes
+    # Attempts to download file from url or url2, checks and removes incomplete downloads < min_bytes
     file = Path(file)
     try:  # GitHub
         print(f'Downloading {url} to {file}...')
