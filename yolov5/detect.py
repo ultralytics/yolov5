@@ -176,7 +176,7 @@ if __name__ == '__main__':
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     opt = parser.parse_args()
     print(opt)
-    check_requirements(exclude=('tensorboard', 'pycocotools', 'thop'))
+    check_requirements('../requirements.txt', exclude=('tensorboard', 'pycocotools', 'thop'))
 
     if opt.update:  # update all models (to fix SourceChangeWarning)
         for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
