@@ -73,6 +73,6 @@ jobs:
           python -m yolov5.test --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $di
 
           python hubconf.py  # hub
-          # python -m yolov5.models.yolo --cfg models/${{ matrix.model }}.yaml  # inspect
-          python -m yolov5.models.export --img 128 --batch 1 --weights weights/${{ matrix.model }}.pt  # export
+          python yolov5/models/yolo.py --cfg models/${{ matrix.model }}.yaml  # inspect
+          python yolov5/models/export.py --img 128 --batch 1 --weights weights/${{ matrix.model }}.pt  # export
         shell: bash
