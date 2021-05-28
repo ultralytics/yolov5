@@ -116,7 +116,7 @@ if __name__ == '__main__':
     import numpy as np
     from PIL import Image
 
-    imgs = ['data/images/zidane.jpg',  # filename
+    imgs = ['yolov5/data/images/zidane.jpg',  # filename
             'https://github.com/ultralytics/yolov5/releases/download/v1.0/zidane.jpg',  # URI
             cv2.imread('yolov5/data/images/bus.jpg')[:, :, ::-1],  # OpenCV
             Image.open('yolov5/data/images/bus.jpg'),  # PIL
