@@ -63,18 +63,18 @@ jobs:
           di=cpu # inference devices  # define device
 
           # train
-          python -m yolov5.train --img 128 --batch 16 --weights weights/${{ matrix.model }}.pt --cfg models/${{ matrix.model }}.yaml --epochs 1 --device $di
+          python -m yolov5.train --img 128 --batch 16 --weights ${{ matrix.model }}.pt --cfg ${{ matrix.model }}.yaml --epochs 1 --device $di
           # detect
-          python -m yolov5.detect --weights weights/${{ matrix.model }}.pt --device $di
+          python -m yolov5.detect --weights ${{ matrix.model }}.pt --device $di
           python -m yolov5.detect --weights runs/train/exp/weights/last.pt --device $di
           # test
-          python -m yolov5.test --img 128 --batch 16 --weights weights/${{ matrix.model }}.pt --device $di
+          python -m yolov5.test --img 128 --batch 16 --weights ${{ matrix.model }}.pt --device $di
           python -m yolov5.test --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $di
 
           # hub
           python hubconf.py
           # inspect
-          python -m yolov5.models.yolo --cfg models/${{ matrix.model }}.yaml
+          python -m yolov5.models.yolo --cfg ${{ matrix.model }}.yaml
           # export
-          python -m yolov5.models.export --img 128 --batch 1 --weights weights/${{ matrix.model }}.pt
+          python -m yolov5.models.export --img 128 --batch 1 --weights ${{ matrix.model }}.pt
         shell: bash
