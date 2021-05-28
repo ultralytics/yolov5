@@ -9,8 +9,7 @@ import torch.backends.cudnn as cudnn
 from yolov5.models.experimental import attempt_load
 from yolov5.utils.datasets import LoadStreams, LoadImages
 from yolov5.utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, \
-    apply_classifier, \
-    scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box, yolov5_in_syspath
+    apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
 from yolov5.utils.plots import colors, plot_one_box
 from yolov5.utils.torch_utils import select_device, load_classifier, time_synchronized
 
@@ -43,8 +42,7 @@ def detect(opt):
     classify = False
     if classify:
         modelc = load_classifier(name='resnet101', n=2)  # initialize
-        with yolov5_in_syspath():
-            modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
+        modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
 
     # Set Dataloader
     vid_path, vid_writer = None, None
