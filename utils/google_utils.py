@@ -32,7 +32,6 @@ def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
             file.unlink(missing_ok=True)  # remove partial downloads
             print(f'ERROR: Download failure: {error_msg or url}')
         print('')
-        return
 
 
 def attempt_download(file, repo='ultralytics/yolov5'):
@@ -68,7 +67,7 @@ def attempt_download(file, repo='ultralytics/yolov5'):
                           min_bytes=1E5,
                           error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/')
 
-        return str(file)
+    return str(file)
 
 
 def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', file='tmp.zip'):
