@@ -111,6 +111,7 @@ if __name__ == '__main__':
     parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')  # ONNX-only
     parser.add_argument('--simplify', action='store_true', help='simplify ONNX model')  # ONNX-only
     parser.add_argument('--opset-version', type=int, default=12, help='ONNX opset version')  # ONNX-only
+    parser.add_argument("--remove-grid", action="store_true", help="remove export of Detect() layer grid")
     opt = parser.parse_args()
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     opt.include = [x.lower() for x in opt.include]
@@ -148,6 +149,7 @@ if __name__ == '__main__':
             m.inplace = opt.inplace
             m.onnx_dynamic = opt.dynamic
             # m.forward = m.forward_export  # assign forward (optional)
+    model.model[-1].export = not opt.remove_grid  # set Detect() layer grid export
 
     for _ in range(2):
         y = model(img)  # dry runs
