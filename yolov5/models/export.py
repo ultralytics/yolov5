@@ -23,7 +23,7 @@ from yolov5.utils.activations import Hardswish, SiLU
 from yolov5.utils.general import colorstr, check_img_size, check_requirements, file_size, set_logging
 from yolov5.utils.torch_utils import select_device
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='./yolov5s.pt', help='weights path')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')  # height, width
@@ -145,3 +145,6 @@ if __name__ == '__main__':
 
     # Finish
     print(f'\nExport complete ({time.time() - t:.2f}s). Visualize with https://github.com/lutzroeder/netron.')
+
+if __name__ == '__main__':
+    main()

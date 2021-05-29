@@ -70,6 +70,15 @@ jobs:
           python -m yolov5.test --img 128 --batch 16 --weights weights/${{ matrix.model }}.pt --device $di
           python -m yolov5.test --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $di
 
+          # train pip
+          train --img 128 --batch 16 --weights weights/${{ matrix.model }}.pt --cfg models/${{ matrix.model }}.yaml --epochs 1 --device $di
+          # detect pip
+          detect --weights weights/${{ matrix.model }}.pt --device $di
+          detect --weights runs/train/exp/weights/last.pt --device $di
+          # test pip
+          test --img 128 --batch 16 --weights weights/${{ matrix.model }}.pt --device $di
+          test --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $di
+
           # hub
           python hubconf.py
           # inspect
@@ -77,4 +86,8 @@ jobs:
           # export
           pip install -e .[export]
           python -m yolov5.models.export --img 128 --batch 1 --weights weights/${{ matrix.model }}.pt
+
+          # export pip
+          pip install -e .[export]
+          export --img 128 --batch 1 --weights weights/${{ matrix.model }}.pt
         shell: bash
