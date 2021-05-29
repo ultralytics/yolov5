@@ -1,10 +1,14 @@
 import argparse
+import sys
 import time
 from pathlib import Path
 
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
+
+FILE = Path(__file__).absolute()
+sys.path.append(str(FILE.parents[1]))  # add /yolov5 to sys.path
 
 from yolov5.models.experimental import attempt_load
 from yolov5.utils.datasets import LoadStreams, LoadImages
@@ -151,7 +155,7 @@ def detect(opt):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
-    parser.add_argument('--source', type=str, default='yolov5/data/images', help='source')  # file/folder, 0 for webcam
+    parser.add_argument('--source', type=str, default=str(FILE.parent / 'data/images'), help='source')
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
@@ -174,8 +178,7 @@ if __name__ == '__main__':
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     opt = parser.parse_args()
     print(opt)
-    check_requirements(requirements=Path(__file__).absolute().parents[1] / 'requirements.txt',
-                       exclude=('tensorboard', 'pycocotools', 'thop'))
+    check_requirements(FILE.parents[1] / 'requirements.txt', exclude=('tensorboard', 'pycocotools', 'thop'))
 
     if opt.update:  # update all models (to fix SourceChangeWarning)
         for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:

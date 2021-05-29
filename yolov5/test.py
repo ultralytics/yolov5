@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 from threading import Thread
 
@@ -8,6 +9,9 @@ import numpy as np
 import torch
 import yaml
 from tqdm import tqdm
+
+FILE = Path(__file__).absolute()
+sys.path.append(str(FILE.parents[1]))  # add /yolov5 to sys.path
 
 from yolov5.models.experimental import attempt_load
 from yolov5.utils.datasets import create_dataloader
@@ -310,8 +314,7 @@ if __name__ == '__main__':
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
     print(opt)
-    check_requirements(requirements=Path(__file__).absolute().parents[1] / 'requirements.txt',
-                       exclude=('tensorboard', 'pycocotools', 'thop'))
+    check_requirements(FILE.parents[1] / 'requirements.txt', exclude=('tensorboard', 'pycocotools', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
         test(opt.data,

@@ -3,6 +3,7 @@ import logging
 import math
 import os
 import random
+import sys
 import time
 from copy import deepcopy
 from pathlib import Path
@@ -20,6 +21,9 @@ from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+
+FILE = Path(__file__).absolute()
+sys.path.append(str(FILE.parents[1]))  # add /yolov5 to sys.path
 
 from yolov5 import test
 from yolov5.models.experimental import attempt_load
@@ -495,8 +499,8 @@ if __name__ == '__main__':
     set_logging(opt.global_rank)
     if opt.global_rank in [-1, 0]:
         check_git_status()
-        check_requirements(requirements=Path(__file__).absolute().parents[1] / 'requirements.txt',
-                           exclude=('pycocotools', 'thop'))
+        check_requirements(FILE.parents[1] / 'requirements.txt', exclude=('pycocotools', 'thop'))
+
     # Resume
     wandb_run = check_wandb_resume(opt)
     if opt.resume and not wandb_run:  # resume an interrupted run

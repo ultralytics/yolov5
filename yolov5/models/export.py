@@ -9,11 +9,12 @@ import sys
 import time
 from pathlib import Path
 
-sys.path.append(Path(__file__).parent.parent.absolute().__str__())  # to run '$ python *.py' files in subdirectories
-
 import torch
 import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
+
+FILE = Path(__file__).absolute()
+sys.path.append(str(FILE.parents[2]))  # add /yolov5 to sys.path
 
 from yolov5.models.common import Conv
 from yolov5.models.yolo import Detect
