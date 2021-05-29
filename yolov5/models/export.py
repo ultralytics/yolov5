@@ -5,7 +5,6 @@ Usage:
 """
 
 import argparse
-import sys
 import time
 from pathlib import Path
 
@@ -13,17 +12,18 @@ import torch
 import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
-FILE = Path(__file__).absolute()
-sys.path.append(str(FILE.parents[2]))  # add /yolov5 to sys.path
-
 from yolov5.models.common import Conv
-from yolov5.models.yolo import Detect
 from yolov5.models.experimental import attempt_load
+from yolov5.models.yolo import Detect
 from yolov5.utils.activations import Hardswish, SiLU
 from yolov5.utils.general import colorstr, check_img_size, check_requirements, file_size, set_logging
 from yolov5.utils.torch_utils import select_device
 
-if __name__ == '__main__':
+
+FILE = Path(__file__).absolute()
+
+
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='./yolov5s.pt', help='weights path')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')  # height, width
@@ -145,3 +145,7 @@ if __name__ == '__main__':
 
     # Finish
     print(f'\nExport complete ({time.time() - t:.2f}s). Visualize with https://github.com/lutzroeder/netron.')
+
+
+if __name__ == '__main__':
+    main()

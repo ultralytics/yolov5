@@ -151,7 +151,7 @@ def detect(opt):
     print(f'Done. ({time.time() - t0:.3f}s)')
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default=str(FILE.parent / 'data/images'), help='source')
@@ -185,3 +185,7 @@ if __name__ == '__main__':
             strip_optimizer(opt.weights)
     else:
         detect(opt=opt)
+
+
+if __name__ == '__main__':
+    main()
