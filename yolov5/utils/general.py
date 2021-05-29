@@ -58,11 +58,6 @@ def is_docker():
     return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
 
 
-def is_pip():
-    # Is file in a pip package?
-    return not (Path(__file__).absolute().parents[2] / 'setup.py').exists()
-
-
 def is_colab():
     # Is environment a Google Colab instance?
     try:
