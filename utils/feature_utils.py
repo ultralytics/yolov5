@@ -2,6 +2,9 @@ import torch
 from typing import Tuple
 
 
+DEFAULT_BOX_LIMIT = 300
+
+
 def ground_truth_boxes_to_pixel_map(nc: int, batch_size: int, boxes: torch.Tensor, img_shape: Tuple[int, int]) -> torch.Tensor:
     """
         Converts a tensor of bounding box information for a minibatch of examples into a pixel map for each class.
@@ -61,7 +64,8 @@ def ground_truth_boxes_to_pixel_map(nc: int, batch_size: int, boxes: torch.Tenso
     return output
 
 
-def predicted_bboxes_to_pixel_map(boxes: torch.Tensor, img_shape: Tuple[int, int]) -> torch.Tensor:
+def predicted_bboxes_to_pixel_map(boxes: torch.Tensor, img_shape: Tuple[int, int],
+                                  keep_top_n_boxes: int = DEFAULT_BOX_LIMIT) -> torch.Tensor:
     """
     Converts a tensor of bounding box information for a minibatch of examples into a pixel map for each class.
     Each class' pixel map has the highest confidence value of any box containing that pixel. The confidence value is
@@ -72,6 +76,8 @@ def predicted_bboxes_to_pixel_map(boxes: torch.Tensor, img_shape: Tuple[int, int
         'features' has the following values, in this order: x, y, w, h, objectness, class_scores
         where class_scores is num_classes long, from 0 to the max class index.
     :param img_shape: the target output shape, a tuple of 2 integers - image width and image height.
+    :param keep_top_n_boxes: An integer that controls the number of boxes used for the pixel map.
+        Higher values are more accurate but slower.
     :return: A Tensor of pixel values between 0 and 1. Its shape will be [batch_size, nc, img_shape[0], img_shape[1]]
     """
 
@@ -80,6 +86,10 @@ def predicted_bboxes_to_pixel_map(boxes: torch.Tensor, img_shape: Tuple[int, int
 
     max_width_px = img_shape[0]
     max_height_px = img_shape[1]
+
+    # pruning step: sort boxes by objness, then prune all but the 'keep_top_n_boxes' most 'object-y' boxes for each image in the batch
+    boxes = sort_by_objectness(boxes)
+    boxes = boxes[:, :keep_top_n_boxes, :]
 
     pixel_bounds = torch.zeros((boxes.shape[0], boxes.shape[1], 7)).to(boxes.device)  # class_conf, objness, hleft, hright, vtop, vbottom, class_idx
 
@@ -111,8 +121,6 @@ def predicted_bboxes_to_pixel_map(boxes: torch.Tensor, img_shape: Tuple[int, int
     output = torch.zeros((batch_size, nc, max_width_px, max_height_px)).to(boxes.device)
 
     # TODO: consider a vectorized alternative (it uses a lot of memory, but maybe duplicating 'output' once for each box and then doing torch.max over it would work? This takes memory:
-    # O(img_size * num_classes * (20*20*3 + 40*40*3 + 80*80*3)) without skipping the calculation for low-objectness boxes.
-    # may filter by '150 most object-y boxes' to avoid insane quantity of dud boxes, can also process this in batches
     for img_idx in range(pixel_bounds.shape[0]):
         for i in range(pixel_bounds.shape[1]):
             class_idx = pixel_bounds_int_parts[img_idx, i, 4]
@@ -133,6 +141,14 @@ def predicted_bboxes_to_pixel_map(boxes: torch.Tensor, img_shape: Tuple[int, int
     # TODO: add 'objectness' channel?
 
     return output
+
+
+def sort_by_objectness(boxes: torch.Tensor):
+    _, sorted_indices = torch.sort(boxes[:, :, 4].view(boxes.shape[0], boxes.shape[1]), dim=1, descending=True)
+    boxes_t = boxes.permute(0, 2, 1)
+    indices_t = sorted_indices.unsqueeze(-1).repeat(1, 1, 7).permute(0, 2, 1)
+    sorted_boxes_t = torch.gather(boxes_t, 2, indices_t)
+    return sorted_boxes_t.permute(0, 2, 1)
 
 
 def test_pixel_map():
