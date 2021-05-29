@@ -495,8 +495,8 @@ if __name__ == '__main__':
     set_logging(opt.global_rank)
     if opt.global_rank in [-1, 0]:
         check_git_status()
-        check_requirements(Path(__file__).parents[1] / 'requirements.txt', exclude=('pycocotools', 'thop'))
-
+        check_requirements(requirements=Path(__file__).absolute().parents[1] / 'requirements.txt',
+                           exclude=('pycocotools', 'thop'))
     # Resume
     wandb_run = check_wandb_resume(opt)
     if opt.resume and not wandb_run:  # resume an interrupted run
