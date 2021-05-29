@@ -9,7 +9,7 @@ setuptools.setup(
     name="ultralytics-yolov5",
     version="0.0.1.dev",
     description="Ultralytics YOLOv5 🚀 Python package, https://ultralytics.com",
-    python_requires=">=3.6",
+    python_requires=">=3.6.2",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/ultralytics/yolov5",
