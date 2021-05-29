@@ -39,7 +39,7 @@ setuptools.setup(
         "export": [
             "coremltools>=4.1",
             "onnx>=1.9.0",
-            "scikit-learn==0.19.2"
+            "scikit-learn>=0.24"
         ],
         "extras": [
             "Cython",
@@ -55,6 +55,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Topic :: Software Development",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
