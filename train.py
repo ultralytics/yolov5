@@ -410,6 +410,7 @@ def train(hyp, opt, device, tb_writer=None):
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training
     if rank in [-1, 0]:
+        logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
         if plots:
             plot_results(save_dir=save_dir)  # save as results.png
             if wandb_logger.wandb:
@@ -418,8 +419,6 @@ def train(hyp, opt, device, tb_writer=None):
                                               if (save_dir / f).exists()]})
 
         if not opt.evolve:
-            # Test best.pt
-            logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
             if is_coco:  # COCO dataset
                 for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
                     results, _, _ = test.test(opt.data,
