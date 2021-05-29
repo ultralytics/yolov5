@@ -57,10 +57,16 @@ Model |size<br><sup>(pixels) |mAP<sup>val<br>0.5:0.95 |mAP<sup>test<br>0.5:0.95 
 
 ## Requirements
 
-Python 3.8 or later with all [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) dependencies installed, including `torch>=1.7`. To install run:
+Python 3.7 or later with all [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) dependencies installed, including `torch>=1.7`. To install run:
 <!-- $ sudo apt update && apt install -y libgl1-mesa-glx libsm6 libxext6 libxrender-dev -->
 ```bash
+# using requirements.txt
 $ pip install -r requirements.txt
+```
+
+```bash
+# setup.py
+$ pip install -e .
 ```
 
 
@@ -106,7 +112,7 @@ $ python -m yolov5.detect --source 0  # webcam
 
 To run inference on example images in `data/images`:
 ```bash
-$ python detect.py --source data/images --weights yolov5s.pt --conf 0.25
+$ python -m yolov5.detect --source data/images --weights yolov5s.pt --conf 0.25
 
 Namespace(agnostic_nms=False, augment=False, classes=None, conf_thres=0.25, device='', exist_ok=False, img_size=640, iou_thres=0.45, name='exp', project='runs/detect', save_conf=False, save_txt=False, source='data/images/', update=False, view_img=False, weights=['yolov5s.pt'])
 YOLOv5 v4.0-96-g83dc1b4 torch 1.7.0+cu101 CUDA:0 (Tesla V100-SXM2-16GB, 16160.5MB)
@@ -142,10 +148,10 @@ results.print()  # or .show(), .save()
 
 Run commands below to reproduce results on [COCO](https://github.com/ultralytics/yolov5/blob/master/data/scripts/get_coco.sh) dataset (dataset auto-downloads on first use). Training times for YOLOv5s/m/l/x are 2/4/6/8 days on a single V100 (multi-GPU times faster). Use the largest `--batch-size` your GPU allows (batch sizes shown for 16 GB devices).
 ```bash
-$ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 64
-                                         yolov5m                                40
-                                         yolov5l                                24
-                                         yolov5x                                16
+$ python -m yolov5.train --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 64
+                                             yolov5m                                   40
+                                             yolov5l                                   24
+                                             yolov5x                                   16
 ```
 <img width="800" src="https://user-images.githubusercontent.com/26833433/90222759-949d8800-ddc1-11ea-9fa1-1c97eed2b963.png">
 
