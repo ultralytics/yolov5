@@ -13,7 +13,8 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/ultralytics/yolov5",
-    author="ultralytics",
+    author="Ultralytics",
+    author_email='glenn.jocher@ultralytics.com',
     license="GPLv3",
     packages=["yolov5"],
     include_package_data=True,
@@ -64,5 +65,10 @@ setuptools.setup(
         "Operating System :: POSIX",
         "Operating System :: Unix",
         "Operating System :: MacOS"
-    ]
+    ],
+    project_urls={
+        'Bug Reports': 'https://github.com/ultralytics/yolov5/issues',
+        'Funding': 'https://www.ultralytics.com',
+        'Source': 'https://github.com/ultralytics/yolov5/',
+    },
 )
