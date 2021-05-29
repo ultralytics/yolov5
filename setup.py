@@ -69,4 +69,12 @@ setuptools.setup(
         'Funding': 'https://ultralytics.com',
         'Source': 'https://github.com/ultralytics/yolov5/',
     },
+    entry_points={
+        'console_scripts': [
+            'yolov5_train=yolov5.train:main',
+            'yolov5_test=yolov5.test:main',
+            'yolov5_detect=yolov5.detect:main',
+            'yolov5_export=yolov5.models.export:main'
+        ],
+    }
 )
