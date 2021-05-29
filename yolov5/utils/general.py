@@ -54,12 +54,17 @@ def get_latest_run(search_dir='.'):
 
 
 def is_docker():
-    # Is environment a Docker container
+    # Is environment a Docker container?
     return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
 
 
+def is_pip():
+    # Is file in a pip package?
+    return not (Path(__file__).absolute().parents[2] / 'setup.py').exists()
+
+
 def is_colab():
-    # Is environment a Google Colab instance
+    # Is environment a Google Colab instance?
     try:
         import google.colab
         return True
@@ -710,7 +715,7 @@ def yolov5_in_syspath():
     Proper fix for: #22, #134, #353, #1155, #1389, #1680, #2531, #3071
     No need for such workarounds: #869, #1052, #2949
     """
-    yolov5_dir = str(Path(__file__).parents[1].absolute())
+    yolov5_dir = str(Path(__file__).absolute().parents[1])
     try:
         sys.path.insert(0, yolov5_dir)
         yield
