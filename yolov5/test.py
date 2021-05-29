@@ -1,7 +1,6 @@
 import argparse
 import json
 import os
-import sys
 from pathlib import Path
 from threading import Thread
 
@@ -10,9 +9,6 @@ import torch
 import yaml
 from tqdm import tqdm
 
-FILE = Path(__file__).absolute()
-sys.path.append(str(FILE.parents[1]))  # add /yolov5 to sys.path
-
 from yolov5.models.experimental import attempt_load
 from yolov5.utils.datasets import create_dataloader
 from yolov5.utils.general import coco80_to_coco91_class, check_dataset, check_file, check_img_size, check_requirements, \
@@ -20,6 +16,9 @@ from yolov5.utils.general import coco80_to_coco91_class, check_dataset, check_fi
 from yolov5.utils.metrics import ap_per_class, ConfusionMatrix
 from yolov5.utils.plots import plot_images, output_to_target, plot_study_txt
 from yolov5.utils.torch_utils import select_device, time_synchronized
+
+
+FILE = Path(__file__).absolute()
 
 
 @torch.no_grad()
