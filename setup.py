@@ -1,6 +1,6 @@
 import pathlib
-import setuptools
 
+import setuptools
 
 root_directory = pathlib.Path(__file__).parent
 long_description = (root_directory / "README.md").read_text(encoding="utf-8")
@@ -55,20 +55,17 @@ setuptools.setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3 :: Only",
         "Topic :: Software Development",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Scientific/Engineering :: Image Recognition",
-        "Typing :: Typed",
-        "Operating System :: Microsoft :: Windows",
-        "Operating System :: POSIX",
-        "Operating System :: Unix",
+        "Operating System :: Windows",
+        "Operating System :: Linux",
         "Operating System :: MacOS"
     ],
     project_urls={
         'Bug Reports': 'https://github.com/ultralytics/yolov5/issues',
-        'Funding': 'https://www.ultralytics.com',
+        'Funding': 'https://ultralytics.com',
         'Source': 'https://github.com/ultralytics/yolov5/',
     },
 )
