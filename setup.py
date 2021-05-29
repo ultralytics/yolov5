@@ -71,10 +71,10 @@ setuptools.setup(
     },
     entry_points={
         'console_scripts': [
-            'train=yolov5.train:main',
-            'test=yolov5.test:main',
-            'detect=yolov5.detect:main',
-            'export=yolov5.models.export:main'
+            'yolov5_train=yolov5.train:main',
+            'yolov5_test=yolov5.test:main',
+            'yolov5_detect=yolov5.detect:main',
+            'yolov5_export=yolov5.models.export:main'
         ],
     }
 )
