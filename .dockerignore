@@ -7,7 +7,7 @@ output
 coco
 storage.googleapis.com
 
-data/samples/*
+yolov5/data/images/*
 **/results*.txt
 *.jpg
 
