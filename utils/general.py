@@ -53,17 +53,22 @@ def get_latest_run(search_dir='.'):
 
 
 def is_docker():
-    # Is environment a Docker container
+    # Is environment a Docker container?
     return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
 
 
 def is_colab():
-    # Is environment a Google Colab instance
+    # Is environment a Google Colab instance?
     try:
         import google.colab
         return True
     except Exception as e:
         return False
+
+
+def is_pip():
+    # Is file in a pip package?
+    return 'site-packages' in Path(__file__).absolute().parts
 
 
 def emojis(str=''):
