@@ -85,7 +85,9 @@ def train():
         c = Classify(ch, nc)  # Classify()
         c.i, c.f, c.type = m.i, m.f, 'models.common.Classify'  # index, from, type
         model.model[-1] = c  # replace
-    elif opt.model in torch.hub.list('rwightman/gen-efficientnet-pytorch'):
+        for p in model.parameters():
+            p.requires_grad = True  # for training
+    elif opt.model in torch.hub.list('rwightman/gen-efficientnet-pytorch'):  # i.e. efficientnet_b0
         model = torch.hub.load('rwightman/gen-efficientnet-pytorch', opt.model, pretrained=True)
         model.classifier = nn.Linear(model.classifier.in_features, nc)
     else:  # try torchvision

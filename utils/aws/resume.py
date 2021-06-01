@@ -1,4 +1,4 @@
-# Resume all interrupted trainings in yolov5/ dir including DPP trainings
+# Resume all interrupted trainings in yolov5/ dir including DDP trainings
 # Usage: $ python utils/aws/resume.py
 
 import os
@@ -19,7 +19,7 @@ for last in path.rglob('*/**/last.pt'):
 
     # Load opt.yaml
     with open(last.parent.parent / 'opt.yaml') as f:
-        opt = yaml.load(f, Loader=yaml.SafeLoader)
+        opt = yaml.safe_load(f)
 
     # Get device count
     d = opt['device'].split(',')  # devices
