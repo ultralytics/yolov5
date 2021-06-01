@@ -1,0 +1,80 @@
+name: CI CPU testing
+
+on:  # https://help.github.com/en/actions/reference/events-that-trigger-workflows
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ master, develop ]
+
+jobs:
+  cpu-tests:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.6.2, 3.7, 3.8, 3.9]  # temporarily to check compatibility with different versions of python
+        model: ['yolov5s']  # models to test
+
+    # Timeout: https://stackoverflow.com/a/59076067/4521646
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Note: This uses an internal pip API and may not always work
+      # https://github.com/actions/cache/blob/master/examples.md#multiple-oss-in-a-workflow
+      - name: Get pip cache
+        id: pip-cache
+        run: |
+          python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
+
+      - name: Cache pip
+        uses: actions/cache@v1
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.python-version }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          python --version
+          pip --version
+          pip list
+        shell: bash
+
+      - name: Download data
+        run: |
+          # curl -L -o tmp.zip https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128.zip
+          # unzip -q tmp.zip -d ../
+          # rm tmp.zip
+
+      - name: Tests workflow
+        run: |
+          di=cpu # inference devices  # define device
+
+          # train
+          python -m yolov5.train --img 128 --batch 16 --weights weights/${{ matrix.model }}.pt --cfg models/${{ matrix.model }}.yaml --epochs 1 --device $di
+          # detect
+          python -m yolov5.detect --weights weights/${{ matrix.model }}.pt --device $di
+          python -m yolov5.detect --weights runs/train/exp/weights/last.pt --device $di
+          # test
+          python -m yolov5.test --img 128 --batch 16 --weights weights/${{ matrix.model }}.pt --device $di
+          python -m yolov5.test --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $di
+
+          # hub
+          python hubconf.py
+          # inspect
+          python -m yolov5.models.yolo --cfg models/${{ matrix.model }}.yaml
+          # export
+          pip install -e .[export]
+          python -m yolov5.models.export --img 128 --batch 1 --weights weights/${{ matrix.model }}.pt
+        shell: bash

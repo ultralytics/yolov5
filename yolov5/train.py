@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import random
+import sys
 import time
 from copy import deepcopy
 from pathlib import Path
@@ -21,6 +22,9 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
+FILE = Path(__file__).absolute()
+sys.path.append(FILE.parent.parent.as_posix())
+
 from yolov5 import test
 from yolov5.models.experimental import attempt_load
 from yolov5.models.yolo import Model
@@ -34,9 +38,6 @@ from yolov5.utils.loss import ComputeLoss
 from yolov5.utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from yolov5.utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, de_parallel
 from yolov5.utils.wandb_logging.wandb_utils import WandbLogger, check_wandb_resume
-
-
-FILE = Path(__file__).absolute()
 
 
 logger = logging.getLogger(__name__)

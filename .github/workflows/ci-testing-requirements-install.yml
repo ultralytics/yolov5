@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]  # temporarily to check compatibility with different versions of python
+        python-version: [3.6.2, 3.7, 3.8, 3.9]  # temporarily to check compatibility with different versions of python
         model: ['yolov5s']  # models to test
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
@@ -45,7 +45,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .
+          pip install -qr requirements.txt -f https://download.pytorch.org/whl/cpu/torch_stable.html
+          pip install -q onnx
           python --version
           pip --version
           pip list
@@ -60,21 +61,26 @@ jobs:
       - name: Tests workflow
         run: |
           di=cpu # inference devices  # define device
+          cd yolov5
 
           # train
-          python -m yolov5.train --img 128 --batch 16 --weights weights/${{ matrix.model }}.pt --cfg models/${{ matrix.model }}.yaml --epochs 1 --device $di
+          python train.py --img 128 --batch 16 --weights weights/${{ matrix.model }}.pt --cfg models/${{ matrix.model }}.yaml --epochs 1 --device $di
           # detect
-          python -m yolov5.detect --weights weights/${{ matrix.model }}.pt --device $di
-          python -m yolov5.detect --weights runs/train/exp/weights/last.pt --device $di
+          python detect.py --weights weights/${{ matrix.model }}.pt --device $di
+          python detect.py --weights runs/train/exp/weights/last.pt --device $di
           # test
-          python -m yolov5.test --img 128 --batch 16 --weights weights/${{ matrix.model }}.pt --device $di
-          python -m yolov5.test --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $di
+          python test.py --img 128 --batch 16 --weights weights/${{ matrix.model }}.pt --device $di
+          python test.py --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $di
+
+          cd ..
 
           # hub
           python hubconf.py
+
+          cd yolov5
+
           # inspect
-          python -m yolov5.models.yolo --cfg models/${{ matrix.model }}.yaml
+          python models/yolo.py --cfg models/${{ matrix.model }}.yaml
           # export
-          pip install -e .[export]
-          python -m yolov5.models.export --img 128 --batch 1 --weights weights/${{ matrix.model }}.pt
+          python models/export.py --img 128 --batch 1 --weights weights/${{ matrix.model }}.pt
         shell: bash

@@ -1,4 +1,5 @@
 import argparse
+import sys
 import time
 from pathlib import Path
 
@@ -6,15 +7,15 @@ import cv2
 import torch
 import torch.backends.cudnn as cudnn
 
+FILE = Path(__file__).absolute()
+sys.path.append(FILE.parent.parent.as_posix())
+
 from yolov5.models.experimental import attempt_load
 from yolov5.utils.datasets import LoadStreams, LoadImages
 from yolov5.utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, \
     apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
 from yolov5.utils.plots import colors, plot_one_box
 from yolov5.utils.torch_utils import select_device, load_classifier, time_synchronized
-
-
-FILE = Path(__file__).absolute()
 
 
 @torch.no_grad()
