@@ -11,7 +11,7 @@ from copy import deepcopy
 from pathlib import Path
 
 FILE = Path(__file__).absolute()
-sys.path.append(str(FILE.parents[2]))  # add /yolov5 to sys.path
+sys.path.append(FILE.parent.parent.parent.as_posix())
 
 from yolov5.models.common import *
 from yolov5.models.experimental import *

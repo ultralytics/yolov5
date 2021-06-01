@@ -5,6 +5,7 @@ Usage:
 """
 
 import argparse
+import sys
 import time
 from pathlib import Path
 
@@ -12,15 +13,15 @@ import torch
 import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
+FILE = Path(__file__).absolute()
+sys.path.append(FILE.parent.parent.parent.as_posix())
+
 from yolov5.models.common import Conv
 from yolov5.models.experimental import attempt_load
 from yolov5.models.yolo import Detect
 from yolov5.utils.activations import Hardswish, SiLU
 from yolov5.utils.general import colorstr, check_img_size, check_requirements, file_size, set_logging
 from yolov5.utils.torch_utils import select_device
-
-
-FILE = Path(__file__).absolute()
 
 
 def main():
