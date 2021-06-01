@@ -7,7 +7,7 @@ long_description = (root_directory / "README.md").read_text(encoding="utf-8")
 
 setuptools.setup(
     name="ultralytics-yolov5",
-    version="0.0.1.dev",
+    version="0.0.2.dev",
     description="Ultralytics YOLOv5 🚀 Python package, https://ultralytics.com",
     python_requires=">=3.6.2",
     long_description=long_description,
@@ -60,8 +60,9 @@ setuptools.setup(
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Scientific/Engineering :: Image Recognition",
-        "Operating System :: Windows",
-        "Operating System :: Linux",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX",
+        "Operating System :: Unix",
         "Operating System :: MacOS"
     ],
     project_urls={
