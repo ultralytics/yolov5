@@ -306,6 +306,8 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='runs/test', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+    parser.add_argument('--use-half', type=bool, default=False, help='whether to use half precision for inference')
+
     opt = parser.parse_args()
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
@@ -326,6 +328,7 @@ if __name__ == '__main__':
              save_txt=opt.save_txt | opt.save_hybrid,
              save_hybrid=opt.save_hybrid,
              save_conf=opt.save_conf,
+             half_precision=opt.use_half,
              opt=opt
              )
 
