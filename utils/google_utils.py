@@ -19,11 +19,11 @@ def gsutil_getsize(url=''):
 def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
     # Attempts to download file from url or url2, checks and removes incomplete downloads < min_bytes
     file = Path(file)
-    try:  # GitHub
+    try:  # url1
         print(f'Downloading {url} to {file}...')
         torch.hub.download_url_to_file(url, str(file))
         assert file.exists() and file.stat().st_size > min_bytes  # check
-    except Exception as e:  # GCP
+    except Exception as e:  # url2
         file.unlink(missing_ok=True)  # remove partial downloads
         print(f'Download error: {e}\nRe-attempting {url2 or url} to {file}...')
         os.system(f"curl -L '{url2 or url}' -o '{file}' --retry 3 -C -")  # curl download, retry and resume on fail
@@ -43,6 +43,7 @@ def attempt_download(file, repo='ultralytics/yolov5'):
         name = file.name
         if str(file).startswith(('http:/', 'https:/')):  # download
             url = str(file).replace(':/', '://')  # Pathlib turns :// -> :/
+            name = name.split('?')[0].split('%3F')[0]  # parse authentication https://url.com/file.txt?auth...
             safe_download(file=name, url=url, min_bytes=1E5)
             return name
 

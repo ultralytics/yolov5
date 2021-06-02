@@ -184,6 +184,7 @@ def check_file(file):
         return file
     elif file.startswith(('http://', 'https://')):  # download
         url, file = file, Path(file).name
+        file = file.split('?')[0].split('%3F')[0]  # parse authentication https://url.com/file.txt?auth...
         print(f'Downloading {url} to {file}...')
         torch.hub.download_url_to_file(url, file)
         assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
