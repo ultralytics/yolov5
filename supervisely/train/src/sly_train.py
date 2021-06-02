@@ -80,7 +80,7 @@ def train(api: sly.Api, task_id, context, state, app_logger):
 
     # stop application
     get_progress_cb("Finished, app is stopped automatically", 1)(1)
-    my_app.stop()
+    my_app.stop(wait=False)
 
 
 def main():
