@@ -16,40 +16,58 @@ def gsutil_getsize(url=''):
     return eval(s.split(' ')[0]) if len(s) else 0  # bytes
 
 
+def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
+    # Attempts to download file from url or url2, checks and removes incomplete downloads < min_bytes
+    file = Path(file)
+    try:  # GitHub
+        print(f'Downloading {url} to {file}...')
+        torch.hub.download_url_to_file(url, str(file))
+        assert file.exists() and file.stat().st_size > min_bytes  # check
+    except Exception as e:  # GCP
+        file.unlink(missing_ok=True)  # remove partial downloads
+        print(f'Download error: {e}\nRe-attempting {url2 or url} to {file}...')
+        os.system(f"curl -L '{url2 or url}' -o '{file}' --retry 3 -C -")  # curl download, retry and resume on fail
+    finally:
+        if not file.exists() or file.stat().st_size < min_bytes:  # check
+            file.unlink(missing_ok=True)  # remove partial downloads
+            print(f'ERROR: Download failure: {error_msg or url}')
+        print('')
+
+
 def attempt_download(file, repo='ultralytics/yolov5'):
     # Attempt file download if does not exist
-    file = Path(str(file).strip().replace("'", '').lower())
+    file = Path(str(file).strip().replace("'", ''))
 
     if not file.exists():
+        # URL specified
+        name = file.name
+        if str(file).startswith(('http:/', 'https:/')):  # download
+            url = str(file).replace(':/', '://')  # Pathlib turns :// -> :/
+            safe_download(file=name, url=url, min_bytes=1E5)
+            return name
+
+        # GitHub assets
+        file.parent.mkdir(parents=True, exist_ok=True)  # make parent dir (if required)
         try:
             response = requests.get(f'https://api.github.com/repos/{repo}/releases/latest').json()  # github api
             assets = [x['name'] for x in response['assets']]  # release assets, i.e. ['yolov5s.pt', 'yolov5m.pt', ...]
             tag = response['tag_name']  # i.e. 'v1.0'
         except:  # fallback plan
-            assets = ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']
-            tag = subprocess.check_output('git tag', shell=True).decode().split()[-1]
+            assets = ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt',
+                      'yolov5s6.pt', 'yolov5m6.pt', 'yolov5l6.pt', 'yolov5x6.pt']
+            try:
+                tag = subprocess.check_output('git tag', shell=True, stderr=subprocess.STDOUT).decode().split()[-1]
+            except:
+                tag = 'v5.0'  # current release
 
-        name = file.name
         if name in assets:
-            msg = f'{file} missing, try downloading from https://github.com/{repo}/releases/'
-            redundant = False  # second download option
-            try:  # GitHub
-                url = f'https://github.com/{repo}/releases/download/{tag}/{name}'
-                print(f'Downloading {url} to {file}...')
-                torch.hub.download_url_to_file(url, file)
-                assert file.exists() and file.stat().st_size > 1E6  # check
-            except Exception as e:  # GCP
-                print(f'Download error: {e}')
-                assert redundant, 'No secondary mirror'
-                url = f'https://storage.googleapis.com/{repo}/ckpt/{name}'
-                print(f'Downloading {url} to {file}...')
-                os.system(f'curl -L {url} -o {file}')  # torch.hub.download_url_to_file(url, weights)
-            finally:
-                if not file.exists() or file.stat().st_size < 1E6:  # check
-                    file.unlink(missing_ok=True)  # remove partial downloads
-                    print(f'ERROR: Download failure: {msg}')
-                print('')
-                return
+            safe_download(file,
+                          url=f'https://github.com/{repo}/releases/download/{tag}/{name}',
+                          # url2=f'https://storage.googleapis.com/{repo}/ckpt/{name}',  # backup url (optional)
+                          min_bytes=1E5,
+                          error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/')
+
+    return str(file)
 
 
 def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', file='tmp.zip'):
