@@ -30,7 +30,7 @@ This repository represents Ultralytics open-source research into future object d
 
 [assets]: https://github.com/ultralytics/yolov5/releases
 
-Model |size<br><sup>(pixels) |mAP<sup>val<br>0.5:0.95 |mAP<sup>test<br>0.5:0.95 |mAP<sup>val<br>0.5 |Speed<br><sup>V100 (ms) | |params<br><sup>(M) |FLOPS<br><sup>640 (B)
+Model |size<br><sup>(pixels) |mAP<sup>val<br>0.5:0.95 |mAP<sup>test<br>0.5:0.95 |mAP<sup>val<br>0.5 |Speed<br><sup>V100 (ms) | |params<br><sup>(M) |<br><sup>640 (B)
 ---   |---  |---        |---         |---             |---                |---|---              |---
 [YOLOv5s][assets]    |640  |36.7     |36.7     |55.4     |**2.0** | |7.3   |17.0
 [YOLOv5m][assets]    |640  |44.5     |44.5     |63.1     |2.7     | |21.4  |51.3
@@ -112,7 +112,7 @@ Namespace(agnostic_nms=False, augment=False, classes=None, conf_thres=0.25, devi
 YOLOv5 v4.0-96-g83dc1b4 torch 1.7.0+cu101 CUDA:0 (Tesla V100-SXM2-16GB, 16160.5MB)
 
 Fusing layers... 
-Model Summary: 224 layers, 7266973 parameters, 0 gradients, 17.0 GFLOPS
+Model Summary: 224 layers, 7266973 parameters, 0 gradients, 17.0 GFLOPs
 image 1/2 /content/yolov5/data/images/bus.jpg: 640x480 4 persons, 1 bus, Done. (0.010s)
 image 2/2 /content/yolov5/data/images/zidane.jpg: 384x640 2 persons, 1 tie, Done. (0.011s)
 Results saved to runs/detect/exp2
