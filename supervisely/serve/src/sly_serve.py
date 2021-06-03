@@ -165,9 +165,9 @@ def debug_inference():
     print(json.dumps(ann, indent=4))
 
 
-@my_app.callback("preprocess")
+#@my_app.callback("preprocess")
 @sly.timeit
-def preprocess(api: sly.Api, task_id, context, state, app_logger):
+def preprocess():
     global model, half, device, imgsz, meta, final_weights
     global stride
 
@@ -180,9 +180,9 @@ def preprocess(api: sly.Api, task_id, context, state, app_logger):
         sly.fs.download(url, local_path, my_app.cache, progress)
     elif modelWeightsOptions == "custom":
         final_weights = custom_weights
-        file_info = api.file.get_info_by_path(TEAM_ID, custom_weights)
+        file_info = my_app.public_api.file.get_info_by_path(TEAM_ID, custom_weights)
         progress.set(current=0, total=file_info.sizeb)
-        api.file.download(TEAM_ID, custom_weights, local_path, my_app.cache, progress.iters_done_report)
+        my_app.public_api.file.download(TEAM_ID, custom_weights, local_path, my_app.cache, progress.iters_done_report)
     else:
         raise ValueError("Unknown weights option {!r}".format(modelWeightsOptions))
 
@@ -201,7 +201,9 @@ def main():
         "modal.state.weightsPath": custom_weights
     })
 
-    my_app.run(initial_events=[{"command": "preprocess"}])
+    preprocess()
+    #my_app.run(initial_events=[{"command": "preprocess"}])
+    my_app.run()
 
 
 #@TODO: move inference methods to SDK
