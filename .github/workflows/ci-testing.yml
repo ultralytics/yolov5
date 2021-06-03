@@ -1,6 +1,6 @@
 name: CI CPU testing
 
-on:  # https://help.github.com/en/actions/reference/events-that-trigger-workflows
+on: # https://help.github.com/en/actions/reference/events-that-trigger-workflows
   push:
     branches: [ master ]
   pull_request:
@@ -16,9 +16,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.8]
-        model: ['yolov5s']  # models to test
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        python-version: [ 3.8 ]
+        model: [ 'yolov5s' ]  # models to test
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
     timeout-minutes: 50
@@ -76,5 +76,5 @@ jobs:
 
           python hubconf.py  # hub
           python models/yolo.py --cfg models/${{ matrix.model }}.yaml  # inspect
-          python models/export.py --img 128 --batch 1 --weights weights/${{ matrix.model }}.pt  # export
+          python export.py --img 128 --batch 1 --weights weights/${{ matrix.model }}.pt  # export
         shell: bash

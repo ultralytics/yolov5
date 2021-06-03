@@ -1,27 +1,31 @@
 # YOLOv5 general utils
 
+import contextlib
 import glob
 import logging
-import math
 import os
 import platform
 import random
 import re
-import subprocess
+import signal
 import time
+import urllib
 from itertools import repeat
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+from subprocess import check_output
 
 import cv2
 import numpy as np
+import math
 import pandas as pd
+import pkg_resources as pkg
 import torch
 import torchvision
 import yaml
 
 from utils.google_utils import gsutil_getsize
-from utils.metrics import fitness
+from utils.metrics import box_iou, fitness
 from utils.torch_utils import init_torch_seeds
 
 # Settings
@@ -30,6 +34,26 @@ np.set_printoptions(linewidth=320, formatter={'float_kind': '{:11.5g}'.format}) 
 pd.options.display.max_columns = 10
 cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with PyTorch DataLoader)
 os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max threads
+
+
+class timeout(contextlib.ContextDecorator):
+    # Usage: @timeout(seconds) decorator or 'with timeout(seconds):' context manager
+    def __init__(self, seconds, *, timeout_msg='', suppress_timeout_errors=True):
+        self.seconds = int(seconds)
+        self.timeout_message = timeout_msg
+        self.suppress = bool(suppress_timeout_errors)
+
+    def _timeout_handler(self, signum, frame):
+        raise TimeoutError(self.timeout_message)
+
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self._timeout_handler)  # Set handler for SIGALRM
+        signal.alarm(self.seconds)  # start countdown for SIGALRM to be raised
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        signal.alarm(0)  # Cancel SIGALRM if it's scheduled
+        if self.suppress and exc_type is TimeoutError:  # Suppress TimeoutError
+            return True
 
 
 def set_logging(rank=-1, verbose=True):
@@ -51,9 +75,23 @@ def get_latest_run(search_dir='.'):
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
-def isdocker():
-    # Is environment a Docker container
+def is_docker():
+    # Is environment a Docker container?
     return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
+
+
+def is_colab():
+    # Is environment a Google Colab instance?
+    try:
+        import google.colab
+        return True
+    except Exception as e:
+        return False
+
+
+def is_pip():
+    # Is file in a pip package?
+    return 'site-packages' in Path(__file__).absolute().parts
 
 
 def emojis(str=''):
@@ -70,24 +108,24 @@ def check_online():
     # Check internet connectivity
     import socket
     try:
-        socket.create_connection(("1.1.1.1", 443), 5)  # check host accesability
+        socket.create_connection(("1.1.1.1", 443), 5)  # check host accessibility
         return True
     except OSError:
         return False
 
 
-def check_git_status():
+def check_git_status(err_msg=', for updates see https://github.com/ultralytics/yolov5'):
     # Recommend 'git pull' if code is out of date
     print(colorstr('github: '), end='')
     try:
         assert Path('.git').exists(), 'skipping check (not a git repository)'
-        assert not isdocker(), 'skipping check (Docker image)'
+        assert not is_docker(), 'skipping check (Docker image)'
         assert check_online(), 'skipping check (offline)'
 
         cmd = 'git fetch && git config --get remote.origin.url'
-        url = subprocess.check_output(cmd, shell=True).decode().strip().rstrip('.git')  # github repo url
-        branch = subprocess.check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
-        n = int(subprocess.check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
+        url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
+        branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
+        n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
         if n > 0:
             s = f"⚠️ WARNING: code is out of date by {n} commit{'s' * (n > 1)}. " \
                 f"Use 'git pull' to update or 'git clone {url}' to download latest."
@@ -95,13 +133,25 @@ def check_git_status():
             s = f'up to date with {url} ✅'
         print(emojis(s))  # emoji-safe
     except Exception as e:
-        print(e)
+        print(f'{e}{err_msg}')
+
+
+def check_python(minimum='3.6.2'):
+    # Check current python version vs. required python version
+    check_version(platform.python_version(), minimum, name='Python ')
+
+
+def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=False):
+    # Check version vs. required version
+    current, minimum = (pkg.parse_version(x) for x in (current, minimum))
+    result = (current == minimum) if pinned else (current >= minimum)
+    assert result, f'{name}{minimum} required by YOLOv5, but {name}{current} is currently installed'
 
 
 def check_requirements(requirements='requirements.txt', exclude=()):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
-    import pkg_resources as pkg
     prefix = colorstr('red', 'bold', 'requirements:')
+    check_python()  # check python version
     if isinstance(requirements, (str, Path)):  # requirements.txt file
         file = Path(requirements)
         if not file.exists():
@@ -116,9 +166,13 @@ def check_requirements(requirements='requirements.txt', exclude=()):
         try:
             pkg.require(r)
         except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
-            n += 1
             print(f"{prefix} {r} not found and is required by YOLOv5, attempting auto-update...")
-            print(subprocess.check_output(f"pip install '{r}'", shell=True).decode())
+            try:
+                assert check_online(), f"'pip install {r}' skipped (offline)"
+                print(check_output(f"pip install '{r}'", shell=True).decode())
+                n += 1
+            except Exception as e:
+                print(f'{prefix} {e}')
 
     if n:  # if packages updated
         source = file.resolve() if 'file' in locals() else requirements
@@ -138,7 +192,8 @@ def check_img_size(img_size, s=32):
 def check_imshow():
     # Check if environment supports image displays
     try:
-        assert not isdocker(), 'cv2.imshow() is disabled in Docker environments'
+        assert not is_docker(), 'cv2.imshow() is disabled in Docker environments'
+        assert not is_colab(), 'cv2.imshow() is disabled in Google Colab environments'
         cv2.imshow('test', np.zeros((1, 1, 3)))
         cv2.waitKey(1)
         cv2.destroyAllWindows()
@@ -150,58 +205,83 @@ def check_imshow():
 
 
 def check_file(file):
-    # Search for file if not found
-    if Path(file).is_file() or file == '':
+    # Search/download file (if necessary) and return path
+    file = str(file)  # convert to str()
+    if Path(file).is_file() or file == '':  # exists
         return file
-    else:
+    elif file.startswith(('http:/', 'https:/')):  # download
+        url = str(Path(file)).replace(':/', '://')  # Pathlib turns :// -> :/
+        file = Path(urllib.parse.unquote(file)).name.split('?')[0]  # '%2F' to '/', split https://url.com/file.txt?auth
+        print(f'Downloading {url} to {file}...')
+        torch.hub.download_url_to_file(url, file)
+        assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
+        return file
+    else:  # search
         files = glob.glob('./**/' + file, recursive=True)  # find file
-        assert len(files), f'File Not Found: {file}'  # assert file was found
+        assert len(files), f'File not found: {file}'  # assert file was found
         assert len(files) == 1, f"Multiple files match '{file}', specify exact path: {files}"  # assert unique
         return files[0]  # return file
 
 
-def check_dataset(dict):
+def check_dataset(data, autodownload=True):
     # Download dataset if not found locally
-    val, s = dict.get('val'), dict.get('download')
-    if val and len(val):
+    path = Path(data.get('path', ''))  # optional 'path' field
+    if path:
+        for k in 'train', 'val', 'test':
+            if data.get(k):  # prepend path
+                data[k] = str(path / data[k]) if isinstance(data[k], str) else [str(path / x) for x in data[k]]
+
+    train, val, test, s = [data.get(x) for x in ('train', 'val', 'test', 'download')]
+    if val:
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
             print('\nWARNING: Dataset not found, nonexistent paths: %s' % [str(x) for x in val if not x.exists()])
-            if s and len(s):  # download script
+            if s and autodownload:  # download script
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
                     print(f'Downloading {s} ...')
                     torch.hub.download_url_to_file(s, f)
-                    r = os.system(f'unzip -q {f} -d ../ && rm {f}')  # unzip
+                    root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
+                    Path(root).mkdir(parents=True, exist_ok=True)  # create root
+                    r = os.system(f'unzip -q {f} -d {root} && rm {f}')  # unzip
                 elif s.startswith('bash '):  # bash script
                     print(f'Running {s} ...')
                     r = os.system(s)
                 else:  # python script
-                    r = exec(s)  # return None
+                    r = exec(s, {'yaml': data})  # return None
                 print('Dataset autodownload %s\n' % ('success' if r in (0, None) else 'failure'))  # print result
             else:
                 raise Exception('Dataset not found.')
 
 
-def download(url, dir='.', multi_thread=False):
+def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
     # Multi-threaded file download and unzip function
     def download_one(url, dir):
         # Download 1 file
         f = dir / Path(url).name  # filename
         if not f.exists():
             print(f'Downloading {url} to {f}...')
-            torch.hub.download_url_to_file(url, f, progress=True)  # download
-        if f.suffix in ('.zip', '.gz'):
+            if curl:
+                os.system(f"curl -L '{url}' -o '{f}' --retry 9 -C -")  # curl download, retry and resume on fail
+            else:
+                torch.hub.download_url_to_file(url, f, progress=True)  # torch download
+        if unzip and f.suffix in ('.zip', '.gz'):
             print(f'Unzipping {f}...')
             if f.suffix == '.zip':
-                os.system(f'unzip -qo {f} -d {dir} && rm {f}')  # unzip -quiet -overwrite
+                s = f'unzip -qo {f} -d {dir}'  # unzip -quiet -overwrite
             elif f.suffix == '.gz':
-                os.system(f'tar xfz {f} --directory {f.parent} && rm {f}')  # unzip
+                s = f'tar xfz {f} --directory {f.parent}'  # unzip
+            if delete:  # delete zip file after unzip
+                s += f' && rm {f}'
+            os.system(s)
 
     dir = Path(dir)
     dir.mkdir(parents=True, exist_ok=True)  # make directory
-    if multi_thread:
-        ThreadPool(8).imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # 8 threads
+    if threads > 1:
+        pool = ThreadPool(threads)
+        pool.imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # multi-threaded
+        pool.close()
+        pool.join()
     else:
         for u in tuple(url) if isinstance(url, str) else url:
             download_one(u, dir)
@@ -316,6 +396,18 @@ def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
     return y
 
 
+def xyxy2xywhn(x, w=640, h=640, clip=False):
+    # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] normalized where xy1=top-left, xy2=bottom-right
+    if clip:
+        clip_coords(x, (h, w))  # warning: inplace clip
+    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
+    y[:, 0] = ((x[:, 0] + x[:, 2]) / 2) / w  # x center
+    y[:, 1] = ((x[:, 1] + x[:, 3]) / 2) / h  # y center
+    y[:, 2] = (x[:, 2] - x[:, 0]) / w  # width
+    y[:, 3] = (x[:, 3] - x[:, 1]) / h  # height
+    return y
+
+
 def xyn2xy(x, w=640, h=640, padw=0, padh=0):
     # Convert normalized segments into pixel segments, shape (n,2)
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
@@ -368,98 +460,20 @@ def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
 
 def clip_coords(boxes, img_shape):
     # Clip bounding xyxy bounding boxes to image shape (height, width)
-    boxes[:, 0].clamp_(0, img_shape[1])  # x1
-    boxes[:, 1].clamp_(0, img_shape[0])  # y1
-    boxes[:, 2].clamp_(0, img_shape[1])  # x2
-    boxes[:, 3].clamp_(0, img_shape[0])  # y2
-
-
-def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, EIoU=False, eps=1e-7):
-    # Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
-    box2 = box2.T
-
-    # Get the coordinates of bounding boxes
-    if x1y1x2y2:  # x1, y1, x2, y2 = box1
-        b1_x1, b1_y1, b1_x2, b1_y2 = box1[0], box1[1], box1[2], box1[3]
-        b2_x1, b2_y1, b2_x2, b2_y2 = box2[0], box2[1], box2[2], box2[3]
-    else:  # transform from xywh to xyxy
-        b1_x1, b1_x2 = box1[0] - box1[2] / 2, box1[0] + box1[2] / 2
-        b1_y1, b1_y2 = box1[1] - box1[3] / 2, box1[1] + box1[3] / 2
-        b2_x1, b2_x2 = box2[0] - box2[2] / 2, box2[0] + box2[2] / 2
-        b2_y1, b2_y2 = box2[1] - box2[3] / 2, box2[1] + box2[3] / 2
-
-    # Intersection area
-    inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * \
-            (torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)).clamp(0)
-
-    # Union Area
-    w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + eps
-    w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
-    union = w1 * h1 + w2 * h2 - inter + eps
-
-    iou = inter / union
-    if GIoU or DIoU or CIoU or EIoU:
-        cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)  # convex (smallest enclosing box) width
-        ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)  # convex height
-        if CIoU or DIoU or EIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
-            c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
-            rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 +
-                    (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center distance squared
-            if DIoU:
-                return iou - rho2 / c2  # DIoU
-            elif CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
-                v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
-                with torch.no_grad():
-                    alpha = v / (v - iou + (1 + eps))
-                return iou - (rho2 / c2 + v * alpha)  # CIoU
-            elif EIoU: #https://arxiv.org/pdf/2101.08158.pdf
-                cww=cw ** 2+eps   
-                chh=ch ** 2+eps
-                cw2=(w2-w1) **2
-                ch2=(h2-h1) **2    
-                return iou-(rho2 / c2 + cw2 / cww + ch2 / chh) #EIoU
-        else:  # GIoU https://arxiv.org/pdf/1902.09630.pdf
-            c_area = cw * ch + eps  # convex area
-            return iou - (c_area - union) / c_area  # GIoU
-    else:
-        return iou  # IoU
-
-
-def box_iou(box1, box2):
-    # https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
-    """
-    Return intersection-over-union (Jaccard index) of boxes.
-    Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
-    Arguments:
-        box1 (Tensor[N, 4])
-        box2 (Tensor[M, 4])
-    Returns:
-        iou (Tensor[N, M]): the NxM matrix containing the pairwise
-            IoU values for every element in boxes1 and boxes2
-    """
-
-    def box_area(box):
-        # box = 4xn
-        return (box[2] - box[0]) * (box[3] - box[1])
-
-    area1 = box_area(box1.T)
-    area2 = box_area(box2.T)
-
-    # inter(N,M) = (rb(N,M,2) - lt(N,M,2)).clamp(0).prod(2)
-    inter = (torch.min(box1[:, None, 2:], box2[:, 2:]) - torch.max(box1[:, None, :2], box2[:, :2])).clamp(0).prod(2)
-    return inter / (area1[:, None] + area2 - inter)  # iou = inter / (area1 + area2 - inter)
-
-
-def wh_iou(wh1, wh2):
-    # Returns the nxm IoU matrix. wh1 is nx2, wh2 is mx2
-    wh1 = wh1[:, None]  # [N,1,2]
-    wh2 = wh2[None]  # [1,M,2]
-    inter = torch.min(wh1, wh2).prod(2)  # [N,M]
-    return inter / (wh1.prod(2) + wh2.prod(2) - inter)  # iou = inter / (area1 + area2 - inter)
+    if isinstance(boxes, torch.Tensor):
+        boxes[:, 0].clamp_(0, img_shape[1])  # x1
+        boxes[:, 1].clamp_(0, img_shape[0])  # y1
+        boxes[:, 2].clamp_(0, img_shape[1])  # x2
+        boxes[:, 3].clamp_(0, img_shape[0])  # y2
+    else:  # np.array
+        boxes[:, 0].clip(0, img_shape[1], out=boxes[:, 0])  # x1
+        boxes[:, 1].clip(0, img_shape[0], out=boxes[:, 1])  # y1
+        boxes[:, 2].clip(0, img_shape[1], out=boxes[:, 2])  # x2
+        boxes[:, 3].clip(0, img_shape[0], out=boxes[:, 3])  # y2
 
 
 def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False,
-                        labels=()):
+                        labels=(), max_det=300):
     """Runs Non-Maximum Suppression (NMS) on inference results
 
     Returns:
@@ -469,9 +483,12 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     nc = prediction.shape[2] - 5  # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
 
+    # Checks
+    assert 0 <= conf_thres <= 1, f'Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0'
+    assert 0 <= iou_thres <= 1, f'Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0'
+
     # Settings
     min_wh, max_wh = 2, 4096  # (pixels) minimum and maximum box width and height
-    max_det = 300  # maximum number of detections per image
     max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
     time_limit = 10.0  # seconds to quit after
     redundant = True  # require redundant detections
@@ -631,8 +648,8 @@ def apply_classifier(x, model, img, im0):
     return x
 
 
-def save_one_box(xyxy, im, file='image.jpg', gain=1.02, pad=10, square=False, BGR=False):
-    # Save an image crop as {file} with crop size multiplied by {gain} and padded by {pad} pixels
+def save_one_box(xyxy, im, file='image.jpg', gain=1.02, pad=10, square=False, BGR=False, save=True):
+    # Save image crop as {file} with crop size multiple {gain} and {pad} pixels. Save and/or return crop
     xyxy = torch.tensor(xyxy).view(-1, 4)
     b = xyxy2xywh(xyxy)  # boxes
     if square:
@@ -640,8 +657,10 @@ def save_one_box(xyxy, im, file='image.jpg', gain=1.02, pad=10, square=False, BG
     b[:, 2:] = b[:, 2:] * gain + pad  # box wh * gain + pad
     xyxy = xywh2xyxy(b).long()
     clip_coords(xyxy, im.shape)
-    crop = im[int(xyxy[0, 1]):int(xyxy[0, 3]), int(xyxy[0, 0]):int(xyxy[0, 2])]
-    cv2.imwrite(str(increment_path(file, mkdir=True).with_suffix('.jpg')), crop if BGR else crop[..., ::-1])
+    crop = im[int(xyxy[0, 1]):int(xyxy[0, 3]), int(xyxy[0, 0]):int(xyxy[0, 2]), ::(1 if BGR else -1)]
+    if save:
+        cv2.imwrite(str(increment_path(file, mkdir=True).with_suffix('.jpg')), crop)
+    return crop
 
 
 def increment_path(path, exist_ok=False, sep='', mkdir=False):

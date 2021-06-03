@@ -9,8 +9,8 @@ import pandas as pd
 import requests
 import torch
 import torch.nn as nn
-from PIL import Image
 import torch.nn.functional as F
+from PIL import Image
 from torch.cuda import amp
 
 from utils.datasets import letterbox
@@ -110,18 +110,8 @@ class TransformerBlock(nn.Module):
         if self.conv is not None:
             x = self.conv(x)
         b, _, w, h = x.shape
-        p = x.flatten(2)
-        p = p.unsqueeze(0)
-        p = p.transpose(0, 3)
-        p = p.squeeze(3)
-        e = self.linear(p)
-        x = p + e
-
-        x = self.tr(x)
-        x = x.unsqueeze(3)
-        x = x.transpose(0, 3)
-        x = x.reshape(b, self.c2, w, h)
-        return x
+        p = x.flatten(2).unsqueeze(0).transpose(0, 3).squeeze(3)
+        return self.tr(p + self.linear(p)).unsqueeze(3).transpose(0, 3).reshape(b, self.c2, w, h)
 
 
 class Bottleneck(nn.Module):
@@ -149,7 +139,7 @@ class InvolutionBottleneck(nn.Module):
     def forward(self, x):
         
         return x + self.cv3(self.cv2(self.cv1(x))) if self.add else self.cv3(self.cv2(self.cv1(x)))
-
+        
 class BottleneckCSP(nn.Module):
     # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
@@ -171,20 +161,19 @@ class BottleneckCSP(nn.Module):
 
 class C3(nn.Module):
     # CSP Bottleneck with 3 convolutions 
-    def __init__(self, c1, c2, n=1, Inverse=False,shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
+    def __init__(self, c1, c2, n=1, Involution=False,shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
         super(C3, self).__init__()
         c_ = int(c2 * e)  # hidden channels
-        #self.cv1 =  Conv(c1, c1*2, 1, 1) if(Inverse==False) else (c1, c1, 1, 1)
+        #self.cv1 =  Conv(c1, c1*2, 1, 1) if(Involution==False) else (c1, c1, 1, 1)
         self.cv1 = Conv(c1, c_, 1, 1) 
         self.cv2 = Conv(c1, c_, 1, 1)
         self.cv3 = Conv(2 * c_, c2, 1)  # act=FReLU(c2)
-        self.m = nn.Sequential(*[(InvolutionBottleneck(c_, c_, shortcut, g, e=1.0) if(Inverse) else Bottleneck(c_, c_, shortcut, g, e=1.0) )for _ in range(n)]) 
+        self.m = nn.Sequential(*[(InvolutionBottleneck(c_, c_, shortcut, g, e=1.0) if(Involution) else Bottleneck(c_, c_, shortcut, g, e=1.0) )for _ in range(n)]) 
         # self.m = nn.Sequential(*[CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)])
 
     def forward(self, x):
        
         return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))
-
 
 
 class C3TR(C3):
@@ -234,6 +223,35 @@ class Contract(nn.Module):
         x = x.permute(0, 3, 5, 1, 2, 4).contiguous()  # x(1,2,2,64,40,40)
         return x.view(N, C * s * s, H // s, W // s)  # x(1,256,40,40)
 
+class Concat_bifpn(nn.Module):
+    # Concatenate a list of tensors along dimension
+    def __init__(self, c1, c2):
+        super(Concat_bifpn, self).__init__()
+        # self.relu = nn.ReLU()
+        self.w1 = nn.Parameter(torch.ones(2, dtype=torch.float32), requires_grad=True)
+        self.w2 = nn.Parameter(torch.ones(3, dtype=torch.float32), requires_grad=True)
+       # self.w3 = nn.Parameter(torch.ones(3, dtype=torch.float32), requires_grad=True)
+        self.epsilon = 0.0001
+        self.conv = Conv(c1, c2, 1 ,1 ,0 )
+        self.act= nn.SiLU()
+
+    def forward(self, x): # mutil-layer 1-3 layers
+        #print("bifpn:",x.shape)
+        if len(x) == 2:
+            # w = self.relu(self.w1)
+            w = self.w1
+            weight = w / (torch.sum(w, dim=0) + self.epsilon)
+            x = self.conv(self.act(weight[0] * x[0] + weight[1] * x[1]))
+        elif len(x) == 3: 
+            # w = self.relu(self.w2)
+            w = self.w2
+            weight = w / (torch.sum(w, dim=0) + self.epsilon)
+            x = self.conv(self.act (weight[0] * x[0] + weight[1] * x[1] + weight[2] * x[2]))
+        # elif len(x) == 4:    
+        #     w = self.w3
+        #     weight = w / (torch.sum(w, dim=0) + self.epsilon)
+        #     x = self.conv(self.act(weight[0] * x[0] + weight[1] * x[1] + weight[2] *x[2] + weight[3]*x[3] ))
+        return x     
 
 class Expand(nn.Module):
     # Expand channels into width-height, i.e. x(1,64,80,80) to x(1,16,160,160)
@@ -264,26 +282,28 @@ class NMS(nn.Module):
     conf = 0.25  # confidence threshold
     iou = 0.45  # IoU threshold
     classes = None  # (optional list) filter by class
+    max_det = 1000  # maximum number of detections per image
 
     def __init__(self):
         super(NMS, self).__init__()
 
     def forward(self, x):
-        return non_max_suppression(x[0], conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)
+        return non_max_suppression(x[0], self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)
 
 
-class autoShape(nn.Module):
+class AutoShape(nn.Module):
     # input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS
     conf = 0.25  # NMS confidence threshold
     iou = 0.45  # NMS IoU threshold
     classes = None  # (optional list) filter by class
+    max_det = 1000  # maximum number of detections per image
 
     def __init__(self, model):
-        super(autoShape, self).__init__()
+        super(AutoShape, self).__init__()
         self.model = model.eval()
 
     def autoshape(self):
-        print('autoShape already enabled, skipping... ')  # model already converted to model.autoshape()
+        print('AutoShape already enabled, skipping... ')  # model already converted to model.autoshape()
         return self
 
     @torch.no_grad()
@@ -315,7 +335,7 @@ class autoShape(nn.Module):
             files.append(Path(f).with_suffix('.jpg').name)
             if im.shape[0] < 5:  # image in CHW
                 im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
-            im = im[:, :, :3] if im.ndim == 3 else np.tile(im[:, :, None], 3)  # enforce 3ch input
+            im = im[..., :3] if im.ndim == 3 else np.tile(im[..., None], 3)  # enforce 3ch input
             s = im.shape[:2]  # HWC
             shape0.append(s)  # image shape
             g = (size / max(s))  # gain
@@ -334,7 +354,7 @@ class autoShape(nn.Module):
             t.append(time_synchronized())
 
             # Post-process
-            y = non_max_suppression(y, conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)  # NMS
+            y = non_max_suppression(y, self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)  # NMS
             for i in range(n):
                 scale_coords(shape1, y[i][:, :4], shape0[i])
 
@@ -368,7 +388,7 @@ class Detections:
                     n = (pred[:, -1] == c).sum()  # detections per class
                     str += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
                 if show or save or render or crop:
-                    for *box, conf, cls in pred:  # xyxy, confidence, class
+                    for *box, conf, cls in reversed(pred):  # xyxy, confidence, class
                         label = f'{self.names[int(cls)]} {conf:.2f}'
                         if crop:
                             save_one_box(box, im, file=save_dir / 'crops' / self.names[int(cls)] / self.files[i])
@@ -442,7 +462,7 @@ class Classify(nn.Module):
         return self.flat(self.conv(z))  # flatten to x(b,c2)
 
 class ASFFV5(nn.Module):
-    def __init__(self, level,out,multiplier=1, rfb=False, vis=False, act_cfg=True):
+    def __init__(self, level, multiplier=1, rfb=False, vis=False, act_cfg=True):
         """
         ASFF version for YoloV5 .
         different than YoloV3
@@ -564,7 +584,7 @@ class ChannelAttentionModule(nn.Module):
             nn.Linear(in_features=mid_channel, out_features=c1)
         )
        # self.sigmoid = nn.Sigmoid()
-        self.act=SiLU()
+        self.act=nn.SiLU()
     def forward(self, x):
         avgout = self.shared_MLP(self.avg_pool(x).view(x.size(0),-1)).unsqueeze(2).unsqueeze(3)
         maxout = self.shared_MLP(self.max_pool(x).view(x.size(0),-1)).unsqueeze(2).unsqueeze(3)
@@ -574,7 +594,7 @@ class SpatialAttentionModule(nn.Module):
     def __init__(self):
         super(SpatialAttentionModule, self).__init__()
         self.conv2d = nn.Conv2d(in_channels=2, out_channels=1, kernel_size=7, stride=1, padding=3)
-        self.act=SiLU()
+        self.act=nn.SiLU()
     def forward(self, x):
         avgout = torch.mean(x, dim=1, keepdim=True)
         maxout, _ = torch.max(x, dim=1, keepdim=True)
@@ -697,21 +717,18 @@ class MHSA(nn.Module):
      
     def forward(self, x):
         n_batch, C, width, height = x.size() 
-        q = self.query(x).view(n_batch, self.heads, C // self.heads, width*height)
-        k = self.key(x).view(n_batch, self.heads, C // self.heads, width*height)
-        v = self.value(x).view(n_batch, self.heads, C // self.heads, width*height)
+        q = self.query(x).view(n_batch, self.heads, C // self.heads, -1)
+        k = self.key(x).view(n_batch, self.heads, C // self.heads, -1)
+        v = self.value(x).view(n_batch, self.heads, C // self.heads, -1)
         #print('q shape:{},k shape:{},v shape:{}'.format(q.shape,k.shape,v.shape))  #1,4,64,256
         content_content = torch.matmul(q.permute(0,1,3,2), k) #1,C,h*w,h*w
         # print("qkT=",content_content.shape)
         c1,c2,c3,c4=content_content.size()
        # print("old content_content shape",content_content.shape) #1,4,256,256
-        content_position = (self.rel_h + self.rel_w).view(1, self.heads, C // self.heads, width*height).permute(0,1,3,2)   #1,4,1024,64
-        if(content_content.shape!=content_position.shape):
-                #print('no mathch!!!!!!!!!!!!')
-                content_position=content_position[:,: , :c3,]
-        
-       #content_position=torch.squeeze(content_position,dim=3)
+        content_position = (self.rel_h + self.rel_w).view(1, self.heads, C // self.heads, -1).permute(0,1,3,2)   #1,4,1024,64
+       
         content_position = torch.matmul(content_position, q)# ([1, 4, 1024, 256])
+        content_position=content_position if(content_content.shape==content_position.shape)else content_position[:,: , :c3,]
         assert(content_content.shape==content_position.shape)
         #print('new pos222-> shape:',content_position.shape)
        # print('new content222-> shape:',content_content.shape)
@@ -758,7 +775,6 @@ class BottleneckTransformer(nn.Module):
         # out += self.shortcut(x)
         # out = F.relu(out)
         out=x + self.cv2(self.cv1(x)) if self.shortcut else self.cv2(self.cv1(x))
-       # print("out:",x.shape)
         return out
         
 class CTR3(nn.Module):
@@ -775,4 +791,4 @@ class CTR3(nn.Module):
     def forward(self, x):
         #print("CTR3-INPUT:",x.shape)
        # return self.cv3
-        return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))             
+        return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))                  
