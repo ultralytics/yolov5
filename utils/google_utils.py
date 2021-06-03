@@ -36,9 +36,7 @@ def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
         print('')
 
 
-def attempt_download(
-        file='https://firebasestorage.googleapis.com/v0/b/ultralytics-hub.appspot.com/o/datasets%2Fcoco128.yaml?alt=media&token=25c4277a-0146-4d8b-9004-8db346a51fd8',
-        repo='ultralytics/yolov5'):  # from utils.google_utils import *; attempt_download()
+def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.google_utils import *; attempt_download()
     # Attempt file download if does not exist
     file = Path(str(file).strip().replace("'", ''))
 
