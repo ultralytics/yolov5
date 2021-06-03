@@ -45,7 +45,7 @@ def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.google_util
         name = Path(urllib.parse.unquote(str(file))).name  # decode '%2F' to '/' etc.
         if str(file).startswith(('http:/', 'https:/')):  # download
             url = str(file).replace(':/', '://')  # Pathlib turns :// -> :/
-            name = name.split('?')[0].split('%3F')[0]  # parse authentication https://url.com/file.txt?auth...
+            name = name.split('?')[0]  # parse authentication https://url.com/file.txt?auth...
             safe_download(file=name, url=url, min_bytes=1E5)
             return name
 
