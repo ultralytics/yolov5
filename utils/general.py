@@ -9,6 +9,7 @@ import random
 import re
 import subprocess
 import time
+import urllib
 from itertools import repeat
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -183,7 +184,8 @@ def check_file(file):
     if Path(file).is_file() or file == '':  # exists
         return file
     elif file.startswith(('http://', 'https://')):  # download
-        url, file = file, Path(file).name
+        url, file = file, Path(urllib.parse.unquote(str(file))).name  # url, file (decode '%2F' to '/' etc.)
+        file = file.split('?')[0]  # parse authentication https://url.com/file.txt?auth...
         print(f'Downloading {url} to {file}...')
         torch.hub.download_url_to_file(url, file)
         assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
