@@ -4,6 +4,7 @@ import os
 import platform
 import subprocess
 import time
+import urllib
 from pathlib import Path
 
 import requests
@@ -40,7 +41,7 @@ def attempt_download(file, repo='ultralytics/yolov5'):
 
     if not file.exists():
         # URL specified
-        name = file.name
+        name = Path(urllib.parse.unquote(str(file))).name  # decode '%2F' to '/' etc.
         if str(file).startswith(('http:/', 'https:/')):  # download
             url = str(file).replace(':/', '://')  # Pathlib turns :// -> :/
             name = name.split('?')[0].split('%3F')[0]  # parse authentication https://url.com/file.txt?auth...
