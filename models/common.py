@@ -706,11 +706,7 @@ class MHSA(nn.Module):
         c1,c2,c3,c4=content_content.size()
        # print("old content_content shape",content_content.shape) #1,4,256,256
         content_position = (self.rel_h + self.rel_w).view(1, self.heads, C // self.heads, width*height).permute(0,1,3,2)   #1,4,1024,64
-        if(content_content.shape!=content_position.shape):
-                #print('no mathch!!!!!!!!!!!!')
-                content_position=content_position[:,: , :c3,]
-        
-       #content_position=torch.squeeze(content_position,dim=3)
+        content_position=content_position if(content_content.shape==content_position.shape)else content_position[:,: , :c3,]
         content_position = torch.matmul(content_position, q)# ([1, 4, 1024, 256])
         assert(content_content.shape==content_position.shape)
         #print('new pos222-> shape:',content_position.shape)
