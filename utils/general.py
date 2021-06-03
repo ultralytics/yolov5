@@ -14,6 +14,7 @@ from pathlib import Path
 import cv2
 import math
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -247,7 +248,7 @@ def clip_coords(boxes, img_shape):
     boxes[:, 3].clamp_(0, img_shape[0])  # y2
 
 
-def ap_per_class(tp, conf, pred_cls, target_cls, iouv_thres_ind=0, conf_thres=0.1, method="interp",
+def ap_per_class(tp, conf, pred_cls, target_cls, iouv_thres_ind=0, conf_thres=0.4, method="interp",
                  plot=False, fname='precision-recall_curve.png'):
     """ Compute the average precision, given the recall and precision curves.
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
@@ -261,7 +262,6 @@ def ap_per_class(tp, conf, pred_cls, target_cls, iouv_thres_ind=0, conf_thres=0.
     # Returns
         The average precision as computed in py-faster-rcnn.
     """
-
     # Sort by objectness
     i = np.argsort(-conf)
     tp, conf, pred_cls = tp[i], conf[i], pred_cls[i]
@@ -513,7 +513,8 @@ def compute_loss(p, targets, model):  # predictions, targets, model
     # Losses
     nt = 0  # number of targets
     np = len(p)  # number of outputs
-    balance = [4.0, 1.0, 0.4] if np == 3 else [4.0, 1.0, 0.4, 0.1]  # P3-5 or P3-6
+    balance = [1.0, 1.0, 1.0] if np == 3 else [4.0, 1.0, 0.4, 0.1]  # P3-5 or P3-6
+
     for i, pi in enumerate(p):  # layer index, layer predictions
         b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
         tobj = torch.zeros_like(pi[..., 0], device=device)  # target obj
