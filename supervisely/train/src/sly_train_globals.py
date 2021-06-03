@@ -5,6 +5,8 @@ import yaml
 import supervisely_lib as sly
 
 my_app = sly.AppService()
+my_app._ignore_stop_for_debug = True
+
 team_id = int(os.environ['context.teamId'])
 workspace_id = int(os.environ['context.workspaceId'])
 project_id = int(os.environ['modal.state.slyProjectId'])
