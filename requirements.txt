@@ -10,9 +10,9 @@ tqdm==4.56.0
 seaborn==0.11.1
 
 # export --------------------------------------
-# coremltools==4.0
-# onnx>=1.8.0
-# scikit-learn==0.19.2  # for coreml quantization
+coremltools==4.1
+onnx>=1.8.0
+scikit-learn==0.19.2  # for coreml quantization
 
 # extras --------------------------------------
 thop==0.0.31-2005241907  # FLOPS computation
