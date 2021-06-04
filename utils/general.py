@@ -38,9 +38,9 @@ os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max t
 
 class timeout(contextlib.ContextDecorator):
     # Usage: @timeout(seconds) decorator or 'with timeout(seconds):' context manager
-    def __init__(self, seconds, *, timeout_message="", suppress_timeout_errors=True):
+    def __init__(self, seconds, *, timeout_msg='', suppress_timeout_errors=True):
         self.seconds = int(seconds)
-        self.timeout_message = timeout_message
+        self.timeout_message = timeout_msg
         self.suppress = bool(suppress_timeout_errors)
 
     def _timeout_handler(self, signum, frame):
@@ -114,6 +114,7 @@ def check_online():
         return False
 
 
+@timeout(5, timeout_msg='skipping (timeout). For YOLOv5 updates check https://github.com/ultralytics/yolov5')
 def check_git_status():
     # Recommend 'git pull' if code is out of date
     print(colorstr('github: '), end='')
