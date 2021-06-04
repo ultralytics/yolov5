@@ -334,7 +334,7 @@ def train(hyp, opt, device, tb_writer=None):
                     if tb_writer and ni == 0:
                         with warnings.catch_warnings():
                             warnings.simplefilter('ignore')  # suppress jit trace warning
-                            tb_writer.add_graph(torch.jit.trace(de_parallel(model), imgs, strict=False), [])
+                            tb_writer.add_graph(torch.jit.trace(de_parallel(model), imgs, strict=False), [])  # graph
                 elif plots and ni == 10 and wandb_logger.wandb:
                     wandb_logger.log({'Mosaics': [wandb_logger.wandb.Image(str(x), caption=x.name) for x in
                                                   save_dir.glob('train*.jpg') if x.exists()]})
