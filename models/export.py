@@ -99,8 +99,10 @@ if __name__ == '__main__':
             torch.onnx.export(model, img, f, verbose=False, opset_version=opt.opset_version, input_names=['images'],
                               training=torch.onnx.TrainingMode.TRAINING if opt.train else torch.onnx.TrainingMode.EVAL,
                               do_constant_folding=not opt.train,
+                              output_names=['output0', 'output1', 'output2', 'output3'],
                               dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # size(1,3,640,640)
-                                            'output': {0: 'batch', 2: 'y', 3: 'x'}} if opt.dynamic else None)
+                                            'output0': {0: 'batch'}, 'output1': {0: 'batch'},
+                                            'output2': {0: 'batch'}, 'output3': {0: 'batch'}} if opt.dynamic else None)
 
             # Checks
             model_onnx = onnx.load(f)  # load onnx model
