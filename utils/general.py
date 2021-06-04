@@ -9,12 +9,12 @@ import platform
 import random
 import re
 import signal
-import subprocess
 import time
 import urllib
 from itertools import repeat
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+from subprocess import check_output
 
 import cv2
 import numpy as np
@@ -114,8 +114,7 @@ def check_online():
         return False
 
 
-@timeout(5, timeout_msg='skipping (timeout). For YOLOv5 updates see https://github.com/ultralytics/yolov5')
-def check_git_status():
+def check_git_status(err_msg=', for updates see https://github.com/ultralytics/yolov5'):
     # Recommend 'git pull' if code is out of date
     print(colorstr('github: '), end='')
     try:
@@ -124,9 +123,9 @@ def check_git_status():
         assert check_online(), 'skipping check (offline)'
 
         cmd = 'git fetch && git config --get remote.origin.url'
-        url = subprocess.check_output(cmd, shell=True).decode().strip().rstrip('.git')  # github repo url
-        branch = subprocess.check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
-        n = int(subprocess.check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
+        url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
+        branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
+        n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
         if n > 0:
             s = f"⚠️ WARNING: code is out of date by {n} commit{'s' * (n > 1)}. " \
                 f"Use 'git pull' to update or 'git clone {url}' to download latest."
@@ -134,7 +133,7 @@ def check_git_status():
             s = f'up to date with {url} ✅'
         print(emojis(s))  # emoji-safe
     except Exception as e:
-        print(e)
+        print(f'{e}{err_msg}')
 
 
 def check_python(minimum='3.7.0', required=True):
@@ -167,7 +166,7 @@ def check_requirements(requirements='requirements.txt', exclude=()):
             n += 1
             print(f"{prefix} {r} not found and is required by YOLOv5, attempting auto-update...")
             try:
-                print(subprocess.check_output(f"pip install '{r}'", shell=True).decode())
+                print(check_output(f"pip install '{r}'", shell=True).decode())
             except Exception as e:
                 print(f'{prefix} {e}')
 
