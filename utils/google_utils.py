@@ -4,6 +4,7 @@ import os
 import platform
 import subprocess
 import time
+import urllib
 from pathlib import Path
 
 import requests
@@ -16,11 +17,39 @@ def gsutil_getsize(url=''):
     return eval(s.split(' ')[0]) if len(s) else 0  # bytes
 
 
-def attempt_download(file, repo='ultralytics/yolov5'):
+def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
+    # Attempts to download file from url or url2, checks and removes incomplete downloads < min_bytes
+    file = Path(file)
+    assert_msg = f"Downloaded file '{file}' does not exist or size is < min_bytes={min_bytes}"
+    try:  # url1
+        print(f'Downloading {url} to {file}...')
+        torch.hub.download_url_to_file(url, str(file))
+        assert file.exists() and file.stat().st_size > min_bytes, assert_msg  # check
+    except Exception as e:  # url2
+        file.unlink(missing_ok=True)  # remove partial downloads
+        print(f'ERROR: {e}\nRe-attempting {url2 or url} to {file}...')
+        os.system(f"curl -L '{url2 or url}' -o '{file}' --retry 3 -C -")  # curl download, retry and resume on fail
+    finally:
+        if not file.exists() or file.stat().st_size < min_bytes:  # check
+            file.unlink(missing_ok=True)  # remove partial downloads
+            print(f"ERROR: {assert_msg}\n{error_msg}")
+        print('')
+
+
+def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.google_utils import *; attempt_download()
     # Attempt file download if does not exist
     file = Path(str(file).strip().replace("'", ''))
 
     if not file.exists():
+        # URL specified
+        name = Path(urllib.parse.unquote(str(file))).name  # decode '%2F' to '/' etc.
+        if str(file).startswith(('http:/', 'https:/')):  # download
+            url = str(file).replace(':/', '://')  # Pathlib turns :// -> :/
+            name = name.split('?')[0]  # parse authentication https://url.com/file.txt?auth...
+            safe_download(file=name, url=url, min_bytes=1E5)
+            return name
+
+        # GitHub assets
         file.parent.mkdir(parents=True, exist_ok=True)  # make parent dir (if required)
         try:
             response = requests.get(f'https://api.github.com/repos/{repo}/releases/latest').json()  # github api
@@ -34,27 +63,14 @@ def attempt_download(file, repo='ultralytics/yolov5'):
             except:
                 tag = 'v5.0'  # current release
 
-        name = file.name
         if name in assets:
-            msg = f'{file} missing, try downloading from https://github.com/{repo}/releases/'
-            redundant = False  # second download option
-            try:  # GitHub
-                url = f'https://github.com/{repo}/releases/download/{tag}/{name}'
-                print(f'Downloading {url} to {file}...')
-                torch.hub.download_url_to_file(url, file)
-                assert file.exists() and file.stat().st_size > 1E6  # check
-            except Exception as e:  # GCP
-                print(f'Download error: {e}')
-                assert redundant, 'No secondary mirror'
-                url = f'https://storage.googleapis.com/{repo}/ckpt/{name}'
-                print(f'Downloading {url} to {file}...')
-                os.system(f"curl -L '{url}' -o '{file}' --retry 3 -C -")  # curl download, retry and resume on fail
-            finally:
-                if not file.exists() or file.stat().st_size < 1E6:  # check
-                    file.unlink(missing_ok=True)  # remove partial downloads
-                    print(f'ERROR: Download failure: {msg}')
-                print('')
-                return
+            safe_download(file,
+                          url=f'https://github.com/{repo}/releases/download/{tag}/{name}',
+                          # url2=f'https://storage.googleapis.com/{repo}/ckpt/{name}',  # backup url (optional)
+                          min_bytes=1E5,
+                          error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/')
+
+    return str(file)
 
 
 def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', file='tmp.zip'):

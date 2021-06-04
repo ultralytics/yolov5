@@ -96,11 +96,14 @@ if __name__ == '__main__':
 
             print(f'{prefix} starting export with onnx {onnx.__version__}...')
             f = opt.weights.replace('.pt', '.onnx')  # filename
-            torch.onnx.export(model, img, f, verbose=False, opset_version=opt.opset_version, input_names=['images'],
+            torch.onnx.export(model, img, f, verbose=False, opset_version=opt.opset_version,
                               training=torch.onnx.TrainingMode.TRAINING if opt.train else torch.onnx.TrainingMode.EVAL,
                               do_constant_folding=not opt.train,
-                              dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # size(1,3,640,640)
-                                            'output': {0: 'batch', 2: 'y', 3: 'x'}} if opt.dynamic else None)
+                              input_names=['images'],
+                              output_names=['output'],
+                              dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
+                                            'output': {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
+                                            } if opt.dynamic else None)
 
             # Checks
             model_onnx = onnx.load(f)  # load onnx model
