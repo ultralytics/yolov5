@@ -13,12 +13,12 @@ jobs:
           stale-issue-message: |
             👋 Hello @${{ github.actor }}, this issue has been automatically marked as stale because it has not had recent activity. Please note it will be closed if no further activity occurs.
 
-            Additional [YOLOv5](https://ultralytics.com/yolov5) 🚀 resources:
+            Access additional [YOLOv5](https://ultralytics.com/yolov5) 🚀 resources:
             - **Wiki** – https://github.com/ultralytics/yolov5/wiki
             - **Tutorials** – https://github.com/ultralytics/yolov5#tutorials
             - **Docs** – https://docs.ultralytics.com
 
-            Additional [Ultralytics](https://ultralytics.com) ⚡ resources:            
+            Access additional [Ultralytics](https://ultralytics.com) ⚡ resources:            
             - **Ultralytics HUB** – https://hub.ultralytics.com
             - **Vision API** – https://ultralytics.com/yolov5
             - **About Us** – https://ultralytics.com/about
