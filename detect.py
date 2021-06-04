@@ -28,8 +28,7 @@ def detect(opt):
     # Initialize
     set_logging()
     device = select_device(opt.device)
-
-    half =opt.half and device.type != 'cpu'   # half precision only supported on CUDA
+    half = opt.half and device.type != 'cpu'   # half precision only supported on CUDA
 
     # Load model
     model = attempt_load(weights, map_location=device)  # load FP32 model
