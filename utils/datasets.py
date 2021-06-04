@@ -535,7 +535,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             # MixUp https://arxiv.org/pdf/1710.09412.pdf
             if random.random() < hyp['mixup']:
                 img2, labels2 = load_mosaic(self, random.randint(0, self.n - 1))
-                r = np.random.beta(8.0, 8.0)  # mixup ratio, alpha=beta=8.0
+                r = np.random.beta(32.0, 32.0)  # mixup ratio, alpha=beta=32.0
                 img = (img * r + img2 * (1 - r)).astype(np.uint8)
                 labels = np.concatenate((labels, labels2), 0)
 
