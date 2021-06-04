@@ -163,10 +163,11 @@ def check_requirements(requirements='requirements.txt', exclude=()):
         try:
             pkg.require(r)
         except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
-            n += 1
             print(f"{prefix} {r} not found and is required by YOLOv5, attempting auto-update...")
             try:
+                assert check_online(), f"'pip install {r}' skipped (offline)"
                 print(check_output(f"pip install '{r}'", shell=True).decode())
+                n += 1
             except Exception as e:
                 print(f'{prefix} {e}')
 
