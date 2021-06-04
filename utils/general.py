@@ -36,6 +36,26 @@ cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with Py
 os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max threads
 
 
+class timeout(contextlib.ContextDecorator):
+    # Usage: @timeout(seconds) decorator or 'with timeout(seconds):' context manager
+    def __init__(self, seconds, *, timeout_message="", suppress_timeout_errors=True):
+        self.seconds = int(seconds)
+        self.timeout_message = timeout_message
+        self.suppress = bool(suppress_timeout_errors)
+
+    def _timeout_handler(self, signum, frame):
+        raise TimeoutError(self.timeout_message)
+
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self._timeout_handler)  # Set handler for SIGALRM
+        signal.alarm(self.seconds)  # start countdown for SIGALRM to be raised
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        signal.alarm(0)  # Cancel SIGALRM if it's scheduled
+        if self.suppress and exc_type is TimeoutError:  # Suppress TimeoutError
+            return True
+
+
 def set_logging(rank=-1, verbose=True):
     logging.basicConfig(
         format="%(message)s",
@@ -88,7 +108,7 @@ def check_online():
     # Check internet connectivity
     import socket
     try:
-        socket.create_connection(("1.1.1.1", 443), 5)  # check host accesability
+        socket.create_connection(("1.1.1.1", 443), 5)  # check host accessibility
         return True
     except OSError:
         return False
@@ -706,23 +726,3 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     if not dir.exists() and mkdir:
         dir.mkdir(parents=True, exist_ok=True)  # make directory
     return path
-
-
-class timeout(contextlib.ContextDecorator):
-    # Usage: @timeout(seconds) decorator or 'with timeout(seconds):' context manager
-    def __init__(self, seconds, *, timeout_message="", suppress_timeout_errors=True):
-        self.seconds = int(seconds)
-        self.timeout_message = timeout_message
-        self.suppress = bool(suppress_timeout_errors)
-
-    def _timeout_handler(self, signum, frame):
-        raise TimeoutError(self.timeout_message)
-
-    def __enter__(self):
-        signal.signal(signal.SIGALRM, self._timeout_handler)  # Set handler for SIGALRM
-        signal.alarm(self.seconds)  # start countdown for SIGALRM to be raised
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        signal.alarm(0)  # Cancel SIGALRM if it's scheduled
-        if self.suppress and exc_type is TimeoutError:  # Suppress TimeoutError
-            return True
