@@ -9,8 +9,8 @@
   ],
   "description": "Export model weights to ONNX, CoreML",
   "docker_image": "supervisely/base-pytorch:6.0.21",
-  "main_script": "supervisely/export_weights/src/sly_export_weights.py",
-  "modal_template": "supervisely/export_weights/src/modal.html",
+  "main_script": "",
+  "modal_template": "",
   "modal_width": 700,
   "modal_template_state": {
     "device": "0",
