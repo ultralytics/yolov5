@@ -114,7 +114,7 @@ def check_online():
         return False
 
 
-@timeout(5, timeout_msg='skipping (timeout). For YOLOv5 updates check https://github.com/ultralytics/yolov5')
+@timeout(5, timeout_msg='skipping (timeout). For YOLOv5 updates see https://github.com/ultralytics/yolov5')
 def check_git_status():
     # Recommend 'git pull' if code is out of date
     print(colorstr('github: '), end='')
