@@ -32,7 +32,7 @@ def detect(opt):
     # Initialize
     set_logging()
     device = select_device(opt.device)
-    half = device.type != 'cpu'  # half precision only supported on CUDA
+    half = opt.half and device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
     model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -176,6 +176,7 @@ def main():
     parser.add_argument('--line-thickness', default=3, type=int, help='bounding box thickness (pixels)')
     parser.add_argument('--hide-labels', default=False, action='store_true', help='hide labels')
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
+    parser.add_argument('--half', type=bool, default=False, help='use FP16 half-precision inference')
     opt = parser.parse_args()
     print(opt)
     check_requirements(FILE.parents[1] / 'requirements.txt', exclude=('tensorboard', 'pycocotools', 'thop'))
