@@ -11,7 +11,7 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           stale-issue-message: |
-            👋 Hello @${{ github.actor }}, this issue has been automatically marked as stale because it has not had recent activity. Please note it will be closed if no further activity occurs.
+            👋 Hello, this issue has been automatically marked as stale because it has not had recent activity. Please note it will be closed if no further activity occurs.
 
             Access additional [YOLOv5](https://ultralytics.com/yolov5) 🚀 resources:
             - **Wiki** – https://github.com/ultralytics/yolov5/wiki
