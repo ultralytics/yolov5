@@ -59,7 +59,6 @@ if __name__ == '__main__':
     if opt.half:
         img, model = img.half(), model.half()  # to FP16
     model.train() if opt.train else model.eval()  # training mode = no Detect() layer grid construction
-
     for k, m in model.named_modules():
         m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatibility
         if isinstance(m, models.common.Conv):  # assign export-friendly activations
