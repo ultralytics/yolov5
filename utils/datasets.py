@@ -29,6 +29,7 @@ from utils.torch_utils import torch_distributed_zero_first
 help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 img_formats = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
 vid_formats = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
+num_threads = min(8, os.cpu_count())  # number of multiprocessing threads
 logger = logging.getLogger(__name__)
 
 # Get orientation exif tag
@@ -447,7 +448,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         if cache_images:
             gb = 0  # Gigabytes of cached images
             self.img_hw0, self.img_hw = [None] * n, [None] * n
-            results = ThreadPool(8).imap(lambda x: load_image(*x), zip(repeat(self), range(n)))  # 8 threads
+            results = ThreadPool(num_threads).imap(lambda x: load_image(*x), zip(repeat(self), range(n)))
             pbar = tqdm(enumerate(results), total=n)
             for i, x in pbar:
                 self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
@@ -459,7 +460,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         # Cache dataset labels, check images and read shapes
         x = {}  # dict
         nm, nf, ne, nc = 0, 0, 0, 0  # number missing, found, empty, corrupt
-        with ThreadPool(8) as pool:  # 8 threads
+        with ThreadPool(num_threads) as pool:
             pbar = tqdm(pool.imap_unordered(lambda z: verify_image_label(*z),
                                             zip(self.img_files, self.label_files, repeat(prefix))),
                         desc='Scanning images', total=len(self.img_files))
