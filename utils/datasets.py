@@ -9,7 +9,7 @@ import random
 import shutil
 import time
 from itertools import repeat
-from multiprocessing.pool import ThreadPool
+from multiprocessing.pool import ThreadPool, Pool
 from pathlib import Path
 from threading import Thread
 
@@ -460,8 +460,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         # Cache dataset labels, check images and read shapes
         x = {}  # dict
         nm, nf, ne, nc = 0, 0, 0, 0  # number missing, found, empty, corrupt
-        with ThreadPool(num_threads) as pool:
-            pbar = tqdm(pool.imap_unordered(lambda z: verify_image_label(*z),
+        with Pool(num_threads) as pool:
+            pbar = tqdm(pool.imap_unordered(verify_image_label,
                                             zip(self.img_files, self.label_files, repeat(prefix))),
                         desc='Scanning images', total=len(self.img_files))
             for im_file, l, shape, segments, nm_f, nf_f, ne_f, nc_f in pbar:
@@ -1043,7 +1043,8 @@ def autosplit(path='../coco128', weights=(0.9, 0.1, 0.0), annotated_only=False):
                 f.write(str(img) + '\n')  # add image to txt file
 
 
-def verify_image_label(im_file, lb_file, prefix=''):
+def verify_image_label(params):
+    im_file, lb_file, prefix = params
     nm, nf, ne, nc = 0, 0, 0, 0  # number missing, found, empty, corrupt
     try:
         # verify images
