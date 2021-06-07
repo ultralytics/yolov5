@@ -466,7 +466,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             for im_file, l, shape, segments, nm_f, nf_f, ne_f, nc_f in pbar:
                 if im_file:
                     x[im_file] = [l, shape, segments]
-                nm, nf, ne, nc = nm+nm_f, nf+nf_f, ne+ne_f, nc+nc_f
+                nm, nf, ne, nc = nm + nm_f, nf + nf_f, ne + ne_f, nc + nc_f
                 pbar.desc = f"{prefix}Scanning '{path.parent / path.stem}' images and labels... " \
                             f"{nf} found, {nm} missing, {ne} empty, {nc} corrupted"
         pbar.close()
@@ -1078,4 +1078,4 @@ def verify_image_label(im_file, lb_file, prefix=''):
     except Exception as e:
         nc += 1
         logging.info(f'{prefix}WARNING: Ignoring corrupted image and/or label {im_file}: {e}')
-        return [None]*4 + [nm, nf, ne, nc]
+        return [None] * 4 + [nm, nf, ne, nc]
