@@ -159,6 +159,8 @@ We are super excited to announce our first-ever Ultralytics YOLOv5 rocket EXPORT
 
 ### Pretrained Checkpoints
 
+[assets]: https://github.com/ultralytics/yolov5/releases
+
 | Model                  | size<br><sup>(pixels) | mAP<sup>val<br>0.5:0.95 | mAP<sup>test<br>0.5:0.95 | mAP<sup>val<br>0.5 | Speed<br><sup>V100 (ms) |     | params<br><sup>(M) | FLOPS<br><sup>640 (B) |
 | ---------------------- | --------------------- | ----------------------- | ------------------------ | ------------------ | ----------------------- | --- | ------------------ | --------------------- |
 | [YOLOv5s][assets]      | 640                   | 36.7                    | 36.7                     | 55.4               | **2.0**                 |     | 7.3                | 17.0                  |
