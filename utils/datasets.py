@@ -1086,17 +1086,18 @@ def verify_image_label(params):
         return [None] * 4 + [nm, nf, ne, nc]
 
 
-def dataset_stats(path='coco128.yaml', verbose=False):
+def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
     """ Return dataset statistics dictionary with images and instances counts per split per class
-    Usage: from utils.datasets import *; dataset_stats('coco128.yaml')
+    Usage: from utils.datasets import *; dataset_stats('coco128.yaml', verbose=True)
     Arguments
         path:           Path to data.yaml
+        autodownload:   Attempt to download dataset if not found locally
         verbose:        Print stats dictionary
     """
     path = check_file(Path(path))
     with open(path) as f:
         data = yaml.safe_load(f)  # data dict
-    check_dataset(data)  # download dataset if missing
+    check_dataset(data, autodownload)  # download dataset if missing
 
     nc = data['nc']  # number of classes
     stats = {'nc': nc, 'names': data['names']}  # statistics dictionary
