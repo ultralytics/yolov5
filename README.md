@@ -1,5 +1,7 @@
-# [YOLOv5](https://ultralytics.com/yolov5) by [Ultralytics](https://ultralytics.com)
-
+<div align="center">
+<a align="left" href="https://ultralytics.com/yolov5" target="_blank">
+<img width="850" src="https://user-images.githubusercontent.com/26833433/121094150-72607500-c7ee-11eb-9f39-1d9e4ce89a9e.jpg"></a>
+</div>
 <div align="center">
 <p>
 <img src="assets/img/yolo-header.gif" />
