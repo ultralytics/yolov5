@@ -1094,11 +1094,9 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
         autodownload:   Attempt to download dataset if not found locally
         verbose:        Print stats dictionary
     """
-    path = check_file(Path(path))
-    with open(path) as f:
+    with open(check_file(Path(path))) as f:
         data = yaml.safe_load(f)  # data dict
     check_dataset(data, autodownload)  # download dataset if missing
-
     nc = data['nc']  # number of classes
     stats = {'nc': nc, 'names': data['names']}  # statistics dictionary
     for split in 'train', 'val', 'test':
