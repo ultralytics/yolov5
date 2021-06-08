@@ -462,19 +462,20 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         nm, nf, ne, nc = 0, 0, 0, 0  # number missing, found, empty, corrupt
         desc = f"{prefix}Scanning '{path.parent / path.stem}' images and labels..."
         with Pool(num_threads) as pool:
-            pbar = tqdm(pool.imap_unordered(verify_image_label,
-                                            zip(self.img_files, self.label_files, repeat(prefix))),
+            pbar = tqdm(pool.imap_unordered(verify_image_label, zip(self.img_files, self.label_files, repeat(prefix))),
                         desc=desc, total=len(self.img_files))
             for im_file, l, shape, segments, nm_f, nf_f, ne_f, nc_f in pbar:
+                nm += nm_f
+                nf += nf_f
+                ne += ne_f
+                nc += nc_f
                 if im_file:
                     x[im_file] = [l, shape, segments]
-                nm, nf, ne, nc = nm + nm_f, nf + nf_f, ne + ne_f, nc + nc_f
                 pbar.desc = f"{desc}{nf} found, {nm} missing, {ne} empty, {nc} corrupted"
-        pbar.close()
 
+        pbar.close()
         if nf == 0:
             logging.info(f'{prefix}WARNING: No labels found in {path}. See {help_url}')
-
         x['hash'] = get_hash(self.label_files + self.img_files)
         x['results'] = nf, nm, ne, nc, len(self.img_files)
         x['version'] = 0.2  # cache version
