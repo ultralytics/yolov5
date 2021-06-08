@@ -1086,9 +1086,9 @@ def verify_image_label(params):
         return [None] * 4 + [nm, nf, ne, nc]
 
 
-def dataset_stats(path='data/coco128.yaml', verbose=False):
+def dataset_stats(path='coco128.yaml', verbose=False):
     """ Return dataset statistics dictionary with images and instances counts per split per class
-    Usage: from utils.datasets import *; dataset_stats('data/coco128.yaml')
+    Usage: from utils.datasets import *; dataset_stats('coco128.yaml')
     Arguments
         path:           Path to data.yaml
         verbose:        Print stats dictionary
