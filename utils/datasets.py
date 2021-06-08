@@ -1044,6 +1044,7 @@ def autosplit(path='../coco128', weights=(0.9, 0.1, 0.0), annotated_only=False):
 
 
 def verify_image_label(params):
+    # Verify one image-label pair
     im_file, lb_file, prefix = params
     nm, nf, ne, nc = 0, 0, 0, 0  # number missing, found, empty, corrupt
     try:
@@ -1057,7 +1058,7 @@ def verify_image_label(params):
 
         # verify labels
         if os.path.isfile(lb_file):
-            nf += 1  # label found
+            nf = 1  # label found
             with open(lb_file, 'r') as f:
                 l = [x.split() for x in f.read().strip().splitlines() if len(x)]
                 if any([len(x) > 8 for x in l]):  # is segment
@@ -1071,13 +1072,13 @@ def verify_image_label(params):
                 assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels'
                 assert np.unique(l, axis=0).shape[0] == l.shape[0], 'duplicate labels'
             else:
-                ne += 1  # label empty
+                ne = 1  # label empty
                 l = np.zeros((0, 5), dtype=np.float32)
         else:
-            nm += 1  # label missing
+            nm = 1  # label missing
             l = np.zeros((0, 5), dtype=np.float32)
         return im_file, l, shape, segments, nm, nf, ne, nc
     except Exception as e:
-        nc += 1
+        nc = 1
         logging.info(f'{prefix}WARNING: Ignoring corrupted image and/or label {im_file}: {e}')
         return [None] * 4 + [nm, nf, ne, nc]
