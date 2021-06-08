@@ -42,8 +42,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
             cfg = list((Path(__file__).parent / 'models').rglob(f'{name}.yaml'))[0]  # model.yaml path
             model = Model(cfg, channels, classes)  # create model
             if pretrained:
-                attempt_download(fname)  # download if not found locally
-                ckpt = torch.load(fname, map_location=torch.device('cpu'))  # load
+                ckpt = torch.load(attempt_download(fname), map_location=torch.device('cpu'))  # load
                 msd = model.state_dict()  # model state_dict
                 csd = ckpt['model'].float().state_dict()  # checkpoint state_dict as FP32
                 csd = {k: v for k, v in csd.items() if msd[k].shape == v.shape}  # filter

@@ -44,22 +44,19 @@ if __name__ == '__main__':
 
     # Load PyTorch model
     device = select_device(opt.device)
+    assert not (opt.device.lower() == 'cpu' and opt.half), '--half only compatible with GPU export, i.e. use --device 0'
     model = attempt_load(opt.weights, map_location=device)  # load FP32 model
     labels = model.names
 
-    # Checks
+    # Input
     gs = int(max(model.stride))  # grid size (max stride)
     opt.img_size = [check_img_size(x, gs) for x in opt.img_size]  # verify img_size are gs-multiples
-    assert not (opt.device.lower() == 'cpu' and opt.half), '--half only compatible with GPU export, i.e. use --device 0'
-
-    # Input
     img = torch.zeros(opt.batch_size, 3, *opt.img_size).to(device)  # image size(1,3,320,192) iDetection
 
     # Update model
     if opt.half:
         img, model = img.half(), model.half()  # to FP16
-    if opt.train:
-        model.train()  # training mode (no grid construction in Detect layer)
+    model.train() if opt.train else model.eval()  # training mode = no Detect() layer grid construction
     for k, m in model.named_modules():
         m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatibility
         if isinstance(m, models.common.Conv):  # assign export-friendly activations
@@ -96,11 +93,14 @@ if __name__ == '__main__':
 
             print(f'{prefix} starting export with onnx {onnx.__version__}...')
             f = opt.weights.replace('.pt', '.onnx')  # filename
-            torch.onnx.export(model, img, f, verbose=False, opset_version=opt.opset_version, input_names=['images'],
+            torch.onnx.export(model, img, f, verbose=False, opset_version=opt.opset_version,
                               training=torch.onnx.TrainingMode.TRAINING if opt.train else torch.onnx.TrainingMode.EVAL,
                               do_constant_folding=not opt.train,
-                              dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # size(1,3,640,640)
-                                            'output': {0: 'batch', 2: 'y', 3: 'x'}} if opt.dynamic else None)
+                              input_names=['images'],
+                              output_names=['output'],
+                              dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
+                                            'output': {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
+                                            } if opt.dynamic else None)
 
             # Checks
             model_onnx = onnx.load(f)  # load onnx model

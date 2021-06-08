@@ -10,8 +10,26 @@ jobs:
       - uses: actions/stale@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          stale-issue-message: 'This issue has been automatically marked as stale because it has not had recent activity. It will be closed if no further activity occurs. Thank you for your contributions.'
-          stale-pr-message: 'This issue has been automatically marked as stale because it has not had recent activity. It will be closed if no further activity occurs. Thank you for your contributions.'
+          stale-issue-message: |
+            👋 Hello, this issue has been automatically marked as stale because it has not had recent activity. Please note it will be closed if no further activity occurs.
+
+            Access additional [YOLOv5](https://ultralytics.com/yolov5) 🚀 resources:
+            - **Wiki** – https://github.com/ultralytics/yolov5/wiki
+            - **Tutorials** – https://github.com/ultralytics/yolov5#tutorials
+            - **Docs** – https://docs.ultralytics.com
+
+            Access additional [Ultralytics](https://ultralytics.com) ⚡ resources:
+            - **Ultralytics HUB** – https://ultralytics.com/pricing
+            - **Vision API** – https://ultralytics.com/yolov5
+            - **About Us** – https://ultralytics.com/about
+            - **Join Our Team** – https://ultralytics.com/work
+            - **Contact Us** – https://ultralytics.com/contact
+
+            Feel free to inform us of any other **issues** you discover or **feature requests** that come to mind in the future. Pull Requests (PRs) are also always welcomed!
+
+            Thank you for your contributions to YOLOv5 🚀 and Vision AI ⭐!
+
+          stale-pr-message: 'This issue has been automatically marked as stale because it has not had recent activity. It will be closed if no further activity occurs. Thank you for your contributions YOLOv5 🚀 and Vision AI ⭐.'
           days-before-stale: 30
           days-before-close: 5
           exempt-issue-labels: 'documentation,tutorial'

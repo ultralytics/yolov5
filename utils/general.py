@@ -1,5 +1,6 @@
 # YOLOv5 general utils
 
+import contextlib
 import glob
 import logging
 import math
@@ -7,11 +8,13 @@ import os
 import platform
 import random
 import re
-import subprocess
+import signal
 import time
+import urllib
 from itertools import repeat
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+from subprocess import check_output
 
 import cv2
 import numpy as np
@@ -31,6 +34,26 @@ np.set_printoptions(linewidth=320, formatter={'float_kind': '{:11.5g}'.format}) 
 pd.options.display.max_columns = 10
 cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with PyTorch DataLoader)
 os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max threads
+
+
+class timeout(contextlib.ContextDecorator):
+    # Usage: @timeout(seconds) decorator or 'with timeout(seconds):' context manager
+    def __init__(self, seconds, *, timeout_msg='', suppress_timeout_errors=True):
+        self.seconds = int(seconds)
+        self.timeout_message = timeout_msg
+        self.suppress = bool(suppress_timeout_errors)
+
+    def _timeout_handler(self, signum, frame):
+        raise TimeoutError(self.timeout_message)
+
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self._timeout_handler)  # Set handler for SIGALRM
+        signal.alarm(self.seconds)  # start countdown for SIGALRM to be raised
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        signal.alarm(0)  # Cancel SIGALRM if it's scheduled
+        if self.suppress and exc_type is TimeoutError:  # Suppress TimeoutError
+            return True
 
 
 def set_logging(rank=-1, verbose=True):
@@ -53,17 +76,22 @@ def get_latest_run(search_dir='.'):
 
 
 def is_docker():
-    # Is environment a Docker container
+    # Is environment a Docker container?
     return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
 
 
 def is_colab():
-    # Is environment a Google Colab instance
+    # Is environment a Google Colab instance?
     try:
         import google.colab
         return True
     except Exception as e:
         return False
+
+
+def is_pip():
+    # Is file in a pip package?
+    return 'site-packages' in Path(__file__).absolute().parts
 
 
 def emojis(str=''):
@@ -80,13 +108,13 @@ def check_online():
     # Check internet connectivity
     import socket
     try:
-        socket.create_connection(("1.1.1.1", 443), 5)  # check host accesability
+        socket.create_connection(("1.1.1.1", 443), 5)  # check host accessibility
         return True
     except OSError:
         return False
 
 
-def check_git_status():
+def check_git_status(err_msg=', for updates see https://github.com/ultralytics/yolov5'):
     # Recommend 'git pull' if code is out of date
     print(colorstr('github: '), end='')
     try:
@@ -95,9 +123,9 @@ def check_git_status():
         assert check_online(), 'skipping check (offline)'
 
         cmd = 'git fetch && git config --get remote.origin.url'
-        url = subprocess.check_output(cmd, shell=True).decode().strip().rstrip('.git')  # github repo url
-        branch = subprocess.check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
-        n = int(subprocess.check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
+        url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
+        branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
+        n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
         if n > 0:
             s = f"⚠️ WARNING: code is out of date by {n} commit{'s' * (n > 1)}. " \
                 f"Use 'git pull' to update or 'git clone {url}' to download latest."
@@ -105,7 +133,7 @@ def check_git_status():
             s = f'up to date with {url} ✅'
         print(emojis(s))  # emoji-safe
     except Exception as e:
-        print(e)
+        print(f'{e}{err_msg}')
 
 
 def check_python(minimum='3.7.0', required=True):
@@ -135,10 +163,11 @@ def check_requirements(requirements='requirements.txt', exclude=()):
         try:
             pkg.require(r)
         except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
-            n += 1
             print(f"{prefix} {r} not found and is required by YOLOv5, attempting auto-update...")
             try:
-                print(subprocess.check_output(f"pip install '{r}'", shell=True).decode())
+                assert check_online(), f"'pip install {r}' skipped (offline)"
+                print(check_output(f"pip install '{r}'", shell=True).decode())
+                n += 1
             except Exception as e:
                 print(f'{prefix} {e}')
 
@@ -178,7 +207,8 @@ def check_file(file):
     if Path(file).is_file() or file == '':  # exists
         return file
     elif file.startswith(('http://', 'https://')):  # download
-        url, file = file, Path(file).name
+        url, file = file, Path(urllib.parse.unquote(str(file))).name  # url, file (decode '%2F' to '/' etc.)
+        file = file.split('?')[0]  # parse authentication https://url.com/file.txt?auth...
         print(f'Downloading {url} to {file}...')
         torch.hub.download_url_to_file(url, file)
         assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
