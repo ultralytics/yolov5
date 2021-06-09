@@ -1,5 +1,5 @@
-<a align="left" href="https://apps.apple.com/app/id1452689527" target="_blank">
-<img width="850" src="https://user-images.githubusercontent.com/26833433/121094150-72607500-c7ee-11eb-9f39-1d9e4ce89a9e.jpg"></a>
+<a align="left" href="https://ultralytics.com/yolov5" target="_blank">
+<img width="850" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/splash.jpg"></a>
 &nbsp
 
 <a href="https://github.com/ultralytics/yolov5/actions"><img src="https://github.com/ultralytics/yolov5/workflows/CI%20CPU%20testing/badge.svg" alt="CI CPU testing"></a>
