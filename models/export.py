@@ -23,18 +23,21 @@ from utils.torch_utils import select_device
 
 
 def export(weights='./yolov5s.pt',  # weights path
-           img_size=(640, 640),  # image height, width
+           img_size=(640, 640),  # image (height, width)
            batch_size=1,  # batch size
            device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
            include=('torchscript', 'onnx', 'coreml'),  # include formats
            half=False,  # FP16 half-precision export
            inplace=False,  # set YOLOv5 Detect() inplace=True
            train=False,  # model.train() mode
-           optimize=False,  # optimize TorchScript for mobile (TorchScript-only)
-           dynamic=False,  # dynamic ONNX axes (ONNX-only)
-           simplify=False,  # simplify ONNX model (ONNX-only)
-           opset_version=12):  # ONNX opset version (ONNX-only)
+           optimize=False,  # TorchScript: optimize for mobile
+           dynamic=False,  # ONNX: dynamic axes
+           simplify=False,  # ONNX: simplify model
+           opset_version=12,  # ONNX: opset version
+           ):
     t = time.time()
+    include = [x.lower() for x in include]
+    img_size *= 2 if len(img_size) == 1 else 1  # expand
 
     # Load PyTorch model
     device = select_device(device)
@@ -142,20 +145,18 @@ def export(weights='./yolov5s.pt',  # weights path
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='./yolov5s.pt', help='weights path')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')  # height, width
+    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image (height, width)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--include', nargs='+', default=['torchscript', 'onnx', 'coreml'], help='include formats')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--train', action='store_true', help='model.train() mode')
-    parser.add_argument('--optimize', action='store_true', help='optimize TorchScript for mobile')  # TorchScript-only
-    parser.add_argument('--dynamic', action='store_true', help='dynamic ONNX axes')  # ONNX-only
-    parser.add_argument('--simplify', action='store_true', help='simplify ONNX model')  # ONNX-only
-    parser.add_argument('--opset-version', type=int, default=12, help='ONNX opset version')  # ONNX-only
+    parser.add_argument('--optimize', action='store_true', help='TorchScript: optimize for mobile')
+    parser.add_argument('--dynamic', action='store_true', help='ONNX: dynamic axes')
+    parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
+    parser.add_argument('--opset-version', type=int, default=12, help='ONNX: opset version')
     opt = parser.parse_args()
-    opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
-    opt.include = [x.lower() for x in opt.include]
     print(opt)
     set_logging()
 
