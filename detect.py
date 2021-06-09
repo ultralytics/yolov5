@@ -15,20 +15,42 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
 @torch.no_grad()
-def detect(opt):
-    source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
-    save_img = not opt.nosave and not source.endswith('.txt')  # save inference images
+def detect(weights='yolov5s.pt',  # model.pt path(s)
+           source='data/images',  # file/dir/URL/glob, 0 for webcam
+           imgsz=640,  # inference size (pixels)
+           conf_thres=0.25,  # confidence threshold
+           iou_thres=0.45,  # NMS IOU threshold
+           max_det=1000,  # maximum detections per image
+           device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+           view_img=False,  # show results
+           save_txt=False,  # save results to *.txt
+           save_conf=False,  # save confidences in --save-txt labels
+           save_crop=False,  # save cropped prediction boxes
+           nosave=False,  # do not save images/videos
+           classes=None,  # filter by class: --class 0, or --class 0 2 3
+           agnostic_nms=False,  # class-agnostic NMS
+           augment=False,  # augmented inference
+           update=False,  # update all models
+           project='runs/detect',  # save results to project/name
+           name='exp',  # save results to project/name
+           exist_ok=False,  # existing project/name ok, do not increment
+           line_thickness=3,  # bounding box thickness (pixels)
+           hide_labels=False,  # hide labels
+           hide_conf=False,  # hide confidences
+           half=False,  # use FP16 half-precision inference
+           ):
+    save_img = not nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://', 'https://'))
 
     # Directories
-    save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok)  # increment run
+    save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
     # Initialize
     set_logging()
-    device = select_device(opt.device)
-    half = opt.half and device.type != 'cpu'  # half precision only supported on CUDA
+    device = select_device(device)
+    half &= device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
     model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -66,11 +88,10 @@ def detect(opt):
 
         # Inference
         t1 = time_synchronized()
-        pred = model(img, augment=opt.augment)[0]
+        pred = model(img, augment=augment)[0]
 
         # Apply NMS
-        pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, opt.classes, opt.agnostic_nms,
-                                   max_det=opt.max_det)
+        pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
         t2 = time_synchronized()
 
         # Apply Classifier
@@ -89,7 +110,7 @@ def detect(opt):
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
             s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-            imc = im0.copy() if opt.save_crop else im0  # for opt.save_crop
+            imc = im0.copy() if save_crop else im0  # for save_crop
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
@@ -103,15 +124,15 @@ def detect(opt):
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                        line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
+                        line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                         with open(txt_path + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-                    if save_img or opt.save_crop or view_img:  # Add bbox to image
+                    if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
-                        label = None if opt.hide_labels else (names[c] if opt.hide_conf else f'{names[c]} {conf:.2f}')
-                        plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_thickness=opt.line_thickness)
-                        if opt.save_crop:
+                        label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
+                        plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_thickness=line_thickness)
+                        if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
             # Print time (inference + NMS)
@@ -145,19 +166,22 @@ def detect(opt):
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
         print(f"Results saved to {save_dir}{s}")
 
+    if update:
+        strip_optimizer(weights)  # update model (to fix SourceChangeWarning)
+
     print(f'Done. ({time.time() - t0:.3f}s)')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
-    parser.add_argument('--source', type=str, default='data/images', help='source')  # file/folder, 0 for webcam
-    parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
-    parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
-    parser.add_argument('--max-det', type=int, default=1000, help='maximum number of detections per image')
+    parser.add_argument('--source', type=str, default='data/images', help='file/dir/URL/glob, 0 for webcam')
+    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
+    parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
+    parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IOU threshold')
+    parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--view-img', action='store_true', help='display results')
+    parser.add_argument('--view-img', action='store_true', help='show results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
@@ -177,9 +201,4 @@ if __name__ == '__main__':
     print(opt)
     check_requirements(exclude=('tensorboard', 'thop'))
 
-    if opt.update:  # update all models (to fix SourceChangeWarning)
-        for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
-            detect(opt=opt)
-            strip_optimizer(opt.weights)
-    else:
-        detect(opt=opt)
+    detect(**vars(opt))
