@@ -156,7 +156,7 @@ def test(data,
                     with open(save_dir / 'labels' / (path.stem + '.txt'), 'a') as f:
                         f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-            # W&B logging - Media Panel Plots
+            # W&B logging - Media Panel plots
             if len(wandb_images) < log_imgs and wandb_logger.current_epoch > 0:  # Check for test operation
                 if wandb_logger.current_epoch % wandb_logger.bbox_interval == 0:
                     box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
