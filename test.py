@@ -22,9 +22,9 @@ from utils.torch_utils import select_device, time_synchronized
 def test(data,
          weights=None,
          batch_size=32,
-         imgsz=640,
-         conf_thres=0.001,
-         iou_thres=0.6,  # for NMS
+         imgsz=640,  # image size
+         conf_thres=0.001,  # confidence threshold
+         iou_thres=0.6,  # NMS IoU threshold
          save_json=False,
          single_cls=False,
          augment=False,
@@ -38,7 +38,7 @@ def test(data,
          plots=True,
          wandb_logger=None,
          compute_loss=None,
-         half=True,
+         half=True,  # FP16 half-precision inference
          project='runs/test',
          name='exp',
          exist_ok=False,
