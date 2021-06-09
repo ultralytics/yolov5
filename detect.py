@@ -33,7 +33,7 @@ def detect(opt):
     # Load model
     model = attempt_load(weights, map_location=device)  # load FP32 model
     stride = int(model.stride.max())  # model stride
-    imgsz = check_img_size(imgsz, s=stride)  # check img_size
+    imgsz = check_img_size(imgsz, s=stride)  # check image size
     names = model.module.names if hasattr(model, 'module') else model.names  # get class names
     if half:
         model.half()  # to FP16
