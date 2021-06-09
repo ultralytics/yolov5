@@ -38,7 +38,7 @@ def test(data,
          plots=True,
          wandb_logger=None,
          compute_loss=None,
-         half_precision=True,
+         half=True,
          opt=None):
     # Initialize/load model and set device
     training = model is not None
@@ -63,7 +63,7 @@ def test(data,
         #     model = nn.DataParallel(model)
 
     # Half
-    half = device.type != 'cpu' and half_precision  # half precision only supported on CUDA
+    half = half and device.type != 'cpu'  # half precision only supported on CUDA
     if half:
         model.half()
 
@@ -330,14 +330,14 @@ if __name__ == '__main__':
              save_txt=opt.save_txt | opt.save_hybrid,
              save_hybrid=opt.save_hybrid,
              save_conf=opt.save_conf,
-             half_precision=opt.half,
+             half=opt.half,
              opt=opt
              )
 
     elif opt.task == 'speed':  # speed benchmarks
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
-            test(opt.data, w, opt.batch_size, opt.img_size, 0.25, 0.45, save_json=False, plots=False,
-                 half_precision=True, opt=opt)
+            test(opt.data, w, opt.batch_size, opt.img_size, 0.25, 0.45, save_json=False, plots=False, half=True,
+                 opt=opt)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         # python test.py --task study --data coco.yaml --iou 0.7 --weights yolov5s.pt yolov5m.pt yolov5l.pt yolov5x.pt
@@ -348,7 +348,7 @@ if __name__ == '__main__':
             for i in x:  # img-size
                 print(f'\nRunning {f} point {i}...')
                 r, _, t = test(opt.data, w, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json,
-                               plots=False, half_precision=True, opt=opt)
+                               plots=False, half=True, opt=opt)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')
