@@ -39,7 +39,6 @@ def test(data,
          wandb_logger=None,
          compute_loss=None,
          half_precision=True,
-         is_coco=False,
          opt=None):
     # Initialize/load model and set device
     training = model is not None
@@ -71,10 +70,10 @@ def test(data,
     # Configure
     model.eval()
     if isinstance(data, str):
-        is_coco = data.endswith('coco.yaml')
         with open(data) as f:
             data = yaml.safe_load(f)
     check_dataset(data)  # check
+    is_coco = data['val'].endswith('coco/val2017.txt')  # COCO dataset
     nc = 1 if single_cls else int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
     niou = iouv.numel()
