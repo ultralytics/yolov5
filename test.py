@@ -20,30 +20,31 @@ from utils.torch_utils import select_device, time_synchronized
 
 @torch.no_grad()
 def test(data,
-         weights=None,
-         batch_size=32,
-         imgsz=640,  # image size
+         weights=None,  # model.pt path(s)
+         batch_size=32,  # batch size
+         imgsz=640,  # inference size (pixels)
          conf_thres=0.001,  # confidence threshold
          iou_thres=0.6,  # NMS IoU threshold
-         save_json=False,
-         single_cls=False,
-         augment=False,
-         verbose=False,
+         task='val',  # train, val, test, speed or study
+         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+         single_cls=False,  # treat as single-class dataset
+         augment=False,  # augmented inference
+         verbose=False,  # verbose output
+         save_txt=False,  # save results to *.txt
+         save_hybrid=False,  # save label+prediction hybrid results to *.txt
+         save_conf=False,  # save confidences in --save-txt labels
+         save_json=False,  # save a cocoapi-compatible JSON results file
+         project='runs/test',  # save to project/name
+         name='exp',  # save to project/name
+         exist_ok=False,  # existing project/name ok, do not increment
+         half=True,  # use FP16 half-precision inference
          model=None,
          dataloader=None,
-         save_dir=Path(''),  # for saving images
-         save_txt=False,  # for auto-labelling
-         save_hybrid=False,  # for hybrid auto-labelling
-         save_conf=False,  # save auto-label confidences
+         save_dir=Path(''),
          plots=True,
          wandb_logger=None,
          compute_loss=None,
-         half=True,  # FP16 half-precision inference
-         project='runs/test',
-         name='exp',
-         exist_ok=False,
-         task='val',
-         device=''):
+         ):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -155,7 +156,7 @@ def test(data,
                     with open(save_dir / 'labels' / (path.stem + '.txt'), 'a') as f:
                         f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-            # W&B logging - Media Panel Plots
+            # W&B logging - Media Panel plots
             if len(wandb_images) < log_imgs and wandb_logger.current_epoch > 0:  # Check for test operation
                 if wandb_logger.current_epoch % wandb_logger.bbox_interval == 0:
                     box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
@@ -295,12 +296,12 @@ def test(data,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='test.py')
+    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
-    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='*.data path')
-    parser.add_argument('--batch-size', type=int, default=32, help='size of each image batch')
+    parser.add_argument('--batch-size', type=int, default=32, help='batch size')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
-    parser.add_argument('--conf-thres', type=float, default=0.001, help='object confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.6, help='IOU threshold for NMS')
+    parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
+    parser.add_argument('--iou-thres', type=float, default=0.6, help='NMS IoU threshold')
     parser.add_argument('--task', default='val', help='train, val, test, speed or study')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--single-cls', action='store_true', help='treat as single-class dataset')
@@ -326,7 +327,8 @@ if __name__ == '__main__':
 
     elif opt.task == 'speed':  # speed benchmarks
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
-            test(opt.data, w, opt.batch_size, opt.imgsz, 0.25, 0.45, save_json=False, plots=False)
+            test(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
+                 save_json=False, plots=False)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         # python test.py --task study --data coco.yaml --iou 0.7 --weights yolov5s.pt yolov5m.pt yolov5l.pt yolov5x.pt
@@ -336,8 +338,8 @@ if __name__ == '__main__':
             y = []  # y axis
             for i in x:  # img-size
                 print(f'\nRunning {f} point {i}...')
-                r, _, t = test(opt.data, w, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json,
-                               plots=False)
+                r, _, t = test(opt.data, weights=w, batch_size=opt.batch_size, imgsz=i, conf_thres=opt.conf_thres,
+                               iou_thres=opt.iou_thres, save_json=opt.save_json, plots=False)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')
