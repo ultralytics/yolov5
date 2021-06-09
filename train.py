@@ -74,7 +74,7 @@ def train(hyp, opt, device, tb_writer=None):
         loggers['wandb'] = wandb_logger.wandb
         data_dict = wandb_logger.data_dict
         if wandb_logger.wandb:
-            weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp  # WandbLogger might update weights, epochs if resuming
+            weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp  # may update weights, epochs if resuming
 
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
@@ -354,18 +354,18 @@ def train(hyp, opt, device, tb_writer=None):
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
                 wandb_logger.current_epoch = epoch + 1
-                results, maps, times = test.test(data_dict,
-                                                 batch_size=batch_size * 2,
-                                                 imgsz=imgsz_test,
-                                                 model=ema.ema,
-                                                 single_cls=single_cls,
-                                                 dataloader=testloader,
-                                                 save_dir=save_dir,
-                                                 save_json=is_coco and final_epoch,
-                                                 verbose=nc < 50 and final_epoch,
-                                                 plots=plots and final_epoch,
-                                                 wandb_logger=wandb_logger,
-                                                 compute_loss=compute_loss)
+                results, maps, _ = test.test(data_dict,
+                                             batch_size=batch_size * 2,
+                                             imgsz=imgsz_test,
+                                             model=ema.ema,
+                                             single_cls=single_cls,
+                                             dataloader=testloader,
+                                             save_dir=save_dir,
+                                             save_json=is_coco and final_epoch,
+                                             verbose=nc < 50 and final_epoch,
+                                             plots=plots and final_epoch,
+                                             wandb_logger=wandb_logger,
+                                             compute_loss=compute_loss)
 
             # Write
             with open(results_file, 'a') as f:
