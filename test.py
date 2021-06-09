@@ -260,6 +260,7 @@ def test(data,
             json.dump(jdict, f)
 
         try:  # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb
+            check_requirements(['pycocotools'])
             from pycocotools.coco import COCO
             from pycocotools.cocoeval import COCOeval
 
@@ -311,7 +312,7 @@ if __name__ == '__main__':
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.data = check_file(opt.data)  # check file
     print(opt)
-    check_requirements(exclude=('tensorboard', 'pycocotools', 'thop'))
+    check_requirements(exclude=('tensorboard', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
         test(opt.data,

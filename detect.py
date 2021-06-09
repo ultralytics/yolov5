@@ -175,7 +175,7 @@ if __name__ == '__main__':
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     opt = parser.parse_args()
     print(opt)
-    check_requirements(exclude=('tensorboard', 'pycocotools', 'thop'))
+    check_requirements(exclude=('tensorboard', 'thop'))
 
     if opt.update:  # update all models (to fix SourceChangeWarning)
         for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
