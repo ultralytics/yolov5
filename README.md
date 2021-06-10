@@ -129,12 +129,12 @@ Get started with YOLOv5 in less than a few minutes using our integrations.
 
 Add these your toolkit to ensure you get the most out of your training experience:  
 
-* [Weight and Biasis](https://wandb.ai/site?utm_campaign=repo_yolo_wandbtutorial) - Debug, compare and reproduce models. Easily visualize performance with powerful custom charts.
+* [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_wandbtutorial) - Debug, compare and reproduce models. Easily visualize performance with powerful custom charts.
 * [Supervisely](https://app.supervise.ly/signup) - Data labeling for images, videos, 3D point cloud, and volumetric medical images  
 
 ## <div align="center">Contribue and Win</div>
 
-We are super excited to announce our first-ever Ultralytics YOLOv5 rocket EXPORT Competition with **$10,000** in cash prizes!  
+We are super excited to announce our first-ever Ultralytics YOLOv5 🚀 EXPORT Competition with **$10000.00** in cash prizes!  
 
 <div align="center">
 <a href="https://github.com/ultralytics/yolov5/discussions/3213">
