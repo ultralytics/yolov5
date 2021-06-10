@@ -3,6 +3,7 @@
 import glob
 import math
 import os
+import warnings
 from copy import copy
 from pathlib import Path
 
@@ -291,7 +292,9 @@ def plot_labels(labels, names=(), save_dir=Path(''), loggers=None):
     x = pd.DataFrame(b.transpose(), columns=['x', 'y', 'width', 'height'])
 
     # seaborn correlogram
-    sns.pairplot(x, corner=True, diag_kind='auto', kind='hist', diag_kws=dict(bins=50), plot_kws=dict(pmax=0.9))
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')  # suppress empty matrix RuntimeWarning: All-NaN slice encountered
+        sns.pairplot(x, corner=True, diag_kind='auto', kind='hist', diag_kws=dict(bins=50), plot_kws=dict(pmax=0.9))
     plt.savefig(save_dir / 'labels_correlogram.jpg', dpi=200)
     plt.close()
 
