@@ -3,7 +3,6 @@
 import glob
 import math
 import os
-import warnings
 from copy import copy
 from pathlib import Path
 
@@ -12,7 +11,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
+import seaborn as sn
 import torch
 import yaml
 from PIL import Image, ImageDraw, ImageFont
@@ -292,9 +291,7 @@ def plot_labels(labels, names=(), save_dir=Path(''), loggers=None):
     x = pd.DataFrame(b.transpose(), columns=['x', 'y', 'width', 'height'])
 
     # seaborn correlogram
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')  # suppress empty matrix RuntimeWarning: All-NaN slice encountered
-        sns.pairplot(x, corner=True, diag_kind='auto', kind='hist', diag_kws=dict(bins=50), plot_kws=dict(pmax=0.9))
+    sn.pairplot(x, corner=True, diag_kind='auto', kind='hist', diag_kws=dict(bins=50), plot_kws=dict(pmax=0.9))
     plt.savefig(save_dir / 'labels_correlogram.jpg', dpi=200)
     plt.close()
 
@@ -309,8 +306,8 @@ def plot_labels(labels, names=(), save_dir=Path(''), loggers=None):
         ax[0].set_xticklabels(names, rotation=90, fontsize=10)
     else:
         ax[0].set_xlabel('classes')
-    sns.histplot(x, x='x', y='y', ax=ax[2], bins=50, pmax=0.9)
-    sns.histplot(x, x='width', y='height', ax=ax[3], bins=50, pmax=0.9)
+    sn.histplot(x, x='x', y='y', ax=ax[2], bins=50, pmax=0.9)
+    sn.histplot(x, x='width', y='height', ax=ax[3], bins=50, pmax=0.9)
 
     # rectangles
     labels[:, 1:3] = 0.5  # center
