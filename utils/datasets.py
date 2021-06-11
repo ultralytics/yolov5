@@ -2,6 +2,7 @@
 
 import glob
 import hashlib
+import json
 import logging
 import math
 import os
@@ -1105,12 +1106,20 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
             continue
         x = []
         dataset = LoadImagesAndLabels(data[split], augment=False, rect=True)  # load dataset
+        if split == 'train':
+            cache_path = Path(dataset.label_files[0]).parent.with_suffix('.cache')  # *.cache path
         for label in tqdm(dataset.labels, total=dataset.n, desc='Statistics'):
             x.append(np.bincount(label[:, 0].astype(int), minlength=nc))
         x = np.array(x)  # shape(128x80)
-        stats[split] = {'instances': {'total': int(x.sum()), 'per_class': x.sum(0).tolist()},
-                        'images': {'total': dataset.n, 'unlabelled': int(np.all(x == 0, 1).sum()),
-                                   'per_class': (x > 0).sum(0).tolist()}}
+        stats[split] = {'instance_stats': {'total': int(x.sum()), 'per_class': x.sum(0).tolist()},
+                        'image_stats': {'total': dataset.n, 'unlabelled': int(np.all(x == 0, 1).sum()),
+                                        'per_class': (x > 0).sum(0).tolist()},
+                        'labels': {str(Path(k).name): v.tolist() for k, v in zip(dataset.img_files, dataset.labels)}}
+
+    # Save, print and return
+    with open(cache_path.with_suffix('.json'), 'w') as f:
+        json.dump(stats, f)  # save stats *.json
     if verbose:
         print(yaml.dump([stats], sort_keys=False, default_flow_style=False))
+        # print(json.dumps(stats, indent=2, sort_keys=False))
     return stats
