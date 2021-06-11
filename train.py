@@ -335,7 +335,7 @@ def train(hyp, opt, device, tb_writer=None):
                     if tb_writer and ni == 0:
                         with warnings.catch_warnings():
                             warnings.simplefilter('ignore')  # suppress jit trace warning
-                            tb_writer.add_graph(torch.jit.trace(deepcopy(ema.ema).float(),
+                            tb_writer.add_graph(torch.jit.trace(deepcopy(de_parallel(model)).float(),
                                                                 imgs.float(), strict=False),
                                                 [])  # add graph
                 elif plots and ni == 10 and wandb_logger.wandb:
