@@ -137,7 +137,10 @@ class LoadImages:  # for inference
         else:
             raise Exception(f'ERROR: {p} does not exist')
 
-        images = [x for x in files if x.split('.')[-1].lower() in img_formats]
+        # if the forlder contains zero size of images then it ignore them to be load in images
+        # and cv2.imread(x) is not None
+        
+        images = [x for x in files if x.split('.')[-1].lower() in img_formats and cv2.imread(x) is not None]
         videos = [x for x in files if x.split('.')[-1].lower() in vid_formats]
         ni, nv = len(images), len(videos)
 
