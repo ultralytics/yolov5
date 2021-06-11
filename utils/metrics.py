@@ -161,9 +161,8 @@ class ConfusionMatrix:
     def plot(self, normalize=True, save_dir='', names=()):
         try:
             import seaborn as sn
-            
-            if normalize:
-                array = self.matrix / (self.matrix.sum(0).reshape(1, self.nc + 1) + 1E-6)  # normalize columns
+
+            array = self.matrix / ((self.matrix.sum(0).reshape(1, -1) + 1E-6) if normalize else 1)  # normalize columns
             array[array < 0.005] = np.nan  # don't annotate (would appear as 0.00)
 
             fig = plt.figure(figsize=(12, 9), tight_layout=True)
@@ -178,7 +177,7 @@ class ConfusionMatrix:
             fig.axes[0].set_ylabel('Predicted')
             fig.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
         except Exception as e:
-            pass
+            print(f'WARNING: ConfusionMatrix plot failure: {e}')
 
     def print(self):
         for i in range(self.nc + 1):
