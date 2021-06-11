@@ -224,7 +224,12 @@ class tf_Upsample(keras.layers.Layer):
         super(tf_Upsample, self).__init__()
         assert scale_factor == 2, "scale_factor must be 2"
         # self.upsample = keras.layers.UpSampling2D(size=scale_factor, interpolation=mode)
-        self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * 2, x.shape[2] * 2), method=mode)
+        if opt.tf_raw_resize:
+            # with default arguments: align_corners=False, half_pixel_centers=False
+            self.upsample = lambda x: tf.raw_ops.ResizeNearestNeighbor(images=x,
+                                                                       size=(x.shape[1] * 2, x.shape[2] * 2))
+        else:
+            self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * 2, x.shape[2] * 2), method=mode)
 
     def call(self, inputs):
         return self.upsample(inputs)
@@ -367,6 +372,8 @@ if __name__ == "__main__":
     parser.add_argument('--ncalib', type=int, default=100, help='number of calibration images')
     parser.add_argument('--tfl-int8', action='store_true', dest='tfl_int8', help='export TFLite int8 model')
     parser.add_argument('--tf-nms', action='store_true', dest='tf_nms', help='TF NMS (without TFLite export)')
+    parser.add_argument('--tf-raw-resize', action='store_true', dest='tf_raw_resize',
+                        help='use tf.raw_ops.ResizeNearestNeighbor for resize')
     parser.add_argument('--topk-per-class', type=int, default=100, help='topk per class to keep in NMS')
     parser.add_argument('--topk-all', type=int, default=100, help='topk for all classes to keep in NMS')
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
