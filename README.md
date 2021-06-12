@@ -43,22 +43,18 @@
 <p>
 YOLOv5 🚀 is a family of object detection architectures and models pretrained on the COCO dataset, and represents Ultralytics open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development. YOLOv5 is current under active development, and all code, models, and documentation are subject to modification or deletion without notice. Use at your own risk.
 </p>
-</div>
-
-###<div align="center">Try the API</div>
-<div align="center">Instantly run YOLOv5 models using our JSON API.<br> <a href="https://ultralytics.com/yolov5">https://ultralytics.com/yolov5</a> </div>
 
 <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
 <img width="850" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-api.png"></a>
 
-
+</div>
 
 
 ## <div align="center">Documentation</div>
 
 See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on training, testing and deployment.
 
-## <div align="center">Quick Start Tutorials</div>
+## <div align="center">Quick Start Examples</div>
 
 These tutorials are intended to get you started using YOLOv5 quickly for demonstration purposes.  
 Head to the [YOLOv5 Docs](https://docs.ultralytics.com) for more in-depth details.
@@ -77,7 +73,7 @@ $ pip install -r requirements.txt
 <details open>
 <summary>Inference</summary>
 
-This tutorial will automatically download YOLOv5 models before running inference on the supplied image.
+Inference with YOLOv5 and [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36):
 
 ```python
 import torch
