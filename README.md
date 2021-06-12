@@ -128,8 +128,6 @@ $ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 
 <details>
 <summary>Tutorials</summary>
 
-## Tutorials
-
 * [Train Custom Data](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data)&nbsp; 🚀 RECOMMENDED
 * [Tips for Best Training Results](https://github.com/ultralytics/yolov5/wiki/Tips-for-Best-Training-Results)&nbsp; ☘️ RECOMMENDED
 * [Weights & Biases Logging](https://github.com/ultralytics/yolov5/issues/1289)&nbsp; 🌟 NEW
