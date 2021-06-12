@@ -18,11 +18,10 @@ def is_activation(mod, act_types=None):
 def replace_activations(mod, act, act_types=None):
     for name, child in mod.named_children():
         if is_activation(child, act_types):
-            setattr(
-                mod,
-                name,
-                act if not isinstance(act, str) else eval(act),
-            )
+            child_act = act if not isinstance(act, str) else eval(act)()
+            setattr(mod, name, child_act)
+        else:
+            replace_activations(child, act, act_types)
 
 
 # SiLU https://arxiv.org/pdf/1606.08415.pdf ----------------------------------------------------------------------------
