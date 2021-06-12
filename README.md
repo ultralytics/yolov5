@@ -166,7 +166,7 @@ Get started with YOLOv5 in seconds with our verified environments and integratio
     <a href="https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-gcp-small.png" width="15%"/>
     </a>
-    <a href="https://wandb.ai/site?utm_campaign=repo_yolo_wandbtutorial">
+    <a href="https://wandb.ai/site?utm_campaign=repo_yolo_readme">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-wb-small.png" width="15%"/>
     </a>
 </div>  
