@@ -41,7 +41,8 @@
 
 <br>
 <p>
-YOLOv5 🚀 is a family of object detection architectures and models pretrained on the COCO dataset, and represents Ultralytics open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
+YOLOv5 🚀 is a family of object detection architectures and models pretrained on the COCO dataset, and represents <a href="https://ultralytics.com">Ultralytics</a>
+ open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
 </p>
 
 <!-- 
@@ -55,6 +56,7 @@ YOLOv5 🚀 is a family of object detection architectures and models pretrained 
 ## <div align="center">Documentation</div>
 
 See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on training, testing and deployment.
+
 
 ## <div align="center">Quick Start Examples</div>
 
@@ -146,6 +148,7 @@ $ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 
 
 </details>
 
+
 ## <div align="center">Environments and Integrations</div>
 
 Get started in seconds with our verified environments and integrations, including [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme) for automatic YOLOv5 experiment logging. Click on each icon below for details.
@@ -182,6 +185,7 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 </a>
 </div>
 
+
 ## <div align="center">Why YOLOv5</div>
 
 <p align="center"><img width="800" src="https://user-images.githubusercontent.com/26833433/114313216-f0a5e100-9af5-11eb-8445-c682b60da2e3.png"></p>
@@ -197,6 +201,7 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
   * EfficientDet data from [google/automl](https://github.com/google/automl) at batch size 8.
   * **Reproduce** by `python test.py --task study --data coco.yaml --iou 0.7 --weights yolov5s6.pt yolov5m6.pt yolov5l6.pt yolov5x6.pt`
 </details>
+
 
 ### Pretrained Checkpoints
 
@@ -226,7 +231,6 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
   * Test Time Augmentation ([TTA](https://github.com/ultralytics/yolov5/issues/303)) includes reflection and scale augmentation. **Reproduce TTA** by `python test.py --data coco.yaml --img 1536 --iou 0.7 --augment`
 </details>
 
-<br>
 
 ## <div align="center">Contribute</div>
 
