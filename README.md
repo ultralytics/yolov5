@@ -146,7 +146,7 @@ $ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 
 
 ## <div align="center">Environments and Integrations</div>
 
-Get started with YOLOv5 in seconds with our verified environments and integrations.
+Get started in seconds with our verified environments and integrations, including [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme) for automatic YOLOv5 experiment logging. Click on each icon below for details.
 
 <div align="center">
     <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb">
@@ -169,12 +169,6 @@ Get started with YOLOv5 in seconds with our verified environments and integratio
     </a>
 </div>  
 
-
-
-Add these to your toolkit to ensure you get the most out of your training experience:
-
-* [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme) - Experiment tracking, dataset versioning, and model management integration.
-* [Supervisely](https://app.supervise.ly/signup) - YOLOv5 training and deployment integration. 
 
 ## <div align="center">Compete and Win</div>
 
