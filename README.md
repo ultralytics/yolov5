@@ -63,26 +63,49 @@ See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on tr
 These tutorials are intended to get you started using YOLOv5 quickly for demonstration purposes.  
 Head to the [YOLOv5 Docs](https://docs.ultralytics.com) for more in-depth details.
 
-<details>
+<details open>
 <summary>
-Install Locally
+Install
 </summary>
 
 ```bash
 $ git clone https://github.com/ultralytics/yolov5
 $ pip install -r requirements.txt
 ```
+</details>
+
+<details open>
+<summary>Inference</summary>
+
+This tutorial will automatically download YOLOv5 models before running inference on the supplied image.
+
+```python
+import torch
+
+# Model
+model = torch.hub.load('ultralytics/yolov5', 'yolov5s')  # or yolov5m, yolov5x, custom
+
+# Images
+img = 'https://ultralytics.com/images/zidane.jpg'  # or file, PIL, OpenCV, numpy, multiple
+
+# Inference
+results = model(img)
+
+# Results
+results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
+```
 
 </details>
+
+
+
 <details>
-<summary>Inference Using Repository Clone</summary>
+<summary>Inference with detect.py</summary>
 
-_NOTE : In order to follow this tutorial please ensure you have installed YOLOv5 locally._
-
+`detect.py` runs inference on a variety of sources, downloading models automatically from the [latest YOLOv5 release](https://github.com/ultralytics/yolov5/releases) and saving results to `runs/detect`.
 ```bash
-# Run inference based on selected input
 $ python detect.py --source 0  # webcam
-                            file.jpg  # image
+                            file.jpg  # image 
                             file.mp4  # video
                             path/  # directory
                             path/*.jpg  # glob
@@ -91,41 +114,18 @@ $ python detect.py --source 0  # webcam
 ```
 
 </details>
-<details open>
-<summary>Inference Using PyTorch Hub</summary>
-
-This tutorial will automatically download YOLOv5 models before running inference on the supplied image.
-
-```python
-import torch
-
-# Load a model
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s')  # or yolov5m, yolov5l, yolov5x
-
-# Define images
-img = 'https://ultralytics.com/images/zidane.jpg'
-
-# Run inference
-results = model(img)
-
-# Handle results
-results.print()  # or .show(), .save(), .pandas().xyz()
-```
-
-</details>
 
 <details>
 <summary>Training</summary>
 
-_NOTE : In order to follow this tutorial please ensure you have installed YOLOv5 locally._
-
+Run commands below to reproduce results on [COCO](https://github.com/ultralytics/yolov5/blob/master/data/scripts/get_coco.sh) dataset (dataset auto-downloads on first use). Training times for YOLOv5s/m/l/x are 2/4/6/8 days on a single V100 (multi-GPU times faster). Use the largest `--batch-size` your GPU allows (batch sizes shown for 16 GB devices).
 ```bash
 $ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 64
                                          yolov5m                                40
                                          yolov5l                                24
                                          yolov5x                                16
-
 ```
+<img width="800" src="https://user-images.githubusercontent.com/26833433/90222759-949d8800-ddc1-11ea-9fa1-1c97eed2b963.png">
 
 </details>  
 
