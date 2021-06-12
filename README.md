@@ -56,14 +56,14 @@ See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on tr
 
 ## <div align="center">Quick Start Examples</div>
 
-These tutorials are intended to get you started using YOLOv5 quickly for demonstration purposes.  
-Head to the [YOLOv5 Docs](https://docs.ultralytics.com) for more in-depth details.
 
 <details open>
 <summary>
 Install
 </summary>
 
+Python >= 3.6.0 required with all [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) dependencies installed:
+<!-- $ sudo apt update && apt install -y libgl1-mesa-glx libsm6 libxext6 libxrender-dev -->
 ```bash
 $ git clone https://github.com/ultralytics/yolov5
 $ pip install -r requirements.txt
@@ -73,7 +73,7 @@ $ pip install -r requirements.txt
 <details open>
 <summary>Inference</summary>
 
-Inference with YOLOv5 and [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36):
+Inference with YOLOv5 and [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36). Models automatically download from the [latest YOLOv5 release](https://github.com/ultralytics/yolov5/releases).
 
 ```python
 import torch
