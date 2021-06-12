@@ -41,8 +41,9 @@ logger = logging.getLogger(__name__)
 
 def train(hyp, opt, device, tb_writer=None):
     logger.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
-    save_dir, epochs, batch_size, total_batch_size, weights, rank = \
-        Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
+    save_dir, epochs, batch_size, total_batch_size, weights, rank, single_cls = \
+        Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank, \
+        opt.single_cls
 
     # Directories
     wdir = save_dir / 'weights'
@@ -73,10 +74,10 @@ def train(hyp, opt, device, tb_writer=None):
         loggers['wandb'] = wandb_logger.wandb
         data_dict = wandb_logger.data_dict
         if wandb_logger.wandb:
-            weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp  # WandbLogger might update weights, epochs if resuming
+            weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp  # may update weights, epochs if resuming
 
-    nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
-    names = ['item'] if opt.single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
+    nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
+    names = ['item'] if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
     assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)  # check
     is_coco = opt.data.endswith('coco.yaml') and nc == 80  # COCO dataset
 
@@ -187,7 +188,7 @@ def train(hyp, opt, device, tb_writer=None):
         logger.info('Using SyncBatchNorm()')
 
     # Trainloader
-    dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
+    dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, single_cls,
                                             hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank,
                                             world_size=opt.world_size, workers=opt.workers,
                                             image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '))
@@ -197,7 +198,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     # Process 0
     if rank in [-1, 0]:
-        testloader = create_dataloader(test_path, imgsz_test, batch_size * 2, gs, opt,  # testloader
+        testloader = create_dataloader(test_path, imgsz_test, batch_size * 2, gs, single_cls,
                                        hyp=hyp, cache=opt.cache_images and not opt.notest, rect=True, rank=-1,
                                        world_size=opt.world_size, workers=opt.workers,
                                        pad=0.5, prefix=colorstr('val: '))[0]
@@ -334,7 +335,7 @@ def train(hyp, opt, device, tb_writer=None):
                     if tb_writer and ni == 0:
                         with warnings.catch_warnings():
                             warnings.simplefilter('ignore')  # suppress jit trace warning
-                            tb_writer.add_graph(torch.jit.trace(de_parallel(model), imgs, strict=False), [])  # graph
+                            tb_writer.add_graph(torch.jit.trace(de_parallel(model), imgs[0:1], strict=False), [])
                 elif plots and ni == 10 and wandb_logger.wandb:
                     wandb_logger.log({'Mosaics': [wandb_logger.wandb.Image(str(x), caption=x.name) for x in
                                                   save_dir.glob('train*.jpg') if x.exists()]})
@@ -353,19 +354,18 @@ def train(hyp, opt, device, tb_writer=None):
             final_epoch = epoch + 1 == epochs
             if not opt.notest or final_epoch:  # Calculate mAP
                 wandb_logger.current_epoch = epoch + 1
-                results, maps, times = test.test(data_dict,
-                                                 batch_size=batch_size * 2,
-                                                 imgsz=imgsz_test,
-                                                 model=ema.ema,
-                                                 single_cls=opt.single_cls,
-                                                 dataloader=testloader,
-                                                 save_dir=save_dir,
-                                                 save_json=is_coco and final_epoch,
-                                                 verbose=nc < 50 and final_epoch,
-                                                 plots=plots and final_epoch,
-                                                 wandb_logger=wandb_logger,
-                                                 compute_loss=compute_loss,
-                                                 is_coco=is_coco)
+                results, maps, _ = test.test(data_dict,
+                                             batch_size=batch_size * 2,
+                                             imgsz=imgsz_test,
+                                             model=ema.ema,
+                                             single_cls=single_cls,
+                                             dataloader=testloader,
+                                             save_dir=save_dir,
+                                             save_json=is_coco and final_epoch,
+                                             verbose=nc < 50 and final_epoch,
+                                             plots=plots and final_epoch,
+                                             wandb_logger=wandb_logger,
+                                             compute_loss=compute_loss)
 
             # Write
             with open(results_file, 'a') as f:
@@ -429,12 +429,11 @@ def train(hyp, opt, device, tb_writer=None):
                                               conf_thres=0.001,
                                               iou_thres=0.7,
                                               model=attempt_load(m, device).half(),
-                                              single_cls=opt.single_cls,
+                                              single_cls=single_cls,
                                               dataloader=testloader,
                                               save_dir=save_dir,
                                               save_json=True,
-                                              plots=False,
-                                              is_coco=is_coco)
+                                              plots=False)
 
             # Strip optimizers
             for f in last, best:
@@ -455,7 +454,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
-    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
+    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
@@ -495,7 +494,7 @@ if __name__ == '__main__':
     set_logging(opt.global_rank)
     if opt.global_rank in [-1, 0]:
         check_git_status()
-        check_requirements(exclude=('pycocotools', 'thop'))
+        check_requirements(exclude=['thop'])
 
     # Resume
     wandb_run = check_wandb_resume(opt)

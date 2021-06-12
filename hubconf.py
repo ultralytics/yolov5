@@ -31,7 +31,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     from utils.torch_utils import select_device
 
     check_requirements(requirements=Path(__file__).parent / 'requirements.txt',
-                       exclude=('tensorboard', 'pycocotools', 'thop', 'opencv-python'))
+                       exclude=('tensorboard', 'thop', 'opencv-python'))
     set_logging(verbose=verbose)
 
     fname = Path(name).with_suffix('.pt')  # checkpoint filename
