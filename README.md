@@ -175,7 +175,7 @@ Get started with YOLOv5 in seconds with our verified environments and integratio
 
 Add these to your toolkit to ensure you get the most out of your training experience:
 
-* [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_wandbtutorial) - Experiment tracking, dataset versioning, and model management integration.
+* [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme) - Experiment tracking, dataset versioning, and model management integration.
 * [Supervisely](https://app.supervise.ly/signup) - YOLOv5 training and deployment integration. 
 
 ## <div align="center">Compete and Win</div>
