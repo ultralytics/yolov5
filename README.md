@@ -41,7 +41,7 @@
 
 <br>
 <p>
-YOLOv5 🚀 is a family of object detection architectures and models pretrained on the COCO dataset, and represents Ultralytics open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development. YOLOv5 is current under active development, and all code, models, and documentation are subject to modification or deletion without notice. Use at your own risk.
+YOLOv5 🚀 is a family of object detection architectures and models pretrained on the COCO dataset, and represents Ultralytics open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
 </p>
 
 <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
@@ -148,7 +148,7 @@ $ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 
 
 ## <div align="center">Environments and Integrations</div>
 
-Get started with YOLOv5 in less than a few minutes using our integrations.  
+Get started with YOLOv5 in seconds with our verified environments and integrations.
 
 <div align="center">
     <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb">
@@ -173,14 +173,14 @@ Get started with YOLOv5 in less than a few minutes using our integrations.
 
 
 
-Add these your toolkit to ensure you get the most out of your training experience:  
+Add these to your toolkit to ensure you get the most out of your training experience:
 
-* [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_wandbtutorial) - Build better models faster with experiment tracking, dataset versioning, and model management.
-* [Supervisely](https://app.supervise.ly/signup) - Training and deployment platform for YOLOv5 models. 
+* [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_wandbtutorial) - Experiment tracking, dataset versioning, and model management integration.
+* [Supervisely](https://app.supervise.ly/signup) - YOLOv5 training and deployment integration. 
 
-## <div align="center">Contribute and Win</div>
+## <div align="center">Compete and Win</div>
 
-We are super excited to announce our first-ever Ultralytics YOLOv5 🚀 EXPORT Competition with **$10,000** in cash prizes!  
+We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competition with **$10,000** in cash prizes!  
 
 <div align="center">
 <a href="https://github.com/ultralytics/yolov5/discussions/3213">
@@ -239,7 +239,7 @@ We are super excited to announce our first-ever Ultralytics YOLOv5 🚀 EXPORT C
 We love your input! We want to make contributing to YOLOv5 as easy and transparent as possible. Please see our [Contributing Guide](CONTRIBUTING.md) to get started. 
 
 
-## <div align="center">Get in Touch</div>
+## <div align="center">Contact</div>
 
 For issues running YOLOv5 please visit [GitHub Issues](https://github.com/ultralytics/yolov5/issues). For business or professional support requests please visit 
 [https://ultralytics.com/contact](https://ultralytics.com/contact).
