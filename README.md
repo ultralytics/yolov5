@@ -45,7 +45,7 @@ YOLOv5 🚀 is a family of object detection architectures and models pretrained 
 </p>
 
 <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
-<img width="850" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-api.png"></a>
+<img width="800" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-api.png"></a>
 
 </div>
 
