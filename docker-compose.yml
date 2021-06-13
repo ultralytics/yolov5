@@ -1,6 +1,13 @@
 version: "3.3"
 services:
   mhyolo:
-    build: .
+    build: "."
     volumes:
       - /home/ubuntu/data:/usr/src/data
+    deploy:
+        resources:
+            reservations:
+                devices:
+                - driver: nvidia
+                  count: 8
+                  capabilities: [gpu]
