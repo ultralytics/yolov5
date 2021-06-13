@@ -36,3 +36,10 @@ flipud: 0.00856
 fliplr: 0.5
 mosaic: 1.0
 mixup: 0.243
+augment: 0.0
+closing: 0.0
+opening: 0.0
+dilate_iterations: 0.0
+enable_threshold: 0.0
+erode_iterations: 0.0
+threshold: 0.0

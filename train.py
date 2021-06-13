@@ -35,8 +35,14 @@ from utils.loss import ComputeLoss
 from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, de_parallel
 from utils.wandb_logging.wandb_utils import WandbLogger, check_wandb_resume
+from multiprocessing import Pool
+import cv2
+from pathlib import Path
+import shutil
+
 
 logger = logging.getLogger(__name__)
+kernel = np.ones((5,5),np.uint8)
 
 
 def train(hyp, opt, device, tb_writer=None):
@@ -97,8 +103,10 @@ def train(hyp, opt, device, tb_writer=None):
         model = Model(opt.cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
     with torch_distributed_zero_first(rank):
         check_dataset(data_dict)  # check
-    train_path = data_dict['train']
-    test_path = data_dict['val']
+    # train_path = data_dict['train']
+    # test_path = data_dict['val']
+    train_path = Path(opt.temp_image_path)/opt.device/"images/train"
+    test_path = Path(opt.temp_image_path)/opt.device/"images/test"
 
     # Freeze
     freeze = []  # parameter names to freeze (full or partial)
@@ -187,6 +195,7 @@ def train(hyp, opt, device, tb_writer=None):
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
         logger.info('Using SyncBatchNorm()')
 
+    single_cls = True
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, single_cls,
                                             hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank,
@@ -335,7 +344,7 @@ def train(hyp, opt, device, tb_writer=None):
                     if tb_writer and ni == 0:
                         with warnings.catch_warnings():
                             warnings.simplefilter('ignore')  # suppress jit trace warning
-                            tb_writer.add_graph(torch.jit.trace(de_parallel(model), imgs[0:1], strict=False), [])
+                            tb_writer.add_graph(torch.jit.trace(de_parallel(model), imgs, strict=False), [])  # graph
                 elif plots and ni == 10 and wandb_logger.wandb:
                     wandb_logger.log({'Mosaics': [wandb_logger.wandb.Image(str(x), caption=x.name) for x in
                                                   save_dir.glob('train*.jpg') if x.exists()]})
@@ -449,6 +458,34 @@ def train(hyp, opt, device, tb_writer=None):
     torch.cuda.empty_cache()
     return results
 
+def clean_up(temp_folder):
+    print("Removing temp folder")
+    if temp_folder.is_dir(): 
+        shutil.rmtree(temp_folder)
+    temp_folder.mkdir(exist_ok=True, parents=True)
+
+def manipulate_image(img_path, out_path, config):
+    img = cv2.imread(str(img_path),0)
+    img = cv2.erode(img, kernel, iterations=round(config['erode_iterations']))
+    img = cv2.dilate(img, kernel, iterations=round(config['dilate_iterations']))
+    
+    if config['enable_threshold'] > 0:
+        cv2.threshold(img, config['threshold'], 255, cv2.THRESH_BINARY)
+    
+    if config['opening'] > 0.5: 
+        img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+        
+    if config['closing'] > 0.5: 
+        img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
+    
+    cv2.imwrite(str(out_path/img_path.name), img)
+
+class Manipulator:
+    def __init__(self, temp_folder, config):
+        self.temp_folder = temp_folder
+        self.config = config
+    def __call__(self, img_path):
+        manipulate_image(img_path, self.temp_folder, self.config)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -486,6 +523,8 @@ if __name__ == '__main__':
     parser.add_argument('--bbox_interval', type=int, default=-1, help='Set bounding-box image logging interval for W&B')
     parser.add_argument('--save_period', type=int, default=-1, help='Log model after every "save_period" epoch')
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
+    parser.add_argument('--original-image-path', type=str)
+    parser.add_argument('--temp-image-path', type=str)
     opt = parser.parse_args()
 
     # Set DDP variables
@@ -571,7 +610,15 @@ if __name__ == '__main__':
                 'flipud': (1, 0.0, 1.0),  # image flip up-down (probability)
                 'fliplr': (0, 0.0, 1.0),  # image flip left-right (probability)
                 'mosaic': (1, 0.0, 1.0),  # image mixup (probability)
-                'mixup': (1, 0.0, 1.0)}  # image mixup (probability)
+                'mixup': (1, 0.0, 1.0),
+                'augment': (1, 0.0, 1.0),
+                'closing': (1, 0.0, 1.0),
+                'opening': (1, 0.0, 1.0),
+                'dilate_iterations': (1, 0.0, 2.0),
+                'enable_threshold': (1, 0.0, 1.0),
+                'erode_iterations': (1, 0.0, 2.0),
+                'threshold': (1, 0, 255),
+        }  # image mixup (probability)
 
         assert opt.local_rank == -1, 'DDP mode not implemented for --evolve'
         opt.notest, opt.nosave = True, True  # only test/save final epoch
@@ -580,7 +627,7 @@ if __name__ == '__main__':
         if opt.bucket:
             os.system('gsutil cp gs://%s/evolve.txt .' % opt.bucket)  # download evolve.txt if exists
 
-        for _ in range(300):  # generations to evolve
+        for _ in range(100):  # generations to evolve
             if Path('evolve.txt').exists():  # if evolve.txt exists: select best hyps and mutate
                 # Select parent(s)
                 parent = 'single'  # parent selection method: 'single' or 'weighted'
@@ -611,6 +658,33 @@ if __name__ == '__main__':
                 hyp[k] = max(hyp[k], v[1])  # lower limit
                 hyp[k] = min(hyp[k], v[2])  # upper limit
                 hyp[k] = round(hyp[k], 5)  # significant digits
+
+            temp_folder = Path(opt.temp_image_path)/opt.device
+            temp_labels_folder = temp_folder/"labels"
+            train_path = temp_folder/"images/train"
+            test_path = temp_folder/"images/test"
+
+            data_folder = Path(opt.original_image_path)
+            images_data_folder = data_folder/"images"
+            labels_data_folder = data_folder/"labels"
+
+            clean_up(temp_folder)
+            train_path.mkdir(exist_ok=True, parents=True)
+            test_path.mkdir(exist_ok=True, parents=True)
+            shutil.copytree(str(labels_data_folder), str(temp_labels_folder))
+
+            pool = Pool()
+
+            train_images = list((images_data_folder/'train').glob('*.jpg'))
+            manipulator = Manipulator(train_path, hyp)
+            list(tqdm(pool.imap(manipulator, train_images), total=len(train_images)))
+            
+            test_images = list((images_data_folder/'test').glob('*.jpg'))
+            manipulator = Manipulator(test_path, hyp)
+            list(tqdm(pool.imap(manipulator, test_images), total=len(test_images)))
+            
+
+            ###
 
             # Train mutation
             results = train(hyp.copy(), opt, device)

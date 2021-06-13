@@ -1,0 +1,6 @@
+version: "3.3"
+services:
+  mhyolo:
+    build: .
+    volumes:
+      - /home/ubuntu/data:/usr/src/data
