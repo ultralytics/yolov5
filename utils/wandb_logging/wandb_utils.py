@@ -1,19 +1,16 @@
 """Utilities and tools for tracking runs with Weights & Biases."""
-import json
-import sys
-from pathlib import Path
 import logging
+import sys
 from contextlib import contextmanager
+from pathlib import Path
 
-
-import torch
 import yaml
 from tqdm import tqdm
 
 sys.path.append(str(Path(__file__).parent.parent.parent))  # add utils/ to path
 from utils.datasets import LoadImagesAndLabels
 from utils.datasets import img2label_paths
-from utils.general import colorstr, xywh2xyxy, check_dataset, check_file
+from utils.general import colorstr, check_dataset, check_file
 
 try:
     import wandb
@@ -95,6 +92,7 @@ class WandbLogger():
     For more on how this logger is used, see the Weights & Biases documentation:
     https://docs.wandb.com/guides/integrations/yolov5
     """
+
     def __init__(self, opt, name, run_id, data_dict, job_type='Training'):
         # Pre-training routine --
         self.job_type = job_type
@@ -309,7 +307,7 @@ class WandbLogger():
 
     def end_epoch(self, best_result=False):
         if self.wandb_run:
-            with all_logging_disabled():                
+            with all_logging_disabled():
                 wandb.log(self.log_dict)
                 self.log_dict = {}
             if self.result_artifact:
@@ -323,25 +321,20 @@ class WandbLogger():
     def finish_run(self):
         if self.wandb_run:
             if self.log_dict:
-                with all_logging_disabled(): 
+                with all_logging_disabled():
                     wandb.log(self.log_dict)
             wandb.run.finish()
 
 
 @contextmanager
 def all_logging_disabled(highest_level=logging.CRITICAL):
-    """
-    source - https://gist.github.com/simon-weber/7853144
-    A context manager that will prevent any logging messages
-    triggered during the body from being processed.
+    """ source - https://gist.github.com/simon-weber/7853144
+    A context manager that will prevent any logging messages triggered during the body from being processed.
     :param highest_level: the maximum logging level in use.
-      This would only need to be changed if a custom level greater than CRITICAL
-      is defined.
+      This would only need to be changed if a custom level greater than CRITICAL is defined.
     """
     previous_level = logging.root.manager.disable
-
     logging.disable(highest_level)
-
     try:
         yield
     finally:
