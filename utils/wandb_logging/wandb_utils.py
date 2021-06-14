@@ -1,16 +1,16 @@
 """Utilities and tools for tracking runs with Weights & Biases."""
-import json
+import logging
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 
-import torch
 import yaml
 from tqdm import tqdm
 
 sys.path.append(str(Path(__file__).parent.parent.parent))  # add utils/ to path
 from utils.datasets import LoadImagesAndLabels
 from utils.datasets import img2label_paths
-from utils.general import colorstr, xywh2xyxy, check_dataset, check_file
+from utils.general import colorstr, check_dataset, check_file
 
 try:
     import wandb
@@ -92,6 +92,7 @@ class WandbLogger():
     For more on how this logger is used, see the Weights & Biases documentation:
     https://docs.wandb.com/guides/integrations/yolov5
     """
+
     def __init__(self, opt, name, run_id, data_dict, job_type='Training'):
         # Pre-training routine --
         self.job_type = job_type
@@ -272,7 +273,7 @@ class WandbLogger():
                                  "box_caption": "%s" % (class_to_id[cls])})
                 img_classes[cls] = class_to_id[cls]
             boxes = {"ground_truth": {"box_data": box_data, "class_labels": class_to_id}}  # inference-space
-            table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes), json.dumps(img_classes),
+            table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes), list(img_classes.values()),
                            Path(paths).name)
         artifact.add(table, name)
         return artifact
@@ -306,8 +307,9 @@ class WandbLogger():
 
     def end_epoch(self, best_result=False):
         if self.wandb_run:
-            wandb.log(self.log_dict)
-            self.log_dict = {}
+            with all_logging_disabled():
+                wandb.log(self.log_dict)
+                self.log_dict = {}
             if self.result_artifact:
                 train_results = wandb.JoinedTable(self.val_table, self.result_table, "id")
                 self.result_artifact.add(train_results, 'result')
@@ -319,5 +321,21 @@ class WandbLogger():
     def finish_run(self):
         if self.wandb_run:
             if self.log_dict:
-                wandb.log(self.log_dict)
+                with all_logging_disabled():
+                    wandb.log(self.log_dict)
             wandb.run.finish()
+
+
+@contextmanager
+def all_logging_disabled(highest_level=logging.CRITICAL):
+    """ source - https://gist.github.com/simon-weber/7853144
+    A context manager that will prevent any logging messages triggered during the body from being processed.
+    :param highest_level: the maximum logging level in use.
+      This would only need to be changed if a custom level greater than CRITICAL is defined.
+    """
+    previous_level = logging.root.manager.disable
+    logging.disable(highest_level)
+    try:
+        yield
+    finally:
+        logging.disable(previous_level)
