@@ -2,6 +2,7 @@ version: "3.3"
 services:
   mhyolo:
     build: "."
+    ipc: host
     volumes:
       - /home/ubuntu/data:/usr/src/data
     deploy:
