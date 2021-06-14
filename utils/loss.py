@@ -133,7 +133,10 @@ class ComputeLoss:
                 lbox += (1.0 - iou).mean()  # iou loss
 
                 # Objectness
-                tobj[b, a, gj, gi] = (1.0 - self.gr) + self.gr * iou.detach().clamp(0).type(tobj.dtype)  # iou ratio
+                score_iou = iou.detach().clamp(0).type(tobj.dtype)
+                sort_id = torch.argsort(score_iou)
+                b, a, gj, gi, score_iou = b[sort_id], a[sort_id], gj[sort_id], gi[sort_id], score_iou[sort_id]
+                tobj[b, a, gj, gi] = (1.0 - self.gr) + self.gr * score_iou  # iou ratio
 
                 # Classification
                 if self.nc > 1:  # cls loss (only if multiple classes)
