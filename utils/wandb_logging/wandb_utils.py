@@ -323,7 +323,8 @@ class WandbLogger():
     def finish_run(self):
         if self.wandb_run:
             if self.log_dict:
-                wandb.log(self.log_dict)
+                with all_logging_disabled(): 
+                    wandb.log(self.log_dict)
             wandb.run.finish()
 
 
