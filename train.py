@@ -469,7 +469,7 @@ def manipulate_image(img_path, out_path, config):
     img = cv2.erode(img, kernel, iterations=round(config['erode_iterations']))
     img = cv2.dilate(img, kernel, iterations=round(config['dilate_iterations']))
     
-    if config['enable_threshold'] > 0:
+    if config['enable_threshold'] > 0.5:
         cv2.threshold(img, config['threshold'], 255, cv2.THRESH_BINARY)
     
     if config['opening'] > 0.5: 
@@ -611,12 +611,11 @@ if __name__ == '__main__':
                 'fliplr': (0, 0.0, 1.0),  # image flip left-right (probability)
                 'mosaic': (1, 0.0, 1.0),  # image mixup (probability)
                 'mixup': (1, 0.0, 1.0),
-                'augment': (1, 0.0, 1.0),
                 'closing': (1, 0.0, 1.0),
                 'opening': (1, 0.0, 1.0),
-                'dilate_iterations': (1, 0.0, 2.0),
+                'dilate_iterations': (1, 0.0, 4.0),
                 'enable_threshold': (1, 0.0, 1.0),
-                'erode_iterations': (1, 0.0, 2.0),
+                'erode_iterations': (1, 0.0, 4.0),
                 'threshold': (1, 0, 255),
         }  # image mixup (probability)
 

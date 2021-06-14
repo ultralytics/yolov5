@@ -29,10 +29,9 @@ flipud: 0.0  # image flip up-down (probability)
 fliplr: 0.5  # image flip left-right (probability)
 mosaic: 1.0  # image mosaic (probability)
 mixup: 0.0  # image mixup (probability)
-augment: 0.0
-closing: 0.0
-opening: 0.0
-dilate_iterations: 0.0
-enable_threshold: 0.0
-erode_iterations: 0.0
-threshold: 0.0
+closing: 0.5
+opening: 0.5
+dilate_iterations: 1
+enable_threshold: 0.5
+erode_iterations: 1
+threshold: 128
