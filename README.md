@@ -70,6 +70,7 @@ Python >= 3.6.0 required with all [requirements.txt](https://github.com/ultralyt
 <!-- $ sudo apt update && apt install -y libgl1-mesa-glx libsm6 libxext6 libxrender-dev -->
 ```bash
 $ git clone https://github.com/ultralytics/yolov5
+$ cd yolov5
 $ pip install -r requirements.txt
 ```
 </details>
