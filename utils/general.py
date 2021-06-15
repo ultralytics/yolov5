@@ -206,9 +206,9 @@ def check_file(file):
     file = str(file)  # convert to str()
     if Path(file).is_file() or file == '':  # exists
         return file
-    elif file.startswith(('http://', 'https://')):  # download
-        url, file = file, Path(urllib.parse.unquote(str(file))).name  # url, file (decode '%2F' to '/' etc.)
-        file = file.split('?')[0]  # parse authentication https://url.com/file.txt?auth...
+    elif file.startswith(('http:/', 'https:/')):  # download
+        url = str(Path(file)).replace(':/', '://')  # Pathlib turns :// -> :/
+        file = Path(urllib.parse.unquote(file)).name.split('?')[0]  # '%2F' to '/', split https://url.com/file.txt?auth
         print(f'Downloading {url} to {file}...')
         torch.hub.download_url_to_file(url, file)
         assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
