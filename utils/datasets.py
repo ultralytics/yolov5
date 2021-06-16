@@ -1046,20 +1046,20 @@ def autosplit(path='../coco128', weights=(0.9, 0.1, 0.0), annotated_only=False):
                 f.write(str(img) + '\n')  # add image to txt file
 
 
-def verify_image_label(params):
+def verify_image_label(args):
     # Verify one image-label pair
-    im_file, lb_file, prefix = params
+    im_file, lb_file, prefix = args
     nm, nf, ne, nc = 0, 0, 0, 0  # number missing, found, empty, corrupt
     try:
         # verify images
         im = Image.open(im_file)
         im.verify()  # PIL verify
         shape = exif_size(im)  # image size
-        segments = []  # instance segments
         assert (shape[0] > 9) & (shape[1] > 9), f'image size {shape} <10 pixels'
         assert im.format.lower() in img_formats, f'invalid image format {im.format}'
 
         # verify labels
+        segments = []  # instance segments
         if os.path.isfile(lb_file):
             nf = 1  # label found
             with open(lb_file, 'r') as f:
@@ -1084,7 +1084,7 @@ def verify_image_label(params):
     except Exception as e:
         nc = 1
         logging.info(f'{prefix}WARNING: Ignoring corrupted image and/or label {im_file}: {e}')
-        return [None] * 4 + [nm, nf, ne, nc]
+        return [None, None, None, None, nm, nf, ne, nc]
 
 
 def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
