@@ -16,19 +16,19 @@ Submitting a PR is easy! This example shows how to submit a PR for updating `req
 
 ### 1. Select File to Update
 Select `requirements.txt` to update by clicking on it in GitHub.
-<img width="1074" alt="PR_step1" src="https://user-images.githubusercontent.com/26833433/122259504-8bde7c80-ced2-11eb-9353-59d9137b56ae.png">
+<img width="1000" alt="PR_step1" src="https://user-images.githubusercontent.com/26833433/122260847-08be2600-ced4-11eb-828b-8287ace4136c.png">
 
 ### 2. Click 'Edit This File'
 Button is in top-right corner.
-<img width="1074" alt="PR_step2" src="https://user-images.githubusercontent.com/26833433/122259310-589bed80-ced2-11eb-9c15-db01e9039cfb.png">
+<img width="1000" alt="PR_step2" src="https://user-images.githubusercontent.com/26833433/122260844-06f46280-ced4-11eb-9eec-b8a24be519ca.png">
 
 ### 3. Make Changes
 Change `matplotlib` version from `3.2.2` to `3.3`.
-<img width="1074" alt="PR_step3" src="https://user-images.githubusercontent.com/26833433/122259419-7701e900-ced2-11eb-9616-acdca2879d8a.png">
+<img width="1000" alt="PR_step3" src="https://user-images.githubusercontent.com/26833433/122260853-0a87e980-ced4-11eb-9fd2-3650fb6e0842.png">
 
 ### 4. Preview Changes and Submit PR
 Click on the **Preview changes** tab to verify your updates. Select 'Create a **new branch** for this commit', assign your branch a descriptive name such as `fix/matplotlib_version` and click the green **Propose changes** button. All done, your PR is now submitted to YOLOv5 for review and approval 😃!
-<img width="1074" alt="PR_step4" src="https://user-images.githubusercontent.com/26833433/122259457-808b5100-ced2-11eb-9c4a-34674d8b62d3.png">
+<img width="1000" alt="PR_step4" src="https://user-images.githubusercontent.com/26833433/122260856-0b208000-ced4-11eb-8e8e-77b6151cbcc3.png">
 
 ### PR recommendations
 
