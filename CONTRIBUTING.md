@@ -18,7 +18,7 @@ Submitting a PR is easy! This example shows how to submit a PR for updating `req
 Select `requirements.txt` to update by clicking on it in GitHub.
 <img width="1000" alt="PR_step1" src="https://user-images.githubusercontent.com/26833433/122260847-08be2600-ced4-11eb-828b-8287ace4136c.png">
 
-### 2. Click 'Edit This File'
+### 2. Click 'Edit this file'
 Button is in top-right corner.
 <img width="1000" alt="PR_step2" src="https://user-images.githubusercontent.com/26833433/122260844-06f46280-ced4-11eb-9eec-b8a24be519ca.png">
 
