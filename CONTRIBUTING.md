@@ -12,6 +12,25 @@ YOLOv5 works so well due to our combined community effort, and for every small i
 
 
 ## Submitting a Pull Request (PR) 🛠️
+Submitting a PR is easy! This example shows how to submit a PR for updating `requirements.txt` in 4 steps:
+
+### 1. Select File to Update
+Select `requirements.txt` to update by clicking on it in GitHub.
+<img width="1074" alt="PR_step1" src="https://user-images.githubusercontent.com/26833433/122259504-8bde7c80-ced2-11eb-9353-59d9137b56ae.png">
+
+### 2. Click 'Edit This File'
+Button is in top-right corner.
+<img width="1074" alt="PR_step2" src="https://user-images.githubusercontent.com/26833433/122259310-589bed80-ced2-11eb-9c15-db01e9039cfb.png">
+
+### 3. Make Changes
+Change `matplotlib` version from `3.2.2` to `3.3`.
+<img width="1074" alt="PR_step3" src="https://user-images.githubusercontent.com/26833433/122259419-7701e900-ced2-11eb-9616-acdca2879d8a.png">
+
+### 4. Preview Changes and Submit PR
+Click on the **Preview changes** tab to verify your updates. Select 'Create a **new branch** for this commit', assign your branch a descriptive name such as `fix/matplotlib_version` and click the green **Propose changes** button. All done, your PR is now submitted to YOLOv5 for review and approval 😃!
+<img width="1074" alt="PR_step4" src="https://user-images.githubusercontent.com/26833433/122259457-808b5100-ced2-11eb-9c4a-34674d8b62d3.png">
+
+### PR recommendations
 
 To allow your work to be integrated as seamlessly as possible, we advise you to:
 - ✅ Verify your PR is **up-to-date with origin/master.** If your PR is behind origin/master an automatic [GitHub actions](https://github.com/ultralytics/yolov5/blob/master/.github/workflows/rebase.yml) rebase may be attempted by including the /rebase command in a comment body, or by running the following code, replacing 'feature' with the name of your local branch:
@@ -28,7 +47,9 @@ git push -u origin -f
 
 ## Submitting a Bug Report 🐛
 
-For us to investigate an issue we would need to be able to reproduce it ourselves first. We've created a few short guidelines below to help users provide what we need in order to get started investigating a possible problem.
+If you spot a problem with YOLOv5 please submit a Bug Report!
+
+For us to start investigating a possibel problem we need to be able to reproduce it ourselves first. We've created a few short guidelines below to help users provide what we need in order to get started.
 
 When asking a question, people will be better able to provide help if you provide **code** that they can easily understand and use to **reproduce** the problem. This is referred to by community members as creating a [minimum reproducible example](https://stackoverflow.com/help/minimal-reproducible-example). Your code that reproduces the problem should be:
 
