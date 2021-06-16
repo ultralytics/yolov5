@@ -9,6 +9,7 @@ COPY requirements.txt .
 RUN python -m pip install --upgrade pip
 RUN pip uninstall -y nvidia-tensorboard nvidia-tensorboard-plugin-dlprof
 RUN pip install --no-cache -r requirements.txt coremltools onnx gsutil notebook
+RUN pip install --no-cache -U torch torchvision
 
 # Create working directory
 RUN mkdir -p /usr/src/app
