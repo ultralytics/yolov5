@@ -1062,7 +1062,6 @@ def verify_image_label(args):
                 f.seek(-2, 2)
                 assert f.read() == b'\xff\xd9', 'corrupted JPEG'
 
-
         # verify labels
         segments = []  # instance segments
         if os.path.isfile(lb_file):
