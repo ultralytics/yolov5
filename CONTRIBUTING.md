@@ -27,7 +27,7 @@ Change `matplotlib` version from `3.2.2` to `3.3`.
 <img width="1000" alt="PR_step3" src="https://user-images.githubusercontent.com/26833433/122260853-0a87e980-ced4-11eb-9fd2-3650fb6e0842.png">
 
 ### 4. Preview Changes and Submit PR
-Click on the **Preview changes** tab to verify your updates. Select 'Create a **new branch** for this commit', assign your branch a descriptive name such as `fix/matplotlib_version` and click the green **Propose changes** button. All done, your PR is now submitted to YOLOv5 for review and approval 😃!
+Click on the **Preview changes** tab to verify your updates. At the bottom of the screen select 'Create a **new branch** for this commit', assign your branch a descriptive name such as `fix/matplotlib_version` and click the green **Propose changes** button. All done, your PR is now submitted to YOLOv5 for review and approval 😃!
 <img width="1000" alt="PR_step4" src="https://user-images.githubusercontent.com/26833433/122260856-0b208000-ced4-11eb-8e8e-77b6151cbcc3.png">
 
 ### PR recommendations
