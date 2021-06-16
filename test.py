@@ -78,7 +78,7 @@ def test(data,
         with open(data) as f:
             data = yaml.safe_load(f)
     check_dataset(data)  # check
-    is_coco = data['val'].endswith('coco/val2017.txt')  # COCO dataset
+    is_coco = type(data['val']) is str and data['val'].endswith('coco/val2017.txt')  # COCO dataset
     nc = 1 if single_cls else int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
     niou = iouv.numel()
