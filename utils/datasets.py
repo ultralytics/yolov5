@@ -1057,6 +1057,10 @@ def verify_image_label(args):
         shape = exif_size(im)  # image size
         assert (shape[0] > 9) & (shape[1] > 9), f'image size {shape} <10 pixels'
         assert im.format.lower() in img_formats, f'invalid image format {im.format}'
+        if im.format.lower() in ('jpg', 'jpeg'):
+            with open(im_file, 'rb') as f:
+                f.seek(-2, 2)
+                assert f.read() == b'\xff\xd9', 'corrupted JPEG'
 
         # verify labels
         segments = []  # instance segments
