@@ -23,7 +23,7 @@ https://github.com/ultralytics/yolov5.git
 ### 2. Install requirements
 ```
 pip install -r requirements.txt
-pip install tensorflow==2.4.0
+pip install tensorflow==2.4.1
 ```
 
 ### 3. Convert and verify

@@ -6,6 +6,8 @@ import traceback
 from copy import deepcopy
 from pathlib import Path
 
+sys.path.append('./')  # to run '$ python *.py' files in subdirectories
+
 import numpy as np
 import tensorflow as tf
 import torch
@@ -15,7 +17,7 @@ from tensorflow import keras
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
 from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat, autopad, C3
-from models.experimental import MixConv2d, CrossConv
+from models.experimental import MixConv2d, CrossConv, attempt_load
 from models.yolo import Detect
 from utils.datasets import LoadImages
 from utils.general import make_divisible, check_file, check_dataset
@@ -32,7 +34,8 @@ class tf_BN(keras.layers.Layer):
             beta_initializer=keras.initializers.Constant(w.bias.numpy()),
             gamma_initializer=keras.initializers.Constant(w.weight.numpy()),
             moving_mean_initializer=keras.initializers.Constant(w.running_mean.numpy()),
-            moving_variance_initializer=keras.initializers.Constant(w.running_var.numpy()))
+            moving_variance_initializer=keras.initializers.Constant(w.running_var.numpy()),
+            epsilon=w.eps)
 
     def call(self, inputs):
         return self.bn(inputs)
@@ -221,7 +224,12 @@ class tf_Upsample(keras.layers.Layer):
         super(tf_Upsample, self).__init__()
         assert scale_factor == 2, "scale_factor must be 2"
         # self.upsample = keras.layers.UpSampling2D(size=scale_factor, interpolation=mode)
-        self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * 2, x.shape[2] * 2), method=mode)
+        if opt.tf_raw_resize:
+            # with default arguments: align_corners=False, half_pixel_centers=False
+            self.upsample = lambda x: tf.raw_ops.ResizeNearestNeighbor(images=x,
+                                                                       size=(x.shape[1] * 2, x.shape[2] * 2))
+        else:
+            self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * 2, x.shape[2] * 2), method=mode)
 
     def call(self, inputs):
         return self.upsample(inputs)
@@ -360,11 +368,12 @@ if __name__ == "__main__":
     parser.add_argument('--img-size', nargs='+', type=int, default=[320, 320], help='image size')  # height, width
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--dynamic-batch-size', action='store_true', help='dynamic batch size')
-    parser.add_argument('--no-tfl-detect', action='store_true', help='remove Detect() from TFLite model')
     parser.add_argument('--source', type=str, default='../data/coco128.yaml', help='dir of images or data.yaml file')
     parser.add_argument('--ncalib', type=int, default=100, help='number of calibration images')
     parser.add_argument('--tfl-int8', action='store_true', dest='tfl_int8', help='export TFLite int8 model')
     parser.add_argument('--tf-nms', action='store_true', dest='tf_nms', help='TF NMS (without TFLite export)')
+    parser.add_argument('--tf-raw-resize', action='store_true', dest='tf_raw_resize',
+                        help='use tf.raw_ops.ResizeNearestNeighbor for resize')
     parser.add_argument('--topk-per-class', type=int, default=100, help='topk per class to keep in NMS')
     parser.add_argument('--topk-all', type=int, default=100, help='topk for all classes to keep in NMS')
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
@@ -378,9 +387,7 @@ if __name__ == "__main__":
     img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size(1,3,320,192) iDetection
 
     # Load PyTorch model
-    attempt_download(opt.weights)
-    model = torch.load(opt.weights, map_location=torch.device('cpu'))['model'].float()  # .fuse()
-    model.eval()
+    model = attempt_load(opt.weights, map_location=torch.device('cpu'), inplace=True, fuse=False)
     model.model[-1].export = False  # set Detect() layer export=True
     y = model(img)  # dry run
     nc = y[0].shape[-1] - 5
@@ -432,10 +439,6 @@ if __name__ == "__main__":
     if not opt.tf_nms:
         try:
             print('\nStarting TFLite export with TensorFlow %s...' % tf.__version__)
-            if opt.no_tfl_detect:
-                print("Don't export Detect module")
-                m.training = True
-                keras_model = keras.Model(inputs=inputs, outputs=tf_model.predict(inputs))
 
             # fp32 TFLite model export ---------------------------------------------------------------------------------
             # converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
@@ -476,6 +479,7 @@ if __name__ == "__main__":
                 converter.inference_output_type = tf.uint8  # or tf.int8
                 converter.allow_custom_ops = False
                 converter.experimental_new_converter = True
+                converter.experimental_new_quantizer = False
                 tflite_model = converter.convert()
                 f = opt.weights.replace('.pt', '-int8.tflite')  # filename
                 open(f, "wb").write(tflite_model)
