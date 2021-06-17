@@ -1118,7 +1118,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
         stats[split] = {'instance_stats': {'total': int(x.sum()), 'per_class': x.sum(0).tolist()},
                         'image_stats': {'total': dataset.n, 'unlabelled': int(np.all(x == 0, 1).sum()),
                                         'per_class': (x > 0).sum(0).tolist()},
-                        'labels': {str(Path(k).name): v.tolist() for k, v in zip(dataset.img_files, dataset.labels)}}
+                        'labels': [{str(Path(k).name): v.tolist()} for k, v in zip(dataset.img_files, dataset.labels)]}
 
     # Save, print and return
     with open(cache_path.with_suffix('.json'), 'w') as f:
