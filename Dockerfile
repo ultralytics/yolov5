@@ -46,8 +46,5 @@ ENV HOME=/usr/src/app
 # Bash into stopped container
 # id=$(sudo docker ps -qa) && sudo docker start $id && sudo docker exec -it $id bash
 
-# Send weights to GCP
-# python -c "from utils.general import *; strip_optimizer('runs/train/exp0_*/weights/best.pt', 'tmp.pt')" && gsutil cp tmp.pt gs://*.pt
-
 # Clean up
 # docker system prune -a --volumes
