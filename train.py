@@ -502,8 +502,8 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     # Set DDP variables
-    opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
-    opt.global_rank = int(os.environ['RANK']) if 'RANK' in os.environ else -1
+    opt.world_size = int(getattr(os.environ, 'WORLD_SIZE', 1))
+    opt.global_rank = int(getattr(os.environ, 'RANK', -1))
     set_logging(opt.global_rank)
     if opt.global_rank in [-1, 0]:
         check_git_status()
