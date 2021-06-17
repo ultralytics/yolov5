@@ -103,10 +103,14 @@ def train(hyp, opt, device, tb_writer=None):
         model = Model(opt.cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
     with torch_distributed_zero_first(rank):
         check_dataset(data_dict)  # check
-    # train_path = data_dict['train']
-    # test_path = data_dict['val']
-    train_path = Path(opt.temp_image_path)/opt.device/"images/train"
-    test_path = Path(opt.temp_image_path)/opt.device/"images/test"
+
+    if opt.evolve:
+        train_path = Path(opt.temp_image_path)/opt.device/"images/train"
+        test_path = Path(opt.temp_image_path)/opt.device/"images/test"
+    else:
+        train_path = data_dict['train']
+        test_path = data_dict['val']
+
 
     # Freeze
     freeze = []  # parameter names to freeze (full or partial)
@@ -658,29 +662,30 @@ if __name__ == '__main__':
                 hyp[k] = min(hyp[k], v[2])  # upper limit
                 hyp[k] = round(hyp[k], 5)  # significant digits
 
-            temp_folder = Path(opt.temp_image_path)/opt.device
-            temp_labels_folder = temp_folder/"labels"
-            train_path = temp_folder/"images/train"
-            test_path = temp_folder/"images/test"
+            if opt.evolve:
+                temp_folder = Path(opt.temp_image_path)/opt.device
+                temp_labels_folder = temp_folder/"labels"
+                train_path = temp_folder/"images/train"
+                test_path = temp_folder/"images/test"
 
-            data_folder = Path(opt.original_image_path)
-            images_data_folder = data_folder/"images"
-            labels_data_folder = data_folder/"labels"
+                data_folder = Path(opt.original_image_path)
+                images_data_folder = data_folder/"images"
+                labels_data_folder = data_folder/"labels"
 
-            clean_up(temp_folder)
-            train_path.mkdir(exist_ok=True, parents=True)
-            test_path.mkdir(exist_ok=True, parents=True)
-            shutil.copytree(str(labels_data_folder), str(temp_labels_folder))
+                clean_up(temp_folder)
+                train_path.mkdir(exist_ok=True, parents=True)
+                test_path.mkdir(exist_ok=True, parents=True)
+                shutil.copytree(str(labels_data_folder), str(temp_labels_folder))
 
-            pool = Pool()
+                pool = Pool()
 
-            train_images = list((images_data_folder/'train').glob('*.jpg'))
-            manipulator = Manipulator(train_path, hyp)
-            list(tqdm(pool.imap(manipulator, train_images), total=len(train_images)))
-            
-            test_images = list((images_data_folder/'test').glob('*.jpg'))
-            manipulator = Manipulator(test_path, hyp)
-            list(tqdm(pool.imap(manipulator, test_images), total=len(test_images)))
+                train_images = list((images_data_folder/'train').glob('*.jpg'))
+                manipulator = Manipulator(train_path, hyp)
+                list(tqdm(pool.imap(manipulator, train_images), total=len(train_images)))
+                
+                test_images = list((images_data_folder/'test').glob('*.jpg'))
+                manipulator = Manipulator(test_path, hyp)
+                list(tqdm(pool.imap(manipulator, test_images), total=len(test_images)))
             
 
             ###
