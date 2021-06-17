@@ -1099,6 +1099,11 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
         autodownload:   Attempt to download dataset if not found locally
         verbose:        Print stats dictionary
     """
+
+    def round_labels(labels):
+        # Update labels to integer class and 6 decimal place floats
+        return [[int(c), *[round(x, 6) for x in points]] for c, *points in labels]
+
     with open(check_file(path)) as f:
         data = yaml.safe_load(f)  # data dict
     check_dataset(data, autodownload)  # download dataset if missing
@@ -1118,12 +1123,13 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
         stats[split] = {'instance_stats': {'total': int(x.sum()), 'per_class': x.sum(0).tolist()},
                         'image_stats': {'total': dataset.n, 'unlabelled': int(np.all(x == 0, 1).sum()),
                                         'per_class': (x > 0).sum(0).tolist()},
-                        'labels': {str(Path(k).name): v.tolist() for k, v in zip(dataset.img_files, dataset.labels)}}
+                        'labels': [{str(Path(k).name): round_labels(v.tolist())} for k, v in
+                                   zip(dataset.img_files, dataset.labels)]}
 
     # Save, print and return
     with open(cache_path.with_suffix('.json'), 'w') as f:
         json.dump(stats, f)  # save stats *.json
     if verbose:
-        print(yaml.dump([stats], sort_keys=False, default_flow_style=False))
-        # print(json.dumps(stats, indent=2, sort_keys=False))
+        print(json.dumps(stats, indent=2, sort_keys=False))
+        # print(yaml.dump([stats], sort_keys=False, default_flow_style=False))
     return stats
