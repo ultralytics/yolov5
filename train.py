@@ -207,7 +207,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, single_cls,
                                             hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=RANK,
-                                            workers=opt.workers // WORLD_SIZE,
+                                            workers=opt.workers,
                                             image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '))
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
     nb = len(dataloader)  # number of batches
