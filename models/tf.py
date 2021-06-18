@@ -325,13 +325,18 @@ class tf_Model():
 
         # Add TensorFlow NMS
         if opt.tf_nms:
-            boxes = tf.expand_dims(xywh2xyxy(x[0][..., :4]), 2)
+            boxes = xywh2xyxy(x[0][..., :4])
             probs = x[0][:, :, 4:5]
             classes = x[0][:, :, 5:]
             scores = probs * classes
-            nms = tf.image.combined_non_max_suppression(
-                boxes, scores, opt.topk_per_class, opt.topk_all, opt.iou_thres, opt.score_thres, clip_boxes=False)
-            return nms, x[1]
+            if opt.agnostic_nms:
+                nms = agnostic_nms_layer()((boxes, classes, scores))
+                return nms, x[1]
+            else:
+                boxes = tf.expand_dims(boxes, 2)
+                nms = tf.image.combined_non_max_suppression(
+                    boxes, scores, opt.topk_per_class, opt.topk_all, opt.iou_thres, opt.score_thres, clip_boxes=False)
+                return nms, x[1]
 
         return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
         # x = x[0][0]  # [x(1,6300,85), ...] to x(6300,85)
@@ -339,6 +344,37 @@ class tf_Model():
         # conf = x[..., 4:5]  # x(6300,1) confidences
         # cls = tf.reshape(tf.cast(tf.argmax(x[..., 5:], axis=1), tf.float32), (-1, 1))  # x(6300,1)  classes
         # return tf.concat([conf, cls, xywh], 1)
+
+
+class agnostic_nms_layer(keras.layers.Layer):
+    # wrap map_fn to avoid TypeSpec related error:
+    # https://stackoverflow.com/a/65809989/3036450
+    def call(self, input):
+        return tf.map_fn(agnostic_nms, input,
+                         fn_output_signature=(tf.float32, tf.float32, tf.float32, tf.int32),
+                         name='agnostic_nms')
+
+
+def agnostic_nms(x):
+    boxes, classes, scores = x
+    class_inds = tf.cast(tf.argmax(classes, axis=-1), tf.float32)
+    scores_inp = tf.reduce_max(scores, -1)
+    selected_inds = tf.image.non_max_suppression(
+        boxes, scores_inp, max_output_size=opt.topk_all, iou_threshold=opt.iou_thres, score_threshold=opt.score_thres)
+    selected_boxes = tf.gather(boxes, selected_inds)
+    padded_boxes = tf.pad(selected_boxes,
+                          paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]], [0, 0]],
+                          mode="CONSTANT", constant_values=0.0)
+    selected_scores = tf.gather(scores_inp, selected_inds)
+    padded_scores = tf.pad(selected_scores,
+                          paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]]],
+                          mode="CONSTANT", constant_values=-1.0)
+    selected_classes = tf.gather(class_inds, selected_inds)
+    padded_classes = tf.pad(selected_classes,
+                          paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]]],
+                          mode="CONSTANT", constant_values=-1.0)
+    valid_detections = tf.shape(selected_inds)[0]
+    return padded_boxes, padded_scores, padded_classes, valid_detections
 
 
 def xywh2xyxy(xywh):
@@ -372,6 +408,7 @@ if __name__ == "__main__":
     parser.add_argument('--ncalib', type=int, default=100, help='number of calibration images')
     parser.add_argument('--tfl-int8', action='store_true', dest='tfl_int8', help='export TFLite int8 model')
     parser.add_argument('--tf-nms', action='store_true', dest='tf_nms', help='TF NMS (without TFLite export)')
+    parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--tf-raw-resize', action='store_true', dest='tf_raw_resize',
                         help='use tf.raw_ops.ResizeNearestNeighbor for resize')
     parser.add_argument('--topk-per-class', type=int, default=100, help='topk per class to keep in NMS')
