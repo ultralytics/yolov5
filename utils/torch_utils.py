@@ -283,16 +283,13 @@ class ModelEMA:
     GPU assignment and distributed training wrappers.
     """
 
-    # when change batch_size, the decay exponential ramp should multiply by max(64/batch_size, 1)
-    # if not, the weights will update so slowly, maybe don't update anymore
-    # the batch_size of pre-trained model is 64
-    def __init__(self, model, batch_size=64, decay=0.9999, updates=0):  
+    def __init__(self, model, decay=0.9999, updates=0):
         # Create EMA
         self.ema = deepcopy(model.module if is_parallel(model) else model).eval()  # FP32 EMA
         # if next(model.parameters()).device.type != 'cpu':
         #     self.ema.half()  # FP16 EMA
         self.updates = updates  # number of EMA updates
-        self.decay = lambda x: decay * (1 - math.exp(-x / (2000*max(64/batch_size, 1))))  # decay exponential ramp (to help early epochs)
+        self.decay = lambda x: decay * (1 - math.exp(-x / 2000))  # decay exponential ramp (to help early epochs)
         for p in self.ema.parameters():
             p.requires_grad_(False)
 
