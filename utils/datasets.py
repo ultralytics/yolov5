@@ -474,9 +474,9 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 nc += nc_f
                 if im_file:
                     x[im_file] = [l, shape, segments]
-                pbar.desc = f"{desc}{nf} found, {nm} missing, {ne} empty, {nc} corrupted"
                 if msg:
                     msgs.append(msg)
+                pbar.desc = f"{desc}{nf} found, {nm} missing, {ne} empty, {nc} corrupted"
 
         pbar.close()
         if msgs:
