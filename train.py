@@ -116,12 +116,14 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     test_path = data_dict['val']
 
     # Freeze
-    freeze = []  # parameter names to freeze (full or partial)
+    freeze = ['model.%s.' % x for x in range(opt.freeze + 1)] if opt.freeze is not None else []  # parameter names to freeze (full or partial)
     for k, v in model.named_parameters():
         v.requires_grad = True  # train all layers
         if any(x in k for x in freeze):
             print('freezing %s' % k)
             v.requires_grad = False
+        elif freeze:
+            print('not freezing %s' % k)
 
     # Optimizer
     nbs = 64  # nominal batch size
@@ -478,6 +480,7 @@ if __name__ == '__main__':
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
+    parser.add_argument('--freeze', type=int, help='freeze layers upto and including layer number')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
