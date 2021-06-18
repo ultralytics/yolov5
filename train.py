@@ -503,9 +503,9 @@ if __name__ == '__main__':
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
     opt = parser.parse_args()
 
-    LOCAL_RANK = int(getattr(os.environ, 'LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
-    RANK = int(getattr(os.environ, 'RANK', -1))
-    WORLD_SIZE = int(getattr(os.environ, 'WORLD_SIZE', 1))
+    LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
+    RANK = int(os.getenv('RANK', -1))
+    WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 
     # Set DDP variables
     set_logging(RANK)

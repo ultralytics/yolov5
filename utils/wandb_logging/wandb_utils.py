@@ -19,7 +19,7 @@ try:
 except ImportError:
     wandb = None
 
-RANK = int(getattr(os.environ, 'RANK', -1))
+RANK = int(os.getenv('RANK', -1))
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
 
