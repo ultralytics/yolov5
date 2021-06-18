@@ -459,7 +459,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                                 name='run_' + wandb_logger.wandb_run.id + '_model',
                                                 aliases=['latest', 'best', 'stripped'])
         wandb_logger.finish_run()
-    else:
+
+    if WORLD_SIZE > 1:
         dist.destroy_process_group()
     torch.cuda.empty_cache()
     return results
