@@ -538,7 +538,7 @@ if __name__ == '__main__':
         assert torch.cuda.device_count() > LOCAL_RANK
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device('cuda', LOCAL_RANK)
-        dist.init_process_group(backend="gloo")  # distributed backend
+        dist.init_process_group(backend="nccl")  # distributed backend
         assert opt.batch_size % WORLD_SIZE == 0, '--batch-size must be multiple of CUDA device count'
         assert not opt.image_weights, '--image-weights argument is not compatible with DDP training'
         opt.batch_size = opt.total_batch_size // WORLD_SIZE
