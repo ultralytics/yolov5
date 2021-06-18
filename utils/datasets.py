@@ -1076,7 +1076,7 @@ def verify_image_label(args):
             if len(l):
                 assert l.shape[1] == 5, 'labels require 5 columns each'
                 assert (l >= 0).all(), 'negative labels'
-                assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels'
+                assert (l[:, 1:] <= 1), 'non-normalized or out of bounds coordinate labels'
                 assert np.unique(l, axis=0).shape[0] == l.shape[0], 'duplicate labels'
             else:
                 ne = 1  # label empty
