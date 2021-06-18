@@ -528,10 +528,10 @@ if __name__ == '__main__':
     # DDP mode
     opt.total_batch_size = opt.batch_size
     device = select_device(opt.device, batch_size=opt.batch_size)
+    print({'RANK': RANK, 'LOCAL_RANK': LOCAL_RANK, 'WORLD_SIZE': WORLD_SIZE})
     if LOCAL_RANK != -1:
         assert torch.cuda.device_count() > LOCAL_RANK
         torch.cuda.set_device(LOCAL_RANK)
-        print({'RANK': RANK, 'LOCAL_RANK': LOCAL_RANK, 'WORLD_SIZE': WORLD_SIZE})
         device = torch.device('cuda', LOCAL_RANK)
         dist.init_process_group(backend="gloo|nccl")  # distributed backend
         assert opt.batch_size % WORLD_SIZE == 0, '--batch-size must be multiple of CUDA device count'
