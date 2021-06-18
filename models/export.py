@@ -144,7 +144,7 @@ def export(weights='./yolov5s.pt',  # weights path
     print(f'\nExport complete ({time.time() - t:.2f}s). Visualize with https://github.com/lutzroeder/netron.')
 
 
-if __name__ == '__main__':
+def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='./yolov5s.pt', help='weights path')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image (height, width)')
@@ -159,7 +159,15 @@ if __name__ == '__main__':
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
     parser.add_argument('--opset-version', type=int, default=12, help='ONNX: opset version')
     opt = parser.parse_args()
+    return opt
+
+
+def main(opt):
     print(opt)
     set_logging()
-
     export(**vars(opt))
+
+
+if __name__ == "__main__":
+    opt = parse_opt()
+    main(opt)
