@@ -532,7 +532,7 @@ def main(opt):
     device = select_device(opt.device, batch_size=opt.batch_size)
     if LOCAL_RANK != -1:
         from datetime import timedelta
-        assert torch.cuda.device_count() > LOCAL_RANK, 'too few GPUS for DDP command'
+        assert torch.cuda.device_count() > LOCAL_RANK, 'insufficient CUDA devices for DDP command'
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device('cuda', LOCAL_RANK)
         dist.init_process_group(backend="gloo", timeout=timedelta(seconds=60))
