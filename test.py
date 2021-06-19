@@ -51,7 +51,6 @@ def test(data,
         device = next(model.parameters()).device  # get model device
 
     else:  # called directly
-        set_logging()
         device = select_device(device, batch_size=batch_size)
 
         # Directories
@@ -323,7 +322,8 @@ def parse_opt():
 
 
 def main(opt):
-    print(opt)
+    set_logging()
+    print(colorstr('test: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
     check_requirements(exclude=('tensorboard', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
