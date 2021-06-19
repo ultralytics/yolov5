@@ -460,8 +460,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                                 aliases=['latest', 'best', 'stripped'])
         wandb_logger.finish_run()
 
-    if WORLD_SIZE > 1:
-        dist.destroy_process_group()
     torch.cuda.empty_cache()
     return results
 
@@ -549,6 +547,10 @@ def main(opt):
     logger.info(opt)
     if not opt.evolve:
         train(opt.hyp, opt, device)
+        if WORLD_SIZE > 1:
+            print('WORLD_SIZE > 1, destroying...')
+            dist.destroy_process_group()
+            print('WORLD_SIZE > 1, done destroying.')
 
     # Evolve hyperparameters (optional)
     else:
