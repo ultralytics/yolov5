@@ -163,8 +163,8 @@ def parse_opt():
 
 
 def main(opt):
-    print(opt)
     set_logging()
+    print(colorstr('export: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
     export(**vars(opt))
 
 
