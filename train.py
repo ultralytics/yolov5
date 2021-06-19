@@ -535,10 +535,11 @@ def main(opt):
     device = select_device(opt.device, batch_size=opt.batch_size)
     print({'RANK': RANK, 'LOCAL_RANK': LOCAL_RANK, 'WORLD_SIZE': WORLD_SIZE})
     if LOCAL_RANK != -1:
+        from datetime import timedelta
         assert torch.cuda.device_count() > LOCAL_RANK, 'too few GPUS for DDP command'
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device('cuda', LOCAL_RANK)
-        dist.init_process_group(backend="nccl")  # distributed backend
+        dist.init_process_group(backend="gloo", timeout=timedelta(seconds=10))  # distributed backend
         assert opt.batch_size % WORLD_SIZE == 0, '--batch-size must be multiple of CUDA device count'
         assert not opt.image_weights, '--image-weights argument is not compatible with DDP training'
         opt.batch_size = opt.total_batch_size // WORLD_SIZE
