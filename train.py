@@ -547,7 +547,7 @@ def main(opt):
     logger.info(opt)
     if not opt.evolve:
         train(opt.hyp, opt, device)
-        if WORLD_SIZE > 1:
+        if WORLD_SIZE > 1 and RANK == 0:
             _ = [print('Destroying process group... ', end=''), dist.destroy_process_group(), print('Done.')]
 
     # Evolve hyperparameters (optional)
