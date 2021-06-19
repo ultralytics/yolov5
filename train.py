@@ -548,9 +548,7 @@ def main(opt):
     if not opt.evolve:
         train(opt.hyp, opt, device)
         if WORLD_SIZE > 1:
-            print('WORLD_SIZE > 1, destroying...')
-            dist.destroy_process_group()
-            print('WORLD_SIZE > 1, done destroying.')
+            _ = [print('Destroying process group... ', end=''), dist.destroy_process_group(), print('Done.')]
 
     # Evolve hyperparameters (optional)
     else:
