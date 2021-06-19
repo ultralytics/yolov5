@@ -466,7 +466,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     return results
 
 
-if __name__ == '__main__':
+def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
@@ -503,6 +503,9 @@ if __name__ == '__main__':
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
     opt = parser.parse_args()
 
+
+def main(opt):
+    print(opt)
     set_logging(RANK)
     if RANK in [-1, 0]:
         check_git_status()
@@ -626,3 +629,8 @@ if __name__ == '__main__':
         plot_evolution(yaml_file)
         print(f'Hyperparameter evolution complete. Best results saved as: {yaml_file}\n'
               f'Command to train a new model with these hyperparameters: $ python train.py --hyp {yaml_file}')
+
+
+if __name__ == "__main__":
+    opt = parse_opt()
+    main(opt)
