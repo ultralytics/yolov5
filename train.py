@@ -91,8 +91,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         run_id = torch.load(weights).get('wandb_id') if weights.endswith('.pt') and os.path.isfile(weights) else None
         wandb_logger = WandbLogger(opt, save_dir.stem, run_id, data_dict)
         loggers['wandb'] = wandb_logger.wandb
-        data_dict = wandb_logger.data_dict
         if loggers['wandb']:
+            data_dict = wandb_logger.data_dict
             weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp  # may update weights, epochs if resuming
 
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
