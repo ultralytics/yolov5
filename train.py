@@ -507,7 +507,7 @@ def parse_opt():
 def main(opt):
     set_logging(RANK)
     if RANK in [-1, 0]:
-        print(opt)
+        print(colorstr('train: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
         check_git_status()
         check_requirements(exclude=['thop'])
 
@@ -544,7 +544,6 @@ def main(opt):
         opt.batch_size = opt.total_batch_size // WORLD_SIZE
 
     # Train
-    logger.info(opt)
     if not opt.evolve:
         train(opt.hyp, opt, device)
         if WORLD_SIZE > 1 and RANK == 0:
