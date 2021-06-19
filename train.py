@@ -505,9 +505,9 @@ def parse_opt():
 
 
 def main(opt):
-    print(opt)
     set_logging(RANK)
     if RANK in [-1, 0]:
+        print(opt)
         check_git_status()
         check_requirements(exclude=['thop'])
 
