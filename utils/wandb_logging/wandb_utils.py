@@ -1,5 +1,6 @@
 """Utilities and tools for tracking runs with Weights & Biases."""
 import logging
+import os
 import sys
 from contextlib import contextmanager
 from pathlib import Path
@@ -18,6 +19,7 @@ try:
 except ImportError:
     wandb = None
 
+RANK = int(os.getenv('RANK', -1))
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
 
@@ -42,10 +44,10 @@ def get_run_info(run_path):
 
 
 def check_wandb_resume(opt):
-    process_wandb_config_ddp_mode(opt) if opt.global_rank not in [-1, 0] else None
+    process_wandb_config_ddp_mode(opt) if RANK not in [-1, 0] else None
     if isinstance(opt.resume, str):
         if opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
-            if opt.global_rank not in [-1, 0]:  # For resuming DDP runs
+            if RANK not in [-1, 0]:  # For resuming DDP runs
                 entity, project, run_id, model_artifact_name = get_run_info(opt.resume)
                 api = wandb.Api()
                 artifact = api.artifact(entity + '/' + project + '/' + model_artifact_name + ':latest')

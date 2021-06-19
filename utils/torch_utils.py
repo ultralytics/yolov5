@@ -13,6 +13,7 @@ from pathlib import Path
 
 import torch
 import torch.backends.cudnn as cudnn
+import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
@@ -30,10 +31,10 @@ def torch_distributed_zero_first(local_rank: int):
     Decorator to make all processes in distributed training wait for each local_master to do something.
     """
     if local_rank not in [-1, 0]:
-        torch.distributed.barrier()
+        dist.barrier()
     yield
     if local_rank == 0:
-        torch.distributed.barrier()
+        dist.barrier()
 
 
 def init_torch_seeds(seed=0):
