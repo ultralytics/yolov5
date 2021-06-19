@@ -47,9 +47,10 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           device,
           ):
     save_dir, epochs, batch_size, weights, single_cls = \
-        Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls
+        opt.save_dir, opt.epochs, opt.batch_size, opt.weights, opt.single_cls
 
     # Directories
+    save_dir = Path(save_dir)
     wdir = save_dir / 'weights'
     wdir.mkdir(parents=True, exist_ok=True)  # make dir
     last = wdir / 'last.pt'
