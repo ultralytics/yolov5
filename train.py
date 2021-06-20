@@ -468,7 +468,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     return results
 
 
-def parse_opt():
+def parse_opt(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
@@ -504,7 +504,7 @@ def parse_opt():
     parser.add_argument('--save_period', type=int, default=-1, help='Log model after every "save_period" epoch')
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
-    opt = parser.parse_args()
+    opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
 
@@ -632,6 +632,14 @@ def main(opt):
         plot_evolution(yaml_file)
         print(f'Hyperparameter evolution complete. Best results saved as: {yaml_file}\n'
               f'Command to train a new model with these hyperparameters: $ python train.py --hyp {yaml_file}')
+
+
+def run(**kwargs):
+    # Usage: import train; train.run(imgsz=320, weights='yolov5m.pt')
+    opt = parse_opt(True)
+    for k, v in kwargs.items():
+        setattr(opt, k, v)
+    main(opt)
 
 
 if __name__ == "__main__":
