@@ -337,12 +337,12 @@ def main(opt):
     check_requirements(exclude=('tensorboard', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
-        test(**vars(opt))
+        run(**vars(opt))
 
     elif opt.task == 'speed':  # speed benchmarks
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
-            test(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
-                 save_json=False, plots=False)
+            run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
+                save_json=False, plots=False)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         # python test.py --task study --data coco.yaml --iou 0.7 --weights yolov5s.pt yolov5m.pt yolov5l.pt yolov5x.pt
@@ -352,8 +352,8 @@ def main(opt):
             y = []  # y axis
             for i in x:  # img-size
                 print(f'\nRunning {f} point {i}...')
-                r, _, t = test(opt.data, weights=w, batch_size=opt.batch_size, imgsz=i, conf_thres=opt.conf_thres,
-                               iou_thres=opt.iou_thres, save_json=opt.save_json, plots=False)
+                r, _, t = run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=i, conf_thres=opt.conf_thres,
+                              iou_thres=opt.iou_thres, save_json=opt.save_json, plots=False)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')

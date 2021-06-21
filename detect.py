@@ -214,7 +214,7 @@ def parse_opt():
 def main(opt):
     print(colorstr('detect: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
     check_requirements(exclude=('tensorboard', 'thop'))
-    detect(**vars(opt))
+    run(**vars(opt))
 
 
 if __name__ == "__main__":
