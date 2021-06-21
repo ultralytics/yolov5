@@ -29,32 +29,32 @@ from utils.torch_utils import select_device, time_synchronized
 
 
 @torch.no_grad()
-def test(data,
-         weights=None,  # model.pt path(s)
-         batch_size=32,  # batch size
-         imgsz=640,  # inference size (pixels)
-         conf_thres=0.001,  # confidence threshold
-         iou_thres=0.6,  # NMS IoU threshold
-         task='val',  # train, val, test, speed or study
-         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-         single_cls=False,  # treat as single-class dataset
-         augment=False,  # augmented inference
-         verbose=False,  # verbose output
-         save_txt=False,  # save results to *.txt
-         save_hybrid=False,  # save label+prediction hybrid results to *.txt
-         save_conf=False,  # save confidences in --save-txt labels
-         save_json=False,  # save a cocoapi-compatible JSON results file
-         project='runs/test',  # save to project/name
-         name='exp',  # save to project/name
-         exist_ok=False,  # existing project/name ok, do not increment
-         half=True,  # use FP16 half-precision inference
-         model=None,
-         dataloader=None,
-         save_dir=Path(''),
-         plots=True,
-         wandb_logger=None,
-         compute_loss=None,
-         ):
+def run(data,
+        weights=None,  # model.pt path(s)
+        batch_size=32,  # batch size
+        imgsz=640,  # inference size (pixels)
+        conf_thres=0.001,  # confidence threshold
+        iou_thres=0.6,  # NMS IoU threshold
+        task='val',  # train, val, test, speed or study
+        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        single_cls=False,  # treat as single-class dataset
+        augment=False,  # augmented inference
+        verbose=False,  # verbose output
+        save_txt=False,  # save results to *.txt
+        save_hybrid=False,  # save label+prediction hybrid results to *.txt
+        save_conf=False,  # save confidences in --save-txt labels
+        save_json=False,  # save a cocoapi-compatible JSON results file
+        project='runs/test',  # save to project/name
+        name='exp',  # save to project/name
+        exist_ok=False,  # existing project/name ok, do not increment
+        half=True,  # use FP16 half-precision inference
+        model=None,
+        dataloader=None,
+        save_dir=Path(''),
+        plots=True,
+        wandb_logger=None,
+        compute_loss=None,
+        ):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py

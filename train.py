@@ -99,7 +99,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         # W&B
         opt.hyp = hyp  # add hyperparameters
         run_id = torch.load(weights).get('wandb_id') if weights.endswith('.pt') and os.path.isfile(weights) else None
-        run_id = run_id if opt.resume else None # start fresh run if transfer learning
+        run_id = run_id if opt.resume else None  # start fresh run if transfer learning
         wandb_logger = WandbLogger(opt, save_dir.stem, run_id, data_dict)
         loggers['wandb'] = wandb_logger.wandb
         if loggers['wandb']:
@@ -385,18 +385,18 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             final_epoch = epoch + 1 == epochs
             if not notest or final_epoch:  # Calculate mAP
                 wandb_logger.current_epoch = epoch + 1
-                results, maps, _ = test.test(data_dict,
-                                             batch_size=batch_size // WORLD_SIZE * 2,
-                                             imgsz=imgsz_test,
-                                             model=ema.ema,
-                                             single_cls=single_cls,
-                                             dataloader=testloader,
-                                             save_dir=save_dir,
-                                             save_json=is_coco and final_epoch,
-                                             verbose=nc < 50 and final_epoch,
-                                             plots=plots and final_epoch,
-                                             wandb_logger=wandb_logger,
-                                             compute_loss=compute_loss)
+                results, maps, _ = test.run(data_dict,
+                                            batch_size=batch_size // WORLD_SIZE * 2,
+                                            imgsz=imgsz_test,
+                                            model=ema.ema,
+                                            single_cls=single_cls,
+                                            dataloader=testloader,
+                                            save_dir=save_dir,
+                                            save_json=is_coco and final_epoch,
+                                            verbose=nc < 50 and final_epoch,
+                                            plots=plots and final_epoch,
+                                            wandb_logger=wandb_logger,
+                                            compute_loss=compute_loss)
 
             # Write
             with open(results_file, 'a') as f:
@@ -453,17 +453,17 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         if not evolve:
             if is_coco:  # COCO dataset
                 for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
-                    results, _, _ = test.test(data,
-                                              batch_size=batch_size // WORLD_SIZE * 2,
-                                              imgsz=imgsz_test,
-                                              conf_thres=0.001,
-                                              iou_thres=0.7,
-                                              model=attempt_load(m, device).half(),
-                                              single_cls=single_cls,
-                                              dataloader=testloader,
-                                              save_dir=save_dir,
-                                              save_json=True,
-                                              plots=False)
+                    results, _, _ = test.run(data,
+                                             batch_size=batch_size // WORLD_SIZE * 2,
+                                             imgsz=imgsz_test,
+                                             conf_thres=0.001,
+                                             iou_thres=0.7,
+                                             model=attempt_load(m, device).half(),
+                                             single_cls=single_cls,
+                                             dataloader=testloader,
+                                             save_dir=save_dir,
+                                             save_json=True,
+                                             plots=False)
 
             # Strip optimizers
             for f in last, best:
