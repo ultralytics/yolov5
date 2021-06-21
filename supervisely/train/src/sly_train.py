@@ -74,8 +74,9 @@ def train(api: sly.Api, task_id, context, state, app_logger):
         upload_artifacts(g.local_artifacts_dir, g.remote_artifacts_dir)
         set_task_output()
     except Exception as e:
-        my_app.show_modal_window(f"Oops! Something went wrong, please try again or contact tech support. "
-                                 f"Find more info in the app logs. Error: {repr(e)}", level="error")
+        msg = f"Oops! Something went wrong, please try again or contact tech support. Find more info in the app logs. Error: {repr(e)}"
+        sly.logger.error(msg, exc_info=True, extra={ 'exc_str': str(e)})
+        my_app.show_modal_window(msg, level="error")
         api.app.set_field(task_id, "state.started", False)
 
     # stop application
