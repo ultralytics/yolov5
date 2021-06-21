@@ -1,8 +1,15 @@
+"""Train a YOLOv5 model on a custom dataset
+
+Usage:
+    $ python path/to/train.py --data coco128.yaml --weights yolov5s.pt --img 640
+"""
+
 import argparse
 import logging
 import math
 import os
 import random
+import sys
 import time
 import warnings
 from copy import deepcopy
@@ -21,6 +28,9 @@ from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+
+FILE = Path(__file__).absolute()
+sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
 import test  # for end-of-epoch mAP
 from models.experimental import attempt_load

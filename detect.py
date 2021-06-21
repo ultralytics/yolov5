@@ -1,10 +1,20 @@
+"""Run inference with a YOLOv5 model on images, videos, directories, streams
+
+Usage:
+    $ python path/to/detect.py --source path/to/img.jpg --weights yolov5s.pt --img 640
+"""
+
 import argparse
+import sys
 import time
 from pathlib import Path
 
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
+
+FILE = Path(__file__).absolute()
+sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages

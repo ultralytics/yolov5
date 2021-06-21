@@ -1,6 +1,13 @@
+"""Test a trained YOLOv5 model's accuracy on a custom dataset
+
+Usage:
+    $ python path/to/test.py --data coco128.yaml --weights yolov5s.pt --img 640
+"""
+
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 from threading import Thread
 
@@ -8,6 +15,9 @@ import numpy as np
 import torch
 import yaml
 from tqdm import tqdm
+
+FILE = Path(__file__).absolute()
+sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
 from models.experimental import attempt_load
 from utils.datasets import create_dataloader
