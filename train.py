@@ -89,6 +89,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         # W&B
         opt.hyp = hyp  # add hyperparameters
         run_id = torch.load(weights).get('wandb_id') if weights.endswith('.pt') and os.path.isfile(weights) else None
+        run_id = run_id if opt.resume else None # start fresh run if transfer learning
         wandb_logger = WandbLogger(opt, save_dir.stem, run_id, data_dict)
         loggers['wandb'] = wandb_logger.wandb
         if loggers['wandb']:
