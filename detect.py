@@ -1,10 +1,20 @@
+"""Run inference with a YOLOv5 model on images, videos, directories, streams
+
+Usage:
+    $ python path/to/detect.py --source path/to/img.jpg --weights yolov5s.pt --img 640
+"""
+
 import argparse
+import sys
 import time
 from pathlib import Path
 
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
+
+FILE = Path(__file__).absolute()
+sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
@@ -15,30 +25,30 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
 @torch.no_grad()
-def detect(weights='yolov5s.pt',  # model.pt path(s)
-           source='data/images',  # file/dir/URL/glob, 0 for webcam
-           imgsz=640,  # inference size (pixels)
-           conf_thres=0.25,  # confidence threshold
-           iou_thres=0.45,  # NMS IOU threshold
-           max_det=1000,  # maximum detections per image
-           device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-           view_img=False,  # show results
-           save_txt=False,  # save results to *.txt
-           save_conf=False,  # save confidences in --save-txt labels
-           save_crop=False,  # save cropped prediction boxes
-           nosave=False,  # do not save images/videos
-           classes=None,  # filter by class: --class 0, or --class 0 2 3
-           agnostic_nms=False,  # class-agnostic NMS
-           augment=False,  # augmented inference
-           update=False,  # update all models
-           project='runs/detect',  # save results to project/name
-           name='exp',  # save results to project/name
-           exist_ok=False,  # existing project/name ok, do not increment
-           line_thickness=3,  # bounding box thickness (pixels)
-           hide_labels=False,  # hide labels
-           hide_conf=False,  # hide confidences
-           half=False,  # use FP16 half-precision inference
-           ):
+def run(weights='yolov5s.pt',  # model.pt path(s)
+        source='data/images',  # file/dir/URL/glob, 0 for webcam
+        imgsz=640,  # inference size (pixels)
+        conf_thres=0.25,  # confidence threshold
+        iou_thres=0.45,  # NMS IOU threshold
+        max_det=1000,  # maximum detections per image
+        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        view_img=False,  # show results
+        save_txt=False,  # save results to *.txt
+        save_conf=False,  # save confidences in --save-txt labels
+        save_crop=False,  # save cropped prediction boxes
+        nosave=False,  # do not save images/videos
+        classes=None,  # filter by class: --class 0, or --class 0 2 3
+        agnostic_nms=False,  # class-agnostic NMS
+        augment=False,  # augmented inference
+        update=False,  # update all models
+        project='runs/detect',  # save results to project/name
+        name='exp',  # save results to project/name
+        exist_ok=False,  # existing project/name ok, do not increment
+        line_thickness=3,  # bounding box thickness (pixels)
+        hide_labels=False,  # hide labels
+        hide_conf=False,  # hide confidences
+        half=False,  # use FP16 half-precision inference
+        ):
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://', 'https://'))
@@ -204,7 +214,7 @@ def parse_opt():
 def main(opt):
     print(colorstr('detect: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
     check_requirements(exclude=('tensorboard', 'thop'))
-    detect(**vars(opt))
+    run(**vars(opt))
 
 
 if __name__ == "__main__":

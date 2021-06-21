@@ -1,6 +1,13 @@
+"""Test a trained YOLOv5 model accuracy on a custom dataset
+
+Usage:
+    $ python path/to/test.py --data coco128.yaml --weights yolov5s.pt --img 640
+"""
+
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 from threading import Thread
 
@@ -8,6 +15,9 @@ import numpy as np
 import torch
 import yaml
 from tqdm import tqdm
+
+FILE = Path(__file__).absolute()
+sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
 from models.experimental import attempt_load
 from utils.datasets import create_dataloader
@@ -19,32 +29,32 @@ from utils.torch_utils import select_device, time_synchronized
 
 
 @torch.no_grad()
-def test(data,
-         weights=None,  # model.pt path(s)
-         batch_size=32,  # batch size
-         imgsz=640,  # inference size (pixels)
-         conf_thres=0.001,  # confidence threshold
-         iou_thres=0.6,  # NMS IoU threshold
-         task='val',  # train, val, test, speed or study
-         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-         single_cls=False,  # treat as single-class dataset
-         augment=False,  # augmented inference
-         verbose=False,  # verbose output
-         save_txt=False,  # save results to *.txt
-         save_hybrid=False,  # save label+prediction hybrid results to *.txt
-         save_conf=False,  # save confidences in --save-txt labels
-         save_json=False,  # save a cocoapi-compatible JSON results file
-         project='runs/test',  # save to project/name
-         name='exp',  # save to project/name
-         exist_ok=False,  # existing project/name ok, do not increment
-         half=True,  # use FP16 half-precision inference
-         model=None,
-         dataloader=None,
-         save_dir=Path(''),
-         plots=True,
-         wandb_logger=None,
-         compute_loss=None,
-         ):
+def run(data,
+        weights=None,  # model.pt path(s)
+        batch_size=32,  # batch size
+        imgsz=640,  # inference size (pixels)
+        conf_thres=0.001,  # confidence threshold
+        iou_thres=0.6,  # NMS IoU threshold
+        task='val',  # train, val, test, speed or study
+        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        single_cls=False,  # treat as single-class dataset
+        augment=False,  # augmented inference
+        verbose=False,  # verbose output
+        save_txt=False,  # save results to *.txt
+        save_hybrid=False,  # save label+prediction hybrid results to *.txt
+        save_conf=False,  # save confidences in --save-txt labels
+        save_json=False,  # save a cocoapi-compatible JSON results file
+        project='runs/test',  # save to project/name
+        name='exp',  # save to project/name
+        exist_ok=False,  # existing project/name ok, do not increment
+        half=True,  # use FP16 half-precision inference
+        model=None,
+        dataloader=None,
+        save_dir=Path(''),
+        plots=True,
+        wandb_logger=None,
+        compute_loss=None,
+        ):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -327,12 +337,12 @@ def main(opt):
     check_requirements(exclude=('tensorboard', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
-        test(**vars(opt))
+        run(**vars(opt))
 
     elif opt.task == 'speed':  # speed benchmarks
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
-            test(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
-                 save_json=False, plots=False)
+            run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
+                save_json=False, plots=False)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         # python test.py --task study --data coco.yaml --iou 0.7 --weights yolov5s.pt yolov5m.pt yolov5l.pt yolov5x.pt
@@ -342,8 +352,8 @@ def main(opt):
             y = []  # y axis
             for i in x:  # img-size
                 print(f'\nRunning {f} point {i}...')
-                r, _, t = test(opt.data, weights=w, batch_size=opt.batch_size, imgsz=i, conf_thres=opt.conf_thres,
-                               iou_thres=opt.iou_thres, save_json=opt.save_json, plots=False)
+                r, _, t = run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=i, conf_thres=opt.conf_thres,
+                              iou_thres=opt.iou_thres, save_json=opt.save_json, plots=False)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')

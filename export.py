@@ -1,7 +1,7 @@
 """Export a YOLOv5 *.pt model to TorchScript, ONNX, CoreML formats
 
 Usage:
-    $ python path/to/models/export.py --weights yolov5s.pt --img 640 --batch 1
+    $ python path/to/export.py --weights yolov5s.pt --img 640 --batch 1
 """
 
 import argparse
@@ -14,7 +14,7 @@ import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
 FILE = Path(__file__).absolute()
-sys.path.append(FILE.parents[1].as_posix())  # add yolov5/ to path
+sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
 from models.common import Conv
 from models.yolo import Detect
@@ -24,19 +24,19 @@ from utils.general import colorstr, check_img_size, check_requirements, file_siz
 from utils.torch_utils import select_device
 
 
-def export(weights='./yolov5s.pt',  # weights path
-           img_size=(640, 640),  # image (height, width)
-           batch_size=1,  # batch size
-           device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-           include=('torchscript', 'onnx', 'coreml'),  # include formats
-           half=False,  # FP16 half-precision export
-           inplace=False,  # set YOLOv5 Detect() inplace=True
-           train=False,  # model.train() mode
-           optimize=False,  # TorchScript: optimize for mobile
-           dynamic=False,  # ONNX: dynamic axes
-           simplify=False,  # ONNX: simplify model
-           opset_version=12,  # ONNX: opset version
-           ):
+def run(weights='./yolov5s.pt',  # weights path
+        img_size=(640, 640),  # image (height, width)
+        batch_size=1,  # batch size
+        device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        include=('torchscript', 'onnx', 'coreml'),  # include formats
+        half=False,  # FP16 half-precision export
+        inplace=False,  # set YOLOv5 Detect() inplace=True
+        train=False,  # model.train() mode
+        optimize=False,  # TorchScript: optimize for mobile
+        dynamic=False,  # ONNX: dynamic axes
+        simplify=False,  # ONNX: simplify model
+        opset_version=12,  # ONNX: opset version
+        ):
     t = time.time()
     include = [x.lower() for x in include]
     img_size *= 2 if len(img_size) == 1 else 1  # expand
@@ -165,7 +165,7 @@ def parse_opt():
 def main(opt):
     set_logging()
     print(colorstr('export: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
-    export(**vars(opt))
+    run(**vars(opt))
 
 
 if __name__ == "__main__":
