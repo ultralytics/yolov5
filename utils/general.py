@@ -136,7 +136,7 @@ def check_git_status(err_msg=', for updates see https://github.com/ultralytics/y
         print(f'{e}{err_msg}')
 
 
-def check_python(minimum='3.7.0', required=True):
+def check_python(minimum='3.6.2', required=True):
     # Check current python version vs. required python version
     current = platform.python_version()
     result = pkg.parse_version(current) >= pkg.parse_version(minimum)
@@ -206,9 +206,9 @@ def check_file(file):
     file = str(file)  # convert to str()
     if Path(file).is_file() or file == '':  # exists
         return file
-    elif file.startswith(('http://', 'https://')):  # download
-        url, file = file, Path(urllib.parse.unquote(str(file))).name  # url, file (decode '%2F' to '/' etc.)
-        file = file.split('?')[0]  # parse authentication https://url.com/file.txt?auth...
+    elif file.startswith(('http:/', 'https:/')):  # download
+        url = str(Path(file)).replace(':/', '://')  # Pathlib turns :// -> :/
+        file = Path(urllib.parse.unquote(file)).name.split('?')[0]  # '%2F' to '/', split https://url.com/file.txt?auth
         print(f'Downloading {url} to {file}...')
         torch.hub.download_url_to_file(url, file)
         assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
@@ -220,14 +220,14 @@ def check_file(file):
         return files[0]  # return file
 
 
-def check_dataset(dict):
+def check_dataset(data, autodownload=True):
     # Download dataset if not found locally
-    val, s = dict.get('val'), dict.get('download')
+    val, s = data.get('val'), data.get('download')
     if val and len(val):
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
             print('\nWARNING: Dataset not found, nonexistent paths: %s' % [str(x) for x in val if not x.exists()])
-            if s and len(s):  # download script
+            if s and len(s) and autodownload:  # download script
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
                     print(f'Downloading {s} ...')

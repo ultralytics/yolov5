@@ -10,8 +10,8 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 
-sys.path.append(Path(__file__).parent.parent.absolute().__str__())  # to run '$ python *.py' files in subdirectories
-logger = logging.getLogger(__name__)
+FILE = Path(__file__).absolute()
+sys.path.append(FILE.parents[1].as_posix())  # add yolov5/ to path
 
 from models.common import *
 from models.experimental import *
@@ -24,6 +24,8 @@ try:
     import thop  # for FLOPs computation
 except ImportError:
     thop = None
+
+logger = logging.getLogger(__name__)
 
 
 class Detect(nn.Module):
