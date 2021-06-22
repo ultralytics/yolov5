@@ -67,7 +67,7 @@ def copy_to_module():
     print(f"Changed {len(lines_changed)} lines to accommodate for imports.")
 
 
-with open("README.md", "r") as fh:
+with open("README.md", "r", encoding="utf8") as fh:
     long_description = fh.read()
 
 with pathlib.Path('requirements.txt').open() as requirements_txt:
