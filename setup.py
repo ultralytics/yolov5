@@ -84,7 +84,7 @@ setuptools.setup(
     name=MODULE_NAME,
     version=VERSION,
     author="Nanovare SAS",
-    author_email="vincent@nanovare.com, robin@nanovare.com",
+    author_email="vincent@mojofertility.co, robin@mojofertility.co",
     description="yolov5 modifications for Nanovare SAS",
     long_description=long_description,
     long_description_content_type="text/markdown",
