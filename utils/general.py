@@ -223,16 +223,17 @@ def check_file(file):
 def check_dataset(data, autodownload=True):
     # Download dataset if not found locally
     val, s = data.get('val'), data.get('download')
-    if val and len(val):
+    if val:
+        root = Path(val).parts[0] + os.sep  # unzip directory i.e. '../'
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
             print('\nWARNING: Dataset not found, nonexistent paths: %s' % [str(x) for x in val if not x.exists()])
-            if s and len(s) and autodownload:  # download script
+            if s and autodownload:  # download script
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
                     print(f'Downloading {s} ...')
                     torch.hub.download_url_to_file(s, f)
-                    r = os.system(f'unzip -q {f} -d ../ && rm {f}')  # unzip
+                    r = os.system(f'unzip -q {f} -d {root} && rm {f}')  # unzip
                 elif s.startswith('bash '):  # bash script
                     print(f'Running {s} ...')
                     r = os.system(s)
