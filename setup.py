@@ -6,6 +6,7 @@ from pkg_resources import parse_requirements
 import shutil
 
 MODULE_NAME = "nanovare_yolov5"
+VERSION = "0.2.0"
 
 
 def copy_to_module():
@@ -13,25 +14,32 @@ def copy_to_module():
     module_root_path = current_path / MODULE_NAME
     module_root_path = module_root_path.relative_to(current_path)
 
+    # Delete folder where we we will create build
     if module_root_path.is_dir():
         shutil.rmtree(module_root_path)
 
     modules_moved = []
-    python_files = list(current_path.glob("**/*.py"))
+    python_files = current_path.rglob("*.py")
+    python_files = list(filter(lambda x: (".venv" not in x.parts) and x.stem != "__init__", python_files))
+
     for python_file_path in python_files:
         python_file_path = python_file_path.relative_to(current_path)
-        if str(python_file_path) == "setup.py" or python_file_path.stem == "__init__":
+        if str(python_file_path) == "setup.py":
             continue
         new_path = module_root_path / python_file_path
-        modules_moved.append(".".join((list(map(str,python_file_path.parents))[::-1][1:] + [python_file_path.stem])))
+        modules_moved.append(".".join((list(map(str, python_file_path.parents))[::-1][1:] + [python_file_path.stem])))
         if not new_path.parent.is_dir():
             new_path.parent.mkdir(parents=True, exist_ok=True)
-            # make an init
+
             init_file = new_path.parent / "__init__.py"
-            init_file.touch()
+            # Make __init__ files and put the __version__ in the root __init__
+            if init_file.parent.stem == MODULE_NAME:
+                with init_file.open("w")as f:
+                    f.write(f"__version__ = {VERSION}")
+            else:
+                init_file.touch()
 
         shutil.copyfile(python_file_path, new_path)
-
 
     # Rename modules
     strings_to_replace = {}
@@ -74,10 +82,10 @@ modules = setuptools.find_packages(include=[MODULE_NAME, f"{MODULE_NAME}.*"])
 
 setuptools.setup(
     name=MODULE_NAME,
-    version="0.1.0",
-    author="nanovare",
+    version=VERSION,
+    author="Nanovare SAS",
     author_email="vincent@nanovare.com, robin@nanovare.com",
-    description="yolov5 modifications for nanovare",
+    description="yolov5 modifications for Nanovare SAS",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/robin-maillot/yolov5",
