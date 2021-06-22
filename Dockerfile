@@ -1,6 +1,7 @@
 # Start FROM Nvidia PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
 FROM nvcr.io/nvidia/pytorch:21.05-py3
 
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg  add - && apt-get update -y && apt-get install google-cloud-sdk -y
 # Install linux packages
 RUN apt update && apt install -y zip htop screen libgl1-mesa-glx
 
@@ -9,6 +10,12 @@ COPY requirements.txt .
 RUN python -m pip install --upgrade pip
 RUN pip uninstall -y nvidia-tensorboard nvidia-tensorboard-plugin-dlprof
 RUN pip install --no-cache -r requirements.txt coremltools onnx gsutil notebook
+RUN pip install google-cloud-storage==1.29.0
+RUN pip install google-api-python-client==1.8.0
+RUN pip install wandb
+
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get install -y python3-opencv
 RUN pip install --no-cache -U torch torchvision
 
 # Create working directory
