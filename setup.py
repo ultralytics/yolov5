@@ -35,7 +35,7 @@ def copy_to_module():
             # Make __init__ files and put the __version__ in the root __init__
             if init_file.parent.stem == MODULE_NAME:
                 with init_file.open("w")as f:
-                    f.write(f"__version__ = {VERSION}")
+                    f.write(f"__version__ = \"{VERSION}\"")
             else:
                 init_file.touch()
 
