@@ -43,7 +43,7 @@ def run(weights='./yolov5s.pt',  # weights path
 
     # Load PyTorch model
     device = select_device(device)
-    assert not (device.type == 'cpu' and opt.half), '--half only compatible with GPU export, i.e. use --device 0'
+    assert not (device.type == 'cpu' and half), '--half only compatible with GPU export, i.e. use --device 0'
     model = attempt_load(weights, map_location=device)  # load FP32 model
     labels = model.names
 
