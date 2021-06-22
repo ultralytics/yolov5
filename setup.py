@@ -6,7 +6,7 @@ from pkg_resources import parse_requirements
 import shutil
 
 MODULE_NAME = "nanovare_yolov5"
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 
 
 def copy_to_module():
@@ -45,7 +45,8 @@ def copy_to_module():
     strings_to_replace = {}
     for module_name in modules_moved:
         strings_to_replace[f"from {module_name} "] = f"from {MODULE_NAME}.{module_name} "
-        strings_to_replace[f"import {module_name}"] = f"import {MODULE_NAME}.{module_name} "
+        # TODO handle cases for "import module_name as"
+        strings_to_replace[f"import {module_name}"] = f"import {MODULE_NAME}.{module_name} as {module_name}"
     strings_to_search_for = tuple(strings_to_replace)
     new_python_files = list(module_root_path.glob("**/*.py"))
     lines_changed = []
@@ -58,7 +59,10 @@ def copy_to_module():
                     lines_changed.append(line)
                     for key in strings_to_search_for:
                         if line.startswith(key):
+                            print(line.rstrip())
                             line = line.replace(key, strings_to_replace[key], 1)
+                            print(line.rstrip())
+                            print()
                 data.append(line)
         with python_file_path.open("w") as f:
             for line in data:
