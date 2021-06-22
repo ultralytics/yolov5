@@ -6,7 +6,7 @@ from pkg_resources import parse_requirements
 import shutil
 
 MODULE_NAME = "nanovare_yolov5"
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 
 
 def copy_to_module():
