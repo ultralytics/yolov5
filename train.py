@@ -54,9 +54,11 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 
 
 def get_step_condition(nw, accumulate):
+    "Supports gradient accumulation and warmup for `nw` iterations"
     nw, accumulate = int(nw), int(accumulate)
     
     def acc(ni):
+        "Ramp up number of accumulated grads from 1 to `accumulate`"
         return int(1 + (accumulate - 1) / nw * ni)
     
     warmup_steps, ni = [], nw - 1
