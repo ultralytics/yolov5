@@ -39,6 +39,7 @@ def create_checkpoint(epoch, model, optimizer, ema, sparseml_wrapper, **kwargs):
             'model': ckpt_model,
             'optimizer': optimizer.state_dict(),
             'yaml': yaml,
+            'hyp': model.hyp,
             **ema.state_dict(pickle),
             **sparseml_wrapper.state_dict(),
             **kwargs}
@@ -53,13 +54,16 @@ def load_checkpoint(type_, weights, device, cfg=None, hyp=None, nc=None, recipe=
 
     if pickled and type_ == 'ensemble':
         # load ensemble using pickled
-        cfg = None
+        hyp = ckpt['model'].hyp
+        cfg = ckpt['model'].yaml
         model = attempt_load(weights, map_location=device)  # load FP32 model
         state_dict = model.state_dict()
     else:
         # load model from config and weights
         cfg = cfg or (ckpt['yaml'] if 'yaml' in ckpt else None) or \
               (ckpt['model'].yaml if pickled else None)
+        hyp = hyp or (ckpt['hyp'] if 'hyp' in ckpt else None) or \
+              (ckpt['model'].hyp if pickled else None)
         model = Model(cfg, ch=3, nc=ckpt['nc'] if ('nc' in ckpt and not nc) else nc,
                       anchors=hyp.get('anchors') if hyp else None).to(device)
         model_key = 'ema' if (type_ in ['ema', 'ensemble'] and 'ema' in ckpt and ckpt['ema']) else 'model'
@@ -90,6 +94,8 @@ def load_checkpoint(type_, weights, device, cfg=None, hyp=None, nc=None, recipe=
 
     return model, {
         'ckpt': ckpt,
+        'cfg': cfg,
+        'hyp': hyp,
         'state_dict': state_dict,
         'start_epoch': start_epoch,
         'sparseml_wrapper': sparseml_wrapper,
