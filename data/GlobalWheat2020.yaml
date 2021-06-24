@@ -8,7 +8,7 @@
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
 path: ../datasets/GlobalWheat2020  # dataset root dir
-train: # 3422 images
+train: # train images (relative to 'path') 3422 images
   - images/arvalis_1
   - images/arvalis_2
   - images/arvalis_3
@@ -16,9 +16,9 @@ train: # 3422 images
   - images/rres_1
   - images/inrae_1
   - images/usask_1
-val: # 748 images (WARNING: train set contains ethz_1)
+val: # val images (relative to 'path') 748 images (WARNING: train set contains ethz_1)
   - images/ethz_1
-test: # 1276 images
+test: # test images (optional) 1276 images
   - images/utokyo_1
   - images/utokyo_2
   - images/nau_1
