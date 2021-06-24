@@ -19,4 +19,47 @@ names: [ 'person',  'bicycle',  'car',  'motorcycle',  'bus',  'truck',  'traffi
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
-  pass
+  import json
+  from utils.general import download, os, Path
+
+
+  def argoverse2yolo(set):
+      print("Converting {set} to YOLOv5 format...")
+      a = json.load(open(set, "rb"))
+
+      label_dict = {}
+      for annot in a['annotations']:
+          img_id = annot['image_id']
+          img_name = a['images'][img_id]['name']
+          img_label_name = img_name[:-3] + "txt"
+
+          cls = annot['category_id']  # instance class id
+          x_center, y_center, width, height = annot['bbox']
+          x_center = (x_center + width / 2) / 1920.  # offset and scale
+          y_center = (y_center + height / 2) / 1200.  # offset and scale
+          width /= 1920.  # scale
+          height /= 1200.  # scale
+
+          img_dir = "./labels/" + a['seq_dirs'][a['images'][annot['image_id']]['sid']]
+
+          Path(img_dir).mkdir(parents=True, exist_ok=True)
+          if img_dir + "/" + img_label_name not in label_dict:
+              label_dict[img_dir + "/" + img_label_name] = []
+
+          label_dict[img_dir + "/" + img_label_name].append(f"{cls} {x_center} {y_center} {width} {height}\n")
+
+      for filename in label_dict:
+          with open(filename, "w") as file:
+              for string in label_dict[filename]:
+                  file.write(string)
+
+
+  # Download
+  dir = Path('../datasets/Argoverse')  # dataset root dir
+  urls = ['https://argoverse-hd.s3.us-east-2.amazonaws.com/Argoverse-HD-Full.zip']
+  download(urls, dir=dir)
+
+  # Convert
+  annotations_dir = 'Argoverse-1.1/Argoverse-HD/annotations/'
+  for d in "train.json", "val.json":
+      argoverse2yolo(dir / annotations_dir / d)  # convert VisDrone annotations to YOLO labels
