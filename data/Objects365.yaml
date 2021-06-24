@@ -1,13 +1,13 @@
 # Objects365 dataset https://www.objects365.org/
-# Train command: python train.py --data objects365.yaml
+# Train command: python train.py --data Objects365.yaml
 # Default dataset location is next to YOLOv5:
 #   /parent
-#     /datasets/objects365
+#     /datasets/Objects365
 #     /yolov5
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-path: ../datasets/objects365  # dataset root dir
+path: ../datasets/Objects365  # dataset root dir
 train: images/train  # train images (relative to 'path') 1742289 images
 val: images/val # val images (relative to 'path') 5570 images
 test:  # test images (optional)
