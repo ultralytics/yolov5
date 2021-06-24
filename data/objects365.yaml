@@ -7,8 +7,9 @@
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-train: ../datasets/objects365/images/train  # 1742289 images
-val: ../datasets/objects365/images/val # 5570 images
+path: ../datasets/objects365  # dataset root dir
+train: images/train  # train images (relative to 'path') 1742289 images
+val: images/val # val images (relative to 'path') 5570 images
 test:  # test images (optional)
 
 # Classes
@@ -64,7 +65,7 @@ download: |
   from utils.general import download, Path
 
   # Make Directories
-  dir = Path('../datasets/objects365')  # dataset directory
+  dir = Path(yaml['path'])  # dataset root dir
   for p in 'images', 'labels':
       (dir / p).mkdir(parents=True, exist_ok=True)
       for q in 'train', 'val':
