@@ -244,7 +244,7 @@ def check_dataset(data, autodownload=True):
                     print(f'Running {s} ...')
                     r = os.system(s)
                 else:  # python script
-                    r = exec(s)  # return None
+                    r = exec(s, {'yaml': data})  # return None
                 print('Dataset autodownload %s\n' % ('success' if r in (0, None) else 'failure'))  # print result
             else:
                 raise Exception('Dataset not found.')
