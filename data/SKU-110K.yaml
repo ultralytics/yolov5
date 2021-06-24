@@ -17,7 +17,7 @@ nc: 1  # number of classes
 names: [ 'object' ]  # class names
 
 
-# Download command/URL (optional) --------------------------------------------------------------------------------------
+# Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
   import shutil
   from tqdm import tqdm

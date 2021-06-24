@@ -29,7 +29,7 @@ nc: 1  # number of classes
 names: [ 'wheat_head' ]  # class names
 
 
-# Download command/URL (optional) --------------------------------------------------------------------------------------
+# Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
   from utils.general import download, Path
 
@@ -37,7 +37,7 @@ download: |
   dir = Path(yaml['path'])  # dataset root dir
   urls = ['https://zenodo.org/record/4298502/files/global-wheat-codalab-official.zip',
           'https://github.com/ultralytics/yolov5/releases/download/v1.0/GlobalWheat2020_labels.zip']
-  download(urls, dir=dir)
+  download(urls, dir=dir.parent)
 
   # Make Directories
   for p in 'annotations', 'images', 'labels':

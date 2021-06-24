@@ -6,13 +6,11 @@
 #     /yolov5
 
 
-# Download command/URL (optional)
-download: bash data/scripts/get_coco.sh
-
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-train: ../coco/train2017.txt  # 118287 images
-val: ../coco/val2017.txt  # 5000 images
-test: ../coco/test-dev2017.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794
+path: ../coco  # dataset root dir
+train: train2017.txt  # train images (relative to 'path') 118287 images
+val: val2017.txt  # train images (relative to 'path') 5000 images
+test: test-dev2017.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794
 
 # Classes
 nc: 80  # number of classes
@@ -25,3 +23,20 @@ names: [ 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', '
          'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
          'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear',
          'hair drier', 'toothbrush' ]  # class names
+
+
+# Download script/URL (optional) ---------------------------------------------------------------------------------------
+download: |
+  from utils.general import download, Path
+
+  # Download labels
+  dir = Path(yaml['path'])  # dataset root dir
+  urls = ['https://github.com/ultralytics/yolov5/releases/download/v1.0/coco2017labels.zip']  # box labels
+  # urls = ['https://github.com/ultralytics/yolov5/releases/download/v1.0/coco2017labels-segments.zip'] # segment labels
+  download(urls, dir=dir.parent)
+
+  # Download data
+  urls = ['http://images.cocodataset.org/zips/train2017.zip',  # 19G, 118k images
+          'http://images.cocodataset.org/zips/val2017.zip',  # 1G, 5k images
+          'http://images.cocodataset.org/zips/test2017.zip']  # 7G, 41k images (optional)
+  download(urls, dir=dir / 'images', threads=3)

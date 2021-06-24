@@ -2,18 +2,21 @@
 # Train command: python train.py --data argoverse_hd.yaml
 # Default dataset location is next to YOLOv5:
 #   /parent
-#     /argoverse
+#     /datasets/argoverse
 #     /yolov5
 
 
-# Download command/URL (optional)
-download: bash data/scripts/get_argoverse_hd.sh
-
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-train: ../argoverse/Argoverse-1.1/images/train/  # 39384 images
-val: ../argoverse/Argoverse-1.1/images/val/  # 15062 iamges
-test: ../argoverse/Argoverse-1.1/images/test/  # Submit to: https://eval.ai/web/challenges/challenge-page/800/overview
+path: ../datasets/argoverse  # dataset root dir
+train: Argoverse-1.1/images/train/  # train images (relative to 'path') 39384 images
+val: Argoverse-1.1/images/val/  # val images (relative to 'path') 15062 images
+test: Argoverse-1.1/images/test/  # test images (optional) https://eval.ai/web/challenges/challenge-page/800/overview
 
 # Classes
 nc: 8  # number of classes
 names: [ 'person',  'bicycle',  'car',  'motorcycle',  'bus',  'truck',  'traffic_light',  'stop_sign' ]  # class names
+
+
+# Download script/URL (optional) ---------------------------------------------------------------------------------------
+download: |
+  pass

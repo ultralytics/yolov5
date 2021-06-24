@@ -6,9 +6,6 @@
 #     /yolov5
 
 
-# Download command/URL (optional)
-download: bash data/scripts/get_voc.sh
-
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
 train: ../VOC/images/train/  # 16551 images
 val: ../VOC/images/val/  # 4952 images
@@ -18,3 +15,7 @@ test:  # test images (optional)
 nc: 20  # number of classes
 names: [ 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog',
          'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor' ]  # class names
+
+
+# Download script/URL (optional) ---------------------------------------------------------------------------------------
+download: bash data/scripts/get_voc.sh

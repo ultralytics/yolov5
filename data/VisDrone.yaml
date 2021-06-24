@@ -17,7 +17,7 @@ nc: 10  # number of classes
 names: [ 'pedestrian', 'people', 'bicycle', 'car', 'van', 'truck', 'tricycle', 'awning-tricycle', 'bus', 'motor' ]
 
 
-# Download command/URL (optional) --------------------------------------------------------------------------------------
+# Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
   from utils.general import download, os, Path
 

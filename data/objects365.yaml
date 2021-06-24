@@ -57,7 +57,7 @@ names: [ 'Person', 'Sneakers', 'Chair', 'Other Shoes', 'Hat', 'Car', 'Lamp', 'Gl
          'Chainsaw', 'Eraser', 'Lobster', 'Durian', 'Okra', 'Lipstick', 'Cosmetics Mirror', 'Curling', 'Table Tennis' ]
 
 
-# Download command/URL (optional) --------------------------------------------------------------------------------------
+# Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
   from pycocotools.coco import COCO
   from tqdm import tqdm
