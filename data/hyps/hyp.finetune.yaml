@@ -1,5 +1,5 @@
 # Hyperparameters for VOC finetuning
-# python train.py --batch 64 --weights yolov5m.pt --data voc.yaml --img 512 --epochs 50
+# python train.py --batch 64 --weights yolov5m.pt --data VOC.yaml --img 512 --epochs 50
 # See tutorials for hyperparameter evolution https://github.com/ultralytics/yolov5#tutorials
 
 

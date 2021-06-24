@@ -453,7 +453,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         if not evolve:
             if is_coco:  # COCO dataset
                 for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
-                    results, _, _ = test.run(data,
+                    results, _, _ = test.run(data_dict,
                                              batch_size=batch_size // WORLD_SIZE * 2,
                                              imgsz=imgsz_test,
                                              conf_thres=0.001,
