@@ -264,7 +264,7 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
         if unzip and f.suffix in ('.zip', '.gz'):
             print(f'Unzipping {f}...')
             if f.suffix == '.zip':
-                s = f'unzip -qo {f} -d {dir} && rm {f}'  # unzip -quiet -overwrite
+                s = f'unzip -qo {f} -d {dir}'  # unzip -quiet -overwrite
             elif f.suffix == '.gz':
                 s = f'tar xfz {f} --directory {f.parent}'  # unzip
             if delete:  # delete zip file after unzip
