@@ -225,8 +225,8 @@ def check_dataset(data, autodownload=True):
     path = Path(data.get('path', ''))  # optional 'path' field
     if path:
         for k in 'train', 'val', 'test':
-            if k in data:
-                data[k] = str(path / Path(data.get(k, '')))  # prepend path
+            if k in data:  # prepend path
+                data[k] = str(path / data[k]) if isinstance(data[k], str) else [str(path / x) for x in data[k]]
 
     train, val, test, s = [data.get(x) for x in ('train', 'val', 'test', 'download')]
     if val:
