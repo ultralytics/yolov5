@@ -25,7 +25,7 @@ names: [ 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', '
          'hair drier', 'toothbrush' ]  # class names
 
 
-# Download script/URL (optional) ---------------------------------------------------------------------------------------
+# Download script/URL (optional)
 download: |
   from utils.general import download, Path
 
