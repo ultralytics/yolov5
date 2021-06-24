@@ -2,13 +2,14 @@
 # Train command: python train.py --data VOC.yaml
 # Default dataset location is next to YOLOv5:
 #   /parent
-#     /VOC
+#     /datasets/VOC
 #     /yolov5
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-train: ../VOC/images/train/  # 16551 images
-val: ../VOC/images/val/  # 4952 images
+path: ../datasets/VOC
+train: images/train  # train images (relative to 'path')  16551 images
+val: images/val  # val images (relative to 'path')  4952 images
 test:  # test images (optional)
 
 # Classes
@@ -18,4 +19,11 @@ names: [ 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 
 
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
-download: bash data/scripts/get_voc.sh
+download: |
+  # Download
+  dir = Path(yaml['path'])  # dataset root dir
+  url = 'https://github.com/ultralytics/yolov5/releases/download/v1.0/'
+  urls = [url + 'VOCtrainval_06-Nov-2007.zip',  # 446MB, 5012 images
+          url + 'VOCtest_06-Nov-2007.zip',  # 438MB, 4953 images
+          url + 'VOCtrainval_11-May-2012.zip']  # 1.95GB, 17126 images
+  download(urls, dir=dir / 'images', threads=3, delete=False)
