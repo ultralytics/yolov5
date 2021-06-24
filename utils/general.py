@@ -230,7 +230,6 @@ def check_dataset(data, autodownload=True):
 
     train, val, test, s = [data.get(x) for x in ('train', 'val', 'test', 'download')]
     if val:
-        root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
             print('\nWARNING: Dataset not found, nonexistent paths: %s' % [str(x) for x in val if not x.exists()])
@@ -239,6 +238,8 @@ def check_dataset(data, autodownload=True):
                     f = Path(s).name  # filename
                     print(f'Downloading {s} ...')
                     torch.hub.download_url_to_file(s, f)
+                    root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
+                    Path(root).mkdir(parents=True, exist_ok=True)  # create root
                     r = os.system(f'unzip -q {f} -d {root} && rm {f}')  # unzip
                 elif s.startswith('bash '):  # bash script
                     print(f'Running {s} ...')
