@@ -166,8 +166,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Optimizer
     nbs = 64  # nominal batch size
     accumulate = max(int(round(nbs / batch_size)), 1)  # accumulate loss before optimizing
-    nw = round(hyp['warmup_epochs'] * nb)  # number of warmup iterations
-    do_step = get_step_condition(nw, accumulate)
     hyp['weight_decay'] *= batch_size * accumulate / nbs  # scale weight_decay
     logger.info(f"Scaled weight_decay = {hyp['weight_decay']}")
 
@@ -294,6 +292,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # Start training
     t0 = time.time()
+    nw = round(hyp['warmup_epochs'] * nb)  # number of warmup iterations
+    do_step = get_step_condition(nw, accumulate)
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
