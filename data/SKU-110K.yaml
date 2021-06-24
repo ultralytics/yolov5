@@ -1,24 +1,22 @@
 # SKU-110K retail items dataset https://github.com/eg4000/SKU110K_CVPR19
 # Train command: python train.py --data SKU-110K.yaml
 # Default dataset location is next to YOLOv5:
-#   /parent_folder
+#   /parent
 #     /datasets/SKU-110K
 #     /yolov5
 
 
-# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
 train: ../datasets/SKU-110K/train.txt  # 8219 images
 val: ../datasets/SKU-110K/val.txt  # 588 images
 test: ../datasets/SKU-110K/test.txt  # 2936 images
 
-# number of classes
-nc: 1
-
-# class names
-names: [ 'object' ]
+# Classes
+nc: 1  # number of classes
+names: [ 'object' ]  # class names
 
 
-# download command/URL (optional) --------------------------------------------------------------------------------------
+# Download command/URL (optional) --------------------------------------------------------------------------------------
 download: |
   import shutil
   from tqdm import tqdm
