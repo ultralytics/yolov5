@@ -11,7 +11,8 @@ from copy import deepcopy
 from pathlib import Path
 
 FILE = Path(__file__).absolute()
-sys.path.append(FILE.parents[1].as_posix())  # add yolov5/ to path
+# appending pip package root directory to path to support legacy way of running script
+sys.path.append(FILE.parent.parent.parent.as_posix())
 
 from yolov5.models.common import *
 from yolov5.models.experimental import *
