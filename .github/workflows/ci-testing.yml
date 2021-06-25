@@ -69,7 +69,7 @@ jobs:
           # hub
           python hubconf.py
           # inspect
-          # python yolov5/models/yolo.py --cfg ${{ matrix.model }}.yaml
+          python yolov5/models/yolo.py --cfg ${{ matrix.model }}.yaml
           # export
           # python yolov5/export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt
 
