@@ -1,24 +1,23 @@
 # VisDrone2019-DET dataset https://github.com/VisDrone/VisDrone-Dataset
 # Train command: python train.py --data VisDrone.yaml
 # Default dataset location is next to YOLOv5:
-#   /parent_folder
-#     /VisDrone
+#   /parent
+#     /datasets/VisDrone
 #     /yolov5
 
 
-# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
-train: ../VisDrone/VisDrone2019-DET-train/images  # 6471 images
-val: ../VisDrone/VisDrone2019-DET-val/images  # 548 images
-test: ../VisDrone/VisDrone2019-DET-test-dev/images  # 1610 images
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: ../datasets/VisDrone  # dataset root dir
+train: VisDrone2019-DET-train/images  # train images (relative to 'path')  6471 images
+val: VisDrone2019-DET-val/images  # val images (relative to 'path')  548 images
+test: VisDrone2019-DET-test-dev/images  # test images (optional)  1610 images
 
-# number of classes
-nc: 10
-
-# class names
+# Classes
+nc: 10  # number of classes
 names: [ 'pedestrian', 'people', 'bicycle', 'car', 'van', 'truck', 'tricycle', 'awning-tricycle', 'bus', 'motor' ]
 
 
-# download command/URL (optional) --------------------------------------------------------------------------------------
+# Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
   from utils.general import download, os, Path
 
@@ -49,7 +48,7 @@ download: |
 
 
   # Download
-  dir = Path('../VisDrone')  # dataset directory
+  dir = Path(yaml['path'])  # dataset root dir
   urls = ['https://github.com/ultralytics/yolov5/releases/download/v1.0/VisDrone2019-DET-train.zip',
           'https://github.com/ultralytics/yolov5/releases/download/v1.0/VisDrone2019-DET-val.zip',
           'https://github.com/ultralytics/yolov5/releases/download/v1.0/VisDrone2019-DET-test-dev.zip',

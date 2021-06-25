@@ -76,6 +76,11 @@ def run(data,
         # if device.type != 'cpu' and torch.cuda.device_count() > 1:
         #     model = nn.DataParallel(model)
 
+        # Data
+        with open(data) as f:
+            data = yaml.safe_load(f)
+        check_dataset(data)  # check
+
     # Half
     half &= device.type != 'cpu'  # half precision only supported on CUDA
     if half:
@@ -83,10 +88,6 @@ def run(data,
 
     # Configure
     model.eval()
-    if isinstance(data, str):
-        with open(data) as f:
-            data = yaml.safe_load(f)
-    check_dataset(data)  # check
     is_coco = type(data['val']) is str and data['val'].endswith('coco/val2017.txt')  # COCO dataset
     nc = 1 if single_cls else int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
@@ -269,7 +270,7 @@ def run(data,
     # Save JSON
     if save_json and len(jdict):
         w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
-        anno_json = '../coco/annotations/instances_val2017.json'  # annotations json
+        anno_json = str(Path(data.get('path', '../coco')) / 'annotations/instances_val2017.json')  # annotations json
         pred_json = str(save_dir / f"{w}_predictions.json")  # predictions json
         print('\nEvaluating pycocotools mAP... saving %s...' % pred_json)
         with open(pred_json, 'w') as f:
