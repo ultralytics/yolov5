@@ -66,7 +66,7 @@ jobs:
           python yolov5/test.py --img 128 --batch 16 --weights ${{ matrix.model }}.pt --device $INFERENCE_DEVICE
           python yolov5/test.py --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $INFERENCE_DEVICE
 
-          # python hubconf.py  # hub
+          python hubconf.py  # hub
           # python yolov5/models/yolo.py --cfg ${{ matrix.model }}.yaml  # inspect
           # python yolov5/export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt  # export
 
