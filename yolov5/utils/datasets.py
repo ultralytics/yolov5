@@ -27,12 +27,14 @@ from yolov5.utils.general import check_requirements, check_file, check_dataset, 
     xyn2xy, segment2box, segments2boxes, resample_segments, clean_str
 from yolov5.utils.torch_utils import torch_distributed_zero_first
 
-# Parameters
-help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
-img_formats = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
-vid_formats = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
-num_threads = min(8, os.cpu_count())  # number of multiprocessing threads
 logger = logging.getLogger(__name__)
+
+# Parameters
+HELP_URL = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
+SUPPORTED_IMAGE_EXTENSIONS = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
+SUPPORTED_VIDEO_EXTENSIONS = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
+NUM_THREADS = min(8, os.cpu_count())  # number of multiprocessing threads
+
 
 # Get orientation exif tag
 for orientation in ExifTags.TAGS.keys():
@@ -138,8 +140,8 @@ class LoadImages:  # for inference
         else:
             raise Exception(f'ERROR: {p} does not exist')
 
-        images = [x for x in files if x.split('.')[-1].lower() in img_formats]
-        videos = [x for x in files if x.split('.')[-1].lower() in vid_formats]
+        images = [x for x in files if x.split('.')[-1].lower() in SUPPORTED_IMAGE_EXTENSIONS]
+        videos = [x for x in files if x.split('.')[-1].lower() in SUPPORTED_VIDEO_EXTENSIONS]
         ni, nv = len(images), len(videos)
 
         self.img_size = img_size
@@ -153,7 +155,7 @@ class LoadImages:  # for inference
         else:
             self.cap = None
         assert self.nf > 0, f'No images or videos found in {p}. ' \
-                            f'Supported formats are:\nimages: {img_formats}\nvideos: {vid_formats}'
+                            f'Supported formats are:\nimages: {SUPPORTED_IMAGE_EXTENSIONS}\nvideos: {SUPPORTED_VIDEO_EXTENSIONS}'
 
     def __iter__(self):
         self.count = 0
@@ -379,11 +381,11 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                         # f += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
                 else:
                     raise Exception(f'{prefix}{p} does not exist')
-            self.img_files = sorted([x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in img_formats])
+            self.img_files = sorted([x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in SUPPORTED_IMAGE_EXTENSIONS])
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in img_formats])  # pathlib
             assert self.img_files, f'{prefix}No images found'
         except Exception as e:
-            raise Exception(f'{prefix}Error loading data from {path}: {e}\nSee {help_url}')
+            raise Exception(f'{prefix}Error loading data from {path}: {e}\nSee {HELP_URL}')
 
         # Check cache
         self.label_files = img2label_paths(self.img_files)  # labels
@@ -402,7 +404,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             tqdm(None, desc=prefix + d, total=n, initial=n)  # display cache results
             if cache['msgs']:
                 logging.info('\n'.join(cache['msgs']))  # display warnings
-        assert nf > 0 or not augment, f'{prefix}No labels in {cache_path}. Can not train without labels. See {help_url}'
+        assert nf > 0 or not augment, f'{prefix}No labels in {cache_path}. Can not train without labels. See {HELP_URL}'
 
         # Read cache
         [cache.pop(k) for k in ('hash', 'version', 'msgs')]  # remove items
@@ -451,7 +453,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         if cache_images:
             gb = 0  # Gigabytes of cached images
             self.img_hw0, self.img_hw = [None] * n, [None] * n
-            results = ThreadPool(num_threads).imap(lambda x: load_image(*x), zip(repeat(self), range(n)))
+            results = ThreadPool(NUM_THREADS).imap(lambda x: load_image(*x), zip(repeat(self), range(n)))
             pbar = tqdm(enumerate(results), total=n)
             for i, x in pbar:
                 self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
@@ -464,7 +466,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         x = {}  # dict
         nm, nf, ne, nc, msgs = 0, 0, 0, 0, []  # number missing, found, empty, corrupt, messages
         desc = f"{prefix}Scanning '{path.parent / path.stem}' images and labels..."
-        with Pool(num_threads) as pool:
+        with Pool(NUM_THREADS) as pool:
             pbar = tqdm(pool.imap_unordered(verify_image_label, zip(self.img_files, self.label_files, repeat(prefix))),
                         desc=desc, total=len(self.img_files))
             for im_file, l, shape, segments, nm_f, nf_f, ne_f, nc_f, msg in pbar:
@@ -482,7 +484,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         if msgs:
             logging.info('\n'.join(msgs))
         if nf == 0:
-            logging.info(f'{prefix}WARNING: No labels found in {path}. See {help_url}')
+            logging.info(f'{prefix}WARNING: No labels found in {path}. See {HELP_URL}')
         x['hash'] = get_hash(self.label_files + self.img_files)
         x['results'] = nf, nm, ne, nc, len(self.img_files)
         x['msgs'] = msgs  # warnings
@@ -1001,7 +1003,7 @@ def extract_boxes(path='../coco128/'):  # from utils.datasets import *; extract_
     files = list(path.rglob('*.*'))
     n = len(files)  # number of files
     for im_file in tqdm(files, total=n):
-        if im_file.suffix[1:] in img_formats:
+        if im_file.suffix[1:] in SUPPORTED_IMAGE_EXTENSIONS:
             # image
             im = cv2.imread(str(im_file))[..., ::-1]  # BGR to RGB
             h, w = im.shape[:2]
@@ -1037,7 +1039,7 @@ def autosplit(path='../coco128', weights=(0.9, 0.1, 0.0), annotated_only=False):
         annotated_only: Only use images with an annotated txt file
     """
     path = Path(path)  # images dir
-    files = sum([list(path.rglob(f"*.{img_ext}")) for img_ext in img_formats], [])  # image files only
+    files = sum([list(path.rglob(f"*.{img_ext}")) for img_ext in SUPPORTED_IMAGE_EXTENSIONS], [])  # image files only
     n = len(files)  # number of files
     indices = random.choices([0, 1, 2], weights=weights, k=n)  # assign each image to a split
 
@@ -1061,7 +1063,7 @@ def verify_image_label(args):
         im.verify()  # PIL verify
         shape = exif_size(im)  # image size
         assert (shape[0] > 9) & (shape[1] > 9), f'image size {shape} <10 pixels'
-        assert im.format.lower() in img_formats, f'invalid image format {im.format}'
+        assert im.format.lower() in SUPPORTED_IMAGE_EXTENSIONS, f'invalid image format {im.format}'
         if im.format.lower() in ('jpg', 'jpeg'):
             with open(im_file, 'rb') as f:
                 f.seek(-2, 2)
