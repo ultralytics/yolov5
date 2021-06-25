@@ -91,8 +91,8 @@ download: |
   convert_labels(dir / 'xView_train.geojson')
 
   # Move images
-  # images = Path(dir / 'images')
-  # images.mkdir(parents=True, exist_ok=True)
-  # Path(dir / 'train_images').rename(dir / 'images' / 'train')
-  # Path(dir / 'val_images').rename(dir / 'images' / 'val')
+  images = Path(dir / 'images')
+  images.mkdir(parents=True, exist_ok=True)
+  Path(dir / 'train_images').rename(dir / 'images' / 'train')
+  Path(dir / 'val_images').rename(dir / 'images' / 'val')
 
