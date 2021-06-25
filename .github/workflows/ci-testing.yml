@@ -68,10 +68,10 @@ jobs:
           python yolov5/detect.py --weights ${{ matrix.model }}.pt --device $di
           python yolov5/detect.py --weights runs/train/exp/weights/last.pt --device $di
           # test
-          python yolov5/test.py --img 128 --batch 16 --weights ${{ matrix.model }}.pt --device $di
-          python yolov5/test.py --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $di
+          # python yolov5/test.py --img 128 --batch 16 --weights ${{ matrix.model }}.pt --device $di
+          # python yolov5/test.py --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $di
 
-          python hubconf.py  # hub
-          python yolov5/models/yolo.py --cfg ${{ matrix.model }}.yaml  # inspect
-          python yolov5/export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt  # export
+          # python hubconf.py  # hub
+          # python yolov5/models/yolo.py --cfg ${{ matrix.model }}.yaml  # inspect
+          # python yolov5/export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt  # export
         shell: bash
