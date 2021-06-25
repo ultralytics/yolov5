@@ -136,7 +136,6 @@ class WandbLogger():
 
     def check_and_upload_dataset(self, opt):
         assert wandb, 'Install wandb to upload dataset'
-        check_dataset(self.data_dict)
         config_path = self.log_dataset_artifact(check_file(opt.data),
                                                 opt.single_cls,
                                                 'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
@@ -215,9 +214,10 @@ class WandbLogger():
                            aliases=['latest', 'last', 'epoch ' + str(self.current_epoch), 'best' if best_model else ''])
         print("Saving model artifact on epoch ", epoch + 1)
 
-    def log_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False, ):
+    def log_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False):
         with open(data_file) as f:
             data = yaml.safe_load(f)  # data dict
+        check_dataset(data)
         nc, names = (1, ['item']) if single_cls else (int(data['nc']), data['names'])
         names = {k: v for k, v in enumerate(names)}  # to index dictionary
         self.train_artifact = self.create_dataset_table(LoadImagesAndLabels(
@@ -230,6 +230,7 @@ class WandbLogger():
             data['val'] = WANDB_ARTIFACT_PREFIX + str(Path(project) / 'val')
         path = data_file if overwrite_config else '_wandb.'.join(data_file.rsplit('.', 1))  # updated data.yaml path
         data.pop('download', None)
+        data.pop('path', None)
         with open(path, 'w') as f:
             yaml.safe_dump(data, f)
 
@@ -315,7 +316,6 @@ class WandbLogger():
                 wandb.log(self.log_dict)
                 self.log_dict = {}
             if self.result_artifact:
-                #train_results = wandb.JoinedTable(self.val_table, self.result_table, "id")
                 self.result_artifact.add(self.result_table, 'result')
                 wandb.log_artifact(self.result_artifact, aliases=['latest', 'last', 'epoch ' + str(self.current_epoch),
                                                                   ('best' if best_result else '')])
