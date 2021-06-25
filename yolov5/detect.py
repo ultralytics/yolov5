@@ -14,7 +14,8 @@ import torch
 import torch.backends.cudnn as cudnn
 
 FILE = Path(__file__).absolute()
-sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
+# appending pip package root directory to path to support legacy way of running script
+sys.path.append(FILE.parent.parent.as_posix())
 
 from yolov5.models.experimental import attempt_load
 from yolov5.utils.datasets import LoadStreams, LoadImages
