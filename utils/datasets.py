@@ -552,7 +552,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         nL = len(labels)  # number of labels
         if nL:
-            labels[:, 1:5] = xyxy2xywhn(labels[:, 1:5]) # convert xyxy to normalized xywh
+            labels[:, 1:5] = xyxy2xywhn(labels[:, 1:5], w=img.shape[1], h=img.shape[0]) # convert xyxy to normalized xywh
 
         if self.augment:
             # flip up-down
