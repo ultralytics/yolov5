@@ -9,9 +9,10 @@ import yaml
 from tqdm import tqdm
 
 sys.path.append(str(Path(__file__).parent.parent.parent))  # add utils/ to path
-from utils.datasets import LoadImagesAndLabels
-from utils.datasets import img2label_paths
-from utils.general import colorstr, check_dataset, check_file
+
+from yolov5.utils.datasets import LoadImagesAndLabels
+from yolov5.utils.datasets import img2label_paths
+from yolov5.utils.general import colorstr, check_dataset, check_file
 
 try:
     import wandb
