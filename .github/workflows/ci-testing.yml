@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.8]
         model: [ 'yolov5s' ]  # models to test
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
@@ -64,7 +64,7 @@ jobs:
           python yolov5/detect.py --weights runs/train/exp/weights/last.pt --device $INFERENCE_DEVICE
           # test
           python yolov5/test.py --img 128 --batch 16 --weights ${{ matrix.model }}.pt --device $INFERENCE_DEVICE
-          # python yolov5/test.py --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $INFERENCE_DEVICE
+          python yolov5/test.py --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $INFERENCE_DEVICE
 
           # python hubconf.py  # hub
           # python yolov5/models/yolo.py --cfg ${{ matrix.model }}.yaml  # inspect
