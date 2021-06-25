@@ -1,4 +1,5 @@
-# xView 2018 dataset http://xviewdataset.org
+# xView 2018 dataset https://challenge.xviewdataset.org
+# ----> NOTE: DOWNLOAD DATA MANUALLY from URL above and unzip to /datasets/xView before running train command below
 # Train command: python train.py --data xView.yaml
 # Default dataset location is next to YOLOv5:
 #   /parent
@@ -8,8 +9,8 @@
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
 path: ../datasets/xView  # dataset root dir
-train: images/train  # train images (relative to 'path') 847 images
-val: images/val  # train images (relative to 'path') 282 images
+train: images/autosplit_train.txt  # train images (relative to 'path') 90% of 847 images
+val: images/autosplit_val.txt  # train images (relative to 'path') 10% of 847 images
 
 # Classes
 nc: 60  # number of classes
@@ -34,6 +35,7 @@ download: |
   from PIL import Image
   from tqdm import tqdm
 
+  from utils.datasets import autosplit
   from utils.general import download, xyxy2xywhn
 
 
@@ -79,7 +81,7 @@ download: |
                       print(f'WARNING: skipping one label for {file}: {e}')
 
 
-  # Download
+  # Download manually from https://challenge.xviewdataset.org
   dir = Path(yaml['path'])  # dataset root dir
   # urls = ['https://d307kc0mrhucc3.cloudfront.net/train_labels.zip',  # train labels
   #         'https://d307kc0mrhucc3.cloudfront.net/train_images.zip',  # 15G, 847 train images
@@ -94,3 +96,7 @@ download: |
   images.mkdir(parents=True, exist_ok=True)
   Path(dir / 'train_images').rename(dir / 'images' / 'train')
   Path(dir / 'val_images').rename(dir / 'images' / 'val')
+
+  # Split
+  autosplit(dir / 'images' / 'train')
+  `
