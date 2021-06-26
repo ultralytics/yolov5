@@ -146,7 +146,7 @@ def check_python(minimum='3.6.2', required=True):
     return result
 
 
-def check_requirements(requirements='requirements.txt', exclude=()):
+def check_requirements(requirements=Path(__file__).parents[2] / 'requirements.txt', exclude=()):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
     prefix = colorstr('red', 'bold', 'requirements:')
     check_python()  # check python version
