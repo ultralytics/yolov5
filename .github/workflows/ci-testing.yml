@@ -2,10 +2,10 @@ name: CI CPU testing
 
 on: # https://help.github.com/en/actions/reference/events-that-trigger-workflows
   push:
-    branches: [ master ]
+    branches: [ master, develop ]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ master ]
+    branches: [ master, develop ]
 
 jobs:
   cpu-tests:
@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
-        python-version: [3.8]
+        python-version: [ 3.8 ]
         model: [ 'yolov5s' ]  # models to test
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
@@ -50,27 +50,29 @@ jobs:
           python --version
           pip --version
           pip list
-
         shell: bash
+
+      - name: Download data
+        run: |
+          # curl -L -o tmp.zip https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128.zip
+          # unzip -q tmp.zip -d ../
+          # rm tmp.zip
 
       - name: Tests workflow
         run: |
-          INFERENCE_DEVICE=cpu
+          # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
+          di=cpu # inference devices  # define device
 
           # train
-          python yolov5/train.py --img 128 --batch 16 --weights ${{ matrix.model }}.pt --cfg ${{ matrix.model }}.yaml --epochs 1 --device $INFERENCE_DEVICE
+          python train.py --img 128 --batch 16 --weights ${{ matrix.model }}.pt --cfg ${{ matrix.model }}.yaml --epochs 1 --device $di
           # detect
-          python yolov5/detect.py --weights ${{ matrix.model }}.pt --device $INFERENCE_DEVICE
-          python yolov5/detect.py --weights runs/train/exp/weights/last.pt --device $INFERENCE_DEVICE
+          python detect.py --weights ${{ matrix.model }}.pt --device $di
+          python detect.py --weights runs/train/exp/weights/last.pt --device $di
           # test
-          python yolov5/test.py --img 128 --batch 16 --weights ${{ matrix.model }}.pt --device $INFERENCE_DEVICE
-          python yolov5/test.py --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $INFERENCE_DEVICE
+          python test.py --img 128 --batch 16 --weights ${{ matrix.model }}.pt --device $di
+          python test.py --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $di
 
-          # hub
-          python hubconf.py
-          # inspect
-          python yolov5/models/yolo.py --cfg ${{ matrix.model }}.yaml
-          # export
-          python yolov5/export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt
-
+          python hubconf.py  # hub
+          python models/yolo.py --cfg ${{ matrix.model }}.yaml  # inspect
+          python export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt  # export
         shell: bash
