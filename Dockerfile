@@ -22,17 +22,16 @@ COPY . /usr/src/app
 ENV HOME=/usr/src/app
 
 
-# ---------------------------------------------------  Extras Below  ---------------------------------------------------
+# Usage Examples -------------------------------------------------------------------------------------------------------
 
 # Build and Push
 # t=ultralytics/yolov5:latest && sudo docker build -t $t . && sudo docker push $t
-# for v in {300..303}; do t=ultralytics/coco:v$v && sudo docker build -t $t . && sudo docker push $t; done
 
 # Pull and Run
 # t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all $t
 
 # Pull and Run with local directory access
-# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all -v "$(pwd)"/coco:/usr/src/coco $t
+# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all -v "$(pwd)"/datasets:/usr/src/datasets $t
 
 # Kill all
 # sudo docker kill $(sudo docker ps -q)
