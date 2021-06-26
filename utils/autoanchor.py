@@ -5,7 +5,7 @@ import torch
 import yaml
 from tqdm import tqdm
 
-from yolov5.utils.general import colorstr
+from utils.general import colorstr
 
 
 def check_anchor_order(m):
@@ -31,7 +31,7 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
     def metric(k):  # compute metric
         r = wh[:, None] / k[None]
         x = torch.min(r, 1. / r).min(2)[0]  # ratio metric
-        best = x.max(1)[0]  # best_xif isinstance(path, str):  # *.yaml file
+        best = x.max(1)[0]  # best_x
         aat = (x > 1. / thr).float().sum(1).mean()  # anchors above threshold
         bpr = (best > 1. / thr).float().mean()  # best possible recall
         return bpr, aat
@@ -104,7 +104,7 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
     if isinstance(path, str):  # *.yaml file
         with open(path) as f:
             data_dict = yaml.safe_load(f)  # model dict
-        from yolov5.utils.datasets import LoadImagesAndLabels
+        from utils.datasets import LoadImagesAndLabels
         dataset = LoadImagesAndLabels(data_dict['train'], augment=True, rect=True)
     else:
         dataset = path  # dataset

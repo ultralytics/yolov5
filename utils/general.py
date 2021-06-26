@@ -1,6 +1,5 @@
 # YOLOv5 general utils
 
-import sys
 import contextlib
 import glob
 import logging
@@ -25,9 +24,9 @@ import torch
 import torchvision
 import yaml
 
-from yolov5.utils.google_utils import gsutil_getsize
-from yolov5.utils.metrics import fitness
-from yolov5.utils.torch_utils import init_torch_seeds
+from utils.google_utils import gsutil_getsize
+from utils.metrics import fitness
+from utils.torch_utils import init_torch_seeds
 
 # Settings
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -146,7 +145,7 @@ def check_python(minimum='3.6.2', required=True):
     return result
 
 
-def check_requirements(requirements=Path(__file__).parents[2] / 'requirements.txt', exclude=()):
+def check_requirements(requirements='requirements.txt', exclude=()):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
     prefix = colorstr('red', 'bold', 'requirements:')
     check_python()  # check python version
@@ -642,10 +641,9 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     return output
 
 
-def strip_optimizer(f='best.pt', s=''):
+def strip_optimizer(f='best.pt', s=''):  # from utils.general import *; strip_optimizer()
     # Strip optimizer from 'f' to finalize training, optionally save as 's'
-    with yolov5_in_syspath():
-        x = torch.load(f, map_location=torch.device('cpu'))
+    x = torch.load(f, map_location=torch.device('cpu'))
     if x.get('ema'):
         x['model'] = x['ema']  # replace model with ema
     for k in 'optimizer', 'training_results', 'wandb_id', 'ema', 'updates':  # keys
@@ -654,8 +652,7 @@ def strip_optimizer(f='best.pt', s=''):
     x['model'].half()  # to FP16
     for p in x['model'].parameters():
         p.requires_grad = False
-    with yolov5_in_syspath():
-        torch.save(x, s or f)
+    torch.save(x, s or f)
     mb = os.path.getsize(s or f) / 1E6  # filesize
     print(f"Optimizer stripped from {f},{(' saved as %s,' % s) if s else ''} {mb:.1f}MB")
 
@@ -756,18 +753,3 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     if not dir.exists() and mkdir:
         dir.mkdir(parents=True, exist_ok=True)  # make directory
     return path
-
-
-@contextlib.contextmanager
-def yolov5_in_syspath():
-    """Temporarily add yolov5 folder to `sys.path`. Credit to https://github.com/fcakyon/yolov5-pip
-    torch.hub fix: https://github.com/pytorch/pytorch/blob/75024e228ca441290b6a1c2e564300ad507d7af6/torch/hub.py#L387
-    Proper fix for: #22, #134, #353, #1155, #1389, #1680, #2531, #3071
-    No need for such workarounds: #869, #1052, #2949
-    """
-    yolov5_dir = str(Path(__file__).absolute().parents[1])
-    try:
-        sys.path.insert(0, yolov5_dir)
-        yield
-    finally:
-        sys.path.remove(yolov5_dir)

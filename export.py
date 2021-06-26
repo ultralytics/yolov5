@@ -14,15 +14,14 @@ import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
 FILE = Path(__file__).absolute()
-# appending pip package root directory to path to support legacy way of running script
-sys.path.append(FILE.parent.parent.as_posix())
+sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
-from yolov5.models.common import Conv
-from yolov5.models.yolo import Detect
-from yolov5.models.experimental import attempt_load
-from yolov5.utils.activations import Hardswish, SiLU
-from yolov5.utils.general import colorstr, check_img_size, check_requirements, file_size, set_logging
-from yolov5.utils.torch_utils import select_device
+from models.common import Conv
+from models.yolo import Detect
+from models.experimental import attempt_load
+from utils.activations import Hardswish, SiLU
+from utils.general import colorstr, check_img_size, check_requirements, file_size, set_logging
+from utils.torch_utils import select_device
 
 
 def run(weights='./yolov5s.pt',  # weights path

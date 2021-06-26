@@ -10,7 +10,7 @@ WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 def create_dataset_artifact(opt):
     with open(opt.data) as f:
         data = yaml.safe_load(f)  # data dict
-    WandbLogger(opt, '', None, data, job_type='Dataset Creation')
+    logger = WandbLogger(opt, '', None, data, job_type='Dataset Creation')
 
 
 if __name__ == '__main__':

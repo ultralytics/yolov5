@@ -29,7 +29,7 @@ download: |
   import xml.etree.ElementTree as ET
 
   from tqdm import tqdm
-  from yolov5.utils.general import download, Path
+  from utils.general import download, Path
 
 
   def convert_label(path, lb_path, year, image_id):
