@@ -7,7 +7,7 @@ long_description = (root_directory / "README.md").read_text(encoding="utf-8")
 
 setuptools.setup(
     name="ultralytics-yolov5",
-    version="0.0.1.1-dev",
+    version="0.0.2.2-dev",
     description="Ultralytics YOLOv5 🚀 Python package, https://ultralytics.com",
     python_requires=">=3.6.2",
     long_description=long_description,
@@ -16,7 +16,7 @@ setuptools.setup(
     author="Ultralytics",
     author_email='glenn.jocher@ultralytics.com',
     license="GPLv3",
-    packages=["yolov5"],
+    packages=setuptools.find_packages(),
     include_package_data=True,
     install_requires=[
         "matplotlib>=3.2.2",
@@ -69,5 +69,6 @@ setuptools.setup(
         'Bug Reports': 'https://github.com/ultralytics/yolov5/issues',
         'Funding': 'https://ultralytics.com',
         'Source': 'https://github.com/ultralytics/yolov5/',
-    }
+    },
+    keywords="machine-learning, deep-learning, ml, pytorch, YOLO, object-detection, vision, YOLOv3, YOLOv4, YOLOv5"
 )

@@ -243,5 +243,7 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
-# pip egg files
+# pip package build files
 *.egg-info
+dist/
+build/
