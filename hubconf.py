@@ -25,13 +25,12 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     """
     from pathlib import Path
 
-    from models.yolo import Model, attempt_load
-    from utils.general import check_requirements, set_logging
-    from utils.google_utils import attempt_download
-    from utils.torch_utils import select_device
+    from yolov5.models.yolo import Model, attempt_load
+    from yolov5.utils.general import check_requirements, set_logging
+    from yolov5.utils.google_utils import attempt_download
+    from yolov5.utils.torch_utils import select_device
 
-    check_requirements(requirements=Path(__file__).parent / 'requirements.txt',
-                       exclude=('tensorboard', 'thop', 'opencv-python'))
+    check_requirements(exclude=('tensorboard', 'thop', 'opencv-python'))
     set_logging(verbose=verbose)
 
     fname = Path(name).with_suffix('.pt')  # checkpoint filename
@@ -114,10 +113,10 @@ if __name__ == '__main__':
     import numpy as np
     from PIL import Image
 
-    imgs = ['data/images/zidane.jpg',  # filename
+    imgs = ['yolov5/data/images/zidane.jpg',  # filename
             'https://github.com/ultralytics/yolov5/releases/download/v1.0/zidane.jpg',  # URI
-            cv2.imread('data/images/bus.jpg')[:, :, ::-1],  # OpenCV
-            Image.open('data/images/bus.jpg'),  # PIL
+            cv2.imread('yolov5/data/images/bus.jpg')[:, :, ::-1],  # OpenCV
+            Image.open('yolov5/data/images/bus.jpg'),  # PIL
             np.zeros((320, 640, 3))]  # numpy
 
     results = model(imgs)  # batched inference
