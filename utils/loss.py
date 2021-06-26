@@ -89,6 +89,7 @@ class ComputeLoss:
     # Compute losses
     def __init__(self, model, autobalance=False):
         super(ComputeLoss, self).__init__()
+        self.sort_obj_iou = False
         device = next(model.parameters()).device  # get model device
         h = model.hyp  # hyperparameters
 
@@ -134,8 +135,9 @@ class ComputeLoss:
 
                 # Objectness
                 score_iou = iou.detach().clamp(0).type(tobj.dtype)
-                sort_id = torch.argsort(score_iou)
-                b, a, gj, gi, score_iou = b[sort_id], a[sort_id], gj[sort_id], gi[sort_id], score_iou[sort_id]
+                if self.sort_obj_iou:
+                    sort_id = torch.argsort(score_iou)
+                    b, a, gj, gi, score_iou = b[sort_id], a[sort_id], gj[sort_id], gi[sort_id], score_iou[sort_id]
                 tobj[b, a, gj, gi] = (1.0 - self.gr) + self.gr * score_iou  # iou ratio
 
                 # Classification
