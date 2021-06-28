@@ -4,11 +4,13 @@ services:
     build: "."
     ipc: host
     volumes:
-      - /home/ubuntu/data:/usr/src/data
+      - /home/ubuntu/working_dir/order-data/test/images:/usr/src/data
+      - /home/ubuntu/working_dir/weights:/usr/src/weights
+      - /home/ubuntu/working_dir/yolov5/runs:/usr/src/app/runs
     deploy:
         resources:
             reservations:
                 devices:
                 - driver: nvidia
-                  count: 8
+                  count: 1
                   capabilities: [gpu]
