@@ -156,7 +156,6 @@ class Model(nn.Module):
             y.append(x if m.i in self.save else None)  # save output
             
             if feature_vis and m.type == 'models.common.SPP':
-                print(m.type, m.i)
                 feature_visualization(x, m.type, m.i)
 
         if profile:
