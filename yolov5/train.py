@@ -85,7 +85,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Configure
     plots = not evolve  # create plots
     cuda = device.type != 'cpu'
-    init_seeds(2 + RANK)
+    init_seeds(1 + RANK)
     with open(Path(__file__).parent.joinpath(data)) as f:
         data_dict = yaml.safe_load(f)  # data dict
 
