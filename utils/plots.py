@@ -459,17 +459,15 @@ def feature_visualization(features, module_type, module_idx, n=64):
     save_dir = increment_path(Path(project) / name)  # increment run
     save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
-    plt.figure()
+    plt.figure(tight_layout=True)
     blocks = torch.chunk(features, features.shape[1], dim=1)  # block by channel dimension
     n = min(n, len(blocks))
     for i in range(n):
         feature = transforms.ToPILImage()(blocks[i].squeeze())
         ax = plt.subplot(int(math.sqrt(n)), int(math.sqrt(n)), i + 1)
-        ax.set_xticks([])
-        ax.set_yticks([])
-        plt.imshow(feature)
-        # plt.imshow(feature, cmap='gray')
+        ax.axis('off')
+        plt.imshow(feature)  # cmap='gray'
 
-    # plt.show()
-    plt.savefig(save_dir / f"{module_type.split('.')[2]}_{module_idx}_feature_map_{n}.png", dpi=300)
-    print(f'Features from {module_type} module in layer {module_idx} saved to {save_dir}')
+    f = f"layer_{module_idx}_{module_type.split('.')[-1]}_features.png"
+    print(f'Saving {save_dir / f}...')
+    plt.savefig(save_dir / f, dpi=300)
