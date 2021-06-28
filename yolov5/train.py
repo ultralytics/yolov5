@@ -86,7 +86,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     plots = not evolve  # create plots
     cuda = device.type != 'cpu'
     init_seeds(2 + RANK)
-    with open(data) as f:
+    with open(Path(__file__).parent.joinpath(data)) as f:
         data_dict = yaml.safe_load(f)  # data dict
 
     # Loggers
@@ -536,8 +536,9 @@ def main(opt):
         opt.cfg, opt.weights, opt.resume = '', ckpt, True  # reinstate
         logger.info('Resuming training from %s' % ckpt)
     else:
-        # opt.hyp = opt.hyp or ('hyp.finetune.yaml' if opt.weights else 'hyp.scratch.yaml')
-        opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
+        # opt.hyp = opt.hyp or ('hyp.finetune.yaml' if opt.weights eyolov5s.ptlse 'hyp.scratch.yaml')
+        pip_package_root = FILE.parent
+        opt.data, opt.cfg, opt.hyp = check_file(pip_package_root / opt.data), check_file(pip_package_root / 'models' / opt.cfg), check_file(pip_package_root / opt.hyp)  # check files
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
         opt.name = 'evolve' if opt.evolve else opt.name

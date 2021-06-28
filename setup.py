@@ -7,7 +7,7 @@ long_description = (root_directory / "README.md").read_text(encoding="utf-8")
 
 setuptools.setup(
     name="ultralytics-yolov5",
-    version="0.0.2.2-dev",
+    version="0.0.4-dev",
     description="Ultralytics YOLOv5 🚀 Python package, https://ultralytics.com",
     python_requires=">=3.6.2",
     long_description=long_description,
