@@ -8,6 +8,7 @@ import argparse
 import logging
 import math
 import os
+import sys
 import random
 import time
 import warnings
@@ -28,8 +29,9 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from yolov5 import mount_yolo_if_required, PIP_PACKAGE_ROOT
-mount_yolo_if_required()
+FILE = Path(__file__).absolute()
+# appending pip package root directory to path to support legacy way of running script
+sys.path.append(FILE.parent.parent.as_posix())
 
 from yolov5 import test  # for end-of-epoch mAP
 from yolov5.models.experimental import attempt_load
@@ -535,7 +537,8 @@ def main(opt):
         logger.info('Resuming training from %s' % ckpt)
     else:
         # opt.hyp = opt.hyp or ('hyp.finetune.yaml' if opt.weights eyolov5s.ptlse 'hyp.scratch.yaml')
-        opt.data, opt.cfg, opt.hyp = check_file(PIP_PACKAGE_ROOT / opt.data), check_file(PIP_PACKAGE_ROOT / 'models' / opt.cfg), check_file(PIP_PACKAGE_ROOT / opt.hyp)  # check files
+        pip_package_root = FILE.parent
+        opt.data, opt.cfg, opt.hyp = check_file(pip_package_root / opt.data), check_file(pip_package_root / 'models' / opt.cfg), check_file(pip_package_root / opt.hyp)  # check files
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
         opt.name = 'evolve' if opt.evolve else opt.name
