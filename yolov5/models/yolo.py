@@ -136,7 +136,7 @@ class Model(nn.Module):
             y.append(yi)
         return torch.cat(y, 1), None  # augmented inference, train
 
-    def forward_once(self, x, profile=False):
+    def forward_once(self, x, profile=False, feature_vis=False):
         y, dt = [], []  # outputs
         for m in self.model:
             if m.f != -1:  # if not from previous layer
@@ -154,6 +154,9 @@ class Model(nn.Module):
 
             x = m(x)  # run
             y.append(x if m.i in self.save else None)  # save output
+
+            if feature_vis and m.type == 'models.common.SPP':
+                feature_visualization(x, m.type, m.i)
 
         if profile:
             logger.info('%.1fms total' % sum(dt))
