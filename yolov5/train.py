@@ -28,7 +28,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from . import mount_yolo_if_required, PIP_PACKAGE_ROOT
+from yolov5 import mount_yolo_if_required, PIP_PACKAGE_ROOT
 mount_yolo_if_required()
 
 from yolov5 import test  # for end-of-epoch mAP
