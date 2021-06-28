@@ -17,6 +17,7 @@ from models.common import *
 from models.experimental import *
 from utils.autoanchor import check_anchor_order
 from utils.general import make_divisible, check_file, set_logging
+from utils.plots import feature_visualization
 from utils.torch_utils import time_synchronized, fuse_conv_and_bn, model_info, scale_img, initialize_weights, \
     select_device, copy_attr
 
@@ -153,6 +154,11 @@ class Model(nn.Module):
 
             x = m(x)  # run
             y.append(x if m.i in self.save else None)  # save output
+            
+            feature_vis = True
+            if m.type == 'models.common.SPP' and feature_vis:
+                print(m.type, m.i)
+                feature_visualization(x, m.type, m.i)
 
         if profile:
             logger.info('%.1fms total' % sum(dt))
