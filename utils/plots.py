@@ -448,11 +448,11 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
     fig.savefig(Path(save_dir) / 'results.png', dpi=200)
 
 
-def feature_visualization(x, module_type, module_idx, n=64):
+def feature_visualization(x, module_type, stage, n=64):
     """
     x:              Features to be visualized
     module_type:    Module type
-    module_idx:     Module layer index within model
+    stage:          Module stage within model
     n:              Maximum number of feature maps to plot
     """
     batch, channels, height, width = x.shape  # batch, channels, height, width
@@ -470,6 +470,6 @@ def feature_visualization(x, module_type, module_idx, n=64):
             ax.axis('off')
             plt.imshow(feature)  # cmap='gray'
 
-        f = f"layer_{module_idx}_{module_type.split('.')[-1]}_features.png"
+        f = f"stage_{stage}_{module_type.split('.')[-1]}_features.png"
         print(f'Saving {save_dir / f}...')
         plt.savefig(save_dir / f, dpi=300)
