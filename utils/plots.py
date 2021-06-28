@@ -450,10 +450,10 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
 
 def feature_visualization(features, module_type, module_idx, n=64):
     """
-    features: Features to be visualized
-    module_type: module type
-    module_idx: module layer index within model
-    n: Maximum number of feature maps to plot
+    features:       Features to be visualized
+    module_type:    Module type
+    module_idx:     Module layer index within model
+    n:              Maximum number of feature maps to plot
     """
     project, name = 'runs/features', 'exp'
     save_dir = increment_path(Path(project) / name)  # increment run
