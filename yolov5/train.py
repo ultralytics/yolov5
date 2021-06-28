@@ -9,7 +9,6 @@ import logging
 import math
 import os
 import random
-import sys
 import time
 import warnings
 from copy import deepcopy
@@ -29,9 +28,8 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-FILE = Path(__file__).absolute()
-# appending pip package root directory to path to support legacy way of running script
-sys.path.append(FILE.parent.parent.as_posix())
+from . import mount_yolo_if_required
+mount_yolo_if_required()
 
 from yolov5 import test  # for end-of-epoch mAP
 from yolov5.models.experimental import attempt_load
