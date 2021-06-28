@@ -4,6 +4,8 @@ import sys
 import contextlib
 import glob
 import logging
+from typing import Union
+
 import math
 import os
 import platform
@@ -28,6 +30,8 @@ import yaml
 from yolov5.utils.google_utils import gsutil_getsize
 from yolov5.utils.metrics import fitness
 from yolov5.utils.torch_utils import init_torch_seeds
+
+PIP_PACKAGE_ROOT_PATH = Path(__file__).parent.parent.absolute()
 
 # Settings
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -765,9 +769,12 @@ def yolov5_in_syspath():
     Proper fix for: #22, #134, #353, #1155, #1389, #1680, #2531, #3071
     No need for such workarounds: #869, #1052, #2949
     """
-    yolov5_dir = str(Path(__file__).absolute().parents[1])
     try:
-        sys.path.insert(0, yolov5_dir)
+        sys.path.insert(0, PIP_PACKAGE_ROOT_PATH.as_posix())
         yield
     finally:
-        sys.path.remove(yolov5_dir)
+        sys.path.remove(PIP_PACKAGE_ROOT_PATH.as_posix())
+
+
+def pip_package_path(relative_path: Union[Path, str]) -> Path:
+    return PIP_PACKAGE_ROOT_PATH.joinpath(relative_path)

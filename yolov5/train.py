@@ -40,7 +40,7 @@ from yolov5.utils.autoanchor import check_anchors
 from yolov5.utils.datasets import create_dataloader
 from yolov5.utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds, \
     strip_optimizer, get_latest_run, check_dataset, check_file, check_git_status, check_img_size, \
-    check_requirements, print_mutation, set_logging, one_cycle, colorstr
+    check_requirements, print_mutation, set_logging, one_cycle, colorstr, pip_package_path
 from yolov5.utils.google_utils import attempt_download
 from yolov5.utils.loss import ComputeLoss
 from yolov5.utils.plots import plot_images, plot_labels, plot_results, plot_evolution
@@ -537,8 +537,9 @@ def main(opt):
         logger.info('Resuming training from %s' % ckpt)
     else:
         # opt.hyp = opt.hyp or ('hyp.finetune.yaml' if opt.weights eyolov5s.ptlse 'hyp.scratch.yaml')
-        pip_package_root = FILE.parent
-        opt.data, opt.cfg, opt.hyp = check_file(pip_package_root / opt.data), check_file(pip_package_root / 'models' / opt.cfg), check_file(pip_package_root / opt.hyp)  # check files
+        opt.data = check_file(pip_package_path(opt.data))
+        opt.cfg = check_file(pip_package_path('models/' + opt.cfg))
+        opt.hyp = check_file(pip_package_path(opt.hyp))
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
         opt.name = 'evolve' if opt.evolve else opt.name
