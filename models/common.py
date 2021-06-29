@@ -77,18 +77,8 @@ class TransformerBlock(nn.Module):
         if self.conv is not None:
             x = self.conv(x)
         b, _, w, h = x.shape
-        p = x.flatten(2)
-        p = p.unsqueeze(0)
-        p = p.transpose(0, 3)
-        p = p.squeeze(3)
-        e = self.linear(p)
-        x = p + e
-
-        x = self.tr(x)
-        x = x.unsqueeze(3)
-        x = x.transpose(0, 3)
-        x = x.reshape(b, self.c2, w, h)
-        return x
+        p = x.flatten(2).unsqueeze(0).transpose(0, 3).squeeze(3)
+        return self.tr(p + self.linear(p)).unsqueeze(3).transpose(0, 3).reshape(b, self.c2, w, h)
 
 
 class Bottleneck(nn.Module):
