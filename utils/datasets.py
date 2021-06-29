@@ -1116,7 +1116,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
     nc = data['nc']  # number of classes
     stats = {'nc': nc, 'names': data['names']}  # statistics dictionary
     for split in 'train', 'val', 'test':
-        if split not in data:
+        if data.get(split) is None:
             stats[split] = None  # i.e. no test set
             continue
         x = []
