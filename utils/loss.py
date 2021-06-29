@@ -3,7 +3,7 @@
 import torch
 import torch.nn as nn
 
-from utils.general import bbox_iou
+from utils.metrics import bbox_iou
 from utils.torch_utils import is_parallel
 
 
