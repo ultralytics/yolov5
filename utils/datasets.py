@@ -4,7 +4,6 @@ import glob
 import hashlib
 import json
 import logging
-import math
 import os
 import random
 import shutil
@@ -15,6 +14,7 @@ from pathlib import Path
 from threading import Thread
 
 import cv2
+import math
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -210,15 +210,8 @@ class LoadWebcam:  # for inference
     def __init__(self, pipe='0', img_size=640, stride=32):
         self.img_size = img_size
         self.stride = stride
-
-        if pipe.isnumeric():
-            pipe = eval(pipe)  # local camera
-        # pipe = 'rtsp://192.168.1.64/1'  # IP camera
-        # pipe = 'rtsp://username:password@192.168.1.64/1'  # IP camera with login
-        # pipe = 'http://wmccpinetop.axiscam.net/mjpg/video.mjpg'  # IP golf camera
-
-        self.pipe = pipe
-        self.cap = cv2.VideoCapture(pipe)  # video capture object
+        self.pipe = eval(pipe) if pipe.isnumeric() else pipe
+        self.cap = cv2.VideoCapture(self.pipe)  # video capture object
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)  # set buffer size
 
     def __iter__(self):
@@ -233,18 +226,8 @@ class LoadWebcam:  # for inference
             raise StopIteration
 
         # Read frame
-        if self.pipe == 0:  # local camera
-            ret_val, img0 = self.cap.read()
-            img0 = cv2.flip(img0, 1)  # flip left-right
-        else:  # IP camera
-            n = 0
-            while True:
-                n += 1
-                self.cap.grab()
-                if n % 30 == 0:  # skip frames
-                    ret_val, img0 = self.cap.retrieve()
-                    if ret_val:
-                        break
+        ret_val, img0 = self.cap.read()
+        img0 = cv2.flip(img0, 1)  # flip left-right
 
         # Print
         assert ret_val, f'Camera Error {self.pipe}'
@@ -308,12 +291,12 @@ class LoadStreams:  # multiple IP or RTSP cameras
 
     def update(self, i, cap):
         # Read stream `i` frames in daemon thread
-        n, f = 0, self.frames[i]
+        n, f, read = 0, self.frames[i], 1  # frame number, frame array, inference every 'read' frame
         while cap.isOpened() and n < f:
             n += 1
             # _, self.imgs[index] = cap.read()
             cap.grab()
-            if n % 4:  # read every 4th frame
+            if n % read == 0:
                 success, im = cap.retrieve()
                 self.imgs[i] = im if success else self.imgs[i] * 0
             time.sleep(1 / self.fps[i])  # wait time
