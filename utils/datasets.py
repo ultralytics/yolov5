@@ -911,23 +911,25 @@ def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, s
 
 def copy_paste(img, labels, segments, fraction=0.5):
     # Implement Copy-Paste augmentation https://arxiv.org/abs/2012.07177, labels in labels in xyxy
-    h, w, c = img.shape  # height, width, channels
-    im_new = np.zeros(img.shape, np.uint8)
-    n = len(segments)
-    labels = labels.tolist()
-    for j in random.sample(range(n), k=round(fraction * n)):
-        l, s = labels[j], segments[j]
-        labels.append([l[0], w - l[3], l[2], w - l[1], l[4]])
-        segments.append(np.concatenate((w - s[:, 0:1], s[:, 1:2]), 1))
-        cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (255, 255, 255), cv2.FILLED)
+    if any(segments):
+        n = len(segments)
+        h, w, c = img.shape  # height, width, channels
+        im_new = np.zeros(img.shape, np.uint8)
+        labels = labels.tolist()
+        for j in random.sample(range(n), k=round(fraction * n)):
+            l, s = labels[j], segments[j]
+            labels.append([l[0], w - l[3], l[2], w - l[1], l[4]])
+            segments.append(np.concatenate((w - s[:, 0:1], s[:, 1:2]), 1))
+            cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (255, 255, 255), cv2.FILLED)
 
-    result = cv2.bitwise_and(src1=img, src2=im_new)
-    result = cv2.flip(result, 1)  # flip left-right
+        result = cv2.bitwise_and(src1=img, src2=im_new)
+        result = cv2.flip(result, 1)  # flip left-right
 
-    i = result > 0
-    # i[:, :] = result.max(2).reshape(h, w, 1)  # act over ch
-    img[i] = result[i]
-    # cv2.imwrite('debug.jpg', img)  # debug
+        i = result > 0
+        # i[:, :] = result.max(2).reshape(h, w, 1)  # act over ch
+        img[i] = result[i]
+        # cv2.imwrite('debug.jpg', img)  # debug
+
     return img, np.array(labels), segments
 
 
