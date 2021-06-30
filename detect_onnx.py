@@ -160,9 +160,6 @@ def run(weights='yolov5s.onnx',  # model.pt path(s)
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
         print(f"Results saved to {save_dir}{s}")
 
-    if update:
-        strip_optimizer(weights)  # update model (to fix SourceChangeWarning)
-
     print(f'Done. ({time.time() - t0:.3f}s)')
 
 
