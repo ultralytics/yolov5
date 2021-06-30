@@ -27,5 +27,5 @@ pandas
 # extras --------------------------------------
 # Cython  # for pycocotools https://github.com/cocodataset/cocoapi/issues/172
 pycocotools>=2.0  # COCO mAP
-sparseml==0.3.1 # Pruning and Quantization
+sparseml>=0.5 # Pruning and Quantization
 thop  # FLOPS computation
