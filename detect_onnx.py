@@ -81,7 +81,7 @@ def run(weights='yolov5s.onnx',  # model.pt path(s)
     for path, img, im0s, vid_cap in dataset:
         img = img.astype("float32")
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
-        if len(img.shape()) == 3:
+        if len(img.shape) == 3:
             img = np.expand_dims(img, axis=0)
 
         # Inference
