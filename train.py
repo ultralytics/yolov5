@@ -6,7 +6,6 @@ Usage:
 
 import argparse
 import logging
-import math
 import os
 import random
 import sys
@@ -16,6 +15,7 @@ from copy import deepcopy
 from pathlib import Path
 from threading import Thread
 
+import math
 import numpy as np
 import torch.distributed as dist
 import torch.nn as nn
@@ -591,7 +591,8 @@ def main(opt):
                 'flipud': (1, 0.0, 1.0),  # image flip up-down (probability)
                 'fliplr': (0, 0.0, 1.0),  # image flip left-right (probability)
                 'mosaic': (1, 0.0, 1.0),  # image mixup (probability)
-                'mixup': (1, 0.0, 1.0)}  # image mixup (probability)
+                'mixup': (1, 0.0, 1.0),  # image mixup (probability)
+                'copy_paste': (1, 0.0, 1.0)}  # segment copy-paste (probability)
 
         with open(opt.hyp) as f:
             hyp = yaml.safe_load(f)  # load hyps dict
