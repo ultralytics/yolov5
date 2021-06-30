@@ -909,28 +909,28 @@ def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, s
     return img, targets
 
 
-def copy_paste(img, labels, segments, fraction=0.5):
+def copy_paste(img, labels, segments, probability=0.5):
     # Implement Copy-Paste augmentation https://arxiv.org/abs/2012.07177, labels in labels in xyxy
-    if any(segments):
-        n = len(segments)
+    n = len(segments)
+    if n:
         h, w, c = img.shape  # height, width, channels
         im_new = np.zeros(img.shape, np.uint8)
-        labels = labels.tolist()
-        for j in random.sample(range(n), k=round(fraction * n)):
+        for j in random.sample(range(n), k=round(probability * n)):
             l, s = labels[j], segments[j]
-            labels.append([l[0], w - l[3], l[2], w - l[1], l[4]])
-            segments.append(np.concatenate((w - s[:, 0:1], s[:, 1:2]), 1))
-            cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (255, 255, 255), cv2.FILLED)
+            box = w - l[3], l[2], w - l[1], l[4]
+            ioa = bbox_ioa(box, labels[:, 1:5])  # intersection over area
+            if (ioa < 0.30).all():  # allow 30% obscuration of existing labels
+                labels = np.concatenate((labels, [[l[0], *box]]), 0)
+                segments.append(np.concatenate((w - s[:, 0:1], s[:, 1:2]), 1))
+                cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (255, 255, 255), cv2.FILLED)
 
         result = cv2.bitwise_and(src1=img, src2=im_new)
-        result = cv2.flip(result, 1)  # flip left-right
-
+        result = cv2.flip(result, 1)  # augment segments (flip left-right)
         i = result > 0
         # i[:, :] = result.max(2).reshape(h, w, 1)  # act over ch
-        img[i] = result[i]
-        # cv2.imwrite('debug.jpg', img)  # debug
+        img[i] = result[i]  # cv2.imwrite('debug.jpg', img)  # debug
 
-    return img, np.array(labels), segments
+    return img, labels, segments
 
 
 def box_candidates(box1, box2, wh_thr=2, ar_thr=20, area_thr=0.1, eps=1e-16):  # box1(4,n), box2(4,n)
