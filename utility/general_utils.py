@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-""" # Updated in 20/10/29 """
+""" # Updated in 20/09/01 """
 import coloredlogs
 import logging
 import configparser
@@ -77,7 +77,6 @@ META_EXTENSION = ["json"]
 IMG_EXTENSIONS = IMAGE_EXTENSIONS
 LATEX_EXTENSIONS = ["tex"]
 TEXT_EXTENSIONS = ["txt"]
-CSV_EXTENSIONS = ["csv"]
 
 COLOR_ARRAY_RGBCMY = [RED, GREEN, BLUE, CYAN, MAGENTA, YELLOW]
 DEV_NULL = open(os.devnull, "w")

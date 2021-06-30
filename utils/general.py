@@ -22,9 +22,11 @@ from utils.metrics import fitness
 from utils.torch_utils import init_torch_seeds
 
 # Set printoptions
-torch.set_printoptions(linewidth=320, precision=5, profile='long')
-np.set_printoptions(linewidth=320, formatter={'float_kind': '{:11.5g}'.format})  # format short g, %precision=5
-matplotlib.rc('font', **{'size': 11})
+torch.set_printoptions(linewidth=320, precision=5, profile="long")
+np.set_printoptions(
+    linewidth=320, formatter={"float_kind": "{:11.5g}".format}
+)  # format short g, %precision=5
+matplotlib.rc("font", **{"size": 11})
 
 # Prevent OpenCV from multithreading (to use PyTorch DataLoader)
 cv2.setNumThreads(0)
@@ -32,8 +34,8 @@ cv2.setNumThreads(0)
 
 def set_logging(rank=-1):
     logging.basicConfig(
-        format="%(message)s",
-        level=logging.INFO if rank in [-1, 0] else logging.WARN)
+        format="%(message)s", level=logging.INFO if rank in [-1, 0] else logging.WARN
+    )
 
 
 def init_seeds(seed=0):
@@ -42,57 +44,72 @@ def init_seeds(seed=0):
     init_torch_seeds(seed)
 
 
-def get_latest_run(search_dir='.'):
+def get_latest_run(search_dir="."):
     # Return path to most recent 'last.pt' in /runs (i.e. to --resume from)
-    last_list = glob.glob(f'{search_dir}/**/last*.pt', recursive=True)
-    return max(last_list, key=os.path.getctime) if last_list else ''
+    last_list = glob.glob(f"{search_dir}/**/last*.pt", recursive=True)
+    return max(last_list, key=os.path.getctime) if last_list else ""
 
 
 def check_git_status():
     # Suggest 'git pull' if repo is out of date
-    if platform.system() in ['Linux', 'Darwin'] and not os.path.isfile('/.dockerenv'):
-        s = subprocess.check_output('if [ -d .git ]; then git fetch && git status -uno; fi', shell=True).decode('utf-8')
-        if 'Your branch is behind' in s:
-            print(s[s.find('Your branch is behind'):s.find('\n\n')] + '\n')
+    if platform.system() in ["Linux", "Darwin"] and not os.path.isfile("/.dockerenv"):
+        s = subprocess.check_output(
+            "if [ -d .git ]; then git fetch && git status -uno; fi", shell=True
+        ).decode("utf-8")
+        if "Your branch is behind" in s:
+            print(s[s.find("Your branch is behind") : s.find("\n\n")] + "\n")
 
 
 def check_img_size(img_size, s=32):
     # Verify img_size is a multiple of stride s
     new_size = make_divisible(img_size, int(s))  # ceil gs-multiple
     if new_size != img_size:
-        print('WARNING: --img-size %g must be multiple of max stride %g, updating to %g' % (img_size, s, new_size))
+        print(
+            "WARNING: --img-size %g must be multiple of max stride %g, updating to %g"
+            % (img_size, s, new_size)
+        )
     return new_size
 
 
 def check_file(file):
     # Search for file if not found
-    if os.path.isfile(file) or file == '':
+    if os.path.isfile(file) or file == "":
         return file
     else:
-        files = glob.glob('./**/' + file, recursive=True)  # find file
-        assert len(files), 'File Not Found: %s' % file  # assert file was found
-        assert len(files) == 1, "Multiple files match '%s', specify exact path: %s" % (file, files)  # assert unique
+        files = glob.glob("./**/" + file, recursive=True)  # find file
+        assert len(files), "File Not Found: %s" % file  # assert file was found
+        assert len(files) == 1, "Multiple files match '%s', specify exact path: %s" % (
+            file,
+            files,
+        )  # assert unique
         return files[0]  # return file
 
 
 def check_dataset(dict):
     # Download dataset if not found locally
-    val, s = dict.get('val'), dict.get('download')
+    val, s = dict.get("val"), dict.get("download")
     if val and len(val):
-        val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
+        val = [
+            Path(x).resolve() for x in (val if isinstance(val, list) else [val])
+        ]  # val path
         if not all(x.exists() for x in val):
-            print('\nWARNING: Dataset not found, nonexistent paths: %s' % [str(x) for x in val if not x.exists()])
+            print(
+                "\nWARNING: Dataset not found, nonexistent paths: %s"
+                % [str(x) for x in val if not x.exists()]
+            )
             if s and len(s):  # download script
-                print('Downloading %s ...' % s)
-                if s.startswith('http') and s.endswith('.zip'):  # URL
+                print("Downloading %s ..." % s)
+                if s.startswith("http") and s.endswith(".zip"):  # URL
                     f = Path(s).name  # filename
                     torch.hub.download_url_to_file(s, f)
-                    r = os.system('unzip -q %s -d ../ && rm %s' % (f, f))  # unzip
+                    r = os.system("unzip -q %s -d ../ && rm %s" % (f, f))  # unzip
                 else:  # bash script
                     r = os.system(s)
-                print('Dataset autodownload %s\n' % ('success' if r == 0 else 'failure'))  # analyze return value
+                print(
+                    "Dataset autodownload %s\n" % ("success" if r == 0 else "failure")
+                )  # analyze return value
             else:
-                raise Exception('Dataset not found.')
+                raise Exception("Dataset not found.")
 
 
 def make_divisible(x, divisor):
@@ -122,7 +139,9 @@ def labels_to_class_weights(labels, nc=80):
 def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
     # Produces image weights based on class mAPs
     n = len(labels)
-    class_counts = np.array([np.bincount(labels[i][:, 0].astype(np.int), minlength=nc) for i in range(n)])
+    class_counts = np.array(
+        [np.bincount(labels[i][:, 0].astype(np.int), minlength=nc) for i in range(n)]
+    )
     image_weights = (class_weights.reshape(1, nc) * class_counts).sum(1)
     # index = random.choices(range(n), weights=image_weights, k=1)  # weight image sample
     return image_weights
@@ -134,9 +153,88 @@ def coco80_to_coco91_class():  # converts 80-index (val2014) to 91-index (paper)
     # b = np.loadtxt('data/coco_paper.names', dtype='str', delimiter='\n')
     # x1 = [list(a[i] == b).index(True) + 1 for i in range(80)]  # darknet to coco
     # x2 = [list(b[i] == a).index(True) if any(b[i] == a) else None for i in range(91)]  # coco to darknet
-    x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 28, 31, 32, 33, 34,
-         35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
-         64, 65, 67, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90]
+    x = [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        27,
+        28,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        67,
+        70,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+    ]
     return x
 
 
@@ -163,8 +261,12 @@ def xywh2xyxy(x):
 def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
     # Rescale coords (xyxy) from img1_shape to img0_shape
     if ratio_pad is None:  # calculate from img0_shape
-        gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
-        pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
+        gain = min(
+            img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1]
+        )  # gain  = old / new
+        pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (
+            img1_shape[0] - img0_shape[0] * gain
+        ) / 2  # wh padding
     else:
         gain = ratio_pad[0][0]
         pad = ratio_pad[1]
@@ -199,8 +301,9 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
         b2_y1, b2_y2 = box2[1] - box2[3] / 2, box2[1] + box2[3] / 2
 
     # Intersection area
-    inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * \
-            (torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)).clamp(0)
+    inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * (
+        torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)
+    ).clamp(0)
 
     # Union Area
     w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + eps
@@ -209,16 +312,24 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
 
     iou = inter / union
     if GIoU or DIoU or CIoU:
-        cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)  # convex (smallest enclosing box) width
+        cw = torch.max(b1_x2, b2_x2) - torch.min(
+            b1_x1, b2_x1
+        )  # convex (smallest enclosing box) width
         ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)  # convex height
         if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
             c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
-            rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 +
-                    (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center distance squared
+            rho2 = (
+                (b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2
+                + (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2
+            ) / 4  # center distance squared
             if DIoU:
                 return iou - rho2 / c2  # DIoU
-            elif CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
-                v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
+            elif (
+                CIoU
+            ):  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
+                v = (4 / math.pi ** 2) * torch.pow(
+                    torch.atan(w2 / h2) - torch.atan(w1 / h1), 2
+                )
                 with torch.no_grad():
                     alpha = v / ((1 + eps) - iou + v)
                 return iou - (rho2 / c2 + v * alpha)  # CIoU
@@ -250,8 +361,17 @@ def box_iou(box1, box2):
     area2 = box_area(box2.T)
 
     # inter(N,M) = (rb(N,M,2) - lt(N,M,2)).clamp(0).prod(2)
-    inter = (torch.min(box1[:, None, 2:], box2[:, 2:]) - torch.max(box1[:, None, :2], box2[:, :2])).clamp(0).prod(2)
-    return inter / (area1[:, None] + area2 - inter)  # iou = inter / (area1 + area2 - inter)
+    inter = (
+        (
+            torch.min(box1[:, None, 2:], box2[:, 2:])
+            - torch.max(box1[:, None, :2], box2[:, :2])
+        )
+        .clamp(0)
+        .prod(2)
+    )
+    return inter / (
+        area1[:, None] + area2 - inter
+    )  # iou = inter / (area1 + area2 - inter)
 
 
 def wh_iou(wh1, wh2):
@@ -259,10 +379,14 @@ def wh_iou(wh1, wh2):
     wh1 = wh1[:, None]  # [N,1,2]
     wh2 = wh2[None]  # [1,M,2]
     inter = torch.min(wh1, wh2).prod(2)  # [N,M]
-    return inter / (wh1.prod(2) + wh2.prod(2) - inter)  # iou = inter / (area1 + area2 - inter)
+    return inter / (
+        wh1.prod(2) + wh2.prod(2) - inter
+    )  # iou = inter / (area1 + area2 - inter)
 
 
-def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, classes=None, agnostic=False):
+def non_max_suppression(
+    prediction, conf_thres=0.1, iou_thres=0.6, merge=False, classes=None, agnostic=False
+):
     """Performs Non-Maximum Suppression (NMS) on inference results
 
     Returns:
@@ -326,11 +450,13 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, 
         i = torch.ops.torchvision.nms(boxes, scores, iou_thres)
         if i.shape[0] > max_det:  # limit detections
             i = i[:max_det]
-        if merge and (1 < n < 3E3):  # Merge NMS (boxes merged using weighted mean)
+        if merge and (1 < n < 3e3):  # Merge NMS (boxes merged using weighted mean)
             # update boxes as boxes(i,4) = weights(i,n) * boxes(n,4)
             iou = box_iou(boxes[i], boxes) > iou_thres  # iou matrix
             weights = iou * scores[None]  # box weights
-            x[i, :4] = torch.mm(weights, x[:, :4]).float() / weights.sum(1, keepdim=True)  # merged boxes
+            x[i, :4] = torch.mm(weights, x[:, :4]).float() / weights.sum(
+                1, keepdim=True
+            )  # merged boxes
             if redundant:
                 i = i[iou.sum(1) > 1]  # require redundancy
 
@@ -341,49 +467,67 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, 
     return output
 
 
-def strip_optimizer(f='weights/best.pt', s=''):  # from utils.general import *; strip_optimizer()
+def strip_optimizer(
+    f="weights/best.pt", s=""
+):  # from utils.general import *; strip_optimizer()
     # Strip optimizer from 'f' to finalize training, optionally save as 's'
-    x = torch.load(f, map_location=torch.device('cpu'))
-    x['optimizer'] = None
-    x['training_results'] = None
-    x['epoch'] = -1
-    x['model'].half()  # to FP16
-    for p in x['model'].parameters():
+    x = torch.load(f, map_location=torch.device("cpu"))
+    x["optimizer"] = None
+    x["training_results"] = None
+    x["epoch"] = -1
+    x["model"].half()  # to FP16
+    for p in x["model"].parameters():
         p.requires_grad = False
     torch.save(x, s or f)
-    mb = os.path.getsize(s or f) / 1E6  # filesize
-    print('Optimizer stripped from %s,%s %.1fMB' % (f, (' saved as %s,' % s) if s else '', mb))
+    mb = os.path.getsize(s or f) / 1e6  # filesize
+    print(
+        "Optimizer stripped from %s,%s %.1fMB"
+        % (f, (" saved as %s," % s) if s else "", mb)
+    )
 
 
-def print_mutation(hyp, results, yaml_file='hyp_evolved.yaml', bucket=''):
+def print_mutation(hyp, results, yaml_file="hyp_evolved.yaml", bucket=""):
     # Print mutation results to evolve.txt (for use with train.py --evolve)
-    a = '%10s' * len(hyp) % tuple(hyp.keys())  # hyperparam keys
-    b = '%10.3g' * len(hyp) % tuple(hyp.values())  # hyperparam values
-    c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
-    print('\n%s\n%s\nEvolved fitness: %s\n' % (a, b, c))
+    a = "%10s" * len(hyp) % tuple(hyp.keys())  # hyperparam keys
+    b = "%10.3g" * len(hyp) % tuple(hyp.values())  # hyperparam values
+    c = (
+        "%10.4g" * len(results) % results
+    )  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
+    print("\n%s\n%s\nEvolved fitness: %s\n" % (a, b, c))
 
     if bucket:
-        url = 'gs://%s/evolve.txt' % bucket
-        if gsutil_getsize(url) > (os.path.getsize('evolve.txt') if os.path.exists('evolve.txt') else 0):
-            os.system('gsutil cp %s .' % url)  # download evolve.txt if larger than local
+        url = "gs://%s/evolve.txt" % bucket
+        if gsutil_getsize(url) > (
+            os.path.getsize("evolve.txt") if os.path.exists("evolve.txt") else 0
+        ):
+            os.system(
+                "gsutil cp %s ." % url
+            )  # download evolve.txt if larger than local
 
-    with open('evolve.txt', 'a') as f:  # append result
-        f.write(c + b + '\n')
-    x = np.unique(np.loadtxt('evolve.txt', ndmin=2), axis=0)  # load unique rows
+    with open("evolve.txt", "a") as f:  # append result
+        f.write(c + b + "\n")
+    x = np.unique(np.loadtxt("evolve.txt", ndmin=2), axis=0)  # load unique rows
     x = x[np.argsort(-fitness(x))]  # sort
-    np.savetxt('evolve.txt', x, '%10.3g')  # save sort by fitness
+    np.savetxt("evolve.txt", x, "%10.3g")  # save sort by fitness
 
     # Save yaml
     for i, k in enumerate(hyp.keys()):
         hyp[k] = float(x[0, i + 7])
-    with open(yaml_file, 'w') as f:
+    with open(yaml_file, "w") as f:
         results = tuple(x[0, :7])
-        c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
-        f.write('# Hyperparameter Evolution Results\n# Generations: %g\n# Metrics: ' % len(x) + c + '\n\n')
+        c = (
+            "%10.4g" * len(results) % results
+        )  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
+        f.write(
+            "# Hyperparameter Evolution Results\n# Generations: %g\n# Metrics: "
+            % len(x)
+            + c
+            + "\n\n"
+        )
         yaml.dump(hyp, f, sort_keys=False)
 
     if bucket:
-        os.system('gsutil cp evolve.txt %s gs://%s' % (yaml_file, bucket))  # upload
+        os.system("gsutil cp evolve.txt %s gs://%s" % (yaml_file, bucket))  # upload
 
 
 def apply_classifier(x, model, img, im0):
@@ -406,7 +550,7 @@ def apply_classifier(x, model, img, im0):
             pred_cls1 = d[:, 5].long()
             ims = []
             for j, a in enumerate(d):  # per item
-                cutout = im0[i][int(a[1]):int(a[3]), int(a[0]):int(a[2])]
+                cutout = im0[i][int(a[1]) : int(a[3]), int(a[0]) : int(a[2])]
                 im = cv2.resize(cutout, (224, 224))  # BGR
                 # cv2.imwrite('test%i.jpg' % j, cutout)
 
@@ -415,13 +559,15 @@ def apply_classifier(x, model, img, im0):
                 im /= 255.0  # 0 - 255 to 0.0 - 1.0
                 ims.append(im)
 
-            pred_cls2 = model(torch.Tensor(ims).to(d.device)).argmax(1)  # classifier prediction
+            pred_cls2 = model(torch.Tensor(ims).to(d.device)).argmax(
+                1
+            )  # classifier prediction
             x[i] = x[i][pred_cls1 == pred_cls2]  # retain matching class detections
 
     return x
 
 
-def increment_path(path, exist_ok=True, sep=''):
+def increment_path(path, exist_ok=True, sep=""):
     # Increment path, i.e. runs/exp --> runs/exp{sep}0, runs/exp{sep}1 etc.
     path = Path(path)  # os-agnostic
     if (path.exists() and exist_ok) or (not path.exists()):

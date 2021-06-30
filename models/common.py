@@ -26,7 +26,9 @@ def DWConv(c1, c2, k=1, s=1, act=True):
 
 class Conv(nn.Module):
     # Standard convolution
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
+    def __init__(
+        self, c1, c2, k=1, s=1, p=None, g=1, act=True
+    ):  # ch_in, ch_out, kernel, stride, padding, groups
         super(Conv, self).__init__()
         self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False)
         self.bn = nn.BatchNorm2d(c2)
@@ -41,7 +43,9 @@ class Conv(nn.Module):
 
 class Bottleneck(nn.Module):
     # Standard bottleneck
-    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, shortcut, groups, expansion
+    def __init__(
+        self, c1, c2, shortcut=True, g=1, e=0.5
+    ):  # ch_in, ch_out, shortcut, groups, expansion
         super(Bottleneck, self).__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
@@ -54,7 +58,9 @@ class Bottleneck(nn.Module):
 
 class BottleneckCSP(nn.Module):
     # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
+    def __init__(
+        self, c1, c2, n=1, shortcut=True, g=1, e=0.5
+    ):  # ch_in, ch_out, number, shortcut, groups, expansion
         super(BottleneckCSP, self).__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
@@ -63,7 +69,9 @@ class BottleneckCSP(nn.Module):
         self.cv4 = Conv(2 * c_, c2, 1, 1)
         self.bn = nn.BatchNorm2d(2 * c_)  # applied to cat(cv2, cv3)
         self.act = nn.LeakyReLU(0.1, inplace=True)
-        self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)])
+        self.m = nn.Sequential(
+            *[Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)]
+        )
 
     def forward(self, x):
         y1 = self.cv3(self.m(self.cv1(x)))
@@ -78,7 +86,9 @@ class SPP(nn.Module):
         c_ = c1 // 2  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
         self.cv2 = Conv(c_ * (len(k) + 1), c2, 1, 1)
-        self.m = nn.ModuleList([nn.MaxPool2d(kernel_size=x, stride=1, padding=x // 2) for x in k])
+        self.m = nn.ModuleList(
+            [nn.MaxPool2d(kernel_size=x, stride=1, padding=x // 2) for x in k]
+        )
 
     def forward(self, x):
         x = self.cv1(x)
@@ -87,12 +97,24 @@ class SPP(nn.Module):
 
 class Focus(nn.Module):
     # Focus wh information into c-space
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
+    def __init__(
+        self, c1, c2, k=1, s=1, p=None, g=1, act=True
+    ):  # ch_in, ch_out, kernel, stride, padding, groups
         super(Focus, self).__init__()
         self.conv = Conv(c1 * 4, c2, k, s, p, g, act)
 
     def forward(self, x):  # x(b,c,w,h) -> y(b,4c,w/2,h/2)
-        return self.conv(torch.cat([x[..., ::2, ::2], x[..., 1::2, ::2], x[..., ::2, 1::2], x[..., 1::2, 1::2]], 1))
+        return self.conv(
+            torch.cat(
+                [
+                    x[..., ::2, ::2],
+                    x[..., 1::2, ::2],
+                    x[..., ::2, 1::2],
+                    x[..., 1::2, 1::2],
+                ],
+                1,
+            )
+        )
 
 
 class Concat(nn.Module):
@@ -115,7 +137,9 @@ class NMS(nn.Module):
         super(NMS, self).__init__()
 
     def forward(self, x):
-        return non_max_suppression(x[0], conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)
+        return non_max_suppression(
+            x[0], conf_thres=self.conf, iou_thres=self.iou, classes=self.classes
+        )
 
 
 class autoShape(nn.Module):
@@ -139,7 +163,9 @@ class autoShape(nn.Module):
 
         p = next(self.model.parameters())  # for device and type
         if isinstance(imgs, torch.Tensor):  # torch
-            return self.model(imgs.to(p.device).type_as(p), augment, profile)  # inference
+            return self.model(
+                imgs.to(p.device).type_as(p), augment, profile
+            )  # inference
 
         # Pre-process
         if not isinstance(imgs, list):
@@ -148,21 +174,30 @@ class autoShape(nn.Module):
         batch = range(len(imgs))  # batch size
         for i in batch:
             imgs[i] = np.array(imgs[i])  # to numpy
-            imgs[i] = imgs[i][:, :, :3] if imgs[i].ndim == 3 else np.tile(imgs[i][:, :, None], 3)  # enforce 3ch input
+            imgs[i] = (
+                imgs[i][:, :, :3]
+                if imgs[i].ndim == 3
+                else np.tile(imgs[i][:, :, None], 3)
+            )  # enforce 3ch input
             s = imgs[i].shape[:2]  # HWC
             shape0.append(s)  # image shape
-            g = (size / max(s))  # gain
+            g = size / max(s)  # gain
             shape1.append([y * g for y in s])
-        shape1 = [make_divisible(x, int(self.stride.max())) for x in np.stack(shape1, 0).max(0)]  # inference shape
+        shape1 = [
+            make_divisible(x, int(self.stride.max()))
+            for x in np.stack(shape1, 0).max(0)
+        ]  # inference shape
         x = [letterbox(imgs[i], new_shape=shape1, auto=False)[0] for i in batch]  # pad
         x = np.stack(x, 0) if batch[-1] else x[0][None]  # stack
         x = np.ascontiguousarray(x.transpose((0, 3, 1, 2)))  # BHWC to BCHW
-        x = torch.from_numpy(x).to(p.device).type_as(p) / 255.  # uint8 to fp16/32
+        x = torch.from_numpy(x).to(p.device).type_as(p) / 255.0  # uint8 to fp16/32
 
         # Inference
         with torch.no_grad():
             y = self.model(x, augment, profile)[0]  # forward
-        y = non_max_suppression(y, conf_thres=self.conf, iou_thres=self.iou, classes=self.classes)  # NMS
+        y = non_max_suppression(
+            y, conf_thres=self.conf, iou_thres=self.iou, classes=self.classes
+        )  # NMS
 
         # Post-process
         for i in batch:
@@ -181,29 +216,38 @@ class Detections:
         self.names = names  # class names
         self.xyxy = pred  # xyxy pixels
         self.xywh = [xyxy2xywh(x) for x in pred]  # xywh pixels
-        gn = [torch.Tensor([*[im.shape[i] for i in [1, 0, 1, 0]], 1., 1.]) for im in imgs]  # normalization gains
+        gn = [
+            torch.Tensor([*[im.shape[i] for i in [1, 0, 1, 0]], 1.0, 1.0])
+            for im in imgs
+        ]  # normalization gains
         self.xyxyn = [x / g for x, g in zip(self.xyxy, gn)]  # xyxy normalized
         self.xywhn = [x / g for x, g in zip(self.xywh, gn)]  # xywh normalized
 
     def display(self, pprint=False, show=False, save=False):
         colors = color_list()
         for i, (img, pred) in enumerate(zip(self.imgs, self.pred)):
-            str = f'Image {i + 1}/{len(self.pred)}: {img.shape[0]}x{img.shape[1]} '
+            str = f"Image {i + 1}/{len(self.pred)}: {img.shape[0]}x{img.shape[1]} "
             if pred is not None:
                 for c in pred[:, -1].unique():
                     n = (pred[:, -1] == c).sum()  # detections per class
-                    str += f'{n} {self.names[int(c)]}s, '  # add to string
+                    str += f"{n} {self.names[int(c)]}s, "  # add to string
                 if show or save:
-                    img = Image.fromarray(img.astype(np.uint8)) if isinstance(img, np.ndarray) else img  # from np
+                    img = (
+                        Image.fromarray(img.astype(np.uint8))
+                        if isinstance(img, np.ndarray)
+                        else img
+                    )  # from np
                     for *box, conf, cls in pred:  # xyxy, confidence, class
                         # str += '%s %.2f, ' % (names[int(cls)], conf)  # label
-                        ImageDraw.Draw(img).rectangle(box, width=4, outline=colors[int(cls) % 10])  # plot
+                        ImageDraw.Draw(img).rectangle(
+                            box, width=4, outline=colors[int(cls) % 10]
+                        )  # plot
             if save:
-                f = f'results{i}.jpg'
+                f = f"results{i}.jpg"
                 str += f"saved to '{f}'"
                 img.save(f)  # save
             if show:
-                img.show(f'Image {i}')  # show
+                img.show(f"Image {i}")  # show
             if pprint:
                 print(str)
 
@@ -226,12 +270,18 @@ class Flatten(nn.Module):
 
 class Classify(nn.Module):
     # Classification head, i.e. x(b,c1,20,20) to x(b,c2)
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1):  # ch_in, ch_out, kernel, stride, padding, groups
+    def __init__(
+        self, c1, c2, k=1, s=1, p=None, g=1
+    ):  # ch_in, ch_out, kernel, stride, padding, groups
         super(Classify, self).__init__()
         self.aap = nn.AdaptiveAvgPool2d(1)  # to x(b,c1,1,1)
-        self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False)  # to x(b,c2,1,1)
+        self.conv = nn.Conv2d(
+            c1, c2, k, s, autopad(k, p), groups=g, bias=False
+        )  # to x(b,c2,1,1)
         self.flat = Flatten()
 
     def forward(self, x):
-        z = torch.cat([self.aap(y) for y in (x if isinstance(x, list) else [x])], 1)  # cat if list
+        z = torch.cat(
+            [self.aap(y) for y in (x if isinstance(x, list) else [x])], 1
+        )  # cat if list
         return self.flat(self.conv(z))  # flatten to x(b,c2)
