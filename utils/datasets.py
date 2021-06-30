@@ -910,7 +910,7 @@ def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, s
 
 
 def copy_paste(img, labels, segments, probability=0.5):
-    # Implement Copy-Paste augmentation https://arxiv.org/abs/2012.07177, labels in labels in xyxy
+    # Implement Copy-Paste augmentation https://arxiv.org/abs/2012.07177, labels as nx5 np.array(cls, xyxy)
     n = len(segments)
     if probability and n:
         h, w, c = img.shape  # height, width, channels

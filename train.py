@@ -6,7 +6,6 @@ Usage:
 
 import argparse
 import logging
-import math
 import os
 import random
 import sys
@@ -16,6 +15,7 @@ from copy import deepcopy
 from pathlib import Path
 from threading import Thread
 
+import math
 import numpy as np
 import torch.distributed as dist
 import torch.nn as nn
