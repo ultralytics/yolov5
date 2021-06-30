@@ -684,7 +684,7 @@ def load_mosaic(self, index):
     # img4, labels4 = replicate(img4, labels4)  # replicate
 
     # Augment
-    img4, labels4, segments4 = copy_paste(img4, labels4, segments4)
+    img4, labels4, segments4 = copy_paste(img4, labels4, segments4, probability=self.hyp['copy_paste'])
     img4, labels4 = random_perspective(img4, labels4, segments4,
                                        degrees=self.hyp['degrees'],
                                        translate=self.hyp['translate'],
@@ -912,7 +912,7 @@ def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, s
 def copy_paste(img, labels, segments, probability=0.5):
     # Implement Copy-Paste augmentation https://arxiv.org/abs/2012.07177, labels in labels in xyxy
     n = len(segments)
-    if n:
+    if probability and n:
         h, w, c = img.shape  # height, width, channels
         im_new = np.zeros(img.shape, np.uint8)
         for j in random.sample(range(n), k=round(probability * n)):
@@ -926,7 +926,7 @@ def copy_paste(img, labels, segments, probability=0.5):
 
         result = cv2.bitwise_and(src1=img, src2=im_new)
         result = cv2.flip(result, 1)  # augment segments (flip left-right)
-        i = result > 0
+        i = result > 0  # pixels to replace
         # i[:, :] = result.max(2).reshape(h, w, 1)  # act over ch
         img[i] = result[i]  # cv2.imwrite('debug.jpg', img)  # debug
 
