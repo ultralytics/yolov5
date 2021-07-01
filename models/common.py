@@ -9,7 +9,8 @@ import pandas as pd
 import requests
 import torch
 import torch.nn as nn
-from PIL import Image
+from PIL import Image, ImageOps
+
 from torch.cuda import amp
 
 from utils.datasets import letterbox
@@ -252,9 +253,10 @@ class AutoShape(nn.Module):
         for i, im in enumerate(imgs):
             f = f'image{i}'  # filename
             if isinstance(im, str):  # filename or uri
-                im, f = np.asarray(Image.open(requests.get(im, stream=True).raw if im.startswith('http') else im)), im
+                im, f = Image.open(requests.get(im, stream=True).raw if im.startswith('http') else im), im
+                im = np.asarray(ImageOps.exif_transpose(im))
             elif isinstance(im, Image.Image):  # PIL Image
-                im, f = np.asarray(im), getattr(im, 'filename', f) or f
+                im, f = np.asarray(ImageOps.exif_transpose(im)), getattr(im, 'filename', f) or f
             files.append(Path(f).with_suffix('.jpg').name)
             if im.shape[0] < 5:  # image in CHW
                 im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
