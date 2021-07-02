@@ -73,8 +73,8 @@ def exif_transpose(image):
     :return: An image.
     """
     exif = image.getexif()
-    orientation = exif.get(0x0112)
-    if orientation:
+    orientation = exif.get(0x0112, 1)  # default 1
+    if orientation > 1:
         method = {2: Image.FLIP_LEFT_RIGHT,
                   3: Image.ROTATE_180,
                   4: Image.FLIP_TOP_BOTTOM,
