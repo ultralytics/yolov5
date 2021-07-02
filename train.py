@@ -60,6 +60,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, notest, nosave, workers, = \
         opt.save_dir, opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
         opt.resume, opt.notest, opt.nosave, opt.workers
+    evolve = evolve is not None
 
     # Directories
     save_dir = Path(save_dir)
@@ -542,7 +543,7 @@ def main(opt):
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
         opt.name = 'evolve' if opt.evolve else opt.name
-        opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok | opt.evolve))
+        opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok | (opt.evolve is None)))
 
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
@@ -556,7 +557,7 @@ def main(opt):
         assert not opt.image_weights, '--image-weights argument is not compatible with DDP training'
 
     # Train
-    if not opt.evolve:
+    if opt.evolve is None:
         train(opt.hyp, opt, device)
         if WORLD_SIZE > 1 and RANK == 0:
             _ = [print('Destroying process group... ', end=''), dist.destroy_process_group(), print('Done.')]
