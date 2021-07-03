@@ -77,16 +77,14 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         modelc.load_state_dict(torch.load('resnet50.pt', map_location=device)['model']).to(device).eval()
 
     # Set Dataloader
-    if source.endswith('.txt'):
-        with open(source, 'r') as f:
-            sources_len = len([x.strip() for x in f.read().strip().splitlines() if len(x.strip())])
-    vid_path, vid_writer = [None]*sources_len, [None]*sources_len
     if webcam:
         view_img = check_imshow()
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadStreams(source, img_size=imgsz, stride=stride)
+        vid_path, vid_writer = [None] * len(dataset.sources), [None] * len(dataset.sources)
     else:
         dataset = LoadImages(source, img_size=imgsz, stride=stride)
+        vid_path, vid_writer = None, None
 
     # Run inference
     if device.type != 'cpu':
@@ -159,7 +157,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             # Save results (image with detections)
             if save_img:
                 if dataset.mode == 'image':
-                    cv2.imwrite(save_path, im0)                   
+                    cv2.imwrite(save_path, im0)
                 else:  # 'video' or 'stream'
                     if vid_path[i] != save_path:  # new video
                         vid_path[i] = save_path
