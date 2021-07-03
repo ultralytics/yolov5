@@ -495,7 +495,7 @@ def parse_opt(known=False):
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
-    parser.add_argument('--evolve', type=int, required=False, help='evolve hyperparameters for this many generations')
+    parser.add_argument('--evolve', nargs='?', const=300, help='evolve hyperparameters for this many generations')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
