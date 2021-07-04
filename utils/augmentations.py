@@ -6,7 +6,7 @@ import cv2
 import math
 import numpy as np
 
-from utils.general import segment2box, resample_segments
+from utils.general import colorstr, segment2box, resample_segments
 from utils.metrics import bbox_ioa
 
 
@@ -20,10 +20,11 @@ class Albumentations:
                 A.MedianBlur(p=0.1),
                 A.ToGray(p=0.01)],
                 bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
+            print(colorstr('albumentations: ') + ', '.join(f'{x}' for x in list(self.transform.transforms)))
         except ImportError:
             self.transform = None
 
-    def __call__(self, im, labels, p=0.0):
+    def __call__(self, im, labels, p=1.0):
         if self.transform and random.random() < p:
             new = self.transform(image=im, bboxes=labels[:, 1:], class_labels=labels[:, 0])  # transformed
             im, labels = new['image'], np.array([[c, *b] for c, b in zip(new['class_labels'], new['bboxes'])])
