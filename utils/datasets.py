@@ -352,7 +352,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
         return self.sources, img, img0, None
 
     def __len__(self):
-        return 0  # 1E12 frames = 32 streams at 30 FPS for 30 years
+        return len(self.sources)  # 1E12 frames = 32 streams at 30 FPS for 30 years
 
 
 def img2label_paths(img_paths):
