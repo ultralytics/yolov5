@@ -154,7 +154,7 @@ class Model(nn.Module):
 
             x = m(x)  # run
             y.append(x if m.i in self.save else None)  # save output
-            
+
             if feature_vis and m.type == 'models.common.SPP':
                 feature_visualization(x, m.type, m.i)
 
