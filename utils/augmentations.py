@@ -1,5 +1,6 @@
 # YOLOv5 image augmentation functions
 
+import logging
 import random
 
 import cv2
@@ -20,7 +21,7 @@ class Albumentations:
                 A.MedianBlur(p=0.1),
                 A.ToGray(p=0.01)],
                 bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
-            print(colorstr('albumentations: ') + ', '.join(f'{x}' for x in list(self.transform.transforms)))
+            logging.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms))
         except ImportError:
             self.transform = None
 
@@ -29,9 +30,6 @@ class Albumentations:
             new = self.transform(image=im, bboxes=labels[:, 1:], class_labels=labels[:, 0])  # transformed
             im, labels = new['image'], np.array([[c, *b] for c, b in zip(new['class_labels'], new['bboxes'])])
         return im, labels
-
-
-albumentations = Albumentations()  # create instance for 'from utils.augmentations import albumentations'
 
 
 def augment_hsv(im, hgain=0.5, sgain=0.5, vgain=0.5):

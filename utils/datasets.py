@@ -22,7 +22,7 @@ from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils.augmentations import albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
+from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
 from utils.general import check_requirements, check_file, check_dataset, xywh2xyxy, xywhn2xyxy, xyxy2xywhn, \
     xyn2xy, segments2boxes, clean_str
 from utils.torch_utils import torch_distributed_zero_first
@@ -372,6 +372,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
         self.path = path
+        self.albumentations = Albumentations() if augment else None
 
         try:
             f = []  # image files
@@ -553,7 +554,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         if self.augment:
             # Albumentations
-            img, labels = albumentations(img, labels)
+            img, labels = self.albumentations(img, labels)
 
             # HSV color-space
             augment_hsv(img, hgain=hyp['hsv_h'], sgain=hyp['hsv_s'], vgain=hyp['hsv_v'])
