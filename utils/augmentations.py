@@ -19,7 +19,7 @@ class Albumentations:
         try:
             import albumentations as A
             r, a = '1.0.0', A.__version__  # required, actual versions
-            assert pkg.parse_version(a) >= pkg.parse_version(r), f'version {r} required but {a} found'
+            assert pkg.parse_version(a) >= pkg.parse_version(r), f'version>={r} required but version {a} found'
             self.transform = A.Compose([
                 A.Blur(p=0.1),
                 A.MedianBlur(p=0.1),
