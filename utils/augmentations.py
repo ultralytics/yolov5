@@ -6,6 +6,7 @@ import random
 import cv2
 import math
 import numpy as np
+import pkg_resources as pkg
 
 from utils.general import colorstr, segment2box, resample_segments
 from utils.metrics import bbox_ioa
@@ -16,6 +17,9 @@ class Albumentations:
     def __init__(self):
         try:
             import albumentations as A
+            r, a = '1.0.0', A.__version__  # required, actual versions
+            assert pkg.parse_version(a) >= pkg.parse_version(r), f'version {r} required but {a} found'
+            # check_requirements(f'albumentations>={r}')
             self.transform = A.Compose([
                 A.Blur(p=0.1),
                 A.MedianBlur(p=0.1),
@@ -24,6 +28,8 @@ class Albumentations:
             logging.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms))
         except ImportError:
             self.transform = None
+        except Exception as e:
+            logging.info(colorstr('albumentations: ') + f'{e}')
 
     def __call__(self, im, labels, p=1.0):
         if self.transform and random.random() < p:
