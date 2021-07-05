@@ -22,7 +22,7 @@ from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from utils.augmentations import augment_hsv, copy_paste, letterbox, mixup, random_perspective
+from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
 from utils.general import check_requirements, check_file, check_dataset, xywh2xyxy, xywhn2xyxy, xyxy2xywhn, \
     xyn2xy, segments2boxes, clean_str
 from utils.torch_utils import torch_distributed_zero_first
@@ -218,7 +218,7 @@ class LoadImages:  # for inference
         img = letterbox(img0, self.img_size, stride=self.stride)[0]
 
         # Convert
-        img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB and HWC to CHW
+        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
 
         return path, img, img0, self.cap
@@ -264,7 +264,7 @@ class LoadWebcam:  # for inference
         img = letterbox(img0, self.img_size, stride=self.stride)[0]
 
         # Convert
-        img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB and HWC to CHW
+        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
 
         return img_path, img, img0, None
@@ -345,7 +345,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
         img = np.stack(img, 0)
 
         # Convert
-        img = img[:, :, :, ::-1].transpose(0, 3, 1, 2)  # BGR to RGB and BHWC to BCHW
+        img = img[..., ::-1].transpose((0, 3, 1, 2))  # BGR to RGB, BHWC to BCHW
         img = np.ascontiguousarray(img)
 
         return self.sources, img, img0, None
@@ -372,6 +372,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
         self.path = path
+        self.albumentations = Albumentations() if augment else None
 
         try:
             f = []  # image files
@@ -526,7 +527,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             if random.random() < hyp['mixup']:
                 img, labels = mixup(img, labels, *load_mosaic(self, random.randint(0, self.n - 1)))
 
-
         else:
             # Load image
             img, (h0, w0), (h, w) = load_image(self, index)
@@ -540,9 +540,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             if labels.size:  # normalized xywh to pixel xyxy format
                 labels[:, 1:] = xywhn2xyxy(labels[:, 1:], ratio[0] * w, ratio[1] * h, padw=pad[0], padh=pad[1])
 
-        if self.augment:
-            # Augment imagespace
-            if not mosaic:
+            if self.augment:
                 img, labels = random_perspective(img, labels,
                                                  degrees=hyp['degrees'],
                                                  translate=hyp['translate'],
@@ -550,36 +548,39 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                                                  shear=hyp['shear'],
                                                  perspective=hyp['perspective'])
 
-            # Augment colorspace
-            augment_hsv(img, hgain=hyp['hsv_h'], sgain=hyp['hsv_s'], vgain=hyp['hsv_v'])
-
-            # Apply cutouts
-            # if random.random() < 0.9:
-            #     labels = cutout(img, labels)
-
-        nL = len(labels)  # number of labels
-        if nL:
+        nl = len(labels)  # number of labels
+        if nl:
             labels[:, 1:5] = xyxy2xywhn(labels[:, 1:5], w=img.shape[1], h=img.shape[0])  # xyxy to xywh normalized
 
         if self.augment:
-            # flip up-down
+            # Albumentations
+            img, labels = self.albumentations(img, labels)
+
+            # HSV color-space
+            augment_hsv(img, hgain=hyp['hsv_h'], sgain=hyp['hsv_s'], vgain=hyp['hsv_v'])
+
+            # Flip up-down
             if random.random() < hyp['flipud']:
                 img = np.flipud(img)
-                if nL:
+                if nl:
                     labels[:, 2] = 1 - labels[:, 2]
 
-            # flip left-right
+            # Flip left-right
             if random.random() < hyp['fliplr']:
                 img = np.fliplr(img)
-                if nL:
+                if nl:
                     labels[:, 1] = 1 - labels[:, 1]
 
-        labels_out = torch.zeros((nL, 6))
-        if nL:
+            # Cutouts
+            # if random.random() < 0.9:
+            #     labels = cutout(img, labels)
+
+        labels_out = torch.zeros((nl, 6))
+        if nl:
             labels_out[:, 1:] = torch.from_numpy(labels)
 
         # Convert
-        img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3 x img_height x img_width
+        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
 
         return torch.from_numpy(img), labels_out, self.img_files[index], shapes
