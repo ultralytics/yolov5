@@ -2,7 +2,6 @@
 
 import datetime
 import logging
-import math
 import os
 import platform
 import subprocess
@@ -11,6 +10,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 
+import math
 import torch
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
@@ -64,7 +64,8 @@ def git_describe(path=Path(__file__).parent):  # path must be a directory
 def select_device(device='', batch_size=None):
     # device = 'cpu' or '0' or '0,1,2,3'
     s = f'YOLOv5 🚀 {git_describe() or date_modified()} torch {torch.__version__} '  # string
-    cpu = device.lower() == 'cpu'
+    device = str(device).strip().lower().replace('cuda:', '')  # to string, 'cuda:0' to '0'
+    cpu = device == 'cpu'
     if cpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force torch.cuda.is_available() = False
     elif device:  # non-cpu device requested
