@@ -15,11 +15,11 @@ from utils.metrics import bbox_ioa
 class Albumentations:
     # YOLOv5 Albumentations class (optional)
     def __init__(self):
+        self.transform = None
         try:
             import albumentations as A
             r, a = '1.0.0', A.__version__  # required, actual versions
             assert pkg.parse_version(a) >= pkg.parse_version(r), f'version {r} required but {a} found'
-            # check_requirements(f'albumentations>={r}')
             self.transform = A.Compose([
                 A.Blur(p=0.1),
                 A.MedianBlur(p=0.1),
@@ -27,7 +27,7 @@ class Albumentations:
                 bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
             logging.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms))
         except ImportError:
-            self.transform = None
+            pass
         except Exception as e:
             logging.info(colorstr('albumentations: ') + f'{e}')
 
