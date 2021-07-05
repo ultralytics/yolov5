@@ -3,7 +3,6 @@
 import contextlib
 import glob
 import logging
-import math
 import os
 import platform
 import random
@@ -17,6 +16,7 @@ from pathlib import Path
 from subprocess import check_output
 
 import cv2
+import math
 import numpy as np
 import pandas as pd
 import pkg_resources as pkg
@@ -136,13 +136,16 @@ def check_git_status(err_msg=', for updates see https://github.com/ultralytics/y
         print(f'{e}{err_msg}')
 
 
-def check_python(minimum='3.6.2', required=True):
+def check_python(minimum='3.6.2'):
     # Check current python version vs. required python version
-    current = platform.python_version()
-    result = pkg.parse_version(current) >= pkg.parse_version(minimum)
-    if required:
-        assert result, f'Python {minimum} required by YOLOv5, but Python {current} is currently installed'
-    return result
+    check_version(platform.python_version(), minimum, name='Python ')
+
+
+def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=False):
+    # Check version vs. required version
+    current, minimum = (pkg.parse_version(x) for x in (current, minimum))
+    result = (current == minimum) if pinned else (current >= minimum)
+    assert result, f'{name}{minimum} required by YOLOv5, but {name}{current} is currently installed'
 
 
 def check_requirements(requirements='requirements.txt', exclude=()):
