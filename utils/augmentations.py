@@ -6,27 +6,25 @@ import random
 import cv2
 import math
 import numpy as np
-import pkg_resources as pkg
 
-from utils.general import colorstr, segment2box, resample_segments
+from utils.general import colorstr, segment2box, resample_segments, check_version
 from utils.metrics import bbox_ioa
 
 
 class Albumentations:
-    # YOLOv5 Albumentations class (optional)
+    # YOLOv5 Albumentations class (optional, used if package is installed)
     def __init__(self):
         self.transform = None
         try:
             import albumentations as A
-            r, a = '1.0.0', A.__version__  # required, actual versions
-            assert pkg.parse_version(a) >= pkg.parse_version(r), f'version>={r} required but version {a} found'
+            check_version(A.__version__, '1.0.0')  # version requirement
             self.transform = A.Compose([
                 A.Blur(p=0.1),
                 A.MedianBlur(p=0.1),
                 A.ToGray(p=0.01)],
                 bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
             logging.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms))
-        except ImportError:
+        except ImportError:  # package not installed, skip
             pass
         except Exception as e:
             logging.info(colorstr('albumentations: ') + f'{e}')
