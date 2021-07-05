@@ -12,7 +12,7 @@ from utils.metrics import bbox_ioa
 
 
 class Albumentations:
-    # YOLOv5 Albumentations class (optional, used if package is installed)
+    # YOLOv5 Albumentations class (optional, only used if package is installed)
     def __init__(self):
         self.transform = None
         try:
