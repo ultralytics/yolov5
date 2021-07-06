@@ -1,39 +1,38 @@
 # SKU-110K retail items dataset https://github.com/eg4000/SKU110K_CVPR19
 # Train command: python train.py --data SKU-110K.yaml
 # Default dataset location is next to YOLOv5:
-#   /parent_folder
+#   /parent
 #     /datasets/SKU-110K
 #     /yolov5
 
 
-# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
-train: ../datasets/SKU-110K/train.txt  # 8219 images
-val: ../datasets/SKU-110K/val.txt  # 588 images
-test: ../datasets/SKU-110K/test.txt  # 2936 images
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: ../datasets/SKU-110K  # dataset root dir
+train: train.txt  # train images (relative to 'path')  8219 images
+val: val.txt  # val images (relative to 'path')  588 images
+test: test.txt  # test images (optional)  2936 images
 
-# number of classes
-nc: 1
-
-# class names
-names: [ 'object' ]
+# Classes
+nc: 1  # number of classes
+names: [ 'object' ]  # class names
 
 
-# download command/URL (optional) --------------------------------------------------------------------------------------
+# Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
   import shutil
   from tqdm import tqdm
   from utils.general import np, pd, Path, download, xyxy2xywh
 
   # Download
-  datasets = Path('../datasets')  # download directory
+  dir = Path(yaml['path'])  # dataset root dir
+  parent = Path(dir.parent)  # download dir
   urls = ['http://trax-geometry.s3.amazonaws.com/cvpr_challenge/SKU110K_fixed.tar.gz']
-  download(urls, dir=datasets, delete=False)
+  download(urls, dir=parent, delete=False)
 
   # Rename directories
-  dir = (datasets / 'SKU-110K')
   if dir.exists():
       shutil.rmtree(dir)
-  (datasets / 'SKU110K_fixed').rename(dir)  # rename dir
+  (parent / 'SKU110K_fixed').rename(dir)  # rename dir
   (dir / 'labels').mkdir(parents=True, exist_ok=True)  # create labels dir
 
   # Convert labels

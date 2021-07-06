@@ -1,4 +1,11 @@
+"""Run inference with a YOLOv5 model on images, videos, directories, streams
+
+Usage:
+    $ python path/to/detect.py --source path/to/img.jpg --weights yolov5s.pt --img 640
+"""
+
 import argparse
+import sys
 import time
 from pathlib import Path
 
@@ -6,39 +13,42 @@ import cv2
 import torch
 import torch.backends.cudnn as cudnn
 
+FILE = Path(__file__).absolute()
+sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
+
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
-from utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
-    scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
+from utils.general import check_img_size, check_requirements, check_imshow, colorstr, non_max_suppression, \
+    apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
 from utils.plots import colors, plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
 @torch.no_grad()
-def detect(weights='yolov5s.pt',  # model.pt path(s)
-           source='data/images',  # file/dir/URL/glob, 0 for webcam
-           imgsz=640,  # inference size (pixels)
-           conf_thres=0.25,  # confidence threshold
-           iou_thres=0.45,  # NMS IOU threshold
-           max_det=1000,  # maximum detections per image
-           device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-           view_img=False,  # show results
-           save_txt=False,  # save results to *.txt
-           save_conf=False,  # save confidences in --save-txt labels
-           save_crop=False,  # save cropped prediction boxes
-           nosave=False,  # do not save images/videos
-           classes=None,  # filter by class: --class 0, or --class 0 2 3
-           agnostic_nms=False,  # class-agnostic NMS
-           augment=False,  # augmented inference
-           update=False,  # update all models
-           project='runs/detect',  # save results to project/name
-           name='exp',  # save results to project/name
-           exist_ok=False,  # existing project/name ok, do not increment
-           line_thickness=3,  # bounding box thickness (pixels)
-           hide_labels=False,  # hide labels
-           hide_conf=False,  # hide confidences
-           half=False,  # use FP16 half-precision inference
-           ):
+def run(weights='yolov5s.pt',  # model.pt path(s)
+        source='data/images',  # file/dir/URL/glob, 0 for webcam
+        imgsz=640,  # inference size (pixels)
+        conf_thres=0.25,  # confidence threshold
+        iou_thres=0.45,  # NMS IOU threshold
+        max_det=1000,  # maximum detections per image
+        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        view_img=False,  # show results
+        save_txt=False,  # save results to *.txt
+        save_conf=False,  # save confidences in --save-txt labels
+        save_crop=False,  # save cropped prediction boxes
+        nosave=False,  # do not save images/videos
+        classes=None,  # filter by class: --class 0, or --class 0 2 3
+        agnostic_nms=False,  # class-agnostic NMS
+        augment=False,  # augmented inference
+        update=False,  # update all models
+        project='runs/detect',  # save results to project/name
+        name='exp',  # save results to project/name
+        exist_ok=False,  # existing project/name ok, do not increment
+        line_thickness=3,  # bounding box thickness (pixels)
+        hide_labels=False,  # hide labels
+        hide_conf=False,  # hide confidences
+        half=False,  # use FP16 half-precision inference
+        ):
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://', 'https://'))
@@ -66,14 +76,16 @@ def detect(weights='yolov5s.pt',  # model.pt path(s)
         modelc = load_classifier(name='resnet50', n=2)  # initialize
         modelc.load_state_dict(torch.load('resnet50.pt', map_location=device)['model']).to(device).eval()
 
-    # Set Dataloader
-    vid_path, vid_writer = None, None
+    # Dataloader
     if webcam:
         view_img = check_imshow()
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadStreams(source, img_size=imgsz, stride=stride)
+        bs = len(dataset)  # batch_size
     else:
         dataset = LoadImages(source, img_size=imgsz, stride=stride)
+        bs = 1  # batch_size
+    vid_path, vid_writer = [None] * bs, [None] * bs
 
     # Run inference
     if device.type != 'cpu':
@@ -148,10 +160,10 @@ def detect(weights='yolov5s.pt',  # model.pt path(s)
                 if dataset.mode == 'image':
                     cv2.imwrite(save_path, im0)
                 else:  # 'video' or 'stream'
-                    if vid_path != save_path:  # new video
-                        vid_path = save_path
-                        if isinstance(vid_writer, cv2.VideoWriter):
-                            vid_writer.release()  # release previous video writer
+                    if vid_path[i] != save_path:  # new video
+                        vid_path[i] = save_path
+                        if isinstance(vid_writer[i], cv2.VideoWriter):
+                            vid_writer[i].release()  # release previous video writer
                         if vid_cap:  # video
                             fps = vid_cap.get(cv2.CAP_PROP_FPS)
                             w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -159,8 +171,8 @@ def detect(weights='yolov5s.pt',  # model.pt path(s)
                         else:  # stream
                             fps, w, h = 30, im0.shape[1], im0.shape[0]
                             save_path += '.mp4'
-                        vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                    vid_writer.write(im0)
+                        vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                    vid_writer[i].write(im0)
 
     if save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
@@ -172,7 +184,7 @@ def detect(weights='yolov5s.pt',  # model.pt path(s)
     print(f'Done. ({time.time() - t0:.3f}s)')
 
 
-if __name__ == '__main__':
+def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='data/images', help='file/dir/URL/glob, 0 for webcam')
@@ -198,7 +210,15 @@ if __name__ == '__main__':
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     opt = parser.parse_args()
-    print(opt)
-    check_requirements(exclude=('tensorboard', 'thop'))
+    return opt
 
-    detect(**vars(opt))
+
+def main(opt):
+    print(colorstr('detect: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
+    check_requirements(exclude=('tensorboard', 'thop'))
+    run(**vars(opt))
+
+
+if __name__ == "__main__":
+    opt = parse_opt()
+    main(opt)

@@ -62,9 +62,7 @@ See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on tr
 
 
 <details open>
-<summary>
-Install
-</summary>
+<summary>Install</summary>
 
 Python >= 3.6.0 required with all [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) dependencies installed:
 <!-- $ sudo apt update && apt install -y libgl1-mesa-glx libsm6 libxext6 libxrender-dev -->
@@ -180,11 +178,10 @@ Get started in seconds with our verified environments and integrations, includin
 
 We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competition with **$10,000** in cash prizes!  
 
-<div align="center">
-<a href="https://github.com/ultralytics/yolov5/discussions/3213">
-    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-export-competition.png"/>
-</a>
-</div>
+<p align="center">
+  <a href="https://github.com/ultralytics/yolov5/discussions/3213">
+  <img width="850" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-export-competition.png"></a>
+</p>
 
 
 ## <div align="center">Why YOLOv5</div>
