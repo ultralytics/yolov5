@@ -479,7 +479,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     torch.cuda.empty_cache()
     return results
 
-
+# python train.py --img 640 --batch 2 --epochs 1 --data data/yaml/kangaroo.yaml --weights weights/yolov5s.pt --hyp data/hyps/hyp.scratch.yaml --name "kangaroo_test"
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
