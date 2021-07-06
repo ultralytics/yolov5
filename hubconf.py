@@ -33,7 +33,8 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     check_requirements(requirements=Path(__file__).parent / 'requirements.txt',
                        exclude=('tensorboard', 'thop', 'opencv-python'))
     set_logging(verbose=verbose)
-
+    
+    name = Path(__file__).parent.parent / 'checkpoints' / name
     fname = Path(name).with_suffix('.pt')  # checkpoint filename
     try:
         device = select_device(('0' if torch.cuda.is_available() else 'cpu') if device is None else device)
