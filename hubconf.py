@@ -4,11 +4,8 @@ Usage:
     import torch
     model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
 """
-from pathlib import Path
 
 import torch
-
-FILE = Path(__file__).absolute()
 
 
 def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True, device=None):
@@ -26,15 +23,18 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     Returns:
         YOLOv5 pytorch model
     """
+    from pathlib import Path
+
     from models.yolo import Model, attempt_load
     from utils.general import check_requirements, set_logging
     from utils.google_utils import attempt_download
     from utils.torch_utils import select_device
 
-    check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=('tensorboard', 'thop', 'opencv-python'))
+    file = Path(__file__).absolute()
+    check_requirements(requirements=file.parent / 'requirements.txt', exclude=('tensorboard', 'thop', 'opencv-python'))
     set_logging(verbose=verbose)
 
-    save_dir = Path('') if str(name).endswith('.pt') else FILE.parent
+    save_dir = Path('') if str(name).endswith('.pt') else file.parent
     path = (save_dir / name).with_suffix('.pt')  # checkpoint path
     try:
         device = select_device(('0' if torch.cuda.is_available() else 'cpu') if device is None else device)
