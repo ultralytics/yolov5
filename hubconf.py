@@ -4,8 +4,11 @@ Usage:
     import torch
     model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
 """
+from pathlib import Path
 
 import torch
+
+FILE = Path(__file__).absolute()
 
 
 def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True, device=None):
@@ -23,28 +26,26 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     Returns:
         YOLOv5 pytorch model
     """
-    from pathlib import Path
-
     from models.yolo import Model, attempt_load
     from utils.general import check_requirements, set_logging
     from utils.google_utils import attempt_download
     from utils.torch_utils import select_device
 
-    check_requirements(requirements=Path(__file__).parent / 'requirements.txt',
-                       exclude=('tensorboard', 'thop', 'opencv-python'))
+    check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=('tensorboard', 'thop', 'opencv-python'))
     set_logging(verbose=verbose)
 
-    fname = Path(name).with_suffix('.pt')  # checkpoint filename
+    save_dir = Path('') if str(name).endswith('.pt') else FILE.parent
+    path = (save_dir / name).with_suffix('.pt')  # checkpoint path
     try:
         device = select_device(('0' if torch.cuda.is_available() else 'cpu') if device is None else device)
 
         if pretrained and channels == 3 and classes == 80:
-            model = attempt_load(fname, map_location=device)  # download/load FP32 model
+            model = attempt_load(path, map_location=device)  # download/load FP32 model
         else:
             cfg = list((Path(__file__).parent / 'models').rglob(f'{name}.yaml'))[0]  # model.yaml path
             model = Model(cfg, channels, classes)  # create model
             if pretrained:
-                ckpt = torch.load(attempt_download(fname), map_location=device)  # load
+                ckpt = torch.load(attempt_download(path), map_location=device)  # load
                 msd = model.state_dict()  # model state_dict
                 csd = ckpt['model'].float().state_dict()  # checkpoint state_dict as FP32
                 csd = {k: v for k, v in csd.items() if msd[k].shape == v.shape}  # filter
