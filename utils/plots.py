@@ -1,12 +1,12 @@
 # Plotting utils
 
 import glob
-import math
 import os
 from copy import copy
 from pathlib import Path
 
 import cv2
+import math
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,7 +15,6 @@ import seaborn as sn
 import torch
 import yaml
 from PIL import Image, ImageDraw, ImageFont
-from torchvision import transforms
 
 from utils.general import increment_path, xywh2xyxy, xyxy2xywh
 from utils.metrics import fitness
@@ -448,28 +447,26 @@ def plot_results(start=0, stop=0, bucket='', id=(), labels=(), save_dir=''):
     fig.savefig(Path(save_dir) / 'results.png', dpi=200)
 
 
-def feature_visualization(x, module_type, stage, n=64):
+def feature_visualization(x, module_type, stage, n=64, save_dir=Path('runs/detect/exp')):
     """
     x:              Features to be visualized
     module_type:    Module type
     stage:          Module stage within model
     n:              Maximum number of feature maps to plot
+    save_dir:       Directory to save results
     """
-    batch, channels, height, width = x.shape  # batch, channels, height, width
-    if height > 1 and width > 1:
-        project, name = 'runs/features', 'exp'
-        save_dir = increment_path(Path(project) / name)  # increment run
-        save_dir.mkdir(parents=True, exist_ok=True)  # make dir
+    if 'Detect' not in module_type:
+        batch, channels, height, width = x.shape  # batch, channels, height, width
+        if height > 1 and width > 1:
+            f = f"stage{stage}_{module_type.split('.')[-1]}_features.png"  # filename
 
-        plt.figure(tight_layout=True)
-        blocks = torch.chunk(x, channels, dim=1)  # block by channel dimension
-        n = min(n, len(blocks))
-        for i in range(n):
-            feature = transforms.ToPILImage()(blocks[i].squeeze())
-            ax = plt.subplot(int(math.sqrt(n)), int(math.sqrt(n)), i + 1)
-            ax.axis('off')
-            plt.imshow(feature)  # cmap='gray'
+            plt.figure(tight_layout=True)
+            blocks = torch.chunk(x[0], channels, dim=0)  # select batch index 0, block by channels
+            n = min(n, channels)  # number of plots
+            ax = plt.subplots(math.ceil(n / 8), 8, tight_layout=True)[1].ravel()  # 8 rows x n/8 cols
+            for i in range(n):
+                ax[i].imshow(blocks[i].squeeze())  # cmap='gray'
+                ax[i].axis('off')
 
-        f = f"stage_{stage}_{module_type.split('.')[-1]}_features.png"
-        print(f'Saving {save_dir / f}...')
-        plt.savefig(save_dir / f, dpi=300)
+            print(f'Saving {save_dir / f}... ({n}/{channels})')
+            plt.savefig(save_dir / f, dpi=300)
