@@ -458,7 +458,7 @@ def feature_visualization(x, module_type, stage, n=64, save_dir=Path('runs/detec
     if 'Detect' not in module_type:
         batch, channels, height, width = x.shape  # batch, channels, height, width
         if height > 1 and width > 1:
-            f = f"stage{stage}_{module_type.split('.')[-1]}_features.jpg"  # filename
+            f = f"stage{stage}_{module_type.split('.')[-1]}_features.png"  # filename
 
             plt.figure(tight_layout=True)
             blocks = torch.chunk(x[0], channels, dim=0)  # select batch index 0, block by channels
