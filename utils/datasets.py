@@ -888,9 +888,11 @@ def verify_image_label(args):
 
 def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
     """ Return dataset statistics dictionary with images and instances counts per split per class
-    Usage: from utils.datasets import *; dataset_stats('coco128.yaml', verbose=True)
+    Usage1: from utils.datasets import *; dataset_stats('coco128.yaml', verbose=True)
+    Usage2: from utils.datasets import *; dataset_stats('../datasets/coco128.zip', verbose=True)
+    
     Arguments
-        path:           Path to data.yaml
+        path:           Path to data.yaml or data.zip (with data.yaml inside data.zip)
         autodownload:   Attempt to download dataset if not found locally
         verbose:        Print stats dictionary
     """
@@ -899,8 +901,20 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
         # Update labels to integer class and 6 decimal place floats
         return [[int(c), *[round(x, 6) for x in points]] for c, *points in labels]
 
-    with open(check_file(path)) as f:
+    def unzip(path):
+        # Unzip data.zip TODO: CONSTRAINT: path/to/abc.zip MUST unzip to 'path/to/abc/'
+        if str(path).endswith('.zip'):  # path is data.zip
+            assert os.system(f'unzip -q {path} -d {path.parent}') == 0, f'Error unzipping {path}'
+            data_dir = path.with_suffix('')  # dataset directory
+            return True, data_dir, list(data_dir.rglob('*.yaml'))[0]  # zipped, data_dir, yaml_path
+        else:  # path is data.yaml
+            return False, None, path
+
+    zipped, data_dir, yaml_path = unzip(Path(path))
+    with open(check_file(yaml_path)) as f:
         data = yaml.safe_load(f)  # data dict
+        if zipped:
+            data['path'] = data_dir  # TODO: should this be dir.resolve()?
     check_dataset(data, autodownload)  # download dataset if missing
     nc = data['nc']  # number of classes
     stats = {'nc': nc, 'names': data['names']}  # statistics dictionary
