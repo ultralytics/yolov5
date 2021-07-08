@@ -234,6 +234,8 @@ def run(data,
             Thread(target=plot_images, args=(img, output_to_target(out), paths, f, names), daemon=True).start()
 
     # Compute statistics
+    accuracy = confusion_matrix.accuracy()
+
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
         p, r, ap, f1, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
@@ -301,7 +303,7 @@ def run(data,
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
-    return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
+    return (mp, mr, map50, map, accuracy, *(loss.cpu() / len(dataloader)).tolist()), maps, t
 
 
 def parse_opt():
