@@ -109,7 +109,7 @@ def compute_ap(recall, precision):
 class ConfusionMatrix:
     # Updated version of https://github.com/kaanakan/object_detection_confusion_matrix
     def __init__(self, nc, conf=0.25, iou_thres=0.45):
-        self.matrix = np.zeros((nc + 1, nc + 1))
+        self.confusion_matrix = np.zeros((nc + 1, nc + 1))
         self.nc = nc  # number of classes
         self.conf = conf
         self.iou_thres = iou_thres
@@ -145,23 +145,28 @@ class ConfusionMatrix:
         for i, gc in enumerate(gt_classes):
             j = m0 == i
             if n and sum(j) == 1:
-                self.matrix[detection_classes[m1[j]], gc] += 1  # correct
+                self.confusion_matrix[detection_classes[m1[j]], gc] += 1  # correct
             else:
-                self.matrix[self.nc, gc] += 1  # background FP
+                self.confusion_matrix[self.nc, gc] += 1  # background FP
 
         if n:
             for i, dc in enumerate(detection_classes):
                 if not any(m1 == i):
-                    self.matrix[dc, self.nc] += 1  # background FN
+                    self.confusion_matrix[dc, self.nc] += 1  # background FN
 
     def matrix(self):
-        return self.matrix
-
+        return self.confusion_matrix
+    
+    def accuracy(self):
+        return np.sum(np.diagonal(self.confusion_matrix)) / np.sum(
+            self.confusion_matrix
+        )
+        
     def plot(self, normalize=True, save_dir='', names=()):
         try:
             import seaborn as sn
 
-            array = self.matrix / ((self.matrix.sum(0).reshape(1, -1) + 1E-6) if normalize else 1)  # normalize columns
+            array = self.confusion_matrix / ((self.confusion_matrix.sum(0).reshape(1, -1) + 1E-6) if normalize else 1)  # normalize columns
             array[array < 0.005] = np.nan  # don't annotate (would appear as 0.00)
 
             fig = plt.figure(figsize=(12, 9), tight_layout=True)
@@ -180,7 +185,7 @@ class ConfusionMatrix:
 
     def print(self):
         for i in range(self.nc + 1):
-            print(' '.join(map(str, self.matrix[i])))
+            print(' '.join(map(str, self.confusion_matrix[i])))
 
 
 def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
