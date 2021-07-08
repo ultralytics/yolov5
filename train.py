@@ -67,6 +67,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     wdir.mkdir(parents=True, exist_ok=True)  # make dir
     last = wdir / 'last.pt'
     best = wdir / 'best.pt'
+    best_accuracy_model =  wdir / 'best_accuracy.pt'
     results_file = save_dir / 'results.txt'
 
     # Hyperparameters
@@ -177,12 +178,13 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     ema = ModelEMA(model) if RANK in [-1, 0] else None
 
     # Resume
-    start_epoch, best_fitness = 0, 0.0
+    start_epoch, best_fitness, best_accuracy = 0, 0.0, 0.0
     if pretrained:
         # Optimizer
         if ckpt['optimizer'] is not None:
             optimizer.load_state_dict(ckpt['optimizer'])
             best_fitness = ckpt['best_fitness']
+            best_accuracy = ckpt['best_accuracy']
 
         # EMA
         if ema and ckpt.get('ema'):
@@ -405,7 +407,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
             # Log
             tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
-                    'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+                    'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'metrics/accuracy',
                     'val/box_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
                     'x/lr0', 'x/lr1', 'x/lr2']  # params
             for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
@@ -413,6 +415,11 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                     loggers['tb'].add_scalar(tag, x, epoch)  # TensorBoard
                 if loggers['wandb']:
                     wandb_logger.log({tag: x})  # W&B
+
+            # Update best accuracy
+            acc = results[4]
+            if acc > best_accuracy:
+                best_accuracy = acc
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
@@ -424,6 +431,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             if (not nosave) or (final_epoch and not evolve):  # if save
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
+                        'best_accuracy': best_accuracy,
                         'training_results': results_file.read_text(),
                         'model': deepcopy(de_parallel(model)).half(),
                         'ema': deepcopy(ema.ema).half(),
@@ -435,6 +443,10 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 torch.save(ckpt, last)
                 if best_fitness == fi:
                     torch.save(ckpt, best)
+                    
+                # Save best accuracy model
+                if best_accuracy == acc:
+                    torch.save(ckpt, best_accuracy)                    
                 if loggers['wandb']:
                     if ((epoch + 1) % opt.save_period == 0 and not final_epoch) and opt.save_period != -1:
                         wandb_logger.log_model(last.parent, opt, epoch, fi, best_model=best_fitness == fi)
