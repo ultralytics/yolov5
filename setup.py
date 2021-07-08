@@ -1,4 +1,6 @@
+import os
 from setuptools import setup
+from yolov5 import __version__
 
 def read(fname):
     with open(os.path.join(os.path.dirname(__file__), fname), "rb") as fid:
