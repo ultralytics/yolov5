@@ -103,7 +103,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         t1 = time_synchronized()
         pred = model(img,
                      augment=augment,
-                     visualize=increment_path(save_dir / 'features', mkdir=True) if visualize else False)[0]
+                     visualize=increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False)[0]
 
         # Apply NMS
         pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
