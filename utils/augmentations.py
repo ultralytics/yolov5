@@ -31,7 +31,7 @@ class Albumentations:
             ],
                 bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
 
-            logging.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms))
+            logging.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms if x.p))
         except ImportError:  # package not installed, skip
             pass
         except Exception as e:
