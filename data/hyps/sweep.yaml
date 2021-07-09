@@ -2,6 +2,7 @@
 # To set range- 
 # Provide min and max values as:
 #      parameter:
+#         
 #         min: scalar
 #         max: scalar
 # OR
@@ -10,82 +11,135 @@
 #     parameter: 
 #         values: [scalar1, scalar2, scalar3...]
 #         
+# You can use grid, bayesian and hyperopt search strategy 
+# For more info on configuring sweeps visit - https://docs.wandb.ai/guides/sweeps/configuration
 
 program: sweep.py
-method: bayes
+method: grid
 metric:
   name: metrics/mAP_0.5
   goal: maximize
-parameters:
-  # dataset to be used
-  data:
-    values: ["data/coco128.yaml"]
+  
 
-  # hyperparameters: set either min, max range or values list
-  lr0:
-    min: 0.01
-    max: 0.1
-  lrf:
-    values: [0.1, 0.2, 0.3] 
+parameters:
+# hyperparameters: set either min, max range or values list
+  data:
+    value: "data/coco128.yaml"
   batch_size:
-    values: [8,16,32,64]
+    values: [64]
   epochs:
-    min: 5
-    max: 15
+    values: [10]
+
+
+  lr0:
+    distribution: uniform
+    min: 1e-5
+    max: 1e-1
+  lrf:
+    distribution: uniform
+    min: 0.01
+    max: 1.0
   momentum:
-    values: [0.937, 0.99] 
-  weight_decay: 
-    min: 0.0002
-    max: 0.0006
+    distribution: uniform
+    min: 0.6
+    max: 0.98
+  weight_decay:
+    distribution: uniform
+    min: 0.0
+    max: 0.001
   warmup_epochs: 
-    values: [3.0, 1.5, 2.0]
+    distribution: uniform
+    min: 0.0
+    max: 5.0
   warmup_momentum:
-    values: [0.8, 0.9, 1.0] 
+    distribution: uniform
+    min: 0.0
+    max: 0.95
   warmup_bias_lr:
-    values: [0.1, 0.2, 0.3, 0.4] 
-  box:
-    values: [0.05, 0.025, 0.03]
-  cls:
-    values: [0.5, 0.6, 0.4] 
-  cls_pw:
-    values: [1.0]
-  obj:
-    values: [1.0]
-  obj_pw: 
-    values: [1.0]
-  iou_t:
-    values: [0.20, 0.3, 0.4, 0.5]
-  anchor_t:
-    values: [4.0]
-  fl_gamma:
-    values: [0.0, 1.0, 1.5]
-  hsv_h: 
-    values: [0.015, 0.01, 0.02, 0.03]
-  hsv_s: 
-    values: [0.3, 0.5, 0.7]
-  hsv_v: 
-    values: [0.4, 0.2, 0.1]
-  degrees:
+    distribution: uniform
     min: 0.0
     max: 0.2
-  translate:
+  box:
+    distribution: uniform
+    min: 0.02
+    max: 0.2
+  cls:
+    distribution: uniform
+    min: 0.2
+    max: 4.0
+  cls_pw:
+    distribution: uniform
+    min: 0.5
+    max: 2.0
+  obj: 
+    distribution: uniform
+    min: 0.2
+    max: 4.0
+  obj_pw: 
+    distribution: uniform
+    min: 0.5
+    max: 2.0
+  iou_t:
+    distribution: uniform
     min: 0.1
-    max: 0.5
-  scale:
-    min: 0.3
-    max: 0.75
-  shear:
-    values: [0.0, 0.1, 0.01]
-  perspective:
-    values: [0.0, 0.001, 0.01, 0.1]
-  flipud:
-    values: [0.0, 0.2, 0.4]
-  fliplr:
-    values: [0.5, 0.2, 0.6]
-  mosaic: 
-    values: [1.0]
-  mixup: 
+    max: 0.7
+  anchor_t:
+    distribution: uniform
+    min: 2.0
+    max: 8.0
+  fl_gamma:
+    distribution: uniform
     min: 0.0
-    max: 0.5
+    max: 0.1
+  hsv_h:
+    distribution: uniform
+    min: 0.0
+    max: 0.1
+  hsv_s:
+    distribution: uniform
+    min: 0.0
+    max: 0.9
+  hsv_v:
+    distribution: uniform
+    min: 0.0
+    max: 0.9
+  degrees:
+    distribution: uniform
+    min: 0.0
+    max: 45.0
+  translate:
+    distribution: uniform
+    min: 0.0
+    max: 0.9
+  scale:
+    distribution: uniform
+    min: 0.0
+    max: 0.9
+  shear:
+    distribution: uniform
+    min: 0.0
+    max: 10.0
+  perspective:
+    distribution: uniform
+    min: 0.0
+    max: 0.001
+  flipud:
+    distribution: uniform
+    min: 0.0
+    max: 1.0
+  fliplr:
+    distribution: uniform
+    min: 0.0
+    max: 1.0
+  mosaic:
+    distribution: uniform
+    min: 0.0
+    max: 1.0
+  mixup: 
+    distribution: uniform
+    min: 0.0
+    max: 1.0
   copy_paste:
-    values: [0.0, 0.1, 0.2, 0.3]
+    distribution: uniform
+    min: 0.0
+    max: 1.0
