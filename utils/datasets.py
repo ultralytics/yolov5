@@ -626,7 +626,7 @@ def load_image(self, index):
     if img is None:  # not cached
         path = self.img_files[index]
         img = np.fromfile(path, np.uint8)
-        img = cv2.imdecode(img)
+        img = cv2.imdecode(img, cv2.IMREAD_COLOR)
         
         assert img is not None, 'Image Not Found ' + path
         h0, w0 = img.shape[:2]  # orig hw
