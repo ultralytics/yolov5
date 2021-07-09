@@ -552,6 +552,9 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         if nl:
             labels[:, 1:5] = xyxy2xywhn(labels[:, 1:5], w=img.shape[1], h=img.shape[0])  # xyxy to xywh normalized
 
+            if np.any(labels[:, 1:5] > 1.0):
+                print(labels[:, 1:5])
+
         if self.augment:
             # Albumentations
             img, labels = self.albumentations(img, labels)
