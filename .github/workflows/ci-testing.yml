@@ -78,5 +78,5 @@ jobs:
 
           # unicode characters
           wget https://raw.githubusercontent.com/sirius-ai/LPRNet_Pytorch/master/data/test/%E4%BA%ACPL3N67.jpg
-          python -c "import cv2; print(cv2.imread('京PL3N67.jpg').shape)"
+          python -c "import cv2, glob; print(cv2.imread(glob.glob('*.jpg')[0]).shape)"
         shell: bash
