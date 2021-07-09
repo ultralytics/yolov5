@@ -80,6 +80,5 @@ jobs:
           wget https://raw.githubusercontent.com/sirius-ai/LPRNet_Pytorch/master/data/test/%E4%BA%ACPL3N67.jpg
           # f = glob.glob('*.jpg')[0]
           # f = str(list(Path('').glob('*.jpg'))[0])
-          f = list(Path('').glob('*.jpg'))[0].as_posix()
-          python -c "import cv2, glob; print(cv2.imread(f).shape)"
+          python -c "import cv2, glob; from pathlib import Path; f = list(Path('').glob('*.jpg'))[0].as_posix(); print(cv2.imread(f).shape)"
         shell: bash
