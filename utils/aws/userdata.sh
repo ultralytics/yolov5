@@ -9,7 +9,7 @@ if [ ! -d yolov5 ]; then
   echo "Running first-time script." # install dependencies, download COCO, pull Docker
   git clone https://github.com/ultralytics/yolov5 -b master && sudo chmod -R 777 yolov5
   cd yolov5
-  bash data/scripts/get_coco.sh && echo "Data done." &
+  bash data/scripts/get_coco.sh && echo "COCO done." &
   sudo docker pull ultralytics/yolov5:latest && echo "Docker done." &
   python -m pip install --upgrade pip && pip install -r requirements.txt && python detect.py && echo "Requirements done." &
   wait && echo "All tasks done." # finish background tasks
