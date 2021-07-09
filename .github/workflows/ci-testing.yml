@@ -81,5 +81,6 @@ jobs:
           # python -c "import torch; torch.hub.download_url_to_file(url, f, progress=True)
           # f = glob.glob('*.jpg')[0]
           # f = str(list(Path('').glob('*.jpg'))[0])
-          python -c "import cv2, glob; from pathlib import Path; f = list(Path('').glob('*.jpg'))[0].as_posix(); print(cv2.imread(f).shape)"
+          # python -c "import cv2, glob; from pathlib import Path; f = list(Path('').glob('*.jpg'))[0].as_posix(); print(cv2.imread(f).shape)"
+          python -c "import cv2, glob; from pathlib import Path; f = glob.glob('*.jpg')[0]; print(cv2.imread(f).shape)"
         shell: bash
