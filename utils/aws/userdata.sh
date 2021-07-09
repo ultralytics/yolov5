@@ -7,7 +7,7 @@
 cd home/ubuntu
 if [ ! -d yolov5 ]; then
   echo "Running first-time script." # install dependencies, download COCO, pull Docker
-  git clone https://github.com/ultralytics/yolov5 -b master && sudo chmod -R 777 yolov5
+  git clone https://github.com/ultralytics/yolov5 -b exp/albumentations && sudo chmod -R 777 yolov5
   cd yolov5
   bash data/scripts/get_coco.sh && echo "COCO done." &
   sudo docker pull ultralytics/yolov5:latest && echo "Docker done." &
