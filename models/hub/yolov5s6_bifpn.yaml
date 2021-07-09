@@ -26,12 +26,12 @@ backbone:
     [ -1, 1, SPP, [ 1024, [ 3, 5, 7 ] ] ],
     [ -1, 3, C3, [ 1024, False ] ],  # 11
   ]
-  
 # BIFPN garph
 #                        
 # p6     ----------------- --------Concat_bifpn----> P6(out)
 #      /                  \                         \       \
-#     /                 Upsample              Concat_bifpn   Concat_bifpn
+#      /-------------------------------------------->  
+#     /                Upsample              Concat_bifpn   Concat_bifpn
 #    /                    |                          \      | 
 # p5 ---Concat_bifpn---> head 5 ---Concat_bifpn----> P5(out)
 #                        \                                  \
@@ -45,12 +45,12 @@ backbone:
 #                         ----Upsample---->                Concat_bifpn   
 #                                          \               /
 # p3 ---Concat_bifpn------------------------------>  P3(out)
-
-# YOLOv5 head
-head:
-  [ [ -1, 1, Conv, [ 768, 1, 1 ] ],    # 12 head
-    [ -1, 1, nn.Upsample, [ None, 2, 'nearest' ] ],
-    [ [ -1, 8 ], 1, Concat_bifpn, [ 384,384] ],  # cat backbone P5
+  
+# YOLOv5 head                                                                       
+head:                                                                       
+  [ [ -1, 1, Conv, [ 768, 1, 1 ] ],    # 12 head                                  
+    [ -1, 1, nn.Upsample, [ None, 2, 'nearest' ] ],                           
+    [ [ -1, 8 ], 1, Concat_bifpn, [ 384,384] ],  # cat backbone P5                
     [ -1, 3, C3, [ 768, False ] ],  # 15
 
     [ -1, 1, Conv, [ 512, 1, 1 ] ],
