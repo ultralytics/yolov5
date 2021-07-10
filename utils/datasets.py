@@ -402,6 +402,25 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             t0 = time.time()
             cache, exists = torch.load(cache_path), True  # load
             t = f'({time.time() - t0:.3f}s)'  # time string
+
+            t0 = time.time()
+            for i in range(3):
+                np.save('test.npy', cache, allow_pickle=True)
+            t1 = time.time()
+            for i in range(3):
+                x = np.load('test.npy', allow_pickle=True)
+            t2 = time.time()
+            print(t2 - t1, t1 - t0)
+
+            t0 = time.time()
+            for i in range(3):
+                torch.save(cache, 'test.pt')
+            t1 = time.time()
+            for i in range(3):
+                x = torch.load('test.pt')
+            t2 = time.time()
+            print(t2 - t1, t1 - t0)
+
             if cache.get('version') != 0.3 or cache.get('hash') != get_hash(self.label_files + self.img_files):
                 cache, exists = self.cache_labels(cache_path, prefix), False  # re-cache
         else:
