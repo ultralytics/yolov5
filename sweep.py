@@ -1,9 +1,10 @@
 from pathlib import Path
 
 import wandb
+
 from train import train, parse_opt
-from utils.torch_utils import select_device
 from utils.general import increment_path
+from utils.torch_utils import select_device
 
 
 def sweep():
