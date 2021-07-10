@@ -937,7 +937,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
     # Profile
     stats_path = Path(data['path']) / 'stats.json'
     if profile:
-        for _ in range(0):
+        for _ in range(1):
             file = stats_path.with_suffix('.cache')
             t1 = time.time()
             torch.save(stats, file)
