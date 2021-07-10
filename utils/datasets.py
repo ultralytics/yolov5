@@ -888,7 +888,7 @@ def verify_image_label(args):
         return [None, None, None, None, nm, nf, ne, nc, msg]
 
 
-def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profile=False):
+def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profile=False, hub=False):
     """ Return dataset statistics dictionary with images and instances counts per split per class
     Usage1: from utils.datasets import *; dataset_stats('coco128.yaml', profile=True)
     Usage2: from utils.datasets import *; dataset_stats('../datasets/coco128.zip', verbose=True)
@@ -918,6 +918,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         if zipped:
             data['path'] = data_dir  # TODO: should this be dir.resolve()?
     check_dataset(data, autodownload)  # download dataset if missing
+    hub_dir = Path(f"{data['path']}-hub")
     stats = {'yaml': data}  # statistics dictionary
     for split in 'train', 'val', 'test':
         if data.get(split) is None:
@@ -934,25 +935,36 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
                         'labels': [{str(Path(k).name): round_labels(v.tolist())} for k, v in
                                    zip(dataset.img_files, dataset.labels)]}
 
-    # Profile
-    stats_path = Path(data['path']) / 'stats.json'
-    if profile:
-        for _ in range(1):
-            file = stats_path.with_suffix('.npy')
-            t1 = time.time()
-            np.save(file, stats, allow_pickle=True)
-            t2 = time.time()
-            x = np.load(file, allow_pickle=True)
-            print(f'stats.npy times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
+        if hub:
+            im_dir = hub_dir / 'images'
+            im_dir.mkdir(parents=True, exist_ok=True)
+            max_dim = 1920
+            for im_file in tqdm(dataset.img_files, total=dataset.n, desc='Hub ops'):
+                im = Image.open(im_file)
+                r = max_dim / max(im.height, im.width)  # ratio
+                if r < 1.0:  # image too large
+                    im = im.resize((int(im.width * r), int(im.height * r)))
+                im.save(im_dir / Path(im_file).name, quality=75)  # save
 
-            file = stats_path.with_suffix('.json')
-            t1 = time.time()
-            with open(file, 'w') as f:
-                json.dump(stats, f)  # save stats *.json
-            t2 = time.time()
-            with open(file, 'r') as f:
-                x = json.load(f)  # load hyps dict
-            print(f'stats.json times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
+        # Profile
+        stats_path = hub_dir / 'stats.json'
+        if profile:
+            for _ in range(1):
+                file = stats_path.with_suffix('.npy')
+                t1 = time.time()
+                np.save(file, stats, allow_pickle=True)
+                t2 = time.time()
+                x = np.load(file, allow_pickle=True)
+                print(f'stats.npy times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
+
+                file = stats_path.with_suffix('.json')
+                t1 = time.time()
+                with open(file, 'w') as f:
+                    json.dump(stats, f)  # save stats *.json
+                t2 = time.time()
+                with open(file, 'r') as f:
+                    x = json.load(f)  # load hyps dict
+                print(f'stats.json times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
 
     # Save, print and return
     with open(stats_path, 'w') as f:
