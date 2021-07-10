@@ -886,7 +886,7 @@ def verify_image_label(args):
         return [None, None, None, None, nm, nf, ne, nc, msg]
 
 
-def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
+def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profile=False):
     """ Return dataset statistics dictionary with images and instances counts per split per class
     Usage1: from utils.datasets import *; dataset_stats('coco128.yaml', verbose=True)
     Usage2: from utils.datasets import *; dataset_stats('../datasets/coco128.zip', verbose=True)
@@ -916,18 +916,15 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
         if zipped:
             data['path'] = data_dir  # TODO: should this be dir.resolve()?
     check_dataset(data, autodownload)  # download dataset if missing
-    nc = data['nc']  # number of classes
-    stats = {'nc': nc, 'names': data['names']}  # statistics dictionary
+    stats = {'yaml': data}  # statistics dictionary
     for split in 'train', 'val', 'test':
         if data.get(split) is None:
             stats[split] = None  # i.e. no test set
             continue
         x = []
         dataset = LoadImagesAndLabels(data[split], augment=False, rect=True)  # load dataset
-        if split == 'train':
-            cache_path = Path(dataset.label_files[0]).parent.with_suffix('.cache')  # *.cache path
         for label in tqdm(dataset.labels, total=dataset.n, desc='Statistics'):
-            x.append(np.bincount(label[:, 0].astype(int), minlength=nc))
+            x.append(np.bincount(label[:, 0].astype(int), minlength=data['nc']))
         x = np.array(x)  # shape(128x80)
         stats[split] = {'instance_stats': {'total': int(x.sum()), 'per_class': x.sum(0).tolist()},
                         'image_stats': {'total': dataset.n, 'unlabelled': int(np.all(x == 0, 1).sum()),
@@ -935,10 +932,28 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
                         'labels': [{str(Path(k).name): round_labels(v.tolist())} for k, v in
                                    zip(dataset.img_files, dataset.labels)]}
 
+    # Profile
+    stats_path = Path(data['path']) / 'stats.json'
+    if profile:
+        file = stats_path.with_suffix('.cache')
+        t1 = time.time()
+        torch.save(stats, file)
+        t2 = time.time()
+        x = torch.load(file)
+        print(f'*.cache times: {t2 - t1}s save, {time.time() - t2}s read')
+
+        file = stats_path.with_suffix('.json')
+        t1 = time.time()
+        with open(file, 'w') as f:
+            json.dump(stats, f)  # save stats *.json
+        t2 = time.time()
+        with open(file, 'r') as f:
+            x = json.load(f)  # load hyps dict
+        print(f'*.json times: {t2 - t1}s save, {time.time() - t2}s read')
+
     # Save, print and return
-    with open(cache_path.with_suffix('.json'), 'w') as f:
-        json.dump(stats, f)  # save stats *.json
+    with open(stats_path, 'w') as f:
+        json.dump(stats, f)  # save stats.json
     if verbose:
         print(json.dumps(stats, indent=2, sort_keys=False))
-        # print(yaml.dump([stats], sort_keys=False, default_flow_style=False))
     return stats
