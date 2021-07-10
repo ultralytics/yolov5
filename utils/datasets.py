@@ -397,39 +397,17 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         # Check cache
         self.label_files = img2label_paths(self.img_files)  # labels
-        cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')  # cached labels
-        if cache_path.is_file():
-            t0 = time.time()
-            cache, exists = torch.load(cache_path), True  # load
-            t = f'({time.time() - t0:.3f}s)'  # time string
-
-            t0 = time.time()
-            for i in range(3):
-                np.save('test.npy', cache, allow_pickle=True)
-            t1 = time.time()
-            for i in range(3):
-                x = np.load('test.npy', allow_pickle=True)
-            t2 = time.time()
-            print(t2 - t1, t1 - t0)
-
-            t0 = time.time()
-            for i in range(3):
-                torch.save(cache, 'test.pt')
-            t1 = time.time()
-            for i in range(3):
-                x = torch.load('test.pt')
-            t2 = time.time()
-            print(t2 - t1, t1 - t0)
-
-            if cache.get('version') != 0.3 or cache.get('hash') != get_hash(self.label_files + self.img_files):
-                cache, exists = self.cache_labels(cache_path, prefix), False  # re-cache
-        else:
-            cache, exists, t = self.cache_labels(cache_path, prefix), False, ''  # cache
+        cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')
+        try:
+            cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
+            assert cache['version'] == 0.4 and cache['hash'] == get_hash(self.label_files + self.img_files)
+        except:
+            cache, exists = self.cache_labels(cache_path, prefix), False  # cache
 
         # Display cache
         nf, nm, ne, nc, n = cache.pop('results')  # found, missing, empty, corrupted, total
         if exists:
-            d = f"Scanning '{cache_path}' images and labels {t}... {nf} found, {nm} missing, {ne} empty, {nc} corrupted"
+            d = f"Scanning '{cache_path}' images and labels... {nf} found, {nm} missing, {ne} empty, {nc} corrupted"
             tqdm(None, desc=prefix + d, total=n, initial=n)  # display cache results
             if cache['msgs']:
                 logging.info('\n'.join(cache['msgs']))  # display warnings
@@ -517,9 +495,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         x['hash'] = get_hash(self.label_files + self.img_files)
         x['results'] = nf, nm, ne, nc, len(self.img_files)
         x['msgs'] = msgs  # warnings
-        x['version'] = 0.3  # cache version
+        x['version'] = 0.4  # cache version
         try:
-            torch.save(x, path)  # save cache for next time
+            np.save(path, x)  # save cache for next time
+            path.with_suffix('.cache.npy').rename(path)  # remove .npy suffix
             logging.info(f'{prefix}New cache created: {path}')
         except Exception as e:
             logging.info(f'{prefix}WARNING: Cache directory {path.parent} is not writeable: {e}')  # path not writeable
@@ -911,7 +890,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
     """ Return dataset statistics dictionary with images and instances counts per split per class
     Usage1: from utils.datasets import *; dataset_stats('coco128.yaml', verbose=True)
     Usage2: from utils.datasets import *; dataset_stats('../datasets/coco128.zip', verbose=True)
-    
+
     Arguments
         path:           Path to data.yaml or data.zip (with data.yaml inside data.zip)
         autodownload:   Attempt to download dataset if not found locally
