@@ -908,7 +908,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         if str(path).endswith('.zip'):  # path is data.zip
             assert os.system(f'unzip -q {path} -d {path.parent}') == 0, f'Error unzipping {path}'
             data_dir = path.with_suffix('')  # dataset directory
-            return True, data_dir, list(data_dir.rglob('*.yaml'))[0]  # zipped, data_dir, yaml_path
+            return True, str(data_dir), list(data_dir.rglob('*.yaml'))[0]  # zipped, data_dir, yaml_path
         else:  # path is data.yaml
             return False, None, path
 
