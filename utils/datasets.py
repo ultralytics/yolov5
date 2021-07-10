@@ -967,8 +967,9 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
                 print(f'stats.json times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
 
     # Save, print and return
-    with open(stats_path, 'w') as f:
-        json.dump(stats, f)  # save stats.json
+    if hub:
+        with open(stats_path, 'w') as f:
+            json.dump(stats, f)  # save stats.json
     if verbose:
         print(json.dumps(stats, indent=2, sort_keys=False))
     return stats
