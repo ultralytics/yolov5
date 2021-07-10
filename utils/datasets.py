@@ -399,7 +399,9 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.label_files = img2label_paths(self.img_files)  # labels
         cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')  # cached labels
         if cache_path.is_file():
+            t0 = time.time()
             cache, exists = torch.load(cache_path), True  # load
+            print(f'Loaded {cache_path} in {time.time() - t0}s')
             if cache.get('version') != 0.3 or cache.get('hash') != get_hash(self.label_files + self.img_files):
                 cache, exists = self.cache_labels(cache_path, prefix), False  # re-cache
         else:
@@ -940,7 +942,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         torch.save(stats, file)
         t2 = time.time()
         x = torch.load(file)
-        print(f'*.cache times: {t2 - t1}s save, {time.time() - t2}s read')
+        print(f'stats.cache times: {t2 - t1}s save, {time.time() - t2}s read')
 
         file = stats_path.with_suffix('.json')
         t1 = time.time()
@@ -949,7 +951,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         t2 = time.time()
         with open(file, 'r') as f:
             x = json.load(f)  # load hyps dict
-        print(f'*.json times: {t2 - t1}s save, {time.time() - t2}s read')
+        print(f'stats.json times: {t2 - t1}s save, {time.time() - t2}s read')
 
     # Save, print and return
     with open(stats_path, 'w') as f:
