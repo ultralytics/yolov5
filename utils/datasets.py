@@ -937,21 +937,22 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
     # Profile
     stats_path = Path(data['path']) / 'stats.json'
     if profile:
-        file = stats_path.with_suffix('.cache')
-        t1 = time.time()
-        torch.save(stats, file)
-        t2 = time.time()
-        x = torch.load(file)
-        print(f'stats.cache times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
+        for _ in range(0):
+            file = stats_path.with_suffix('.cache')
+            t1 = time.time()
+            torch.save(stats, file)
+            t2 = time.time()
+            x = torch.load(file)
+            print(f'stats.cache times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
 
-        file = stats_path.with_suffix('.json')
-        t1 = time.time()
-        with open(file, 'w') as f:
-            json.dump(stats, f)  # save stats *.json
-        t2 = time.time()
-        with open(file, 'r') as f:
-            x = json.load(f)  # load hyps dict
-        print(f'stats.json times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
+            file = stats_path.with_suffix('.json')
+            t1 = time.time()
+            with open(file, 'w') as f:
+                json.dump(stats, f)  # save stats *.json
+            t2 = time.time()
+            with open(file, 'r') as f:
+                x = json.load(f)  # load hyps dict
+            print(f'stats.json times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
 
     # Save, print and return
     with open(stats_path, 'w') as f:
