@@ -401,16 +401,16 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         if cache_path.is_file():
             t0 = time.time()
             cache, exists = torch.load(cache_path), True  # load
-            print(f'Loaded {cache_path} in {time.time() - t0}s')
+            t = f'({time.time() - t0:.3f}s)'  # time string
             if cache.get('version') != 0.3 or cache.get('hash') != get_hash(self.label_files + self.img_files):
                 cache, exists = self.cache_labels(cache_path, prefix), False  # re-cache
         else:
-            cache, exists = self.cache_labels(cache_path, prefix), False  # cache
+            cache, exists, t = self.cache_labels(cache_path, prefix), False, ''  # cache
 
         # Display cache
         nf, nm, ne, nc, n = cache.pop('results')  # found, missing, empty, corrupted, total
         if exists:
-            d = f"Scanning '{cache_path}' images and labels... {nf} found, {nm} missing, {ne} empty, {nc} corrupted"
+            d = f"Scanning '{cache_path}' images and labels {t}... {nf} found, {nm} missing, {ne} empty, {nc} corrupted"
             tqdm(None, desc=prefix + d, total=n, initial=n)  # display cache results
             if cache['msgs']:
                 logging.info('\n'.join(cache['msgs']))  # display warnings
@@ -942,7 +942,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         torch.save(stats, file)
         t2 = time.time()
         x = torch.load(file)
-        print(f'stats.cache times: {t2 - t1}s save, {time.time() - t2}s read')
+        print(f'stats.cache times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
 
         file = stats_path.with_suffix('.json')
         t1 = time.time()
@@ -951,11 +951,11 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         t2 = time.time()
         with open(file, 'r') as f:
             x = json.load(f)  # load hyps dict
-        print(f'stats.json times: {t2 - t1}s save, {time.time() - t2}s read')
+        print(f'stats.json times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
 
     # Save, print and return
     with open(stats_path, 'w') as f:
         json.dump(stats, f)  # save stats.json
     if verbose:
         print(json.dumps(stats, indent=2, sort_keys=False))
-    return stats
+    return None
