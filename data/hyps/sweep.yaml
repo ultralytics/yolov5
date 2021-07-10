@@ -19,17 +19,15 @@ method: grid
 metric:
   name: metrics/mAP_0.5
   goal: maximize
-  
 
 parameters:
-# hyperparameters: set either min, max range or values list
+  # hyperparameters: set either min, max range or values list
   data:
     value: "data/coco128.yaml"
   batch_size:
-    values: [64]
+    values: [ 64 ]
   epochs:
-    values: [10]
-
+    values: [ 10 ]
 
   lr0:
     distribution: uniform
@@ -47,7 +45,7 @@ parameters:
     distribution: uniform
     min: 0.0
     max: 0.001
-  warmup_epochs: 
+  warmup_epochs:
     distribution: uniform
     min: 0.0
     max: 5.0
@@ -71,11 +69,11 @@ parameters:
     distribution: uniform
     min: 0.5
     max: 2.0
-  obj: 
+  obj:
     distribution: uniform
     min: 0.2
     max: 4.0
-  obj_pw: 
+  obj_pw:
     distribution: uniform
     min: 0.5
     max: 2.0
@@ -135,7 +133,7 @@ parameters:
     distribution: uniform
     min: 0.0
     max: 1.0
-  mixup: 
+  mixup:
     distribution: uniform
     min: 0.0
     max: 1.0
