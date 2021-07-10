@@ -397,12 +397,11 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         # Check cache
         self.label_files = img2label_paths(self.img_files)  # labels
-        cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')  # cached labels
-        if cache_path.is_file():
-            cache, exists = torch.load(cache_path), True  # load
-            if cache.get('version') != 0.3 or cache.get('hash') != get_hash(self.label_files + self.img_files):
-                cache, exists = self.cache_labels(cache_path, prefix), False  # re-cache
-        else:
+        cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')
+        try:
+            cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
+            assert cache['version'] == 0.4 and cache['hash'] == get_hash(self.label_files + self.img_files)
+        except:
             cache, exists = self.cache_labels(cache_path, prefix), False  # cache
 
         # Display cache
@@ -496,9 +495,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         x['hash'] = get_hash(self.label_files + self.img_files)
         x['results'] = nf, nm, ne, nc, len(self.img_files)
         x['msgs'] = msgs  # warnings
-        x['version'] = 0.3  # cache version
+        x['version'] = 0.4  # cache version
         try:
-            torch.save(x, path)  # save cache for next time
+            np.save(path, x)  # save cache for next time
+            path.with_suffix('.cache.npy').rename(path)  # remove .npy suffix
             logging.info(f'{prefix}New cache created: {path}')
         except Exception as e:
             logging.info(f'{prefix}WARNING: Cache directory {path.parent} is not writeable: {e}')  # path not writeable
