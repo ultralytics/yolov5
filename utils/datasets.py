@@ -399,15 +399,17 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.label_files = img2label_paths(self.img_files)  # labels
         cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')
         try:
+            t = time.time()
             cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
+            t = f' ({time.time() - t:.3f}s)'
             assert cache['version'] == 0.4 and cache['hash'] == get_hash(self.label_files + self.img_files)
         except:
-            cache, exists = self.cache_labels(cache_path, prefix), False  # cache
+            cache, exists, t = self.cache_labels(cache_path, prefix), False, ''  # cache
 
         # Display cache
         nf, nm, ne, nc, n = cache.pop('results')  # found, missing, empty, corrupted, total
         if exists:
-            d = f"Scanning '{cache_path}' images and labels... {nf} found, {nm} missing, {ne} empty, {nc} corrupted"
+            d = f"Scanning '{cache_path}' images and labels{t}... {nf} found, {nm} missing, {ne} empty, {nc} corrupted"
             tqdm(None, desc=prefix + d, total=n, initial=n)  # display cache results
             if cache['msgs']:
                 logging.info('\n'.join(cache['msgs']))  # display warnings
