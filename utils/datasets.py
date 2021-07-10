@@ -938,6 +938,13 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
     stats_path = Path(data['path']) / 'stats.json'
     if profile:
         for _ in range(1):
+            file = stats_path.with_suffix('.npy')
+            t1 = time.time()
+            np.save(file, stats, allow_pickle=True)
+            t2 = time.time()
+            x = np.load(file, allow_pickle=True)
+            print(f'stats.npy times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
+
             file = stats_path.with_suffix('.cache')
             t1 = time.time()
             torch.save(stats, file)
