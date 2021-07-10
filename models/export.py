@@ -55,16 +55,13 @@ def load_checkpoint(type_, weights, device, cfg=None, hyp=None, nc=None, recipe=
 
     if pickled and type_ == 'ensemble':
         # load ensemble using pickled
-        hyp = ckpt['model'].hyp
-        cfg = ckpt['model'].yaml
+        cfg = None
         model = attempt_load(weights, map_location=device)  # load FP32 model
         state_dict = model.state_dict()
     else:
         # load model from config and weights
         cfg = cfg or (ckpt['yaml'] if 'yaml' in ckpt else None) or \
               (ckpt['model'].yaml if pickled else None)
-        hyp = hyp or (ckpt['hyp'] if 'hyp' in ckpt else None) or \
-              (ckpt['model'].hyp if pickled else None)
         model = Model(cfg, ch=3, nc=ckpt['nc'] if ('nc' in ckpt and not nc) else nc,
                       anchors=hyp.get('anchors') if hyp else None).to(device)
         model_key = 'ema' if (type_ in ['ema', 'ensemble'] and 'ema' in ckpt and ckpt['ema']) else 'model'
@@ -77,31 +74,46 @@ def load_checkpoint(type_, weights, device, cfg=None, hyp=None, nc=None, recipe=
     # load sparseml recipe for applying pruning and quantization
     recipe = recipe or (ckpt['recipe'] if 'recipe' in ckpt else None)
     sparseml_wrapper = SparseMLWrapper(model, recipe)
+    exclude_anchors = (cfg or hyp.get('anchors')) and not resume
+    loaded = False
+
     if type_ in ['ema', 'ensemble']:
         # apply the recipe to create the final state of the model when not training
         sparseml_wrapper.apply()
     else:
-        # intialize the recipe for training
+        # intialize the recipe for training and restore the weights before if no quantized weights
+        quantized_state_dict = any([name.endswith('.zero_point') for name in state_dict.keys()])
+        if not quantized_state_dict:
+            state_dict = load_state_dict(model, state_dict, train=True, exclude_anchors=exclude_anchors)
+            loaded = True
         sparseml_wrapper.initialize(start_epoch)
 
-    if type_ == 'train':
-        # load any missing weights from the model
-        exclude = ['anchor'] if (cfg or hyp.get('anchors')) and not resume else []  # exclude keys
-        state_dict = intersect_dicts(state_dict, model.state_dict(), exclude=exclude)  # intersect
+    if not loaded:
+        state_dict = load_state_dict(model, state_dict, train=type_ not in ['ema', 'ensemble'], exclude_anchors=exclude_anchors)
 
-    model.load_state_dict(state_dict, strict=type_ != 'train')  # load
     model.float()
     report = 'Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights)
 
     return model, {
         'ckpt': ckpt,
-        'cfg': cfg,
-        'hyp': hyp,
         'state_dict': state_dict,
         'start_epoch': start_epoch,
         'sparseml_wrapper': sparseml_wrapper,
         'report': report,
     }
+
+
+def load_state_dict(model, state_dict, train, exclude_anchors):
+    # fix older state_dict names not porting to the new model setup
+    state_dict = {key if not key.startswith("module.") else key[7:]: val for key, val in state_dict.items()}
+
+    if train:
+        # load any missing weights from the model
+        state_dict = intersect_dicts(state_dict, model.state_dict(), exclude=['anchor'] if exclude_anchors else [])
+
+    model.load_state_dict(state_dict, strict=not train)  # load
+
+    return state_dict
 
 
 if __name__ == '__main__':
