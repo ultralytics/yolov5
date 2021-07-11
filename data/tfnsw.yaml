@@ -1,0 +1,15 @@
+# TfNSW dataset iteration 1.0
+# Train command: python train.py --data coco128.yaml
+# Default dataset location is next to YOLOv5:
+#   /parent
+#     /datasets/tfnsw
+#     /yolov5
+
+path: ../datasets/tfnsw  # dataset root dir
+train: images/train  # train images (relative to 'path') 128 images
+val: images/val  # val images (relative to 'path') 128 images
+test:  # test images (optional)
+
+# Classes
+nc: 3  # number of classes
+names: [ 'Mask', 'NoMask', 'Unknown' ]  # class names
