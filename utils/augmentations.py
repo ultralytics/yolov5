@@ -21,8 +21,8 @@ class Albumentations:
 
             self.transform = A.Compose([
                 A.CLAHE(p=0.0),
-                A.RandomBrightnessContrast(p=0.1),
-                A.RandomGamma(p=0.0),
+                A.RandomBrightnessContrast(p=0.0),
+                A.RandomGamma(p=0.1),
                 A.Blur(p=0.0),
                 A.MedianBlur(p=0.0),
                 A.ToGray(p=0.0),
