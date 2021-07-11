@@ -17,7 +17,7 @@ class Albumentations:
         self.transform = None
         try:
             import albumentations as A
-            check_version(A.__version__, '1.0.0')  # version requirement
+            check_version(A.__version__, '1.0.2')  # version requirement
 
             self.transform = A.Compose([
                 A.Blur(p=0.1),
