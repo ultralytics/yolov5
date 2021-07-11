@@ -918,7 +918,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         if zipped:
             data['path'] = data_dir  # TODO: should this be dir.resolve()?
     check_dataset(data, autodownload)  # download dataset if missing
-    hub_dir = Path(f"{data['path']}-hub" if hub else '')
+    hub_dir = Path(data['path'] + '-hub' if hub else '')
     stats = {'yaml': data}  # statistics dictionary
     for split in 'train', 'val', 'test':
         if data.get(split) is None:
