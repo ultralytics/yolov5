@@ -918,7 +918,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         if zipped:
             data['path'] = data_dir  # TODO: should this be dir.resolve()?
     check_dataset(data, autodownload)  # download dataset if missing
-    hub_dir = Path(data['path'] + '-hub' if hub else '')
+    hub_dir = Path(data['path'] + ('-hub' if hub else ''))
     stats = {'yaml': data}  # statistics dictionary
     for split in 'train', 'val', 'test':
         if data.get(split) is None:
@@ -952,7 +952,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         for _ in range(1):
             file = stats_path.with_suffix('.npy')
             t1 = time.time()
-            np.save(file, stats, allow_pickle=True)
+            np.save(file, stats)
             t2 = time.time()
             x = np.load(file, allow_pickle=True)
             print(f'stats.npy times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
