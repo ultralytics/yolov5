@@ -1,0 +1,1248 @@
+# grozi data set from google drive id 1Fx9lvmjthe3aOqjvKc6MJpMuLF22I1Hp
+# Train command: python train.py --data grozi.yaml
+# Default dataset location is next to YOLOv5:
+#   /parent
+#     /grozi
+#     /yolov5
+
+
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: ../grozi  # dataset root dir
+train: /images/train  # train images (relative to 'path') 128 images
+val: /images/val  # val images (relative to 'path') 128 images
+test: /images/test
+
+# Classes
+nc: 1222  # number of classes
+names:
+  -rice
+  -rice
+  -rice
+  -rice
+  -brown rice
+  -brown rice
+  -brown rice
+  -brown rice
+  -rice
+  -brown rice
+  -short pasta
+  -short pasta
+  -short pasta
+  -short pasta
+  -short pasta
+  -short pasta
+  -short pasta
+  -salsa
+  -salsa
+  -salsa
+  -salsa
+  -salsa
+  -canned beans
+  -canned beans
+  -Non ID Obj
+  -Non ID Obj
+  -canned ravioli
+  -canned beans
+  -canned ravioli
+  -canned ravioli
+  -canned lentils
+  -canned peas
+  -canned peas
+  -canned chickpeas
+  -canned lentils
+  -canned beans
+  -canned beans
+  -canned beans
+  -canned carrots
+  -canned peas
+  -canned asparagus
+  -canned asparagus
+  -compot
+  -compot
+  -compot
+  -compot
+  -compot
+  -compot
+  -compot
+  -compot
+  -compot
+  -compot
+  -compot
+  -compot
+  -compot
+  -compot
+  -compot
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -crackers
+  -crackers
+  -crackers
+  -crackers
+  -crackers
+  -crackers
+  -crackers
+  -crackers
+  -crackers
+  -Non ID Obj
+  -crackers
+  -crackers
+  -crackers
+  -cake
+  -cake
+  -cake
+  -cake
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -honey
+  -honey
+  -chocolate spread
+  -chocolate spread
+  -peanut butter
+  -chocolate spread
+  -chocolate spread
+  -honey
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -jam
+  -nuts
+  -dry fruit
+  -nuts
+  -nuts
+  -nuts
+  -nuts
+  -nuts
+  -nuts
+  -nuts
+  -dry fruit
+  -dry fruit
+  -dry fruit
+  -dry fruit
+  -nuts
+  -dry fruit
+  -dry fruit
+  -dry fruit
+  -dry fruit
+  -dry fruit
+  -dry fruit
+  -nuts
+  -nuts
+  -nuts
+  -grapes
+  -grapes
+  -nuts
+  -dry fruit
+  -dry fruit
+  -nuts
+  -dry fruit
+  -dry fruit
+  -nuts
+  -nuts
+  -nuts
+  -nuts
+  -dry fruit
+  -Non ID Obj
+  -Non ID Obj
+  -nuts
+  -hot chocolate
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -coffee
+  -cereal
+  -cereal
+  -cereal
+  -cereal
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -cookies
+  -cookies
+  -chips
+  -chips
+  -crackers
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -chips
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -bottled water
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -juice
+  -rice
+  -rice
+  -rice
+  -rice
+  -rice
+  -rice
+  -rice
+  -milk
+  -milk
+  -milk
+  -milk
+  -milk
+  -milk
+  -milk
+  -milk
+  -milk
+  -choco drink
+  -choco drink
+  -milk
+  -milk
+  -milk
+  -milk
+  -milk
+  -milk
+  -choco drink
+  -milk
+  -milk
+  -choco drink
+  -whipped cream
+  -whipped cream
+  -whipped cream
+  -milk
+  -short pasta
+  -short pasta
+  -short pasta
+  -short pasta
+  -short pasta
+  -short pasta
+  -short pasta
+  -short pasta
+  -short pasta
+  -short pasta
+  -short pasta
+  -spaghetti
+  -spaghetti
+  -spaghetti
+  -short pasta
+  -short pasta
+  -short pasta
+  -short pasta
+  -short pasta
+  -lasagna
+  -spaghetti
+  -salsa
+  -salsa
+  -salsa
+  -salsa
+  -salsa
+  -salsa
+  -salsa
+  -salsa
+  -salsa
+  -salsa
+  -pesto
+  -Non ID Obj
+  -pulp
+  -pulp
+  -pulp
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate candy
+  -chocolate candy
+  -chocolate candy
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -chocolate candy
+  -chocolate bar
+  -chocolate candy
+  -chocolate candy
+  -chocolate bar
+  -chocolate bar
+  -chocolate candy
+  -chocolate candy
+  -chocolate candy
+  -chocolate candy
+  -chocolate bar
+  -chocolate candy
+  -brown rice
+  -rice
+  -rice
+  -olive oil
+  -olive oil
+  -olive oil
+  -olive oil
+  -olive oil
+  -olive oil
+  -oil
+  -oil
+  -oil
+  -olive oil
+  -olive oil
+  -olive oil
+  -olive oil
+  -balsamico
+  -olive oil
+  -olive oil
+  -olive oil
+  -oil
+  -vinegar
+  -vinegar
+  -vinegar
+  -balsamico
+  -balsamico
+  -vinegar
+  -olive oil
+  -vinegar
+  -vinegar
+  -vinegar
+  -juice
+  -olive oil
+  -canned onions
+  -canned onions
+  -canned pickles
+  -canned pickles
+  -canned pickles
+  -canned pickles
+  -canned pickles
+  -canned pickles
+  -calamari
+  -sardines
+  -sardines
+  -sardines
+  -canned shrips
+  -canned tuna
+  -canned tuna
+  -canned tuna
+  -canned tuna
+  -canned tuna
+  -sardines
+  -canned tuna
+  -canned tuna
+  -canned tuna
+  -canned tuna
+  -canned tuna
+  -canned tuna
+  -canned tuna
+  -sardines
+  -sardines
+  -canned tuna
+  -canned tuna
+  -canned tuna
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -salt
+  -salt
+  -salt
+  -salt
+  -salt
+  -black pepper
+  -black pepper
+  -black pepper
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -pastries doe
+  -pastries doe
+  -pastries doe
+  -pastries doe
+  -pastries doe
+  -pastries doe
+  -pastries doe
+  -pastries doe
+  -pastries doe
+  -wrapped bread rolls
+  -wrapped bread rolls
+  -croissants
+  -croissants
+  -salty pretzels
+  -salty pretzels
+  -salty pretzels
+  -salty pretzels
+  -salty pretzels
+  -nuts
+  -grissini
+  -grissini
+  -grissini
+  -grissini
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -Non ID Obj
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -Non ID Obj
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -Non ID Obj
+  -yoghurt
+  -yoghurt
+  -Non ID Obj
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -sliced bread
+  -sliced bread
+  -sliced bread
+  -sliced bread
+  -sliced bread
+  -sliced bread
+  -sliced bread
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -rice puffs
+  -rice puffs
+  -cake
+  -cookies
+  -cookies
+  -wrapped bread rolls
+  -wrapped bread rolls
+  -wrapped bread rolls
+  -wrapped bread rolls
+  -wrapped bread rolls
+  -wrapped bread rolls
+  -wrapped bread rolls
+  -crackers
+  -crackers
+  -crackers
+  -crackers
+  -crackers
+  -crackers
+  -crackers
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -crackers
+  -cookies
+  -cookies
+  -crackers
+  -crackers
+  -crackers
+  -crackers
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -french cheese
+  -french cheese
+  -french cheese
+  -french cheese
+  -french cheese
+  -french cheese
+  -french cheese
+  -french cheese
+  -french cheese
+  -french cheese
+  -halloumi cheese
+  -halloumi cheese
+  -halloumi cheese
+  -grinned cheese
+  -grinned cheese
+  -grinned cheese
+  -mozzarella
+  -Non ID Obj
+  -cream cheese
+  -cream cheese
+  -feta cheese
+  -feta cheese
+  -Non ID Obj
+  -cream cheese
+  -tofu
+  -feta cheese
+  -feta cheese
+  -feta cheese
+  -yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -grinned spices
+  -grinned spices
+  -grinned spices
+  -grinned spices
+  -grinned spices
+  -grinned spices
+  -grinned spices
+  -grinned spices
+  -grinned spices
+  -grinned spices
+  -grinned spices
+  -grinned spices
+  -grinned spices
+  -grinned spices
+  -grinned spices
+  -canned corn
+  -canned fruit
+  -canned fruit
+  -canned fruit
+  -canned corn
+  -Non ID Obj
+  -canned peas and carrots
+  -canned peas and carrots
+  -canned peas and carrots
+  -canned carrots
+  -canned peas and carrots
+  -canned mushrooms
+  -canned mushrooms
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -feta cheese
+  -yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -cream cheese
+  -flavored butter
+  -flavored butter
+  -plain butter
+  -tartare sauce
+  -french cheese
+  -cake
+  -cake
+  -cake
+  -cake
+  -cake
+  -yoghurt
+  -croissants
+  -cake
+  -wrapped bread rolls
+  -yoghurt
+  -cake
+  -cake
+  -pastries doe
+  -sliced bread
+  -coffee drink
+  -coffee drink
+  -coffee drink
+  -coffee drink
+  -coffee drink
+  -coffee drink
+  -coffee drink
+  -chocolate drink
+  -crackers
+  -candy
+  -candy
+  -candy
+  -candy
+  -candy
+  -candy
+  -candy
+  -candy
+  -candy
+  -candy
+  -candy
+  -candy
+  -candy
+  -candy
+  -candy
+  -cookies
+  -cookies
+  -grinned yellow cheese
+  -yellow cheese
+  -yellow cheese
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -energy drink
+  -energy drink
+  -energy drink
+  -coffee drink
+  -coffee drink
+  -coffee drink
+  -coffee drink
+  -coffee drink
+  -juice
+  -juice
+  -coffee drink
+  -Non ID Obj
+  -yoghurt
+  -Non ID Obj
+  -french cheese
+  -hallomi cheese
+  -tomato sauce
+  -curry sauce
+  -tartare sauce
+  -cocktail sauce
+  -ketchup sauce
+  -mustard sauce
+  -tartare sauce
+  -ketchup sauce
+  -Non ID Obj
+  -nuts
+  -sesame
+  -cereal
+  -cereal
+  -cereal
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -Non ID Obj
+  -rice
+  -salsa
+  -salsa
+  -canned mushrooms
+  -jam
+  -cereal
+  -cake
+  -tea
+  -tea
+  -tea
+  -tea
+  -honey
+  -jam
+  -coffee
+  -chips
+  -cookies
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -juice
+  -rice
+  -milk
+  -short pasta
+  -short pasta
+  -short pasta
+  -salsa
+  -salsa
+  -salsa
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -tuna
+  -white wine
+  -soup concentrate
+  -soup concentrate
+  -spices
+  -cake
+  -yoghurt
+  -yoghurt
+  -cake
+  -Non ID Obj
+  -wrapped bread rolls
+  -wrapped bread rolls
+  -feta cheese
+  -cream cheese
+  -Non ID Obj
+  -spices
+  -spices
+  -candy
+  -spices
+  -spices
+  -chilli sauce
+  -cookies
+  -canned meatballs
+  -canned ravioli
+  -canned ravioli
+  -canned ravioli
+  -canned artichoke
+  -cereal
+  -cereal
+  -crackers
+  -cake
+  -cake
+  -crackers
+  -tea
+  -tea
+  -tea
+  -tea
+  -tea
+  -honey
+  -honey
+  -honey
+  -honey
+  -chocolate spread
+  -jam
+  -jam
+  -jam
+  -jam
+  -coffee
+  -coffee
+  -coffee
+  -chip dip
+  -chip dip
+  -chips
+  -chips
+  -grissini
+  -grissini
+  -rice
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -bottled watter
+  -bottled watter
+  -soft drinks
+  -rice
+  -rice
+  -milk
+  -short pasta
+  -short pasta
+  -pesto
+  -salsa
+  -chocolate candy
+  -chocolate candy
+  -chocolate bar
+  -chocolate bar
+  -chocolate bar
+  -candy
+  -chocolate bar
+  -chocolate bar
+  -olive oil
+  -balsamico
+  -balsamico
+  -balsamico
+  -balsamico
+  -balsamico
+  -balsamico
+  -canned olives
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -soup concentrate
+  -salt
+  -black pepper
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -soft drinks
+  -cake
+  -croissants
+  -pastries doe
+  -Non ID Obj
+  -pastries doe
+  -pretzel
+  -grissini
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -yoghurt
+  -sliced bread yoghurt
+  -cookies
+  -cake
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -chocolate candy
+  -cookies
+  -cookies
+  -cookies
+  -cookies
+  -yoghurt
+  -french cheese
+  -sardines
+  -yellow cheese
+  -mozzarella sticks
+  -french cheese
+  -french cheese
+  -grinned yellow cheese
+  -mozzarella
+  -feta cheese
+  -yoghurt
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -spices
+  -salt
+  -milk
+  -hummus
+  -feta cheese
+  -Non ID Obj
+  -canned fruit
+  -jam
+  -canned fruit
+  -milk
+  -milk
+  -french cheese
+  -french cheese
+  -french cheese
+  -french cheese
+  -cottage cheese
+  -french cheese
+  -cake
+  -cake
+  -cake
+  -sliced bread
+  -cake
+  -salty pretzels
+  -candy
+  -candy
+  -candy
+  -candy
+  -candy
+  -candy
+  -cottage cheese
+  -yoghurt
+  -short pasta
+  -mustard sauce
+  -canned asparagus
+  -canned asparagus
+  -cereal
+  -cereal
+  -canned lentils
+
+
+# Download script/URL (optional)
+download:
+  import GroziPrep
+  GroziPrep.fetch_dataset()
+  GroziPrep.create_annotation_txt()
+  GroziPrep.create_segmentation_of_data()
+
