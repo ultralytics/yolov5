@@ -90,8 +90,8 @@ def show_annotation(imageid):
     scaled_annotations[:, 3] = scaled_annotations[:, 1] + scaled_annotations[:, 3]
     scaled_annotations[:, 4] = scaled_annotations[:, 2] + scaled_annotations[:, 4]
 
-    with open('classes.txt') as f:
-        classes = {int(line[:line.find(" ")].strip()): line[line.find(" "):].strip() for line in f}
+    with open('classes_list.txt') as f:
+        classes = [line[line.find("-")+1:].strip() for line in f]
 
     for ann in scaled_annotations:
         cls, left, top, right, bottom = (round(x) for x in ann)
