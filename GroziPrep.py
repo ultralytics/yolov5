@@ -39,8 +39,11 @@ def create_annotation_txt():
 
         bboxes[bbox[0]] = dict()
         b = bboxes[bbox[0]]
+
         for i in range(len(tags)):
             b[tags[i]] = bbox[i]
+
+        assert b['classid'] < 1223
 
         # Transform the bbox co-ordinates as per the format required by YOLO v5
         b['box_center_x'] = (b['lx'] + b['rx']) / 2
@@ -48,7 +51,7 @@ def create_annotation_txt():
         b['box_width'] = (b['rx'] - b['lx'])
         b['box_height'] = (b['by'] - b['ty'])
 
-        print(bboxes[bbox[0]])
+        #print(bboxes[bbox[0]])
 
     images = [grozi_path + grozi_dir + '/src/3264/' + img for img in os.listdir(grozi_path + grozi_dir + '/src/3264/')
               if img[-3:] == 'jpg']
@@ -148,8 +151,10 @@ def create_segmentation_of_data():
         for f in m[0]:
             shutil.copy(f, path + m[1])
 
-
-if __name__ == "__main__":
+def etl():
     fetch_dataset()
     create_annotation_txt()
     create_segmentation_of_data()
+
+if __name__ == "__main__":
+    etl()
