@@ -307,7 +307,7 @@ class Detections:
     def display(self, pprint=False, show=False, save=False, crop=False, render=False, save_dir=Path('')):
         for i, (im, pred) in enumerate(zip(self.imgs, self.pred)):
             str = f'image {i + 1}/{len(self.pred)}: {im.shape[0]}x{im.shape[1]} '
-            if pred is not None:
+            if pred.shape[0]:
                 for c in pred[:, -1].unique():
                     n = (pred[:, -1] == c).sum()  # detections per class
                     str += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
@@ -318,6 +318,8 @@ class Detections:
                             save_one_box(box, im, file=save_dir / 'crops' / self.names[int(cls)] / self.files[i])
                         else:  # all others
                             plot_one_box(box, im, label=label, color=colors(cls))
+            else:
+                str += '(no detections)'
 
             im = Image.fromarray(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im  # from np
             if pprint:
@@ -332,7 +334,8 @@ class Detections:
                 self.imgs[i] = np.asarray(im)
 
     def print(self):
-        print(self.__str__())  # print results
+        self.display(pprint=True)  # print results
+        print(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' % self.t)
 
     def show(self):
         self.display(show=True)  # show results
@@ -370,10 +373,6 @@ class Detections:
 
     def __len__(self):
         return self.n
-
-    def __str__(self):
-        self.display(pprint=True)
-        return f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' % self.t
 
 
 class Classify(nn.Module):
