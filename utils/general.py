@@ -396,10 +396,10 @@ def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
     return y
 
 
-def xyxy2xywhn(x, w=640, h=640, clip=False):
+def xyxy2xywhn(x, w=640, h=640, clip=False, eps=0.0):
     # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] normalized where xy1=top-left, xy2=bottom-right
     if clip:
-        clip_coords(x, (h, w))  # warning: inplace clip
+        clip_coords(x, (h - eps, w - eps))  # warning: inplace clip
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[:, 0] = ((x[:, 0] + x[:, 2]) / 2) / w  # x center
     y[:, 1] = ((x[:, 1] + x[:, 3]) / 2) / h  # y center
@@ -458,18 +458,16 @@ def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
     return coords
 
 
-def clip_coords(boxes, img_shape):
+def clip_coords(boxes, shape):
     # Clip bounding xyxy bounding boxes to image shape (height, width)
-    if isinstance(boxes, torch.Tensor):
-        boxes[:, 0].clamp_(0, img_shape[1])  # x1
-        boxes[:, 1].clamp_(0, img_shape[0])  # y1
-        boxes[:, 2].clamp_(0, img_shape[1])  # x2
-        boxes[:, 3].clamp_(0, img_shape[0])  # y2
-    else:  # np.array
-        boxes[:, 0].clip(0, img_shape[1], out=boxes[:, 0])  # x1
-        boxes[:, 1].clip(0, img_shape[0], out=boxes[:, 1])  # y1
-        boxes[:, 2].clip(0, img_shape[1], out=boxes[:, 2])  # x2
-        boxes[:, 3].clip(0, img_shape[0], out=boxes[:, 3])  # y2
+    if isinstance(boxes, torch.Tensor):  # faster individually
+        boxes[:, 0].clamp_(0, shape[1])  # x1
+        boxes[:, 1].clamp_(0, shape[0])  # y1
+        boxes[:, 2].clamp_(0, shape[1])  # x2
+        boxes[:, 3].clamp_(0, shape[0])  # y2
+    else:  # np.array (faster grouped)
+        boxes[:, [0, 2]] = boxes[:, [0, 2]].clip(0, shape[1])  # x1, x2
+        boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, shape[0])  # y1, y2
 
 
 def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False,
