@@ -627,6 +627,7 @@ def load_image(self, index):
         path = self.img_files[index]
         img = np.fromfile(path, np.uint8)
         img = cv2.imdecode(img, cv2.IMREAD_UNCHANGED)
+        img = img[..., :3] if img.ndim == 3 else np.tile(img[..., None], 3)
         
         assert img is not None, 'Image Not Found ' + path
         h0, w0 = img.shape[:2]  # orig hw
