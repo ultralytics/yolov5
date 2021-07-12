@@ -1,7 +1,7 @@
-"""Run inference with a YOLOv5 model on images, videos, directories, streams
+"""Run inference with a YOLOv5 model on images, videos, directories, streams using ONNX
 
 Usage:
-    $ python path/to/detect.py --source path/to/img.jpg --weights yolov5s.pt --img 640
+    $ python path/to/detect.py --source path/to/img.jpg --weights yolov5s.onnx --img 640
 """
 
 import argparse
@@ -10,8 +10,10 @@ import time
 from pathlib import Path
 
 import cv2
+import onnx
 import torch
-import torch.backends.cudnn as cudnn
+import onnxruntime
+import numpy as np
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
@@ -23,15 +25,14 @@ from utils.general import check_img_size, check_requirements, check_imshow, colo
 from utils.plots import colors, plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
+# TODO - add stride and names in the parse args
 
-@torch.no_grad()
-def run(weights='yolov5s.pt',  # model.pt path(s)
+def run(weights='yolov5s.onnx',  # model.pt path(s)
         source='data/images',  # file/dir/URL/glob, 0 for webcam
         imgsz=640,  # inference size (pixels)
         conf_thres=0.25,  # confidence threshold
         iou_thres=0.45,  # NMS IOU threshold
         max_det=1000,  # maximum detections per image
-        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         view_img=False,  # show results
         save_txt=False,  # save results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
@@ -47,7 +48,9 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         line_thickness=3,  # bounding box thickness (pixels)
         hide_labels=False,  # hide labels
         hide_conf=False,  # hide confidences
-        half=False,  # use FP16 half-precision inference
+        stride=32, # stride of the model
+        names=['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
+, # names of classes
         ):
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
@@ -59,54 +62,35 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
 
     # Initialize
     set_logging()
-    device = select_device(device)
-    half &= device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
-    model = attempt_load(weights, map_location=device)  # load FP32 model
-    stride = int(model.stride.max())  # model stride
+    session = onnxruntime.InferenceSession(weights, None)
+    input_name = session.get_inputs()[0].name
+    output_name = session.get_outputs()[0].name
     imgsz = check_img_size(imgsz, s=stride)  # check image size
-    names = model.module.names if hasattr(model, 'module') else model.names  # get class names
-    if half:
-        model.half()  # to FP16
-
-    # Second-stage classifier
-    classify = False
-    if classify:
-        modelc = load_classifier(name='resnet50', n=2)  # initialize
-        modelc.load_state_dict(torch.load('resnet50.pt', map_location=device)['model']).to(device).eval()
 
     # Set Dataloader
     vid_path, vid_writer = None, None
     if webcam:
         view_img = check_imshow()
-        cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadStreams(source, img_size=imgsz, stride=stride)
     else:
         dataset = LoadImages(source, img_size=imgsz, stride=stride)
 
-    # Run inference
-    if device.type != 'cpu':
-        model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
     for path, img, im0s, vid_cap in dataset:
-        img = torch.from_numpy(img).to(device)
-        img = img.half() if half else img.float()  # uint8 to fp16/32
+        img = img.astype("float32")
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
-        if img.ndimension() == 3:
-            img = img.unsqueeze(0)
+        if len(img.shape) == 3:
+            img = np.expand_dims(img, axis=0)
 
         # Inference
         t1 = time_synchronized()
-        pred = model(img, augment=augment)[0]
+        result = session.run([output_name], {input_name: img})
 
         # Apply NMS
-        pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
+        pred = non_max_suppression(torch.tensor(result), conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
         t2 = time_synchronized()
-
-        # Apply Classifier
-        if classify:
-            pred = apply_classifier(pred, modelc, img, im0s)
 
         # Process detections
         for i, det in enumerate(pred):  # detections per image
@@ -176,21 +160,17 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
         print(f"Results saved to {save_dir}{s}")
 
-    if update:
-        strip_optimizer(weights)  # update model (to fix SourceChangeWarning)
-
     print(f'Done. ({time.time() - t0:.3f}s)')
 
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.onnx', help='model.onnx path(s)')
     parser.add_argument('--source', type=str, default='data/images', help='file/dir/URL/glob, 0 for webcam')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='show results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
@@ -206,7 +186,8 @@ def parse_opt():
     parser.add_argument('--line-thickness', default=3, type=int, help='bounding box thickness (pixels)')
     parser.add_argument('--hide-labels', default=False, action='store_true', help='hide labels')
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
-    parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
+    parser.add_argument('--stride', default=32, type=int, help="stide of the model")
+    parser.add_argument('--names', nargs="+", default=['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'], help='names of classes')
     opt = parser.parse_args()
     return opt
 
