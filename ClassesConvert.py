@@ -10,7 +10,7 @@ def ClassesConvert():
 
     l= []
     maxkey = max(classes)
-    for i in range(max(classes)):
+    for i in range(max(classes)+1):
         if i in classes.keys():
             l.append(classes[i])
         else:
