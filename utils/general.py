@@ -122,7 +122,7 @@ def check_git_status(err_msg=', for updates see https://github.com/ultralytics/y
         assert not is_docker(), 'skipping check (Docker image)'
         assert check_online(), 'skipping check (offline)'
 
-        cmd = 'git fetch && git config --get remote.origin.url'
+        cmd = 'git fetch upstream && git config --get remote.origin.url'
         url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
         branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
         n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
