@@ -11,6 +11,7 @@ from pathlib import Path
 
 import cv2
 import torch
+import numpy as np
 import onnxruntime
 import torch.backends.cudnn as cudnn
 
@@ -66,9 +67,9 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
     set_logging()
     if onnx:
         # Load model
-        if weights.split(".")[1] == "pt":
+        if weights[0].split(".")[1] == "pt":
             raise ValueError("Weight file should be an ONNX file.")
-        session = onnxruntime.InferenceSession(weights, None)
+        session = onnxruntime.InferenceSession(weights[0], None)
         input_name = session.get_inputs()[0].name
         output_name = session.get_outputs()[0].name
     else:
@@ -135,8 +136,9 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         t2 = time_synchronized()
 
         # Apply Classifier
-        if classify:
-            pred = apply_classifier(pred, modelc, img, im0s)
+        if not onnx:
+            if classify:
+                pred = apply_classifier(pred, modelc, img, im0s)
 
         # Process detections
         for i, det in enumerate(pred):  # detections per image
@@ -238,6 +240,9 @@ def parse_opt():
     parser.add_argument('--hide-labels', default=False, action='store_true', help='hide labels')
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
+    parser.add_argument('--stride', default=32, type=int, help="stide of the model")
+    parser.add_argument('--names', nargs="+", default=['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'], help='names of classes')
+    parser.add_argument('--onnx', action='store_true', help="use ONNX inference.")
     opt = parser.parse_args()
     return opt
 
