@@ -332,8 +332,7 @@ class Detections:
                 self.imgs[i] = np.asarray(im)
 
     def print(self):
-        self.display(pprint=True)  # print results
-        print(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' % self.t)
+        print(self.__str__())  # print results
 
     def show(self):
         self.display(show=True)  # show results
@@ -371,6 +370,10 @@ class Detections:
 
     def __len__(self):
         return self.n
+
+    def __str__(self):
+        self.display(pprint=True)
+        return f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' % self.t
 
 
 class Classify(nn.Module):
