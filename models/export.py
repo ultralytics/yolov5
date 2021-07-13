@@ -52,8 +52,10 @@ def load_checkpoint(type_, weights, device, cfg=None, hyp=None, nc=None, recipe=
                       else weights, map_location=device)  # load checkpoint
     start_epoch = ckpt['epoch'] + 1 if 'epoch' in ckpt else 0
     pickled = isinstance(ckpt['model'], nn.Module)
+    train_type = type_ == 'train'
+    ensemble_type = type_ == 'ensemble'
 
-    if pickled and type_ == 'ensemble':
+    if pickled and ensemble_type:
         # load ensemble using pickled
         cfg = None
         model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -64,7 +66,7 @@ def load_checkpoint(type_, weights, device, cfg=None, hyp=None, nc=None, recipe=
               (ckpt['model'].yaml if pickled else None)
         model = Model(cfg, ch=3, nc=ckpt['nc'] if ('nc' in ckpt and not nc) else nc,
                       anchors=hyp.get('anchors') if hyp else None).to(device)
-        model_key = 'ema' if (type_ in ['ema', 'ensemble'] and 'ema' in ckpt and ckpt['ema']) else 'model'
+        model_key = 'ema' if (not train_type and 'ema' in ckpt and ckpt['ema']) else 'model'
         state_dict = ckpt[model_key].float().state_dict() if pickled else ckpt[model_key]
 
     # turn gradients for params back on in case they were removed
@@ -74,10 +76,10 @@ def load_checkpoint(type_, weights, device, cfg=None, hyp=None, nc=None, recipe=
     # load sparseml recipe for applying pruning and quantization
     recipe = recipe or (ckpt['recipe'] if 'recipe' in ckpt else None)
     sparseml_wrapper = SparseMLWrapper(model, recipe)
-    exclude_anchors = (cfg or hyp.get('anchors')) and not resume
+    exclude_anchors = train_type and (cfg or hyp.get('anchors')) and not resume
     loaded = False
 
-    if type_ in ['ema', 'ensemble']:
+    if not train_type:
         # apply the recipe to create the final state of the model when not training
         sparseml_wrapper.apply()
     else:
@@ -89,7 +91,7 @@ def load_checkpoint(type_, weights, device, cfg=None, hyp=None, nc=None, recipe=
         sparseml_wrapper.initialize(start_epoch)
 
     if not loaded:
-        state_dict = load_state_dict(model, state_dict, train=type_ not in ['ema', 'ensemble'], exclude_anchors=exclude_anchors)
+        state_dict = load_state_dict(model, state_dict, train=train_type, exclude_anchors=exclude_anchors)
 
     model.float()
     report = 'Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights)
