@@ -4,7 +4,6 @@ import wandb
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[2].as_posix())  # add utils/ to path
-print("Sweep parents",FILE.parents[2].as_posix())
 
 from train import train, parse_opt
 import test
