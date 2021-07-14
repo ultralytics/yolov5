@@ -938,7 +938,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
             im_dir = hub_dir / 'images'
             im_dir.mkdir(parents=True, exist_ok=True)
             max_dim = 1920
-            for im_file in tqdm(dataset.img_files, total=dataset.n, desc='Hub ops'):
+            for im_file in tqdm(dataset.img_files, total=dataset.n, desc='Hub image compression'):
                 im = Image.open(im_file)
                 r = max_dim / max(im.height, im.width)  # ratio
                 if r < 1.0:  # image too large
@@ -967,7 +967,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
 
     # Save, print and return
     if hub:
-        print(f'Saving {f}...')
+        print(f'Saving {stats_path.resolve()}...')
         with open(stats_path, 'w') as f:
             json.dump(stats, f)  # save stats.json
     if verbose:
