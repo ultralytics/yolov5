@@ -32,7 +32,7 @@ from tqdm import tqdm
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
-import test  # for end-of-epoch mAP
+import val  # for end-of-epoch mAP
 from models.experimental import attempt_load
 from models.yolo import Model
 from utils.autoanchor import check_anchors
@@ -57,9 +57,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           opt,
           device,
           ):
-    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, notest, nosave, workers, = \
+    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, = \
         opt.save_dir, opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
-        opt.resume, opt.notest, opt.nosave, opt.workers
+        opt.resume, opt.noval, opt.nosave, opt.workers
 
     # Directories
     save_dir = Path(save_dir)
@@ -129,7 +129,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     with torch_distributed_zero_first(RANK):
         check_dataset(data_dict)  # check
     train_path = data_dict['train']
-    test_path = data_dict['val']
+    val_path = data_dict['val']
 
     # Freeze
     freeze = []  # parameter names to freeze (full or partial)
@@ -207,7 +207,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Image sizes
     gs = max(int(model.stride.max()), 32)  # grid size (max stride)
     nl = model.model[-1].nl  # number of detection layers (used for scaling hyp['obj'])
-    imgsz, imgsz_test = [check_img_size(x, gs) for x in opt.img_size]  # verify imgsz are gs-multiples
+    imgsz, imgsz_val = [check_img_size(x, gs) for x in opt.img_size]  # verify imgsz are gs-multiples
 
     # DP mode
     if cuda and RANK == -1 and torch.cuda.device_count() > 1:
@@ -231,8 +231,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # Process 0
     if RANK in [-1, 0]:
-        testloader = create_dataloader(test_path, imgsz_test, batch_size // WORLD_SIZE * 2, gs, single_cls,
-                                       hyp=hyp, cache=opt.cache_images and not notest, rect=True, rank=-1,
+        valloader = create_dataloader(val_path, imgsz_val, batch_size // WORLD_SIZE * 2, gs, single_cls,
+                                       hyp=hyp, cache=opt.cache_images and not noval, rect=True, rank=-1,
                                        workers=workers,
                                        pad=0.5, prefix=colorstr('val: '))[0]
 
@@ -276,7 +276,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
     compute_loss = ComputeLoss(model)  # init loss class
-    logger.info(f'Image sizes {imgsz} train, {imgsz_test} test\n'
+    logger.info(f'Image sizes {imgsz} train, {imgsz_val} val\n'
                 f'Using {dataloader.num_workers} dataloader workers\n'
                 f'Logging results to {save_dir}\n'
                 f'Starting training for {epochs} epochs...')
@@ -384,20 +384,20 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             # mAP
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
-            if not notest or final_epoch:  # Calculate mAP
+            if not noval or final_epoch:  # Calculate mAP
                 wandb_logger.current_epoch = epoch + 1
-                results, maps, _ = test.run(data_dict,
-                                            batch_size=batch_size // WORLD_SIZE * 2,
-                                            imgsz=imgsz_test,
-                                            model=ema.ema,
-                                            single_cls=single_cls,
-                                            dataloader=testloader,
-                                            save_dir=save_dir,
-                                            save_json=is_coco and final_epoch,
-                                            verbose=nc < 50 and final_epoch,
-                                            plots=plots and final_epoch,
-                                            wandb_logger=wandb_logger,
-                                            compute_loss=compute_loss)
+                results, maps, _ = val.run(data_dict,
+                                           batch_size=batch_size // WORLD_SIZE * 2,
+                                           imgsz=imgsz_val,
+                                           model=ema.ema,
+                                           single_cls=single_cls,
+                                           dataloader=valloader,
+                                           save_dir=save_dir,
+                                           save_json=is_coco and final_epoch,
+                                           verbose=nc < 50 and final_epoch,
+                                           plots=plots and final_epoch,
+                                           wandb_logger=wandb_logger,
+                                           compute_loss=compute_loss)
 
             # Write
             with open(results_file, 'a') as f:
@@ -454,15 +454,15 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         if not evolve:
             if is_coco:  # COCO dataset
                 for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
-                    results, _, _ = test.run(data_dict,
-                                             batch_size=batch_size // WORLD_SIZE * 2,
-                                             imgsz=imgsz_test,
-                                             model=attempt_load(m, device).half(),
-                                             single_cls=single_cls,
-                                             dataloader=testloader,
-                                             save_dir=save_dir,
-                                             save_json=True,
-                                             plots=False)
+                    results, _, _ = val.run(data_dict,
+                                            batch_size=batch_size // WORLD_SIZE * 2,
+                                            imgsz=imgsz_val,
+                                            model=attempt_load(m, device).half(),
+                                            single_cls=single_cls,
+                                            dataloader=valloader,
+                                            save_dir=save_dir,
+                                            save_json=True,
+                                            plots=False)
 
             # Strip optimizers
             for f in last, best:
@@ -486,11 +486,11 @@ def parse_opt(known=False):
     parser.add_argument('--hyp', type=str, default='data/hyps/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
+    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, val] image sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
-    parser.add_argument('--notest', action='store_true', help='only test final epoch')
+    parser.add_argument('--noval', action='store_true', help='only validate final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
     parser.add_argument('--evolve', type=int, nargs='?', const=300, help='evolve hyperparameters for x generations')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
@@ -538,7 +538,7 @@ def main(opt):
         # opt.hyp = opt.hyp or ('hyp.finetune.yaml' if opt.weights else 'hyp.scratch.yaml')
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
-        opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
+        opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, val)
         opt.name = 'evolve' if opt.evolve else opt.name
         opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok or opt.evolve))
 
@@ -597,7 +597,7 @@ def main(opt):
             if 'anchors' not in hyp:  # anchors commented in hyp.yaml
                 hyp['anchors'] = 3
         assert LOCAL_RANK == -1, 'DDP mode not implemented for --evolve'
-        opt.notest, opt.nosave = True, True  # only test/save final epoch
+        opt.noval, opt.nosave = True, True  # only val/save final epoch
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
         yaml_file = Path(opt.save_dir) / 'hyp_evolved.yaml'  # save best result here
         if opt.bucket:
