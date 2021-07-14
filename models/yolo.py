@@ -117,11 +117,10 @@ class Model(nn.Module):
         self.info()
         logger.info('')
 
-    def forward(self, x, augment=False, profile=False):
+    def forward(self, x, augment=False, profile=False, visualize=False):
         if augment:
             return self.forward_augment(x)  # augmented inference, None
-        else:
-            return self.forward_once(x, profile)  # single-scale inference, train
+        return self.forward_once(x, profile, visualize)  # single-scale inference, train
 
     def forward_augment(self, x):
         img_size = x.shape[-2:]  # height, width
@@ -136,7 +135,7 @@ class Model(nn.Module):
             y.append(yi)
         return torch.cat(y, 1), None  # augmented inference, train
 
-    def forward_once(self, x, profile=False, feature_vis=False):
+    def forward_once(self, x, profile=False, visualize=False):
         y, dt = [], []  # outputs
         for m in self.model:
             if m.f != -1:  # if not from previous layer
@@ -155,8 +154,8 @@ class Model(nn.Module):
             x = m(x)  # run
             y.append(x if m.i in self.save else None)  # save output
 
-            if feature_vis and m.type == 'models.common.SPP':
-                feature_visualization(x, m.type, m.i)
+            if visualize:
+                feature_visualization(x, m.type, m.i, save_dir=visualize)
 
         if profile:
             logger.info('%.1fms total' % sum(dt))
@@ -311,4 +310,3 @@ if __name__ == '__main__':
     # tb_writer = SummaryWriter('.')
     # logger.info("Run 'tensorboard --logdir=models' to view tensorboard at http://localhost:6006/")
     # tb_writer.add_graph(torch.jit.trace(model, img, strict=False), [])  # add model graph
-    # tb_writer.add_image('test', img[0], dataformats='CWH')  # add model to tensorboard
