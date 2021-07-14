@@ -967,6 +967,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
 
     # Save, print and return
     if hub:
+        print(f'Saving {f}...')
         with open(stats_path, 'w') as f:
             json.dump(stats, f)  # save stats.json
     if verbose:
