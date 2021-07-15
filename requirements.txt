@@ -1,4 +1,4 @@
 Cython==0.29.21
 pillow==7.2.0
-PyYAML==5.3.1
+PyYAML~=5.3
 tqdm==4.48.2
