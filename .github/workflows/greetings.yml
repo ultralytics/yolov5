@@ -33,7 +33,7 @@ jobs:
 
             ## Requirements
 
-            **Python>=3.6.0** with all [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) including **PyTorch>=1.7**. To get started:
+            **Python>=3.6.0** with all [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) installed including **PyTorch>=1.7**. To get started:
             ```bash
             $ git clone https://github.com/ultralytics/yolov5
             $ cd yolov5
