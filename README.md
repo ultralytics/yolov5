@@ -65,7 +65,7 @@ See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on tr
 <summary>Install</summary>
 
 [**Python>=3.6.0**](https://www.python.org/) with all [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) installed including [**PyTorch>=1.7**](https://pytorch.org/get-started/locally/):
-  <!-- $ sudo apt update && apt install -y libgl1-mesa-glx libsm6 libxext6 libxrender-dev -->
+<!-- $ sudo apt update && apt install -y libgl1-mesa-glx libsm6 libxext6 libxrender-dev -->
 ```bash
 $ git clone https://github.com/ultralytics/yolov5
 $ cd yolov5
