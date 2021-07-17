@@ -1,0 +1,19 @@
+# @package _group_
+
+data_folder: ${hydra:runtime.cwd}/datasets
+cls: hannah.datasets.Kitti.Kitti
+dataset: kitti
+
+test_pct: 10
+dev_pct: 10
+train_pct: 80
+
+
+kitti_folder: ${dataset.data_folder}/kitti
+img_size: 375, 1242
+num_img_pct: 100
+
+
+variants: ["kitti"]
+labels: {"DontCare" : 0, "Car" : 1, "Van" : 2, "Truck" : 3, "Pedestrian" : 4, "Person_sitting" : 5, "Cyclist" : 6, "Tram" : 7, "Misc" : 8}
+labels_ignore: [0, 2, 3, 5, 7, 8]
