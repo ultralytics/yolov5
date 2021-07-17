@@ -217,7 +217,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # SyncBatchNorm
     if opt.sync_bn and cuda and RANK != -1:
-        raise Exception('can not train with --sync-bn, please remove https://github.com/ultralytics/yolov5/issues/3998')
+        raise Exception('can not train with --sync-bn, known issue https://github.com/ultralytics/yolov5/issues/3998')
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
         logger.info('Using SyncBatchNorm()')
 
