@@ -22,7 +22,7 @@ class Albumentations:
             self.transform = A.Compose([
                 A.Blur(p=0.0),
                 A.ToGray(p=0.0),
-                A.CLAHE(p=0.20),
+                A.CLAHE(p=0.40),
             ],
                 bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
 
