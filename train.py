@@ -217,6 +217,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # SyncBatchNorm
     if opt.sync_bn and cuda and RANK != -1:
+        raise Exception('can not train with --sync-bn, known issue https://github.com/ultralytics/yolov5/issues/3998')
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
         logger.info('Using SyncBatchNorm()')
 
@@ -232,9 +233,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Process 0
     if RANK in [-1, 0]:
         valloader = create_dataloader(val_path, imgsz_val, batch_size // WORLD_SIZE * 2, gs, single_cls,
-                                       hyp=hyp, cache=opt.cache_images and not noval, rect=True, rank=-1,
-                                       workers=workers,
-                                       pad=0.5, prefix=colorstr('val: '))[0]
+                                      hyp=hyp, cache=opt.cache_images and not noval, rect=True, rank=-1,
+                                      workers=workers,
+                                      pad=0.5, prefix=colorstr('val: '))[0]
 
         if not resume:
             labels = np.concatenate(dataset.labels, 0)
