@@ -207,7 +207,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Image sizes
     gs = max(int(model.stride.max()), 32)  # grid size (max stride)
     nl = model.model[-1].nl  # number of detection layers (used for scaling hyp['obj'])
-    imgsz, imgsz_val = [check_img_size(x, gs) for x in opt.img_size]  # verify imgsz are gs-multiples
+    imgsz = check_img_size(opt.img_size, gs)  # verify imgsz is gs-multiple
 
     # DP mode
     if cuda and RANK == -1 and torch.cuda.device_count() > 1:
@@ -232,7 +232,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # Process 0
     if RANK in [-1, 0]:
-        valloader = create_dataloader(val_path, imgsz_val, batch_size // WORLD_SIZE * 2, gs, single_cls,
+        valloader = create_dataloader(val_path, imgsz, batch_size // WORLD_SIZE * 2, gs, single_cls,
                                       hyp=hyp, cache=opt.cache_images and not noval, rect=True, rank=-1,
                                       workers=workers,
                                       pad=0.5, prefix=colorstr('val: '))[0]
@@ -277,7 +277,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
     compute_loss = ComputeLoss(model)  # init loss class
-    logger.info(f'Image sizes {imgsz} train, {imgsz_val} val\n'
+    logger.info(f'Image sizes {imgsz} train, {imgsz} val\n'
                 f'Using {dataloader.num_workers} dataloader workers\n'
                 f'Logging results to {save_dir}\n'
                 f'Starting training for {epochs} epochs...')
@@ -389,7 +389,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 wandb_logger.current_epoch = epoch + 1
                 results, maps, _ = val.run(data_dict,
                                            batch_size=batch_size // WORLD_SIZE * 2,
-                                           imgsz=imgsz_val,
+                                           imgsz=imgsz,
                                            model=ema.ema,
                                            single_cls=single_cls,
                                            dataloader=valloader,
@@ -457,7 +457,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
                     results, _, _ = val.run(data_dict,
                                             batch_size=batch_size // WORLD_SIZE * 2,
-                                            imgsz=imgsz_val,
+                                            imgsz=imgsz,
                                             model=attempt_load(m, device).half(),
                                             single_cls=single_cls,
                                             dataloader=valloader,
@@ -487,7 +487,7 @@ def parse_opt(known=False):
     parser.add_argument('--hyp', type=str, default='data/hyps/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, val] image sizes')
+    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='train, val image size (pixels)')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')

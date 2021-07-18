@@ -18,7 +18,7 @@ from models.experimental import *
 from utils.autoanchor import check_anchor_order
 from utils.general import make_divisible, check_file, set_logging
 from utils.plots import feature_visualization
-from utils.torch_utils import time_synchronized, fuse_conv_and_bn, model_info, scale_img, initialize_weights, \
+from utils.torch_utils import time_sync, fuse_conv_and_bn, model_info, scale_img, initialize_weights, \
     select_device, copy_attr
 
 try:
@@ -143,10 +143,10 @@ class Model(nn.Module):
 
             if profile:
                 o = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2 if thop else 0  # FLOPs
-                t = time_synchronized()
+                t = time_sync()
                 for _ in range(10):
                     _ = m(x)
-                dt.append((time_synchronized() - t) * 100)
+                dt.append((time_sync() - t) * 100)
                 if m == self.model[0]:
                     logger.info(f"{'time (ms)':>10s} {'GFLOPs':>10s} {'params':>10s}  {'module'}")
                 logger.info(f'{dt[-1]:10.2f} {o:10.2f} {m.np:10.0f}  {m.type}')
