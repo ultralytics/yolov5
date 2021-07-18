@@ -51,7 +51,7 @@ def process_batch(predictions, labels, iouv):
     return correct
 
 
-@profile
+@torch.no_grad()
 def run(data,
         weights=None,  # model.pt path(s)
         batch_size=32,  # batch size
