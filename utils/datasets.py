@@ -46,7 +46,6 @@ def get_hash(paths):
     h.update(''.join(paths).encode())  # hash paths
     return h.hexdigest()  # return hash
 
-
 def exif_size(img):
     # Returns exif-corrected PIL size
     s = img.size  # (width, height)
@@ -88,7 +87,7 @@ def exif_transpose(image):
     return image
 
 
-def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False, pad=0.0,
+def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False, cache_on_disk=False, cache_directory="", pad=0.0,
                       rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix=''):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
     with torch_distributed_zero_first(rank):
@@ -97,6 +96,8 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
                                       hyp=hyp,  # augmentation hyperparameters
                                       rect=rect,  # rectangular training
                                       cache_images=cache,
+                                      cache_on_disk=cache_on_disk,
+                                      cache_directory=cache_directory,
                                       single_cls=single_cls,
                                       stride=int(stride),
                                       pad=pad,
@@ -361,7 +362,7 @@ def img2label_paths(img_paths):
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
+                 cache_images=False, cache_on_disk=False, cache_directory="", single_cls=False, stride=32, pad=0.0, prefix=''):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -372,6 +373,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.stride = stride
         self.path = path
         self.albumentations = Albumentations() if augment else None
+        self.cache_on_disk = cache_on_disk
+        self.cache_directory = cache_directory
 
         try:
             f = []  # image files
@@ -397,6 +400,11 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         # Check cache
         self.label_files = img2label_paths(self.img_files)  # labels
         cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')
+        if cache_directory:
+            cache_dir = Path(cache_directory)
+            if not cache_dir.is_dir():
+                cache_dir.mkdir(parents=True)
+            cache_path = Path(cache_directory + "/label_files_"+hashlib.md5(self.label_files[0].encode()).hexdigest()).with_suffix('.cache')
         try:
             cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
             assert cache['version'] == 0.4 and cache['hash'] == get_hash(self.label_files + self.img_files)
@@ -462,8 +470,12 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             results = ThreadPool(NUM_THREADS).imap(lambda x: load_image(*x), zip(repeat(self), range(n)))
             pbar = tqdm(enumerate(results), total=n)
             for i, x in pbar:
-                self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
-                gb += self.imgs[i].nbytes
+                if cache_on_disk:
+                    img, self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
+                    np.save(self.cache_directory+"/"+str(i)+".npy",img)
+                else:
+                    self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
+                    gb += self.imgs[i].nbytes
                 pbar.desc = f'{prefix}Caching images ({gb / 1E9:.1f}GB)'
             pbar.close()
 
@@ -622,15 +634,19 @@ def load_image(self, index):
     # loads 1 image from dataset, returns img, original hw, resized hw
     img = self.imgs[index]
     if img is None:  # not cached
-        path = self.img_files[index]
-        img = cv2.imread(path)  # BGR
-        assert img is not None, 'Image Not Found ' + path
-        h0, w0 = img.shape[:2]  # orig hw
-        r = self.img_size / max(h0, w0)  # ratio
-        if r != 1:  # if sizes are not equal
-            img = cv2.resize(img, (int(w0 * r), int(h0 * r)),
-                             interpolation=cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR)
-        return img, (h0, w0), img.shape[:2]  # img, hw_original, hw_resized
+        if self.img_hw[index] is None:
+            path = self.img_files[index]
+            img = cv2.imread(path)  # BGR
+            assert img is not None, 'Image Not Found ' + path
+            h0, w0 = img.shape[:2]  # orig hw
+            r = self.img_size / max(h0, w0)  # ratio
+            if r != 1:  # if sizes are not equal
+                img = cv2.resize(img, (int(w0 * r), int(h0 * r)),
+                                 interpolation=cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR)
+            return img, (h0, w0), img.shape[:2]  # img, hw_original, hw_resized
+        else:
+            img = np.load(self.cache_directory+"/"+str(index)+'.npy')
+            return  img, self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
     else:
         return self.imgs[index], self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
 
@@ -923,7 +939,10 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
         x = []
         dataset = LoadImagesAndLabels(data[split], augment=False, rect=True)  # load dataset
         if split == 'train':
-            cache_path = Path(dataset.label_files[0]).parent.with_suffix('.cache')  # *.cache path
+            if cache_directory:
+                cache_path = Path(cache_directory + "/label_files_"+hashlib.md5(self.dataset.label_files[0].encode()).hexdigest()).with_suffix('.cache')
+            else:
+                cache_path = Path(dataset.label_files[0]).parent.with_suffix('.cache')  # *.cache path
         for label in tqdm(dataset.labels, total=dataset.n, desc='Statistics'):
             x.append(np.bincount(label[:, 0].astype(int), minlength=nc))
         x = np.array(x)  # shape(128x80)
