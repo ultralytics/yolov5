@@ -220,16 +220,17 @@ def run(data,
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
             if wandb_logger:
-                if len(wandb_images) < log_imgs and wandb_logger.current_epoch > 0:  # W&B logging - media panel plots
-                    if wandb_logger.current_epoch % wandb_logger.bbox_interval == 0:
-                        box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
-                                     "class_id": int(cls),
-                                     "box_caption": "%s %.3f" % (names[cls], conf),
-                                     "scores": {"class_score": conf},
-                                     "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
-                        boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
-                        wandb_images.append(wandb_logger.wandb.Image(img[si], boxes=boxes, caption=path.name))
-                wandb_logger.log_training_progress(predn, path, names) if wandb_logger.wandb_run else None
+                pass  # TODO: replace with utils.wandb_logging.wandb_utils.wandb_val_one_image(*args, **kwargs)
+                # if len(wandb_images) < log_imgs and wandb_logger.current_epoch > 0:  # W&B logging - media panel plots
+                #     if wandb_logger.current_epoch % wandb_logger.bbox_interval == 0:
+                #         box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
+                #                      "class_id": int(cls),
+                #                      "box_caption": "%s %.3f" % (names[cls], conf),
+                #                      "scores": {"class_score": conf},
+                #                      "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
+                #         boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
+                #         wandb_images.append(wandb_logger.wandb.Image(img[si], boxes=boxes, caption=path.name))
+                # wandb_logger.log_training_progress(predn, path, names) if wandb_logger.wandb_run else None
 
         # Plot images
         if plots and batch_i < 3:
