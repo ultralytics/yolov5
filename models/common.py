@@ -1,7 +1,7 @@
 # YOLOv5 common modules
 
 from copy import copy
-from pathlib import Path
+from pathlib import Path, PosixPath
 
 import math
 import numpy as np
@@ -251,7 +251,7 @@ class AutoShape(nn.Module):
         shape0, shape1, files = [], [], []  # image and inference shapes, filenames
         for i, im in enumerate(imgs):
             f = f'image{i}'  # filename
-            if isinstance(im, (str, pathlib.PosixPath)):  # filename or uri
+            if isinstance(im, (str, PosixPath)):  # filename or uri
                 im, f = Image.open(requests.get(im, stream=True).raw if str(im).startswith('http') else im), im
                 im = np.asarray(exif_transpose(im))
             elif isinstance(im, Image.Image):  # PIL Image
