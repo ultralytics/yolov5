@@ -1,7 +1,7 @@
 # YOLOv5 common modules
 
 from copy import copy
-from pathlib import Path
+from pathlib import Path, PosixPath
 
 import math
 import numpy as np
@@ -232,8 +232,8 @@ class AutoShape(nn.Module):
     @torch.no_grad()
     def forward(self, imgs, size=640, augment=False, profile=False):
         # Inference from various sources. For height=640, width=1280, RGB images example inputs are:
-        #   filename:   imgs = 'data/images/zidane.jpg'
-        #   URI:             = 'https://github.com/ultralytics/yolov5/releases/download/v1.0/zidane.jpg'
+        #   filename:   imgs = 'data/images/zidane.jpg'  # str or PosixPath
+        #   URI:             = 'https://ultralytics.com/images/zidane.jpg'
         #   OpenCV:          = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(640,1280,3)
         #   PIL:             = Image.open('image.jpg')  # HWC x(640,1280,3)
         #   numpy:           = np.zeros((640,1280,3))  # HWC
@@ -251,8 +251,8 @@ class AutoShape(nn.Module):
         shape0, shape1, files = [], [], []  # image and inference shapes, filenames
         for i, im in enumerate(imgs):
             f = f'image{i}'  # filename
-            if isinstance(im, str):  # filename or uri
-                im, f = Image.open(requests.get(im, stream=True).raw if im.startswith('http') else im), im
+            if isinstance(im, (str, PosixPath)):  # filename or uri
+                im, f = Image.open(requests.get(im, stream=True).raw if str(im).startswith('http') else im), im
                 im = np.asarray(exif_transpose(im))
             elif isinstance(im, Image.Image):  # PIL Image
                 im, f = np.asarray(exif_transpose(im)), getattr(im, 'filename', f) or f
