@@ -222,30 +222,28 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         logger.info('Using SyncBatchNorm()')
 
     # Trainloader
-    dataloader, dataset = create_dataloader(train_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
-                                            hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=RANK,
-                                            workers=workers,
-                                            image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '))
+    train_loader, dataset = create_dataloader(train_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
+                                              hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=RANK,
+                                              workers=workers, image_weights=opt.image_weights, quad=opt.quad,
+                                              prefix=colorstr('train: '))
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
-    nb = len(dataloader)  # number of batches
+    nb = len(train_loader)  # number of batches
     assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (mlc, nc, data, nc - 1)
 
     # Process 0
     if RANK in [-1, 0]:
-        valloader = create_dataloader(val_path, imgsz, batch_size // WORLD_SIZE * 2, gs, single_cls,
-                                      hyp=hyp, cache=opt.cache_images and not noval, rect=True, rank=-1,
-                                      workers=workers,
-                                      pad=0.5, prefix=colorstr('val: '))[0]
+        val_loader = create_dataloader(val_path, imgsz, batch_size // WORLD_SIZE * 2, gs, single_cls,
+                                       hyp=hyp, cache=opt.cache_images and not noval, rect=True, rank=-1,
+                                       workers=workers, pad=0.5,
+                                       prefix=colorstr('val: '))[0]
 
         if not resume:
             labels = np.concatenate(dataset.labels, 0)
-            c = torch.tensor(labels[:, 0])  # classes
+            # c = torch.tensor(labels[:, 0])  # classes
             # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
             # model._initialize_biases(cf.to(device))
             if plots:
                 plot_labels(labels, names, save_dir, loggers)
-                if loggers['tb']:
-                    loggers['tb'].add_histogram('classes', c, 0)  # TensorBoard
 
             # Anchors
             if not opt.noautoanchor:
@@ -278,7 +276,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     scaler = amp.GradScaler(enabled=cuda)
     compute_loss = ComputeLoss(model)  # init loss class
     logger.info(f'Image sizes {imgsz} train, {imgsz} val\n'
-                f'Using {dataloader.num_workers} dataloader workers\n'
+                f'Using {train_loader.num_workers} dataloader workers\n'
                 f'Logging results to {save_dir}\n'
                 f'Starting training for {epochs} epochs...')
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
@@ -304,8 +302,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
         mloss = torch.zeros(4, device=device)  # mean losses
         if RANK != -1:
-            dataloader.sampler.set_epoch(epoch)
-        pbar = enumerate(dataloader)
+            train_loader.sampler.set_epoch(epoch)
+        pbar = enumerate(train_loader)
         logger.info(('\n' + '%10s' * 8) % ('Epoch', 'gpu_mem', 'box', 'obj', 'cls', 'total', 'labels', 'img_size'))
         if RANK in [-1, 0]:
             pbar = tqdm(pbar, total=nb)  # progress bar
@@ -392,7 +390,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            imgsz=imgsz,
                                            model=ema.ema,
                                            single_cls=single_cls,
-                                           dataloader=valloader,
+                                           dataloader=val_loader,
                                            save_dir=save_dir,
                                            save_json=is_coco and final_epoch,
                                            verbose=nc < 50 and final_epoch,
@@ -460,7 +458,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                             imgsz=imgsz,
                                             model=attempt_load(m, device).half(),
                                             single_cls=single_cls,
-                                            dataloader=valloader,
+                                            dataloader=val_loader,
                                             save_dir=save_dir,
                                             save_json=True,
                                             plots=False)
@@ -534,7 +532,7 @@ def main(opt):
         with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
             opt = argparse.Namespace(**yaml.safe_load(f))  # replace
         opt.cfg, opt.weights, opt.resume = '', ckpt, True  # reinstate
-        logger.info('Resuming training from %s' % ckpt)
+        logger.info(f'Resuming training from {ckpt}')
     else:
         # opt.hyp = opt.hyp or ('hyp.finetune.yaml' if opt.weights else 'hyp.scratch.yaml')
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
@@ -601,7 +599,7 @@ def main(opt):
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
         yaml_file = Path(opt.save_dir) / 'hyp_evolved.yaml'  # save best result here
         if opt.bucket:
-            os.system('gsutil cp gs://%s/evolve.txt .' % opt.bucket)  # download evolve.txt if exists
+            os.system(f'gsutil cp gs://{opt.bucket}/evolve.txt .')  # download evolve.txt if exists
 
         for _ in range(opt.evolve):  # generations to evolve
             if Path('evolve.txt').exists():  # if evolve.txt exists: select best hyps and mutate
