@@ -171,7 +171,7 @@ class WandbLogger():
                 self.val_table = self.val_artifact.get("val")
                 self.map_val_table_path()
                 wandb.log({"validation dataset": self.val_table})
-                
+
         if self.val_artifact is not None:
             self.result_artifact = wandb.Artifact("run_" + wandb.run.id + "_progress", "evaluation")
             self.result_table = wandb.Table(["epoch", "id", "ground truth", "prediction", "avg_confidence"])
@@ -182,7 +182,7 @@ class WandbLogger():
     def download_dataset_artifact(self, path, alias):
         if isinstance(path, str) and path.startswith(WANDB_ARTIFACT_PREFIX):
             artifact_path = Path(remove_prefix(path, WANDB_ARTIFACT_PREFIX) + ":" + alias)
-            dataset_artifact = wandb.use_artifact(artifact_path.as_posix().replace("\\","/"))
+            dataset_artifact = wandb.use_artifact(artifact_path.as_posix().replace("\\", "/"))
             assert dataset_artifact is not None, "'Error: W&B dataset artifact doesn\'t exist'"
             datadir = dataset_artifact.download()
             return datadir, dataset_artifact
@@ -319,7 +319,7 @@ class WandbLogger():
                 self.result_artifact.add(self.result_table, 'result')
                 wandb.log_artifact(self.result_artifact, aliases=['latest', 'last', 'epoch ' + str(self.current_epoch),
                                                                   ('best' if best_result else '')])
-                
+
                 wandb.log({"evaluation": self.result_table})
                 self.result_table = wandb.Table(["epoch", "id", "ground truth", "prediction", "avg_confidence"])
                 self.result_artifact = wandb.Artifact("run_" + wandb.run.id + "_progress", "evaluation")
@@ -330,6 +330,21 @@ class WandbLogger():
                 with all_logging_disabled():
                     wandb.log(self.log_dict)
             wandb.run.finish()
+
+
+def wandb_val_one_image(wandb_logger, wandb_images, pred, predn, path, names, im):
+    # Log 1 validation image, called in val.py
+    log_imgs = min(wandb_logger.log_imgs, 100)
+    if len(wandb_images) < log_imgs and wandb_logger.current_epoch > 0:  # W&B logging - media panel plots
+        if wandb_logger.current_epoch % wandb_logger.bbox_interval == 0:
+            box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
+                         "class_id": int(cls),
+                         "box_caption": "%s %.3f" % (names[cls], conf),
+                         "scores": {"class_score": conf},
+                         "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
+            boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
+            wandb_images.append(wandb_logger.wandb.Image(im, boxes=boxes, caption=path.name))
+    wandb_logger.log_training_progress(predn, path, names) if wandb_logger.wandb_run else None
 
 
 @contextmanager

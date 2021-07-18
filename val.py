@@ -26,6 +26,7 @@ from utils.general import coco80_to_coco91_class, check_dataset, check_file, che
 from utils.metrics import ap_per_class, ConfusionMatrix
 from utils.plots import plot_images, output_to_target, plot_study_txt
 from utils.torch_utils import select_device, time_sync
+from utils.wandb_logging.wandb_utils import wandb_val_one_image
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -88,7 +89,7 @@ def run(data,
         save_txt=False,  # save results to *.txt
         save_hybrid=False,  # save label+prediction hybrid results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
-        save_json=False,  # save a cocoapi-compatible JSON results file
+        save_json=False,  # save a COCO-JSON results file
         project='runs/val',  # save to project/name
         name='exp',  # save to project/name
         exist_ok=False,  # existing project/name ok, do not increment
@@ -138,10 +139,6 @@ def run(data,
     iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
     niou = iouv.numel()
 
-    # Logging
-    log_imgs = 0
-    if wandb_logger and wandb_logger.wandb:
-        log_imgs = min(wandb_logger.log_imgs, 100)
     # Dataloader
     if not training:
         if device.type != 'cpu':
@@ -214,23 +211,13 @@ def run(data,
                 correct = torch.zeros(pred.shape[0], niou, dtype=torch.bool)
             stats.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), tcls))  # (correct, conf, pcls, tcls)
 
-            # Save and log
+            # Save/log
             if save_txt:
                 save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / (path.stem + '.txt'))
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
             if wandb_logger:
-                pass  # TODO: replace with utils.wandb_logging.wandb_utils.wandb_val_one_image(*args, **kwargs)
-                # if len(wandb_images) < log_imgs and wandb_logger.current_epoch > 0:  # W&B logging - media panel plots
-                #     if wandb_logger.current_epoch % wandb_logger.bbox_interval == 0:
-                #         box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
-                #                      "class_id": int(cls),
-                #                      "box_caption": "%s %.3f" % (names[cls], conf),
-                #                      "scores": {"class_score": conf},
-                #                      "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
-                #         boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
-                #         wandb_images.append(wandb_logger.wandb.Image(img[si], boxes=boxes, caption=path.name))
-                # wandb_logger.log_training_progress(predn, path, names) if wandb_logger.wandb_run else None
+                wandb_val_one_image(wandb_logger, wandb_images, pred, predn, path, names, img[si])
 
         # Plot images
         if plots and batch_i < 3:
@@ -326,7 +313,7 @@ def parse_opt():
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-hybrid', action='store_true', help='save label+prediction hybrid results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
-    parser.add_argument('--save-json', action='store_true', help='save a cocoapi-compatible JSON results file')
+    parser.add_argument('--save-json', action='store_true', help='save a COCO-JSON results file')
     parser.add_argument('--project', default='runs/val', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
