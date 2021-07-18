@@ -1,5 +1,6 @@
 # YOLOv5 common modules
 
+import logging
 from copy import copy
 from pathlib import Path, PosixPath
 
@@ -16,6 +17,8 @@ from utils.datasets import exif_transpose, letterbox
 from utils.general import non_max_suppression, make_divisible, scale_coords, increment_path, xyxy2xywh, save_one_box
 from utils.plots import colors, plot_one_box
 from utils.torch_utils import time_sync
+
+LOGGER = logging.getLogger(__name__)
 
 
 def autopad(k, p=None):  # kernel, padding
@@ -226,7 +229,7 @@ class AutoShape(nn.Module):
         self.model = model.eval()
 
     def autoshape(self):
-        print('AutoShape already enabled, skipping... ')  # model already converted to model.autoshape()
+        LOGGER.info('AutoShape already enabled, skipping... ')  # model already converted to model.autoshape()
         return self
 
     @torch.no_grad()
@@ -323,31 +326,33 @@ class Detections:
 
             im = Image.fromarray(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im  # from np
             if pprint:
-                print(str.rstrip(', '))
+                LOGGER.info(str.rstrip(', '))
             if show:
                 im.show(self.files[i])  # show
             if save:
                 f = self.files[i]
                 im.save(save_dir / f)  # save
-                print(f"{'Saved' * (i == 0)} {f}", end=',' if i < self.n - 1 else f' to {save_dir}\n')
+                if i == self.n - 1:
+                    LOGGER.info(f"Saved {self.n} image{'s' * (self.n > 1)} to '{save_dir}'")
             if render:
                 self.imgs[i] = np.asarray(im)
 
     def print(self):
         self.display(pprint=True)  # print results
-        print(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' % self.t)
+        LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' %
+                    self.t)
 
     def show(self):
         self.display(show=True)  # show results
 
-    def save(self, save_dir='runs/hub/exp'):
-        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/hub/exp', mkdir=True)  # increment save_dir
+    def save(self, save_dir='runs/predict/exp'):
+        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/predict/exp', mkdir=True)  # increment save_dir
         self.display(save=True, save_dir=save_dir)  # save results
 
-    def crop(self, save_dir='runs/hub/exp'):
-        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/hub/exp', mkdir=True)  # increment save_dir
+    def crop(self, save_dir='runs/predict/exp'):
+        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/predict/exp', mkdir=True)  # increment save_dir
         self.display(crop=True, save_dir=save_dir)  # crop results
-        print(f'Saved results to {save_dir}\n')
+        LOGGER.info(f'Saved results to {save_dir}\n')
 
     def render(self):
         self.display(render=True)  # render results
