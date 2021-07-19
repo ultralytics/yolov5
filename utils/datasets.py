@@ -474,6 +474,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 if cache_on_disk:
                     img, self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
                     np.save(self.cache_directory+"/"+str(i)+".npy",img)
+                    timg, thw0, thw = load_image(self, i)
+                    assert (img.shape == timg.shape), f'{img.shape} should the same as {timg.shape}.'
+                    assert (self.img_hw0[i] == thw0), f'{self.img_hw0[i]} should the same as {thw0}.' 
+                    assert (self.img_hw[i] == thw),  f'{self.img_hw[i]} should the same as {thw}.' 
                 else:
                     self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
                     gb += self.imgs[i].nbytes
