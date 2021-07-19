@@ -46,6 +46,7 @@ def get_hash(paths):
     h.update(''.join(paths).encode())  # hash paths
     return h.hexdigest()  # return hash
 
+
 def exif_size(img):
     # Returns exif-corrected PIL size
     s = img.size  # (width, height)
