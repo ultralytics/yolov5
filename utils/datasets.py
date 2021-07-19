@@ -467,7 +467,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         if cache_images:
             gb = 0  # Gigabytes of cached images
             self.img_hw0, self.img_hw = [None] * n, [None] * n
-            results = ThreadPool(NUM_THREADS).imap(lambda x: load_image(*x), zip(repeat(self), range(n)))
+            results = ThreadPool(NUM_THREADS).imap(lambda x: load_image(*x, no_cache=True), zip(repeat(self), range(n)))
             pbar = tqdm(enumerate(results), total=n)
             for i, x in pbar:
                 if cache_on_disk:
@@ -630,11 +630,11 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
-def load_image(self, index):
+def load_image(self, index, no_cache=False):
     # loads 1 image from dataset, returns img, original hw, resized hw
     img = self.imgs[index]
     if img is None:  # not cached
-        if self.cache_on_disk:
+        if no_cache == False and self.cache_on_disk:
             img = np.load(self.cache_directory+"/"+str(index)+'.npy')
             return  img, self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
         else:
