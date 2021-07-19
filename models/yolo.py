@@ -209,20 +209,6 @@ class Model(nn.Module):
         self.info()
         return self
 
-    def nms(self, mode=True):  # add or remove NMS module
-        present = type(self.model[-1]) is NMS  # last layer is NMS
-        if mode and not present:
-            LOGGER.info('Adding NMS... ')
-            m = NMS()  # module
-            m.f = -1  # from
-            m.i = self.model[-1].i + 1  # index
-            self.model.add_module(name='%s' % m.i, module=m)  # add
-            self.eval()
-        elif not mode and present:
-            LOGGER.info('Removing NMS... ')
-            self.model = self.model[:-1]  # remove
-        return self
-
     def autoshape(self):  # add AutoShape module
         LOGGER.info('Adding AutoShape... ')
         m = AutoShape(self)  # wrap model
