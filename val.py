@@ -215,7 +215,7 @@ def run(data,
                 save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / (path.stem + '.txt'))
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
-            if wandb_logger:
+            if wandb_logger and wandb_logger.wandb_run:
                 wandb_logger.val_one_image(pred, predn, path, names, img[si])
 
         # Plot images
