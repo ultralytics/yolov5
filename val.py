@@ -26,7 +26,6 @@ from utils.general import coco80_to_coco91_class, check_dataset, check_file, che
 from utils.metrics import ap_per_class, ConfusionMatrix
 from utils.plots import plot_images, output_to_target, plot_study_txt
 from utils.torch_utils import select_device, time_sync
-from utils.wandb_logging.wandb_utils import wandb_val_one_image
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -154,7 +153,7 @@ def run(data,
     s = ('%20s' + '%11s' * 6) % ('Class', 'Images', 'Labels', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
     p, r, f1, mp, mr, map50, map, t0, t1, t2 = 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.
     loss = torch.zeros(3, device=device)
-    jdict, stats, ap, ap_class, wandb_images = [], [], [], [], []
+    jdict, stats, ap, ap_class = [], [], [], []
     for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
         t_ = time_sync()
         img = img.to(device, non_blocking=True)
@@ -217,7 +216,7 @@ def run(data,
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
             if wandb_logger:
-                wandb_val_one_image(wandb_logger, wandb_images, pred, predn, path, names, img[si])
+                wandb_logger.val_one_image(pred, predn, path, names, img[si])
 
         # Plot images
         if plots and batch_i < 3:
@@ -257,8 +256,6 @@ def run(data,
         if wandb_logger and wandb_logger.wandb:
             val_batches = [wandb_logger.wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('val*.jpg'))]
             wandb_logger.log({"Validation": val_batches})
-    if wandb_images:
-        wandb_logger.log({"Bounding Box Debugger/Images": wandb_images})
 
     # Save JSON
     if save_json and len(jdict):
