@@ -79,7 +79,7 @@ class ASFF_Detect(nn.Module):   #add ASFFV5 layer and Rfb
     stride = None  # strides computed during build
     onnx_dynamic = False  # ONNX export parameter
 
-    def __init__(self, nc=80, anchors=(), multiplier=0.5,rfb=False,ch=()):  # detection layer
+    def __init__(self, nc=80, anchors=(), multiplier=0.5,rfb=False,ch=(),inplace=True):  # detection layer
         super(ASFF_Detect, self).__init__()
         self.nc = nc  # number of classes
         self.no = nc + 5  # number of outputs per anchor
