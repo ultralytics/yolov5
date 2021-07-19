@@ -634,7 +634,10 @@ def load_image(self, index):
     # loads 1 image from dataset, returns img, original hw, resized hw
     img = self.imgs[index]
     if img is None:  # not cached
-        if self.img_hw[index] is None:
+        if self.cache_on_disk:
+            img = np.load(self.cache_directory+"/"+str(index)+'.npy')
+            return  img, self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
+        else:
             path = self.img_files[index]
             img = cv2.imread(path)  # BGR
             assert img is not None, 'Image Not Found ' + path
@@ -644,9 +647,6 @@ def load_image(self, index):
                 img = cv2.resize(img, (int(w0 * r), int(h0 * r)),
                                  interpolation=cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR)
             return img, (h0, w0), img.shape[:2]  # img, hw_original, hw_resized
-        else:
-            img = np.load(self.cache_directory+"/"+str(index)+'.npy')
-            return  img, self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
     else:
         return self.imgs[index], self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
 
