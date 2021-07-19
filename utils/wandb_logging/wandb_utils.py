@@ -106,6 +106,7 @@ class WandbLogger():
         self.data_dict = data_dict
         self.bbox_media_panel_images = []
         self.val_table_path_map = None
+        self.max_imgs_to_log = 16 
         # It's more elegant to stick to 1 wandb.init call, but useful config data is overwritten in the WandbLogger's wandb.init call
         if isinstance(opt.resume, str):  # checks resume from artifact
             if opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
@@ -133,7 +134,7 @@ class WandbLogger():
                 if not opt.resume:
                     wandb_data_dict = self.check_and_upload_dataset(opt) if opt.upload_dataset else data_dict
                     # Info useful for resuming from artifacts
-                    self.wandb_run.config.update({'opt': vars(opt), 'data_dict': data_dict}, allow_val_change=True)
+                    self.wandb_run.config.update({'opt': vars(opt), 'data_dict': wandb_data_dict}, allow_val_change=True)
                 self.data_dict = self.setup_training(opt, data_dict)
             if self.job_type == 'Dataset Creation':
                 self.data_dict = self.check_and_upload_dataset(opt)
@@ -152,7 +153,7 @@ class WandbLogger():
         return wandb_data_dict
 
     def setup_training(self, opt, data_dict):
-        self.log_dict, self.current_epoch, self.log_imgs = {}, 0, 16  # Logging Constants
+        self.log_dict, self.current_epoch = {}, 0
         self.bbox_interval = opt.bbox_interval
         if isinstance(opt.resume, str):
             modeldir, _ = self.download_model_artifact(opt)
@@ -317,8 +318,7 @@ class WandbLogger():
         if self.val_table and self.result_table: # Log Table if Val dataset is uploaded as artifact
             self.log_training_progress(predn, path, names)
         else: # Default to bbox media panelif Val artifact not found
-            log_imgs = min(self.log_imgs, 100)
-            if len(self.bbox_media_panel_images) < log_imgs and self.current_epoch > 0:
+            if len(self.bbox_media_panel_images) < self.max_imgs_to_log and self.current_epoch > 0:
                 if self.current_epoch % self.bbox_interval == 0:
                     box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
                                  "class_id": int(cls),
