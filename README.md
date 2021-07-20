@@ -71,6 +71,10 @@ YOLOv5 is one of the best available detectors. And we are proud to announce its 
 6. [Convert YOLO v5 to Supervisely format](https://ecosystem.supervise.ly/apps/convert-yolov5-to-supervisely-format) - import images and yolov5 annotatons to Supervisely.
 
     <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/convert-yolov5-to-supervisely-format" src="https://i.imgur.com/roiJIE8.png" width="350px"/> 
+    
+7. [Export weights](https://ecosystem.supervise.ly/apps/convert-yolov5-to-supervisely-format) - export weights to ONNX or TorchScript; also find python examples how to apply exported weights to an image and get predictions.
+
+    <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem%252Fyolov5%252Fsupervisely%252Fexport_weights" src="https://i.imgur.com/6h0krdp.png" width="350px"/> 
 
 # For Developers
 - you can use sources of [Serve YOLOv5 app](https://github.com/supervisely-ecosystem/yolov5/tree/master/supervisely/serve) as example of how to prepare weights, initialize model and apply it to a folder with images (or to images URLs)
