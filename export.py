@@ -45,7 +45,7 @@ def export_onnx(model, img, file, opset_version, train, dynamic, simplify):
         check_requirements(('onnx', 'onnx-simplifier'))
         import onnx
 
-        print(f'{prefix} starting export with onnx {onnx.__version__}...')
+        print(f'\n{prefix} starting export with onnx {onnx.__version__}...')
         f = file.with_suffix('.onnx')
         torch.onnx.export(model, img, f, verbose=False, opset_version=opset_version,
                           training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
@@ -86,7 +86,7 @@ def export_coreml(model, img, file):
     try:
         import coremltools as ct
 
-        print(f'{prefix} starting export with coremltools {ct.__version__}...')
+        print(f'\n{prefix} starting export with coremltools {ct.__version__}...')
         f = file.with_suffix('.mlmodel')
         model.train()  # CoreML exports should be placed in model.train() mode
         ts = torch.jit.trace(model, img, strict=False)  # TorchScript model
