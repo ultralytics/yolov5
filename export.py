@@ -45,7 +45,7 @@ def export_onnx(model, img, file, opset_version, train, dynamic, simplify):
         check_requirements(('onnx', 'onnx-simplifier'))
         import onnx
 
-        print(f'{prefix} starting export with onnx {onnx.__version__}...')
+        print(f'\n{prefix} starting export with onnx {onnx.__version__}...')
         f = file.with_suffix('.onnx')
         torch.onnx.export(model, img, f, verbose=False, opset_version=opset_version,
                           training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
@@ -80,16 +80,17 @@ def export_onnx(model, img, file, opset_version, train, dynamic, simplify):
         print(f'{prefix} export failure: {e}')
 
 
-def export_coreml(ts_model, img, file, train):
+def export_coreml(model, img, file):
     # CoreML model export
     prefix = colorstr('CoreML:')
     try:
         import coremltools as ct
 
-        print(f'{prefix} starting export with coremltools {ct.__version__}...')
+        print(f'\n{prefix} starting export with coremltools {ct.__version__}...')
         f = file.with_suffix('.mlmodel')
-        assert train, 'CoreML exports should be placed in model.train() mode with `python export.py --train`'
-        model = ct.convert(ts_model, inputs=[ct.ImageType('image', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
+        model.train()  # CoreML exports should be placed in model.train() mode
+        ts = torch.jit.trace(model, img, strict=False)  # TorchScript model
+        model = ct.convert(ts, inputs=[ct.ImageType('image', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
         model.save(f)
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
@@ -145,12 +146,12 @@ def run(weights='./yolov5s.pt',  # weights path
     print(f"\n{colorstr('PyTorch:')} starting from {weights} ({file_size(weights):.1f} MB)")
 
     # Exports
+    if 'torchscript' in include:
+        export_torchscript(model, img, file, optimize)
     if 'onnx' in include:
         export_onnx(model, img, file, opset_version, train, dynamic, simplify)
-    if 'torchscript' in include or 'coreml' in include:
-        ts = export_torchscript(model, img, file, optimize)
-        if 'coreml' in include:
-            export_coreml(ts, img, file, train)
+    if 'coreml' in include:
+        export_coreml(model, img, file)
 
     # Finish
     print(f'\nExport complete ({time.time() - t:.2f}s). Visualize with https://github.com/lutzroeder/netron.')
