@@ -130,7 +130,6 @@ def run(weights='./yolov5s.pt',  # weights path
         img, model = img.half(), model.half()  # to FP16
     model.train() if train else model.eval()  # training mode = no Detect() layer grid construction
     for k, m in model.named_modules():
-        m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatibility
         if isinstance(m, Conv):  # assign export-friendly activations
             if isinstance(m.act, nn.Hardswish):
                 m.act = Hardswish()
