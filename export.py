@@ -42,6 +42,7 @@ def export_onnx(model, img, file, opset_version, train, dynamic, simplify):
     # ONNX model export
     prefix = colorstr('ONNX:')
     try:
+        check_requirements(('onnx', 'onnx-simplifier'))
         import onnx
 
         print(f'{prefix} starting export with onnx {onnx.__version__}...')
@@ -63,7 +64,6 @@ def export_onnx(model, img, file, opset_version, train, dynamic, simplify):
         # Simplify
         if simplify:
             try:
-                check_requirements(['onnx-simplifier'])
                 import onnxsim
 
                 print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
@@ -84,6 +84,7 @@ def export_coreml(ts_model, img, file, train):
     # CoreML model export
     prefix = colorstr('CoreML:')
     try:
+        check_requirements('coremltools')
         import coremltools as ct
 
         print(f'{prefix} starting export with coremltools {ct.__version__}...')
