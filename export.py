@@ -84,7 +84,6 @@ def export_coreml(ts_model, img, file, train):
     # CoreML model export
     prefix = colorstr('CoreML:')
     try:
-        check_requirements('coremltools')
         import coremltools as ct
 
         print(f'{prefix} starting export with coremltools {ct.__version__}...')
