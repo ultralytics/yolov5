@@ -7,23 +7,15 @@
     "detection",
     "export"
   ],
-  "description": "Export model weights to ONNX, CoreML",
+  "description": "to TorchScript and ONNX formats",
   "docker_image": "supervisely/base-pytorch:6.0.22",
-  "main_script": "",
-  "modal_template": "",
-  "modal_width": 700,
-  "modal_template_state": {
-    "device": "0",
-    "weightsPath": "",
-    "imageSize": "640"
-  },
-  "task_location": "application_sessions",
-  "icon": "https://i.imgur.com/2U6HufM.png",
+  "main_script": "supervisely/export_weights/src/sly_export_weights.py",
+  "task_location": "workspace_tasks",
+  "icon": "https://i.imgur.com/pNBtA2G.png",
   "icon_cover": true,
   "isolate": true,
-  "need_gpu": true,
   "headless": true,
-  "instance_version": "6.4.15",
+  "instance_version": "6.4.20",
   "context_menu": {
     "target": ["files_file"]
   }
