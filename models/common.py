@@ -21,6 +21,62 @@ from utils.torch_utils import time_sync
 LOGGER = logging.getLogger(__name__)
 
 
+class FSum(nn.Module):
+    # Weighted sum of 2 or more layers https://arxiv.org/abs/1911.09070
+    def __init__(self, n):  # n: number of inputs
+        super().__init__()
+        self.iter = range(1, n)  # iter object
+
+    def forward(self, x):
+        y = x[0]  # no weight
+        for i in self.iter:
+            y = y + x[i]
+        return y
+
+
+class FCSum(nn.Module):
+    # Weighted sum of 2 or more layers https://arxiv.org/abs/1911.09070
+    def __init__(self, n, c):  # n: number of inputs
+        super().__init__()
+        c2 = min(c)
+        self.iter = range(1, n)  # iter object
+        self.c = nn.ModuleList([Conv(c, c2) for c in c])
+
+    def forward(self, x):
+        y = self.c[0](x[0])  # no weight
+        for i in self.iter:
+            y = y + self.c[i](x[i])
+        return y
+
+
+class FMax(nn.Module):
+    # Weighted sum of 2 or more layers https://arxiv.org/abs/1911.09070
+    def __init__(self, n):  # n: number of inputs
+        super().__init__()
+        self.iter = range(1, n)  # iter object
+
+    def forward(self, x):
+        y = x[0]  # no weight
+        for i in self.iter:
+            y = torch.max(y, x[i])
+        return y
+
+
+class FCMax(nn.Module):
+    # Weighted sum of 2 or more layers https://arxiv.org/abs/1911.09070
+    def __init__(self, n, c):  # n: number of inputs
+        super().__init__()
+        c2 = min(c)
+        self.iter = range(1, n)  # iter object
+        self.c = nn.ModuleList([Conv(c, c2) for c in c])
+
+    def forward(self, x):
+        y = self.c[0](x[0])  # no weight
+        for i in self.iter:
+            y = torch.max(y, self.c[i](x[i]))
+        return y
+
+
 def autopad(k, p=None):  # kernel, padding
     # Pad to 'same'
     if p is None:
@@ -208,6 +264,7 @@ class Concat(nn.Module):
         self.d = dimension
 
     def forward(self, x):
+        print([list(x.shape) for x in x])
         return torch.cat(x, self.d)
 
 
