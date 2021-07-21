@@ -1,6 +1,7 @@
 import argparse
 import time
 from pathlib import Path
+import platform
 
 import cv2
 import torch
@@ -16,6 +17,12 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
     scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
 from utils.plots import colors, plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
+
+EDGETPU_SHARED_LIB = {
+  'Linux': 'libedgetpu.so.1',
+  'Darwin': 'libedgetpu.1.dylib',
+  'Windows': 'edgetpu.dll'
+}[platform.system()]
 
 
 @torch.no_grad()
@@ -134,7 +141,7 @@ def detect(opt):
         interpreter = tf.lite.Interpreter(
             model_path=opt.weights[0],
             experimental_delegates=
-                [tf.lite.experimental.load_delegate('libedgetpu.so.1')] if opt.edgetpu else None)
+                [tf.lite.experimental.load_delegate(EDGETPU_SHARED_LIB)] if opt.edgetpu else None)
         interpreter.allocate_tensors()
 
         # Get input and output tensors.
