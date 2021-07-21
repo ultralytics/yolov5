@@ -46,6 +46,8 @@ def get_hash(paths):
     h.update(''.join(paths).encode())  # hash paths
     return h.hexdigest()  # return hash
 
+def str2md5(str_arg):
+    return hashlib.md5(str_arg.encode()).hexdigest()
 
 def exif_size(img):
     # Returns exif-corrected PIL size
@@ -473,7 +475,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             for i, x in pbar:
                 if cache_on_disk:
                     img, self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
-                    np.save(self.cache_directory+"/"+str(i)+".npy",img)
+                    parent_path = Path(self.img_files[i]).parent
+                    np.save(self.cache_directory+"/"+str2md5(str(parent_path))+"_"+str(i)+".npy",img)
                     timg, thw0, thw = load_image(self, i)
                     assert (img.shape == timg.shape), f'{img.shape} should the same as {timg.shape}.'
                     assert (self.img_hw0[i] == thw0), f'{self.img_hw0[i]} should the same as {thw0}.' 
@@ -640,7 +643,8 @@ def load_image(self, index, no_cache=False):
     img = self.imgs[index]
     if img is None:  # not cached
         if no_cache == False and self.cache_on_disk:
-            img = np.load(self.cache_directory+"/"+str(index)+'.npy')
+            parent_path = Path(self.img_files[index]).parent
+            img = np.load(self.cache_directory+"/"+str2md5(str(parent_path)) + "_" + str(index)+".npy")
             return  img, self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
         else:
             path = self.img_files[index]
