@@ -1,4 +1,4 @@
-"""Prune a YOLOv5s model on a custom dataset, now only support yolov5s.yaml with one gpu, no tb or wandb in this class.
+"""Prune a YOLOv5 model on a custom dataset, now only support one gpu, no tb or wandb in this class.
    test with GlobalWheat2020,
    with 80% GFLOPs, the prune model hold almost the same performance.
    with 5% GFLOPs, the prune model still get >90% map@.5
@@ -55,7 +55,8 @@ class MyPrune:
         self.resume_project()
 
         # after pruning one layer, some other layers should change accordingly, so the tensor in/out shape could match.
-        # the relation will change with model structure changed, below for yolov5s
+        # the relation will change with model structure changed, the three dicts below is all the convs' relation for yolov5s. 
+        # the relation of yolov5m/l/x only need some add on this basis. the code after the three relations will auto do that.
 
         # "key: [val[0], val[1]]" means "cur_conv_name: [next_conv_name, parallel_conv_name]"
         #  while changing the output filter nums of cur_conv, also need to change the input filter nums of next_conv
@@ -142,6 +143,20 @@ class MyPrune:
         self.spp_convs_relation = {
             "model.8.cv1.conv": "model.8.cv2.conv",
         }
+
+        # width_multiple won't affect the conv relations, but depth_multiple affects the num of C3 module and brings more conv relations
+        for i, (f, n, m, args) in enumerate(self.model.yaml['backbone'] + self.model.yaml['head']):  # from, number, module, args
+            if m == "C3":
+                n = max(round(n * self.model.yaml["depth_multiple"]), 1) if n > 1 else n  # depth gain
+                key0, value0 = "model.{}.cv1.conv".format(i), [["model.{}.cv3.conv".format(i)], []]
+                key1_n, value1_n = [], []
+                for repeat in range(n):
+                    value0[0].append("model.{}.m.{}.cv1.conv".format(i, repeat))
+                    value0[1].append("model.{}.m.{}.cv2.conv".format(i, repeat))
+                    key1_n.append("model.{}.m.{}.cv1.conv".format(i, repeat))
+                    value1_n.append([["model.{}.m.{}.cv2.conv".format(i, repeat)], []])
+                for key, value in zip([key0] + key1_n, [value0] + value1_n):
+                    self.normal_convs_relation[key] = value
 
         # check the key convs every iter, modify the key convs to modify the whole model
         self.check_convs = set()
