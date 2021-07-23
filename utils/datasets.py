@@ -324,7 +324,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             if n % read == 0:
                 success, im = cap.retrieve()
                 self.imgs[i] = im if success else self.imgs[i] * 0
-            time.sleep(1 / self.fps[i])  # wait time
+            time.sleep(8 / self.fps[i])  # wait time
 
     def __iter__(self):
         self.count = -1
