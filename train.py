@@ -534,11 +534,12 @@ def main(opt):
     if LOCAL_RANK != -1:
         from datetime import timedelta
         assert torch.cuda.device_count() > LOCAL_RANK, 'insufficient CUDA devices for DDP command'
+        assert opt.batch_size % WORLD_SIZE == 0, '--batch-size must be multiple of CUDA device count'
+        assert not opt.image_weights, '--image-weights argument is not compatible with DDP training'
+        assert not opt.evolve, '--evolve argument is not compatible with DDP training'
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device('cuda', LOCAL_RANK)
         dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo", timeout=timedelta(seconds=60))
-        assert opt.batch_size % WORLD_SIZE == 0, '--batch-size must be multiple of CUDA device count'
-        assert not opt.image_weights, '--image-weights argument is not compatible with DDP training'
 
     # Train
     if not opt.evolve:
@@ -583,7 +584,6 @@ def main(opt):
             hyp = yaml.safe_load(f)  # load hyps dict
             if 'anchors' not in hyp:  # anchors commented in hyp.yaml
                 hyp['anchors'] = 3
-        assert LOCAL_RANK == -1, 'DDP mode not implemented for --evolve'
         opt.noval, opt.nosave = True, True  # only val/save final epoch
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
         yaml_file = Path(opt.save_dir) / 'hyp_evolved.yaml'  # save best result here
