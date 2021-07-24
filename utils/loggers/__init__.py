@@ -49,7 +49,7 @@ class Loggers():
             self.opt.hyp = self.hyp  # add hyperparameters
             self.wandb = WandbLogger(self.opt, s.stem, run_id, self.data_dict)
         except:
-            self.include = (x for x in self.include if x != 'wandb')
+            self.include = [x for x in self.include if x != 'wandb']
             self.wandb = None
 
         return self

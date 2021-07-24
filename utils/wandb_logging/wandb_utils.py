@@ -20,6 +20,8 @@ try:
 
     assert hasattr(wandb, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
+    prefix = colorstr('Weights & Biases: ')
+    print(f"{prefix}run 'pip install wandb' for automatic YOLOv5 experiment tracking (recommended)")
     wandb = None
 
 RANK = int(os.getenv('RANK', -1))
@@ -143,8 +145,7 @@ class WandbLogger():
             if self.job_type == 'Dataset Creation':
                 self.data_dict = self.check_and_upload_dataset(opt)
         else:
-            prefix = colorstr('wandb: ')
-            print(f"{prefix}Install Weights & Biases for YOLOv5 logging with 'pip install wandb' (recommended)")
+            pass  # print install note here
 
     def check_and_upload_dataset(self, opt):
         assert wandb, 'Install wandb to upload dataset'
