@@ -13,6 +13,8 @@ LOGGERS = ('txt', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
 
 try:
     import wandb
+
+    assert hasattr(wandb, '__version__')  # verify package import not local dir
 except ImportError:
     wandb = None
 

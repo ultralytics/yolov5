@@ -17,7 +17,8 @@ from utils.general import colorstr, check_dataset, check_file
 
 try:
     import wandb
-    from wandb import init, finish
+
+    assert hasattr(wandb, '__version__')  # verify package import not local dir
 except ImportError:
     wandb = None
 
