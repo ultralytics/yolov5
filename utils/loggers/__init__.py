@@ -20,7 +20,7 @@ def start_loggers(save_dir, weights, opt, hyp, data_dict, logger, include=LOGGER
     project = save_dir.parent
 
     # TensorBoard
-    if 'tb' in include:
+    if 'tb' in include and not opt.evolve:
         prefix = colorstr('tensorboard: ')
         logger.info(f"{prefix}Start with 'tensorboard --logdir {project}', view at http://localhost:6006/")
         loggers['tb'] = SummaryWriter(str(save_dir))

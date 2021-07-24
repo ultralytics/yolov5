@@ -89,8 +89,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # Loggers
     if RANK in [-1, 0]:
-        loggers = start_loggers(save_dir, weights, opt, hyp, data_dict, LOGGER,
-                                include=('tensorboard' if plots else None, 'wandb'))  # loggers dict
+        loggers = start_loggers(save_dir, weights, opt, hyp, data_dict, LOGGER)  # loggers dict
 
     # Model
     pretrained = weights.endswith('.pt')
