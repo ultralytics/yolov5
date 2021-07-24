@@ -5,9 +5,9 @@ import warnings
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from utils.general import colorstr
-from utils.torch_utils import de_parallel
+from utils.general import colorstr, emojis
 from utils.loggers.wandb.wandb_utils import WandbLogger
+from utils.torch_utils import de_parallel
 
 LOGGERS = ('txt', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
 
@@ -36,6 +36,14 @@ class Loggers():
 
     def start(self):
         self.txt = True  # always log to txt
+
+        # Message
+        try:
+            import wandb
+        except ImportError:
+            prefix = colorstr('Weights & Biases: ')
+            s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs (RECOMMENDED)"
+            print(emojis(s))
 
         # TensorBoard
         s = self.save_dir

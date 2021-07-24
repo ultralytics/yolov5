@@ -1,4 +1,5 @@
 """Utilities and tools for tracking runs with Weights & Biases."""
+
 import logging
 import os
 import sys
@@ -13,16 +14,13 @@ sys.path.append(FILE.parents[3].as_posix())  # add yolov5/ to path
 
 from utils.datasets import LoadImagesAndLabels
 from utils.datasets import img2label_paths
-from utils.general import colorstr, check_dataset, check_file, emojis
+from utils.general import check_dataset, check_file
 
 try:
     import wandb
 
     assert hasattr(wandb, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
-    prefix = colorstr('Weights & Biases: ')
-    s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 training (RECOMMENDED)"
-    print(emojis(s))
     wandb = None
 
 RANK = int(os.getenv('RANK', -1))
