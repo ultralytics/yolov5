@@ -1,4 +1,5 @@
 """Utilities and tools for tracking runs with Weights & Biases."""
+
 import logging
 import os
 import sys
@@ -8,15 +9,18 @@ from pathlib import Path
 import yaml
 from tqdm import tqdm
 
-sys.path.append(str(Path(__file__).parent.parent.parent))  # add utils/ to path
+FILE = Path(__file__).absolute()
+sys.path.append(FILE.parents[3].as_posix())  # add yolov5/ to path
+
 from utils.datasets import LoadImagesAndLabels
 from utils.datasets import img2label_paths
-from utils.general import colorstr, check_dataset, check_file
+from utils.general import check_dataset, check_file
 
 try:
     import wandb
-    from wandb import init, finish
-except ImportError:
+
+    assert hasattr(wandb, '__version__')  # verify package import not local dir
+except (ImportError, AssertionError):
     wandb = None
 
 RANK = int(os.getenv('RANK', -1))
@@ -106,7 +110,7 @@ class WandbLogger():
         self.data_dict = data_dict
         self.bbox_media_panel_images = []
         self.val_table_path_map = None
-        self.max_imgs_to_log = 16 
+        self.max_imgs_to_log = 16
         # It's more elegant to stick to 1 wandb.init call, but useful config data is overwritten in the WandbLogger's wandb.init call
         if isinstance(opt.resume, str):  # checks resume from artifact
             if opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
@@ -134,13 +138,11 @@ class WandbLogger():
                 if not opt.resume:
                     wandb_data_dict = self.check_and_upload_dataset(opt) if opt.upload_dataset else data_dict
                     # Info useful for resuming from artifacts
-                    self.wandb_run.config.update({'opt': vars(opt), 'data_dict': wandb_data_dict}, allow_val_change=True)
+                    self.wandb_run.config.update({'opt': vars(opt), 'data_dict': wandb_data_dict},
+                                                 allow_val_change=True)
                 self.data_dict = self.setup_training(opt, data_dict)
             if self.job_type == 'Dataset Creation':
                 self.data_dict = self.check_and_upload_dataset(opt)
-        else:
-            prefix = colorstr('wandb: ')
-            print(f"{prefix}Install Weights & Biases for YOLOv5 logging with 'pip install wandb' (recommended)")
 
     def check_and_upload_dataset(self, opt):
         assert wandb, 'Install wandb to upload dataset'
@@ -169,14 +171,13 @@ class WandbLogger():
                                                                                            opt.artifact_alias)
             self.val_artifact_path, self.val_artifact = self.download_dataset_artifact(data_dict.get('val'),
                                                                                        opt.artifact_alias)
-            
+
         if self.train_artifact_path is not None:
             train_path = Path(self.train_artifact_path) / 'data/images/'
             data_dict['train'] = str(train_path)
         if self.val_artifact_path is not None:
             val_path = Path(self.val_artifact_path) / 'data/images/'
             data_dict['val'] = str(val_path)
-
 
         if self.val_artifact is not None:
             self.result_artifact = wandb.Artifact("run_" + wandb.run.id + "_progress", "evaluation")
@@ -315,9 +316,9 @@ class WandbLogger():
                                    )
 
     def val_one_image(self, pred, predn, path, names, im):
-        if self.val_table and self.result_table: # Log Table if Val dataset is uploaded as artifact
+        if self.val_table and self.result_table:  # Log Table if Val dataset is uploaded as artifact
             self.log_training_progress(predn, path, names)
-        else: # Default to bbox media panelif Val artifact not found
+        else:  # Default to bbox media panelif Val artifact not found
             if len(self.bbox_media_panel_images) < self.max_imgs_to_log and self.current_epoch > 0:
                 if self.current_epoch % self.bbox_interval == 0:
                     box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
@@ -328,7 +329,6 @@ class WandbLogger():
                     boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
                     self.bbox_media_panel_images.append(wandb.Image(im, boxes=boxes, caption=path.name))
 
-        
     def log(self, log_dict):
         if self.wandb_run:
             for key, value in log_dict.items():
