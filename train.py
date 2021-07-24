@@ -24,7 +24,6 @@ import yaml
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import Adam, SGD, lr_scheduler
-from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 FILE = Path(__file__).absolute()
@@ -42,8 +41,9 @@ from utils.google_utils import attempt_download
 from utils.loss import ComputeLoss
 from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, de_parallel
-from utils.wandb_logging.wandb_utils import WandbLogger, check_wandb_resume
+from utils.wandb_logging.wandb_utils import check_wandb_resume
 from utils.metrics import fitness
+from utils.loggers import init_loggers
 
 LOGGER = logging.getLogger(__name__)
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
@@ -84,23 +84,13 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         data_dict = yaml.safe_load(f)  # data dict
 
     # Loggers
-    loggers = {'wandb': None, 'tb': None}  # loggers dict
     if RANK in [-1, 0]:
+        loggers = init_loggers(save_dir, weights, opt, hyp, data_dict, LOGGER,
+                               include=('tensorboard' if plots else None, 'wandb'))
+        # if loggers['wandb']:
+        #     data_dict = wandb_logger.data_dict
+        #     weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp  # may update weights, epochs if resuming
         # TensorBoard
-        if plots:
-            prefix = colorstr('tensorboard: ')
-            LOGGER.info(f"{prefix}Start with 'tensorboard --logdir {opt.project}', view at http://localhost:6006/")
-            loggers['tb'] = SummaryWriter(str(save_dir))
-
-        # W&B
-        opt.hyp = hyp  # add hyperparameters
-        run_id = torch.load(weights).get('wandb_id') if weights.endswith('.pt') and os.path.isfile(weights) else None
-        run_id = run_id if opt.resume else None  # start fresh run if transfer learning
-        wandb_logger = WandbLogger(opt, save_dir.stem, run_id, data_dict)
-        loggers['wandb'] = wandb_logger.wandb
-        if loggers['wandb']:
-            data_dict = wandb_logger.data_dict
-            weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp  # may update values if resuming
 
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
