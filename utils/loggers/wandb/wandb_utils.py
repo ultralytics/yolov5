@@ -21,7 +21,7 @@ try:
     assert hasattr(wandb, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
     prefix = colorstr('Weights & Biases: ')
-    s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 training runs (RECOMMENDED)"
+    s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 training (RECOMMENDED)"
     print(emojis(s))
     wandb = None
 
