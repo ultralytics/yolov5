@@ -89,12 +89,12 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Loggers
     if RANK in [-1, 0]:
         loggers = Loggers(save_dir, results_file, weights, opt, hyp, data_dict, LOGGER).start()  # loggers dict
+        if loggers.wandb and resume:
+            weights, epochs, hyp, data_dict = opt.weights, opt.epochs, opt.hyp, loggers.wandb.data_dict
 
     # Model
     pretrained = weights.endswith('.pt')
     if pretrained:
-        if loggers.wandb:
-            weights, epochs, hyp, data_dict = opt.weights, opt.epochs, opt.hyp, loggers.wandb.data_dict
         with torch_distributed_zero_first(RANK):
             weights = attempt_download(weights)  # download if not found locally
         ckpt = torch.load(weights, map_location=device)  # load checkpoint
@@ -374,8 +374,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             loggers.on_train_val_end(mloss, results, lr, epoch, s, best_fitness, fi)
 
             # Save model
-            save = (not nosave) or (final_epoch and not evolve)
-            if save:  # if save
+            if (not nosave) or (final_epoch and not evolve):  # if save
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
                         'training_results': results_file.read_text(),

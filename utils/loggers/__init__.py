@@ -59,7 +59,7 @@ class Loggers():
             self.opt.hyp = self.hyp  # add hyperparameters
             self.wandb = WandbLogger(self.opt, s.stem, run_id, self.data_dict)
         except:
-            self.include = [x for x in self.include if x != 'wandb']
+            self.wandb = None
 
         return self
 
@@ -70,7 +70,7 @@ class Loggers():
                 warnings.simplefilter('ignore')  # suppress jit trace warning
                 self.tb.add_graph(torch.jit.trace(de_parallel(model), imgs[0:1], strict=False), [])
         if self.wandb and ni == 10:
-            files = self.save_dir.glob('train*.jpg')
+            files = sorted(self.save_dir.glob('train*.jpg'))
             self.wandb.log({'Mosaics': [wandb.Image(str(f), caption=f.name) for f in files if f.exists()]})
 
     def on_train_epoch_end(self, epoch):
