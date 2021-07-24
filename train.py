@@ -40,7 +40,7 @@ from utils.google_utils import attempt_download
 from utils.loss import ComputeLoss
 from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, de_parallel
-from utils.wandb_logging.wandb_utils import check_wandb_resume
+from utils.loggers.wandb_logging.wandb_utils import check_wandb_resume
 from utils.metrics import fitness
 from utils.loggers import Loggers
 
