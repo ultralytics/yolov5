@@ -71,7 +71,7 @@ class Loggers():
                 self.tb.add_graph(torch.jit.trace(de_parallel(model), imgs[0:1], strict=False), [])
         if self.wandb and ni == 10:
             files = self.save_dir.glob('train*.jpg')
-            wandb.log({'Mosaics': [wandb.Image(str(f), caption=f.name) for f in files if f.exists()]})
+            self.wandb.log({'Mosaics': [wandb.Image(str(f), caption=f.name) for f in files if f.exists()]})
 
     def on_train_epoch_end(self, epoch):
         # Callback runs on train epoch end
@@ -87,7 +87,7 @@ class Loggers():
         # Callback runs on val end
         if self.wandb:
             files = sorted(self.save_dir.glob('val*.jpg'))
-            wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in files]})
+            self.wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in files]})
 
     def on_train_val_end(self, mloss, results, lr, epoch, s, best_fitness, fi):
         # Callback runs on validation end during training
@@ -103,9 +103,8 @@ class Loggers():
             for x, tag in zip(vals, tags):
                 self.tb.add_scalar(tag, x, epoch)  # TensorBoard
         if self.wandb:
+            self.wandb.log({k: v for k, v in zip(tags, vals)})
             self.wandb.end_epoch(best_result=best_fitness == fi)
-            for x, tag in zip(vals, tags):
-                wandb.log({tag: x})
 
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):
         # Callback runs on model save event
@@ -127,4 +126,4 @@ class Loggers():
     def log_images(self, paths):
         # Log images
         if self.wandb:
-            wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]}, commit=False)
+            self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
