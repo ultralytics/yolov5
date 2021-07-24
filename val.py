@@ -255,8 +255,7 @@ def run(data,
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
         if loggers['wandb'].wandb:
-            val_batches = [loggers['wandb'].wandb.Image(str(f), caption=f.name) for f in
-                           sorted(save_dir.glob('val*.jpg'))]
+            val_batches = [loggers['wandb'].Image(str(f), caption=f.name) for f in sorted(save_dir.glob('val*.jpg'))]
             loggers['wandb'].log({"Validation": val_batches})
 
     # Save JSON
