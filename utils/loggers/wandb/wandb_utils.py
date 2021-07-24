@@ -143,8 +143,6 @@ class WandbLogger():
                 self.data_dict = self.setup_training(opt, data_dict)
             if self.job_type == 'Dataset Creation':
                 self.data_dict = self.check_and_upload_dataset(opt)
-        else:
-            pass  # print install note here
 
     def check_and_upload_dataset(self, opt):
         assert wandb, 'Install wandb to upload dataset'
