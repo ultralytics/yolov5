@@ -15,7 +15,7 @@ try:
     import wandb
 
     assert hasattr(wandb, '__version__')  # verify package import not local dir
-except ImportError:
+except (ImportError, AssertionError):
     wandb = None
 
 
