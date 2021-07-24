@@ -26,7 +26,7 @@ from utils.general import coco80_to_coco91_class, check_dataset, check_file, che
 from utils.metrics import ap_per_class, ConfusionMatrix
 from utils.plots import plot_images, output_to_target, plot_study_txt
 from utils.torch_utils import select_device, time_sync
-from utils.loggers import init_loggers
+from utils.loggers import Loggers
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -98,7 +98,7 @@ def run(data,
         dataloader=None,
         save_dir=Path(''),
         plots=True,
-        loggers=init_loggers(),
+        loggers=Loggers(),
         compute_loss=None,
         ):
     # Initialize/load model and set device
@@ -216,8 +216,7 @@ def run(data,
                 save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / (path.stem + '.txt'))
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
-            if loggers['wandb'].wandb and loggers['wandb'].wandb_run:
-                loggers['wandb'].val_one_image(pred, predn, path, names, img[si])
+            loggers.on_val_batch_end(pred, predn, path, names, img[si])
 
         # Plot images
         if plots and batch_i < 3:
@@ -254,9 +253,7 @@ def run(data,
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        if loggers['wandb'].wandb:
-            val_batches = [loggers['wandb'].Image(str(f), caption=f.name) for f in sorted(save_dir.glob('val*.jpg'))]
-            loggers['wandb'].log({"Validation": val_batches})
+        loggers.on_val_end()
 
     # Save JSON
     if save_json and len(jdict):
