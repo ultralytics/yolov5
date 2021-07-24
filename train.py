@@ -17,6 +17,7 @@ from threading import Thread
 
 import math
 import numpy as np
+import torch
 import torch.distributed as dist
 import torch.nn as nn
 import yaml
