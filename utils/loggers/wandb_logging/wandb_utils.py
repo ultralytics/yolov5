@@ -9,7 +9,7 @@ import yaml
 from tqdm import tqdm
 
 FILE = Path(__file__).absolute()
-sys.path.append(FILE.parents[2].as_posix())  # add yolov5/ to path
+sys.path.append(FILE.parents[3].as_posix())  # add yolov5/ to path
 
 from utils.datasets import LoadImagesAndLabels
 from utils.datasets import img2label_paths
