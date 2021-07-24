@@ -87,7 +87,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     loggers = {'wandb': None, 'tb': None}  # loggers dict
     if RANK in [-1, 0]:
         # TensorBoard
-        if not evolve:
+        if plots:
             prefix = colorstr('tensorboard: ')
             LOGGER.info(f"{prefix}Start with 'tensorboard --logdir {opt.project}', view at http://localhost:6006/")
             loggers['tb'] = SummaryWriter(str(save_dir))
@@ -100,7 +100,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         loggers['wandb'] = wandb_logger.wandb
         if loggers['wandb']:
             data_dict = wandb_logger.data_dict
-            weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp  # may update weights, epochs if resuming
+            weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp  # may update values if resuming
 
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
