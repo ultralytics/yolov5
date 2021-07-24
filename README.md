@@ -82,10 +82,10 @@ Inference with YOLOv5 and [PyTorch Hub](https://github.com/ultralytics/yolov5/is
 import torch
 
 # Model
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s')  # or yolov5m, yolov5x, custom
+model = torch.hub.load('ultralytics/yolov5', 'yolov5s')  # or yolov5m, yolov5l, yolov5x, custom
 
 # Images
-img = 'https://ultralytics.com/images/zidane.jpg'  # or file, PIL, OpenCV, numpy, multiple
+img = 'https://ultralytics.com/images/zidane.jpg'  # or PosixPath, PIL, OpenCV, numpy, list
 
 # Inference
 results = model(img)
