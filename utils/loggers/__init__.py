@@ -71,7 +71,7 @@ class Loggers():
 
     def on_val_batch_end(self, pred, predn, path, names, im):
         # Callback runs on train batch end
-        if 'wandb' in self.include and self.wandb.wandb_run:
+        if 'wandb' in self.include:
             self.wandb.val_one_image(pred, predn, path, names, im)
 
     def on_val_end(self):
