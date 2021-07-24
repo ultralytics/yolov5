@@ -378,6 +378,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.albumentations = Albumentations() if augment else None
         self.cache_on_disk = cache_on_disk
         self.cache_directory = cache_directory
+        # Use self.prefix as cache-key for on-disk-cache
+        self.prefix = prefix
 
         try:
             f = []  # image files
@@ -476,11 +478,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 if cache_on_disk:
                     img, self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
                     parent_path = Path(self.img_files[i]).parent
-                    np.save(self.cache_directory+"/"+str2md5(str(parent_path))+"_"+str(i)+".npy",img)
-                    timg, thw0, thw = load_image(self, i)
-                    assert (img.shape == timg.shape), f'{img.shape} should the same as {timg.shape}.'
-                    assert (self.img_hw0[i] == thw0), f'{self.img_hw0[i]} should the same as {thw0}.' 
-                    assert (self.img_hw[i] == thw),  f'{self.img_hw[i]} should the same as {thw}.' 
+                    np.save(self.cache_directory+"/"+str2md5(prefix+str(parent_path))+"_"+str(i)+".npy",img)
                 else:
                     self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
                     gb += self.imgs[i].nbytes
@@ -644,7 +642,7 @@ def load_image(self, index, no_cache=False):
     if img is None:  # not cached
         if no_cache == False and self.cache_on_disk:
             parent_path = Path(self.img_files[index]).parent
-            img = np.load(self.cache_directory+"/"+str2md5(str(parent_path)) + "_" + str(index)+".npy")
+            img = np.load(self.cache_directory+"/"+str2md5(self.prefix+str(parent_path)) + "_" + str(index)+".npy")
             return  img, self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
         else:
             path = self.img_files[index]
