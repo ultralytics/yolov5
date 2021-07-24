@@ -423,7 +423,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             plot_results(save_dir=save_dir)  # save as results.png
             if loggers['wandb'].wandb:
                 files = ['results.png', 'confusion_matrix.png', *[f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R')]]
-                loggers['wandb'].log({"Results": [loggers['wandb'].wandb.Image(str(save_dir / f), caption=f) for
+                loggers['wandb'].log({"Results": [loggers['wandb'].Image(str(save_dir / f), caption=f) for
                                                   f in files if (save_dir / f).exists()]})
 
         if not evolve:
