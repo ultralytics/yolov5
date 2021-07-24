@@ -9,7 +9,7 @@ from utils.general import colorstr
 from utils.torch_utils import de_parallel
 from utils.wandb_logging.wandb_utils import WandbLogger
 
-LOGGERS = ('txt', 'tb', 'wandb')
+LOGGERS = ('txt', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
 
 try:
     import wandb
