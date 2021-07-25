@@ -94,7 +94,7 @@ class Loggers():
             self.wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in files]})
 
     def on_train_val_end(self, mloss, results, lr, epoch, best_fitness, fi):
-        # Callback runs on validation end during training
+        # Callback runs on val end during training
         vals = list(mloss[:-1]) + list(results) + lr
         keys = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
                 'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',  # metrics
