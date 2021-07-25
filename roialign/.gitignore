@@ -1,0 +1,9 @@
+.idea
+.vscode*
+*.so
+*.o
+*.pyc
+build/
+roi_align.egg-info/
+dist/
+.DS_Store
