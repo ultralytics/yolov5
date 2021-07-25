@@ -9,7 +9,7 @@ from utils.general import colorstr, emojis
 from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.torch_utils import de_parallel
 
-LOGGERS = ('txt', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
+LOGGERS = ('csv', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
 
 try:
     import wandb
@@ -21,10 +21,8 @@ except (ImportError, AssertionError):
 
 class Loggers():
     # YOLOv5 Loggers class
-    def __init__(self, save_dir=None, results_file=None, weights=None, opt=None, hyp=None,
-                 data_dict=None, logger=None, include=LOGGERS):
+    def __init__(self, save_dir=None, weights=None, opt=None, hyp=None, data_dict=None, logger=None, include=LOGGERS):
         self.save_dir = save_dir
-        self.results_file = results_file
         self.weights = weights
         self.opt = opt
         self.hyp = hyp
@@ -35,7 +33,7 @@ class Loggers():
             setattr(self, k, None)  # init empty logger dictionary
 
     def start(self):
-        self.txt = True  # always log to txt
+        self.csv = True  # always log to csv
 
         # Message
         try:
@@ -89,21 +87,28 @@ class Loggers():
             files = sorted(self.save_dir.glob('val*.jpg'))
             self.wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in files]})
 
-    def on_train_val_end(self, mloss, results, lr, epoch, s, best_fitness, fi):
+    def on_train_val_end(self, mloss, results, lr, epoch, best_fitness, fi):
         # Callback runs on validation end during training
         vals = list(mloss[:-1]) + list(results) + lr
-        tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
-                'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+        keys = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
+                'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',  # metrics
                 'val/box_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
                 'x/lr0', 'x/lr1', 'x/lr2']  # params
-        if self.txt:
-            with open(self.results_file, 'a') as f:
-                f.write(s + '%10.4g' * 7 % results + '\n')  # append metrics, val_loss
+        x = {k: v for k, v in zip(keys, vals)}  # dict
+
+        if self.csv:
+            file = self.save_dir / 'results.csv'
+            n = len(x) + 1  # number of cols
+            s = '' if file.exists() else (('%20s,' * n % tuple(['epoch'] + keys)).rstrip(',') + '\n')  # add header
+            with open(file, 'a') as f:
+                f.write(s + ('%20.5g,' * n % tuple([epoch] + vals)).rstrip(',') + '\n')
+
         if self.tb:
-            for x, tag in zip(vals, tags):
-                self.tb.add_scalar(tag, x, epoch)  # TensorBoard
+            for k, v in x.items():
+                self.tb.add_scalar(k, v, epoch)  # TensorBoard
+
         if self.wandb:
-            self.wandb.log({k: v for k, v in zip(tags, vals)})
+            self.wandb.log(x)
             self.wandb.end_epoch(best_result=best_fitness == fi)
 
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):
