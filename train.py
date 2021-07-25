@@ -12,7 +12,6 @@ import sys
 import time
 from copy import deepcopy
 from pathlib import Path
-from threading import Thread
 
 import math
 import numpy as np
@@ -38,7 +37,7 @@ from utils.general import labels_to_class_weights, increment_path, labels_to_ima
     check_requirements, print_mutation, set_logging, one_cycle, colorstr
 from utils.google_utils import attempt_download
 from utils.loss import ComputeLoss
-from utils.plots import plot_images, plot_labels, plot_evolution
+from utils.plots import plot_labels, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, de_parallel
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.metrics import fitness
@@ -323,19 +322,13 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                     ema.update(model)
                 last_opt_step = ni
 
-            # Print
+            # Log
             if RANK in [-1, 0]:
                 mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
                 mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
                 pbar.set_description(('%10s' * 2 + '%10.4g' * 6) % (
                     f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
-
-                # Plot
-                if plots:
-                    if ni < 3:
-                        f = save_dir / f'train_batch{ni}.jpg'  # filename
-                        Thread(target=plot_images, args=(imgs, targets, paths, f), daemon=True).start()
-                    loggers.on_train_batch_end(ni, model, imgs)
+                loggers.on_train_batch_end(ni, model, imgs, targets, paths, plots)
 
             # end batch ------------------------------------------------------------------------------------------------
 

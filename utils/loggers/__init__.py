@@ -1,13 +1,14 @@
 # YOLOv5 experiment logging utils
 
 import warnings
+from threading import Thread
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from utils.general import colorstr, emojis
 from utils.loggers.wandb.wandb_utils import WandbLogger
-from utils.plots import plot_results
+from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
 
 LOGGERS = ('csv', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
@@ -62,15 +63,19 @@ class Loggers():
 
         return self
 
-    def on_train_batch_end(self, ni, model, imgs):
+    def on_train_batch_end(self, ni, model, imgs, targets, paths, plots):
         # Callback runs on train batch end
-        if ni == 0:
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore')  # suppress jit trace warning
-                self.tb.add_graph(torch.jit.trace(de_parallel(model), imgs[0:1], strict=False), [])
-        if self.wandb and ni == 10:
-            files = sorted(self.save_dir.glob('train*.jpg'))
-            self.wandb.log({'Mosaics': [wandb.Image(str(f), caption=f.name) for f in files if f.exists()]})
+        if plots:
+            if ni == 0:
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore')  # suppress jit trace warning
+                    self.tb.add_graph(torch.jit.trace(de_parallel(model), imgs[0:1], strict=False), [])
+            if ni < 3:
+                f = self.save_dir / f'train_batch{ni}.jpg'  # filename
+                Thread(target=plot_images, args=(imgs, targets, paths, f), daemon=True).start()
+            if self.wandb and ni == 10:
+                files = sorted(self.save_dir.glob('train*.jpg'))
+                self.wandb.log({'Mosaics': [wandb.Image(str(f), caption=f.name) for f in files if f.exists()]})
 
     def on_train_epoch_end(self, epoch):
         # Callback runs on train epoch end
