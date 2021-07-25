@@ -95,7 +95,7 @@ class Loggers():
 
     def on_train_val_end(self, mloss, results, lr, epoch, best_fitness, fi):
         # Callback runs on val end during training
-        vals = list(mloss[:-1]) + list(results) + lr
+        vals = list(mloss) + list(results) + lr
         keys = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
                 'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',  # metrics
                 'val/box_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
