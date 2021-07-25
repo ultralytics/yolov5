@@ -385,9 +385,9 @@ def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
     plt.savefig(Path(save_dir) / 'idetection_profile.png', dpi=200)
 
 
-def plot_results(save_dir=''):
-    # Plot training 'results*.csv'. from utils.plots import *; plot_results(save_dir='runs/train/exp')
-    save_dir = Path(save_dir)
+def plot_results(file='path/to/results.csv', save_dir=''):
+    # Plot training results.csv. Usage: from utils.plots import *; plot_results('path/to/results.csv')
+    save_dir = Path(file).parent if file else Path(save_dir)
     fig, ax = plt.subplots(2, 5, figsize=(12, 6), tight_layout=True)
     ax = ax.ravel()
     files = list(save_dir.glob('results*.csv'))
