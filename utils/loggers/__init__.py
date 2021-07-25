@@ -126,7 +126,7 @@ class Loggers():
     def on_train_end(self, last, best, plots):
         # Callback runs on training end
         if plots:
-            plot_results(save_dir=self.save_dir)  # save results.png
+            plot_results(dir=self.save_dir)  # save results.png
         files = ['results.png', 'confusion_matrix.png', *[f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R')]]
         files = [(self.save_dir / f) for f in files if (self.save_dir / f).exists()]  # filter
         if self.wandb:
