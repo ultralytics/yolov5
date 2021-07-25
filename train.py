@@ -38,7 +38,7 @@ from utils.general import labels_to_class_weights, increment_path, labels_to_ima
     check_requirements, print_mutation, set_logging, one_cycle, colorstr
 from utils.google_utils import attempt_download
 from utils.loss import ComputeLoss
-from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
+from utils.plots import plot_images, plot_labels, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, de_parallel
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.metrics import fitness
@@ -389,9 +389,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # end training -----------------------------------------------------------------------------------------------------
     if RANK in [-1, 0]:
         LOGGER.info(f'{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.\n')
-        if plots:
-            plot_results(save_dir=save_dir)  # save as results.png
-
         if not evolve:
             if is_coco:  # COCO dataset
                 for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
@@ -405,13 +402,11 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                             save_dir=save_dir,
                                             save_json=True,
                                             plots=False)
-
             # Strip optimizers
             for f in last, best:
                 if f.exists():
                     strip_optimizer(f)  # strip optimizers
-
-        loggers.on_train_end(last, best)
+        loggers.on_train_end(last, best, plots)
 
     torch.cuda.empty_cache()
     return results

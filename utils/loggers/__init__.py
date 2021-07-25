@@ -7,6 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from utils.general import colorstr, emojis
 from utils.loggers.wandb.wandb_utils import WandbLogger
+from utils.plots import plot_results
 from utils.torch_utils import de_parallel
 
 LOGGERS = ('csv', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
@@ -117,8 +118,10 @@ class Loggers():
             if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
                 self.wandb.log_model(last.parent, self.opt, epoch, fi, best_model=best_fitness == fi)
 
-    def on_train_end(self, last, best):
+    def on_train_end(self, last, best, plots):
         # Callback runs on training end
+        if plots:
+            plot_results(save_dir=self.save_dir)  # save results.png
         files = ['results.png', 'confusion_matrix.png', *[f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R')]]
         files = [(self.save_dir / f) for f in files if (self.save_dir / f).exists()]  # filter
         if self.wandb:
