@@ -79,7 +79,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     cuda = device.type != 'cpu'
     init_seeds(1 + RANK)
     with open(data, encoding='ascii', errors='ignore') as f:
-        data_dict = yaml.safe_load(f)  # data dict
+        data_dict = yaml.safe_load(f)
 
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names

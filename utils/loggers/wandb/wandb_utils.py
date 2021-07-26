@@ -62,7 +62,7 @@ def check_wandb_resume(opt):
 
 
 def process_wandb_config_ddp_mode(opt):
-    with open(check_file(opt.data)) as f:
+    with open(check_file(opt.data), encoding='ascii', errors='ignore') as f:
         data_dict = yaml.safe_load(f)  # data dict
     train_dir, val_dir = None, None
     if isinstance(data_dict['train'], str) and data_dict['train'].startswith(WANDB_ARTIFACT_PREFIX):
@@ -150,7 +150,7 @@ class WandbLogger():
                                                 opt.single_cls,
                                                 'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
         print("Created dataset config file ", config_path)
-        with open(config_path) as f:
+        with open(config_path, encoding='ascii', errors='ignore') as f:
             wandb_data_dict = yaml.safe_load(f)
         return wandb_data_dict
 
@@ -226,7 +226,7 @@ class WandbLogger():
         print("Saving model artifact on epoch ", epoch + 1)
 
     def log_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False):
-        with open(data_file) as f:
+        with open(data_file, encoding='ascii', errors='ignore') as f:
             data = yaml.safe_load(f)  # data dict
         check_dataset(data)
         nc, names = (1, ['item']) if single_cls else (int(data['nc']), data['names'])
