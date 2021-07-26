@@ -203,8 +203,9 @@ class MaskLoss(torch.nn.Module):
                 y_true = y_true.cuda()
             if not y_pred.is_cuda:
                 y_pred = y_pred.cuda()
-            loss = F.binary_cross_entropy_with_logits(y_pred, y_true)
+            loss = F.binary_cross_entropy(y_pred, y_true)
 
+            #for visualization of mask target and mask prediction
             for i in range(y_true.size()[0]):
                 jo = np.array(y_pred[i].cpu().detach(), dtype='float32')
                 cv2.imshow('mask_predict',
@@ -446,7 +447,7 @@ def train(hyp, opt, device, tb_writer=None):
         # batch -------------------------------------------------------------
         imgs = imgs.to(device, non_blocking=True).float() / 255.0  # uint8 to float32, 0-255 to 0.0-1.0
         targets = targets.to(device)
-        gt_class_ids = targets[:, 0] + 1
+        gt_class_ids = targets[:, 1] + 1
 
         # Multi-scale
         new_gt_masks = []
