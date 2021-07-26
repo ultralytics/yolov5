@@ -49,11 +49,6 @@ RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 
 
-import yaml.reader
-import re
-
-yaml.reader.Reader.NON_PRINTABLE = re.compile(u'[^\x09\x0A\x0D\x20-\x7E\x85\xA0-\uD7FF\uE000-\uFFFD\U00010000-\U0010FFFF\]')
-
 def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           opt,
           device,
@@ -83,10 +78,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     plots = not evolve  # create plots
     cuda = device.type != 'cpu'
     init_seeds(1 + RANK)
-    with open(data) as f:
-        data_dict = yaml.safe_load(f.read().replace(u'\1F680', '') )  # data dict
-    # f.read().replace(u'\x82', '') # \1F680
-    # f.read().replace(u'\1F680', '') # \1F680
+    with open(data, encoding='ascii', errors='ignore') as f:
+        data_dict = yaml.safe_load(f)  # data dict
 
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
