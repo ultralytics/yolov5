@@ -49,6 +49,11 @@ RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 
 
+import yaml.reader
+import re
+
+yaml.reader.Reader.NON_PRINTABLE = re.compile(u'[^\x09\x0A\x0D\x20-\x7E\x85\xA0-\uD7FF\uE000-\uFFFD\U00010000-\U0010FFFF\]')
+
 def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           opt,
           device,
