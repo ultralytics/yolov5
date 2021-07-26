@@ -1,9 +1,10 @@
+# Copyright Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
 # Global Wheat 2020 dataset http://www.global-wheat.com/
-# Train command: python train.py --data GlobalWheat2020.yaml
-# Default dataset location is next to YOLOv5:
-#   /parent
-#     /datasets/GlobalWheat2020
-#     /yolov5
+# YOLOv5 🚀 example usage: python train.py --data GlobalWheat2020.yaml
+# parent
+# ├── yolov5
+# └── datasets
+#     └── GlobalWheat2020  ← downloads here
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]

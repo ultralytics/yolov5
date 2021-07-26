@@ -1,9 +1,10 @@
+# Copyright Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
 # SKU-110K retail items dataset https://github.com/eg4000/SKU110K_CVPR19
-# Train command: python train.py --data SKU-110K.yaml
-# Default dataset location is next to YOLOv5:
-#   /parent
-#     /datasets/SKU-110K
-#     /yolov5
+# YOLOv5 🚀 example usage: python train.py --data SKU-110K.yaml
+# parent
+# ├── yolov5
+# └── datasets
+#     └── SKU-110K  ← downloads here
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
