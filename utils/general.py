@@ -1,8 +1,12 @@
-# YOLOv5 general utils
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+General utils
+"""
 
 import contextlib
 import glob
 import logging
+import math
 import os
 import platform
 import random
@@ -17,14 +21,13 @@ from subprocess import check_output
 
 import cv2
 import numpy as np
-import math
 import pandas as pd
 import pkg_resources as pkg
 import torch
 import torchvision
 import yaml
 
-from utils.google_utils import gsutil_getsize
+from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
 from utils.torch_utils import init_torch_seeds
 
@@ -36,8 +39,17 @@ cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with Py
 os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max threads
 
 
-class timeout(contextlib.ContextDecorator):
-    # Usage: @timeout(seconds) decorator or 'with timeout(seconds):' context manager
+class Profile(contextlib.ContextDecorator):
+    # Usage: @Profile() decorator or 'with Profile():' context manager
+    def __enter__(self):
+        self.start = time.time()
+
+    def __exit__(self, type, value, traceback):
+        print(f'Profile results: {time.time() - self.start:.5f}s')
+
+
+class Timeout(contextlib.ContextDecorator):
+    # Usage: @Timeout(seconds) decorator or 'with Timeout(seconds):' context manager
     def __init__(self, seconds, *, timeout_msg='', suppress_timeout_errors=True):
         self.seconds = int(seconds)
         self.timeout_message = timeout_msg
@@ -54,6 +66,22 @@ class timeout(contextlib.ContextDecorator):
         signal.alarm(0)  # Cancel SIGALRM if it's scheduled
         if self.suppress and exc_type is TimeoutError:  # Suppress TimeoutError
             return True
+
+
+def try_except(func):
+    # try-except function. Usage: @try_except decorator
+    def handler(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception as e:
+            print(e)
+
+    return handler
+
+
+def methods(instance):
+    # Get class/instance methods
+    return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith("__")]
 
 
 def set_logging(rank=-1, verbose=True):
@@ -94,6 +122,12 @@ def is_pip():
     return 'site-packages' in Path(__file__).absolute().parts
 
 
+def is_ascii(s=''):
+    # Is string composed of all ASCII (no UTF) characters?
+    s = str(s)  # convert list, tuple, None, etc. to str
+    return len(s.encode().decode('ascii', 'ignore')) == len(s)
+
+
 def emojis(str=''):
     # Return platform-dependent emoji-safe version of string
     return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
@@ -114,26 +148,24 @@ def check_online():
         return False
 
 
-def check_git_status(err_msg=', for updates see https://github.com/ultralytics/yolov5'):
+@try_except
+def check_git_status():
     # Recommend 'git pull' if code is out of date
+    msg = ', for updates see https://github.com/ultralytics/yolov5'
     print(colorstr('github: '), end='')
-    try:
-        assert Path('.git').exists(), 'skipping check (not a git repository)'
-        assert not is_docker(), 'skipping check (Docker image)'
-        assert check_online(), 'skipping check (offline)'
+    assert Path('.git').exists(), 'skipping check (not a git repository)' + msg
+    assert not is_docker(), 'skipping check (Docker image)' + msg
+    assert check_online(), 'skipping check (offline)' + msg
 
-        cmd = 'git fetch && git config --get remote.origin.url'
-        url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
-        branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
-        n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
-        if n > 0:
-            s = f"⚠️ WARNING: code is out of date by {n} commit{'s' * (n > 1)}. " \
-                f"Use 'git pull' to update or 'git clone {url}' to download latest."
-        else:
-            s = f'up to date with {url} ✅'
-        print(emojis(s))  # emoji-safe
-    except Exception as e:
-        print(f'{e}{err_msg}')
+    cmd = 'git fetch && git config --get remote.origin.url'
+    url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
+    branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
+    n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
+    if n > 0:
+        s = f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use `git pull` or `git clone {url}` to update."
+    else:
+        s = f'up to date with {url} ✅'
+    print(emojis(s))  # emoji-safe
 
 
 def check_python(minimum='3.6.2'):
@@ -148,15 +180,14 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
     assert result, f'{name}{minimum} required by YOLOv5, but {name}{current} is currently installed'
 
 
-def check_requirements(requirements='requirements.txt', exclude=()):
+@try_except
+def check_requirements(requirements='requirements.txt', exclude=(), install=True):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
     prefix = colorstr('red', 'bold', 'requirements:')
     check_python()  # check python version
     if isinstance(requirements, (str, Path)):  # requirements.txt file
         file = Path(requirements)
-        if not file.exists():
-            print(f"{prefix} {file.resolve()} not found, check failed.")
-            return
+        assert file.exists(), f"{prefix} {file.resolve()} not found, check failed."
         requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(file.open()) if x.name not in exclude]
     else:  # list or tuple of packages
         requirements = [x for x in requirements if x not in exclude]
@@ -166,26 +197,33 @@ def check_requirements(requirements='requirements.txt', exclude=()):
         try:
             pkg.require(r)
         except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
-            print(f"{prefix} {r} not found and is required by YOLOv5, attempting auto-update...")
-            try:
-                assert check_online(), f"'pip install {r}' skipped (offline)"
-                print(check_output(f"pip install '{r}'", shell=True).decode())
-                n += 1
-            except Exception as e:
-                print(f'{prefix} {e}')
+            s = f"{prefix} {r} not found and is required by YOLOv5"
+            if install:
+                print(f"{s}, attempting auto-update...")
+                try:
+                    assert check_online(), f"'pip install {r}' skipped (offline)"
+                    print(check_output(f"pip install '{r}'", shell=True).decode())
+                    n += 1
+                except Exception as e:
+                    print(f'{prefix} {e}')
+            else:
+                print(f'{s}. Please install and rerun your command.')
 
     if n:  # if packages updated
         source = file.resolve() if 'file' in locals() else requirements
         s = f"{prefix} {n} package{'s' * (n > 1)} updated per {source}\n" \
             f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
-        print(emojis(s))  # emoji-safe
+        print(emojis(s))
 
 
-def check_img_size(img_size, s=32):
-    # Verify img_size is a multiple of stride s
-    new_size = make_divisible(img_size, int(s))  # ceil gs-multiple
-    if new_size != img_size:
-        print('WARNING: --img-size %g must be multiple of max stride %g, updating to %g' % (img_size, s, new_size))
+def check_img_size(imgsz, s=32, floor=0):
+    # Verify image size is a multiple of stride s in each dimension
+    if isinstance(imgsz, int):  # integer i.e. img_size=640
+        new_size = max(make_divisible(imgsz, int(s)), floor)
+    else:  # list i.e. img_size=[640, 480]
+        new_size = [max(make_divisible(x, int(s)), floor) for x in imgsz]
+    if new_size != imgsz:
+        print(f'WARNING: --img-size {imgsz} must be multiple of max stride {s}, updating to {new_size}')
     return new_size
 
 
@@ -224,13 +262,30 @@ def check_file(file):
 
 
 def check_dataset(data, autodownload=True):
-    # Download dataset if not found locally
-    path = Path(data.get('path', ''))  # optional 'path' field
-    if path:
-        for k in 'train', 'val', 'test':
-            if data.get(k):  # prepend path
-                data[k] = str(path / data[k]) if isinstance(data[k], str) else [str(path / x) for x in data[k]]
+    # Download and/or unzip dataset if not found locally
+    # Usage: https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128_with_yaml.zip
 
+    # Download (optional)
+    extract_dir = ''
+    if isinstance(data, (str, Path)) and str(data).endswith('.zip'):  # i.e. gs://bucket/dir/coco128.zip
+        download(data, dir='../datasets', unzip=True, delete=False, curl=False, threads=1)
+        data = next((Path('../datasets') / Path(data).stem).rglob('*.yaml'))
+        extract_dir, autodownload = data.parent, False
+
+    # Read yaml (optional)
+    if isinstance(data, (str, Path)):
+        with open(data, errors='ignore') as f:
+            data = yaml.safe_load(f)  # dictionary
+
+    # Parse yaml
+    path = extract_dir or Path(data.get('path') or '')  # optional 'path' default to '.'
+    for k in 'train', 'val', 'test':
+        if data.get(k):  # prepend path
+            data[k] = str(path / data[k]) if isinstance(data[k], str) else [str(path / x) for x in data[k]]
+
+    assert 'nc' in data, "Dataset 'nc' key missing."
+    if 'names' not in data:
+        data['names'] = [f'class{i}' for i in range(data['nc'])]  # assign class names if missing
     train, val, test, s = [data.get(x) for x in ('train', 'val', 'test', 'download')]
     if val:
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
@@ -253,13 +308,17 @@ def check_dataset(data, autodownload=True):
             else:
                 raise Exception('Dataset not found.')
 
+    return data  # dictionary
+
 
 def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
-    # Multi-threaded file download and unzip function
+    # Multi-threaded file download and unzip function, used in data.yaml for autodownload
     def download_one(url, dir):
         # Download 1 file
         f = dir / Path(url).name  # filename
-        if not f.exists():
+        if Path(url).is_file():  # exists in current path
+            Path(url).rename(f)  # move to dir
+        elif not f.exists():
             print(f'Downloading {url} to {f}...')
             if curl:
                 os.system(f"curl -L '{url}' -o '{f}' --retry 9 -C -")  # curl download, retry and resume on fail
@@ -283,7 +342,7 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
         pool.close()
         pool.join()
     else:
-        for u in tuple(url) if isinstance(url, str) else url:
+        for u in [url] if isinstance(url, (str, Path)) else url:
             download_one(u, dir)
 
 
@@ -298,7 +357,7 @@ def clean_str(s):
 
 
 def one_cycle(y1=0.0, y2=1.0, steps=100):
-    # lambda function for sinusoidal ramp from y1 to y2
+    # lambda function for sinusoidal ramp from y1 to y2 https://arxiv.org/pdf/1812.01187.pdf
     return lambda x: ((1 - math.cos(x * math.pi / steps)) / 2) * (y2 - y1) + y1
 
 
@@ -396,10 +455,10 @@ def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
     return y
 
 
-def xyxy2xywhn(x, w=640, h=640, clip=False):
+def xyxy2xywhn(x, w=640, h=640, clip=False, eps=0.0):
     # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] normalized where xy1=top-left, xy2=bottom-right
     if clip:
-        clip_coords(x, (h, w))  # warning: inplace clip
+        clip_coords(x, (h - eps, w - eps))  # warning: inplace clip
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[:, 0] = ((x[:, 0] + x[:, 2]) / 2) / w  # x center
     y[:, 1] = ((x[:, 1] + x[:, 3]) / 2) / h  # y center
@@ -458,18 +517,16 @@ def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
     return coords
 
 
-def clip_coords(boxes, img_shape):
+def clip_coords(boxes, shape):
     # Clip bounding xyxy bounding boxes to image shape (height, width)
-    if isinstance(boxes, torch.Tensor):
-        boxes[:, 0].clamp_(0, img_shape[1])  # x1
-        boxes[:, 1].clamp_(0, img_shape[0])  # y1
-        boxes[:, 2].clamp_(0, img_shape[1])  # x2
-        boxes[:, 3].clamp_(0, img_shape[0])  # y2
-    else:  # np.array
-        boxes[:, 0].clip(0, img_shape[1], out=boxes[:, 0])  # x1
-        boxes[:, 1].clip(0, img_shape[0], out=boxes[:, 1])  # y1
-        boxes[:, 2].clip(0, img_shape[1], out=boxes[:, 2])  # x2
-        boxes[:, 3].clip(0, img_shape[0], out=boxes[:, 3])  # y2
+    if isinstance(boxes, torch.Tensor):  # faster individually
+        boxes[:, 0].clamp_(0, shape[1])  # x1
+        boxes[:, 1].clamp_(0, shape[0])  # y1
+        boxes[:, 2].clamp_(0, shape[1])  # x2
+        boxes[:, 3].clamp_(0, shape[0])  # y2
+    else:  # np.array (faster grouped)
+        boxes[:, [0, 2]] = boxes[:, [0, 2]].clip(0, shape[1])  # x1, x2
+        boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, shape[0])  # y1, y2
 
 
 def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False,
@@ -582,35 +639,43 @@ def strip_optimizer(f='best.pt', s=''):  # from utils.general import *; strip_op
     print(f"Optimizer stripped from {f},{(' saved as %s,' % s) if s else ''} {mb:.1f}MB")
 
 
-def print_mutation(hyp, results, yaml_file='hyp_evolved.yaml', bucket=''):
-    # Print mutation results to evolve.txt (for use with train.py --evolve)
-    a = '%10s' * len(hyp) % tuple(hyp.keys())  # hyperparam keys
-    b = '%10.3g' * len(hyp) % tuple(hyp.values())  # hyperparam values
-    c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
-    print('\n%s\n%s\nEvolved fitness: %s\n' % (a, b, c))
+def print_mutation(results, hyp, save_dir, bucket):
+    evolve_csv, results_csv, evolve_yaml = save_dir / 'evolve.csv', save_dir / 'results.csv', save_dir / 'hyp_evolve.yaml'
+    keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+            'val/box_loss', 'val/obj_loss', 'val/cls_loss') + tuple(hyp.keys())  # [results + hyps]
+    keys = tuple(x.strip() for x in keys)
+    vals = results + tuple(hyp.values())
+    n = len(keys)
 
+    # Download (optional)
     if bucket:
-        url = 'gs://%s/evolve.txt' % bucket
-        if gsutil_getsize(url) > (os.path.getsize('evolve.txt') if os.path.exists('evolve.txt') else 0):
-            os.system('gsutil cp %s .' % url)  # download evolve.txt if larger than local
+        url = f'gs://{bucket}/evolve.csv'
+        if gsutil_getsize(url) > (os.path.getsize(evolve_csv) if os.path.exists(evolve_csv) else 0):
+            os.system(f'gsutil cp {url} {save_dir}')  # download evolve.csv if larger than local
 
-    with open('evolve.txt', 'a') as f:  # append result
-        f.write(c + b + '\n')
-    x = np.unique(np.loadtxt('evolve.txt', ndmin=2), axis=0)  # load unique rows
-    x = x[np.argsort(-fitness(x))]  # sort
-    np.savetxt('evolve.txt', x, '%10.3g')  # save sort by fitness
+    # Log to evolve.csv
+    s = '' if evolve_csv.exists() else (('%20s,' * n % keys).rstrip(',') + '\n')  # add header
+    with open(evolve_csv, 'a') as f:
+        f.write(s + ('%20.5g,' * n % vals).rstrip(',') + '\n')
+
+    # Print to screen
+    print(colorstr('evolve: ') + ', '.join(f'{x.strip():>20s}' for x in keys))
+    print(colorstr('evolve: ') + ', '.join(f'{x:20.5g}' for x in vals), end='\n\n\n')
 
     # Save yaml
-    for i, k in enumerate(hyp.keys()):
-        hyp[k] = float(x[0, i + 7])
-    with open(yaml_file, 'w') as f:
-        results = tuple(x[0, :7])
-        c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
-        f.write('# Hyperparameter Evolution Results\n# Generations: %g\n# Metrics: ' % len(x) + c + '\n\n')
+    with open(evolve_yaml, 'w') as f:
+        data = pd.read_csv(evolve_csv)
+        data = data.rename(columns=lambda x: x.strip())  # strip keys
+        i = np.argmax(fitness(data.values[:, :7]))  #
+        f.write(f'# YOLOv5 Hyperparameter Evolution Results\n' +
+                f'# Best generation: {i}\n' +
+                f'# Last generation: {len(data)}\n' +
+                f'# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:7]) + '\n' +
+                f'# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :7]) + '\n\n')
         yaml.safe_dump(hyp, f, sort_keys=False)
 
     if bucket:
-        os.system('gsutil cp evolve.txt %s gs://%s' % (yaml_file, bucket))  # upload
+        os.system(f'gsutil cp {evolve_csv} {evolve_yaml} gs://{bucket}')  # upload
 
 
 def apply_classifier(x, model, img, im0):
@@ -635,7 +700,7 @@ def apply_classifier(x, model, img, im0):
             for j, a in enumerate(d):  # per item
                 cutout = im0[i][int(a[1]):int(a[3]), int(a[0]):int(a[2])]
                 im = cv2.resize(cutout, (224, 224))  # BGR
-                # cv2.imwrite('test%i.jpg' % j, cutout)
+                # cv2.imwrite('example%i.jpg' % j, cutout)
 
                 im = im[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
                 im = np.ascontiguousarray(im, dtype=np.float32)  # uint8 to float32

@@ -1,6 +1,11 @@
 # YOLOv5 common modules
+"""
+Common modules
+"""
 
+import logging
 import math
+import warnings
 from copy import copy
 from pathlib import Path
 
@@ -13,10 +18,13 @@ import torch.nn.functional as F
 from PIL import Image
 from torch.cuda import amp
 
-from utils.datasets import letterbox
-from utils.general import non_max_suppression, make_divisible, scale_coords, increment_path, xyxy2xywh, save_one_box
-from utils.plots import colors, plot_one_box
-from utils.torch_utils import time_synchronized
+from utils.datasets import exif_transpose, letterbox
+from utils.general import colorstr, increment_path, is_ascii, make_divisible, non_max_suppression, save_one_box, \
+    scale_coords, xyxy2xywh
+from utils.plots import Annotator, colors
+from utils.torch_utils import time_sync
+
+LOGGER = logging.getLogger(__name__)
 
 
 def autopad(k, p=None):  # kernel, padding
@@ -24,11 +32,6 @@ def autopad(k, p=None):  # kernel, padding
     if p is None:
         p = k // 2 if isinstance(k, int) else [x // 2 for x in k]  # auto-pad
     return p
-
-
-def DWConv(c1, c2, k=1, s=1, act=True):
-    # Depthwise convolution
-    return Conv(c1, c2, k, s, g=math.gcd(c1, c2), act=act)
 
 
 class Conv(nn.Module):
@@ -44,6 +47,13 @@ class Conv(nn.Module):
 
     def fuseforward(self, x):
         return self.act(self.conv(x))
+        
+        
+class DWConv(Conv):
+    # Depth-wise convolution class
+    def __init__(self, c1, c2, k=1, s=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
+        super().__init__(c1, c2, k, s, g=math.gcd(c1, c2), act=act) 
+        
 class Involution(nn.Module):
 
     def __init__(self,c1,c2,kernel_size,stride):
@@ -125,6 +135,7 @@ class Bottleneck(nn.Module):
 
     def forward(self, x):
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
+        
 
 class InvolutionBottleneck(nn.Module):
     # Standard bottleneck
@@ -137,9 +148,9 @@ class InvolutionBottleneck(nn.Module):
         self.add = shortcut and c1 == c2
 
     def forward(self, x):
-        
         return x + self.cv3(self.cv2(self.cv1(x))) if self.add else self.cv3(self.cv2(self.cv1(x)))
-        
+      
+      
 class BottleneckCSP(nn.Module):
     # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
@@ -172,7 +183,6 @@ class C3(nn.Module):
         # self.m = nn.Sequential(*[CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)])
 
     def forward(self, x):
-       
         return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))
 
 
@@ -182,12 +192,28 @@ class C3TR(C3):
         super().__init__(c1, c2, n, shortcut, g, e)
         c_ = int(c2 * e)
         self.m = TransformerBlock(c_, c_, 4, n)
+        
+        
+class C3SPP(C3):
+    # C3 module with SPP()
+    def __init__(self, c1, c2, k=(5, 9, 13), n=1, shortcut=True, g=1, e=0.5):
+        super().__init__(c1, c2, n, shortcut, g, e)
+        c_ = int(c2 * e)
+        self.m = SPP(c_, c_, k)
 
+
+class C3Ghost(C3):
+    # C3 module with GhostBottleneck()
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
+        super().__init__(c1, c2, n, shortcut, g, e)
+        c_ = int(c2 * e)  # hidden channels
+        self.m = nn.Sequential(*[GhostBottleneck(c_, c_) for _ in range(n)])
+        
 
 class SPP(nn.Module):
-    # Spatial pyramid pooling layer used in YOLOv3-SPP
+    # Spatial Pyramid Pooling (SPP) layer https://arxiv.org/abs/1406.4729
     def __init__(self, c1, c2, k=(5, 9, 13)):
-        super(SPP, self).__init__()
+        super().__init__()
         c_ = c1 // 2  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
         self.cv2 = Conv(c_ * (len(k) + 1), c2, 1, 1)
@@ -195,9 +221,29 @@ class SPP(nn.Module):
 
     def forward(self, x):
         x = self.cv1(x)
-        return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')  # suppress torch 1.9.0 max_pool2d() warning
+            return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
+      
 
+class SPPF(nn.Module):
+    # Spatial Pyramid Pooling - Fast (SPPF) layer for YOLOv5 by Glenn Jocher
+    def __init__(self, c1, c2, k=5):  # equivalent to SPP(k=(5, 9, 13))
+        super().__init__()
+        c_ = c1 // 2  # hidden channels
+        self.cv1 = Conv(c1, c_, 1, 1)
+        self.cv2 = Conv(c_ * 4, c2, 1, 1)
+        self.m = nn.MaxPool2d(kernel_size=k, stride=1, padding=k // 2)
 
+    def forward(self, x):
+        x = self.cv1(x)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')  # suppress torch 1.9.0 max_pool2d() warning
+            y1 = self.m(x)
+            y2 = self.m(y1)
+            return self.cv2(torch.cat([x, y1, y2, self.m(y2)], 1))
+            
+            
 class Focus(nn.Module):
     # Focus wh information into c-space
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
@@ -210,6 +256,33 @@ class Focus(nn.Module):
         # return self.conv(self.contract(x))
 
 
+class GhostConv(nn.Module):
+    # Ghost Convolution https://github.com/huawei-noah/ghostnet
+    def __init__(self, c1, c2, k=1, s=1, g=1, act=True):  # ch_in, ch_out, kernel, stride, groups
+        super().__init__()
+        c_ = c2 // 2  # hidden channels
+        self.cv1 = Conv(c1, c_, k, s, None, g, act)
+        self.cv2 = Conv(c_, c_, 5, 1, None, c_, act)
+
+    def forward(self, x):
+        y = self.cv1(x)
+        return torch.cat([y, self.cv2(y)], 1)
+        
+
+class GhostBottleneck(nn.Module):
+    # Ghost Bottleneck https://github.com/huawei-noah/ghostnet
+    def __init__(self, c1, c2, k=3, s=1):  # ch_in, ch_out, kernel, stride
+        super().__init__()
+        c_ = c2 // 2
+        self.conv = nn.Sequential(GhostConv(c1, c_, 1, 1),  # pw
+                                  DWConv(c_, c_, k, s, act=False) if s == 2 else nn.Identity(),  # dw
+                                  GhostConv(c_, c2, 1, 1, act=False))  # pw-linear
+        self.shortcut = nn.Sequential(DWConv(c1, c1, k, s, act=False),
+                                      Conv(c1, c2, 1, 1, act=False)) if s == 2 else nn.Identity()
+
+    def forward(self, x):
+        return self.conv(x) + self.shortcut(x)
+        
 class Contract(nn.Module):
     # Contract width-height into channels, i.e. x(1,64,80,80) to x(1,256,40,40)
     def __init__(self, gain=2):
@@ -217,33 +290,30 @@ class Contract(nn.Module):
         self.gain = gain
 
     def forward(self, x):
-        N, C, H, W = x.size()  # assert (H / s == 0) and (W / s == 0), 'Indivisible gain'
+        b, c, h, w = x.size()  # assert (h / s == 0) and (W / s == 0), 'Indivisible gain'
         s = self.gain
-        x = x.view(N, C, H // s, s, W // s, s)  # x(1,64,40,2,40,2)
+        x = x.view(b, c, h // s, s, w // s, s)  # x(1,64,40,2,40,2)
         x = x.permute(0, 3, 5, 1, 2, 4).contiguous()  # x(1,2,2,64,40,40)
-        return x.view(N, C * s * s, H // s, W // s)  # x(1,256,40,40)
+        return x.view(b, c * s * s, h // s, w // s)  # x(1,256,40,40)
 
 class Concat_bifpn(nn.Module):
     # Concatenate a list of tensors along dimension
     def __init__(self, c1, c2):
         super(Concat_bifpn, self).__init__()
-        # self.relu = nn.ReLU()
         self.w1 = nn.Parameter(torch.ones(2, dtype=torch.float32), requires_grad=True)
         self.w2 = nn.Parameter(torch.ones(3, dtype=torch.float32), requires_grad=True)
        # self.w3 = nn.Parameter(torch.ones(3, dtype=torch.float32), requires_grad=True)
         self.epsilon = 0.0001
         self.conv = Conv(c1, c2, 1 ,1 ,0 )
-        self.act= nn.SiLU()
+        self.act= nn.ReLU()
 
     def forward(self, x): # mutil-layer 1-3 layers
         #print("bifpn:",x.shape)
         if len(x) == 2:
-            # w = self.relu(self.w1)
             w = self.w1
             weight = w / (torch.sum(w, dim=0) + self.epsilon)
             x = self.conv(self.act(weight[0] * x[0] + weight[1] * x[1]))
         elif len(x) == 3: 
-            # w = self.relu(self.w2)
             w = self.w2
             weight = w / (torch.sum(w, dim=0) + self.epsilon)
             x = self.conv(self.act (weight[0] * x[0] + weight[1] * x[1] + weight[2] * x[2]))
@@ -260,11 +330,11 @@ class Expand(nn.Module):
         self.gain = gain
 
     def forward(self, x):
-        N, C, H, W = x.size()  # assert C / s ** 2 == 0, 'Indivisible gain'
+        b, c, h, w = x.size()  # assert C / s ** 2 == 0, 'Indivisible gain'
         s = self.gain
-        x = x.view(N, s, s, C // s ** 2, H, W)  # x(1,2,2,16,80,80)
+        x = x.view(b, s, s, c // s ** 2, h, w)  # x(1,2,2,16,80,80)
         x = x.permute(0, 3, 4, 1, 5, 2).contiguous()  # x(1,16,80,2,80,2)
-        return x.view(N, C // s ** 2, H * s, W * s)  # x(1,16,160,160)
+        return x.view(b, c // s ** 2, h * s, w * s)  # x(1,16,160,160)
 
 
 class Concat(nn.Module):
@@ -277,18 +347,18 @@ class Concat(nn.Module):
         return torch.cat(x, self.d)
 
 
-class NMS(nn.Module):
-    # Non-Maximum Suppression (NMS) module
-    conf = 0.25  # confidence threshold
-    iou = 0.45  # IoU threshold
-    classes = None  # (optional list) filter by class
-    max_det = 1000  # maximum number of detections per image
+# class NMS(nn.Module):
+    # # Non-Maximum Suppression (NMS) module
+    # conf = 0.25  # confidence threshold
+    # iou = 0.45  # IoU threshold
+    # classes = None  # (optional list) filter by class
+    # max_det = 1000  # maximum number of detections per image
 
-    def __init__(self):
-        super(NMS, self).__init__()
+    # def __init__(self):
+        # super(NMS, self).__init__()
 
-    def forward(self, x):
-        return non_max_suppression(x[0], self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)
+    # def forward(self, x):
+        # return non_max_suppression(x[0], self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)
 
 
 class AutoShape(nn.Module):
@@ -317,7 +387,7 @@ class AutoShape(nn.Module):
         #   torch:           = torch.zeros(16,3,320,640)  # BCHW (scaled to size=640, 0-1 values)
         #   multiple:        = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
 
-        t = [time_synchronized()]
+        t = [time_sync()]
         p = next(self.model.parameters())  # for device and type
         if isinstance(imgs, torch.Tensor):  # torch
             with amp.autocast(enabled=p.device.type != 'cpu'):
@@ -346,19 +416,19 @@ class AutoShape(nn.Module):
         x = np.stack(x, 0) if n > 1 else x[0][None]  # stack
         x = np.ascontiguousarray(x.transpose((0, 3, 1, 2)))  # BHWC to BCHW
         x = torch.from_numpy(x).to(p.device).type_as(p) / 255.  # uint8 to fp16/32
-        t.append(time_synchronized())
+        t.append(time_sync())
 
         with amp.autocast(enabled=p.device.type != 'cpu'):
             # Inference
             y = self.model(x, augment, profile)[0]  # forward
-            t.append(time_synchronized())
+            t.append(time_sync())
 
             # Post-process
             y = non_max_suppression(y, self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)  # NMS
             for i in range(n):
                 scale_coords(shape1, y[i][:, :4], shape0[i])
 
-            t.append(time_synchronized())
+            t.append(time_sync())
             return Detections(imgs, y, files, t, self.names, x.shape)
 
 
@@ -371,6 +441,7 @@ class Detections:
         self.imgs = imgs  # list of images as numpy arrays
         self.pred = pred  # list of tensors pred[0] = (xyxy, conf, cls)
         self.names = names  # class names
+        self.ascii = is_ascii(names)  # names are ascii (use PIL for UTF-8)
         self.files = files  # image filenames
         self.xyxy = pred  # xyxy pixels
         self.xywh = [xyxy2xywh(x) for x in pred]  # xywh pixels
@@ -388,40 +459,46 @@ class Detections:
                     n = (pred[:, -1] == c).sum()  # detections per class
                     str += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
                 if show or save or render or crop:
+                    annotator = Annotator(im, pil=not self.ascii)
                     for *box, conf, cls in reversed(pred):  # xyxy, confidence, class
                         label = f'{self.names[int(cls)]} {conf:.2f}'
                         if crop:
                             save_one_box(box, im, file=save_dir / 'crops' / self.names[int(cls)] / self.files[i])
                         else:  # all others
-                            plot_one_box(box, im, label=label, color=colors(cls))
+                            annotator.box_label(box, label, color=colors(cls))
+                        im = annotator.im    
+            else:
+                str += '(no detections)'
 
             im = Image.fromarray(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im  # from np
             if pprint:
-                print(str.rstrip(', '))
+                LOGGER.info(str.rstrip(', '))
             if show:
                 im.show(self.files[i])  # show
             if save:
                 f = self.files[i]
                 im.save(save_dir / f)  # save
-                print(f"{'Saved' * (i == 0)} {f}", end=',' if i < self.n - 1 else f' to {save_dir}\n')
+                if i == self.n - 1:
+                    LOGGER.info(f"Saved {self.n} image{'s' * (self.n > 1)} to {colorstr('bold', save_dir)}")
             if render:
                 self.imgs[i] = np.asarray(im)
 
     def print(self):
         self.display(pprint=True)  # print results
-        print(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' % self.t)
+        LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' %
+                    self.t)
 
     def show(self):
         self.display(show=True)  # show results
 
-    def save(self, save_dir='runs/hub/exp'):
-        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/hub/exp', mkdir=True)  # increment save_dir
+    def save(self, save_dir='runs/detect/exp'):
+        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True)  # increment save_dir
         self.display(save=True, save_dir=save_dir)  # save results
 
-    def crop(self, save_dir='runs/hub/exp'):
-        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/hub/exp', mkdir=True)  # increment save_dir
+    def crop(self, save_dir='runs/detect/exp'):
+        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True)  # increment save_dir
         self.display(crop=True, save_dir=save_dir)  # crop results
-        print(f'Saved results to {save_dir}\n')
+        LOGGER.info(f'Saved results to {save_dir}\n')
 
     def render(self):
         self.display(render=True)  # render results

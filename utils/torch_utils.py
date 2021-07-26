@@ -1,4 +1,7 @@
-# YOLOv5 PyTorch utils
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+PyTorch utils
+"""
 
 import datetime
 import logging
@@ -22,7 +25,8 @@ try:
     import thop  # for FLOPs computation
 except ImportError:
     thop = None
-logger = logging.getLogger(__name__)
+
+LOGGER = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -31,10 +35,10 @@ def torch_distributed_zero_first(local_rank: int):
     Decorator to make all processes in distributed training wait for each local_master to do something.
     """
     if local_rank not in [-1, 0]:
-        dist.barrier()
+        dist.barrier(device_ids=[local_rank])
     yield
     if local_rank == 0:
-        dist.barrier()
+        dist.barrier(device_ids=[0])
 
 
 def init_torch_seeds(seed=0):
@@ -64,7 +68,8 @@ def git_describe(path=Path(__file__).parent):  # path must be a directory
 def select_device(device='', batch_size=None):
     # device = 'cpu' or '0' or '0,1,2,3'
     s = f'YOLOv5 🚀 {git_describe() or date_modified()} torch {torch.__version__} '  # string
-    cpu = device.lower() == 'cpu'
+    device = str(device).strip().lower().replace('cuda:', '')  # to string, 'cuda:0' to '0'
+    cpu = device == 'cpu'
     if cpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force torch.cuda.is_available() = False
     elif device:  # non-cpu device requested
@@ -84,54 +89,68 @@ def select_device(device='', batch_size=None):
     else:
         s += 'CPU\n'
 
-    logger.info(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)  # emoji-safe
+    LOGGER.info(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)  # emoji-safe
     return torch.device('cuda:0' if cuda else 'cpu')
 
 
-def time_synchronized():
+def time_sync():
     # pytorch-accurate time
     if torch.cuda.is_available():
         torch.cuda.synchronize()
     return time.time()
 
 
-def profile(x, ops, n=100, device=None):
-    # profile a pytorch module or list of modules. Example usage:
-    #     x = torch.randn(16, 3, 640, 640)  # input
+def profile(input, ops, n=10, device=None):
+    # YOLOv5 speed/memory/FLOPs profiler
+    #
+    # Usage:
+    #     input = torch.randn(16, 3, 640, 640)
     #     m1 = lambda x: x * torch.sigmoid(x)
     #     m2 = nn.SiLU()
-    #     profile(x, [m1, m2], n=100)  # profile speed over 100 iterations
+    #     profile(input, [m1, m2], n=100)  # profile over 100 iterations
 
-    device = device or torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    x = x.to(device)
-    x.requires_grad = True
-    print(torch.__version__, device.type, torch.cuda.get_device_properties(0) if device.type == 'cuda' else '')
-    print(f"\n{'Params':>12s}{'GFLOPs':>12s}{'forward (ms)':>16s}{'backward (ms)':>16s}{'input':>24s}{'output':>24s}")
-    for m in ops if isinstance(ops, list) else [ops]:
-        m = m.to(device) if hasattr(m, 'to') else m  # device
-        m = m.half() if hasattr(m, 'half') and isinstance(x, torch.Tensor) and x.dtype is torch.float16 else m  # type
-        dtf, dtb, t = 0., 0., [0., 0., 0.]  # dt forward, backward
-        try:
-            flops = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2  # GFLOPs
-        except:
-            flops = 0
+    results = []
+    logging.basicConfig(format="%(message)s", level=logging.INFO)
+    device = device or select_device()
+    print(f"{'Params':>12s}{'GFLOPs':>12s}{'GPU_mem (GB)':>14s}{'forward (ms)':>14s}{'backward (ms)':>14s}"
+          f"{'input':>24s}{'output':>24s}")
 
-        for _ in range(n):
-            t[0] = time_synchronized()
-            y = m(x)
-            t[1] = time_synchronized()
+    for x in input if isinstance(input, list) else [input]:
+        x = x.to(device)
+        x.requires_grad = True
+        for m in ops if isinstance(ops, list) else [ops]:
+            m = m.to(device) if hasattr(m, 'to') else m  # device
+            m = m.half() if hasattr(m, 'half') and isinstance(x, torch.Tensor) and x.dtype is torch.float16 else m
+            tf, tb, t = 0., 0., [0., 0., 0.]  # dt forward, backward
             try:
-                _ = y.sum().backward()
-                t[2] = time_synchronized()
-            except:  # no backward method
-                t[2] = float('nan')
-            dtf += (t[1] - t[0]) * 1000 / n  # ms per op forward
-            dtb += (t[2] - t[1]) * 1000 / n  # ms per op backward
+                flops = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2  # GFLOPs
+            except:
+                flops = 0
 
-        s_in = tuple(x.shape) if isinstance(x, torch.Tensor) else 'list'
-        s_out = tuple(y.shape) if isinstance(y, torch.Tensor) else 'list'
-        p = sum(list(x.numel() for x in m.parameters())) if isinstance(m, nn.Module) else 0  # parameters
-        print(f'{p:12}{flops:12.4g}{dtf:16.4g}{dtb:16.4g}{str(s_in):>24s}{str(s_out):>24s}')
+            try:
+                for _ in range(n):
+                    t[0] = time_sync()
+                    y = m(x)
+                    t[1] = time_sync()
+                    try:
+                        _ = (sum([yi.sum() for yi in y]) if isinstance(y, list) else y).sum().backward()
+                        t[2] = time_sync()
+                    except Exception as e:  # no backward method
+                        print(e)
+                        t[2] = float('nan')
+                    tf += (t[1] - t[0]) * 1000 / n  # ms per op forward
+                    tb += (t[2] - t[1]) * 1000 / n  # ms per op backward
+                mem = torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0  # (GB)
+                s_in = tuple(x.shape) if isinstance(x, torch.Tensor) else 'list'
+                s_out = tuple(y.shape) if isinstance(y, torch.Tensor) else 'list'
+                p = sum(list(x.numel() for x in m.parameters())) if isinstance(m, nn.Module) else 0  # parameters
+                print(f'{p:12}{flops:12.4g}{mem:>14.3f}{tf:14.4g}{tb:14.4g}{str(s_in):>24s}{str(s_out):>24s}')
+                results.append([p, flops, mem, tf, tb, s_in, s_out])
+            except Exception as e:
+                print(e)
+                results.append(None)
+            torch.cuda.empty_cache()
+    return results
 
 
 def is_parallel(model):
@@ -230,7 +249,7 @@ def model_info(model, verbose=False, img_size=640):
     except (ImportError, Exception):
         fs = ''
 
-    logger.info(f"Model Summary: {len(list(model.modules()))} layers, {n_p} parameters, {n_g} gradients{fs}")
+    LOGGER.info(f"Model Summary: {len(list(model.modules()))} layers, {n_p} parameters, {n_g} gradients{fs}")
 
 
 def load_classifier(name='resnet101', n=2):
@@ -272,6 +291,23 @@ def copy_attr(a, b, include=(), exclude=()):
             continue
         else:
             setattr(a, k, v)
+
+
+class EarlyStopping:
+    # YOLOv5 simple early stopper
+    def __init__(self, patience=30):
+        self.best_fitness = 0.0  # i.e. mAP
+        self.best_epoch = 0
+        self.patience = patience  # epochs to wait after fitness stops improving to stop
+
+    def __call__(self, epoch, fitness):
+        if fitness >= self.best_fitness:  # >= 0 to allow for early zero-fitness stage of training
+            self.best_epoch = epoch
+            self.best_fitness = fitness
+        stop = (epoch - self.best_epoch) >= self.patience  # stop training if patience exceeded
+        if stop:
+            LOGGER.info(f'EarlyStopping patience {self.patience} exceeded, stopping training.')
+        return stop
 
 
 class ModelEMA:
