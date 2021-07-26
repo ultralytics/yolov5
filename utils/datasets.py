@@ -222,7 +222,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                     name = value1[0]['name']
                     #TODO:checklai
                     # class_id = classes.index(name)
-                    class_id = 0
+                    class_id = category_id - 1
                     box = item2['bbox']
                     if box:
                         bb = self.convert_box((width, height), box)
@@ -764,31 +764,7 @@ def cutout(image, labels):
     return labels
 
 
-if __name__ == '__main__':
-    train_path = r'E:\TDS3D_all\TDS3D\projects\abc\AI\Images\trainval.json'
 
-    dataset = LoadImagesAndLabels(path, imgsz, batch_size,
-                                  augment=augment,  # augment images
-                                  hyp=hyp,  # augmentation hyperparameters
-                                  rect=rect,  # rectangular training
-                                  cache_images=cache,
-                                  single_cls=opt.single_cls,
-                                  stride=int(stride),
-                                  pad=pad,
-                                  image_weights=image_weights,
-                                  prefix=prefix)
-
-    batch_size = min(batch_size, len(dataset))
-    nw = min([os.cpu_count() // world_size, batch_size if batch_size > 1 else 0, workers])  # number of workers
-    # sampler = torch.utils.data.distributed.DistributedSampler(dataset) if rank != -1 else None
-    # loader = torch.utils.data.DataLoader if image_weights else InfiniteDataLoader
-    # Use torch.utils.data.DataLoader() if dataset.properties will update during training else InfiniteDataLoader()
-    dataloader = data.DataLoader(dataset,
-                                 batch_size=batch_size,
-                                 num_workers=0,
-                                 pin_memory=True,
-                                 shuffle=True,
-                                 collate_fn=LoadImagesAndLabels.collate_fn4 if quad else LoadImagesAndLabels.collate_fn)
 
 
 
