@@ -1,12 +1,11 @@
 #!/bin/bash
 # Copyright Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
-# COCO 2017 dataset http://cocodataset.org
+# Download COCO 2017 dataset http://cocodataset.org
 # YOLOv5 🚀 example usage: bash data/scripts/get_coco.sh
 # parent
 # ├── yolov5
 # └── datasets
 #     └── coco  ← downloads here
-
 
 # Download/unzip labels
 d='../datasets' # unzip directory
