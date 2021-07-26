@@ -1,10 +1,11 @@
+# Copyright Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
 # xView 2018 dataset https://challenge.xviewdataset.org
-# ----> NOTE: DOWNLOAD DATA MANUALLY from URL above and unzip to /datasets/xView before running train command below
-# Train command: python train.py --data xView.yaml
-# Default dataset location is next to YOLOv5:
-#   /parent
-#     /datasets/xView
-#     /yolov5
+# --------  DOWNLOAD DATA MANUALLY from URL above and unzip to 'datasets/xView' before running train command!  --------
+# YOLOv5 🚀 example usage: python train.py --data xView.yaml
+# parent
+# ├── yolov5
+# └── datasets
+#     └── xView  ← downloads here
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]

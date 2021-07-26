@@ -1,9 +1,10 @@
+# Copyright Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
 # VisDrone2019-DET dataset https://github.com/VisDrone/VisDrone-Dataset
-# Train command: python train.py --data VisDrone.yaml
-# Default dataset location is next to YOLOv5:
-#   /parent
-#     /datasets/VisDrone
-#     /yolov5
+# YOLOv5 🚀 example usage: python train.py --data VisDrone.yaml
+# parent
+# ├── yolov5
+# └── datasets
+#     └── VisDrone  ← downloads here
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
