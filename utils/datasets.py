@@ -888,7 +888,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
     """ Return dataset statistics dictionary with images and instances counts per split per class
     To run in parent directory: export PYTHONPATH="$PWD/yolov5"
     Usage1: from utils.datasets import *; dataset_stats('coco128.yaml', autodownload=True)
-    Usage2: from utils.datasets import *; dataset_stats('../datasets/coco128.zip')
+    Usage2: from utils.datasets import *; dataset_stats('../datasets/coco128_with_yaml.zip')
     Arguments
         path:           Path to data.yaml or data.zip (with data.yaml inside data.zip)
         autodownload:   Attempt to download dataset if not found locally
@@ -902,9 +902,10 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
     def unzip(path):
         # Unzip data.zip TODO: CONSTRAINT: path/to/abc.zip MUST unzip to 'path/to/abc/'
         if str(path).endswith('.zip'):  # path is data.zip
+            assert Path(path).is_file(), f'Error unzipping {path}, file not found'
             assert os.system(f'unzip -q {path} -d {path.parent}') == 0, f'Error unzipping {path}'
-            data_dir = path.with_suffix('')  # dataset directory
-            return True, str(data_dir), list(data_dir.rglob('*.yaml'))[0]  # zipped, data_dir, yaml_path
+            dir = path.with_suffix('')  # dataset directory
+            return True, str(dir), next(dir.rglob('*.yaml'))  # zipped, data_dir, yaml_path
         else:  # path is data.yaml
             return False, None, path
 

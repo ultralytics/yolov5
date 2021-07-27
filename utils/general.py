@@ -228,9 +228,11 @@ def check_dataset(data, autodownload=True):
     # Usage: https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128_with_yaml.zip
 
     # Download (optional)
+    unzip_dir = ''
     if isinstance(data, (str, Path)) and str(data).endswith('.zip'):  # i.e. gs://bucket/dir/coco128.zip
         download(data, dir='../datasets', unzip=True, delete=False, curl=False, threads=1)
-        data = next((Path('../datasets') / Path(data).stem).glob('*.yaml'))
+        data = next((Path('../datasets') / Path(data).stem).rglob('*.yaml'))
+        unzip_dir = data.parent
 
     # Read yaml (optional)
     if isinstance(data, (str, Path)):
@@ -238,15 +240,14 @@ def check_dataset(data, autodownload=True):
             data = yaml.safe_load(f)  # dictionary
 
     # Parse yaml
-    path = Path(data.get('path', ''))  # optional 'path' field
-    if path:
-        for k in 'train', 'val', 'test':
-            if data.get(k):  # prepend path
-                data[k] = str(path / data[k]) if isinstance(data[k], str) else [str(path / x) for x in data[k]]
+    path = unzip_dir or Path(data.get('path') or '')  # optional 'path' default to '.'
+    for k in 'train', 'val', 'test':
+        if data.get(k):  # prepend path
+            data[k] = str(path / data[k]) if isinstance(data[k], str) else [str(path / x) for x in data[k]]
 
     assert 'nc' in data, "Dataset 'nc' key missing."
     if 'names' not in data:
-        data['names'] = [str(i) for i in range(data['nc'])]  # assign class names if missing
+        data['names'] = [f'class{i}' for i in range(data['nc'])]  # assign class names if missing
     train, val, test, s = [data.get(x) for x in ('train', 'val', 'test', 'download')]
     if val:
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
