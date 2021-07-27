@@ -2,7 +2,6 @@ from pathlib import Path
 import sys
 import getpass
 import wandb
-from wandb.sdk.lib import apikey
 from wandb.errors import term
 from wandb.util import _is_databricks, isatty
 
@@ -71,8 +70,8 @@ def get_api_key():
     return key
 
 def setup_wandb():
-    key = apikey.api_key(settings=wandb.setup()._settings)
-    if key:
+    wandb.ensure_configured()
+    if wandb.api.api_key:
         return True
     choice = get_user_choice()
     if choice is not None and choice == 0:
