@@ -1,6 +1,6 @@
-# Copyright Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
+# YOLOv5 🚀 by Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
 # Argoverse-HD dataset (ring-front-center camera) http://www.cs.cmu.edu/~mengtial/proj/streaming/
-# YOLOv5 🚀 example usage: python train.py --data Argoverse_HD.yaml
+# Example usage: python train.py --data Argoverse_HD.yaml
 # parent
 # ├── yolov5
 # └── datasets
