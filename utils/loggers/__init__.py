@@ -57,7 +57,7 @@ class Loggers():
             assert 'wandb' in self.include and wandb
             run_id = torch.load(self.weights).get('wandb_id') if self.opt.resume else None
             self.opt.hyp = self.hyp  # add hyperparameters
-            self.wandb = WandbLogger(self.opt, s.stem, run_id, self.data_dict)
+            self.wandb = WandbLogger(self.opt, run_id, self.data_dict)
         except:
             self.wandb = None
 
