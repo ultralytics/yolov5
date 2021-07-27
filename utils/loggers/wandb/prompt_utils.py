@@ -68,7 +68,7 @@ def get_api_key():
         "Paste your W&B API Key from here: https://wandb.ai/authorize?signup=true"
     )
     key = getpass.getpass().strip()
-
+    return key
 
 def setup_wandb():
     key = apikey.api_key(settings=wandb.setup()._settings)
