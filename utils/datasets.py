@@ -913,7 +913,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
         data = yaml.safe_load(f)  # data dict
         if zipped:
             data['path'] = data_dir  # TODO: should this be dir.resolve()?
-    check_dataset(data, autodownload)  # download dataset if missing
+    data = check_dataset(data, autodownload)  # download dataset if missing
     nc = data['nc']  # number of classes
     stats = {'nc': nc, 'names': data['names']}  # statistics dictionary
     for split in 'train', 'val', 'test':
