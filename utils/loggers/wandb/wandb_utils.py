@@ -15,12 +15,11 @@ sys.path.append(FILE.parents[3].as_posix())  # add yolov5/ to path
 from utils.datasets import LoadImagesAndLabels
 from utils.datasets import img2label_paths
 from utils.general import check_dataset, check_file
+from utils.loggers.wandb.prompt_utils import setup_wandb
+import wandb
 
-try:
-    import wandb
-
-    assert hasattr(wandb, '__version__')  # verify package import not local dir
-except (ImportError, AssertionError):
+wandb_logged_in = setup_wandb()
+if not wandb_logged_in:
     wandb = None
 
 RANK = int(os.getenv('RANK', -1))
