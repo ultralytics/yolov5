@@ -23,7 +23,7 @@ def _get_model_framework_file(model, path):
     raise ValueError(f"Could not find a valid framework file for {path}")
 
 
-def check_load_sparsezoo_weights(path):
+def check_download_sparsezoo_weights(path):
     if isinstance(path, str):
         if path.startswith("zoo:"):
             # load model from the SparseZoo and override the path with the new download
@@ -36,7 +36,7 @@ def check_load_sparsezoo_weights(path):
     if not isinstance(path, list):
         raise ValueError(f"unknown type for path given: {path}")
 
-    return [check_load_sparsezoo_weights(p) for p in path]
+    return [check_download_sparsezoo_weights(p) for p in path]
 
 
 class SparseMLWrapper(object):

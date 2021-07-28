@@ -24,7 +24,7 @@ from models.yolo import Model
 from utils.activations import Hardswish, SiLU
 from utils.general import colorstr, check_img_size, check_requirements, file_size, set_logging
 from utils.google_utils import attempt_download
-from utils.sparse import SparseMLWrapper, check_load_sparsezoo_weights
+from utils.sparse import SparseMLWrapper, check_download_sparsezoo_weights
 from utils.torch_utils import select_device, intersect_dicts, is_parallel, torch_distributed_zero_first
 
 
@@ -48,7 +48,7 @@ def create_checkpoint(epoch, model, optimizer, ema, sparseml_wrapper, **kwargs):
 def load_checkpoint(type_, weights, device, cfg=None, hyp=None, nc=None, recipe=None, resume=None, rank=-1):
     with torch_distributed_zero_first(rank):
         attempt_download(weights)  # download if not found locally
-        check_load_sparsezoo_weights(weights)  # download from sparsezoo if zoo stub
+        check_download_sparsezoo_weights(weights)  # download from sparsezoo if zoo stub
     ckpt = torch.load(weights[0] if isinstance(weights, list) or isinstance(weights, tuple)
                       else weights, map_location=device)  # load checkpoint
     start_epoch = ckpt['epoch'] + 1 if 'epoch' in ckpt else 0
