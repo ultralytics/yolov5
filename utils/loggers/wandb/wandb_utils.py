@@ -149,14 +149,14 @@ class WandbLogger():
                 if not opt.resume:
                     if opt.upload_dataset:
                         self.wandb_artifact_data_dict = self.check_and_upload_dataset(opt)
-                
-                    elif opt.data.endswith('_wandb.yaml'): # When dataset is W&B artifact
+
+                    elif opt.data.endswith('_wandb.yaml'):  # When dataset is W&B artifact
                         with open(opt.data, encoding='ascii', errors='ignore') as f:
                             data_dict = yaml.safe_load(f)
                         self.data_dict = data_dict
-                    else: # Local .yaml dataset file or .zip file
+                    else:  # Local .yaml dataset file or .zip file
                         self.data_dict = check_dataset(opt.data)
-                    
+
                 self.setup_training(opt)
                 if not self.wandb_artifact_data_dict:
                     self.wandb_artifact_data_dict = self.data_dict
@@ -164,7 +164,7 @@ class WandbLogger():
                 if not opt.resume:
                     self.wandb_run.config.update({'data_dict': self.wandb_artifact_data_dict},
                                                  allow_val_change=True)
-                     
+
             if self.job_type == 'Dataset Creation':
                 self.data_dict = self.check_and_upload_dataset(opt)
 
@@ -179,7 +179,7 @@ class WandbLogger():
         Updated dataset info dictionary where local dataset paths are replaced by WAND_ARFACT_PREFIX links.
         """
         assert wandb, 'Install wandb to upload dataset'
-        config_path = self.log_dataset_artifact(opt.data ,
+        config_path = self.log_dataset_artifact(opt.data,
                                                 opt.single_cls,
                                                 'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
         print("Created dataset config file ", config_path)
@@ -216,7 +216,7 @@ class WandbLogger():
                                                                                            opt.artifact_alias)
             self.val_artifact_path, self.val_artifact = self.download_dataset_artifact(data_dict.get('val'),
                                                                                        opt.artifact_alias)
-        
+
         if self.train_artifact_path is not None:
             train_path = Path(self.train_artifact_path) / 'data/images/'
             data_dict['train'] = str(train_path)
