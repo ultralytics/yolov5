@@ -8,6 +8,7 @@ import argparse
 from copy import deepcopy
 import sys
 import time
+import os
 
 sys.path.append('./')  # to run '$ python *.py' files in subdirectories
 
@@ -198,8 +199,8 @@ if __name__ == '__main__':
             print(f'{prefix} starting export with onnx {onnx.__version__}...')
             f = opt.weights.replace('.pt', '.onnx')  # filename
             # export through SparseML so quantized and pruned graphs can be corrected
-            save_dir = '/'.join(f.split('/')[:-1])
-            save_name = f.split('/')[-1]
+            save_dir = os.path.join(f.split(os.path.sep)[:-1])
+            save_name = f.split(os.path.sep)[-1]
 
             # get the number of outputs so we know how to name and change dynamic axes
             # nested outputs can be returned if model is exported with dynamic
