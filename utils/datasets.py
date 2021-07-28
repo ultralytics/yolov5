@@ -884,11 +884,11 @@ def verify_image_label(args):
         return [None, None, None, None, nm, nf, ne, nc, msg]
 
 
-def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
+def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profile=False, hub=False):
     """ Return dataset statistics dictionary with images and instances counts per split per class
-    Usage1: from utils.datasets import *; dataset_stats('coco128.yaml', verbose=True)
-    Usage2: from utils.datasets import *; dataset_stats('../datasets/coco128.zip', verbose=True)
-    
+    To run in parent directory: export PYTHONPATH="$PWD/yolov5"
+    Usage1: from utils.datasets import *; dataset_stats('coco128.yaml', autodownload=True)
+    Usage2: from utils.datasets import *; dataset_stats('../datasets/coco128_with_yaml.zip')
     Arguments
         path:           Path to data.yaml or data.zip (with data.yaml inside data.zip)
         autodownload:   Attempt to download dataset if not found locally
@@ -897,16 +897,25 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
 
     def round_labels(labels):
         # Update labels to integer class and 6 decimal place floats
-        return [[int(c), *[round(x, 6) for x in points]] for c, *points in labels]
+        return [[int(c), *[round(x, 4) for x in points]] for c, *points in labels]
 
     def unzip(path):
         # Unzip data.zip TODO: CONSTRAINT: path/to/abc.zip MUST unzip to 'path/to/abc/'
         if str(path).endswith('.zip'):  # path is data.zip
+            assert Path(path).is_file(), f'Error unzipping {path}, file not found'
             assert os.system(f'unzip -q {path} -d {path.parent}') == 0, f'Error unzipping {path}'
-            data_dir = path.with_suffix('')  # dataset directory
-            return True, data_dir, list(data_dir.rglob('*.yaml'))[0]  # zipped, data_dir, yaml_path
+            dir = path.with_suffix('')  # dataset directory
+            return True, str(dir), next(dir.rglob('*.yaml'))  # zipped, data_dir, yaml_path
         else:  # path is data.yaml
             return False, None, path
+
+    def hub_ops(f, max_dim=1920):
+        # HUB ops for 1 image 'f'
+        im = Image.open(f)
+        r = max_dim / max(im.height, im.width)  # ratio
+        if r < 1.0:  # image too large
+            im = im.resize((int(im.width * r), int(im.height * r)))
+        im.save(im_dir / Path(f).name, quality=75)  # save
 
     zipped, data_dir, yaml_path = unzip(Path(path))
     with open(check_file(yaml_path), encoding='ascii', errors='ignore') as f:
@@ -914,18 +923,16 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
         if zipped:
             data['path'] = data_dir  # TODO: should this be dir.resolve()?
     check_dataset(data, autodownload)  # download dataset if missing
-    nc = data['nc']  # number of classes
-    stats = {'nc': nc, 'names': data['names']}  # statistics dictionary
+    hub_dir = Path(data['path'] + ('-hub' if hub else ''))
+    stats = {'nc': data['nc'], 'names': data['names']}  # statistics dictionary
     for split in 'train', 'val', 'test':
         if data.get(split) is None:
             stats[split] = None  # i.e. no test set
             continue
         x = []
-        dataset = LoadImagesAndLabels(data[split], augment=False, rect=True)  # load dataset
-        if split == 'train':
-            cache_path = Path(dataset.label_files[0]).parent.with_suffix('.cache')  # *.cache path
+        dataset = LoadImagesAndLabels(data[split])  # load dataset
         for label in tqdm(dataset.labels, total=dataset.n, desc='Statistics'):
-            x.append(np.bincount(label[:, 0].astype(int), minlength=nc))
+            x.append(np.bincount(label[:, 0].astype(int), minlength=data['nc']))
         x = np.array(x)  # shape(128x80)
         stats[split] = {'instance_stats': {'total': int(x.sum()), 'per_class': x.sum(0).tolist()},
                         'image_stats': {'total': dataset.n, 'unlabelled': int(np.all(x == 0, 1).sum()),
@@ -933,10 +940,37 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False):
                         'labels': [{str(Path(k).name): round_labels(v.tolist())} for k, v in
                                    zip(dataset.img_files, dataset.labels)]}
 
+        if hub:
+            im_dir = hub_dir / 'images'
+            im_dir.mkdir(parents=True, exist_ok=True)
+            for _ in tqdm(ThreadPool(NUM_THREADS).imap(hub_ops, dataset.img_files), total=dataset.n, desc='HUB Ops'):
+                pass
+
+    # Profile
+    stats_path = hub_dir / 'stats.json'
+    if profile:
+        for _ in range(1):
+            file = stats_path.with_suffix('.npy')
+            t1 = time.time()
+            np.save(file, stats)
+            t2 = time.time()
+            x = np.load(file, allow_pickle=True)
+            print(f'stats.npy times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
+
+            file = stats_path.with_suffix('.json')
+            t1 = time.time()
+            with open(file, 'w') as f:
+                json.dump(stats, f)  # save stats *.json
+            t2 = time.time()
+            with open(file, 'r') as f:
+                x = json.load(f)  # load hyps dict
+            print(f'stats.json times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
+
     # Save, print and return
-    with open(cache_path.with_suffix('.json'), 'w') as f:
-        json.dump(stats, f)  # save stats *.json
+    if hub:
+        print(f'Saving {stats_path.resolve()}...')
+        with open(stats_path, 'w') as f:
+            json.dump(stats, f)  # save stats.json
     if verbose:
         print(json.dumps(stats, indent=2, sort_keys=False))
-        # print(yaml.dump([stats], sort_keys=False, default_flow_style=False))
     return stats

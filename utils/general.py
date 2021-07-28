@@ -24,7 +24,7 @@ import torch
 import torchvision
 import yaml
 
-from utils.google_utils import gsutil_getsize
+from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
 from utils.torch_utils import init_torch_seeds
 
@@ -224,16 +224,30 @@ def check_file(file):
 
 
 def check_dataset(data, autodownload=True):
-    # Download dataset if not found locally
-    path = Path(data.get('path', ''))  # optional 'path' field
-    if path:
-        for k in 'train', 'val', 'test':
-            if data.get(k):  # prepend path
-                data[k] = str(path / data[k]) if isinstance(data[k], str) else [str(path / x) for x in data[k]]
+    # Download and/or unzip dataset if not found locally
+    # Usage: https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128_with_yaml.zip
+
+    # Download (optional)
+    extract_dir = ''
+    if isinstance(data, (str, Path)) and str(data).endswith('.zip'):  # i.e. gs://bucket/dir/coco128.zip
+        download(data, dir='../datasets', unzip=True, delete=False, curl=False, threads=1)
+        data = next((Path('../datasets') / Path(data).stem).rglob('*.yaml'))
+        extract_dir, autodownload = data.parent, False
+
+    # Read yaml (optional)
+    if isinstance(data, (str, Path)):
+        with open(data, encoding='ascii', errors='ignore') as f:
+            data = yaml.safe_load(f)  # dictionary
+
+    # Parse yaml
+    path = extract_dir or Path(data.get('path') or '')  # optional 'path' default to '.'
+    for k in 'train', 'val', 'test':
+        if data.get(k):  # prepend path
+            data[k] = str(path / data[k]) if isinstance(data[k], str) else [str(path / x) for x in data[k]]
 
     assert 'nc' in data, "Dataset 'nc' key missing."
     if 'names' not in data:
-        data['names'] = [str(i) for i in range(data['nc'])]  # assign class names if missing
+        data['names'] = [f'class{i}' for i in range(data['nc'])]  # assign class names if missing
     train, val, test, s = [data.get(x) for x in ('train', 'val', 'test', 'download')]
     if val:
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
@@ -256,13 +270,17 @@ def check_dataset(data, autodownload=True):
             else:
                 raise Exception('Dataset not found.')
 
+    return data  # dictionary
+
 
 def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
-    # Multi-threaded file download and unzip function
+    # Multi-threaded file download and unzip function, used in data.yaml for autodownload
     def download_one(url, dir):
         # Download 1 file
         f = dir / Path(url).name  # filename
-        if not f.exists():
+        if Path(url).is_file():  # exists in current path
+            Path(url).rename(f)  # move to dir
+        elif not f.exists():
             print(f'Downloading {url} to {f}...')
             if curl:
                 os.system(f"curl -L '{url}' -o '{f}' --retry 9 -C -")  # curl download, retry and resume on fail
@@ -286,7 +304,7 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
         pool.close()
         pool.join()
     else:
-        for u in tuple(url) if isinstance(url, str) else url:
+        for u in [url] if isinstance(url, (str, Path)) else url:
             download_one(u, dir)
 
 
