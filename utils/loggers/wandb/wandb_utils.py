@@ -3,9 +3,10 @@
 import logging
 import os
 import sys
-import yaml
 from contextlib import contextmanager
 from pathlib import Path
+
+import yaml
 from tqdm import tqdm
 
 FILE = Path(__file__).absolute()

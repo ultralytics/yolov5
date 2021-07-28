@@ -1,7 +1,8 @@
 # YOLOv5 experiment logging utils
-import torch
 import warnings
 from threading import Thread
+
+import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from utils.general import colorstr, emojis
