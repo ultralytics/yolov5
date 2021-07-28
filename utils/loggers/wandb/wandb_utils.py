@@ -164,7 +164,7 @@ class WandbLogger():
                 if not opt.resume:
                     self.wandb_run.config.update({'data_dict': self.wandb_artifact_data_dict},
                                                  allow_val_change=True)
-                    
+                     
             if self.job_type == 'Dataset Creation':
                 self.data_dict = self.check_and_upload_dataset(opt)
 
