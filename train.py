@@ -73,24 +73,29 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         yaml.safe_dump(hyp, f, sort_keys=False)
     with open(save_dir / 'opt.yaml', 'w') as f:
         yaml.safe_dump(vars(opt), f, sort_keys=False)
+    data_dict = None
+    
+    # Loggers
+    if RANK in [-1, 0]:
+        loggers = Loggers(save_dir, weights, opt, hyp, LOGGER).start()  # loggers dict
+        if loggers.wandb:
+            data_dict = loggers.wandb.data_dict
+            if resume:
+                weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp
 
+            
     # Config
     plots = not evolve  # create plots
     cuda = device.type != 'cpu'
     init_seeds(1 + RANK)
     with torch_distributed_zero_first(RANK):
-        data_dict = check_dataset(data)  # check
+        data_dict = data_dict or check_dataset(data)  # check if None
     train_path, val_path = data_dict['train'], data_dict['val']
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
     assert len(names) == nc, f'{len(names)} names found for nc={nc} dataset in {data}'  # check
     is_coco = data.endswith('coco.yaml') and nc == 80  # COCO dataset
 
-    # Loggers
-    if RANK in [-1, 0]:
-        loggers = Loggers(save_dir, weights, opt, hyp, data_dict, LOGGER).start()  # loggers dict
-        if loggers.wandb and resume:
-            weights, epochs, hyp, data_dict = opt.weights, opt.epochs, opt.hyp, loggers.wandb.data_dict
 
     # Model
     pretrained = weights.endswith('.pt')
