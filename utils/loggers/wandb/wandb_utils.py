@@ -153,8 +153,10 @@ class WandbLogger():
                         # Info useful for resuming from artifacts
                         self.wandb_run.config.update({'opt': vars(opt), 'data_dict': wandb_data_dict},
                                                  allow_val_change=True)
-                    else:
-                        self.data_dict = check_dataset(opt.data)
+                    elif opt.data.endswith('.yaml'):
+                        with open(opt.data, encoding='ascii', errors='ignore') as f:
+                            data_dict = yaml.safe_load(f)
+                        self.data_dict = data_dict
 
                 self.setup_training(opt)
             if self.job_type == 'Dataset Creation':
@@ -200,7 +202,9 @@ class WandbLogger():
                 opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs, opt.hyp = str(
                     self.weights), config.save_period, config.batch_size, config.bbox_interval, config.epochs, \
                                                                                                        config.opt['hyp']
-        data_dict = dict(self.wandb_run.config.data_dict)  # eliminates the need for config file to resume
+            data_dict = dict(self.wandb_run.config.data_dict)  # eliminates the need for config file to resume
+        else:
+            data_dict = self.data_dict
         if self.val_artifact is None:  # If --upload_dataset is set, use the existing artifact, don't download
             self.train_artifact_path, self.train_artifact = self.download_dataset_artifact(data_dict.get('train'),
                                                                                            opt.artifact_alias)
