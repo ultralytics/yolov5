@@ -1,7 +1,7 @@
 #!/bin/bash
-# Copyright Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
+# YOLOv5 🚀 by Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
 # Download COCO128 dataset https://www.kaggle.com/ultralytics/coco128 (first 128 images from COCO train2017)
-# YOLOv5 🚀 example usage: bash data/scripts/get_coco128.sh
+# Example usage: bash data/scripts/get_coco128.sh
 # parent
 # ├── yolov5
 # └── datasets

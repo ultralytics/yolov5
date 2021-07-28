@@ -90,7 +90,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     init_seeds(1 + RANK)
     with torch_distributed_zero_first(RANK):
         if not data_dict:
-            print("checking again")
             data_dict = check_dataset(data)  # check
     train_path, val_path = data_dict['train'], data_dict['val']
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
