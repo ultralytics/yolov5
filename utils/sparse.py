@@ -1,9 +1,42 @@
 import math
 
+from sparsezoo import Zoo
 from sparseml.pytorch.optim import ScheduledModifierManager
 from sparseml.pytorch.utils import SparsificationGroupLogger
 
 from utils.torch_utils import is_parallel
+
+
+def _get_model_framework_file(model, path):
+    transfer_request = 'recipe_type=transfer' in path
+    checkpoint_available = any([file.checkpoint for file in model.framework_files])
+    final_available = any([not file.checkpoint for file in model.framework_files])
+
+    if transfer_request and checkpoint_available:
+        # checkpoints are saved for transfer learning use cases,
+        # return checkpoint if avaiable and requested
+        return [file for file in model.framework_files if file.checkpoint][0]
+    elif final_available:
+        # default to returning final state, if available
+        return [file for file in model.framework_files if not file.checkpoint][0]
+
+    raise ValueError(f"Could not find a valid framework file for {path}")
+
+
+def check_load_sparsezoo_weights(path):
+    if isinstance(path, str):
+        if path.startswith("zoo:"):
+            # load model from the SparseZoo and override the path with the new download
+            model = Zoo.load_model_from_stub(path)
+            file = _get_model_framework_file(model, path)
+            path = file.downloaded_path()
+
+        return path
+
+    if not isinstance(path, list):
+        raise ValueError(f"unknown type for path given: {path}")
+
+    return [check_load_sparsezoo_weights(p) for p in path]
 
 
 class SparseMLWrapper(object):
