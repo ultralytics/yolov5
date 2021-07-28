@@ -325,7 +325,8 @@ class WandbLogger():
             data['train'] = WANDB_ARTIFACT_PREFIX + str(Path(project) / 'train')
         if data.get('val'):
             data['val'] = WANDB_ARTIFACT_PREFIX + str(Path(project) / 'val')
-        path = data_file if overwrite_config else '_wandb.'.join(data_file.rsplit('.', 1))  # updated data.yaml path
+        path = Path(data_file).stem
+        path = (path if overwrite_config else path + '_wandb') + '.yaml' # updated data.yaml path
         data.pop('download', None)
         data.pop('path', None)
         with open(path, 'w') as f:
