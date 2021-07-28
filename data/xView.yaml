@@ -1,7 +1,7 @@
-# Copyright Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
+# YOLOv5 🚀 by Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
 # xView 2018 dataset https://challenge.xviewdataset.org
 # --------  DOWNLOAD DATA MANUALLY from URL above and unzip to 'datasets/xView' before running train command!  --------
-# YOLOv5 🚀 example usage: python train.py --data xView.yaml
+# Example usage: python train.py --data xView.yaml
 # parent
 # ├── yolov5
 # └── datasets
