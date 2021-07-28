@@ -121,7 +121,7 @@ class WandbLogger():
         self.bbox_media_panel_images = []
         self.val_table_path_map = None
         self.max_imgs_to_log = 16
-        self.dataset_download_success = False
+        self.wandb_artifact_data_dict = None
         self.data_dict = None
         # It's more elegant to stick to 1 wandb.init call, but useful config data is overwritten in the WandbLogger's wandb.init call
         if isinstance(opt.resume, str):  # checks resume from artifact
@@ -149,16 +149,23 @@ class WandbLogger():
             if self.job_type == 'Training':
                 if not opt.resume:
                     if opt.upload_dataset:
-                        wandb_data_dict = self.check_and_upload_dataset(opt)
-                        # Info useful for resuming from artifacts
-                        self.wandb_run.config.update({'opt': vars(opt), 'data_dict': wandb_data_dict},
-                                                 allow_val_change=True)
-                    elif opt.data.endswith('.yaml'):
+                        self.wandb_artifact_data_dict = self.check_and_upload_dataset(opt)
+                
+                    elif opt.data.endswith('_wandb.yaml'): # When dataset is W&B artifact
                         with open(opt.data, encoding='ascii', errors='ignore') as f:
                             data_dict = yaml.safe_load(f)
                         self.data_dict = data_dict
-
+                    else: # Local .yaml dataset file or .zip file
+                        self.data_dict = check_dataset(opt.data)
+                    # We don't handle .zip datasets
+                    
                 self.setup_training(opt)
+                # write data_dict to config. useful for resuming from artifacts
+                if not self.wandb_artifact_data_dict:
+                    self.wandb_artifact_data_dict = self.data_dict
+                self.wandb_run.config.update({'data_dict': self.wandb_artifact_data_dict},
+                                                 allow_val_change=True)
+                
             if self.job_type == 'Dataset Creation':
                 self.data_dict = self.check_and_upload_dataset(opt)
 
@@ -201,7 +208,7 @@ class WandbLogger():
                 config = self.wandb_run.config
                 opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs, opt.hyp = str(
                     self.weights), config.save_period, config.batch_size, config.bbox_interval, config.epochs, \
-                                                                                                       config.opt['hyp']
+                                                                                                       config.hyp
             data_dict = dict(self.wandb_run.config.data_dict)  # eliminates the need for config file to resume
         else:
             data_dict = self.data_dict
