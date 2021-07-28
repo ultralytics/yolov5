@@ -17,6 +17,9 @@ def gsutil_getsize(url=''):
 
 
 def attempt_download(file, repo='ultralytics/yolov5'):
+    if not isinstance(file, str) or file.startswith("zoo:"):
+        return
+
     # Attempt file download if does not exist
     file = Path(str(file).strip().replace("'", ''))
 

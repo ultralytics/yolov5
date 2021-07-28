@@ -81,7 +81,7 @@ def train(hyp, opt, device, tb_writer=None):
     assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)  # check
 
     # Model
-    pretrained = weights.endswith('.pt') or weights.endswith('.pth')
+    pretrained = weights.endswith('.pt') or weights.endswith('.pth') or weights.startswith('zoo:')
     if pretrained:
         model, extras = load_checkpoint('train', weights, device, opt.cfg, hyp, nc, opt.recipe, opt.resume, rank)
         ckpt, state_dict, sparseml_wrapper = extras['ckpt'], extras['state_dict'], extras['sparseml_wrapper']
