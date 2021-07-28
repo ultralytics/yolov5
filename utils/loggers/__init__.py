@@ -1,5 +1,4 @@
 # YOLOv5 experiment logging utils
-import sys
 import warnings
 from threading import Thread
 
