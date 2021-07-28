@@ -1,6 +1,7 @@
 import sys
-import wandb
 from pathlib import Path
+
+import wandb
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[2].as_posix())  # add utils/ to path

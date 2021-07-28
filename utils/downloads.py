@@ -115,7 +115,6 @@ def get_token(cookie="./cookie"):
                 return line.split()[-1]
     return ""
 
-
 # Google utils: https://cloud.google.com/storage/docs/reference/libraries ----------------------------------------------
 #
 #

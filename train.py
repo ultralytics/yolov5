@@ -74,7 +74,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     with open(save_dir / 'opt.yaml', 'w') as f:
         yaml.safe_dump(vars(opt), f, sort_keys=False)
     data_dict = None
-    
+
     # Loggers
     if RANK in [-1, 0]:
         loggers = Loggers(save_dir, weights, opt, hyp, LOGGER).start()  # loggers dict
@@ -83,7 +83,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             if resume:
                 weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp
 
-            
     # Config
     plots = not evolve  # create plots
     cuda = device.type != 'cpu'
@@ -95,7 +94,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     names = ['item'] if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
     assert len(names) == nc, f'{len(names)} names found for nc={nc} dataset in {data}'  # check
     is_coco = data.endswith('coco.yaml') and nc == 80  # COCO dataset
-
 
     # Model
     pretrained = weights.endswith('.pt')
