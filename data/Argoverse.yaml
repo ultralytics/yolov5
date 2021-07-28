@@ -15,7 +15,7 @@ test: Argoverse-1.1/images/test/  # test images (optional) https://eval.ai/web/c
 
 # Classes
 nc: 8  # number of classes
-names: [ 'person',  'bicycle',  'car',  'motorcycle',  'bus',  'truck',  'traffic_light',  'stop_sign' ]  # class names
+names: ['person',  'bicycle',  'car',  'motorcycle',  'bus',  'truck',  'traffic_light',  'stop_sign']  # class names
 
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------

@@ -27,7 +27,7 @@ test: # test images (optional) 1276 images
 
 # Classes
 nc: 1  # number of classes
-names: [ 'wheat_head' ]  # class names
+names: ['wheat_head']  # class names
 
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
