@@ -108,7 +108,6 @@ class WandbLogger():
         arguments:
         opt (namespace) -- Commandline arguments for this run
         run_id (str) -- Run ID of W&B run to be resumed
-        data_dict (Dict) -- Dictionary conataining info about the dataset to be used
         job_type (str) -- To set the job_type for this run 
 
        """
