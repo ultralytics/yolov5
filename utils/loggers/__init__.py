@@ -48,7 +48,7 @@ class Loggers():
             self.tb = SummaryWriter(str(s))
  
         # W&B
-        if wandb:
+        if wandb and 'wandb' in self.include:
             wandb_artifact_resume = isinstance(self.opt.resume, str) and self.opt.resume.startswith('wandb-artifact://')
             run_id = torch.load(self.weights).get('wandb_id') if self.opt.resume and not wandb_artifact_resume else None
             self.opt.hyp = self.hyp  # add hyperparameters
