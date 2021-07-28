@@ -1,8 +1,7 @@
 # YOLOv5 experiment logging utils
+import torch
 import warnings
 from threading import Thread
-
-import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from utils.general import colorstr, emojis
@@ -14,6 +13,7 @@ LOGGERS = ('csv', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
 
 try:
     import wandb
+
     assert hasattr(wandb, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
     wandb = None
