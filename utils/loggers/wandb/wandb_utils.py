@@ -158,11 +158,12 @@ class WandbLogger():
                         self.data_dict = check_dataset(opt.data)
 
                 self.setup_training(opt)
-                # write data_dict to config. useful for resuming from artifacts
                 if not self.wandb_artifact_data_dict:
                     self.wandb_artifact_data_dict = self.data_dict
-                self.wandb_run.config.update({'data_dict': self.wandb_artifact_data_dict},
-                                             allow_val_change=True)
+                # write data_dict to config. useful for resuming from artifacts. Do this only when not resuming.
+                if not opt.resume:
+                    self.wandb_run.config.update({'data_dict': self.wandb_artifact_data_dict},
+                                                 allow_val_change=True)
 
             if self.job_type == 'Dataset Creation':
                 self.data_dict = self.check_and_upload_dataset(opt)
