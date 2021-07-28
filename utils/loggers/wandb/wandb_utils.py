@@ -3,10 +3,9 @@
 import logging
 import os
 import sys
+import yaml
 from contextlib import contextmanager
 from pathlib import Path
-
-import yaml
 from tqdm import tqdm
 
 FILE = Path(__file__).absolute()
@@ -165,7 +164,7 @@ class WandbLogger():
                 if not opt.resume:
                     self.wandb_run.config.update({'data_dict': self.wandb_artifact_data_dict},
                                                  allow_val_change=True)
-                
+                    
             if self.job_type == 'Dataset Creation':
                 self.data_dict = self.check_and_upload_dataset(opt)
 
@@ -327,7 +326,7 @@ class WandbLogger():
         if data.get('val'):
             data['val'] = WANDB_ARTIFACT_PREFIX + str(Path(project) / 'val')
         path = Path(data_file).stem
-        path = (path if overwrite_config else path + '_wandb') + '.yaml' # updated data.yaml path
+        path = (path if overwrite_config else path + '_wandb') + '.yaml'  # updated data.yaml path
         data.pop('download', None)
         data.pop('path', None)
         with open(path, 'w') as f:
