@@ -15,7 +15,6 @@ LOGGERS = ('csv', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
 
 try:
     import wandb
-
     assert hasattr(wandb, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
     wandb = None
@@ -37,9 +36,7 @@ class Loggers():
         self.csv = True  # always log to csv
 
         # Message
-        try:
-            import wandb
-        except ImportError:
+        if not wandb:
             prefix = colorstr('Weights & Biases: ')
             s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs (RECOMMENDED)"
             print(emojis(s))
