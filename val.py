@@ -123,9 +123,7 @@ def run(data,
         #     model = nn.DataParallel(model)
 
         # Data
-        with open(data, encoding='ascii', errors='ignore') as f:
-            data = yaml.safe_load(f)
-        check_dataset(data)  # check
+        data = check_dataset(data)  # check
 
     # Half
     half &= device.type != 'cpu'  # half precision only supported on CUDA

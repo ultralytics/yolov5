@@ -100,7 +100,7 @@ class WandbLogger():
     """
 
     def __init__(self, opt, run_id, data_dict, job_type='Training'):
-        '''
+        """
         - Initialize WandbLogger instance
         - Upload dataset if opt.upload_dataset is True
         - Setup trainig processes if job_type is 'Training'
@@ -111,7 +111,7 @@ class WandbLogger():
         data_dict (Dict) -- Dictionary conataining info about the dataset to be used
         job_type (str) -- To set the job_type for this run 
 
-       '''
+       """
         # Pre-training routine --
         self.job_type = job_type
         self.wandb, self.wandb_run = wandb, None if not wandb else wandb.run
@@ -157,7 +157,7 @@ class WandbLogger():
                 self.data_dict = self.check_and_upload_dataset(opt)
 
     def check_and_upload_dataset(self, opt):
-        '''
+        """
         Check if the dataset format is compatible and upload it as W&B artifact
         
         arguments:
@@ -165,7 +165,7 @@ class WandbLogger():
         
         returns:
         Updated dataset info dictionary where local dataset paths are replaced by WAND_ARFACT_PREFIX links.
-        '''
+        """
         assert wandb, 'Install wandb to upload dataset'
         config_path = self.log_dataset_artifact(check_file(opt.data),
                                                 opt.single_cls,
@@ -176,7 +176,7 @@ class WandbLogger():
         return wandb_data_dict
 
     def setup_training(self, opt, data_dict):
-        '''
+        """
         Setup the necessary processes for training YOLO models:
           - Attempt to download model checkpoint and dataset artifacts if opt.resume stats with WANDB_ARTIFACT_PREFIX
           - Update data_dict, to contain info of previous run if resumed and the paths of dataset artifact if downloaded
@@ -188,7 +188,7 @@ class WandbLogger():
         
         returns:
         data_dict (Dict) -- contains the updated info about the dataset to be used for training
-        '''
+        """
         self.log_dict, self.current_epoch = {}, 0
         self.bbox_interval = opt.bbox_interval
         if isinstance(opt.resume, str):
@@ -224,7 +224,7 @@ class WandbLogger():
         return data_dict
 
     def download_dataset_artifact(self, path, alias):
-        '''
+        """
         download the model checkpoint artifact if the path starts with WANDB_ARTIFACT_PREFIX
         
         arguments:
@@ -234,7 +234,7 @@ class WandbLogger():
         returns:
         (str, wandb.Artifact) -- path of the downladed dataset and it's corresponding artifact object if dataset
         is found otherwise returns (None, None)
-        '''
+        """
         if isinstance(path, str) and path.startswith(WANDB_ARTIFACT_PREFIX):
             artifact_path = Path(remove_prefix(path, WANDB_ARTIFACT_PREFIX) + ":" + alias)
             dataset_artifact = wandb.use_artifact(artifact_path.as_posix().replace("\\", "/"))
@@ -244,12 +244,12 @@ class WandbLogger():
         return None, None
 
     def download_model_artifact(self, opt):
-        '''
+        """
         download the model checkpoint artifact if the resume path starts with WANDB_ARTIFACT_PREFIX
         
         arguments:
         opt (namespace) -- Commandline arguments for this run
-        '''
+        """
         if opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
             model_artifact = wandb.use_artifact(remove_prefix(opt.resume, WANDB_ARTIFACT_PREFIX) + ":latest")
             assert model_artifact is not None, 'Error: W&B model artifact doesn\'t exist'
@@ -262,7 +262,7 @@ class WandbLogger():
         return None, None
 
     def log_model(self, path, opt, epoch, fitness_score, best_model=False):
-        '''
+        """
         Log the model checkpoint as W&B artifact
         
         arguments:
@@ -271,7 +271,7 @@ class WandbLogger():
         epoch (int)  -- Current epoch number
         fitness_score (float) -- fitness score for current epoch 
         best_model (boolean) -- Boolean representing if the current checkpoint is the best yet.
-        '''
+        """
         model_artifact = wandb.Artifact('run_' + wandb.run.id + '_model', type='model', metadata={
             'original_url': str(path),
             'epochs_trained': epoch + 1,
@@ -286,7 +286,7 @@ class WandbLogger():
         print("Saving model artifact on epoch ", epoch + 1)
 
     def log_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False):
-        '''
+        """
         Log the dataset as W&B artifact and return the new data file with W&B links
         
         arguments:
@@ -298,10 +298,8 @@ class WandbLogger():
         
         returns:
         the new .yaml file with artifact links. it can be used to start training directly from artifacts
-        '''
-        with open(data_file, encoding='ascii', errors='ignore') as f:
-            data = yaml.safe_load(f)  # data dict
-        check_dataset(data)
+        """
+        data = check_dataset(data_file)  # parse and check
         nc, names = (1, ['item']) if single_cls else (int(data['nc']), data['names'])
         names = {k: v for k, v in enumerate(names)}  # to index dictionary
         self.train_artifact = self.create_dataset_table(LoadImagesAndLabels(
@@ -330,17 +328,17 @@ class WandbLogger():
         return path
 
     def map_val_table_path(self):
-        '''
+        """
         Map the validation dataset Table like name of file -> it's id in the W&B Table.
         Useful for - referencing artifacts for evaluation.
-        '''
+        """
         self.val_table_path_map = {}
         print("Mapping dataset")
         for i, data in enumerate(tqdm(self.val_table.data)):
             self.val_table_path_map[data[3]] = data[0]
 
     def create_dataset_table(self, dataset, class_to_id, name='dataset'):
-        '''
+        """
         Create and return W&B artifact containing W&B Table of the dataset.
         
         arguments:
@@ -350,7 +348,7 @@ class WandbLogger():
         
         returns:
         dataset artifact to be logged or used
-        '''
+        """
         # TODO: Explore multiprocessing to slpit this loop parallely| This is essential for speeding up the the logging
         artifact = wandb.Artifact(name=name, type="dataset")
         img_files = tqdm([dataset.path]) if isinstance(dataset.path, str) and Path(dataset.path).is_dir() else None
@@ -382,14 +380,14 @@ class WandbLogger():
         return artifact
 
     def log_training_progress(self, predn, path, names):
-        '''
+        """
         Build evaluation Table. Uses reference from validation dataset table.
         
         arguments:
         predn (list): list of predictions in the native space in the format - [xmin, ymin, xmax, ymax, confidence, class]
         path (str): local path of the current evaluation image 
         names (dict(int, str)): hash map that maps class ids to labels
-        '''
+        """
         class_set = wandb.Classes([{'id': id, 'name': name} for id, name in names.items()])
         box_data = []
         total_conf = 0
@@ -412,17 +410,17 @@ class WandbLogger():
                                    )
 
     def val_one_image(self, pred, predn, path, names, im):
-        '''
+        """
         Log validation data for one image. updates the result Table if validation dataset is uploaded and log bbox media panel
         
         arguments:
         pred (list): list of scaled predictions in the format - [xmin, ymin, xmax, ymax, confidence, class]
         predn (list): list of predictions in the native space - [xmin, ymin, xmax, ymax, confidence, class]
         path (str): local path of the current evaluation image 
-        '''
+        """
         if self.val_table and self.result_table:  # Log Table if Val dataset is uploaded as artifact
             self.log_training_progress(predn, path, names)
-        
+
         if len(self.bbox_media_panel_images) < self.max_imgs_to_log and self.current_epoch > 0:
             if self.current_epoch % self.bbox_interval == 0:
                 box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
@@ -434,23 +432,23 @@ class WandbLogger():
                 self.bbox_media_panel_images.append(wandb.Image(im, boxes=boxes, caption=path.name))
 
     def log(self, log_dict):
-        '''
+        """
         save the metrics to the logging dictionary
         
         arguments:
         log_dict (Dict) -- metrics/media to be logged in current step
-        '''
+        """
         if self.wandb_run:
             for key, value in log_dict.items():
                 self.log_dict[key] = value
 
     def end_epoch(self, best_result=False):
-        '''
+        """
         commit the log_dict, model artifacts and Tables to W&B and flush the log_dict.
         
         arguments:
         best_result (boolean): Boolean representing if the result of this evaluation is best or not
-        '''
+        """
         if self.wandb_run:
             with all_logging_disabled():
                 if self.bbox_media_panel_images:
@@ -468,9 +466,9 @@ class WandbLogger():
                 self.result_artifact = wandb.Artifact("run_" + wandb.run.id + "_progress", "evaluation")
 
     def finish_run(self):
-        '''
+        """
         Log metrics if any and finish the current W&B run
-        '''
+        """
         if self.wandb_run:
             if self.log_dict:
                 with all_logging_disabled():
