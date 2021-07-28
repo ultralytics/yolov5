@@ -50,7 +50,7 @@ def create_checkpoint(epoch, model, optimizer, ema, sparseml_wrapper, **kwargs):
 def load_checkpoint(type_, weights, device, cfg=None, hyp=None, nc=None, recipe=None, resume=None, rank=-1):
     with torch_distributed_zero_first(rank):
         attempt_download(weights)  # download if not found locally
-        check_download_sparsezoo_weights(weights)  # download from sparsezoo if zoo stub
+        weights = check_download_sparsezoo_weights(weights)  # download from sparsezoo if zoo stub
     ckpt = torch.load(weights[0] if isinstance(weights, list) or isinstance(weights, tuple)
                       else weights, map_location=device)  # load checkpoint
     start_epoch = ckpt['epoch'] + 1 if 'epoch' in ckpt else 0
