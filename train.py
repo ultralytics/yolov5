@@ -451,7 +451,7 @@ def main(opt):
     if RANK in [-1, 0]:
         print(colorstr('train: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
         check_git_status()
-        check_requirements(exclude=['thop'])
+        check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=['thop'])
 
     # Resume
     if opt.resume and not check_wandb_resume(opt):  # resume an interrupted run
