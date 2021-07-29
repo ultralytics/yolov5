@@ -13,7 +13,6 @@ from threading import Thread
 
 import numpy as np
 import torch
-import yaml
 from tqdm import tqdm
 
 FILE = Path(__file__).absolute()

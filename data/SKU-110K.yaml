@@ -15,7 +15,7 @@ test: test.txt  # test images (optional)  2936 images
 
 # Classes
 nc: 1  # number of classes
-names: [ 'object' ]  # class names
+names: ['object']  # class names
 
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------

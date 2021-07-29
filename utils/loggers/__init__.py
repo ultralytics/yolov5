@@ -1,5 +1,4 @@
 # YOLOv5 experiment logging utils
-
 import warnings
 from threading import Thread
 
@@ -23,12 +22,11 @@ except (ImportError, AssertionError):
 
 class Loggers():
     # YOLOv5 Loggers class
-    def __init__(self, save_dir=None, weights=None, opt=None, hyp=None, data_dict=None, logger=None, include=LOGGERS):
+    def __init__(self, save_dir=None, weights=None, opt=None, hyp=None, logger=None, include=LOGGERS):
         self.save_dir = save_dir
         self.weights = weights
         self.opt = opt
         self.hyp = hyp
-        self.data_dict = data_dict
         self.logger = logger  # for printing results to console
         self.include = include
         for k in LOGGERS:
@@ -38,9 +36,7 @@ class Loggers():
         self.csv = True  # always log to csv
 
         # Message
-        try:
-            import wandb
-        except ImportError:
+        if not wandb:
             prefix = colorstr('Weights & Biases: ')
             s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs (RECOMMENDED)"
             print(emojis(s))
@@ -53,12 +49,12 @@ class Loggers():
             self.tb = SummaryWriter(str(s))
 
         # W&B
-        try:
-            assert 'wandb' in self.include and wandb
-            run_id = torch.load(self.weights).get('wandb_id') if self.opt.resume else None
+        if wandb and 'wandb' in self.include:
+            wandb_artifact_resume = isinstance(self.opt.resume, str) and self.opt.resume.startswith('wandb-artifact://')
+            run_id = torch.load(self.weights).get('wandb_id') if self.opt.resume and not wandb_artifact_resume else None
             self.opt.hyp = self.hyp  # add hyperparameters
-            self.wandb = WandbLogger(self.opt, run_id, self.data_dict)
-        except:
+            self.wandb = WandbLogger(self.opt, run_id)
+        else:
             self.wandb = None
 
         return self
