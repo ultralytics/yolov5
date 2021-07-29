@@ -56,6 +56,17 @@ class timeout(contextlib.ContextDecorator):
             return True
 
 
+def try_except(func):
+    # try-except function. Usage: @try_except decorator
+    def handler(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception as e:
+            print(e)
+
+    return handler
+
+
 def set_logging(rank=-1, verbose=True):
     logging.basicConfig(
         format="%(message)s",
@@ -114,26 +125,25 @@ def check_online():
         return False
 
 
-def check_git_status(err_msg=', for updates see https://github.com/ultralytics/yolov5'):
+@try_except
+def check_git_status():
     # Recommend 'git pull' if code is out of date
+    msg = ', for updates see https://github.com/ultralytics/yolov5'
     print(colorstr('github: '), end='')
-    try:
-        assert Path('.git').exists(), 'skipping check (not a git repository)'
-        assert not is_docker(), 'skipping check (Docker image)'
-        assert check_online(), 'skipping check (offline)'
+    assert Path('.git').exists(), 'skipping check (not a git repository)' + msg
+    assert not is_docker(), 'skipping check (Docker image)' + msg
+    assert check_online(), 'skipping check (offline)' + msg
 
-        cmd = 'git fetch && git config --get remote.origin.url'
-        url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
-        branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
-        n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
-        if n > 0:
-            s = f"⚠️ WARNING: code is out of date by {n} commit{'s' * (n > 1)}. " \
-                f"Use 'git pull' to update or 'git clone {url}' to download latest."
-        else:
-            s = f'up to date with {url} ✅'
-        print(emojis(s))  # emoji-safe
-    except Exception as e:
-        print(f'{e}{err_msg}')
+    cmd = 'git fetch && git config --get remote.origin.url'
+    url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
+    branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
+    n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
+    if n > 0:
+        s = f"⚠️ WARNING: code is out of date by {n} commit{'s' * (n > 1)}. " \
+            f"Use 'git pull' to update or 'git clone {url}' to download latest."
+    else:
+        s = f'up to date with {url} ✅'
+    print(emojis(s))  # emoji-safe
 
 
 def check_python(minimum='3.6.2'):
@@ -148,15 +158,14 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
     assert result, f'{name}{minimum} required by YOLOv5, but {name}{current} is currently installed'
 
 
+@try_except
 def check_requirements(requirements='requirements.txt', exclude=()):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
     prefix = colorstr('red', 'bold', 'requirements:')
     check_python()  # check python version
     if isinstance(requirements, (str, Path)):  # requirements.txt file
         file = Path(requirements)
-        if not file.exists():
-            print(f"{prefix} {file.resolve()} not found, check failed.")
-            return
+        assert file.exists(), f"{prefix} {file.resolve()} not found, check failed."
         requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(file.open()) if x.name not in exclude]
     else:  # list or tuple of packages
         requirements = [x for x in requirements if x not in exclude]
@@ -178,7 +187,7 @@ def check_requirements(requirements='requirements.txt', exclude=()):
         source = file.resolve() if 'file' in locals() else requirements
         s = f"{prefix} {n} package{'s' * (n > 1)} updated per {source}\n" \
             f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
-        print(emojis(s))  # emoji-safe
+        print(emojis(s))
 
 
 def check_img_size(img_size, s=32, floor=0):
