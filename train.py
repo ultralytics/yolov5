@@ -43,6 +43,8 @@ from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.metrics import fitness
 from utils.loggers import Loggers
 
+from utils import callbacks
+
 LOGGER = logging.getLogger(__name__)
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -52,6 +54,7 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           opt,
           device,
+          callbacks
           ):
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
@@ -330,6 +333,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 pbar.set_description(('%10s' * 2 + '%10.4g' * 5) % (
                     f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
                 loggers.on_train_batch_end(ni, model, imgs, targets, paths, plots)
+                callbacks.on_train_batch_end(ni, model, imgs, targets, paths, plots)
 
             # end batch ------------------------------------------------------------------------------------------------
 
@@ -340,6 +344,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         if RANK in [-1, 0]:
             # mAP
             loggers.on_train_epoch_end(epoch)
+            callbacks.on_train_epoch_end(epoch)
+
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
             if not noval or final_epoch:  # Calculate mAP
@@ -361,6 +367,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             if fi > best_fitness:
                 best_fitness = fi
             loggers.on_train_val_end(mloss, results, lr, epoch, best_fitness, fi)
+            callbacks.on_val_end(mloss, results, lr, epoch, best_fitness, fi)
 
             # Save model
             if (not nosave) or (final_epoch and not evolve):  # if save
@@ -378,6 +385,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                     torch.save(ckpt, best)
                 del ckpt
                 loggers.on_model_save(last, epoch, final_epoch, best_fitness, fi)
+                callbacks.on_model_save(last, epoch, final_epoch, best_fitness, fi)
 
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training -----------------------------------------------------------------------------------------------------
@@ -401,6 +409,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 if f.exists():
                     strip_optimizer(f)  # strip optimizers
         loggers.on_train_end(last, best, plots)
+        callbacks.on_train_end(last, best, plots)
 
     torch.cuda.empty_cache()
     return results
@@ -446,7 +455,11 @@ def parse_opt(known=False):
     return opt
 
 
-def main(opt):
+def main(opt, callback_handler = None):
+
+    # Define new hook handler if one is not passed in
+    if not callback_handler: callback_handler = callbacks.Callbacks()
+
     set_logging(RANK)
     if RANK in [-1, 0]:
         print(colorstr('train: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
@@ -482,7 +495,7 @@ def main(opt):
 
     # Train
     if not opt.evolve:
-        train(opt.hyp, opt, device)
+        train(opt.hyp, opt, device, callback_handler)
         if WORLD_SIZE > 1 and RANK == 0:
             _ = [print('Destroying process group... ', end=''), dist.destroy_process_group(), print('Done.')]
 
@@ -562,7 +575,7 @@ def main(opt):
                 hyp[k] = round(hyp[k], 5)  # significant digits
 
             # Train mutation
-            results = train(hyp.copy(), opt, device)
+            results = train(hyp.copy(), opt, device, callback_handler)
 
             # Write mutation results
             print_mutation(hyp.copy(), results, yaml_file, opt.bucket)
