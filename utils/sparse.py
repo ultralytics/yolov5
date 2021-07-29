@@ -33,10 +33,10 @@ def check_download_sparsezoo_weights(path):
 
         return path
 
-    if not isinstance(path, list):
-        raise ValueError(f"unknown type for path given: {path}")
+    if isinstance(path, list):
+        return [check_download_sparsezoo_weights(p) for p in path]
 
-    return [check_download_sparsezoo_weights(p) for p in path]
+    return path
 
 
 class SparseMLWrapper(object):
