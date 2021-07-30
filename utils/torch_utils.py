@@ -125,7 +125,7 @@ def profile(x, ops, n=100, device=None):
             y = m(x)
             t[1] = time_sync()
             try:
-                _ = y.sum().backward()
+                _ = [y.sum().backward() for y in y] if isinstance(y, list) else y.sum().backward()
                 t[2] = time_sync()
             except:  # no backward method
                 t[2] = float('nan')
