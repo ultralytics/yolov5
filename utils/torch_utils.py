@@ -107,6 +107,7 @@ def profile(input, ops, n=10, device=None):
     #     m2 = nn.SiLU()
     #     profile(input, [m1, m2], n=100)  # profile over 100 iterations
 
+    results = []
     device = device or select_device()
     print(f"{'Params':>12s}{'GFLOPs':>12s}{'GPU_mem (GB)':>14s}{'forward (ms)':>14s}{'backward (ms)':>14s}"
           f"{'input':>24s}{'output':>24s}")
@@ -141,9 +142,12 @@ def profile(input, ops, n=10, device=None):
                 s_out = tuple(y.shape) if isinstance(y, torch.Tensor) else 'list'
                 p = sum(list(x.numel() for x in m.parameters())) if isinstance(m, nn.Module) else 0  # parameters
                 print(f'{p:12}{flops:12.4g}{mem:>14.3f}{tf:14.4g}{tb:14.4g}{str(s_in):>24s}{str(s_out):>24s}')
+                results.append([p, flops, mem, tf, tb, s_in, s_out])
             except Exception as e:
                 print(e)
+                results.append(None)
             torch.cuda.empty_cache()
+    return results
 
 
 def is_parallel(model):
