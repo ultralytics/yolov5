@@ -78,7 +78,7 @@ def setup_wandb():
         wandb.login(key=key)
         return True
     else:
-        print("W&B Disabled")
+        wandb.termlog("W&B Disabled")
         return False
 
 
