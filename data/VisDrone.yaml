@@ -15,7 +15,7 @@ test: VisDrone2019-DET-test-dev/images  # test images (optional)  1610 images
 
 # Classes
 nc: 10  # number of classes
-names: [ 'pedestrian', 'people', 'bicycle', 'car', 'van', 'truck', 'tricycle', 'awning-tricycle', 'bus', 'motor' ]
+names: ['pedestrian', 'people', 'bicycle', 'car', 'van', 'truck', 'tricycle', 'awning-tricycle', 'bus', 'motor']
 
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------

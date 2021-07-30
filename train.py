@@ -74,7 +74,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     with open(save_dir / 'opt.yaml', 'w') as f:
         yaml.safe_dump(vars(opt), f, sort_keys=False)
     data_dict = None
-    
+
     # Loggers
     if RANK in [-1, 0]:
         loggers = Loggers(save_dir, weights, opt, hyp, LOGGER).start()  # loggers dict
@@ -83,7 +83,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             if resume:
                 weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp
 
-            
     # Config
     plots = not evolve  # create plots
     cuda = device.type != 'cpu'
@@ -95,7 +94,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     names = ['item'] if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
     assert len(names) == nc, f'{len(names)} names found for nc={nc} dataset in {data}'  # check
     is_coco = data.endswith('coco.yaml') and nc == 80  # COCO dataset
-
 
     # Model
     pretrained = weights.endswith('.pt')
@@ -130,9 +128,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     for v in model.modules():
         if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):  # bias
             g2.append(v.bias)
-        if isinstance(v, nn.BatchNorm2d):  # weight with decay
+        if isinstance(v, nn.BatchNorm2d):  # weight (no decay)
             g0.append(v.weight)
-        elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):  # weight without decay
+        elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):  # weight (with decay)
             g1.append(v.weight)
 
     if opt.adam:
@@ -453,7 +451,7 @@ def main(opt):
     if RANK in [-1, 0]:
         print(colorstr('train: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
         check_git_status()
-        check_requirements(exclude=['thop'])
+        check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=['thop'])
 
     # Resume
     if opt.resume and not check_wandb_resume(opt):  # resume an interrupted run

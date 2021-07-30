@@ -1,6 +1,7 @@
 # YOLOv5 common modules
 
 import logging
+import warnings
 from copy import copy
 from pathlib import Path
 
@@ -158,7 +159,9 @@ class SPP(nn.Module):
 
     def forward(self, x):
         x = self.cv1(x)
-        return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')  # suppress torch 1.9.0 max_pool2d() warning
+            return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
 
 
 class Focus(nn.Module):

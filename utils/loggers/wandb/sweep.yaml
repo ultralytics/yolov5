@@ -25,9 +25,9 @@ parameters:
   data:
     value: "data/coco128.yaml"
   batch_size:
-    values: [ 64 ]
+    values: [64]
   epochs:
-    values: [ 10 ]
+    values: [10]
 
   lr0:
     distribution: uniform
