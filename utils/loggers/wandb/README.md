@@ -4,7 +4,7 @@
  * [Viewing runs](#viewing-runs)
  * [Advanced Usage: Dasaset and Model Management](#advanced-usage)
  * [Reports: Share your work with the world!](#reports)
- 
+
 ## About Weights & Biases
 Think of [W&B](https://wandb.ai/site?utm_campaign=repo_yolo_wandbtutorial) like GitHub for machine learning models. With a few lines of code, save everything you need to debug, compare and reproduce your models — architecture, hyperparameters, git commits, model weights, GPU usage, and even datasets and predictions.
   
@@ -17,8 +17,9 @@ Think of [W&B](https://wandb.ai/site?utm_campaign=repo_yolo_wandbtutorial) like 
  * [Optimize hyperparameters](https://docs.wandb.com/sweeps) efficiently
  * [Track](https://docs.wandb.com/artifacts) datasets, pipelines, and production models
  
+ ## First-Time Setup
 <details open>
-<summary>## First-Time Setup</summary>
+ <summary> Toggle Details </summary>
 When you first train, W&B will prompt you to create a new account and will generate an **API key** for you. If you are an existing user you can retrieve your key from https://wandb.ai/authorize. This key is used to tell W&B where to log your data. You only need to supply your key once, and then it is remembered on the same device.
  
  W&B will create a cloud **project** (default is 'YOLOv5') for your training runs, and each new training run will be provided a unique run **name** within that project as project/name. You can also manually set your project and run name as:
@@ -30,9 +31,10 @@ When you first train, W&B will prompt you to create a new account and will gener
  <img alt="" width="800" src="https://user-images.githubusercontent.com/26833433/98183367-4acbc600-1f08-11eb-9a23-7266a4192355.jpg">
  </details>
  
+## Viewing Runs
 <details open>
-<summary> ## Viewing Runs </summary>
- Run information streams from your environment to the W&B cloud console as you train. This allows you to monitor and even cancel runs in **realtime**. All important information is logged:
+  <summary> Toggle Details </summary>
+ Run information streams from your environment to the W&B cloud console as you train. This allows you to monitor and even cancel runs in <b>realtime</b> . All important information is logged:
  
  * Training & Validation losses
  * Metrics: Precision, Recall, mAP@0.5, mAP@0.5:0.95
@@ -45,8 +47,22 @@ When you first train, W&B will prompt you to create a new account and will gener
  
  <img alt="" width="800" src="https://user-images.githubusercontent.com/26833433/98184457-bd3da580-1f0a-11eb-8461-95d908a71893.jpg">
 </details>
-<details>
-<summary> ## Advanced Usage: Dasaset and Model Management</summary>
+
+## Advanced Usage: Dasaset and Model Management
+You can leverage W&B artifacts and Tables integration to easily visualize and manage your datasets, models and training evaluations. Here are some quick examples to get you started.
+<details open>
+ <h3>1. Visualize and Version Datasets</h3>
+ Log, visualize, dynamically query, and understand your data with <a href='https://docs.wandb.ai/guides/data-vis/tables'>W&B Tables</a>. You can use the following command to log your dataset as a W&B Table. This will generate a <code>{dataset}_wandb.yaml</code> file which can be used to train from dataset artifact.
+ <details>
+  <summary> <b>Usage</b> </summary>
+  <code>
+ $ python utils/logger/wandb/log_dataset.py --project ... --name ... --data ..
+  </code>
+ </details>
+  
+
+ <summary> Toggle Details </summary>
+
 
 </details>
  ## Reports
