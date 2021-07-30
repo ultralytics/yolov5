@@ -108,7 +108,7 @@ def profile(x, ops, n=100, device=None):
     device = device or select_device()
     x = x.to(device)
     x.requires_grad = True
-    print(f"{'Params':>12s}{'GFLOPs':>12s}{'GPU Memory':>12s}{'forward (ms)':>14s}{'backward (ms)':>14s}"
+    print(f"{'Params':>12s}{'GFLOPs':>12s}{'GPU_memory':>12s}{'forward (ms)':>14s}{'backward (ms)':>14s}"
           f"{'input':>24s}{'output':>24s}")
     for m in ops if isinstance(ops, list) else [ops]:
         torch.cuda.empty_cache()
@@ -132,7 +132,7 @@ def profile(x, ops, n=100, device=None):
             tf += (t[1] - t[0]) * 1000 / n  # ms per op forward
             tb += (t[2] - t[1]) * 1000 / n  # ms per op backward
 
-        mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
+        mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3f}G'  # (GB)
         s_in = tuple(x.shape) if isinstance(x, torch.Tensor) else 'list'
         s_out = tuple(y.shape) if isinstance(y, torch.Tensor) else 'list'
         p = sum(list(x.numel() for x in m.parameters())) if isinstance(m, nn.Module) else 0  # parameters
