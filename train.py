@@ -111,7 +111,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         model = Model(cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
 
     # Freeze
-    freeze = ['model.%s.' % x for x in range(freeze)]  # parameter names to freeze (full or partial)
+    freeze = ['model.%s.' % x for x in range(freeze)] if freeze is not NONE else []  # parameter names to freeze (full or partial)
     for k, v in model.named_parameters():
         v.requires_grad = True  # train all layers
         if any(x in k for x in freeze):
