@@ -37,7 +37,7 @@ def _prompt_choice_with_timeout():
 
 def _prompt_choice():
     try:
-        return int(input("%s: Enter your choice: " % term.LOG_STRING)) - 1  # noqa: W503
+        return int(input("%s: Enter your choice: " % term.LOG_STRING)) - 1
     except ValueError:
         return -1
 
