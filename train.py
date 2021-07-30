@@ -53,9 +53,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           opt,
           device,
           ):
-    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, = \
+    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
-        opt.resume, opt.noval, opt.nosave, opt.workers
+        opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze
 
     # Directories
     w = save_dir / 'weights'  # weights dir
@@ -111,7 +111,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         model = Model(cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
 
     # Freeze
-    freeze = []  # parameter names to freeze (full or partial)
+    freeze = [f'model.{x}.' for x in range(freeze)]  # layers to freeze
     for k, v in model.named_parameters():
         v.requires_grad = True  # train all layers
         if any(x in k for x in freeze):
@@ -128,9 +128,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     for v in model.modules():
         if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):  # bias
             g2.append(v.bias)
-        if isinstance(v, nn.BatchNorm2d):  # weight with decay
+        if isinstance(v, nn.BatchNorm2d):  # weight (no decay)
             g0.append(v.weight)
-        elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):  # weight without decay
+        elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):  # weight (with decay)
             g1.append(v.weight)
 
     if opt.adam:
@@ -442,6 +442,7 @@ def parse_opt(known=False):
     parser.add_argument('--save_period', type=int, default=-1, help='Log model after every "save_period" epoch')
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
+    parser.add_argument('--freeze', type=int, default=0, help='Number of layers to freeze. backbone=10, all=24')
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
@@ -451,7 +452,7 @@ def main(opt):
     if RANK in [-1, 0]:
         print(colorstr('train: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
         check_git_status()
-        check_requirements(exclude=['thop'])
+        check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=['thop'])
 
     # Resume
     if opt.resume and not check_wandb_resume(opt):  # resume an interrupted run
