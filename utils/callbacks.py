@@ -6,23 +6,22 @@ class Callbacks:
     """
 
     _callbacks = {
-        'on_pretrain_routine_start' :[],
-        'on_pretrain_routine_end' :[],
+        'on_pretrain_routine_start': [],
+        'on_pretrain_routine_end': [],
 
-        'on_train_start' :[],
+        'on_train_start': [],
         'on_train_end': [],
         'on_train_epoch_start': [],
         'on_train_epoch_end': [],
         'on_train_batch_start': [],
         'on_train_batch_end': [],
-        
-        'on_val_start' :[],
+
+        'on_val_start': [],
         'on_val_end': [],
         'on_val_epoch_start': [],
         'on_val_epoch_end': [],
         'on_val_batch_start': [],
         'on_val_batch_end': [],
-
 
         'on_model_save': [],
         'optimizer_step': [],
@@ -70,7 +69,6 @@ class Callbacks:
         for logger in register:
             logger['callback'](*args)
 
-
     def on_pretrain_routine_start(self, *args):
         """
         Fires all registered callbacks at the start of each pretraining routine
@@ -106,7 +104,6 @@ class Callbacks:
         Fires all registered callbacks at the end of each training epoch
         """
         self.fireCallbacks(self._callbacks['on_train_epoch_end'], *args)
-
 
     def on_train_batch_start(self, *args):
         """
@@ -179,5 +176,3 @@ class Callbacks:
         Fires all registered callbacks before teardown
         """
         self.fireCallbacks(self._callbacks['teardown'], *args)
-
-    
