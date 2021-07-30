@@ -5,12 +5,11 @@ import wandb
 from wandb.errors import term
 from wandb.util import _is_databricks, isatty
 
-from inputimeout import inputimeout, TimeoutOccurred
-
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[3].as_posix())  # add yolov5/ to path
 
 from utils.general import colorstr, emojis
+from utils.loggers.wandb.input_timeout import inputimeout, TimeoutOccurred
 
 
 TIMEOUT_CODE = -2
