@@ -123,25 +123,26 @@ def profile(input, ops, n=10, device=None):
             except:
                 flops = 0
 
-            for _ in range(n):
-                t[0] = time_sync()
-                y = m(x)
-                t[1] = time_sync()
-                try:
-                    _ = (sum([yi.sum() for yi in y]) if isinstance(y, list) else y).sum().backward()
-                    t[2] = time_sync()
-                except Exception as e:  # no backward method
-                    print(e)
-                    t[2] = float('nan')
-                tf += (t[1] - t[0]) * 1000 / n  # ms per op forward
-                tb += (t[2] - t[1]) * 1000 / n  # ms per op backward
-
-            mem = torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0  # (GB)
-            s_in = tuple(x.shape) if isinstance(x, torch.Tensor) else 'list'
-            s_out = tuple(y.shape) if isinstance(y, torch.Tensor) else 'list'
-            p = sum(list(x.numel() for x in m.parameters())) if isinstance(m, nn.Module) else 0  # parameters
-            print(f'{p:12}{flops:12.4g}{mem:>14.3f}{tf:14.4g}{tb:14.4g}{str(s_in):>24s}{str(s_out):>24s}')
-            del x, y
+            try:
+                for _ in range(n):
+                    t[0] = time_sync()
+                    y = m(x)
+                    t[1] = time_sync()
+                    try:
+                        _ = (sum([yi.sum() for yi in y]) if isinstance(y, list) else y).sum().backward()
+                        t[2] = time_sync()
+                    except Exception as e:  # no backward method
+                        print(e)
+                        t[2] = float('nan')
+                    tf += (t[1] - t[0]) * 1000 / n  # ms per op forward
+                    tb += (t[2] - t[1]) * 1000 / n  # ms per op backward
+                mem = torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0  # (GB)
+                s_in = tuple(x.shape) if isinstance(x, torch.Tensor) else 'list'
+                s_out = tuple(y.shape) if isinstance(y, torch.Tensor) else 'list'
+                p = sum(list(x.numel() for x in m.parameters())) if isinstance(m, nn.Module) else 0  # parameters
+                print(f'{p:12}{flops:12.4g}{mem:>14.3f}{tf:14.4g}{tb:14.4g}{str(s_in):>24s}{str(s_out):>24s}')
+            except Exception as e:
+                print(e)
             torch.cuda.empty_cache()
 
 
