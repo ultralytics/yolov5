@@ -108,7 +108,8 @@ def profile(x, ops, n=100, device=None):
     device = device or select_device()
     x = x.to(device)
     x.requires_grad = True
-    print(f"{'Params':>12s}{'GFLOPs':>12s}{'forward (ms)':>16s}{'backward (ms)':>16s}{'input':>24s}{'output':>24s}")
+    print(f"{'Params':>12s}{'GFLOPs':>12s}{'GPU_mem (GB)':>12s}{'forward (ms)':>14s}{'backward (ms)':>14s}"
+          f"{'input':>24s}{'output':>24s}")
     for m in ops if isinstance(ops, list) else [ops]:
         torch.cuda.empty_cache()
         m = m.to(device) if hasattr(m, 'to') else m  # device
@@ -130,13 +131,12 @@ def profile(x, ops, n=100, device=None):
                 t[2] = float('nan')
             tf += (t[1] - t[0]) * 1000 / n  # ms per op forward
             tb += (t[2] - t[1]) * 1000 / n  # ms per op backward
-        mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
-        print(mem)
 
+        mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
         s_in = tuple(x.shape) if isinstance(x, torch.Tensor) else 'list'
         s_out = tuple(y.shape) if isinstance(y, torch.Tensor) else 'list'
         p = sum(list(x.numel() for x in m.parameters())) if isinstance(m, nn.Module) else 0  # parameters
-        print(f'{p:12}{flops:12.4g}{tf:16.4g}{tb:16.4g}{str(s_in):>24s}{str(s_out):>24s}')
+        print(f'{p:12}{flops:12.4g}{mem:12.3g}{tf:14.4g}{tb:14.4g}{str(s_in):>24s}{str(s_out):>24s}')
 
 
 def is_parallel(model):
