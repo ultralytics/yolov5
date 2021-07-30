@@ -98,12 +98,14 @@ def time_sync():
     return time.time()
 
 
-def profile(input, ops, n=100, device=None):
-    # profile a pytorch module or list of modules. Example usage:
-    #     x = torch.randn(16, 3, 640, 640)  # input
+def profile(input, ops, n=10, device=None):
+    # YOLOv5 speed/memory/FLOPs profiler
+    #
+    # Usage:
+    #     input = torch.randn(16, 3, 640, 640)
     #     m1 = lambda x: x * torch.sigmoid(x)
     #     m2 = nn.SiLU()
-    #     profile(x, [m1, m2], n=100)  # profile speed over 100 iterations
+    #     profile(input, [m1, m2], n=100)  # profile over 100 iterations
 
     device = device or select_device()
     print(f"{'Params':>12s}{'GFLOPs':>12s}{'GPU_mem (GB)':>14s}{'forward (ms)':>14s}{'backward (ms)':>14s}"
