@@ -125,9 +125,10 @@ def profile(x, ops, n=100, device=None):
             y = m(x)
             t[1] = time_sync()
             try:
-                _ = [y.sum().backward() for y in y] if isinstance(y, list) else y.sum().backward()
+                _ = (sum([yi.sum() for yi in y]) if isinstance(y, list) else y).sum().backward()
                 t[2] = time_sync()
-            except:  # no backward method
+            except Exception as e:  # no backward method
+                print(e)
                 t[2] = float('nan')
             tf += (t[1] - t[0]) * 1000 / n  # ms per op forward
             tb += (t[2] - t[1]) * 1000 / n  # ms per op backward
