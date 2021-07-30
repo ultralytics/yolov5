@@ -6,19 +6,18 @@ Usage:
 
 import argparse
 import logging
+import math
+import numpy as np
 import os
 import random
 import sys
 import time
-from copy import deepcopy
-from pathlib import Path
-
-import math
-import numpy as np
 import torch
 import torch.distributed as dist
 import torch.nn as nn
 import yaml
+from copy import deepcopy
+from pathlib import Path
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import Adam, SGD, lr_scheduler
@@ -42,8 +41,7 @@ from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_di
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.metrics import fitness
 from utils.loggers import Loggers
-
-from utils import callbacks
+from utils.callbacks import Callbacks
 
 LOGGER = logging.getLogger(__name__)
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
@@ -456,11 +454,8 @@ def parse_opt(known=False):
     return opt
 
 
-def main(opt, callback_handler = None):
-
-    # Define new hook handler if one is not passed in
-    if not callback_handler: callback_handler = callbacks.Callbacks()
-
+def main(opt, callback_handler=Callbacks()):
+    # Checks
     set_logging(RANK)
     if RANK in [-1, 0]:
         print(colorstr('train: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
