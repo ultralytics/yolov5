@@ -20,7 +20,7 @@ LOGIN_CHOICES = [LOGIN_CHOICE_ENABLED, LOGIN_CHOICE_DISABLED]
 
 
 def _prompt_choice_with_timeout():
-    # If we're not in an interactive environment, default to dry-run.
+    # If we're not in an interactive environment, disable wandb.
     jupyter = wandb.Settings()._jupyter
     if (
         not jupyter and (not isatty(sys.stdout) or not isatty(sys.stdin))
@@ -30,7 +30,6 @@ def _prompt_choice_with_timeout():
     try:
         choice = inputimeout(prompt="%s: Enter your choice: " % term.LOG_STRING, timeout=15)
         return int(choice) - 1
-        #return int(input("%s: Enter your choice: " % term.LOG_STRING)) - 1
     except TimeoutOccurred:
         return TIMEOUT_CODE
     except ValueError:
@@ -64,7 +63,7 @@ def get_user_choice():
 
 def get_api_key():
     wandb.termlog(
-        "Paste your W&B API Key from here: https://wandb.ai/authorize?signup=true"
+        "Paste your W&B API Key from here: https://wandb.ai/authorize"
     )
     key = getpass.getpass().strip()
     return key

@@ -6,18 +6,11 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from utils.general import colorstr, emojis
-from utils.loggers.wandb.wandb_utils import WandbLogger
+from utils.loggers.wandb.wandb_utils import WandbLogger, wandb
 from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
 
 LOGGERS = ('csv', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
-
-try:
-    import wandb
-
-    assert hasattr(wandb, '__version__')  # verify package import not local dir
-except (ImportError, AssertionError):
-    wandb = None
 
 
 class Loggers():
@@ -38,7 +31,7 @@ class Loggers():
         # Message
         if not wandb:
             prefix = colorstr('Weights & Biases: ')
-            s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs (RECOMMENDED)"
+            s = f"{prefix}run 'wandb login' to automatically track and visualize YOLOv5 🚀 runs (RECOMMENDED)"
             print(emojis(s))
 
         # TensorBoard
