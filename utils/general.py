@@ -67,6 +67,11 @@ def try_except(func):
     return handler
 
 
+def methods(instance):
+    # Get class/instance methods
+    return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith("__")]
+
+
 def set_logging(rank=-1, verbose=True):
     logging.basicConfig(
         format="%(message)s",
