@@ -346,7 +346,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
         if RANK in [-1, 0]:
             # mAP
-            callbacks.on_train_epoch_end(epoch)
+            callbacks.on_train_epoch_end(epoch=epoch)
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
             if not noval or final_epoch:  # Calculate mAP
@@ -408,6 +408,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 if f.exists():
                     strip_optimizer(f)  # strip optimizers
         callbacks.on_train_end(last, best, plots)
+        LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
 
     torch.cuda.empty_cache()
     return results

@@ -19,6 +19,7 @@ class Callbacks:
 
         'on_val_start': [],
         'on_val_batch_start': [],
+        'on_val_image_end': [],
         'on_val_batch_end': [],
         'on_val_end': [],
 
@@ -63,6 +64,7 @@ class Callbacks:
         Loop through the registered actions and fire all callbacks
         """
         for logger in register:
+            # print(f"Running callbacks.{logger['callback'].__name__}()")
             logger['callback'](*args, **kwargs)
 
     def on_pretrain_routine_start(self, *args, **kwargs):
@@ -130,6 +132,12 @@ class Callbacks:
         Fires all registered callbacks at the start of each validation batch
         """
         self.run_callbacks(self._callbacks['on_val_batch_start'], *args, **kwargs)
+
+    def on_val_image_end(self, *args, **kwargs):
+        """
+        Fires all registered callbacks at the end of each val image
+        """
+        self.run_callbacks(self._callbacks['on_val_image_end'], *args, **kwargs)
 
     def on_val_batch_end(self, *args, **kwargs):
         """
