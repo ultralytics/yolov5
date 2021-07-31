@@ -108,7 +108,7 @@ class Loggers():
 
         if self.tb:
             for k, v in x.items():
-                self.tb.add_scalar(k, v, epoch)  # TensorBoard
+                self.tb.add_scalar(k, v, epoch)
 
         if self.wandb:
             self.wandb.log(x)
@@ -120,12 +120,19 @@ class Loggers():
             if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
                 self.wandb.log_model(last.parent, self.opt, epoch, fi, best_model=best_fitness == fi)
 
-    def on_train_end(self, last, best, plots):
+    def on_train_end(self, last, best, plots, epoch):
         # Callback runs on training end
         if plots:
             plot_results(dir=self.save_dir)  # save results.png
         files = ['results.png', 'confusion_matrix.png', *[f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R')]]
         files = [(self.save_dir / f) for f in files if (self.save_dir / f).exists()]  # filter
+
+        if self.tb:
+            from PIL import Image
+            import numpy as np
+            for f in files:
+                self.tb.add_image(f.stem, np.asarray(Image.open(f)), epoch, dataformats='HWC')
+
         if self.wandb:
             wandb.log({"Results": [wandb.Image(str(f), caption=f.name) for f in files]})
             wandb.log_artifact(str(best if best.exists() else last), type='model',
