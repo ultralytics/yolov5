@@ -53,7 +53,7 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           opt,
           device,
-          callbacks
+          callbacks=Callbacks()
           ):
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
@@ -227,6 +227,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             if not opt.noautoanchor:
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
             model.half().float()  # pre-reduce anchor precision
+
+        callbacks.on_pretrain_routine_end()
 
     # DDP mode
     if cuda and RANK != -1:
@@ -452,7 +454,7 @@ def parse_opt(known=False):
     return opt
 
 
-def main(opt, callback_handler=Callbacks()):
+def main(opt):
     # Checks
     set_logging(RANK)
     if RANK in [-1, 0]:
@@ -489,7 +491,7 @@ def main(opt, callback_handler=Callbacks()):
 
     # Train
     if not opt.evolve:
-        train(opt.hyp, opt, device, callback_handler)
+        train(opt.hyp, opt, device)
         if WORLD_SIZE > 1 and RANK == 0:
             _ = [print('Destroying process group... ', end=''), dist.destroy_process_group(), print('Done.')]
 
@@ -569,7 +571,7 @@ def main(opt, callback_handler=Callbacks()):
                 hyp[k] = round(hyp[k], 5)  # significant digits
 
             # Train mutation
-            results = train(hyp.copy(), opt, device, callback_handler)
+            results = train(hyp.copy(), opt, device)
 
             # Write mutation results
             print_mutation(hyp.copy(), results, yaml_file, opt.bucket)
