@@ -6,12 +6,13 @@ Usage:
 
 import argparse
 import json
-import numpy as np
 import os
 import sys
-import torch
 from pathlib import Path
 from threading import Thread
+
+import numpy as np
+import torch
 from tqdm import tqdm
 
 FILE = Path(__file__).absolute()
@@ -24,7 +25,6 @@ from utils.general import coco80_to_coco91_class, check_dataset, check_file, che
 from utils.metrics import ap_per_class, ConfusionMatrix
 from utils.plots import plot_images, output_to_target, plot_study_txt
 from utils.torch_utils import select_device, time_sync
-from utils.loggers import Loggers
 from utils.callbacks import Callbacks
 
 
@@ -97,7 +97,6 @@ def run(data,
         dataloader=None,
         save_dir=Path(''),
         plots=True,
-        loggers=Loggers(),
         callbacks=Callbacks(),
         compute_loss=None,
         ):
@@ -214,7 +213,6 @@ def run(data,
                 save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / (path.stem + '.txt'))
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
-            loggers.on_val_batch_end(pred, predn, path, names, img[si])
             callbacks.on_val_batch_end(pred, predn, path, names, img[si])
 
         # Plot images
@@ -252,7 +250,6 @@ def run(data,
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        loggers.on_val_end()
         callbacks.on_val_end()
 
     # Save JSON
@@ -297,7 +294,7 @@ def parse_opt():
     parser.add_argument('--data', type=str, default='data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--batch-size', type=int, default=32, help='batch size')
-    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
+    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=256, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.6, help='NMS IoU threshold')
     parser.add_argument('--task', default='val', help='train, val, test, speed or study')

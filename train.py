@@ -6,18 +6,19 @@ Usage:
 
 import argparse
 import logging
-import math
-import numpy as np
 import os
 import random
 import sys
 import time
+from copy import deepcopy
+from pathlib import Path
+
+import math
+import numpy as np
 import torch
 import torch.distributed as dist
 import torch.nn as nn
 import yaml
-from copy import deepcopy
-from pathlib import Path
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import Adam, SGD, lr_scheduler
@@ -33,7 +34,7 @@ from utils.autoanchor import check_anchors
 from utils.datasets import create_dataloader
 from utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds, \
     strip_optimizer, get_latest_run, check_dataset, check_file, check_git_status, check_img_size, \
-    check_requirements, print_mutation, set_logging, one_cycle, colorstr
+    check_requirements, print_mutation, set_logging, one_cycle, colorstr, methods
 from utils.downloads import attempt_download
 from utils.loss import ComputeLoss
 from utils.plots import plot_labels, plot_evolution
@@ -78,11 +79,15 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # Loggers
     if RANK in [-1, 0]:
-        loggers = Loggers(save_dir, weights, opt, hyp, LOGGER).start()  # loggers dict
+        loggers = Loggers(save_dir, weights, opt, hyp, LOGGER)  # loggers instance
         if loggers.wandb:
             data_dict = loggers.wandb.data_dict
             if resume:
                 weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp
+
+        # Register actions
+        for k in methods(loggers):
+            callbacks.register_action(k, callback=getattr(loggers, k))
 
     # Config
     plots = not evolve  # create plots
@@ -216,7 +221,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
             # model._initialize_biases(cf.to(device))
             if plots:
-                plot_labels(labels, names, save_dir, loggers)
+                plot_labels(labels, names, save_dir)
 
             # Anchors
             if not opt.noautoanchor:
@@ -330,9 +335,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
                 pbar.set_description(('%10s' * 2 + '%10.4g' * 5) % (
                     f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
-                loggers.on_train_batch_end(ni, model, imgs, targets, paths, plots)
                 callbacks.on_train_batch_end(ni, model, imgs, targets, paths, plots)
-
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
@@ -341,9 +344,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
         if RANK in [-1, 0]:
             # mAP
-            loggers.on_train_epoch_end(epoch)
             callbacks.on_train_epoch_end(epoch)
-
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
             if not noval or final_epoch:  # Calculate mAP
@@ -357,15 +358,14 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            save_json=is_coco and final_epoch,
                                            verbose=nc < 50 and final_epoch,
                                            plots=plots and final_epoch,
-                                           loggers=loggers,
+                                           callbacks=callbacks,
                                            compute_loss=compute_loss)
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             if fi > best_fitness:
                 best_fitness = fi
-            loggers.on_train_val_end(mloss, results, lr, epoch, best_fitness, fi)
-            callbacks.on_val_end(mloss, results, lr, epoch, best_fitness, fi)
+            callbacks.on_fit_epoch_end(mloss, results, lr, epoch, best_fitness, fi)
 
             # Save model
             if (not nosave) or (final_epoch and not evolve):  # if save
@@ -382,7 +382,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 if best_fitness == fi:
                     torch.save(ckpt, best)
                 del ckpt
-                loggers.on_model_save(last, epoch, final_epoch, best_fitness, fi)
                 callbacks.on_model_save(last, epoch, final_epoch, best_fitness, fi)
 
         # end epoch ----------------------------------------------------------------------------------------------------
@@ -406,7 +405,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             for f in last, best:
                 if f.exists():
                     strip_optimizer(f)  # strip optimizers
-        loggers.on_train_end(last, best, plots)
         callbacks.on_train_end(last, best, plots)
 
     torch.cuda.empty_cache()

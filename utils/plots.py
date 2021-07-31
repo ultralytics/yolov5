@@ -281,7 +281,7 @@ def plot_study_txt(path='', x=None):  # from utils.plots import *; plot_study_tx
     plt.savefig(str(Path(path).name) + '.png', dpi=300)
 
 
-def plot_labels(labels, names=(), save_dir=Path(''), loggers=None):
+def plot_labels(labels, names=(), save_dir=Path('')):
     # plot dataset labels
     print('Plotting labels... ')
     c, b = labels[:, 0], labels[:, 1:].transpose()  # classes, boxes
@@ -323,10 +323,6 @@ def plot_labels(labels, names=(), save_dir=Path(''), loggers=None):
     plt.savefig(save_dir / 'labels.jpg', dpi=200)
     matplotlib.use('Agg')
     plt.close()
-
-    # loggers
-    if loggers:
-        loggers.log_images(save_dir.glob('*labels*.jpg'))
 
 
 def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots import *; plot_evolution()
