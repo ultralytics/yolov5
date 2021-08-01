@@ -12,7 +12,6 @@ import sys
 import time
 from copy import deepcopy
 from pathlib import Path
-from threading import Thread
 
 import math
 import numpy as np
@@ -35,14 +34,15 @@ from utils.autoanchor import check_anchors
 from utils.datasets import create_dataloader
 from utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds, \
     strip_optimizer, get_latest_run, check_dataset, check_file, check_git_status, check_img_size, \
-    check_requirements, print_mutation, set_logging, one_cycle, colorstr
-from utils.google_utils import attempt_download
+    check_requirements, print_mutation, set_logging, one_cycle, colorstr, methods
+from utils.downloads import attempt_download
 from utils.loss import ComputeLoss
-from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
+from utils.plots import plot_labels, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, de_parallel
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.metrics import fitness
 from utils.loggers import Loggers
+from utils.callbacks import Callbacks
 
 LOGGER = logging.getLogger(__name__)
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
@@ -53,15 +53,16 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           opt,
           device,
+          callbacks=Callbacks()
           ):
-    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, = \
+    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
-        opt.resume, opt.noval, opt.nosave, opt.workers
+        opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze
 
     # Directories
     w = save_dir / 'weights'  # weights dir
     w.mkdir(parents=True, exist_ok=True)  # make dir
-    last, best, results_file = w / 'last.pt', w / 'best.pt', save_dir / 'results.txt'
+    last, best = w / 'last.pt', w / 'best.pt'
 
     # Hyperparameters
     if isinstance(hyp, str):
@@ -74,23 +75,31 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         yaml.safe_dump(hyp, f, sort_keys=False)
     with open(save_dir / 'opt.yaml', 'w') as f:
         yaml.safe_dump(vars(opt), f, sort_keys=False)
+    data_dict = None
+
+    # Loggers
+    if RANK in [-1, 0]:
+        loggers = Loggers(save_dir, weights, opt, hyp, LOGGER)  # loggers instance
+        if loggers.wandb:
+            data_dict = loggers.wandb.data_dict
+            if resume:
+                weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp
+
+        # Register actions
+        for k in methods(loggers):
+            callbacks.register_action(k, callback=getattr(loggers, k))
 
     # Config
     plots = not evolve  # create plots
     cuda = device.type != 'cpu'
     init_seeds(1 + RANK)
-    with open(data) as f:
-        data_dict = yaml.safe_load(f)  # data dict
+    with torch_distributed_zero_first(RANK):
+        data_dict = data_dict or check_dataset(data)  # check if None
+    train_path, val_path = data_dict['train'], data_dict['val']
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
     assert len(names) == nc, f'{len(names)} names found for nc={nc} dataset in {data}'  # check
     is_coco = data.endswith('coco.yaml') and nc == 80  # COCO dataset
-
-    # Loggers
-    if RANK in [-1, 0]:
-        loggers = Loggers(save_dir, results_file, weights, opt, hyp, data_dict, LOGGER).start()  # loggers dict
-        if loggers.wandb and resume:
-            weights, epochs, hyp, data_dict = opt.weights, opt.epochs, opt.hyp, loggers.wandb.data_dict
 
     # Model
     pretrained = weights.endswith('.pt')
@@ -106,12 +115,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         LOGGER.info(f'Transferred {len(csd)}/{len(model.state_dict())} items from {weights}')  # report
     else:
         model = Model(cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
-    with torch_distributed_zero_first(RANK):
-        check_dataset(data_dict)  # check
-    train_path, val_path = data_dict['train'], data_dict['val']
 
     # Freeze
-    freeze = []  # parameter names to freeze (full or partial)
+    freeze = [f'model.{x}.' for x in range(freeze)]  # layers to freeze
     for k, v in model.named_parameters():
         v.requires_grad = True  # train all layers
         if any(x in k for x in freeze):
@@ -128,9 +134,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     for v in model.modules():
         if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):  # bias
             g2.append(v.bias)
-        if isinstance(v, nn.BatchNorm2d):  # weight with decay
+        if isinstance(v, nn.BatchNorm2d):  # weight (no decay)
             g0.append(v.weight)
-        elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):  # weight without decay
+        elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):  # weight (with decay)
             g1.append(v.weight)
 
     if opt.adam:
@@ -166,10 +172,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         if ema and ckpt.get('ema'):
             ema.ema.load_state_dict(ckpt['ema'].float().state_dict())
             ema.updates = ckpt['updates']
-
-        # Results
-        if ckpt.get('training_results') is not None:
-            results_file.write_text(ckpt['training_results'])  # write results.txt
 
         # Epochs
         start_epoch = ckpt['epoch'] + 1
@@ -219,12 +221,14 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
             # model._initialize_biases(cf.to(device))
             if plots:
-                plot_labels(labels, names, save_dir, loggers)
+                plot_labels(labels, names, save_dir)
 
             # Anchors
             if not opt.noautoanchor:
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
             model.half().float()  # pre-reduce anchor precision
+
+        callbacks.on_pretrain_routine_end()
 
     # DDP mode
     if cuda and RANK != -1:
@@ -275,11 +279,11 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         # b = int(random.uniform(0.25 * imgsz, 0.75 * imgsz + gs) // gs * gs)
         # dataset.mosaic_border = [b - imgsz, -b]  # height, width borders
 
-        mloss = torch.zeros(4, device=device)  # mean losses
+        mloss = torch.zeros(3, device=device)  # mean losses
         if RANK != -1:
             train_loader.sampler.set_epoch(epoch)
         pbar = enumerate(train_loader)
-        LOGGER.info(('\n' + '%10s' * 8) % ('Epoch', 'gpu_mem', 'box', 'obj', 'cls', 'total', 'labels', 'img_size'))
+        LOGGER.info(('\n' + '%10s' * 7) % ('Epoch', 'gpu_mem', 'box', 'obj', 'cls', 'labels', 'img_size'))
         if RANK in [-1, 0]:
             pbar = tqdm(pbar, total=nb)  # progress bar
         optimizer.zero_grad()
@@ -327,21 +331,13 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                     ema.update(model)
                 last_opt_step = ni
 
-            # Print
+            # Log
             if RANK in [-1, 0]:
                 mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
                 mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
-                s = ('%10s' * 2 + '%10.4g' * 6) % (
-                    f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1])
-                pbar.set_description(s)
-
-                # Plot
-                if plots:
-                    if ni < 3:
-                        f = save_dir / f'train_batch{ni}.jpg'  # filename
-                        Thread(target=plot_images, args=(imgs, targets, paths, f), daemon=True).start()
-                    loggers.on_train_batch_end(ni, model, imgs)
-
+                pbar.set_description(('%10s' * 2 + '%10.4g' * 5) % (
+                    f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
+                callbacks.on_train_batch_end(ni, model, imgs, targets, paths, plots)
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
@@ -350,7 +346,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
         if RANK in [-1, 0]:
             # mAP
-            loggers.on_train_epoch_end(epoch)
+            callbacks.on_train_epoch_end(epoch=epoch)
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
             if not noval or final_epoch:  # Calculate mAP
@@ -364,20 +360,19 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            save_json=is_coco and final_epoch,
                                            verbose=nc < 50 and final_epoch,
                                            plots=plots and final_epoch,
-                                           loggers=loggers,
+                                           callbacks=callbacks,
                                            compute_loss=compute_loss)
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             if fi > best_fitness:
                 best_fitness = fi
-            loggers.on_train_val_end(mloss, results, lr, epoch, s, best_fitness, fi)
+            callbacks.on_fit_epoch_end(mloss, results, lr, epoch, best_fitness, fi)
 
             # Save model
             if (not nosave) or (final_epoch and not evolve):  # if save
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
-                        'training_results': results_file.read_text(),
                         'model': deepcopy(de_parallel(model)).half(),
                         'ema': deepcopy(ema.ema).half(),
                         'updates': ema.updates,
@@ -389,15 +384,12 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 if best_fitness == fi:
                     torch.save(ckpt, best)
                 del ckpt
-                loggers.on_model_save(last, epoch, final_epoch, best_fitness, fi)
+                callbacks.on_model_save(last, epoch, final_epoch, best_fitness, fi)
 
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training -----------------------------------------------------------------------------------------------------
     if RANK in [-1, 0]:
         LOGGER.info(f'{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.\n')
-        if plots:
-            plot_results(save_dir=save_dir)  # save as results.png
-
         if not evolve:
             if is_coco:  # COCO dataset
                 for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
@@ -411,13 +403,12 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                             save_dir=save_dir,
                                             save_json=True,
                                             plots=False)
-
             # Strip optimizers
             for f in last, best:
                 if f.exists():
                     strip_optimizer(f)  # strip optimizers
-
-        loggers.on_train_end(last, best)
+        callbacks.on_train_end(last, best, plots, epoch)
+        LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
 
     torch.cuda.empty_cache()
     return results
@@ -459,16 +450,18 @@ def parse_opt(known=False):
     parser.add_argument('--save_period', type=int, default=-1, help='Log model after every "save_period" epoch')
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
+    parser.add_argument('--freeze', type=int, default=0, help='Number of layers to freeze. backbone=10, all=24')
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
 
 def main(opt):
+    # Checks
     set_logging(RANK)
     if RANK in [-1, 0]:
         print(colorstr('train: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
         check_git_status()
-        check_requirements(exclude=['thop'])
+        check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=['thop'])
 
     # Resume
     if opt.resume and not check_wandb_resume(opt):  # resume an interrupted run

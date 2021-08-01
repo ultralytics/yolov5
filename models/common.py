@@ -1,8 +1,9 @@
 # YOLOv5 common modules
 
 import logging
+import warnings
 from copy import copy
-from pathlib import Path, PosixPath
+from pathlib import Path
 
 import math
 import numpy as np
@@ -158,7 +159,9 @@ class SPP(nn.Module):
 
     def forward(self, x):
         x = self.cv1(x)
-        return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')  # suppress torch 1.9.0 max_pool2d() warning
+            return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
 
 
 class Focus(nn.Module):
@@ -248,7 +251,7 @@ class AutoShape(nn.Module):
         shape0, shape1, files = [], [], []  # image and inference shapes, filenames
         for i, im in enumerate(imgs):
             f = f'image{i}'  # filename
-            if isinstance(im, (str, PosixPath)):  # filename or uri
+            if isinstance(im, (str, Path)):  # filename or uri
                 im, f = Image.open(requests.get(im, stream=True).raw if str(im).startswith('http') else im), im
                 im = np.asarray(exif_transpose(im))
             elif isinstance(im, Image.Image):  # PIL Image
