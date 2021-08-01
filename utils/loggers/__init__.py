@@ -134,7 +134,8 @@ class Loggers():
                 self.tb.add_image(f.stem, np.asarray(Image.open(f)), epoch, dataformats='HWC')
 
         if self.wandb:
-            wandb.log({"Results": [wandb.Image(str(f), caption=f.name) for f in files]})
+            self.wandb.log({"Results": [wandb.Image(str(f), caption=f.name) for f in files]})
+            # Calling wandb.log. TODO: Refactor this into WandbLogger.log_model
             wandb.log_artifact(str(best if best.exists() else last), type='model',
                                name='run_' + self.wandb.wandb_run.id + '_model',
                                aliases=['latest', 'best', 'stripped'])
