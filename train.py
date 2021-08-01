@@ -34,7 +34,7 @@ from utils.autoanchor import check_anchors
 from utils.datasets import create_dataloader
 from utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds, \
     strip_optimizer, get_latest_run, check_dataset, check_file, check_git_status, check_img_size, \
-    check_requirements, print_mutation, set_logging, one_cycle, colorstr
+    check_requirements, print_mutation, set_logging, one_cycle, colorstr, methods
 from utils.downloads import attempt_download
 from utils.loss import ComputeLoss
 from utils.plots import plot_labels, plot_evolution
@@ -42,6 +42,7 @@ from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_di
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.metrics import fitness
 from utils.loggers import Loggers
+from utils.callbacks import Callbacks
 
 LOGGER = logging.getLogger(__name__)
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
@@ -52,10 +53,11 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           opt,
           device,
+          callbacks=Callbacks()
           ):
-    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, = \
+    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
-        opt.resume, opt.noval, opt.nosave, opt.workers
+        opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze
 
     # Directories
     w = save_dir / 'weights'  # weights dir
@@ -77,11 +79,15 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # Loggers
     if RANK in [-1, 0]:
-        loggers = Loggers(save_dir, weights, opt, hyp, LOGGER).start()  # loggers dict
+        loggers = Loggers(save_dir, weights, opt, hyp, LOGGER)  # loggers instance
         if loggers.wandb:
             data_dict = loggers.wandb.data_dict
             if resume:
                 weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp
+
+        # Register actions
+        for k in methods(loggers):
+            callbacks.register_action(k, callback=getattr(loggers, k))
 
     # Config
     plots = not evolve  # create plots
@@ -111,7 +117,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         model = Model(cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
 
     # Freeze
-    freeze = []  # parameter names to freeze (full or partial)
+    freeze = [f'model.{x}.' for x in range(freeze)]  # layers to freeze
     for k, v in model.named_parameters():
         v.requires_grad = True  # train all layers
         if any(x in k for x in freeze):
@@ -215,12 +221,14 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
             # model._initialize_biases(cf.to(device))
             if plots:
-                plot_labels(labels, names, save_dir, loggers)
+                plot_labels(labels, names, save_dir)
 
             # Anchors
             if not opt.noautoanchor:
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
             model.half().float()  # pre-reduce anchor precision
+
+        callbacks.on_pretrain_routine_end()
 
     # DDP mode
     if cuda and RANK != -1:
@@ -329,8 +337,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
                 pbar.set_description(('%10s' * 2 + '%10.4g' * 5) % (
                     f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
-                loggers.on_train_batch_end(ni, model, imgs, targets, paths, plots)
-
+                callbacks.on_train_batch_end(ni, model, imgs, targets, paths, plots)
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
@@ -339,7 +346,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
         if RANK in [-1, 0]:
             # mAP
-            loggers.on_train_epoch_end(epoch)
+            callbacks.on_train_epoch_end(epoch=epoch)
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
             if not noval or final_epoch:  # Calculate mAP
@@ -353,14 +360,14 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            save_json=is_coco and final_epoch,
                                            verbose=nc < 50 and final_epoch,
                                            plots=plots and final_epoch,
-                                           loggers=loggers,
+                                           callbacks=callbacks,
                                            compute_loss=compute_loss)
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             if fi > best_fitness:
                 best_fitness = fi
-            loggers.on_train_val_end(mloss, results, lr, epoch, best_fitness, fi)
+            callbacks.on_fit_epoch_end(mloss, results, lr, epoch, best_fitness, fi)
 
             # Save model
             if (not nosave) or (final_epoch and not evolve):  # if save
@@ -377,7 +384,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 if best_fitness == fi:
                     torch.save(ckpt, best)
                 del ckpt
-                loggers.on_model_save(last, epoch, final_epoch, best_fitness, fi)
+                callbacks.on_model_save(last, epoch, final_epoch, best_fitness, fi)
 
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training -----------------------------------------------------------------------------------------------------
@@ -400,7 +407,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             for f in last, best:
                 if f.exists():
                     strip_optimizer(f)  # strip optimizers
-        loggers.on_train_end(last, best, plots)
+        callbacks.on_train_end(last, best, plots, epoch)
+        LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
 
     torch.cuda.empty_cache()
     return results
@@ -442,11 +450,13 @@ def parse_opt(known=False):
     parser.add_argument('--save_period', type=int, default=-1, help='Log model after every "save_period" epoch')
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
+    parser.add_argument('--freeze', type=int, default=0, help='Number of layers to freeze. backbone=10, all=24')
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
 
 def main(opt):
+    # Checks
     set_logging(RANK)
     if RANK in [-1, 0]:
         print(colorstr('train: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
