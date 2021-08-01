@@ -1,7 +1,12 @@
 #!/bin/bash
+# YOLOv5 🚀 by Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
 # Download latest models from https://github.com/ultralytics/yolov5/releases
-# Usage:
-#    $ bash path/to/download_weights.sh
+# Example usage: bash path/to/download_weights.sh
+# parent
+# └── yolov5
+#     ├── yolov5s.pt  ← downloads here
+#     ├── yolov5m.pt
+#     └── ...
 
 python - <<EOF
 from utils.google_utils import attempt_download

@@ -38,7 +38,7 @@ def export_torchscript(model, img, file, optimize):
         print(f'{prefix} export failure: {e}')
 
 
-def export_onnx(model, img, file, opset_version, train, dynamic, simplify):
+def export_onnx(model, img, file, opset, train, dynamic, simplify):
     # ONNX model export
     prefix = colorstr('ONNX:')
     try:
@@ -47,7 +47,7 @@ def export_onnx(model, img, file, opset_version, train, dynamic, simplify):
 
         print(f'\n{prefix} starting export with onnx {onnx.__version__}...')
         f = file.with_suffix('.onnx')
-        torch.onnx.export(model, img, f, verbose=False, opset_version=opset_version,
+        torch.onnx.export(model, img, f, verbose=False, opset_version=opset,
                           training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
                           do_constant_folding=not train,
                           input_names=['images'],
@@ -76,6 +76,7 @@ def export_onnx(model, img, file, opset_version, train, dynamic, simplify):
             except Exception as e:
                 print(f'{prefix} simplifier failure: {e}')
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+        print(f"{prefix} run --dynamic ONNX model inference with detect.py: 'python detect.py --weights {f}'")
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 
@@ -94,7 +95,7 @@ def export_coreml(model, img, file):
         model.save(f)
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
-        print(f'{prefix} export failure: {e}')
+        print(f'\n{prefix} export failure: {e}')
 
 
 def run(weights='./yolov5s.pt',  # weights path
@@ -108,7 +109,7 @@ def run(weights='./yolov5s.pt',  # weights path
         optimize=False,  # TorchScript: optimize for mobile
         dynamic=False,  # ONNX: dynamic axes
         simplify=False,  # ONNX: simplify model
-        opset_version=12,  # ONNX: opset version
+        opset=12,  # ONNX: opset version
         ):
     t = time.time()
     include = [x.lower() for x in include]
@@ -149,7 +150,7 @@ def run(weights='./yolov5s.pt',  # weights path
     if 'torchscript' in include:
         export_torchscript(model, img, file, optimize)
     if 'onnx' in include:
-        export_onnx(model, img, file, opset_version, train, dynamic, simplify)
+        export_onnx(model, img, file, opset, train, dynamic, simplify)
     if 'coreml' in include:
         export_coreml(model, img, file)
 
@@ -170,7 +171,7 @@ def parse_opt():
     parser.add_argument('--optimize', action='store_true', help='TorchScript: optimize for mobile')
     parser.add_argument('--dynamic', action='store_true', help='ONNX: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
-    parser.add_argument('--opset-version', type=int, default=12, help='ONNX: opset version')
+    parser.add_argument('--opset', type=int, default=12, help='ONNX: opset version')
     opt = parser.parse_args()
     return opt
 

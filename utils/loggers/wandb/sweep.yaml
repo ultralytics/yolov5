@@ -14,7 +14,7 @@
 # You can use grid, bayesian and hyperopt search strategy 
 # For more info on configuring sweeps visit - https://docs.wandb.ai/guides/sweeps/configuration
 
-program: utils/wandb_logging/sweep.py
+program: utils/loggers/wandb/sweep.py
 method: random
 metric:
   name: metrics/mAP_0.5
@@ -25,9 +25,9 @@ parameters:
   data:
     value: "data/coco128.yaml"
   batch_size:
-    values: [ 64 ]
+    values: [64]
   epochs:
-    values: [ 10 ]
+    values: [10]
 
   lr0:
     distribution: uniform

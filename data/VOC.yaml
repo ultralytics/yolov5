@@ -1,9 +1,10 @@
-# PASCAL VOC dataset http://host.robots.ox.ac.uk/pascal/VOC/
-# Train command: python train.py --data VOC.yaml
-# Default dataset location is next to YOLOv5:
-#   /parent
-#     /datasets/VOC
-#     /yolov5
+# YOLOv5 🚀 by Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
+# PASCAL VOC dataset http://host.robots.ox.ac.uk/pascal/VOC
+# Example usage: python train.py --data VOC.yaml
+# parent
+# ├── yolov5
+# └── datasets
+#     └── VOC  ← downloads here
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
@@ -20,8 +21,8 @@ test: # test images (optional)
 
 # Classes
 nc: 20  # number of classes
-names: [ 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog',
-         'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor' ]  # class names
+names: ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog',
+        'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']  # class names
 
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------

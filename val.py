@@ -13,7 +13,6 @@ from threading import Thread
 
 import numpy as np
 import torch
-import yaml
 from tqdm import tqdm
 
 FILE = Path(__file__).absolute()
@@ -26,6 +25,7 @@ from utils.general import coco80_to_coco91_class, check_dataset, check_file, che
 from utils.metrics import ap_per_class, ConfusionMatrix
 from utils.plots import plot_images, output_to_target, plot_study_txt
 from utils.torch_utils import select_device, time_sync
+from utils.callbacks import Callbacks
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -97,7 +97,7 @@ def run(data,
         dataloader=None,
         save_dir=Path(''),
         plots=True,
-        wandb_logger=None,
+        callbacks=Callbacks(),
         compute_loss=None,
         ):
     # Initialize/load model and set device
@@ -122,9 +122,7 @@ def run(data,
         #     model = nn.DataParallel(model)
 
         # Data
-        with open(data) as f:
-            data = yaml.safe_load(f)
-        check_dataset(data)  # check
+        data = check_dataset(data)  # check
 
     # Half
     half &= device.type != 'cpu'  # half precision only supported on CUDA
@@ -170,7 +168,7 @@ def run(data,
 
         # Compute loss
         if compute_loss:
-            loss += compute_loss([x.float() for x in train_out], targets)[1][:3]  # box, obj, cls
+            loss += compute_loss([x.float() for x in train_out], targets)[1]  # box, obj, cls
 
         # Run NMS
         targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)  # to pixels
@@ -215,8 +213,7 @@ def run(data,
                 save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / (path.stem + '.txt'))
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
-            if wandb_logger and wandb_logger.wandb_run:
-                wandb_logger.val_one_image(pred, predn, path, names, img[si])
+            callbacks.on_val_image_end(pred, predn, path, names, img[si])
 
         # Plot images
         if plots and batch_i < 3:
@@ -253,9 +250,7 @@ def run(data,
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        if wandb_logger and wandb_logger.wandb:
-            val_batches = [wandb_logger.wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('val*.jpg'))]
-            wandb_logger.log({"Validation": val_batches})
+        callbacks.on_val_end()
 
     # Save JSON
     if save_json and len(jdict):
@@ -287,7 +282,7 @@ def run(data,
     model.float()  # for training
     if not training:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
-        print(f"Results saved to {save_dir}{s}")
+        print(f"Results saved to {colorstr('bold', save_dir)}{s}")
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
@@ -325,7 +320,7 @@ def parse_opt():
 def main(opt):
     set_logging()
     print(colorstr('val: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
-    check_requirements(exclude=('tensorboard', 'thop'))
+    check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=('tensorboard', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
         run(**vars(opt))
