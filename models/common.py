@@ -30,7 +30,7 @@ def autopad(k, p=None):  # kernel, padding
 
 
 def DWConv(c1, c2, k=1, s=1, act=True):
-    # Depthwise convolution
+    # Depth-wise convolution
     return Conv(c1, c2, k, s, g=math.gcd(c1, c2), act=act)
 
 
@@ -183,11 +183,11 @@ class Contract(nn.Module):
         self.gain = gain
 
     def forward(self, x):
-        N, C, H, W = x.size()  # assert (H / s == 0) and (W / s == 0), 'Indivisible gain'
+        b, c, h, w = x.size()  # assert (h / s == 0) and (W / s == 0), 'Indivisible gain'
         s = self.gain
-        x = x.view(N, C, H // s, s, W // s, s)  # x(1,64,40,2,40,2)
+        x = x.view(b, c, h // s, s, w // s, s)  # x(1,64,40,2,40,2)
         x = x.permute(0, 3, 5, 1, 2, 4).contiguous()  # x(1,2,2,64,40,40)
-        return x.view(N, C * s * s, H // s, W // s)  # x(1,256,40,40)
+        return x.view(b, c * s * s, h // s, w // s)  # x(1,256,40,40)
 
 
 class Expand(nn.Module):
@@ -197,11 +197,11 @@ class Expand(nn.Module):
         self.gain = gain
 
     def forward(self, x):
-        N, C, H, W = x.size()  # assert C / s ** 2 == 0, 'Indivisible gain'
+        b, c, h, w = x.size()  # assert C / s ** 2 == 0, 'Indivisible gain'
         s = self.gain
-        x = x.view(N, s, s, C // s ** 2, H, W)  # x(1,2,2,16,80,80)
+        x = x.view(b, s, s, c // s ** 2, h, w)  # x(1,2,2,16,80,80)
         x = x.permute(0, 3, 4, 1, 5, 2).contiguous()  # x(1,16,80,2,80,2)
-        return x.view(N, C // s ** 2, H * s, W * s)  # x(1,16,160,160)
+        return x.view(b, c // s ** 2, h * s, w * s)  # x(1,16,160,160)
 
 
 class Concat(nn.Module):
