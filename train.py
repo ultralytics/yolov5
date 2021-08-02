@@ -199,7 +199,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # Trainloader
     train_loader, dataset = create_dataloader(train_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
-                                              hyp=hyp, augment=True, cache=opt.cache_images, cache_on_disk=opt.cache_on_disk, cache_directory=opt.cache_directory, rect=opt.rect, rank=RANK,
+                                              hyp=hyp, augment=True, cache_device=opt.cache, rect=opt.rect, rank=RANK,
                                               workers=workers, image_weights=opt.image_weights, quad=opt.quad,
                                               prefix=colorstr('train: '))
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
@@ -209,7 +209,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Process 0
     if RANK in [-1, 0]:
         val_loader = create_dataloader(val_path, imgsz, batch_size // WORLD_SIZE * 2, gs, single_cls,
-                                       hyp=hyp, cache=opt.cache_images and not noval, cache_on_disk=opt.cache_on_disk, cache_directory=opt.cache_directory, rect=True, rank=-1,
+                                       hyp=hyp, cache_device= ('' if noval else opt.cache), rect=True, rank=-1,
                                        workers=workers, pad=0.5,
                                        prefix=colorstr('val: '))[0]
 
@@ -439,9 +439,7 @@ def parse_opt(known=False):
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
     parser.add_argument('--evolve', type=int, nargs='?', const=300, help='evolve hyperparameters for x generations')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
-    parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
-    parser.add_argument('--cache-on-disk', action='store_true', help='cache images on disk, and use the --cache-directory option together')
-    parser.add_argument('--cache-directory', type=str, default='', help='A directory for cache, and it is not available by default')
+    parser.add_argument('--cache', type=str, default='', help='Select a device for cache. In default, cache is not used. When you use cache, set ram or disk')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
