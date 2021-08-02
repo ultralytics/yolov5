@@ -189,7 +189,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
 
     if save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
-        print(f"Results saved to {save_dir}{s}")
+        print(f"Results saved to {colorstr('bold', save_dir)}{s}")
 
     if update:
         strip_optimizer(weights)  # update model (to fix SourceChangeWarning)
