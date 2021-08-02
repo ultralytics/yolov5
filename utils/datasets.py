@@ -21,8 +21,6 @@ import yaml
 from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
-import psutil
-import re
 
 from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
 from utils.general import check_requirements, check_file, check_dataset, xywh2xyxy, xywhn2xyxy, xyxy2xywhn, \
@@ -47,6 +45,7 @@ def get_hash(paths):
     h = hashlib.md5(str(size).encode())  # hash sizes
     h.update(''.join(paths).encode())  # hash paths
     return h.hexdigest()  # return hash
+
 
 def exif_size(img):
     # Returns exif-corrected PIL size
@@ -373,8 +372,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.stride = stride
         self.path = path
         self.albumentations = Albumentations() if augment else None
-        self.cache_images = cache_images
-        self.prefix = prefix
 
         try:
             f = []  # image files
@@ -400,10 +397,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         # Check cache
         self.label_files = img2label_paths(self.img_files)  # labels
         cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')
-        if cache_images == "disk":
-            cache_dir = Path(self.img_files[0]).parent / "images_npy"
-            if not cache_dir.is_dir():
-                cache_dir.mkdir(parents=True)
         try:
             cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
             assert cache['version'] == 0.4 and cache['hash'] == get_hash(self.label_files + self.img_files)
@@ -462,24 +455,25 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             self.batch_shapes = np.ceil(np.array(shapes) * img_size / stride + pad).astype(np.int) * stride
 
         # Cache images into memory for faster training (WARNING: large datasets may exceed system RAM)
-        self.imgs = [None] * n
+        self.imgs, self.img_npy = [None] * n, [None] * n
         if cache_images:
+            if cache_images == 'disk':
+                self.im_cache_dir = Path(Path(self.img_files[0]).parent.as_posix() + '_npy')
+                self.img_npy = [self.im_cache_dir / Path(f).with_suffix('.npy').name for f in self.img_files]
+                self.im_cache_dir.mkdir(parents=True, exist_ok=True)
             gb = 0  # Gigabytes of cached images
             self.img_hw0, self.img_hw = [None] * n, [None] * n
-            results = ThreadPool(NUM_THREADS).imap(lambda x: load_image(*x, no_cache=True), zip(repeat(self), range(n)))
+            results = ThreadPool(NUM_THREADS).imap(lambda x: load_image(*x), zip(repeat(self), range(n)))
             pbar = tqdm(enumerate(results), total=n)
-            if cache_images == "disk":
-                parent_path = Path(self.img_files[0]).parent / "images_npy"
-                disk = psutil.disk_usage(parent_path)
-                for i, x in pbar:
-                    img, self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
-                    np.save(parent_path / (self.prefix + str(i)+".npy"),img)
-                    pbar.desc = f'{prefix}Disk usage for cache({disk.used / 1E9:.1f}GB / {disk.total / 1E9:.1f}GB = {disk.percent}%)'
-            else:
-                for i, x in pbar:
-                    self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
+            for i, x in pbar:
+                im, self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
+                if cache_images == 'disk':
+                    np.save(self.img_npy[i].as_posix(), im)
+                    gb += self.img_npy[i].stat().st_size
+                else:
+                    self.imgs[i] = im
                     gb += self.imgs[i].nbytes
-                    pbar.desc = f'{prefix}Caching images ({gb / 1E9:.1f}GB)'
+                pbar.desc = f'{prefix}Caching images ({gb / 1E9:.1f}GB {cache_images})'
             pbar.close()
 
     def cache_labels(self, path=Path('./labels.cache'), prefix=''):
@@ -633,26 +627,25 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
-def load_image(self, index, no_cache=False):
-    # loads 1 image from dataset, returns img, original hw, resized hw
-    img = self.imgs[index]
-    if img is None:  # not cached
-        if no_cache == False and self.cache_images == "disk":
-            parent_path = Path(self.img_files[index]).parent
-            img = np.load(parent_path / "images_npy" / (self.prefix + str(index) + ".npy"))
-            return  img, self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
-        else:
-            path = self.img_files[index]
-            img = cv2.imread(path)  # BGR
-            assert img is not None, 'Image Not Found ' + path
-            h0, w0 = img.shape[:2]  # orig hw
-            r = self.img_size / max(h0, w0)  # ratio
-            if r != 1:  # if sizes are not equal
-                img = cv2.resize(img, (int(w0 * r), int(h0 * r)),
-                                 interpolation=cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR)
-            return img, (h0, w0), img.shape[:2]  # img, hw_original, hw_resized
+def load_image(self, i):
+    # loads 1 image from dataset index 'i', returns im, original hw, resized hw
+    im = self.imgs[i]
+    if im is None:  # not cached in ram
+        npy = self.img_npy[i]
+        if npy and npy.exists():  # load npy
+            im = np.load(npy)
+        else:  # read image
+            path = self.img_files[i]
+            im = cv2.imread(path)  # BGR
+            assert im is not None, 'Image Not Found ' + path
+        h0, w0 = im.shape[:2]  # orig hw
+        r = self.img_size / max(h0, w0)  # ratio
+        if r != 1:  # if sizes are not equal
+            im = cv2.resize(im, (int(w0 * r), int(h0 * r)),
+                            interpolation=cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR)
+        return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
     else:
-        return self.imgs[index], self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
+        return self.imgs[i], self.img_hw0[i], self.img_hw[i]  # im, hw_original, hw_resized
 
 
 def load_mosaic(self, index):
