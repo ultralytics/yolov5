@@ -155,7 +155,9 @@ def run(weights='./yolov5s.pt',  # weights path
         export_coreml(model, img, file)
 
     # Finish
-    print(f'\nExport complete ({time.time() - t:.2f}s). Visualize with https://github.com/lutzroeder/netron.')
+    print(f'\nExport complete ({time.time() - t:.2f}s)'
+          f"Results saved to {colorstr('bold', file.parent.resolve())}\n"
+          f'Visualize with https://netron.app')
 
 
 def parse_opt():
