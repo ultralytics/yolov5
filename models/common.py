@@ -30,7 +30,7 @@ def autopad(k, p=None):  # kernel, padding
 
 
 def DWConv(c1, c2, k=1, s=1, act=True):
-    # Depth-wise convolution
+    # Depth-wise convolution function
     return Conv(c1, c2, k, s, g=math.gcd(c1, c2), act=act)
 
 
@@ -45,8 +45,15 @@ class Conv(nn.Module):
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
 
-    def fuseforward(self, x):
+    def forward_fuse(self, x):
         return self.act(self.conv(x))
+
+
+class DWConvClass(Conv):
+    # Depth-wise convolution class
+    def __init__(self, c1, c2, k=1, s=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
+        super().__init__(c1, c2, k, s, act)
+        self.conv = nn.Conv2d(c1, c2, k, s, autopad(k), groups=math.gcd(c1, c2), bias=False)
 
 
 class TransformerLayer(nn.Module):
