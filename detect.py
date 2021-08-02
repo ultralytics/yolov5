@@ -112,16 +112,27 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         if no new frame was update and causes latency for new frames but these line check that 
         if new frame and older one are same or not
         """
-        if frstframe:
-            frstframe=False
+        if webcam:
+            if frstframe:
+                frstframe=False
+                previous = img.clone()
+
+            if torch.all(torch.eq(previous, img)) :
+
+                continue
+
             previous = img.clone()
-
-        if torch.all(torch.eq(previous, img)) :
-
-            continue
-
-        previous = img.clone()
         
+        else:
+            if pt:
+                img = torch.from_numpy(img).to(device)
+                img = img.half() if half else img.float()  # uint8 to fp16/32
+            elif onnx:
+                img = img.astype('float32')
+            img /= 255.0  # 0 - 255 to 0.0 - 1.0
+            if len(img.shape) == 3:
+                img = img[None]  # expand for batch dim
+
         
 
         # Inference
