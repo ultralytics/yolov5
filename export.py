@@ -156,8 +156,8 @@ def run(weights='./yolov5s.pt',  # weights path
 
     # Finish
     print(f'\nExport complete ({time.time() - t:.2f}s)'
-          f"Results saved to {colorstr('bold', file.parent.resolve())}\n"
-          f'Visualize with https://netron.app')
+          f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
+          f'\nVisualize with https://netron.app')
 
 
 def parse_opt():
