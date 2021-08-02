@@ -86,7 +86,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
     if webcam:
         view_img = check_imshow()
         cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(source, img_size=imgsz, stride=stride)
+        dataset = LoadStreams(pt,onnx,source,img_size=imgsz, stride=stride,half=False)
         bs = len(dataset)  # batch_size
     else:
         dataset = LoadImages(source, img_size=imgsz, stride=stride)
@@ -97,15 +97,32 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
     if pt and device.type != 'cpu':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
+    frstframe = True  # just used once to copy first frame
     for path, img, im0s, vid_cap in dataset:
-        if pt:
-            img = torch.from_numpy(img).to(device)
-            img = img.half() if half else img.float()  # uint8 to fp16/32
-        elif onnx:
-            img = img.astype('float32')
-        img /= 255.0  # 0 - 255 to 0.0 - 1.0
-        if len(img.shape) == 3:
-            img = img[None]  # expand for batch dim
+        
+
+        
+        """ this again helps in reducing delay i checked for hours earlier was causing delay after hours but this changed 
+        everything and no delay was found
+        """
+        
+        
+        """
+        though these are few lines but they changed everything becuase if check closely this loop keeps on detecting even 
+        if no new frame was update and causes latency for new frames but these line check that 
+        if new frame and older one are same or not
+        """
+        if frstframe:
+            frstframe=False
+            previous = img.clone()
+
+        if torch.all(torch.eq(previous, img)) :
+
+            continue
+
+        previous = img.clone()
+        
+        
 
         # Inference
         t1 = time_sync()
@@ -114,6 +131,9 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             pred = model(img, augment=augment, visualize=visualize)[0]
         elif onnx:
             pred = torch.tensor(session.run([session.get_outputs()[0].name], {session.get_inputs()[0].name: img}))
+
+        
+
 
         # NMS
         pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)

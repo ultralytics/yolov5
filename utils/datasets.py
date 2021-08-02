@@ -273,10 +273,15 @@ class LoadWebcam:  # for inference
 
 
 class LoadStreams:  # multiple IP or RTSP cameras
-    def __init__(self, sources='streams.txt', img_size=640, stride=32):
+    def __init__(self,pt,onnx, sources='streams.txt', img_size=640, stride=32,half=False):
         self.mode = 'stream'
         self.img_size = img_size
         self.stride = stride
+        self.pt = pt
+        self.onnx = onnx
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.half = half
+        self.half &= self.device.type != 'cpu'
 
         if os.path.isfile(sources):
             with open(sources, 'r') as f:
@@ -324,7 +329,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             if n % read == 0:
                 success, im = cap.retrieve()
                 self.imgs[i] = im if success else self.imgs[i] * 0
-            time.sleep(1 / self.fps[i])  # wait time
+            # time.sleep(1 / self.fps[i])  # wait time  #it was causing delay when we run live stream for hours inititally delay is in milisecond but it hurts on long run and also you have already done imgs[i]*0 if frame not grabbed 
 
     def __iter__(self):
         self.count = -1
@@ -346,6 +351,18 @@ class LoadStreams:  # multiple IP or RTSP cameras
         # Convert
         img = img[..., ::-1].transpose((0, 3, 1, 2))  # BGR to RGB, BHWC to BCHW
         img = np.ascontiguousarray(img)
+        
+        #we can do this image preprocessing here only. When i was running my model on live stream it was causing delay.. again milli seconds hurts at long run
+
+        if self.pt:
+            img = torch.from_numpy(img).to(self.device)
+            img = img.half() if self.half else img.float()  # uint8 to fp16/32
+        elif self.onnx:
+            img = img.astype('float32')
+        img /= 255.0  # 0 - 255 to 0.0 - 1.0
+        if len(img.shape) == 3:
+            img = img[None]  # expand for batch dim
+
 
         return self.sources, img, img0, None
 
