@@ -89,7 +89,7 @@ def exif_transpose(image):
     return image
 
 
-def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache_device='', pad=0.0,
+def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False, pad=0.0,
                       rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix=''):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
     with torch_distributed_zero_first(rank):
@@ -97,7 +97,7 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
                                       augment=augment,  # augment images
                                       hyp=hyp,  # augmentation hyperparameters
                                       rect=rect,  # rectangular training
-                                      cache_device=cache_device,
+                                      cache_images=cache,
                                       single_cls=single_cls,
                                       stride=int(stride),
                                       pad=pad,
@@ -362,7 +362,7 @@ def img2label_paths(img_paths):
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-                 cache_device='', single_cls=False, stride=32, pad=0.0, prefix=''):
+                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -373,12 +373,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.stride = stride
         self.path = path
         self.albumentations = Albumentations() if augment else None
-        self.cache_device = cache_device
-        # Use self.prefix as cache-key for on-disk-cache
-        self.prefix = re.sub(r'\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]', "", prefix).replace(' ','_')
-
-        if cache_device != '' and cache_device != 'ram' and cache_device != 'disk':
-            raise Exception(f'{cache_device} is set in cache_device. It should be ram or disk.')
+        self.cache_images = cache_images
+        self.prefix = prefix
 
         try:
             f = []  # image files
@@ -404,7 +400,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         # Check cache
         self.label_files = img2label_paths(self.img_files)  # labels
         cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')
-        if cache_device == "disk":
+        if cache_images == "disk":
             cache_dir = Path(self.img_files[0]).parent / "images_npy"
             if not cache_dir.is_dir():
                 cache_dir.mkdir(parents=True)
@@ -467,12 +463,12 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
 
         # Cache images into memory for faster training (WARNING: large datasets may exceed system RAM)
         self.imgs = [None] * n
-        if cache_device != '':
+        if cache_images:
             gb = 0  # Gigabytes of cached images
             self.img_hw0, self.img_hw = [None] * n, [None] * n
             results = ThreadPool(NUM_THREADS).imap(lambda x: load_image(*x, no_cache=True), zip(repeat(self), range(n)))
             pbar = tqdm(enumerate(results), total=n)
-            if cache_device == "disk":
+            if cache_images == "disk":
                 parent_path = Path(self.img_files[0]).parent / "images_npy"
                 disk = psutil.disk_usage(parent_path)
                 for i, x in pbar:
@@ -641,7 +637,7 @@ def load_image(self, index, no_cache=False):
     # loads 1 image from dataset, returns img, original hw, resized hw
     img = self.imgs[index]
     if img is None:  # not cached
-        if no_cache == False and self.cache_device == "disk":
+        if no_cache == False and self.cache_images == "disk":
             parent_path = Path(self.img_files[index]).parent
             img = np.load(parent_path / "images_npy" / (self.prefix + str(index) + ".npy"))
             return  img, self.img_hw0[index], self.img_hw[index]  # img, hw_original, hw_resized
