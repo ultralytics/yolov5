@@ -466,12 +466,12 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             results = ThreadPool(NUM_THREADS).imap(lambda x: load_image(*x), zip(repeat(self), range(n)))
             pbar = tqdm(enumerate(results), total=n)
             for i, x in pbar:
-                im, self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
                 if cache_images == 'disk':
-                    np.save(self.img_npy[i].as_posix(), im)
+                    if not self.img_npy[i].exists():
+                        np.save(self.img_npy[i].as_posix(), x[0])
                     gb += self.img_npy[i].stat().st_size
                 else:
-                    self.imgs[i] = im
+                    self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # im, hw_orig, hw_resized = load_image(self, i)
                     gb += self.imgs[i].nbytes
                 pbar.desc = f'{prefix}Caching images ({gb / 1E9:.1f}GB {cache_images})'
             pbar.close()
