@@ -60,11 +60,11 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
     print('')  # newline
 
 
-def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=1000, verbose=True):
+def kmean_anchors(dataset='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=1000, verbose=True):
     """ Creates kmeans-evolved anchors from training dataset
 
         Arguments:
-            path: path to dataset *.yaml, or a loaded dataset
+            dataset: path to data.yaml, or a loaded dataset
             n: number of anchors
             img_size: image size used for training
             thr: anchor-label wh ratio threshold hyperparameter hyp['anchor_t'] used for training, default=4.0
@@ -103,13 +103,11 @@ def kmean_anchors(path='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen=10
             print('%i,%i' % (round(x[0]), round(x[1])), end=',  ' if i < len(k) - 1 else '\n')  # use in *.cfg
         return k
 
-    if isinstance(path, str):  # *.yaml file
-        with open(path) as f:
+    if isinstance(dataset, str):  # *.yaml file
+        with open(dataset, encoding='ascii', errors='ignore') as f:
             data_dict = yaml.safe_load(f)  # model dict
         from utils.datasets import LoadImagesAndLabels
         dataset = LoadImagesAndLabels(data_dict['train'], augment=True, rect=True)
-    else:
-        dataset = path  # dataset
 
     # Get label wh
     shapes = img_size * dataset.shapes / dataset.shapes.max(1, keepdims=True)

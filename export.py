@@ -76,6 +76,7 @@ def export_onnx(model, img, file, opset, train, dynamic, simplify):
             except Exception as e:
                 print(f'{prefix} simplifier failure: {e}')
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+        print(f"{prefix} run --dynamic ONNX model inference with detect.py: 'python detect.py --weights {f}'")
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 
@@ -94,7 +95,7 @@ def export_coreml(model, img, file):
         model.save(f)
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
-        print(f'{prefix} export failure: {e}')
+        print(f'\n{prefix} export failure: {e}')
 
 
 def run(weights='./yolov5s.pt',  # weights path
@@ -154,7 +155,9 @@ def run(weights='./yolov5s.pt',  # weights path
         export_coreml(model, img, file)
 
     # Finish
-    print(f'\nExport complete ({time.time() - t:.2f}s). Visualize with https://github.com/lutzroeder/netron.')
+    print(f'\nExport complete ({time.time() - t:.2f}s)'
+          f"Results saved to {colorstr('bold', file.parent.resolve())}\n"
+          f'Visualize with https://netron.app')
 
 
 def parse_opt():

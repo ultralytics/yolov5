@@ -27,7 +27,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
 
     from models.yolo import Model, attempt_load
     from utils.general import check_requirements, set_logging
-    from utils.google_utils import attempt_download
+    from utils.downloads import attempt_download
     from utils.torch_utils import select_device
 
     file = Path(__file__).absolute()
@@ -115,9 +115,11 @@ if __name__ == '__main__':
     import cv2
     import numpy as np
     from PIL import Image
+    from pathlib import Path
 
     imgs = ['data/images/zidane.jpg',  # filename
-            'https://github.com/ultralytics/yolov5/releases/download/v1.0/zidane.jpg',  # URI
+            Path('data/images/zidane.jpg'),  # Path
+            'https://ultralytics.com/images/zidane.jpg',  # URI
             cv2.imread('data/images/bus.jpg')[:, :, ::-1],  # OpenCV
             Image.open('data/images/bus.jpg'),  # PIL
             np.zeros((320, 640, 3))]  # numpy
