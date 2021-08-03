@@ -23,7 +23,6 @@ try:
 except ImportError:
     thop = None
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
 
 
@@ -108,6 +107,7 @@ def profile(input, ops, n=10, device=None):
     #     profile(input, [m1, m2], n=100)  # profile over 100 iterations
 
     results = []
+    logging.basicConfig(format="%(message)s", level=logging.INFO)
     device = device or select_device()
     print(f"{'Params':>12s}{'GFLOPs':>12s}{'GPU_mem (GB)':>14s}{'forward (ms)':>14s}{'backward (ms)':>14s}"
           f"{'input':>24s}{'output':>24s}")
