@@ -1,6 +1,7 @@
 # YOLOv5 common modules
 
 import logging
+import warnings
 from copy import copy
 from pathlib import Path
 
@@ -29,7 +30,7 @@ def autopad(k, p=None):  # kernel, padding
 
 
 def DWConv(c1, c2, k=1, s=1, act=True):
-    # Depthwise convolution
+    # Depth-wise convolution function
     return Conv(c1, c2, k, s, g=math.gcd(c1, c2), act=act)
 
 
@@ -44,8 +45,15 @@ class Conv(nn.Module):
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
 
-    def fuseforward(self, x):
+    def forward_fuse(self, x):
         return self.act(self.conv(x))
+
+
+class DWConvClass(Conv):
+    # Depth-wise convolution class
+    def __init__(self, c1, c2, k=1, s=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
+        super().__init__(c1, c2, k, s, act)
+        self.conv = nn.Conv2d(c1, c2, k, s, autopad(k), groups=math.gcd(c1, c2), bias=False)
 
 
 class TransformerLayer(nn.Module):
@@ -158,7 +166,9 @@ class SPP(nn.Module):
 
     def forward(self, x):
         x = self.cv1(x)
-        return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')  # suppress torch 1.9.0 max_pool2d() warning
+            return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
 
 
 class Focus(nn.Module):
@@ -180,11 +190,11 @@ class Contract(nn.Module):
         self.gain = gain
 
     def forward(self, x):
-        N, C, H, W = x.size()  # assert (H / s == 0) and (W / s == 0), 'Indivisible gain'
+        b, c, h, w = x.size()  # assert (h / s == 0) and (W / s == 0), 'Indivisible gain'
         s = self.gain
-        x = x.view(N, C, H // s, s, W // s, s)  # x(1,64,40,2,40,2)
+        x = x.view(b, c, h // s, s, w // s, s)  # x(1,64,40,2,40,2)
         x = x.permute(0, 3, 5, 1, 2, 4).contiguous()  # x(1,2,2,64,40,40)
-        return x.view(N, C * s * s, H // s, W // s)  # x(1,256,40,40)
+        return x.view(b, c * s * s, h // s, w // s)  # x(1,256,40,40)
 
 
 class Expand(nn.Module):
@@ -194,11 +204,11 @@ class Expand(nn.Module):
         self.gain = gain
 
     def forward(self, x):
-        N, C, H, W = x.size()  # assert C / s ** 2 == 0, 'Indivisible gain'
+        b, c, h, w = x.size()  # assert C / s ** 2 == 0, 'Indivisible gain'
         s = self.gain
-        x = x.view(N, s, s, C // s ** 2, H, W)  # x(1,2,2,16,80,80)
+        x = x.view(b, s, s, c // s ** 2, h, w)  # x(1,2,2,16,80,80)
         x = x.permute(0, 3, 4, 1, 5, 2).contiguous()  # x(1,16,80,2,80,2)
-        return x.view(N, C // s ** 2, H * s, W * s)  # x(1,16,160,160)
+        return x.view(b, c // s ** 2, h * s, w * s)  # x(1,16,160,160)
 
 
 class Concat(nn.Module):
@@ -229,10 +239,10 @@ class AutoShape(nn.Module):
     @torch.no_grad()
     def forward(self, imgs, size=640, augment=False, profile=False):
         # Inference from various sources. For height=640, width=1280, RGB images example inputs are:
-        #   filename:   imgs = 'data/images/zidane.jpg'  # str or PosixPath
+        #   file:       imgs = 'data/images/zidane.jpg'  # str or PosixPath
         #   URI:             = 'https://ultralytics.com/images/zidane.jpg'
         #   OpenCV:          = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(640,1280,3)
-        #   PIL:             = Image.open('image.jpg')  # HWC x(640,1280,3)
+        #   PIL:             = Image.open('image.jpg') or ImageGrab.grab()  # HWC x(640,1280,3)
         #   numpy:           = np.zeros((640,1280,3))  # HWC
         #   torch:           = torch.zeros(16,3,320,640)  # BCHW (scaled to size=640, 0-1 values)
         #   multiple:        = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
