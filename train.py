@@ -457,7 +457,7 @@ def parse_opt(known=False):
     return opt
 
 
-def main(opt):
+def main(opt, callback_handler):
     # Checks
     set_logging(RANK)
     if RANK in [-1, 0]:
