@@ -386,7 +386,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 if best_fitness == fi:
                     torch.save(ckpt, best)
                 del ckpt
-                callbacks.on_model_save(last, epoch, final_epoch, best_fitness, fi)
+                callbacks.on_model_save(last, epoch, final_epoch, best_fitness, fi, save_dir)
 
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training -----------------------------------------------------------------------------------------------------
