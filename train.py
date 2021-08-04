@@ -477,7 +477,7 @@ def main(opt):
         if opt.evolve:
             opt.project = 'runs/evolve'
             opt.exist_ok = opt.resume
-        opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok)
+        opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))
 
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
@@ -535,11 +535,11 @@ def main(opt):
             hyp = yaml.safe_load(f)  # load hyps dict
             if 'anchors' not in hyp:  # anchors commented in hyp.yaml
                 hyp['anchors'] = 3
-        opt.noval, opt.nosave = True, True  # only val/save final epoch
+        opt.noval, opt.nosave, save_dir = True, True, Path(opt.save_dir)  # only val/save final epoch
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
-        yaml_file, evolve_csv = opt.save_dir / 'hyp_evolved.yaml', opt.save_dir / 'evolve.csv'
+        yaml_file, evolve_csv = save_dir / 'hyp_evolved.yaml', save_dir / 'evolve.csv'
         if opt.bucket:
-            os.system(f'gsutil cp gs://{opt.bucket}/evolve.csv {opt.save_dir}')  # download evolve.csv if exists
+            os.system(f'gsutil cp gs://{opt.bucket}/evolve.csv {save_dir}')  # download evolve.csv if exists
 
         for _ in range(opt.evolve):  # generations to evolve
             if evolve_csv.exists():  # if evolve.csv exists: select best hyps and mutate
