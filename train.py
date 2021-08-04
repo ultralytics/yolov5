@@ -464,7 +464,7 @@ def main(opt):
         check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=['thop'])
 
     # Resume
-    if opt.resume and not check_wandb_resume(opt):  # resume an interrupted run
+    if opt.resume and not check_wandb_resume(opt) and not opt.evolve:  # resume an interrupted run
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
@@ -474,8 +474,10 @@ def main(opt):
     else:
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
-        opt.name = 'evolve' if opt.evolve else opt.name
-        opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok or opt.evolve))
+        if opt.evolve:
+            opt.project = 'runs/evolve'
+            opt.exist_ok = opt.resume
+        opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok)
 
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
@@ -535,15 +537,15 @@ def main(opt):
                 hyp['anchors'] = 3
         opt.noval, opt.nosave = True, True  # only val/save final epoch
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
-        yaml_file = Path(opt.save_dir) / 'hyp_evolved.yaml'  # save best result here
+        yaml_file, evolve_csv = opt.save_dir / 'hyp_evolved.yaml', opt.save_dir / 'evolve.csv'
         if opt.bucket:
-            os.system(f'gsutil cp gs://{opt.bucket}/evolve.txt .')  # download evolve.txt if exists
+            os.system(f'gsutil cp gs://{opt.bucket}/evolve.csv {opt.save_dir}')  # download evolve.csv if exists
 
         for _ in range(opt.evolve):  # generations to evolve
-            if Path('evolve.txt').exists():  # if evolve.txt exists: select best hyps and mutate
+            if evolve_csv.exists():  # if evolve.csv exists: select best hyps and mutate
                 # Select parent(s)
                 parent = 'single'  # parent selection method: 'single' or 'weighted'
-                x = np.loadtxt('evolve.txt', ndmin=2)
+                x = np.loadtxt(evolve_csv, ndmin=2, delimiter=',')
                 n = min(5, len(x))  # number of previous results to consider
                 x = x[np.argsort(-fitness(x))][:n]  # top n mutations
                 w = fitness(x) - fitness(x).min() + 1E-6  # weights (sum > 0)
@@ -575,11 +577,12 @@ def main(opt):
             results = train(hyp.copy(), opt, device)
 
             # Write mutation results
-            print_mutation(hyp.copy(), results, yaml_file, opt.bucket)
+            print_mutation(hyp.copy(), results, yaml_file, evolve_csv, opt.bucket)
 
         # Plot results
         plot_evolution(yaml_file)
-        print(f'Hyperparameter evolution complete. Best results saved as: {yaml_file}\n'
+        print(f'Hyperparameter evolution complete.\n'
+              f'Best results saved as: {yaml_file}\n'
               f'Command to train a new model with these hyperparameters: $ python train.py --hyp {yaml_file}')
 
 
