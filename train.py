@@ -583,7 +583,7 @@ def main(opt):
         # Plot results
         plot_evolve(evolve_csv)
         print(f'Hyperparameter evolution finished\n'
-              f"Results saved to {colorstr('bold', save_dir)}"
+              f"Results saved to {colorstr('bold', save_dir)}\n"
               f'Use best hyperparameters example: $ python train.py --hyp {evolve_yaml}')
 
 
