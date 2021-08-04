@@ -37,7 +37,7 @@ from utils.general import labels_to_class_weights, increment_path, labels_to_ima
     check_requirements, print_mutation, set_logging, one_cycle, colorstr, methods
 from utils.downloads import attempt_download
 from utils.loss import ComputeLoss
-from utils.plots import plot_labels, plot_evolution
+from utils.plots import plot_labels, plot_evolve
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, de_parallel
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.metrics import fitness
@@ -539,7 +539,7 @@ def main(opt):
                 hyp['anchors'] = 3
         opt.noval, opt.nosave, save_dir = True, True, Path(opt.save_dir)  # only val/save final epoch
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
-        yaml_file, evolve_csv = save_dir / 'hyp_evolved.yaml', save_dir / 'evolve.csv'
+        evolve_yaml, evolve_csv = save_dir / 'hyp_evolved.yaml', save_dir / 'evolve.csv'
         if opt.bucket:
             os.system(f'gsutil cp gs://{opt.bucket}/evolve.csv {save_dir}')  # download evolve.csv if exists
 
@@ -547,7 +547,7 @@ def main(opt):
             if evolve_csv.exists():  # if evolve.csv exists: select best hyps and mutate
                 # Select parent(s)
                 parent = 'single'  # parent selection method: 'single' or 'weighted'
-                x = np.loadtxt(evolve_csv, ndmin=2, delimiter=(','), skiprows=1)
+                x = np.loadtxt(evolve_csv, ndmin=2, delimiter=',', skiprows=1)
                 n = min(5, len(x))  # number of previous results to consider
                 x = x[np.argsort(-fitness(x))][:n]  # top n mutations
                 w = fitness(x) - fitness(x).min() + 1E-6  # weights (sum > 0)
@@ -582,10 +582,10 @@ def main(opt):
             print_mutation(results, hyp.copy(), save_dir, opt.bucket)
 
         # Plot results
-        plot_evolution(yaml_file)
+        plot_evolve(evolve_csv)
         print(f'Hyperparameter evolution complete.\n'
-              f'Best results saved as: {yaml_file}\n'
-              f'Command to train a new model with these hyperparameters: $ python train.py --hyp {yaml_file}')
+              f'Best results saved as: {evolve_yaml}\n'
+              f'Command to train a new model with these hyperparameters: $ python train.py --hyp {evolve_yaml}')
 
 
 def run(**kwargs):
