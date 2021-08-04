@@ -539,7 +539,7 @@ def main(opt):
                 hyp['anchors'] = 3
         opt.noval, opt.nosave, save_dir = True, True, Path(opt.save_dir)  # only val/save final epoch
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
-        evolve_yaml, evolve_csv = save_dir / 'hyp_evolved.yaml', save_dir / 'evolve.csv'
+        evolve_yaml, evolve_csv = save_dir / 'hyp_evolve.yaml', save_dir / 'evolve.csv'
         if opt.bucket:
             os.system(f'gsutil cp gs://{opt.bucket}/evolve.csv {save_dir}')  # download evolve.csv if exists
 
@@ -585,7 +585,7 @@ def main(opt):
         plot_evolve(evolve_csv)
         print(f'Hyperparameter evolution complete.\n'
               f'Best results saved as: {evolve_yaml}\n'
-              f'Command to train a new model with these hyperparameters: $ python train.py --hyp {evolve_yaml}')
+              f'Train a new model with these hyperparameters: $ python train.py --hyp {evolve_yaml}')
 
 
 def run(**kwargs):

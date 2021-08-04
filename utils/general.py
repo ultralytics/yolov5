@@ -636,7 +636,7 @@ def print_mutation(results, hyp, save_dir, bucket):
 
     # Print to screen
     print(colorstr('evolve: ') + ', '.join(f'{x.strip():>20s}' for x in keys))
-    print(colorstr('evolve: ') + ', '.join(f'{x:20.5g}' for x in vals))
+    print(colorstr('evolve: ') + ', '.join(f'{x:20.5g}' for x in vals), end='\n')
 
     # Save yaml
     with open(evolve_yaml, 'w') as f:
