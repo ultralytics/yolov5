@@ -37,7 +37,7 @@ from utils.general import labels_to_class_weights, increment_path, labels_to_ima
     check_requirements, print_mutation, set_logging, one_cycle, colorstr, methods
 from utils.downloads import attempt_download
 from utils.loss import ComputeLoss
-from utils.plots import plot_labels, plot_evolution
+from utils.plots import plot_labels, plot_evolve
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, de_parallel
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.metrics import fitness
@@ -367,7 +367,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             if fi > best_fitness:
                 best_fitness = fi
-            callbacks.on_fit_epoch_end(mloss, results, lr, epoch, best_fitness, fi)
+            log_vals = list(mloss) + list(results) + lr
+            callbacks.on_fit_epoch_end(log_vals, epoch, best_fitness, fi)
 
             # Save model
             if (not nosave) or (final_epoch and not evolve):  # if save
@@ -464,7 +465,7 @@ def main(opt):
         check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=['thop'])
 
     # Resume
-    if opt.resume and not check_wandb_resume(opt):  # resume an interrupted run
+    if opt.resume and not check_wandb_resume(opt) and not opt.evolve:  # resume an interrupted run
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
@@ -474,8 +475,10 @@ def main(opt):
     else:
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
-        opt.name = 'evolve' if opt.evolve else opt.name
-        opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok or opt.evolve))
+        if opt.evolve:
+            opt.project = 'runs/evolve'
+            opt.exist_ok = opt.resume
+        opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))
 
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
@@ -533,17 +536,17 @@ def main(opt):
             hyp = yaml.safe_load(f)  # load hyps dict
             if 'anchors' not in hyp:  # anchors commented in hyp.yaml
                 hyp['anchors'] = 3
-        opt.noval, opt.nosave = True, True  # only val/save final epoch
+        opt.noval, opt.nosave, save_dir = True, True, Path(opt.save_dir)  # only val/save final epoch
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
-        yaml_file = Path(opt.save_dir) / 'hyp_evolved.yaml'  # save best result here
+        evolve_yaml, evolve_csv = save_dir / 'hyp_evolve.yaml', save_dir / 'evolve.csv'
         if opt.bucket:
-            os.system(f'gsutil cp gs://{opt.bucket}/evolve.txt .')  # download evolve.txt if exists
+            os.system(f'gsutil cp gs://{opt.bucket}/evolve.csv {save_dir}')  # download evolve.csv if exists
 
         for _ in range(opt.evolve):  # generations to evolve
-            if Path('evolve.txt').exists():  # if evolve.txt exists: select best hyps and mutate
+            if evolve_csv.exists():  # if evolve.csv exists: select best hyps and mutate
                 # Select parent(s)
                 parent = 'single'  # parent selection method: 'single' or 'weighted'
-                x = np.loadtxt('evolve.txt', ndmin=2)
+                x = np.loadtxt(evolve_csv, ndmin=2, delimiter=',', skiprows=1)
                 n = min(5, len(x))  # number of previous results to consider
                 x = x[np.argsort(-fitness(x))][:n]  # top n mutations
                 w = fitness(x) - fitness(x).min() + 1E-6  # weights (sum > 0)
@@ -575,12 +578,13 @@ def main(opt):
             results = train(hyp.copy(), opt, device)
 
             # Write mutation results
-            print_mutation(hyp.copy(), results, yaml_file, opt.bucket)
+            print_mutation(results, hyp.copy(), save_dir, opt.bucket)
 
         # Plot results
-        plot_evolution(yaml_file)
-        print(f'Hyperparameter evolution complete. Best results saved as: {yaml_file}\n'
-              f'Command to train a new model with these hyperparameters: $ python train.py --hyp {yaml_file}')
+        plot_evolve(evolve_csv)
+        print(f'Hyperparameter evolution finished\n'
+              f"Results saved to {colorstr('bold', save_dir)}"
+              f'Use best hyperparameters example: $ python train.py --hyp {evolve_yaml}')
 
 
 def run(**kwargs):

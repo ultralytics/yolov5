@@ -325,30 +325,6 @@ def plot_labels(labels, names=(), save_dir=Path('')):
     plt.close()
 
 
-def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots import *; plot_evolution()
-    # Plot hyperparameter evolution results in evolve.txt
-    with open(yaml_file) as f:
-        hyp = yaml.safe_load(f)
-    x = np.loadtxt('evolve.txt', ndmin=2)
-    f = fitness(x)
-    # weights = (f - f.min()) ** 2  # for weighted results
-    plt.figure(figsize=(10, 12), tight_layout=True)
-    matplotlib.rc('font', **{'size': 8})
-    for i, (k, v) in enumerate(hyp.items()):
-        y = x[:, i + 7]
-        # mu = (y * weights).sum() / weights.sum()  # best weighted result
-        mu = y[f.argmax()]  # best single result
-        plt.subplot(6, 5, i + 1)
-        plt.scatter(y, f, c=hist2d(y, f, 20), cmap='viridis', alpha=.8, edgecolors='none')
-        plt.plot(mu, f.max(), 'k+', markersize=15)
-        plt.title('%s = %.3g' % (k, mu), fontdict={'size': 9})  # limit to 40 characters
-        if i % 5 != 0:
-            plt.yticks([])
-        print('%15s: %.3g' % (k, mu))
-    plt.savefig('evolve.png', dpi=200)
-    print('\nPlot saved as evolve.png')
-
-
 def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
     # Plot iDetection '*.txt' per-image logs. from utils.plots import *; profile_idetection()
     ax = plt.subplots(2, 4, figsize=(12, 6), tight_layout=True)[1].ravel()
@@ -381,7 +357,31 @@ def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
     plt.savefig(Path(save_dir) / 'idetection_profile.png', dpi=200)
 
 
-def plot_results(file='', dir=''):
+def plot_evolve(evolve_csv=Path('path/to/evolve.csv')):  # from utils.plots import *; plot_evolve()
+    # Plot evolve.csv hyp evolution results
+    data = pd.read_csv(evolve_csv)
+    keys = [x.strip() for x in data.columns]
+    x = data.values
+    f = fitness(x)
+    j = np.argmax(f)  # max fitness index
+    plt.figure(figsize=(10, 12), tight_layout=True)
+    matplotlib.rc('font', **{'size': 8})
+    for i, k in enumerate(keys[7:]):
+        v = x[:, 7 + i]
+        mu = v[j]  # best single result
+        plt.subplot(6, 5, i + 1)
+        plt.scatter(v, f, c=hist2d(v, f, 20), cmap='viridis', alpha=.8, edgecolors='none')
+        plt.plot(mu, f.max(), 'k+', markersize=15)
+        plt.title('%s = %.3g' % (k, mu), fontdict={'size': 9})  # limit to 40 characters
+        if i % 5 != 0:
+            plt.yticks([])
+        print('%15s: %.3g' % (k, mu))
+    f = evolve_csv.with_suffix('.png')  # filename
+    plt.savefig(f, dpi=200)
+    print(f'Saved {f}')
+
+
+def plot_results(file='path/to/results.csv', dir=''):
     # Plot training results.csv. Usage: from utils.plots import *; plot_results('path/to/results.csv')
     save_dir = Path(file).parent if file else Path(dir)
     fig, ax = plt.subplots(2, 5, figsize=(12, 6), tight_layout=True)
