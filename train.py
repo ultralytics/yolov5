@@ -435,6 +435,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 torch.save(ckpt, last)
                 if best_fitness == fi:
                     torch.save(ckpt, best)
+                if opt.checkpoint_frequency and epoch != 0 and epoch % opt.checkpoint_frequency == 0:
+                    torch.save(ckpt, wdir / f'checkpoint-{epoch}.pt')
                 if loggers['wandb']:
                     if ((epoch + 1) % opt.save_period == 0 and not final_epoch) and opt.save_period != -1:
                         wandb_logger.log_model(last.parent, opt, epoch, fi, best_model=best_fitness == fi)
@@ -514,6 +516,7 @@ def parse_opt(known=False):
     parser.add_argument('--save_period', type=int, default=-1, help='Log model after every "save_period" epoch')
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
+    parser.add_argument('--checkpoint_frequency', type=int, default=None, help='how often you want to save the weight checkpoint')
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
