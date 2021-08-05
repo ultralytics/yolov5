@@ -72,7 +72,7 @@ class GhostBottleneck(nn.Module):
 
 
 class MixConv2d(nn.Module):
-    # Mixed Depthwise Conv https://arxiv.org/abs/1907.09595
+    # Mixed Depth-wise Conv https://arxiv.org/abs/1907.09595
     def __init__(self, c1, c2, k=(1, 3), s=1, equal_ch=True):
         super().__init__()
         groups = len(k)

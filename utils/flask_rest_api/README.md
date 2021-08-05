@@ -19,7 +19,7 @@ $ python3 restapi.py --port 5000
 Then use [curl](https://curl.se/) to perform a request:
 
 ```shell
-$ curl -X POST -F image=@zidane.jpg 'http://localhost:5000/v1/object-detection/yolov5s'`
+$ curl -X POST -F image=@zidane.jpg 'http://localhost:5000/v1/object-detection/yolov5s'
 ```
 
 The model inference results are returned as a JSON response:
