@@ -52,8 +52,7 @@ class Conv(nn.Module):
 class DWConvClass(Conv):
     # Depth-wise convolution class
     def __init__(self, c1, c2, k=1, s=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
-        super().__init__(c1, c2, k, s, act)
-        self.conv = nn.Conv2d(c1, c2, k, s, autopad(k), groups=math.gcd(c1, c2), bias=False)
+        super().__init__(c1, c2, k, s, g=math.gcd(c1, c2), act=act)
 
 
 class TransformerLayer(nn.Module):
