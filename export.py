@@ -5,6 +5,7 @@ Usage:
 """
 
 import argparse
+import struct
 import sys
 import time
 from pathlib import Path
@@ -12,12 +13,13 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
+from utils.torch_utils import select_device
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
 from models.common import Conv
-from models.yolo import Detect
+from models.yolo import Detect, attempt_download
 from models.experimental import attempt_load
 from utils.activations import Hardswish, SiLU
 from utils.general import colorstr, check_img_size, check_requirements, file_size, set_logging
@@ -75,6 +77,8 @@ def export_onnx(model, img, file, opset, train, dynamic, simplify):
                 onnx.save(model_onnx, f)
             except Exception as e:
                 print(f'{prefix} simplifier failure: {e}')
+
+        print(f)
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
         print(f"{prefix} run --dynamic ONNX model inference with detect.py: 'python detect.py --weights {f}'")
     except Exception as e:
@@ -97,12 +101,31 @@ def export_coreml(model, img, file):
     except Exception as e:
         print(f'\n{prefix} export failure: {e}')
 
+def export_wts(weights, file):
+    # export for https://github.com/wang-xinyu/tensorrtx/tree/master/yolov5
+    # credits: Wang-Xinyu
+
+    attempt_download(weights)
+    weights_file = Path(weights)
+    file_wts = Path(weights_file.parents[0], str(weights_file.stem).strip().replace("'", '') + '.wts')
+
+    model = torch.load(weights, map_location='cpu')['model'].float().eval() # load to FP32
+    
+    with open(file_wts, 'w') as f:
+        f.write('{}\n'.format(len(model.state_dict().keys())))
+        for k, v in model.state_dict().items():
+            vr = v.reshape(-1).cpu().numpy()
+            f.write('{} {} '.format(k, len(vr)))
+            for vv in vr:
+                f.write(' ')
+                f.write(struct.pack('>f', float(vv)).hex())
+            f.write('\n')
 
 def run(weights='./yolov5s.pt',  # weights path
         img_size=(640, 640),  # image (height, width)
         batch_size=1,  # batch size
         device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        include=('torchscript', 'onnx', 'coreml'),  # include formats
+        include=('torchscript', 'onnx', 'coreml', 'wts'),  # include formats
         half=False,  # FP16 half-precision export
         inplace=False,  # set YOLOv5 Detect() inplace=True
         train=False,  # model.train() mode
@@ -153,6 +176,8 @@ def run(weights='./yolov5s.pt',  # weights path
         export_onnx(model, img, file, opset, train, dynamic, simplify)
     if 'coreml' in include:
         export_coreml(model, img, file)
+    if 'wts' in include:
+        export_wts(weights, file)
 
     # Finish
     print(f'\nExport complete ({time.time() - t:.2f}s)'
@@ -166,7 +191,7 @@ def parse_opt():
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image (height, width)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--include', nargs='+', default=['torchscript', 'onnx', 'coreml'], help='include formats')
+    parser.add_argument('--include', nargs='+', default=['torchscript', 'onnx', 'coreml', 'wts'], help='include formats')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--train', action='store_true', help='model.train() mode')
