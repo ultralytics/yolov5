@@ -55,17 +55,26 @@ You can leverage W&B artifacts and Tables integration to easily visualize and ma
  Log, visualize, dynamically query, and understand your data with <a href='https://docs.wandb.ai/guides/data-vis/tables'>W&B Tables</a>. You can use the following command to log your dataset as a W&B Table. This will generate a <code>{dataset}_wandb.yaml</code> file which can be used to train from dataset artifact.
  <details>
   <summary> <b>Usage</b> </summary>
-  <code>
- $ python utils/logger/wandb/log_dataset.py --project ... --name ... --data ..
-  </code>
+   <b>Code</b> <code> $ python utils/logger/wandb/log_dataset.py --project ... --name ... --data .. </code>
+   
+ ![Screenshot (64)](https://user-images.githubusercontent.com/15766192/128486078-d8433890-98a3-4d12-8986-b6c0e3fc64b9.png)
  </details>
   
-
- <summary> Toggle Details </summary>
-
-
+ <h3> 2: Log dataset and train on it simultaneously </h3>
+  
+ <details>
+  <summary> <b>Usage</b> </summary>
+   <b>Code</b> <code> $ python utils/logger/wandb/log_dataset.py --project ... --name ... --data .. </code>
+   
+ ![Screenshot (64)](https://user-images.githubusercontent.com/15766192/128486078-d8433890-98a3-4d12-8986-b6c0e3fc64b9.png)
+ </details>
+  
+  
 </details>
- ## Reports
+
+
+
+ <h3> Reports </h3>
  W&B Reports can be created from your saved runs for sharing online. Once a report is created you will receive a link you can use to publically share your results. Here is an example report created from the COCO128 tutorial trainings of all four YOLOv5 models ([link](https://wandb.ai/glenn-jocher/yolov5_tutorial/reports/YOLOv5-COCO128-Tutorial-Results--VmlldzozMDI5OTY)).
  
  <img alt="" width="800" src="https://user-images.githubusercontent.com/26833433/98185222-794ba000-1f0c-11eb-850f-3e9c45ad6949.jpg">
