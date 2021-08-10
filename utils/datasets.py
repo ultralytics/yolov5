@@ -361,7 +361,7 @@ def img2label_paths(img_paths):
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
+                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix='', read_data_from_cache=True):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -397,11 +397,17 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         # Check cache
         self.label_files = img2label_paths(self.img_files)  # labels
         cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')
-        try:
-            cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
-            assert cache['version'] == 0.4 and cache['hash'] == get_hash(self.label_files + self.img_files)
-        except:
+
+        if read_data_from_cache: #if false, data would be read from scratch even if cache exists
+            try:
+                cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
+                assert cache['version'] == 0.4 and cache['hash'] == get_hash(self.label_files + self.img_files)
+            except:
+                print("No Cache Exists, Reading from Disc instead")
+                cache, exists = self.cache_labels(cache_path, prefix), False  # cache
+        else:
             cache, exists = self.cache_labels(cache_path, prefix), False  # cache
+
 
         # Display cache
         nf, nm, ne, nc, n = cache.pop('results')  # found, missing, empty, corrupted, total
