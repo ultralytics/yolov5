@@ -452,7 +452,7 @@ def parse_opt(known=False):
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--freeze', type=int, default=0, help='Number of layers to freeze. backbone=10, all=24')
-    parser.add_argument('--cache', action='store_true', help='Read data from Cache if exists. Default=True')
+    parser.add_argument('--cache', default=False, action='store_true', help='Read data from Cache if exists. Default=True')
 
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
