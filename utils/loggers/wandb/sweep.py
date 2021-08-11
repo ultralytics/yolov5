@@ -4,7 +4,7 @@ from pathlib import Path
 import wandb
 
 FILE = Path(__file__).absolute()
-sys.path.append(FILE.parents[2].as_posix())  # add utils/ to path
+sys.path.append(FILE.parents[3].as_posix())  # add utils/ to path
 
 from train import train, parse_opt
 from utils.general import increment_path
