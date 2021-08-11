@@ -68,7 +68,7 @@ You can leverage W&B artifacts and Tables integration to easily visualize and ma
   <summary> <b>Usage</b> </summary>
    <b>Code</b> <code> $ python utils/logger/wandb/log_dataset.py --data ..  --upload_data </code>
    
-   ![Screenshot (64)](https://user-images.githubusercontent.com/15766192/128486078-d8433890-98a3-4d12-8986-b6c0e3fc64b9.png)
+![Screenshot (72)](https://user-images.githubusercontent.com/15766192/128979739-4cf63aeb-a76f-483f-8861-1c0100b938a5.png)
  </details>
   
  <h3> 3: Train using dataset artifact </h3>
@@ -78,7 +78,7 @@ You can leverage W&B artifacts and Tables integration to easily visualize and ma
   <summary> <b>Usage</b> </summary>
    <b>Code</b> <code> $ python utils/logger/wandb/log_dataset.py --data {data}_wandb.yaml </code>
    
-   ![Screenshot (64)](https://user-images.githubusercontent.com/15766192/128486078-d8433890-98a3-4d12-8986-b6c0e3fc64b9.png)
+![Screenshot (72)](https://user-images.githubusercontent.com/15766192/128979739-4cf63aeb-a76f-483f-8861-1c0100b938a5.png)
  </details>
   
    <h3> 4: Save model checkpoints as artifacts </h3>
