@@ -147,23 +147,25 @@ class WandbLogger():
                                         allow_val_change=True) if not wandb.run else wandb.run
         if self.wandb_run:
             if self.job_type == 'Training':
-                #TODO: Refactor this to improve control flow
                 if not opt.resume:
                     if opt.upload_dataset:
-                        self.data_dict = self.check_and_upload_dataset(opt)
+                        self.wandb_artifact_data_dict = self.check_and_upload_dataset(opt)
 
                     elif opt.data.endswith('_wandb.yaml'):  # When dataset is W&B artifact
                         with open(opt.data, encoding='ascii', errors='ignore') as f:
                             data_dict = yaml.safe_load(f)
                         self.data_dict = data_dict
-
-                if not self.data_dict:
+                    else:  # Local .yaml dataset file or .zip file
+                        self.data_dict = check_dataset(opt.data)
+                else:
                     self.data_dict = check_dataset(opt.data)
-                
+
                 self.setup_training(opt)
+                if not self.wandb_artifact_data_dict:
+                    self.wandb_artifact_data_dict = self.data_dict
                 # write data_dict to config. useful for resuming from artifacts. Do this only when not resuming.
                 if not opt.resume:
-                    self.wandb_run.config.update({'data_dict': self.data_dict},
+                    self.wandb_run.config.update({'data_dict': self.wandb_artifact_data_dict},
                                                  allow_val_change=True)
 
             if self.job_type == 'Dataset Creation':
