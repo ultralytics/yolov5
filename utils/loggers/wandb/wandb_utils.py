@@ -157,6 +157,8 @@ class WandbLogger():
                         self.data_dict = data_dict
                     else:  # Local .yaml dataset file or .zip file
                         self.data_dict = check_dataset(opt.data)
+                else:
+                    self.data_dict = check_dataset(opt.data)
 
                 self.setup_training(opt)
                 if not self.wandb_artifact_data_dict:
