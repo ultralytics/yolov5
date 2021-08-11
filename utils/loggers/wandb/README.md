@@ -2,7 +2,7 @@
  * [About Weights & Biases](#about-weights-&-biases)
  * [First-Time Setup](#first-time-setup)
  * [Viewing runs](#viewing-runs)
- * [Advanced Usage: Dasaset and Model Management](#advanced-usage)
+ * [Advanced Usage: Dataset Versioning and Evaluation](#advanced-usage)
  * [Reports: Share your work with the world!](#reports)
 
 ## About Weights & Biases
@@ -48,7 +48,7 @@ When you first train, W&B will prompt you to create a new account and will gener
  <img alt="" width="800" src="https://user-images.githubusercontent.com/26833433/98184457-bd3da580-1f0a-11eb-8461-95d908a71893.jpg">
 </details>
 
-## Advanced Usage: Dasaset and Model Management
+## Advanced Usage
 You can leverage W&B artifacts and Tables integration to easily visualize and manage your datasets, models and training evaluations. Here are some quick examples to get you started.
 <details open>
  <h3>1. Visualize and Version Datasets</h3>
