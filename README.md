@@ -72,7 +72,7 @@ YOLOv5 is one of the best available detectors. And we are proud to announce its 
 
     <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/convert-yolov5-to-supervisely-format" src="https://i.imgur.com/roiJIE8.png" width="350px"/> 
     
-7. [Export weights](https://ecosystem.supervise.ly/apps/convert-yolov5-to-supervisely-format) - export weights to ONNX or TorchScript; also find python examples how to apply exported weights to an image and get predictions.
+7. [Export weights](https://ecosystem.supervise.ly/apps/supervisely-ecosystem/yolov5/supervisely/export_weights) - export weights to ONNX or TorchScript; also find python examples how to apply exported weights to an image and get predictions.
 
     <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/yolov5/supervisely/export_weights" src="https://i.imgur.com/6h0krdp.png" width="350px"/> 
 
