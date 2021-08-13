@@ -55,9 +55,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           device,
           callbacks=Callbacks()
           ):
-    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, read_data_from_cache = \
+    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
-        opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze, opt.read_data_from_cache
+        opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze
 
     # Directories
     w = save_dir / 'weights'  # weights dir
@@ -203,8 +203,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     train_loader, dataset = create_dataloader(train_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
                                               hyp=hyp, augment=True, cache=opt.cache, rect=opt.rect, rank=RANK,
                                               workers=workers, image_weights=opt.image_weights, quad=opt.quad,
-                                              prefix=colorstr('train: '), read_data_from_cache=read_data_from_cache)
-    mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
+                                              prefix=colorstr('train: '))
+    mlc = int(np.concatenate(dataset.labels, 0)[:, 0].max())  # max label class
     nb = len(train_loader)  # number of batches
     assert mlc < nc, f'Label class {mlc} exceeds nc={nc} in {data}. Possible class labels are 0-{nc - 1}'
 
@@ -452,8 +452,6 @@ def parse_opt(known=False):
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--freeze', type=int, default=0, help='Number of layers to freeze. backbone=10, all=24')
-    parser.add_argument('--cache', default=1, type=int, help='Read data from Cache if exists. Default=1, Change to 0 for reading data from disc instead of cache')
-
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
