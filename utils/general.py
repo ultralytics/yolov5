@@ -112,7 +112,7 @@ def is_pip():
 
 def emojis(str=''):
     # Return platform-dependent emoji-safe version of string
-    return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
+    return str.encode().decode(encoding='ascii', errors='ignore') if platform.system() == 'Windows' else str
 
 
 def file_size(file):
@@ -250,7 +250,7 @@ def check_dataset(data, autodownload=True):
 
     # Read yaml (optional)
     if isinstance(data, (str, Path)):
-        with open(data, encoding='ascii', errors='ignore') as f:
+        with open(data, errors='ignore') as f:
             data = yaml.safe_load(f)  # dictionary
 
     # Parse yaml
