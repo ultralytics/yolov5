@@ -110,9 +110,14 @@ def is_pip():
     return 'site-packages' in Path(__file__).absolute().parts
 
 
+def is_ascii(str=''):
+    # Is string composed of all ASCII (no UTF) characters?
+    return len(str.encode().decode('ascii', 'ignore')) == len(str)
+
+
 def emojis(str=''):
     # Return platform-dependent emoji-safe version of string
-    return str.encode().decode(encoding='ascii', errors='ignore') if platform.system() == 'Windows' else str
+    return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
 
 
 def file_size(file):
