@@ -149,12 +149,12 @@ class C3SPP(C3):
         self.m = SPP(c_, c_, k)
 
 
-class C3Ghost(Conv):
+class C3Ghost(C3):
     # C3 module with GhostBottleneck()
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
         super().__init__(c1, c2, n, shortcut, g, e)
         c_ = int(c2 * e)  # hidden channels
-        self.m = nn.Sequential(*[GhostBottleneck(c_, c_, shortcut, g) for _ in range(n)])
+        self.m = nn.Sequential(*[GhostBottleneck(c_, c_) for _ in range(n)])
 
 
 class SPP(nn.Module):
