@@ -1,8 +1,12 @@
-# YOLOv5 general utils
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+General utils
+"""
 
 import contextlib
 import glob
 import logging
+import math
 import os
 import platform
 import random
@@ -16,7 +20,6 @@ from pathlib import Path
 from subprocess import check_output
 
 import cv2
-import math
 import numpy as np
 import pandas as pd
 import pkg_resources as pkg

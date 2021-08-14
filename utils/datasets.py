@@ -1,4 +1,7 @@
-# YOLOv5 dataset utils and dataloaders
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Dataloaders and dataset utils
+"""
 
 import glob
 import hashlib

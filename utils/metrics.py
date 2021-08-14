@@ -1,9 +1,12 @@
-# Model validation metrics
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Model validation metrics
+"""
 
+import math
 import warnings
 from pathlib import Path
 
-import math
 import matplotlib.pyplot as plt
 import numpy as np
 import torch

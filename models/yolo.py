@@ -1,4 +1,6 @@
-"""YOLOv5-specific modules
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+YOLO-specific modules
 
 Usage:
     $ python path/to/models/yolo.py --cfg yolov5s.yaml

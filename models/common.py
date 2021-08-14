@@ -1,11 +1,14 @@
-# YOLOv5 common modules
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Common modules
+"""
 
 import logging
+import math
 import warnings
 from copy import copy
 from pathlib import Path
 
-import math
 import numpy as np
 import pandas as pd
 import requests
