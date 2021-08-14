@@ -79,13 +79,13 @@ def plot_one_box(box, im, color=(128, 128, 128), txt_color=(255, 255, 255), labe
             draw.rectangle([box[0], box[1] - txt_height + 4, box[0] + txt_width, box[1]], fill=color)
             draw.text((box[0], box[1] - txt_height + 1), label, fill=txt_color, font=font)
         return np.asarray(im)
-    else:  # use cv2
+    else:  # use OpenCV
         c1, c2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
         cv2.rectangle(im, c1, c2, color, thickness=lw, lineType=cv2.LINE_AA)
         if label:
             tf = max(lw - 1, 1)  # font thickness
-            t_size = cv2.getTextSize(label, 0, fontScale=lw / 3, thickness=tf)[0]
-            c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
+            txt_width, txt_height = cv2.getTextSize(label, 0, fontScale=lw / 3, thickness=tf)[0]
+            c2 = c1[0] + txt_width, c1[1] - txt_height - 3
             cv2.rectangle(im, c1, c2, color, -1, cv2.LINE_AA)  # filled
             cv2.putText(im, label, (c1[0], c1[1] - 2), 0, lw / 3, txt_color, thickness=tf, lineType=cv2.LINE_AA)
         return im
