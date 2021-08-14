@@ -3,6 +3,7 @@
 Callback utils
 """
 
+
 class Callbacks:
     """"
     Handles all registered callbacks for YOLOv5 Hooks
