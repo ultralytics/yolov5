@@ -112,7 +112,7 @@ def is_pip():
 
 def emojis(str=''):
     # Return platform-dependent emoji-safe version of string
-    return str.encode().decode(errors='ignore') if platform.system() == 'Windows' else str
+    return str.encode().decode(encoding='ascii', errors='ignore') if platform.system() == 'Windows' else str
 
 
 def file_size(file):
