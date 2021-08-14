@@ -1,4 +1,7 @@
-# YOLOv5 image augmentation functions
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Image augmentation functions
+"""
 
 import logging
 import random

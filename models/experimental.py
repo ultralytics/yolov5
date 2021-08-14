@@ -1,10 +1,13 @@
-# YOLOv5 experimental modules
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Experimental modules
+"""
 
 import numpy as np
 import torch
 import torch.nn as nn
 
-from models.common import Conv, DWConv
+from models.common import Conv
 from utils.downloads import attempt_download
 
 

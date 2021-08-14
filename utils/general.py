@@ -1,4 +1,7 @@
-# YOLOv5 general utils
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+General utils
+"""
 
 import contextlib
 import glob

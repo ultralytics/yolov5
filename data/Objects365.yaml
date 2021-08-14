@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 # Objects365 dataset https://www.objects365.org/
 # Example usage: python train.py --data Objects365.yaml
 # parent

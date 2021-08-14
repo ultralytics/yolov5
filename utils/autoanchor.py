@@ -1,4 +1,7 @@
-# Auto-anchor utils
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Auto-anchor utils
+"""
 
 import random
 

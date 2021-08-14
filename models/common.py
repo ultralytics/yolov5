@@ -1,4 +1,7 @@
-# YOLOv5 common modules
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Common modules
+"""
 
 import logging
 import warnings
