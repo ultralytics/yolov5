@@ -354,7 +354,7 @@ class Detections:
                         if crop:
                             save_one_box(box, im, file=save_dir / 'crops' / self.names[int(cls)] / self.files[i])
                         else:  # all others
-                            plot_one_box(box, im, label=label, color=colors(cls))
+                            im = plot_one_box(box, im, label=label, color=colors(cls))
             else:
                 str += '(no detections)'
 
