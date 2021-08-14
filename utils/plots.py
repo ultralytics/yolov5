@@ -13,7 +13,7 @@ import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.general import xywh2xyxy, xyxy2xywh
+from utils.general import is_ascii, xyxy2xywh, xywh2xyxy
 from utils.metrics import fitness
 
 # Settings
@@ -68,6 +68,7 @@ def plot_one_box(box, im, color=(128, 128, 128), txt_color=(255, 255, 255), labe
     # Plots one xyxy box on image 'im'
     assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to plot_on_box() input image.'
     lw = line_width or max(int(min(im.size) / 200), 2)  # line width
+    use_pil |= not is_ascii(label)
     if use_pil:
         im = Image.fromarray(im)
         draw = ImageDraw.Draw(im)
