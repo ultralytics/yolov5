@@ -65,11 +65,11 @@ def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
 
 
 def plot_one_box(box, im, color=(128, 128, 128), txt_color=(255, 255, 255), label=None, line_width=3, use_pil=False):
-    # Plots one xyxy box on image 'im'
+    # Plots one xyxy box on image im with label
     assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to plot_on_box() input image.'
     lw = line_width or max(int(min(im.size) / 200), 2)  # line width
-    use_pil |= not is_ascii(label)
-    if use_pil:
+
+    if use_pil or not is_ascii(label):  # use PIL
         im = Image.fromarray(im)
         draw = ImageDraw.Draw(im)
         draw.rectangle(box, width=lw + 1, outline=color)  # plot
