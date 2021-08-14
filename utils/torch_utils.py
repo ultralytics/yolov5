@@ -5,6 +5,7 @@ PyTorch utils
 
 import datetime
 import logging
+import math
 import os
 import platform
 import subprocess
@@ -13,7 +14,6 @@ from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 
-import math
 import torch
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist

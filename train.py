@@ -8,6 +8,7 @@ Usage:
 
 import argparse
 import logging
+import math
 import os
 import random
 import sys
@@ -15,7 +16,6 @@ import time
 from copy import deepcopy
 from pathlib import Path
 
-import math
 import numpy as np
 import torch
 import torch.distributed as dist
