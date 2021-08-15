@@ -1,11 +1,13 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+
 name: CI CPU testing
 
 on: # https://help.github.com/en/actions/reference/events-that-trigger-workflows
   push:
-    branches: [ master, develop ]
+    branches: [master, develop]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ master, develop ]
+    branches: [master, develop]
 
 jobs:
   cpu-tests:
@@ -14,9 +16,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
-        python-version: [ 3.8 ]
-        model: [ 'yolov5s' ]  # models to test
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.8]
+        model: ['yolov5s']  # models to test
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
     timeout-minutes: 50
