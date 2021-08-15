@@ -1,4 +1,6 @@
-"""Run inference with a YOLOv5 model on images, videos, directories, streams
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Run inference on images, videos, directories, streams, etc.
 
 Usage:
     $ python path/to/detect.py --source path/to/img.jpg --weights yolov5s.pt --img 640
@@ -156,7 +158,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
-                        plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_thickness=line_thickness)
+                        im0 = plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=line_thickness)
                         if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 

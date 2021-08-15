@@ -1,3 +1,5 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+
 name: Close stale issues
 on:
   schedule:

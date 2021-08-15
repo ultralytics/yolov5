@@ -1,6 +1,8 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+
 name: Greetings
 
-on: [ pull_request_target, issues ]
+on: [pull_request_target, issues]
 
 jobs:
   greeting:

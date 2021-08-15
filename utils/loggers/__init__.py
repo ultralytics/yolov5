@@ -1,4 +1,8 @@
-# YOLOv5 experiment logging utils
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Logging utils
+"""
+
 import warnings
 from threading import Thread
 

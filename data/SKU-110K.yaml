@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 # SKU-110K retail items dataset https://github.com/eg4000/SKU110K_CVPR19
 # Example usage: python train.py --data SKU-110K.yaml
 # parent

@@ -1,4 +1,6 @@
-"""Export a YOLOv5 *.pt model to TorchScript, ONNX, CoreML formats
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Export a PyTorch model to TorchScript, ONNX, CoreML formats
 
 Usage:
     $ python path/to/export.py --weights yolov5s.pt --img 640 --batch 1
@@ -76,7 +78,7 @@ def export_onnx(model, img, file, opset, train, dynamic, simplify):
             except Exception as e:
                 print(f'{prefix} simplifier failure: {e}')
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
-        print(f"{prefix} run --dynamic ONNX model inference with detect.py: 'python detect.py --weights {f}'")
+        print(f"{prefix} run --dynamic ONNX model inference with: 'python detect.py --weights {f}'")
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 
