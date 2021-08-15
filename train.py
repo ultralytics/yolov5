@@ -493,7 +493,7 @@ def main(opt):
         assert not opt.sync_bn, '--sync-bn known training issue, see https://github.com/ultralytics/yolov5/issues/3998'
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device('cuda', LOCAL_RANK)
-        dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo", timeout=timedelta(seconds=60))
+        dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
 
     # Train
     if not opt.evolve:
