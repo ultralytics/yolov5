@@ -86,33 +86,26 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         import onnxruntime
         session = onnxruntime.InferenceSession(w, None)
     else:  # TensorFlow models
+        check_requirements(('tensorboard>=2.4.1',))
         import tensorflow as tf
         from tensorflow import keras
-
         stride = 64
         if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
-            # https://github.com/leimao/Frozen_Graph_TensorFlow
-            def wrap_frozen_graph(graph_def, inputs, outputs):
-                def _imports_graph_def():
-                    tf.compat.v1.import_graph_def(graph_def, name="")
+            def wrap_frozen_graph(gd, inputs, outputs):
+                x = tf.compat.v1.wrap_function(lambda: tf.compat.v1.import_graph_def(gd, name=""), [])  # wrapped import
+                return x.prune(tf.nest.map_structure(x.graph.as_graph_element, inputs),
+                               tf.nest.map_structure(x.graph.as_graph_element, outputs))
 
-                wrapped_import = tf.compat.v1.wrap_function(_imports_graph_def, [])
-                import_graph = wrapped_import.graph
-                return wrapped_import.prune(
-                    tf.nest.map_structure(import_graph.as_graph_element, inputs),
-                    tf.nest.map_structure(import_graph.as_graph_element, outputs))
-
-            graph = tf.Graph()
-            graph_def = graph.as_graph_def()
+            graph_def = tf.Graph().as_graph_def()
             graph_def.ParseFromString(open(weights, 'rb').read())
-            frozen_func = wrap_frozen_graph(graph_def=graph_def, inputs="x:0", outputs="Identity:0")
+            frozen_func = wrap_frozen_graph(gd=graph_def, inputs="x:0", outputs="Identity:0")
+        elif saved_model:
+            model = keras.models.load_model(weights)
         elif tflite:
             interpreter = tf.lite.Interpreter(model_path=weights)  # load TFLite model
             interpreter.allocate_tensors()  # allocate
             input_details = interpreter.get_input_details()  # inputs
             output_details = interpreter.get_output_details()  # outputs
-        elif saved_model:
-            model = keras.models.load_model(weights)
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
     # Dataloader
@@ -149,10 +142,10 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             pred = torch.tensor(session.run([session.get_outputs()[0].name], {session.get_inputs()[0].name: img}))
         else:  # tensorflow model (tflite, pb, saved_model)
             imn = img.permute(0, 2, 3, 1).cpu().numpy()  # image in numpy
-            if saved_model:
-                pred = model(imn, training=False).numpy()
-            elif pb:
+            if pb:
                 pred = frozen_func(x=tf.constant(imn)).numpy()
+            elif saved_model:
+                pred = model(imn, training=False).numpy()
             elif tflite:
                 if tfl_int8:
                     scale, zero_point = input_details[0]['quantization']
@@ -253,9 +246,9 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pb', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='data/images', help='file/dir/URL/glob, 0 for webcam')
-    parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
+    parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[320], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
