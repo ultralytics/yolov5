@@ -67,7 +67,8 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
 
     # Load model
     w = weights[0] if isinstance(weights, list) else weights
-    classify, pt, onnx = False, w.endswith('.pt'), w.endswith('.onnx')  # inference type
+    classify, suffix = False, Path(w).suffix.lower()
+    pt, onnx, tflite, pb, graph_def = (suffix == x for x in ['.pt', '.onnx', '.tflite', '.pb', ''])  # backend
     stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
     if pt:
         model = attempt_load(weights, map_location=device)  # load FP32 model

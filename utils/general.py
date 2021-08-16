@@ -203,11 +203,14 @@ def check_requirements(requirements='requirements.txt', exclude=()):
         print(emojis(s))
 
 
-def check_img_size(img_size, s=32, floor=0):
-    # Verify img_size is a multiple of stride s
-    new_size = max(make_divisible(img_size, int(s)), floor)  # ceil gs-multiple
-    if new_size != img_size:
-        print(f'WARNING: --img-size {img_size} must be multiple of max stride {s}, updating to {new_size}')
+def check_img_size(imgsz, s=32, floor=0):
+    # Verify image size is a multiple of stride s in each dimension
+    if isinstance(imgsz, int):  # integer i.e. img_size=640
+        new_size = max(make_divisible(imgsz, int(s)), floor)
+    else:  # list i.e. img_size=[640, 480]
+        new_size = [max(make_divisible(x, int(s)), floor) for x in imgsz]
+    if new_size != imgsz:
+        print(f'WARNING: --img-size {imgsz} must be multiple of max stride {s}, updating to {new_size}')
     return new_size
 
 
