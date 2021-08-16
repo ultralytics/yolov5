@@ -1,3 +1,5 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+
 lr0: 0.00258
 lrf: 0.17
 momentum: 0.779
@@ -26,3 +28,4 @@ flipud: 0.0
 fliplr: 0.5
 mosaic: 1.0
 mixup: 0.0
+copy_paste: 0.0
