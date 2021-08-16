@@ -1,3 +1,12 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+TensorFlow/Keras and TFLite versions of YOLOv5
+Authored by https://github.com/zldrobit in PR https://github.com/ultralytics/yolov5/pull/1127
+
+Usage:
+    $ python path/to/models/tf.py --cfg yolov5s.yaml --weights yolov5s.pt
+"""
+
 import argparse
 import logging
 import os
@@ -21,7 +30,6 @@ from models.experimental import MixConv2d, CrossConv, attempt_load
 from models.yolo import Detect
 from utils.datasets import LoadImages
 from utils.general import make_divisible, check_file, check_dataset
-from utils.google_utils import attempt_download
 
 logger = logging.getLogger(__name__)
 
@@ -347,8 +355,7 @@ class tf_Model():
 
 
 class agnostic_nms_layer(keras.layers.Layer):
-    # wrap map_fn to avoid TypeSpec related error:
-    # https://stackoverflow.com/a/65809989/3036450
+    # wrap map_fn to avoid TypeSpec related error https://stackoverflow.com/a/65809989/3036450
     def call(self, input):
         return tf.map_fn(agnostic_nms, input,
                          fn_output_signature=(tf.float32, tf.float32, tf.float32, tf.int32),
@@ -367,12 +374,12 @@ def agnostic_nms(x):
                           mode="CONSTANT", constant_values=0.0)
     selected_scores = tf.gather(scores_inp, selected_inds)
     padded_scores = tf.pad(selected_scores,
-                          paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]]],
-                          mode="CONSTANT", constant_values=-1.0)
+                           paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]]],
+                           mode="CONSTANT", constant_values=-1.0)
     selected_classes = tf.gather(class_inds, selected_inds)
     padded_classes = tf.pad(selected_classes,
-                          paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]]],
-                          mode="CONSTANT", constant_values=-1.0)
+                            paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]]],
+                            mode="CONSTANT", constant_values=-1.0)
     valid_detections = tf.shape(selected_inds)[0]
     return padded_boxes, padded_scores, padded_classes, valid_detections
 
