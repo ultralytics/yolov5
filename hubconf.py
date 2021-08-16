@@ -27,7 +27,8 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     """
     from pathlib import Path
 
-    from models.yolo import Model, attempt_load
+    from models.yolo import Model
+    from models.experimental import attempt_load
     from utils.general import check_requirements, set_logging
     from utils.downloads import attempt_download
     from utils.torch_utils import select_device
