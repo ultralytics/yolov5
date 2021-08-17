@@ -569,6 +569,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             # Albumentations
             img, labels = self.albumentations(img, labels)
 
+            nl = len(labels) # update number of labels after augmentation
+
             # HSV color-space
             augment_hsv(img, hgain=hyp['hsv_h'], sgain=hyp['hsv_s'], vgain=hyp['hsv_v'])
 
