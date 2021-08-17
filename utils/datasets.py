@@ -161,8 +161,16 @@ class LoadImages:  # for inference
             files = sorted(glob.glob(p, recursive=True))  # glob
         elif os.path.isdir(p):
             files = sorted(glob.glob(os.path.join(p, '*.*')))  # dir
+
         elif os.path.isfile(p):
-            files = [p]  # files
+            if p.endswith('.txt'):
+                with open(p, 'r') as t:
+                    t = t.read().strip().splitlines()
+                    parent = str(Path(path).absolute().parent) + os.sep
+                    files = [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
+                    print(files)
+            else:
+                files = [p]  # files
         else:
             raise Exception(f'ERROR: {p} does not exist')
 
