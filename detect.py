@@ -86,7 +86,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         import onnxruntime
         session = onnxruntime.InferenceSession(w, None)
     else:  # TensorFlow models
-        check_requirements(('tensorboard>=2.4.1',))
+        check_requirements(('tensorflow>=2.4.1',))
         import tensorflow as tf
         if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
             def wrap_frozen_graph(gd, inputs, outputs):
