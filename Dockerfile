@@ -1,3 +1,5 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+
 # Start FROM Nvidia PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
 FROM nvcr.io/nvidia/pytorch:21.05-py3
 

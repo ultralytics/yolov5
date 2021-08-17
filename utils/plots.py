@@ -1,20 +1,22 @@
-# Plotting utils
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Plotting utils
+"""
 
+import math
 from copy import copy
 from pathlib import Path
 
 import cv2
-import math
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sn
 import torch
-import yaml
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.general import xywh2xyxy, xyxy2xywh
+from utils.general import is_ascii, xyxy2xywh, xywh2xyxy
 from utils.metrics import fitness
 
 # Settings
@@ -65,32 +67,31 @@ def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
     return filtfilt(b, a, data)  # forward-backward filter
 
 
-def plot_one_box(x, im, color=(128, 128, 128), label=None, line_thickness=3):
-    # Plots one bounding box on image 'im' using OpenCV
+def plot_one_box(box, im, color=(128, 128, 128), txt_color=(255, 255, 255), label=None, line_width=3, use_pil=False):
+    # Plots one xyxy box on image im with label
     assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to plot_on_box() input image.'
-    tl = line_thickness or round(0.002 * (im.shape[0] + im.shape[1]) / 2) + 1  # line/font thickness
-    c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
-    cv2.rectangle(im, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
-    if label:
-        tf = max(tl - 1, 1)  # font thickness
-        t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
-        c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
-        cv2.rectangle(im, c1, c2, color, -1, cv2.LINE_AA)  # filled
-        cv2.putText(im, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
+    lw = line_width or max(int(min(im.size) / 200), 2)  # line width
 
-
-def plot_one_box_PIL(box, im, color=(128, 128, 128), label=None, line_thickness=None):
-    # Plots one bounding box on image 'im' using PIL
-    im = Image.fromarray(im)
-    draw = ImageDraw.Draw(im)
-    line_thickness = line_thickness or max(int(min(im.size) / 200), 2)
-    draw.rectangle(box, width=line_thickness, outline=color)  # plot
-    if label:
-        font = ImageFont.truetype("Arial.ttf", size=max(round(max(im.size) / 40), 12))
-        txt_width, txt_height = font.getsize(label)
-        draw.rectangle([box[0], box[1] - txt_height + 4, box[0] + txt_width, box[1]], fill=color)
-        draw.text((box[0], box[1] - txt_height + 1), label, fill=(255, 255, 255), font=font)
-    return np.asarray(im)
+    if use_pil or not is_ascii(label):  # use PIL
+        im = Image.fromarray(im)
+        draw = ImageDraw.Draw(im)
+        draw.rectangle(box, width=lw + 1, outline=color)  # plot
+        if label:
+            font = ImageFont.truetype("Arial.ttf", size=max(round(max(im.size) / 40), 12))
+            txt_width, txt_height = font.getsize(label)
+            draw.rectangle([box[0], box[1] - txt_height + 4, box[0] + txt_width, box[1]], fill=color)
+            draw.text((box[0], box[1] - txt_height + 1), label, fill=txt_color, font=font)
+        return np.asarray(im)
+    else:  # use OpenCV
+        c1, c2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
+        cv2.rectangle(im, c1, c2, color, thickness=lw, lineType=cv2.LINE_AA)
+        if label:
+            tf = max(lw - 1, 1)  # font thickness
+            txt_width, txt_height = cv2.getTextSize(label, 0, fontScale=lw / 3, thickness=tf)[0]
+            c2 = c1[0] + txt_width, c1[1] - txt_height - 3
+            cv2.rectangle(im, c1, c2, color, -1, cv2.LINE_AA)  # filled
+            cv2.putText(im, label, (c1[0], c1[1] - 2), 0, lw / 3, txt_color, thickness=tf, lineType=cv2.LINE_AA)
+        return im
 
 
 def plot_wh_methods():  # from utils.plots import *; plot_wh_methods()
@@ -180,7 +181,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
                 cls = names[cls] if names else cls
                 if labels or conf[j] > 0.25:  # 0.25 conf thresh
                     label = '%s' % cls if labels else '%s %.1f' % (cls, conf[j])
-                    plot_one_box(box, mosaic, label=label, color=color, line_thickness=tl)
+                    mosaic = plot_one_box(box, mosaic, label=label, color=color, line_width=tl)
 
         # Draw image filename labels
         if paths:
@@ -325,30 +326,6 @@ def plot_labels(labels, names=(), save_dir=Path('')):
     plt.close()
 
 
-def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots import *; plot_evolution()
-    # Plot hyperparameter evolution results in evolve.txt
-    with open(yaml_file) as f:
-        hyp = yaml.safe_load(f)
-    x = np.loadtxt('evolve.txt', ndmin=2)
-    f = fitness(x)
-    # weights = (f - f.min()) ** 2  # for weighted results
-    plt.figure(figsize=(10, 12), tight_layout=True)
-    matplotlib.rc('font', **{'size': 8})
-    for i, (k, v) in enumerate(hyp.items()):
-        y = x[:, i + 7]
-        # mu = (y * weights).sum() / weights.sum()  # best weighted result
-        mu = y[f.argmax()]  # best single result
-        plt.subplot(6, 5, i + 1)
-        plt.scatter(y, f, c=hist2d(y, f, 20), cmap='viridis', alpha=.8, edgecolors='none')
-        plt.plot(mu, f.max(), 'k+', markersize=15)
-        plt.title('%s = %.3g' % (k, mu), fontdict={'size': 9})  # limit to 40 characters
-        if i % 5 != 0:
-            plt.yticks([])
-        print('%15s: %.3g' % (k, mu))
-    plt.savefig('evolve.png', dpi=200)
-    print('\nPlot saved as evolve.png')
-
-
 def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
     # Plot iDetection '*.txt' per-image logs. from utils.plots import *; profile_idetection()
     ax = plt.subplots(2, 4, figsize=(12, 6), tight_layout=True)[1].ravel()
@@ -381,7 +358,31 @@ def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
     plt.savefig(Path(save_dir) / 'idetection_profile.png', dpi=200)
 
 
-def plot_results(file='', dir=''):
+def plot_evolve(evolve_csv=Path('path/to/evolve.csv')):  # from utils.plots import *; plot_evolve()
+    # Plot evolve.csv hyp evolution results
+    data = pd.read_csv(evolve_csv)
+    keys = [x.strip() for x in data.columns]
+    x = data.values
+    f = fitness(x)
+    j = np.argmax(f)  # max fitness index
+    plt.figure(figsize=(10, 12), tight_layout=True)
+    matplotlib.rc('font', **{'size': 8})
+    for i, k in enumerate(keys[7:]):
+        v = x[:, 7 + i]
+        mu = v[j]  # best single result
+        plt.subplot(6, 5, i + 1)
+        plt.scatter(v, f, c=hist2d(v, f, 20), cmap='viridis', alpha=.8, edgecolors='none')
+        plt.plot(mu, f.max(), 'k+', markersize=15)
+        plt.title('%s = %.3g' % (k, mu), fontdict={'size': 9})  # limit to 40 characters
+        if i % 5 != 0:
+            plt.yticks([])
+        print('%15s: %.3g' % (k, mu))
+    f = evolve_csv.with_suffix('.png')  # filename
+    plt.savefig(f, dpi=200)
+    print(f'Saved {f}')
+
+
+def plot_results(file='path/to/results.csv', dir=''):
     # Plot training results.csv. Usage: from utils.plots import *; plot_results('path/to/results.csv')
     save_dir = Path(file).parent if file else Path(dir)
     fig, ax = plt.subplots(2, 5, figsize=(12, 6), tight_layout=True)

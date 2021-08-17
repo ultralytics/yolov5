@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 # PASCAL VOC dataset http://host.robots.ox.ac.uk/pascal/VOC
 # Example usage: python train.py --data VOC.yaml
 # parent

@@ -1,7 +1,11 @@
-# YOLOv5 PyTorch utils
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+PyTorch utils
+"""
 
 import datetime
 import logging
+import math
 import os
 import platform
 import subprocess
@@ -10,7 +14,6 @@ from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 
-import math
 import torch
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
@@ -23,7 +26,6 @@ try:
 except ImportError:
     thop = None
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
 
 
@@ -33,10 +35,10 @@ def torch_distributed_zero_first(local_rank: int):
     Decorator to make all processes in distributed training wait for each local_master to do something.
     """
     if local_rank not in [-1, 0]:
-        dist.barrier()
+        dist.barrier(device_ids=[local_rank])
     yield
     if local_rank == 0:
-        dist.barrier()
+        dist.barrier(device_ids=[0])
 
 
 def init_torch_seeds(seed=0):
@@ -108,6 +110,7 @@ def profile(input, ops, n=10, device=None):
     #     profile(input, [m1, m2], n=100)  # profile over 100 iterations
 
     results = []
+    logging.basicConfig(format="%(message)s", level=logging.INFO)
     device = device or select_device()
     print(f"{'Params':>12s}{'GFLOPs':>12s}{'GPU_mem (GB)':>14s}{'forward (ms)':>14s}{'backward (ms)':>14s}"
           f"{'input':>24s}{'output':>24s}")

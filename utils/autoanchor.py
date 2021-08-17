@@ -1,4 +1,7 @@
-# Auto-anchor utils
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Auto-anchor utils
+"""
 
 import random
 
@@ -104,7 +107,7 @@ def kmean_anchors(dataset='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen
         return k
 
     if isinstance(dataset, str):  # *.yaml file
-        with open(dataset, encoding='ascii', errors='ignore') as f:
+        with open(dataset, errors='ignore') as f:
             data_dict = yaml.safe_load(f)  # model dict
         from utils.datasets import LoadImagesAndLabels
         dataset = LoadImagesAndLabels(data_dict['train'], augment=True, rect=True)

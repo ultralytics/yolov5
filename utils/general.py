@@ -1,8 +1,12 @@
-# YOLOv5 general utils
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+General utils
+"""
 
 import contextlib
 import glob
 import logging
+import math
 import os
 import platform
 import random
@@ -16,7 +20,6 @@ from pathlib import Path
 from subprocess import check_output
 
 import cv2
-import math
 import numpy as np
 import pandas as pd
 import pkg_resources as pkg
@@ -110,6 +113,11 @@ def is_pip():
     return 'site-packages' in Path(__file__).absolute().parts
 
 
+def is_ascii(str=''):
+    # Is string composed of all ASCII (no UTF) characters?
+    return len(str.encode().decode('ascii', 'ignore')) == len(str)
+
+
 def emojis(str=''):
     # Return platform-dependent emoji-safe version of string
     return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
@@ -195,11 +203,14 @@ def check_requirements(requirements='requirements.txt', exclude=()):
         print(emojis(s))
 
 
-def check_img_size(img_size, s=32, floor=0):
-    # Verify img_size is a multiple of stride s
-    new_size = max(make_divisible(img_size, int(s)), floor)  # ceil gs-multiple
-    if new_size != img_size:
-        print(f'WARNING: --img-size {img_size} must be multiple of max stride {s}, updating to {new_size}')
+def check_img_size(imgsz, s=32, floor=0):
+    # Verify image size is a multiple of stride s in each dimension
+    if isinstance(imgsz, int):  # integer i.e. img_size=640
+        new_size = max(make_divisible(imgsz, int(s)), floor)
+    else:  # list i.e. img_size=[640, 480]
+        new_size = [max(make_divisible(x, int(s)), floor) for x in imgsz]
+    if new_size != imgsz:
+        print(f'WARNING: --img-size {imgsz} must be multiple of max stride {s}, updating to {new_size}')
     return new_size
 
 
@@ -250,7 +261,7 @@ def check_dataset(data, autodownload=True):
 
     # Read yaml (optional)
     if isinstance(data, (str, Path)):
-        with open(data, encoding='ascii', errors='ignore') as f:
+        with open(data, errors='ignore') as f:
             data = yaml.safe_load(f)  # dictionary
 
     # Parse yaml
@@ -615,35 +626,43 @@ def strip_optimizer(f='best.pt', s=''):  # from utils.general import *; strip_op
     print(f"Optimizer stripped from {f},{(' saved as %s,' % s) if s else ''} {mb:.1f}MB")
 
 
-def print_mutation(hyp, results, yaml_file='hyp_evolved.yaml', bucket=''):
-    # Print mutation results to evolve.txt (for use with train.py --evolve)
-    a = '%10s' * len(hyp) % tuple(hyp.keys())  # hyperparam keys
-    b = '%10.3g' * len(hyp) % tuple(hyp.values())  # hyperparam values
-    c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
-    print('\n%s\n%s\nEvolved fitness: %s\n' % (a, b, c))
+def print_mutation(results, hyp, save_dir, bucket):
+    evolve_csv, results_csv, evolve_yaml = save_dir / 'evolve.csv', save_dir / 'results.csv', save_dir / 'hyp_evolve.yaml'
+    keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+            'val/box_loss', 'val/obj_loss', 'val/cls_loss') + tuple(hyp.keys())  # [results + hyps]
+    keys = tuple(x.strip() for x in keys)
+    vals = results + tuple(hyp.values())
+    n = len(keys)
 
+    # Download (optional)
     if bucket:
-        url = 'gs://%s/evolve.txt' % bucket
-        if gsutil_getsize(url) > (os.path.getsize('evolve.txt') if os.path.exists('evolve.txt') else 0):
-            os.system('gsutil cp %s .' % url)  # download evolve.txt if larger than local
+        url = f'gs://{bucket}/evolve.csv'
+        if gsutil_getsize(url) > (os.path.getsize(evolve_csv) if os.path.exists(evolve_csv) else 0):
+            os.system(f'gsutil cp {url} {save_dir}')  # download evolve.csv if larger than local
 
-    with open('evolve.txt', 'a') as f:  # append result
-        f.write(c + b + '\n')
-    x = np.unique(np.loadtxt('evolve.txt', ndmin=2), axis=0)  # load unique rows
-    x = x[np.argsort(-fitness(x))]  # sort
-    np.savetxt('evolve.txt', x, '%10.3g')  # save sort by fitness
+    # Log to evolve.csv
+    s = '' if evolve_csv.exists() else (('%20s,' * n % keys).rstrip(',') + '\n')  # add header
+    with open(evolve_csv, 'a') as f:
+        f.write(s + ('%20.5g,' * n % vals).rstrip(',') + '\n')
+
+    # Print to screen
+    print(colorstr('evolve: ') + ', '.join(f'{x.strip():>20s}' for x in keys))
+    print(colorstr('evolve: ') + ', '.join(f'{x:20.5g}' for x in vals), end='\n\n\n')
 
     # Save yaml
-    for i, k in enumerate(hyp.keys()):
-        hyp[k] = float(x[0, i + 7])
-    with open(yaml_file, 'w') as f:
-        results = tuple(x[0, :7])
-        c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
-        f.write('# Hyperparameter Evolution Results\n# Generations: %g\n# Metrics: ' % len(x) + c + '\n\n')
+    with open(evolve_yaml, 'w') as f:
+        data = pd.read_csv(evolve_csv)
+        data = data.rename(columns=lambda x: x.strip())  # strip keys
+        i = np.argmax(fitness(data.values[:, :7]))  #
+        f.write(f'# YOLOv5 Hyperparameter Evolution Results\n' +
+                f'# Best generation: {i}\n' +
+                f'# Last generation: {len(data)}\n' +
+                f'# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:7]) + '\n' +
+                f'# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :7]) + '\n\n')
         yaml.safe_dump(hyp, f, sort_keys=False)
 
     if bucket:
-        os.system('gsutil cp evolve.txt %s gs://%s' % (yaml_file, bucket))  # upload
+        os.system(f'gsutil cp {evolve_csv} {evolve_yaml} gs://{bucket}')  # upload
 
 
 def apply_classifier(x, model, img, im0):
