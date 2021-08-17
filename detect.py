@@ -97,12 +97,12 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
                                tf.nest.map_structure(x.graph.as_graph_element, outputs))
 
             graph_def = tf.Graph().as_graph_def()
-            graph_def.ParseFromString(open(weights, 'rb').read())
+            graph_def.ParseFromString(open(w, 'rb').read())
             frozen_func = wrap_frozen_graph(gd=graph_def, inputs="x:0", outputs="Identity:0")
         elif saved_model:
-            model = keras.models.load_model(weights)
+            model = keras.models.load_model(w)
         elif tflite:
-            interpreter = tf.lite.Interpreter(model_path=weights)  # load TFLite model
+            interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
             interpreter.allocate_tensors()  # allocate
             input_details = interpreter.get_input_details()  # inputs
             output_details = interpreter.get_output_details()  # outputs
