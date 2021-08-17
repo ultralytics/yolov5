@@ -88,7 +88,6 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
     else:  # TensorFlow models
         check_requirements(('tensorboard>=2.4.1',))
         import tensorflow as tf
-        from tensorflow import keras
         if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
             def wrap_frozen_graph(gd, inputs, outputs):
                 x = tf.compat.v1.wrap_function(lambda: tf.compat.v1.import_graph_def(gd, name=""), [])  # wrapped import
@@ -99,7 +98,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             graph_def.ParseFromString(open(w, 'rb').read())
             frozen_func = wrap_frozen_graph(gd=graph_def, inputs="x:0", outputs="Identity:0")
         elif saved_model:
-            model = keras.models.load_model(w)
+            model = tf.keras.models.load_model(w)
         elif tflite:
             interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
             interpreter.allocate_tensors()  # allocate
