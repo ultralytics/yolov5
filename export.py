@@ -28,7 +28,7 @@ def run(weights='./yolov5s.pt',  # weights path
         img_size=(640, 640),  # image (height, width)
         batch_size=1,  # batch size
         device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        include=('torchscript', 'onnx', 'coreml'),  # include formats
+        include=('torchscript', 'onnx', 'coreml', 'tflite'),  # include formats
         half=False,  # FP16 half-precision export
         inplace=False,  # set YOLOv5 Detect() inplace=True
         train=False,  # model.train() mode
@@ -139,6 +139,9 @@ def run(weights='./yolov5s.pt',  # weights path
             print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
         except Exception as e:
             print(f'{prefix} export failure: {e}')
+    # TFLite export ----------------------------------------------------------------------------------------------------
+    if 'tflite' in include:
+        prefix = colorstr('CoreML:')
 
     # Finish
     print(f'\nExport complete ({time.time() - t:.2f}s). Visualize with https://github.com/lutzroeder/netron.')
@@ -150,7 +153,7 @@ def parse_opt():
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image (height, width)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--include', nargs='+', default=['torchscript', 'onnx', 'coreml'], help='include formats')
+    parser.add_argument('--include', nargs='+', default=['torchscript', 'onnx', 'coreml', 'tflite'], help='include formats')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--train', action='store_true', help='model.train() mode')

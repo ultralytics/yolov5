@@ -48,6 +48,8 @@ VOC/
 *.onnx
 *.mlmodel
 *.torchscript
+*.pb
+*.tflite
 darknet53.conv.74
 yolov3-tiny.conv.15
 
