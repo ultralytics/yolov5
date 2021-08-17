@@ -5,6 +5,9 @@ import pathlib
 import torch
 import torch.nn as nn
 
+from pathlib import Path
+import yaml
+
 import sys
 root_source_path = str(pathlib.Path(sys.argv[0]).parents[3])
 sly.logger.info(f"Root source directory: {root_source_path}")
@@ -90,12 +93,18 @@ def download_weights(path2weights):
 @sly.timeit
 def export_weights(api: sly.Api, task_id, context, state, app_logger):
     weights_path = download_weights(customWeightsPath)
+    configs_path = download_weights(os.path.join(Path(customWeightsPath).parents[1], 'opt.yaml'))
     model = attempt_load(weights=weights_path, map_location=device)
+
+    with open(configs_path, 'r') as stream:
+        cfgs_loaded = yaml.safe_load(stream)
 
     if hasattr(model, 'module') and hasattr(model.module, 'img_size'):
         imgsz = model.module.img_size[0]
     elif hasattr(model, 'img_size'):
         imgsz = model.img_size[0]
+    elif cfgs_loaded['img_size']:
+        imgsz = cfgs_loaded['img_size']
     else:
         sly.logger.warning(f"Image size is not found in model checkpoint. Use default: {image_size}")
         imgsz = image_size

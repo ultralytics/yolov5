@@ -1,7 +1,10 @@
 import torch
 import numpy as np
 import supervisely_lib as sly
-
+from supervisely_lib.io.fs import get_file_name_with_ext
+import os
+from pathlib import Path
+import yaml
 
 from utils.torch_utils import select_device
 from models.experimental import attempt_load
@@ -40,11 +43,17 @@ def load_model(weights_path, imgsz=640, device='cpu'):
 
     # Load model
     model = attempt_load(weights_path, map_location=device)  # load FP32 model
+    configs_path = os.path.join(Path(weights_path).parents[0], 'opt.yaml')
+
+    with open(configs_path, 'r') as stream:
+        cfgs_loaded = yaml.safe_load(stream)
 
     if hasattr(model, 'module') and hasattr(model.module, 'img_size'):
         imgsz = model.module.img_size[0]
     elif hasattr(model, 'img_size'):
         imgsz = model.img_size[0]
+    elif cfgs_loaded['img_size']:
+        imgsz = cfgs_loaded['img_size'][0]
     else:
         sly.logger.warning(f"Image size is not found in model checkpoint. Use default: {IMG_SIZE}")
         imgsz = IMG_SIZE
