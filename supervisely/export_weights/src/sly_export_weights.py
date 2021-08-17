@@ -104,7 +104,7 @@ def export_weights(api: sly.Api, task_id, context, state, app_logger):
     elif hasattr(model, 'img_size'):
         imgsz = model.img_size[0]
     elif cfgs_loaded['img_size']:
-        imgsz = cfgs_loaded['img_size']
+        imgsz = cfgs_loaded['img_size'][0]
     else:
         sly.logger.warning(f"Image size is not found in model checkpoint. Use default: {image_size}")
         imgsz = image_size
