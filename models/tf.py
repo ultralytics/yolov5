@@ -4,7 +4,31 @@ TensorFlow/Keras and TFLite versions of YOLOv5
 Authored by https://github.com/zldrobit in PR https://github.com/ultralytics/yolov5/pull/1127
 
 Usage:
-    $ python path/to/models/tf.py --cfg yolov5s.yaml --weights yolov5s.pt
+    $ python models/tf.py --weights yolov5s.pt --cfg yolov5s.yaml
+
+Export int8 TFLite models:
+    $ python models/tf.py --weights yolov5s.pt --cfg models/yolov5s.yaml --tfl-int8 \
+        --source path/to/images/ --ncalib 100
+
+Detection:
+    $ python detect.py --weights yolov5s.pb          --img 320
+    $ python detect.py --weights yolov5s_saved_model --img 320
+    $ python detect.py --weights yolov5s-fp16.tflite --img 320
+    $ python detect.py --weights yolov5s-int8.tflite --img 320 --tfl-int8
+
+For TensorFlow.js:
+    $ python models/tf.py --weights yolov5s.pt --cfg models/yolov5s.yaml --img 320 --tf-nms --agnostic-nms
+    $ pip install tensorflowjs
+    $ tensorflowjs_converter \
+          --input_format=tf_frozen_model \
+          --output_node_names='Identity,Identity_1,Identity_2,Identity_3' \
+          yolov5s.pb \
+          web_model
+    $ # Edit web_model/model.json to sort Identity* in ascending order
+    $ cd .. && git clone https://github.com/zldrobit/tfjs-yolov5-example.git && cd tfjs-yolov5-example
+    $ npm install
+    $ ln -s ../../yolov5/web_model public/web_model
+    $ npm start
 """
 
 import argparse
