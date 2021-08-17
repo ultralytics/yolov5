@@ -4,6 +4,7 @@ import yaml
 import pathlib
 import sys
 import supervisely_lib as sly
+from pathlib import Path
 
 root_source_path = str(pathlib.Path(sys.argv[0]).parents[3])
 sly.logger.info(f"Root source directory: {root_source_path}")
@@ -180,9 +181,12 @@ def preprocess():
         sly.fs.download(url, local_path, my_app.cache, progress)
     elif modelWeightsOptions == "custom":
         final_weights = custom_weights
+        configs = os.path.join(Path(custom_weights).parents[1], 'opt.yaml')
+        configs_local_path = os.path.join(my_app.data_dir, 'opt.yaml')
         file_info = my_app.public_api.file.get_info_by_path(TEAM_ID, custom_weights)
         progress.set(current=0, total=file_info.sizeb)
         my_app.public_api.file.download(TEAM_ID, custom_weights, local_path, my_app.cache, progress.iters_done_report)
+        my_app.public_api.file.download(TEAM_ID, configs, configs_local_path)
     else:
         raise ValueError("Unknown weights option {!r}".format(modelWeightsOptions))
 
