@@ -89,7 +89,6 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         check_requirements(('tensorboard>=2.4.1',))
         import tensorflow as tf
         from tensorflow import keras
-        stride = 64
         if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
             def wrap_frozen_graph(gd, inputs, outputs):
                 x = tf.compat.v1.wrap_function(lambda: tf.compat.v1.import_graph_def(gd, name=""), [])  # wrapped import
