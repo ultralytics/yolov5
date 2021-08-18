@@ -433,6 +433,8 @@ def train(hyp, opt, device, tb_writer=None):
 
             # Save model
             if (not opt.nosave) or (final_epoch and not opt.evolve):  # if save
+                model.img_size = opt.img_size
+                ema.ema.img_size = opt.img_size
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
                         'training_results': results_file.read_text(),
@@ -453,7 +455,6 @@ def train(hyp, opt, device, tb_writer=None):
                 del ckpt
 
         # end epoch ----------------------------------------------------------------------------------------------------
-
     if plots and opt.sly and train_batches_uploaded is False:
         train_batches_uploaded = True
         upload_train_data_vis()
