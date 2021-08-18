@@ -35,7 +35,6 @@ def export_torchscript(model, img, file, optimize):
         ts = torch.jit.trace(model, img, strict=False)
         (optimize_for_mobile(ts) if optimize else ts).save(f)
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
-        return ts
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 
