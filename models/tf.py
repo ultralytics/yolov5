@@ -39,7 +39,8 @@ import traceback
 from copy import deepcopy
 from pathlib import Path
 
-sys.path.append('./')  # to run '$ python *.py' files in subdirectories
+FILE = Path(__file__).absolute()
+sys.path.append(FILE.parents[1].as_posix())  # add yolov5/ to path
 
 import numpy as np
 import tensorflow as tf
@@ -53,7 +54,7 @@ from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, C
 from models.experimental import MixConv2d, CrossConv, attempt_load
 from models.yolo import Detect
 from utils.datasets import LoadImages
-from utils.general import make_divisible, check_file, check_dataset
+from utils.general import make_divisible, check_file, check_dataset, colorstr
 
 logger = logging.getLogger(__name__)
 
@@ -217,7 +218,7 @@ class tf_Detect(keras.layers.Layer):
         self.export = False  # onnx export
         self.training = True  # set to False after building model
         for i in range(self.nl):
-            ny, nx = opt.img_size[0] // self.stride[i], opt.img_size[1] // self.stride[i]
+            ny, nx = opt.imgsz[0] // self.stride[i], opt.imgsz[1] // self.stride[i]
             self.grid[i] = self._make_grid(nx, ny)
 
     def call(self, inputs):
@@ -228,7 +229,7 @@ class tf_Detect(keras.layers.Layer):
         for i in range(self.nl):
             x.append(self.m[i](inputs[i]))
             # x(bs,20,20,255) to x(bs,3,20,20,85)
-            ny, nx = opt.img_size[0] // self.stride[i], opt.img_size[1] // self.stride[i]
+            ny, nx = opt.imgsz[0] // self.stride[i], opt.imgsz[1] // self.stride[i]
             x[i] = tf.transpose(tf.reshape(x[i], [-1, ny * nx, self.na, self.no]), [0, 2, 1, 3])
 
             if not self.training:  # inference
@@ -236,8 +237,8 @@ class tf_Detect(keras.layers.Layer):
                 xy = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
                 wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]
                 # Normalize xywh to 0-1 to reduce calibration error
-                xy /= tf.constant([[opt.img_size[1], opt.img_size[0]]], dtype=tf.float32)
-                wh /= tf.constant([[opt.img_size[1], opt.img_size[0]]], dtype=tf.float32)
+                xy /= tf.constant([[opt.imgsz[1], opt.imgsz[0]]], dtype=tf.float32)
+                wh /= tf.constant([[opt.imgsz[1], opt.imgsz[0]]], dtype=tf.float32)
                 y = tf.concat([xy, wh, y[..., 4:]], -1)
                 z.append(tf.reshape(y, [-1, 3 * ny * nx, self.no]))
 
@@ -367,7 +368,7 @@ class tf_Model():
             else:
                 boxes = tf.expand_dims(boxes, 2)
                 nms = tf.image.combined_non_max_suppression(
-                    boxes, scores, opt.topk_per_class, opt.topk_all, opt.iou_thres, opt.score_thres, clip_boxes=False)
+                    boxes, scores, opt.topk_per_class, opt.topk_all, opt.iou_thres, opt.conf_thres, clip_boxes=False)
                 return nms, x[1]
 
         return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
@@ -381,17 +382,17 @@ class tf_Model():
 class agnostic_nms_layer(keras.layers.Layer):
     # wrap map_fn to avoid TypeSpec related error https://stackoverflow.com/a/65809989/3036450
     def call(self, input):
-        return tf.map_fn(agnostic_nms, input,
+        return tf.map_fn(tf_agnostic_nms, input,
                          fn_output_signature=(tf.float32, tf.float32, tf.float32, tf.int32),
                          name='agnostic_nms')
 
 
-def agnostic_nms(x):
+def tf_agnostic_nms(x):
     boxes, classes, scores = x
     class_inds = tf.cast(tf.argmax(classes, axis=-1), tf.float32)
     scores_inp = tf.reduce_max(scores, -1)
     selected_inds = tf.image.non_max_suppression(
-        boxes, scores_inp, max_output_size=opt.topk_all, iou_threshold=opt.iou_thres, score_threshold=opt.score_thres)
+        boxes, scores_inp, max_output_size=opt.topk_all, iou_threshold=opt.iou_thres, score_threshold=opt.conf_thres)
     selected_boxes = tf.gather(boxes, selected_inds)
     padded_boxes = tf.pad(selected_boxes,
                           paddings=[[0, opt.topk_all - tf.shape(selected_boxes)[0]], [0, 0]],
@@ -414,7 +415,7 @@ def xywh2xyxy(xywh):
     return tf.concat([x - w / 2, y - h / 2, x + w / 2, y + h / 2], axis=-1)
 
 
-def representative_dataset_gen():
+def representative_dataset_gen(dataset, ncalib=100):
     # Representative dataset for use with converter.representative_dataset
     n = 0
     for path, img, im0s, vid_cap in dataset:
@@ -424,38 +425,33 @@ def representative_dataset_gen():
         input = np.expand_dims(input, axis=0).astype(np.float32)
         input /= 255.0
         yield [input]
-        if n >= opt.ncalib:
+        if n >= ncalib:
             break
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default='yolov5s.yaml', help='cfg path')
-    parser.add_argument('--weights', type=str, default='yolov5s.pt', help='weights path')
-    parser.add_argument('--img-size', nargs='+', type=int, default=[320, 320], help='image size')  # height, width
-    parser.add_argument('--batch-size', type=int, default=1, help='batch size')
-    parser.add_argument('--dynamic-batch-size', action='store_true', help='dynamic batch size')
-    parser.add_argument('--source', type=str, default='../data/coco128.yaml', help='dir of images or data.yaml file')
-    parser.add_argument('--ncalib', type=int, default=100, help='number of calibration images')
-    parser.add_argument('--tfl-int8', action='store_true', dest='tfl_int8', help='export TFLite int8 model')
-    parser.add_argument('--tf-nms', action='store_true', dest='tf_nms', help='TF NMS (without TFLite export)')
-    parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
-    parser.add_argument('--tf-raw-resize', action='store_true', dest='tf_raw_resize',
-                        help='use tf.raw_ops.ResizeNearestNeighbor for resize')
-    parser.add_argument('--topk-per-class', type=int, default=100, help='topk per class to keep in NMS')
-    parser.add_argument('--topk-all', type=int, default=100, help='topk for all classes to keep in NMS')
-    parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
-    parser.add_argument('--score-thres', type=float, default=0.4, help='score threshold for NMS')
-    opt = parser.parse_args()
-    opt.cfg = check_file(opt.cfg)  # check file
-    opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
-    print(opt)
+def run(cfg='yolov5s.yaml',  # cfg path
+        weights='yolov5s.pt',  # weights path
+        imgsz=(320, 320),  # inference size h,w
+        batch_size=1,  # batch size
+        dynamic_batch_size=False,  # dynamic batch size
+        source='../data/coco128.yaml',  # dir of images or data.yaml file
+        ncalib=100,  # number of calibration images
+        tfl_int8=False,  # export TFLite int8 model
+        tf_nms=False,  # TF NMS (without TFLite export)
+        agnostic_nms=False,  # class-agnostic NMS
+        tf_raw_resize=False,  # use tf.raw_ops.ResizeNearestNeighbor for resize
+        topk_per_class=100,  # topk per class to keep in NMS
+        topk_all=100,  # topk for all classes to keep in NMS
+        iou_thres=0.45,  # IOU threshold for NMS
+        conf_thres=0.25,  # score threshold for NMS
+        ):
+    # Run TensorFlow model export
 
     # Input
-    img = torch.zeros((opt.batch_size, 3, *opt.img_size))  # image size(1,3,320,192) iDetection
+    img = torch.zeros((batch_size, 3, *imgsz))  # image size(1,3,320,192) iDetection
 
     # Load PyTorch model
-    model = attempt_load(opt.weights, map_location=torch.device('cpu'), inplace=True, fuse=False)
+    model = attempt_load(weights, map_location=torch.device('cpu'), inplace=True, fuse=False)
     model.model[-1].export = False  # set Detect() layer export=True
     y = model(img)  # dry run
     nc = y[0].shape[-1] - 5
@@ -463,18 +459,18 @@ if __name__ == "__main__":
     # TensorFlow saved_model export
     try:
         print('\nStarting TensorFlow saved_model export with TensorFlow %s...' % tf.__version__)
-        tf_model = tf_Model(opt.cfg, model=model, nc=nc)
-        img = tf.zeros((opt.batch_size, *opt.img_size, 3))  # NHWC Input for TensorFlow
+        tf_model = tf_Model(cfg, model=model, nc=nc)
+        img = tf.zeros((batch_size, *imgsz, 3))  # NHWC Input for TensorFlow
 
         m = tf_model.model.layers[-1]
         assert isinstance(m, tf_Detect), "the last layer must be Detect"
         m.training = False
         y = tf_model.predict(img)
 
-        inputs = keras.Input(shape=(*opt.img_size, 3), batch_size=None if opt.dynamic_batch_size else opt.batch_size)
+        inputs = keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic_batch_size else batch_size)
         keras_model = keras.Model(inputs=inputs, outputs=tf_model.predict(inputs))
         keras_model.summary()
-        path = opt.weights.replace('.pt', '_saved_model')  # filename
+        path = weights.replace('.pt', '_saved_model')  # filename
         keras_model.save(path, save_format='tf')
         print('TensorFlow saved_model export success, saved as %s' % path)
     except Exception as e:
@@ -492,7 +488,7 @@ if __name__ == "__main__":
 
         frozen_func = convert_variables_to_constants_v2(full_model)
         frozen_func.graph.as_graph_def()
-        f = opt.weights.replace('.pt', '.pb')  # filename
+        f = weights.replace('.pt', '.pb')  # filename
         tf.io.write_graph(graph_or_graph_def=frozen_func.graph,
                           logdir=os.path.dirname(f),
                           name=os.path.basename(f),
@@ -504,7 +500,7 @@ if __name__ == "__main__":
         traceback.print_exc(file=sys.stdout)
 
     # TFLite model export
-    if not opt.tf_nms:
+    if not tf_nms:
         try:
             print('\nStarting TFLite export with TensorFlow %s...' % tf.__version__)
 
@@ -514,7 +510,7 @@ if __name__ == "__main__":
             # converter.allow_custom_ops = False
             # converter.experimental_new_converter = True
             # tflite_model = converter.convert()
-            # f = opt.weights.replace('.pt', '.tflite')  # filename
+            # f = weights.replace('.pt', '.tflite')  # filename
             # open(f, "wb").write(tflite_model)
 
             # fp16 TFLite model export ---------------------------------------------------------------------------------
@@ -526,22 +522,22 @@ if __name__ == "__main__":
             converter.allow_custom_ops = False
             converter.experimental_new_converter = True
             tflite_model = converter.convert()
-            f = opt.weights.replace('.pt', '-fp16.tflite')  # filename
+            f = weights.replace('.pt', '-fp16.tflite')  # filename
             open(f, "wb").write(tflite_model)
             print('\nTFLite export success, saved as %s' % f)
 
             # int8 TFLite model export ---------------------------------------------------------------------------------
-            if opt.tfl_int8:
+            if tfl_int8:
                 # Representative Dataset
-                if opt.source.endswith('.yaml'):
-                    with open(check_file(opt.source)) as f:
+                if source.endswith('.yaml'):
+                    with open(check_file(source)) as f:
                         data = yaml.load(f, Loader=yaml.FullLoader)  # data dict
                         check_dataset(data)  # check
-                    opt.source = data['train']
-                dataset = LoadImages(opt.source, img_size=opt.img_size, auto=False)
+                    source = data['train']
+                dataset = LoadImages(source, img_size=imgsz, auto=False)
                 converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
                 converter.optimizations = [tf.lite.Optimize.DEFAULT]
-                converter.representative_dataset = representative_dataset_gen
+                converter.representative_dataset = representative_dataset_gen(dataset, ncalib)
                 converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
                 converter.inference_input_type = tf.uint8  # or tf.int8
                 converter.inference_output_type = tf.uint8  # or tf.int8
@@ -549,10 +545,45 @@ if __name__ == "__main__":
                 converter.experimental_new_converter = True
                 converter.experimental_new_quantizer = False
                 tflite_model = converter.convert()
-                f = opt.weights.replace('.pt', '-int8.tflite')  # filename
+                f = weights.replace('.pt', '-int8.tflite')  # filename
                 open(f, "wb").write(tflite_model)
                 print('\nTFLite (int8) export success, saved as %s' % f)
 
         except Exception as e:
             print('\nTFLite export failure: %s' % e)
             traceback.print_exc(file=sys.stdout)
+
+
+def parse_opt():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--cfg', type=str, default='yolov5s.yaml', help='cfg path')
+    parser.add_argument('--weights', type=str, default='yolov5s.pt', help='weights path')
+    parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
+    parser.add_argument('--batch-size', type=int, default=1, help='batch size')
+    parser.add_argument('--dynamic-batch-size', action='store_true', help='dynamic batch size')
+    parser.add_argument('--source', type=str, default='../data/coco128.yaml', help='dir of images or data.yaml file')
+    parser.add_argument('--ncalib', type=int, default=100, help='number of calibration images')
+    parser.add_argument('--tfl-int8', action='store_true', dest='tfl_int8', help='export TFLite int8 model')
+    parser.add_argument('--tf-nms', action='store_true', dest='tf_nms', help='TF NMS (without TFLite export)')
+    parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
+    parser.add_argument('--tf-raw-resize', action='store_true', dest='tf_raw_resize',
+                        help='use tf.raw_ops.ResizeNearestNeighbor for resize')
+    parser.add_argument('--topk-per-class', type=int, default=100, help='topk per class to keep in NMS')
+    parser.add_argument('--topk-all', type=int, default=1000, help='topk for all classes to keep in NMS')
+    parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
+    parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
+    opt = parser.parse_args()
+
+    opt.cfg = check_file(opt.cfg)  # check file
+    opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
+    return opt
+
+
+def main(opt):
+    print(colorstr('tf.py: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
+    run(**vars(opt))
+
+
+if __name__ == "__main__":
+    opt = parse_opt()
+    main(opt)

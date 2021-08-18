@@ -1,6 +1,6 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
-Export a PyTorch model to TorchScript, ONNX, CoreML formats
+Export a PyTorch model to TorchScript, ONNX, CoreML, Tensorflow (TFLite, TF.js, saved_model, *.pb) formats
 
 Usage:
     $ python path/to/export.py --weights yolov5s.pt --img 640 --batch 1
@@ -101,6 +101,70 @@ def export_coreml(model, img, file):
         print(f'\n{prefix} export failure: {e}')
 
 
+def export_saved_model(model, img, file):
+    # TensorFlow saved_model export
+    prefix = colorstr('TensorFlow saved_model:')
+    keras_model = []
+    try:
+        check_requirements(('tensorflow',))
+        import tensorflow as tf
+
+        print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
+        f = file.with_suffix('')
+        # TODO export code here
+
+        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+    except Exception as e:
+        print(f'\n{prefix} export failure: {e}')
+
+    return keras_model
+
+
+def export_pb(model, img, file):
+    # TensorFlow GraphDef *.pb export
+    prefix = colorstr('TensorFlow GraphDef:')
+    try:
+        import tensorflow as tf
+
+        print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
+        f = file.with_suffix('')
+        # TODO export code here
+
+        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+    except Exception as e:
+        print(f'\n{prefix} export failure: {e}')
+
+
+def export_tflite(model, img, file):
+    # TensorFlow TFLite export
+    prefix = colorstr('TensorFlow Lite:')
+    try:
+        import tensorflow as tf
+
+        print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
+        f = file.with_suffix('')
+        # TODO export code here
+
+        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+    except Exception as e:
+        print(f'\n{prefix} export failure: {e}')
+
+
+def export_tfjs(model, img, file):
+    # TensorFlow TF.js export
+    prefix = colorstr('TensorFlow.js:')
+    try:
+        import tensorflow as tf
+
+        print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
+        f = file.with_suffix('')
+        # TODO export code here
+
+        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+    except Exception as e:
+        print(f'\n{prefix} export failure: {e}')
+
+
 def run(weights='./yolov5s.pt',  # weights path
         img_size=(640, 640),  # image (height, width)
         batch_size=1,  # batch size
@@ -156,6 +220,16 @@ def run(weights='./yolov5s.pt',  # weights path
         export_onnx(model, img, file, opset, train, dynamic, simplify)
     if 'coreml' in include:
         export_coreml(model, img, file)
+
+    # TensorFlow Exports
+    if any(x in include for x in ('saved_model', 'pb', 'tflite', 'tfjs')):
+        model = export_saved_model(model, img, file)  # keras model
+        if 'pb' in include:
+            export_pb(model, img, file)
+        if 'tflite' in include:
+            export_tflite(model, img, file)
+        if 'tfjs' in include:
+            export_tfjs(model, img, file)
 
     # Finish
     print(f'\nExport complete ({time.time() - t:.2f}s)'
