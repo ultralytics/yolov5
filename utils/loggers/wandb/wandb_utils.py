@@ -160,17 +160,21 @@ class WandbLogger():
                                         allow_val_change=True) if not wandb.run else wandb.run
         if self.wandb_run:
             if self.job_type == 'Training':
-                if not opt.resume and opt.upload_dataset:
+                if opt.upload_dataset:
+                    assert not opt.resume, "Cannot log dataset in when resuming"  
                     self.wandb_artifact_data_dict = self.check_and_upload_dataset(opt)
+                    
+                if opt.resume:
+                    self.data_dict = dict(self.wandb_run.config.data_dict)
                 else:
                     self.data_dict = check_wandb_dataset(opt.data)
-                    
-                self.setup_training(opt)
-                # write data_dict to config. useful for resuming from artifacts. Do this only when not resuming.
-                if not opt.resume:
                     self.wandb_artifact_data_dict = self.wandb_artifact_data_dict or self.data_dict
+                    
+                    # write data_dict to config. useful for resuming from artifacts. Do this only when not resuming.
                     self.wandb_run.config.update({'data_dict': self.wandb_artifact_data_dict},
-                                                 allow_val_change=True)
+                                                 allow_val_change=True)                    
+                self.setup_training(opt)
+
 
             if self.job_type == 'Dataset Creation':
                 self.data_dict = self.check_and_upload_dataset(opt)
