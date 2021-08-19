@@ -219,9 +219,7 @@ class WandbLogger():
                 opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs, opt.hyp = str(
                     self.weights), config.save_period, config.batch_size, config.bbox_interval, config.epochs, \
                                                                                                        config.hyp
-            data_dict = dict(self.wandb_run.config.data_dict)  # eliminates the need for config file to resume
-        else:
-            data_dict = self.data_dict
+        data_dict = self.data_dict
         if self.val_artifact is None:  # If --upload_dataset is set, use the existing artifact, don't download
             self.train_artifact_path, self.train_artifact = self.download_dataset_artifact(data_dict.get('train'),
                                                                                            opt.artifact_alias)
