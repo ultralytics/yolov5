@@ -38,6 +38,19 @@ def check_wandb_config_file(data_config_file):
     return data_config_file
 
 
+def check_wandb_dataset(data_file):
+    is_wandb_artifact = False
+    if check_file(data_file) and data_file.endswith('.yaml'):
+        with open(data_file, errors='ignore') as f:
+            data_dict = yaml.safe_load(f)
+        is_wandb_artifact = (data_dict['train'].startswith(WANDB_ARTIFACT_PREFIX) or 
+                             data_dict['val'].startswith(WANDB_ARTIFACT_PREFIX))
+    if is_wandb_artifact:
+        return data_dict 
+    else:
+        return check_dataset(data_file)
+
+
 def get_run_info(run_path):
     run_path = Path(remove_prefix(run_path, WANDB_ARTIFACT_PREFIX))
     run_id = run_path.stem
@@ -147,24 +160,15 @@ class WandbLogger():
                                         allow_val_change=True) if not wandb.run else wandb.run
         if self.wandb_run:
             if self.job_type == 'Training':
-                if not opt.resume:
-                    if opt.upload_dataset:
-                        self.wandb_artifact_data_dict = self.check_and_upload_dataset(opt)
-
-                    elif opt.data.endswith('_wandb.yaml'):  # When dataset is W&B artifact
-                        with open(opt.data, errors='ignore') as f:
-                            data_dict = yaml.safe_load(f)
-                        self.data_dict = data_dict
-                    else:  # Local .yaml dataset file or .zip file
-                        self.data_dict = check_dataset(opt.data)
+                if not opt.resume and opt.upload_dataset:
+                    self.wandb_artifact_data_dict = self.check_and_upload_dataset(opt)
                 else:
-                    self.data_dict = check_dataset(opt.data)
-
+                    self.data_dict = check_wandb_dataset(opt.data)
+                    
                 self.setup_training(opt)
-                if not self.wandb_artifact_data_dict:
-                    self.wandb_artifact_data_dict = self.data_dict
                 # write data_dict to config. useful for resuming from artifacts. Do this only when not resuming.
                 if not opt.resume:
+                    self.wandb_artifact_data_dict = self.wandb_artifact_data_dict or self.data_dict
                     self.wandb_run.config.update({'data_dict': self.wandb_artifact_data_dict},
                                                  allow_val_change=True)
 
