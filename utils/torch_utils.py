@@ -1,7 +1,11 @@
-# YOLOv5 PyTorch utils
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+PyTorch utils
+"""
 
 import datetime
 import logging
+import math
 import os
 import platform
 import subprocess
@@ -10,7 +14,6 @@ from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 
-import math
 import torch
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
@@ -32,10 +35,10 @@ def torch_distributed_zero_first(local_rank: int):
     Decorator to make all processes in distributed training wait for each local_master to do something.
     """
     if local_rank not in [-1, 0]:
-        dist.barrier()
+        dist.barrier(device_ids=[local_rank])
     yield
     if local_rank == 0:
-        dist.barrier()
+        dist.barrier(device_ids=[0])
 
 
 def init_torch_seeds(seed=0):

@@ -62,7 +62,7 @@ def check_wandb_resume(opt):
 
 
 def process_wandb_config_ddp_mode(opt):
-    with open(check_file(opt.data), encoding='ascii', errors='ignore') as f:
+    with open(check_file(opt.data), errors='ignore') as f:
         data_dict = yaml.safe_load(f)  # data dict
     train_dir, val_dir = None, None
     if isinstance(data_dict['train'], str) and data_dict['train'].startswith(WANDB_ARTIFACT_PREFIX):
@@ -152,7 +152,7 @@ class WandbLogger():
                         self.wandb_artifact_data_dict = self.check_and_upload_dataset(opt)
 
                     elif opt.data.endswith('_wandb.yaml'):  # When dataset is W&B artifact
-                        with open(opt.data, encoding='ascii', errors='ignore') as f:
+                        with open(opt.data, errors='ignore') as f:
                             data_dict = yaml.safe_load(f)
                         self.data_dict = data_dict
                     else:  # Local .yaml dataset file or .zip file
@@ -186,7 +186,7 @@ class WandbLogger():
                                                 opt.single_cls,
                                                 'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
         print("Created dataset config file ", config_path)
-        with open(config_path, encoding='ascii', errors='ignore') as f:
+        with open(config_path, errors='ignore') as f:
             wandb_data_dict = yaml.safe_load(f)
         return wandb_data_dict
 

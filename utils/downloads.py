@@ -1,4 +1,7 @@
-# Download utils
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Download utils
+"""
 
 import os
 import platform
@@ -36,7 +39,7 @@ def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
         print('')
 
 
-def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.google_utils import *; attempt_download()
+def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads import *; attempt_download()
     # Attempt file download if does not exist
     file = Path(str(file).strip().replace("'", ''))
 
@@ -74,7 +77,7 @@ def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.google_util
 
 
 def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', file='tmp.zip'):
-    # Downloads a file from Google Drive. from yolov5.utils.google_utils import *; gdrive_download()
+    # Downloads a file from Google Drive. from yolov5.utils.downloads import *; gdrive_download()
     t = time.time()
     file = Path(file)
     cookie = Path('cookie')  # gdrive cookie

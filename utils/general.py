@@ -1,8 +1,12 @@
-# YOLOv5 general utils
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+General utils
+"""
 
 import contextlib
 import glob
 import logging
+import math
 import os
 import platform
 import random
@@ -16,7 +20,6 @@ from pathlib import Path
 from subprocess import check_output
 
 import cv2
-import math
 import numpy as np
 import pandas as pd
 import pkg_resources as pkg
@@ -110,6 +113,11 @@ def is_pip():
     return 'site-packages' in Path(__file__).absolute().parts
 
 
+def is_ascii(str=''):
+    # Is string composed of all ASCII (no UTF) characters?
+    return len(str.encode().decode('ascii', 'ignore')) == len(str)
+
+
 def emojis(str=''):
     # Return platform-dependent emoji-safe version of string
     return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
@@ -195,11 +203,14 @@ def check_requirements(requirements='requirements.txt', exclude=()):
         print(emojis(s))
 
 
-def check_img_size(img_size, s=32, floor=0):
-    # Verify img_size is a multiple of stride s
-    new_size = max(make_divisible(img_size, int(s)), floor)  # ceil gs-multiple
-    if new_size != img_size:
-        print(f'WARNING: --img-size {img_size} must be multiple of max stride {s}, updating to {new_size}')
+def check_img_size(imgsz, s=32, floor=0):
+    # Verify image size is a multiple of stride s in each dimension
+    if isinstance(imgsz, int):  # integer i.e. img_size=640
+        new_size = max(make_divisible(imgsz, int(s)), floor)
+    else:  # list i.e. img_size=[640, 480]
+        new_size = [max(make_divisible(x, int(s)), floor) for x in imgsz]
+    if new_size != imgsz:
+        print(f'WARNING: --img-size {imgsz} must be multiple of max stride {s}, updating to {new_size}')
     return new_size
 
 
@@ -250,7 +261,7 @@ def check_dataset(data, autodownload=True):
 
     # Read yaml (optional)
     if isinstance(data, (str, Path)):
-        with open(data, encoding='ascii', errors='ignore') as f:
+        with open(data, errors='ignore') as f:
             data = yaml.safe_load(f)  # dictionary
 
     # Parse yaml
