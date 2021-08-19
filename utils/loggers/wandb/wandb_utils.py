@@ -161,11 +161,15 @@ class WandbLogger():
         if self.wandb_run:
             if self.job_type == 'Training':
                 if opt.upload_dataset:
-                    assert not opt.resume, "Cannot log dataset in when resuming"  
-                    self.wandb_artifact_data_dict = self.check_and_upload_dataset(opt)
+                    if not opt.resume:  
+                        self.wandb_artifact_data_dict = self.check_and_upload_dataset(opt)
                     
                 if opt.resume:
-                    self.data_dict = dict(self.wandb_run.config.data_dict)
+                    # resume from artifact
+                    if isinstance(opt.resume, str) and opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
+                      self.data_dict = dict(self.wandb_run.config.data_dict)
+                    else: #local resume
+                      self.data_dict = check_wandb_dataset(opt.data)
                 else:
                     self.data_dict = check_wandb_dataset(opt.data)
                     self.wandb_artifact_data_dict = self.wandb_artifact_data_dict or self.data_dict
