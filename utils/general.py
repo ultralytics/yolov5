@@ -198,7 +198,7 @@ def check_requirements(requirements='requirements.txt', exclude=(), install=True
                 except Exception as e:
                     print(f'{prefix} {e}')
             else:
-                print(f'{s}')
+                print(f'{s}. Please install and rerun your command.')
 
     if n:  # if packages updated
         source = file.resolve() if 'file' in locals() else requirements
