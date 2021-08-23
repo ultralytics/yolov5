@@ -103,7 +103,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             interpreter.allocate_tensors()  # allocate
             input_details = interpreter.get_input_details()  # inputs
             output_details = interpreter.get_output_details()  # outputs
-            is_int8 = input_details[0]['dtype'] == np.uint8  # is TFLite quantized uint8 model
+            int8 = input_details[0]['dtype'] == np.uint8  # is TFLite quantized uint8 model
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
     # Dataloader
@@ -145,13 +145,13 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             elif saved_model:
                 pred = model(imn, training=False).numpy()
             elif tflite:
-                if is_int8:
+                if int8:
                     scale, zero_point = input_details[0]['quantization']
                     imn = (imn / scale + zero_point).astype(np.uint8)  # de-scale
                 interpreter.set_tensor(input_details[0]['index'], imn)
                 interpreter.invoke()
                 pred = interpreter.get_tensor(output_details[0]['index'])
-                if is_int8:
+                if int8:
                     scale, zero_point = output_details[0]['quantization']
                     pred = (pred.astype(np.float32) - zero_point) * scale  # re-scale
             pred[..., 0] *= imgsz[1]  # x
