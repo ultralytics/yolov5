@@ -36,7 +36,7 @@ download: |
   from PIL import Image
   from tqdm import tqdm
 
-  from utils.datasets import autosplit
+  from utils.datasets_old import autosplit
   from utils.general import download, xyxy2xywhn
 
 

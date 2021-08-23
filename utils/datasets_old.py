@@ -24,6 +24,7 @@ import yaml
 from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
+from typing import Tuple
 
 from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
 from utils.general import check_requirements, check_file, check_dataset, xywh2xyxy, xywhn2xyxy, xyxy2xywhn, \
@@ -95,6 +96,18 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
                       rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix=''):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
     with torch_distributed_zero_first(rank):
+        print('path', path)
+        print('imgsz', imgsz)
+        print('batch_size', batch_size)
+        print('augment', augment)
+        print('hyp', hyp)
+        print('rect', rect)
+        print('cache', cache)
+        print('single_cls', single_cls)
+        print('stride', stride)
+        print('pad', pad)
+        print('image_weights', image_weights)
+        print('prefix', prefix)
         dataset = LoadImagesAndLabels(path, imgsz, batch_size,
                                       augment=augment,  # augment images
                                       hyp=hyp,  # augmentation hyperparameters
@@ -364,6 +377,9 @@ def img2label_paths(img_paths):
     return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in img_paths]
 
 
+
+# image_weights - unused
+
 class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
                  cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
@@ -421,8 +437,12 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         [cache.pop(k) for k in ('hash', 'version', 'msgs')]  # remove items
         labels, shapes, self.segments = zip(*cache.values())
         self.labels = list(labels)
+
+        print(self.labels)
+
         self.shapes = np.array(shapes, dtype=np.float64)
         self.img_files = list(cache.keys())  # update
+        print(self.img_files)
         self.label_files = img2label_paths(cache.keys())  # update
         if single_cls:
             for x in self.labels:
@@ -596,10 +616,19 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
 
+        # print(type(torch.from_numpy(img)))
+        # print(type(labels_out))
+        # print(labels_out)
+        # print(type(self.img_files[index]))
+        # print(self.img_files[index])
+        # print(type(shapes))
+        # print(shapes)
+
         return torch.from_numpy(img), labels_out, self.img_files[index], shapes
 
     @staticmethod
     def collate_fn(batch):
+        # print('batch', type(batch), batch)
         img, label, path, shapes = zip(*batch)  # transposed
         for i, l in enumerate(label):
             l[:, 0] = i  # add target image index for build_targets()
@@ -800,7 +829,7 @@ def flatten_recursive(path='../datasets/coco128'):
         shutil.copyfile(file, new_path / Path(file).name)
 
 
-def extract_boxes(path='../datasets/coco128'):  # from utils.datasets import *; extract_boxes()
+def extract_boxes(path='../datasets/coco128'):  # from utils.datasets_old import *; extract_boxes()
     # Convert detection dataset into classification dataset, with one directory per class
     path = Path(path)  # images dir
     shutil.rmtree(path / 'classifier') if (path / 'classifier').is_dir() else None  # remove existing

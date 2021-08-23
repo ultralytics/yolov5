@@ -52,7 +52,7 @@ from tensorflow.python.framework.convert_to_constants import convert_variables_t
 from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat, autopad, C3
 from models.experimental import MixConv2d, CrossConv, attempt_load
 from models.yolo import Detect
-from utils.datasets import LoadImages
+from utils.datasets_old import LoadImages
 from utils.general import make_divisible, check_file, check_dataset
 
 logger = logging.getLogger(__name__)

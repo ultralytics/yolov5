@@ -12,8 +12,8 @@ from tqdm import tqdm
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[3].as_posix())  # add yolov5/ to path
 
-from utils.datasets import LoadImagesAndLabels
-from utils.datasets import img2label_paths
+from utils.datasets_old import LoadImagesAndLabels
+from utils.datasets_old import img2label_paths
 from utils.general import check_dataset, check_file
 
 try:
