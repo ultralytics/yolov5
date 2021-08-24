@@ -436,12 +436,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         [cache.pop(k) for k in ('hash', 'version', 'msgs')]  # remove items
         labels, shapes, self.segments = zip(*cache.values())
         self.labels = list(labels)
-
-        print(self.labels)
-
         self.shapes = np.array(shapes, dtype=np.float64)
         self.img_files = list(cache.keys())  # update
-        print(self.img_files)
         self.label_files = img2label_paths(cache.keys())  # update
         if single_cls:
             for x in self.labels:
@@ -614,14 +610,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         # Convert
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
-
-        # print(type(torch.from_numpy(img)))
-        # print(type(labels_out))
-        # print(labels_out)
-        # print(type(self.img_files[index]))
-        # print(self.img_files[index])
-        # print(type(shapes))
-        # print(shapes)
 
         return torch.from_numpy(img), labels_out, self.img_files[index], shapes
 

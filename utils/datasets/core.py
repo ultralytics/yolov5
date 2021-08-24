@@ -1,11 +1,11 @@
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 import os
 import torch
 from torch.utils.data import Dataset
 
 from utils.datasets.coco import read_json_file, ANNOTATIONS_FILE_NAME, load_coco_annotations
-from utils.datasets.yolo import load_image_names_from_paths
+from utils.datasets.yolo import load_image_names_from_paths, img2label_paths
 
 DatasetEntry = Tuple[torch.Tensor, torch.Tensor, str]
 
@@ -25,6 +25,7 @@ class COCODataset(Dataset):
     """
     dataset
     ├── annotations.json
+    ├── dataset.cache [optional]
     └── images
         ├── image-1.jpg
         ├── image-2.jpg
@@ -32,6 +33,13 @@ class COCODataset(Dataset):
     """
 
     def __init__(self, path: str, cache_images: bool) -> None:
+        """
+        Load COCO labels along with images from provided path.
+
+        Args:
+            path: `str` - path to `dataset` root directory.
+            cache_images: `bool` - flag to force caching of images.
+        """
         self.path = path
         self.cache_images = cache_images
 
@@ -60,25 +68,38 @@ class COCODataset(Dataset):
     def load_labels(path: str) -> List[torch.Tensor]:
         pass
 
+    @staticmethod
+    def resolve_cache_path() -> Optional[str]:
+        pass
+
 
 class YOLODataset(Dataset):
     """
     dataset
-    ├── image_names.txt
+    ├── image_names.txt [optional]
     ├── images
     │   ├── image-1.jpg
     │   ├── image-2.jpg
     │   └── ...
     └── labels
+        ├── dataset.cache [optional]
         ├── image-1.txt
         ├── image-2.txt
         └── ...
     """
 
     def __init__(self, path: str, cache_images: bool) -> None:
+        """
+        Load YOLO labels along with images from provided path.
+
+        Args:
+            path: `str` - path to `dataset` root directory or to `image_names.txt` file.
+            cache_images: `bool` - flag to force caching of images.
+        """
         self.path = path
         self.cache_images = cache_images
         self.image_paths = load_image_names_from_paths(paths=path)
+        self.label_paths = img2label_paths(image_paths=self.image_paths)
         self.labels = []
         self.images = []
 
@@ -99,3 +120,19 @@ class YOLODataset(Dataset):
     @staticmethod
     def load_labels(path: str) -> List[torch.Tensor]:
         pass
+
+    @staticmethod
+    def resolve_cache_path() -> Optional[str]:
+        pass
+
+
+class TransformedDataset(Dataset):
+
+    def __init__(self, source_dataset: Dataset) -> None:
+        self.source_dataset = source_dataset
+
+    def __len__(self) -> int:
+        return len(self.source_dataset)
+
+    def __getitem__(self, index: int) -> DatasetEntry:
+        return self.source_dataset[index]
