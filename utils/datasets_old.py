@@ -24,7 +24,6 @@ import yaml
 from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
-from typing import Tuple
 
 from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
 from utils.general import check_requirements, check_file, check_dataset, xywh2xyxy, xywhn2xyxy, xyxy2xywhn, \

@@ -19,11 +19,20 @@ def initiate_dataset(path: str, cache_images: bool) -> Dataset:
 
 
 class COCODataset(Dataset):
+    """
+    dataset
+    ├── annotations.json
+    └── images
+        ├── image-1.jpg
+        ├── image-2.jpg
+        └── ...
+    """
 
     def __init__(self, path: str, cache_images: bool) -> None:
         self.path = path
         self.cache_images = cache_images
-        self.image_file_name = []
+        self.image_file_names = []
+        self.labels = []
 
     def __len__(self) -> int:
         pass
@@ -45,11 +54,24 @@ class COCODataset(Dataset):
 
 
 class YOLODataset(Dataset):
+    """
+    dataset
+    ├── image_names.txt
+    ├── images
+    │   ├── image-1.jpg
+    │   ├── image-2.jpg
+    │   └── ...
+    └── labels
+        ├── image-1.txt
+        ├── image-2.txt
+        └── ...
+    """
 
     def __init__(self, path: str, cache_images: bool) -> None:
         self.path = path
         self.cache_images = cache_images
-        self.image_file_name = []
+        self.image_file_names = []
+        self.labels = []
 
     def __len__(self) -> int:
         pass
