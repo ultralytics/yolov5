@@ -1,8 +1,11 @@
 from typing import Tuple, List
 
+import os
 import torch
 from torch.utils.data import Dataset
 
+from utils.datasets.coco import read_json_file, ANNOTATIONS_FILE_NAME, load_coco_annotations
+from utils.datasets.yolo import load_image_names_from_paths
 
 DatasetEntry = Tuple[torch.Tensor, torch.Tensor, str]
 
@@ -31,11 +34,16 @@ class COCODataset(Dataset):
     def __init__(self, path: str, cache_images: bool) -> None:
         self.path = path
         self.cache_images = cache_images
-        self.image_file_names = []
-        self.labels = []
+
+        coco_data = read_json_file(os.path.join(path, ANNOTATIONS_FILE_NAME))
+        coco_annotations = load_coco_annotations(coco_data=coco_data)
+
+        self.image_paths = coco_annotations.keys()
+        self.labels = coco_annotations.values()
+        self.images = []
 
     def __len__(self) -> int:
-        pass
+        return len(self.image_paths)
 
     def __getitem__(self, index: int) -> DatasetEntry:
         pass
@@ -70,11 +78,12 @@ class YOLODataset(Dataset):
     def __init__(self, path: str, cache_images: bool) -> None:
         self.path = path
         self.cache_images = cache_images
-        self.image_file_names = []
+        self.image_paths = load_image_names_from_paths(paths=path)
         self.labels = []
+        self.images = []
 
     def __len__(self) -> int:
-        pass
+        return len(self.image_paths)
 
     def __getitem__(self, index: int) -> DatasetEntry:
         pass
