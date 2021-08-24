@@ -95,18 +95,6 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
                       rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix=''):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
     with torch_distributed_zero_first(rank):
-        print('path', path)
-        print('imgsz', imgsz)
-        print('batch_size', batch_size)
-        print('augment', augment)
-        print('hyp', hyp)
-        print('rect', rect)
-        print('cache', cache)
-        print('single_cls', single_cls)
-        print('stride', stride)
-        print('pad', pad)
-        print('image_weights', image_weights)
-        print('prefix', prefix)
         dataset = LoadImagesAndLabels(path, imgsz, batch_size,
                                       augment=augment,  # augment images
                                       hyp=hyp,  # augmentation hyperparameters
@@ -436,12 +424,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         [cache.pop(k) for k in ('hash', 'version', 'msgs')]  # remove items
         labels, shapes, self.segments = zip(*cache.values())
         self.labels = list(labels)
-
-        print(self.labels)
-
         self.shapes = np.array(shapes, dtype=np.float64)
         self.img_files = list(cache.keys())  # update
-        print(self.img_files)
         self.label_files = img2label_paths(cache.keys())  # update
         if single_cls:
             for x in self.labels:
@@ -614,14 +598,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         # Convert
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
-
-        # print(type(torch.from_numpy(img)))
-        # print(type(labels_out))
-        # print(labels_out)
-        # print(type(self.img_files[index]))
-        # print(self.img_files[index])
-        # print(type(shapes))
-        # print(shapes)
 
         return torch.from_numpy(img), labels_out, self.img_files[index], shapes
 

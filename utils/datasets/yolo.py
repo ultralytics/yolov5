@@ -25,3 +25,11 @@ def load_image_names_from_paths(paths: Union[str, List[str]]) -> List[str]:
         else:
             raise Exception(f'{path} does not exist')
     return sorted([x.replace('/', os.sep) for x in image_paths if x.split('.')[-1].lower() in IMG_FORMATS])
+
+
+def img2label_paths(image_paths: List[str]) -> List[str]:
+    """
+    Define label paths as a function of image paths.
+    """
+    sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
+    return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in image_paths]
