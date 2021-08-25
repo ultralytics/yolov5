@@ -1,25 +1,16 @@
-import hashlib
 import os
-from multiprocessing.pool import ThreadPool
-from pathlib import Path
-from typing import Optional, Union, List, Dict
 from abc import ABC, abstractmethod
-from tqdm import tqdm
+from multiprocessing.pool import ThreadPool
+from typing import Optional, List, Dict
 
-import numpy as np
 import cv2
+import numpy as np
+from tqdm import tqdm
 
 from utils.datasets.error import CacheError
 
 
-def get_hash(paths: List[str]) -> str:
-    """
-    Returns a single hash value of a list of paths (files or dirs)
-    """
-    size = sum(os.path.getsize(p) for p in paths if os.path.exists(p))  # sizes
-    h = hashlib.md5(str(size).encode())  # hash sizes
-    h.update(''.join(paths).encode())  # hash paths
-    return h.hexdigest()  # return hash
+NUM_THREADS = min(8, os.cpu_count())
 
 
 class BaseImageCache(ABC):
@@ -61,12 +52,19 @@ class DiscImageCache(BaseImageCache):
 
     def __init__(self, thread_count: int = 8) -> None:
         super().__init__(cache_type="disc", thread_count=thread_count)
+        self._image_paths: Dict[str, str] = {}
 
     def _load_images(self, paths: List[str]) -> None:
-        pass
+        pass  # TODO
 
     def _get_image(self, path: str) -> Optional[np.ndarray]:
-        pass
+        pass  # TODO
+
+    def _load_image(self, path: str) -> None:
+        pass  # TODO
+
+    def _init_cache(self, paths: List[str]) -> None:
+        pass  # TODO
 
 
 class RAMImageCache(BaseImageCache):
@@ -93,32 +91,31 @@ class RAMImageCache(BaseImageCache):
         self._cache_size += image.nbytes
 
 
-class LabelCache:
+class ImageProvider:
 
-    VERSION = 0.4
-    VERSION_KEY = "version"
-    HASH_KEY = "hash"
-    RESULTS_KEY = "results"
+    def __init__(self, cache_images: Optional[str], paths: List[str]) -> None:
+        self._cache_images = cache_images
+        self._cache = ImageProvider._init_cache(cache_images=cache_images, paths=paths)
 
-    @staticmethod
-    def load(path: Union[str, Path], hash: str) -> Optional[dict]:
-        cache = LabelCache._safe_load(path=path)
-        if all([
-            cache,
-            cache[LabelCache.VERSION_KEY] == LabelCache.VERSION,
-            cache[LabelCache.HASH_KEY] == hash
-        ]):
-            return cache
+    def get_image(self, path: str) -> np.ndarray:
+        if self._cache_images:
+            return self._cache.get_image(path=path)
         else:
-            return None
+            image = cv2.imread(path)
+            if image is None:
+                raise CacheError(f"Image with {path} path could not be found.")
+            return image
 
     @staticmethod
-    def save(path: Union[str, Path], hash: str) -> None:
-        pass
-
-    @staticmethod
-    def _safe_load(path: Union[str, Path]) -> Optional[dict]:
-        try:
-            return np.load(path, allow_pickle=True).item()
-        except:
+    def _init_cache(cache_images: Optional[str], paths: List[str]) -> Optional[BaseImageCache]:
+        if cache_images == "disc":
+            cache = DiscImageCache(thread_count=NUM_THREADS)
+            cache.load_images(paths=paths)
+            return cache
+        if cache_images == 'ram':
+            cache = RAMImageCache(thread_count=NUM_THREADS)
+            cache.load_images(paths=paths)
+            return cache
+        if cache_images is None:
             return None
+        raise CacheError(f"Unsupported cache type. Expected disc, ram or None. {cache_images} given.")

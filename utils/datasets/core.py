@@ -1,12 +1,13 @@
+import os
 from pathlib import Path
 from typing import Tuple, List, Optional
 
-import os
 import torch
 from torch.utils.data import Dataset
 
-from utils.datasets.cache import LabelCache, get_hash
 from utils.datasets.coco import read_json_file, ANNOTATIONS_FILE_NAME, load_coco_annotations
+from utils.datasets.image_cache import ImageProvider
+from utils.datasets.label_cache import LabelCache, get_hash
 from utils.datasets.yolo import load_image_names_from_paths, img2label_paths
 
 DatasetEntry = Tuple[torch.Tensor, torch.Tensor, str]
@@ -52,9 +53,9 @@ class COCODataset(Dataset):
         coco_data = read_json_file(os.path.join(path, ANNOTATIONS_FILE_NAME))
         coco_annotations = load_coco_annotations(coco_data=coco_data)
 
-        self.image_paths = coco_annotations.keys()
-        self.labels = coco_annotations.values()
-        self.images = []
+        self.image_paths = list(coco_annotations.keys())
+        self.labels = list(coco_annotations.values())
+        self.image_provider = ImageProvider(cache_images=cache_images, paths=self.image_paths)
 
     def __len__(self) -> int:
         return len(self.image_paths)
@@ -112,8 +113,11 @@ class YOLODataset(Dataset):
         self.label_paths: List[str] = img2label_paths(image_paths=self.image_paths)
 
         cache_path = YOLODataset.resolve_cache_path(path=self.path, label_paths=self.label_paths)
-        hash = get_hash(self.label_paths + self.image_paths)
-        cache = LabelCache.load(path=cache_path, hash=hash)
+        label_cache = LabelCache.load(
+            path=cache_path,
+            hash=get_hash(self.label_paths + self.image_paths)
+        )
+        self.image_provider = ImageProvider(cache_images=cache_images, paths=self.image_paths)
 
         self.labels = []
         self.images = []
