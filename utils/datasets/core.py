@@ -112,10 +112,8 @@ class YOLODataset(Dataset):
         self.label_paths: List[str] = img2label_paths(image_paths=self.image_paths)
 
         cache_path = YOLODataset.resolve_cache_path(path=self.path, label_paths=self.label_paths)
-        print(cache_path)
         hash = get_hash(self.label_paths + self.image_paths)
         cache = LabelCache.load(path=cache_path, hash=hash)
-        print(cache.keys())
 
         self.labels = []
         self.images = []

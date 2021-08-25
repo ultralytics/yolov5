@@ -1,0 +1,3 @@
+
+class CacheError(Exception):
+    pass
