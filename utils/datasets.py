@@ -873,8 +873,8 @@ def verify_image_label(args):
             with open(im_file, 'rb') as f:
                 f.seek(-2, 2)
                 if f.read() != b'\xff\xd9':  # corrupt JPEG
-                    msg = f'{prefix}WARNING: Re-saving corrupted JPEG {im_file}'
                     im.save(im_file, format='JPEG', subsampling=0, quality=100)  # re-save image
+                    msg = f'{prefix}WARNING: corrupt JPEG restored and saved {im_file}'
 
         # verify labels
         if os.path.isfile(lb_file):
