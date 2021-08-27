@@ -2,6 +2,8 @@ from PIL import Image
 import os
 import cv2
 import numpy as np
-path = r"E:\workdir\datasets\labels"
+import torch
+import torchvision
 
-f = open(os.path.join(path,"93.txt"))
+print(torch.__version__)
+print(torchvision.__version__)
