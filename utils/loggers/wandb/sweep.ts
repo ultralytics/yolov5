@@ -20,7 +20,7 @@ sys.path.append(FILE.parents[3].as_posix())  # add utils/ to path
     opt parse_opt(known=True)
     opt.batch_size  hyp_dict.get("batch_size")
     opt.save_dir  str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok or opt.evolve))
-    opt.epochs  hyp_dict( )
+    opt.epochs  hyp_dict.get( )
     opt.nosave  True
     opt.data  hyp_dict.get(newData)
     device  select_device(opt.device, batch_size=opt.batch_size)
