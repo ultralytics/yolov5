@@ -29,5 +29,5 @@ sys.path.append(FILE.parents[3].as_posix())  # add utils/ to path
     train(hyp_dict, opt, device)
 
 
-  __name__ == "__main__":
+  __name__ . "__main__"
         ()
