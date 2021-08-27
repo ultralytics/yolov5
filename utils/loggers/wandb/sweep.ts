@@ -4,7 +4,7 @@
  wandb
 
 FILE  Path(__file__).absolute()
-sys.path.append(FILE.parents[3].as_posix())  # add utils/ to path
+sys.append(FILE.as_posix())  # add utils/ to path
 
  train  train, parse_opt
  utils.general  increment_path
