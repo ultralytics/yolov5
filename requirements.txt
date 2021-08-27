@@ -23,7 +23,10 @@ pandas
 # coremltools>=4.1
 # onnx>=1.9.0
 # scikit-learn==0.19.2  # for coreml quantization
+# tensorflow==2.4.1  # for TFLite export
 
 # extras --------------------------------------
-thop  # FLOPS computation
-pycocotools>=2.0  # COCO mAP
+# Cython  # for pycocotools https://github.com/cocodataset/cocoapi/issues/172
+# pycocotools>=2.0  # COCO mAP
+# albumentations>=1.0.3
+thop  # FLOPs computation

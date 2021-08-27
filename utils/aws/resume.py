@@ -28,7 +28,7 @@ for last in path.rglob('*/**/last.pt'):
 
     if ddp:  # multi-GPU
         port += 1
-        cmd = f'python -m torch.distributed.launch --nproc_per_node {nd} --master_port {port} train.py --resume {last}'
+        cmd = f'python -m torch.distributed.run --nproc_per_node {nd} --master_port {port} train.py --resume {last}'
     else:  # single-GPU
         cmd = f'python train.py --resume {last}'
 
