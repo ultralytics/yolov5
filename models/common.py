@@ -377,7 +377,7 @@ class Detections:
                             save_one_box(box, im, file=save_dir / 'crops' / self.names[int(cls)] / self.files[i])
                         else:  # all others
                             annotator.box_label(box, label, color=colors(cls))
-                    im = annotator.result()
+                    im = annotator.im
 
             else:
                 str += '(no detections)'
