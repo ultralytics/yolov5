@@ -391,13 +391,15 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 del ckpt
                 callbacks.on_model_save(last, epoch, final_epoch, best_fitness, fi)
 
-        # Stop
-        with torch_distributed_zero_first(RANK):
+            # Stop
             stop = stopper(epoch=epoch, fitness=fi)
-            # if RANK == 0:
-            #    dist.broadcast_object_list([stop])
-            if stop:
-                break
+            if RANK == 0:
+                dist.broadcast_object_list([stop])
+
+        # Stop
+        # with torch_distributed_zero_first(RANK):
+        if stop:
+            break
 
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training -----------------------------------------------------------------------------------------------------
