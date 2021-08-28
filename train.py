@@ -278,6 +278,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 dist.broadcast(indices, 0)
                 if RANK != 0:
                     dataset.indices = indices.cpu().numpy()
+        print(RANK, dataset.indices[:10])
 
         # Update mosaic border
         # b = int(random.uniform(0.25 * imgsz, 0.75 * imgsz + gs) // gs * gs)
