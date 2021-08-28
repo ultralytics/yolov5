@@ -348,6 +348,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         lr = [x['lr'] for x in optimizer.param_groups]  # for loggers
         scheduler.step()
 
+        stop = False
         if RANK in [-1, 0]:
             # mAP
             callbacks.on_train_epoch_end(epoch=epoch)
