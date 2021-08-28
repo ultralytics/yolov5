@@ -136,8 +136,11 @@ def run(data,
     model.eval()
     is_coco = type(data['val']) is str and data['val'].endswith('coco/val2017.txt')  # COCO dataset
     nc = 1 if single_cls else int(data['nc'])  # number of classes
-    iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
+    # iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
+    # niou = iouv.numel()
+    iouv = torch.linspace(0.3, 0.7, 3).to(device)  # iou vector for mAP@0.3:0.7
     niou = iouv.numel()
+
 
     # Dataloader
     if not training:
@@ -151,8 +154,9 @@ def run(data,
     confusion_matrix = ConfusionMatrix(nc=nc)
     names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
-    s = ('%20s' + '%11s' * 6) % ('Class', 'Images', 'Labels', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
-    p, r, f1, mp, mr, map50, map, t0, t1, t2 = 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.
+    # s = ('%20s' + '%11s' * 6) % ('Class', 'Images', 'Labels', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
+    s = ('%20s' + '%11s' * 8) % ('Class', 'Images', 'Labels', 'P', 'R', 'mAP@.3','mAP@.5','mAP@.7', 'mAP@.3:.7')
+    p, r, f1, mp, mr, map30,map50,map70, map, t0, t1, t2 = 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,0.,0.
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
     for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
@@ -205,18 +209,20 @@ def run(data,
                 scale_coords(img[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
                 correct = process_batch(predn, labelsn, iouv)
+                
                 if plots:
                     confusion_matrix.process_batch(predn, labelsn)
             else:
                 correct = torch.zeros(pred.shape[0], niou, dtype=torch.bool)
             stats.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), tcls))  # (correct, conf, pcls, tcls)
-
+            
             # Save/log
             if save_txt:
                 save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / (path.stem + '.txt'))
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
             callbacks.on_val_image_end(pred, predn, path, names, img[si])
+        
 
         # Plot images
         if plots and batch_i < 3:
@@ -229,15 +235,18 @@ def run(data,
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
         p, r, ap, f1, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
-        ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
-        mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
+        
+        # ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
+        ap30,ap50,ap70, ap = ap[:, 0],ap[:, 1],ap[:, 2], ap.mean(1)  # AP@0.3, AP@0.5,AP@0.7,AP@0.3:0.7
+        # mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
+        mp, mr, map30,map50,map70, map = p.mean(), r.mean(),ap30.mean(), ap50.mean(),ap70.mean(), ap.mean()
         nt = np.bincount(stats[3].astype(np.int64), minlength=nc)  # number of targets per class
     else:
         nt = torch.zeros(1)
 
     # Print results
-    pf = '%20s' + '%11i' * 2 + '%11.3g' * 4  # print format
-    print(pf % ('all', seen, nt.sum(), mp, mr, map50, map))
+    pf = '%20s' + '%11i' * 2 + '%11.3g' * 6  # print format
+    print(pf % ('all', seen, nt.sum(), mp, mr, map30,map50,map70, map))
 
     # Print results per class
     if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
@@ -341,6 +350,7 @@ def main(opt):
             y = []  # y axis
             for i in x:  # img-size
                 print(f'\nRunning {f} point {i}...')
+                
                 r, _, t = run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=i, conf_thres=opt.conf_thres,
                               iou_thres=opt.iou_thres, save_json=opt.save_json, plots=False)
                 y.append(r + t)  # results and times
