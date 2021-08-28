@@ -301,7 +301,7 @@ class EarlyStopping:
         self.patience = patience  # epochs to wait after fitness stops improving to stop
 
     def __call__(self, epoch, fitness):
-        if fitness >= self.best_fitness:  # >= 0 to allow for early zero-fitness stage of training
+        if fitness > self.best_fitness:  # >= 0 to allow for early zero-fitness stage of training
             self.best_epoch = epoch
             self.best_fitness = fitness
         stop = (epoch - self.best_epoch) >= self.patience  # stop training if patience exceeded
