@@ -112,11 +112,11 @@ class Annotator:
 
     def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
         # Plots one xyxy box on image im with label
-        self.draw.rectangle(box, width=self.lw, outline=color)  # plot
+        self.draw.rectangle(box, width=self.lw, outline=color)  # box
         if label:
-            txt_width, txt_height = self.font.getsize(label)
-            self.draw.rectangle([box[0], box[1] - txt_height + 4, box[0] + txt_width, box[1]], fill=color)
-            self.draw.text((box[0], box[1] - txt_height + 1), label, fill=txt_color, font=self.font)
+            w, h = self.font.getsize(label)  # text width, height
+            self.draw.rectangle([box[0], box[1] - h + 4, box[0] + w, box[1]], fill=color)
+            self.draw.text((box[0], box[1] - h + 1), label, fill=txt_color, font=self.font)
 
     def rectangle(self, xy, fill=None, outline=None, width=1):
         self.draw.rectangle(xy, fill, outline, width)
@@ -191,7 +191,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
     annotator = Annotator(mosaic, line_width=round(fs / 10), font_size=fs)
     for i in range(i + 1):
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
-        annotator.rectangle((x, y, x + w, y + h), None, (255, 255, 255), width=2)  # borders
+        annotator.rectangle([x, y, x + w, y + h], None, (255, 255, 255), width=2)  # borders
         if paths:
             annotator.text((x + 5, y + 5 + h), text=Path(paths[i]).name[:40], txt_color=(220, 220, 220))  # filenames
         if len(targets) > 0:
