@@ -158,7 +158,7 @@ def output_to_target(output):
     return np.array(targets)
 
 
-def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max_size=500, max_subplots=16):
+def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max_size=1920, max_subplots=16):
     # Plot image grid with labels
     if isinstance(images, torch.Tensor):
         images = images.cpu().float().numpy()
@@ -170,7 +170,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
     ns = np.ceil(bs ** 0.5)  # number of subplots (square)
 
     # Resize (optional)
-    scale = max_size / max(h, w)
+    scale = max_size / ns / max(h, w)
     if scale < 1:
         h = math.ceil(scale * h)
         w = math.ceil(scale * w)
