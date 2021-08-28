@@ -395,12 +395,14 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             # Stop
             stop = stopper(epoch=epoch, fitness=fi)
             if RANK == 0:
-                dist.broadcast_object_list([stop])
+                dist.Store.set('stop', stop)
 
         # Stop
-        # with torch_distributed_zero_first(RANK):
-        if stop:
-            break
+        with torch_distributed_zero_first(RANK):
+            if RANK != -1:
+                stop = dist.Store.get('stop')
+            if stop:
+                break
 
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training -----------------------------------------------------------------------------------------------------
