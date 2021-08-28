@@ -158,24 +158,24 @@ def output_to_target(output):
     return np.array(targets)
 
 
-def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max_size=640, max_subplots=16):
+def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max_size=500, max_subplots=16):
     # Plot image grid with labels
     if isinstance(images, torch.Tensor):
         images = images.cpu().float().numpy()
     if isinstance(targets, torch.Tensor):
         targets = targets.cpu().numpy()
-
     images *= 255.0 if np.max(images[0]) <= 1 else 1.0  # de-normalise (optional)
     bs, _, h, w = images.shape  # batch size, _, height, width
     bs = min(bs, max_subplots)  # limit plot images
     ns = np.ceil(bs ** 0.5)  # number of subplots (square)
 
-    # Check if resize
+    # Resize (optional)
     scale = max_size / max(h, w)
     if scale < 1:
         h = math.ceil(scale * h)
         w = math.ceil(scale * w)
 
+    # Build Image
     fs = int(h * ns * 0.02)  # font size
     mosaic = np.full((int(ns * h), int(ns * w), 3), 255, dtype=np.uint8)  # init
     for i, im in enumerate(images):
@@ -187,10 +187,13 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
             im = cv2.resize(im, (w, h))
         mosaic[y:y + h, x:x + w, :] = im
 
+    # Annotate
     annotator = Annotator(mosaic, line_width=round(fs / 10), font_size=fs)
     for i in range(i + 1):
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
-
+        annotator.rectangle((x, y, x + w, y + h), None, (255, 255, 255), width=2)  # borders
+        if paths:
+            annotator.text((x + 5, y + 5 + h), text=Path(paths[i]).name[:40], txt_color=(220, 220, 220))  # filenames
         if len(targets) > 0:
             ti = targets[targets[:, 0] == i]  # image targets
             boxes = xywh2xyxy(ti[:, 2:6]).T
@@ -213,22 +216,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
                 if labels or conf[j] > 0.25:  # 0.25 conf thresh
                     label = f'{cls}' if labels else f'{cls} {conf[j]:.1f}'
                     annotator.box_label(box, label, color=color)
-
-        # Draw image filename labels
-        if paths:
-            label = Path(paths[i]).name[:40]  # trim to 40 char
-            annotator.text((x + 5, y + 5 + h), label, (220, 220, 220))
-
-        # Image border
-        annotator.rectangle((x, y, x + w, y + h), None, (255, 255, 255), width=2)
-
-    mosaic = annotator.result()
-    if fname:
-        r = min(1280. / max(h, w) / ns, 1.0)  # ratio to limit image size
-        mosaic = cv2.resize(mosaic, (int(ns * w * r), int(ns * h * r)), interpolation=cv2.INTER_AREA)
-        # cv2.imwrite(fname, cv2.cvtColor(mosaic, cv2.COLOR_BGR2RGB))  # cv2 save
-        Image.fromarray(mosaic).save(fname)  # PIL save
-    return mosaic
+    annotator.im.save(fname)  # save
 
 
 def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=''):
