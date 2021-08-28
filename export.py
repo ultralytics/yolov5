@@ -3,7 +3,7 @@
 Export a PyTorch model to TorchScript, ONNX, CoreML, Tensorflow (TFLite, TF.js, saved_model, *.pb) formats
 
 Usage:
-    $ python path/to/export.py --weights yolov5s.pt --img 640 --batch 1
+    $ python path/to/export.py --weights yolov5s.pt --img 640 --include torchscript onnx coreml tflite tfjs
 """
 
 import argparse
@@ -16,7 +16,8 @@ import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
 FILE = Path(__file__).absolute()
-sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
+ROOT = FILE.parents[0]  # yolov5/ dir
+sys.path.append(ROOT.as_posix())  # add yolov5/ to path
 
 from models.common import Conv
 from models.yolo import Detect
@@ -164,7 +165,7 @@ def export_tfjs(model, img, file):
         print(f'\n{prefix} export failure: {e}')
 
 
-def run(weights='./yolov5s.pt',  # weights path
+def run(weights=ROOT / 'yolov5s.pt',  # weights path
         img_size=(640, 640),  # image (height, width)
         batch_size=1,  # batch size
         device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
@@ -238,7 +239,7 @@ def run(weights='./yolov5s.pt',  # weights path
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='./yolov5s.pt', help='weights path')
+    parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='weights path')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image (height, width)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
