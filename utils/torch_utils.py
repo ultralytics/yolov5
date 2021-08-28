@@ -298,7 +298,7 @@ class EarlyStopping:
     def __init__(self, patience=30):
         self.best_fitness = 0  # i.e. mAP
         self.best_epoch = 0
-        self.patience = patience
+        self.patience = patience  # epochs to wait after fitness stops improving to stop
 
     def __call__(self, epoch, fitness):
         if fitness > self.best_fitness:
