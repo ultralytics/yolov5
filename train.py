@@ -398,10 +398,10 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 dist.broadcast_object_list([stop], 0)
 
         # Stop
-        with torch_distributed_zero_first(RANK):
-            print(RANK, stop)
-            if stop:
-                break
+        #with torch_distributed_zero_first(RANK):
+        print(RANK, stop)
+        if stop:
+            break
 
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training -----------------------------------------------------------------------------------------------------
