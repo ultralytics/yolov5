@@ -296,7 +296,7 @@ def copy_attr(a, b, include=(), exclude=()):
 class EarlyStopping:
     # YOLOv5 simple early stopper
     def __init__(self, patience=30):
-        self.best_fitness = 0  # i.e. mAP
+        self.best_fitness = 0.0  # i.e. mAP
         self.best_epoch = 0
         self.patience = patience  # epochs to wait after fitness stops improving to stop
 
@@ -304,7 +304,7 @@ class EarlyStopping:
         if fitness >= self.best_fitness:  # >= 0 to allow for early zero-fitness stage of training
             self.best_epoch = epoch
             self.best_fitness = fitness
-        stop = (epoch - self.best_epoch) > self.patience  # stop training if patience exceeded
+        stop = (epoch - self.best_epoch) >= self.patience  # stop training if patience exceeded
         if stop:
             LOGGER.info(f'EarlyStopping patience {self.patience} exceeded, stopping training.')
         return stop
