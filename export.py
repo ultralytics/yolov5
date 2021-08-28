@@ -27,9 +27,8 @@ from utils.general import colorstr, check_img_size, check_requirements, file_siz
 from utils.torch_utils import select_device
 
 
-def export_torchscript(model, img, file, optimize):
+def export_torchscript(model, img, file, optimize, prefix=colorstr('TorchScript:')):
     # TorchScript model export
-    prefix = colorstr('TorchScript:')
     try:
         print(f'\n{prefix} starting export with torch {torch.__version__}...')
         f = file.with_suffix('.torchscript.pt')
@@ -40,9 +39,8 @@ def export_torchscript(model, img, file, optimize):
         print(f'{prefix} export failure: {e}')
 
 
-def export_onnx(model, img, file, opset, train, dynamic, simplify):
+def export_onnx(model, img, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:')):
     # ONNX model export
-    prefix = colorstr('ONNX:')
     try:
         check_requirements(('onnx', 'onnx-simplifier'))
         import onnx
@@ -83,9 +81,9 @@ def export_onnx(model, img, file, opset, train, dynamic, simplify):
         print(f'{prefix} export failure: {e}')
 
 
-def export_coreml(model, img, file):
+def export_coreml(model, img, file, prefix=colorstr('CoreML:')):
     # CoreML model export
-    prefix = colorstr('CoreML:')
+
     try:
         check_requirements(('coremltools',))
         import coremltools as ct
@@ -101,9 +99,8 @@ def export_coreml(model, img, file):
         print(f'\n{prefix} export failure: {e}')
 
 
-def export_saved_model(model, img, file):
+def export_saved_model(model, img, file, prefix=colorstr('TensorFlow saved_model:')):
     # TensorFlow saved_model export
-    prefix = colorstr('TensorFlow saved_model:')
     keras_model = []
     try:
         check_requirements(('tensorflow',))
@@ -120,9 +117,8 @@ def export_saved_model(model, img, file):
     return keras_model
 
 
-def export_pb(model, img, file):
+def export_pb(model, img, file, prefix=colorstr('TensorFlow GraphDef:')):
     # TensorFlow GraphDef *.pb export
-    prefix = colorstr('TensorFlow GraphDef:')
     try:
         import tensorflow as tf
 
@@ -135,9 +131,8 @@ def export_pb(model, img, file):
         print(f'\n{prefix} export failure: {e}')
 
 
-def export_tflite(model, img, file):
+def export_tflite(model, img, file, prefix=colorstr('TensorFlow Lite:')):
     # TensorFlow TFLite export
-    prefix = colorstr('TensorFlow Lite:')
     try:
         import tensorflow as tf
 
@@ -150,9 +145,8 @@ def export_tflite(model, img, file):
         print(f'\n{prefix} export failure: {e}')
 
 
-def export_tfjs(model, img, file):
+def export_tfjs(model, img, file, prefix=colorstr('TensorFlow.js:')):
     # TensorFlow TF.js export
-    prefix = colorstr('TensorFlow.js:')
     try:
         import tensorflow as tf
 
