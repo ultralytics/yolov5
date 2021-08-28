@@ -102,8 +102,13 @@ class Annotator:
         self.draw = ImageDraw.Draw(self.im)
         s = sum(self.im.size) / 2  # mean shape
         f = font_size or max(round(s * 0.035), 12)
-        self.font = ImageFont.truetype(font, size=f)
         self.lw = line_width or max(round(s * 0.005), 2)  # line width
+        try:
+            self.font = ImageFont.truetype(font, size=f)
+        except:
+            url = "https://github.com/ultralytics/yolov5/releases/download/v1.0/" + font
+            torch.hub.download_url_to_file(url, font)
+            self.font = ImageFont.truetype(font, size=f)
 
     def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
         # Plots one xyxy box on image im with label
