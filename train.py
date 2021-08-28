@@ -399,6 +399,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
         # Stop
         with torch_distributed_zero_first(RANK):
+            print(RANK, stop)
             if stop:
                 break
 
