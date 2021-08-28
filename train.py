@@ -394,8 +394,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
             # Stop
             stop = stopper(epoch=epoch, fitness=fi)
-            if RANK == 0:
-                dist.broadcast_object_list([stop], 0)
+            #if RANK == 0:
+            #    dist.broadcast_object_list([stop], 0)
 
         # Stop
         #with torch_distributed_zero_first(RANK):
