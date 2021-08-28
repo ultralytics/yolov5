@@ -94,6 +94,36 @@ def plot_one_box(box, im, color=(128, 128, 128), txt_color=(255, 255, 255), labe
         return im
 
 
+class Annotator:
+    # YOLOv5 PIL Annotator class
+    def __init__(self, im, line_width=4, font_size=None, font='Arial.ttf'):
+        assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to plot_on_box() input image.'
+        self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
+        self.draw = ImageDraw.Draw(self.im)
+        s = sum(self.im.size) / 2  # mean shape
+        f = font_size or max(round(s * 0.035), 12)
+        self.font = ImageFont.truetype(font, size=f)
+        self.lw = line_width or max(round(s * 0.005), 2)  # line width
+
+    def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
+        # Plots one xyxy box on image im with label
+        self.draw.rectangle(box, width=self.lw, outline=color)  # plot
+        if label:
+            txt_width, txt_height = self.font.getsize(label)
+            self.draw.rectangle([box[0], box[1] - txt_height + 4, box[0] + txt_width, box[1]], fill=color)
+            self.draw.text((box[0], box[1] - txt_height + 1), label, fill=txt_color, font=self.font)
+
+    def rectangle(self, xy, fill=None, outline=None, width=1):
+        self.draw.rectangle(xy, fill, outline, width)
+
+    def text(self, xy, text, txt_color=(255, 255, 255)):
+        txt_width, txt_height = self.font.getsize(text)
+        self.draw.text((xy[0], xy[1] - txt_height + 1), text, fill=txt_color, font=self.font)
+
+    def result(self):
+        return np.asarray(self.im)
+
+
 def plot_wh_methods():  # from utils.plots import *; plot_wh_methods()
     # Compares the two methods for width-height anchor multiplication
     # https://github.com/ultralytics/yolov3/issues/168
@@ -135,8 +165,6 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
     if np.max(images[0]) <= 1:
         images *= 255
 
-    tl = 3  # line thickness
-    tf = max(tl - 1, 1)  # font thickness
     bs, _, h, w = images.shape  # batch size, _, height, width
     bs = min(bs, max_subplots)  # limit plot images
     ns = np.ceil(bs ** 0.5)  # number of subplots (square)
@@ -147,6 +175,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
         h = math.ceil(scale_factor * h)
         w = math.ceil(scale_factor * w)
 
+    fs = int(h * ns * 0.02)  # font size
     mosaic = np.full((int(ns * h), int(ns * w), 3), 255, dtype=np.uint8)  # init
     for i, img in enumerate(images):
         if i == max_subplots:  # if last batch has fewer images than we expect
@@ -160,6 +189,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
             img = cv2.resize(img, (w, h))
 
         mosaic[block_y:block_y + h, block_x:block_x + w, :] = img
+        annotator = Annotator(mosaic, line_width=round(fs / 10), font_size=fs)
         if len(targets) > 0:
             image_targets = targets[targets[:, 0] == i]
             boxes = xywh2xyxy(image_targets[:, 2:6]).T
@@ -180,18 +210,17 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
                 color = colors(cls)
                 cls = names[cls] if names else cls
                 if labels or conf[j] > 0.25:  # 0.25 conf thresh
-                    label = '%s' % cls if labels else '%s %.1f' % (cls, conf[j])
-                    mosaic = plot_one_box(box, mosaic, label=label, color=color, line_width=tl)
+                    label = f'{cls}' if labels else f'{cls} {conf[j]:.1f}'
+                    annotator.box_label(box, label, color=color)
 
         # Draw image filename labels
         if paths:
             label = Path(paths[i]).name[:40]  # trim to 40 char
-            t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
-            cv2.putText(mosaic, label, (block_x + 5, block_y + t_size[1] + 5), 0, tl / 3, [220, 220, 220], thickness=tf,
-                        lineType=cv2.LINE_AA)
+            annotator.text((block_x + 5, block_y + 5 + h), label, (220, 220, 220))
 
         # Image border
-        cv2.rectangle(mosaic, (block_x, block_y), (block_x + w, block_y + h), (255, 255, 255), thickness=3)
+        annotator.rectangle((block_x, block_y, block_x + w, block_y + h), None, (255, 255, 255), width=2)
+        mosaic = annotator.result()
 
     if fname:
         r = min(1280. / max(h, w) / ns, 1.0)  # ratio to limit image size

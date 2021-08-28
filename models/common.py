@@ -19,7 +19,7 @@ from torch.cuda import amp
 
 from utils.datasets import exif_transpose, letterbox
 from utils.general import non_max_suppression, make_divisible, scale_coords, increment_path, xyxy2xywh, save_one_box
-from utils.plots import colors, plot_one_box
+from utils.plots import colors, Annotator
 from utils.torch_utils import time_sync
 
 LOGGER = logging.getLogger(__name__)
@@ -370,12 +370,15 @@ class Detections:
                     n = (pred[:, -1] == c).sum()  # detections per class
                     str += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
                 if show or save or render or crop:
+                    annotator = Annotator(im)
                     for *box, conf, cls in reversed(pred):  # xyxy, confidence, class
                         label = f'{self.names[int(cls)]} {conf:.2f}'
                         if crop:
                             save_one_box(box, im, file=save_dir / 'crops' / self.names[int(cls)] / self.files[i])
                         else:  # all others
-                            im = plot_one_box(box, im, label=label, color=colors(cls))
+                            annotator.box_label(box, label, color=colors(cls))
+                    im = annotator.result()
+
             else:
                 str += '(no detections)'
 
