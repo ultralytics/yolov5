@@ -23,7 +23,7 @@ from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
 from utils.general import check_img_size, check_requirements, check_imshow, colorstr, non_max_suppression, \
     apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
-from utils.plots import colors, plot_one_box
+from utils.plots import colors, Annotator
 from utils.torch_utils import select_device, load_classifier, time_sync
 
 
@@ -181,6 +181,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
+            annotator = Annotator(im0, line_width=line_thickness, pil=False)
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
@@ -201,7 +202,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
-                        im0 = plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=line_thickness)
+                        annotator.box_label(xyxy, label, color=colors(c, True))
                         if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
@@ -209,6 +210,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             print(f'{s}Done. ({t2 - t1:.3f}s)')
 
             # Stream results
+            im0 = annotator.result()
             if view_img:
                 cv2.imshow(str(p), im0)
                 cv2.waitKey(1)  # 1 millisecond
