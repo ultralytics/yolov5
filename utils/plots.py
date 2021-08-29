@@ -45,30 +45,8 @@ class Colors:
 colors = Colors()  # create instance for 'from utils.plots import colors'
 
 
-def hist2d(x, y, n=100):
-    # 2d histogram used in labels.png and evolve.png
-    xedges, yedges = np.linspace(x.min(), x.max(), n), np.linspace(y.min(), y.max(), n)
-    hist, xedges, yedges = np.histogram2d(x, y, (xedges, yedges))
-    xidx = np.clip(np.digitize(x, xedges) - 1, 0, hist.shape[0] - 1)
-    yidx = np.clip(np.digitize(y, yedges) - 1, 0, hist.shape[1] - 1)
-    return np.log(hist[xidx, yidx])
-
-
-def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
-    from scipy.signal import butter, filtfilt
-
-    # https://stackoverflow.com/questions/28536191/how-to-filter-smooth-with-scipy-numpy
-    def butter_lowpass(cutoff, fs, order):
-        nyq = 0.5 * fs
-        normal_cutoff = cutoff / nyq
-        return butter(order, normal_cutoff, btype='low', analog=False)
-
-    b, a = butter_lowpass(cutoff, fs, order=order)
-    return filtfilt(b, a, data)  # forward-backward filter
-
-
 class Annotator:
-    # YOLOv5 PIL Annotator class
+    # YOLOv5 Annotator for train/val mosaics and jpgs and detect/hub inference annotations
     def __init__(self, im, line_width=None, font_size=None, font='Arial.ttf', pil=True):
         assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to plot_on_box() input image.'
         self.pil = pil
@@ -79,9 +57,11 @@ class Annotator:
             f = font_size or max(round(s * 0.035), 12)
             try:
                 self.font = ImageFont.truetype(font, size=f)
-            except:  # download TTF
+            except Exception as e:  # download TTF if missing
+                print(f'WARNING: Annotator font {font} not found: {e}')
                 url = "https://github.com/ultralytics/yolov5/releases/download/v1.0/" + font
                 torch.hub.download_url_to_file(url, font)
+                print(f'Annotator font successfully downloaded from {url} to {font}')
                 self.font = ImageFont.truetype(font, size=f)
             self.fh = self.font.getsize('a')[1] - 3  # font height
         else:  # use cv2
@@ -120,6 +100,28 @@ class Annotator:
     def result(self):
         # Return annotated image as array
         return np.asarray(self.im)
+
+
+def hist2d(x, y, n=100):
+    # 2d histogram used in labels.png and evolve.png
+    xedges, yedges = np.linspace(x.min(), x.max(), n), np.linspace(y.min(), y.max(), n)
+    hist, xedges, yedges = np.histogram2d(x, y, (xedges, yedges))
+    xidx = np.clip(np.digitize(x, xedges) - 1, 0, hist.shape[0] - 1)
+    yidx = np.clip(np.digitize(y, yedges) - 1, 0, hist.shape[1] - 1)
+    return np.log(hist[xidx, yidx])
+
+
+def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
+    from scipy.signal import butter, filtfilt
+
+    # https://stackoverflow.com/questions/28536191/how-to-filter-smooth-with-scipy-numpy
+    def butter_lowpass(cutoff, fs, order):
+        nyq = 0.5 * fs
+        normal_cutoff = cutoff / nyq
+        return butter(order, normal_cutoff, btype='low', analog=False)
+
+    b, a = butter_lowpass(cutoff, fs, order=order)
+    return filtfilt(b, a, data)  # forward-backward filter
 
 
 def output_to_target(output):
