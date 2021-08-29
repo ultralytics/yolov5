@@ -99,7 +99,6 @@ class Annotator:
     def __init__(self, im, line_width=4, font_size=None, font='Arial.ttf'):
         assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to plot_on_box() input image.'
         self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
-        self.ima = None  # im as array
         self.draw = ImageDraw.Draw(self.im)
         s = sum(self.im.size) / 2  # mean shape
         f = font_size or max(round(s * 0.035), 12)
@@ -131,9 +130,7 @@ class Annotator:
 
     def result(self):
         # Return annotated image as array
-        if self.ima is None:
-            self.ima = np.asarray(self.im)
-        return self.ima
+        return np.asarray(self.im)
 
 
 def plot_wh_methods():  # from utils.plots import *; plot_wh_methods()
