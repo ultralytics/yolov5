@@ -370,7 +370,7 @@ class Detections:
                     n = (pred[:, -1] == c).sum()  # detections per class
                     str += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
                 if show or save or render or crop:
-                    annotator = Annotator(im)
+                    annotator = Annotator(im, pil=False)
                     for *box, conf, cls in reversed(pred):  # xyxy, confidence, class
                         label = f'{self.names[int(cls)]} {conf:.2f}'
                         if crop:
@@ -378,7 +378,6 @@ class Detections:
                         else:  # all others
                             annotator.box_label(box, label, color=colors(cls))
                     im = annotator.im
-
             else:
                 str += '(no detections)'
 
