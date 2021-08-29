@@ -86,7 +86,7 @@ class Annotator:
             self.fh = self.font.getsize('a')[1] - 3  # font height
         else:  # use cv2
             self.im = im
-        s = sum(self.im.shape) / 2  # mean shape
+        s = sum(im.shape) / 2  # mean shape
         self.lw = line_width or max(round(s * 0.003), 2)  # line width
 
     def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
