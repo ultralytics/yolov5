@@ -39,6 +39,15 @@ cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with Py
 os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max threads
 
 
+class Profile(contextlib.ContextDecorator):
+    # Usage: @Profile() decorator or 'with Profile():' context manager
+    def __enter__(self):
+        self.start = time.time()
+
+    def __exit__(self, type, value, traceback):
+        print(f'Profile results: {time.time() - self.start:.5f}s')
+
+
 class timeout(contextlib.ContextDecorator):
     # Usage: @timeout(seconds) decorator or 'with timeout(seconds):' context manager
     def __init__(self, seconds, *, timeout_msg='', suppress_timeout_errors=True):
