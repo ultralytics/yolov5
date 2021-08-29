@@ -210,8 +210,8 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             print(f'{s}Done. ({t2 - t1:.3f}s)')
 
             # Stream results
-            im0 = annotator.result()
             if view_img:
+                im0 = annotator.result()
                 cv2.imshow(str(p), im0)
                 cv2.waitKey(1)  # 1 millisecond
 
@@ -220,6 +220,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
                 if dataset.mode == 'image':
                     annotator.im.save(save_path)
                 else:  # 'video' or 'stream'
+                    im0 = annotator.result()
                     if vid_path[i] != save_path:  # new video
                         vid_path[i] = save_path
                         if isinstance(vid_writer[i], cv2.VideoWriter):
