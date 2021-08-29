@@ -1,0 +1,143 @@
+# Hyperparameters for training
+# To set range- 
+# Provide min and max values as:
+#      parameter:
+#         
+#         min: scalar
+#         max: scalar
+# OR
+#
+# Set a specific list of search space-
+#     parameter: 
+#         values: [scalar1, scalar2, scalar3...]
+#         
+# You can use grid, bayesian and hyperopt search strategy 
+# For more info on configuring sweeps visit - https://docs.wandb.ai/guides/sweeps/configuration
+
+program: utils/loggers/wandb/sweep.py
+method: random
+metric:
+  name: metrics/mAP_0.5
+  goal: maximize
+
+parameters:
+  # hyperparameters: set either min, max range or values list
+  data:
+    value: "data/coco128.yaml"
+  batch_size:
+    values: [64]
+  epochs:
+    values: [10]
+
+  lr0:
+    distribution: uniform
+    min: 1e-5
+    max: 1e-1
+  lrf:
+    distribution: uniform
+    min: 0.01
+    max: 1.0
+  momentum:
+    distribution: uniform
+    min: 0.6
+    max: 0.98
+  weight_decay:
+    distribution: uniform
+    min: 0.0
+    max: 0.001
+  warmup_epochs:
+    distribution: uniform
+    min: 0.0
+    max: 5.0
+  warmup_momentum:
+    distribution: uniform
+    min: 0.0
+    max: 0.95
+  warmup_bias_lr:
+    distribution: uniform
+    min: 0.0
+    max: 0.2
+  box:
+    distribution: uniform
+    min: 0.02
+    max: 0.2
+  cls:
+    distribution: uniform
+    min: 0.2
+    max: 4.0
+  cls_pw:
+    distribution: uniform
+    min: 0.5
+    max: 2.0
+  obj:
+    distribution: uniform
+    min: 0.2
+    max: 4.0
+  obj_pw:
+    distribution: uniform
+    min: 0.5
+    max: 2.0
+  iou_t:
+    distribution: uniform
+    min: 0.1
+    max: 0.7
+  anchor_t:
+    distribution: uniform
+    min: 2.0
+    max: 8.0
+  fl_gamma:
+    distribution: uniform
+    min: 0.0
+    max: 0.1
+  hsv_h:
+    distribution: uniform
+    min: 0.0
+    max: 0.1
+  hsv_s:
+    distribution: uniform
+    min: 0.0
+    max: 0.9
+  hsv_v:
+    distribution: uniform
+    min: 0.0
+    max: 0.9
+  degrees:
+    distribution: uniform
+    min: 0.0
+    max: 45.0
+  translate:
+    distribution: uniform
+    min: 0.0
+    max: 0.9
+  scale:
+    distribution: uniform
+    min: 0.0
+    max: 0.9
+  shear:
+    distribution: uniform
+    min: 0.0
+    max: 10.0
+  perspective:
+    distribution: uniform
+    min: 0.0
+    max: 0.001
+  flipud:
+    distribution: uniform
+    min: 0.0
+    max: 1.0
+  fliplr:
+    distribution: uniform
+    min: 0.0
+    max: 1.0
+  mosaic:
+    distribution: uniform
+    min: 0.0
+    max: 1.0
+  mixup:
+    distribution: uniform
+    min: 0.0
+    max: 1.0
+  copy_paste:
+    distribution: uniform
+    min: 0.0
+    max: 1.0
