@@ -124,7 +124,7 @@ def is_pip():
 
 def is_ascii(s=''):
     # Is string composed of all ASCII (no UTF) characters?
-    s = str(s)  # convert to str() in case of None, etc.
+    s = str(s)  # convert list, tuple, None, etc. to str
     return len(s.encode().decode('ascii', 'ignore')) == len(s)
 
 
