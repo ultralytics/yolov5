@@ -25,7 +25,7 @@ from utils.general import check_img_size, check_requirements, check_imshow, colo
     apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
 from utils.plots import colors, Annotator
 from utils.torch_utils import select_device, load_classifier, time_sync
-from threading import Thread
+import threading
 
 
 @torch.no_grad()
@@ -219,7 +219,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             # Save results (image with detections)
             if save_img:
                 if dataset.mode == 'image':
-                    Thread(target=cv2.imwrite, args=(save_path, im0), daemon=True).start()
+                    threading.Thread(target=cv2.imwrite, args=(save_path, im0), daemon=True).start()
                 else:  # 'video' or 'stream'
                     if vid_path[i] != save_path:  # new video
                         vid_path[i] = save_path
@@ -242,6 +242,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
     if update:
         strip_optimizer(weights)  # update model (to fix SourceChangeWarning)
 
+    [t.join() for t in threading.enumerate() if t is not threading.current_thread()]  # join all daemon threads
     print(f'Done. ({time.time() - t0:.3f}s)')
 
 
