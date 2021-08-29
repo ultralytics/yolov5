@@ -110,14 +110,15 @@ class Annotator:
             url = "https://github.com/ultralytics/yolov5/releases/download/v1.0/" + font
             torch.hub.download_url_to_file(url, font)
             self.font = ImageFont.truetype(font, size=f)
+        self.fh = self.font.getsize('a')[1] - 3  # font height
 
     def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
         # Add one xyxy box to image with label
         self.draw.rectangle(box, width=self.lw, outline=color)  # box
         if label:
-            w, h = self.font.getsize(label)  # text width, height
-            self.draw.rectangle([box[0], box[1] - h + 4, box[0] + w, box[1]], fill=color)
-            self.draw.text((box[0], box[1] - h + 1), label, fill=txt_color, font=self.font)
+            w = self.font.getsize(label)[0]  # text width
+            self.draw.rectangle([box[0], box[1] - self.fh, box[0] + w + 1, box[1] + 1], fill=color)
+            self.draw.text((box[0], box[1]), label, fill=txt_color, font=self.font, anchor='ls')
 
     def rectangle(self, xy, fill=None, outline=None, width=1):
         # Add rectangle to image
