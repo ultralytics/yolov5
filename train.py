@@ -444,7 +444,7 @@ def parse_opt(known=False):
     parser.add_argument('--project', default='runs/train', help='save to project/name')
     parser.add_argument('--entity', default=None, help='W&B entity')
     parser.add_argument('--name', default='exp', help='save to project/name')
-    parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+    parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment') 
     parser.add_argument('--quad', action='store_true', help='quad dataloader')
     parser.add_argument('--linear-lr', action='store_true', help='linear LR')
     parser.add_argument('--label-smoothing', type=float, default=0.0, help='Label smoothing epsilon')
@@ -458,7 +458,7 @@ def parse_opt(known=False):
     return opt
 
 
-def main(opt):
+def main(opt):  
     # Checks
     set_logging(RANK)
     if RANK in [-1, 0]:

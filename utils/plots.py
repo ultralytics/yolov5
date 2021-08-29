@@ -19,6 +19,9 @@ from PIL import Image, ImageDraw, ImageFont
 from utils.general import is_ascii, xyxy2xywh, xywh2xyxy
 from utils.metrics import fitness
 
+import matplotlib.font_manager as fm # to create font
+from matplotlib import font_manager
+
 # Settings
 matplotlib.rc('font', **{'size': 11})
 matplotlib.use('Agg')  # for writing to files only
@@ -77,7 +80,11 @@ def plot_one_box(box, im, color=(128, 128, 128), txt_color=(255, 255, 255), labe
         draw = ImageDraw.Draw(im)
         draw.rectangle(box, width=lw + 1, outline=color)  # plot
         if label:
-            font = ImageFont.truetype("Arial.ttf", size=max(round(max(im.size) / 40), 12))
+            # font = ImageFont.truetype("Arial.ttf", size=max(round(max(im.size) / 40), 12))
+            fontsize = 100
+            # font = font_manager.FontProperties(fname="/Library/Fonts/Songti.ttc")
+            # font = ImageFont.truetype(fm.findfont(fm.FontProperties(family='Songti')),fontsize)
+            font = ImageFont.truetype("Songti.ttf", 2*max(round(max(im.size) / 40), 12), encoding="utf-8") 
             txt_width, txt_height = font.getsize(label)
             draw.rectangle([box[0], box[1] - txt_height + 4, box[0] + txt_width, box[1]], fill=color)
             draw.text((box[0], box[1] - txt_height + 1), label, fill=txt_color, font=font)
