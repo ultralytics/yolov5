@@ -72,7 +72,7 @@ def plot_one_box(box, im, color=(128, 128, 128), txt_color=(255, 255, 255), labe
     assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to plot_on_box() input image.'
     lw = line_width or max(int(min(im.size) / 200), 2)  # line width
 
-    if use_pil or not is_ascii(label):  # use PIL
+    if use_pil or (label is not None and not is_ascii(label)):  # use PIL
         im = Image.fromarray(im)
         draw = ImageDraw.Draw(im)
         draw.rectangle(box, width=lw + 1, outline=color)  # plot
