@@ -242,8 +242,8 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
     if update:
         strip_optimizer(weights)  # update model (to fix SourceChangeWarning)
 
-    [t.join() for t in threading.enumerate() if t is not threading.current_thread()]  # join all daemon threads
     print(f'Done. ({time.time() - t0:.3f}s)')
+    [t.join() for t in threading.enumerate() if t.daemon]  # join all daemon threads
 
 
 def parse_opt():
