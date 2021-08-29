@@ -122,9 +122,10 @@ def is_pip():
     return 'site-packages' in Path(__file__).absolute().parts
 
 
-def is_ascii(str=''):
+def is_ascii(s=''):
     # Is string composed of all ASCII (no UTF) characters?
-    return len(str.encode().decode('ascii', 'ignore')) == len(str)
+    s = str(s)  # convert to str() in case of None, etc.
+    return len(s.encode().decode('ascii', 'ignore')) == len(s)
 
 
 def emojis(str=''):
