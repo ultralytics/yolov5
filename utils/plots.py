@@ -168,30 +168,30 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
         images = images.cpu().float().numpy()
     if isinstance(targets, torch.Tensor):
         targets = targets.cpu().numpy()
-    images *= 255.0 if np.max(images[0]) <= 1 else 1.0  # de-normalise (optional)
+    if np.max(images[0]) <= 1:
+        images *= 255.0  # de-normalise (optional)
     bs, _, h, w = images.shape  # batch size, _, height, width
     bs = min(bs, max_subplots)  # limit plot images
     ns = np.ceil(bs ** 0.5)  # number of subplots (square)
 
-    # Resize (optional)
-    scale = max_size / ns / max(h, w)
-    if scale < 1:
-        h = math.ceil(scale * h)
-        w = math.ceil(scale * w)
-
     # Build Image
-    fs = int(h * ns * 0.02)  # font size
     mosaic = np.full((int(ns * h), int(ns * w), 3), 255, dtype=np.uint8)  # init
     for i, im in enumerate(images):
         if i == max_subplots:  # if last batch has fewer images than we expect
             break
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
         im = im.transpose(1, 2, 0)
-        if scale < 1:
-            im = cv2.resize(im, (w, h))
         mosaic[y:y + h, x:x + w, :] = im
 
+    # Resize (optional)
+    scale = max_size / ns / max(h, w)
+    if scale < 1:
+        h = math.ceil(scale * h)
+        w = math.ceil(scale * w)
+        mosaic = cv2.resize(mosaic, tuple(int(x * ns) for x in (w, h)))
+
     # Annotate
+    fs = int(h * ns * 0.02)  # font size
     annotator = Annotator(mosaic, line_width=round(fs / 10), font_size=fs)
     for i in range(i + 1):
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
