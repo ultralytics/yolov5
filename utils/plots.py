@@ -345,7 +345,6 @@ def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
                     a.remove()
         except Exception as e:
             print('Warning: Plotting error for %s; %s' % (f, e))
-
     ax[1].legend()
     plt.savefig(Path(save_dir) / 'idetection_profile.png', dpi=200)
 
@@ -371,6 +370,7 @@ def plot_evolve(evolve_csv=Path('path/to/evolve.csv')):  # from utils.plots impo
         print('%15s: %.3g' % (k, mu))
     f = evolve_csv.with_suffix('.png')  # filename
     plt.savefig(f, dpi=200)
+    plt.close()
     print(f'Saved {f}')
 
 
@@ -397,6 +397,7 @@ def plot_results(file='path/to/results.csv', dir=''):
             print(f'Warning: Plotting error for {f}: {e}')
     ax[1].legend()
     fig.savefig(save_dir / 'results.png', dpi=200)
+    plt.close()
 
 
 def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detect/exp')):
@@ -423,3 +424,4 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detec
 
             print(f'Saving {save_dir / f}... ({n}/{channels})')
             plt.savefig(save_dir / f, dpi=300, bbox_inches='tight')
+            plt.close()
