@@ -293,6 +293,23 @@ def copy_attr(a, b, include=(), exclude=()):
             setattr(a, k, v)
 
 
+class EarlyStopping:
+    # YOLOv5 simple early stopper
+    def __init__(self, patience=30):
+        self.best_fitness = 0.0  # i.e. mAP
+        self.best_epoch = 0
+        self.patience = patience  # epochs to wait after fitness stops improving to stop
+
+    def __call__(self, epoch, fitness):
+        if fitness >= self.best_fitness:  # >= 0 to allow for early zero-fitness stage of training
+            self.best_epoch = epoch
+            self.best_fitness = fitness
+        stop = (epoch - self.best_epoch) >= self.patience  # stop training if patience exceeded
+        if stop:
+            LOGGER.info(f'EarlyStopping patience {self.patience} exceeded, stopping training.')
+        return stop
+
+
 class ModelEMA:
     """ Model Exponential Moving Average from https://github.com/rwightman/pytorch-image-models
     Keep a moving average of everything in the model state_dict (parameters and buffers).

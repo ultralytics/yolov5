@@ -131,10 +131,9 @@ class Loggers():
         files = [(self.save_dir / f) for f in files if (self.save_dir / f).exists()]  # filter
 
         if self.tb:
-            from PIL import Image
-            import numpy as np
+            import cv2
             for f in files:
-                self.tb.add_image(f.stem, np.asarray(Image.open(f)), epoch, dataformats='HWC')
+                self.tb.add_image(f.stem, cv2.imread(str(f))[..., ::-1], epoch, dataformats='HWC')
 
         if self.wandb:
             self.wandb.log({"Results": [wandb.Image(str(f), caption=f.name) for f in files]})
