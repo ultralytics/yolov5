@@ -162,8 +162,7 @@ def check_git_status():
     branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
     n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
     if n > 0:
-        s = f"⚠️ WARNING: code is out of date by {n} commit{'s' * (n > 1)}. " \
-            f"Use 'git pull' to update or 'git clone {url}' to download latest."
+        s = f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use `git pull` or `git clone {url}` to update."
     else:
         s = f'up to date with {url} ✅'
     print(emojis(s))  # emoji-safe
