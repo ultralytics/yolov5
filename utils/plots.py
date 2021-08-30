@@ -48,7 +48,7 @@ colors = Colors()  # create instance for 'from utils.plots import colors'
 class Annotator:
     # YOLOv5 Annotator for train/val mosaics and jpgs and detect/hub inference annotations
     def __init__(self, im, line_width=None, font_size=None, font='Arial.ttf', pil=True):
-        assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to plot_on_box() input image.'
+        assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to Annotator() input images.'
         self.pil = pil
         if self.pil:  # use PIL
             self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
@@ -57,11 +57,10 @@ class Annotator:
             f = font_size or max(round(s * 0.035), 12)
             try:
                 self.font = ImageFont.truetype(font, size=f)
-            except Exception as e:  # download TTF if missing
-                print(f'WARNING: Annotator font {font} not found: {e}')
-                url = "https://github.com/ultralytics/yolov5/releases/download/v1.0/" + font
+            except Exception as e:  # download if missing
+                url = "https://ultralytics.com/assets/" + font
+                print(f'Downloading {url} to {font}...')
                 torch.hub.download_url_to_file(url, font)
-                print(f'Annotator font successfully downloaded from {url} to {font}')
                 self.font = ImageFont.truetype(font, size=f)
             self.fh = self.font.getsize('a')[1] - 3  # font height
         else:  # use cv2
