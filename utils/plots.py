@@ -397,7 +397,7 @@ def plot_results(file='path/to/results.csv', dir=''):
             print(f'Warning: Plotting error for {f}: {e}')
     ax[1].legend()
     fig.savefig(save_dir / 'results.png', dpi=200)
-    fig.close()
+    plt.close()
 
 
 def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detect/exp')):
