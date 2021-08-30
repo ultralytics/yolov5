@@ -119,7 +119,7 @@ class SparseMLWrapper(object):
         if not self.enabled or not self.manager.quantization_modifiers:
             return False
 
-        qat_start = max([mod.start_epoch for mod in self.manager.quantization_modifiers])
+        qat_start = min([mod.start_epoch for mod in self.manager.quantization_modifiers])
 
         return qat_start < epoch + 1
 
