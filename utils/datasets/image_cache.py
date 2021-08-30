@@ -53,6 +53,7 @@ class DiscImageCache(BaseImageCache):
     def __init__(self, thread_count: int = 8) -> None:
         super().__init__(cache_type="disc", thread_count=thread_count)
         self._image_paths: Dict[str, str] = {}
+        self._cache_path: Optional[str] = None
 
     def _load_images(self, paths: List[str]) -> None:
         pass  # TODO
@@ -63,7 +64,7 @@ class DiscImageCache(BaseImageCache):
     def _load_image(self, path: str) -> None:
         pass  # TODO
 
-    def _init_cache(self, paths: List[str]) -> None:
+    def _init_cache(self, paths: List[str]) -> str:
         pass  # TODO
 
 
