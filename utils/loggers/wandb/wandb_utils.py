@@ -112,7 +112,7 @@ class WandbLogger():
     https://docs.wandb.com/guides/integrations/yolov5
     """
 
-    def __init__(self, opt, run_id, job_type='Training'):
+    def __init__(self, opt, run_id=None, job_type='Training'):
         """
         - Initialize WandbLogger instance
         - Upload dataset if opt.upload_dataset is True
