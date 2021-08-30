@@ -4,7 +4,7 @@ import torch
 from PIL import ImageFont
 
 FILE = Path(__file__).absolute()
-ROOT = FILE.parents[0]  # yolov5/ dir
+ROOT = FILE.parents[1]  # yolov5/ dir
 
 # Check YOLOv5 Annotator font
 font = 'Arial.ttf'
