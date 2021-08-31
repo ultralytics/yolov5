@@ -128,7 +128,6 @@ Each row of `output` tensor will have 6 positional values, representing `top`, `
 To get fast visualization, use following code:
 ```python
 # img0: torch.Tensor([1, 3, H, W]) - image(tensor) for inference
-
 # metadata for YOLOv5. Here model = restored original YOLOv5 model
 meta = construct_model_meta(model)
 
