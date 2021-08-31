@@ -20,7 +20,6 @@ ANNOTATION_KEY = "annotations"
 ANNOTATION_IMAGE_ID_KEY = "image_id"
 ANNOTATION_BBOX_KEY = "bbox"
 ANNOTATION_CATEGORY_ID = "category_id"
-ANNOTATIONS_FILE_NAME = "annotations.json"
 
 
 def read_json_file(file_path: str, **kwargs) -> Union[list, dict]:

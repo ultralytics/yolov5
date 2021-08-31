@@ -10,7 +10,8 @@ from typing import Tuple, List, Optional
 import torch
 from torch.utils.data import Dataset
 
-from utils.datasets.coco import read_json_file, ANNOTATIONS_FILE_NAME, load_coco_annotations
+from utils.datasets.coco import read_json_file, load_coco_annotations
+from utils.datasets.error import COCODatasetError
 from utils.datasets.image_cache import ImageProvider
 from utils.datasets.label_cache import LabelCache, get_hash
 from utils.datasets.yolo import load_image_names_from_paths, img2label_paths
@@ -33,7 +34,10 @@ class COCODataset(Dataset):
         └── ...
     """
 
-    def __init__(self, path: str, cache_images: Optional[str]) -> None:
+    ANNOTATIONS_FILE_NAME = "annotations.json"
+    IMAGES_DIRECTORY_NAME = "images"
+
+    def __init__(self, path: str, cache_images: Optional[str] = None) -> None:
         """
         Load COCO labels along with images from provided path.
 
@@ -45,6 +49,7 @@ class COCODataset(Dataset):
                 raw, uncompressed form. This prevents memory overflow, and offers faster access to data then regular
                 image read. `None` - image caching is turned of.
         """
+        self._validate_dataset_path(path=path)
         self.path = path
         self.cache_images = cache_images
         self.image_paths, self.labels = self._load_image_paths_and_labels(path=path)
@@ -65,9 +70,23 @@ class COCODataset(Dataset):
 
     @staticmethod
     def _load_image_paths_and_labels(path: str) -> Tuple[List[str], List[torch.Tensor]]:
-        coco_data = read_json_file(os.path.join(path, ANNOTATIONS_FILE_NAME))
+        images_path = os.path.join(path, COCODataset.IMAGES_DIRECTORY_NAME)
+        annotations_path = os.path.join(path, COCODataset.ANNOTATIONS_FILE_NAME)
+        coco_data = read_json_file(file_path=annotations_path)
         coco_annotations = load_coco_annotations(coco_data=coco_data)
-        return list(coco_annotations.keys()), list(coco_annotations.values())
+        image_paths = [
+            os.path.join(images_path, image_name)
+            for image_name
+            in coco_annotations.keys()
+        ]
+        return image_paths, list(coco_annotations.values())
+
+    @staticmethod
+    def _validate_dataset_path(path: str) -> None:
+        images_path = os.path.join(path, COCODataset.IMAGES_DIRECTORY_NAME)
+        annotations_path = os.path.join(path, COCODataset.ANNOTATIONS_FILE_NAME)
+        if not os.path.isfile(annotations_path) or not os.path.isdir(images_path):
+            raise COCODatasetError("Given path does not point to COCO dataset.")
 
     @staticmethod
     def resolve_cache_path() -> Path:
@@ -89,7 +108,7 @@ class YOLODataset(Dataset):
         └── ...
     """
 
-    def __init__(self, path: str, cache_images: Optional[str]) -> None:
+    def __init__(self, path: str, cache_images: Optional[str] = None) -> None:
         """
         Load YOLO labels along with images from provided path.
 
@@ -125,16 +144,16 @@ class YOLODataset(Dataset):
         label_paths = img2label_paths(image_paths=image_paths)
 
         # TODO: finalize yolo labels cache plugin
-        # cache_path = YOLODataset.resolve_cache_path(path=path, label_paths=label_paths)
-        # label_cache = LabelCache.load(
-        #     path=cache_path,
-        #     hash=get_hash(label_paths + image_paths)
-        # )
-        # labels = [
-        #     label_cache[image_path]
-        #     for image_path
-        #     in image_paths
-        # ]
+        cache_path = YOLODataset.resolve_cache_path(path=path, label_paths=label_paths)
+        label_cache = LabelCache.load(
+            path=cache_path,
+            hash=get_hash(label_paths + image_paths)
+        )
+        labels = [
+            label_cache[image_path]
+            for image_path
+            in image_paths
+        ]
 
         return image_paths, labels
 
@@ -146,11 +165,35 @@ class YOLODataset(Dataset):
 
 class TransformedDataset(Dataset):
 
-    def __init__(self, source_dataset: Dataset) -> None:
+    def __init__(
+            self,
+            source_dataset: Dataset,
+            img_size: int = 640,
+            batch_size: int = 16,
+            augment: bool = False,
+            hyp=None,
+            rect=False,
+            single_cls: bool = False,
+            stride: int = 32,
+            pad: float = 0.0
+    ) -> None:
         self.source_dataset = source_dataset
+        self.img_size = img_size
+        self.batch_size = batch_size
+        self.augment = augment
+        self.hyp = hyp
+        self.rect = rect
+        self.stride = stride
+        self.single_cls = single_cls
+        self.pad = pad
 
     def __len__(self) -> int:
         return len(self.source_dataset)
 
     def __getitem__(self, index: int) -> DatasetEntry:
-        return self.source_dataset[index]
+        image, labels, image_path = self.source_dataset[index]
+
+        if self.single_cls:
+            labels[:, 0] = 0
+
+        return image, labels, image_path

@@ -2,3 +2,5 @@
 # handle prefix, most likely by using proper logging
 # coco label caching
 # yolo label loading
+
+# why we need information about batch_size if we only return one image
