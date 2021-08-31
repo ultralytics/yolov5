@@ -1,3 +1,8 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+YOLO dataset loading utils
+"""
+
 import os
 import glob
 from pathlib import Path
@@ -37,8 +42,10 @@ def img2label_paths(image_paths: List[str]) -> List[str]:
 
 class YOLOLabelsLoader:
 
-    def __init__(self) -> None:
-        pass  # TODO
+    def __init__(self, image_paths: List[str], labels_paths: List[str]) -> None:
+        self.image_paths = image_paths
+        self.labels_paths = labels_paths
+        self.missing_labels = 0
 
     def load_label(self) -> None:
         pass  # TODO

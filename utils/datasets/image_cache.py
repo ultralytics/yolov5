@@ -1,3 +1,8 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Image loading and caching helpers
+"""
+
 import os
 from abc import ABC, abstractmethod
 from multiprocessing.pool import ThreadPool
@@ -118,6 +123,18 @@ class RAMImageCache(BaseImageCache):
 class ImageProvider:
 
     def __init__(self, cache_images: Optional[str], paths: List[str]) -> None:
+        """
+        High level class responsible for loading images. ImageProvider has the ability to cache images on disk or in
+        memory to speed up the loading process.
+
+        Args:
+            cache_images: `Optional[str]` - flag enabling image caching. Can be equal to one of three values: `"ram"`,
+                `"disc"` or `None`. `"ram"` - all images are stored in memory to enable fastest access. This may however
+                result in exceeding the limit of available memory. `"disc"` - all images are stored on hard drive but in
+                raw, uncompressed form. This prevents memory overflow, and offers faster access to data then regular
+                image read. `None` - image caching is turned of.
+            paths: `List[str]` - list of image paths that you would like to cache.
+        """
         self._cache_images = cache_images
         self._cache = ImageProvider._init_cache(cache_images=cache_images, paths=paths)
 

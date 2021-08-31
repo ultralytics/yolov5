@@ -1,3 +1,8 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+COCO dataset loading utils
+"""
+
 import json
 from typing import Dict, Union, List
 from collections import defaultdict

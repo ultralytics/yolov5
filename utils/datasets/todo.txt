@@ -1,0 +1,4 @@
+# handle corrupted images
+# handle prefix, most likely by using proper logging
+# coco label caching
+# yolo label loading
