@@ -87,12 +87,16 @@ N = 1 # batch size
 C = 3 # number of channels
 H, W = model.img_size
 tensor = torch.randn(N, C, H, W)
-
+```
+**TorchScript**
+```python
 customWeightsPath_torchScript = '/path/to/remote/weights/best.torchscript.pt'
 path_to_torch_script_saved_model = download_weights(customWeightsPath_torchScript)
 torch_script_model = torch.jit.load(path_to_torch_script_saved_model)
 torch_script_model_inference = torch_script_model(tensor)[0]
-
+```
+**ONNX**
+```python
 customWeightsPath_onnx = "/path/to/remote/weights/best.onnx"
 path_to_onnx_saved_model = download_weights(customWeightsPath_onnx)
 onnx_model = rt.InferenceSession(path_to_onnx_saved_model)
@@ -100,21 +104,8 @@ input_name = onnx_model.get_inputs()[0].name
 label_name = onnx_model.get_outputs()[0].name
 onnx_model_inference = onnx_model.run([label_name], {input_name: to_numpy(tensor).astype(np.float32)})[0]
 ```
-**TorchScript**
-```python
-torch_script_model = torch.jit.load(path_to_torch_script_saved_model)
-torch_script_model_inference = torch_script_model(tensor)[0]
-```
- 
-**ONNX**
-```python
-onnx_model = rt.InferenceSession(path_to_onnx_saved_model)
-input_name = onnx_model.get_inputs()[0].name
-label_name = onnx_model.get_outputs()[0].name
-onnx_model_inference = onnx_model.run([label_name], {input_name: to_numpy(tensor).astype(np.float32)})[0]
-onnx_model_inference = to_tensor(onnx_model_inference)
-```
 Pass inference result through [non_max_suppression](https://github.com/supervisely-ecosystem/yolov5/blob/0138090cd8d6f15e088246f16ca3240854bbba12/utils/general.py#L455): ([explanation](https://towardsdatascience.com/non-maximum-suppression-nms-93ce178e177c)) with default settings for YOLOv5: 
+
 ```python
 conf_thres=0.25
 iou_thres=0.45
