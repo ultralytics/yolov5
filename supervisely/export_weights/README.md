@@ -70,15 +70,23 @@ def download_weights(path2weights):
         raise FileNotFoundError('FileNotFoundError')
         return None
     
-customWeightsPath = '/yolov5_train/Lemons-aug/8342_008/weights/best.pt'
+customWeightsPath = '/path/to/remote/weights/best.pt'
+# download YOLOv5 original weights
 weights_path = download_weights(customWeightsPath)
+# download YOLOv5 training configs
 configs_path = download_weights(os.path.join(Path(customWeightsPath).parents[1], 'opt.yaml'))
+# build model
 model = attempt_load(weights=weights_path, map_location=device)
 
+# generate random tensor for inference
+# Tensor valueas have to be distributed in range [0.0, 1.0] (if tensor values distributed in range [0, 255], 
+# divide tensor to 255.0) and tensor spartial values must match with model input image's spartial values:
+N = 1 # batch size
+C = 3 # number of channels
 H, W = model.img_size
 tensor = torch.randn(N, C, H, W)
 
-customWeightsPath_torchScript = '/yolov5_train/Lemons-aug/8342_008/weights/best.torchscript.pt'
+customWeightsPath_torchScript = '/path/to/remote/weights/best.torchscript.pt'
 path_to_torch_script_saved_model = download_weights(customWeightsPath_torchScript)
 torch_script_model = torch.jit.load(path_to_torch_script_saved_model)
 torch_script_model_inference = torch_script_model(tensor)[0]
@@ -89,16 +97,6 @@ onnx_model = rt.InferenceSession(path_to_onnx_saved_model)
 input_name = onnx_model.get_inputs()[0].name
 label_name = onnx_model.get_outputs()[0].name
 onnx_model_inference = onnx_model.run([label_name], {input_name: to_numpy(tensor).astype(np.float32)})[0]
-N = 1 # batch size
-C = 3 # number of channels
-H = 640 # image height
-W = 640 # image width
-
-# generate random tensor for inference
-# Tensor valueas have to be distributed in range [0.0, 1.0] (if tensor values distributed in range [0, 255], 
-# divide tensor to 255.0) and tensor spartial values must match with model input image's spartial values:
-
-tensor = torch.randn(N,C,H,W)
 ```
 **TorchScript**
 ```python
