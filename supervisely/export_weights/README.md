@@ -40,6 +40,7 @@ App exports pretrained YOLO v5 model weights to [Torchscript](https://pytorch.or
 <img src="https://i.imgur.com/Xk2Gzr0.png"/>
 
 # Infer models
+More info about [download_weights](https://github.com/supervisely-ecosystem/yolov5/blob/81f30df7c56e7b7957dec53704c1ba2a8663a603/supervisely/export_weights/src/sly_export_weights.py#L79)
 **saved model loading and usage**
 ```python
 import supervisely_lib as sly
@@ -58,23 +59,11 @@ def to_tensor(raw_data):
         raw_data = torch.as_tensor(raw_data)    
     return raw_data
 
-def download_weights(path2weights):
-    remote_path = path2weights
-    weights_path = os.path.join(my_app.data_dir, get_file_name_with_ext(remote_path))
-    try:
-        my_app.public_api.file.download(team_id=TEAM_ID,
-                                        remote_path=remote_path,
-                                        local_save_path=weights_path)
-        return weights_path
-    except:
-        raise FileNotFoundError('FileNotFoundError')
-        return None
-
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 customWeightsPath = '/path/to/remote/weights/best.pt'
 # download YOLOv5 original weights
-weights_path = [download_weights](https://github.com/supervisely-ecosystem/yolov5/blob/81f30df7c56e7b7957dec53704c1ba2a8663a603/supervisely/export_weights/src/sly_export_weights.py#L79)(customWeightsPath)
+weights_path = download_weights(customWeightsPath)
 # download YOLOv5 training configs
 configs_path = download_weights(os.path.join(Path(customWeightsPath).parents[1], 'opt.yaml'))
 # restore original YOLOv5 model with pretrained weights from our checkpoint
