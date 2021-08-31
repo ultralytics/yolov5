@@ -48,7 +48,22 @@ class Colors:
 colors = Colors()  # create instance for 'from utils.plots import colors'
 
 
+def check_font(font='Arial.ttf', size=10):
+    # Return a PIL TrueType Font, downloading to ROOT dir if necessary
+    font = Path(font)
+    font = font if font.exists() else (ROOT / font.name)
+    try:
+        return ImageFont.truetype(str(font) if font.exists() else font.name, size)
+    except Exception as e:  # download if missing
+        url = "https://ultralytics.com/assets/" + font.name
+        print(f'Downloading {url} to {font}...')
+        torch.hub.download_url_to_file(url, str(font))
+        return ImageFont.truetype(str(font), size)
+
+
 class Annotator:
+    check_font()  # download TTF if necessary
+
     # YOLOv5 Annotator for train/val mosaics and jpgs and detect/hub inference annotations
     def __init__(self, im, line_width=None, font_size=None, font='Arial.ttf', pil=True):
         assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to Annotator() input images.'
@@ -56,22 +71,11 @@ class Annotator:
         if self.pil:  # use PIL
             self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
             self.draw = ImageDraw.Draw(self.im)
-            s = sum(self.im.size) / 2  # mean shape
-            f = font_size or max(round(s * 0.035), 12)
-            font = Path(font)  # font handling
-            font = font if font.exists() else (ROOT / font.name)
-            try:
-                self.font = ImageFont.truetype(str(font) if font.exists() else font.name, size=f)
-            except Exception as e:  # download if missing
-                url = "https://ultralytics.com/assets/" + font.name
-                print(f'Downloading {url} to {font}...')
-                torch.hub.download_url_to_file(url, str(font))
-                self.font = ImageFont.truetype(font, size=f)
+            self.font = check_font(font, size=font_size or max(round(sum(self.im.size) / 2 * 0.035), 12))
             self.fh = self.font.getsize('a')[1] - 3  # font height
         else:  # use cv2
             self.im = im
-        s = sum(im.shape) / 2  # mean shape
-        self.lw = line_width or max(round(s * 0.003), 2)  # line width
+        self.lw = line_width or max(round(sum(im.shape) / 2 * 0.003), 2)  # line width
 
     def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
         # Add one xyxy box to image with label
