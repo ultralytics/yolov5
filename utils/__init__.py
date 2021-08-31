@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import torch
@@ -5,6 +6,8 @@ from PIL import ImageFont
 
 FILE = Path(__file__).absolute()
 ROOT = FILE.parents[1]  # yolov5/ dir
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
 
 # Check YOLOv5 Annotator font
 font = 'Arial.ttf'
