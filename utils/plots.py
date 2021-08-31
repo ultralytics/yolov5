@@ -23,6 +23,9 @@ from utils.metrics import fitness
 matplotlib.rc('font', **{'size': 11})
 matplotlib.use('Agg')  # for writing to files only
 
+FILE = Path(__file__).absolute()
+ROOT = FILE.parents[1]  # yolov5/ dir
+
 
 class Colors:
     # Ultralytics color palette https://ultralytics.com/
@@ -55,12 +58,14 @@ class Annotator:
             self.draw = ImageDraw.Draw(self.im)
             s = sum(self.im.size) / 2  # mean shape
             f = font_size or max(round(s * 0.035), 12)
+            font = Path(font)  # font handling
+            font = font if font.exists() else (ROOT / font.name)
             try:
-                self.font = ImageFont.truetype(font, size=f)
+                self.font = ImageFont.truetype(str(font) if font.exists() else font.name, size=f)
             except Exception as e:  # download if missing
-                url = "https://ultralytics.com/assets/" + font
+                url = "https://ultralytics.com/assets/" + font.name
                 print(f'Downloading {url} to {font}...')
-                torch.hub.download_url_to_file(url, font)
+                torch.hub.download_url_to_file(url, str(font))
                 self.font = ImageFont.truetype(font, size=f)
             self.fh = self.font.getsize('a')[1] - 3  # font height
         else:  # use cv2
