@@ -69,7 +69,9 @@ def download_weights(path2weights):
     except:
         raise FileNotFoundError('FileNotFoundError')
         return None
-    
+
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
 customWeightsPath = '/path/to/remote/weights/best.pt'
 # download YOLOv5 original weights
 weights_path = download_weights(customWeightsPath)
