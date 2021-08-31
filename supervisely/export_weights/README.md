@@ -40,9 +40,10 @@ App exports pretrained YOLO v5 model weights to [Torchscript](https://pytorch.or
 <img src="https://i.imgur.com/Xk2Gzr0.png"/>
 
 # Infer models
-More info about [download_weights](https://github.com/supervisely-ecosystem/yolov5/blob/81f30df7c56e7b7957dec53704c1ba2a8663a603/supervisely/export_weights/src/sly_export_weights.py#L79)
 
 **saved model loading and usage**
+
+More info about [download_weights](https://github.com/supervisely-ecosystem/yolov5/blob/81f30df7c56e7b7957dec53704c1ba2a8663a603/supervisely/export_weights/src/sly_export_weights.py#L79)
 ```python
 import supervisely_lib as sly
 import numpy as np
