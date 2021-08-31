@@ -1,6 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from multiprocessing.pool import ThreadPool
+from pathlib import Path
 from typing import Optional, List, Dict
 
 import cv2
@@ -27,6 +28,8 @@ class BaseImageCache(ABC):
         return self._cache_size
 
     def load_images(self, paths: List[str]) -> None:
+        if self._loading_completed:
+            raise CacheError(f"load_images method can only be called once.")
         self._load_images(paths=paths)
         self._loading_completed = True
         print(f"Image caching completed. ({self._cache_size / 1E9:.1f}GB {self._cache_type})")
@@ -56,16 +59,36 @@ class DiscImageCache(BaseImageCache):
         self._cache_path: Optional[str] = None
 
     def _load_images(self, paths: List[str]) -> None:
-        pass  # TODO
+        self._cache_path = self._init_cache(paths=paths)
+        self._image_paths = {
+            path: Path(self._cache_path) / Path(path).with_suffix('.npy').name
+            for path
+            in paths
+        }
+        results = ThreadPool(self._thread_count).imap(lambda x: self._load_image(x), paths)
+        bar = tqdm(enumerate(results), total=len(paths))
+        for i in bar:
+            bar.desc = f"Caching images ({self._cache_size / 1E9:.1f}GB {self._cache_type})"
+        bar.close()
 
     def _get_image(self, path: str) -> Optional[np.ndarray]:
-        pass  # TODO
+        target_path = self._image_paths.get(path)
+        if target_path is None:
+            return None
+        return np.load(target_path)
 
     def _load_image(self, path: str) -> None:
-        pass  # TODO
+        image = cv2.imread(path)
+        if image is None:
+            raise CacheError(f"Image with {path} path could not be found.")
+        target_path = self._image_paths[path]
+        np.save(target_path, image)
+        self._cache_size += image.nbytes
 
     def _init_cache(self, paths: List[str]) -> str:
-        pass  # TODO
+        cache_path = Path(paths[0]).parent.as_posix() + '_npy'
+        Path(cache_path).mkdir(parents=True, exist_ok=True)
+        return cache_path
 
 
 class RAMImageCache(BaseImageCache):
