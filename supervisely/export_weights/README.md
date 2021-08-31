@@ -54,8 +54,8 @@ def to_numpy(tensor):
     return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
 
 def to_tensor(raw_data):
-    if isinstance(raw_data, np.ndarray):
-        raw_data = torch.Tensor(raw_data)    
+    if not isinstance(raw_data, torch.Tensor):
+        raw_data = torch.as_tensor(raw_data)    
     return raw_data
 
 def download_weights(path2weights):
