@@ -91,7 +91,7 @@ path_to_torch_script_saved_model = download_weights(customWeightsPath_torchScrip
 torch_script_model = torch.jit.load(path_to_torch_script_saved_model)
 torch_script_model_inference = torch_script_model(tensor)[0]
 
-customWeightsPath_onnx = "/yolov5_train/Lemons-aug/8342_008/weights/best.onnx"
+customWeightsPath_onnx = "/path/to/remote/weights/best.onnx"
 path_to_onnx_saved_model = download_weights(customWeightsPath_onnx)
 onnx_model = rt.InferenceSession(path_to_onnx_saved_model)
 input_name = onnx_model.get_inputs()[0].name
