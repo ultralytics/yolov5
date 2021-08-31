@@ -14,14 +14,7 @@ DatasetEntry = Tuple[torch.Tensor, torch.Tensor, str]
 
 
 def assemble_data_loader() -> None:
-    pass
-
-
-def initiate_dataset(path: str, cache_images: Optional[str]) -> Dataset:
-    if COCODataset.validate_directory_structure(path=path):
-        return COCODataset(path=path, cache_images=cache_images)
-    if YOLODataset.validate_directory_structure(path=path):
-        return YOLODataset(path=path, cache_images=cache_images)
+    pass  # TODO
 
 
 class COCODataset(Dataset):
@@ -49,35 +42,31 @@ class COCODataset(Dataset):
         """
         self.path = path
         self.cache_images = cache_images
-
-        coco_data = read_json_file(os.path.join(path, ANNOTATIONS_FILE_NAME))
-        coco_annotations = load_coco_annotations(coco_data=coco_data)
-
-        self.image_paths = list(coco_annotations.keys())
-        self.labels = list(coco_annotations.values())
+        self.image_paths, self.labels = self._load_image_paths_and_labels(path=path)
         self.image_provider = ImageProvider(cache_images=cache_images, paths=self.image_paths)
 
     def __len__(self) -> int:
         return len(self.image_paths)
 
     def __getitem__(self, index: int) -> DatasetEntry:
-        pass
+        image_path = self.image_paths[index]
+        labels = self.labels[index]
+        image = self.image_provider.get_image(path=image_path)
+        return torch.from_numpy(image), labels, image_path
 
     @staticmethod
     def collate_fn(batch: List[DatasetEntry]) -> torch.Tensor:
-        pass
+        pass  # TODO:
 
     @staticmethod
-    def validate_directory_structure(path: str) -> None:
-        pass
-
-    @staticmethod
-    def load_labels(path: str) -> List[torch.Tensor]:
-        pass
+    def _load_image_paths_and_labels(path: str) -> Tuple[List[str], List[torch.Tensor]]:
+        coco_data = read_json_file(os.path.join(path, ANNOTATIONS_FILE_NAME))
+        coco_annotations = load_coco_annotations(coco_data=coco_data)
+        return list(coco_annotations.keys()), list(coco_annotations.values())
 
     @staticmethod
     def resolve_cache_path() -> Path:
-        pass
+        pass  # TODO:
 
 
 class YOLODataset(Dataset):
@@ -109,36 +98,40 @@ class YOLODataset(Dataset):
         """
         self.path = path
         self.cache_images = cache_images
-        self.image_paths: List[str] = load_image_names_from_paths(paths=path)
-        self.label_paths: List[str] = img2label_paths(image_paths=self.image_paths)
-
-        cache_path = YOLODataset.resolve_cache_path(path=self.path, label_paths=self.label_paths)
-        label_cache = LabelCache.load(
-            path=cache_path,
-            hash=get_hash(self.label_paths + self.image_paths)
-        )
+        self.image_paths, self.labels = self._load_image_paths_and_labels(path=path)
         self.image_provider = ImageProvider(cache_images=cache_images, paths=self.image_paths)
-
-        self.labels = []
-        self.images = []
 
     def __len__(self) -> int:
         return len(self.image_paths)
 
     def __getitem__(self, index: int) -> DatasetEntry:
-        pass
+        image_path = self.image_paths[index]
+        labels = self.labels[index]
+        image = self.image_provider.get_image(path=image_path)
+        return torch.from_numpy(image), labels, image_path
 
     @staticmethod
     def collate_fn(batch: List[DatasetEntry]) -> torch.Tensor:
         pass
 
     @staticmethod
-    def validate_directory_structure(path: str) -> None:
-        pass
+    def _load_image_paths_and_labels(path: str) -> Tuple[List[str], List[torch.Tensor]]:
+        image_paths = load_image_names_from_paths(paths=path)
+        label_paths = img2label_paths(image_paths=image_paths)
 
-    @staticmethod
-    def load_labels(path: str) -> List[torch.Tensor]:
-        pass
+        # TODO: finalize yolo labels cache plugin
+        # cache_path = YOLODataset.resolve_cache_path(path=path, label_paths=label_paths)
+        # label_cache = LabelCache.load(
+        #     path=cache_path,
+        #     hash=get_hash(label_paths + image_paths)
+        # )
+        # labels = [
+        #     label_cache[image_path]
+        #     for image_path
+        #     in image_paths
+        # ]
+
+        return image_paths, labels
 
     @staticmethod
     def resolve_cache_path(path: str, label_paths: List[str]) -> Path:

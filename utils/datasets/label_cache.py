@@ -36,8 +36,8 @@ class LabelCache:
             return None
 
     @staticmethod
-    def save(path: Union[str, Path], hash: str) -> None:
-        pass
+    def save(path: Union[str, Path], hash: str, data: dict) -> None:
+        pass  # TODO
 
     @staticmethod
     def _safe_load(path: Union[str, Path]) -> Optional[dict]:

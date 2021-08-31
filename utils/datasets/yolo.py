@@ -33,3 +33,12 @@ def img2label_paths(image_paths: List[str]) -> List[str]:
     """
     sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
     return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in image_paths]
+
+
+class YOLOLabelsLoader:
+
+    def __init__(self) -> None:
+        pass  # TODO
+
+    def load_label(self) -> None:
+        pass  # TODO
