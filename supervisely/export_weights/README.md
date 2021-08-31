@@ -74,7 +74,7 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 customWeightsPath = '/path/to/remote/weights/best.pt'
 # download YOLOv5 original weights
-weights_path = download_weights(customWeightsPath)
+weights_path = [download_weights](https://github.com/supervisely-ecosystem/yolov5/blob/81f30df7c56e7b7957dec53704c1ba2a8663a603/supervisely/export_weights/src/sly_export_weights.py#L79)(customWeightsPath)
 # download YOLOv5 training configs
 configs_path = download_weights(os.path.join(Path(customWeightsPath).parents[1], 'opt.yaml'))
 # restore original YOLOv5 model with pretrained weights from our checkpoint
