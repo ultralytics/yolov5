@@ -75,7 +75,7 @@ customWeightsPath = '/path/to/remote/weights/best.pt'
 weights_path = download_weights(customWeightsPath)
 # download YOLOv5 training configs
 configs_path = download_weights(os.path.join(Path(customWeightsPath).parents[1], 'opt.yaml'))
-# build model
+# restore original YOLOv5 model with pretrained weights from our checkpoint
 model = attempt_load(weights=weights_path, map_location=device)
 
 # generate random tensor for inference
@@ -127,7 +127,7 @@ To get fast visualization, use following code:
 ```python
 # img0: torch.Tensor([1, 3, H, W]) - image(tensor) for inference
 
-# metadata for YOLOv5
+# metadata for YOLOv5. Here model = restored original YOLOv5 model
 meta = construct_model_meta(model)
 
 # class_names
