@@ -6,37 +6,37 @@ Usage:
     $ python path/to/val.py --data coco128.yaml --weights yolov5s.pt --img 640
 """
 
-import argparse
-import json
-import os
-import sys
-from pathlib import Path
-from threading import Thread
+ argparse
+ json
+ os
+ sys
+ pathlib  Path
+ threading  Thread
 
-import numpy as np
-import torch
-from tqdm import tqdm
+ numpy  np
+ torch
+ tqdm     tqdm
 
 FILE = Path(__file__).absolute()
-sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
+sys.path.append(FILE.parents[0].as_posix()) 
 
-from models.experimental import attempt_load
-from utils.datasets import create_dataloader
-from utils.general import coco80_to_coco91_class, check_dataset, check_file, check_img_size, check_requirements, \
+     models.experimental   attempt_load
+     utils.datasets   create_dataloader
+     utils.general  coco80_to_coco91_class, check_dataset, check_file, check_img_size, check_requirements, \
     box_iou, non_max_suppression, scale_coords, xyxy2xywh, xywh2xyxy, set_logging, increment_path, colorstr
-from utils.metrics import ap_per_class, ConfusionMatrix
-from utils.plots import plot_images, output_to_target, plot_study_txt
-from utils.torch_utils import select_device, time_sync
-from utils.callbacks import Callbacks
+     utils.metrics   ap_per_class, ConfusionMatrix
+    utils.plots    plot_images, output_to_target, plot_study_txt
+    utils.torch_utils   select_device, time_sync
+    utils.callbacks   Callbacks
 
 
-def save_one_txt(predn, save_conf, shape, file):
-    # Save one txt result
+   save_one_txt(predn, save_conf, shape, file):
+    
     gn = torch.tensor(shape)[[1, 0, 1, 0]]  # normalization gain whwh
-    for *xyxy, conf, cls in predn.tolist():
-        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-        line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-        with open(file, 'a') as f:
+       *xyxy, conf, cls in predn.tolist():
+        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  
+        line = (cls, *xywh, conf)  save_conf else (cls, *xywh)  
+            open(file, 'a')  f:
             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
 
