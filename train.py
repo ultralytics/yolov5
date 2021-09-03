@@ -570,7 +570,7 @@ def main(opt):
                 mp, s = 0.8, 0.2  # mutation probability, sigma
                 npr = np.random
                 npr.seed(int(time.time()))
-                g = np.array([x[0] for x in meta.values()])  # gains 0-1
+                g = np.array([meta[k][0] for k in hyp.keys()])  # gains 0-1
                 ng = len(meta)
                 v = np.ones(ng)
                 while all(v == 1):  # mutate until a change occurs (prevent duplicates)
