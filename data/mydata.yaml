@@ -1,0 +1,18 @@
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: ../mydata  # dataset root dir
+train: train/images  # train images (relative to 'path') 128 images
+val: val/images  # val images (relative to 'path') 128 images
+test:  test/images # test images (optional)
+
+# Classes
+nc: 60  # number of classes
+names: ['Apple','Banana','Pitaya','Snow Pear','Cherry Fruit','Kiwi Fruit','Green Mango','Grape',
+                  'Corn','green cabbage','purple cabbage','fresh cut purple cabbage','cauliflower',
+                  'broccoli','tomato','bebe pumpkin','golden pumpkin','green pepper' ,
+                  'Green Bell Pepper','Red Bell Pepper','Yellow Bell Pepper','Eggplant',
+                  'Zucchini','Okra','Carrot','quail egg','papaya','fresh cut papaya','spinach','lettuce',
+                  'cole','cantaloupe','Fresh cut cantaloupe','Pleurotus ostreatus','green radish',
+                  'baby cabbage','egg','cucumber','yellow mango','green grape','blueberry',
+                  'Strawberry','longan','hawthorn','red cherry','juiced peach','nectarine','passion fruit',
+                  'Plum','avocado','mangosteen','orange','yellow orange','lemon','yuzu','pear','pear',
+                  'Bean sprouts','oiled lettuce','celery']# class names
