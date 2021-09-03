@@ -40,7 +40,10 @@ App exports pretrained YOLO v5 model weights to [Torchscript](https://pytorch.or
 <img src="https://i.imgur.com/Xk2Gzr0.png"/>
 
 # Infer models
+
 **saved model loading and usage**
+
+More info about [download_weights](https://github.com/supervisely-ecosystem/yolov5/blob/81f30df7c56e7b7957dec53704c1ba2a8663a603/supervisely/export_weights/src/sly_export_weights.py#L79)
 ```python
 import supervisely_lib as sly
 import numpy as np
@@ -54,28 +57,18 @@ def to_numpy(tensor):
     return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
 
 def to_tensor(raw_data):
-    if isinstance(raw_data, np.ndarray):
-        raw_data = torch.Tensor(raw_data)    
+    if not isinstance(raw_data, torch.Tensor):
+        raw_data = torch.as_tensor(raw_data)    
     return raw_data
 
-def download_weights(path2weights):
-    remote_path = path2weights
-    weights_path = os.path.join(my_app.data_dir, get_file_name_with_ext(remote_path))
-    try:
-        my_app.public_api.file.download(team_id=TEAM_ID,
-                                        remote_path=remote_path,
-                                        local_save_path=weights_path)
-        return weights_path
-    except:
-        raise FileNotFoundError('FileNotFoundError')
-        return None
-    
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
 customWeightsPath = '/path/to/remote/weights/best.pt'
 # download YOLOv5 original weights
 weights_path = download_weights(customWeightsPath)
 # download YOLOv5 training configs
 configs_path = download_weights(os.path.join(Path(customWeightsPath).parents[1], 'opt.yaml'))
-# build model
+# restore original YOLOv5 model with pretrained weights from our checkpoint
 model = attempt_load(weights=weights_path, map_location=device)
 
 # generate random tensor for inference
@@ -85,12 +78,16 @@ N = 1 # batch size
 C = 3 # number of channels
 H, W = model.img_size
 tensor = torch.randn(N, C, H, W)
-
+```
+**TorchScript**
+```python
 customWeightsPath_torchScript = '/path/to/remote/weights/best.torchscript.pt'
 path_to_torch_script_saved_model = download_weights(customWeightsPath_torchScript)
 torch_script_model = torch.jit.load(path_to_torch_script_saved_model)
 torch_script_model_inference = torch_script_model(tensor)[0]
-
+```
+**ONNX**
+```python
 customWeightsPath_onnx = "/path/to/remote/weights/best.onnx"
 path_to_onnx_saved_model = download_weights(customWeightsPath_onnx)
 onnx_model = rt.InferenceSession(path_to_onnx_saved_model)
@@ -98,21 +95,8 @@ input_name = onnx_model.get_inputs()[0].name
 label_name = onnx_model.get_outputs()[0].name
 onnx_model_inference = onnx_model.run([label_name], {input_name: to_numpy(tensor).astype(np.float32)})[0]
 ```
-**TorchScript**
-```python
-torch_script_model = torch.jit.load(path_to_torch_script_saved_model)
-torch_script_model_inference = torch_script_model(tensor)[0]
-```
- 
-**ONNX**
-```python
-onnx_model = rt.InferenceSession(path_to_onnx_saved_model)
-input_name = onnx_model.get_inputs()[0].name
-label_name = onnx_model.get_outputs()[0].name
-onnx_model_inference = onnx_model.run([label_name], {input_name: to_numpy(tensor).astype(np.float32)})[0]
-onnx_model_inference = to_tensor(onnx_model_inference)
-```
 Pass inference result through [non_max_suppression](https://github.com/supervisely-ecosystem/yolov5/blob/0138090cd8d6f15e088246f16ca3240854bbba12/utils/general.py#L455): ([explanation](https://towardsdatascience.com/non-maximum-suppression-nms-93ce178e177c)) with default settings for YOLOv5: 
+
 ```python
 conf_thres=0.25
 iou_thres=0.45
@@ -126,8 +110,7 @@ Each row of `output` tensor will have 6 positional values, representing `top`, `
 To get fast visualization, use following code:
 ```python
 # img0: torch.Tensor([1, 3, H, W]) - image(tensor) for inference
-
-# metadata for YOLOv5
+# metadata for YOLOv5. Here model = restored original YOLOv5 model
 meta = construct_model_meta(model)
 
 # class_names
