@@ -30,7 +30,6 @@ from utils.plots import plot_images, output_to_target, plot_study_txt
 from utils.torch_utils import select_device, time_sync
 from utils.callbacks import Callbacks
 
-matplotlib.rcParams['font.sans-serif'] = ['KaiTi']
 
 def save_one_txt(predn, save_conf, shape, file):
     # Save one txt result
@@ -306,7 +305,7 @@ def run(data,
 def parse_opt():
     parser = argparse.ArgumentParser(prog='val.py')
     parser.add_argument('--data', type=str, default='data/mydata.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', nargs='+', type=str, default='mydata_pretrained.pt', help='model.pt path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default='runs/train/exp2/weights/best.pt', help='model.pt path(s)')
     parser.add_argument('--batch-size', type=int, default=16, help='batch size')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
