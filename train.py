@@ -344,7 +344,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             # mAP
             callbacks.on_train_epoch_end(epoch=epoch)
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
-            final_epoch = epoch + 1 == epochs
+            final_epoch = (epoch + 1 == epochs) or stopper.possible_stop
             if not noval or final_epoch:  # Calculate mAP
                 results, maps, _ = val.run(data_dict,
                                            batch_size=batch_size // WORLD_SIZE * 2,
@@ -384,7 +384,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 callbacks.on_model_save(last, epoch, final_epoch, best_fitness, fi)
 
             # Stop Single-GPU
-            if stopper(epoch=epoch, fitness=fi):
+            if RANK == -1 and stopper(epoch=epoch, fitness=fi):
                 break
 
             # Stop DDP TODO: known issues shttps://github.com/ultralytics/yolov5/pull/4576
@@ -462,7 +462,7 @@ def parse_opt(known=False):
     parser.add_argument('--artifact_alias', type=str, default="latest", help='version of dataset artifact to be used')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--freeze', type=int, default=0, help='Number of layers to freeze. backbone=10, all=24')
-    parser.add_argument('--patience', type=int, default=30, help='EarlyStopping patience (epochs)')
+    parser.add_argument('--patience', type=int, default=100, help='EarlyStopping patience (epochs without improvement)')
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
