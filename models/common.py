@@ -373,10 +373,13 @@ class Detections:
                     str += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
                 if show or save or render or crop:
                     annotator = Annotator(im, pil=not self.ascii)
+                    cropped = [] 
                     for *box, conf, cls in reversed(pred):  # xyxy, confidence, class
                         label = f'{self.names[int(cls)]} {conf:.2f}'
                         if crop:
-                            save_one_box(box, im, file=save_dir / 'crops' / self.names[int(cls)] / self.files[i])
+                            cropped_save_dir = save_dir / 'crops' / self.names[int(cls)] / self.files[i] if save else None
+                            cropped_box = save_one_box(box, im, file=cropped_save_dir, save=save)
+                            cropped.append({'label': label,'img': cropped_box})
                         else:  # all others
                             annotator.box_label(box, label, color=colors(cls))
                     im = annotator.im
@@ -395,35 +398,9 @@ class Detections:
                     LOGGER.info(f"Saved {self.n} image{'s' * (self.n > 1)} to {colorstr('bold', save_dir)}")
             if render:
                 self.imgs[i] = np.asarray(im)
-
-    def get_cropped(self): 
-        """
-        returns list of dicts containing cropped detections and their labels 
-        >>> result.get_cropped()
-            [
-                { 
-                    'label': <label> <accuracy> 
-                    'img': <cropped np image> 
-                }, 
-                { 
-                    'label': <label> <accuracy> 
-                    'img': <cropped np image> 
-                }, 
-                ...
-            ]
-        """
-        res = [] 
-        for i, (im, pred) in enumerate(zip(self.imgs, self.pred)):
-            assert pred != None, "prediction result is empty, no object detected"
-            for *box, conf, cls in pred:  # xyxy, confidence, class
-                label = f'{self.names[int(cls)]} {conf:.2f}'
-                cropped_img = save_one_box(box, im, save=False)
-                res.append({ 
-                    'label': label, 
-                    'img': cropped_img
-                })
-        return res 
-
+            
+            if crop: 
+                return cropped
 
     def print(self):
         self.display(pprint=True)  # print results
@@ -437,10 +414,12 @@ class Detections:
         save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True)  # increment save_dir
         self.display(save=True, save_dir=save_dir)  # save results
 
-    def crop(self, save_dir='runs/detect/exp'):
-        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True)  # increment save_dir
-        self.display(crop=True, save_dir=save_dir)  # crop results
-        LOGGER.info(f'Saved results to {save_dir}\n')
+    def crop(self, save=True, save_dir='runs/detect/exp'):
+        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True) if save else None
+        cropped = self.display(crop=True, save=save, save_dir=save_dir)  # crop results
+        if save: 
+            LOGGER.info(f'Saved results to {save_dir}\n')
+        return cropped 
 
     def render(self):
         self.display(render=True)  # render results
