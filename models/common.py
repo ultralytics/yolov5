@@ -396,6 +396,35 @@ class Detections:
             if render:
                 self.imgs[i] = np.asarray(im)
 
+    def get_cropped(self): 
+        """
+        returns list of dicts containing cropped detections and their labels 
+        >>> result.get_cropped()
+            [
+                { 
+                    'label': <label> <accuracy> 
+                    'img': <cropped np image> 
+                }, 
+                { 
+                    'label': <label> <accuracy> 
+                    'img': <cropped np image> 
+                }, 
+                ...
+            ]
+        """
+        res = [] 
+        for i, (im, pred) in enumerate(zip(self.imgs, self.pred)):
+            assert pred != None, "prediction result is empty, no object detected"
+            for *box, conf, cls in pred:  # xyxy, confidence, class
+                label = f'{self.names[int(cls)]} {conf:.2f}'
+                cropped_img = save_one_box(box, im, save=False)
+                res.append({ 
+                    'label': label, 
+                    'img': cropped_img
+                })
+        return res 
+
+
     def print(self):
         self.display(pprint=True)  # print results
         LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' %
