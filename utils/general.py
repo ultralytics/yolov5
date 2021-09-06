@@ -39,8 +39,17 @@ cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with Py
 os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max threads
 
 
-class timeout(contextlib.ContextDecorator):
-    # Usage: @timeout(seconds) decorator or 'with timeout(seconds):' context manager
+class Profile(contextlib.ContextDecorator):
+    # Usage: @Profile() decorator or 'with Profile():' context manager
+    def __enter__(self):
+        self.start = time.time()
+
+    def __exit__(self, type, value, traceback):
+        print(f'Profile results: {time.time() - self.start:.5f}s')
+
+
+class Timeout(contextlib.ContextDecorator):
+    # Usage: @Timeout(seconds) decorator or 'with Timeout(seconds):' context manager
     def __init__(self, seconds, *, timeout_msg='', suppress_timeout_errors=True):
         self.seconds = int(seconds)
         self.timeout_message = timeout_msg
@@ -113,9 +122,10 @@ def is_pip():
     return 'site-packages' in Path(__file__).absolute().parts
 
 
-def is_ascii(str=''):
+def is_ascii(s=''):
     # Is string composed of all ASCII (no UTF) characters?
-    return len(str.encode().decode('ascii', 'ignore')) == len(str)
+    s = str(s)  # convert list, tuple, None, etc. to str
+    return len(s.encode().decode('ascii', 'ignore')) == len(s)
 
 
 def emojis(str=''):
@@ -152,8 +162,7 @@ def check_git_status():
     branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
     n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
     if n > 0:
-        s = f"⚠️ WARNING: code is out of date by {n} commit{'s' * (n > 1)}. " \
-            f"Use 'git pull' to update or 'git clone {url}' to download latest."
+        s = f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use `git pull` or `git clone {url}` to update."
     else:
         s = f'up to date with {url} ✅'
     print(emojis(s))  # emoji-safe
@@ -172,7 +181,7 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
 
 
 @try_except
-def check_requirements(requirements='requirements.txt', exclude=()):
+def check_requirements(requirements='requirements.txt', exclude=(), install=True):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
     prefix = colorstr('red', 'bold', 'requirements:')
     check_python()  # check python version
@@ -188,13 +197,17 @@ def check_requirements(requirements='requirements.txt', exclude=()):
         try:
             pkg.require(r)
         except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
-            print(f"{prefix} {r} not found and is required by YOLOv5, attempting auto-update...")
-            try:
-                assert check_online(), f"'pip install {r}' skipped (offline)"
-                print(check_output(f"pip install '{r}'", shell=True).decode())
-                n += 1
-            except Exception as e:
-                print(f'{prefix} {e}')
+            s = f"{prefix} {r} not found and is required by YOLOv5"
+            if install:
+                print(f"{s}, attempting auto-update...")
+                try:
+                    assert check_online(), f"'pip install {r}' skipped (offline)"
+                    print(check_output(f"pip install '{r}'", shell=True).decode())
+                    n += 1
+                except Exception as e:
+                    print(f'{prefix} {e}')
+            else:
+                print(f'{s}. Please install and rerun your command.')
 
     if n:  # if packages updated
         source = file.resolve() if 'file' in locals() else requirements
@@ -203,11 +216,14 @@ def check_requirements(requirements='requirements.txt', exclude=()):
         print(emojis(s))
 
 
-def check_img_size(img_size, s=32, floor=0):
-    # Verify img_size is a multiple of stride s
-    new_size = max(make_divisible(img_size, int(s)), floor)  # ceil gs-multiple
-    if new_size != img_size:
-        print(f'WARNING: --img-size {img_size} must be multiple of max stride {s}, updating to {new_size}')
+def check_img_size(imgsz, s=32, floor=0):
+    # Verify image size is a multiple of stride s in each dimension
+    if isinstance(imgsz, int):  # integer i.e. img_size=640
+        new_size = max(make_divisible(imgsz, int(s)), floor)
+    else:  # list i.e. img_size=[640, 480]
+        new_size = [max(make_divisible(x, int(s)), floor) for x in imgsz]
+    if new_size != imgsz:
+        print(f'WARNING: --img-size {imgsz} must be multiple of max stride {s}, updating to {new_size}')
     return new_size
 
 

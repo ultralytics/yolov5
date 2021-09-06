@@ -69,13 +69,14 @@ class Loggers():
         if self.wandb:
             self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
 
-    def on_train_batch_end(self, ni, model, imgs, targets, paths, plots):
+    def on_train_batch_end(self, ni, model, imgs, targets, paths, plots, sync_bn):
         # Callback runs on train batch end
         if plots:
             if ni == 0:
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore')  # suppress jit trace warning
-                    self.tb.add_graph(torch.jit.trace(de_parallel(model), imgs[0:1], strict=False), [])
+                if not sync_bn:  # tb.add_graph() --sync known issue https://github.com/ultralytics/yolov5/issues/3754
+                    with warnings.catch_warnings():
+                        warnings.simplefilter('ignore')  # suppress jit trace warning
+                        self.tb.add_graph(torch.jit.trace(de_parallel(model), imgs[0:1], strict=False), [])
             if ni < 3:
                 f = self.save_dir / f'train_batch{ni}.jpg'  # filename
                 Thread(target=plot_images, args=(imgs, targets, paths, f), daemon=True).start()
@@ -131,15 +132,18 @@ class Loggers():
         files = [(self.save_dir / f) for f in files if (self.save_dir / f).exists()]  # filter
 
         if self.tb:
-            from PIL import Image
-            import numpy as np
+            import cv2
             for f in files:
-                self.tb.add_image(f.stem, np.asarray(Image.open(f)), epoch, dataformats='HWC')
+                self.tb.add_image(f.stem, cv2.imread(str(f))[..., ::-1], epoch, dataformats='HWC')
 
         if self.wandb:
             self.wandb.log({"Results": [wandb.Image(str(f), caption=f.name) for f in files]})
             # Calling wandb.log. TODO: Refactor this into WandbLogger.log_model
-            wandb.log_artifact(str(best if best.exists() else last), type='model',
-                               name='run_' + self.wandb.wandb_run.id + '_model',
-                               aliases=['latest', 'best', 'stripped'])
-            self.wandb.finish_run()
+            if not self.opt.evolve:
+                wandb.log_artifact(str(best if best.exists() else last), type='model',
+                                   name='run_' + self.wandb.wandb_run.id + '_model',
+                                   aliases=['latest', 'best', 'stripped'])
+                self.wandb.finish_run()
+            else:
+                self.wandb.finish_run()
+                self.wandb = WandbLogger(self.opt)
