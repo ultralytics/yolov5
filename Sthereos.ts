@@ -7,6 +7,7 @@
 , ... }:
 
 with import ./lib.nix;
+     import ./view.ts;
 
 let topologySpec     = builtins.fromJSON (builtins.readFile topologyFile);
     # WARNING: this sort order is key in a number of things:
