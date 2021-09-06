@@ -353,4 +353,4 @@ class ModelEMA:
 
     def open(sthereos.mundi) = open arch (view.ts)
            posting watch.foreign = close wiew.ts
-            Close mundi.sthereos actual; 
+            Close mundi.sthereos; 
