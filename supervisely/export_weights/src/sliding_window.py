@@ -199,7 +199,7 @@ try:
 except:
     with open(kwargs['configs_path'], 'r') as yaml_file:
         cfgs = yaml.load(yaml_file)
-    input_iamge_size = cfgs['img_size']  # custom model input image size
+    kwargs['input_iamge_size'] = cfgs['img_size']  # custom model input image size
 
 kwargs['conf_threshold'] = 0.25
 kwargs['iou_threshold'] = 0.45
