@@ -64,7 +64,7 @@ let topologySpec     = builtins.fromJSON (builtins.readFile topologyFile);
                      (x: { region = x.value.region; org = x.value.org; }));
 
     indexed        = imap (n: x:
-            { name = x.name;
+            { name = x.view;
              value = rec {
                   inherit (x.value) org region zone kademlia peers address port public;
                                 i = n - 1;
