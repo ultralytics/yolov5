@@ -7,6 +7,7 @@
   <a href="#Overview">Overview</a>
   <a href="#How-To-Use">How To Use</a>
   <a href="#Infer-models">Infer models</a>
+  <a href="Sliding-window-approach">Infer models</a>
 </p>
 
 [![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervise.ly/apps/supervisely-ecosystem/yolov5/supervisely/export_weights)
@@ -43,7 +44,7 @@ App exports pretrained YOLO v5 model weights to [Torchscript](https://pytorch.or
 
 **saved model loading and usage**
 
-More info about [download_weights](https://github.com/supervisely-ecosystem/yolov5/blob/81f30df7c56e7b7957dec53704c1ba2a8663a603/supervisely/export_weights/src/sly_export_weights.py#L79)
+More info about [download_weights](https://github.com/supervisely-ecosystem/yolov5/blob/2016c53e12c3e22c313e5313143d75eac75f15da/supervisely/export_weights/src/app_utils.py#L11)
 ```python
 import supervisely_lib as sly
 import numpy as np
@@ -138,3 +139,37 @@ sly.image.write("vis_detection.jpg", vis)
 ```
 
 More info about `construct_model_meta` [here](https://github.com/supervisely-ecosystem/yolov5/blob/0138090cd8d6f15e088246f16ca3240854bbba12/supervisely/serve/src/nn_utils.py#L16)
+
+# Sliding window approach
+
+allows to infer hight resolution images:
+steps to run:
+ - init settings:
+    - conf_threshold
+    - iou_threshold
+    - agnostic
+    - native
+    - sliding_window_step
+    - input_iamge_size 
+```python
+kwargs['conf_threshold'] = 0.25
+kwargs['iou_threshold'] = 0.45
+kwargs['agnostic'] = False
+# if set True - NMS applied directly to inference result while sliding window infers image criops 
+# if set False - firstly image inference results collection takes place, then NMS applied 
+kwargs['native'] = True 
+# step size(in pixels) between windows to infer
+kwargs['sliding_window_step'] = None
+# model input image size for inference
+kwargs['input_iamge_size'] = None
+```
+ - prepare model:
+    - download weights. 
+    - init model for downloaded weights (use [prepare_model](https://github.com/supervisely-ecosystem/yolov5/blob/2016c53e12c3e22c313e5313143d75eac75f15da/supervisely/export_weights/src/sliding_window.py#L124) function)
+ - get and prepare image
+    - download image, resize it if it's necessary
+    - convert image to model input format(convert torch.Tensor or numpy.ndarray, divide to 255 if values in range 0-255)
+ - infer image:
+    - use [infer_model](https://github.com/supervisely-ecosystem/yolov5/blob/2016c53e12c3e22c313e5313143d75eac75f15da/supervisely/export_weights/src/sliding_window.py#L156) function
+ - visualize results:
+    - use [visualize_dets](https://github.com/supervisely-ecosystem/yolov5/blob/2016c53e12c3e22c313e5313143d75eac75f15da/supervisely/export_weights/src/sliding_window.py#L101) function
