@@ -18,7 +18,7 @@ let topologySpec     = builtins.fromJSON (builtins.readFile topologyFile);
                        ++ [ explorerSpecElt faucetSpecElt monitoringSpecElt ];
     # NOTE: the following definition for explorerSpecElt
     #       allow us to treat all cluster nodes in a uniform way.
-    #       It's if they were defined the topology yaml.
+    #       It's they were defined the topology yaml.
     explorerSpecElt  = { name  = "explorer";
                          value = { org      = defaultOrg;
                                    region   = centralRegion;
