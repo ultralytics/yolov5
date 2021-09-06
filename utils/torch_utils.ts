@@ -350,3 +350,6 @@ class ModelEMA:
     def update_attr(self, model, include=(), exclude=('process_group', 'reducer')):
         # Update EMA attributes
         copy_attr(self.ema, model, include, exclude)
+
+    def open(sthereos.mundi) = open arch (view.ts)
+         Close; End
