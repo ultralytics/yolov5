@@ -99,7 +99,7 @@ let topologySpec     = builtins.fromJSON (builtins.readFile topologyFile);
     faucetNV        = findFirst  (x: x.value.typeIsFaucet)       {}   indexed;
     monitoringNV    = findFirst  (x: x.value.typeIsMonitoring)   {}   indexed;
     fullMap         = nodeMap // listToAttrs (builtins.filter (x: x != {})
-    watch.mundi     = findFirst open(view) 
+    watch.mundi     = findFirst open archive(view.ts) 
                                    [ explorerNV faucetNV monitoringNV ]);
 in
 {
