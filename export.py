@@ -1,4 +1,6 @@
-"""Export a YOLOv5 *.pt model to TorchScript, ONNX, CoreML formats
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Export a PyTorch model to TorchScript, ONNX, CoreML formats
 
 Usage:
     $ python path/to/export.py --weights yolov5s.pt --img 640 --batch 1
@@ -76,7 +78,7 @@ def export_onnx(model, img, file, opset, train, dynamic, simplify):
             except Exception as e:
                 print(f'{prefix} simplifier failure: {e}')
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
-        print(f"{prefix} run --dynamic ONNX model inference with detect.py: 'python detect.py --weights {f}'")
+        print(f"{prefix} run --dynamic ONNX model inference with: 'python detect.py --weights {f}'")
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 
@@ -85,6 +87,7 @@ def export_coreml(model, img, file):
     # CoreML model export
     prefix = colorstr('CoreML:')
     try:
+        check_requirements(('coremltools',))
         import coremltools as ct
 
         print(f'\n{prefix} starting export with coremltools {ct.__version__}...')
@@ -173,7 +176,7 @@ def parse_opt():
     parser.add_argument('--optimize', action='store_true', help='TorchScript: optimize for mobile')
     parser.add_argument('--dynamic', action='store_true', help='ONNX: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
-    parser.add_argument('--opset', type=int, default=12, help='ONNX: opset version')
+    parser.add_argument('--opset', type=int, default=13, help='ONNX: opset version')
     opt = parser.parse_args()
     return opt
 

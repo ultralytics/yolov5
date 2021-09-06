@@ -4,7 +4,7 @@
 matplotlib>=3.2.2
 numpy>=1.18.5
 opencv-python>=4.1.2
-Pillow
+Pillow>=8.0.0
 PyYAML>=5.3.1
 scipy>=1.4.1
 torch>=1.7.0
@@ -23,6 +23,7 @@ pandas
 # coremltools>=4.1
 # onnx>=1.9.0
 # scikit-learn==0.19.2  # for coreml quantization
+# tensorflow==2.4.1  # for TFLite export
 
 # extras --------------------------------------
 # Cython  # for pycocotools https://github.com/cocodataset/cocoapi/issues/172

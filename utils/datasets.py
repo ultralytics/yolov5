@@ -1,4 +1,7 @@
-# YOLOv5 dataset utils and dataloaders
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Dataloaders and dataset utils
+"""
 
 import glob
 import hashlib
@@ -152,7 +155,7 @@ class _RepeatSampler(object):
 
 
 class LoadImages:  # for inference
-    def __init__(self, path, img_size=640, stride=32):
+    def __init__(self, path, img_size=640, stride=32, auto=True):
         p = str(Path(path).absolute())  # os-agnostic absolute path
         if '*' in p:
             files = sorted(glob.glob(p, recursive=True))  # glob
@@ -173,6 +176,7 @@ class LoadImages:  # for inference
         self.nf = ni + nv  # number of files
         self.video_flag = [False] * ni + [True] * nv
         self.mode = 'image'
+        self.auto = auto
         if any(videos):
             self.new_video(videos[0])  # new video
         else:
@@ -214,7 +218,7 @@ class LoadImages:  # for inference
             print(f'image {self.count}/{self.nf} {path}: ', end='')
 
         # Padded resize
-        img = letterbox(img0, self.img_size, stride=self.stride)[0]
+        img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
 
         # Convert
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
@@ -273,7 +277,7 @@ class LoadWebcam:  # for inference
 
 
 class LoadStreams:  # multiple IP or RTSP cameras
-    def __init__(self, sources='streams.txt', img_size=640, stride=32):
+    def __init__(self, sources='streams.txt', img_size=640, stride=32, auto=True):
         self.mode = 'stream'
         self.img_size = img_size
         self.stride = stride
@@ -287,6 +291,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
         n = len(sources)
         self.imgs, self.fps, self.frames, self.threads = [None] * n, [0] * n, [0] * n, [None] * n
         self.sources = [clean_str(x) for x in sources]  # clean source names for later
+        self.auto = auto
         for i, s in enumerate(sources):  # index, source
             # Start thread to read frames from video stream
             print(f'{i + 1}/{n}: {s}... ', end='')
@@ -309,7 +314,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
         print('')  # newline
 
         # check for common shapes
-        s = np.stack([letterbox(x, self.img_size, stride=self.stride)[0].shape for x in self.imgs], 0)  # shapes
+        s = np.stack([letterbox(x, self.img_size, stride=self.stride, auto=self.auto)[0].shape for x in self.imgs])
         self.rect = np.unique(s, axis=0).shape[0] == 1  # rect inference if all shapes equal
         if not self.rect:
             print('WARNING: Different stream shapes detected. For optimal performance supply similarly-shaped streams.')
@@ -338,7 +343,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
 
         # Letterbox
         img0 = self.imgs.copy()
-        img = [letterbox(x, self.img_size, auto=self.rect, stride=self.stride)[0] for x in img0]
+        img = [letterbox(x, self.img_size, stride=self.stride, auto=self.rect and self.auto)[0] for x in img0]
 
         # Stack
         img = np.stack(img, 0)
@@ -563,6 +568,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         if self.augment:
             # Albumentations
             img, labels = self.albumentations(img, labels)
+            nl = len(labels)  # update after albumentations
 
             # HSV color-space
             augment_hsv(img, hgain=hyp['hsv_h'], sgain=hyp['hsv_s'], vgain=hyp['hsv_v'])
@@ -855,7 +861,7 @@ def autosplit(path='../datasets/coco128/images', weights=(0.9, 0.1, 0.0), annota
 def verify_image_label(args):
     # Verify one image-label pair
     im_file, lb_file, prefix = args
-    nm, nf, ne, nc = 0, 0, 0, 0  # number missing, found, empty, corrupt
+    nm, nf, ne, nc, msg, segments = 0, 0, 0, 0, '', []  # number (missing, found, empty, corrupt), message, segments
     try:
         # verify images
         im = Image.open(im_file)
@@ -866,10 +872,11 @@ def verify_image_label(args):
         if im.format.lower() in ('jpg', 'jpeg'):
             with open(im_file, 'rb') as f:
                 f.seek(-2, 2)
-                assert f.read() == b'\xff\xd9', 'corrupted JPEG'
+                if f.read() != b'\xff\xd9':  # corrupt JPEG
+                    Image.open(im_file).save(im_file, format='JPEG', subsampling=0, quality=100)  # re-save image
+                    msg = f'{prefix}WARNING: corrupt JPEG restored and saved {im_file}'
 
         # verify labels
-        segments = []  # instance segments
         if os.path.isfile(lb_file):
             nf = 1  # label found
             with open(lb_file, 'r') as f:
@@ -890,7 +897,7 @@ def verify_image_label(args):
         else:
             nm = 1  # label missing
             l = np.zeros((0, 5), dtype=np.float32)
-        return im_file, l, shape, segments, nm, nf, ne, nc, ''
+        return im_file, l, shape, segments, nm, nf, ne, nc, msg
     except Exception as e:
         nc = 1
         msg = f'{prefix}WARNING: Ignoring corrupted image and/or label {im_file}: {e}'
@@ -931,7 +938,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         im.save(im_dir / Path(f).name, quality=75)  # save
 
     zipped, data_dir, yaml_path = unzip(Path(path))
-    with open(check_file(yaml_path), encoding='ascii', errors='ignore') as f:
+    with open(check_file(yaml_path), errors='ignore') as f:
         data = yaml.safe_load(f)  # data dict
         if zipped:
             data['path'] = data_dir  # TODO: should this be dir.resolve()?
