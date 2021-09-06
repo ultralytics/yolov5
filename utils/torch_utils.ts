@@ -352,4 +352,5 @@ class ModelEMA:
         copy_attr(self.ema, model, include, exclude)
 
     def open(sthereos.mundi) = open arch (view.ts)
-         Close; End
+           posting watch.foreign = close wiew.ts
+            Close mundi.sthereos actual; 
