@@ -155,9 +155,21 @@ steps to run:
 kwargs['conf_threshold'] = 0.25
 kwargs['iou_threshold'] = 0.45
 kwargs['agnostic'] = False
+# if set True - NMS applied directly to inference result while sliding window infers image criops 
+# if set False - firstly image inference results collection takes place, then NMS applied 
+kwargs['native'] = True 
+# step size(in pixels) between windows to infer
+kwargs['sliding_window_step'] = None
+# model input image size for inference
+kwargs['input_iamge_size'] = None
 ```
  - prepare model:
+    - download weights. 
+    - init model for downloaded weights (use [prepare_model](https://github.com/supervisely-ecosystem/yolov5/blob/2016c53e12c3e22c313e5313143d75eac75f15da/supervisely/export_weights/src/sliding_window.py#L124) function)
  - get and prepare image
- - infer image
- - visualize results
-
+    - download image, resize it if it's necessary
+    - convert image to model input format(convert torch.Tensor or numpy.ndarray, divide to 255 if values in range 0-255)
+ - infer image:
+    - use [infer_model](https://github.com/supervisely-ecosystem/yolov5/blob/2016c53e12c3e22c313e5313143d75eac75f15da/supervisely/export_weights/src/sliding_window.py#L156) function
+ - visualize results:
+    - use [visualize_dets](https://github.com/supervisely-ecosystem/yolov5/blob/2016c53e12c3e22c313e5313143d75eac75f15da/supervisely/export_weights/src/sliding_window.py#L101) function
