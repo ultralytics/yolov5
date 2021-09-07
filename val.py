@@ -216,7 +216,7 @@ def run(data,
                 save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / (path.stem + '.txt'))
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
-            callbacks.on_val_image_end(pred, predn, path, names, img[si])
+            callbacks.run('on_val_image_end', pred, predn, path, names, img[si])
 
         # Plot images
         if plots and batch_i < 3:
@@ -253,7 +253,7 @@ def run(data,
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        callbacks.on_val_end()
+        callbacks.run('on_val_end')
 
     # Save JSON
     if save_json and len(jdict):
