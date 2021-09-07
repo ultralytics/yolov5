@@ -60,7 +60,7 @@ class Callbacks:
         else:
             return self._callbacks
 
-    def run_callbacks(self, hook, *args, **kwargs):
+    def run(self, hook, *args, **kwargs):
         """
         Loop through the registered actions and fire all callbacks
 
@@ -69,7 +69,7 @@ class Callbacks:
             args Arguments to receive from YOLOv5
             kwargs Keyword Arguments to receive from YOLOv5
         """
-        
+
         assert hook in self._callbacks, f"hook '{hook}' not found in callbacks {self._callbacks}"
 
         for logger in self._callbacks[hook]:
