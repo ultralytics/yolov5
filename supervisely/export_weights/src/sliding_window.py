@@ -156,7 +156,6 @@ def main():
                         help='path to save inference results')
 
     opt = parser.parse_args()
-    path2_model = opt.weights
     folder = Path(opt.weights).parents[0]
     file = Path(opt.weights).name.split('.')[0] + '.pt'
     path2original_model = os.path.join(folder, file)
@@ -175,11 +174,14 @@ def main():
     infer_fn = infer_model if opt.mode == 'direct' else sliding_window
     output = infer_fn(model, tensor, input_img_size=input_img_size)
 
-    # # metadata construction stage
-    o_model = get_model(opt.original_model)
-    meta = construct_model_meta(o_model)
-    names = o_model.module.names if hasattr(o_model, 'module') else o_model.names
-    visualize_dets(image, output, opt.save_path, names, meta)
+    if opt.viz:
+        # load orig YOLOv5 model to construct meta
+        o_model = get_model(opt.original_model)
+        # meta construction
+        meta = construct_model_meta(o_model)
+        # get class names
+        names = o_model.module.names if hasattr(o_model, 'module') else o_model.names
+        visualize_dets(image, output, opt.save_path, names, meta)
 
 
 if __name__ == '__main__':
