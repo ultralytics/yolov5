@@ -244,7 +244,7 @@ def check_imshow():
 
 def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
     # Check file(s) for acceptable suffixes
-    if any(suffix):
+    if file and suffix:
         if isinstance(suffix, str):
             suffix = [suffix]
         for f in file if isinstance(file, (list, tuple)) else [file]:
@@ -258,7 +258,7 @@ def check_yaml(file, suffix=('.yaml', '.yml')):
 
 def check_file(file, suffix=''):
     # Search/download file (if necessary) and return path
-    check_suffix(file, suffix)
+    check_suffix(file, suffix)  # optional
     file = str(file)  # convert to str()
     if Path(file).is_file() or file == '':  # exists
         return file
