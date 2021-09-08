@@ -49,7 +49,7 @@ python ./path/to/inference_demo.py
         --weights=/path/to/weights/name.{pt, torchscript.pt, onnx}
         --image=/path/to/image{any extension}
 ```
-
+```
   -h, --help                       show this help message and exit
   --weights WEIGHTS                initial weights path
   --cfgs CFGS                      path to model cfgs (required for ONNX anf TorchScript models)
@@ -58,7 +58,7 @@ python ./path/to/inference_demo.py
   --viz                            flag for results visualisation
   --original_model ORIGINAL_MODEL  path to original model to construct meta (required for ONNX anf TorchScript models)
   --save_path SAVE_PATH            path to save inference results
-
+```
 
 **TorchScript**
 ```python
