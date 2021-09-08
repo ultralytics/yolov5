@@ -50,13 +50,13 @@ Use following command to infer image:
 python ./path/to/inference_demo.py
         --weights=/path/to/weights/name.{pt, torchscript.pt, onnx}
         --cfgs=/path/to/opt.yaml 
-        --image=/path/to/image.{any extension}
+        --image=/path/to/image.{any extension: .png, .jpg etc.}
         --mode={direct / sliding_window}
         --conf_thresh=0.25
         --iou_thresh=0.45
         --sliding_window_step 1 1 
         --original_model=/path/to/{original_model_name}.pt
-        
+        --save_path=/path/to/image_name.{any extension: .png, .jpg etc.}
 ```
 Options to set:
 
