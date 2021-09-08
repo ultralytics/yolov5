@@ -105,7 +105,7 @@ def get_latest_run(search_dir='.'):
 
 def user_config_dir(dir='Ultralytics'):
     # Return path of user configuration directory (make if necessary)
-    settings = {'Windows': 'AppData/Roaming', 'Linux': '.local/share', 'Darwin': 'Library/Application Support'}
+    settings = {'Windows': 'AppData/Roaming', 'Linux': '.config', 'Darwin': 'Library/Application Support'}
     path = Path.home() / settings.get(platform.system(), '') / dir
     if not path.is_dir():
         path.mkdir()  # make dir if required
