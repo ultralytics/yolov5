@@ -76,16 +76,11 @@ Additional options for `*.torchscript.pt`, `*.onnx`
 ```
   --original_model  path to original model to construct meta (required for ONNX anf TorchScript models)
 ```
+More info about sliding_window approach [here]()
 
-if `mode` set to `sliding_window`:
-```
-  --native               sliding window approach marker
-  --sliding_window_step  [SLIDING_WINDOW_STEP ...]
-```
- - for `native` cases of sliding window approach: 
-    - if set to True - NMS applied immediately to each window inference result.
-    - if set to False - NMS applied to the whole sliding window result set.
 
+
+Detailed instructions to infer image manually:
 
 **TorchScript**
 ```python
@@ -106,16 +101,11 @@ onnx_model_inference = onnx_model.run([label_name], {input_name: to_numpy(tensor
 
 # Sliding window approach
 
-allows to infer hight resolution images:
-
-steps to run:
- - prepare model:
-    - download weights. 
-    - init model for downloaded weights (use [prepare_model](https://github.com/supervisely-ecosystem/yolov5/blob/2016c53e12c3e22c313e5313143d75eac75f15da/supervisely/export_weights/src/sliding_window.py#L124) function)
- - get and prepare image
-    - download image, resize it if it's necessary
-    - convert image to model input format(convert torch.Tensor or numpy.ndarray, divide to 255 if values in range 0-255)
- - infer image:
-    - use [infer_model](https://github.com/supervisely-ecosystem/yolov5/blob/2016c53e12c3e22c313e5313143d75eac75f15da/supervisely/export_weights/src/sliding_window.py#L156) function
- - visualize results:
-    - use [visualize_dets](https://github.com/supervisely-ecosystem/yolov5/blob/2016c53e12c3e22c313e5313143d75eac75f15da/supervisely/export_weights/src/sliding_window.py#L101) function
+if `mode` set to `sliding_window`:
+```
+  --native               sliding window approach marker
+  --sliding_window_step  [SLIDING_WINDOW_STEP ...]
+```
+ - for `native` cases of sliding window approach: 
+    - if set to True - NMS applied immediately to each window inference result.
+    - if set to False - NMS applied to the whole sliding window result set.
