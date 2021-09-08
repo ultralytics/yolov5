@@ -44,42 +44,12 @@ App exports pretrained YOLO v5 model weights to [Torchscript](https://pytorch.or
 
 **saved model loading and usage**
 
-More info about [download_weights](https://github.com/supervisely-ecosystem/yolov5/blob/2016c53e12c3e22c313e5313143d75eac75f15da/supervisely/export_weights/src/app_utils.py#L11)
-```python
-import supervisely_lib as sly
-import numpy as np
-
-import torch
-import onnx
-import onnxruntime as rt
-
-
-def to_numpy(tensor):
-    return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
-
-def to_tensor(raw_data):
-    if not isinstance(raw_data, torch.Tensor):
-        raw_data = torch.as_tensor(raw_data)    
-    return raw_data
-
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
-customWeightsPath = '/path/to/remote/weights/best.pt'
-# download YOLOv5 original weights
-weights_path = download_weights(customWeightsPath)
-# download YOLOv5 training configs
-configs_path = download_weights(os.path.join(Path(customWeightsPath).parents[1], 'opt.yaml'))
-# restore original YOLOv5 model with pretrained weights from our checkpoint
-model = attempt_load(weights=weights_path, map_location=device)
-
-# generate random tensor for inference
-# Tensor valueas have to be distributed in range [0.0, 1.0] (if tensor values distributed in range [0, 255], 
-# divide tensor to 255.0) and tensor spartial values must match with model input image's spartial values:
-N = 1 # batch size
-C = 3 # number of channels
-H, W = model.img_size
-tensor = torch.randn(N, C, H, W)
+```#!/bin/bash
+python ./yolov5/supervisely/export_weights/src/sliding_window.py /
+        --weights=/home/work/PycharmProjects/app_debug_data/data/best.onnx \
+        --image=yolov5/supervisely/export_weights/src/IMG_0748_big.jpeg
 ```
+
 **TorchScript**
 ```python
 customWeightsPath_torchScript = '/path/to/remote/weights/best.torchscript.pt'
