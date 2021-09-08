@@ -146,7 +146,7 @@ def visualize_dets(img_, output_, save_path_, names_, meta_):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str,
-                        default='/home/work/PycharmProjects/app_debug_data/data/best.pt',
+                        default='/home/work/PycharmProjects/app_debug_data/data/best.torchscript.pt',
                         help='initial weights path')
     parser.add_argument('--cfgs', type=str,
                         default='/home/work/PycharmProjects/app_debug_data/data/opt.yaml',
@@ -156,13 +156,24 @@ def main():
                         help='initial image path')
     parser.add_argument('--mode',
                         choices=['direct', 'sliding_window'],
-                        default='direct',
+                        default='sliding_window',
                         help='inference mode')
+    parser.add_argument('--viz', action='store_true', help='Flag for results visualisation')
+    parser.add_argument('--original_model',
+                        default='/home/work/PycharmProjects/app_debug_data/data/best.pt',
+                        help='path to original model to construct meta (required for ONNX anf TorchScript models)')
     parser.add_argument('--save_path', type=str,
-                        default=os.getcwd(),
-                        help='initial image path')
+                        default=os.path.join(os.getcwd(), "vis_detection.jpg"),
+                        help='path to save inference results')
 
     opt = parser.parse_args()
+    path2_model = opt.weights
+    folder = Path(opt.weights).parents[0]
+    file = Path(opt.weights).name.split('.')[0] + '.pt'
+    path2original_model = os.path.join(folder, file)
+    if opt.viz and not os.path.exists(path2original_model):
+        print('Please, set path to original_model to construct meta to visualise results.')
+        raise FileNotFoundError(path2original_model)
 
     cfgs = get_configs(opt.cfgs)
     input_img_size = cfgs['img_size']
@@ -176,11 +187,10 @@ def main():
     output = infer_fn(model, tensor, input_img_size=input_img_size)
 
     # # metadata construction stage
-    model = get_model(opt.weights)
-    meta = construct_model_meta(model)
-    names = model.module.names if hasattr(model, 'module') else model.names
-    save_path = os.path.join(opt.save_path, "vis_detection.jpg")
-    visualize_dets(image, output, save_path, names, meta)
+    o_model = get_model(opt.original_model)
+    meta = construct_model_meta(o_model)
+    names = o_model.module.names if hasattr(o_model, 'module') else o_model.names
+    visualize_dets(image, output, opt.save_path, names, meta)
 
 
 if __name__ == '__main__':
