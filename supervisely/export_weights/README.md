@@ -79,9 +79,13 @@ Additional options for `*.torchscript.pt`, `*.onnx`
 
 if `mode` set to `sliding_window`:
 ```
-  --native               for sliding window approach
+  --native               for sliding window approach: if set to True - NMS applied immediately to each window inference result. 
   --sliding_window_step  [SLIDING_WINDOW_STEP ...]
 ```
+ - sliding window approach: 
+    - if set to True - NMS applied immediately to each window inference result.
+    - if set to False - NMS applied to the whole sliding window result set.
+
 
 **TorchScript**
 ```python
