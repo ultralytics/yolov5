@@ -96,6 +96,7 @@ onnx_model_inference = onnx_model.run([label_name], {input_name: to_numpy(tensor
 ```
 
 # Sliding window approach
+More info about Sliding window approach [here](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/export_weights/src/inference_demo.py#L66)
 
 if `mode` set to `sliding_window`:
 ```
