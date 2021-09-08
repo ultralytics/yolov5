@@ -59,6 +59,7 @@ python ./path/to/inference_demo.py
         
 ```
 Options to set:
+
 Required for `*.pt`, `*.torchscript.pt`, `*.onnx`
 ```
   --weights         path to model weights
