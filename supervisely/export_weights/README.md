@@ -44,20 +44,38 @@ App exports pretrained YOLO v5 model weights to [Torchscript](https://pytorch.or
 
 **saved model loading and usage**
 
+Use following command to infer image:
+
 ```#!/bin/bash
 python ./path/to/inference_demo.py
         --weights=/path/to/weights/name.{pt, torchscript.pt, onnx}
-        --image=/path/to/image{any extension}
+        --cfgs=/path/to/opt.yaml 
+        --image=/path/to/image.{any extension}
+        --sliding_window_step 1 1 
+        --original_model=/path/to/{original_model_name}.pt
 ```
+Options to set:
+Required for `*.pt`, `*.torchscript.pt`, `*.onnx`
 ```
-  -h, --help        show this help message and exit
-  --weights         initial weights path
+  --weights         path to model weights
   --cfgs            path to model cfgs (required for ONNX anf TorchScript models)
-  --image           initial image path
+  --image           path to model image
   --mode            {direct,sliding_window} inference mode
+  --conf_thresh     confidence threshold
+  --iou_thresh      intersection over union threshold
   --viz             flag for results visualisation
-  --original_model  path to original model to construct meta (required for ONNX anf TorchScript models)
   --save_path       path to save inference results
+```
+
+Additional options for `*.torchscript.pt`, `*.onnx`
+```
+  --original_model  path to original model to construct meta (required for ONNX anf TorchScript models)
+```
+
+if `mode` set to sliding_window:
+```
+  --native          for sliding window approach
+  --sliding_window_step  [SLIDING_WINDOW_STEP ...]
 ```
 
 **TorchScript**
