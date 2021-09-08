@@ -50,14 +50,14 @@ python ./path/to/inference_demo.py
         --image=/path/to/image{any extension}
 ```
 ```
-  -h, --help                       show this help message and exit
-  --weights WEIGHTS                initial weights path
-  --cfgs CFGS                      path to model cfgs (required for ONNX anf TorchScript models)
-  --image IMAGE                    initial image path
-  --mode                           {direct,sliding_window} inference mode
-  --viz                            flag for results visualisation
-  --original_model ORIGINAL_MODEL  path to original model to construct meta (required for ONNX anf TorchScript models)
-  --save_path SAVE_PATH            path to save inference results
+  -h, --help        show this help message and exit
+  --weights         initial weights path
+  --cfgs            path to model cfgs (required for ONNX anf TorchScript models)
+  --image           initial image path
+  --mode            {direct,sliding_window} inference mode
+  --viz             flag for results visualisation
+  --original_model  path to original model to construct meta (required for ONNX anf TorchScript models)
+  --save_path       path to save inference results
 ```
 
 **TorchScript**
