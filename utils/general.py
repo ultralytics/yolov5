@@ -103,6 +103,15 @@ def get_latest_run(search_dir='.'):
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
+def user_config_dir(dir='Ultralytics'):
+    # Return path of user configuration directory (make if necessary)
+    settings = {'Windows': 'AppData/Roaming', 'Linux': '.config', 'Darwin': 'Library/Application Support'}
+    path = Path.home() / settings.get(platform.system(), '') / dir
+    if not path.is_dir():
+        path.mkdir()  # make dir if required
+    return path
+
+
 def is_docker():
     # Is environment a Docker container?
     return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
