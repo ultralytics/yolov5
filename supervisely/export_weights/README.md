@@ -76,22 +76,20 @@ Additional options for `*.torchscript.pt`, `*.onnx`
 ```
   --original_model  path to original model to construct meta (required for ONNX anf TorchScript models)
 ```
-More info about sliding_window approach [here](https://github.com/supervisely-ecosystem/yolov5/blob/dev_bugfix/supervisely/export_weights/README.md#sliding-window-approach)
+More info about sliding_window approach [here](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/export_weights/README.md#sliding-window-approach)
 
 Detailed instructions to infer image manually:
 
 **TorchScript**
 ```python
-customWeightsPath_torchScript = '/path/to/remote/weights/best.torchscript.pt'
-path_to_torch_script_saved_model = download_weights(customWeightsPath_torchScript)
-torch_script_model = torch.jit.load(path_to_torch_script_saved_model)
+path_to_weight = '/path/to/remote/weights/best.torchscript.pt'
+torch_script_model = torch.jit.load(path_to_weight)
 torch_script_model_inference = torch_script_model(tensor)[0]
 ```
 **ONNX**
 ```python
-customWeightsPath_onnx = "/path/to/remote/weights/best.onnx"
-path_to_onnx_saved_model = download_weights(customWeightsPath_onnx)
-onnx_model = rt.InferenceSession(path_to_onnx_saved_model)
+path_to_weight = "/path/to/remote/weights/best.onnx"
+onnx_model = rt.InferenceSession(path_to_weight)
 input_name = onnx_model.get_inputs()[0].name
 label_name = onnx_model.get_outputs()[0].name
 onnx_model_inference = onnx_model.run([label_name], {input_name: to_numpy(tensor).astype(np.float32)})[0]
