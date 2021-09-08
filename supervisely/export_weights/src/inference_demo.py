@@ -1,3 +1,7 @@
+import sys
+
+sys.path.insert(0, './yolov5')
+
 import argparse
 import numpy as np
 
@@ -12,8 +16,8 @@ from torchvision import transforms
 from app_utils import to_numpy, get_image, get_model, get_configs, preprocess
 from supervisely.serve.src.nn_utils import construct_model_meta
 from utils.general import non_max_suppression
-from utils.torch_utils import select_device
 
+# from utils.torch_utils import select_device
 # my_app = sly.AppService()
 # team_id = int(os.environ['context.teamId'])
 # workspace_id = int(os.environ['context.workspaceId'])
@@ -147,7 +151,7 @@ def main():
                         choices=['direct', 'sliding_window'],
                         default='sliding_window',
                         help='inference mode')
-    parser.add_argument('--viz', action='store_true', help='Flag for results visualisation')
+    parser.add_argument('--viz', action='store_false', help='Flag for results visualisation')
     parser.add_argument('--original_model',
                         default='/home/work/PycharmProjects/app_debug_data/data/best.pt',
                         help='path to original model to construct meta (required for ONNX anf TorchScript models)')
@@ -186,3 +190,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # python ./yolov5/supervisely/export_weights/src/sliding_window.py /
+    #         --weights=/home/work/PycharmProjects/app_debug_data/data/best.onnx \
+    #         --image=yolov5/supervisely/export_weights/src/IMG_0748_big.jpeg
