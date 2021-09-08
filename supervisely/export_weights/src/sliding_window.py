@@ -7,20 +7,19 @@ import torch
 import torch.nn.functional as F
 
 from pathlib import Path
-from PIL import Image
 from torchvision import transforms
 
-from app_utils import download_file, to_numpy, get_image, get_model, get_configs, preprocess
+from app_utils import to_numpy, get_image, get_model, get_configs, preprocess
 from supervisely.serve.src.nn_utils import construct_model_meta
 from utils.general import non_max_suppression
 from utils.torch_utils import select_device
 
-my_app = sly.AppService()
-team_id = int(os.environ['context.teamId'])
-workspace_id = int(os.environ['context.workspaceId'])
-task_id = int(os.environ['TASK_ID'])
-customWeightsPath = os.environ['modal.state.slyFile']
-device = select_device(device='cpu')
+# my_app = sly.AppService()
+# team_id = int(os.environ['context.teamId'])
+# workspace_id = int(os.environ['context.workspaceId'])
+# task_id = int(os.environ['TASK_ID'])
+# customWeightsPath = os.environ['modal.state.slyFile']
+# device = select_device(device='cpu')
 
 
 def infer_torch_model(_model, _tensor):
@@ -61,10 +60,7 @@ def infer_model(model_, img, conf_thresh=0.25, iou_thresh=0.45, agnostic=False, 
 def sliding_window(model_, img, conf_thresh=0.25, iou_thresh=0.45,
                    agnostic=False, native=False,
                    sliding_window_step=None, input_img_size=None):
-    # infer_fn = infer_onnx_model if isinstance(model_, tuple) else infer_torch_model
-    if isinstance(model_, tuple):
-        onnx_model, input_name, label_name = model_
-
+    infer_fn = infer_onnx_model if isinstance(model_, tuple) else infer_torch_model
     img_h, img_w = img.shape[-2:]
     try:
         sw_h, sw_w = model_.img_size
@@ -75,10 +71,8 @@ def sliding_window(model_, img, conf_thresh=0.25, iou_thresh=0.45,
     if sliding_window_step:
         sws_h, sws_w = sliding_window_step
     else:
-        sws_h = (img_h - sw_h + 1) // 5
-        # sws_h = round((img_h - sw_h + 1) / 5)
-        sws_w = (img_w - sw_w + 1) // 5
-        # sws_w = round((img_w - sw_w + 1) / 5)
+        sws_h = round((img_h - sw_h + 1) / 5)
+        sws_w = round((img_w - sw_w + 1) / 5)
 
     possible_height_steps = (img_h - sw_h + 1) // sws_h
     possible_width_steps = (img_w - sw_w + 1) // sws_w
@@ -94,14 +88,9 @@ def sliding_window(model_, img, conf_thresh=0.25, iou_thresh=0.45,
             cropped_image = img[..., top:bot, left:right]
             # padding_left, padding_right, padding_top, padding_bottom
             cropped_image = F.pad(cropped_image,
-                                  pad=(0, sw_w - cropped_image.shape[3], 0, sw_h - cropped_image.shape[2]))
-
-            # inf_res = infer_fn(model_, cropped_image)
-            if not isinstance(model_, tuple):
-                inf_res = model_(cropped_image)[0]
-            else:
-                inf_res = onnx_model.run([label_name], {input_name: to_numpy(cropped_image).astype(np.float32)})[0]
-
+                                  pad=(0, sw_w - cropped_image.shape[3],
+                                       0, sw_h - cropped_image.shape[2]))
+            inf_res = infer_fn(model_, cropped_image)
             inf_res = inf_res[inf_res[..., 4] > conf_thresh]
             inf_res[:, 0] += left
             inf_res[:, 1] += top
@@ -146,7 +135,7 @@ def visualize_dets(img_, output_, save_path_, names_, meta_):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str,
-                        default='/home/work/PycharmProjects/app_debug_data/data/best.torchscript.pt',
+                        default='/home/work/PycharmProjects/app_debug_data/data/best.onnx',
                         help='initial weights path')
     parser.add_argument('--cfgs', type=str,
                         default='/home/work/PycharmProjects/app_debug_data/data/opt.yaml',
