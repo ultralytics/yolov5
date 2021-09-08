@@ -78,15 +78,15 @@ Additional options for `*.torchscript.pt`, `*.onnx`
 ```
 More info about sliding_window approach [here](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/export_weights/README.md#sliding-window-approach)
 
-Detailed instructions to infer image manually:
+**Detailed instructions to infer image manually:**
 
-**TorchScript**
+ - TorchScript
 ```python
 path_to_weight = '/path/to/remote/weights/best.torchscript.pt'
 torch_script_model = torch.jit.load(path_to_weight)
 torch_script_model_inference = torch_script_model(tensor)[0]
 ```
-**ONNX**
+ - ONNX
 ```python
 path_to_weight = "/path/to/remote/weights/best.onnx"
 onnx_model = rt.InferenceSession(path_to_weight)
