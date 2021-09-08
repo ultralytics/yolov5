@@ -7,7 +7,7 @@
   <a href="#Overview">Overview</a>
   <a href="#How-To-Use">How To Use</a>
   <a href="#Infer-models">Infer models</a>
-  <a href="Sliding-window-approach">Sliding window approach</a>
+  <a href="#Sliding-window-approach">Sliding window approach</a>
 </p>
 
 [![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervise.ly/apps/supervisely-ecosystem/yolov5/supervisely/export_weights)
