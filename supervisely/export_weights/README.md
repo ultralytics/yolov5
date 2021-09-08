@@ -45,10 +45,20 @@ App exports pretrained YOLO v5 model weights to [Torchscript](https://pytorch.or
 **saved model loading and usage**
 
 ```#!/bin/bash
-python ./yolov5/supervisely/export_weights/src/sliding_window.py /
-        --weights=/home/work/PycharmProjects/app_debug_data/data/best.onnx \
-        --image=yolov5/supervisely/export_weights/src/IMG_0748_big.jpeg
+python ./path/to/inference_demo.py
+        --weights=/path/to/weights/name.{pt, torchscript.pt, onnx}
+        --image=/path/to/image{any extension}
 ```
+
+  -h, --help                       show this help message and exit
+  --weights WEIGHTS                initial weights path
+  --cfgs CFGS                      path to model cfgs (required for ONNX anf TorchScript models)
+  --image IMAGE                    initial image path
+  --mode                           {direct,sliding_window} inference mode
+  --viz                            flag for results visualisation
+  --original_model ORIGINAL_MODEL  path to original model to construct meta (required for ONNX anf TorchScript models)
+  --save_path SAVE_PATH            path to save inference results
+
 
 **TorchScript**
 ```python
