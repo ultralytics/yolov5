@@ -3,7 +3,9 @@ import onnxruntime as rt
 import os
 import torch
 import yaml
-
+# import sys
+# from pathlib import Path
+# sys.path.append(Path(sys.argv[0]))
 from models.experimental import attempt_load
 from PIL import Image
 from supervisely_lib.io.fs import get_file_name_with_ext
@@ -54,8 +56,7 @@ def get_model(path2model,
                                                 app=app,
                                                 team_id=_team_id)
         except:
-            raise FileNotFoundError
-        raise FileNotFoundError(path2model)
+            raise FileNotFoundError(path2model)
     else:
         path_to_saved_model = path2model
 
@@ -66,7 +67,6 @@ def get_model(path2model,
             _model = attempt_load(weights=path_to_saved_model)  # , map_location=device
     if 'onnx' in path_to_saved_model:
         _model = onnx_inference(path_to_saved_model)
-
     return _model
 
 
