@@ -82,7 +82,7 @@ if `mode` set to `sliding_window`:
   --native               sliding window approach marker
   --sliding_window_step  [SLIDING_WINDOW_STEP ...]
 ```
- - for `sliding window approach`: 
+ - for `native` cases of sliding window approach: 
     - if set to True - NMS applied immediately to each window inference result.
     - if set to False - NMS applied to the whole sliding window result set.
 
