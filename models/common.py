@@ -372,14 +372,12 @@ class Detections:
                     n = (pred[:, -1] == c).sum()  # detections per class
                     str += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
                 if show or save or render or crop:
-                    annotator = Annotator(im, pil=not self.ascii)
-                    cropped = [] 
+                    annotator, crops = Annotator(im, pil=not self.ascii), []
                     for *box, conf, cls in reversed(pred):  # xyxy, confidence, class
                         label = f'{self.names[int(cls)]} {conf:.2f}'
                         if crop:
-                            cropped_save_dir = save_dir / 'crops' / self.names[int(cls)] / self.files[i] if save else None
-                            cropped_box = save_one_box(box, im, file=cropped_save_dir, save=save)
-                            cropped.append({'label': label,'img': cropped_box})
+                            file = save_dir / 'crops' / self.names[int(cls)] / self.files[i] if save else None
+                            crops.append({'label': label, 'im': save_one_box(box, im, file=file, save=save)})
                         else:  # all others
                             annotator.box_label(box, label, color=colors(cls))
                     im = annotator.im
@@ -398,9 +396,8 @@ class Detections:
                     LOGGER.info(f"Saved {self.n} image{'s' * (self.n > 1)} to {colorstr('bold', save_dir)}")
             if render:
                 self.imgs[i] = np.asarray(im)
-            
-            if crop: 
-                return cropped
+            if crop:
+                return crops
 
     def print(self):
         self.display(pprint=True)  # print results
@@ -416,10 +413,10 @@ class Detections:
 
     def crop(self, save=True, save_dir='runs/detect/exp'):
         save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True) if save else None
-        cropped = self.display(crop=True, save=save, save_dir=save_dir)  # crop results
-        if save: 
+        crops = self.display(crop=True, save=save, save_dir=save_dir)  # crop results
+        if save:
             LOGGER.info(f'Saved results to {save_dir}\n')
-        return cropped 
+        return crops
 
     def render(self):
         self.display(render=True)  # render results
