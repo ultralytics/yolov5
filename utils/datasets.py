@@ -26,8 +26,8 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 
 from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
-from utils.general import check_requirements, check_file, check_dataset, xywh2xyxy, xywhn2xyxy, xyxy2xywhn, \
-    xyn2xy, segments2boxes, clean_str
+from utils.general import check_dataset, check_requirements, check_yaml, clean_str, segments2boxes, \
+    xywh2xyxy, xywhn2xyxy, xyxy2xywhn, xyn2xy
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
@@ -938,7 +938,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         im.save(im_dir / Path(f).name, quality=75)  # save
 
     zipped, data_dir, yaml_path = unzip(Path(path))
-    with open(check_file(yaml_path), errors='ignore') as f:
+    with open(check_yaml(yaml_path), errors='ignore') as f:
         data = yaml.safe_load(f)  # data dict
         if zipped:
             data['path'] = data_dir  # TODO: should this be dir.resolve()?
