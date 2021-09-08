@@ -62,14 +62,14 @@ Options to set:
 
 Required for `*.pt`, `*.torchscript.pt`, `*.onnx`
 ```
-  --weights         path to model weights
-  --cfgs            path to model cfgs (required for ONNX anf TorchScript models)
-  --image           path to model image
-  --mode            {direct,sliding_window} inference mode
-  --conf_thresh     confidence threshold
-  --iou_thresh      intersection over union threshold
-  --viz             flag for results visualisation
-  --save_path       path to save inference results
+  --weights       |  path to model weights
+  --cfgs          |  path to model cfgs (required for ONNX anf TorchScript models)
+  --image         |  path to model image
+  --mode          |  {direct,sliding_window} inference mode
+  --conf_thresh   |  confidence threshold
+  --iou_thresh    |  intersection over union threshold
+  --viz           |  flag for results visualisation
+  --save_path     |  path to save inference results
 ```
 
 Additional options for `*.torchscript.pt`, `*.onnx`
