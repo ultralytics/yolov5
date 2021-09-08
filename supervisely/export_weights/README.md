@@ -82,13 +82,13 @@ More info about sliding_window approach [here](https://github.com/supervisely-ec
 
  - TorchScript
 ```python
-path_to_weight = '/path/to/remote/weights/best.torchscript.pt'
+path_to_weight = '/path/to/weights/best.torchscript.pt'
 torch_script_model = torch.jit.load(path_to_weight)
 torch_script_model_inference = torch_script_model(tensor)[0]
 ```
  - ONNX
 ```python
-path_to_weight = "/path/to/remote/weights/best.onnx"
+path_to_weight = "/path/to/weights/best.onnx"
 onnx_model = rt.InferenceSession(path_to_weight)
 input_name = onnx_model.get_inputs()[0].name
 label_name = onnx_model.get_outputs()[0].name
