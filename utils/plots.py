@@ -16,15 +16,13 @@ import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.general import is_ascii, xyxy2xywh, xywh2xyxy
+from utils.general import user_config_dir, is_ascii, xywh2xyxy, xyxy2xywh
 from utils.metrics import fitness
 
 # Settings
+CONFIG_DIR = user_config_dir()  # Ultralytics settings dir
 matplotlib.rc('font', **{'size': 11})
 matplotlib.use('Agg')  # for writing to files only
-
-FILE = Path(__file__).absolute()
-ROOT = FILE.parents[1]  # yolov5/ dir
 
 
 class Colors:
@@ -49,9 +47,9 @@ colors = Colors()  # create instance for 'from utils.plots import colors'
 
 
 def check_font(font='Arial.ttf', size=10):
-    # Return a PIL TrueType Font, downloading to ROOT dir if necessary
+    # Return a PIL TrueType Font, downloading to CONFIG_DIR if necessary
     font = Path(font)
-    font = font if font.exists() else (ROOT / font.name)
+    font = font if font.exists() else (CONFIG_DIR / font.name)
     try:
         return ImageFont.truetype(str(font) if font.exists() else font.name, size)
     except Exception as e:  # download if missing
