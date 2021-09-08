@@ -281,7 +281,7 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--profile', action='store_true', help='profile model speed')
     opt = parser.parse_args()
-    opt.cfg = check_yaml(opt.cfg)  # check file
+    opt.cfg = check_yaml(opt.cfg)  # check YAML
     set_logging()
     device = select_device(opt.device)
 
