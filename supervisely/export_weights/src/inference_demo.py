@@ -17,6 +17,7 @@ from app_utils import to_numpy, get_image, get_model, get_configs, preprocess
 from supervisely.serve.src.nn_utils import construct_model_meta
 from utils.general import non_max_suppression
 
+
 # from utils.torch_utils import select_device
 # my_app = sly.AppService()
 # team_id = int(os.environ['context.teamId'])
@@ -37,7 +38,8 @@ def infer_onnx_model(_model, _tensor):
     return onnx_model_inference
 
 
-def infer_model(model_, img, conf_thresh=0.25, iou_thresh=0.45, agnostic=False, input_img_size=None):
+def infer_model(model_, img, conf_thresh=0.25, iou_thresh=0.45,
+                agnostic=False, input_img_size=None):
     infer_fn = infer_onnx_model if isinstance(model_, tuple) else infer_torch_model
     if hasattr(model_, 'img_size'):
         height, width = model_.img_size
@@ -63,7 +65,7 @@ def infer_model(model_, img, conf_thresh=0.25, iou_thresh=0.45, agnostic=False, 
 
 def sliding_window(model_, img, conf_thresh=0.25, iou_thresh=0.45,
                    agnostic=False, native=False,
-                   sliding_window_step=None, input_img_size=None):
+                   sliding_window_step=[], input_img_size=None):
     infer_fn = infer_onnx_model if isinstance(model_, tuple) else infer_torch_model
     img_h, img_w = img.shape[-2:]
     try:
@@ -139,21 +141,28 @@ def visualize_dets(img_, output_, save_path_, names_, meta_):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str,
-                        default='/home/work/PycharmProjects/app_debug_data/data/best.onnx',
+                        # default='/home/work/PycharmProjects/app_debug_data/data/best.onnx',
                         help='initial weights path')
     parser.add_argument('--cfgs', type=str,
-                        default='/home/work/PycharmProjects/app_debug_data/data/opt.yaml',
+                        # default='/home/work/PycharmProjects/app_debug_data/data/opt.yaml',
                         help='path to model cfgs (required for ONNX anf TorchScript models)')
     parser.add_argument('--image', type=str,
-                        default='./IMG_0748_big.jpeg',
+                        # default='./IMG_0748_big.jpeg',
                         help='initial image path')
     parser.add_argument('--mode',
                         choices=['direct', 'sliding_window'],
-                        default='sliding_window',
+                        default='direct',
                         help='inference mode')
-    parser.add_argument('--viz', action='store_false', help='Flag for results visualisation')
+    parser.add_argument('--conf_thresh', type=float, default=0.25, help='Confidence threshold')
+    parser.add_argument('--iou_thresh', type=float, default=0.45, help='Intersection over Union threshold')
+    parser.add_argument('--agnostic', type=bool, default=False, help='')
+    parser.add_argument('--native', type=bool, default=False, help='for sliding window approach')
+    parser.add_argument('--sliding_window_step', nargs='+', type=int,
+                        # default=[1216, 1216],
+                        help='')
+    parser.add_argument('--viz', type=bool, default=False, help='to save detections to image')
     parser.add_argument('--original_model',
-                        default='/home/work/PycharmProjects/app_debug_data/data/best.pt',
+                        # default='/home/work/PycharmProjects/app_debug_data/data/best.pt',
                         help='path to original model to construct meta (required for ONNX anf TorchScript models)')
     parser.add_argument('--save_path', type=str,
                         default=os.path.join(os.getcwd(), "vis_detection.jpg"),
@@ -175,9 +184,14 @@ def main():
     # load and prepare models
     model = get_model(opt.weights)
     # infer prepared image
-    infer_fn = infer_model if opt.mode == 'direct' else sliding_window
-    output = infer_fn(model, tensor, input_img_size=input_img_size)
-
+    if opt.mode == 'direct':
+        output = infer_model(model_=model, img=tensor, conf_thresh=opt.conf_thresh, iou_thresh=opt.iou_thresh,
+                             agnostic=opt.agnostic, input_img_size=input_img_size)
+    else:
+        output = sliding_window(model_=model, img=tensor, conf_thresh=opt.conf_thresh, iou_thresh=opt.iou_thresh,
+                                agnostic=opt.agnostic, native=opt.native, sliding_window_step=opt.sliding_window_step,
+                                input_img_size=input_img_size)
+    print(opt.viz)
     if opt.viz:
         # load orig YOLOv5 model to construct meta
         o_model = get_model(opt.original_model)
@@ -190,6 +204,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # python ./yolov5/supervisely/export_weights/src/sliding_window.py /
-    #         --weights=/home/work/PycharmProjects/app_debug_data/data/best.onnx \
-    #         --image=yolov5/supervisely/export_weights/src/IMG_0748_big.jpeg
