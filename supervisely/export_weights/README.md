@@ -143,8 +143,10 @@ More info about `construct_model_meta` [here](https://github.com/supervisely-eco
 # Sliding window approach
 
 allows to infer hight resolution images:
+
 steps to run:
- - init settings:
+
+- init settings:
     - conf_threshold
     - iou_threshold
     - agnostic
