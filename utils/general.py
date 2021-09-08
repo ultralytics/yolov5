@@ -252,7 +252,7 @@ def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
 
 
 def check_yaml(file, suffix=('.yaml', '.yml')):
-    # Check YAML file(s) for acceptable suffixes
+    # Search/download YAML file (if necessary) and return path, checking suffix
     return check_file(file, suffix)
 
 
