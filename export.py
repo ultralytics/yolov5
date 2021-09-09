@@ -44,7 +44,7 @@ def export_onnx(model, img, file, opset, train, dynamic, simplify):
     # ONNX model export
     prefix = colorstr('ONNX:')
     try:
-        check_requirements(('onnx', 'onnx-simplifier'))
+        check_requirements(('onnx',))
         import onnx
 
         print(f'\n{prefix} starting export with onnx {onnx.__version__}...')
@@ -66,6 +66,7 @@ def export_onnx(model, img, file, opset, train, dynamic, simplify):
         # Simplify
         if simplify:
             try:
+                check_requirements(('onnx-simplifier',))
                 import onnxsim
 
                 print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
