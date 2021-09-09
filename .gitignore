@@ -30,7 +30,6 @@ data/*
 !data/images/bus.jpg
 !data/*.sh
 
-results*.txt
 results*.csv
 
 # Datasets -------------------------------------------------------------------------------------------------------------
@@ -77,7 +76,7 @@ sdist/
 var/
 wheels/
 *.egg-info/
-wandb/
+/wandb/
 .installed.cfg
 *.egg
 

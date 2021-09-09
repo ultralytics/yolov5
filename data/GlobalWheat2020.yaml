@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics https://ultralytics.com, licensed under GNU GPL v3.0
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 # Global Wheat 2020 dataset http://www.global-wheat.com/
 # Example usage: python train.py --data GlobalWheat2020.yaml
 # parent
