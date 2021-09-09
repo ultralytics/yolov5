@@ -383,9 +383,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 if best_fitness == fi:
                     torch.save(ckpt, best)
                 del ckpt
-<<<<<<< HEAD
-                callbacks.on_model_save(last, epoch, final_epoch, best_fitness, fi, save_dir)
-=======
                 callbacks.run('on_model_save', last, epoch, final_epoch, best_fitness, fi)
 
             # Stop Single-GPU
@@ -401,7 +398,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         # with torch_distributed_zero_first(RANK):
         # if stop:
         #    break  # must break all DDP ranks
->>>>>>> 2d9411dbb85ae63b8ca9913726844767898eb021
 
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training -----------------------------------------------------------------------------------------------------
@@ -473,11 +469,7 @@ def parse_opt(known=False):
     return opt
 
 
-<<<<<<< HEAD
-def main(opt, callback_handler):
-=======
 def main(opt, callbacks=Callbacks()):
->>>>>>> 2d9411dbb85ae63b8ca9913726844767898eb021
     # Checks
     set_logging(RANK)
     if RANK in [-1, 0]:
@@ -516,11 +508,7 @@ def main(opt, callbacks=Callbacks()):
 
     # Train
     if not opt.evolve:
-<<<<<<< HEAD
-        train(opt.hyp, opt, device, callback_handler)
-=======
         train(opt.hyp, opt, device, callbacks)
->>>>>>> 2d9411dbb85ae63b8ca9913726844767898eb021
         if WORLD_SIZE > 1 and RANK == 0:
             _ = [print('Destroying process group... ', end=''), dist.destroy_process_group(), print('Done.')]
 
@@ -600,11 +588,7 @@ def main(opt, callbacks=Callbacks()):
                 hyp[k] = round(hyp[k], 5)  # significant digits
 
             # Train mutation
-<<<<<<< HEAD
-            results = train(hyp.copy(), opt, device, callback_handler)
-=======
             results = train(hyp.copy(), opt, device, callbacks)
->>>>>>> 2d9411dbb85ae63b8ca9913726844767898eb021
 
             # Write mutation results
             print_mutation(results, hyp.copy(), save_dir, opt.bucket)
