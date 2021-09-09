@@ -21,12 +21,19 @@ sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
-from utils.general import check_img_size, check_imshow, check_requirements, check_suffix, colorstr, is_ascii, \
-    non_max_suppression, apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, \
-    save_one_box
-from utils.plots import Annotator, colors
+from utils.general import check_img_size, check_requirements, check_imshow, colorstr, non_max_suppression, \
+    apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
+from utils.plots import colors, plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_sync
+from utils.classifier import load_fastai_classifier, fastai_classify
 
+def crop(original, xyxy):
+    x1=int(xyxy[0])
+    y1=int(xyxy[1])
+    x2=int(xyxy[2])
+    y2=int(xyxy[3])
+    cropped = original[y1:y2, x1:x2].copy()
+    return cropped
 
 @torch.no_grad()
 def run(weights='yolov5s.pt',  # model.pt path(s)
@@ -53,10 +60,15 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         hide_labels=False,  # hide labels
         hide_conf=False,  # hide confidences
         half=False,  # use FP16 half-precision inference
+        classifier_model='weights/classifier_latest.pkl',
+        classify=False
         ):
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://', 'https://'))
+    
+    if opt.classify:
+        fastai_model = load_fastai_classifier(opt.classifier_model) 
 
     # Directories
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
@@ -69,9 +81,8 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
 
     # Load model
     w = weights[0] if isinstance(weights, list) else weights
-    classify, suffix, suffixes = False, Path(w).suffix.lower(), ['.pt', '.onnx', '.tflite', '.pb', '']
-    check_suffix(w, suffixes)  # check weights have acceptable suffix
-    pt, onnx, tflite, pb, saved_model = (suffix == x for x in suffixes)  # backend booleans
+    classify, suffix = False, Path(w).suffix.lower()
+    pt, onnx, tflite, pb, saved_model = (suffix == x for x in ['.pt', '.onnx', '.tflite', '.pb', ''])  # backend
     stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
     if pt:
         model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -107,7 +118,6 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             output_details = interpreter.get_output_details()  # outputs
             int8 = input_details[0]['dtype'] == np.uint8  # is TFLite quantized uint8 model
     imgsz = check_img_size(imgsz, s=stride)  # check image size
-    ascii = is_ascii(names)  # names are ascii (use PIL for UTF-8)
 
     # Dataloader
     if webcam:
@@ -167,9 +177,6 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
         t2 = time_sync()
 
-        # Second-stage classifier (optional)
-        if classify:
-            pred = apply_classifier(pred, modelc, img, im0s)
 
         # Process predictions
         for i, det in enumerate(pred):  # detections per image
@@ -184,7 +191,6 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
-            annotator = Annotator(im0, line_width=line_thickness, pil=not ascii)
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
@@ -196,6 +202,19 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
+                    if opt.classify:
+                        cropped = crop(im0, xyxy)
+                        classify_result = fastai_classify(fastai_model, cropped)
+                        print(f'classify result: {classify_result}')
+                        if classify_result['pred'] == 'no_moulting':
+                            if classify_result['refl_conf'] > 0.4: # if reflection confidence is higher than threshold, we just skip
+                                print('no_moulting should skip')
+                                continue
+                        if classify_result['pred'] == 'moulting':
+                            if classify_result['moulting_conf'] < 0.6: # if reflection confidence is higher than threshold, we just skip
+                                print('moulting conf is too low, skip')
+                                continue
+
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
@@ -203,9 +222,13 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
                     if save_img or save_crop or view_img:  # Add bbox to image
+                        print("add bbox")
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
-                        annotator.box_label(xyxy, label, color=colors(c, True))
+                        if opt.classify:
+                            label = None if hide_labels else (names[c] if hide_conf else f'{conf:.2f}, {classify_result["moulting_conf"]:.2f}')
+
+                        im0 = plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=line_thickness)
                         if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
@@ -213,7 +236,6 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             print(f'{s}Done. ({t2 - t1:.3f}s)')
 
             # Stream results
-            im0 = annotator.result()
             if view_img:
                 cv2.imshow(str(p), im0)
                 cv2.waitKey(1)  # 1 millisecond
@@ -273,6 +295,9 @@ def parse_opt():
     parser.add_argument('--hide-labels', default=False, action='store_true', help='hide labels')
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
+    parser.add_argument('--classifier-model', type=str, default='weights/classifier_latest.pkl', help="classifer model")
+    parser.add_argument('--classify', default=False, action='store_true', help='enable/disable classification')
+
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     return opt
