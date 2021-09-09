@@ -105,9 +105,10 @@ def get_latest_run(search_dir='.'):
 
 def user_config_dir(dir='Ultralytics'):
     # Return path of user configuration directory (make if necessary)
+    system = platform.system()
     cfg = {'Windows': 'AppData/Roaming', 'Linux': '.config', 'Darwin': 'Library/Application Support'}
-    path = Path.home() / cfg.get(platform.system(), '') / dir
-    if not is_writeable(path):  # GCP functions and AWS lambda solution, only /tmp is writeable
+    path = Path.home() / cfg.get(system, '') / dir
+    if system == 'Linux' and not is_writeable(path):  # GCP functions and AWS lambda solution, only /tmp is writeable
         path = Path('/tmp') / dir
     if not path.is_dir():
         path.mkdir()  # make dir if required
@@ -115,7 +116,7 @@ def user_config_dir(dir='Ultralytics'):
 
 
 def is_writeable(path):
-    # Return True if path has write permissions
+    # Return True if path has write permissions (Warning: known issue on Windows)
     return os.access(path, os.R_OK)
 
 
