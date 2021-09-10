@@ -437,7 +437,7 @@ def representative_dataset_gen(dataset, ncalib=100):
 
 def run(cfg='yolov5s.yaml',  # cfg path
         weights='yolov5s.pt',  # weights path
-        imgsz=(320, 320),  # inference size h,w
+        imgsz=(640, 640),  # inference size h,w
         batch_size=1,  # batch size
         dynamic_batch_size=False,  # dynamic batch size
         source='../data/coco128.yaml',  # dir of images or data.yaml file
