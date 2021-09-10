@@ -445,6 +445,7 @@ def run(cfg='yolov5s.yaml',  # cfg path
         iou_thres=0.45,  # IOU threshold for NMS
         conf_thres=0.25,  # score threshold for NMS
         ):
+    cfg = check_yaml(cfg)  # check YAML
     # Run TensorFlow model export
 
     # Input
@@ -573,8 +574,6 @@ def parse_opt():
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
     opt = parser.parse_args()
-
-    opt.cfg = check_yaml(opt.cfg)  # check YAML
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     return opt
 
