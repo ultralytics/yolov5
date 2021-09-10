@@ -1,5 +1,5 @@
 import supervisely_lib as sly
-from supervisely_lib.io.fs import download, file_exists, get_file_name, get_file_name_with_ext
+# from supervisely_lib.io.fs import download, file_exists, get_file_name, get_file_name_with_ext
 import os
 import pathlib
 import torch
@@ -14,7 +14,8 @@ sly.logger.info(f"Root source directory: {root_source_path}")
 sys.path.append(root_source_path)
 
 import models
-from utils.general import colorstr, check_img_size, check_requirements, file_size, set_logging
+from app_utils import download_weights
+from utils.general import check_img_size  # , colorstr, check_requirements, file_size, set_logging
 from utils.torch_utils import select_device
 from models.experimental import attempt_load
 from utils.activations import Hardswish, SiLU
@@ -31,6 +32,7 @@ image_size = 640
 ts = None
 batch_size = 1
 grid = True
+args = dict(my_app=my_app, TEAM_ID=TEAM_ID)
 
 
 def export_to_torch_script(weights, img, model):
@@ -76,24 +78,12 @@ def export_to_core_ml(weights, img):
         pass
 
 
-def download_weights(path2weights):
-    remote_path = path2weights
-    weights_path = os.path.join(my_app.data_dir, get_file_name_with_ext(remote_path))
-    try:
-        my_app.public_api.file.download(team_id=TEAM_ID,
-                                        remote_path=remote_path,
-                                        local_save_path=weights_path)
-        return weights_path
-    except:
-        raise FileNotFoundError('FileNotFoundError')
-        return None
-
-
 @my_app.callback("export_weights")
 @sly.timeit
 def export_weights(api: sly.Api, task_id, context, state, app_logger):
-    weights_path = download_weights(customWeightsPath)
-    configs_path = download_weights(os.path.join(Path(customWeightsPath).parents[1], 'opt.yaml'))
+    weights_path = download_weights(customWeightsPath, **args)
+    cwp = os.path.join(Path(customWeightsPath).parents[1], 'opt.yaml')
+    configs_path = download_weights(cwp, **args)
     model = attempt_load(weights=weights_path, map_location=device)
 
     with open(configs_path, 'r') as stream:
@@ -125,7 +115,9 @@ def export_weights(api: sly.Api, task_id, context, state, app_logger):
 
     # @TODO: fix export_to_onnx for cuda:0
     # ========================================================================
+    sly.logger.warning(f"Exporting weights to torchScript format in progress..")
     export_to_torch_script(weights_path, img, model)
+    sly.logger.warning(f"Exporting weights to ONNX format in progress..")
     export_to_onnx(weights_path, img, model, dynamic=False, simplify=False)
     # export_to_core_ml(weights_path, img)
     # ========================================================================
