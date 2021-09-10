@@ -99,7 +99,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     cuda = device.type != 'cpu'
     init_seeds(1 + RANK)
     with torch_distributed_zero_first(RANK):
-        data_dict = data_dict or check_dataset(data)  # check if None
+        data_dict = data_dict or (check_dataset(data, opt.project) if opt.sandbox else check_dataset(data))  # check if None, check for sandbox dir
     train_path, val_path = data_dict['train'], data_dict['val']
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
@@ -453,6 +453,7 @@ def parse_opt(known=False):
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
     parser.add_argument('--project', default='runs/train', help='save to project/name')
+    parser.add_argument('--sandbox', default=False, help='save all files including datasets within project')
     parser.add_argument('--entity', default=None, help='W&B entity')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')

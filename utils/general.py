@@ -293,15 +293,15 @@ def check_file(file, suffix=''):
         return files[0]  # return file
 
 
-def check_dataset(data, autodownload=True):
+def check_dataset(data, save_dir="../datasets", autodownload=True):
     # Download and/or unzip dataset if not found locally
     # Usage: https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128_with_yaml.zip
 
     # Download (optional)
     extract_dir = ''
     if isinstance(data, (str, Path)) and str(data).endswith('.zip'):  # i.e. gs://bucket/dir/coco128.zip
-        download(data, dir='../datasets', unzip=True, delete=False, curl=False, threads=1)
-        data = next((Path('../datasets') / Path(data).stem).rglob('*.yaml'))
+        download(data, dir=save_dir, unzip=True, delete=False, curl=False, threads=1)
+        data = next((Path(save_dir) / Path(data).stem).rglob('*.yaml'))
         extract_dir, autodownload = data.parent, False
 
     # Read yaml (optional)
