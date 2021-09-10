@@ -203,7 +203,7 @@ class tf_SPP(keras.layers.Layer):
 
 
 class tf_Detect(keras.layers.Layer):
-    def __init__(self, nc=80, anchors=(), ch=(), w=None):  # detection layer
+    def __init__(self, nc=80, anchors=(), ch=(), imgsz=(640, 640), w=None):  # detection layer
         super(tf_Detect, self).__init__()
         self.stride = tf.convert_to_tensor(w.stride.numpy(), dtype=tf.float32)
         self.nc = nc  # number of classes
@@ -217,7 +217,7 @@ class tf_Detect(keras.layers.Layer):
         self.m = [tf_Conv2d(x, self.no * self.na, 1, w=w.m[i]) for i, x in enumerate(ch)]
         self.export = False  # onnx export
         self.training = True  # set to False after building model
-        self.imgsz = opt.imgsz
+        self.imgsz = imgsz
         for i in range(self.nl):
             ny, nx = self.imgsz[0] // self.stride[i], self.imgsz[1] // self.stride[i]
             self.grid[i] = self._make_grid(nx, ny)
@@ -277,7 +277,7 @@ class tf_Concat(keras.layers.Layer):
         return tf.concat(inputs, self.d)
 
 
-def parse_model(d, ch, model):  # model_dict, input_channels(3)
+def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
     logger.info('\n%3s%18s%3s%10s  %-40s%-30s' % ('', 'from', 'n', 'params', 'module', 'arguments'))
     anchors, nc, gd, gw = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple']
     na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
@@ -310,10 +310,7 @@ def parse_model(d, ch, model):  # model_dict, input_channels(3)
             args.append([ch[x + 1] for x in f])
             if isinstance(args[1], int):  # number of anchors
                 args[1] = [list(range(args[1] * 2))] * len(f)
-            # args.append(imgsz) if len(args) == 4 else args.extend([None, imgsz])  # add w and imgsz if needed
-            # if len(args) == 3:
-            #    args.extend([None, imgsz])
-            # print(args)
+            args.append(imgsz)
         else:
             c2 = ch[f]
 
@@ -333,7 +330,7 @@ def parse_model(d, ch, model):  # model_dict, input_channels(3)
 
 
 class tf_Model():
-    def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None, model=None):  # model, input channels, number of classes
+    def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None, model=None, imgsz=(640, 640)):  # model, channels, classes
         super(tf_Model, self).__init__()
         if isinstance(cfg, dict):
             self.yaml = cfg  # model dict
@@ -347,7 +344,7 @@ class tf_Model():
         if nc and nc != self.yaml['nc']:
             print('Overriding %s nc=%g with nc=%g' % (cfg, self.yaml['nc'], nc))
             self.yaml['nc'] = nc  # override yaml value
-        self.model, self.savelist = parse_model(deepcopy(self.yaml), ch=[ch], model=model)
+        self.model, self.savelist = parse_model(deepcopy(self.yaml), ch=[ch], model=model, imgsz=imgsz)
 
     def predict(self, inputs, tf_nms=False, agnostic_nms=False, topk_per_class=100, topk_all=100, iou_thres=0.45,
                 conf_thres=0.25):
@@ -463,7 +460,7 @@ def run(cfg='yolov5s.yaml',  # cfg path
     # TensorFlow saved_model export
     try:
         print('\nStarting TensorFlow saved_model export with TensorFlow %s...' % tf.__version__)
-        tf_model = tf_Model(cfg, model=model, nc=nc)
+        tf_model = tf_Model(cfg, model=model, nc=nc, imgsz=imgsz)
         img = tf.zeros((batch_size, *imgsz, 3))  # NHWC Input for TensorFlow
 
         m = tf_model.model.layers[-1]
