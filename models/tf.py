@@ -254,16 +254,14 @@ class tf_Detect(keras.layers.Layer):
 
 
 class tf_Upsample(keras.layers.Layer):
-    def __init__(self, size, scale_factor, mode, w=None):
+    def __init__(self, size, scale_factor, mode, w=None):  # warning: all arguments needed including 'w'
         super(tf_Upsample, self).__init__()
         assert scale_factor == 2, "scale_factor must be 2"
+        self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * 2, x.shape[2] * 2), method=mode)
         # self.upsample = keras.layers.UpSampling2D(size=scale_factor, interpolation=mode)
-        if opt.tf_raw_resize:
-            # with default arguments: align_corners=False, half_pixel_centers=False
-            self.upsample = lambda x: tf.raw_ops.ResizeNearestNeighbor(images=x,
-                                                                       size=(x.shape[1] * 2, x.shape[2] * 2))
-        else:
-            self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * 2, x.shape[2] * 2), method=mode)
+        # with default arguments: align_corners=False, half_pixel_centers=False
+        # self.upsample = lambda x: tf.raw_ops.ResizeNearestNeighbor(images=x,
+        #                                                            size=(x.shape[1] * 2, x.shape[2] * 2))
 
     def call(self, inputs):
         return self.upsample(inputs)
@@ -445,7 +443,6 @@ def run(cfg='yolov5s.yaml',  # cfg path
         tfl_int8=False,  # export TFLite int8 model
         tf_nms=False,  # TF NMS (without TFLite export)
         agnostic_nms=False,  # class-agnostic NMS
-        tf_raw_resize=False,  # use tf.raw_ops.ResizeNearestNeighbor for resize
         topk_per_class=100,  # topk per class to keep in NMS
         topk_all=100,  # topk for all classes to keep in NMS
         iou_thres=0.45,  # IOU threshold for NMS
@@ -484,6 +481,7 @@ def run(cfg='yolov5s.yaml',  # cfg path
     except Exception as e:
         print('TensorFlow saved_model export failure: %s' % e)
         traceback.print_exc(file=sys.stdout)
+        return
 
     # TensorFlow GraphDef export
     try:
@@ -574,8 +572,6 @@ def parse_opt():
     parser.add_argument('--tfl-int8', action='store_true', dest='tfl_int8', help='export TFLite int8 model')
     parser.add_argument('--tf-nms', action='store_true', dest='tf_nms', help='TF NMS (without TFLite export)')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
-    parser.add_argument('--tf-raw-resize', action='store_true', dest='tf_raw_resize',
-                        help='use tf.raw_ops.ResizeNearestNeighbor for resize')
     parser.add_argument('--topk-per-class', type=int, default=100, help='topk per class to keep in NMS')
     parser.add_argument('--topk-all', type=int, default=1000, help='topk for all classes to keep in NMS')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
