@@ -217,8 +217,9 @@ class tf_Detect(keras.layers.Layer):
         self.m = [tf_Conv2d(x, self.no * self.na, 1, w=w.m[i]) for i, x in enumerate(ch)]
         self.export = False  # onnx export
         self.training = True  # set to False after building model
+        self.imgsz = opt.imgsz
         for i in range(self.nl):
-            ny, nx = opt.imgsz[0] // self.stride[i], opt.imgsz[1] // self.stride[i]
+            ny, nx = self.imgsz[0] // self.stride[i], self.imgsz[1] // self.stride[i]
             self.grid[i] = self._make_grid(nx, ny)
 
     def call(self, inputs):
@@ -229,7 +230,7 @@ class tf_Detect(keras.layers.Layer):
         for i in range(self.nl):
             x.append(self.m[i](inputs[i]))
             # x(bs,20,20,255) to x(bs,3,20,20,85)
-            ny, nx = opt.imgsz[0] // self.stride[i], opt.imgsz[1] // self.stride[i]
+            ny, nx = self.imgsz[0] // self.stride[i], self.imgsz[1] // self.stride[i]
             x[i] = tf.transpose(tf.reshape(x[i], [-1, ny * nx, self.na, self.no]), [0, 2, 1, 3])
 
             if not self.training:  # inference
@@ -237,8 +238,8 @@ class tf_Detect(keras.layers.Layer):
                 xy = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
                 wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]
                 # Normalize xywh to 0-1 to reduce calibration error
-                xy /= tf.constant([[opt.imgsz[1], opt.imgsz[0]]], dtype=tf.float32)
-                wh /= tf.constant([[opt.imgsz[1], opt.imgsz[0]]], dtype=tf.float32)
+                xy /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
+                wh /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
                 y = tf.concat([xy, wh, y[..., 4:]], -1)
                 z.append(tf.reshape(y, [-1, 3 * ny * nx, self.no]))
 
@@ -311,6 +312,10 @@ def parse_model(d, ch, model):  # model_dict, input_channels(3)
             args.append([ch[x + 1] for x in f])
             if isinstance(args[1], int):  # number of anchors
                 args[1] = [list(range(args[1] * 2))] * len(f)
+            # args.append(imgsz) if len(args) == 4 else args.extend([None, imgsz])  # add w and imgsz if needed
+            # if len(args) == 3:
+            #    args.extend([None, imgsz])
+            # print(args)
         else:
             c2 = ch[f]
 
@@ -344,9 +349,10 @@ class tf_Model():
         if nc and nc != self.yaml['nc']:
             print('Overriding %s nc=%g with nc=%g' % (cfg, self.yaml['nc'], nc))
             self.yaml['nc'] = nc  # override yaml value
-        self.model, self.savelist = parse_model(deepcopy(self.yaml), ch=[ch], model=model)  # model, savelist, ch_out
+        self.model, self.savelist = parse_model(deepcopy(self.yaml), ch=[ch], model=model)
 
-    def predict(self, inputs, profile=False):
+    def predict(self, inputs, tf_nms=False, agnostic_nms=False, topk_per_class=100, topk_all=100, iou_thres=0.45,
+                conf_thres=0.25):
         y = []  # outputs
         x = inputs
         for i, m in enumerate(self.model.layers):
@@ -357,18 +363,18 @@ class tf_Model():
             y.append(x if m.i in self.savelist else None)  # save output
 
         # Add TensorFlow NMS
-        if opt.tf_nms:
+        if tf_nms:
             boxes = xywh2xyxy(x[0][..., :4])
             probs = x[0][:, :, 4:5]
             classes = x[0][:, :, 5:]
             scores = probs * classes
-            if opt.agnostic_nms:
+            if agnostic_nms:
                 nms = agnostic_nms_layer()((boxes, classes, scores))
                 return nms, x[1]
             else:
                 boxes = tf.expand_dims(boxes, 2)
                 nms = tf.image.combined_non_max_suppression(
-                    boxes, scores, opt.topk_per_class, opt.topk_all, opt.iou_thres, opt.conf_thres, clip_boxes=False)
+                    boxes, scores, topk_per_class, topk_all, iou_thres, conf_thres, clip_boxes=False)
                 return nms, x[1]
 
         return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
@@ -466,10 +472,11 @@ def run(cfg='yolov5s.yaml',  # cfg path
         m = tf_model.model.layers[-1]
         assert isinstance(m, tf_Detect), "the last layer must be Detect"
         m.training = False
-        y = tf_model.predict(img)
+        y = tf_model.predict(img, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
 
         inputs = keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic_batch_size else batch_size)
-        keras_model = keras.Model(inputs=inputs, outputs=tf_model.predict(inputs))
+        outputs = tf_model.predict(inputs, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
+        keras_model = keras.Model(inputs=inputs, outputs=outputs)
         keras_model.summary()
         path = weights.replace('.pt', '_saved_model')  # filename
         keras_model.save(path, save_format='tf')
