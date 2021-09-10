@@ -105,13 +105,10 @@ def get_latest_run(search_dir='.'):
 
 def user_config_dir(dir='Ultralytics'):
     # Return path of user configuration directory (make if necessary)
-    system = platform.system()
-    cfg = {'Windows': 'AppData/Roaming', 'Linux': '.config', 'Darwin': 'Library/Application Support'}
-    path = Path.home() / cfg.get(system, '') / dir
-    if not is_writeable(path):  # GCP functions and AWS lambda solution, only /tmp is writeable
-        path = Path('/tmp') / dir
-    if not path.is_dir():
-        path.mkdir()  # make dir if required
+    cfg = {'Windows': 'AppData/Roaming', 'Linux': '.config', 'Darwin': 'Library/Application Support'}  # 3 config dirs
+    path = Path.home() / cfg.get(platform.system(), '')  # OS-specific config dir
+    path = (path if is_writeable(path) else Path('/tmp')) / dir  # GCP and AWS lambda fix, only /tmp is writeable
+    path.mkdir(exist_ok=True)  # make if required
     return path
 
 
