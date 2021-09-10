@@ -163,10 +163,10 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             pred[..., 2] *= imgsz[1]  # w
             pred[..., 3] *= imgsz[0]  # h
             pred = torch.tensor(pred)
-        dt[1] += time_sync() - t2
+        t3 = time_sync()
+        dt[1] += t3 - t2
 
         # NMS
-        t3 = time_sync()
         pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
         dt[2] += time_sync() - t3
 
