@@ -27,8 +27,7 @@ def sweep():
     device = select_device(opt.device, batch_size=opt.batch_size)
 
     # train
-    callbacks = Callbacks()
-    train(hyp_dict, opt, device, callbacks)
+    train(hyp_dict, opt, device, callbacks=Callbacks())
 
 
 if __name__ == "__main__":
