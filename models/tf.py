@@ -53,7 +53,7 @@ from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, C
 from models.experimental import MixConv2d, CrossConv, attempt_load
 from models.yolo import Detect
 from utils.datasets import LoadImages
-from utils.general import make_divisible, check_file, check_dataset
+from utils.general import check_dataset, check_yaml, make_divisible
 
 logger = logging.getLogger(__name__)
 
@@ -447,7 +447,7 @@ if __name__ == "__main__":
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
     parser.add_argument('--score-thres', type=float, default=0.4, help='score threshold for NMS')
     opt = parser.parse_args()
-    opt.cfg = check_file(opt.cfg)  # check file
+    opt.cfg = check_yaml(opt.cfg)  # check YAML
     opt.img_size *= 2 if len(opt.img_size) == 1 else 1  # expand
     print(opt)
 
@@ -534,7 +534,7 @@ if __name__ == "__main__":
             if opt.tfl_int8:
                 # Representative Dataset
                 if opt.source.endswith('.yaml'):
-                    with open(check_file(opt.source)) as f:
+                    with open(check_yaml(opt.source)) as f:
                         data = yaml.load(f, Loader=yaml.FullLoader)  # data dict
                         check_dataset(data)  # check
                     opt.source = data['train']
