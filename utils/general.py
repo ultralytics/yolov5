@@ -112,17 +112,19 @@ def user_config_dir(dir='Ultralytics'):
     return path
 
 
-def is_writeable(dir):
-    # Return True if directory has write permissions
-    # return os.access(path, os.R_OK)  # known issue on Windows
-    file = Path(dir) / 'tmp.txt'
-    try:
-        with open(file, 'w'):
-            pass
-        file.unlink()  # remove file
-        return True
-    except IOError:
-        return False
+def is_writeable(dir, test=False):
+    # Return True if directory has write permissions, test opening a file with write permissions if test=True
+    if test:  # method 1
+        file = Path(dir) / 'tmp.txt'
+        try:
+            with open(file, 'w'):  # open file with write permissions
+                pass
+            file.unlink()  # remove file
+            return True
+        except IOError:
+            return False
+    else:  # method 2
+        return os.access(dir, os.R_OK)  # possible issues on Windows
 
 
 def is_docker():
