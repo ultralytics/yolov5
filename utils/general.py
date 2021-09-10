@@ -113,7 +113,7 @@ def user_config_dir(dir='Ultralytics'):
 
 
 def is_writeable(dir, test=False):
-    # Return True if directory has write permissions, actually open a file with write permissions if test=True
+    # Return True if directory has write permissions, test opening a file with write permissions if test=True
     if test:  # method 1
         file = Path(dir) / 'tmp.txt'
         try:
