@@ -108,16 +108,24 @@ def user_config_dir(dir='Ultralytics'):
     system = platform.system()
     cfg = {'Windows': 'AppData/Roaming', 'Linux': '.config', 'Darwin': 'Library/Application Support'}
     path = Path.home() / cfg.get(system, '') / dir
-    if system == 'Linux' and not is_writeable(path):  # GCP functions and AWS lambda solution, only /tmp is writeable
+    if not is_writeable(path):  # GCP functions and AWS lambda solution, only /tmp is writeable
         path = Path('/tmp') / dir
     if not path.is_dir():
         path.mkdir()  # make dir if required
     return path
 
 
-def is_writeable(path):
-    # Return True if path has write permissions (Warning: known issue on Windows)
-    return os.access(path, os.R_OK)
+def is_writeable(dir):
+    # Return True if directory has write permissions
+    # return os.access(path, os.R_OK)  # known issue on Windows
+    file = Path(dir) / 'tmp.txt'
+    try:
+        with open(file, 'w'):
+            pass
+        file.unlink()  # remove file
+        return True
+    except IOError:
+        return False
 
 
 def is_docker():
