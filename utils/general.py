@@ -8,6 +8,7 @@ import glob
 import logging
 import math
 import os
+import sys
 import platform
 import random
 import re
@@ -267,7 +268,6 @@ def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
         for f in file if isinstance(file, (list, tuple)) else [file]:
             assert Path(f).suffix.lower() in suffix, f"{msg}{f} acceptable suffix is {suffix}"
 
-
 def check_yaml(file, suffix=('.yaml', '.yml')):
     # Search/download YAML file (if necessary) and return path, checking suffix
     return check_file(file, suffix)
@@ -279,9 +279,9 @@ def check_file(file, suffix=''):
     file = str(file)  # convert to str()
     if Path(file).is_file() or file == '':  # exists
         return file
-    elif file.startswith(('http:/', 'https:/')):  # download
-        url = str(Path(file)).replace(':/', '://')  # Pathlib turns :// -> :/
-        file = Path(urllib.parse.unquote(file)).name.split('?')[0]  # '%2F' to '/', split https://url.com/file.txt?auth
+    elif is_URL(file):  # download
+        url = file
+        file = get_URL_filename(file)
         print(f'Downloading {url} to {file}...')
         torch.hub.download_url_to_file(url, file)
         assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
@@ -293,44 +293,64 @@ def check_file(file, suffix=''):
         return files[0]  # return file
 
 
-def check_dataset(data, save_dir="../datasets", autodownload=True):
+def check_dataset(data, save_root="../datasets", autodownload=True):
     # Download and/or unzip dataset if not found locally
     # Usage: https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128_with_yaml.zip
 
-    # Download (optional)
-    extract_dir = ''
-    if isinstance(data, (str, Path)) and str(data).endswith('.zip'):  # i.e. gs://bucket/dir/coco128.zip
-        download(data, dir=save_dir, unzip=True, delete=False, curl=False, threads=1)
-        data = next((Path(save_dir) / Path(data).stem).rglob('*.yaml'))
-        extract_dir, autodownload = data.parent, False
+    if is_URL(data): 
+        filename = get_URL_filename(data)
+        is_zip =  has_extension(filename, '.zip')# Decode and parse URL
+    else:
+        filename = data
+        is_zip = has_extension(data, '.zip')
+
+    # Download (optional) will attempt to download all *.zip paths
+    if isinstance(data, (str, Path)) and is_zip:  # i.e. gs://bucket/dir/coco128.zip
+        download(data, dir=save_root, unzip=True, delete=False, curl=False, threads=1)
+        try:
+            data = next((Path(save_root) / Path(filename).stem).rglob('*.yaml'))
+            autodownload = False # Prevent another download attempt
+        except StopIteration as e:
+            print('Dataset zip does not contain yaml.')
+            sys.exit(1) # Die with error
 
     # Read yaml (optional)
     if isinstance(data, (str, Path)):
         with open(data, errors='ignore') as f:
             data = yaml.safe_load(f)  # dictionary
 
-    # Parse yaml
-    path = extract_dir or Path(data.get('path') or '')  # optional 'path' default to '.'
+    assert 'nc' in data, "Dataset 'nc' key missing."
+    if 'names' not in data:
+        data['names'] = [f'class{i}' for i in range(data['nc'])]  # assign class names if missing
+    val, s = [data.get(x) for x in ('val', 'download')]
+    
+    # Define path by priority: 1.Custom by save_root argument, 2.YAML.path, 3.Default
+    is_default_root = save_root == '../datasets'
+    has_yaml_path = data and data.get('path')
+
+    if is_default_root and has_yaml_path:
+        # Set path as yaml path
+        path = Path(data.get('path'))
+    else:
+        path = Path(save_root) / Path(s).stem # append dataset subdir to save_root
+
+    # Define image paths
     for k in 'train', 'val', 'test':
         if data.get(k):  # prepend path
             data[k] = str(path / data[k]) if isinstance(data[k], str) else [str(path / x) for x in data[k]]
 
-    assert 'nc' in data, "Dataset 'nc' key missing."
-    if 'names' not in data:
-        data['names'] = [f'class{i}' for i in range(data['nc'])]  # assign class names if missing
-    train, val, test, s = [data.get(x) for x in ('train', 'val', 'test', 'download')]
     if val:
-        val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
+        val = [Path(path / x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
             print('\nWARNING: Dataset not found, nonexistent paths: %s' % [str(x) for x in val if not x.exists()])
             if s and autodownload:  # download script
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
-                    print(f'Downloading {s} ...')
+                    print(f'Downloading {s} to {f}...')
                     torch.hub.download_url_to_file(s, f)
-                    root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
-                    Path(root).mkdir(parents=True, exist_ok=True)  # create root
-                    r = os.system(f'unzip -q {f} -d {root} && rm {f}')  # unzip
+                    #root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
+                    Path(save_root).mkdir(parents=True, exist_ok=True)  # create root
+                    r = os.system(f'unzip -q {f} -d {save_root} && rm {f}')  # unzip
                 elif s.startswith('bash '):  # bash script
                     print(f'Running {s} ...')
                     r = os.system(s)
@@ -347,20 +367,21 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
     # Multi-threaded file download and unzip function, used in data.yaml for autodownload
     def download_one(url, dir):
         # Download 1 file
-        f = dir / Path(url).name  # filename
-        if Path(url).is_file():  # exists in current path
+        if not(is_URL(url)) and Path(url).is_file():  # exists in current path
+            f = dir / Path(url).name  # filename
             Path(url).rename(f)  # move to dir
-        elif not f.exists():
+        else:
+            f = get_URL_filename(url)
             print(f'Downloading {url} to {f}...')
             if curl:
                 os.system(f"curl -L '{url}' -o '{f}' --retry 9 -C -")  # curl download, retry and resume on fail
             else:
                 torch.hub.download_url_to_file(url, f, progress=True)  # torch download
-        if unzip and f.suffix in ('.zip', '.gz'):
+        if unzip and has_extension(f, ('.zip', '.gz')):
             print(f'Unzipping {f}...')
-            if f.suffix == '.zip':
+            if has_extension(f, '.zip'):
                 s = f'unzip -qo {f} -d {dir}'  # unzip -quiet -overwrite
-            elif f.suffix == '.gz':
+            elif has_extension(f, '.gz'):
                 s = f'tar xfz {f} --directory {f.parent}'  # unzip
             if delete:  # delete zip file after unzip
                 s += f' && rm {f}'
@@ -775,3 +796,41 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     if not dir.exists() and mkdir:
         dir.mkdir(parents=True, exist_ok=True)  # make directory
     return path
+
+
+def has_extension(file, suffix) -> bool:
+    """" Returns true if file has extension """
+    if isinstance(suffix, str):
+        suffix = [suffix]
+    for f in file if isinstance(file, (list, tuple)) else [file]:
+        result = Path(f).suffix.lower() in suffix
+    return result
+
+# URL Specific Functions ----------------------------
+
+
+def decode_URL(url) -> str:
+    """ Returns decoded url"""
+    return urllib.parse.unquote(url)
+
+
+def strip_get_parameters(url) -> str:
+    """ Returns url without GET parameters """
+    #url = str(Path(file)).replace(':/', '://')  # Pathlib turns :// -> :/
+    #file = Path(urllib.parse.unquote(file)).name.split('?')[0]  # '%2F' to '/', split https://url.com/file.txt?auth
+    return url.split('?')[0]
+
+
+def remove_authentication_token(url) -> str:
+    """ Returns a decoded url without parameters """
+    return strip_get_parameters(decode_URL(url))
+
+
+def is_URL(str) -> bool:
+    """ Returns true if passed a URL"""
+    return str.startswith(('http://', 'https://', 'ftp://'))
+
+
+def get_URL_filename(url) -> str:
+    """ Returns the filename from URL, google.com/file.txt = file.txt"""
+    return strip_get_parameters(decode_URL(url)).split("/")[-1]
