@@ -4,6 +4,7 @@ Plotting utils
 """
 
 import math
+import os
 from copy import copy
 from pathlib import Path
 
@@ -20,6 +21,7 @@ from utils.general import is_ascii, xyxy2xywh, xywh2xyxy
 from utils.metrics import fitness
 
 # Settings
+CONFIG_DIR = Path(os.getenv('YOLOV5_CONFIG_DIR') or user_config_dir())  # Ultralytics settings dir
 matplotlib.rc('font', **{'size': 11})
 matplotlib.use('Agg')  # for writing to files only
 
