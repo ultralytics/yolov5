@@ -54,7 +54,7 @@ from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, C
 from models.experimental import MixConv2d, CrossConv, attempt_load
 from models.yolo import Detect
 from utils.datasets import LoadImages
-from utils.general import make_divisible, check_file, check_dataset, colorstr
+from utils.general import check_dataset, check_yaml, colorstr, make_divisible
 
 logger = logging.getLogger(__name__)
 
@@ -530,7 +530,7 @@ def run(cfg='yolov5s.yaml',  # cfg path
             if tfl_int8:
                 # Representative Dataset
                 if source.endswith('.yaml'):
-                    with open(check_file(source)) as f:
+                    with open(check_yaml(source)) as f:
                         data = yaml.load(f, Loader=yaml.FullLoader)  # data dict
                         check_dataset(data)  # check
                     source = data['train']
@@ -574,7 +574,7 @@ def parse_opt():
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
     opt = parser.parse_args()
 
-    opt.cfg = check_file(opt.cfg)  # check file
+    opt.cfg = check_yaml(opt.cfg)  # check YAML
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     return opt
 

@@ -42,7 +42,7 @@ def export_torchscript(model, img, file, optimize, prefix=colorstr('TorchScript:
 def export_onnx(model, img, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:')):
     # ONNX model export
     try:
-        check_requirements(('onnx', 'onnx-simplifier'))
+        check_requirements(('onnx',))
         import onnx
 
         print(f'\n{prefix} starting export with onnx {onnx.__version__}...')
@@ -64,6 +64,7 @@ def export_onnx(model, img, file, opset, train, dynamic, simplify, prefix=colors
         # Simplify
         if simplify:
             try:
+                check_requirements(('onnx-simplifier',))
                 import onnxsim
 
                 print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')

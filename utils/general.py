@@ -103,6 +103,23 @@ def get_latest_run(search_dir='.'):
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
+def user_config_dir(dir='Ultralytics'):
+    # Return path of user configuration directory (make if necessary)
+    system = platform.system()
+    cfg = {'Windows': 'AppData/Roaming', 'Linux': '.config', 'Darwin': 'Library/Application Support'}
+    path = Path.home() / cfg.get(system, '') / dir
+    if system == 'Linux' and not is_writeable(path):  # GCP functions and AWS lambda solution, only /tmp is writeable
+        path = Path('/tmp') / dir
+    if not path.is_dir():
+        path.mkdir()  # make dir if required
+    return path
+
+
+def is_writeable(path):
+    # Return True if path has write permissions (Warning: known issue on Windows)
+    return os.access(path, os.R_OK)
+
+
 def is_docker():
     # Is environment a Docker container?
     return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
@@ -162,8 +179,7 @@ def check_git_status():
     branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
     n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
     if n > 0:
-        s = f"⚠️ WARNING: code is out of date by {n} commit{'s' * (n > 1)}. " \
-            f"Use 'git pull' to update or 'git clone {url}' to download latest."
+        s = f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use `git pull` or `git clone {url}` to update."
     else:
         s = f'up to date with {url} ✅'
     print(emojis(s))  # emoji-safe
@@ -243,8 +259,23 @@ def check_imshow():
         return False
 
 
-def check_file(file):
+def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
+    # Check file(s) for acceptable suffixes
+    if file and suffix:
+        if isinstance(suffix, str):
+            suffix = [suffix]
+        for f in file if isinstance(file, (list, tuple)) else [file]:
+            assert Path(f).suffix.lower() in suffix, f"{msg}{f} acceptable suffix is {suffix}"
+
+
+def check_yaml(file, suffix=('.yaml', '.yml')):
+    # Search/download YAML file (if necessary) and return path, checking suffix
+    return check_file(file, suffix)
+
+
+def check_file(file, suffix=''):
     # Search/download file (if necessary) and return path
+    check_suffix(file, suffix)  # optional
     file = str(file)  # convert to str()
     if Path(file).is_file() or file == '':  # exists
         return file

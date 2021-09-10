@@ -4,6 +4,7 @@ Plotting utils
 """
 
 import math
+import os
 from copy import copy
 from pathlib import Path
 
@@ -16,10 +17,11 @@ import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.general import is_ascii, xyxy2xywh, xywh2xyxy
+from utils.general import user_config_dir, is_ascii, xywh2xyxy, xyxy2xywh
 from utils.metrics import fitness
 
 # Settings
+CONFIG_DIR = Path(os.getenv('YOLOV5_CONFIG_DIR') or user_config_dir())  # Ultralytics settings dir
 matplotlib.rc('font', **{'size': 11})
 matplotlib.use('Agg')  # for writing to files only
 
@@ -45,7 +47,22 @@ class Colors:
 colors = Colors()  # create instance for 'from utils.plots import colors'
 
 
+def check_font(font='Arial.ttf', size=10):
+    # Return a PIL TrueType Font, downloading to CONFIG_DIR if necessary
+    font = Path(font)
+    font = font if font.exists() else (CONFIG_DIR / font.name)
+    try:
+        return ImageFont.truetype(str(font) if font.exists() else font.name, size)
+    except Exception as e:  # download if missing
+        url = "https://ultralytics.com/assets/" + font.name
+        print(f'Downloading {url} to {font}...')
+        torch.hub.download_url_to_file(url, str(font))
+        return ImageFont.truetype(str(font), size)
+
+
 class Annotator:
+    check_font()  # download TTF if necessary
+
     # YOLOv5 Annotator for train/val mosaics and jpgs and detect/hub inference annotations
     def __init__(self, im, line_width=None, font_size=None, font='Arial.ttf', pil=True):
         assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to Annotator() input images.'
@@ -53,20 +70,11 @@ class Annotator:
         if self.pil:  # use PIL
             self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
             self.draw = ImageDraw.Draw(self.im)
-            s = sum(self.im.size) / 2  # mean shape
-            f = font_size or max(round(s * 0.035), 12)
-            try:
-                self.font = ImageFont.truetype(font, size=f)
-            except Exception as e:  # download if missing
-                url = "https://ultralytics.com/assets/" + font
-                print(f'Downloading {url} to {font}...')
-                torch.hub.download_url_to_file(url, font)
-                self.font = ImageFont.truetype(font, size=f)
+            self.font = check_font(font, size=font_size or max(round(sum(self.im.size) / 2 * 0.035), 12))
             self.fh = self.font.getsize('a')[1] - 3  # font height
         else:  # use cv2
             self.im = im
-        s = sum(im.shape) / 2  # mean shape
-        self.lw = line_width or max(round(s * 0.003), 2)  # line width
+        self.lw = line_width or max(round(sum(im.shape) / 2 * 0.003), 2)  # line width
 
     def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
         # Add one xyxy box to image with label
@@ -345,13 +353,13 @@ def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
                     a.remove()
         except Exception as e:
             print('Warning: Plotting error for %s; %s' % (f, e))
-
     ax[1].legend()
     plt.savefig(Path(save_dir) / 'idetection_profile.png', dpi=200)
 
 
-def plot_evolve(evolve_csv=Path('path/to/evolve.csv')):  # from utils.plots import *; plot_evolve()
+def plot_evolve(evolve_csv='path/to/evolve.csv'):  # from utils.plots import *; plot_evolve()
     # Plot evolve.csv hyp evolution results
+    evolve_csv = Path(evolve_csv)
     data = pd.read_csv(evolve_csv)
     keys = [x.strip() for x in data.columns]
     x = data.values
@@ -371,6 +379,7 @@ def plot_evolve(evolve_csv=Path('path/to/evolve.csv')):  # from utils.plots impo
         print('%15s: %.3g' % (k, mu))
     f = evolve_csv.with_suffix('.png')  # filename
     plt.savefig(f, dpi=200)
+    plt.close()
     print(f'Saved {f}')
 
 
@@ -397,6 +406,7 @@ def plot_results(file='path/to/results.csv', dir=''):
             print(f'Warning: Plotting error for {f}: {e}')
     ax[1].legend()
     fig.savefig(save_dir / 'results.png', dpi=200)
+    plt.close()
 
 
 def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detect/exp')):
@@ -423,3 +433,4 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detec
 
             print(f'Saving {save_dir / f}... ({n}/{channels})')
             plt.savefig(save_dir / f, dpi=300, bbox_inches='tight')
+            plt.close()

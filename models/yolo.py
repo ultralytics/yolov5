@@ -17,10 +17,10 @@ sys.path.append(FILE.parents[1].as_posix())  # add yolov5/ to path
 from models.common import *
 from models.experimental import *
 from utils.autoanchor import check_anchor_order
-from utils.general import make_divisible, check_file, set_logging
+from utils.general import check_yaml, make_divisible, set_logging
 from utils.plots import feature_visualization
-from utils.torch_utils import time_sync, fuse_conv_and_bn, model_info, scale_img, initialize_weights, \
-    select_device, copy_attr
+from utils.torch_utils import copy_attr, fuse_conv_and_bn, initialize_weights, model_info, scale_img, \
+    select_device, time_sync
 
 try:
     import thop  # for FLOPs computation
@@ -281,7 +281,7 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--profile', action='store_true', help='profile model speed')
     opt = parser.parse_args()
-    opt.cfg = check_file(opt.cfg)  # check file
+    opt.cfg = check_yaml(opt.cfg)  # check YAML
     set_logging()
     device = select_device(opt.device)
 
