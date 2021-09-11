@@ -382,7 +382,7 @@ class tf_Model():
 class agnostic_nms_layer(keras.layers.Layer):
     # wrap map_fn to avoid TypeSpec related error https://stackoverflow.com/a/65809989/3036450
     def call(self, input):
-        return tf.map_fn(lambda: tf_agnostic_nms, input,
+        return tf.map_fn(tf_agnostic_nms, input,
                          fn_output_signature=(tf.float32, tf.float32, tf.float32, tf.int32),
                          name='agnostic_nms')
 
