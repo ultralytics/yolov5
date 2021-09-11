@@ -3,7 +3,7 @@ from pathlib import Path
 
 import wandb
 
-FILE = Path(__file__).absolute()
+FILE = Path(__file__).resolve()
 sys.path.append(FILE.parents[3].as_posix())  # add utils/ to path
 
 from train import train, parse_opt
