@@ -252,11 +252,12 @@ def run(data='data/coco128.yaml',  # 'dataset.yaml path'
     include = [x.lower() for x in include]
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
     file = Path(weights)
+    tf_exports = list(x in include for x in ('saved_model', 'pb', 'tflite', 'tfjs'))  # TensorFlow exports
 
     # Load PyTorch model
     device = select_device(device)
     assert not (device.type == 'cpu' and half), '--half only compatible with GPU export, i.e. use --device 0'
-    model = attempt_load(weights, map_location=device)  # load FP32 model
+    model = attempt_load(weights, map_location=device, inplace=True, fuse=not any(tf_exports))  # load FP32 model
     nc, names = model.nc, model.names  # number of classes, class names
 
     # Input
@@ -290,7 +291,7 @@ def run(data='data/coco128.yaml',  # 'dataset.yaml path'
         export_coreml(model, im, file)
 
     # TensorFlow Exports
-    if any(x in include for x in ('saved_model', 'pb', 'tflite', 'tfjs')):
+    if any(tf_exports):
         model = export_saved_model(model, im, file, dynamic)  # keras model
         if 'pb' in include:
             export_pb(model, im, file)
