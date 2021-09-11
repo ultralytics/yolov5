@@ -46,7 +46,6 @@ import numpy as np
 import tensorflow as tf
 import torch
 import torch.nn as nn
-import yaml
 from tensorflow import keras
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
@@ -531,16 +530,10 @@ def run(cfg='yolov5s.yaml',  # cfg path
 
             # int8 TFLite model export ---------------------------------------------------------------------------------
             if tfl_int8:
-                # Representative Dataset
-                if source.endswith('.yaml'):
-                    with open(check_yaml(source)) as f:
-                        data = yaml.load(f, Loader=yaml.FullLoader)  # data dict
-                        check_dataset(data)  # check
-                    source = data['train']
-                dataset = LoadImages(source, img_size=imgsz, auto=False)
+                dataset = LoadImages(check_dataset(source)['train'], img_size=imgsz, auto=False)  # representative data
                 converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
                 converter.optimizations = [tf.lite.Optimize.DEFAULT]
-                converter.representative_dataset = representative_dataset_gen(dataset, ncalib)
+                converter.representative_dataset = lambda: representative_dataset_gen(dataset, ncalib)
                 converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
                 converter.inference_input_type = tf.uint8  # or tf.int8
                 converter.inference_output_type = tf.uint8  # or tf.int8
