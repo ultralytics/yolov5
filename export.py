@@ -21,12 +21,11 @@ ROOT = FILE.parents[0]  # yolov5/ dir
 sys.path.append(ROOT.as_posix())  # add yolov5/ to path
 
 from models.common import Conv
-from models.yolo import Detect
 from models.experimental import attempt_load
+from models.yolo import Detect
 from utils.activations import SiLU
 from utils.datasets import LoadImages
-from utils.general import colorstr, check_dataset, check_img_size, check_requirements, file_size, \
-    set_logging
+from utils.general import colorstr, check_dataset, check_img_size, check_requirements, file_size, set_logging
 from utils.torch_utils import select_device
 
 
@@ -320,7 +319,7 @@ def parse_opt():
     parser.add_argument('--opset', type=int, default=13, help='ONNX: opset version')
     parser.add_argument('--include', nargs='+',
                         default=['torchscript', 'onnx'],
-                        help="available formats are (torchscript, onnx, coreml, saved_model, pb, tflite, tfjs)")
+                        help='available formats are (torchscript, onnx, coreml, saved_model, pb, tflite, tfjs)')
     opt = parser.parse_args()
     return opt
 
