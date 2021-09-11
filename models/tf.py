@@ -59,10 +59,10 @@ from utils.activations import SiLU
 logger = logging.getLogger(__name__)
 
 
-class tf_BN(keras.layers.Layer):
+class TFBN(keras.layers.Layer):
     # TensorFlow BatchNormalization wrapper
     def __init__(self, w=None):
-        super(tf_BN, self).__init__()
+        super(TFBN, self).__init__()
         self.bn = keras.layers.BatchNormalization(
             beta_initializer=keras.initializers.Constant(w.bias.numpy()),
             gamma_initializer=keras.initializers.Constant(w.weight.numpy()),
@@ -74,20 +74,20 @@ class tf_BN(keras.layers.Layer):
         return self.bn(inputs)
 
 
-class tf_Pad(keras.layers.Layer):
+class TFPad(keras.layers.Layer):
     def __init__(self, pad):
-        super(tf_Pad, self).__init__()
+        super(TFPad, self).__init__()
         self.pad = tf.constant([[0, 0], [pad, pad], [pad, pad], [0, 0]])
 
     def call(self, inputs):
         return tf.pad(inputs, self.pad, mode='constant', constant_values=0)
 
 
-class tf_Conv(keras.layers.Layer):
+class TFConv(keras.layers.Layer):
     # Standard convolution
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):
         # ch_in, ch_out, weights, kernel, stride, padding, groups
-        super(tf_Conv, self).__init__()
+        super(TFConv, self).__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
         assert isinstance(k, int), "Convolution with multiple kernels are not allowed."
         # TensorFlow convolution padding is inconsistent with PyTorch (e.g. k=3 s=2 'SAME' padding)
@@ -96,8 +96,8 @@ class tf_Conv(keras.layers.Layer):
         conv = keras.layers.Conv2D(
             c2, k, s, 'SAME' if s == 1 else 'VALID', use_bias=False,
             kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()))
-        self.conv = conv if s == 1 else keras.Sequential([tf_Pad(autopad(k, p)), conv])
-        self.bn = tf_BN(w.bn) if hasattr(w, 'bn') else tf.identity
+        self.conv = conv if s == 1 else keras.Sequential([TFPad(autopad(k, p)), conv])
+        self.bn = TFBN(w.bn) if hasattr(w, 'bn') else tf.identity
 
         # YOLOv5 activations
         if isinstance(w.act, nn.LeakyReLU):
@@ -113,12 +113,12 @@ class tf_Conv(keras.layers.Layer):
         return self.act(self.bn(self.conv(inputs)))
 
 
-class tf_Focus(keras.layers.Layer):
+class TFFocus(keras.layers.Layer):
     # Focus wh information into c-space
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):
         # ch_in, ch_out, kernel, stride, padding, groups
-        super(tf_Focus, self).__init__()
-        self.conv = tf_Conv(c1 * 4, c2, k, s, p, g, act, w.conv)
+        super(TFFocus, self).__init__()
+        self.conv = TFConv(c1 * 4, c2, k, s, p, g, act, w.conv)
 
     def call(self, inputs):  # x(b,w,h,c) -> y(b,w/2,h/2,4c)
         # inputs = inputs / 255.  # normalize 0-255 to 0-1
@@ -128,23 +128,23 @@ class tf_Focus(keras.layers.Layer):
                                     inputs[:, 1::2, 1::2, :]], 3))
 
 
-class tf_Bottleneck(keras.layers.Layer):
+class TFBottleneck(keras.layers.Layer):
     # Standard bottleneck
     def __init__(self, c1, c2, shortcut=True, g=1, e=0.5, w=None):  # ch_in, ch_out, shortcut, groups, expansion
-        super(tf_Bottleneck, self).__init__()
+        super(TFBottleneck, self).__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = tf_Conv(c1, c_, 1, 1, w=w.cv1)
-        self.cv2 = tf_Conv(c_, c2, 3, 1, g=g, w=w.cv2)
+        self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
+        self.cv2 = TFConv(c_, c2, 3, 1, g=g, w=w.cv2)
         self.add = shortcut and c1 == c2
 
     def call(self, inputs):
         return inputs + self.cv2(self.cv1(inputs)) if self.add else self.cv2(self.cv1(inputs))
 
 
-class tf_Conv2d(keras.layers.Layer):
+class TFConv2d(keras.layers.Layer):
     # Substitution for PyTorch nn.Conv2D
     def __init__(self, c1, c2, k, s=1, g=1, bias=True, w=None):
-        super(tf_Conv2d, self).__init__()
+        super(TFConv2d, self).__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
         self.conv = keras.layers.Conv2D(
             c2, k, s, 'VALID', use_bias=bias,
@@ -155,19 +155,19 @@ class tf_Conv2d(keras.layers.Layer):
         return self.conv(inputs)
 
 
-class tf_BottleneckCSP(keras.layers.Layer):
+class TFBottleneckCSP(keras.layers.Layer):
     # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, w=None):
         # ch_in, ch_out, number, shortcut, groups, expansion
-        super(tf_BottleneckCSP, self).__init__()
+        super(TFBottleneckCSP, self).__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = tf_Conv(c1, c_, 1, 1, w=w.cv1)
-        self.cv2 = tf_Conv2d(c1, c_, 1, 1, bias=False, w=w.cv2)
-        self.cv3 = tf_Conv2d(c_, c_, 1, 1, bias=False, w=w.cv3)
-        self.cv4 = tf_Conv(2 * c_, c2, 1, 1, w=w.cv4)
-        self.bn = tf_BN(w.bn)
+        self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
+        self.cv2 = TFConv2d(c1, c_, 1, 1, bias=False, w=w.cv2)
+        self.cv3 = TFConv2d(c_, c_, 1, 1, bias=False, w=w.cv3)
+        self.cv4 = TFConv(2 * c_, c2, 1, 1, w=w.cv4)
+        self.bn = TFBN(w.bn)
         self.act = lambda x: keras.activations.relu(x, alpha=0.1)
-        self.m = keras.Sequential([tf_Bottleneck(c_, c_, shortcut, g, e=1.0, w=w.m[j]) for j in range(n)])
+        self.m = keras.Sequential([TFBottleneck(c_, c_, shortcut, g, e=1.0, w=w.m[j]) for j in range(n)])
 
     def call(self, inputs):
         y1 = self.cv3(self.m(self.cv1(inputs)))
@@ -175,28 +175,28 @@ class tf_BottleneckCSP(keras.layers.Layer):
         return self.cv4(self.act(self.bn(tf.concat((y1, y2), axis=3))))
 
 
-class tf_C3(keras.layers.Layer):
+class TFC3(keras.layers.Layer):
     # CSP Bottleneck with 3 convolutions
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, w=None):
         # ch_in, ch_out, number, shortcut, groups, expansion
-        super(tf_C3, self).__init__()
+        super(TFC3, self).__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = tf_Conv(c1, c_, 1, 1, w=w.cv1)
-        self.cv2 = tf_Conv(c1, c_, 1, 1, w=w.cv2)
-        self.cv3 = tf_Conv(2 * c_, c2, 1, 1, w=w.cv3)
-        self.m = keras.Sequential([tf_Bottleneck(c_, c_, shortcut, g, e=1.0, w=w.m[j]) for j in range(n)])
+        self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
+        self.cv2 = TFConv(c1, c_, 1, 1, w=w.cv2)
+        self.cv3 = TFConv(2 * c_, c2, 1, 1, w=w.cv3)
+        self.m = keras.Sequential([TFBottleneck(c_, c_, shortcut, g, e=1.0, w=w.m[j]) for j in range(n)])
 
     def call(self, inputs):
         return self.cv3(tf.concat((self.m(self.cv1(inputs)), self.cv2(inputs)), axis=3))
 
 
-class tf_SPP(keras.layers.Layer):
+class TFSPP(keras.layers.Layer):
     # Spatial pyramid pooling layer used in YOLOv3-SPP
     def __init__(self, c1, c2, k=(5, 9, 13), w=None):
-        super(tf_SPP, self).__init__()
+        super(TFSPP, self).__init__()
         c_ = c1 // 2  # hidden channels
-        self.cv1 = tf_Conv(c1, c_, 1, 1, w=w.cv1)
-        self.cv2 = tf_Conv(c_ * (len(k) + 1), c2, 1, 1, w=w.cv2)
+        self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
+        self.cv2 = TFConv(c_ * (len(k) + 1), c2, 1, 1, w=w.cv2)
         self.m = [keras.layers.MaxPool2D(pool_size=x, strides=1, padding='SAME') for x in k]
 
     def call(self, inputs):
@@ -204,9 +204,9 @@ class tf_SPP(keras.layers.Layer):
         return self.cv2(tf.concat([x] + [m(x) for m in self.m], 3))
 
 
-class tf_Detect(keras.layers.Layer):
+class TFDetect(keras.layers.Layer):
     def __init__(self, nc=80, anchors=(), ch=(), imgsz=(640, 640), w=None):  # detection layer
-        super(tf_Detect, self).__init__()
+        super(TFDetect, self).__init__()
         self.stride = tf.convert_to_tensor(w.stride.numpy(), dtype=tf.float32)
         self.nc = nc  # number of classes
         self.no = nc + 5  # number of outputs per anchor
@@ -216,7 +216,7 @@ class tf_Detect(keras.layers.Layer):
         self.anchors = tf.convert_to_tensor(w.anchors.numpy(), dtype=tf.float32)
         self.anchor_grid = tf.reshape(tf.convert_to_tensor(w.anchor_grid.numpy(), dtype=tf.float32),
                                       [self.nl, 1, -1, 1, 2])
-        self.m = [tf_Conv2d(x, self.no * self.na, 1, w=w.m[i]) for i, x in enumerate(ch)]
+        self.m = [TFConv2d(x, self.no * self.na, 1, w=w.m[i]) for i, x in enumerate(ch)]
         self.training = False  # set to False after building model
         self.imgsz = imgsz
         for i in range(self.nl):
@@ -252,9 +252,9 @@ class tf_Detect(keras.layers.Layer):
         return tf.cast(tf.reshape(tf.stack([xv, yv], 2), [1, 1, ny * nx, 2]), dtype=tf.float32)
 
 
-class tf_Upsample(keras.layers.Layer):
+class TFUpsample(keras.layers.Layer):
     def __init__(self, size, scale_factor, mode, w=None):  # warning: all arguments needed including 'w'
-        super(tf_Upsample, self).__init__()
+        super(TFUpsample, self).__init__()
         assert scale_factor == 2, "scale_factor must be 2"
         self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * 2, x.shape[2] * 2), method=mode)
         # self.upsample = keras.layers.UpSampling2D(size=scale_factor, interpolation=mode)
@@ -266,9 +266,9 @@ class tf_Upsample(keras.layers.Layer):
         return self.upsample(inputs)
 
 
-class tf_Concat(keras.layers.Layer):
+class TFConcat(keras.layers.Layer):
     def __init__(self, dimension=1, w=None):
-        super(tf_Concat, self).__init__()
+        super(TFConcat, self).__init__()
         assert dimension == 1, "convert only NCHW to NHWC concat"
         self.d = 3
 
@@ -313,7 +313,7 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
         else:
             c2 = ch[f]
 
-        tf_m = eval('tf_' + m_str.replace('nn.', ''))
+        tf_m = eval('TF' + m_str.replace('nn.', ''))
         m_ = keras.Sequential([tf_m(*args, w=model.model[i][j]) for j in range(n)]) if n > 1 \
             else tf_m(*args, w=model.model[i])  # module
 
@@ -328,9 +328,9 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
     return keras.Sequential(layers), sorted(save)
 
 
-class tf_Model():
+class TFModel:
     def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None, model=None, imgsz=(640, 640)):  # model, channels, classes
-        super(tf_Model, self).__init__()
+        super(TFModel, self).__init__()
         if isinstance(cfg, dict):
             self.yaml = cfg  # model dict
         else:  # is *.yaml
@@ -363,7 +363,7 @@ class tf_Model():
             classes = x[0][:, :, 5:]
             scores = probs * classes
             if agnostic_nms:
-                nms = agnostic_nms_layer()((boxes, classes, scores))
+                nms = AgnosticNMS()((boxes, classes, scores))
                 return nms, x[1]
             else:
                 boxes = tf.expand_dims(boxes, 2)
@@ -379,34 +379,35 @@ class tf_Model():
         # return tf.concat([conf, cls, xywh], 1)
 
 
-class agnostic_nms_layer(keras.layers.Layer):
-    # wrap map_fn to avoid TypeSpec related error https://stackoverflow.com/a/65809989/3036450
+class AgnosticNMS(keras.layers.Layer):
+    # TF Agnostic NMS
     def call(self, input):
-        return tf.map_fn(tf_agnostic_nms, input,
+        # wrap map_fn to avoid TypeSpec related error https://stackoverflow.com/a/65809989/3036450
+        return tf.map_fn(self._nms, input,
                          fn_output_signature=(tf.float32, tf.float32, tf.float32, tf.int32),
                          name='agnostic_nms')
 
-
-def tf_agnostic_nms(x, topk_all=100, iou_thres=0.45, conf_thres=0.25):
-    boxes, classes, scores = x
-    class_inds = tf.cast(tf.argmax(classes, axis=-1), tf.float32)
-    scores_inp = tf.reduce_max(scores, -1)
-    selected_inds = tf.image.non_max_suppression(
-        boxes, scores_inp, max_output_size=topk_all, iou_threshold=iou_thres, score_threshold=conf_thres)
-    selected_boxes = tf.gather(boxes, selected_inds)
-    padded_boxes = tf.pad(selected_boxes,
-                          paddings=[[0, topk_all - tf.shape(selected_boxes)[0]], [0, 0]],
-                          mode="CONSTANT", constant_values=0.0)
-    selected_scores = tf.gather(scores_inp, selected_inds)
-    padded_scores = tf.pad(selected_scores,
-                           paddings=[[0, topk_all - tf.shape(selected_boxes)[0]]],
-                           mode="CONSTANT", constant_values=-1.0)
-    selected_classes = tf.gather(class_inds, selected_inds)
-    padded_classes = tf.pad(selected_classes,
-                            paddings=[[0, topk_all - tf.shape(selected_boxes)[0]]],
-                            mode="CONSTANT", constant_values=-1.0)
-    valid_detections = tf.shape(selected_inds)[0]
-    return padded_boxes, padded_scores, padded_classes, valid_detections
+    @staticmethod
+    def _nms(x, topk_all=100, iou_thres=0.45, conf_thres=0.25):  # agnostic NMS
+        boxes, classes, scores = x
+        class_inds = tf.cast(tf.argmax(classes, axis=-1), tf.float32)
+        scores_inp = tf.reduce_max(scores, -1)
+        selected_inds = tf.image.non_max_suppression(
+            boxes, scores_inp, max_output_size=topk_all, iou_threshold=iou_thres, score_threshold=conf_thres)
+        selected_boxes = tf.gather(boxes, selected_inds)
+        padded_boxes = tf.pad(selected_boxes,
+                              paddings=[[0, topk_all - tf.shape(selected_boxes)[0]], [0, 0]],
+                              mode="CONSTANT", constant_values=0.0)
+        selected_scores = tf.gather(scores_inp, selected_inds)
+        padded_scores = tf.pad(selected_scores,
+                               paddings=[[0, topk_all - tf.shape(selected_boxes)[0]]],
+                               mode="CONSTANT", constant_values=-1.0)
+        selected_classes = tf.gather(class_inds, selected_inds)
+        padded_classes = tf.pad(selected_classes,
+                                paddings=[[0, topk_all - tf.shape(selected_boxes)[0]]],
+                                mode="CONSTANT", constant_values=-1.0)
+        valid_detections = tf.shape(selected_inds)[0]
+        return padded_boxes, padded_scores, padded_classes, valid_detections
 
 
 def xywh2xyxy(xywh):
@@ -455,11 +456,8 @@ def run(cfg='yolov5s.yaml',  # cfg path
     # TensorFlow saved_model export
     try:
         print('\nStarting TensorFlow saved_model export with TensorFlow %s...' % tf.__version__)
-        tf_model = tf_Model(cfg, model=model, nc=nc, imgsz=imgsz)
+        tf_model = TFModel(cfg, model=model, nc=nc, imgsz=imgsz)
         img = tf.zeros((batch_size, *imgsz, 3))  # NHWC Input for TensorFlow
-
-        m = tf_model.model.layers[-1]
-        assert isinstance(m, tf_Detect), "the last layer must be Detect"
         y = tf_model.predict(img, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
 
         inputs = keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic_batch_size else batch_size)

@@ -118,13 +118,13 @@ def export_saved_model(model, im, file, dynamic,
         check_requirements(('tensorflow',))
         import tensorflow as tf
         from tensorflow import keras
-        from models.tf import tf_Model, tf_Detect
+        from models.tf import TFModel, TFDetect
 
         print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
         f = str(file).replace('.pt', '_saved_model')
         batch_size, ch, *imgsz = list(im.shape)  # BCHW
 
-        tf_model = tf_Model(cfg=model.yaml, model=model, nc=model.nc, imgsz=imgsz)
+        tf_model = TFModel(cfg=model.yaml, model=model, nc=model.nc, imgsz=imgsz)
         im = tf.zeros((batch_size, *imgsz, 3))  # BHWC order for TensorFlow
         y = tf_model.predict(im, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
         inputs = keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic else batch_size)
