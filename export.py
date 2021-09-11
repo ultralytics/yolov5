@@ -23,7 +23,6 @@ sys.path.append(ROOT.as_posix())  # add yolov5/ to path
 from models.common import Conv
 from models.yolo import Detect
 from models.experimental import attempt_load
-from models.tf import representative_dataset_gen, tf_Model, tf_Detect
 from utils.activations import Hardswish, SiLU
 from utils.datasets import LoadImages
 from utils.general import colorstr, check_dataset, check_img_size, check_requirements, file_size, \
@@ -113,6 +112,7 @@ def export_saved_model(model, im, file, dynamic,
         check_requirements(('tensorflow',))
         import tensorflow as tf
         from tensorflow import keras
+        from models.tf import tf_Model, tf_Detect
 
         print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
         f = str(file).replace('.pt', '_saved_model')
@@ -165,6 +165,7 @@ def export_tflite(keras_model, im, file, tfl_int8, data, ncalib, prefix=colorstr
     # TensorFlow TFLite export
     try:
         import tensorflow as tf
+        from models.tf import representative_dataset_gen
 
         print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
         batch_size, imgsz = im.shape[0], list(im.shape[2:4])  # BCHW
@@ -212,7 +213,7 @@ def export_tflite(keras_model, im, file, tfl_int8, data, ncalib, prefix=colorstr
             converter.experimental_new_converter = True
             converter.experimental_new_quantizer = False
             tflite_model = converter.convert()
-            f = file.replace('.pt', '-int8.tflite')  # filename
+            f = str(file).replace('.pt', '-int8.tflite')  # filename
             open(f, "wb").write(tflite_model)
             print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
         # Export INT8 TFLite end ----------
