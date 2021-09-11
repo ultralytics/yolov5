@@ -14,7 +14,7 @@ Detection:
     $ python detect.py --weights yolov5s.pb          --img 320
     $ python detect.py --weights yolov5s_saved_model --img 320
     $ python detect.py --weights yolov5s-fp16.tflite --img 320
-    $ python detect.py --weights yolov5s-int8.tflite --img 320 --tfl-int8
+    $ python detect.py --weights yolov5s-int8.tflite --img 320
 
 For TensorFlow.js:
     $ python models/tf.py --weights yolov5s.pt --cfg models/yolov5s.yaml --img 320 --tf-nms --agnostic-nms
