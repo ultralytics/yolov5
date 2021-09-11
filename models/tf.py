@@ -55,6 +55,7 @@ from models.experimental import MixConv2d, CrossConv, attempt_load
 from models.yolo import Detect
 from utils.datasets import LoadImages
 from utils.general import check_dataset, check_yaml, colorstr, make_divisible
+from utils.activations import SiLU
 
 logger = logging.getLogger(__name__)
 
@@ -104,8 +105,10 @@ class tf_Conv(keras.layers.Layer):
             self.act = (lambda x: keras.activations.relu(x, alpha=0.1)) if act else tf.identity
         elif isinstance(w.act, nn.Hardswish):
             self.act = (lambda x: x * tf.nn.relu6(x + 3) * 0.166666667) if act else tf.identity
-        elif isinstance(w.act, nn.SiLU):
+        elif isinstance(w.act, (nn.SiLU, SiLU)):
             self.act = (lambda x: keras.activations.swish(x)) if act else tf.identity
+        else:
+            raise Exception(f'no matching TensorFlow activation found for {w.act}')
 
     def call(self, inputs):
         return self.act(self.bn(self.conv(inputs)))

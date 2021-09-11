@@ -116,7 +116,7 @@ def export_saved_model(model, im, file, dynamic,
 
         print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
         f = str(file).replace('.pt', '_saved_model')
-        batch_size, imgsz = im.shape[0], im.shape[2:4]  # BCHW
+        batch_size, imgsz = im.shape[0], list(im.shape[2:4])  # BCHW
 
         # Export Keras model start ----------
         tf_model = tf_Model(cfg=model.yaml, model=model, nc=model.nc, imgsz=imgsz)
@@ -153,7 +153,7 @@ def export_pb(keras_model, im, file, prefix=colorstr('TensorFlow GraphDef:')):
         m = m.get_concrete_function(tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype))
         frozen_func = convert_variables_to_constants_v2(m)
         frozen_func.graph.as_graph_def()
-        tf.io.write_graph(graph_or_graph_def=frozen_func.graph, logdir=f.parent, name=f.name, as_text=False)
+        tf.io.write_graph(graph_or_graph_def=frozen_func.graph, logdir=str(f.parent), name=f.name, as_text=False)
         # Export *.pb end ----------
 
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -167,7 +167,7 @@ def export_tflite(keras_model, im, file, tfl_int8, data, ncalib, prefix=colorstr
         import tensorflow as tf
 
         print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
-        batch_size, imgsz = im.shape[0], im.shape[2:4]  # BCHW
+        batch_size, imgsz = im.shape[0], list(im.shape[2:4])  # BCHW
 
         # Export FP32 TFLite start ----------
         # converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
@@ -320,7 +320,6 @@ def parse_opt():
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640, 640], help='image (h, w)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--include', nargs='+', default=['torchscript', 'onnx', 'coreml'], help='include formats')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--train', action='store_true', help='model.train() mode')
@@ -328,6 +327,9 @@ def parse_opt():
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TF: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
     parser.add_argument('--opset', type=int, default=13, help='ONNX: opset version')
+    parser.add_argument('--include', nargs='+',
+                        default=['torchscript', 'onnx', 'coreml', 'saved_model', 'pb', 'tflite', 'tfjs'],
+                        help='formats')
     opt = parser.parse_args()
     return opt
 
