@@ -43,7 +43,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
 
 
 def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:')):
-    # ONNX model export
+    # YOLOv5 ONNX model export
     try:
         check_requirements(('onnx',))
         import onnx
@@ -86,7 +86,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
 
 
 def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
-    # CoreML model export
+    # YOLOv5 CoreML model export
 
     try:
         check_requirements(('coremltools',))
@@ -106,7 +106,7 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
 def export_saved_model(model, im, file, dynamic,
                        tf_nms=False, agnostic_nms=False, topk_per_class=100, topk_all=100, iou_thres=0.45,
                        conf_thres=0.25, prefix=colorstr('TensorFlow saved_model:')):
-    # TensorFlow saved_model export
+    # YOLOv5 TensorFlow saved_model export
     keras_model = []
     try:
         check_requirements(('tensorflow',))
@@ -139,7 +139,7 @@ def export_saved_model(model, im, file, dynamic,
 
 
 def export_pb(keras_model, im, file, prefix=colorstr('TensorFlow GraphDef:')):
-    # TensorFlow GraphDef *.pb export https://github.com/leimao/Frozen_Graph_TensorFlow
+    # YOLOv5 TensorFlow GraphDef *.pb export https://github.com/leimao/Frozen_Graph_TensorFlow
     try:
         import tensorflow as tf
         from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
@@ -161,7 +161,7 @@ def export_pb(keras_model, im, file, prefix=colorstr('TensorFlow GraphDef:')):
 
 
 def export_tflite(keras_model, im, file, tfl_int8, data, ncalib, prefix=colorstr('TensorFlow Lite:')):
-    # TensorFlow TFLite export
+    # YOLOv5 TensorFlow TFLite export
     try:
         import tensorflow as tf
         from models.tf import representative_dataset_gen
@@ -215,7 +215,7 @@ def export_tflite(keras_model, im, file, tfl_int8, data, ncalib, prefix=colorstr
 
 
 def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
-    # TensorFlow TF.js export
+    # YOLOv5 TensorFlow TF.js export
     try:
         check_requirements(('tensorflowjs',))
         import tensorflowjs as tfjs
@@ -311,7 +311,7 @@ def run(data='data/coco128.yaml',  # 'dataset.yaml path'
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='dataset.yaml path')
+    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='weights path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640, 640], help='image (h, w)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
