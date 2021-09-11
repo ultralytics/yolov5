@@ -105,19 +105,26 @@ def get_latest_run(search_dir='.'):
 
 def user_config_dir(dir='Ultralytics'):
     # Return path of user configuration directory (make if necessary)
-    system = platform.system()
-    cfg = {'Windows': 'AppData/Roaming', 'Linux': '.config', 'Darwin': 'Library/Application Support'}
-    path = Path.home() / cfg.get(system, '') / dir
-    if system == 'Linux' and not is_writeable(path):  # GCP functions and AWS lambda solution, only /tmp is writeable
-        path = Path('/tmp') / dir
-    if not path.is_dir():
-        path.mkdir()  # make dir if required
+    cfg = {'Windows': 'AppData/Roaming', 'Linux': '.config', 'Darwin': 'Library/Application Support'}  # 3 config dirs
+    path = Path.home() / cfg.get(platform.system(), '')  # OS-specific config dir
+    path = (path if is_writeable(path) else Path('/tmp')) / dir  # GCP and AWS lambda fix, only /tmp is writeable
+    path.mkdir(exist_ok=True)  # make if required
     return path
 
 
-def is_writeable(path):
-    # Return True if path has write permissions (Warning: known issue on Windows)
-    return os.access(path, os.R_OK)
+def is_writeable(dir, test=False):
+    # Return True if directory has write permissions, test opening a file with write permissions if test=True
+    if test:  # method 1
+        file = Path(dir) / 'tmp.txt'
+        try:
+            with open(file, 'w'):  # open file with write permissions
+                pass
+            file.unlink()  # remove file
+            return True
+        except IOError:
+            return False
+    else:  # method 2
+        return os.access(dir, os.R_OK)  # possible issues on Windows
 
 
 def is_docker():
