@@ -116,7 +116,7 @@ def export_saved_model(model, im, file, dynamic,
 
         print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
         f = str(file).replace('.pt', '_saved_model')
-        batch_size, imgsz = im.shape[0], list(im.shape[2:4])  # BCHW
+        batch_size, ch, *imgsz = list(im.shape)  # BCHW
 
         # Export Keras model start ----------
         tf_model = tf_Model(cfg=model.yaml, model=model, nc=model.nc, imgsz=imgsz)
@@ -167,7 +167,7 @@ def export_tflite(keras_model, im, file, tfl_int8, data, ncalib, prefix=colorstr
         from models.tf import representative_dataset_gen
 
         print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
-        batch_size, imgsz = im.shape[0], list(im.shape[2:4])  # BCHW
+        batch_size, ch, *imgsz = list(im.shape)  # BCHW
 
         # Export FP32 TFLite start ----------
         # converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
@@ -221,11 +221,11 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
         import tensorflowjs as tfjs
 
         print(f'\n{prefix} starting export with tensorflowjs {tfjs.__version__}...')
-        f = file.with_suffix('')
+        f = str(file).replace('.pt', '_tfjs_model')
 
         # Export TensorFlow.js start ----------
-        cmd = "tensorflowjs_converter --input_format=tf_frozen_model " \
-              "--output_node_names='Identity,Identity_1,Identity_2,Identity_3' yolov5s.pb web_model"
+        cmd = f"tensorflowjs_converter --input_format=tf_frozen_model " \
+              f"--output_node_names='Identity,Identity_1,Identity_2,Identity_3' yolov5s.pb {f}"
         _ = check_output(cmd, shell=True)
         # Export TensorFlow.js end ----------
 
@@ -234,6 +234,7 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
         print(f'\n{prefix} export failure: {e}')
 
 
+@torch.no_grad()
 def run(data='data/coco128.yaml',  # 'dataset.yaml path'
         weights=ROOT / 'yolov5s.pt',  # weights path
         imgsz=(640, 640),  # image (height, width)
@@ -250,9 +251,9 @@ def run(data='data/coco128.yaml',  # 'dataset.yaml path'
         ):
     t = time.time()
     include = [x.lower() for x in include]
+    tf_exports = list(x in include for x in ('saved_model', 'pb', 'tflite', 'tfjs'))  # TensorFlow exports
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
     file = Path(weights)
-    tf_exports = list(x in include for x in ('saved_model', 'pb', 'tflite', 'tfjs'))  # TensorFlow exports
 
     # Load PyTorch model
     device = select_device(device)
@@ -292,12 +293,14 @@ def run(data='data/coco128.yaml',  # 'dataset.yaml path'
 
     # TensorFlow Exports
     if any(tf_exports):
-        model = export_saved_model(model, im, file, dynamic)  # keras model
-        if 'pb' in include:
+        pb, tflite, tfjs = tf_exports[1:]
+        assert not (tflite and tfjs), 'TFLite and TF.js models must be exported separately, please pass only one type.'
+        model = export_saved_model(model, im, file, dynamic, tf_nms=tfjs, agnostic_nms=tfjs)  # keras model
+        if pb:
             export_pb(model, im, file)
-        if 'tflite' in include:
+        if tflite:
             export_tflite(model, im, file, tfl_int8=False, data=data, ncalib=100)
-        if 'tfjs' in include:
+        if tfjs:
             export_tfjs(model, im, file)
 
     # Finish
