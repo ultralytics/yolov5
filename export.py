@@ -3,7 +3,7 @@
 Export a PyTorch model to TorchScript, ONNX, CoreML, Tensorflow (TFLite, TF.js, saved_model, *.pb) formats
 
 Usage:
-    $ python path/to/export.py --weights yolov5s.pt --img 640 --include torchscript onnx coreml tflite tfjs
+    $ python path/to/export.py --weights yolov5s.pt --img 640 --include torchscript onnx coreml pb tflite tfjs
 """
 
 import argparse
