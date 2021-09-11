@@ -31,25 +31,28 @@ from utils.torch_utils import select_device
 
 
 def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):
-    # TorchScript model export
+    # YOLOv5 TorchScript model export
     try:
         print(f'\n{prefix} starting export with torch {torch.__version__}...')
         f = file.with_suffix('.torchscript.pt')
+
         ts = torch.jit.trace(model, im, strict=False)
         (optimize_for_mobile(ts) if optimize else ts).save(f)
+
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
         print(f'{prefix} export failure: {e}')
 
 
 def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:')):
-    # YOLOv5 ONNX model export
+    # YOLOv5 ONNX export
     try:
         check_requirements(('onnx',))
         import onnx
 
         print(f'\n{prefix} starting export with onnx {onnx.__version__}...')
         f = file.with_suffix('.onnx')
+
         torch.onnx.export(model, im, f, verbose=False, opset_version=opset,
                           training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
                           do_constant_folding=not train,
@@ -86,18 +89,19 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
 
 
 def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
-    # YOLOv5 CoreML model export
-
+    # YOLOv5 CoreML export
     try:
         check_requirements(('coremltools',))
         import coremltools as ct
 
         print(f'\n{prefix} starting export with coremltools {ct.__version__}...')
         f = file.with_suffix('.mlmodel')
+
         model.train()  # CoreML exports should be placed in model.train() mode
         ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
         model = ct.convert(ts, inputs=[ct.ImageType('image', shape=im.shape, scale=1 / 255.0, bias=[0, 0, 0])])
         model.save(f)
+
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
         print(f'\n{prefix} export failure: {e}')
@@ -118,18 +122,14 @@ def export_saved_model(model, im, file, dynamic,
         f = str(file).replace('.pt', '_saved_model')
         batch_size, ch, *imgsz = list(im.shape)  # BCHW
 
-        # Export Keras model start ----------
         tf_model = tf_Model(cfg=model.yaml, model=model, nc=model.nc, imgsz=imgsz)
         im = tf.zeros((batch_size, *imgsz, 3))  # BHWC order for TensorFlow
-        m = tf_model.model.layers[-1]
-        assert isinstance(m, tf_Detect), "the last layer must be Detect()"
         y = tf_model.predict(im, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
         inputs = keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic else batch_size)
         outputs = tf_model.predict(inputs, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
         keras_model = keras.Model(inputs=inputs, outputs=outputs)
         keras_model.summary()
         keras_model.save(f, save_format='tf')
-        # Export keras model end ----------
 
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
@@ -147,13 +147,11 @@ def export_pb(keras_model, im, file, prefix=colorstr('TensorFlow GraphDef:')):
         print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
         f = file.with_suffix('.pb')
 
-        # Export *.pb start ----------
         m = tf.function(lambda x: keras_model(x))  # full model
         m = m.get_concrete_function(tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype))
         frozen_func = convert_variables_to_constants_v2(m)
         frozen_func.graph.as_graph_def()
         tf.io.write_graph(graph_or_graph_def=frozen_func.graph, logdir=str(f.parent), name=f.name, as_text=False)
-        # Export *.pb end ----------
 
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
@@ -161,7 +159,7 @@ def export_pb(keras_model, im, file, prefix=colorstr('TensorFlow GraphDef:')):
 
 
 def export_tflite(keras_model, im, file, tfl_int8, data, ncalib, prefix=colorstr('TensorFlow Lite:')):
-    # YOLOv5 TensorFlow TFLite export
+    # YOLOv5 TensorFlow Lite export
     try:
         import tensorflow as tf
         from models.tf import representative_dataset_gen
@@ -177,7 +175,6 @@ def export_tflite(keras_model, im, file, tfl_int8, data, ncalib, prefix=colorstr
         # tflite_model = converter.convert()
         # f = weights.replace('.pt', '.tflite')  # filename
         # open(f, "wb").write(tflite_model)
-        # Export FP32 TFLite end ----------
 
         # Export FP16 TFLite start ----------
         converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
@@ -191,7 +188,6 @@ def export_tflite(keras_model, im, file, tfl_int8, data, ncalib, prefix=colorstr
         f = str(file).replace('.pt', '-fp16.tflite')  # filename
         open(f, "wb").write(tflite_model)
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
-        # Export FP16 TFLite end ----------
 
         # Export INT8 TFLite start ----------
         if tfl_int8:
@@ -209,13 +205,13 @@ def export_tflite(keras_model, im, file, tfl_int8, data, ncalib, prefix=colorstr
             f = str(file).replace('.pt', '-int8.tflite')  # filename
             open(f, "wb").write(tflite_model)
             print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
-        # Export INT8 TFLite end ----------
+
     except Exception as e:
         print(f'\n{prefix} export failure: {e}')
 
 
 def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
-    # YOLOv5 TensorFlow TF.js export
+    # YOLOv5 TensorFlow.js export
     try:
         check_requirements(('tensorflowjs',))
         import tensorflowjs as tfjs
@@ -223,11 +219,9 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
         print(f'\n{prefix} starting export with tensorflowjs {tfjs.__version__}...')
         f = str(file).replace('.pt', '_tfjs_model')
 
-        # Export TensorFlow.js start ----------
         cmd = f"tensorflowjs_converter --input_format=tf_frozen_model " \
               f"--output_node_names='Identity,Identity_1,Identity_2,Identity_3' yolov5s.pb {f}"
         _ = check_output(cmd, shell=True)
-        # Export TensorFlow.js end ----------
 
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
