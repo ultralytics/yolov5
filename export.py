@@ -169,44 +169,21 @@ def export_tflite(keras_model, im, file, tfl_int8, data, ncalib, prefix=colorstr
         print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
         batch_size, ch, *imgsz = list(im.shape)  # BCHW
 
-        # Export FP32 TFLite start ----------
-        # converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
-        # converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
-        # converter.allow_custom_ops = False
-        # converter.experimental_new_converter = True
-        # tflite_model = converter.convert()
-        # f = weights.replace('.pt', '.tflite')  # filename
-        # open(f, "wb").write(tflite_model)
-
-        # Export FP16 TFLite start ----------
         converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
-        converter.optimizations = [tf.lite.Optimize.DEFAULT]
-        # converter.representative_dataset = representative_dataset_gen
-        # converter.target_spec.supported_types = [tf.float16]
         converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
-        converter.allow_custom_ops = False
-        converter.experimental_new_converter = True
-        tflite_model = converter.convert()
-        f = str(file).replace('.pt', '-fp16.tflite')  # filename
-        open(f, "wb").write(tflite_model)
-        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
-
-        # Export INT8 TFLite start ----------
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
         if tfl_int8:
             dataset = LoadImages(check_dataset(data)['train'], img_size=imgsz, auto=False)  # representative data
-            converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
-            converter.optimizations = [tf.lite.Optimize.DEFAULT]
             converter.representative_dataset = lambda: representative_dataset_gen(dataset, ncalib)
             converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
             converter.inference_input_type = tf.uint8  # or tf.int8
             converter.inference_output_type = tf.uint8  # or tf.int8
-            converter.allow_custom_ops = False
-            converter.experimental_new_converter = True
             converter.experimental_new_quantizer = False
-            tflite_model = converter.convert()
-            f = str(file).replace('.pt', '-int8.tflite')  # filename
-            open(f, "wb").write(tflite_model)
-            print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+
+        tflite_model = converter.convert()
+        f = str(file).replace('.pt', ('-int8' if tfl_int8 else '') + '.tflite')  # filename
+        open(f, "wb").write(tflite_model)
+        print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
 
     except Exception as e:
         print(f'\n{prefix} export failure: {e}')
