@@ -7,10 +7,10 @@ Usage:
 """
 
 import argparse
+import subprocess
 import sys
 import time
 from pathlib import Path
-from subprocess import check_output
 
 import torch
 import torch.nn as nn
@@ -168,6 +168,7 @@ def export_tflite(keras_model, im, file, tfl_int8, data, ncalib, prefix=colorstr
 
         print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
         batch_size, ch, *imgsz = list(im.shape)  # BCHW
+        f = file.with_suffix('.tflite')
 
         converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
         converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
@@ -179,9 +180,9 @@ def export_tflite(keras_model, im, file, tfl_int8, data, ncalib, prefix=colorstr
             converter.inference_input_type = tf.uint8  # or tf.int8
             converter.inference_output_type = tf.uint8  # or tf.int8
             converter.experimental_new_quantizer = False
+            f = str(file).replace('.pt', '-int8.tflite')
 
         tflite_model = converter.convert()
-        f = str(file).replace('.pt', ('-int8' if tfl_int8 else '') + '.tflite')  # filename
         open(f, "wb").write(tflite_model)
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
 
@@ -201,7 +202,7 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
 
         cmd = f"tensorflowjs_converter --input_format=tf_frozen_model " \
               f"--output_node_names='Identity,Identity_1,Identity_2,Identity_3' {f_pb} {f}"
-        _ = check_output(cmd, shell=True)
+        subprocess.run(cmd, shell=True)
 
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
@@ -270,7 +271,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         pb, tflite, tfjs = tf_exports[1:]
         assert not (tflite and tfjs), 'TFLite and TF.js models must be exported separately, please pass only one type.'
         model = export_saved_model(model, im, file, dynamic, tf_nms=tfjs, agnostic_nms=tfjs)  # keras model
-        if pb:
+        if pb or tfjs:  # pb prerequisite to tfjs
             export_pb(model, im, file)
         if tflite:
             export_tflite(model, im, file, tfl_int8=False, data=data, ncalib=100)
