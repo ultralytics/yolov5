@@ -1,0 +1,1139 @@
+<section xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="sec-release-21.11">
+  <title>Release 21.11 (“?”, 2021.11/??)</title>
+  <para>
+    In addition to numerous new and upgraded packages, this release has
+    the following highlights:
+  </para>
+  <itemizedlist spacing="compact">
+    <listitem>
+      <para>
+        Support is planned until the end of June 2022, handing over to
+        22.05.
+      </para>
+    </listitem>
+  </itemizedlist>
+  <section xml:id="sec-release-21.11-highlights">
+    <title>Highlights</title>
+    <itemizedlist>
+      <listitem>
+        <para>
+          PHP now defaults to PHP 8.0, updated from 7.4.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          kOps now defaults to 1.21.1, which uses containerd as the
+          default runtime.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <literal>python3</literal> now defaults to Python 3.9, updated
+          from Python 3.8.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          PostgreSQL now defaults to major version 13.
+        </para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section xml:id="sec-release-21.11-new-services">
+    <title>New Services</title>
+    <itemizedlist>
+      <listitem>
+        <para>
+          <link xlink:href="https://digint.ch/btrbk/index.html">btrbk</link>,
+          a backup tool for btrfs subvolumes, taking advantage of btrfs
+          specific capabilities to create atomic snapshots and transfer
+          them incrementally to your backup locations. Available as
+          <link xlink:href="options.html#opt-services.brtbk.instances">services.btrbk</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://github.com/xrelkd/clipcat/">clipcat</link>,
+          an X11 clipboard manager written in Rust. Available at
+          [services.clipcat](options.html#o pt-services.clipcat.enable).
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://github.com/maxmind/geoipupdate">geoipupdate</link>,
+          a GeoIP database updater from MaxMind. Available as
+          <link xlink:href="options.html#opt-services.geoipupdate.enable">services.geoipupdate</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://www.isc.org/kea/">Kea</link>, ISCs
+          2nd generation DHCP and DDNS server suite. Available at
+          <link xlink:href="options.html#opt-services.kea">services.kea</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://sr.ht">sourcehut</link>, a
+          collection of tools useful for software development. Available
+          as
+          <link xlink:href="options.html#opt-services.sourcehut.enable">services.sourcehut</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://download.pureftpd.org/pub/ucarp/README">ucarp</link>,
+          an userspace implementation of the Common Address Redundancy
+          Protocol (CARP). Available as
+          <link xlink:href="options.html#opt-networking.ucarp.enable">networking.ucarp</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          Users of flashrom should migrate to
+          <link xlink:href="options.html#opt-programs.flashrom.enable">programs.flashrom.enable</link>
+          and add themselves to the <literal>flashrom</literal> group to
+          be able to access programmers supported by flashrom.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://vikunja.io">vikunja</link>, a to-do
+          list app. Available as
+          <link linkend="opt-services.vikunja.enable">services.vikunja</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://www.snapraid.it/">snapraid</link>, a
+          backup program for disk arrays. Available as
+          <link linkend="opt-snapraid.enable">snapraid</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://github.com/hockeypuck/hockeypuck">Hockeypuck</link>,
+          a OpenPGP Key Server. Available as
+          <link linkend="opt-services.hockeypuck.enable">services.hockeypuck</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://github.com/buildkite/buildkite-agent-metrics">buildkite-agent-metrics</link>,
+          a command-line tool for collecting Buildkite agent metrics,
+          now has a Prometheus exporter available as
+          <link linkend="opt-services.prometheus.exporters.buildkite-agent.enable">services.prometheus.exporters.buildkite-agent</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://github.com/prometheus/influxdb_exporter">influxdb-exporter</link>
+          a Prometheus exporter that exports metrics received on an
+          InfluxDB compatible endpoint is now available as
+          <link linkend="opt-services.prometheus.exporters.influxdb.enable">services.prometheus.exporters.influxdb</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://github.com/matrix-discord/mx-puppet-discord">mx-puppet-discord</link>,
+          a discord puppeting bridge for matrix. Available as
+          <link linkend="opt-services.mx-puppet-discord.enable">services.mx-puppet-discord</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://www.meshcommander.com/meshcentral2/overview">MeshCentral</link>,
+          a remote administration service (<quote>TeamViewer but
+          self-hosted and with more features</quote>) is now available
+          with a package and a module:
+          <link linkend="opt-services.meshcentral.enable">services.meshcentral.enable</link>
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://github.com/Arksine/moonraker">moonraker</link>,
+          an API web server for Klipper. Available as
+          <link linkend="opt-services.moonraker.enable">moonraker</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://github.com/influxdata/influxdb">influxdb2</link>,
+          a Scalable datastore for metrics, events, and real-time
+          analytics. Available as
+          <link linkend="opt-services.influxdb2.enable">services.influxdb2</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://posativ.org/isso/">isso</link>, a
+          commenting server similar to Disqus. Available as
+          <link linkend="opt-services.isso.enable">isso</link>
+        </para>
+      </listitem>
+    </itemizedlist>
+    <itemizedlist spacing="compact">
+      <listitem>
+        <para>
+          <link xlink:href="https://www.navidrome.org/">navidrome</link>,
+          a personal music streaming server with subsonic-compatible
+          api. Available as
+          <link linkend="opt-services.navidrome.enable">navidrome</link>.
+        </para>
+      </listitem>
+    </itemizedlist>
+    <itemizedlist>
+      <listitem>
+        <para>
+          <link xlink:href="https://docs.fluidd.xyz/">fluidd</link>, a
+          Klipper web interface for managing 3d printers using
+          moonraker. Available as
+          <link linkend="opt-services.fluidd.enable">fluidd</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://github.com/earnestly/sx">sx</link>,
+          a simple alternative to both xinit and startx for starting a
+          Xorg server. Available as
+          <link linkend="opt-services.xserver.displayManager.sx.enable">services.xserver.displayManager.sx</link>
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://postfixadmin.sourceforge.io/">postfixadmin</link>,
+          a web based virtual user administration interface for Postfix
+          mail servers. Available as
+          <link linkend="opt-services.postfixadmin.enable">postfixadmin</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://sr.ht/~emersion/soju">soju</link>, a
+          user-friendly IRC bouncer. Available as
+          <link xlink:href="options.html#opt-services.soju.enable">services.soju</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <link xlink:href="https://nats.io/">nats</link>, a high
+          performance cloud and edge messaging system. Available as
+          <link linkend="opt-services.nats.enable">services.nats</link>.
+        </para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section xml:id="sec-release-21.11-incompatibilities">
+    <title>Backward Incompatibilities</title>
+    <itemizedlist>
+      <listitem>
+        <para>
+          The <literal>paperless</literal> module and package have been
+          removed. All users should migrate to the successor
+          <literal>paperless-ng</literal> instead. The Paperless project
+          <link xlink:href="https://github.com/the-paperless-project/paperless/commit/9b0063c9731f7c5f65b1852cb8caff97f5e40ba4">has
+          been archived</link> and advises all users to use
+          <literal>paperless-ng</literal> instead.
+        </para>
+        <para>
+          Users can use the <literal>services.paperless-ng</literal>
+          module as a replacement while noting the following
+          incompatibilities:
+        </para>
+        <itemizedlist spacing="compact">
+          <listitem>
+            <para>
+              <literal>services.paperless.ocrLanguages</literal> has no
+              replacement. Users should migrate to
+              <link xlink:href="options.html#opt-services.paperless-ng.extraConfig"><literal>services.paperless-ng.extraConfig</literal></link>
+              instead:
+            </para>
+          </listitem>
+        </itemizedlist>
+        <programlisting language="bash">
+{
+  services.paperless-ng.extraConfig = {
+    # Provide languages as ISO 639-2 codes
+    # separated by a plus (+) sign.
+    # https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
+    PAPERLESS_OCR_LANGUAGE = &quot;deu+eng+jpn&quot;; # German &amp; English &amp; Japanse
+  };
+}
+</programlisting>
+        <itemizedlist>
+          <listitem>
+            <para>
+              If you previously specified
+              <literal>PAPERLESS_CONSUME_MAIL_*</literal> settings in
+              <literal>services.paperless.extraConfig</literal> you
+              should remove those options now. You now
+              <emphasis>must</emphasis> define those settings in the
+              admin interface of paperless-ng.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Option <literal>services.paperless.manage</literal> no
+              longer exists. Use the script at
+              <literal>${services.paperless-ng.dataDir}/paperless-ng-manage</literal>
+              instead. Note that this script only exists after the
+              <literal>paperless-ng</literal> service has been started
+              at least once.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              After switching to the new system configuration you should
+              run the Django management command to reindex your
+              documents and optionally create a user, if you don’t have
+              one already.
+            </para>
+            <para>
+              To do so, enter the data directory (the value of
+              <literal>services.paperless-ng.dataDir</literal>,
+              <literal>/var/lib/paperless</literal> by default), switch
+              to the paperless user and execute the management command
+              like below:
+            </para>
+            <programlisting>
+$ cd /var/lib/paperless
+$ su paperless -s /bin/sh
+$ ./paperless-ng-manage document_index reindex
+# if not already done create a user account, paperless-ng requires a login
+$ ./paperless-ng-manage createsuperuser
+Username (leave blank to use 'paperless'): my-user-name
+Email address: me@example.com
+Password: **********
+Password (again): **********
+Superuser created successfully.
+</programlisting>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>staticjinja</literal> package has been upgraded
+          from 1.0.4 to 4.1.0
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          Firefox v91 does not support addons with invalid signature
+          anymore. Firefox ESR needs to be used for nix addon support.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>erigon</literal> ethereum node has moved to a new
+          database format in <literal>2021-05-04</literal>, and requires
+          a full resync
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>erigon</literal> ethereum node has moved it’s
+          database location in <literal>2021-08-03</literal>, users
+          upgrading must manually move their chaindata (see
+          <link xlink:href="https://github.com/ledgerwatch/erigon/releases/tag/v2021.08.03">release
+          notes</link>).
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <literal>services.geoip-updater</literal> was broken and has
+          been replaced by
+          <link xlink:href="options.html#opt-services.geoipupdate.enable">services.geoipupdate</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          PHP 7.3 is no longer supported due to upstream not supporting
+          this version for the entire lifecycle of the 21.11 release.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          Those making use of <literal>buildBazelPackage</literal> will
+          need to regenerate the fetch hashes (preferred), or set
+          <literal>fetchConfigured = false;</literal>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <literal>consul</literal> was upgraded to a new major release
+          with breaking changes, see
+          <link xlink:href="https://github.com/hashicorp/consul/releases/tag/v1.10.0">upstream
+          changelog</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          fsharp41 has been removed in preference to use the latest
+          dotnet-sdk
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The following F#-related packages have been removed for being
+          unmaintaned. Please use <literal>fetchNuGet</literal> for
+          specific packages.
+        </para>
+        <itemizedlist spacing="compact">
+          <listitem>
+            <para>
+              ExtCore
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Fake
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Fantomas
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FsCheck
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FsCheck262
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FsCheckNunit
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FSharpAutoComplete
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FSharpCompilerCodeDom
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FSharpCompilerService
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FSharpCompilerTools
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FSharpCore302
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FSharpCore3125
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FSharpCore4001
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FSharpCore4117
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FSharpData
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FSharpData225
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FSharpDataSQLProvider
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FSharpFormatting
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FsLexYacc
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FsLexYacc706
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FsLexYaccRuntime
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FsPickler
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              FsUnit
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Projekt
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Suave
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              UnionArgParser
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              ExcelDnaRegistration
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              MathNetNumerics
+            </para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+      <listitem>
+        <para>
+          <literal>programs.x2goserver</literal> is now
+          <literal>services.x2goserver</literal>
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The following dotnet-related packages have been removed for
+          being unmaintaned. Please use <literal>fetchNuGet</literal>
+          for specific packages.
+        </para>
+        <itemizedlist spacing="compact">
+          <listitem>
+            <para>
+              Autofac
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              SystemValueTuple
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              MicrosoftDiaSymReader
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              MicrosoftDiaSymReaderPortablePdb
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              SystemCollectionsImmutable
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              SystemCollectionsImmutable131
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              SystemReflectionMetadata
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              NUnit350
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Deedle
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              ExcelDna
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              GitVersionTree
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              NDeskOptions
+            </para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+    </itemizedlist>
+    <itemizedlist>
+      <listitem>
+        <para>
+          The <literal>antlr</literal> package now defaults to the 4.x
+          release instead of the old 2.7.7 version.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>pulseeffects</literal> package updated to
+          <link xlink:href="https://github.com/wwmm/easyeffects/releases/tag/v6.0.0">version
+          4.x</link> and renamed to <literal>easyeffects</literal>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>libwnck</literal> package now defaults to the 3.x
+          release instead of the old 2.31.0 version.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>bitwarden_rs</literal> packages and modules were
+          renamed to <literal>vaultwarden</literal>
+          <link xlink:href="https://github.com/dani-garcia/vaultwarden/discussions/1642">following
+          upstream</link>. More specifically,
+        </para>
+        <itemizedlist>
+          <listitem>
+            <para>
+              <literal>pkgs.bitwarden_rs</literal>,
+              <literal>pkgs.bitwarden_rs-sqlite</literal>,
+              <literal>pkgs.bitwarden_rs-mysql</literal> and
+              <literal>pkgs.bitwarden_rs-postgresql</literal> were
+              renamed to <literal>pkgs.vaultwarden</literal>,
+              <literal>pkgs.vaultwarden-sqlite</literal>,
+              <literal>pkgs.vaultwarden-mysql</literal> and
+              <literal>pkgs.vaultwarden-postgresql</literal>,
+              respectively.
+            </para>
+            <itemizedlist spacing="compact">
+              <listitem>
+                <para>
+                  Old names are preserved as aliases for backwards
+                  compatibility, but may be removed in the future.
+                </para>
+              </listitem>
+              <listitem>
+                <para>
+                  The <literal>bitwarden_rs</literal> executable was
+                  also renamed to <literal>vaultwarden</literal> in all
+                  packages.
+                </para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+          <listitem>
+            <para>
+              <literal>pkgs.bitwarden_rs-vault</literal> was renamed to
+              <literal>pkgs.vaultwarden-vault</literal>.
+            </para>
+            <itemizedlist spacing="compact">
+              <listitem>
+                <para>
+                  <literal>pkgs.bitwarden_rs-vault</literal> is
+                  preserved as an alias for backwards compatibility, but
+                  may be removed in the future.
+                </para>
+              </listitem>
+              <listitem>
+                <para>
+                  The static files were moved from
+                  <literal>/usr/share/bitwarden_rs</literal> to
+                  <literal>/usr/share/vaultwarden</literal>.
+                </para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+          <listitem>
+            <para>
+              The <literal>services.bitwarden_rs</literal> config module
+              was renamed to <literal>services.vaultwarden</literal>.
+            </para>
+            <itemizedlist spacing="compact">
+              <listitem>
+                <para>
+                  <literal>services.bitwarden_rs</literal> is preserved
+                  as an alias for backwards compatibility, but may be
+                  removed in the future.
+                </para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+          <listitem>
+            <para>
+              <literal>systemd.services.bitwarden_rs</literal>,
+              <literal>systemd.services.backup-bitwarden_rs</literal>
+              and <literal>systemd.timers.backup-bitwarden_rs</literal>
+              were renamed to
+              <literal>systemd.services.vaultwarden</literal>,
+              <literal>systemd.services.backup-vaultwarden</literal> and
+              <literal>systemd.timers.backup-vaultwarden</literal>,
+              respectively.
+            </para>
+            <itemizedlist spacing="compact">
+              <listitem>
+                <para>
+                  Old names are preserved as aliases for backwards
+                  compatibility, but may be removed in the future.
+                </para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+          <listitem>
+            <para>
+              <literal>users.users.bitwarden_rs</literal> and
+              <literal>users.groups.bitwarden_rs</literal> were renamed
+              to <literal>users.users.vaultwarden</literal> and
+              <literal>users.groups.vaultwarden</literal>, respectively.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              The data directory remains located at
+              <literal>/var/lib/bitwarden_rs</literal>, for backwards
+              compatibility.
+            </para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+    </itemizedlist>
+    <itemizedlist>
+      <listitem>
+        <para>
+          <literal>yggdrasil</literal> was upgraded to a new major
+          release with breaking changes, see
+          <link xlink:href="https://github.com/yggdrasil-network/yggdrasil-go/releases/tag/v0.4.0">upstream
+          changelog</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <literal>icingaweb2</literal> was upgraded to a new release
+          which requires a manual database upgrade, see
+          <link xlink:href="https://github.com/Icinga/icingaweb2/releases/tag/v2.9.0">upstream
+          changelog</link>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>isabelle</literal> package has been upgraded from
+          2020 to 2021
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          the <literal>mingw-64</literal> package has been upgraded from
+          6.0.0 to 9.0.0
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <literal>tt-rss</literal> was upgraded to the commit on
+          2021-06-21, which has breaking changes. If you use
+          <literal>services.tt-rss.extraConfig</literal> you should
+          migrate to the <literal>putenv</literal>-style configuration.
+          See
+          <link xlink:href="https://community.tt-rss.org/t/rip-config-php-hello-classes-config-php/4337">this
+          Discourse post</link> in the tt-rss forums for more details.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The following Visual Studio Code extensions were renamed to
+          keep the naming convention uniform.
+        </para>
+        <itemizedlist spacing="compact">
+          <listitem>
+            <para>
+              <literal>bbenoist.Nix</literal> -&gt;
+              <literal>bbenoist.nix</literal>
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <literal>CoenraadS.bracket-pair-colorizer</literal> -&gt;
+              <literal>coenraads.bracket-pair-colorizer</literal>
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <literal>golang.Go</literal> -&gt;
+              <literal>golang.go</literal>
+            </para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+      <listitem>
+        <para>
+          <literal>services.uptimed</literal> now uses
+          <literal>/var/lib/uptimed</literal> as its stateDirectory
+          instead of <literal>/var/spool/uptimed</literal>. Make sure to
+          move all files to the new directory.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          Deprecated package aliases in <literal>emacs.pkgs.*</literal>
+          have been removed. These aliases were remnants of the old
+          Emacs package infrastructure. We now use exact upstream names
+          wherever possible.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <literal>programs.neovim.runtime</literal> switched to a
+          <literal>linkFarm</literal> internally, making it impossible
+          to use wildcards in the <literal>source</literal> argument.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>openrazer</literal> and
+          <literal>openrazer-daemon</literal> packages as well as the
+          <literal>hardware.openrazer</literal> module now require users
+          to be members of the <literal>openrazer</literal> group
+          instead of <literal>plugdev</literal>. With this change, users
+          no longer need be granted the entire set of
+          <literal>plugdev</literal> group permissions, which can
+          include permissions other than those required by
+          <literal>openrazer</literal>. This is desirable from a
+          security point of view. The setting
+          <link xlink:href="options.html#opt-services.hardware.openrazer.users"><literal>harware.openrazer.users</literal></link>
+          can be used to add users to the <literal>openrazer</literal>
+          group.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The fontconfig service’s dpi option has been removed.
+          Fontconfig should use Xft settings by default so there’s no
+          need to override one value in multiple places. The user can
+          set DPI via ~/.Xresources properly, or at the system level per
+          monitor, or as a last resort at the system level with
+          <literal>services.xserver.dpi</literal>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>yambar</literal> package has been split into
+          <literal>yambar</literal> and
+          <literal>yambar-wayland</literal>, corresponding to the xorg
+          and wayland backend respectively. Please switch to
+          <literal>yambar-wayland</literal> if you are on wayland.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>services.minio</literal> module gained an
+          additional option <literal>consoleAddress</literal>, that
+          configures the address and port the web UI is listening, it
+          defaults to <literal>:9001</literal>. To be able to access the
+          web UI this port needs to be opened in the firewall.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>varnish</literal> package was upgraded from 6.3.x
+          to 6.5.x. <literal>varnish60</literal> for the last LTS
+          release is also still available.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>kubernetes</literal> package was upgraded to
+          1.22. The <literal>kubernetes.apiserver.kubeletHttps</literal>
+          option was removed and HTTPS is always used.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The attribute <literal>linuxPackages_latest_hardened</literal>
+          was dropped because the hardened patches lag behind the
+          upstream kernel which made version bumps harder. If you want
+          to use a hardened kernel, please pin it explicitly with a
+          versioned attribute such as
+          <literal>linuxPackages_5_10_hardened</literal>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>nomad</literal> package now defaults to a 1.1.x
+          release instead of 1.0.x
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          If <literal>exfat</literal> is included in
+          <literal>boot.supportedFilesystems</literal> and when using
+          kernel 5.7 or later, the <literal>exfatprogs</literal>
+          user-space utilities are used instead of
+          <literal>exfat</literal>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>todoman</literal> package was upgraded from 3.9.0
+          to 4.0.0. This introduces breaking changes in the
+          <link xlink:href="https://todoman.readthedocs.io/en/stable/configure.html#configuration-file">configuration
+          file</link> format.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>datadog-agent</literal>,
+          <literal>datadog-integrations-core</literal> and
+          <literal>datadog-process-agent</literal> packages were
+          upgraded from 6.11.2 to 7.30.2, git-2018-09-18 to 7.30.1 and
+          6.11.1 to 7.30.2, respectively. As a result
+          <literal>services.datadog-agent</literal> has had breaking
+          changes to the configuration file. For details, see the
+          <link xlink:href="https://github.com/DataDog/datadog-agent/blob/main/CHANGELOG.rst">upstream
+          changelog</link>.
+        </para>
+      </listitem>
+    </itemizedlist>
+  </section>
+  <section xml:id="sec-release-21.11-notable-changes">
+    <title>Other Notable Changes</title>
+    <itemizedlist>
+      <listitem>
+        <para>
+          The setting
+          <link xlink:href="options.html#opt-services.openssh.logLevel"><literal>services.openssh.logLevel</literal></link>
+          <literal>&quot;VERBOSE&quot;</literal>
+          <literal>&quot;INFO&quot;</literal>. This brings NixOS in line
+          with upstream and other Linux distributions, and reduces log
+          spam on servers due to bruteforcing botnets.
+        </para>
+        <para>
+          However, if
+          <link xlink:href="options.html#opt-services.fail2ban.enable"><literal>services.fail2ban.enable</literal></link>
+          is <literal>true</literal>, the <literal>fail2ban</literal>
+          will override the verbosity to
+          <literal>&quot;VERBOSE&quot;</literal>, so that
+          <literal>fail2ban</literal> can observe the failed login
+          attempts from the SSH logs.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          Sway: The terminal emulator <literal>rxvt-unicode</literal> is
+          no longer installed by default via
+          <literal>programs.sway.extraPackages</literal>. The current
+          default configuration uses <literal>alacritty</literal> (and
+          soon <literal>foot</literal>) so this is only an issue when
+          using a customized configuration and not installing
+          <literal>rxvt-unicode</literal> explicitly.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <literal>python3</literal> now defaults to Python 3.9. Python
+          3.9 introduces many deprecation warnings, please look at the
+          <link xlink:href="https://docs.python.org/3/whatsnew/3.9.html">What’s
+          New In Python 3.9 post</link> for more information.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <literal>qtile</literal> hase been updated from
+          <quote>0.16.0</quote> to <quote>0.18.0</quote>, please check
+          <link xlink:href="https://github.com/qtile/qtile/blob/master/CHANGELOG">qtile
+          changelog</link> for changes.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The <literal>claws-mail</literal> package now references the
+          new GTK+ 3 release branch, major version 4. To use the GTK+ 2
+          releases, one can install the
+          <literal>claws-mail-gtk2</literal> package.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The wordpress module provides a new interface which allows to
+          use different webservers with the new option
+          <link xlink:href="options.html#opt-services.wordpress.webserver"><literal>services.wordpress.webserver</literal></link>.
+          Currently <literal>httpd</literal> and
+          <literal>nginx</literal> are supported. The definitions of
+          wordpress sites should now be set in
+          <link xlink:href="options.html#opt-services.wordpress.sites"><literal>services.wordpress.sites</literal></link>.
+        </para>
+        <para>
+          Sites definitions that use the old interface are automatically
+          migrated in the new option. This backward compatibility will
+          be removed in 22.05.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The order of NSS (host) modules has been brought in line with
+          upstream recommendations:
+        </para>
+        <itemizedlist spacing="compact">
+          <listitem>
+            <para>
+              The <literal>myhostname</literal> module is placed before
+              the <literal>resolve</literal> (optional) and
+              <literal>dns</literal> entries, but after
+              <literal>file</literal> (to allow overriding via
+              <literal>/etc/hosts</literal> /
+              <literal>networking.extraHosts</literal>, and prevent ISPs
+              with catchall-DNS resolvers from hijacking
+              <literal>.localhost</literal> domains)
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              The <literal>mymachines</literal> module, which provides
+              hostname resolution for local containers (registered with
+              <literal>systemd-machined</literal>) is placed to the
+              front, to make sure its mappings are preferred over other
+              resolvers.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              If systemd-networkd is enabled, the
+              <literal>resolve</literal> module is placed before
+              <literal>files</literal> and
+              <literal>myhostname</literal>, as it provides the same
+              logic internally, with caching.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              The <literal>mdns(_minimal)</literal> module has been
+              updated to the new priorities.
+            </para>
+          </listitem>
+        </itemizedlist>
+        <para>
+          If you use your own NSS host modules, make sure to update your
+          priorities according to these rules:
+        </para>
+        <itemizedlist spacing="compact">
+          <listitem>
+            <para>
+              NSS modules which should be queried before
+              <literal>resolved</literal> DNS resolution should use
+              mkBefore.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              NSS modules which should be queried after
+              <literal>resolved</literal>, <literal>files</literal> and
+              <literal>myhostname</literal>, but before
+              <literal>dns</literal> should use the default priority
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              NSS modules which should come after <literal>dns</literal>
+              should use mkAfter.
+            </para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+      <listitem>
+        <para>
+          The
+          <link xlink:href="options.html#opt-networking.wireless.iwd.enable">networking.wireless.iwd</link>
+          module has a new
+          <link xlink:href="options.html#opt-networking.wireless.iwd.settings">networking.wireless.iwd.settings</link>
+          option.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          The
+          <link xlink:href="options.html#opt-services.syncoid.enable">services.syncoid.enable</link>
+          module now properly drops ZFS permissions after usage. Before
+          it delegated permissions to whole pools instead of datasets
+          and didn’t clean up after execution. You can manually look
+          this up for your pools by running
+          <literal>zfs allow your-pool-name</literal> and use
+          <literal>zfs unallow syncoid your-pool-name</literal> to clean
+          this up.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          Zfs: <literal>latestCompatibleLinuxPackages</literal> is now
+          exported on the zfs package. One can use
+          <literal>boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;</literal>
+          to always track the latest compatible kernel with a given
+          version of zfs.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          Nginx will use the value of
+          <literal>sslTrustedCertificate</literal> if provided for a
+          virtual host, even if <literal>enableACME</literal> is set.
+          This is useful for providers not using the same certificate to
+          sign OCSP responses and server certificates.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <literal>lib.formats.yaml</literal>’s
+          <literal>generate</literal> will not generate JSON anymore,
+          but instead use more of the YAML-specific syntax.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          GNOME desktop environment now enables
+          <literal>QGnomePlatform</literal> as the Qt platform theme,
+          which should avoid crashes when opening file chooser dialogs
+          in Qt apps by using XDG desktop portal. Additionally, it will
+          make the apps fit better visually.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          <literal>rofi</literal> has been updated from
+          <quote>1.6.1</quote> to <quote>1.7.0</quote>, one important
+          thing is the removal of the old xresources based configuration
+          setup. Read more
+          <link xlink:href="https://github.com/davatorium/rofi/blob/cb12e6fc058f4a0f4f/Changelog#L1">in
+          rofi’s changelog</link>.
+        </para>
+      </listitem>
+    </itemizedlist>
+  </section>
+</section>
