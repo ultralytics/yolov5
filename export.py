@@ -217,10 +217,11 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
         import tensorflowjs as tfjs
 
         print(f'\n{prefix} starting export with tensorflowjs {tfjs.__version__}...')
-        f = str(file).replace('.pt', '_tfjs_model')
+        f = str(file).replace('.pt', '_tfjs_model')  # js dir
+        f_pb = file.with_suffix('.pb')  # *.pb path
 
         cmd = f"tensorflowjs_converter --input_format=tf_frozen_model " \
-              f"--output_node_names='Identity,Identity_1,Identity_2,Identity_3' yolov5s.pb {f}"
+              f"--output_node_names='Identity,Identity_1,Identity_2,Identity_3' {f_pb} {f}"
         _ = check_output(cmd, shell=True)
 
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
