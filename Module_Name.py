@@ -766,11 +766,4 @@ if __name__ == '__main__':  # Tests
 # ========================================================= #
 
 
-imports all to ci & make datalhncloud 
- datalncloud
-  Import sthereos to datalhncloud
-         view to datalhncloud
-         dataname to datalhncloud
- close(datalncloud)
-End;
-         
+
