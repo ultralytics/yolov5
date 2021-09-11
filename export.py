@@ -319,8 +319,8 @@ def parse_opt():
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
     parser.add_argument('--opset', type=int, default=13, help='ONNX: opset version')
     parser.add_argument('--include', nargs='+',
-                        default=['torchscript', 'onnx', 'coreml', 'saved_model', 'pb', 'tflite', 'tfjs'],
-                        help='formats')
+                        default=['torchscript', 'onnx'],
+                        help="available formats are (torchscript, onnx, coreml, saved_model, pb, tflite, tfjs)")
     opt = parser.parse_args()
     return opt
 
