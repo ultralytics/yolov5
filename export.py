@@ -89,6 +89,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
 
 def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
     # YOLOv5 CoreML export
+    ct_model = None
     try:
         check_requirements(('coremltools',))
         import coremltools as ct
@@ -98,19 +99,21 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
 
         model.train()  # CoreML exports should be placed in model.train() mode
         ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
-        model = ct.convert(ts, inputs=[ct.ImageType('image', shape=im.shape, scale=1 / 255.0, bias=[0, 0, 0])])
-        model.save(f)
+        ct_model = ct.convert(ts, inputs=[ct.ImageType('image', shape=im.shape, scale=1 / 255.0, bias=[0, 0, 0])])
+        ct_model.save(f)
 
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
         print(f'\n{prefix} export failure: {e}')
+
+    return ct_model
 
 
 def export_saved_model(model, im, file, dynamic,
                        tf_nms=False, agnostic_nms=False, topk_per_class=100, topk_all=100, iou_thres=0.45,
                        conf_thres=0.25, prefix=colorstr('TensorFlow saved_model:')):
     # YOLOv5 TensorFlow saved_model export
-    keras_model = []
+    keras_model = None
     try:
         check_requirements(('tensorflow',))
         import tensorflow as tf
