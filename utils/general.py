@@ -147,7 +147,7 @@ def is_colab():
 
 def is_pip():
     # Is file in a pip package?
-    return 'site-packages' in Path(__file__).absolute().parts
+    return 'site-packages' in Path(__file__).resolve().parts
 
 
 def is_ascii(s=''):
