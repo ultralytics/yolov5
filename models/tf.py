@@ -217,17 +217,14 @@ class tf_Detect(keras.layers.Layer):
         self.anchor_grid = tf.reshape(tf.convert_to_tensor(w.anchor_grid.numpy(), dtype=tf.float32),
                                       [self.nl, 1, -1, 1, 2])
         self.m = [tf_Conv2d(x, self.no * self.na, 1, w=w.m[i]) for i, x in enumerate(ch)]
-        self.export = False  # onnx export
-        self.training = True  # set to False after building model
+        self.training = False  # set to False after building model
         self.imgsz = imgsz
         for i in range(self.nl):
             ny, nx = self.imgsz[0] // self.stride[i], self.imgsz[1] // self.stride[i]
             self.grid[i] = self._make_grid(nx, ny)
 
     def call(self, inputs):
-        # x = x.copy()  # for profiling
         z = []  # inference output
-        self.training |= self.export
         x = []
         for i in range(self.nl):
             x.append(self.m[i](inputs[i]))
@@ -452,7 +449,6 @@ def run(cfg='yolov5s.yaml',  # cfg path
 
     # Load PyTorch model
     model = attempt_load(weights, map_location=torch.device('cpu'), inplace=True, fuse=False)
-    model.model[-1].export = False  # set Detect() layer export=True
     y = model(img)  # dry run
     nc = y[0].shape[-1] - 5
 
@@ -464,7 +460,6 @@ def run(cfg='yolov5s.yaml',  # cfg path
 
         m = tf_model.model.layers[-1]
         assert isinstance(m, tf_Detect), "the last layer must be Detect"
-        m.training = False
         y = tf_model.predict(img, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
 
         inputs = keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic_batch_size else batch_size)

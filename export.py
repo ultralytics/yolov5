@@ -23,7 +23,7 @@ sys.path.append(ROOT.as_posix())  # add yolov5/ to path
 from models.common import Conv
 from models.yolo import Detect
 from models.experimental import attempt_load
-from utils.activations import Hardswish, SiLU
+from utils.activations import SiLU
 from utils.datasets import LoadImages
 from utils.general import colorstr, check_dataset, check_img_size, check_requirements, file_size, \
     set_logging
@@ -123,7 +123,6 @@ def export_saved_model(model, im, file, dynamic,
         im = tf.zeros((batch_size, *imgsz, 3))  # BHWC order for TensorFlow
         m = tf_model.model.layers[-1]
         assert isinstance(m, tf_Detect), "the last layer must be Detect()"
-        m.training = False
         y = tf_model.predict(im, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
         inputs = keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic else batch_size)
         outputs = tf_model.predict(inputs, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
@@ -271,9 +270,7 @@ def run(data='data/coco128.yaml',  # 'dataset.yaml path'
     model.train() if train else model.eval()  # training mode = no Detect() layer grid construction
     for k, m in model.named_modules():
         if isinstance(m, Conv):  # assign export-friendly activations
-            if isinstance(m.act, nn.Hardswish):
-                m.act = Hardswish()
-            elif isinstance(m.act, nn.SiLU):
+            if isinstance(m.act, nn.SiLU):
                 m.act = SiLU()
         elif isinstance(m, Detect):
             m.inplace = inplace
@@ -298,7 +295,7 @@ def run(data='data/coco128.yaml',  # 'dataset.yaml path'
         if 'pb' in include:
             export_pb(model, im, file)
         if 'tflite' in include:
-            export_tflite(model, im, file, tfl_int8=True, data=data, ncalib=100)
+            export_tflite(model, im, file, tfl_int8=False, data=data, ncalib=100)
         if 'tfjs' in include:
             export_tfjs(model, im, file)
 
