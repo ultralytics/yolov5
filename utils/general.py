@@ -17,7 +17,7 @@ import urllib
 from itertools import repeat
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from subprocess import check_output
+from subprocess import check_output, TimeoutExpired
 
 import cv2
 import numpy as np
@@ -173,23 +173,68 @@ def check_online():
 
 
 @try_except
-def check_git_status():
-    # Recommend 'git pull' if code is out of date
+def check_git_status() -> None:
+    """ Compares current commit with ultralytics/yolov5 repo commits and suggests updates when out of date """
+
     msg = ', for updates see https://github.com/ultralytics/yolov5'
     print(colorstr('github: '), end='')
     assert Path('.git').exists(), 'skipping check (not a git repository)' + msg
     assert not is_docker(), 'skipping check (Docker image)' + msg
     assert check_online(), 'skipping check (offline)' + msg
 
-    cmd = 'git fetch && git config --get remote.origin.url'
-    url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
+    remote_url = url = get_remote_origin_url()
+    
+    if not (is_ultralyltics_repo(remote_url)):
+        upstream_url = url = get_remote_upstream_url()
+        assert is_ultralyltics_repo(upstream_url), 'skipping check (forked repo)' + msg
+        remote = 'upstream' # forked repo
+    else:
+        remote = 'origin'
+
+    if is_ssh_repo(url):
+        print('Connecting to GitHUB to check for updates... ')
+        timeout=10
+    else:
+        timeout=None
+
+    try:
+        cmd = f"git fetch {remote}"
+        check_output(cmd, shell=True, timeout=timeout)  # timeout for SSH password input
+    except TimeoutExpired as e:
+        print('could not connect')
+        return
+
     branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
-    n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
+    n = int(check_output(f'git rev-list {branch}..{remote}/master --count', shell=True))  # commits behind
     if n > 0:
         s = f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use `git pull` or `git clone {url}` to update."
     else:
-        s = f'up to date with {url} ✅'
+        clean_url = url.rstrip('.git')
+        s = f'up to date with {clean_url} ✅'
     print(emojis(s))  # emoji-safe
+
+
+def get_remote_upstream_url() -> str:
+    """ Returns git remote upstream url """
+    cmd = 'git config --get remote.upstream.url'
+    return check_output(cmd, shell=True).decode().strip()
+
+
+def get_remote_origin_url() -> str:
+    """ Returns git remote origin url """
+    cmd = 'git config --get remote.origin.url'
+    return check_output(cmd, shell=True).decode().strip()
+
+
+def is_ssh_repo(url) -> bool:
+    """ Returns true if remote url is ssh connection """
+    return url.startswith("git@github.com")
+
+
+def is_ultralyltics_repo(url):
+    """ Returns true if url matches ultralytics urls """
+    ultralytics_urls = ['https://github.com/ultralytics/yolov5.git', 'git@github.com:ultralytics/yolov5.git']
+    return url in ultralytics_urls
 
 
 def check_python(minimum='3.6.2'):
