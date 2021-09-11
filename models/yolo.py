@@ -11,7 +11,7 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 
-FILE = Path(__file__).absolute()
+FILE = Path(__file__).resolve()
 sys.path.append(FILE.parents[1].as_posix())  # add yolov5/ to path
 
 from models.common import *
