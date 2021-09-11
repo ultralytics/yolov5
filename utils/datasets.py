@@ -34,7 +34,6 @@ from utils.torch_utils import torch_distributed_zero_first
 HELP_URL = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 IMG_FORMATS = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
 VID_FORMATS = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
-NUM_THREADS = min(8, os.cpu_count())  # number of multiprocessing threads
 
 # Get orientation exif tag
 for orientation in ExifTags.TAGS.keys():
@@ -104,7 +103,8 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
                                       stride=int(stride),
                                       pad=pad,
                                       image_weights=image_weights,
-                                      prefix=prefix)
+                                      prefix=prefix,
+                                      workers=workers)
 
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, workers])  # number of workers
@@ -366,7 +366,7 @@ def img2label_paths(img_paths):
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
+                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix='', workers=8):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -406,7 +406,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
             assert cache['version'] == 0.4 and cache['hash'] == get_hash(self.label_files + self.img_files)
         except:
-            cache, exists = self.cache_labels(cache_path, prefix), False  # cache
+            cache, exists = self.cache_labels(cache_path, prefix, workers), False  # cache
 
         # Display cache
         nf, nm, ne, nc, n = cache.pop('results')  # found, missing, empty, corrupted, total
@@ -468,7 +468,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 self.im_cache_dir.mkdir(parents=True, exist_ok=True)
             gb = 0  # Gigabytes of cached images
             self.img_hw0, self.img_hw = [None] * n, [None] * n
-            results = ThreadPool(NUM_THREADS).imap(lambda x: load_image(*x), zip(repeat(self), range(n)))
+            results = ThreadPool(workers).imap(lambda x: load_image(*x), zip(repeat(self), range(n)))
             pbar = tqdm(enumerate(results), total=n)
             for i, x in pbar:
                 if cache_images == 'disk':
@@ -481,12 +481,12 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 pbar.desc = f'{prefix}Caching images ({gb / 1E9:.1f}GB {cache_images})'
             pbar.close()
 
-    def cache_labels(self, path=Path('./labels.cache'), prefix=''):
+    def cache_labels(self, path=Path('./labels.cache'), prefix='', workers=8):
         # Cache dataset labels, check images and read shapes
         x = {}  # dict
         nm, nf, ne, nc, msgs = 0, 0, 0, 0, []  # number missing, found, empty, corrupt, messages
         desc = f"{prefix}Scanning '{path.parent / path.stem}' images and labels..."
-        with Pool(NUM_THREADS) as pool:
+        with Pool(workers) as pool:
             pbar = tqdm(pool.imap_unordered(verify_image_label, zip(self.img_files, self.label_files, repeat(prefix))),
                         desc=desc, total=len(self.img_files))
             for im_file, l, shape, segments, nm_f, nf_f, ne_f, nc_f, msg in pbar:
@@ -904,7 +904,7 @@ def verify_image_label(args):
         return [None, None, None, None, nm, nf, ne, nc, msg]
 
 
-def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profile=False, hub=False):
+def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profile=False, hub=False, workers=8):
     """ Return dataset statistics dictionary with images and instances counts per split per class
     To run in parent directory: export PYTHONPATH="$PWD/yolov5"
     Usage1: from utils.datasets import *; dataset_stats('coco128.yaml', autodownload=True)
@@ -950,7 +950,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
             stats[split] = None  # i.e. no test set
             continue
         x = []
-        dataset = LoadImagesAndLabels(data[split])  # load dataset
+        dataset = LoadImagesAndLabels(data[split], workers)  # load dataset
         for label in tqdm(dataset.labels, total=dataset.n, desc='Statistics'):
             x.append(np.bincount(label[:, 0].astype(int), minlength=data['nc']))
         x = np.array(x)  # shape(128x80)
@@ -963,7 +963,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         if hub:
             im_dir = hub_dir / 'images'
             im_dir.mkdir(parents=True, exist_ok=True)
-            for _ in tqdm(ThreadPool(NUM_THREADS).imap(hub_ops, dataset.img_files), total=dataset.n, desc='HUB Ops'):
+            for _ in tqdm(ThreadPool(workers).imap(hub_ops, dataset.img_files), total=dataset.n, desc='HUB Ops'):
                 pass
 
     # Profile
