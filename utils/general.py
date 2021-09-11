@@ -182,11 +182,11 @@ def check_git_status() -> None:
     assert not is_docker(), 'skipping check (Docker image)' + msg
     assert check_online(), 'skipping check (offline)' + msg
 
-    remote_url = url = get_remote_origin_url()
+    remote_url = url = get_remote_url()
     
     if not (is_ultralyltics_repo(remote_url)):
-        upstream_url = url = get_remote_upstream_url()
-        assert is_ultralyltics_repo(upstream_url), 'skipping check (forked repo)' + msg
+        upstream_url = url = get_remote_url('upstream')
+        assert is_ultralyltics_repo(upstream_url), 'skipping check (forked repo)' + msg # repo forked, upstream not configured
         remote = 'upstream' # forked repo
     else:
         remote = 'origin'
@@ -214,15 +214,9 @@ def check_git_status() -> None:
     print(emojis(s))  # emoji-safe
 
 
-def get_remote_upstream_url() -> str:
-    """ Returns git remote upstream url """
-    cmd = 'git config --get remote.upstream.url'
-    return check_output(cmd, shell=True).decode().strip()
-
-
-def get_remote_origin_url() -> str:
-    """ Returns git remote origin url """
-    cmd = 'git config --get remote.origin.url'
+def get_remote_url(name='origin') -> str:
+    """ Returns git remote url """
+    cmd = f'git config --get remote.{name}.url'
     return check_output(cmd, shell=True).decode().strip()
 
 
