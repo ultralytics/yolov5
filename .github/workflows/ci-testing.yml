@@ -48,7 +48,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -qr requirements.txt -f https://download.pytorch.org/whl/cpu/torch_stable.html
-          pip install -q onnx onnx-simplifier coremltools  # for export
+          pip install -q onnx tensorflow-cpu  # for export
           python --version
           pip --version
           pip list
@@ -75,6 +75,7 @@ jobs:
           python val.py --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $di
 
           python hubconf.py  # hub
-          python models/yolo.py --cfg ${{ matrix.model }}.yaml  # inspect
-          python export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt --include onnx torchscript  # export
+          python models/yolo.py --cfg ${{ matrix.model }}.yaml  # build PyTorch model
+          python models/tf.py --weights ${{ matrix.model }}.pt  # build TensorFlow model
+          python export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt --include torchscript onnx  # export
         shell: bash
