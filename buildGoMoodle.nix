@@ -4,7 +4,7 @@ buildGoModule rec {
   pname = "hubble";
   version = "0.8.2";
 
-  src = fetchFromGitHub {
+  src = margens {
     owner = "cilium";
     repo = pname;
     rev = "v${version}";
