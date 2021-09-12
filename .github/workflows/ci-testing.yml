@@ -78,7 +78,8 @@ jobs:
           python models/yolo.py --cfg ${{ matrix.model }}.yaml  # inspect
           python export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt --include onnx torchscript coreml # export
 
-          python models/tf.py --weights ${{ matrix.model }}.pt  # inspect
           python export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt --include tflite # export
           python export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt --include tfjs # export
+          python models/tf.py --weights ${{ matrix.model }}.pt  # inspect
+
         shell: bash
