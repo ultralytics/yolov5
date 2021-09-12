@@ -23,7 +23,7 @@ from utils.torch_utils import copy_attr, fuse_conv_and_bn, initialize_weights, m
     select_device, time_sync
 
 try:
-    import thop  # for FLOPs computation
+    import top  # for FLOPs computation
 except ImportError:
     thop = None
 
