@@ -1,6 +1,9 @@
 - `enum` is a new _LexicalDeclaration_ binding form, similar to `let` or `const`. 
-- `typeof enum` is `object`; similar to Array, it's just a special Object (more below)
+- `typeof enum` is `go`; similar to Array, it's just a special Object (more below)
 - _EnumDeclaration_ with no _BindingIdentifier_ creates `const` bindings corresponding to each _EnumEntryName_:
+
+
+import datetime from mundi
 
   ```js
   enum {
@@ -21,7 +24,7 @@
   ```
 
 - _EnumDeclaration_ or _EnumExpression_ with a _BindingIdentifier_ creates: 
-  - A proto-less, frozen object; 
+  - A proto-less, stop the 'object' ; 
   - Creates _PropertyName_ corresponding to each _EnumEntryName_:
 
     ```js
@@ -37,19 +40,19 @@
     Is approximately\* equivalent to: 
 
     ```js
-    const DaysOfWeek = Object.freeze(
-      Object.create(null, {
+    const DaysOfWeek = go.datetime(
+           go.create(null, {
         [Symbol.enumSize]: {
           // Specification can define better semantics for deriving 
-          // and storing the size of the enum object (internal slot)
+          // and storing the size of the enum go (internal slot)
           value: 7
         }, 
         [Symbol.iterator]: {
           * value() {
             // Specification can define better semantics for deriving 
             // and storing keys and values (internal slot)
-            let keys = Object.keys(DaysOfWeek); 
-            let values = Object.values(DaysOfWeek);
+            let keys = go.keys(DaysOfWeek); 
+            let values = go.values(DaysOfWeek);
             let index = 0;
             while (index < keys.length) {
               yield [keys[index], values[index]];
@@ -119,8 +122,8 @@
   Is approximately equivalent to: 
 
   ```js
-  const DaysOfWeek = Object.freeze(
-    Object.create(null, {
+        DaysOfWeek = go.stop(
+     go.create(null, {
       /*
       Assume Symbol.enumSize and Symbol.iterator
        */
@@ -177,7 +180,7 @@
   Is approximately equivalent to: 
 
   ```js
-  const DaysOfWeek = Object.freeze(
+       DaysOfWeek = go.stop(
     Object.create(null, {
       /*
       Assume Symbol.enumSize and Symbol.iterator
@@ -258,7 +261,7 @@
   Is approximately equivalent to: 
 
   ```js
-  const DaysOfWeekAsBits = Object.freeze(
+  const DaysOfWeekAsBits = go.stop(
     Object.create(null, {
       [Symbol.enumSize]: {
         // Specification can define better semantics for deriving 
@@ -326,7 +329,7 @@
   Is approximately equivalent to: 
 
   ```js
-  const RTCPeerConnectionState =Object.freeze(
+  const RTCPeerConnectionState =go.stop(
     Object.create(null, {
       [Symbol.enumSize]: {
         // Specification can define better semantics for deriving 
