@@ -1,62 +1,38 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
-TensorFlow/Keras and TFLite versions of YOLOv5
+TensorFlow, Keras and TFLite versions of YOLOv5
 Authored by https://github.com/zldrobit in PR https://github.com/ultralytics/yolov5/pull/1127
 
 Usage:
-    $ python models/tf.py --weights yolov5s.pt --cfg yolov5s.yaml
+    $ python models/tf.py --weights yolov5s.pt
 
-Export int8 TFLite models:
-    $ python models/tf.py --weights yolov5s.pt --cfg models/yolov5s.yaml --tfl-int8 \
-        --source path/to/images/ --ncalib 100
-
-Detection:
-    $ python detect.py --weights yolov5s.pb          --img 320
-    $ python detect.py --weights yolov5s_saved_model --img 320
-    $ python detect.py --weights yolov5s-fp16.tflite --img 320
-    $ python detect.py --weights yolov5s-int8.tflite --img 320
-
-For TensorFlow.js:
-    $ python models/tf.py --weights yolov5s.pt --cfg models/yolov5s.yaml --img 320 --tf-nms --agnostic-nms
-    $ pip install tensorflowjs
-    $ tensorflowjs_converter \
-          --input_format=tf_frozen_model \
-          --output_node_names='Identity,Identity_1,Identity_2,Identity_3' \
-          yolov5s.pb \
-          web_model
-    $ # Edit web_model/model.json to sort Identity* in ascending order
-    $ cd .. && git clone https://github.com/zldrobit/tfjs-yolov5-example.git && cd tfjs-yolov5-example
-    $ npm install
-    $ ln -s ../../yolov5/web_model public/web_model
-    $ npm start
+Export:
+    $ python path/to/export.py --weights yolov5s.pt --include saved_model pb tflite tfjs
 """
 
 import argparse
 import logging
-import os
 import sys
-import traceback
 from copy import deepcopy
 from pathlib import Path
 
-FILE = Path(__file__).absolute()
-sys.path.append(FILE.parents[1].as_posix())  # add yolov5/ to path
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[1]  # yolov5/ dir
+sys.path.append(ROOT.as_posix())  # add yolov5/ to path
 
 import numpy as np
 import tensorflow as tf
 import torch
 import torch.nn as nn
 from tensorflow import keras
-from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
 from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat, autopad, C3
 from models.experimental import MixConv2d, CrossConv, attempt_load
 from models.yolo import Detect
-from utils.datasets import LoadImages
-from utils.general import check_dataset, check_yaml, colorstr, make_divisible
+from utils.general import colorstr, make_divisible, set_logging
 from utils.activations import SiLU
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class TFBN(keras.layers.Layer):
@@ -277,7 +253,7 @@ class TFConcat(keras.layers.Layer):
 
 
 def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
-    logger.info('\n%3s%18s%3s%10s  %-40s%-30s' % ('', 'from', 'n', 'params', 'module', 'arguments'))
+    LOGGER.info('\n%3s%18s%3s%10s  %-40s%-30s' % ('', 'from', 'n', 'params', 'module', 'arguments'))
     anchors, nc, gd, gw = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple']
     na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
@@ -321,7 +297,7 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
         t = str(m)[8:-2].replace('__main__.', '')  # module type
         np = sum([x.numel() for x in torch_m_.parameters()])  # number params
         m_.i, m_.f, m_.type, m_.np = i, f, t, np  # attach index, 'from' index, type, number params
-        logger.info('%3s%18s%3s%10.0f  %-40s%-30s' % (i, f, n, np, t, args))  # print
+        LOGGER.info('%3s%18s%3s%10.0f  %-40s%-30s' % (i, f, n, np, t, args))  # print
         save.extend(x % i for x in ([f] if isinstance(f, int) else f) if x != -1)  # append to savelist
         layers.append(m_)
         ch.append(c2)
@@ -358,7 +334,7 @@ class TFModel:
 
         # Add TensorFlow NMS
         if tf_nms:
-            boxes = xywh2xyxy(x[0][..., :4])
+            boxes = self._xywh2xyxy(x[0][..., :4])
             probs = x[0][:, :, 4:5]
             classes = x[0][:, :, 5:]
             scores = probs * classes
@@ -377,6 +353,12 @@ class TFModel:
         # conf = x[..., 4:5]  # x(6300,1) confidences
         # cls = tf.reshape(tf.cast(tf.argmax(x[..., 5:], axis=1), tf.float32), (-1, 1))  # x(6300,1)  classes
         # return tf.concat([conf, cls, xywh], 1)
+
+    @staticmethod
+    def _xywh2xyxy(xywh):
+        # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+        x, y, w, h = tf.split(xywh, num_or_size_splits=4, axis=-1)
+        return tf.concat([x - w / 2, y - h / 2, x + w / 2, y + h / 2], axis=-1)
 
 
 class AgnosticNMS(keras.layers.Layer):
@@ -410,12 +392,6 @@ class AgnosticNMS(keras.layers.Layer):
         return padded_boxes, padded_scores, padded_classes, valid_detections
 
 
-def xywh2xyxy(xywh):
-    # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
-    x, y, w, h = tf.split(xywh, num_or_size_splits=4, axis=-1)
-    return tf.concat([x - w / 2, y - h / 2, x + w / 2, y + h / 2], axis=-1)
-
-
 def representative_dataset_gen(dataset, ncalib=100):
     # Representative dataset generator for use with converter.representative_dataset, returns a generator of np arrays
     for n, (path, img, im0s, vid_cap) in enumerate(dataset):
@@ -427,144 +403,41 @@ def representative_dataset_gen(dataset, ncalib=100):
             break
 
 
-def run(cfg='yolov5s.yaml',  # cfg path
-        weights='yolov5s.pt',  # weights path
+def run(weights=ROOT / 'yolov5s.pt',  # weights path
         imgsz=(640, 640),  # inference size h,w
         batch_size=1,  # batch size
-        dynamic_batch_size=False,  # dynamic batch size
-        source='../data/coco128.yaml',  # dir of images or data.yaml file
-        ncalib=100,  # number of calibration images
-        tfl_int8=False,  # export TFLite int8 model
-        tf_nms=False,  # TF NMS (without TFLite export)
-        agnostic_nms=False,  # class-agnostic NMS
-        topk_per_class=100,  # topk per class to keep in NMS
-        topk_all=100,  # topk for all classes to keep in NMS
-        iou_thres=0.45,  # IOU threshold for NMS
-        conf_thres=0.25,  # score threshold for NMS
+        dynamic=False,  # dynamic batch size
         ):
-    cfg = check_yaml(cfg)  # check YAML
-    # Run TensorFlow model export
-
-    # Input
-    img = torch.zeros((batch_size, 3, *imgsz))  # image size(1,3,320,192) iDetection
-
-    # Load PyTorch model
+    # PyTorch model
+    im = torch.zeros((batch_size, 3, *imgsz))  # BCHW image
     model = attempt_load(weights, map_location=torch.device('cpu'), inplace=True, fuse=False)
-    y = model(img)  # dry run
-    nc = y[0].shape[-1] - 5
+    y = model(im)  # inference
+    model.info()
 
-    # TensorFlow saved_model export
-    try:
-        print('\nStarting TensorFlow saved_model export with TensorFlow %s...' % tf.__version__)
-        tf_model = TFModel(cfg, model=model, nc=nc, imgsz=imgsz)
-        img = tf.zeros((batch_size, *imgsz, 3))  # NHWC Input for TensorFlow
-        y = tf_model.predict(img, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
+    # TensorFlow model
+    im = tf.zeros((batch_size, *imgsz, 3))  # BHWC image
+    tf_model = TFModel(cfg=model.yaml, model=model, nc=model.nc, imgsz=imgsz)
+    y = tf_model.predict(im)  # inference
 
-        inputs = keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic_batch_size else batch_size)
-        outputs = tf_model.predict(inputs, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
-        keras_model = keras.Model(inputs=inputs, outputs=outputs)
-        keras_model.summary()
-        path = weights.replace('.pt', '_saved_model')  # filename
-        keras_model.save(path, save_format='tf')
-        print('TensorFlow saved_model export success, saved as %s' % path)
-    except Exception as e:
-        print('TensorFlow saved_model export failure: %s' % e)
-        traceback.print_exc(file=sys.stdout)
-        return
-
-    # TensorFlow GraphDef export
-    try:
-        print('\nStarting TensorFlow GraphDef export with TensorFlow %s...' % tf.__version__)
-
-        # https://github.com/leimao/Frozen_Graph_TensorFlow
-        full_model = tf.function(lambda x: keras_model(x))
-        full_model = full_model.get_concrete_function(
-            tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype))
-
-        frozen_func = convert_variables_to_constants_v2(full_model)
-        frozen_func.graph.as_graph_def()
-        f = weights.replace('.pt', '.pb')  # filename
-        tf.io.write_graph(graph_or_graph_def=frozen_func.graph,
-                          logdir=os.path.dirname(f),
-                          name=os.path.basename(f),
-                          as_text=False)
-
-        print('TensorFlow GraphDef export success, saved as %s' % f)
-    except Exception as e:
-        print('TensorFlow GraphDef export failure: %s' % e)
-        traceback.print_exc(file=sys.stdout)
-
-    # TFLite model export
-    if not tf_nms:
-        try:
-            print('\nStarting TFLite export with TensorFlow %s...' % tf.__version__)
-
-            # fp32 TFLite model export ---------------------------------------------------------------------------------
-            # converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
-            # converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
-            # converter.allow_custom_ops = False
-            # converter.experimental_new_converter = True
-            # tflite_model = converter.convert()
-            # f = weights.replace('.pt', '.tflite')  # filename
-            # open(f, "wb").write(tflite_model)
-
-            # fp16 TFLite model export ---------------------------------------------------------------------------------
-            converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
-            converter.optimizations = [tf.lite.Optimize.DEFAULT]
-            # converter.representative_dataset = representative_dataset_gen
-            # converter.target_spec.supported_types = [tf.float16]
-            converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
-            converter.allow_custom_ops = False
-            converter.experimental_new_converter = True
-            tflite_model = converter.convert()
-            f = weights.replace('.pt', '-fp16.tflite')  # filename
-            open(f, "wb").write(tflite_model)
-            print('\nTFLite export success, saved as %s' % f)
-
-            # int8 TFLite model export ---------------------------------------------------------------------------------
-            if tfl_int8:
-                dataset = LoadImages(check_dataset(source)['train'], img_size=imgsz, auto=False)  # representative data
-                converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
-                converter.optimizations = [tf.lite.Optimize.DEFAULT]
-                converter.representative_dataset = lambda: representative_dataset_gen(dataset, ncalib)
-                converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-                converter.inference_input_type = tf.uint8  # or tf.int8
-                converter.inference_output_type = tf.uint8  # or tf.int8
-                converter.allow_custom_ops = False
-                converter.experimental_new_converter = True
-                converter.experimental_new_quantizer = False
-                tflite_model = converter.convert()
-                f = weights.replace('.pt', '-int8.tflite')  # filename
-                open(f, "wb").write(tflite_model)
-                print('\nTFLite (int8) export success, saved as %s' % f)
-
-        except Exception as e:
-            print('\nTFLite export failure: %s' % e)
-            traceback.print_exc(file=sys.stdout)
+    # Keras model
+    im = keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic else batch_size)
+    keras_model = keras.Model(inputs=im, outputs=tf_model.predict(im))
+    keras_model.summary()
 
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg', type=str, default='yolov5s.yaml', help='cfg path')
-    parser.add_argument('--weights', type=str, default='yolov5s.pt', help='weights path')
+    parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='weights path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
-    parser.add_argument('--dynamic-batch-size', action='store_true', help='dynamic batch size')
-    parser.add_argument('--source', type=str, default='../data/coco128.yaml', help='dir of images or data.yaml file')
-    parser.add_argument('--ncalib', type=int, default=100, help='number of calibration images')
-    parser.add_argument('--tfl-int8', action='store_true', dest='tfl_int8', help='export TFLite int8 model')
-    parser.add_argument('--tf-nms', action='store_true', dest='tf_nms', help='TF NMS (without TFLite export)')
-    parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
-    parser.add_argument('--topk-per-class', type=int, default=100, help='topk per class to keep in NMS')
-    parser.add_argument('--topk-all', type=int, default=1000, help='topk for all classes to keep in NMS')
-    parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
-    parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
+    parser.add_argument('--dynamic', action='store_true', help='dynamic batch size')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     return opt
 
 
 def main(opt):
+    set_logging()
     print(colorstr('tf.py: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
     run(**vars(opt))
 

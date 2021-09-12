@@ -1,9 +1,24 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
-Export a PyTorch model to TorchScript, ONNX, CoreML, Tensorflow (TFLite, TF.js, saved_model, *.pb) formats
+Export a YOLOv5 PyTorch model to TorchScript, ONNX, CoreML, TensorFlow (saved_model, pb, TFLite, TF.js,) formats
+TensorFlow exports authored by https://github.com/zldrobit
 
 Usage:
-    $ python path/to/export.py --weights yolov5s.pt --img 640 --include torchscript onnx coreml pb tflite tfjs
+    $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx coreml saved_model pb tflite tfjs
+
+Inference:
+    $ python path/to/detect.py --weights yolov5s.pt
+                                         yolov5s.onnx  (must export with --dynamic)
+                                         yolov5s_saved_model
+                                         yolov5s.pb
+                                         yolov5s.tflite
+
+TensorFlow.js:
+    $ # Edit yolov5s_web_model/model.json to sort Identity* in ascending order
+    $ cd .. && git clone https://github.com/zldrobit/tfjs-yolov5-example.git && cd tfjs-yolov5-example
+    $ npm install
+    $ ln -s ../../yolov5/yolov5s_web_model public/yolov5s_web_model
+    $ npm start
 """
 
 import argparse
@@ -197,7 +212,7 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
         import tensorflowjs as tfjs
 
         print(f'\n{prefix} starting export with tensorflowjs {tfjs.__version__}...')
-        f = str(file).replace('.pt', '_tfjs_model')  # js dir
+        f = str(file).replace('.pt', '_web_model')  # js dir
         f_pb = file.with_suffix('.pb')  # *.pb path
 
         cmd = f"tensorflowjs_converter --input_format=tf_frozen_model " \
@@ -239,7 +254,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     # Input
     gs = int(max(model.stride))  # grid size (max stride)
     imgsz = [check_img_size(x, gs) for x in imgsz]  # verify img_size are gs-multiples
-    im = torch.zeros(batch_size, 3, *imgsz).to(device)  # image size(1,3,320,192) iDetection
+    im = torch.zeros(batch_size, 3, *imgsz).to(device)  # image size(1,3,320,192) BCHW iDetection
 
     # Update model
     if half:
