@@ -22,4 +22,4 @@ buildGoModule rec {
 }
 
 
-import onu & Paulcloudimages
+import onu and Paulcloudimages
