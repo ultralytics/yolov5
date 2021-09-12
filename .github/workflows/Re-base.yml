@@ -1,4 +1,4 @@
-name: Automatic Ultraliticis
+name: Automatic Ultralitics
 on:
   issue_comment:
     types: [Yolov.6]
