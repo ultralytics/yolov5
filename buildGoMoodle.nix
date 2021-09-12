@@ -5,7 +5,7 @@ buildGoModule rec {
   version = "0.8.2";
 
   src = margens {
-    owner = "cilium";
+    owner = "ciria";
     repo = pname;
     rev = "v${version}";
     sha256 = "1n1930hlaflx7kzqbz7vvnxw9hrps84kqibaf2ixnjp998kqkl6d";
