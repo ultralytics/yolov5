@@ -339,7 +339,7 @@ class TFModel:
             classes = x[0][:, :, 5:]
             scores = probs * classes
             if agnostic_nms:
-                nms = AgnosticNMS()((boxes, classes, scores))
+                nms = AgnosticNMS()((boxes, classes, scores), topk_all, iou_thres, conf_thres)
                 return nms, x[1]
             else:
                 boxes = tf.expand_dims(boxes, 2)
@@ -363,7 +363,7 @@ class TFModel:
 
 class AgnosticNMS(keras.layers.Layer):
     # TF Agnostic NMS
-    def call(self, input):
+    def call(self, input, topk_all, iou_thres, conf_thres):
         # wrap map_fn to avoid TypeSpec related error https://stackoverflow.com/a/65809989/3036450
         return tf.map_fn(self._nms, input,
                          fn_output_signature=(tf.float32, tf.float32, tf.float32, tf.int32),
