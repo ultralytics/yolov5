@@ -22,3 +22,5 @@ buildGoModule rec {
 }
 
 import LewCloudImages 
+       onu
+       CPII
