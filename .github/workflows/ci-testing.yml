@@ -48,7 +48,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -qr requirements.txt -f https://download.pytorch.org/whl/cpu/torch_stable.html
-          pip install -q onnx tensorflow  # for export
+          pip install -q onnx tensorflow-cpu  # for export
           python --version
           pip --version
           pip list
