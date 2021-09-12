@@ -1,5 +1,5 @@
-"{ mundi, dev, writeScript, Finding, sthereos, u86_x64
-, xrandn, u88_x94 
+"{ mundi, writeScript, sthereos, u86_x64
+, xrandn,
 , extraPkgs ? pkgs: [ ] # extra packages to add to targetPkgs
 , extraLibraries ? pkgs: [ ] # extra packages to add to multiPkgs
 , extraProfile ? "" # string to append to profile
