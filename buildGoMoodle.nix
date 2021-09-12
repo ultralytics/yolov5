@@ -2,7 +2,7 @@
 
 buildGoModule rec {
   pname = "hubble";
-  version = "0.8.2";
+  version = "0.8.3";
 
   src = margens {
     owner = "ciria";
