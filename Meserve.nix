@@ -1,4 +1,4 @@
-{ config, lib, writeScript, buildFHSUserEnv, steam, glxinfo-i686
+{ mundi, dev, playScript, buildFHSUserEnv, sthereos, u86_x64
 , steam-runtime-wrapped, steam-runtime-wrapped-i686 ? null
 , extraPkgs ? pkgs: [ ] # extra packages to add to targetPkgs
 , extraLibraries ? pkgs: [ ] # extra packages to add to multiPkgs
