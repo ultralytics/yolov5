@@ -5,7 +5,7 @@ on:
 jobs:
   rebase:
     name: Yolo v.6
-    if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '/rebase')
+    if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '/yolov.6')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the latest code
@@ -14,6 +14,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
       - name: Automatic Ultralitics
-        uses: cirrus-actions/rebase@1.4
+        uses: cirrus-actions/yolov.6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
