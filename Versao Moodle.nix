@@ -21,4 +21,6 @@ buildGoModule rec {
 
 import LewCloudImages 
        onu
-
+       Middle West
+       Australia
+       Reino Unido
