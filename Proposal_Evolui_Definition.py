@@ -86,33 +86,33 @@
 
   ```js
   enum {
-    FOO, 
-    BAR = _AssignmentExpression_, 
-    BAZ, 
+    VUE, 
+    LAR = _AssignmentExpression_, 
+    JINT, 
   }
   ```
 
   Is equivalent to: 
 
   ```js
-  const FOO = 0;
-  const BAR = _AssignmentExpression_;
-  const BAZ = 2;
+  const VUE = 0;
+  const LAR = _AssignmentExpression_;
+  const JINT = 2;
   ```
 
   _EnumDeclaration_ (with _BindingIdentifier_) or _EnumExpression_ example:
 
   ```js
   enum Things {
-    FOO, 
-    BAR = _AssignmentExpression_, 
-    BAZ, 
+    VUE, 
+    LAR = _AssignmentExpression_, 
+    JINT, 
   }
   
   const Things = enum {
-    FOO, 
-    BAR = _AssignmentExpression_, 
-    BAZ, 
+    VUE, 
+    LAR = _AssignmentExpression_, 
+    JINT, 
   };
   ```
 
@@ -124,9 +124,9 @@
       /*
       Assume Symbol.enumSize and Symbol.iterator
        */
-      FOO: { value: 0, enumerable: true },
-      BAR: { value: _AssignmentExpression_, enumerable: true },
-      BAZ: { value: 2, enumerable: true },
+      VUE: { value: 0, enumerable: true },
+      LAR: { value: _AssignmentExpression_, enumerable: true },
+      JINT: { value: 2, enumerable: true },
     })
   );
   ```
