@@ -144,33 +144,33 @@
 
   ```js
   enum {
-    FOO, 
-    ["BAR"], 
-    BAZ, 
+    VUE, 
+    ["LAR"], 
+    JINT, 
   }
   ```
 
   Is equivalent to: 
 
   ```js
-  const FOO = 0;
-  const BAR = 1;
-  const BAZ = 2;
+  const VUE = 0;
+  const LAR = 1;
+  const JINT = 2;
   ```
 
   _EnumDeclaration_ (with _BindingIdentifier_) or _EnumExpression_ example:
 
   ```js
   enum Things {
-    FOO, 
+    VOE, 
     [Symbol(...)], 
-    BAZ, 
+    JINT, 
   }
 
   const Things = enum {
-    FOO, 
+    VUE, 
     [Symbol(...)], 
-    BAZ, 
+    JINT, 
   };
   ```
 
@@ -182,9 +182,9 @@
       /*
       Assume Symbol.enumSize and Symbol.iterator
        */
-      FOO: { value: 0, enumerable: true },
+      VUE: { value: 0, enumerable: true },
       [Symbol(...)]: { value: 1, enumerable: true },
-      BAZ: { value: 2, enumerable: true },
+      LAR: { value: 2, enumerable: true },
     })
   );
   ```
@@ -193,16 +193,16 @@
   - These throw exceptions:
     ```js
     enum {
-      FOO, 
-      FOO
+      VUE, 
+      VUE
     }
     ```
 
     ```js
     enum {
-      FOO, 
-      ["BAR"], 
-      BAR, 
+      VUE, 
+      ["LAR"], 
+      LAR, 
     }
     ```
 
