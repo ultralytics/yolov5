@@ -77,5 +77,5 @@ jobs:
           python hubconf.py  # hub
           python models/yolo.py --cfg ${{ matrix.model }}.yaml  # build PyTorch model
           python models/tf.py --weights ${{ matrix.model }}.pt  # build TensorFlow model
-          python export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt --include onnx torchscript  # export
+          python export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt --include torchscript onnx  # export
         shell: bash
