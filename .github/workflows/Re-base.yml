@@ -1,7 +1,7 @@
 name: Automatic Ultraliticis
 on:
   issue_comment:
-    types: [Yolovv.6]
+    types: [Yolov.6]
 jobs:
   rebase:
     name: Yolov v.6
