@@ -130,7 +130,6 @@ def export_saved_model(model, im, file, dynamic,
     # YOLOv5 TensorFlow saved_model export
     keras_model = None
     try:
-        check_requirements(('tensorflow',))
         import tensorflow as tf
         from tensorflow import keras
         from models.tf import TFModel, TFDetect
