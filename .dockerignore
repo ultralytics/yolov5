@@ -18,7 +18,11 @@ data/samples/*
 **/*.mlmodel
 **/*.torchscript
 **/*.torchscript.pt
-
+**/*.tflite
+**/*.h5
+**/*.pb
+*_saved_model/
+*_web_model/
 
 # Below Copied From .gitignore -----------------------------------------------------------------------------------------
 # Below Copied From .gitignore -----------------------------------------------------------------------------------------
