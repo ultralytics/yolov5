@@ -307,8 +307,8 @@ def check_dataset(data, save_root="../datasets", autodownload=True):
     # Download (optional)
     extract_dir = ''
     if isinstance(data, (str, Path)) and str(data).endswith('.zip'):  # i.e. gs://bucket/dir/coco128.zip
-        download(data, dir='../datasets', unzip=True, delete=False, curl=False, threads=1)
-        data = next((Path('../datasets') / Path(data).stem).rglob('*.yaml'))
+        download(data, dir=save_root, unzip=True, delete=False, curl=False, threads=1)
+        data = next((Path(save_root) / Path(data).stem).rglob('*.yaml'))
         extract_dir, autodownload = data.parent, False
 
     # Read yaml (optional)
@@ -316,17 +316,11 @@ def check_dataset(data, save_root="../datasets", autodownload=True):
         with open(data, errors='ignore') as f:
             data = yaml.safe_load(f)  # dictionary
 
-    # Parse yaml
-    path = extract_dir or Path(data.get('path') or '')  # optional 'path' default to '.'
-    for k in 'train', 'val', 'test':
-        if data.get(k):  # prepend path
-            data[k] = str(path / data[k]) if isinstance(data[k], str) else [str(path / x) for x in data[k]]
-
     assert 'nc' in data, "Dataset 'nc' key missing."
     if 'names' not in data:
         data['names'] = [f'class{i}' for i in range(data['nc'])]  # assign class names if missing
     train, val, test, s = [data.get(x) for x in ('train', 'val', 'test', 'download')]
-
+    
     # Define path by priority: 1.Custom by save_root argument, 2.YAML.path, 3.Default
     is_default_root = save_root == '../datasets' # Returns bool
     has_yaml_path = data and data.get('path')
@@ -337,16 +331,21 @@ def check_dataset(data, save_root="../datasets", autodownload=True):
     else:
         path = Path(save_root) / Path(s).stem # append dataset subdir to save_root
 
+    # Parse yaml
+    for k in 'train', 'val', 'test':
+        if data.get(k):  # prepend path
+            data[k] = str(path / data[k]) if isinstance(data[k], str) else [str(path / x) for x in data[k]]
+
     if val:
-        val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
+        val = [Path(path / x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
             print('\nWARNING: Dataset not found, nonexistent paths: %s' % [str(x) for x in val if not x.exists()])
             if s and autodownload:  # download script
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
-                    print(f'Downloading {s} ...')
+                    print(f'Downloading {s} to {f}...')
                     torch.hub.download_url_to_file(s, f)
-                    root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
+                    root = path.parent # unzip directory i.e. '../'
                     Path(root).mkdir(parents=True, exist_ok=True)  # create root
                     r = os.system(f'unzip -q {f} -d {root} && rm {f}')  # unzip
                 elif s.startswith('bash '):  # bash script
