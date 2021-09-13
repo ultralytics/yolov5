@@ -300,7 +300,7 @@ def check_file(file, suffix=''):
         return files[0]  # return file
 
 
-def check_dataset(data, autodownload=True):
+def check_dataset(data, save_root="../datasets", autodownload=True):
     # Download and/or unzip dataset if not found locally
     # Usage: https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128_with_yaml.zip
 
@@ -326,6 +326,17 @@ def check_dataset(data, autodownload=True):
     if 'names' not in data:
         data['names'] = [f'class{i}' for i in range(data['nc'])]  # assign class names if missing
     train, val, test, s = [data.get(x) for x in ('train', 'val', 'test', 'download')]
+
+    # Define path by priority: 1.Custom by save_root argument, 2.YAML.path, 3.Default
+    is_default_root = save_root == '../datasets' # Returns bool
+    has_yaml_path = data and data.get('path')
+
+    if is_default_root and has_yaml_path:
+        # Set path as yaml path
+        path = Path(data.get('path'))
+    else:
+        path = Path(save_root) / Path(s).stem # append dataset subdir to save_root
+
     if val:
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
