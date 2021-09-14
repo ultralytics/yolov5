@@ -54,7 +54,7 @@ python ./path/to/inference_demo.py
         --mode={direct / sliding_window}
         --conf_thresh=0.25
         --iou_thresh=0.45
-        --sliding_window_step {sliding_window_step_by_y(height)} {sliding_window_step_by_x(width)} 
+        --sliding_window_step {sliding_window_step_by_y(height)} {sliding_window_step_by_x(width)} # E.g. --sliding_window_step 1 1
         --original_model=/path/to/{original_model_name}.pt
         --save_path=/path/to/image_name.{any extension: .png, .jpg etc.}
 ```
