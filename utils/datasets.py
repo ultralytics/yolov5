@@ -661,6 +661,7 @@ def load_mosaic(self, index):
     s = self.img_size
     yc, xc = [int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border]  # mosaic center x, y
     indices = [index] + random.choices(self.indices, k=3)  # 3 additional image indices
+    random.shuffle(indices)
     for i, index in enumerate(indices):
         # Load image
         img, _, (h, w) = load_image(self, index)
@@ -717,6 +718,7 @@ def load_mosaic9(self, index):
     labels9, segments9 = [], []
     s = self.img_size
     indices = [index] + random.choices(self.indices, k=8)  # 8 additional image indices
+    random.shuffle(indices)
     for i, index in enumerate(indices):
         # Load image
         img, _, (h, w) = load_image(self, index)
