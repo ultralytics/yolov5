@@ -862,47 +862,47 @@ def verify_image_label(args):
     # Verify one image-label pair
     im_file, lb_file, prefix = args
     nm, nf, ne, nc, msg, segments = 0, 0, 0, 0, '', []  # number (missing, found, empty, corrupt), message, segments
-    try:
-        # verify images
-        im_file = Path(im_file).absolute()
-        im = Image.open(im_file)
-        im.verify()  # PIL verify
-        shape = exif_size(im)  # image size
-        assert (shape[0] > 9) & (shape[1] > 9), f'image size {shape} <10 pixels'
-        assert im.format.lower() in IMG_FORMATS, f'invalid image format {im.format}'
-        if im.format.lower() in ('jpg', 'jpeg'):
-            with open(im_file, 'rb') as f:
-                f.seek(-2, 2)
-                if f.read() != b'\xff\xd9':  # corrupt JPEG
-                    Image.open(im_file).save(im_file, format='JPEG', subsampling=0, quality=100)  # re-save image
-                    msg = f'{prefix}WARNING: corrupt JPEG restored and saved {im_file}'
+    # try:
+    # verify images
+    im_file = Path(im_file).absolute()
+    im = Image.open(im_file)
+    im.verify()  # PIL verify
+    shape = exif_size(im)  # image size
+    assert (shape[0] > 9) & (shape[1] > 9), f'image size {shape} <10 pixels'
+    assert im.format.lower() in IMG_FORMATS, f'invalid image format {im.format}'
+    if im.format.lower() in ('jpg', 'jpeg'):
+        with open(im_file, 'rb') as f:
+            f.seek(-2, 2)
+            if f.read() != b'\xff\xd9':  # corrupt JPEG
+                Image.open(im_file).save(im_file, format='JPEG', subsampling=0, quality=100)  # re-save image
+                msg = f'{prefix}WARNING: corrupt JPEG restored and saved {im_file}'
 
-        # verify labels
-        if os.path.isfile(lb_file):
-            nf = 1  # label found
-            with open(lb_file, 'r') as f:
-                l = [x.split() for x in f.read().strip().splitlines() if len(x)]
-                if any([len(x) > 8 for x in l]):  # is segment
-                    classes = np.array([x[0] for x in l], dtype=np.float32)
-                    segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in l]  # (cls, xy1...)
-                    l = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
-                l = np.array(l, dtype=np.float32)
-            if len(l):
-                assert l.shape[1] == 5, 'labels require 5 columns each'
-                assert (l >= 0).all(), 'negative labels'
-                assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels'
-                assert np.unique(l, axis=0).shape[0] == l.shape[0], 'duplicate labels'
-            else:
-                ne = 1  # label empty
-                l = np.zeros((0, 5), dtype=np.float32)
+    # verify labels
+    if os.path.isfile(lb_file):
+        nf = 1  # label found
+        with open(lb_file, 'r') as f:
+            l = [x.split() for x in f.read().strip().splitlines() if len(x)]
+            if any([len(x) > 8 for x in l]):  # is segment
+                classes = np.array([x[0] for x in l], dtype=np.float32)
+                segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in l]  # (cls, xy1...)
+                l = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
+            l = np.array(l, dtype=np.float32)
+        if len(l):
+            assert l.shape[1] == 5, 'labels require 5 columns each'
+            assert (l >= 0).all(), 'negative labels'
+            assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels'
+            assert np.unique(l, axis=0).shape[0] == l.shape[0], 'duplicate labels'
         else:
-            nm = 1  # label missing
+            ne = 1  # label empty
             l = np.zeros((0, 5), dtype=np.float32)
-        return im_file, l, shape, segments, nm, nf, ne, nc, msg
-    except Exception as e:
-        nc = 1
-        msg = f'{prefix}WARNING: Ignoring corrupted image and/or label {im_file}: {e}'
-        return [None, None, None, None, nm, nf, ne, nc, msg]
+    else:
+        nm = 1  # label missing
+        l = np.zeros((0, 5), dtype=np.float32)
+    return im_file, l, shape, segments, nm, nf, ne, nc, msg
+    # except Exception as e:
+    #     nc = 1
+    #     msg = f'{prefix}WARNING: Ignoring corrupted image and/or label {im_file}: {e}'
+    #     return [None, None, None, None, nm, nf, ne, nc, msg]
 
 
 def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profile=False, hub=False):
