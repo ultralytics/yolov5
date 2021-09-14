@@ -864,7 +864,6 @@ def verify_image_label(args):
     nm, nf, ne, nc, msg, segments = 0, 0, 0, 0, '', []  # number (missing, found, empty, corrupt), message, segments
     # try:
     # verify images
-    im_file = Path(im_file).absolute()
     im = Image.open(im_file)
     im.verify()  # PIL verify
     shape = exif_size(im)  # image size
