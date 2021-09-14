@@ -864,6 +864,7 @@ def verify_image_label(args):
     nm, nf, ne, nc, msg, segments = 0, 0, 0, 0, '', []  # number (missing, found, empty, corrupt), message, segments
     try:
         # verify images
+        im_file = Path(im_file).absolute()
         im = Image.open(im_file)
         im.verify()  # PIL verify
         shape = exif_size(im)  # image size
@@ -900,7 +901,6 @@ def verify_image_label(args):
         return im_file, l, shape, segments, nm, nf, ne, nc, msg
     except Exception as e:
         nc = 1
-        notFound = str(Path(im_file).absolute())
         msg = f'{prefix}WARNING: Ignoring corrupted image and/or label {notFound}: {e}'
         return [None, None, None, None, nm, nf, ne, nc, msg]
 
