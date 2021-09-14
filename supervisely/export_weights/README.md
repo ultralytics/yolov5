@@ -62,20 +62,17 @@ Options to set:
 
 Required for `*.pt`, `*.torchscript.pt`, `*.onnx`
 ```
-  --weights       |  path to model weights
-  --cfgs          |  path to model cfgs (required for ONNX anf TorchScript models)
-  --image         |  path to model image
-  --mode          |  {direct,sliding_window} inference mode
-  --conf_thresh   |  confidence threshold
-  --iou_thresh    |  intersection over union threshold
-  --viz           |  flag for results visualisation
-  --save_path     |  path to save inference results
+  --weights         |  path to model weights
+  --cfgs            |  path to model cfgs
+  --image           |  path to model image
+  --mode            |  {direct,sliding_window} inference mode
+  --conf_thresh     |  confidence threshold
+  --iou_thresh      |  intersection over union threshold
+  --viz             |  flag for results visualisation
+  --save_path       |  path to save inference results
+  --original_model  |  path to original model to construct meta
 ```
 
-Additional options for `*.torchscript.pt`, `*.onnx`
-```
-  --original_model  |  path to original model to construct meta (required for ONNX anf TorchScript models)
-```
 More info about sliding_window approach [here](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/export_weights/README.md#sliding-window-approach)
 
 **Detailed instructions to infer image manually:**
