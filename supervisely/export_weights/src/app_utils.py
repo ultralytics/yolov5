@@ -86,8 +86,8 @@ def preprocess(predictions, original_image_size, reshaped_image_size):
     coefficients = torch.tensor(original_image_size) / torch.tensor(reshaped_image_size)
     predictions_copy = predictions
     for item in predictions_copy:
-        item[..., 0] *= coefficients[0]
-        item[..., 1] *= coefficients[1]
-        item[..., 2] *= coefficients[0]
-        item[..., 3] *= coefficients[1]
+        item[..., 0] *= coefficients[1]
+        item[..., 1] *= coefficients[0]
+        item[..., 2] *= coefficients[1]
+        item[..., 3] *= coefficients[0]
     return predictions_copy
