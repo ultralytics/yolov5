@@ -2,7 +2,7 @@ Import mundi
  Export to onucloud
 
 Const mundi = ('/mundi.py')
- New Gps = mapamundi except Brazil.router.mundi
+ New Gps = mapamundi Brazil.router.mundi
   Brazil.router.mundi = new file(router.brl.py)
 
 Const router.brl = ('/router.brl.py')
