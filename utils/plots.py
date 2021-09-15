@@ -84,18 +84,24 @@ class Annotator:
             self.draw.rectangle(box, width=self.lw, outline=color)  # box
             if label:
                 w, h = self.font.getsize(label)  # text width
-                self.draw.rectangle([box[0], box[1] - self.fh, box[0] + w + 1, box[1] + 1], fill=color)
+                self.draw.rectangle([box[0],
+                                     box[1] - h if box[1] - h >= 0 else box[1],
+                                     box[0] + w + 1,
+                                     box[1] + 1 if box[1] - h >= 0 else box[1] + h + 1], fill=color)
                 # self.draw.text((box[0], box[1]), label, fill=txt_color, font=self.font, anchor='ls')  # for PIL>8.0
-                self.draw.text((box[0], box[1] - h), label, fill=txt_color, font=self.font)
+                self.draw.text((box[0], box[1] - h if box[1] - h >= 0 else box[1]),
+                               label, fill=txt_color, font=self.font)
         else:  # cv2
             c1, c2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
             cv2.rectangle(self.im, c1, c2, color, thickness=self.lw, lineType=cv2.LINE_AA)
             if label:
                 tf = max(self.lw - 1, 1)  # font thickness
                 w, h = cv2.getTextSize(label, 0, fontScale=self.lw / 3, thickness=tf)[0]
-                c2 = c1[0] + w, c1[1] - h - 3
+                c2 = c1[0] + w, c1[1] - h - 3 if c1[1] - h - 3 >= 0 else c1[1] + h + 3
                 cv2.rectangle(self.im, c1, c2, color, -1, cv2.LINE_AA)  # filled
-                cv2.putText(self.im, label, (c1[0], c1[1] - 2), 0, self.lw / 3, txt_color, thickness=tf,
+                cv2.putText(self.im, label,
+                            (c1[0], c1[1] - 2 if c1[1] - h -3 >= 0 else c1[1] + h + 2),
+                                0, self.lw / 3, txt_color, thickness=tf,
                             lineType=cv2.LINE_AA)
 
     def rectangle(self, xy, fill=None, outline=None, width=1):
