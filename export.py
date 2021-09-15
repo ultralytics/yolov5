@@ -234,9 +234,9 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         half=False,  # FP16 half-precision export
         inplace=False,  # set YOLOv5 Detect() inplace=True
         train=False,  # model.train() mode
-        int8=False,  # CoreML/TF INT8 quantization
         optimize=False,  # TorchScript: optimize for mobile
-        dynamic=False,  # ONNX: dynamic axes
+        int8=False,  # CoreML/TF INT8 quantization
+        dynamic=False,  # ONNX/TF: dynamic axes
         simplify=False,  # ONNX: simplify model
         opset=12,  # ONNX: opset version
         ):
