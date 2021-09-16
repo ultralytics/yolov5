@@ -41,7 +41,7 @@ from models.experimental import attempt_load
 from models.yolo import Detect
 from utils.activations import SiLU
 from utils.datasets import LoadImages
-from utils.general import colorstr, check_dataset, check_img_size, check_requirements, file_size, set_logging
+from utils.general import colorstr, check_dataset, check_img_size, check_requirements, file_size, set_logging, url2file
 from utils.torch_utils import select_device
 
 
@@ -244,7 +244,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     include = [x.lower() for x in include]
     tf_exports = list(x in include for x in ('saved_model', 'pb', 'tflite', 'tfjs'))  # TensorFlow exports
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
-    file = Path(weights)
+    file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)
 
     # Load PyTorch model
     device = select_device(device)
