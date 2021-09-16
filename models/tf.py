@@ -70,8 +70,9 @@ class TFConv(keras.layers.Layer):
         # see https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
 
         conv = keras.layers.Conv2D(
-            c2, k, s, 'SAME' if s == 1 else 'VALID', use_bias=False,
-            kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()))
+            c2, k, s, 'SAME' if s == 1 else 'VALID', use_bias=False if hasattr(w, 'bn') else True,
+            kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()),
+            bias_initializer='zeros' if hasattr(w, 'bn') else keras.initializers.Constant(w.conv.bias.numpy()))
         self.conv = conv if s == 1 else keras.Sequential([TFPad(autopad(k, p)), conv])
         self.bn = TFBN(w.bn) if hasattr(w, 'bn') else tf.identity
 
