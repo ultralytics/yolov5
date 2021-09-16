@@ -188,6 +188,7 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
 
         converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
         converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
+        converter.target_spec.supported_types = [tf.float16]
         converter.optimizations = [tf.lite.Optimize.DEFAULT]
         if int8:
             dataset = LoadImages(check_dataset(data)['train'], img_size=imgsz, auto=False)  # representative data
