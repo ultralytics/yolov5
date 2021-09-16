@@ -26,6 +26,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+import urllib
 
 import torch
 import torch.nn as nn
@@ -244,6 +245,12 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     include = [x.lower() for x in include]
     tf_exports = list(x in include for x in ('saved_model', 'pb', 'tflite', 'tfjs'))  # TensorFlow exports
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
+
+    # Fix path if URL [DEV] Copied from general.check_file[299]
+    if weights.startswith(('http:/', 'https:/')):
+        url = str(Path(weights)).replace(':/', '://')  # Pathlib turns :// -> :/
+        weights = Path(urllib.parse.unquote(weights)).name.split('?')[0]  # '%2F' to '/', split https://url.com/file.txt?auth
+
     file = Path(weights)
 
     # Load PyTorch model
