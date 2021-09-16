@@ -272,7 +272,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
 
     for _ in range(2):
         y = model(im)  # dry runs
-    print(f"\n{colorstr('PyTorch:')} starting from {weights} ({file_size(weights):.1f} MB)")
+    print(f"\n{colorstr('PyTorch:')} starting from {file} ({file_size(file):.1f} MB)")
 
     # Exports
     if 'torchscript' in include:
