@@ -26,7 +26,6 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-import urllib
 
 import torch
 import torch.nn as nn
@@ -42,7 +41,7 @@ from models.experimental import attempt_load
 from models.yolo import Detect
 from utils.activations import SiLU
 from utils.datasets import LoadImages
-from utils.general import colorstr, check_dataset, check_img_size, check_requirements, file_size, set_logging
+from utils.general import colorstr, check_dataset, check_img_size, check_requirements, file_size, set_logging, url2file
 from utils.torch_utils import select_device
 
 
@@ -245,13 +244,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     include = [x.lower() for x in include]
     tf_exports = list(x in include for x in ('saved_model', 'pb', 'tflite', 'tfjs'))  # TensorFlow exports
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
-
-    # Fix path if URL [DEV] Copied from general.check_file[299]
-    if weights.startswith(('http:/', 'https:/')):
-        url = str(Path(weights)).replace(':/', '://')  # Pathlib turns :// -> :/
-        weights = Path(urllib.parse.unquote(weights)).name.split('?')[0]  # '%2F' to '/', split https://url.com/file.txt?auth
-
-    file = Path(weights)
+    file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)
 
     # Load PyTorch model
     device = select_device(device)
