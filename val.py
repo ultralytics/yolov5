@@ -17,7 +17,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-FILE = Path(__file__).absolute()
+FILE = Path(__file__).resolve()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
 from models.experimental import attempt_load

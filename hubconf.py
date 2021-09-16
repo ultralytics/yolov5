@@ -33,7 +33,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     from utils.downloads import attempt_download
     from utils.torch_utils import select_device
 
-    file = Path(__file__).absolute()
+    file = Path(__file__).resolve()
     check_requirements(requirements=file.parent / 'requirements.txt', exclude=('tensorboard', 'thop', 'opencv-python'))
     set_logging(verbose=verbose)
 

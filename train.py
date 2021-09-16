@@ -26,7 +26,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import Adam, SGD, lr_scheduler
 from tqdm import tqdm
 
-FILE = Path(__file__).absolute()
+FILE = Path(__file__).resolve()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
 import val  # for end-of-epoch mAP
@@ -64,7 +64,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # Directories
     w = save_dir / 'weights'  # weights dir
-    w.mkdir(parents=True, exist_ok=True)  # make dir
+    (w.parent if evolve else w).mkdir(parents=True, exist_ok=True)  # make dir
     last, best = w / 'last.pt', w / 'best.pt'
 
     # Hyperparameters
@@ -489,7 +489,7 @@ def main(opt, callbacks=Callbacks()):
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         if opt.evolve:
             opt.project = 'runs/evolve'
-            opt.exist_ok = opt.resume
+            opt.exist_ok, opt.resume = opt.resume, False  # pass resume to exist_ok and disable resume
         opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))
 
     # DDP mode

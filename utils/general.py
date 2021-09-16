@@ -103,11 +103,15 @@ def get_latest_run(search_dir='.'):
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
-def user_config_dir(dir='Ultralytics'):
-    # Return path of user configuration directory (make if necessary)
-    cfg = {'Windows': 'AppData/Roaming', 'Linux': '.config', 'Darwin': 'Library/Application Support'}  # 3 config dirs
-    path = Path.home() / cfg.get(platform.system(), '')  # OS-specific config dir
-    path = (path if is_writeable(path) else Path('/tmp')) / dir  # GCP and AWS lambda fix, only /tmp is writeable
+def user_config_dir(dir='Ultralytics', env_var='YOLOV5_CONFIG_DIR'):
+    # Return path of user configuration directory. Prefer environment variable if exists. Make dir if required.
+    env = os.getenv(env_var)
+    if env:
+        path = Path(env)  # use environment variable
+    else:
+        cfg = {'Windows': 'AppData/Roaming', 'Linux': '.config', 'Darwin': 'Library/Application Support'}  # 3 OS dirs
+        path = Path.home() / cfg.get(platform.system(), '')  # OS-specific config dir
+        path = (path if is_writeable(path) else Path('/tmp')) / dir  # GCP and AWS lambda fix, only /tmp is writeable
     path.mkdir(exist_ok=True)  # make if required
     return path
 
@@ -143,7 +147,7 @@ def is_colab():
 
 def is_pip():
     # Is file in a pip package?
-    return 'site-packages' in Path(__file__).absolute().parts
+    return 'site-packages' in Path(__file__).resolve().parts
 
 
 def is_ascii(s=''):
@@ -157,9 +161,15 @@ def emojis(str=''):
     return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
 
 
-def file_size(file):
-    # Return file size in MB
-    return Path(file).stat().st_size / 1e6
+def file_size(path):
+    # Return file/dir size (MB)
+    path = Path(path)
+    if path.is_file():
+        return path.stat().st_size / 1E6
+    elif path.is_dir():
+        return sum(f.stat().st_size for f in path.glob('**/*') if f.is_file()) / 1E6
+    else:
+        return 0.0
 
 
 def check_online():
