@@ -145,6 +145,7 @@ def export_saved_model(model, im, file, dynamic,
         inputs = keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic else batch_size)
         outputs = tf_model.predict(inputs, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
         keras_model = keras.Model(inputs=inputs, outputs=outputs)
+        keras_model.trainable = False
         keras_model.summary()
         keras_model.save(f, save_format='tf')
 
@@ -183,15 +184,17 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
 
         print(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
         batch_size, ch, *imgsz = list(im.shape)  # BCHW
-        f = file.with_suffix('.tflite')
+        f = str(file).replace('.pt', '-fp16.tflite')
 
         converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
         converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
+        converter.target_spec.supported_types = [tf.float16]
         converter.optimizations = [tf.lite.Optimize.DEFAULT]
         if int8:
             dataset = LoadImages(check_dataset(data)['train'], img_size=imgsz, auto=False)  # representative data
             converter.representative_dataset = lambda: representative_dataset_gen(dataset, ncalib)
             converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+            converter.target_spec.supported_types = []
             converter.inference_input_type = tf.uint8  # or tf.int8
             converter.inference_output_type = tf.uint8  # or tf.int8
             converter.experimental_new_quantizer = False
@@ -249,7 +252,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     # Load PyTorch model
     device = select_device(device)
     assert not (device.type == 'cpu' and half), '--half only compatible with GPU export, i.e. use --device 0'
-    model = attempt_load(weights, map_location=device, inplace=True, fuse=not any(tf_exports))  # load FP32 model
+    model = attempt_load(weights, map_location=device, inplace=True, fuse=True)  # load FP32 model
     nc, names = model.nc, model.names  # number of classes, class names
 
     # Input
