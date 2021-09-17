@@ -5,7 +5,7 @@ import os
 import sys
 from contextlib import contextmanager
 from pathlib import Path
-from packaging import version
+import pkg_resources as pkg
 
 import yaml
 from tqdm import tqdm
@@ -21,7 +21,7 @@ try:
     import wandb
 
     assert hasattr(wandb, '__version__')  # verify package import not local dir
-    if version.parse(wandb.__version__) >= version.parse('0.12.2'):
+    if pkg.parse_version(wandb.__version__) >= pkg.parse_version('0.12.2'):
         wandb.login(timeout=30)
 except (ImportError, AssertionError):
     wandb = None
