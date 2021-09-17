@@ -74,7 +74,7 @@ class Detect(nn.Module):
         yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
         grid = torch.stack((xv, yv), 2).expand((1, na, ny, nx, 2)).float()
         anchor_grid = anchors.clone().view((1, na, 1, 1, 2)).expand((1, na, ny, nx, 2)).float()
-        return grid, anchor_grid
+        return grid.to(anchors.device), anchor_grid.to(anchors.device)
 
 
 class Model(nn.Module):

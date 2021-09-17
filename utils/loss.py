@@ -111,7 +111,7 @@ class ComputeLoss:
         self.balance = {3: [4.0, 1.0, 0.4]}.get(det.nl, [4.0, 1.0, 0.25, 0.06, .02])  # P3-P7
         self.ssi = list(det.stride).index(16) if autobalance else 0  # stride 16 index
         self.BCEcls, self.BCEobj, self.gr, self.hyp, self.autobalance = BCEcls, BCEobj, 1.0, h, autobalance
-        self.anchors = det.anchors / det.stride.view(-1, 1, 1)
+        self.anchors = det.anchors / det.stride.to(det.anchors.device).view(-1, 1, 1)
         for k in 'na', 'nc', 'nl':
             setattr(self, k, getattr(det, k))
 
