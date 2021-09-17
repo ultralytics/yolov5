@@ -100,8 +100,14 @@ def attempt_load(weights, map_location=None, inplace=True, fuse=True):
 
     # Compatibility updates
     for m in model.modules():
-        if type(m) in [nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Detect, Model]:
+        if type(m) in [nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Model]:
             m.inplace = inplace  # pytorch 1.7.0 compatibility
+        elif type(m) is Detect:
+            m.inplace = inplace  # pytorch 1.7.0 compatibility
+            if not isinstance(m.anchor_grid, list):  # new Detect Layer compatibility
+                m.anchors = m.anchor_grid.clone().view(m.nl, -1, 2)
+                delattr(m, 'anchor_grid')
+                setattr(m, 'anchor_grid', [torch.zeros(1)] * m.nl)
         elif type(m) is Conv:
             m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatibility
 
