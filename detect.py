@@ -8,7 +8,6 @@ Usage:
 
 import argparse
 import sys
-import time
 from pathlib import Path
 
 import cv2
@@ -16,13 +15,14 @@ import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 
-FILE = Path(__file__).absolute()
+FILE = Path(__file__).resolve()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
-from utils.general import check_img_size, check_requirements, check_imshow, colorstr, is_ascii, non_max_suppression, \
-    apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
+from utils.general import check_img_size, check_imshow, check_requirements, check_suffix, colorstr, is_ascii, \
+    non_max_suppression, apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, \
+    save_one_box
 from utils.plots import Annotator, colors
 from utils.torch_utils import select_device, load_classifier, time_sync
 
@@ -68,8 +68,9 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
 
     # Load model
     w = weights[0] if isinstance(weights, list) else weights
-    classify, suffix = False, Path(w).suffix.lower()
-    pt, onnx, tflite, pb, saved_model = (suffix == x for x in ['.pt', '.onnx', '.tflite', '.pb', ''])  # backend
+    classify, suffix, suffixes = False, Path(w).suffix.lower(), ['.pt', '.onnx', '.tflite', '.pb', '']
+    check_suffix(w, suffixes)  # check weights have acceptable suffix
+    pt, onnx, tflite, pb, saved_model = (suffix == x for x in suffixes)  # backend booleans
     stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
     if pt:
         model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -121,8 +122,9 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
     # Run inference
     if pt and device.type != 'cpu':
         model(torch.zeros(1, 3, *imgsz).to(device).type_as(next(model.parameters())))  # run once
-    t0 = time.time()
+    dt, seen = [0.0, 0.0, 0.0], 0
     for path, img, im0s, vid_cap in dataset:
+        t1 = time_sync()
         if onnx:
             img = img.astype('float32')
         else:
@@ -131,9 +133,10 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         img = img / 255.0  # 0 - 255 to 0.0 - 1.0
         if len(img.shape) == 3:
             img = img[None]  # expand for batch dim
+        t2 = time_sync()
+        dt[0] += t2 - t1
 
         # Inference
-        t1 = time_sync()
         if pt:
             visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
             pred = model(img, augment=augment, visualize=visualize)[0]
@@ -160,17 +163,20 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             pred[..., 2] *= imgsz[1]  # w
             pred[..., 3] *= imgsz[0]  # h
             pred = torch.tensor(pred)
+        t3 = time_sync()
+        dt[1] += t3 - t2
 
         # NMS
         pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
-        t2 = time_sync()
+        dt[2] += time_sync() - t3
 
         # Second-stage classifier (optional)
         if classify:
             pred = apply_classifier(pred, modelc, img, im0s)
 
         # Process predictions
-        for i, det in enumerate(pred):  # detections per image
+        for i, det in enumerate(pred):  # per image
+            seen += 1
             if webcam:  # batch_size >= 1
                 p, s, im0, frame = path[i], f'{i}: ', im0s[i].copy(), dataset.count
             else:
@@ -207,8 +213,8 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
                         if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
-            # Print time (inference + NMS)
-            print(f'{s}Done. ({t2 - t1:.3f}s)')
+            # Print time (inference-only)
+            print(f'{s}Done. ({t3 - t2:.3f}s)')
 
             # Stream results
             im0 = annotator.result()
@@ -235,19 +241,19 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
                         vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
                     vid_writer[i].write(im0)
 
+    # Print results
+    t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
+    print(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}' % t)
     if save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
         print(f"Results saved to {colorstr('bold', save_dir)}{s}")
-
     if update:
         strip_optimizer(weights)  # update model (to fix SourceChangeWarning)
-
-    print(f'Done. ({time.time() - t0:.3f}s)')
 
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model path(s)')
     parser.add_argument('--source', type=str, default='data/images', help='file/dir/URL/glob, 0 for webcam')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')

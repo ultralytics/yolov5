@@ -45,9 +45,14 @@ VOC/
 # Neural Network weights -----------------------------------------------------------------------------------------------
 *.weights
 *.pt
+*.pb
 *.onnx
 *.mlmodel
 *.torchscript
+*.tflite
+*.h5
+*_saved_model/
+*_web_model/
 darknet53.conv.74
 yolov3-tiny.conv.15
 
@@ -76,7 +81,7 @@ sdist/
 var/
 wheels/
 *.egg-info/
-wandb/
+/wandb/
 .installed.cfg
 *.egg
 
