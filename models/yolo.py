@@ -29,7 +29,7 @@ try:
 except ImportError:
     thop = None
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = set_logging(__name__)
 
 
 class Detect(nn.Module):
@@ -281,7 +281,6 @@ if __name__ == '__main__':
     parser.add_argument('--profile', action='store_true', help='profile model speed')
     opt = parser.parse_args()
     opt.cfg = check_yaml(opt.cfg)  # check YAML
-    set_logging()
     device = select_device(opt.device)
 
     # Create model

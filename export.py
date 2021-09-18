@@ -45,6 +45,8 @@ from utils.general import colorstr, check_dataset, check_img_size, check_require
     set_logging, url2file
 from utils.torch_utils import select_device
 
+LOGGER = set_logging(__name__)
+
 
 def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):
     # YOLOv5 TorchScript model export
@@ -328,7 +330,6 @@ def parse_opt():
 
 
 def main(opt):
-    set_logging()
     run(**vars(opt))
 
 
