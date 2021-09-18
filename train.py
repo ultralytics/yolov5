@@ -36,7 +36,7 @@ from utils.autoanchor import check_anchors
 from utils.datasets import create_dataloader
 from utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds, \
     strip_optimizer, get_latest_run, check_dataset, check_git_status, check_img_size, check_requirements, \
-    check_file, check_yaml, check_suffix, print_mutation, set_logging, one_cycle, colorstr, methods
+    check_file, check_yaml, check_suffix, print_args, print_mutation, set_logging, one_cycle, colorstr, methods
 from utils.downloads import attempt_download
 from utils.loss import ComputeLoss
 from utils.plots import plot_labels, plot_evolve
@@ -470,9 +470,8 @@ def parse_opt(known=False):
 
 def main(opt, callbacks=Callbacks()):
     # Checks
-    set_logging(RANK)
     if RANK in [-1, 0]:
-        print(colorstr('train: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
+        print_args(FILE.stem, opt)
         check_git_status()
         check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=['thop'])
 
@@ -508,7 +507,7 @@ def main(opt, callbacks=Callbacks()):
     if not opt.evolve:
         train(opt.hyp, opt, device, callbacks)
         if WORLD_SIZE > 1 and RANK == 0:
-            _ = [print('Destroying process group... ', end=''), dist.destroy_process_group(), print('Done.')]
+            _ = LOGGER.info('Destroying process group... ', end=''), dist.destroy_process_group(), LOGGER.info('Done.')
 
     # Evolve hyperparameters (optional)
     else:

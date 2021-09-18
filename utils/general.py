@@ -89,6 +89,11 @@ def set_logging(rank=-1, verbose=True):
         level=logging.INFO if (verbose and rank in [-1, 0]) else logging.WARN)
 
 
+def print_args(name, opt):
+    # Print argparser arguments
+    print(colorstr(f'{name}: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
+
+
 def init_seeds(seed=0):
     # Initialize random number generator (RNG) seeds https://pytorch.org/docs/stable/notes/randomness.html
     # cudnn seed 0 settings are slower and more reproducible, else faster and less reproducible

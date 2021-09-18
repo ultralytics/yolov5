@@ -19,12 +19,12 @@ FILE = Path(__file__).resolve()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
 from models.experimental import attempt_load
-from utils.datasets import LoadStreams, LoadImages
-from utils.general import check_img_size, check_imshow, check_requirements, check_suffix, colorstr, is_ascii, \
-    non_max_suppression, apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, \
-    save_one_box
+from utils.datasets import LoadImages, LoadStreams
+from utils.general import apply_classifier, check_img_size, check_imshow, check_requirements, check_suffix, colorstr, \
+    increment_path, is_ascii, non_max_suppression, print_args, save_one_box, scale_coords, set_logging, \
+    strip_optimizer, xyxy2xywh
 from utils.plots import Annotator, colors
-from utils.torch_utils import select_device, load_classifier, time_sync
+from utils.torch_utils import load_classifier, select_device, time_sync
 
 
 @torch.no_grad()
@@ -279,11 +279,11 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
+    print_args(FILE.stem, opt)
     return opt
 
 
 def main(opt):
-    print(colorstr('detect: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
     check_requirements(exclude=('tensorboard', 'thop'))
     run(**vars(opt))
 
