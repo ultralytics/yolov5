@@ -286,7 +286,7 @@ def parse_opt():
 
 
 def main(opt):
-    check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=('tensorboard', 'thop'))
+    check_requirements(requirements=ROOT / 'requirements.txt', exclude=('tensorboard', 'thop'))
     run(**vars(opt))
 
 
