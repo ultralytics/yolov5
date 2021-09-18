@@ -27,7 +27,9 @@ from torch.optim import Adam, SGD, lr_scheduler
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
-sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
+ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
 
 import val  # for end-of-epoch mAP
 from models.experimental import attempt_load
