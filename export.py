@@ -32,7 +32,7 @@ import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
 FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # yolov5/ dir
+ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 
@@ -41,7 +41,8 @@ from models.experimental import attempt_load
 from models.yolo import Detect
 from utils.activations import SiLU
 from utils.datasets import LoadImages
-from utils.general import colorstr, check_dataset, check_img_size, check_requirements, file_size, set_logging, url2file
+from utils.general import colorstr, check_dataset, check_img_size, check_requirements, file_size, print_args, \
+    set_logging, url2file
 from utils.torch_utils import select_device
 
 
@@ -322,12 +323,12 @@ def parse_opt():
                         default=['torchscript', 'onnx'],
                         help='available formats are (torchscript, onnx, coreml, saved_model, pb, tflite, tfjs)')
     opt = parser.parse_args()
+    print_args(FILE.stem, opt)
     return opt
 
 
 def main(opt):
     set_logging()
-    print(colorstr('export: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
     run(**vars(opt))
 
 

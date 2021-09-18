@@ -5,12 +5,15 @@ import os
 import sys
 from contextlib import contextmanager
 from pathlib import Path
+import pkg_resources as pkg
 
 import yaml
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
-sys.path.append(FILE.parents[3].as_posix())  # add yolov5/ to path
+ROOT = FILE.parents[3]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
 
 from utils.datasets import LoadImagesAndLabels
 from utils.datasets import img2label_paths
@@ -20,6 +23,8 @@ try:
     import wandb
 
     assert hasattr(wandb, '__version__')  # verify package import not local dir
+    if pkg.parse_version(wandb.__version__) >= pkg.parse_version('0.12.2'):
+        wandb.login(timeout=30)
 except (ImportError, AssertionError):
     wandb = None
 
