@@ -4,7 +4,9 @@ from pathlib import Path
 import wandb
 
 FILE = Path(__file__).resolve()
-sys.path.append(FILE.parents[3].as_posix())  # add utils/ to path
+ROOT = FILE.parents[3]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
 
 from train import train, parse_opt
 from utils.general import increment_path

@@ -27,7 +27,9 @@ from torch.optim import Adam, SGD, lr_scheduler
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
-sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
+ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
 
 import val  # for end-of-epoch mAP
 from models.experimental import attempt_load
@@ -470,10 +472,11 @@ def parse_opt(known=False):
 
 def main(opt, callbacks=Callbacks()):
     # Checks
+    set_logging(RANK)
     if RANK in [-1, 0]:
         print_args(FILE.stem, opt)
         check_git_status()
-        check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=['thop'])
+        check_requirements(requirements=ROOT / 'requirements.txt', exclude=['thop'])
 
     # Resume
     if opt.resume and not check_wandb_resume(opt) and not opt.evolve:  # resume an interrupted run

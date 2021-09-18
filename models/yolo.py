@@ -12,7 +12,9 @@ from copy import deepcopy
 from pathlib import Path
 
 FILE = Path(__file__).resolve()
-sys.path.append(FILE.parents[1].as_posix())  # add yolov5/ to path
+ROOT = FILE.parents[1]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
 
 from models.common import *
 from models.experimental import *

@@ -18,7 +18,9 @@ import torch
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
-sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
+ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
 
 from models.experimental import attempt_load
 from utils.datasets import create_dataloader
@@ -325,7 +327,7 @@ def parse_opt():
 
 def main(opt):
     set_logging()
-    check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=('tensorboard', 'thop'))
+    check_requirements(requirements=ROOT / 'requirements.txt', exclude=('tensorboard', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
         run(**vars(opt))
