@@ -29,7 +29,6 @@ import yaml
 
 from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
-from utils.torch_utils import init_torch_seeds
 
 # Settings
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -91,10 +90,13 @@ def set_logging(rank=-1, verbose=True):
 
 
 def init_seeds(seed=0):
-    # Initialize random number generator (RNG) seeds
+    # Initialize random number generator (RNG) seeds https://pytorch.org/docs/stable/notes/randomness.html
+    # cudnn seed 0 settings are slower and more reproducible, else faster and less reproducible
+    import torch.backends.cudnn as cudnn
     random.seed(seed)
     np.random.seed(seed)
-    init_torch_seeds(seed)
+    torch.manual_seed(seed)
+    cudnn.benchmark, cudnn.deterministic = (False, True) if seed == 0 else (True, False)
 
 
 def get_latest_run(search_dir='.'):

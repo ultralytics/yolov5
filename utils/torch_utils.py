@@ -15,7 +15,6 @@ from copy import deepcopy
 from pathlib import Path
 
 import torch
-import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
@@ -39,15 +38,6 @@ def torch_distributed_zero_first(local_rank: int):
     yield
     if local_rank == 0:
         dist.barrier(device_ids=[0])
-
-
-def init_torch_seeds(seed=0):
-    # Speed-reproducibility tradeoff https://pytorch.org/docs/stable/notes/randomness.html
-    torch.manual_seed(seed)
-    if seed == 0:  # slower, more reproducible
-        cudnn.benchmark, cudnn.deterministic = False, True
-    else:  # faster, less reproducible
-        cudnn.benchmark, cudnn.deterministic = True, False
 
 
 def date_modified(path=__file__):
