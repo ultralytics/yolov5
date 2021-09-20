@@ -50,3 +50,6 @@ ENV HOME=/usr/src/app
 
 # Clean up
 # docker system prune -a --volumes
+
+# Update Ubuntu drivers
+# https://www.maketecheasier.com/install-nvidia-drivers-ubuntu/
