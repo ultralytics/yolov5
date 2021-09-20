@@ -3,11 +3,12 @@
 Plotting utils
 """
 
+import math
+import os
 from copy import copy
 from pathlib import Path
 
 import cv2
-import math
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,6 +22,7 @@ from utils.metrics import fitness
 
 # Settings
 CONFIG_DIR = user_config_dir()  # Ultralytics settings dir
+RANK = int(os.getenv('RANK', -1))
 matplotlib.rc('font', **{'size': 11})
 matplotlib.use('Agg')  # for writing to files only
 
@@ -55,12 +57,13 @@ def check_font(font='Arial.ttf', size=10):
     except Exception as e:  # download if missing
         url = "https://ultralytics.com/assets/" + font.name
         print(f'Downloading {url} to {font}...')
-        torch.hub.download_url_to_file(url, str(font))
+        torch.hub.download_url_to_file(url, str(font), progress=False)
         return ImageFont.truetype(str(font), size)
 
 
 class Annotator:
-    check_font()  # download TTF if necessary
+    if RANK in (-1, 0):
+        check_font()  # download TTF if necessary
 
     # YOLOv5 Annotator for train/val mosaics and jpgs and detect/hub inference annotations
     def __init__(self, im, line_width=None, font_size=None, font='Arial.ttf', pil=True):
