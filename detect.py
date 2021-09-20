@@ -13,10 +13,10 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
     scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
-
+from utils.flir import LoadFLIR
 
 def detect(save_img=False):
-    source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
+    source, weights, view_img, save_txt, imgsz, flir = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.flir
     save_img = not opt.nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://', 'https://'))
@@ -45,7 +45,10 @@ def detect(save_img=False):
 
     # Set Dataloader
     vid_path, vid_writer = None, None
-    if webcam:
+    if flir:
+        cudnn.benchmark = True
+        dataset = LoadFLIR(source, img_size=imgsz, stride=stride) # source is re-used as camera ID
+    elif webcam:
         view_img = check_imshow()
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadStreams(source, img_size=imgsz, stride=stride)
@@ -165,6 +168,7 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='runs/detect', help='save results to project/name')
     parser.add_argument('--name', default='exp', help='save results to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+    parser.add_argument('--flir', action='store_true', help='use a flir camera')
     opt = parser.parse_args()
     print(opt)
     check_requirements(exclude=('pycocotools', 'thop'))
