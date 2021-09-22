@@ -19,6 +19,11 @@
 *.avi
 *.data
 *.json
+*.ttf
+
+# Mojo files
+*.whl
+job.yml
 
 #package
 yolov5/*
@@ -29,8 +34,9 @@ yolov5/*
 storage.googleapis.com
 runs/*
 data/*
-!data/samples/zidane.jpg
-!data/samples/bus.jpg
+!data/hyps/*
+!data/images/zidane.jpg
+!data/images/bus.jpg
 !data/coco.names
 !data/coco_paper.names
 !data/coco.data
@@ -39,9 +45,12 @@ data/*
 !data/trainvalno5k.shapes
 !data/*.sh
 
-pycocotools/*
-results*.txt
-gcp_test*.sh
+results*.csv
+
+# Datasets -------------------------------------------------------------------------------------------------------------
+coco/
+coco128/
+VOC/
 
 # MATLAB GitIgnore -----------------------------------------------------------------------------------------------------
 *.m~
@@ -82,8 +91,10 @@ sdist/
 var/
 wheels/
 *.egg-info/
+# wandb/
 .installed.cfg
 *.egg
+
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

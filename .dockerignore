@@ -7,17 +7,18 @@ output
 coco
 storage.googleapis.com
 
+*.ttf
 data/samples/*
-**/results*.txt
+**/results*.csv
 *.jpg
 
 # Neural Network weights -----------------------------------------------------------------------------------------------
-**/*.weights
 **/*.pt
 **/*.pth
 **/*.onnx
 **/*.mlmodel
 **/*.torchscript
+**/*.torchscript.pt
 
 
 # Below Copied From .gitignore -----------------------------------------------------------------------------------------
@@ -49,6 +50,7 @@ sdist/
 var/
 wheels/
 *.egg-info/
+# wandb/
 .installed.cfg
 *.egg
 

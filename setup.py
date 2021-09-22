@@ -53,7 +53,7 @@ def copy_to_module():
 
     for python_file_path in new_python_files:
         data = []
-        with python_file_path.open("r") as f:
+        with python_file_path.open("r", encoding="utf8") as f:
             for line in f:
                 if line.startswith(strings_to_search_for):
                     lines_changed.append(line)
@@ -64,7 +64,7 @@ def copy_to_module():
                             print(line.rstrip())
                             print()
                 data.append(line)
-        with python_file_path.open("w") as f:
+        with python_file_path.open("w", encoding="utf8") as f:
             for line in data:
                 f.write(line)
 
@@ -74,7 +74,7 @@ def copy_to_module():
 with open("README.md", "r", encoding="utf8") as fh:
     long_description = fh.read()
 
-with pathlib.Path('requirements.txt').open() as requirements_txt:
+with pathlib.Path('requirements.txt').open(encoding="utf8") as requirements_txt:
     install_requires = [
         str(requirement)
         for requirement
