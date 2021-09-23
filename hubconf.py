@@ -34,7 +34,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     from utils.torch_utils import select_device
 
     file = Path(__file__).resolve()
-    check_requirements(requirements=file.parent / 'requirements.txt', exclude=('tensorboard', 'thop', 'opencv-python'))
+    check_requirements(exclude=('tensorboard', 'thop', 'opencv-python'))
     set_logging(verbose=verbose)
 
     save_dir = Path('') if str(name).endswith('.pt') else file.parent

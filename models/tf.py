@@ -17,8 +17,9 @@ from copy import deepcopy
 from pathlib import Path
 
 FILE = Path(__file__).resolve()
-ROOT = FILE.parents[1]  # yolov5/ dir
-sys.path.append(ROOT.as_posix())  # add yolov5/ to path
+ROOT = FILE.parents[1]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
 
 import numpy as np
 import tensorflow as tf
@@ -27,9 +28,9 @@ import torch.nn as nn
 from tensorflow import keras
 
 from models.common import Conv, Bottleneck, SPP, DWConv, Focus, BottleneckCSP, Concat, autopad, C3
-from models.experimental import MixConv2d, CrossConv, attempt_load
+from models.experimental import CrossConv, MixConv2d, attempt_load
 from models.yolo import Detect
-from utils.general import colorstr, make_divisible, set_logging
+from utils.general import make_divisible, print_args, set_logging
 from utils.activations import SiLU
 
 LOGGER = logging.getLogger(__name__)
@@ -70,8 +71,9 @@ class TFConv(keras.layers.Layer):
         # see https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
 
         conv = keras.layers.Conv2D(
-            c2, k, s, 'SAME' if s == 1 else 'VALID', use_bias=False,
-            kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()))
+            c2, k, s, 'SAME' if s == 1 else 'VALID', use_bias=False if hasattr(w, 'bn') else True,
+            kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()),
+            bias_initializer='zeros' if hasattr(w, 'bn') else keras.initializers.Constant(w.conv.bias.numpy()))
         self.conv = conv if s == 1 else keras.Sequential([TFPad(autopad(k, p)), conv])
         self.bn = TFBN(w.bn) if hasattr(w, 'bn') else tf.identity
 
@@ -433,12 +435,12 @@ def parse_opt():
     parser.add_argument('--dynamic', action='store_true', help='dynamic batch size')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
+    print_args(FILE.stem, opt)
     return opt
 
 
 def main(opt):
     set_logging()
-    print(colorstr('tf.py: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
     run(**vars(opt))
 
 
