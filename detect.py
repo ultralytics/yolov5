@@ -217,7 +217,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
 
             # Print time (inference-only)
             print(f'{s}Done. ({t3 - t2:.3f}s)')
-   "show image"
+            "show image"
             # Stream results
             im0 = annotator.result()
             if view_img:
