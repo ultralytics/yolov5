@@ -212,20 +212,20 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
     # YOLOv5 TensorFlow.js export
     try:
         check_requirements(('tensorflowjs',))
+        import re
         import tensorflowjs as tfjs
 
         print(f'\n{prefix} starting export with tensorflowjs {tfjs.__version__}...')
         f = str(file).replace('.pt', '_web_model')  # js dir
         f_pb = file.with_suffix('.pb')  # *.pb path
+        f_json = f + '/model.json'  # *.json path
 
         cmd = f"tensorflowjs_converter --input_format=tf_frozen_model " \
               f"--output_node_names='Identity,Identity_1,Identity_2,Identity_3' {f_pb} {f}"
         subprocess.run(cmd, shell=True)
 
-        import re
-        f_json = f + '/model.json'
         json = open(f_json).read()
-        with open(f_json, 'w') as j:
+        with open(f_json, 'w') as j:  # sort JSON Identity_* in ascending order
             subst = re.sub(
                 r'{"outputs": {"Identity.?.?": {"name": "Identity.?.?"}, ' + \
                 r'"Identity.?.?": {"name": "Identity.?.?"}, ' + \
