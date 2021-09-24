@@ -73,7 +73,6 @@ class Annotator:
             self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
             self.draw = ImageDraw.Draw(self.im)
             self.font = check_font(font, size=font_size or max(round(sum(self.im.size) / 2 * 0.035), 12))
-            self.fh = self.font.getsize('a')[1] - 3  # font height
         else:  # use cv2
             self.im = im
         self.lw = line_width or max(round(sum(im.shape) / 2 * 0.003), 2)  # line width
@@ -84,25 +83,24 @@ class Annotator:
             self.draw.rectangle(box, width=self.lw, outline=color)  # box
             if label:
                 w, h = self.font.getsize(label)  # text width
+                outside = box[1] - h >= 0  # label fits outside box
                 self.draw.rectangle([box[0],
-                                     box[1] - h if box[1] - h >= 0 else box[1],
+                                     box[1] - h if outside else box[1],
                                      box[0] + w + 1,
-                                     box[1] + 1 if box[1] - h >= 0 else box[1] + h + 1], fill=color)
+                                     box[1] + 1 if outside else box[1] + h + 1], fill=color)
                 # self.draw.text((box[0], box[1]), label, fill=txt_color, font=self.font, anchor='ls')  # for PIL>8.0
-                self.draw.text((box[0], box[1] - h if box[1] - h >= 0 else box[1]),
-                               label, fill=txt_color, font=self.font)
+                self.draw.text((box[0], box[1] - h if outside else box[1]), label, fill=txt_color, font=self.font)
         else:  # cv2
             c1, c2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
             cv2.rectangle(self.im, c1, c2, color, thickness=self.lw, lineType=cv2.LINE_AA)
             if label:
                 tf = max(self.lw - 1, 1)  # font thickness
                 w, h = cv2.getTextSize(label, 0, fontScale=self.lw / 3, thickness=tf)[0]
-                c2 = c1[0] + w, c1[1] - h - 3 if c1[1] - h - 3 >= 0 else c1[1] + h + 3
+                outside = c1[1] - h - 3 >= 0  # label fits outside box
+                c2 = c1[0] + w, c1[1] - h - 3 if outside else c1[1] + h + 3
                 cv2.rectangle(self.im, c1, c2, color, -1, cv2.LINE_AA)  # filled
-                cv2.putText(self.im, label,
-                            (c1[0], c1[1] - 2 if c1[1] - h -3 >= 0 else c1[1] + h + 2),
-                                0, self.lw / 3, txt_color, thickness=tf,
-                            lineType=cv2.LINE_AA)
+                cv2.putText(self.im, label, (c1[0], c1[1] - 2 if outside else c1[1] + h + 2), 0, self.lw / 3, txt_color,
+                            thickness=tf, lineType=cv2.LINE_AA)
 
     def rectangle(self, xy, fill=None, outline=None, width=1):
         # Add rectangle to image (PIL-only)
