@@ -243,6 +243,10 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         dynamic=False,  # ONNX/TF: dynamic axes
         simplify=False,  # ONNX: simplify model
         opset=12,  # ONNX: opset version
+        topk_per_class=100,  # topk per class to keep in NMS
+        topk_all=100,  # topk for all classes to keep in NMS
+        iou_thres=0.45,  # IOU threshold for NMS
+        conf_thres=0.25  # conf threshold for NMS
         ):
     t = time.time()
     include = [x.lower() for x in include]
@@ -290,7 +294,9 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     if any(tf_exports):
         pb, tflite, tfjs = tf_exports[1:]
         assert not (tflite and tfjs), 'TFLite and TF.js models must be exported separately, please pass only one type.'
-        model = export_saved_model(model, im, file, dynamic, tf_nms=tfjs, agnostic_nms=tfjs)  # keras model
+        model = export_saved_model(model, im, file, dynamic, tf_nms=tfjs, agnostic_nms=tfjs,
+                                   topk_per_class=topk_per_class, topk_all=topk_all, conf_thres=conf_thres,
+                                   iou_thres=iou_thres)  # keras model
         if pb or tfjs:  # pb prerequisite to tfjs
             export_pb(model, im, file)
         if tflite:
@@ -319,6 +325,10 @@ def parse_opt():
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TF: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
     parser.add_argument('--opset', type=int, default=13, help='ONNX: opset version')
+    parser.add_argument('--topk-per-class', type=int, default=100, help='topk per class to keep in NMS')
+    parser.add_argument('--topk-all', type=int, default=100, help='topk for all classes to keep in NMS')
+    parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
+    parser.add_argument('--conf-thres', type=float, default=0.25, help='conf threshold for NMS')
     parser.add_argument('--include', nargs='+',
                         default=['torchscript', 'onnx'],
                         help='available formats are (torchscript, onnx, coreml, saved_model, pb, tflite, tfjs)')
