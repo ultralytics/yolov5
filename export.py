@@ -223,6 +223,22 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
               f"--output_node_names='Identity,Identity_1,Identity_2,Identity_3' {f_pb} {f}"
         subprocess.run(cmd, shell=True)
 
+        import re
+        f_json = f + '/model.json'
+        json = open(f_json).read()
+        with open(f_json, 'w') as j:
+            subst = re.sub(
+                r'{"outputs": {"Identity.?.?": {"name": "Identity.?.?"}, ' + \
+                    r'"Identity.?.?": {"name": "Identity.?.?"}, ' + \
+                    r'"Identity.?.?": {"name": "Identity.?.?"}, ' + \
+                    r'"Identity.?.?": {"name": "Identity.?.?"}}}',
+                r'{"outputs": {"Identity": {"name": "Identity"}, ' + \
+                    r'"Identity_1": {"name": "Identity_1"}, ' + \
+                    r'"Identity_2": {"name": "Identity_2"}, ' + \
+                    r'"Identity_3": {"name": "Identity_3"}}}',
+                json)
+            j.write(subst)
+
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
         print(f'\n{prefix} export failure: {e}')
