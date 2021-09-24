@@ -14,7 +14,6 @@ Inference:
                                          yolov5s.tflite
 
 TensorFlow.js:
-    $ # Edit yolov5s_web_model/model.json to sort Identity* in ascending order
     $ cd .. && git clone https://github.com/zldrobit/tfjs-yolov5-example.git && cd tfjs-yolov5-example
     $ npm install
     $ ln -s ../../yolov5/yolov5s_web_model public/yolov5s_web_model
