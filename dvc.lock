@@ -1,0 +1,16 @@
+schema: '2.0'
+stages:
+  training:
+    cmd: python train.py --dvc
+    deps:
+    - path: params.yml
+      md5: 5b4daed5bacb7330efb72d700b67a508
+      size: 568
+    - path: train.py
+      md5: 93015949ceebdbe2be67ed64ef82b931
+      size: 32119
+    outs:
+    - path: model
+      md5: 8cc333ddcb9dacaf20a707ff52606c4a.dir
+      size: 42534620
+      nfiles: 23
