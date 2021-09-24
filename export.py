@@ -228,13 +228,13 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
         with open(f_json, 'w') as j:
             subst = re.sub(
                 r'{"outputs": {"Identity.?.?": {"name": "Identity.?.?"}, ' + \
-                    r'"Identity.?.?": {"name": "Identity.?.?"}, ' + \
-                    r'"Identity.?.?": {"name": "Identity.?.?"}, ' + \
-                    r'"Identity.?.?": {"name": "Identity.?.?"}}}',
+                r'"Identity.?.?": {"name": "Identity.?.?"}, ' + \
+                r'"Identity.?.?": {"name": "Identity.?.?"}, ' + \
+                r'"Identity.?.?": {"name": "Identity.?.?"}}}',
                 r'{"outputs": {"Identity": {"name": "Identity"}, ' + \
-                    r'"Identity_1": {"name": "Identity_1"}, ' + \
-                    r'"Identity_2": {"name": "Identity_2"}, ' + \
-                    r'"Identity_3": {"name": "Identity_3"}}}',
+                r'"Identity_1": {"name": "Identity_1"}, ' + \
+                r'"Identity_2": {"name": "Identity_2"}, ' + \
+                r'"Identity_3": {"name": "Identity_3"}}}',
                 json)
             j.write(subst)
 
@@ -258,10 +258,10 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         dynamic=False,  # ONNX/TF: dynamic axes
         simplify=False,  # ONNX: simplify model
         opset=12,  # ONNX: opset version
-        topk_per_class=100,  # topk per class to keep in NMS
-        topk_all=100,  # topk for all classes to keep in NMS
-        iou_thres=0.45,  # IOU threshold for NMS
-        conf_thres=0.25  # conf threshold for NMS
+        topk_per_class=100,  # TF.js NMS: topk per class to keep
+        topk_all=100,  # TF.js NMS: topk for all classes to keep
+        iou_thres=0.45,  # TF.js NMS: IoU threshold
+        conf_thres=0.25  # TF.js NMS: confidence threshold
         ):
     t = time.time()
     include = [x.lower() for x in include]
@@ -340,10 +340,10 @@ def parse_opt():
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TF: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
     parser.add_argument('--opset', type=int, default=13, help='ONNX: opset version')
-    parser.add_argument('--topk-per-class', type=int, default=100, help='topk per class to keep in NMS')
-    parser.add_argument('--topk-all', type=int, default=100, help='topk for all classes to keep in NMS')
-    parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
-    parser.add_argument('--conf-thres', type=float, default=0.25, help='conf threshold for NMS')
+    parser.add_argument('--topk-per-class', type=int, default=100, help='TF.js NMS: topk per class to keep')
+    parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
+    parser.add_argument('--iou-thres', type=float, default=0.45, help='TF.js NMS: IoU threshold')
+    parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
     parser.add_argument('--include', nargs='+',
                         default=['torchscript', 'onnx'],
                         help='available formats are (torchscript, onnx, coreml, saved_model, pb, tflite, tfjs)')
