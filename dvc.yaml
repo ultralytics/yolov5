@@ -7,4 +7,3 @@ stages:
     outs:
       - model:
           persist: true
-
