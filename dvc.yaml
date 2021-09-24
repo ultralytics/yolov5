@@ -1,0 +1,10 @@
+stages:
+  training:
+    cmd: python train.py --dvc
+    deps:
+    - train.py
+    - params.yml
+    outs:
+      - model:
+          persist: true
+
