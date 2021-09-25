@@ -15,6 +15,7 @@ from itertools import repeat
 from multiprocessing.pool import ThreadPool, Pool
 from pathlib import Path
 from threading import Thread
+from zipfile import ZipFile
 
 import cv2
 import numpy as np
@@ -365,6 +366,8 @@ def img2label_paths(img_paths):
 
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
+    cache_version = 0.5  # dataset labels *.cache version
+
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
                  cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
         self.img_size = img_size
@@ -404,7 +407,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')
         try:
             cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
-            assert cache['version'] == 0.4 and cache['hash'] == get_hash(self.label_files + self.img_files)
+            assert cache['version'] == self.cache_version  # same version
+            assert cache['hash'] == get_hash(self.label_files + self.img_files)  # same hash
         except:
             cache, exists = self.cache_labels(cache_path, prefix), False  # cache
 
@@ -487,7 +491,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         nm, nf, ne, nc, msgs = 0, 0, 0, 0, []  # number missing, found, empty, corrupt, messages
         desc = f"{prefix}Scanning '{path.parent / path.stem}' images and labels..."
         with Pool(NUM_THREADS) as pool:
-            pbar = tqdm(pool.imap_unordered(verify_image_label, zip(self.img_files, self.label_files, repeat(prefix))),
+            pbar = tqdm(pool.imap(verify_image_label, zip(self.img_files, self.label_files, repeat(prefix))),
                         desc=desc, total=len(self.img_files))
             for im_file, l, shape, segments, nm_f, nf_f, ne_f, nc_f, msg in pbar:
                 nm += nm_f
@@ -508,7 +512,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         x['hash'] = get_hash(self.label_files + self.img_files)
         x['results'] = nf, nm, ne, nc, len(self.img_files)
         x['msgs'] = msgs  # warnings
-        x['version'] = 0.4  # cache version
+        x['version'] = self.cache_version  # cache version
         try:
             np.save(path, x)  # save cache for next time
             path.with_suffix('.cache.npy').rename(path)  # remove .npy suffix
@@ -661,6 +665,7 @@ def load_mosaic(self, index):
     s = self.img_size
     yc, xc = [int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border]  # mosaic center x, y
     indices = [index] + random.choices(self.indices, k=3)  # 3 additional image indices
+    random.shuffle(indices)
     for i, index in enumerate(indices):
         # Load image
         img, _, (h, w) = load_image(self, index)
@@ -717,6 +722,7 @@ def load_mosaic9(self, index):
     labels9, segments9 = [], []
     s = self.img_size
     indices = [index] + random.choices(self.indices, k=8)  # 8 additional image indices
+    random.shuffle(indices)
     for i, index in enumerate(indices):
         # Load image
         img, _, (h, w) = load_image(self, index)
@@ -923,8 +929,8 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         # Unzip data.zip TODO: CONSTRAINT: path/to/abc.zip MUST unzip to 'path/to/abc/'
         if str(path).endswith('.zip'):  # path is data.zip
             assert Path(path).is_file(), f'Error unzipping {path}, file not found'
-            assert os.system(f'unzip -q {path} -d {path.parent}') == 0, f'Error unzipping {path}'
-            dir = path.with_suffix('')  # dataset directory
+            ZipFile(path).extractall(path=path.parent)  # unzip
+            dir = path.with_suffix('')  # dataset directory == zip name
             return True, str(dir), next(dir.rglob('*.yaml'))  # zipped, data_dir, yaml_path
         else:  # path is data.yaml
             return False, None, path
