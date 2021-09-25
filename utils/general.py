@@ -352,11 +352,11 @@ def check_dataset(data, autodownload=True):
         if not all(x.exists() for x in val):
             print('\nWARNING: Dataset not found, nonexistent paths: %s' % [str(x) for x in val if not x.exists()])
             if s and autodownload:  # download script
+                root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
                     print(f'Downloading {s} to {f}...')
                     torch.hub.download_url_to_file(s, f)
-                    root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
                     Path(root).mkdir(parents=True, exist_ok=True)  # create root
                     ZipFile(f).extractall(path=root)  # unzip
                     Path(f).unlink()  # remove zip
@@ -366,7 +366,7 @@ def check_dataset(data, autodownload=True):
                     r = os.system(s)
                 else:  # python script
                     r = exec(s, {'yaml': data})  # return None
-                print(f"Dataset autodownload {f'success, saved to {root}' if r in (0, None) else 'failure'}")
+                print(f"Dataset autodownload {f'success, saved to {root}' if r in (0, None) else 'failure'}\n")
             else:
                 raise Exception('Dataset not found.')
 
