@@ -15,6 +15,7 @@ from itertools import repeat
 from multiprocessing.pool import ThreadPool, Pool
 from pathlib import Path
 from threading import Thread
+from zipfile import ZipFile
 
 import cv2
 import numpy as np
@@ -928,8 +929,8 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         # Unzip data.zip TODO: CONSTRAINT: path/to/abc.zip MUST unzip to 'path/to/abc/'
         if str(path).endswith('.zip'):  # path is data.zip
             assert Path(path).is_file(), f'Error unzipping {path}, file not found'
-            assert os.system(f'unzip -q {path} -d {path.parent}') == 0, f'Error unzipping {path}'
-            dir = path.with_suffix('')  # dataset directory
+            ZipFile(path).extractall(path=path.parent)  # unzip
+            dir = path.with_suffix('')  # dataset directory == zip name
             return True, str(dir), next(dir.rglob('*.yaml'))  # zipped, data_dir, yaml_path
         else:  # path is data.yaml
             return False, None, path

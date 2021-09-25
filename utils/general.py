@@ -18,6 +18,7 @@ from itertools import repeat
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from subprocess import check_output
+from zipfile import ZipFile
 
 import cv2
 import numpy as np
@@ -353,17 +354,19 @@ def check_dataset(data, autodownload=True):
             if s and autodownload:  # download script
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
-                    print(f'Downloading {s} ...')
+                    print(f'Downloading {s} to {f}...')
                     torch.hub.download_url_to_file(s, f)
                     root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
                     Path(root).mkdir(parents=True, exist_ok=True)  # create root
-                    r = os.system(f'unzip -q {f} -d {root} && rm {f}')  # unzip
+                    ZipFile(f).extractall(path=root)  # unzip
+                    Path(f).unlink()  # remove zip
+                    r = None  # success
                 elif s.startswith('bash '):  # bash script
                     print(f'Running {s} ...')
                     r = os.system(s)
                 else:  # python script
                     r = exec(s, {'yaml': data})  # return None
-                print('Dataset autodownload %s\n' % ('success' if r in (0, None) else 'failure'))  # print result
+                print(f"Dataset autodownload {f'success, saved to {root}' if r in (0, None) else 'failure'}")
             else:
                 raise Exception('Dataset not found.')
 
@@ -393,12 +396,11 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
         if unzip and f.suffix in ('.zip', '.gz'):
             print(f'Unzipping {f}...')
             if f.suffix == '.zip':
-                s = f'unzip -qo {f} -d {dir}'  # unzip -quiet -overwrite
+                ZipFile(f).extractall(path=dir)  # unzip
             elif f.suffix == '.gz':
-                s = f'tar xfz {f} --directory {f.parent}'  # unzip
-            if delete:  # delete zip file after unzip
-                s += f' && rm {f}'
-            os.system(s)
+                os.system(f'tar xfz {f} --directory {f.parent}')  # unzip
+            if delete:
+                f.unlink()  # remove zip
 
     dir = Path(dir)
     dir.mkdir(parents=True, exist_ok=True)  # make directory
