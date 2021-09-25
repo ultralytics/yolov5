@@ -1,10 +1,1 @@
-# add these requirements in your app on top of the existing ones
-pip==18.1
-Flask==1.0.2
-gunicorn==19.9.0
 
-
-
-import CI
-import Union
-import to my CVE
