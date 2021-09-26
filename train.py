@@ -410,7 +410,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                             batch_size=batch_size // WORLD_SIZE * 2,
                                             imgsz=imgsz,
                                             model=attempt_load(f, device).half(),
-                                            iou_thres=0.7,  # NMS IoU threshold for best pycocotools results
+                                            iou_thres=0.7 if is_coco else 0.6,  # best pycocotools results at 0.7
                                             single_cls=single_cls,
                                             dataloader=val_loader,
                                             save_dir=save_dir,
