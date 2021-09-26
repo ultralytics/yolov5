@@ -315,7 +315,9 @@ def check_file(file, suffix=''):
         assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
         return file
     else:  # search
-        files = glob.glob('./**/' + file, recursive=True)  # find file
+        files = []
+        for d in 'data', 'models', 'utils':  # search directories
+            files.extend(glob.glob(str(ROOT / d / '**' / file), recursive=True))  # find file
         assert len(files), f'File not found: {file}'  # assert file was found
         assert len(files) == 1, f"Multiple files match '{file}', specify exact path: {files}"  # assert unique
         return files[0]  # return file
