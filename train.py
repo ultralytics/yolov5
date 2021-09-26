@@ -356,9 +356,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            single_cls=single_cls,
                                            dataloader=val_loader,
                                            save_dir=save_dir,
-                                           save_json=is_coco and final_epoch,
-                                           verbose=nc < 50 and final_epoch,
-                                           plots=plots and final_epoch,
+                                           plots=False,
                                            callbacks=callbacks,
                                            compute_loss=compute_loss)
 
@@ -404,23 +402,24 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # end training -----------------------------------------------------------------------------------------------------
     if RANK in [-1, 0]:
         LOGGER.info(f'\n{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.')
-        if not evolve:
-            if is_coco:  # COCO dataset
-                for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
+        for f in last, best:
+            if f.exists():
+                strip_optimizer(f)  # strip optimizers
+                if f is best:
+                    LOGGER.info(f'\nValidating {f}...')
                     results, _, _ = val.run(data_dict,
                                             batch_size=batch_size // WORLD_SIZE * 2,
                                             imgsz=imgsz,
-                                            model=attempt_load(m, device).half(),
-                                            iou_thres=0.7,  # NMS IoU threshold for best pycocotools results
+                                            model=attempt_load(f, device).half(),
+                                            iou_thres=0.7 if is_coco else 0.6,  # best pycocotools results at 0.7
                                             single_cls=single_cls,
                                             dataloader=val_loader,
                                             save_dir=save_dir,
-                                            save_json=True,
-                                            plots=False)
-            # Strip optimizers
-            for f in last, best:
-                if f.exists():
-                    strip_optimizer(f)  # strip optimizers
+                                            save_json=is_coco,
+                                            verbose=True,
+                                            plots=True,
+                                            callbacks=callbacks)  # val best model with plots
+
         callbacks.run('on_train_end', last, best, plots, epoch)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
 
