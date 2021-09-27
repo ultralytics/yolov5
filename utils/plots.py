@@ -17,7 +17,7 @@ import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.general import user_config_dir, is_ascii, xywh2xyxy, xyxy2xywh
+from utils.general import user_config_dir, is_chinese, xywh2xyxy, xyxy2xywh
 from utils.metrics import fitness
 
 # Settings
@@ -66,20 +66,21 @@ class Annotator:
         check_font()  # download TTF if necessary
 
     # YOLOv5 Annotator for train/val mosaics and jpgs and detect/hub inference annotations
-    def __init__(self, im, line_width=None, font_size=None, font='Arial.ttf', pil=True):
+    def __init__(self, im, line_width=None, font_size=None, font='Arial.ttf', pil=False, example='abc'):
         assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to Annotator() input images.'
-        self.pil = pil
+        self.pil = pil or not example.isascii() or is_chinese(example)
         if self.pil:  # use PIL
             self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
             self.draw = ImageDraw.Draw(self.im)
-            self.font = check_font(font, size=font_size or max(round(sum(self.im.size) / 2 * 0.035), 12))
+            self.font = check_font(font='Arial.Unicode.ttf' if is_chinese(example) else font,
+                                   size=font_size or max(round(sum(self.im.size) / 2 * 0.035), 12))
         else:  # use cv2
             self.im = im
         self.lw = line_width or max(round(sum(im.shape) / 2 * 0.003), 2)  # line width
 
     def box_label(self, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
         # Add one xyxy box to image with label
-        if self.pil or not is_ascii(label):
+        if self.pil or not label.isascii():
             self.draw.rectangle(box, width=self.lw, outline=color)  # box
             if label:
                 w, h = self.font.getsize(label)  # text width, height
@@ -177,7 +178,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
 
     # Annotate
     fs = int((h + w) * ns * 0.01)  # font size
-    annotator = Annotator(mosaic, line_width=round(fs / 10), font_size=fs)
+    annotator = Annotator(mosaic, line_width=round(fs / 10), font_size=fs, pil=True)
     for i in range(i + 1):
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
         annotator.rectangle([x, y, x + w, y + h], None, (255, 255, 255), width=2)  # borders
