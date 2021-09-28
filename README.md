@@ -190,9 +190,9 @@ Get started in seconds with our verified environments. Click each icon below for
     </a>
 </div>
 
-||||
+|Weights and Biases||Roboflow|
 |:-:|-|:-:|
-|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases.](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|<img src="spacer.png" width="49%"/>|Label and automatically export your custom datasets directly to YOLOv5 for training using [Roboflow Annotate](https://roboflow.com/annotate) (⭐ NEW) |
+|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases.](https://wandb.ai/site?utm_campaign=repo_yolo_readme)||Label and automatically export your custom datasets directly to YOLOv5 for training using [Roboflow Annotate](https://roboflow.com/annotate) (⭐ NEW) |
 
 
 <!-- ## <div align="center">Compete and Win</div>
