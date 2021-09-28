@@ -68,10 +68,10 @@ jobs:
           di=cpu  # device
 
           # Train
-          python train.py --img 128 --batch 16 --weights ${{ matrix.model }}.pt --cfg ${{ matrix.model }}.yaml --epochs 1 --device $di
+          python train.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --cfg ${{ matrix.model }}.yaml --epochs 1 --device $di
           # Val
-          python val.py --img 128 --batch 16 --weights ${{ matrix.model }}.pt --device $di
-          python val.py --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $di
+          python val.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --device $di
+          python val.py --img 64 --batch 32 --weights runs/train/exp/weights/last.pt --device $di
           # Detect
           python detect.py --weights ${{ matrix.model }}.pt --device $di
           python detect.py --weights runs/train/exp/weights/last.pt --device $di
@@ -79,7 +79,7 @@ jobs:
           # Export
           python models/yolo.py --cfg ${{ matrix.model }}.yaml  # build PyTorch model
           python models/tf.py --weights ${{ matrix.model }}.pt  # build TensorFlow model
-          python export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt --include torchscript onnx  # export
+          python export.py --img 64 --batch 1 --weights ${{ matrix.model }}.pt --include torchscript onnx  # export
           # Python
           python - <<EOF
           import torch
