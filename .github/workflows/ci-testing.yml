@@ -75,8 +75,8 @@ jobs:
           # Detect
           python detect.py --weights ${{ matrix.model }}.pt --device $di
           python detect.py --weights runs/train/exp/weights/last.pt --device $di
-          # Extra
           python hubconf.py  # hub
+          # Export
           python models/yolo.py --cfg ${{ matrix.model }}.yaml  # build PyTorch model
           python models/tf.py --weights ${{ matrix.model }}.pt  # build TensorFlow model
           python export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt --include torchscript onnx  # export
