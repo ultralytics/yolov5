@@ -16,8 +16,8 @@ tensorboard>=2.4.1
 # wandb
 
 # Plotting ------------------------------------
-seaborn>=0.11.0
 pandas
+seaborn>=0.11.0
 
 # Export --------------------------------------
 # coremltools>=4.1  # CoreML export
@@ -28,7 +28,8 @@ pandas
 # tensorflowjs>=3.9.0  # TF.js export
 
 # Extras --------------------------------------
+# albumentations>=1.0.3
 # Cython  # for pycocotools https://github.com/cocodataset/cocoapi/issues/172
 # pycocotools>=2.0  # COCO mAP
-# albumentations>=1.0.3
+# roboflow
 thop  # FLOPs computation

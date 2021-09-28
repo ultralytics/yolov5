@@ -9,6 +9,7 @@ import subprocess
 import time
 import urllib
 from pathlib import Path
+from zipfile import ZipFile
 
 import requests
 import torch
@@ -104,8 +105,8 @@ def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', file='tmp.zip'):
     # Unzip if archive
     if file.suffix == '.zip':
         print('unzipping... ', end='')
-        os.system(f'unzip -q {file}')  # unzip
-        file.unlink()  # remove zip to free space
+        ZipFile(file).extractall(path=file.parent)  # unzip
+        file.unlink()  # remove zip
 
     print(f'Done ({time.time() - t:.1f}s)')
     return r
