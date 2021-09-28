@@ -186,7 +186,7 @@ Get started in seconds with our verified environments. Click each icon below for
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-wb-long.png" width="49%"/>
     </a>
     <a href="https://roboflow.com/annotate?ref=ultralytics">
-        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow-long.png" width="49%"/>
+        <img src="https://uploads-ssl.webflow.com/5f6bc60e665f54545a1e52a5/615322dd55a4b411cdf99728_logo-roboflow-long.png" width="49%"/>
     </a>
 </div>
 
