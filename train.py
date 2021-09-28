@@ -487,10 +487,11 @@ def main(opt, callbacks=Callbacks()):
         opt.cfg, opt.weights, opt.resume = '', ckpt, True  # reinstate
         LOGGER.info(f'Resuming training from {ckpt}')
     else:
-        opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_yaml(opt.cfg), check_yaml(opt.hyp)  # check YAMLs
+        opt.data, opt.cfg, opt.hyp, opt.weights, opt.project = \
+            check_file(opt.data), check_yaml(opt.cfg), check_yaml(opt.hyp), str(opt.weights), str(opt.project)  # checks
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         if opt.evolve:
-            opt.project = 'runs/evolve'
+            opt.project = str(ROOT / 'runs/evolve')
             opt.exist_ok, opt.resume = opt.resume, False  # pass resume to exist_ok and disable resume
         opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))
 
