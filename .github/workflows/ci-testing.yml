@@ -4,10 +4,10 @@ name: CI CPU testing
 
 on: # https://help.github.com/en/actions/reference/events-that-trigger-workflows
   push:
-    branches: [master]
+    branches: [ master ]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [master]
+    branches: [ master ]
   schedule:
     - cron: '0 0 * * *'  # Runs at 00:00 UTC every day
 
@@ -18,9 +18,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.8]
-        model: ['yolov5s']  # models to test
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        python-version: [ 3.8 ]
+        model: [ 'yolov5s' ]  # models to test
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
     timeout-minutes: 50
@@ -65,19 +65,25 @@ jobs:
       - name: Tests workflow
         run: |
           # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
-          di=cpu # inference devices  # define device
+          di=cpu  # device
 
-          # train
+          # Train
           python train.py --img 128 --batch 16 --weights ${{ matrix.model }}.pt --cfg ${{ matrix.model }}.yaml --epochs 1 --device $di
-          # detect
-          python detect.py --weights ${{ matrix.model }}.pt --device $di
-          python detect.py --weights runs/train/exp/weights/last.pt --device $di
-          # val
+          # Val
           python val.py --img 128 --batch 16 --weights ${{ matrix.model }}.pt --device $di
           python val.py --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $di
-
+          # Detect
+          python detect.py --weights ${{ matrix.model }}.pt --device $di
+          python detect.py --weights runs/train/exp/weights/last.pt --device $di
           python hubconf.py  # hub
+          # Export
           python models/yolo.py --cfg ${{ matrix.model }}.yaml  # build PyTorch model
           python models/tf.py --weights ${{ matrix.model }}.pt  # build TensorFlow model
           python export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt --include torchscript onnx  # export
+          # Python
+          python - <<EOF
+          import torch
+          model = torch.hub.load('ultralytics/yolov5', 'custom', path='runs/train/exp/weights/last.pt')
+          EOF
+
         shell: bash
