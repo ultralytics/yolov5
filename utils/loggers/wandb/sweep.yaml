@@ -1,17 +1,17 @@
 # Hyperparameters for training
-# To set range- 
+# To set range-
 # Provide min and max values as:
 #      parameter:
-#         
+#
 #         min: scalar
 #         max: scalar
 # OR
 #
 # Set a specific list of search space-
-#     parameter: 
+#     parameter:
 #         values: [scalar1, scalar2, scalar3...]
-#         
-# You can use grid, bayesian and hyperopt search strategy 
+#
+# You can use grid, bayesian and hyperopt search strategy
 # For more info on configuring sweeps visit - https://docs.wandb.ai/guides/sweeps/configuration
 
 program: utils/loggers/wandb/sweep.py

@@ -46,7 +46,7 @@ YOLOv5 🚀 is a family of object detection architectures and models pretrained 
  open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
 </p>
 
-<!-- 
+<!--
 <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
 <img width="800" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-api.png"></a>
 -->
@@ -109,7 +109,7 @@ the [latest YOLOv5 release](https://github.com/ultralytics/yolov5/releases) and 
 
 ```bash
 $ python detect.py --source 0  # webcam
-                            file.jpg  # image 
+                            file.jpg  # image
                             file.mp4  # video
                             path/  # directory
                             path/*.jpg  # glob
@@ -136,7 +136,7 @@ $ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 
 
 <img width="800" src="https://user-images.githubusercontent.com/26833433/90222759-949d8800-ddc1-11ea-9fa1-1c97eed2b963.png">
 
-</details>  
+</details>
 
 <details open>
 <summary>Tutorials</summary>
@@ -178,7 +178,7 @@ Get started in seconds with our verified environments. Click each icon below for
     <a href="https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-gcp-small.png" width="15%"/>
     </a>
-</div>  
+</div>
 
 ## <div align="center">Integrations</div>
 <div align="center">
