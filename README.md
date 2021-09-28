@@ -185,14 +185,14 @@ Get started in seconds with our verified environments. Click each icon below for
     <a href="https://wandb.ai/site?utm_campaign=repo_yolo_readme">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-wb-long.png" width="49%"/>
     </a>
-    <a href="https://roboflow.com/annotate?ref=ultralytics">
+    <a href="https://roboflow.com/?ref=ultralytics">
         <img src="https://uploads-ssl.webflow.com/5f6bc60e665f54545a1e52a5/615322dd55a4b411cdf99728_logo-roboflow-long.png" width="49%"/>
     </a>
 </div>
 
 |Weights and Biases|Roboflow - ⭐ NEW|
 |:-:|:-:|
-|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases.](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and automatically export your custom datasets directly to YOLOv5 for training using [Roboflow Annotate](https://roboflow.com/annotate?ref=ultralytics) |
+|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases.](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and automatically export your custom datasets directly to YOLOv5 for training using [Roboflow](https://roboflow.com/?ref=ultralytics) |
 
 
 <!-- ## <div align="center">Compete and Win</div>
