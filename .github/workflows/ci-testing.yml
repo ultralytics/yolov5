@@ -69,6 +69,7 @@ jobs:
 
           # Train
           python train.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --cfg ${{ matrix.model }}.yaml --epochs 1 --device $di
+          python train.py --img 64 --batch 32 --weights '' --cfg ${{ matrix.model }}.yaml --epochs 1 --device $di
           # Val
           python val.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --device $di
           python val.py --img 64 --batch 32 --weights runs/train/exp/weights/last.pt --device $di
