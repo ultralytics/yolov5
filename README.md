@@ -160,9 +160,7 @@ $ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 
 
 ## <div align="center">Environments</div>
 
-Get started in seconds with our verified environments and integrations,
-including [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme) for automatic YOLOv5 experiment
-logging. Click each icon below for details.
+Get started in seconds with our verified environments. Click each icon below for details.
 
 <div align="center">
     <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb">
@@ -191,14 +189,10 @@ logging. Click each icon below for details.
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow-long.png" width="49%"/>
     </a>
 </div>
-<div align="center">
-    <span style="width:49%; display:inline-block;">
-    Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases.][(https://wandb.ai/site?utm_campaign=repo_yolo_readme)
-    </span>
-    <span style="width:49%; display:inline-block;">
-    Label and automatically export your custom datasets directly to YOLOv5 for training using [Roboflow Annotate](https://roboflow.com/annotate) (⭐ NEW) 
-    </span>
-</div>
+
+||||
+|:-:|-|:-:|
+|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases.](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|<img src="spacer.png" width="49%"/>|Label and automatically export your custom datasets directly to YOLOv5 for training using [Roboflow Annotate](https://roboflow.com/annotate) (⭐ NEW) |
 
 
 <!-- ## <div align="center">Compete and Win</div>
