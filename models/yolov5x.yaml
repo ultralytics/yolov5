@@ -1,3 +1,5 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+
 # Parameters
 nc: 80  # number of classes
 depth_multiple: 1.33  # model depth multiple

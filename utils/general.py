@@ -1,8 +1,12 @@
-# YOLOv5 general utils
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+General utils
+"""
 
 import contextlib
 import glob
 import logging
+import math
 import os
 import platform
 import random
@@ -14,9 +18,9 @@ from itertools import repeat
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from subprocess import check_output
+from zipfile import ZipFile
 
 import cv2
-import math
 import numpy as np
 import pandas as pd
 import pkg_resources as pkg
@@ -26,7 +30,6 @@ import yaml
 
 from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
-from utils.torch_utils import init_torch_seeds
 
 # Settings
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -35,9 +38,21 @@ pd.options.display.max_columns = 10
 cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with PyTorch DataLoader)
 os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max threads
 
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[1]  # YOLOv5 root directory
 
-class timeout(contextlib.ContextDecorator):
-    # Usage: @timeout(seconds) decorator or 'with timeout(seconds):' context manager
+
+class Profile(contextlib.ContextDecorator):
+    # Usage: @Profile() decorator or 'with Profile():' context manager
+    def __enter__(self):
+        self.start = time.time()
+
+    def __exit__(self, type, value, traceback):
+        print(f'Profile results: {time.time() - self.start:.5f}s')
+
+
+class Timeout(contextlib.ContextDecorator):
+    # Usage: @Timeout(seconds) decorator or 'with Timeout(seconds):' context manager
     def __init__(self, seconds, *, timeout_msg='', suppress_timeout_errors=True):
         self.seconds = int(seconds)
         self.timeout_message = timeout_msg
@@ -78,17 +93,53 @@ def set_logging(rank=-1, verbose=True):
         level=logging.INFO if (verbose and rank in [-1, 0]) else logging.WARN)
 
 
+def print_args(name, opt):
+    # Print argparser arguments
+    print(colorstr(f'{name}: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
+
+
 def init_seeds(seed=0):
-    # Initialize random number generator (RNG) seeds
+    # Initialize random number generator (RNG) seeds https://pytorch.org/docs/stable/notes/randomness.html
+    # cudnn seed 0 settings are slower and more reproducible, else faster and less reproducible
+    import torch.backends.cudnn as cudnn
     random.seed(seed)
     np.random.seed(seed)
-    init_torch_seeds(seed)
+    torch.manual_seed(seed)
+    cudnn.benchmark, cudnn.deterministic = (False, True) if seed == 0 else (True, False)
 
 
 def get_latest_run(search_dir='.'):
     # Return path to most recent 'last.pt' in /runs (i.e. to --resume from)
     last_list = glob.glob(f'{search_dir}/**/last*.pt', recursive=True)
     return max(last_list, key=os.path.getctime) if last_list else ''
+
+
+def user_config_dir(dir='Ultralytics', env_var='YOLOV5_CONFIG_DIR'):
+    # Return path of user configuration directory. Prefer environment variable if exists. Make dir if required.
+    env = os.getenv(env_var)
+    if env:
+        path = Path(env)  # use environment variable
+    else:
+        cfg = {'Windows': 'AppData/Roaming', 'Linux': '.config', 'Darwin': 'Library/Application Support'}  # 3 OS dirs
+        path = Path.home() / cfg.get(platform.system(), '')  # OS-specific config dir
+        path = (path if is_writeable(path) else Path('/tmp')) / dir  # GCP and AWS lambda fix, only /tmp is writeable
+    path.mkdir(exist_ok=True)  # make if required
+    return path
+
+
+def is_writeable(dir, test=False):
+    # Return True if directory has write permissions, test opening a file with write permissions if test=True
+    if test:  # method 1
+        file = Path(dir) / 'tmp.txt'
+        try:
+            with open(file, 'w'):  # open file with write permissions
+                pass
+            file.unlink()  # remove file
+            return True
+        except IOError:
+            return False
+    else:  # method 2
+        return os.access(dir, os.R_OK)  # possible issues on Windows
 
 
 def is_docker():
@@ -107,7 +158,17 @@ def is_colab():
 
 def is_pip():
     # Is file in a pip package?
-    return 'site-packages' in Path(__file__).absolute().parts
+    return 'site-packages' in Path(__file__).resolve().parts
+
+def is_ascii(s=''):
+    # Is string composed of all ASCII (no UTF) characters? (note str().isascii() introduced in python 3.7)
+    s = str(s)  # convert list, tuple, None, etc. to str
+    return len(s.encode().decode('ascii', 'ignore')) == len(s)
+
+
+def is_chinese(s='人工智能'):
+    # Is string composed of any Chinese characters?
+    return re.search('[\u4e00-\u9fff]', s)
 
 
 def emojis(str=''):
@@ -115,9 +176,15 @@ def emojis(str=''):
     return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
 
 
-def file_size(file):
-    # Return file size in MB
-    return Path(file).stat().st_size / 1e6
+def file_size(path):
+    # Return file/dir size (MB)
+    path = Path(path)
+    if path.is_file():
+        return path.stat().st_size / 1E6
+    elif path.is_dir():
+        return sum(f.stat().st_size for f in path.glob('**/*') if f.is_file()) / 1E6
+    else:
+        return 0.0
 
 
 def check_online():
@@ -144,8 +211,7 @@ def check_git_status():
     branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
     n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
     if n > 0:
-        s = f"⚠️ WARNING: code is out of date by {n} commit{'s' * (n > 1)}. " \
-            f"Use 'git pull' to update or 'git clone {url}' to download latest."
+        s = f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use `git pull` or `git clone {url}` to update."
     else:
         s = f'up to date with {url} ✅'
     print(emojis(s))  # emoji-safe
@@ -164,7 +230,7 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
 
 
 @try_except
-def check_requirements(requirements='requirements.txt', exclude=()):
+def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
     prefix = colorstr('red', 'bold', 'requirements:')
     check_python()  # check python version
@@ -180,13 +246,17 @@ def check_requirements(requirements='requirements.txt', exclude=()):
         try:
             pkg.require(r)
         except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
-            print(f"{prefix} {r} not found and is required by YOLOv5, attempting auto-update...")
-            try:
-                assert check_online(), f"'pip install {r}' skipped (offline)"
-                print(check_output(f"pip install '{r}'", shell=True).decode())
-                n += 1
-            except Exception as e:
-                print(f'{prefix} {e}')
+            s = f"{prefix} {r} not found and is required by YOLOv5"
+            if install:
+                print(f"{s}, attempting auto-update...")
+                try:
+                    assert check_online(), f"'pip install {r}' skipped (offline)"
+                    print(check_output(f"pip install '{r}'", shell=True).decode())
+                    n += 1
+                except Exception as e:
+                    print(f'{prefix} {e}')
+            else:
+                print(f'{s}. Please install and rerun your command.')
 
     if n:  # if packages updated
         source = file.resolve() if 'file' in locals() else requirements
@@ -195,11 +265,14 @@ def check_requirements(requirements='requirements.txt', exclude=()):
         print(emojis(s))
 
 
-def check_img_size(img_size, s=32, floor=0):
-    # Verify img_size is a multiple of stride s
-    new_size = max(make_divisible(img_size, int(s)), floor)  # ceil gs-multiple
-    if new_size != img_size:
-        print(f'WARNING: --img-size {img_size} must be multiple of max stride {s}, updating to {new_size}')
+def check_img_size(imgsz, s=32, floor=0):
+    # Verify image size is a multiple of stride s in each dimension
+    if isinstance(imgsz, int):  # integer i.e. img_size=640
+        new_size = max(make_divisible(imgsz, int(s)), floor)
+    else:  # list i.e. img_size=[640, 480]
+        new_size = [max(make_divisible(x, int(s)), floor) for x in imgsz]
+    if new_size != imgsz:
+        print(f'WARNING: --img-size {imgsz} must be multiple of max stride {s}, updating to {new_size}')
     return new_size
 
 
@@ -218,8 +291,23 @@ def check_imshow():
         return False
 
 
-def check_file(file):
+def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
+    # Check file(s) for acceptable suffixes
+    if file and suffix:
+        if isinstance(suffix, str):
+            suffix = [suffix]
+        for f in file if isinstance(file, (list, tuple)) else [file]:
+            assert Path(f).suffix.lower() in suffix, f"{msg}{f} acceptable suffix is {suffix}"
+
+
+def check_yaml(file, suffix=('.yaml', '.yml')):
+    # Search/download YAML file (if necessary) and return path, checking suffix
+    return check_file(file, suffix)
+
+
+def check_file(file, suffix=''):
     # Search/download file (if necessary) and return path
+    check_suffix(file, suffix)  # optional
     file = str(file)  # convert to str()
     if Path(file).is_file() or file == '':  # exists
         return file
@@ -231,7 +319,9 @@ def check_file(file):
         assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
         return file
     else:  # search
-        files = glob.glob('./**/' + file, recursive=True)  # find file
+        files = []
+        for d in 'data', 'models', 'utils':  # search directories
+            files.extend(glob.glob(str(ROOT / d / '**' / file), recursive=True))  # find file
         assert len(files), f'File not found: {file}'  # assert file was found
         assert len(files) == 1, f"Multiple files match '{file}', specify exact path: {files}"  # assert unique
         return files[0]  # return file
@@ -250,7 +340,7 @@ def check_dataset(data, autodownload=True):
 
     # Read yaml (optional)
     if isinstance(data, (str, Path)):
-        with open(data, encoding='ascii', errors='ignore') as f:
+        with open(data, errors='ignore') as f:
             data = yaml.safe_load(f)  # dictionary
 
     # Parse yaml
@@ -268,23 +358,32 @@ def check_dataset(data, autodownload=True):
         if not all(x.exists() for x in val):
             print('\nWARNING: Dataset not found, nonexistent paths: %s' % [str(x) for x in val if not x.exists()])
             if s and autodownload:  # download script
+                root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
-                    print(f'Downloading {s} ...')
+                    print(f'Downloading {s} to {f}...')
                     torch.hub.download_url_to_file(s, f)
-                    root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
                     Path(root).mkdir(parents=True, exist_ok=True)  # create root
-                    r = os.system(f'unzip -q {f} -d {root} && rm {f}')  # unzip
+                    ZipFile(f).extractall(path=root)  # unzip
+                    Path(f).unlink()  # remove zip
+                    r = None  # success
                 elif s.startswith('bash '):  # bash script
                     print(f'Running {s} ...')
                     r = os.system(s)
                 else:  # python script
                     r = exec(s, {'yaml': data})  # return None
-                print('Dataset autodownload %s\n' % ('success' if r in (0, None) else 'failure'))  # print result
+                print(f"Dataset autodownload {f'success, saved to {root}' if r in (0, None) else 'failure'}\n")
             else:
                 raise Exception('Dataset not found.')
 
     return data  # dictionary
+
+
+def url2file(url):
+    # Convert URL to filename, i.e. https://url.com/file.txt?auth -> file.txt
+    url = str(Path(url)).replace(':/', '://')  # Pathlib turns :// -> :/
+    file = Path(urllib.parse.unquote(url)).name.split('?')[0]  # '%2F' to '/', split https://url.com/file.txt?auth
+    return file
 
 
 def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
@@ -303,12 +402,11 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
         if unzip and f.suffix in ('.zip', '.gz'):
             print(f'Unzipping {f}...')
             if f.suffix == '.zip':
-                s = f'unzip -qo {f} -d {dir}'  # unzip -quiet -overwrite
+                ZipFile(f).extractall(path=dir)  # unzip
             elif f.suffix == '.gz':
-                s = f'tar xfz {f} --directory {f.parent}'  # unzip
-            if delete:  # delete zip file after unzip
-                s += f' && rm {f}'
-            os.system(s)
+                os.system(f'tar xfz {f} --directory {f.parent}')  # unzip
+            if delete:
+                f.unlink()  # remove zip
 
     dir = Path(dir)
     dir.mkdir(parents=True, exist_ok=True)  # make directory
@@ -615,35 +713,43 @@ def strip_optimizer(f='best.pt', s=''):  # from utils.general import *; strip_op
     print(f"Optimizer stripped from {f},{(' saved as %s,' % s) if s else ''} {mb:.1f}MB")
 
 
-def print_mutation(hyp, results, yaml_file='hyp_evolved.yaml', bucket=''):
-    # Print mutation results to evolve.txt (for use with train.py --evolve)
-    a = '%10s' * len(hyp) % tuple(hyp.keys())  # hyperparam keys
-    b = '%10.3g' * len(hyp) % tuple(hyp.values())  # hyperparam values
-    c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
-    print('\n%s\n%s\nEvolved fitness: %s\n' % (a, b, c))
+def print_mutation(results, hyp, save_dir, bucket):
+    evolve_csv, results_csv, evolve_yaml = save_dir / 'evolve.csv', save_dir / 'results.csv', save_dir / 'hyp_evolve.yaml'
+    keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+            'val/box_loss', 'val/obj_loss', 'val/cls_loss') + tuple(hyp.keys())  # [results + hyps]
+    keys = tuple(x.strip() for x in keys)
+    vals = results + tuple(hyp.values())
+    n = len(keys)
 
+    # Download (optional)
     if bucket:
-        url = 'gs://%s/evolve.txt' % bucket
-        if gsutil_getsize(url) > (os.path.getsize('evolve.txt') if os.path.exists('evolve.txt') else 0):
-            os.system('gsutil cp %s .' % url)  # download evolve.txt if larger than local
+        url = f'gs://{bucket}/evolve.csv'
+        if gsutil_getsize(url) > (os.path.getsize(evolve_csv) if os.path.exists(evolve_csv) else 0):
+            os.system(f'gsutil cp {url} {save_dir}')  # download evolve.csv if larger than local
 
-    with open('evolve.txt', 'a') as f:  # append result
-        f.write(c + b + '\n')
-    x = np.unique(np.loadtxt('evolve.txt', ndmin=2), axis=0)  # load unique rows
-    x = x[np.argsort(-fitness(x))]  # sort
-    np.savetxt('evolve.txt', x, '%10.3g')  # save sort by fitness
+    # Log to evolve.csv
+    s = '' if evolve_csv.exists() else (('%20s,' * n % keys).rstrip(',') + '\n')  # add header
+    with open(evolve_csv, 'a') as f:
+        f.write(s + ('%20.5g,' * n % vals).rstrip(',') + '\n')
+
+    # Print to screen
+    print(colorstr('evolve: ') + ', '.join(f'{x.strip():>20s}' for x in keys))
+    print(colorstr('evolve: ') + ', '.join(f'{x:20.5g}' for x in vals), end='\n\n\n')
 
     # Save yaml
-    for i, k in enumerate(hyp.keys()):
-        hyp[k] = float(x[0, i + 7])
-    with open(yaml_file, 'w') as f:
-        results = tuple(x[0, :7])
-        c = '%10.4g' * len(results) % results  # results (P, R, mAP@0.5, mAP@0.5:0.95, val_losses x 3)
-        f.write('# Hyperparameter Evolution Results\n# Generations: %g\n# Metrics: ' % len(x) + c + '\n\n')
+    with open(evolve_yaml, 'w') as f:
+        data = pd.read_csv(evolve_csv)
+        data = data.rename(columns=lambda x: x.strip())  # strip keys
+        i = np.argmax(fitness(data.values[:, :7]))  #
+        f.write(f'# YOLOv5 Hyperparameter Evolution Results\n' +
+                f'# Best generation: {i}\n' +
+                f'# Last generation: {len(data)}\n' +
+                f'# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:7]) + '\n' +
+                f'# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :7]) + '\n\n')
         yaml.safe_dump(hyp, f, sort_keys=False)
 
     if bucket:
-        os.system('gsutil cp evolve.txt %s gs://%s' % (yaml_file, bucket))  # upload
+        os.system(f'gsutil cp {evolve_csv} {evolve_yaml} gs://{bucket}')  # upload
 
 
 def apply_classifier(x, model, img, im0):

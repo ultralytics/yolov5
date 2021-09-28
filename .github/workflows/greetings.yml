@@ -1,6 +1,8 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+
 name: Greetings
 
-on: [ pull_request_target, issues ]
+on: [pull_request_target, issues]
 
 jobs:
   greeting:
@@ -16,7 +18,7 @@ jobs:
             git remote add upstream https://github.com/ultralytics/yolov5.git
             git fetch upstream
             git checkout feature  # <----- replace 'feature' with local branch name
-            git rebase upstream/master
+            git merge upstream/master
             git push -u origin -f
             ```
             - ✅ Verify all Continuous Integration (CI) **checks are passing**.

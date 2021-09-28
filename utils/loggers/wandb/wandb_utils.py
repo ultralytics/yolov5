@@ -6,24 +6,30 @@ import sys
 from contextlib import contextmanager
 from pathlib import Path
 
+import pkg_resources as pkg
 import yaml
 from tqdm import tqdm
 
-FILE = Path(__file__).absolute()
-sys.path.append(FILE.parents[3].as_posix())  # add yolov5/ to path
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[3]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
 
 from utils.datasets import LoadImagesAndLabels
 from utils.datasets import img2label_paths
 from utils.general import check_dataset, check_file
 
+RANK = int(os.getenv('RANK', -1))
+
 try:
     import wandb
 
     assert hasattr(wandb, '__version__')  # verify package import not local dir
+    if pkg.parse_version(wandb.__version__) >= pkg.parse_version('0.12.2') and RANK in [0, -1]:
+        wandb.login(timeout=30)
 except (ImportError, AssertionError):
     wandb = None
 
-RANK = int(os.getenv('RANK', -1))
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
 
@@ -36,6 +42,22 @@ def check_wandb_config_file(data_config_file):
     if Path(wandb_config).is_file():
         return wandb_config
     return data_config_file
+
+
+def check_wandb_dataset(data_file):
+    is_trainset_wandb_artifact = False
+    is_valset_wandb_artifact = False
+    if check_file(data_file) and data_file.endswith('.yaml'):
+        with open(data_file, errors='ignore') as f:
+            data_dict = yaml.safe_load(f)
+        is_trainset_wandb_artifact = (isinstance(data_dict['train'], str) and
+                                      data_dict['train'].startswith(WANDB_ARTIFACT_PREFIX))
+        is_valset_wandb_artifact = (isinstance(data_dict['val'], str) and
+                                    data_dict['val'].startswith(WANDB_ARTIFACT_PREFIX))
+    if is_trainset_wandb_artifact or is_valset_wandb_artifact:
+        return data_dict
+    else:
+        return check_dataset(data_file)
 
 
 def get_run_info(run_path):
@@ -62,7 +84,7 @@ def check_wandb_resume(opt):
 
 
 def process_wandb_config_ddp_mode(opt):
-    with open(check_file(opt.data), encoding='ascii', errors='ignore') as f:
+    with open(check_file(opt.data), errors='ignore') as f:
         data_dict = yaml.safe_load(f)  # data dict
     train_dir, val_dir = None, None
     if isinstance(data_dict['train'], str) and data_dict['train'].startswith(WANDB_ARTIFACT_PREFIX):
@@ -99,12 +121,12 @@ class WandbLogger():
     https://docs.wandb.com/guides/integrations/yolov5
     """
 
-    def __init__(self, opt, run_id, job_type='Training'):
+    def __init__(self, opt, run_id=None, job_type='Training'):
         """
         - Initialize WandbLogger instance
         - Upload dataset if opt.upload_dataset is True
         - Setup trainig processes if job_type is 'Training'
-        
+
         arguments:
         opt (namespace) -- Commandline arguments for this run
         run_id (str) -- Run ID of W&B run to be resumed
@@ -147,24 +169,24 @@ class WandbLogger():
                                         allow_val_change=True) if not wandb.run else wandb.run
         if self.wandb_run:
             if self.job_type == 'Training':
-                if not opt.resume:
-                    if opt.upload_dataset:
+                if opt.upload_dataset:
+                    if not opt.resume:
                         self.wandb_artifact_data_dict = self.check_and_upload_dataset(opt)
 
-                    elif opt.data.endswith('_wandb.yaml'):  # When dataset is W&B artifact
-                        with open(opt.data, encoding='ascii', errors='ignore') as f:
-                            data_dict = yaml.safe_load(f)
-                        self.data_dict = data_dict
-                    else:  # Local .yaml dataset file or .zip file
-                        self.data_dict = check_dataset(opt.data)
+                if opt.resume:
+                    # resume from artifact
+                    if isinstance(opt.resume, str) and opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
+                        self.data_dict = dict(self.wandb_run.config.data_dict)
+                    else:  # local resume
+                        self.data_dict = check_wandb_dataset(opt.data)
+                else:
+                    self.data_dict = check_wandb_dataset(opt.data)
+                    self.wandb_artifact_data_dict = self.wandb_artifact_data_dict or self.data_dict
 
-                self.setup_training(opt)
-                if not self.wandb_artifact_data_dict:
-                    self.wandb_artifact_data_dict = self.data_dict
-                # write data_dict to config. useful for resuming from artifacts. Do this only when not resuming.
-                if not opt.resume:
+                    # write data_dict to config. useful for resuming from artifacts. Do this only when not resuming.
                     self.wandb_run.config.update({'data_dict': self.wandb_artifact_data_dict},
                                                  allow_val_change=True)
+                self.setup_training(opt)
 
             if self.job_type == 'Dataset Creation':
                 self.data_dict = self.check_and_upload_dataset(opt)
@@ -172,10 +194,10 @@ class WandbLogger():
     def check_and_upload_dataset(self, opt):
         """
         Check if the dataset format is compatible and upload it as W&B artifact
-        
+
         arguments:
         opt (namespace)-- Commandline arguments for current run
-        
+
         returns:
         Updated dataset info dictionary where local dataset paths are replaced by WAND_ARFACT_PREFIX links.
         """
@@ -184,7 +206,7 @@ class WandbLogger():
                                                 opt.single_cls,
                                                 'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
         print("Created dataset config file ", config_path)
-        with open(config_path, encoding='ascii', errors='ignore') as f:
+        with open(config_path, errors='ignore') as f:
             wandb_data_dict = yaml.safe_load(f)
         return wandb_data_dict
 
@@ -194,10 +216,10 @@ class WandbLogger():
           - Attempt to download model checkpoint and dataset artifacts if opt.resume stats with WANDB_ARTIFACT_PREFIX
           - Update data_dict, to contain info of previous run if resumed and the paths of dataset artifact if downloaded
           - Setup log_dict, initialize bbox_interval 
-        
+
         arguments:
         opt (namespace) -- commandline arguments for this run
-        
+
         """
         self.log_dict, self.current_epoch = {}, 0
         self.bbox_interval = opt.bbox_interval
@@ -209,9 +231,7 @@ class WandbLogger():
                 opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs, opt.hyp = str(
                     self.weights), config.save_period, config.batch_size, config.bbox_interval, config.epochs, \
                                                                                                        config.hyp
-            data_dict = dict(self.wandb_run.config.data_dict)  # eliminates the need for config file to resume
-        else:
-            data_dict = self.data_dict
+        data_dict = self.data_dict
         if self.val_artifact is None:  # If --upload_dataset is set, use the existing artifact, don't download
             self.train_artifact_path, self.train_artifact = self.download_dataset_artifact(data_dict.get('train'),
                                                                                            opt.artifact_alias)
@@ -241,11 +261,11 @@ class WandbLogger():
     def download_dataset_artifact(self, path, alias):
         """
         download the model checkpoint artifact if the path starts with WANDB_ARTIFACT_PREFIX
-        
+
         arguments:
         path -- path of the dataset to be used for training
         alias (str)-- alias of the artifact to be download/used for training
-        
+
         returns:
         (str, wandb.Artifact) -- path of the downladed dataset and it's corresponding artifact object if dataset
         is found otherwise returns (None, None)
@@ -261,7 +281,7 @@ class WandbLogger():
     def download_model_artifact(self, opt):
         """
         download the model checkpoint artifact if the resume path starts with WANDB_ARTIFACT_PREFIX
-        
+
         arguments:
         opt (namespace) -- Commandline arguments for this run
         """
@@ -279,7 +299,7 @@ class WandbLogger():
     def log_model(self, path, opt, epoch, fitness_score, best_model=False):
         """
         Log the model checkpoint as W&B artifact
-        
+
         arguments:
         path (Path)   -- Path of directory containing the checkpoints
         opt (namespace) -- Command line arguments for this run
@@ -303,14 +323,14 @@ class WandbLogger():
     def log_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False):
         """
         Log the dataset as W&B artifact and return the new data file with W&B links
-        
+
         arguments:
         data_file (str) -- the .yaml file with information about the dataset like - path, classes etc.
         single_class (boolean)  -- train multi-class data as single-class
         project (str) -- project name. Used to construct the artifact path
         overwrite_config (boolean) -- overwrites the data.yaml file if set to true otherwise creates a new 
         file with _wandb postfix. Eg -> data_wandb.yaml
-        
+
         returns:
         the new .yaml file with artifact links. it can be used to start training directly from artifacts
         """
@@ -357,12 +377,12 @@ class WandbLogger():
     def create_dataset_table(self, dataset, class_to_id, name='dataset'):
         """
         Create and return W&B artifact containing W&B Table of the dataset.
-        
+
         arguments:
         dataset (LoadImagesAndLabels) -- instance of LoadImagesAndLabels class used to iterate over the data to build Table
         class_to_id (dict(int, str)) -- hash map that maps class ids to labels
         name (str) -- name of the artifact
-        
+
         returns:
         dataset artifact to be logged or used
         """
@@ -399,7 +419,7 @@ class WandbLogger():
     def log_training_progress(self, predn, path, names):
         """
         Build evaluation Table. Uses reference from validation dataset table.
-        
+
         arguments:
         predn (list): list of predictions in the native space in the format - [xmin, ymin, xmax, ymax, confidence, class]
         path (str): local path of the current evaluation image 
@@ -429,7 +449,7 @@ class WandbLogger():
     def val_one_image(self, pred, predn, path, names, im):
         """
         Log validation data for one image. updates the result Table if validation dataset is uploaded and log bbox media panel
-        
+
         arguments:
         pred (list): list of scaled predictions in the format - [xmin, ymin, xmax, ymax, confidence, class]
         predn (list): list of predictions in the native space - [xmin, ymin, xmax, ymax, confidence, class]
@@ -451,7 +471,7 @@ class WandbLogger():
     def log(self, log_dict):
         """
         save the metrics to the logging dictionary
-        
+
         arguments:
         log_dict (Dict) -- metrics/media to be logged in current step
         """
@@ -462,7 +482,7 @@ class WandbLogger():
     def end_epoch(self, best_result=False):
         """
         commit the log_dict, model artifacts and Tables to W&B and flush the log_dict.
-        
+
         arguments:
         best_result (boolean): Boolean representing if the result of this evaluation is best or not
         """
