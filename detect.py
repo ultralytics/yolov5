@@ -6,7 +6,6 @@ Usage:
     $ python path/to/detect.py --source path/to/img.jpg --weights yolov5s.pt --imgsz 640
 """
 
-import argparse
 import os
 import sys
 from pathlib import Path
@@ -27,7 +26,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.experimental import attempt_load
 from utils.datasets import LoadImages, LoadStreams
 from utils.general import apply_classifier, check_img_size, check_imshow, check_requirements, check_suffix, colorstr, \
-    increment_path, non_max_suppression, print_args, save_one_box, scale_coords, strip_optimizer, xyxy2xywh, LOGGER
+    increment_path, non_max_suppression, save_one_box, scale_coords, strip_optimizer, xyxy2xywh, LOGGER
 from utils.plots import Annotator, colors
 from utils.torch_utils import load_classifier, select_device, time_sync
 
@@ -90,6 +89,8 @@ def run(
         dnn: use OpenCV DNN for ONNX inference
     """
     source = str(source)
+    if not isinstance(imgsz, Sequence):
+        imgsz = [imgsz]
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
