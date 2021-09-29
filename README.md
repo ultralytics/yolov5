@@ -190,9 +190,9 @@ Get started in seconds with our verified environments. Click each icon below for
     </a>
 </div>
 
-|Weights and Biases|Roboflow - ⭐ NEW|
-|:-:|:-:|
-|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases.](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and automatically export your custom datasets directly to YOLOv5 for training using [Roboflow](https://roboflow.com/?ref=ultralytics) |
+|                                                                     Weights and Biases                                                                     |                                                              Roboflow - ⭐ NEW                                                               |
+| :--------------------------------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------: |
+| Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases.](https://wandb.ai/site?utm_campaign=repo_yolo_readme) | Label and automatically export your custom datasets directly to YOLOv5 for training using [Roboflow](https://roboflow.com/?ref=ultralytics) |
 
 
 <!-- ## <div align="center">Compete and Win</div>
@@ -203,6 +203,16 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
   <a href="https://github.com/ultralytics/yolov5/discussions/3213">
   <img width="850" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-export-competition.png"></a>
 </p> -->
+
+## <div align="center">Ultralytics Survey</div>
+
+<p align="center">
+We want to know about you and your experience with vision AI. Our survey will take no longer than a couple of minutes and your feedback will provide us with valuable information for the future of YOLOv5🚀
+</p>
+<p align="center">
+  <a href="https://ultralytics.com/survey?utm_source=github&utm_medium=social&utm_campaign=Survey">
+  <img width="100%" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-survey.png"></a>
+</p>
 
 ## <div align="center">Why YOLOv5</div>
 
@@ -227,19 +237,19 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 
 [assets]: https://github.com/ultralytics/yolov5/releases
 
-|Model |size<br><sup>(pixels) |mAP<sup>val<br>0.5:0.95 |mAP<sup>test<br>0.5:0.95 |mAP<sup>val<br>0.5 |Speed<br><sup>V100 (ms) | |params<br><sup>(M) |FLOPs<br><sup>640 (B)
-|---                    |---  |---      |---      |---      |---     |---|---   |---
-|[YOLOv5s][assets]      |640  |36.7     |36.7     |55.4     |**2.0** |   |7.3   |17.0
-|[YOLOv5m][assets]      |640  |44.5     |44.5     |63.1     |2.7     |   |21.4  |51.3
-|[YOLOv5l][assets]      |640  |48.2     |48.2     |66.9     |3.8     |   |47.0  |115.4
-|[YOLOv5x][assets]      |640  |**50.4** |**50.4** |**68.8** |6.1     |   |87.7  |218.8
-|                       |     |         |         |         |        |   |      |
-|[YOLOv5s6][assets]     |1280 |43.3     |43.3     |61.9     |**4.3** |   |12.7  |17.4
-|[YOLOv5m6][assets]     |1280 |50.5     |50.5     |68.7     |8.4     |   |35.9  |52.4
-|[YOLOv5l6][assets]     |1280 |53.4     |53.4     |71.1     |12.3    |   |77.2  |117.7
-|[YOLOv5x6][assets]     |1280 |**54.4** |**54.4** |**72.0** |22.4    |   |141.8 |222.9
-|                       |     |         |         |         |        |   |      |
-|[YOLOv5x6][assets] TTA |1280 |**55.0** |**55.0** |**72.0** |70.8    |   |-     |-
+| Model                  | size<br><sup>(pixels) | mAP<sup>val<br>0.5:0.95 | mAP<sup>test<br>0.5:0.95 | mAP<sup>val<br>0.5 | Speed<br><sup>V100 (ms) |     | params<br><sup>(M) | FLOPs<br><sup>640 (B) |
+| ---------------------- | --------------------- | ----------------------- | ------------------------ | ------------------ | ----------------------- | --- | ------------------ | --------------------- |
+| [YOLOv5s][assets]      | 640                   | 36.7                    | 36.7                     | 55.4               | **2.0**                 |     | 7.3                | 17.0                  |
+| [YOLOv5m][assets]      | 640                   | 44.5                    | 44.5                     | 63.1               | 2.7                     |     | 21.4               | 51.3                  |
+| [YOLOv5l][assets]      | 640                   | 48.2                    | 48.2                     | 66.9               | 3.8                     |     | 47.0               | 115.4                 |
+| [YOLOv5x][assets]      | 640                   | **50.4**                | **50.4**                 | **68.8**           | 6.1                     |     | 87.7               | 218.8                 |
+|                        |                       |                         |                          |                    |                         |     |                    |
+| [YOLOv5s6][assets]     | 1280                  | 43.3                    | 43.3                     | 61.9               | **4.3**                 |     | 12.7               | 17.4                  |
+| [YOLOv5m6][assets]     | 1280                  | 50.5                    | 50.5                     | 68.7               | 8.4                     |     | 35.9               | 52.4                  |
+| [YOLOv5l6][assets]     | 1280                  | 53.4                    | 53.4                     | 71.1               | 12.3                    |     | 77.2               | 117.7                 |
+| [YOLOv5x6][assets]     | 1280                  | **54.4**                | **54.4**                 | **72.0**           | 22.4                    |     | 141.8              | 222.9                 |
+|                        |                       |                         |                          |                    |                         |     |                    |
+| [YOLOv5x6][assets] TTA | 1280                  | **55.0**                | **55.0**                 | **72.0**           | 70.8                    |     | -                  | -                     |
 
 <details>
   <summary>Table Notes (click to expand)</summary>
