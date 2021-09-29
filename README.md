@@ -145,7 +145,7 @@ $ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 
 * [Tips for Best Training Results](https://github.com/ultralytics/yolov5/wiki/Tips-for-Best-Training-Results)&nbsp; ☘️
   RECOMMENDED
 * [Weights & Biases Logging](https://github.com/ultralytics/yolov5/issues/1289)&nbsp; 🌟 NEW
-* [Supervisely Ecosystem](https://github.com/ultralytics/yolov5/issues/2518)&nbsp; 🌟 NEW
+* [Roboflow for Datasets, Labeling, and Active Learning](https://github.com/ultralytics/yolov5/issues/4975)&nbsp; 🌟 NEW
 * [Multi-GPU Training](https://github.com/ultralytics/yolov5/issues/475)
 * [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)&nbsp; ⭐ NEW
 * [TorchScript, ONNX, CoreML Export](https://github.com/ultralytics/yolov5/issues/251) 🚀
@@ -158,11 +158,9 @@ $ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 
 
 </details>
 
-## <div align="center">Environments and Integrations</div>
+## <div align="center">Environments</div>
 
-Get started in seconds with our verified environments and integrations,
-including [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme) for automatic YOLOv5 experiment
-logging. Click each icon below for details.
+Get started in seconds with our verified environments. Click each icon below for details.
 
 <div align="center">
     <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb">
@@ -180,19 +178,31 @@ logging. Click each icon below for details.
     <a href="https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-gcp-small.png" width="15%"/>
     </a>
-    <a href="https://wandb.ai/site?utm_campaign=repo_yolo_readme">
-        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-wb-small.png" width="15%"/>
-    </a>
 </div>  
 
-## <div align="center">Compete and Win</div>
+## <div align="center">Integrations</div>
+<div align="center">
+    <a href="https://wandb.ai/site?utm_campaign=repo_yolo_readme">
+        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-wb-long.png" width="49%"/>
+    </a>
+    <a href="https://roboflow.com/?ref=ultralytics">
+        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow-long.png" width="49%"/>
+    </a>
+</div>
+
+|Weights and Biases|Roboflow - ⭐ NEW|
+|:-:|:-:|
+|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases.](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and automatically export your custom datasets directly to YOLOv5 for training using [Roboflow](https://roboflow.com/?ref=ultralytics) |
+
+
+<!-- ## <div align="center">Compete and Win</div>
 
 We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competition with **$10,000** in cash prizes!
 
 <p align="center">
   <a href="https://github.com/ultralytics/yolov5/discussions/3213">
   <img width="850" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-export-competition.png"></a>
-</p>
+</p> -->
 
 ## <div align="center">Why YOLOv5</div>
 
