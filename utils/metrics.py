@@ -8,6 +8,7 @@ import warnings
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from scipy.sparse import csr_matrix
 import numpy as np
 import torch
 
@@ -117,6 +118,34 @@ class ConfusionMatrix:
         self.conf = conf
         self.iou_thres = iou_thres
 
+    def get_det_matched_gt_inds(self, overlaps):
+        num_gts, num_dets = overlaps.shape
+        det_matched_gt_inds = np.full((num_dets, ), -1, dtype=np.long)
+        if num_gts == 0 or num_dets == 0:
+            return det_matched_gt_inds
+
+        # for each det, which gt best overlaps with it and the max overlap ratio of all gts
+        argmax_overlaps_foreach_det = np.argmax(overlaps, axis=0)
+        max_overlaps_foreach_det = overlaps[argmax_overlaps_foreach_det, np.arange(num_dets)]
+        foreground_indices = max_overlaps_foreach_det >= self.iou_thres
+        det_matched_gt_inds[foreground_indices] = argmax_overlaps_foreach_det[foreground_indices]
+
+        overlaps_new = csr_matrix((max_overlaps_foreach_det[foreground_indices], 
+                                    (argmax_overlaps_foreach_det[foreground_indices], 
+                                     np.nonzero(foreground_indices)[0])), 
+                                    (num_gts, num_dets))
+        argmax_overlaps_foreach_gt = np.argmax(overlaps_new, axis=1)
+
+        gt_matched_det_inds = np.full((num_gts, ), -1, dtype=np.long)
+        for det_ind, gt_ind in enumerate(det_matched_gt_inds):
+            if gt_ind != -1 and argmax_overlaps_foreach_gt[gt_ind] == det_ind:
+                gt_matched_det_inds[gt_ind] = det_ind
+        det_matched_gt_inds[:] = -1
+        for gt_ind, det_ind in enumerate(gt_matched_det_inds):
+            if det_ind != -1 :
+                det_matched_gt_inds[det_ind] = gt_ind
+        return det_matched_gt_inds
+
     def process_batch(self, detections, labels):
         """
         Return intersection-over-union (Jaccard index) of boxes.
@@ -132,30 +161,20 @@ class ConfusionMatrix:
         detection_classes = detections[:, 5].int()
         iou = box_iou(labels[:, 1:], detections[:, :4])
 
-        x = torch.where(iou > self.iou_thres)
-        if x[0].shape[0]:
-            matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy()
-            if x[0].shape[0] > 1:
-                matches = matches[matches[:, 2].argsort()[::-1]]
-                matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
-                matches = matches[matches[:, 2].argsort()[::-1]]
-                matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
-        else:
-            matches = np.zeros((0, 3))
-
-        n = matches.shape[0] > 0
-        m0, m1, _ = matches.transpose().astype(np.int16)
-        for i, gc in enumerate(gt_classes):
-            j = m0 == i
-            if n and sum(j) == 1:
-                self.matrix[detection_classes[m1[j]], gc] += 1  # correct
+        det_matched_gt_inds = self.get_det_matched_gt_inds(iou.cpu().numpy())
+        for det_ind, gt_ind in enumerate(det_matched_gt_inds):
+            if gt_ind != -1:
+                self.matrix[detection_classes[det_ind], gt_classes[gt_ind]] += 1
             else:
-                self.matrix[self.nc, gc] += 1  # background FP
+                self.matrix[detection_classes[det_ind], self.nc] += 1  # background FP
 
-        if n:
-            for i, dc in enumerate(detection_classes):
-                if not any(m1 == i):
-                    self.matrix[dc, self.nc] += 1  # background FN
+        gt_matched_det_inds = np.full((len(gt_classes), ), -1, dtype=np.long)
+        for det_ind, gt_ind in enumerate(det_matched_gt_inds):
+            if gt_ind != -1:
+                gt_matched_det_inds[gt_ind] = det_ind
+        for gt_ind, det_ind in enumerate(gt_matched_det_inds):
+            if det_ind == -1:
+                self.matrix[self.nc, gt_classes[gt_ind]] += 1  # background FP
 
     def matrix(self):
         return self.matrix
