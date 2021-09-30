@@ -419,7 +419,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                             save_json=is_coco,
                                             verbose=True,
                                             plots=True,
-                                            callbacks=callbacks)  # val best model with plots
+                                            callbacks=callbacks,
+                                            compute_loss=compute_loss)  # val best model with plots
 
         callbacks.run('on_train_end', last, best, plots, epoch)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
