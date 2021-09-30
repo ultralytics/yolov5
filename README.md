@@ -192,7 +192,7 @@ Get started in seconds with our verified environments. Click each icon below for
 
 |Weights and Biases|Roboflow - ⭐ NEW|
 |:-:|:-:|
-|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases.](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and automatically export your custom datasets directly to YOLOv5 for training using [Roboflow](https://roboflow.com/?ref=ultralytics) |
+|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and automatically export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics) |
 
 
 <!-- ## <div align="center">Compete and Win</div>
