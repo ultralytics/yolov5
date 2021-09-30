@@ -181,6 +181,7 @@ Get started in seconds with our verified environments. Click each icon below for
 </div>  
 
 ## <div align="center">Integrations</div>
+
 <div align="center">
     <a href="https://wandb.ai/site?utm_campaign=repo_yolo_readme">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-wb-long.png" width="49%"/>
@@ -261,7 +262,9 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 ## <div align="center">Contribute</div>
 
 We love your input! We want to make contributing to YOLOv5 as easy and transparent as possible. Please see
-our [Contributing Guide](CONTRIBUTING.md) to get started.
+our [Contributing Guide](CONTRIBUTING.md) to get started, and fill out
+the [YOLOv5 Survey](https://ultralytics.com/survey?utm_source=github&utm_medium=social&utm_campaign=Survey) to provide 
+thoughts and feedback on your experience with YOLOv5. Thank you!
 
 ## <div align="center">Contact</div>
 
