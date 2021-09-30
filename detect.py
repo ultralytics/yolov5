@@ -33,31 +33,31 @@ from utils.torch_utils import load_classifier, select_device, time_sync
 
 @torch.no_grad()
 def run(
-        weights: Union[str, Path] = ROOT / 'yolov5s.pt',  # model.pt path(s)
-        source: Union[str, Path] = ROOT / 'data/images',  # file/dir/URL/glob, 0 for webcam
-        imgsz: Sequence[int] = 640,  # inference size (pixels)
-        conf_thres: float = 0.25,  # confidence threshold
-        iou_thres: float = 0.45,  # NMS IOU threshold
-        max_det: int = 1000,  # maximum detections per image
-        device: str = '',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        view_img: bool = False,  # show results
-        save_txt: bool = False,  # save results to *.txt
-        save_conf: bool = False,  # save confidences in --save-txt labels
-        save_crop: bool = False,  # save cropped prediction boxes
-        nosave: bool = False,  # do not save images/videos
-        classes: Optional[Sequence]=None,  # filter by class: --class 0, or --class 0 2 3
-        agnostic_nms: bool = False,  # class-agnostic NMS
-        augment: bool = False,  # augmented inference
-        visualize: bool = False,  # visualize features
-        update: bool = False,  # update all models
-        project: Union[str, Path] = ROOT / 'runs/detect',  # save results to project/name
-        name: str = 'exp',  # save results to project/name
-        exist_ok: bool = False,  # existing project/name ok, do not increment
-        line_thickness: int = 3,  # bounding box thickness (pixels)
-        hide_labels: bool = False,  # hide labels
-        hide_conf: bool = False,  # hide confidences
-        half: bool = False,  # use FP16 half-precision inference
-        dnn: bool = False,  # use OpenCV DNN for ONNX inference
+        weights: Union[str, Path] = ROOT / 'yolov5s.pt',
+        source: Union[str, Path] = ROOT / 'data/images',
+        imgsz: Sequence[int] = 640,
+        conf_thres: float = 0.25,
+        iou_thres: float = 0.45,
+        max_det: int = 1000,
+        device: str = '',
+        view_img: bool = False,
+        save_txt: bool = False,
+        save_conf: bool = False,
+        save_crop: bool = False,
+        nosave: bool = False,
+        classes: Optional[Sequence] = None,
+        agnostic_nms: bool = False,
+        augment: bool = False,
+        visualize: bool = False,
+        update: bool = False,
+        project: Union[str, Path] = ROOT / 'runs/detect',
+        name: str = 'exp',
+        exist_ok: bool = False,
+        line_thickness: int = 3,
+        hide_labels: bool = False,
+        hide_conf: bool = False,
+        half: bool = False,
+        dnn: bool = False,
     ):
     """
 
