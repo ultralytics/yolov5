@@ -245,17 +245,15 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 <details>
   <summary>Table Notes (click to expand)</summary>
 
+* All checkpoints are trained to 300 epochs with default settings and hyperparameters.
 * AP<sup>test</sup> denotes COCO [test-dev2017](http://cocodataset.org/#upload) server results, all other AP results
   denote val2017 accuracy.
-* AP values are for single-model single-scale unless otherwise noted. **Reproduce mAP**
-  by `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
-* Speed<sub>GPU</sub> averaged over 5000 COCO val2017 images using a
+* **mAP** values are for single-model single-scale unless otherwise noted.<br>**Reproduce** by `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
+* **Speed** averaged over 5000 COCO val2017 images using a
   GCP [n1-standard-16](https://cloud.google.com/compute/docs/machine-types#n1_standard_machine_types) V100 instance, and
-  includes FP16 inference, postprocessing and NMS. **Reproduce speed**
+  includes FP16 inference, postprocessing and NMS.<br>**Reproduce**
   by `python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half`
-* All checkpoints are trained to 300 epochs with default settings and hyperparameters (no autoaugmentation).
-* Test Time Augmentation ([TTA](https://github.com/ultralytics/yolov5/issues/303)) includes reflection and scale
-  augmentation. **Reproduce TTA** by `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
+* **TTA** [Test Time Augmentation](https://github.com/ultralytics/yolov5/issues/303) includes reflection and scale.<br>**Reproduce** by `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
 
 </details>
 
