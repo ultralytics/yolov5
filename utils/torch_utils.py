@@ -51,7 +51,7 @@ def git_describe(path=Path(__file__).parent):  # path must be a directory
     s = f'git -C {path} describe --tags --long --always'
     try:
         return subprocess.check_output(s, shell=True, stderr=subprocess.STDOUT).decode()[:-1]
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         return ''  # not a git repository
 
 
@@ -114,7 +114,7 @@ def profile(input, ops, n=10, device=None):
             tf, tb, t = 0., 0., [0., 0., 0.]  # dt forward, backward
             try:
                 flops = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2  # GFLOPs
-            except:
+            except ImportError:
                 flops = 0
 
             try:
