@@ -127,8 +127,10 @@ class ConfusionMatrix:
         # for each det, which gt best overlaps with it and the max overlap ratio of all gts
         argmax_overlaps_foreach_det = np.argmax(overlaps, axis=0)
         max_overlaps_foreach_det = overlaps[argmax_overlaps_foreach_det, np.arange(num_dets)]
-        foreground_indices = max_overlaps_foreach_det >= self.iou_thres
+        foreground_indices = max_overlaps_foreach_det > self.iou_thres
         det_matched_gt_inds[foreground_indices] = argmax_overlaps_foreach_det[foreground_indices]
+        if np.count_nonzero(foreground_indices) <= 1:
+            return det_matched_gt_inds
 
         overlaps_new = csr_matrix((max_overlaps_foreach_det[foreground_indices], 
                                     (argmax_overlaps_foreach_det[foreground_indices], 
