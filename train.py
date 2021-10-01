@@ -412,14 +412,15 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                             batch_size=batch_size // WORLD_SIZE * 2,
                                             imgsz=imgsz,
                                             model=attempt_load(f, device).half(),
-                                            iou_thres=0.7 if is_coco else 0.6,  # best pycocotools results at 0.7
+                                            iou_thres=0.65 if is_coco else 0.60,  # best pycocotools results at 0.65
                                             single_cls=single_cls,
                                             dataloader=val_loader,
                                             save_dir=save_dir,
                                             save_json=is_coco,
                                             verbose=True,
                                             plots=True,
-                                            callbacks=callbacks)  # val best model with plots
+                                            callbacks=callbacks,
+                                            compute_loss=compute_loss)  # val best model with plots
 
         callbacks.run('on_train_end', last, best, plots, epoch)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")

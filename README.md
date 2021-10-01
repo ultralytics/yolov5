@@ -181,6 +181,7 @@ Get started in seconds with our verified environments. Click each icon below for
 </div>  
 
 ## <div align="center">Integrations</div>
+
 <div align="center">
     <a href="https://wandb.ai/site?utm_campaign=repo_yolo_readme">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-wb-long.png" width="49%"/>
@@ -192,7 +193,7 @@ Get started in seconds with our verified environments. Click each icon below for
 
 |Weights and Biases|Roboflow - ⭐ NEW|
 |:-:|:-:|
-|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases.](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and automatically export your custom datasets directly to YOLOv5 for training using [Roboflow](https://roboflow.com/?ref=ultralytics) |
+|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and automatically export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics) |
 
 
 <!-- ## <div align="center">Compete and Win</div>
@@ -244,24 +245,24 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 <details>
   <summary>Table Notes (click to expand)</summary>
 
+* All checkpoints are trained to 300 epochs with default settings and hyperparameters.
 * AP<sup>test</sup> denotes COCO [test-dev2017](http://cocodataset.org/#upload) server results, all other AP results
   denote val2017 accuracy.
-* AP values are for single-model single-scale unless otherwise noted. **Reproduce mAP**
-  by `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
-* Speed<sub>GPU</sub> averaged over 5000 COCO val2017 images using a
+* **mAP** values are for single-model single-scale unless otherwise noted.<br>**Reproduce** by `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
+* **Speed** averaged over 5000 COCO val2017 images using a
   GCP [n1-standard-16](https://cloud.google.com/compute/docs/machine-types#n1_standard_machine_types) V100 instance, and
-  includes FP16 inference, postprocessing and NMS. **Reproduce speed**
+  includes FP16 inference, postprocessing and NMS.<br>**Reproduce**
   by `python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half`
-* All checkpoints are trained to 300 epochs with default settings and hyperparameters (no autoaugmentation).
-* Test Time Augmentation ([TTA](https://github.com/ultralytics/yolov5/issues/303)) includes reflection and scale
-  augmentation. **Reproduce TTA** by `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
+* **TTA** [Test Time Augmentation](https://github.com/ultralytics/yolov5/issues/303) includes reflection and scale.<br>**Reproduce** by `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
 
 </details>
 
 ## <div align="center">Contribute</div>
 
 We love your input! We want to make contributing to YOLOv5 as easy and transparent as possible. Please see
-our [Contributing Guide](CONTRIBUTING.md) to get started.
+our [Contributing Guide](CONTRIBUTING.md) to get started, and fill out
+the [YOLOv5 Survey](https://ultralytics.com/survey?utm_source=github&utm_medium=social&utm_campaign=Survey) to provide 
+thoughts and feedback on your experience with YOLOv5. Thank you!
 
 ## <div align="center">Contact</div>
 
