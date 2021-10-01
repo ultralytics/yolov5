@@ -35,6 +35,7 @@ ROOT = ROOT.relative_to(Path.cwd())  # relative
 import val  # for end-of-epoch mAP
 from models.experimental import attempt_load
 from models.yolo import Model
+from models.structured_pruning import create_sequential_view, prune_model, prune_detect_layer
 from utils.autoanchor import check_anchors
 from utils.datasets import create_dataloader
 from utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds, \
@@ -131,6 +132,18 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             print(f'freezing {k}')
             v.requires_grad = False
 
+    # Prune before initializing optimizers
+    if(opt.prune_amount > 0):
+        gs = int(max(model.stride))  # grid size (max stride)
+        imgsz = check_img_size(opt.imgsz, gs)  # verify imgsz are gs-multiples
+        model.cpu()
+        sequential_view, out_layers_names, hooks = create_sequential_view(model)
+        out_layers_idxs = prune_model(sequential_view, out_layers_names, amount=opt.prune_amount, input_shape=(1, 3, imgsz, imgsz))
+        prune_detect_layer(model, out_layers_idxs)
+        for hook in hooks:
+            hook.remove()
+        model.to(device)
+
     # Optimizer
     nbs = 64  # nominal batch size
     accumulate = max(round(nbs / batch_size), 1)  # accumulate loss before optimizing
@@ -169,7 +182,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
-    if pretrained:
+    if pretrained and opt.prune_amount == 0.0:
         # Optimizer
         if ckpt['optimizer'] is not None:
             optimizer.load_state_dict(ckpt['optimizer'])
@@ -467,6 +480,7 @@ def parse_opt(known=False):
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--freeze', type=int, default=0, help='Number of layers to freeze. backbone=10, all=24')
     parser.add_argument('--patience', type=int, default=100, help='EarlyStopping patience (epochs without improvement)')
+    parser.add_argument('--prune-amount', type=float, default=0.0, help='Kernel pruning amount')
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
