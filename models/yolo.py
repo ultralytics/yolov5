@@ -170,16 +170,12 @@ class Model(nn.Module):
     def _clip_augmented(self, y):
         # Clip YOLOv5 augmented inference tails
         nl = self.model[-1].nl  # number of detection layers (P3-P5)
-        n = sum(4 ** x for x in range(nl))
-
-        # large
-        i = y[0].shape[1] // n
-        y[0] = y[0][:, :-i]
-
-        # small
-        i = (y[-1].shape[1] // n) * 4 ** (nl - 1)
-        y[-1] = y[-1][:, i:]
-
+        g = sum(4 ** x for x in range(nl))  # grid points
+        e = 1  # exclude layer count
+        i = (y[0].shape[1] // g) * sum(4 ** x for x in range(e))  # indices
+        y[0] = y[0][:, :-i]  # large
+        i = (y[-1].shape[1] // g) * sum(4 ** (nl - 1 - x) for x in range(e))  # indices
+        y[-1] = y[-1][:, i:]  # small
         return y
 
     def _profile_one_layer(self, m, x, dt):
