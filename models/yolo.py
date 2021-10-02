@@ -173,11 +173,11 @@ class Model(nn.Module):
         n = sum(4 ** x for x in range(nl))
 
         # small
-        i = (y[0].shape[1] // n) * 4 ** (nl - 1)
+        i = y[0].shape[1] // n
         y[0] = y[0][:, i:]
 
         # large
-        i = y[-1].shape[1] // n
+        i = (y[-1].shape[1] // n) * 4 ** (nl - 1)
         y[-1] = y[-1][:, :-i]
 
         return y
