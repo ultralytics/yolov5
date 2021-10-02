@@ -168,15 +168,15 @@ class Model(nn.Module):
         return p
 
     def _clip_augmented(self, y):
-        # clip augmented inference tails: remove small detections from small scale and large detections from large scale
+        # Clip YOLOv5 augmented inference tails
         nl = self.model[-1].nl  # number of detection layers (P3-P5)
         n = sum(4 ** x for x in range(nl))
 
-        # remove small detections for smallest output layer
+        # small
         i = (y[0].shape[1] // n) * 4 ** (nl - 1)
         y[0] = y[0][:, i:]
 
-        # remove large detections for largest output layer
+        # large
         i = y[-1].shape[1] // n
         y[-1] = y[-1][:, :-i]
 
