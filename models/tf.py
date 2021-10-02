@@ -268,7 +268,7 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
         for j, a in enumerate(args):
             try:
                 args[j] = eval(a) if isinstance(a, str) else a  # eval strings
-            except:
+            except NameError:
                 pass
 
         n = max(round(n * gd), 1) if n > 1 else n  # depth gain
