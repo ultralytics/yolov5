@@ -134,6 +134,7 @@ class Model(nn.Module):
             # cv2.imwrite(f'img_{si}.jpg', 255 * xi[0].cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
             yi = self._descale_pred(yi, fi, si, img_size)
             y.append(yi)
+        y = self._clip_augmented(y)  # clip augmented tails
         return torch.cat(y, 1), None  # augmented inference, train
 
     def _forward_once(self, x, profile=False, visualize=False):
@@ -165,6 +166,21 @@ class Model(nn.Module):
                 x = img_size[1] - x  # de-flip lr
             p = torch.cat((x, y, wh, p[..., 4:]), -1)
         return p
+
+    def _clip_augmented(self, y):
+        # clip augmented inference tails: remove small detections from small scale and large detections from large scale
+        nl = self.model[-1].nl  # number of detection layers (P3-P5)
+        n = sum(4 ** x for x in range(nl))
+
+        # remove small detections for smallest output layer
+        i = (y[0].shape[1] // n) * 4 ** (nl - 1)
+        y[0] = y[0][:, i:]
+
+        # remove large detections for largest output layer
+        i = y[-1].shape[1] // n
+        y[-1] = y[-1][:, :-i]
+
+        return y
 
     def _profile_one_layer(self, m, x, dt):
         c = isinstance(m, Detect)  # is final layer, copy input as inplace fix
