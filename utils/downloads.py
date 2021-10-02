@@ -59,8 +59,7 @@ def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads i
             response = requests.get(f'https://api.github.com/repos/{repo}/releases/latest').json()  # github api
             assets = [x['name'] for x in response['assets']]  # release assets, i.e. ['yolov5s.pt', 'yolov5m.pt', ...]
             tag = response['tag_name']  # i.e. 'v1.0'
-        except requests.exceptions.RequestException as e:  # fallback plan
-            print(str(e))  # print the general exception
+        except:  # fallback plan
             assets = ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt',
                       'yolov5s6.pt', 'yolov5m6.pt', 'yolov5l6.pt', 'yolov5x6.pt']
             try:
