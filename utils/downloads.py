@@ -64,7 +64,7 @@ def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads i
                       'yolov5s6.pt', 'yolov5m6.pt', 'yolov5l6.pt', 'yolov5x6.pt']
             try:
                 tag = subprocess.check_output('git tag', shell=True, stderr=subprocess.STDOUT).decode().split()[-1]
-            except subprocess.CalledProcessError:
+            except:
                 tag = 'v5.0'  # current release
 
         if name in assets:
