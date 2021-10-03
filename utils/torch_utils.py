@@ -51,7 +51,7 @@ def git_describe(path=Path(__file__).parent):  # path must be a directory
     s = f'git -C {path} describe --tags --long --always'
     try:
         return subprocess.check_output(s, shell=True, stderr=subprocess.STDOUT).decode()[:-1]
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as e:
         return ''  # not a git repository
 
 
@@ -112,10 +112,10 @@ def profile(input, ops, n=10, device=None):
             m = m.to(device) if hasattr(m, 'to') else m  # device
             m = m.half() if hasattr(m, 'half') and isinstance(x, torch.Tensor) and x.dtype is torch.float16 else m
             tf, tb, t = 0., 0., [0., 0., 0.]  # dt forward, backward
-            if thop is None:
-                flops = 0
-            else:
+            try:
                 flops = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2  # GFLOPs
+            except:
+                flops = 0
 
             try:
                 for _ in range(n):

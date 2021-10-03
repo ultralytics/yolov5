@@ -60,7 +60,7 @@ def exif_size(img):
             s = (s[1], s[0])
         elif rotation == 8:  # rotation 90
             s = (s[1], s[0])
-    except AttributeError:
+    except:
         pass
 
     return s
@@ -409,7 +409,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
             assert cache['version'] == self.cache_version  # same version
             assert cache['hash'] == get_hash(self.label_files + self.img_files)  # same hash
-        except FileNotFoundError:
+        except:
             cache, exists = self.cache_labels(cache_path, prefix), False  # cache
 
         # Display cache
