@@ -227,6 +227,7 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 ### Pretrained Checkpoints
 
 [assets]: https://github.com/ultralytics/yolov5/releases
+[TTA]: https://github.com/ultralytics/yolov5/issues/303
 
 |Model |size<br><sup>(pixels) |mAP<sup>val<br>0.5:0.95 |mAP<sup>test<br>0.5:0.95 |mAP<sup>val<br>0.5 |Speed<br><sup>V100 (ms) | |params<br><sup>(M) |FLOPs<br><sup>640 (B)
 |---                    |---  |---      |---      |---      |---     |---|---   |---
@@ -244,7 +245,7 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 
 |Model |size<br><sup>(pixels) |mAP<sup>val<br>0.5:0.95 |mAP<sup>test<br>0.5:0.95 |mAP<sup>val<br>0.5 |Speed<br><sup>V100 (ms) | |params<br><sup>(M) |FLOPs<br><sup>640 (B)
 |---                    |---  |---      |---      |---      |---     |---|---   |---
-|[YOLOv5n][assets]      |640  |-        |-        |-        |-       |   |1.9   |4.5
+|[YOLOv5n][assets]      |640  |-        |-        |-        |-       |   |**1.9**|**4.5**
 |[YOLOv5s][assets]      |640  |37.2     |-        |56.0     |-       |   |7.2   |16.5
 |[YOLOv5m][assets]      |640  |45.2     |-        |63.9     |-       |   |21.2  |49.0
 |[YOLOv5l][assets]      |640  |48.8     |-        |67.2     |-       |   |46.5  |109.1
@@ -254,7 +255,7 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 |[YOLOv5s6][assets]     |1280 |         |         |         |        |   |16.8  |12.6
 |[YOLOv5m6][assets]     |1280 |         |         |         |        |   |35.7  |50.0
 |[YOLOv5l6][assets]     |1280 |         |         |         |        |   |76.8  |111.4
-|[YOLOv5x6][assets]     |1280 |54.7     |-        |72.4     |-       |   |140.7 |209.8
+|[YOLOv5x6][assets]<br>+[TTA][TTA]|1280<br>1536 |54.7<br>**55.4**     |-        |72.4<br>72.3     |-       |   |140.7<br>-  |209.8<br>- 
 
 
 <details>
