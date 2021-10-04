@@ -208,6 +208,8 @@ class Model(nn.Module):
                 m.conv = fuse_conv_and_bn(m.conv, m.bn)  # update conv
                 delattr(m, 'bn')  # remove batchnorm
                 m.forward = m.forward_fuse  # update forward
+                if hasattr(m, 'act') and hasattr(m.act, 'inplace'):  # if has activation
+                    m.act.inplace = True  # use inplace
         self.info()
         return self
 
