@@ -242,6 +242,21 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 |                       |     |         |         |         |        |   |      |
 |[YOLOv5x6][assets] TTA |1280 |**55.0** |**55.0** |**72.0** |70.8    |   |-     |-
 
+|Model |size<br><sup>(pixels) |mAP<sup>val<br>0.5:0.95 |mAP<sup>test<br>0.5:0.95 |mAP<sup>val<br>0.5 |Speed<br><sup>V100 (ms) | |params<br><sup>(M) |FLOPs<br><sup>640 (B)
+|---                    |---  |---      |---      |---      |---     |---|---   |---
+|[YOLOv5n][assets]      |640  |-     |-     |-     |- |   |-   |-
+|[YOLOv5s][assets]      |640  |-     |-     |-     |- |   |-   |-
+|[YOLOv5m][assets]      |640  |-     |-     |-     |- |   |-   |-
+|[YOLOv5l][assets]      |640  |-     |-     |-     |- |   |-   |-
+|[YOLOv5x][assets]      |640  |-     |-     |-     |- |   |-   |-
+|                       |     |         |         |         |        |   |      |
+|[YOLOv5n6][assets]     |1280 |-     |-     |-     |- |   |-   |-
+|[YOLOv5s6][assets]     |1280 |-     |-     |-     |- |   |-   |-
+|[YOLOv5m6][assets]     |1280 |-     |-     |-     |- |   |-   |-
+|[YOLOv5l6][assets]     |1280 |-     |-     |-     |- |   |-   |-
+|[YOLOv5x6][assets]     |1280 |-     |-     |-     |- |   |-   |-
+
+
 <details>
   <summary>Table Notes (click to expand)</summary>
 
