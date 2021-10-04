@@ -2,8 +2,8 @@
 
 # Parameters
 nc: 80  # number of classes
-depth_multiple: 1.0  # model depth multiple
-width_multiple: 1.0  # layer channel multiple
+depth_multiple: 0.33  # model depth multiple
+width_multiple: 0.25  # layer channel multiple
 anchors:
   - [19,27,  44,40,  38,94]  # P3/8
   - [96,68,  86,152,  180,137]  # P4/16
