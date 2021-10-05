@@ -279,6 +279,13 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         # b = int(random.uniform(0.25 * imgsz, 0.75 * imgsz + gs) // gs * gs)
         # dataset.mosaic_border = [b - imgsz, -b]  # height, width borders
 
+        # Update trainloader (optional)
+        if epoch == round(epochs * 0.9):
+            train_loader, dataset = create_dataloader(train_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
+                                                      hyp=hyp, augment=True, cache=opt.cache, rect=True, rank=RANK,
+                                                      workers=workers, image_weights=opt.image_weights, quad=opt.quad,
+                                                      prefix=colorstr('train: '))
+
         mloss = torch.zeros(3, device=device)  # mean losses
         if RANK != -1:
             train_loader.sampler.set_epoch(epoch)
