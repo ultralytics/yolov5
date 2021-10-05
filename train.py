@@ -114,8 +114,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         with torch_distributed_zero_first(RANK):
             weights = attempt_download(weights)  # download if not found locally
         ckpt = torch.load(weights, map_location=device)  # load checkpoint
-        if not isinstance(ckpt['model'].model[-1].anchor_grid, list): # compatibility for new Detect layer
-            ckpt['model'].model[-1].anchors *= ckpt['model'].model[-1].stride.view(-1, 1, 1)
         model = Model(cfg or ckpt['model'].yaml, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
         exclude = ['anchor'] if (cfg or hyp.get('anchors')) and not resume else []  # exclude keys
         csd = ckpt['model'].float().state_dict()  # checkpoint state_dict as FP32
@@ -179,8 +177,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
         # EMA
         if ema and ckpt.get('ema'):
-            if not isinstance(ckpt['ema'].model[-1].anchor_grid, list): # compatibility for new Detect layer
-                ckpt['ema'].model[-1].anchors *= ckpt['ema'].model[-1].stride.view(-1, 1, 1)
             ema.ema.load_state_dict(ckpt['ema'].float().state_dict())
             ema.updates = ckpt['updates']
 

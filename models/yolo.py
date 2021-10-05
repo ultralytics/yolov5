@@ -59,7 +59,7 @@ class Detect(nn.Module):
             if not self.training:  # inference
                 if self.grid[i].shape[2:4] != x[i].shape[2:4] or \
                    self.anchor_grid[i].shape[2:4] != x[i].shape[2:4] or self.onnx_dynamic:
-                    self.grid[i], self.anchor_grid[i] = self._make_grid(self.anchors[i], self.na, nx, ny)
+                    self.grid[i], self.anchor_grid[i] = self._make_grid(self.anchors[i], self.stride[i], self.na, nx, ny)
 
                 y = x[i].sigmoid()
                 if self.inplace:
@@ -74,10 +74,11 @@ class Detect(nn.Module):
         return x if self.training else (torch.cat(z, 1), x)
 
     @staticmethod
-    def _make_grid(anchors, na=3, nx=20, ny=20):
+    def _make_grid(anchors, stride, na=3, nx=20, ny=20):
         yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
         grid = torch.stack((xv, yv), 2).expand((1, na, ny, nx, 2)).float()
-        anchor_grid = anchors.clone().view((1, na, 1, 1, 2)).expand((1, na, ny, nx, 2)).float()
+        anchor_grid = anchors.clone() * stride
+        anchor_grid = anchor_grid.view((1, na, 1, 1, 2)).expand((1, na, ny, nx, 2)).float()
         return grid.to(anchors.device), anchor_grid.to(anchors.device)
 
 
@@ -110,6 +111,7 @@ class Model(nn.Module):
             s = 256  # 2x min stride
             m.inplace = self.inplace
             m.stride = torch.tensor([s / x.shape[-2] for x in self.forward(torch.zeros(1, ch, s, s))])  # forward
+            m.anchors /= m.stride.view(-1, 1, 1)
             check_anchor_order(m)
             self.stride = m.stride
             self._initialize_biases()  # only run once

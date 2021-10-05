@@ -104,7 +104,6 @@ def attempt_load(weights, map_location=None, inplace=True, fuse=True):
             m.inplace = inplace  # pytorch 1.7.0 compatibility
             if type(m) is Detect:
                 if not isinstance(m.anchor_grid, list):  # new Detect Layer compatibility
-                    m.anchors = m.anchor_grid.clone().view(m.nl, -1, 2)
                     delattr(m, 'anchor_grid')
                     setattr(m, 'anchor_grid', [torch.zeros(1)] * m.nl)
         elif type(m) is Conv:

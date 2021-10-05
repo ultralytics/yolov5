@@ -40,8 +40,8 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
         bpr = (best > 1. / thr).float().mean()  # best possible recall
         return bpr, aat
 
-    anchors = m.anchors.clone().cpu().view(-1, 2)  # current anchors
-    bpr, aat = metric(anchors)
+    anchors = m.anchors.clone() * m.stride.to(m.anchors.device).view(-1, 1, 1)  # current anchors
+    bpr, aat = metric(anchors.cpu().view(-1, 2))
     print(f'anchors/target = {aat:.2f}, Best Possible Recall (BPR) = {bpr:.4f}', end='')
     if bpr < 0.98:  # threshold to recompute
         print('. Attempting to improve anchors, please wait...')
@@ -53,7 +53,7 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
         new_bpr = metric(anchors)[0]
         if new_bpr > bpr:  # replace anchors
             anchors = torch.tensor(anchors, device=m.anchors.device).type_as(m.anchors)
-            m.anchors[:] = anchors.clone().view_as(m.anchors)
+            m.anchors[:] = anchors.clone().view_as(m.anchors) / m.stride.to(m.anchors.device).view(-1, 1, 1)  # loss
             check_anchor_order(m)
             print(f'{prefix}New anchors saved to model. Update model *.yaml to use these anchors in the future.')
         else:
