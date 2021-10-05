@@ -335,7 +335,7 @@ def main(opt):
     elif opt.task == 'speed':  # speed benchmarks
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
             run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
-                save_json=False, plots=False)
+                device=opt.device, save_json=False, plots=False)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         # python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5s.pt yolov5m.pt yolov5l.pt yolov5x.pt
