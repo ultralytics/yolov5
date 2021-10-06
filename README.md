@@ -257,6 +257,26 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 |[YOLOv5l6][assets]     |1280 |         |         |         |        |   |76.8  |111.4
 |[YOLOv5x6][assets]<br>+[TTA][TTA]|1280<br>1536 |54.7<br>**55.4**     |-        |72.4<br>72.3     |-       |   |140.7<br>-  |209.8<br>- 
 
+python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half --weights r6yolov5s.pt
+python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half --weights r6yolov5m.pt
+python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half --weights r6yolov5l.pt
+python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half --weights r6yolov5x.pt
+python val.py --data coco.yaml --img 1280 --conf 0.25 --iou 0.45 --half --weights r6yolov5x6.pt
+sudo shutdown now
+
+
+Speed: 0.1ms pre-process, 1.0ms inference, 0.8ms NMS per image at shape (32, 3, 640, 640)
+Speed: 0.1ms pre-process, 1.8ms inference, 0.9ms NMS per image at shape (32, 3, 640, 640)
+Speed: 0.1ms pre-process, 3.0ms inference, 0.9ms NMS per image at shape (32, 3, 640, 640)
+Speed: 0.1ms pre-process, 5.2ms inference, 0.8ms NMS per image at shape (32, 3, 640, 640)
+Speed: 0.4ms pre-process, 20.8ms inference, 1.2ms NMS per image at shape (32, 3, 1280, 1280)
+
+
+
+
+
+
+
 
 <details>
   <summary>Table Notes (click to expand)</summary>
