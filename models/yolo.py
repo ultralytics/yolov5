@@ -57,9 +57,9 @@ class Detect(nn.Module):
             x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
             if not self.training:  # inference
-                if self.grid[i].shape[2:4] != x[i].shape[2:4] or \
-                   self.anchor_grid[i].shape[2:4] != x[i].shape[2:4] or self.onnx_dynamic:
-                    self.grid[i], self.anchor_grid[i] = self._make_grid(self.anchors[i], self.stride[i], self.na, nx, ny)
+                if self.grid[i].shape[2:4] != x[i].shape[2:4] or self.onnx_dynamic:
+                    self.grid[i], self.anchor_grid[i] = \
+                        self._make_grid(self.anchors[i], self.stride[i], self.na, nx, ny)
 
                 y = x[i].sigmoid()
                 if self.inplace:
