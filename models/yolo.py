@@ -58,8 +58,7 @@ class Detect(nn.Module):
 
             if not self.training:  # inference
                 if self.grid[i].shape[2:4] != x[i].shape[2:4] or self.onnx_dynamic:
-                    self.grid[i], self.anchor_grid[i] = \
-                        self._make_grid(self.anchors[i], self.stride[i], self.na, nx, ny)
+                    self.grid[i], self.anchor_grid[i] = self._make_grid(nx, ny, i)
 
                 y = x[i].sigmoid()
                 if self.inplace:
@@ -73,13 +72,12 @@ class Detect(nn.Module):
 
         return x if self.training else (torch.cat(z, 1), x)
 
-    @staticmethod
-    def _make_grid(anchors, stride, na=3, nx=20, ny=20):
+    def _make_grid(self, nx=20, ny=20, i=0):
         yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
-        grid = torch.stack((xv, yv), 2).expand((1, na, ny, nx, 2)).float()
-        anchor_grid = anchors.clone() * stride
-        anchor_grid = anchor_grid.view((1, na, 1, 1, 2)).expand((1, na, ny, nx, 2)).float()
-        return grid.to(anchors.device), anchor_grid.to(anchors.device)
+        grid = torch.stack((xv, yv), 2).expand((1, self.na, ny, nx, 2)).float()
+        anchor_grid = (self.anchors[i].clone() * self.stride[i]) \
+            .view((1, self.na, 1, 1, 2)).expand((1, self.na, ny, nx, 2)).float()
+        return grid.to(self.anchors[i].device), anchor_grid.to(self.anchors[i].device)
 
 
 class Model(nn.Module):
