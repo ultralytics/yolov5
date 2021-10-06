@@ -73,11 +73,12 @@ class Detect(nn.Module):
         return x if self.training else (torch.cat(z, 1), x)
 
     def _make_grid(self, nx=20, ny=20, i=0):
-        yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
+        d = self.anchors[i].device
+        yv, xv = torch.meshgrid([torch.arange(ny).to(d), torch.arange(nx).to(d)])
         grid = torch.stack((xv, yv), 2).expand((1, self.na, ny, nx, 2)).float()
         anchor_grid = (self.anchors[i].clone() * self.stride[i]) \
             .view((1, self.na, 1, 1, 2)).expand((1, self.na, ny, nx, 2)).float()
-        return grid.to(self.anchors[i].device), anchor_grid.to(self.anchors[i].device)
+        return grid, anchor_grid
 
 
 class Model(nn.Module):
