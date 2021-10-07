@@ -36,6 +36,7 @@ def autobatch(model, imgsz=640, fraction=0.9):
 
     p = np.polyfit(batch_sizes, y, w=batch_sizes, deg=1)  # first degree polynomial fit
     print(batch_sizes, y, p)
+    print(np.polyval(p, batch_sizes))
     f_intercept = int((f * fraction - p[0]) / p[1])  # optimal batch size
     return f_intercept
 
