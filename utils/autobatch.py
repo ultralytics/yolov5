@@ -32,7 +32,7 @@ def autobatch(model, imgsz=640, fraction=0.9):
         y = profile(img, model, n=3, device=device)
         y = [x[2] for x in y if y]  # memory [2]
     except Exception as e:
-        print((f'{prefix}{e})
+        print(f'{prefix}{e}')
 
     batch_sizes = batch_sizes[:len(y)]
     print(y)
