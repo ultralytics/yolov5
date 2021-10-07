@@ -25,7 +25,7 @@ def autobatch(model, imgsz=640, fraction=0.9):
     # f = 15.8
     print(f'{prefix}{t:.3g}G total, {r:.3g}G reserved, {a:.3g}G allocated, {f:.3g}G free')
 
-    batch_sizes = [1, 2, 4, 8, 16, 32]
+    batch_sizes = [1, 2, 4, 8, 16, 64]
     model = deepcopy(de_parallel(model)).train()
     try:
         img = [torch.zeros(b, 3, imgsz, imgsz) for b in batch_sizes]
@@ -34,11 +34,12 @@ def autobatch(model, imgsz=640, fraction=0.9):
     except Exception as e:
         print()
 
-    for i in range(2, 7):
+
+    print(y)
+    for i in range(2, len(batch_sizes)):
         p = np.polyfit(batch_sizes[:i], y[:i], deg=1)  # first degree polynomial fit
         f_intercept = int((f * fraction - p[1]) / p[0])  # optimal batch size
         print(f_intercept)
-
 
     return f_intercept
 
