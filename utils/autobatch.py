@@ -12,11 +12,12 @@ from utils.general import colorstr
 from utils.torch_utils import de_parallel, profile
 
 
-def autobatch(model, imgsz=64, fraction=0.8, device='cpu'):
+def autobatch(model, imgsz=64, fraction=0.9):
     # Automatically compute optimal batch size to use `fraction` of available CUDA memory
     prefix = colorstr('autobatch: ')
     print(f'\n{prefix} Computing optimal batch size')
 
+    device = next(model.parameters()).device  # get model device
     t = torch.cuda.get_device_properties(device).total_memory / 1024 ** 3  # (GB)
     r = torch.cuda.memory_reserved(device) / 1024 ** 3  # (GB)
     a = torch.cuda.memory_allocated(device) / 1024 ** 3  # (GB)
@@ -34,7 +35,7 @@ def autobatch(model, imgsz=64, fraction=0.8, device='cpu'):
         print()
 
     p = np.polyfit(batch_sizes, y, deg=1)  # first degree polynomial fit
-    f_intercept = int((f - p[0]) / p[1])  # optimal batch size
+    f_intercept = int((f * fraction - p[0]) / p[1])  # optimal batch size
     return f_intercept
 
 
