@@ -34,10 +34,12 @@ def autobatch(model, imgsz=640, fraction=0.9):
     except Exception as e:
         print()
 
-    p = np.polyfit(batch_sizes, y, deg=1)  # first degree polynomial fit
-    print(batch_sizes, y, p)
-    print(np.polyval(p, batch_sizes))
-    f_intercept = int((f * fraction - p[1]) / p[0])  # optimal batch size
+    for i in range(2, 7):
+        p = np.polyfit(batch_sizes[:i], y[:i], deg=1)  # first degree polynomial fit
+        f_intercept = int((f * fraction - p[1]) / p[0])  # optimal batch size
+        print(f_intercept)
+
+
     return f_intercept
 
 # autobatch(torch.hub.load('ultralytics/yolov5', 'yolov5s', autoshape=False))
