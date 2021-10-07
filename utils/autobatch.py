@@ -12,6 +12,14 @@ from utils.general import colorstr
 from utils.torch_utils import de_parallel, profile
 
 
+def check_batch_size(model, imgsz=640, b=16):
+    # Check YOLOv5 batch size
+    assert isinstance(b, int), f'batch-size {b} must be integer'
+    if b < 1:
+        b = autobatch(model, imgsz)  # compute optimal batch size
+    return b
+
+
 def autobatch(model, imgsz=640, fraction=0.95):
     # Automatically compute optimal batch size to use `fraction` of available CUDA memory
     # Usage:
