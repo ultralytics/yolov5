@@ -33,9 +33,8 @@ def autobatch(model, imgsz=640, fraction=0.9):
     except Exception as e:
         print(f'{prefix}{e}')
 
-    y = [x[2] for x in y if y]  # memory [2]
+    y = [x[2] for x in y if x]  # memory [2]
     batch_sizes = batch_sizes[:len(y)]
-    print(y)
     for i in range(2, len(batch_sizes)):
         p = np.polyfit(batch_sizes[:i], y[:i], deg=1)  # first degree polynomial fit
         f_intercept = int((f * fraction - p[1]) / p[0])  # optimal batch size
