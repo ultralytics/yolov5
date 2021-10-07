@@ -5,8 +5,8 @@ import os
 import sys
 from contextlib import contextmanager
 from pathlib import Path
-import pkg_resources as pkg
 
+import pkg_resources as pkg
 import yaml
 from tqdm import tqdm
 
@@ -19,16 +19,17 @@ from utils.datasets import LoadImagesAndLabels
 from utils.datasets import img2label_paths
 from utils.general import check_dataset, check_file
 
+RANK = int(os.getenv('RANK', -1))
+
 try:
     import wandb
 
     assert hasattr(wandb, '__version__')  # verify package import not local dir
-    if pkg.parse_version(wandb.__version__) >= pkg.parse_version('0.12.2'):
+    if pkg.parse_version(wandb.__version__) >= pkg.parse_version('0.12.2') and RANK in [0, -1]:
         wandb.login(timeout=30)
 except (ImportError, AssertionError):
     wandb = None
 
-RANK = int(os.getenv('RANK', -1))
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
 
@@ -44,13 +45,16 @@ def check_wandb_config_file(data_config_file):
 
 
 def check_wandb_dataset(data_file):
-    is_wandb_artifact = False
+    is_trainset_wandb_artifact = False
+    is_valset_wandb_artifact = False
     if check_file(data_file) and data_file.endswith('.yaml'):
         with open(data_file, errors='ignore') as f:
             data_dict = yaml.safe_load(f)
-        is_wandb_artifact = (data_dict['train'].startswith(WANDB_ARTIFACT_PREFIX) or
-                             data_dict['val'].startswith(WANDB_ARTIFACT_PREFIX))
-    if is_wandb_artifact:
+        is_trainset_wandb_artifact = (isinstance(data_dict['train'], str) and
+                                      data_dict['train'].startswith(WANDB_ARTIFACT_PREFIX))
+        is_valset_wandb_artifact = (isinstance(data_dict['val'], str) and
+                                    data_dict['val'].startswith(WANDB_ARTIFACT_PREFIX))
+    if is_trainset_wandb_artifact or is_valset_wandb_artifact:
         return data_dict
     else:
         return check_dataset(data_file)
