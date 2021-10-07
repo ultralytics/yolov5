@@ -25,7 +25,7 @@ def autobatch(model, imgsz=640, fraction=0.9):
     # f = 15.8
     print(f'{prefix}{t:.3g}G total, {r:.3g}G reserved, {a:.3g}G allocated, {f:.3g}G free')
 
-    batch_sizes = [1, 2, 4, 8, 16]
+    batch_sizes = [1, 2, 4, 8, 16, 32, 64]
     model = deepcopy(de_parallel(model)).train()
     try:
         img = [torch.zeros(b, 3, imgsz, imgsz) for b in batch_sizes]
