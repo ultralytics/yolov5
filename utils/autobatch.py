@@ -30,10 +30,10 @@ def autobatch(model, imgsz=640, fraction=0.9):
     try:
         img = [torch.zeros(b, 3, imgsz, imgsz) for b in batch_sizes]
         y = profile(img, model, n=3, device=device)
-        y = [x[2] for x in y if y]  # memory [2]
     except Exception as e:
         print(f'{prefix}{e}')
 
+    y = [x[2] for x in y if y]  # memory [2]
     batch_sizes = batch_sizes[:len(y)]
     print(y)
     for i in range(2, len(batch_sizes)):
