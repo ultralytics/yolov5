@@ -86,7 +86,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             modelc = load_classifier(name='resnet50', n=2)  # initialize
             modelc.load_state_dict(torch.load('resnet50.pt', map_location=device)['model']).to(device).eval()
     elif onnx:
-        check_requirements(('onnx', 'onnxruntime'))
+        check_requirements(('onnx', 'onnxruntime-gpu' if torch.has_cuda else 'onnxruntime'))
         import onnxruntime
         session = onnxruntime.InferenceSession(w, None)
     else:  # TensorFlow models
