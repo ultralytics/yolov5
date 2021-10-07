@@ -309,7 +309,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             self.frames[i] = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0) or float('inf')  # infinite stream fallback
 
             _, self.imgs[i] = cap.read()  # guarantee first frame
-            self.threads[i] = Thread(target=self.update, args=([i, cap]), daemon=True)
+            self.threads[i] = Thread(target=self.update, args=([i, cap, s]), daemon=True)
             print(f" success ({self.frames[i]} frames {w}x{h} at {self.fps[i]:.2f} FPS)")
             self.threads[i].start()
         print('')  # newline
@@ -320,7 +320,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
         if not self.rect:
             print('WARNING: Different stream shapes detected. For optimal performance supply similarly-shaped streams.')
 
-    def update(self, i, cap):
+    def update(self, i, cap, stream):
         # Read stream `i` frames in daemon thread
         n, f, read = 0, self.frames[i], 1  # frame number, frame array, inference every 'read' frame
         while cap.isOpened() and n < f:
@@ -329,7 +329,15 @@ class LoadStreams:  # multiple IP or RTSP cameras
             cap.grab()
             if n % read == 0:
                 success, im = cap.retrieve()
-                self.imgs[i] = im if success else self.imgs[i] * 0
+                if success:
+                    self.imgs[i] = im
+                else:
+                    print("Video stream doesn't respond. Check your IP camera availability")
+                    self.imgs[i] * 0
+                    cap.open(stream) # re-open stream if signal was lost
+                    
+
+
             time.sleep(1 / self.fps[i])  # wait time
 
     def __iter__(self):
