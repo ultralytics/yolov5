@@ -25,7 +25,7 @@ COPY . /usr/src/app
 ADD  https://ultralytics.com/assets/Arial.ttf /root/.config/Ultralytics/
 
 # Set environment variables
-#ENV HOME=/usr/src/app
+# ENV HOME=/usr/src/app
 
 
 # Usage Examples -------------------------------------------------------------------------------------------------------
