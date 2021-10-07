@@ -14,6 +14,12 @@ from utils.torch_utils import de_parallel, profile
 
 def autobatch(model, imgsz=640, fraction=0.95):
     # Automatically compute optimal batch size to use `fraction` of available CUDA memory
+    # Usage:
+    #     import torch
+    #     from utils.autobatch import autobatch
+    #     model = torch.hub.load('ultralytics/yolov5', 'yolov5s', autoshape=False)
+    #     print(autobatch(model))
+
     prefix = colorstr('autobatch: ')
     print(f'{prefix}Computing optimal batch size for --imgsz {imgsz}')
     model = deepcopy(de_parallel(model)).train()
