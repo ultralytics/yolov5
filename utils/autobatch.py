@@ -13,14 +13,14 @@ from tqdm import tqdm
 from utils.general import colorstr
 
 
-def autobatch(model, imgsz=640, fraction=0.8):
+def autobatch(model, imgsz=640, fraction=0.8, device=0):
     # Automatically compute optimal batch size to use `fraction` of available CUDA memory
     prefix = colorstr('autobatch: ')
     print(f'\n{prefix} Computing optimal batch size')
 
-    t = torch.cuda.get_device_properties(0).total_memory / 1E9  # (GB)
-    r = torch.cuda.memory_reserved(0) / 1E9  # (GB)
-    a = torch.cuda.memory_allocated(0) / 1E9  # (GB)
+    t = torch.cuda.get_device_properties(device).total_memory / 1024 ** 3  # (GB)
+    r = torch.cuda.memory_reserved(device) / 1024 ** 3  # (GB)
+    a = torch.cuda.memory_allocated(device) / 1024 ** 3  # (GB)
     f = r - a  # free inside reserved
 
     try:
