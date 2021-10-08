@@ -29,7 +29,6 @@ def autobatch(model, imgsz=640, fraction=0.95):
 
     prefix = colorstr('autobatch: ')
     print(f'{prefix}Computing optimal batch size for --imgsz {imgsz}')
-    model = deepcopy(de_parallel(model)).train()
     device = next(model.parameters()).device  # get model device
     t = torch.cuda.get_device_properties(device).total_memory / 1024 ** 3  # (GB)
     r = torch.cuda.memory_reserved(device) / 1024 ** 3  # (GB)
