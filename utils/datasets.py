@@ -332,9 +332,9 @@ class LoadStreams:  # multiple IP or RTSP cameras
                 if success:
                     self.imgs[i] = im
                 else:
-                    print("Video stream doesn't respond. Check your IP camera availability")
-                    self.imgs[i] * 0
-                    cap.open(stream) # re-open stream if signal was lost                   
+                    print('WARNING: Video stream unresponsive, please check your IP camera connection.')
+                    self.imgs[i] *= 0
+                    cap.open(stream)  # re-open stream if signal was lost
             time.sleep(1 / self.fps[i])  # wait time
 
     def __iter__(self):
