@@ -36,7 +36,7 @@ def autobatch(model, imgsz=640, fraction=0.95):
     f = t - (r + a)  # free inside reserved
     print(f'{prefix}{t:.3g}G total, {r:.3g}G reserved, {a:.3g}G allocated, {f:.3g}G free')
 
-    batch_sizes = [1, 2, 4, 8, 16, 32, 64]
+    batch_sizes = [1, 2, 4, 8, 16, 32]
     try:
         img = [torch.zeros(b, 3, imgsz, imgsz) for b in batch_sizes]
         y = profile(img, model, n=3, device=device)
