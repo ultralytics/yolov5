@@ -47,7 +47,7 @@ def autobatch(model, imgsz=640, fraction=0.95):
     y = [x[2] for x in y if x]  # memory [2]
     batch_sizes = batch_sizes[:len(y)]
     p = np.polyfit(batch_sizes, y, deg=1)  # first degree polynomial fit
-    f_intercept = int((t * fraction - p[1]) / p[0])  # optimal batch size
+    f_intercept = int((f * fraction - p[1]) / p[0])  # optimal batch size
     print(f'{prefix}batch-size {f_intercept} estimated to utilize '
           f'{str(device).upper()} {t * fraction:.3g}G/{t:.3g}G ({fraction * 100:.0f}%)')
     return f_intercept
