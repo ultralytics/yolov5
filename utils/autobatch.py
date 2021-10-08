@@ -34,11 +34,12 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
         print(f'{prefix}CUDA not detected, using default CPU batch-size {batch_size}')
         return batch_size
 
+    d = str(device).upper()  # 'CUDA:0'
     t = torch.cuda.get_device_properties(device).total_memory / 1024 ** 3  # (GB)
     r = torch.cuda.memory_reserved(device) / 1024 ** 3  # (GB)
     a = torch.cuda.memory_allocated(device) / 1024 ** 3  # (GB)
     f = t - (r + a)  # free inside reserved
-    print(f'{prefix}{t:.3g}G total, {r:.3g}G reserved, {a:.3g}G allocated, {f:.3g}G free')
+    print(f'{prefix}{d} {t:.3g}G total, {r:.3g}G reserved, {a:.3g}G allocated, {f:.3g}G free')
 
     batch_sizes = [1, 2, 4, 8, 16]
     try:
@@ -50,9 +51,8 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
     y = [x[2] for x in y if x]  # memory [2]
     batch_sizes = batch_sizes[:len(y)]
     p = np.polyfit(batch_sizes, y, deg=1)  # first degree polynomial fit
-    f_intercept = int((f * fraction - p[1]) / p[0])  # optimal batch size
-    print(f'{prefix}batch-size {f_intercept} estimated to utilize '
-          f'{str(device).upper()} {t * fraction:.3g}G/{t:.3g}G ({fraction * 100:.0f}%)')
-    return f_intercept
+    b = int((f * fraction - p[1]) / p[0])  # y intercept (optimal batch size)
+    print(f'{prefix}batch-size {b} estimated to utilize {d} {t * fraction:.3g}G/{t:.3g}G ({fraction * 100:.0f}%)')
+    return b
 
 # autobatch(torch.hub.load('ultralytics/yolov5', 'yolov5s', autoshape=False))
