@@ -139,7 +139,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Batch size
     if cuda and RANK == -1:  # single-GPU only
         with amp.autocast():
-            batch_size = check_batch_size(deepcopy(model).eval(), imgsz, batch_size)
+            check_batch_size(deepcopy(model).eval(), imgsz, batch_size)
             batch_size = check_batch_size(deepcopy(model).train(), imgsz, batch_size)
 
     # Optimizer
