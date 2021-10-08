@@ -19,7 +19,7 @@ def check_batch_size(model, imgsz=640, b=16):
     return b
 
 
-def autobatch(model, imgsz=640, fraction=0.95):
+def autobatch(model, imgsz=640, fraction=0.9):
     # Automatically compute optimal batch size to use `fraction` of available CUDA memory
     # Usage:
     #     import torch
