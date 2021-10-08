@@ -7,20 +7,20 @@ from copy import deepcopy
 
 import numpy as np
 import torch
+from torch.cuda import amp
 
 from utils.general import colorstr
-from utils.torch_utils import de_parallel, profile
+from utils.torch_utils import profile
 
 
-def check_batch_size(model, imgsz=640, b=16):
-    # Check YOLOv5 batch size
-    if b < 1 or b == 'auto':
-        b = autobatch(model, imgsz)  # compute optimal batch size
-    return b
+def check_train_batch_size(model, imgsz=640):
+    # Check YOLOv5 training batch size
+    with amp.autocast():
+        return autobatch(deepcopy(model).train(), imgsz)  # compute optimal batch size
 
 
-def autobatch(model, imgsz=640, fraction=0.9):
-    # Automatically compute optimal batch size to use `fraction` of available CUDA memory
+def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
+    # Automatically estimate best batch size to use `fraction` of available CUDA memory
     # Usage:
     #     import torch
     #     from utils.autobatch import autobatch
@@ -30,6 +30,10 @@ def autobatch(model, imgsz=640, fraction=0.9):
     prefix = colorstr('autobatch: ')
     print(f'{prefix}Computing optimal batch size for --imgsz {imgsz}')
     device = next(model.parameters()).device  # get model device
+    if device.type == 'cpu':
+        print(f'{prefix}CUDA not detected, using default CPU batch-size {batch_size}')
+        return batch_size
+
     t = torch.cuda.get_device_properties(device).total_memory / 1024 ** 3  # (GB)
     r = torch.cuda.memory_reserved(device) / 1024 ** 3  # (GB)
     a = torch.cuda.memory_allocated(device) / 1024 ** 3  # (GB)
