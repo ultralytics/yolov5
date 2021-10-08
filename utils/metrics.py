@@ -12,9 +12,17 @@ import numpy as np
 import torch
 
 
-def fitness(x):
-    # Model fitness as a weighted combination of metrics
-    w = [0.0, 0.0, 0.1, 0.9]  # weights for [P, R, mAP@0.5, mAP@0.5:0.95]
+def fitness(x, w=(0.0, 0.0, 0.1, 0.9)):
+    """
+        Returns the fitness function based upon a weighted sum
+        of the precision, the recall, the mAP@0.5 and the mAP@0.5:0.95
+        metrics.
+        Arguments:
+            x (Array[N, 4]): Of the form [Precision, Recall, mAP@0.5, mAP@0.5:0.95]
+            w (Array[4, ]): A normalized array of weights
+        Returns:
+            # TODO
+    """
     return (x[:, :4] * w).sum(1)
 
 
