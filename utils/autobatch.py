@@ -48,8 +48,8 @@ def autobatch(model, imgsz=640, fraction=0.95):
     batch_sizes = batch_sizes[:len(y)]
     p = np.polyfit(batch_sizes, y, deg=1)  # first degree polynomial fit
     f_intercept = int((t * fraction - p[1]) / p[0])  # optimal batch size
-    print(f'{prefix}batch-size {f_intercept} estimated to utilize {t * fraction:.3g}G of '
-          f'{str(device).upper()} {t:.3g}G ({fraction * 100:.0f}%)')
+    print(f'{prefix}batch-size {f_intercept} estimated to utilize '
+          f'{str(device).upper()} {t * fraction:.3g}G/{t:.3g}G ({fraction * 100:.0f}%)')
     return f_intercept
 
 # autobatch(torch.hub.load('ultralytics/yolov5', 'yolov5s', autoshape=False))
