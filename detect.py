@@ -77,7 +77,15 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     pt, onnx, tflite, pb, saved_model = (suffix == x for x in suffixes)  # backend booleans
     stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
     if pt:
-        model = attempt_load(weights, map_location=device)  # load FP32 model
+        if 'torchscript' in w:
+            # this is torchscript saved not a pickle that can be loaded with th.load
+            # we assume the file exist in the target folder
+            if Path(w).is_file():
+                model = torch.jit.load(w)
+            else:
+                raise ValueError('Cannot find torchscript file {}'.format(Path(w))
+        else:
+            model = attempt_load(weights, map_location=device)  # load FP32 model
         stride = int(model.stride.max())  # model stride
         names = model.module.names if hasattr(model, 'module') else model.names  # get class names
         if half:
