@@ -1,4 +1,6 @@
-"""YOLOv5 PyTorch Hub models https://pytorch.org/hub/ultralytics_yolov5/
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+PyTorch Hub models https://pytorch.org/hub/ultralytics_yolov5/
 
 Usage:
     import torch
@@ -25,24 +27,28 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     """
     from pathlib import Path
 
-    from models.yolo import Model, attempt_load
+    from models.yolo import Model
+    from models.experimental import attempt_load
     from utils.general import check_requirements, set_logging
-    from utils.google_utils import attempt_download
+    from utils.downloads import attempt_download
     from utils.torch_utils import select_device
 
-    check_requirements(Path(__file__).parent / 'requirements.txt', exclude=('tensorboard', 'pycocotools', 'thop'))
+    file = Path(__file__).resolve()
+    check_requirements(exclude=('tensorboard', 'thop', 'opencv-python'))
     set_logging(verbose=verbose)
 
-    fname = Path(name).with_suffix('.pt')  # checkpoint filename
+    save_dir = Path('') if str(name).endswith('.pt') else file.parent
+    path = (save_dir / name).with_suffix('.pt')  # checkpoint path
     try:
+        device = select_device(('0' if torch.cuda.is_available() else 'cpu') if device is None else device)
+
         if pretrained and channels == 3 and classes == 80:
-            model = attempt_load(fname, map_location=torch.device('cpu'))  # download/load FP32 model
+            model = attempt_load(path, map_location=device)  # download/load FP32 model
         else:
             cfg = list((Path(__file__).parent / 'models').rglob(f'{name}.yaml'))[0]  # model.yaml path
             model = Model(cfg, channels, classes)  # create model
             if pretrained:
-                attempt_download(fname)  # download if not found locally
-                ckpt = torch.load(fname, map_location=torch.device('cpu'))  # load
+                ckpt = torch.load(attempt_download(path), map_location=device)  # load
                 msd = model.state_dict()  # model state_dict
                 csd = ckpt['model'].float().state_dict()  # checkpoint state_dict as FP32
                 csd = {k: v for k, v in csd.items() if msd[k].shape == v.shape}  # filter
@@ -51,7 +57,6 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                     model.names = ckpt['model'].names  # set class names attribute
         if autoshape:
             model = model.autoshape()  # for file/URI/PIL/cv2/np inputs and NMS
-        device = select_device('0' if torch.cuda.is_available() else 'cpu') if device is None else torch.device(device)
         return model.to(device)
 
     except Exception as e:
@@ -113,9 +118,11 @@ if __name__ == '__main__':
     import cv2
     import numpy as np
     from PIL import Image
+    from pathlib import Path
 
     imgs = ['data/images/zidane.jpg',  # filename
-            'https://github.com/ultralytics/yolov5/releases/download/v1.0/zidane.jpg',  # URI
+            Path('data/images/zidane.jpg'),  # Path
+            'https://ultralytics.com/images/zidane.jpg',  # URI
             cv2.imread('data/images/bus.jpg')[:, :, ::-1],  # OpenCV
             Image.open('data/images/bus.jpg'),  # PIL
             np.zeros((320, 640, 3))]  # numpy
