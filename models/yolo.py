@@ -232,6 +232,13 @@ class Model(nn.Module):
     def info(self, verbose=False, img_size=640):  # print model information
         model_info(self, verbose, img_size)
 
+    def to(self, *args, **kwargs):
+        self = super().to(*args, **kwargs)
+        m = self.model[-1]  # Detect()
+        m.stride = m.stride.to(*args, **kwargs)
+        m.grid = [grid.to(*args, **kwargs) for grid in m.grid]
+        return self
+
 
 def parse_model(d, ch):  # model_dict, input_channels(3)
     LOGGER.info('\n%3s%18s%3s%10s  %-40s%-30s' % ('', 'from', 'n', 'params', 'module', 'arguments'))

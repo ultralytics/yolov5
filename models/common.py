@@ -289,6 +289,13 @@ class AutoShape(nn.Module):
         LOGGER.info('AutoShape already enabled, skipping... ')  # model already converted to model.autoshape()
         return self
 
+    def to(self, *args, **kwargs):
+        self = super().to(*args, **kwargs)
+        m = self.model.model[-1]  # Detect()
+        m.stride = m.stride.to(*args, **kwargs)
+        m.grid = [grid.to(*args, **kwargs) for grid in m.grid]
+        return self
+
     @torch.no_grad()
     def forward(self, imgs, size=640, augment=False, profile=False):
         # Inference from various sources. For height=640, width=1280, RGB images example inputs are:
