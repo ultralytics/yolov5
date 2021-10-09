@@ -80,10 +80,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         if 'torchscript' in w:
             # this is torchscript saved not a pickle that can be loaded with th.load
             # we assume the file exist in the target folder
-            if Path(w).is_file():
-                model = torch.jit.load(w)
-            else:
-                raise ValueError('Cannot find torchscript file {}'.format(Path(w))
+            model = torch.jit.load(w)
         else:
             model = attempt_load(weights, map_location=device)  # load FP32 model
         stride = int(model.stride.max())  # model stride
