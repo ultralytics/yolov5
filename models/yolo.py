@@ -232,11 +232,11 @@ class Model(nn.Module):
     def info(self, verbose=False, img_size=640):  # print model information
         model_info(self, verbose, img_size)
 
-    def to(self, *args, **kwargs):
-        self = super().to(*args, **kwargs)
+    def _apply(self, fn):
+        self = super()._apply(fn)
         m = self.model[-1]  # Detect()
-        m.stride = m.stride.to(*args, **kwargs)
-        m.grid = [grid.to(*args, **kwargs) for grid in m.grid]
+        m.stride = fn(m.stride)
+        m.grid = list(map(fn, m.grid))
         return self
 
 
