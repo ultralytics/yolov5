@@ -233,6 +233,7 @@ class Model(nn.Module):
         model_info(self, verbose, img_size)
 
     def _apply(self, fn):
+        # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
         self = super()._apply(fn)
         m = self.model[-1]  # Detect()
         if isinstance(m, Detect):
