@@ -290,6 +290,7 @@ class AutoShape(nn.Module):
         return self
 
     def _apply(self, fn):
+        # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
         self = super()._apply(fn)
         m = self.model.model[-1]  # Detect()
         m.stride = fn(m.stride)
