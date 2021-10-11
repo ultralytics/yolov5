@@ -151,7 +151,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         elif onnx:
             if dnn:
                 net.setInput(img)
-                pred = net.forward()
+                pred = torch.tensor(net.forward())
             else:
                 pred = torch.tensor(session.run([session.get_outputs()[0].name], {session.get_inputs()[0].name: img}))
         else:  # tensorflow model (tflite, pb, saved_model)
