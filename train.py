@@ -469,7 +469,7 @@ def parse_opt(known=False):
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--fitness_weights', type=float, nargs=4, default=[0.0, 0.0, 0.1, 0.9],
-                        help="Normalized array of weights for the fitness function of the form: Precision Recall mAP@0.50 mAP@0.50:0.95. Defaults to --fitness_weights 0.0 0.0 0.1 0.9")
+                        help="Normalized array of weights for the fitness function in the form of: Precision Recall mAP@0.50 mAP@0.50:0.95. Defaults to --fitness_weights 0.0 0.0 0.1 0.9")
 
     # Weights & Biases arguments
     parser.add_argument('--entity', default=None, help='W&B: Entity')
@@ -573,8 +573,8 @@ def main(opt, callbacks=Callbacks()):
                 parent = 'single'  # parent selection method: 'single' or 'weighted'
                 x = np.loadtxt(evolve_csv, ndmin=2, delimiter=',', skiprows=1)
                 n = min(5, len(x))  # number of previous results to consider
-                x = x[np.argsort(-fitness(x))][:n]  # top n mutations
-                w = fitness(x) - fitness(x).min() + 1E-6  # weights (sum > 0)
+                x = x[np.argsort(-fitness(x, opt.fitness_weights))][:n]  # top n mutations
+                w = fitness(x, opt.fitness_weights) - fitness(x, opt.fitness_weights).min() + 1E-6  # weights (sum > 0)
                 if parent == 'single' or len(x) == 1:
                     # x = x[random.randint(0, n - 1)]  # random selection
                     x = x[random.choices(range(n), weights=w)[0]]  # weighted selection
