@@ -45,7 +45,8 @@ def check_wandb_config_file(data_config_file):
 
 
 def check_wandb_dataset(data_file):
-    is_wandb_artifact = False
+    is_trainset_wandb_artifact = False
+    is_valset_wandb_artifact = False
     if check_file(data_file) and data_file.endswith('.yaml'):
         with open(data_file, errors='ignore') as f:
             data_dict = yaml.safe_load(f)

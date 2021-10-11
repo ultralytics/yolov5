@@ -152,7 +152,7 @@ def is_colab():
     try:
         import google.colab
         return True
-    except Exception as e:
+    except ImportError:
         return False
 
 
@@ -162,9 +162,14 @@ def is_pip():
 
 
 def is_ascii(s=''):
-    # Is string composed of all ASCII (no UTF) characters?
+    # Is string composed of all ASCII (no UTF) characters? (note str().isascii() introduced in python 3.7)
     s = str(s)  # convert list, tuple, None, etc. to str
     return len(s.encode().decode('ascii', 'ignore')) == len(s)
+
+
+def is_chinese(s='人工智能'):
+    # Is string composed of any Chinese characters?
+    return re.search('[\u4e00-\u9fff]', s)
 
 
 def emojis(str=''):
@@ -309,13 +314,15 @@ def check_file(file, suffix=''):
         return file
     elif file.startswith(('http:/', 'https:/')):  # download
         url = str(Path(file)).replace(':/', '://')  # Pathlib turns :// -> :/
-        file = Path(urllib.parse.unquote(file)).name.split('?')[0]  # '%2F' to '/', split https://url.com/file.txt?auth
+        file = Path(urllib.parse.unquote(file).split('?')[0]).name  # '%2F' to '/', split https://url.com/file.txt?auth
         print(f'Downloading {url} to {file}...')
         torch.hub.download_url_to_file(url, file)
         assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
         return file
     else:  # search
-        files = glob.glob('./**/' + file, recursive=True)  # find file
+        files = []
+        for d in 'data', 'models', 'utils':  # search directories
+            files.extend(glob.glob(str(ROOT / d / '**' / file), recursive=True))  # find file
         assert len(files), f'File not found: {file}'  # assert file was found
         assert len(files) == 1, f"Multiple files match '{file}', specify exact path: {files}"  # assert unique
         return files[0]  # return file
@@ -352,11 +359,11 @@ def check_dataset(data, autodownload=True):
         if not all(x.exists() for x in val):
             print('\nWARNING: Dataset not found, nonexistent paths: %s' % [str(x) for x in val if not x.exists()])
             if s and autodownload:  # download script
+                root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
                     print(f'Downloading {s} to {f}...')
                     torch.hub.download_url_to_file(s, f)
-                    root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
                     Path(root).mkdir(parents=True, exist_ok=True)  # create root
                     ZipFile(f).extractall(path=root)  # unzip
                     Path(f).unlink()  # remove zip
@@ -366,7 +373,7 @@ def check_dataset(data, autodownload=True):
                     r = os.system(s)
                 else:  # python script
                     r = exec(s, {'yaml': data})  # return None
-                print(f"Dataset autodownload {f'success, saved to {root}' if r in (0, None) else 'failure'}")
+                print(f"Dataset autodownload {f'success, saved to {root}' if r in (0, None) else 'failure'}\n")
             else:
                 raise Exception('Dataset not found.')
 
@@ -735,11 +742,11 @@ def print_mutation(results, hyp, save_dir, bucket):
         data = pd.read_csv(evolve_csv)
         data = data.rename(columns=lambda x: x.strip())  # strip keys
         i = np.argmax(fitness(data.values[:, :7]))  #
-        f.write(f'# YOLOv5 Hyperparameter Evolution Results\n' +
+        f.write('# YOLOv5 Hyperparameter Evolution Results\n' +
                 f'# Best generation: {i}\n' +
                 f'# Last generation: {len(data)}\n' +
-                f'# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:7]) + '\n' +
-                f'# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :7]) + '\n\n')
+                '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:7]) + '\n' +
+                '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :7]) + '\n\n')
         yaml.safe_dump(hyp, f, sort_keys=False)
 
     if bucket:

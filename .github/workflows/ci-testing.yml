@@ -2,10 +2,10 @@ name: CI CPU testing
 
 on: # https://help.github.com/en/actions/reference/events-that-trigger-workflows
   push:
-    branches: [master]
+    branches: [ master ]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [master]
+    branches: [ master ]
   schedule:
     - cron: '0 0 * * *'  # Runs at 00:00 UTC every day
 
@@ -16,9 +16,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
-        model: ['yolov5s']  # models to test
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        python-version: [ 3.6, 3.7, 3.8, 3.9 ]
+        model: [ 'yolov5s' ]  # models to test
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
     timeout-minutes: 50
@@ -63,27 +63,31 @@ jobs:
       - name: Tests workflow
         run: |
           # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
-          di=cpu # inference devices  # define device
+          di=cpu  # device
 
-          # train
-          python train.py --img 128 --batch 16 --weights ${{ matrix.model }}.pt --cfg ${{ matrix.model }}.yaml --epochs 1 --device $di
-          # detect
+          # Train
+          python train.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --cfg ${{ matrix.model }}.yaml --epochs 1 --device $di
+          # Val
+          python val.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --device $di
+          python val.py --img 64 --batch 32 --weights runs/train/exp/weights/last.pt --device $di
+          # Detect
           python detect.py --weights ${{ matrix.model }}.pt --device $di
           python detect.py --weights runs/train/exp/weights/last.pt --device $di
-          # val
-          python val.py --img 128 --batch 16 --weights ${{ matrix.model }}.pt --device $di
-          python val.py --img 128 --batch 16 --weights runs/train/exp/weights/last.pt --device $di
-
           python hubconf.py  # hub
+          # Export
           python models/yolo.py --cfg ${{ matrix.model }}.yaml  # build PyTorch model
           python models/tf.py --weights ${{ matrix.model }}.pt  # build TensorFlow model
-          python export.py --img 128 --batch 1 --weights ${{ matrix.model }}.pt --include torchscript onnx  # export
-
-          # unicode characters
+          python export.py --img 64 --batch 1 --weights ${{ matrix.model }}.pt --include torchscript onnx  # export
+          # Unicode
           curl -o '京PL3N67.jpg' 'https://raw.githubusercontent.com/sirius-ai/LPRNet_Pytorch/master/data/test/%E4%BA%ACPL3N67.jpg'
           # python -c "import torch; torch.hub.download_url_to_file(url, f, progress=True)
-          # f = glob.glob('*.jpg')[0]
-          # f = str(list(Path('').glob('*.jpg'))[0])
           # python -c "import cv2, glob; from pathlib import Path; f = list(Path('').glob('*.jpg'))[0].as_posix(); print(cv2.imread(f).shape)"
           python -c "import cv2, glob; from pathlib import Path; f = glob.glob('*.jpg')[0]; print(cv2.imread(f).shape)"
+          # Python
+          python - <<EOF
+          import torch
+          # Known issue, urllib.error.HTTPError: HTTP Error 403: rate limit exceeded, will be resolved in torch==1.10.0 
+          # model = torch.hub.load('ultralytics/yolov5', 'custom', path='runs/train/exp/weights/last.pt')
+          EOF
+
         shell: bash

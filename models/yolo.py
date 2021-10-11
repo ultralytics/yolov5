@@ -15,11 +15,12 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
+# ROOT = ROOT.relative_to(Path.cwd())  # relative
 
 from models.common import *
 from models.experimental import *
 from utils.autoanchor import check_anchor_order
-from utils.general import check_yaml, make_divisible, set_logging
+from utils.general import check_yaml, make_divisible, print_args, set_logging
 from utils.plots import feature_visualization
 from utils.torch_utils import copy_attr, fuse_conv_and_bn, initialize_weights, model_info, scale_img, \
     select_device, time_sync
@@ -86,7 +87,7 @@ class Model(nn.Module):
         else:  # is *.yaml
             import yaml  # for torch hub
             self.yaml_file = Path(cfg).name
-            with open(cfg) as f:
+            with open(cfg, errors='ignore') as f:
                 self.yaml = yaml.safe_load(f)  # model dict
 
         # Define model
@@ -133,6 +134,7 @@ class Model(nn.Module):
             # cv2.imwrite(f'img_{si}.jpg', 255 * xi[0].cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
             yi = self._descale_pred(yi, fi, si, img_size)
             y.append(yi)
+        y = self._clip_augmented(y)  # clip augmented tails
         return torch.cat(y, 1), None  # augmented inference, train
 
     def _forward_once(self, x, profile=False, visualize=False):
@@ -164,6 +166,17 @@ class Model(nn.Module):
                 x = img_size[1] - x  # de-flip lr
             p = torch.cat((x, y, wh, p[..., 4:]), -1)
         return p
+
+    def _clip_augmented(self, y):
+        # Clip YOLOv5 augmented inference tails
+        nl = self.model[-1].nl  # number of detection layers (P3-P5)
+        g = sum(4 ** x for x in range(nl))  # grid points
+        e = 1  # exclude layer count
+        i = (y[0].shape[1] // g) * sum(4 ** x for x in range(e))  # indices
+        y[0] = y[0][:, :-i]  # large
+        i = (y[-1].shape[1] // g) * sum(4 ** (nl - 1 - x) for x in range(e))  # indices
+        y[-1] = y[-1][:, i:]  # small
+        return y
 
     def _profile_one_layer(self, m, x, dt):
         c = isinstance(m, Detect)  # is final layer, copy input as inplace fix
@@ -219,6 +232,15 @@ class Model(nn.Module):
     def info(self, verbose=False, img_size=640):  # print model information
         model_info(self, verbose, img_size)
 
+    def _apply(self, fn):
+        # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
+        self = super()._apply(fn)
+        m = self.model[-1]  # Detect()
+        if isinstance(m, Detect):
+            m.stride = fn(m.stride)
+            m.grid = list(map(fn, m.grid))
+        return self
+
 
 def parse_model(d, ch):  # model_dict, input_channels(3)
     LOGGER.info('\n%3s%18s%3s%10s  %-40s%-30s' % ('', 'from', 'n', 'params', 'module', 'arguments'))
@@ -232,7 +254,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         for j, a in enumerate(args):
             try:
                 args[j] = eval(a) if isinstance(a, str) else a  # eval strings
-            except:
+            except NameError:
                 pass
 
         n = n_ = max(round(n * gd), 1) if n > 1 else n  # depth gain
@@ -281,6 +303,7 @@ if __name__ == '__main__':
     parser.add_argument('--profile', action='store_true', help='profile model speed')
     opt = parser.parse_args()
     opt.cfg = check_yaml(opt.cfg)  # check YAML
+    print_args(FILE.stem, opt)
     set_logging()
     device = select_device(opt.device)
 
