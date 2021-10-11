@@ -21,7 +21,7 @@ TensorFlow.js:
 """
 
 import argparse
-import os.path
+import os
 import subprocess
 import sys
 import time
