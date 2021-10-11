@@ -606,7 +606,7 @@ def main(opt, callbacks=Callbacks()):
             print_mutation(results, hyp.copy(), save_dir, opt.bucket, opt.fitness_weights)
 
         # Plot results
-        plot_evolve(evolve_csv)
+        plot_evolve(evolve_csv, opt)
         print(f'Hyperparameter evolution finished\n'
               f"Results saved to {colorstr('bold', save_dir)}\n"
               f'Use best hyperparameters example: $ python train.py --hyp {evolve_yaml}')
