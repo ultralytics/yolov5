@@ -216,11 +216,8 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 <details>
   <summary>Figure Notes (click to expand)</summary>
 
-* GPU Speed measures end-to-end time per image averaged over 5000 COCO val2017 images using a V100 GPU with batch size
-  32, and includes image preprocessing, PyTorch FP16 inference, postprocessing and NMS.
-* EfficientDet data from [google/automl](https://github.com/google/automl) at batch size 8.
-* **Reproduce** by
-  `python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5s6.pt yolov5m6.pt yolov5l6.pt yolov5x6.pt`
+* **GPU Speed** measures average inference time per image on [COCO val2017](http://cocodataset.org) dataset using a [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) V100 instance at batch-size 32.<br> Reproduce by `python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n6.pt yolov5s6.pt yolov5m6.pt yolov5l6.pt yolov5x6.pt`
+* **EfficientDet** data from [google/automl](https://github.com/google/automl) at batch size 8.
 
 </details>
 
@@ -229,75 +226,27 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 [assets]: https://github.com/ultralytics/yolov5/releases
 [TTA]: https://github.com/ultralytics/yolov5/issues/303
 
-|Model |size<br><sup>(pixels) |mAP<sup>val<br>0.5:0.95 |mAP<sup>test<br>0.5:0.95 |mAP<sup>val<br>0.5 |Speed<br><sup>V100 (ms) | |params<br><sup>(M) |FLOPs<br><sup>640 (B)
-|---                    |---  |---      |---      |---      |---     |---|---   |---
-|[YOLOv5s][assets]      |640  |36.7     |36.7     |55.4     |**2.0** |   |7.3   |17.0
-|[YOLOv5m][assets]      |640  |44.5     |44.5     |63.1     |2.7     |   |21.4  |51.3
-|[YOLOv5l][assets]      |640  |48.2     |48.2     |66.9     |3.8     |   |47.0  |115.4
-|[YOLOv5x][assets]      |640  |**50.4** |**50.4** |**68.8** |6.1     |   |87.7  |218.8
-|                       |     |         |         |         |        |   |      |
-|[YOLOv5s6][assets]     |1280 |43.3     |43.3     |61.9     |**4.3** |   |12.7  |17.4
-|[YOLOv5m6][assets]     |1280 |50.5     |50.5     |68.7     |8.4     |   |35.9  |52.4
-|[YOLOv5l6][assets]     |1280 |53.4     |53.4     |71.1     |12.3    |   |77.2  |117.7
-|[YOLOv5x6][assets]     |1280 |**54.4** |**54.4** |**72.0** |22.4    |   |141.8 |222.9
-|                       |     |         |         |         |        |   |      |
-|[YOLOv5x6][assets] TTA |1280 |**55.0** |**55.0** |**72.0** |70.8    |   |-     |-
-
-|Model |size<br><sup>(pixels) |mAP<sup>val<br>0.5:0.95 |mAP<sup>test<br>0.5:0.95 |mAP<sup>val<br>0.5 |Speed<br><sup>V100 (ms) | |params<br><sup>(M) |FLOPs<br><sup>640 (B)
+|Model |size<br><sup>(pixels) |mAP<sup>val<br>0.5:0.95 |mAP<sup>val<br>0.5 |Speed<br><sup>CPU (ms) |Speed<br><sup>V100 (ms) | |params<br><sup>(M) |FLOPs<br><sup>640 (B)
 |---                    |---  |---    |---    |---      |---    |---|---    |---
-|[YOLOv5n][assets]      |640  |28.4   |-      |46.0     |**0.6**|   |**1.9**|**4.5**
-|[YOLOv5s][assets]      |640  |37.2   |-      |56.0     |1.0    |   |7.2    |16.5
-|[YOLOv5m][assets]      |640  |45.2   |-      |63.9     |1.7    |   |21.2   |49.0
-|[YOLOv5l][assets]      |640  |48.8   |-      |67.2     |2.7    |   |46.5   |109.1
-|[YOLOv5x][assets]      |640  |50.7   |-      |68.9     |4.9    |   |86.7   |205.7
-|                       |     |       |       |         |       |   |       |
-|[YOLOv5n6][assets]     |1280 |34.0   |       |50.7     |2.2    |   |3.2    |4.6
-|[YOLOv5s6][assets]     |1280 |44.5   |       |63.0     |3.7    |   |16.8   |12.6
-|[YOLOv5m6][assets]     |1280 |51.0   |       |69.0     |7.0    |   |35.7   |50.0
-|[YOLOv5l6][assets]     |1280 |53.6   |       |71.6     |10.7   |   |76.8   |111.4
-|[YOLOv5x6][assets]<br>+[TTA][TTA]|1280<br>1536 |54.7<br>**55.4** | |**72.4**<br>72.3 |20.1<br>- | |140.7<br>- |209.8<br>- 
-
-python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half --weights r6yolov5s.pt
-python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half --weights r6yolov5m.pt
-python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half --weights r6yolov5l.pt
-python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half --weights r6yolov5x.pt
-python val.py --data coco.yaml --img 1280 --conf 0.25 --iou 0.45 --half --weights r6yolov5x6.pt
-sudo shutdown now
-
-Speed: 0.1ms pre-process, 1.0ms inference, 0.8ms NMS per image at shape (32, 3, 640, 640)
-Speed: 0.1ms pre-process, 1.8ms inference, 0.9ms NMS per image at shape (32, 3, 640, 640)
-Speed: 0.1ms pre-process, 3.0ms inference, 0.9ms NMS per image at shape (32, 3, 640, 640)
-Speed: 0.1ms pre-process, 5.2ms inference, 0.8ms NMS per image at shape (32, 3, 640, 640)
-Speed: 0.4ms pre-process, 20.8ms inference, 1.2ms NMS per image at shape (32, 3, 1280, 1280)
-
-
-
-
-python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half --weights r6yolov5n.pt
-python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half --weights r6yolov5s.pt
-python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half --weights r6yolov5m.pt
-python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half --weights r6yolov5l.pt
-python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half --weights r6yolov5x.pt
-
-python val.py --data coco.yaml --img 1280 --conf 0.25 --iou 0.45 --half --weights r6yolov5n6.pt
-python val.py --data coco.yaml --img 1280 --conf 0.25 --iou 0.45 --half --weights r6yolov5s6.pt
-python val.py --data coco.yaml --img 1280 --conf 0.25 --iou 0.45 --half --weights r6yolov5m6.pt
-python val.py --data coco.yaml --img 1280 --conf 0.25 --iou 0.45 --half --weights r6yolov5l6deg0.pt
-python val.py --data coco.yaml --img 1280 --conf 0.25 --iou 0.45 --half --weights r6yolov5x6.pt
-
-
+|[YOLOv5n][assets]      |640  |28.4   |46.0   |-     |**0.6**|   |**1.9**|**4.5**
+|[YOLOv5s][assets]      |640  |37.2   |56.0   |-     |1.0    |   |7.2    |16.5
+|[YOLOv5m][assets]      |640  |45.2   |63.9   |-     |1.7    |   |21.2   |49.0
+|[YOLOv5l][assets]      |640  |48.8   |67.2   |-     |2.7    |   |46.5   |109.1
+|[YOLOv5x][assets]      |640  |50.7   |68.9   |-     |4.9    |   |86.7   |205.7
+|                       |     |       |       |      |       |   |       |
+|[YOLOv5n6][assets]     |1280 |34.0   |50.7   |-     |2.2    |   |3.2    |4.6
+|[YOLOv5s6][assets]     |1280 |44.5   |63.0   |-     |3.7    |   |16.8   |12.6
+|[YOLOv5m6][assets]     |1280 |51.0   |69.0   |-     |7.0    |   |35.7   |50.0
+|[YOLOv5l6][assets]     |1280 |53.6   |71.6   |-     |10.7   |   |76.8   |111.4
+|[YOLOv5x6][assets]<br>+ [TTA][TTA]|1280<br>1536 |54.7<br>**55.4** |**72.4**<br>72.3 |- |20.1<br>- | |140.7<br>- |209.8<br>- 
 
 <details>
   <summary>Table Notes (click to expand)</summary>
 
 * All checkpoints are trained to 300 epochs with default settings and hyperparameters.
-* AP<sup>test</sup> denotes COCO [test-dev2017](http://cocodataset.org/#upload) server results, all other AP results
-  denote val2017 accuracy.
-* **mAP** values are for single-model single-scale unless otherwise noted.<br>**Reproduce** by `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
-* **Speed** averaged over 5000 COCO val2017 images using a
-  GCP [n1-standard-16](https://cloud.google.com/compute/docs/machine-types#n1_standard_machine_types) V100 instance with FP16 inference. NMS times (~1 ms/img) not included.<br>**Reproduce**
-  by `python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45 --half`
-* **TTA** [Test Time Augmentation](https://github.com/ultralytics/yolov5/issues/303) includes reflection and scale.<br>**Reproduce** by `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
+* **mAP<sup>val</sup>** values are for single-model single-scale on [COCO val2017](http://cocodataset.org) dataset.<br>Reproduce by `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
+* **Speed** averaged over COCO val images using a [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) instance. NMS times (~1 ms/img) not included.<br>Reproduce by `python val.py --data coco.yaml --img 640 --conf 0.25 --iou 0.45`
+* **TTA** [Test Time Augmentation](https://github.com/ultralytics/yolov5/issues/303) includes reflection and scale augmentations.<br>Reproduce by `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
 
 </details>
 
