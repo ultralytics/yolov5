@@ -9,7 +9,6 @@ Usage:
 import argparse
 import json
 import os
-import os.path
 import sys
 from pathlib import Path
 from threading import Thread
