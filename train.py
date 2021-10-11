@@ -603,7 +603,7 @@ def main(opt, callbacks=Callbacks()):
             results = train(hyp.copy(), opt, device, callbacks)
 
             # Write mutation results
-            print_mutation(results, hyp.copy(), save_dir, opt.bucket)
+            print_mutation(results, hyp.copy(), save_dir, opt.bucket, opt.fitness_weights)
 
         # Plot results
         plot_evolve(evolve_csv)

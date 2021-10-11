@@ -716,7 +716,7 @@ def strip_optimizer(f='best.pt', s=''):  # from utils.general import *; strip_op
     print(f"Optimizer stripped from {f},{(' saved as %s,' % s) if s else ''} {mb:.1f}MB")
 
 
-def print_mutation(results, hyp, save_dir, bucket):
+def print_mutation(results, hyp, save_dir, bucket, fitness_weights):
     evolve_csv, results_csv, evolve_yaml = save_dir / 'evolve.csv', save_dir / 'results.csv', save_dir / 'hyp_evolve.yaml'
     keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
             'val/box_loss', 'val/obj_loss', 'val/cls_loss') + tuple(hyp.keys())  # [results + hyps]
@@ -743,7 +743,7 @@ def print_mutation(results, hyp, save_dir, bucket):
     with open(evolve_yaml, 'w') as f:
         data = pd.read_csv(evolve_csv)
         data = data.rename(columns=lambda x: x.strip())  # strip keys
-        i = np.argmax(fitness(data.values[:, :7]))  #
+        i = np.argmax(fitness(data.values[:, :7], fitness_weights))  #
         f.write('# YOLOv5 Hyperparameter Evolution Results\n' +
                 f'# Best generation: {i}\n' +
                 f'# Last generation: {len(data)}\n' +
