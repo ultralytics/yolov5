@@ -21,7 +21,7 @@ def fitness(x, w=(0.0, 0.0, 0.1, 0.9)):
             x (Array[N, 4]): Of the form [Precision, Recall, mAP@0.5, mAP@0.5:0.95]
             w (Array[4, ]): A normalized array of weights
         Returns:
-            # TODO
+            Array[1]: Fitness value
     """
     return (x[:, :4] * w).sum(1)
 
