@@ -10,7 +10,6 @@ import argparse
 import logging
 import math
 import os
-import os.path
 import random
 import sys
 import time
