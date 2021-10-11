@@ -9,6 +9,7 @@ Usage:
 import argparse
 import json
 import os
+import os.path
 import sys
 from pathlib import Path
 from threading import Thread
@@ -21,7 +22,7 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
-ROOT = ROOT.relative_to(Path.cwd())  # relative
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.experimental import attempt_load
 from utils.datasets import create_dataloader
