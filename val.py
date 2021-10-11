@@ -333,12 +333,13 @@ def main(opt):
         run(**vars(opt))
 
     elif opt.task == 'speed':  # speed benchmarks
+        # python val.py --task speed --data coco.yaml --batch 1 --weights yolov5n.pt yolov5s.pt...
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
             run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
                 device=opt.device, save_json=False, plots=False)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
-        # python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5s.pt yolov5m.pt yolov5l.pt yolov5x.pt
+        # python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n.pt yolov5s.pt...
         x = list(range(256, 1536 + 128, 128))  # x axis (image sizes)
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
             f = f'study_{Path(opt.data).stem}_{Path(w).stem}.txt'  # filename to save to
