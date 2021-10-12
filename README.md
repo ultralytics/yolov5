@@ -207,11 +207,11 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 
 ## <div align="center">Why YOLOv5</div>
 
-<p align="center"><img width="800" src="https://user-images.githubusercontent.com/26833433/114313216-f0a5e100-9af5-11eb-8445-c682b60da2e3.png"></p>
+<p align="left"><img width="800" src="https://user-images.githubusercontent.com/26833433/136763871-81e40e5d-54f7-4f6c-951d-185d2d03d515.png"></p>
 <details>
   <summary>YOLOv5-P5 640 Figure (click to expand)</summary>
 
-<p align="center"><img width="800" src="https://user-images.githubusercontent.com/26833433/114313219-f1d70e00-9af5-11eb-9973-52b1f98d321a.png"></p>
+<p align="left"><img width="800" src="https://user-images.githubusercontent.com/26833433/136763877-b174052b-c12f-48d2-8bc4-545e3853398e.png"></p>
 </details>
 <details>
   <summary>Figure Notes (click to expand)</summary>
@@ -220,7 +220,6 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 * **GPU Speed** measures average inference time per image on [COCO val2017](http://cocodataset.org) dataset using a [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) V100 instance at batch-size 32.
 * **EfficientDet** data from [google/automl](https://github.com/google/automl) at batch size 8.
 * **Reproduce** by `python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n6.pt yolov5s6.pt yolov5m6.pt yolov5l6.pt yolov5x6.pt`
-
 </details>
 
 ### Pretrained Checkpoints
