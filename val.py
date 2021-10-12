@@ -21,7 +21,7 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
-ROOT = ROOT.relative_to(Path.cwd())  # relative
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.experimental import attempt_load
 from utils.datasets import create_dataloader
@@ -147,8 +147,9 @@ def run(data,
     if not training:
         if device.type != 'cpu':
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
+        pad = 0.0 if task == 'speed' else 0.5
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
-        dataloader = create_dataloader(data[task], imgsz, batch_size, gs, single_cls, pad=0.5, rect=True,
+        dataloader = create_dataloader(data[task], imgsz, batch_size, gs, single_cls, pad=pad, rect=True,
                                        prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
@@ -333,12 +334,13 @@ def main(opt):
         run(**vars(opt))
 
     elif opt.task == 'speed':  # speed benchmarks
+        # python val.py --task speed --data coco.yaml --batch 1 --weights yolov5n.pt yolov5s.pt...
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
             run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
                 device=opt.device, save_json=False, plots=False)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
-        # python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5s.pt yolov5m.pt yolov5l.pt yolov5x.pt
+        # python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n.pt yolov5s.pt...
         x = list(range(256, 1536 + 128, 128))  # x axis (image sizes)
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
             f = f'study_{Path(opt.data).stem}_{Path(w).stem}.txt'  # filename to save to
@@ -346,7 +348,7 @@ def main(opt):
             for i in x:  # img-size
                 print(f'\nRunning {f} point {i}...')
                 r, _, t = run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=i, conf_thres=opt.conf_thres,
-                              iou_thres=opt.iou_thres, save_json=opt.save_json, plots=False)
+                              iou_thres=opt.iou_thres, device=opt.device, save_json=opt.save_json, plots=False)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')
