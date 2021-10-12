@@ -80,6 +80,7 @@ jobs:
           python models/yolo.py --cfg ${{ matrix.model }}.yaml  # build PyTorch model
           python models/tf.py --weights ${{ matrix.model }}.pt  # build TensorFlow model
           python export.py --img 64 --batch 1 --weights ${{ matrix.model }}.pt --include torchscript onnx  # export
+          python export.py --img 64 --batch 1 --weights ${{ matrix.model }}.pt --include saved_model tflite  # export to tf format
           # Python
           python - <<EOF
           import torch
