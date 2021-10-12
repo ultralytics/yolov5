@@ -79,7 +79,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     pt, onnx, tflite, pb, saved_model = (suffix == x for x in suffixes)  # backend booleans
     stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
     if pt:
-        model = attempt_load(weights, map_location=device)  # load FP32 model
+        model = torch.jit.load(w) if 'torchscript' in w else attempt_load(weights, map_location=device)
         stride = int(model.stride.max())  # model stride
         names = model.module.names if hasattr(model, 'module') else model.names  # get class names
         if half:
