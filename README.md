@@ -207,7 +207,7 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 
 ## <div align="center">Why YOLOv5</div>
 
-<p align="left"><img width="800" src="https://user-images.githubusercontent.com/26833433/136763871-81e40e5d-54f7-4f6c-951d-185d2d03d515.png"></p>
+<p align="left"><img width="800" src="https://user-images.githubusercontent.com/26833433/136901921-abcfcd9d-f978-4942-9b97-0e3f202907df.png"></p>
 <details>
   <summary>YOLOv5-P5 640 Figure (click to expand)</summary>
 
