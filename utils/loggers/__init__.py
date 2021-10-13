@@ -5,6 +5,8 @@ Logging utils
 
 import warnings
 from threading import Thread
+import pkg_resources as pkg
+import os
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -15,14 +17,18 @@ from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
 
 LOGGERS = ('csv', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
+RANK = int(os.getenv('RANK', -1))
 
 try:
     import wandb
 
     assert hasattr(wandb, '__version__')  # verify package import not local dir
+    if pkg.parse_version(wandb.__version__) >= pkg.parse_version('0.12.2') and RANK in [0, -1]:
+        wandb_login_success = wandb.login(timeout=30)
+        if not wandb_login_success:
+            wandb = None
 except (ImportError, AssertionError):
     wandb = None
-
 
 class Loggers():
     # YOLOv5 Loggers class
