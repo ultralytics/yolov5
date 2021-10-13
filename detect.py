@@ -92,7 +92,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             # check_requirements(('opencv-python>=4.5.4',))
             net = cv2.dnn.readNetFromONNX(w)
         else:
-            check_requirements(('onnx', 'onnxruntime'))
+            check_requirements(('onnx', 'onnxruntime-gpu' if torch.has_cuda else 'onnxruntime'))
             import onnxruntime
             session = onnxruntime.InferenceSession(w, None)
     else:  # TensorFlow models
