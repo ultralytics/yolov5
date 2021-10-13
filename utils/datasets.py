@@ -456,7 +456,7 @@ class LoadImagesAndLabels(Dataset):
             if single_cls:  # single-class training, merge all classes into 0
                 self.labels[i][:, 0] = 0
                 if segment:
-                    self.labels[i][:, 0] = 0
+                    self.segments[i][:, 0] = 0
 
         # Rectangular Training
         if self.rect:
