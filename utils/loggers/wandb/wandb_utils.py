@@ -18,6 +18,7 @@ if str(ROOT) not in sys.path:
 from utils.datasets import LoadImagesAndLabels
 from utils.datasets import img2label_paths
 from utils.general import check_dataset, check_file
+import wandb
 
 RANK = int(os.getenv('RANK', -1))
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
