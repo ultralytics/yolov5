@@ -3,11 +3,11 @@
 Logging utils
 """
 
+import os
 import warnings
 from threading import Thread
-import pkg_resources as pkg
-import os
 
+import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
@@ -29,6 +29,7 @@ try:
             wandb = None
 except (ImportError, AssertionError):
     wandb = None
+
 
 class Loggers():
     # YOLOv5 Loggers class
