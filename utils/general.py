@@ -298,8 +298,9 @@ def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
         if isinstance(suffix, str):
             suffix = [suffix]
         for f in file if isinstance(file, (list, tuple)) else [file]:
-            s = Path(f).suffix.lower()
-            assert (s in suffix) or (len(s) == 0), f"{msg}{f} acceptable suffix is {suffix}"
+            s = Path(f).suffix.lower()  # file suffix
+            if len(s):
+                assert s in suffix, f"{msg}{f} acceptable suffix is {suffix}"
 
 
 def check_yaml(file, suffix=('.yaml', '.yml')):
