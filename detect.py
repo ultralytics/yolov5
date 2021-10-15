@@ -84,7 +84,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     )
 
     dt, seen = run_inference(half, device, imgsz, dataset, model,
-        net, session, frozen_func, interpreter, img, pt, onnx, dnn,
+        net, session, frozen_func, interpreter, pt, onnx, dnn,
         tflite, int8, input_details, output_details, save_dir,
         path, visualize, augment, conf_thres, iou_thres, classes,
         agnostic_nms, max_det, classify, modelc, webcam,
@@ -272,7 +272,7 @@ def initialize_dataloader(webcam, source, imgsz, stride, pt):
 
 
 def run_inference(half, device, imgsz, dataset, model, \
-        net, session, frozen_func, interpreter, img, pt, onnx, dnn, \
+        net, session, frozen_func, interpreter, pt, onnx, dnn, \
         tflite, int8, input_details, output_details, save_dir, \
         path, visualize, augment, conf_thres, iou_thres, classes, \
         agnostic_nms, max_det, classify, modelc, webcam, \
