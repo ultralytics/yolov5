@@ -310,7 +310,7 @@ def run_inference(half, device, imgsz, dataset, model, \
         seen += process_predictions(
             pred, webcam, img, im0s, dataset, save_dir,
             save_crop, save_txt, save_conf, save_img, hide_labels, hide_conf,
-            view_img, video_path, txt_path, video_cap line_thickness, names,
+            view_img, video_path, txt_path, video_cap, line_thickness, names,
             t3, t2
         )
 
@@ -384,7 +384,7 @@ def inference(model, net, session, frozen_func, interpreter, img, pt, \
 
 def process_predictions(pred, webcam, img, im0s, dataset, save_dir, \
         save_crop, save_txt, save_conf, save_img, hide_labels, hide_conf, \
-        view_img, video_path, txt_path, video_cap line_thickness, names, \
+        view_img, video_path, txt_path, video_cap, line_thickness, names, \
         t3, t2):
     seen = 0
     
