@@ -917,7 +917,7 @@ def verify_image_label(args):
                 l = np.unique(l, axis=0)  # remove duplicate rows
                 if len(l) < nl:
                     segments = np.unique(segments, axis=0)
-                    msg = f'{prefix}WARNING: {im_file}: {len(l) - nl} duplicate labels'
+                    msg = f'{prefix}WARNING: {im_file}: {nl - len(l)} duplicate labels removed'
             else:
                 ne = 1  # label empty
                 l = np.zeros((0, 5), dtype=np.float32)
