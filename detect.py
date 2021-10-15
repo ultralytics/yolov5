@@ -309,7 +309,7 @@ def run_inference(half, device, imgsz, dataset, model, \
             pred = apply_classifier(pred, modelc, img, im0s)
 
         seen += process_predictions(
-            pred, webcam, img, im0s, dataset, save_dir,
+            pred, path, webcam, img, im0s, dataset, save_dir,
             save_crop, save_txt, save_conf, save_img, hide_labels, hide_conf,
             view_img, vid_cap, line_thickness, names,
             t3, t2
@@ -383,7 +383,7 @@ def inference(model, net, session, frozen_func, interpreter, img, pt, \
     return pred
 
 
-def process_predictions(pred, webcam, img, im0s, dataset, save_dir, \
+def process_predictions(pred, path, webcam, img, im0s, dataset, save_dir, \
         save_crop, save_txt, save_conf, save_img, hide_labels, hide_conf, \
         view_img, vid_cap, line_thickness, names, \
         t3, t2):
