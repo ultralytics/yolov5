@@ -134,7 +134,7 @@ class ConfusionMatrix:
 
         overlaps_new = csr_matrix((max_overlaps_foreach_det[foreground_indices], 
                                     (argmax_overlaps_foreach_det[foreground_indices], 
-                                     np.nonzero(foreground_indices)[0])), 
+                                     np.arange(num_dets)[foreground_indices])), 
                                     (num_gts, num_dets))
         argmax_overlaps_foreach_gt = np.argmax(overlaps_new, axis=1)
 
