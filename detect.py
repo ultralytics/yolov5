@@ -276,7 +276,7 @@ def run_inference(half, device, imgsz, dataset, model, \
         path, visualize, augment, conf_thres, iou_thres, classes, \
         agnostic_nms, max_det, classify, modelc, webcam, \
         save_crop, save_txt, save_conf, save_img, hide_labels, hide_conf, \
-        view_img, video_path, txt_path, video_cap line_thickness, names):
+        view_img, video_path, txt_path, video_cap, line_thickness, names):
     if pt and device.type != 'cpu':
         # run once
         model(
