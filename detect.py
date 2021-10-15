@@ -150,7 +150,7 @@ def load_model(weights, imgsz, device, half, dnn, w, classify, pt,
     # assign defaults
     stride, names = 64, [f'class{i}' for i in range(1000)]
     model = modelc = net = session = frozen_func = interpreter = None
-    int8, input_details, output_details = None
+    int8 = input_details = output_details = None
     if pt:
         model, stride, modelc = load_model_pre_trained(
             w, weights, device, half, classify
