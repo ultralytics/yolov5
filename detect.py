@@ -35,6 +35,7 @@ from utils.plots import Annotator, colors
 from utils.torch_utils import load_classifier, select_device, time_sync
 
 
+# TODO: Use argument dict to simplify the function signatures
 @torch.no_grad()
 def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         source=ROOT / 'data/images',  # file/dir/URL/glob, 0 for webcam
@@ -62,7 +63,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
         ):
-
     source, save_img, webcam, save_dir = initialize_fields(
         source, nosave, project, name, exist_ok, save_txt
     )
@@ -377,8 +377,6 @@ def inference(model, net, session, frozen_func, interpreter, img, pt, \
         pred[..., 2] *= imgsz[1]  # w
         pred[..., 3] *= imgsz[0]  # h
         pred = torch.tensor(pred)
-
-    
 
     return pred
 
