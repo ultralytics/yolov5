@@ -897,7 +897,7 @@ def verify_image_label(args):
                 f.seek(-2, 2)
                 if f.read() != b'\xff\xd9':  # corrupt JPEG
                     Image.open(im_file).save(im_file, format='JPEG', subsampling=0, quality=100)  # re-save image
-                    msg = f'{prefix}WARNING: corrupt JPEG restored and saved {im_file}'
+                    msg = f'{prefix}WARNING: {im_file}: corrupt JPEG restored and saved'
 
         # verify labels
         if os.path.isfile(lb_file):
@@ -909,11 +909,15 @@ def verify_image_label(args):
                     segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in l]  # (cls, xy1...)
                     l = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
                 l = np.array(l, dtype=np.float32)
-            if len(l):
+            nl = len(l)
+            if nl:
                 assert l.shape[1] == 5, 'labels require 5 columns each'
                 assert (l >= 0).all(), 'negative labels'
                 assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels'
-                assert np.unique(l, axis=0).shape[0] == l.shape[0], 'duplicate labels'
+                l = np.unique(l, axis=0)  # remove duplicate rows
+                if len(l) < nl:
+                    segments = np.unique(segments, axis=0)
+                    msg = f'{prefix}WARNING: {im_file}: {len(l) - nl} duplicate labels'
             else:
                 ne = 1  # label empty
                 l = np.zeros((0, 5), dtype=np.float32)
@@ -923,7 +927,7 @@ def verify_image_label(args):
         return im_file, l, shape, segments, nm, nf, ne, nc, msg
     except Exception as e:
         nc = 1
-        msg = f'{prefix}WARNING: Ignoring corrupted image and/or label {im_file}: {e}'
+        msg = f'{prefix}WARNING: Ignoring corrupt image and/or label {im_file}: {e}'
         return [None, None, None, None, nm, nf, ne, nc, msg]
 
 
