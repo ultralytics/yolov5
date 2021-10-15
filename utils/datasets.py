@@ -911,9 +911,9 @@ def verify_image_label(args):
                 l = np.array(l, dtype=np.float32)
             nl = len(l)
             if nl:
-                assert l.shape[1] == 5, 'labels require 5 columns each'
-                assert (l >= 0).all(), 'negative labels'
-                assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels'
+                assert l.shape[1] == 5, f'labels require 5 columns, {l.shape[1]} columns detected'
+                assert (l >= 0).all(), f'negative label values {l[l < 0]}'
+                assert (l[:, 1:] <= 1).all(), f'non-normalized or out of bounds coordinates {l[:, 1:][l[:, 1:] > 1]}'
                 l = np.unique(l, axis=0)  # remove duplicate rows
                 if len(l) < nl:
                     segments = np.unique(segments, axis=0)
@@ -927,7 +927,7 @@ def verify_image_label(args):
         return im_file, l, shape, segments, nm, nf, ne, nc, msg
     except Exception as e:
         nc = 1
-        msg = f'{prefix}WARNING: Ignoring corrupt image and/or label {im_file}: {e}'
+        msg = f'{prefix}WARNING: {im_file}: ignoring image: {e}'
         return [None, None, None, None, nm, nf, ne, nc, msg]
 
 
