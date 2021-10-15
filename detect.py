@@ -35,6 +35,7 @@ from utils.plots import Annotator, colors
 from utils.torch_utils import load_classifier, select_device, time_sync
 
 
+# TODO: Use argument dict to simplify the function signatures
 @torch.no_grad()
 def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         source=ROOT / 'data/images',  # file/dir/URL/glob, 0 for webcam
@@ -62,7 +63,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
         ):
-
     source, save_img, webcam, save_dir = initialize_fields(
         source, nosave, project, name, exist_ok, save_txt
     )
@@ -73,7 +73,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         check_model_type(weights)
 
     model, modelc, net, session, frozen_func, interpreter, \
-    int8, input_details, output_details, imgsz = \
+    int8, input_details, output_details, imgsz, stride, names = \
         load_model(
             weights, imgsz, device, half, dnn,
             w, classify, pt, onnx, tflite, pb, saved_model
@@ -84,12 +84,12 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     )
 
     dt, seen = run_inference(half, device, imgsz, dataset, model,
-        net, session, frozen_func, interpreter, img, pt, onnx, dnn,
+        net, session, frozen_func, interpreter, pt, onnx, dnn,
         tflite, int8, input_details, output_details, save_dir,
-        path, visualize, augment, conf_thres, iou_thres, classes,
+        visualize, augment, conf_thres, iou_thres, classes,
         agnostic_nms, max_det, classify, modelc, webcam,
         save_crop, save_txt, save_conf, save_img, hide_labels, hide_conf,
-        view_img, video_path, txt_path, video_cap, line_thickness, names
+        view_img, line_thickness, names
     )
 
     print_results(
@@ -150,6 +150,7 @@ def load_model(weights, imgsz, device, half, dnn, w, classify, pt,
     # assign defaults
     stride, names = 64, [f'class{i}' for i in range(1000)]
     model = modelc = net = session = frozen_func = interpreter = None
+    int8 = input_details = output_details = None
     if pt:
         model, stride, modelc = load_model_pre_trained(
             w, weights, device, half, classify
@@ -166,7 +167,7 @@ def load_model(weights, imgsz, device, half, dnn, w, classify, pt,
     imgsz = check_img_size(imgsz, s=stride)
 
     return model, modelc, net, session, frozen_func, interpreter, \
-        int8, input_details, output_details, imgsz
+        int8, input_details, output_details, imgsz, stride, names
 
 
 def load_model_pre_trained(w, weights, device, half, classify):
@@ -271,12 +272,12 @@ def initialize_dataloader(webcam, source, imgsz, stride, pt):
 
 
 def run_inference(half, device, imgsz, dataset, model, \
-        net, session, frozen_func, interpreter, img, pt, onnx, dnn, \
+        net, session, frozen_func, interpreter, pt, onnx, dnn, \
         tflite, int8, input_details, output_details, save_dir, \
-        path, visualize, augment, conf_thres, iou_thres, classes, \
+        visualize, augment, conf_thres, iou_thres, classes, \
         agnostic_nms, max_det, classify, modelc, webcam, \
         save_crop, save_txt, save_conf, save_img, hide_labels, hide_conf, \
-        view_img, video_path, txt_path, video_cap line_thickness, names):
+        view_img, line_thickness, names):
     if pt and device.type != 'cpu':
         # run once
         model(
@@ -308,9 +309,9 @@ def run_inference(half, device, imgsz, dataset, model, \
             pred = apply_classifier(pred, modelc, img, im0s)
 
         seen += process_predictions(
-            pred, webcam, img, im0s, dataset, save_dir,
+            pred, path, webcam, img, im0s, dataset, save_dir,
             save_crop, save_txt, save_conf, save_img, hide_labels, hide_conf,
-            view_img, video_path, txt_path, video_cap line_thickness, names,
+            view_img, vid_cap, line_thickness, names,
             t3, t2
         )
 
@@ -377,14 +378,12 @@ def inference(model, net, session, frozen_func, interpreter, img, pt, \
         pred[..., 3] *= imgsz[0]  # h
         pred = torch.tensor(pred)
 
-    
-
     return pred
 
 
-def process_predictions(pred, webcam, img, im0s, dataset, save_dir, \
+def process_predictions(pred, path, webcam, img, im0s, dataset, save_dir, \
         save_crop, save_txt, save_conf, save_img, hide_labels, hide_conf, \
-        view_img, video_path, txt_path, video_cap line_thickness, names, \
+        view_img, vid_cap, line_thickness, names, \
         t3, t2):
     seen = 0
     
@@ -397,14 +396,14 @@ def process_predictions(pred, webcam, img, im0s, dataset, save_dir, \
         else:
             p, s, im0, frame = path, '', im0s.copy(), getattr(dataset, 'frame', 0)
 
-        save_path, text_path, s, gn, imc, annotator = \
+        save_path, txt_path, s, gn, imc, annotator = \
             initialize_prediction_fields(
-                p, save_dir, dataset, frame, img,
+                p, s, save_dir, dataset, frame, img,
                 im0, save_crop, line_thickness, names
             )
         if len(det):
             write_results(
-                det, img, im0, imc, annotator, names, save_txt,
+                p, s, det, img, im0, imc, annotator, names, save_txt,
                 save_conf, hide_labels, hide_conf, txt_path, save_img,
                 save_crop, view_img, gn
             )
@@ -417,12 +416,12 @@ def process_predictions(pred, webcam, img, im0s, dataset, save_dir, \
 
         if save_img:
             save_image_with_annotation(
-                dataset, save_path, im0, video_path, i, video_cap
+                dataset, save_path, im0, i, vid_cap
             )
 
     return seen
 
-def initialize_prediction_fields(p, save_dir, dataset, frame, img, \
+def initialize_prediction_fields(p, s, save_dir, dataset, frame, img, \
         im0, save_crop, line_thickness, names):
     # to Path
     p = Path(p)
@@ -448,10 +447,10 @@ def initialize_prediction_fields(p, save_dir, dataset, frame, img, \
     
     annotator = Annotator(im0, line_width=line_thickness, example=str(names))
 
-    return save_path, text_path, s, gn, imc, annotator
+    return save_path, txt_path, s, gn, imc, annotator
 
 
-def write_results(det, img, im0, imc, annotator, names, save_txt, \
+def write_results(p, s, det, img, im0, imc, annotator, names, save_txt, \
         save_conf, hide_labels, hide_conf, txt_path, save_img, \
         save_crop, view_img, gn):
     p = Path(p)
@@ -507,8 +506,8 @@ def view_stream_results():
     cv2.waitKey(1)
 
 
-def save_image_with_annotation(dataset, save_path, im0, video_path, index, \
-        video_cap):
+def save_image_with_annotation(dataset, save_path, im0, index, \
+        vid_cap):
     if dataset.mode == 'image':
         cv2.imwrite(save_path, im0)
     else:  # 'video' or 'stream'
