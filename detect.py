@@ -89,7 +89,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         visualize, augment, conf_thres, iou_thres, classes,
         agnostic_nms, max_det, classify, modelc, webcam,
         save_crop, save_txt, save_conf, save_img, hide_labels, hide_conf,
-        view_img, video_path, txt_path, video_cap, line_thickness, names
+        view_img, txt_path, video_cap, line_thickness, names
     )
 
     print_results(
@@ -277,7 +277,7 @@ def run_inference(half, device, imgsz, dataset, model, \
         visualize, augment, conf_thres, iou_thres, classes, \
         agnostic_nms, max_det, classify, modelc, webcam, \
         save_crop, save_txt, save_conf, save_img, hide_labels, hide_conf, \
-        view_img, video_path, txt_path, video_cap, line_thickness, names):
+        view_img, txt_path, video_cap, line_thickness, names):
     if pt and device.type != 'cpu':
         # run once
         model(
@@ -311,7 +311,7 @@ def run_inference(half, device, imgsz, dataset, model, \
         seen += process_predictions(
             pred, webcam, img, im0s, dataset, save_dir,
             save_crop, save_txt, save_conf, save_img, hide_labels, hide_conf,
-            view_img, video_path, txt_path, video_cap, line_thickness, names,
+            view_img, txt_path, video_cap, line_thickness, names,
             t3, t2
         )
 
@@ -385,7 +385,7 @@ def inference(model, net, session, frozen_func, interpreter, img, pt, \
 
 def process_predictions(pred, webcam, img, im0s, dataset, save_dir, \
         save_crop, save_txt, save_conf, save_img, hide_labels, hide_conf, \
-        view_img, video_path, txt_path, video_cap, line_thickness, names, \
+        view_img, txt_path, video_cap, line_thickness, names, \
         t3, t2):
     seen = 0
     
@@ -418,7 +418,7 @@ def process_predictions(pred, webcam, img, im0s, dataset, save_dir, \
 
         if save_img:
             save_image_with_annotation(
-                dataset, save_path, im0, video_path, i, video_cap
+                dataset, save_path, im0, i, video_cap
             )
 
     return seen
@@ -508,7 +508,7 @@ def view_stream_results():
     cv2.waitKey(1)
 
 
-def save_image_with_annotation(dataset, save_path, im0, video_path, index, \
+def save_image_with_annotation(dataset, save_path, im0, index, \
         video_cap):
     if dataset.mode == 'image':
         cv2.imwrite(save_path, im0)
