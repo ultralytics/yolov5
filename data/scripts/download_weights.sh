@@ -9,9 +9,14 @@
 #     └── ...
 
 python - <<EOF
+import os
 from utils.downloads import attempt_download
 
-for x in ['n', 's', 'm', 'l', 'x']:
+models = ['n', 's', 'm', 'l', 'x']
+if os.environ.get('YOLOV5_DOWNLOAD_LARGE_IMAGE_MODELS'):
+    models.extend([i + '6' for i in models])
+
+for x in models:
     attempt_download(f'yolov5{x}.pt')
 
 EOF
