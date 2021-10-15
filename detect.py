@@ -398,7 +398,7 @@ def process_predictions(pred, path, webcam, img, im0s, dataset, save_dir, \
         else:
             p, s, im0, frame = path, '', im0s.copy(), getattr(dataset, 'frame', 0)
 
-        save_path, text_path, s, gn, imc, annotator = \
+        save_path, txt_path, s, gn, imc, annotator = \
             initialize_prediction_fields(
                 p, s, save_dir, dataset, frame, img,
                 im0, save_crop, line_thickness, names
@@ -449,7 +449,7 @@ def initialize_prediction_fields(p, s, save_dir, dataset, frame, img, \
     
     annotator = Annotator(im0, line_width=line_thickness, example=str(names))
 
-    return save_path, text_path, s, gn, imc, annotator
+    return save_path, txt_path, s, gn, imc, annotator
 
 
 def write_results(det, img, im0, imc, annotator, names, save_txt, \
