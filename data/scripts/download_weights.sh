@@ -11,7 +11,7 @@
 python - <<EOF
 from utils.downloads import attempt_download
 
-for x in ['s', 'm', 'l', 'x']:
+for x in ['n', 's', 'm', 'l', 'x']:
     attempt_download(f'yolov5{x}.pt')
 
 EOF
