@@ -20,7 +20,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         python-version: [ 3.8 ]
-        model: [ 'yolov5s' ]  # models to test
+        model: [ 'yolov5n' ]  # models to test
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
     timeout-minutes: 50
