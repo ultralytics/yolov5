@@ -405,7 +405,7 @@ def process_predictions(pred, path, webcam, img, im0s, dataset, save_dir, \
             )
         if len(det):
             write_results(
-                det, img, im0, imc, annotator, names, save_txt,
+                p, det, img, im0, imc, annotator, names, save_txt,
                 save_conf, hide_labels, hide_conf, txt_path, save_img,
                 save_crop, view_img, gn
             )
@@ -452,7 +452,7 @@ def initialize_prediction_fields(p, s, save_dir, dataset, frame, img, \
     return save_path, txt_path, s, gn, imc, annotator
 
 
-def write_results(det, img, im0, imc, annotator, names, save_txt, \
+def write_results(p, det, img, im0, imc, annotator, names, save_txt, \
         save_conf, hide_labels, hide_conf, txt_path, save_img, \
         save_crop, view_img, gn):
     p = Path(p)
