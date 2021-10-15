@@ -73,7 +73,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         check_model_type(weights)
 
     model, modelc, net, session, frozen_func, interpreter, \
-    int8, input_details, output_details, imgsz = \
+    int8, input_details, output_details, imgsz, stride, names = \
         load_model(
             weights, imgsz, device, half, dnn,
             w, classify, pt, onnx, tflite, pb, saved_model
@@ -167,7 +167,7 @@ def load_model(weights, imgsz, device, half, dnn, w, classify, pt,
     imgsz = check_img_size(imgsz, s=stride)
 
     return model, modelc, net, session, frozen_func, interpreter, \
-        int8, input_details, output_details, imgsz
+        int8, input_details, output_details, imgsz, stride, names
 
 
 def load_model_pre_trained(w, weights, device, half, classify):
