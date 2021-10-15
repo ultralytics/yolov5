@@ -400,7 +400,7 @@ def process_predictions(pred, path, webcam, img, im0s, dataset, save_dir, \
 
         save_path, text_path, s, gn, imc, annotator = \
             initialize_prediction_fields(
-                p, save_dir, dataset, frame, img,
+                p, s, save_dir, dataset, frame, img,
                 im0, save_crop, line_thickness, names
             )
         if len(det):
@@ -423,7 +423,7 @@ def process_predictions(pred, path, webcam, img, im0s, dataset, save_dir, \
 
     return seen
 
-def initialize_prediction_fields(p, save_dir, dataset, frame, img, \
+def initialize_prediction_fields(p, s, save_dir, dataset, frame, img, \
         im0, save_crop, line_thickness, names):
     # to Path
     p = Path(p)
