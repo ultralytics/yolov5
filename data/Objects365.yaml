@@ -72,43 +72,43 @@ download: |
       for q in 'train', 'val':
           (dir / p / q).mkdir(parents=True, exist_ok=True)
 
-  for split, patches in [('train', 50+1), ('val', 43+1)]:
-    print(f"Processing {split} in {patches} patches ...")
+  for split, patches in [('train', 50 + 1), ('val', 43 + 1)]:
+      print(f"Processing {split} in {patches} patches ...")
+      images, labels = dir / 'images' / split, dir / 'labels' / split
 
-    # Download split
-    url = f"https://dorc.ks3-cn-beijing.ksyun.com/data-set/2020Objects365%E6%95%B0%E6%8D%AE%E9%9B%86/{split}/"
-    if split == 'train':
-        download([url + f'zhiyuan_objv2_{split}.tar.gz'], dir=dir, delete=False)  # annotations json
-        download([url + f for f in [f'patch{i}.tar.gz' for i in range(patches)]], dir=dir / 'images' / split,
-                 curl=True, delete=False, threads=8)
-    elif split == 'val':
-        download([url + f'zhiyuan_objv2_{split}.json'], dir=dir, delete=False)    # annotations json
-        download([url + 'images/v1/' + f for f in [f'patch{i}.tar.gz' for i in range(15+1)]], dir=dir / 'images' / split,
-                 curl=True, delete=False, threads=8)
-        download([url + 'images/v2/' + f for f in [f'patch{i}.tar.gz' for i in range(16, patches)]], dir=dir / 'images' / split,
-                 curl=True, delete=False, threads=8)
+      # Download
+      url = f"https://dorc.ks3-cn-beijing.ksyun.com/data-set/2020Objects365%E6%95%B0%E6%8D%AE%E9%9B%86/{split}/"
+      if split == 'train':
+          download([url + f'zhiyuan_objv2_{split}.tar.gz'], dir=dir, delete=False)  # annotations json
+          download([url + f for f in [f'patch{i}.tar.gz' for i in range(patches)]],
+                   dir=images, curl=True, delete=False, threads=8)
+      elif split == 'val':
+          download([url + f'zhiyuan_objv2_{split}.json'], dir=dir, delete=False)  # annotations json
+          download([url + 'images/v1/' + f for f in [f'patch{i}.tar.gz' for i in range(15 + 1)]],
+                   dir=images, curl=True, delete=False, threads=8)
+          download([url + 'images/v2/' + f for f in [f'patch{i}.tar.gz' for i in range(16, patches)]],
+                   dir=images, curl=True, delete=False, threads=8)
 
-    # Move split images
-    splitP = dir / 'images' / split
-    for f in tqdm(splitP.rglob('*.jpg'), desc=f'Moving {split} images'):
-      f.rename(splitP / f.name)  # move to /images/{split}
+      # Move
+      for f in tqdm(images.rglob('*.jpg'), desc=f'Moving {split} images'):
+          f.rename(images / f.name)  # move to /images/{split}
 
-    # Split labels
-    coco = COCO(dir / f'zhiyuan_objv2_{split}.json')
-    names = [x["name"] for x in coco.loadCats(coco.getCatIds())]
-    for cid, cat in enumerate(names):
-      catIds = coco.getCatIds(catNms=[cat])
-      imgIds = coco.getImgIds(catIds=catIds)
-      for im in tqdm(coco.loadImgs(imgIds), desc=f'Class {cid + 1}/{len(names)} {cat}'):
-        width, height = im["width"], im["height"]
-        path = Path(im["file_name"])  # image filename
-        try:
-          with open(dir / 'labels' / split / path.with_suffix('.txt').name, 'a') as file:
-            annIds = coco.getAnnIds(imgIds=im["id"], catIds=catIds, iscrowd=None)
-            for a in coco.loadAnns(annIds):
-              x, y, w, h = a['bbox']  # bounding box in xywh (xy top-left corner)
-              x, y = x + w / 2, y + h / 2  # xy to center
-              file.write(f"{cid} {x / width:.5f} {y / height:.5f} {w / width:.5f} {h / height:.5f}\n")
+      # Labels
+      coco = COCO(dir / f'zhiyuan_objv2_{split}.json')
+      names = [x["name"] for x in coco.loadCats(coco.getCatIds())]
+      for cid, cat in enumerate(names):
+          catIds = coco.getCatIds(catNms=[cat])
+          imgIds = coco.getImgIds(catIds=catIds)
+          for im in tqdm(coco.loadImgs(imgIds), desc=f'Class {cid + 1}/{len(names)} {cat}'):
+              width, height = im["width"], im["height"]
+              path = Path(im["file_name"])  # image filename
+              try:
+                  with open(labels / path.with_suffix('.txt').name, 'a') as file:
+                      annIds = coco.getAnnIds(imgIds=im["id"], catIds=catIds, iscrowd=None)
+                      for a in coco.loadAnns(annIds):
+                          x, y, w, h = a['bbox']  # bounding box in xywh (xy top-left corner)
+                          x, y = x + w / 2, y + h / 2  # xy to center
+                          file.write(f"{cid} {x / width:.5f} {y / height:.5f} {w / width:.5f} {h / height:.5f}\n")
 
-        except Exception as e:
-          print(e)
+              except Exception as e:
+                  print(e)
