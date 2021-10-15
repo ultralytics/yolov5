@@ -375,7 +375,7 @@ def img2label_paths(img_paths):
 
 class LoadImagesAndLabels(Dataset):
     # YOLOv5 train_loader/val_loader, loads images and labels for training and validation
-    cache_version = 0.5  # dataset labels *.cache version
+    cache_version = 0.6  # dataset labels *.cache version
 
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
                  cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
@@ -904,7 +904,7 @@ def verify_image_label(args):
             nf = 1  # label found
             with open(lb_file, 'r') as f:
                 l = [x.split() for x in f.read().strip().splitlines() if len(x)]
-                if any([len(x) > 8 for x in l]):  # is segment
+                if all([len(x) > 8 for x in l]):  # is segment
                     classes = np.array([x[0] for x in l], dtype=np.float32)
                     segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in l]  # (cls, xy1...)
                     l = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
@@ -927,7 +927,7 @@ def verify_image_label(args):
         return im_file, l, shape, segments, nm, nf, ne, nc, msg
     except Exception as e:
         nc = 1
-        msg = f'{prefix}WARNING: {im_file}: ignoring image: {e}'
+        msg = f'{prefix}WARNING: {im_file}: ignoring corrupt image/label: {e}'
         return [None, None, None, None, nm, nf, ne, nc, msg]
 
 
