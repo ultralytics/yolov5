@@ -78,15 +78,31 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     check_suffix(w, suffixes)  # check weights have acceptable suffix
     pt, onnx, tflite, pb, saved_model = (suffix == x for x in suffixes)  # backend booleans
     stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
+    pt_jit = pt and 'torchscript' in w
     if pt:
-        model = torch.jit.load(w) if 'torchscript' in w else attempt_load(weights, map_location=device)
-        stride = int(model.stride.max())  # model stride
-        names = model.module.names if hasattr(model, 'module') else model.names  # get class names
-        if half:
-            model.half()  # to FP16
-        if classify:  # second-stage classifier
-            modelc = load_classifier(name='resnet50', n=2)  # initialize
-            modelc.load_state_dict(torch.load('resnet50.pt', map_location=device)['model']).to(device).eval()
+        if pt_jit:
+            # parse the model name for resolution, batch & stride
+            jit_params = w.split("\\")[-1].split('/')[-1].split('_')
+            if len(jit_params) >= 4:
+              print("Inferring model BHW and stride from torchscrip file name.")
+              predef_h, predef_w = [int(x) for x in jit_params[2].split('x')]
+              predef_bs = int(jit_params[3][1:])
+              predef_s = int(jit_params[4][1:])
+              stride = predef_s
+              ts_predef_params = True
+            else:
+              print("Torchscript file name does not have encoded BHW/stride. Assuming defaults.")
+              ts_predef_params = False
+            model = torch.jit.load(w)
+        else:
+            model = attempt_load(weights, map_location=device)
+            stride = int(model.stride.max()) # model stride
+            names = model.module.names if hasattr(model, 'module') else model.names  # get class names
+            if half:
+                model.half()  # to FP16
+            if classify:  # second-stage classifier
+                modelc = load_classifier(name='resnet50', n=2)  # initialize
+                modelc.load_state_dict(torch.load('resnet50.pt', map_location=device)['model']).to(device).eval()
     elif onnx:
         if dnn:
             # check_requirements(('opencv-python>=4.5.4',))
@@ -116,15 +132,18 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             output_details = interpreter.get_output_details()  # outputs
             int8 = input_details[0]['dtype'] == np.uint8  # is TFLite quantized uint8 model
     imgsz = check_img_size(imgsz, s=stride)  # check image size
+    if pt_jit and ts_predef_params and imgsz != [predef_h, predef_w]:
+      print("Changing resolution from {} to {} based to graph defaults".format(imgsz, [predef_h, predef_w]))
+      imgsz = predef_h, predef_w
 
     # Dataloader
     if webcam:
         view_img = check_imshow()
         cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt)
+        dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt and not pt_jit)
         bs = len(dataset)  # batch_size
     else:
-        dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
+        dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt and not pt_jit)
         bs = 1  # batch_size
     vid_path, vid_writer = [None] * bs, [None] * bs
 
@@ -148,7 +167,10 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         # Inference
         if pt:
             visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
-            pred = model(img, augment=augment, visualize=visualize)[0]
+            if pt_jit:
+                pred = model(img)[0]
+            else:
+                pred = model(img, augment=augment, visualize=visualize)[0]
         elif onnx:
             if dnn:
                 net.setInput(img)
@@ -266,13 +288,13 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s_cuda_640x640_B1_S32_torchscript.pt', help='model path(s)')
     parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob, 0 for webcam')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--device', default='0', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='show results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
