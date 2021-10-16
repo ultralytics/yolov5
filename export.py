@@ -51,7 +51,15 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
     # YOLOv5 TorchScript model export
     try:
         print(f'\n{prefix} starting export with torch {torch.__version__}...')
-        f = file.with_suffix('.torchscript.pt')
+        fn = str(file.name)
+        fn = fn.replace('.pt','')
+        pth = str(file.parent)
+        h,w = im.shape[-2:]
+        batch_size = im.shape[0]
+        stride = int(max(model.stride))
+        dev_type = next(model.parameters()).device.type
+        f = os.path.join(pth, '{}_{}_{}x{}_B{}_S{}_torchscript.pt'.format(
+          fn, dev_type, h, w, batch_size, stride))
 
         ts = torch.jit.trace(model, im, strict=False)
         (optimize_for_mobile(ts) if optimize else ts).save(f)
@@ -333,7 +341,7 @@ def parse_opt():
     parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='weights path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640, 640], help='image (h, w)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
-    parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--device', default='0', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--train', action='store_true', help='model.train() mode')
