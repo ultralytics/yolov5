@@ -276,13 +276,13 @@ def run(data,
 
             anno = COCO(anno_json)  # init annotations api
             pred = anno.loadRes(pred_json)  # init predictions api
-            eval = COCOeval(anno, pred, 'bbox')
+            evaluation = COCOeval(anno, pred, 'bbox')
             if is_coco:
-                eval.params.imgIds = [int(Path(x).stem) for x in dataloader.dataset.img_files]  # image IDs to evaluate
-            eval.evaluate()
-            eval.accumulate()
-            eval.summarize()
-            map, map50 = eval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
+                evaluation.params.imgIds = [int(Path(x).stem) for x in dataloader.dataset.img_files]  # image IDs to evaluate
+            evaluation.evaluate()
+            evaluation.accumulate()
+            evaluation.summarize()
+            map, map50 = evaluation.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
         except Exception as e:
             print(f'pycocotools unable to run: {e}')
 
