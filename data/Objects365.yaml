@@ -63,7 +63,7 @@ download: |
   from pycocotools.coco import COCO
   from tqdm import tqdm
   
-  from utils.general import download, Path
+  from utils.general import Path, download, np, xyxy2xywhn
   
   # Make Directories
   dir = Path(yaml['path'])  # dataset root dir
@@ -105,7 +105,8 @@ download: |
                       annIds = coco.getAnnIds(imgIds=im["id"], catIds=catIds, iscrowd=None)
                       for a in coco.loadAnns(annIds):
                           x, y, w, h = a['bbox']  # bounding box in xywh (xy top-left corner)
-                          x, y = x + w / 2, y + h / 2  # xy to center
-                          file.write(f"{cid} {x / width:.5f} {y / height:.5f} {w / width:.5f} {h / height:.5f}\n")
+                          xyxy = np.array([x, y, x + w, y + h])[None]  # pixels(1,4)
+                          x, y, w, h = xyxy2xywhn(xyxy, w=width, h=height, clip=True)[0]  # normalized and clipped
+                          file.write(f"{cid} {x:.5f} {y:.5f} {w:.5f} {h:.5f}\n")
               except Exception as e:
                   print(e)
