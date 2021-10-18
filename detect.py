@@ -324,7 +324,7 @@ def pre_process(onnx, img, device, half):
     else:
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
-    img = img / 255.0  # 0 - 255 to 0.0 - 1.0
+    img /= 255.0  # 0 - 255 to 0.0 - 1.0
     if len(img.shape) == 3:
         img = img[None]  # expand for batch dim
 
