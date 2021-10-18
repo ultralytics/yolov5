@@ -433,7 +433,7 @@ class WandbLogger():
                      "box_caption": "%s %.3f" % (names[cls], conf),
                      "scores": {"class_score": conf},
                      "domain": "pixel"})
-                total_conf = total_conf + conf
+                total_conf += conf
         boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
         id = self.val_table_path_map[Path(path).name]
         self.result_table.add_data(self.current_epoch,
