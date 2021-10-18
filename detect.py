@@ -7,6 +7,7 @@ Usage:
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -19,19 +20,20 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.experimental import attempt_load
 from utils.datasets import LoadImages, LoadStreams
 from utils.general import apply_classifier, check_img_size, check_imshow, check_requirements, check_suffix, colorstr, \
-    increment_path, is_ascii, non_max_suppression, print_args, save_one_box, scale_coords, set_logging, \
+    increment_path, non_max_suppression, print_args, save_one_box, scale_coords, set_logging, \
     strip_optimizer, xyxy2xywh
 from utils.plots import Annotator, colors
 from utils.torch_utils import load_classifier, select_device, time_sync
 
 
 @torch.no_grad()
-def run(weights='yolov5s.pt',  # model.pt path(s)
-        source='data/images',  # file/dir/URL/glob, 0 for webcam
+def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
+        source=ROOT / 'data/images',  # file/dir/URL/glob, 0 for webcam
         imgsz=640,  # inference size (pixels)
         conf_thres=0.25,  # confidence threshold
         iou_thres=0.45,  # NMS IOU threshold
@@ -47,14 +49,16 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         augment=False,  # augmented inference
         visualize=False,  # visualize features
         update=False,  # update all models
-        project='runs/detect',  # save results to project/name
+        project=ROOT / 'runs/detect',  # save results to project/name
         name='exp',  # save results to project/name
         exist_ok=False,  # existing project/name ok, do not increment
         line_thickness=3,  # bounding box thickness (pixels)
         hide_labels=False,  # hide labels
         hide_conf=False,  # hide confidences
         half=False,  # use FP16 half-precision inference
+        dnn=False,  # use OpenCV DNN for ONNX inference
         ):
+    source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://', 'https://'))
@@ -69,13 +73,13 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
     half &= device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
-    w = weights[0] if isinstance(weights, list) else weights
+    w = str(weights[0] if isinstance(weights, list) else weights)
     classify, suffix, suffixes = False, Path(w).suffix.lower(), ['.pt', '.onnx', '.tflite', '.pb', '']
     check_suffix(w, suffixes)  # check weights have acceptable suffix
     pt, onnx, tflite, pb, saved_model = (suffix == x for x in suffixes)  # backend booleans
     stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
     if pt:
-        model = attempt_load(weights, map_location=device)  # load FP32 model
+        model = torch.jit.load(w) if 'torchscript' in w else attempt_load(weights, map_location=device)
         stride = int(model.stride.max())  # model stride
         names = model.module.names if hasattr(model, 'module') else model.names  # get class names
         if half:
@@ -84,9 +88,13 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             modelc = load_classifier(name='resnet50', n=2)  # initialize
             modelc.load_state_dict(torch.load('resnet50.pt', map_location=device)['model']).to(device).eval()
     elif onnx:
-        check_requirements(('onnx', 'onnxruntime'))
-        import onnxruntime
-        session = onnxruntime.InferenceSession(w, None)
+        if dnn:
+            # check_requirements(('opencv-python>=4.5.4',))
+            net = cv2.dnn.readNetFromONNX(w)
+        else:
+            check_requirements(('onnx', 'onnxruntime-gpu' if torch.has_cuda else 'onnxruntime'))
+            import onnxruntime
+            session = onnxruntime.InferenceSession(w, None)
     else:  # TensorFlow models
         check_requirements(('tensorflow>=2.4.1',))
         import tensorflow as tf
@@ -108,7 +116,6 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             output_details = interpreter.get_output_details()  # outputs
             int8 = input_details[0]['dtype'] == np.uint8  # is TFLite quantized uint8 model
     imgsz = check_img_size(imgsz, s=stride)  # check image size
-    ascii = is_ascii(names)  # names are ascii (use PIL for UTF-8)
 
     # Dataloader
     if webcam:
@@ -132,7 +139,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         else:
             img = torch.from_numpy(img).to(device)
             img = img.half() if half else img.float()  # uint8 to fp16/32
-        img = img / 255.0  # 0 - 255 to 0.0 - 1.0
+        img /= 255.0  # 0 - 255 to 0.0 - 1.0
         if len(img.shape) == 3:
             img = img[None]  # expand for batch dim
         t2 = time_sync()
@@ -143,7 +150,11 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
             pred = model(img, augment=augment, visualize=visualize)[0]
         elif onnx:
-            pred = torch.tensor(session.run([session.get_outputs()[0].name], {session.get_inputs()[0].name: img}))
+            if dnn:
+                net.setInput(img)
+                pred = torch.tensor(net.forward())
+            else:
+                pred = torch.tensor(session.run([session.get_outputs()[0].name], {session.get_inputs()[0].name: img}))
         else:  # tensorflow model (tflite, pb, saved_model)
             imn = img.permute(0, 2, 3, 1).cpu().numpy()  # image in numpy
             if pb:
@@ -190,7 +201,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
-            annotator = Annotator(im0, line_width=line_thickness, pil=not ascii)
+            annotator = Annotator(im0, line_width=line_thickness, example=str(names))
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
@@ -255,8 +266,8 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model path(s)')
-    parser.add_argument('--source', type=str, default='data/images', help='file/dir/URL/glob, 0 for webcam')
+    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path(s)')
+    parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob, 0 for webcam')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
@@ -272,13 +283,14 @@ def parse_opt():
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--visualize', action='store_true', help='visualize features')
     parser.add_argument('--update', action='store_true', help='update all models')
-    parser.add_argument('--project', default='runs/detect', help='save results to project/name')
+    parser.add_argument('--project', default=ROOT / 'runs/detect', help='save results to project/name')
     parser.add_argument('--name', default='exp', help='save results to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--line-thickness', default=3, type=int, help='bounding box thickness (pixels)')
     parser.add_argument('--hide-labels', default=False, action='store_true', help='hide labels')
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
+    parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(FILE.stem, opt)

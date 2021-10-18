@@ -6,6 +6,7 @@ numpy>=1.18.5
 opencv-python>=4.1.2
 Pillow>=7.1.2
 PyYAML>=5.3.1
+requests>=2.23.0
 scipy>=1.4.1
 torch>=1.7.0
 torchvision>=0.8.1
@@ -16,8 +17,8 @@ tensorboard>=2.4.1
 # wandb
 
 # Plotting ------------------------------------
+pandas>=1.1.4
 seaborn>=0.11.0
-pandas
 
 # Export --------------------------------------
 # coremltools>=4.1  # CoreML export
@@ -28,7 +29,8 @@ pandas
 # tensorflowjs>=3.9.0  # TF.js export
 
 # Extras --------------------------------------
+# albumentations>=1.0.3
 # Cython  # for pycocotools https://github.com/cocodataset/cocoapi/issues/172
 # pycocotools>=2.0  # COCO mAP
-# albumentations>=1.0.3
+# roboflow
 thop  # FLOPs computation
