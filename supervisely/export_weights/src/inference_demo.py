@@ -141,7 +141,7 @@ def visualize_dets(img_, output_, save_path_, names_, meta_):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str,
-                        # default='/home/work/PycharmProjects/app_debug_data/data/best.torchscript.pt',
+                        # default='/home/work/PycharmProjects/app_debug_data/data/best.onnx',
                         help='initial weights path')
     parser.add_argument('--cfgs', type=str,
                         # default='/home/work/PycharmProjects/app_debug_data/data/opt.yaml',
@@ -176,21 +176,13 @@ def main():
         print('Please, set path to original_model to construct meta to visualise results.')
         raise FileNotFoundError(path2original_model)
 
+    cfgs = get_configs(opt.cfgs)
+    input_img_size = cfgs['img_size']
+
     # load and prepare image
     tensor, image = get_image(opt.image)
     # load and prepare models
     model = get_model(opt.weights)
-
-    if opt.cfgs:
-        cfgs = get_configs(opt.cfgs)
-        input_img_size = cfgs['img_size']
-    else:
-        if hasattr(model, 'module') and hasattr(model.module, 'img_size'):
-            input_img_size = model.module.img_size
-        elif hasattr(model, 'img_size'):
-            input_img_size = model.img_size
-        else:
-            raise Exception('input_img_size is not initialized.')
 
     # infer prepared image
     if opt.mode == 'direct':
@@ -200,24 +192,11 @@ def main():
         output = sliding_window(model_=model, img=tensor, conf_thresh=opt.conf_thresh, iou_thresh=opt.iou_thresh,
                                 agnostic=opt.agnostic, native=opt.native, sliding_window_step=opt.sliding_window_step,
                                 input_img_size=input_img_size)
+
+    print(opt.viz)
     if opt.viz:
         # load orig YOLOv5 model to construct meta
-        if '.pt' in opt.weights: # .pt, torchscript.pt
-            if 'torchscript' not in opt.weights: # .pt
-                o_model = model
-            else:
-                if opt.original_model:  # .torchscript.pt
-                    o_model = get_model(opt.original_model)
-                else:
-                    raise Exception("original model is not initialized. "
-                                    "Pass original model weight's path as script arg --original_model")
-        else: # ONNX
-            if opt.original_model:
-                o_model = get_model(opt.original_model)
-            else:
-                raise Exception("original model is not initialized. "
-                                "Pass original model weight's path as script arg --original_model")
-
+        o_model = get_model(opt.original_model)
         # meta construction
         meta = construct_model_meta(o_model)
         # get class names
