@@ -10,3 +10,14 @@ updates:
       - glenn-jocher
     labels:
       - dependencies
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      time: "04:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - glenn-jocher
+    labels:
+      - dependencies
