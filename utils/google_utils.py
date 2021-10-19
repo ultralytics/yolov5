@@ -33,6 +33,8 @@ def attempt_download(file, repo='ultralytics/yolov5'):
             except:
                 tag = 'v5.0'  # current release
 
+        tag = 'v5.0'
+
         name = file.name
         if name in assets:
             msg = f'{file} missing, try downloading from https://github.com/{repo}/releases/'

@@ -76,6 +76,7 @@ Additional options for `*.torchscript.pt`, `*.onnx`
 ```
   --original_model  |  path to original model to construct meta (required for ONNX anf TorchScript models)
 ```
+
 More info about sliding_window approach [here](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/export_weights/README.md#sliding-window-approach)
 
 **Detailed instructions to infer image manually:**

@@ -183,6 +183,7 @@ def main():
     tensor, image = get_image(opt.image)
     # load and prepare models
     model = get_model(opt.weights)
+
     # infer prepared image
     if opt.mode == 'direct':
         output = infer_model(model_=model, img=tensor, conf_thresh=opt.conf_thresh, iou_thresh=opt.iou_thresh,
@@ -191,6 +192,7 @@ def main():
         output = sliding_window(model_=model, img=tensor, conf_thresh=opt.conf_thresh, iou_thresh=opt.iou_thresh,
                                 agnostic=opt.agnostic, native=opt.native, sliding_window_step=opt.sliding_window_step,
                                 input_img_size=input_img_size)
+
     print(opt.viz)
     if opt.viz:
         # load orig YOLOv5 model to construct meta
