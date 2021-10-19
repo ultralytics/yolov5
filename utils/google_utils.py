@@ -33,13 +33,14 @@ def attempt_download(file, repo='ultralytics/yolov5'):
             except:
                 tag = 'v5.0'  # current release
 
+        tag = 'v5.0'
+
         name = file.name
         if name in assets:
             msg = f'{file} missing, try downloading from https://github.com/{repo}/releases/'
             redundant = False  # second download option
             try:  # GitHub
-                # url = f'https://github.com/{repo}/releases/download/{tag}/{name}'
-                url = f'https://github.com/{repo}/releases/download/v5.0/{name}'
+                url = f'https://github.com/{repo}/releases/download/{tag}/{name}'
                 print(f'Downloading {url} to {file}...')
                 torch.hub.download_url_to_file(url, file)
                 assert file.exists() and file.stat().st_size > 1E6  # check
