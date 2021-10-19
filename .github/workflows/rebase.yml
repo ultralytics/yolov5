@@ -1,10 +1,9 @@
-name: Automatic Rebase
 # https://github.com/marketplace/actions/automatic-rebase
 
+name: Automatic Rebase
 on:
   issue_comment:
     types: [created]
-
 jobs:
   rebase:
     name: Rebase
@@ -14,8 +13,9 @@ jobs:
       - name: Checkout the latest code
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
       - name: Automatic Rebase
-        uses: cirrus-actions/rebase@1.3.1
+        uses: cirrus-actions/rebase@1.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
