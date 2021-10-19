@@ -54,7 +54,7 @@ python ./path/to/inference_demo.py
         --mode={direct / sliding_window}
         --conf_thresh=0.25
         --iou_thresh=0.45
-        --sliding_window_step 1 1 
+        --sliding_window_step {sliding_window_step_by_y(height)} {sliding_window_step_by_x(width)} # E.g. --sliding_window_step 1 1
         --original_model=/path/to/{original_model_name}.pt
         --save_path=/path/to/image_name.{any extension: .png, .jpg etc.}
 ```
@@ -62,20 +62,22 @@ Options to set:
 
 Required for `*.pt`, `*.torchscript.pt`, `*.onnx`
 ```
-  --weights       |  path to model weights
-  --cfgs          |  path to model cfgs (required for ONNX anf TorchScript models)
-  --image         |  path to model image
-  --mode          |  {direct,sliding_window} inference mode
-  --conf_thresh   |  confidence threshold
-  --iou_thresh    |  intersection over union threshold
-  --viz           |  flag for results visualisation
-  --save_path     |  path to save inference results
+  --weights         |  path to model weights
+  --cfgs            |  path to model cfgs
+  --image           |  path to model image
+  --mode            |  {direct,sliding_window} inference mode
+  --conf_thresh     |  confidence threshold
+  --iou_thresh      |  intersection over union threshold
+  --viz             |  flag for results visualisation
+  --save_path       |  path to save inference results
+  --original_model  |  path to original model to construct meta
 ```
 
-Additional options for `*.torchscript.pt`, `*.onnx`
+Additional required config for `*.torchscript.pt`, `*.onnx`
 ```
-  --original_model  |  path to original model to construct meta (required for ONNX anf TorchScript models)
+  --original_model  |  path to original model to construct meta
 ```
+
 More info about sliding_window approach [here](https://github.com/supervisely-ecosystem/yolov5/blob/master/supervisely/export_weights/README.md#sliding-window-approach)
 
 **Detailed instructions to infer image manually:**
