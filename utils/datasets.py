@@ -865,8 +865,9 @@ def autosplit(path='../datasets/coco128/images', weights=(0.9, 0.1, 0.0), annota
         weights:         Train, val, test weights (list, tuple)
         annotated_only:  Only use images with an annotated txt file
     """
+    IMG_FORMATS_CASE_INSENSITIVE = [''.join('[%s%s]' % (c.lower(), c.upper()) for c in ext) for ext in IMG_FORMATS]
     path = Path(path)  # images dir
-    files = sum([list(path.rglob(f"*.{img_ext}")) for img_ext in IMG_FORMATS], [])  # image files only
+    files = sum([list(path.rglob(f"*.{img_ext}")) for img_ext in IMG_FORMATS_CASE_INSENSITIVE], [])  # image files only
     n = len(files)  # number of files
     random.seed(0)  # for reproducibility
     indices = random.choices([0, 1, 2], weights=weights, k=n)  # assign each image to a split
