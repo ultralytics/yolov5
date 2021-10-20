@@ -22,7 +22,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import yaml
-from PIL import Image, ExifTags
+from PIL import Image, ExifTags, ImageOps
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
@@ -896,7 +896,7 @@ def verify_image_label(args):
             with open(im_file, 'rb') as f:
                 f.seek(-2, 2)
                 if f.read() != b'\xff\xd9':  # corrupt JPEG
-                    Image.open(im_file).save(im_file, format='JPEG', subsampling=0, quality=100)  # re-save image
+                    ImageOps.exif_transpose(Image.open(im_file)).save(im_file, format='JPEG', subsampling=0, quality=100)  # re-save image
                     msg = f'{prefix}WARNING: {im_file}: corrupt JPEG restored and saved'
 
         # verify labels
