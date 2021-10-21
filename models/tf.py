@@ -186,7 +186,7 @@ class TFSPP(keras.layers.Layer):
 class TFSPPF(keras.layers.Layer):
     # Spatial pyramid pooling-Fast layer
     def __init__(self, c1, c2, k=5, w=None):
-        super(TFSPPF, self).__init__()
+        super().__init__()
         c_ = c1 // 2  # hidden channels
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
         self.cv2 = TFConv(c_ * 4, c2, 1, 1, w=w.cv2)
