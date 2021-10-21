@@ -152,13 +152,14 @@ def is_colab():
     try:
         import google.colab
         return True
-    except Exception as e:
+    except ImportError:
         return False
 
 
 def is_pip():
     # Is file in a pip package?
     return 'site-packages' in Path(__file__).resolve().parts
+
 
 def is_ascii(s=''):
     # Is string composed of all ASCII (no UTF) characters? (note str().isascii() introduced in python 3.7)
@@ -292,12 +293,14 @@ def check_imshow():
 
 
 def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
-    # Check file(s) for acceptable suffixes
+    # Check file(s) for acceptable suffix
     if file and suffix:
         if isinstance(suffix, str):
             suffix = [suffix]
         for f in file if isinstance(file, (list, tuple)) else [file]:
-            assert Path(f).suffix.lower() in suffix, f"{msg}{f} acceptable suffix is {suffix}"
+            s = Path(f).suffix.lower()  # file suffix
+            if len(s):
+                assert s in suffix, f"{msg}{f} acceptable suffix is {suffix}"
 
 
 def check_yaml(file, suffix=('.yaml', '.yml')):
@@ -741,11 +744,11 @@ def print_mutation(results, hyp, save_dir, bucket):
         data = pd.read_csv(evolve_csv)
         data = data.rename(columns=lambda x: x.strip())  # strip keys
         i = np.argmax(fitness(data.values[:, :7]))  #
-        f.write(f'# YOLOv5 Hyperparameter Evolution Results\n' +
+        f.write('# YOLOv5 Hyperparameter Evolution Results\n' +
                 f'# Best generation: {i}\n' +
                 f'# Last generation: {len(data)}\n' +
-                f'# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:7]) + '\n' +
-                f'# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :7]) + '\n\n')
+                '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:7]) + '\n' +
+                '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :7]) + '\n\n')
         yaml.safe_dump(hyp, f, sort_keys=False)
 
     if bucket:
