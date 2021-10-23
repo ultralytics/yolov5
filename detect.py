@@ -89,7 +89,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             modelc.load_state_dict(torch.load('resnet50.pt', map_location=device)['model']).to(device).eval()
     elif onnx:
         if dnn:
-            # check_requirements(('opencv-python>=4.5.4',))
+            check_requirements(('opencv-python>=4.5.4',))
             net = cv2.dnn.readNetFromONNX(w)
         else:
             check_requirements(('onnx', 'onnxruntime-gpu' if torch.has_cuda else 'onnxruntime'))
