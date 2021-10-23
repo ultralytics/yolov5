@@ -82,12 +82,15 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     if pt:
         if pt_jit:
             # parse the model name for resolution, batch & stride
-            jit_params = w.split("\\")[-1].split('/')[-1].split('_')
-            if len(jit_params) >= 4:
-              print("Inferring model BHW and stride from torchscrip file name.")
-              predef_h, predef_w = [int(x) for x in jit_params[2].split('x')]
-              predef_bs = int(jit_params[3][1:])
-              predef_s = int(jit_params[4][1:])
+            jit_params_fn = w.replace(Path(w).suffix,'.txt')
+            if os.path.isfile(jit_params_fn):
+              import json
+              with open(jit_params_fn, 'rt') as fp: 
+                dct_predef = json.load(fp)
+              predef_h, predef_w = dct_predef['HW']
+              predef_bs = int(dct_predef['BATCH'])
+              predef_s = int(dct_predef['STRIDE'])
+              print("Using saved graph params HW: {}, stride: {}".format((predef_h, predef_w),predef_s))
               stride = predef_s
               ts_predef_params = True
             else:
@@ -288,7 +291,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s_cuda_640x640_B1_S32_torchscript.pt', help='model path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path(s)')
     parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob, 0 for webcam')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
