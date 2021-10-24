@@ -46,13 +46,13 @@ To allow your work to be integrated as seamlessly as possible, we advise you to:
   be attempted by including the /rebase command in a comment body, or by running the following code, replacing 'feature'
   with the name of your local branch:
 
-```bash
-git remote add upstream https://github.com/ultralytics/yolov5.git
-git fetch upstream
-git checkout feature  # <----- replace 'feature' with local branch name
-git merge upstream/master
-git push -u origin -f
-```
+  ```bash
+  git remote add upstream https://github.com/ultralytics/yolov5.git
+  git fetch upstream
+  git checkout -b feature  # <----- replace 'feature' with local branch name
+  git merge upstream/master
+  git push -u origin -f
+  ```
 
 - ✅ Verify all Continuous Integration (CI) **checks are passing**.
 - ✅ Reduce changes to the absolute **minimum** required for your bug fix or feature addition. _"It is not daily increase
