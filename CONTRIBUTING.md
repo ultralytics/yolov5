@@ -49,7 +49,7 @@ To allow your work to be integrated as seamlessly as possible, we advise you to:
   ```bash
   git remote add upstream https://github.com/ultralytics/yolov5.git
   git fetch upstream
-  git checkout -b feature  # <----- replace 'feature' with local branch name
+  git checkout feature  # <----- replace 'feature' with local branch name
   git merge upstream/master
   git push -u origin -f
   ```
