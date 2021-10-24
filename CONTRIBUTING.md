@@ -41,7 +41,7 @@ changes** button. All done, your PR is now submitted to YOLOv5 for review and ap
 
 To allow your work to be integrated as seamlessly as possible, we advise you to:
 
-- ✅ Verify your PR is **up-to-date with origin/master.** If your PR is behind origin/master an
+- ✅ Verify your PR is **up-to-date with upstream/master.** If your PR is behind upstream/master an
   automatic [GitHub actions](https://github.com/ultralytics/yolov5/blob/master/.github/workflows/rebase.yml) rebase may
   be attempted by including the /rebase command in a comment body, or by running the following code, replacing 'feature'
   with the name of your local branch:
