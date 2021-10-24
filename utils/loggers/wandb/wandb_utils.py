@@ -486,7 +486,7 @@ class WandbLogger():
         if self.wandb_run:
             with all_logging_disabled():
                 if self.bbox_media_panel_images:
-                    self.log_dict["Bounding Box Debugger/Images"] = self.bbox_media_panel_images
+                    self.log_dict["BoundingBoxDebugger"] = self.bbox_media_panel_images
                 wandb.log(self.log_dict)
                 self.log_dict = {}
                 self.bbox_media_panel_images = []
