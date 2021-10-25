@@ -152,12 +152,12 @@ class ConfusionMatrix:
             if n and sum(j) == 1:
                 self.matrix[detection_classes[m1[j]], gc] += 1  # correct
             else:
-                self.matrix[self.nc, gc] += 1  # background FP
+                self.matrix[self.nc, gc] += 1  # background FN
 
         if n:
             for i, dc in enumerate(detection_classes):
                 if not any(m1 == i):
-                    self.matrix[dc, self.nc] += 1  # background FN
+                    self.matrix[dc, self.nc] += 1  # background FP
 
     def matrix(self):
         return self.matrix
