@@ -433,7 +433,7 @@ class WandbLogger():
                      "box_caption": "%s %.3f" % (names[cls], conf),
                      "scores": {"class_score": conf},
                      "domain": "pixel"})
-                total_conf = total_conf + conf
+                total_conf += conf
         boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
         id = self.val_table_path_map[Path(path).name]
         self.result_table.add_data(self.current_epoch,
@@ -486,7 +486,7 @@ class WandbLogger():
         if self.wandb_run:
             with all_logging_disabled():
                 if self.bbox_media_panel_images:
-                    self.log_dict["Bounding Box Debugger/Images"] = self.bbox_media_panel_images
+                    self.log_dict["BoundingBoxDebugger"] = self.bbox_media_panel_images
                 wandb.log(self.log_dict)
                 self.log_dict = {}
                 self.bbox_media_panel_images = []

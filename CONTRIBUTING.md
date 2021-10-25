@@ -41,22 +41,22 @@ changes** button. All done, your PR is now submitted to YOLOv5 for review and ap
 
 To allow your work to be integrated as seamlessly as possible, we advise you to:
 
-- ✅ Verify your PR is **up-to-date with origin/master.** If your PR is behind origin/master an
+- ✅ Verify your PR is **up-to-date with upstream/master.** If your PR is behind upstream/master an
   automatic [GitHub actions](https://github.com/ultralytics/yolov5/blob/master/.github/workflows/rebase.yml) rebase may
   be attempted by including the /rebase command in a comment body, or by running the following code, replacing 'feature'
   with the name of your local branch:
 
-```bash
-git remote add upstream https://github.com/ultralytics/yolov5.git
-git fetch upstream
-git checkout feature  # <----- replace 'feature' with local branch name
-git merge upstream/master
-git push -u origin -f
-```
+  ```bash
+  git remote add upstream https://github.com/ultralytics/yolov5.git
+  git fetch upstream
+  git checkout feature  # <----- replace 'feature' with local branch name
+  git merge upstream/master
+  git push -u origin -f
+  ```
 
 - ✅ Verify all Continuous Integration (CI) **checks are passing**.
 - ✅ Reduce changes to the absolute **minimum** required for your bug fix or feature addition. _"It is not daily increase
-  but daily decrease, hack away the unessential. The closer to the source, the less wastage there is."_  -Bruce Lee
+  but daily decrease, hack away the unessential. The closer to the source, the less wastage there is."_  — Bruce Lee
 
 ## Submitting a Bug Report 🐛
 
