@@ -223,7 +223,7 @@ def model_info(model, verbose=False, img_size=640):
     n_p = sum(x.numel() for x in model.parameters())  # number parameters
     n_g = sum(x.numel() for x in model.parameters() if x.requires_grad)  # number gradients
     if verbose:
-        print('{:>5} {:>40} {:>9} {:>12} {:>20} {:>10} {:>10}'.format('layer', 'name', 'gradient', 'parameters', 'shape', 'mu', 'sigma'))
+        print(f"{'layer':>5} {'name':>40} {'gradient':>9} {'parameters':>12} {'shape':>20} {'mu':>10} {'sigma':>10}")
         for i, (name, p) in enumerate(model.named_parameters()):
             name = name.replace('module_list.', '')
             print('%5g %40s %9s %12g %20s %10.3g %10.3g' %
@@ -299,7 +299,10 @@ class EarlyStopping:
         self.possible_stop = delta >= (self.patience - 1)  # possible stop may occur next epoch
         stop = delta >= self.patience  # stop training if patience exceeded
         if stop:
-            LOGGER.info(f'EarlyStopping patience {self.patience} exceeded, stopping training.')
+            LOGGER.info(f'Stopping training early as no improvement observed in last {self.patience} epochs. '
+                        f'Best results observed at epoch {self.best_epoch}, best model saved as best.pt.\n'
+                        f'To update EarlyStopping(patience={self.patience}) pass a new patience value, '
+                        f'i.e. `python train.py --patience 300` or use `--patience 0` to disable EarlyStopping.')
         return stop
 
 
