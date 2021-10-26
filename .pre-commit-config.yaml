@@ -1,6 +1,10 @@
+# define hooks for code formations
+# if a user has installed and linked commit hook, with each commit following will be applied on changed files
+
 default_language_version:
   python: python3.8
 
+# define bot property if installed via https://github.com/marketplace/pre-commit-ci
 ci:
   autofix_prs: true
   autoupdate_commit_msg: '[pre-commit.ci] pre-commit suggestions'
@@ -26,18 +30,21 @@ repos:
         args: [--py36-plus]
         name: Upgrade code
 
+  # TODO
   #- repo: https://github.com/PyCQA/isort
   #  rev: 5.9.3
   #  hooks:
   #    - id: isort
   #      name: imports
 
+  # TODO
   #- repo: https://github.com/pre-commit/mirrors-yapf
   #  rev: v0.31.0
   #  hooks:
   #    - id: yapf
   #      name: formatting
 
+  # TODO
   #- repo: https://github.com/executablebooks/mdformat
   #  rev: 0.7.7
   #  hooks:
@@ -47,6 +54,7 @@ repos:
   #        - mdformat-black
   #        - mdformat_frontmatter
 
+  # TODO
   #- repo: https://github.com/asottile/yesqa
   #  rev: v1.2.3
   #  hooks:

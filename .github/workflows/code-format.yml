@@ -1,9 +1,10 @@
 name: Code formatting
+# running formatting action, can be replaced by this bot: https://github.com/marketplace/pre-commit-ci
 
 # see: https://help.github.com/en/actions/reference/events-that-trigger-workflows
 on:  # Trigger the workflow on push or pull request, but only for the main branch
   push:
-    branches: [main]
+    branches: [master]
   pull_request: {}
 
 jobs:
