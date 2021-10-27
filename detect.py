@@ -81,22 +81,20 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     pt_jit = pt and 'torchscript' in w
     if pt:
         if pt_jit:
-            # parse the model name for resolution, batch & stride
-            jit_params_fn = w.replace(Path(w).suffix,'.txt')
-            if os.path.isfile(jit_params_fn):
-              import json
-              with open(jit_params_fn, 'rt') as fp: 
-                dct_predef = json.load(fp)
+            import json
+            extra_files = {'config.txt' : ''}
+            model = torch.jit.load(w, _extra_files=extra_files)
+            try:
+              dct_predef = json.loads(extra_files['config.txt'])
               predef_h, predef_w = dct_predef['HW']
               predef_bs = int(dct_predef['BATCH'])
               predef_s = int(dct_predef['STRIDE'])
-              print("Using saved graph params HW: {}, stride: {}".format((predef_h, predef_w),predef_s))
-              stride = predef_s
               ts_predef_params = True
-            else:
-              print("Torchscript file name does not have encoded BHW/stride. Assuming defaults.")
+              stride = predef_s
+              print("Using saved graph params HW: {}, stride: {}".format((predef_h, predef_w),predef_s))
+            except:
               ts_predef_params = False
-            model = torch.jit.load(w)
+              print("Failed to load default jit graph params from {}".format(w))
         else:
             model = attempt_load(weights, map_location=device)
             stride = int(model.stride.max()) # model stride

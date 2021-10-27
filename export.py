@@ -54,16 +54,17 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
         print(f'\n{prefix} starting export with torch {torch.__version__}...')
 
         f = file.with_suffix('.torchscript.pt')
-        f_cfg = file.with_suffix('.torchscript.txt')
         h, w = im.shape[-2:]
         batch_size = im.shape[0]
         stride = int(max(model.stride))
         dev_type = next(model.parameters()).device.type
-        with open(f_cfg, "wt") as fp:
-          json.dump({"HW" : [h, w], "BATCH": batch_size, "STRIDE":stride, "DEVICE":dev_type}, fp, indent=4)
+        dct_params = {"HW" : [h, w], "BATCH": batch_size, "STRIDE":stride, "DEVICE":dev_type}
+        str_config = json.dumps(dct_params)
+        extra_files = {'config.txt' : str_config} #torch._C.ExtraFilesMap()
 
         ts = torch.jit.trace(model, im, strict=False)
-        (optimize_for_mobile(ts) if optimize else ts).save(f)
+        (optimize_for_mobile(ts) if optimize else ts).save(
+          f, _extra_files=extra_files)
 
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
