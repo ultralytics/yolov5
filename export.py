@@ -49,22 +49,21 @@ from utils.torch_utils import select_device
 
 def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):
     # YOLOv5 TorchScript model export
-    import json # required to save graph props
+    import json  # required to save graph props
     try:
         print(f'\n{prefix} starting export with torch {torch.__version__}...')
-
         f = file.with_suffix('.torchscript.pt')
+        
         h, w = im.shape[-2:]
         batch_size = im.shape[0]
         stride = int(max(model.stride))
         dev_type = next(model.parameters()).device.type
-        dct_params = {"HW" : [h, w], "BATCH": batch_size, "STRIDE":stride, "DEVICE":dev_type}
+        dct_params = {"HW": [h, w], "BATCH": batch_size, "STRIDE": stride, "DEVICE": dev_type}
         str_config = json.dumps(dct_params)
-        extra_files = {'config.txt' : str_config} #torch._C.ExtraFilesMap()
+        extra_files = {'config.txt': str_config}  # torch._C.ExtraFilesMap()
 
         ts = torch.jit.trace(model, im, strict=False)
-        (optimize_for_mobile(ts) if optimize else ts).save(
-          f, _extra_files=extra_files)
+        (optimize_for_mobile(ts) if optimize else ts).save(f, _extra_files=extra_files)
 
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
