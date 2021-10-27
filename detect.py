@@ -107,7 +107,18 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         elif saved_model:
             model = tf.keras.models.load_model(w)
         elif tflite:
-            interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
+            if "edgetpu" in w:
+                import tflite_runtime.interpreter as tflite # import tflite_runtime: https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
+                import platform
+                EDGETPU_SHARED_LIB = {
+                    'Linux': 'libedgetpu.so.1',
+                    'Darwin': 'libedgetpu.1.dylib',
+                    'Windows': 'edgetpu.dll'
+                    }[platform.system()] # Install libedgetpu: https://coral.ai/software/#edgetpu-runtime
+                interpreter = tflite.Interpreter(model_path=w, 
+                        experimental_delegates=[tflite.load_delegate(EDGETPU_SHARED_LIB)])  # load TFLite model with edgetpu delegation.
+            else:    
+                interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
             interpreter.allocate_tensors()  # allocate
             input_details = interpreter.get_input_details()  # inputs
             output_details = interpreter.get_output_details()  # outputs
