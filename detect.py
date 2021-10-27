@@ -82,22 +82,21 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     if pt:
         if pt_jit:
             import json
-            extra_files = {'config.txt' : ''}
+            extra_files = {'config.txt': ''}
             model = torch.jit.load(w, _extra_files=extra_files)
             try:
-              dct_predef = json.loads(extra_files['config.txt'])
-              predef_h, predef_w = dct_predef['HW']
-              predef_bs = int(dct_predef['BATCH'])
-              predef_s = int(dct_predef['STRIDE'])
-              ts_predef_params = True
-              stride = predef_s
-              print("Using saved graph params HW: {}, stride: {}".format((predef_h, predef_w),predef_s))
+                d = json.loads(extra_files['config.txt'])  # extra_files dict
+                ts_h, ts_w = d['HW']
+                ts_bs = int(d['BATCH'])
+                stride = int(d['STRIDE'])
+                ts_params = True  # torchscript predefined params
+                print("Using saved graph params HW: {}, stride: {}".format((ts_h, ts_w), stride))
             except:
-              ts_predef_params = False
-              print("Failed to load default jit graph params from {}".format(w))
+                ts_params = False
+                print("Failed to load default jit graph params from {}".format(w))
         else:
             model = attempt_load(weights, map_location=device)
-            stride = int(model.stride.max()) # model stride
+            stride = int(model.stride.max())  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
             if half:
                 model.half()  # to FP16
@@ -133,9 +132,9 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             output_details = interpreter.get_output_details()  # outputs
             int8 = input_details[0]['dtype'] == np.uint8  # is TFLite quantized uint8 model
     imgsz = check_img_size(imgsz, s=stride)  # check image size
-    if pt_jit and ts_predef_params and imgsz != [predef_h, predef_w]:
-      print("Changing resolution from {} to {} based to graph defaults".format(imgsz, [predef_h, predef_w]))
-      imgsz = predef_h, predef_w
+    if pt_jit and ts_params and imgsz != [ts_h, ts_w]:
+        print("Changing resolution from {} to {} based to graph defaults".format(imgsz, [ts_h, ts_w]))
+        imgsz = ts_h, ts_w
 
     # Dataloader
     if webcam:
