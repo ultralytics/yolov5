@@ -330,7 +330,7 @@ def parse_opt():
 
 def main(opt):
     check_requirements(requirements=ROOT / 'requirements.txt', exclude=('tensorboard', 'thop'))
-    
+
     if opt.task in ('train', 'val', 'test'):  # run normally
         run(**vars(opt))
 
