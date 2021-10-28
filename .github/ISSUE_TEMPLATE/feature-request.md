@@ -13,7 +13,7 @@ assignees: ''
 
 ## Motivation
 
-<!-- Please outline the motivation for the proposal. Is your feature request related to a problem? 
+<!-- Please outline the motivation for the proposal. Is your feature request related to a problem?
 e.g., I'm always frustrated when [...]. If this is related to another GitHub issue, please link here too -->
 
 ## Pitch

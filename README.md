@@ -46,7 +46,7 @@ YOLOv5 🚀 is a family of object detection architectures and models pretrained 
  open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
 </p>
 
-<!-- 
+<!--
 <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
 <img width="800" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-api.png"></a>
 -->
@@ -109,7 +109,7 @@ the [latest YOLOv5 release](https://github.com/ultralytics/yolov5/releases) and 
 
 ```bash
 $ python detect.py --source 0  # webcam
-                            file.jpg  # image 
+                            file.jpg  # image
                             file.mp4  # video
                             path/  # directory
                             path/*.jpg  # glob
@@ -136,7 +136,7 @@ $ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 
 
 <img width="800" src="https://user-images.githubusercontent.com/26833433/90222759-949d8800-ddc1-11ea-9fa1-1c97eed2b963.png">
 
-</details>  
+</details>
 
 <details open>
 <summary>Tutorials</summary>
@@ -178,7 +178,7 @@ Get started in seconds with our verified environments. Click each icon below for
     <a href="https://github.com/ultralytics/yolov5/wiki/GCP-Quickstart">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-gcp-small.png" width="15%"/>
     </a>
-</div>  
+</div>
 
 ## <div align="center">Integrations</div>
 
@@ -239,7 +239,7 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 |[YOLOv5s6][assets]     |1280 |44.5   |63.0   |385    |8.2    |3.6    |16.8   |12.6
 |[YOLOv5m6][assets]     |1280 |51.0   |69.0   |887    |11.1   |6.8    |35.7   |50.0
 |[YOLOv5l6][assets]     |1280 |53.6   |71.6   |1784   |15.8   |10.5   |76.8   |111.4
-|[YOLOv5x6][assets]<br>+ [TTA][TTA]|1280<br>1536 |54.7<br>**55.4** |**72.4**<br>72.3 |3136<br>- |26.2<br>- |19.4<br>- |140.7<br>- |209.8<br>- 
+|[YOLOv5x6][assets]<br>+ [TTA][TTA]|1280<br>1536 |54.7<br>**55.4** |**72.4**<br>72.3 |3136<br>- |26.2<br>- |19.4<br>- |140.7<br>- |209.8<br>-
 
 <details>
   <summary>Table Notes (click to expand)</summary>
