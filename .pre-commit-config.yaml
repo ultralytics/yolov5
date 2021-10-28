@@ -1,10 +1,10 @@
-# define hooks for code formations
-# if a user has installed and linked commit hook, with each commit following will be applied on changed files
+# Define hooks for code formations
+# Will be applied on any updated commit files if a user has installed and linked commit hook
 
 default_language_version:
   python: python3.8
 
-# define bot property if installed via https://github.com/marketplace/pre-commit-ci
+# Define bot property if installed via https://github.com/marketplace/pre-commit-ci
 ci:
   autofix_prs: true
   autoupdate_commit_msg: '[pre-commit.ci] pre-commit suggestions'
