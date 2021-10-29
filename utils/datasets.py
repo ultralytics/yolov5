@@ -22,7 +22,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import yaml
-from PIL import Image, ExifTags
+from PIL import Image, ImageOps, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
@@ -69,7 +69,7 @@ def exif_size(img):
 def exif_transpose(image):
     """
     Transpose a PIL image accordingly if it has an EXIF Orientation tag.
-    From https://github.com/python-pillow/Pillow/blob/master/src/PIL/ImageOps.py
+    Inplace version of https://github.com/python-pillow/Pillow/blob/master/src/PIL/ImageOps.py exif_transpose()
 
     :param image: The image to transpose.
     :return: An image.
@@ -140,7 +140,7 @@ class InfiniteDataLoader(torch.utils.data.dataloader.DataLoader):
             yield next(self.iterator)
 
 
-class _RepeatSampler(object):
+class _RepeatSampler:
     """ Sampler that repeats forever
 
     Args:
@@ -287,7 +287,7 @@ class LoadStreams:
         self.stride = stride
 
         if os.path.isfile(sources):
-            with open(sources, 'r') as f:
+            with open(sources) as f:
                 sources = [x.strip() for x in f.read().strip().splitlines() if len(x.strip())]
         else:
             sources = [sources]
@@ -396,17 +396,17 @@ class LoadImagesAndLabels(Dataset):
                 p = Path(p)  # os-agnostic
                 if p.is_dir():  # dir
                     f += glob.glob(str(p / '**' / '*.*'), recursive=True)
-                    # f = list(p.rglob('**/*.*'))  # pathlib
+                    # f = list(p.rglob('*.*'))  # pathlib
                 elif p.is_file():  # file
-                    with open(p, 'r') as t:
+                    with open(p) as t:
                         t = t.read().strip().splitlines()
                         parent = str(p.parent) + os.sep
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
                         # f += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
                 else:
                     raise Exception(f'{prefix}{p} does not exist')
-            self.img_files = sorted([x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS])
-            # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in img_formats])  # pathlib
+            self.img_files = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
+            # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in IMG_FORMATS])  # pathlib
             assert self.img_files, f'{prefix}No images found'
         except Exception as e:
             raise Exception(f'{prefix}Error loading data from {path}: {e}\nSee {HELP_URL}')
@@ -681,7 +681,7 @@ def load_mosaic(self, index):
     # YOLOv5 4-mosaic loader. Loads 1 image + 3 random images into a 4-image mosaic
     labels4, segments4 = [], []
     s = self.img_size
-    yc, xc = [int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border]  # mosaic center x, y
+    yc, xc = (int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border)  # mosaic center x, y
     indices = [index] + random.choices(self.indices, k=3)  # 3 additional image indices
     random.shuffle(indices)
     for i, index in enumerate(indices):
@@ -767,7 +767,7 @@ def load_mosaic9(self, index):
             c = s - w, s + h0 - hp - h, s, s + h0 - hp
 
         padx, pady = c[:2]
-        x1, y1, x2, y2 = [max(x, 0) for x in c]  # allocate coords
+        x1, y1, x2, y2 = (max(x, 0) for x in c)  # allocate coords
 
         # Labels
         labels, segments = self.labels[index].copy(), self.segments[index].copy()
@@ -782,7 +782,7 @@ def load_mosaic9(self, index):
         hp, wp = h, w  # height, width previous
 
     # Offset
-    yc, xc = [int(random.uniform(0, s)) for _ in self.mosaic_border]  # mosaic center x, y
+    yc, xc = (int(random.uniform(0, s)) for _ in self.mosaic_border)  # mosaic center x, y
     img9 = img9[yc:yc + 2 * s, xc:xc + 2 * s]
 
     # Concat/clip labels
@@ -838,7 +838,7 @@ def extract_boxes(path='../datasets/coco128'):  # from utils.datasets import *; 
             # labels
             lb_file = Path(img2label_paths([str(im_file)])[0])
             if Path(lb_file).exists():
-                with open(lb_file, 'r') as f:
+                with open(lb_file) as f:
                     lb = np.array([x.split() for x in f.read().strip().splitlines()], dtype=np.float32)  # labels
 
                 for j, x in enumerate(lb):
@@ -866,7 +866,7 @@ def autosplit(path='../datasets/coco128/images', weights=(0.9, 0.1, 0.0), annota
         annotated_only:  Only use images with an annotated txt file
     """
     path = Path(path)  # images dir
-    files = sum([list(path.rglob(f"*.{img_ext}")) for img_ext in IMG_FORMATS], [])  # image files only
+    files = sorted(x for x in path.rglob('*.*') if x.suffix[1:].lower() in IMG_FORMATS)  # image files only
     n = len(files)  # number of files
     random.seed(0)  # for reproducibility
     indices = random.choices([0, 1, 2], weights=weights, k=n)  # assign each image to a split
@@ -896,13 +896,13 @@ def verify_image_label(args):
             with open(im_file, 'rb') as f:
                 f.seek(-2, 2)
                 if f.read() != b'\xff\xd9':  # corrupt JPEG
-                    Image.open(im_file).save(im_file, format='JPEG', subsampling=0, quality=100)  # re-save image
+                    ImageOps.exif_transpose(Image.open(im_file)).save(im_file, 'JPEG', subsampling=0, quality=100)
                     msg = f'{prefix}WARNING: {im_file}: corrupt JPEG restored and saved'
 
         # verify labels
         if os.path.isfile(lb_file):
             nf = 1  # label found
-            with open(lb_file, 'r') as f:
+            with open(lb_file) as f:
                 l = [x.split() for x in f.read().strip().splitlines() if len(x)]
                 if any([len(x) > 8 for x in l]):  # is segment
                     classes = np.array([x[0] for x in l], dtype=np.float32)
@@ -944,7 +944,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
 
     def round_labels(labels):
         # Update labels to integer class and 6 decimal place floats
-        return [[int(c), *[round(x, 4) for x in points]] for c, *points in labels]
+        return [[int(c), *(round(x, 4) for x in points)] for c, *points in labels]
 
     def unzip(path):
         # Unzip data.zip TODO: CONSTRAINT: path/to/abc.zip MUST unzip to 'path/to/abc/'
@@ -1019,7 +1019,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
             with open(file, 'w') as f:
                 json.dump(stats, f)  # save stats *.json
             t2 = time.time()
-            with open(file, 'r') as f:
+            with open(file) as f:
                 x = json.load(f)  # load hyps dict
             print(f'stats.json times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
 

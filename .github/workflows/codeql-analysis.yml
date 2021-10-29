@@ -1,4 +1,4 @@
-# This action runs GitHub's industry-leading static analysis engine, CodeQL, against a repository's source code to find security vulnerabilities. 
+# This action runs GitHub's industry-leading static analysis engine, CodeQL, against a repository's source code to find security vulnerabilities.
 # https://github.com/github/codeql-action
 
 name: "CodeQL"

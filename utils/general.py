@@ -136,7 +136,7 @@ def is_writeable(dir, test=False):
                 pass
             file.unlink()  # remove file
             return True
-        except IOError:
+        except OSError:
             return False
     else:  # method 2
         return os.access(dir, os.R_OK)  # possible issues on Windows
@@ -355,7 +355,7 @@ def check_dataset(data, autodownload=True):
     assert 'nc' in data, "Dataset 'nc' key missing."
     if 'names' not in data:
         data['names'] = [f'class{i}' for i in range(data['nc'])]  # assign class names if missing
-    train, val, test, s = [data.get(x) for x in ('train', 'val', 'test', 'download')]
+    train, val, test, s = (data.get(x) for x in ('train', 'val', 'test', 'download'))
     if val:
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):

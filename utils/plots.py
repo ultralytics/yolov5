@@ -250,7 +250,7 @@ def plot_targets_txt():  # from utils.plots import *; plot_targets_txt()
     fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
     ax = ax.ravel()
     for i in range(4):
-        ax[i].hist(x[i], bins=100, label='%.3g +/- %.3g' % (x[i].mean(), x[i].std()))
+        ax[i].hist(x[i], bins=100, label=f'{x[i].mean():.3g} +/- {x[i].std():.3g}')
         ax[i].legend()
         ax[i].set_title(s[i])
     plt.savefig('targets.jpg', dpi=200)
@@ -363,7 +363,7 @@ def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
                 else:
                     a.remove()
         except Exception as e:
-            print('Warning: Plotting error for %s; %s' % (f, e))
+            print(f'Warning: Plotting error for {f}; {e}')
     ax[1].legend()
     plt.savefig(Path(save_dir) / 'idetection_profile.png', dpi=200)
 
@@ -384,10 +384,10 @@ def plot_evolve(evolve_csv='path/to/evolve.csv'):  # from utils.plots import *; 
         plt.subplot(6, 5, i + 1)
         plt.scatter(v, f, c=hist2d(v, f, 20), cmap='viridis', alpha=.8, edgecolors='none')
         plt.plot(mu, f.max(), 'k+', markersize=15)
-        plt.title('%s = %.3g' % (k, mu), fontdict={'size': 9})  # limit to 40 characters
+        plt.title(f'{k} = {mu:.3g}', fontdict={'size': 9})  # limit to 40 characters
         if i % 5 != 0:
             plt.yticks([])
-        print('%15s: %.3g' % (k, mu))
+        print(f'{k:>15}: {mu:.3g}')
     f = evolve_csv.with_suffix('.png')  # filename
     plt.savefig(f, dpi=200)
     plt.close()
