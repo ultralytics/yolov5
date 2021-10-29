@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Slack
+    url: https://join.slack.com/t/ultralytics/shared_invite/zt-w29ei8bp-jczz7QYUmDtgo6r6KcMIAg
+    about: Ask on Ultralytics Slack Forum
+  - name: Stack Overflow
+    url: https://stackoverflow.com/search?q=YOLOv5
+    about: Ask on Stack Overflow with 'YOLOv5' tag
