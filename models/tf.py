@@ -31,10 +31,8 @@ from tensorflow import keras
 from models.common import Bottleneck, BottleneckCSP, Concat, Conv, C3, DWConv, Focus, SPP, SPPF, autopad
 from models.experimental import CrossConv, MixConv2d, attempt_load
 from models.yolo import Detect
-from utils.general import make_divisible, print_args, set_logging
+from utils.general import make_divisible, print_args, LOGGER
 from utils.activations import SiLU
-
-LOGGER = set_logging(__name__)
 
 
 class TFBN(keras.layers.Layer):

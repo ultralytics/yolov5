@@ -49,7 +49,7 @@ def set_logging(name=None, verbose=True):
     return logging.getLogger(name)
 
 
-LOGGER = set_logging(__name__)  # define globally for us in general
+LOGGER = set_logging(__name__)  # define globally (used in train.py, val.py, detect.py, etc.)
 
 
 class Profile(contextlib.ContextDecorator):

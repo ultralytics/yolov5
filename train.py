@@ -40,7 +40,7 @@ from utils.autobatch import check_train_batch_size
 from utils.datasets import create_dataloader
 from utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds, \
     strip_optimizer, get_latest_run, check_dataset, check_git_status, check_img_size, check_requirements, \
-    check_file, check_yaml, check_suffix, print_args, print_mutation, set_logging, one_cycle, colorstr, methods
+    check_file, check_yaml, check_suffix, print_args, print_mutation, one_cycle, colorstr, methods, LOGGER
 from utils.downloads import attempt_download
 from utils.loss import ComputeLoss
 from utils.plots import plot_labels, plot_evolve
@@ -51,7 +51,6 @@ from utils.metrics import fitness
 from utils.loggers import Loggers
 from utils.callbacks import Callbacks
 
-LOGGER = set_logging(__name__)
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))

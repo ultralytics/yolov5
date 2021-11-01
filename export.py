@@ -42,11 +42,9 @@ from models.experimental import attempt_load
 from models.yolo import Detect
 from utils.activations import SiLU
 from utils.datasets import LoadImages
-from utils.general import colorstr, check_dataset, check_img_size, check_requirements, file_size, print_args, \
-    set_logging, url2file
+from utils.general import check_dataset, check_img_size, check_requirements, colorstr, file_size, print_args, \
+    url2file, LOGGER
 from utils.torch_utils import select_device
-
-LOGGER = set_logging(__name__)
 
 
 def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):
