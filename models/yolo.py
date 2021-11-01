@@ -308,7 +308,6 @@ if __name__ == '__main__':
     parser.add_argument('--profile', action='store_true', help='profile model speed')
     opt = parser.parse_args()
     opt.cfg = check_yaml(opt.cfg)  # check YAML
-    set_logging()
     print_args(FILE.stem, opt)
     device = select_device(opt.device)
 
