@@ -220,14 +220,17 @@ def check_git_status():
 
 def check_python(minimum='3.6.2'):
     # Check current python version vs. required python version
-    check_version(platform.python_version(), minimum, name='Python ')
+    check_version(platform.python_version(), minimum, name='Python ', hard=True)
 
 
-def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=False):
+def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=False, hard=False):
     # Check version vs. required version
     current, minimum = (pkg.parse_version(x) for x in (current, minimum))
-    result = (current == minimum) if pinned else (current >= minimum)
-    assert result, f'{name}{minimum} required by YOLOv5, but {name}{current} is currently installed'
+    result = (current == minimum) if pinned else (current >= minimum)  # bool
+    if hard:  # assert min requirements met
+        assert result, f'{name}{minimum} required by YOLOv5, but {name}{current} is currently installed'
+    else:
+        return result
 
 
 @try_except
