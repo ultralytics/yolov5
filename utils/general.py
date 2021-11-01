@@ -206,11 +206,13 @@ def check_online():
 def check_git_status():
     # Recommend 'git pull' if code is out of date
     msg = ', for updates see https://github.com/ultralytics/yolov5'
+    cwd = Path.cwd()
     print(colorstr('github: '), end='')
-    assert Path('.git').exists(), 'skipping check (not a git repository)' + msg
+    assert Path(ROOT / '.git').exists(), 'skipping check (not a git repository)' + msg
     assert not is_docker(), 'skipping check (Docker image)' + msg
     assert check_online(), 'skipping check (offline)' + msg
 
+    os.chdir(ROOT)  # Changing the current working directory to YOLOv5 repository root
     cmd = 'git fetch && git config --get remote.origin.url'
     url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
     branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
@@ -220,6 +222,7 @@ def check_git_status():
     else:
         s = f'up to date with {url} ✅'
     print(emojis(s))  # emoji-safe
+    os.chdir(cwd)  # Reverting back to the original working directory
 
 
 def check_python(minimum='3.6.2'):
