@@ -40,7 +40,7 @@ LOGGER = logging.getLogger(__name__)
 class TFBN(keras.layers.Layer):
     # TensorFlow BatchNormalization wrapper
     def __init__(self, w=None):
-        super(TFBN, self).__init__()
+        super().__init__()
         self.bn = keras.layers.BatchNormalization(
             beta_initializer=keras.initializers.Constant(w.bias.numpy()),
             gamma_initializer=keras.initializers.Constant(w.weight.numpy()),
@@ -54,7 +54,7 @@ class TFBN(keras.layers.Layer):
 
 class TFPad(keras.layers.Layer):
     def __init__(self, pad):
-        super(TFPad, self).__init__()
+        super().__init__()
         self.pad = tf.constant([[0, 0], [pad, pad], [pad, pad], [0, 0]])
 
     def call(self, inputs):
@@ -65,7 +65,7 @@ class TFConv(keras.layers.Layer):
     # Standard convolution
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):
         # ch_in, ch_out, weights, kernel, stride, padding, groups
-        super(TFConv, self).__init__()
+        super().__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
         assert isinstance(k, int), "Convolution with multiple kernels are not allowed."
         # TensorFlow convolution padding is inconsistent with PyTorch (e.g. k=3 s=2 'SAME' padding)
@@ -96,7 +96,7 @@ class TFFocus(keras.layers.Layer):
     # Focus wh information into c-space
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):
         # ch_in, ch_out, kernel, stride, padding, groups
-        super(TFFocus, self).__init__()
+        super().__init__()
         self.conv = TFConv(c1 * 4, c2, k, s, p, g, act, w.conv)
 
     def call(self, inputs):  # x(b,w,h,c) -> y(b,w/2,h/2,4c)
@@ -110,7 +110,7 @@ class TFFocus(keras.layers.Layer):
 class TFBottleneck(keras.layers.Layer):
     # Standard bottleneck
     def __init__(self, c1, c2, shortcut=True, g=1, e=0.5, w=None):  # ch_in, ch_out, shortcut, groups, expansion
-        super(TFBottleneck, self).__init__()
+        super().__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
         self.cv2 = TFConv(c_, c2, 3, 1, g=g, w=w.cv2)
@@ -123,7 +123,7 @@ class TFBottleneck(keras.layers.Layer):
 class TFConv2d(keras.layers.Layer):
     # Substitution for PyTorch nn.Conv2D
     def __init__(self, c1, c2, k, s=1, g=1, bias=True, w=None):
-        super(TFConv2d, self).__init__()
+        super().__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
         self.conv = keras.layers.Conv2D(
             c2, k, s, 'VALID', use_bias=bias,
@@ -138,7 +138,7 @@ class TFBottleneckCSP(keras.layers.Layer):
     # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, w=None):
         # ch_in, ch_out, number, shortcut, groups, expansion
-        super(TFBottleneckCSP, self).__init__()
+        super().__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
         self.cv2 = TFConv2d(c1, c_, 1, 1, bias=False, w=w.cv2)
@@ -158,7 +158,7 @@ class TFC3(keras.layers.Layer):
     # CSP Bottleneck with 3 convolutions
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, w=None):
         # ch_in, ch_out, number, shortcut, groups, expansion
-        super(TFC3, self).__init__()
+        super().__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
         self.cv2 = TFConv(c1, c_, 1, 1, w=w.cv2)
@@ -172,7 +172,7 @@ class TFC3(keras.layers.Layer):
 class TFSPP(keras.layers.Layer):
     # Spatial pyramid pooling layer used in YOLOv3-SPP
     def __init__(self, c1, c2, k=(5, 9, 13), w=None):
-        super(TFSPP, self).__init__()
+        super().__init__()
         c_ = c1 // 2  # hidden channels
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
         self.cv2 = TFConv(c_ * (len(k) + 1), c2, 1, 1, w=w.cv2)
@@ -186,7 +186,7 @@ class TFSPP(keras.layers.Layer):
 class TFSPPF(keras.layers.Layer):
     # Spatial pyramid pooling-Fast layer
     def __init__(self, c1, c2, k=5, w=None):
-        super(TFSPPF, self).__init__()
+        super().__init__()
         c_ = c1 // 2  # hidden channels
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
         self.cv2 = TFConv(c_ * 4, c2, 1, 1, w=w.cv2)
@@ -201,7 +201,7 @@ class TFSPPF(keras.layers.Layer):
 
 class TFDetect(keras.layers.Layer):
     def __init__(self, nc=80, anchors=(), ch=(), imgsz=(640, 640), w=None):  # detection layer
-        super(TFDetect, self).__init__()
+        super().__init__()
         self.stride = tf.convert_to_tensor(w.stride.numpy(), dtype=tf.float32)
         self.nc = nc  # number of classes
         self.no = nc + 5  # number of outputs per anchor
@@ -249,7 +249,7 @@ class TFDetect(keras.layers.Layer):
 
 class TFUpsample(keras.layers.Layer):
     def __init__(self, size, scale_factor, mode, w=None):  # warning: all arguments needed including 'w'
-        super(TFUpsample, self).__init__()
+        super().__init__()
         assert scale_factor == 2, "scale_factor must be 2"
         self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * 2, x.shape[2] * 2), method=mode)
         # self.upsample = keras.layers.UpSampling2D(size=scale_factor, interpolation=mode)
@@ -263,7 +263,7 @@ class TFUpsample(keras.layers.Layer):
 
 class TFConcat(keras.layers.Layer):
     def __init__(self, dimension=1, w=None):
-        super(TFConcat, self).__init__()
+        super().__init__()
         assert dimension == 1, "convert only NCHW to NHWC concat"
         self.d = 3
 
@@ -272,7 +272,7 @@ class TFConcat(keras.layers.Layer):
 
 
 def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
-    LOGGER.info('\n%3s%18s%3s%10s  %-40s%-30s' % ('', 'from', 'n', 'params', 'module', 'arguments'))
+    LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
     anchors, nc, gd, gw = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple']
     na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
@@ -299,7 +299,7 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
         elif m is nn.BatchNorm2d:
             args = [ch[f]]
         elif m is Concat:
-            c2 = sum([ch[-1 if x == -1 else x + 1] for x in f])
+            c2 = sum(ch[-1 if x == -1 else x + 1] for x in f)
         elif m is Detect:
             args.append([ch[x + 1] for x in f])
             if isinstance(args[1], int):  # number of anchors
@@ -312,11 +312,11 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
         m_ = keras.Sequential([tf_m(*args, w=model.model[i][j]) for j in range(n)]) if n > 1 \
             else tf_m(*args, w=model.model[i])  # module
 
-        torch_m_ = nn.Sequential(*[m(*args) for _ in range(n)]) if n > 1 else m(*args)  # module
+        torch_m_ = nn.Sequential(*(m(*args) for _ in range(n))) if n > 1 else m(*args)  # module
         t = str(m)[8:-2].replace('__main__.', '')  # module type
-        np = sum([x.numel() for x in torch_m_.parameters()])  # number params
+        np = sum(x.numel() for x in torch_m_.parameters())  # number params
         m_.i, m_.f, m_.type, m_.np = i, f, t, np  # attach index, 'from' index, type, number params
-        LOGGER.info('%3s%18s%3s%10.0f  %-40s%-30s' % (i, f, n, np, t, args))  # print
+        LOGGER.info(f'{i:>3}{str(f):>18}{str(n):>3}{np:>10}  {t:<40}{str(args):<30}')  # print
         save.extend(x % i for x in ([f] if isinstance(f, int) else f) if x != -1)  # append to savelist
         layers.append(m_)
         ch.append(c2)
@@ -325,7 +325,7 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
 
 class TFModel:
     def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None, model=None, imgsz=(640, 640)):  # model, channels, classes
-        super(TFModel, self).__init__()
+        super().__init__()
         if isinstance(cfg, dict):
             self.yaml = cfg  # model dict
         else:  # is *.yaml
@@ -336,7 +336,7 @@ class TFModel:
 
         # Define model
         if nc and nc != self.yaml['nc']:
-            print('Overriding %s nc=%g with nc=%g' % (cfg, self.yaml['nc'], nc))
+            print(f"Overriding {cfg} nc={self.yaml['nc']} with nc={nc}")
             self.yaml['nc'] = nc  # override yaml value
         self.model, self.savelist = parse_model(deepcopy(self.yaml), ch=[ch], model=model, imgsz=imgsz)
 
