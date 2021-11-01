@@ -133,7 +133,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     if pt and device.type != 'cpu':
         model(torch.zeros(1, 3, *imgsz).to(device).type_as(next(model.parameters())))  # run once
     dt, seen = [0.0, 0.0, 0.0], 0
-    for path, img, im0s, vid_cap in dataset:
+    for path, img, im0s, vid_cap, s in dataset:
         t1 = time_sync()
         if onnx:
             img = img.astype('float32')
@@ -192,9 +192,10 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         for i, det in enumerate(pred):  # per image
             seen += 1
             if webcam:  # batch_size >= 1
-                p, s, im0, frame = path[i], f'{i}: ', im0s[i].copy(), dataset.count
+                p, im0, frame = path[i], im0s[i].copy(), dataset.count
+                s += f'{i}: '
             else:
-                p, s, im0, frame = path, '', im0s.copy(), getattr(dataset, 'frame', 0)
+                p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # img.jpg

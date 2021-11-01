@@ -210,14 +210,14 @@ class LoadImages:
                     ret_val, img0 = self.cap.read()
 
             self.frame += 1
-            print(f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: ', end='')
+            s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: '
 
         else:
             # Read image
             self.count += 1
             img0 = cv2.imread(path)  # BGR
-            assert img0 is not None, 'Image Not Found ' + path
-            print(f'image {self.count}/{self.nf} {path}: ', end='')
+            assert img0 is not None, f'Image Not Found {path}'
+            s = f'image {self.count}/{self.nf} {path}: '
 
         # Padded resize
         img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
@@ -226,7 +226,7 @@ class LoadImages:
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
 
-        return path, img, img0, self.cap
+        return path, img, img0, self.cap, s
 
     def new_video(self, path):
         self.frame = 0
@@ -666,7 +666,7 @@ def load_image(self, i):
         else:  # read image
             path = self.img_files[i]
             im = cv2.imread(path)  # BGR
-            assert im is not None, 'Image Not Found ' + path
+            assert im is not None, f'Image Not Found {path}'
         h0, w0 = im.shape[:2]  # orig hw
         r = self.img_size / max(h0, w0)  # ratio
         if r != 1:  # if sizes are not equal
