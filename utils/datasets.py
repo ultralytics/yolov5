@@ -27,7 +27,7 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 
 from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
-from utils.general import check_dataset, check_requirements, check_yaml, clean_str, segments2boxes, \
+from utils.general import check_dataset, check_requirements, check_yaml, clean_str, segments2boxes, set_logging, \
     xywh2xyxy, xywhn2xyxy, xyxy2xywhn, xyn2xy
 from utils.torch_utils import torch_distributed_zero_first
 
@@ -36,6 +36,7 @@ HELP_URL = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 IMG_FORMATS = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
 VID_FORMATS = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
 NUM_THREADS = min(8, os.cpu_count())  # number of multiprocessing threads
+LOGGER = set_logging(__name__)
 
 # Get orientation exif tag
 for orientation in ExifTags.TAGS.keys():
@@ -264,7 +265,7 @@ class LoadWebcam:  # for inference
         # Print
         assert ret_val, f'Camera Error {self.pipe}'
         img_path = 'webcam.jpg'
-        print(f'webcam {self.count}: ', end='')
+        s = f'webcam {self.count}: '
 
         # Padded resize
         img = letterbox(img0, self.img_size, stride=self.stride)[0]
@@ -273,7 +274,7 @@ class LoadWebcam:  # for inference
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
 
-        return img_path, img, img0, None
+        return img_path, img, img0, None, s
 
     def __len__(self):
         return 0
@@ -298,14 +299,14 @@ class LoadStreams:
         self.auto = auto
         for i, s in enumerate(sources):  # index, source
             # Start thread to read frames from video stream
-            print(f'{i + 1}/{n}: {s}... ', end='')
+            st = f'{i + 1}/{n}: {s}... '
             if 'youtube.com/' in s or 'youtu.be/' in s:  # if source is YouTube video
                 check_requirements(('pafy', 'youtube_dl'))
                 import pafy
                 s = pafy.new(s).getbest(preftype="mp4").url  # YouTube URL
             s = eval(s) if s.isnumeric() else s  # i.e. s = '0' local webcam
             cap = cv2.VideoCapture(s)
-            assert cap.isOpened(), f'Failed to open {s}'
+            assert cap.isOpened(), f'{st}Failed to open {s}'
             w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             self.fps[i] = max(cap.get(cv2.CAP_PROP_FPS) % 100, 0) or 30.0  # 30 FPS fallback
@@ -313,15 +314,15 @@ class LoadStreams:
 
             _, self.imgs[i] = cap.read()  # guarantee first frame
             self.threads[i] = Thread(target=self.update, args=([i, cap, s]), daemon=True)
-            print(f" success ({self.frames[i]} frames {w}x{h} at {self.fps[i]:.2f} FPS)")
+            LOGGER.info(f"{st} Success ({self.frames[i]} frames {w}x{h} at {self.fps[i]:.2f} FPS)")
             self.threads[i].start()
-        print('')  # newline
+        LOGGER.info('')  # newline
 
         # check for common shapes
         s = np.stack([letterbox(x, self.img_size, stride=self.stride, auto=self.auto)[0].shape for x in self.imgs])
         self.rect = np.unique(s, axis=0).shape[0] == 1  # rect inference if all shapes equal
         if not self.rect:
-            print('WARNING: Different stream shapes detected. For optimal performance supply similarly-shaped streams.')
+            LOGGER.warning('WARNING: Stream shapes differ. For optimal performance supply similarly-shaped streams.')
 
     def update(self, i, cap, stream):
         # Read stream `i` frames in daemon thread
@@ -335,7 +336,7 @@ class LoadStreams:
                 if success:
                     self.imgs[i] = im
                 else:
-                    print('WARNING: Video stream unresponsive, please check your IP camera connection.')
+                    LOGGER.warn('WARNING: Video stream unresponsive, please check your IP camera connection.')
                     self.imgs[i] *= 0
                     cap.open(stream)  # re-open stream if signal was lost
             time.sleep(1 / self.fps[i])  # wait time
@@ -361,7 +362,7 @@ class LoadStreams:
         img = img[..., ::-1].transpose((0, 3, 1, 2))  # BGR to RGB, BHWC to BCHW
         img = np.ascontiguousarray(img)
 
-        return self.sources, img, img0, None
+        return self.sources, img, img0, None, ''
 
     def __len__(self):
         return len(self.sources)  # 1E12 frames = 32 streams at 30 FPS for 30 years
