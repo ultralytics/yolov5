@@ -20,7 +20,7 @@ if str(ROOT) not in sys.path:
 from models.common import *
 from models.experimental import *
 from utils.autoanchor import check_anchor_order
-from utils.general import check_yaml, make_divisible, print_args, set_logging
+from utils.general import check_yaml, make_divisible, print_args, set_logging, check_version
 from utils.plots import feature_visualization
 from utils.torch_utils import copy_attr, fuse_conv_and_bn, initialize_weights, model_info, scale_img, \
     select_device, time_sync
@@ -74,7 +74,10 @@ class Detect(nn.Module):
 
     def _make_grid(self, nx=20, ny=20, i=0):
         d = self.anchors[i].device
-        yv, xv = torch.meshgrid([torch.arange(ny).to(d), torch.arange(nx).to(d)])
+        if check_version(torch.__version__, '1.10.0'):  # torch>=1.10.0 meshgrid workaround for torch>=0.7 compatibility
+            yv, xv = torch.meshgrid([torch.arange(ny).to(d), torch.arange(nx).to(d)], indexing='ij')
+        else:
+            yv, xv = torch.meshgrid([torch.arange(ny).to(d), torch.arange(nx).to(d)])
         grid = torch.stack((xv, yv), 2).expand((1, self.na, ny, nx, 2)).float()
         anchor_grid = (self.anchors[i].clone() * self.stride[i]) \
             .view((1, self.na, 1, 1, 2)).expand((1, self.na, ny, nx, 2)).float()
