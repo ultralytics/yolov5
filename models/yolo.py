@@ -20,7 +20,7 @@ if str(ROOT) not in sys.path:
 from models.common import *
 from models.experimental import *
 from utils.autoanchor import check_anchor_order
-from utils.general import check_yaml, make_divisible, print_args, set_logging, check_version
+from utils.general import check_version, check_yaml, make_divisible, print_args, LOGGER
 from utils.plots import feature_visualization
 from utils.torch_utils import copy_attr, fuse_conv_and_bn, initialize_weights, model_info, scale_img, \
     select_device, time_sync
@@ -29,8 +29,6 @@ try:
     import thop  # for FLOPs computation
 except ImportError:
     thop = None
-
-LOGGER = logging.getLogger(__name__)
 
 
 class Detect(nn.Module):
@@ -311,7 +309,6 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     opt.cfg = check_yaml(opt.cfg)  # check YAML
     print_args(FILE.stem, opt)
-    set_logging()
     device = select_device(opt.device)
 
     # Create model
