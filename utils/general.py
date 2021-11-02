@@ -216,20 +216,19 @@ def check_online():
 
 
 @try_except
+@WorkingDirectory(ROOT)
 def check_git_status():
     # Recommend 'git pull' if code is out of date
     msg = ', for updates see https://github.com/ultralytics/yolov5'
     print(colorstr('github: '), end='')
-    assert (ROOT / '.git').exists(), 'skipping check (not a git repository)' + msg
+    assert Path('.git').exists(), 'skipping check (not a git repository)' + msg
     assert not is_docker(), 'skipping check (Docker image)' + msg
     assert check_online(), 'skipping check (offline)' + msg
 
-    with WorkingDirectory(ROOT):
-        cmd = 'git fetch && git config --get remote.origin.url'
-        url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
-        branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
-        n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
-
+    cmd = 'git fetch && git config --get remote.origin.url'
+    url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
+    branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
+    n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
     if n > 0:
         s = f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use `git pull` or `git clone {url}` to update."
     else:
