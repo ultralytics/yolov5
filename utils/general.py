@@ -89,7 +89,7 @@ class ChangeWorkingDirectoryToRoot(contextlib.ContextDecorator):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         os.chdir(self.cwd)
-        
+
 
 def try_except(func):
     # try-except function. Usage: @try_except decorator
