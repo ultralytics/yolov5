@@ -80,12 +80,13 @@ class Timeout(contextlib.ContextDecorator):
         if self.suppress and exc_type is TimeoutError:  # Suppress TimeoutError
             return True
 
-class ChangeWorkingDirectoryToRoot(contextlib.ContextDecorator):
-    # Usage: @ChangeWorkingDirectoryToRoot() decorator
-    # or 'with ChangeWorkingDirectoryToRoot():' context manager
-    def __enter__(self):
+class ChangeWorkingDirectory(contextlib.ContextDecorator):
+    # Temporarily change the current working directory to a different one.
+    # Usage: @ChangeWorkingDirectory(dir) decorator
+    # or 'with ChangeWorkingDirectory(dir):' context manager
+    def __enter__(self, dir):
         self.cwd = Path.cwd().resolve()
-        os.chdir(ROOT)
+        os.chdir(dir)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         os.chdir(self.cwd)
@@ -221,7 +222,7 @@ def check_git_status():
     assert not is_docker(), 'skipping check (Docker image)' + msg
     assert check_online(), 'skipping check (offline)' + msg
 
-    with ChangeWorkingDirectoryToRoot():
+    with ChangeWorkingDirectory(ROOT):
         cmd = 'git fetch && git config --get remote.origin.url'
         url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
         branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
