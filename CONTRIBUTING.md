@@ -62,7 +62,7 @@ To allow your work to be integrated as seamlessly as possible, we advise you to:
 
 If you spot a problem with YOLOv5 please submit a Bug Report!
 
-For us to start investigating a possibel problem we need to be able to reproduce it ourselves first. We've created a few
+For us to start investigating a possible problem we need to be able to reproduce it ourselves first. We've created a few
 short guidelines below to help users provide what we need in order to get started.
 
 When asking a question, people will be better able to provide help if you provide **code** that they can easily
