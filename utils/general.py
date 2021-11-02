@@ -80,6 +80,16 @@ class Timeout(contextlib.ContextDecorator):
         if self.suppress and exc_type is TimeoutError:  # Suppress TimeoutError
             return True
 
+class ChangeWorkingDirectoryToRoot(contextlib.ContextDecorator):
+    # Usage: @ChangeWorkingDirectoryToRoot() decorator
+    # or 'with ChangeWorkingDirectoryToRoot():' context manager
+    def __enter__(self):
+        self.cwd = Path.cwd().resolve()
+        os.chdir(ROOT)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        os.chdir(self.cwd)
+        
 
 def try_except(func):
     # try-except function. Usage: @try_except decorator
@@ -206,23 +216,22 @@ def check_online():
 def check_git_status():
     # Recommend 'git pull' if code is out of date
     msg = ', for updates see https://github.com/ultralytics/yolov5'
-    cwd = Path.cwd()
     print(colorstr('github: '), end='')
     assert Path(ROOT / '.git').exists(), 'skipping check (not a git repository)' + msg
     assert not is_docker(), 'skipping check (Docker image)' + msg
     assert check_online(), 'skipping check (offline)' + msg
 
-    os.chdir(ROOT)  # Changing the current working directory to YOLOv5 repository root
-    cmd = 'git fetch && git config --get remote.origin.url'
-    url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
-    branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
-    n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
+    with ChangeWorkingDirectoryToRoot():
+        cmd = 'git fetch && git config --get remote.origin.url'
+        url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
+        branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
+        n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
+
     if n > 0:
         s = f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use `git pull` or `git clone {url}` to update."
     else:
         s = f'up to date with {url} ✅'
     print(emojis(s))  # emoji-safe
-    os.chdir(cwd)  # Reverting back to the original working directory
 
 
 def check_python(minimum='3.6.2'):
