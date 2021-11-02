@@ -82,11 +82,14 @@ class Timeout(contextlib.ContextDecorator):
 
 class ChangeWorkingDirectory(contextlib.ContextDecorator):
     # Temporarily change the current working directory to a different one.
-    # Usage: @ChangeWorkingDirectory(dir) decorator
-    # or 'with ChangeWorkingDirectory(dir):' context manager
-    def __enter__(self, dir):
+    # Usage: @ChangeWorkingDirectory(directory) decorator
+    # or 'with ChangeWorkingDirectory(directory):' context manager
+    def __init__(self, directory):
+        self.directory = directory
         self.cwd = Path.cwd().resolve()
-        os.chdir(dir)
+
+    def __enter__(self):
+        os.chdir(self.directory)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         os.chdir(self.cwd)
