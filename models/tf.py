@@ -411,7 +411,7 @@ class AgnosticNMS(keras.layers.Layer):
 
 def representative_dataset_gen(dataset, ncalib=100):
     # Representative dataset generator for use with converter.representative_dataset, returns a generator of np arrays
-    for n, (path, img, im0s, vid_cap) in enumerate(dataset):
+    for n, (path, img, im0s, vid_cap, string) in enumerate(dataset):
         input = np.transpose(img, [1, 2, 0])
         input = np.expand_dims(input, axis=0).astype(np.float32)
         input /= 255.0
