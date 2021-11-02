@@ -81,6 +81,19 @@ class Timeout(contextlib.ContextDecorator):
             return True
 
 
+class WorkingDirectory(contextlib.ContextDecorator):
+    # Usage: @WorkingDirectory(dir) decorator or 'with WorkingDirectory(dir):' context manager
+    def __init__(self, new_dir):
+        self.dir = new_dir  # new dir
+        self.cwd = Path.cwd().resolve()  # current dir
+
+    def __enter__(self):
+        os.chdir(self.dir)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        os.chdir(self.cwd)
+
+
 def try_except(func):
     # try-except function. Usage: @try_except decorator
     def handler(*args, **kwargs):
@@ -203,6 +216,7 @@ def check_online():
 
 
 @try_except
+@WorkingDirectory(ROOT)
 def check_git_status():
     # Recommend 'git pull' if code is out of date
     msg = ', for updates see https://github.com/ultralytics/yolov5'
