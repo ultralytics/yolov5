@@ -78,7 +78,7 @@ jobs:
           python models/yolo.py --cfg ${{ matrix.model }}.yaml  # build PyTorch model
           python models/tf.py --weights ${{ matrix.model }}.pt  # build TensorFlow model
           python export.py --img 64 --batch 1 --weights ${{ matrix.model }}.pt --include torchscript onnx  # export
-          # Unicode
+          # Unicode tests
           curl -o '京PL3N67.jpg' 'https://raw.githubusercontent.com/sirius-ai/LPRNet_Pytorch/master/data/test/%E4%BA%ACPL3N67.jpg'
           # python -c "import torch; torch.hub.download_url_to_file(url, f, progress=True)
           # python -c "import cv2, glob; from pathlib import Path; f = list(Path('').glob('*.jpg'))[0].as_posix(); print(cv2.imread(f).shape)"
