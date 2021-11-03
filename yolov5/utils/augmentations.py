@@ -10,8 +10,8 @@ import random
 import cv2
 import numpy as np
 
-from utils.general import colorstr, segment2box, resample_segments, check_version
-from utils.metrics import bbox_ioa
+from yolov5.utils.general import colorstr, segment2box, resample_segments, check_version
+from yolov5.utils.metrics import bbox_ioa
 
 
 class Albumentations:
@@ -20,7 +20,7 @@ class Albumentations:
         self.transform = None
         try:
             import albumentations as A
-            check_version(A.__version__, '1.0.3')  # version requirement
+            check_version(A.__version__, '1.0.3', hard=True)  # version requirement
 
             self.transform = A.Compose([
                 A.Blur(p=0.01),

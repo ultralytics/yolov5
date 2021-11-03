@@ -6,6 +6,11 @@ Usage:
     $ python path/to/train.py --data coco128.yaml --weights yolov5s.pt --img 640
 """
 
+# Trick to allow using train.py inside lib
+import os, sys
+dir_path = os.getcwd()
+sys.path.insert(0, dir_path)
+
 import argparse
 import logging
 import math
@@ -31,6 +36,7 @@ ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
+
 
 import yolov5.val  # for end-of-epoch mAP
 from yolov5.models.experimental import attempt_load

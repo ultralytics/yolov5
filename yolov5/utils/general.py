@@ -28,8 +28,8 @@ import torch
 import torchvision
 import yaml
 
-from utils.downloads import gsutil_getsize
-from utils.metrics import box_iou, fitness
+from yolov5.utils.downloads import gsutil_getsize
+from yolov5.utils.metrics import box_iou, fitness
 
 # Settings
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -40,6 +40,16 @@ os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max t
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
+
+
+def set_logging(name=None, verbose=True):
+    # Sets level and returns logger
+    rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
+    logging.basicConfig(format="%(message)s", level=logging.INFO if (verbose and rank in (-1, 0)) else logging.WARN)
+    return logging.getLogger(name)
+
+
+LOGGER = set_logging(__name__)  # define globally (used in train.py, val.py, detect.py, etc.)
 
 
 class Profile(contextlib.ContextDecorator):
@@ -71,6 +81,19 @@ class Timeout(contextlib.ContextDecorator):
             return True
 
 
+class WorkingDirectory(contextlib.ContextDecorator):
+    # Usage: @WorkingDirectory(dir) decorator or 'with WorkingDirectory(dir):' context manager
+    def __init__(self, new_dir):
+        self.dir = new_dir  # new dir
+        self.cwd = Path.cwd().resolve()  # current dir
+
+    def __enter__(self):
+        os.chdir(self.dir)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        os.chdir(self.cwd)
+
+
 def try_except(func):
     # try-except function. Usage: @try_except decorator
     def handler(*args, **kwargs):
@@ -87,15 +110,9 @@ def methods(instance):
     return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith("__")]
 
 
-def set_logging(rank=-1, verbose=True):
-    logging.basicConfig(
-        format="%(message)s",
-        level=logging.INFO if (verbose and rank in [-1, 0]) else logging.WARN)
-
-
 def print_args(name, opt):
     # Print argparser arguments
-    print(colorstr(f'{name}: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
+    LOGGER.info(colorstr(f'{name}: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
 
 
 def init_seeds(seed=0):
@@ -199,6 +216,7 @@ def check_online():
 
 
 @try_except
+@WorkingDirectory(ROOT)
 def check_git_status():
     # Recommend 'git pull' if code is out of date
     msg = ', for updates see https://github.com/ultralytics/yolov5'
@@ -220,14 +238,17 @@ def check_git_status():
 
 def check_python(minimum='3.6.2'):
     # Check current python version vs. required python version
-    check_version(platform.python_version(), minimum, name='Python ')
+    check_version(platform.python_version(), minimum, name='Python ', hard=True)
 
 
-def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=False):
+def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=False, hard=False):
     # Check version vs. required version
     current, minimum = (pkg.parse_version(x) for x in (current, minimum))
-    result = (current == minimum) if pinned else (current >= minimum)
-    assert result, f'{name}{minimum} required by YOLOv5, but {name}{current} is currently installed'
+    result = (current == minimum) if pinned else (current >= minimum)  # bool
+    if hard:  # assert min requirements met
+        assert result, f'{name}{minimum} required by YOLOv5, but {name}{current} is currently installed'
+    else:
+        return result
 
 
 @try_except
