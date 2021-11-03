@@ -24,7 +24,7 @@ repos:
       - id: check-docstring-first
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.23.1
+    rev: v2.29.0
     hooks:
       - id: pyupgrade
         args: [--py36-plus]
@@ -43,24 +43,22 @@ repos:
   #    - id: yapf
   #      name: formatting
 
-  # TODO
-  #- repo: https://github.com/executablebooks/mdformat
-  #  rev: 0.7.7
-  #  hooks:
-  #    - id: mdformat
-  #      additional_dependencies:
-  #        - mdformat-gfm
-  #        - mdformat-black
-  #        - mdformat_frontmatter
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.10
+    hooks:
+      - id: mdformat
+        additional_dependencies:
+          - mdformat-gfm
+          - mdformat-black
+          - mdformat_frontmatter
 
-  # TODO
-  #- repo: https://github.com/asottile/yesqa
-  #  rev: v1.2.3
-  #  hooks:
-  #    - id: yesqa
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.3.0
+    hooks:
+      - id: yesqa
 
   - repo: https://github.com/PyCQA/flake8
-    rev: 3.9.2
+    rev: 4.0.1
     hooks:
       - id: flake8
         name: PEP8
