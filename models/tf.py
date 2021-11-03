@@ -441,6 +441,8 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
     keras_model = keras.Model(inputs=im, outputs=tf_model.predict(im))
     keras_model.summary()
 
+    LOGGER.info('PyTorch, TensorFlow and Keras models successfully verified.\nUse export.py for TF model export.')
+
 
 def parse_opt():
     parser = argparse.ArgumentParser()
