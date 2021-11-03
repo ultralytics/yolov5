@@ -155,7 +155,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
     if isinstance(targets, torch.Tensor):
         targets = targets.cpu().numpy()
     if np.max(images[0]) <= 1:
-        images *= 255.0  # de-normalise (optional)
+        images *= 255  # de-normalise (optional)
     bs, _, h, w = images.shape  # batch size, _, height, width
     bs = min(bs, max_subplots)  # limit plot images
     ns = np.ceil(bs ** 0.5)  # number of subplots (square)

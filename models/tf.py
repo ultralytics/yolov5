@@ -98,7 +98,7 @@ class TFFocus(keras.layers.Layer):
         self.conv = TFConv(c1 * 4, c2, k, s, p, g, act, w.conv)
 
     def call(self, inputs):  # x(b,w,h,c) -> y(b,w/2,h/2,4c)
-        # inputs = inputs / 255.  # normalize 0-255 to 0-1
+        # inputs = inputs / 255  # normalize 0-255 to 0-1
         return self.conv(tf.concat([inputs[:, ::2, ::2, :],
                                     inputs[:, 1::2, ::2, :],
                                     inputs[:, ::2, 1::2, :],
@@ -227,7 +227,7 @@ class TFDetect(keras.layers.Layer):
 
             if not self.training:  # inference
                 y = tf.sigmoid(x[i])
-                xy = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
+                xy = (y[..., 0:2] * 2 - 0.5 + self.grid[i]) * self.stride[i]  # xy
                 wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]
                 # Normalize xywh to 0-1 to reduce calibration error
                 xy /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
@@ -414,7 +414,7 @@ def representative_dataset_gen(dataset, ncalib=100):
     for n, (path, img, im0s, vid_cap, string) in enumerate(dataset):
         input = np.transpose(img, [1, 2, 0])
         input = np.expand_dims(input, axis=0).astype(np.float32)
-        input /= 255.0
+        input /= 255
         yield [input]
         if n >= ncalib:
             break
