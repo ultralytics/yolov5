@@ -75,7 +75,7 @@ def select_device(device='', batch_size=None):
         space = ' ' * (len(s) + 1)
         for i, d in enumerate(devices):
             p = torch.cuda.get_device_properties(i)
-            name = p.name + (f'{p.total_memory / 1024 ** 3}GB' if 'GB' not in p.name else '')  # GPU name
+            name = p.name + (f'-{p.total_memory / 1024 ** 3:1f}GB' if 'GB' not in p.name else '')  # GPU name
             s += f"{'' if i == 0 else space}CUDA:{d} {name}\n"  # bytes to MB
     else:
         s += 'CPU\n'
