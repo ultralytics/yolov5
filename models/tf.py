@@ -31,10 +31,8 @@ from tensorflow import keras
 from models.common import Bottleneck, BottleneckCSP, Concat, Conv, C3, DWConv, Focus, SPP, SPPF, autopad
 from models.experimental import CrossConv, MixConv2d, attempt_load
 from models.yolo import Detect
-from utils.general import make_divisible, print_args, set_logging
+from utils.general import make_divisible, print_args, LOGGER
 from utils.activations import SiLU
-
-LOGGER = logging.getLogger(__name__)
 
 
 class TFBN(keras.layers.Layer):
@@ -336,7 +334,7 @@ class TFModel:
 
         # Define model
         if nc and nc != self.yaml['nc']:
-            print(f"Overriding {cfg} nc={self.yaml['nc']} with nc={nc}")
+            LOGGER.info(f"Overriding {cfg} nc={self.yaml['nc']} with nc={nc}")
             self.yaml['nc'] = nc  # override yaml value
         self.model, self.savelist = parse_model(deepcopy(self.yaml), ch=[ch], model=model, imgsz=imgsz)
 
@@ -413,7 +411,7 @@ class AgnosticNMS(keras.layers.Layer):
 
 def representative_dataset_gen(dataset, ncalib=100):
     # Representative dataset generator for use with converter.representative_dataset, returns a generator of np arrays
-    for n, (path, img, im0s, vid_cap) in enumerate(dataset):
+    for n, (path, img, im0s, vid_cap, string) in enumerate(dataset):
         input = np.transpose(img, [1, 2, 0])
         input = np.expand_dims(input, axis=0).astype(np.float32)
         input /= 255.0
@@ -457,7 +455,6 @@ def parse_opt():
 
 
 def main(opt):
-    set_logging()
     run(**vars(opt))
 
 
