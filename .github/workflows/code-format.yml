@@ -1,0 +1,47 @@
+# Run code formatting GitHub Action, can be replaced by this bot: https://github.com/marketplace/pre-commit-ci
+
+name: Code formatting
+
+on: # https://help.github.com/en/actions/reference/events-that-trigger-workflows
+  push:
+    branches: [master]
+  pull_request: {}
+
+jobs:
+  pep8-check-flake8:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install dependencies
+        run: |
+          pip install flake8
+          pip list
+        shell: bash
+      - name: PEP8
+        run: |
+          flake8 .
+
+  pre-commit-check:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        # for private repo - first is the checkout step, which needs to use unlimited fetch depth for pushing
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v2
+
+      - name: set PY
+        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - uses: pre-commit/action@v2.0.3
+        # this action also provides an additional behaviour when used in private repositories
+        # when configured with a github token, the action will push back fixes to the pull request branch
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
