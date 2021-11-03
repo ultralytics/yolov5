@@ -362,7 +362,7 @@ class Detections:
     def __init__(self, imgs, pred, files, times=None, names=None, shape=None):
         super().__init__()
         d = pred[0].device  # device
-        gn = [torch.tensor([*(im.shape[i] for i in [1, 0, 1, 0]), 1., 1.], device=d) for im in imgs]  # normalizations
+        gn = [torch.tensor([*(im.shape[i] for i in [1, 0, 1, 0]), 1, 1], device=d) for im in imgs]  # normalizations
         self.imgs = imgs  # list of images as numpy arrays
         self.pred = pred  # list of tensors pred[0] = (xyxy, conf, cls)
         self.names = names  # class names
