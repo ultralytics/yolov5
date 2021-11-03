@@ -80,7 +80,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     if pt:
         if pt_jit:
             import json
-            extra_files = {'config.txt': ''}
+            extra_files = {'config.txt': ''}  # model metadata
             model = torch.jit.load(w, _extra_files=extra_files)
             try:
                 d = json.loads(extra_files['config.txt'])  # extra_files dict
