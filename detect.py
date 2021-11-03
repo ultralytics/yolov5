@@ -8,6 +8,7 @@ Usage:
 
 import argparse
 import os
+import platform
 import sys
 from pathlib import Path
 
@@ -107,16 +108,12 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         elif saved_model:
             model = tf.keras.models.load_model(w)
         elif tflite:
-            if "edgetpu" in w:
-                import tflite_runtime.interpreter as tflite # import tflite_runtime: https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
-                import platform
-                EDGETPU_SHARED_LIB = {
-                    'Linux': 'libedgetpu.so.1',
-                    'Darwin': 'libedgetpu.1.dylib',
-                    'Windows': 'edgetpu.dll'
-                    }[platform.system()] # Install libedgetpu: https://coral.ai/software/#edgetpu-runtime
-                interpreter = tflite.Interpreter(model_path=w,
-                        experimental_delegates=[tflite.load_delegate(EDGETPU_SHARED_LIB)])  # load TFLite model with edgetpu delegation.
+            if "edgetpu" in w:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
+                import tflite_runtime.interpreter as tflri
+                delegate = {'Linux': 'libedgetpu.so.1',  # install libedgetpu https://coral.ai/software/#edgetpu-runtime
+                            'Darwin': 'libedgetpu.1.dylib',
+                            'Windows': 'edgetpu.dll'}[platform.system()]
+                interpreter = tflri.Interpreter(model_path=w, experimental_delegates=[tflri.load_delegate(delegate)])
             else:
                 interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
             interpreter.allocate_tensors()  # allocate
