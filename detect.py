@@ -58,7 +58,7 @@ def run(
         hide_conf: bool = False,
         half: bool = False,
         dnn: bool = False,
-    ):
+):
     """
 
     Args:
