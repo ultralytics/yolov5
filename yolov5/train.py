@@ -32,26 +32,25 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-import val  # for end-of-epoch mAP
-from models.experimental import attempt_load
-from models.yolo import Model
-from utils.autoanchor import check_anchors
-from utils.autobatch import check_train_batch_size
-from utils.datasets import create_dataloader
-from utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds, \
+import yolov5.val  # for end-of-epoch mAP
+from yolov5.models.experimental import attempt_load
+from yolov5.models.yolo import Model
+from yolov5.utils.autoanchor import check_anchors
+from yolov5.utils.autobatch import check_train_batch_size
+from yolov5.utils.datasets import create_dataloader
+from yolov5.utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds, \
     strip_optimizer, get_latest_run, check_dataset, check_git_status, check_img_size, check_requirements, \
-    check_file, check_yaml, check_suffix, print_args, print_mutation, set_logging, one_cycle, colorstr, methods
-from utils.downloads import attempt_download
-from utils.loss import ComputeLoss
-from utils.plots import plot_labels, plot_evolve
-from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, intersect_dicts, select_device, \
+    check_file, check_yaml, check_suffix, print_args, print_mutation, one_cycle, colorstr, methods, LOGGER
+from yolov5.utils.downloads import attempt_download
+from yolov5.utils.loss import ComputeLoss
+from yolov5.utils.plots import plot_labels, plot_evolve
+from yolov5.utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, intersect_dicts, select_device, \
     torch_distributed_zero_first
-from utils.loggers.wandb.wandb_utils import check_wandb_resume
-from utils.metrics import fitness
-from utils.loggers import Loggers
-from utils.callbacks import Callbacks
+from yolov5.utils.loggers.wandb.wandb_utils import check_wandb_resume
+from yolov5.utils.metrics import fitness
+from yolov5.utils.loggers import Loggers
+from yolov5.utils.callbacks import Callbacks
 
-LOGGER = logging.getLogger(__name__)
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
@@ -129,7 +128,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     for k, v in model.named_parameters():
         v.requires_grad = True  # train all layers
         if any(x in k for x in freeze):
-            print(f'freezing {k}')
+            LOGGER.info(f'freezing {k}')
             v.requires_grad = False
 
     # Image size
@@ -485,7 +484,6 @@ def parse_opt(known=False):
 
 def main(opt, callbacks=Callbacks()):
     # Checks
-    set_logging(RANK)
     if RANK in [-1, 0]:
         print_args(FILE.stem, opt)
         check_git_status()
@@ -609,9 +607,9 @@ def main(opt, callbacks=Callbacks()):
 
         # Plot results
         plot_evolve(evolve_csv)
-        print(f'Hyperparameter evolution finished\n'
-              f"Results saved to {colorstr('bold', save_dir)}\n"
-              f'Use best hyperparameters example: $ python train.py --hyp {evolve_yaml}')
+        LOGGER.info(f'Hyperparameter evolution finished\n'
+                    f"Results saved to {colorstr('bold', save_dir)}\n"
+                    f'Use best hyperparameters example: $ python train.py --hyp {evolve_yaml}')
 
 
 def run(**kwargs):
