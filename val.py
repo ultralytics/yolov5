@@ -255,7 +255,7 @@ def run(data,
     if not training:
         shape = (batch_size, 3, imgsz, imgsz)
         LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {shape}' % t)
-        
+
     # save the metrics
     if save_metrics:
         with open(save_dir / 'metrics.txt', 'a') as f:
