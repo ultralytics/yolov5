@@ -53,7 +53,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
     try:
         LOGGER.info(f'\n{prefix} starting export with torch {torch.__version__}...')
         f = file.with_suffix('.torchscript.pt')
-        
+
         h, w = im.shape[-2:]
         batch_size = im.shape[0]
         stride = int(max(model.stride))
