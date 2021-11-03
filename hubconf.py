@@ -27,10 +27,10 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     """
     from pathlib import Path
 
-    from models.yolo import Model
     from models.experimental import attempt_load
-    from utils.general import check_requirements, set_logging
+    from models.yolo import Model
     from utils.downloads import attempt_download
+    from utils.general import check_requirements, set_logging
     from utils.torch_utils import select_device
 
     file = Path(__file__).resolve()
@@ -125,10 +125,11 @@ if __name__ == '__main__':
     # model = custom(path='path/to/model.pt')  # custom
 
     # Verify inference
+    from pathlib import Path
+
     import cv2
     import numpy as np
     from PIL import Image
-    from pathlib import Path
 
     imgs = ['data/images/zidane.jpg',  # filename
             Path('data/images/zidane.jpg'),  # Path
