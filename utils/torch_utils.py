@@ -20,12 +20,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 
+from utils.general import LOGGER
+
 try:
     import thop  # for FLOPs computation
 except ImportError:
     thop = None
-
-LOGGER = logging.getLogger(__name__)
 
 
 @contextmanager
