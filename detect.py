@@ -85,7 +85,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             try:
                 d = json.loads(extra_files['config.txt'])  # extra_files dict
                 ts_h, ts_w = d['HW']
-                ts_bs = int(d['BATCH'])
                 stride = int(d['STRIDE'])
                 ts_params = True  # torchscript predefined params
                 print("Using saved graph params HW: {}, stride: {}".format((ts_h, ts_w), stride))
