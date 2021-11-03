@@ -115,9 +115,9 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     'Darwin': 'libedgetpu.1.dylib',
                     'Windows': 'edgetpu.dll'
                     }[platform.system()] # Install libedgetpu: https://coral.ai/software/#edgetpu-runtime
-                interpreter = tflite.Interpreter(model_path=w, 
+                interpreter = tflite.Interpreter(model_path=w,
                         experimental_delegates=[tflite.load_delegate(EDGETPU_SHARED_LIB)])  # load TFLite model with edgetpu delegation.
-            else:    
+            else:
                 interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
             interpreter.allocate_tensors()  # allocate
             input_details = interpreter.get_input_details()  # inputs
