@@ -87,10 +87,10 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                 ts_h, ts_w = d['HW']
                 stride = int(d['STRIDE'])
                 ts_params = True  # torchscript predefined params
-                print("Using saved graph params HW: {}, stride: {}".format((ts_h, ts_w), stride))
+                print(f"Using saved graph params HW: {(ts_h, ts_w)}, stride: {stride}")
             except:
                 ts_params = False
-                print("Failed to load default jit graph params from {}".format(w))
+                print(f"Failed to load default jit graph params from {w}")
         else:
             model = attempt_load(weights, map_location=device)
             stride = int(model.stride.max())  # model stride
@@ -130,7 +130,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             int8 = input_details[0]['dtype'] == np.uint8  # is TFLite quantized uint8 model
     imgsz = check_img_size(imgsz, s=stride)  # check image size
     if pt_jit and ts_params and imgsz != [ts_h, ts_w]:
-        print("Changing resolution from {} to {} based to graph defaults".format(imgsz, [ts_h, ts_w]))
+        print(f"Changing resolution from {imgsz} to {[ts_h, ts_w]} based to graph defaults")
         imgsz = ts_h, ts_w
 
     # Dataloader
