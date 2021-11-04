@@ -27,18 +27,8 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 
 from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
-from utils.general import (
-    check_dataset,
-    check_requirements,
-    check_yaml,
-    clean_str,
-    LOGGER,
-    segments2boxes,
-    xyn2xy,
-    xywh2xyxy,
-    xywhn2xyxy,
-    xyxy2xywhn,
-)
+from utils.general import (LOGGER, check_dataset, check_requirements, check_yaml, clean_str, segments2boxes, xyn2xy,
+                           xywh2xyxy, xywhn2xyxy, xyxy2xywhn)
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters

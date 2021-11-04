@@ -42,16 +42,8 @@ from models.experimental import attempt_load
 from models.yolo import Detect
 from utils.activations import SiLU
 from utils.datasets import LoadImages
-from utils.general import (
-    check_dataset,
-    check_img_size,
-    check_requirements,
-    colorstr,
-    file_size,
-    LOGGER,
-    print_args,
-    url2file,
-)
+from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, colorstr, file_size, print_args,
+                           url2file)
 from utils.torch_utils import select_device
 
 
