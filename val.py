@@ -8,6 +8,7 @@ Usage:
 
 import argparse
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -32,6 +33,8 @@ from utils.metrics import ap_per_class, ConfusionMatrix
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, time_sync
 from utils.callbacks import Callbacks
+
+LOGGER.addHandler(logging.FileHandler('log.txt'))
 
 
 def save_one_txt(predn, save_conf, shape, file):
