@@ -28,11 +28,11 @@ import torch
 import torch.nn as nn
 from tensorflow import keras
 
-from models.common import Bottleneck, BottleneckCSP, Concat, Conv, C3, DWConv, Focus, SPP, SPPF, autopad
+from models.common import C3, SPP, SPPF, Bottleneck, BottleneckCSP, Concat, Conv, DWConv, Focus, autopad
 from models.experimental import CrossConv, MixConv2d, attempt_load
 from models.yolo import Detect
-from utils.general import make_divisible, print_args, LOGGER
 from utils.activations import SiLU
+from utils.general import LOGGER, make_divisible, print_args
 
 
 class TFBN(keras.layers.Layer):
