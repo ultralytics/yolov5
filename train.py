@@ -383,7 +383,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                         'updates': ema.updates,
                         'optimizer': optimizer.state_dict(),
                         'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None,
-                        'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+                        'date': datetime.now().isoformat()}
 
                 # Save last, best and delete
                 torch.save(ckpt, last)
