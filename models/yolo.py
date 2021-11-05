@@ -49,7 +49,6 @@ class Detect(nn.Module):
 
     def forward(self, x):
         z = []  # inference output
-        self.training |= self.onnx_dynamic
         for i in range(self.nl):
             x[i] = self.m[i](x[i])  # conv
             bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
