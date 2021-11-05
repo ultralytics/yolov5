@@ -837,7 +837,6 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
         i = [int(m.groups()[0]) for m in matches if m]  # indices
         n = max(i) + 1 if i else 2  # increment number
         path = Path(f"{path}{sep}{n}{suffix}")  # update path
-    dir = path if path.suffix == '' else path.parent  # directory
-    if not dir.exists() and mkdir:
-        dir.mkdir(parents=True, exist_ok=True)  # make directory
+    if mkdir:
+        path.mkdir(parents=True, exist_ok=True)  # make directory
     return path
