@@ -42,8 +42,8 @@ from models.experimental import attempt_load
 from models.yolo import Detect
 from utils.activations import SiLU
 from utils.datasets import LoadImages
-from utils.general import check_dataset, check_img_size, check_requirements, colorstr, file_size, print_args, \
-    url2file, LOGGER
+from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, colorstr, file_size, print_args,
+                           url2file)
 from utils.torch_utils import select_device
 
 
@@ -135,7 +135,8 @@ def export_saved_model(model, im, file, dynamic,
     try:
         import tensorflow as tf
         from tensorflow import keras
-        from models.tf import TFModel, TFDetect
+
+        from models.tf import TFDetect, TFModel
 
         LOGGER.info(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
         f = str(file).replace('.pt', '_saved_model')
@@ -182,6 +183,7 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
     # YOLOv5 TensorFlow Lite export
     try:
         import tensorflow as tf
+
         from models.tf import representative_dataset_gen
 
         LOGGER.info(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
@@ -215,6 +217,7 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
     try:
         check_requirements(('tensorflowjs',))
         import re
+
         import tensorflowjs as tfjs
 
         LOGGER.info(f'\n{prefix} starting export with tensorflowjs {tfjs.__version__}...')

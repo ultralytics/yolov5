@@ -8,6 +8,7 @@ Usage:
 
 import argparse
 import os
+import platform
 import sys
 from pathlib import Path
 
@@ -24,8 +25,9 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.experimental import attempt_load
 from utils.datasets import LoadImages, LoadStreams
-from utils.general import apply_classifier, check_img_size, check_imshow, check_requirements, check_suffix, colorstr, \
-    increment_path, non_max_suppression, print_args, save_one_box, scale_coords, strip_optimizer, xyxy2xywh, LOGGER
+from utils.general import (LOGGER, apply_classifier, check_img_size, check_imshow, check_requirements, check_suffix,
+                           colorstr, increment_path, non_max_suppression, print_args, save_one_box, scale_coords,
+                           strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors
 from utils.torch_utils import load_classifier, select_device, time_sync
 
@@ -107,7 +109,14 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         elif saved_model:
             model = tf.keras.models.load_model(w)
         elif tflite:
-            interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
+            if "edgetpu" in w:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
+                import tflite_runtime.interpreter as tflri
+                delegate = {'Linux': 'libedgetpu.so.1',  # install libedgetpu https://coral.ai/software/#edgetpu-runtime
+                            'Darwin': 'libedgetpu.1.dylib',
+                            'Windows': 'edgetpu.dll'}[platform.system()]
+                interpreter = tflri.Interpreter(model_path=w, experimental_delegates=[tflri.load_delegate(delegate)])
+            else:
+                interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
             interpreter.allocate_tensors()  # allocate
             input_details = interpreter.get_input_details()  # inputs
             output_details = interpreter.get_output_details()  # outputs
