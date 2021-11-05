@@ -14,6 +14,7 @@ import random
 import sys
 import time
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -381,7 +382,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                         'ema': deepcopy(ema.ema).half(),
                         'updates': ema.updates,
                         'optimizer': optimizer.state_dict(),
-                        'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None}
+                        'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None,
+                        'date': datetime.now().isoformat()}
 
                 # Save last, best and delete
                 torch.save(ckpt, last)
