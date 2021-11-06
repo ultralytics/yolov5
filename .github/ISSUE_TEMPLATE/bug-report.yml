@@ -64,7 +64,9 @@ body:
         When asking a question, people will be better able to provide help if you provide code that they can easily understand and use to **reproduce** the problem.
         This is referred to by community members as creating a [minimal reproducible example](https://stackoverflow.com/help/minimal-reproducible-example).
       placeholder: |
-        # code to reproduce your issue here
+        ```
+        # Code to reproduce your issue here
+        ```
     validations:
       required: false
 
