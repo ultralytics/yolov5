@@ -30,7 +30,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     from models.experimental import attempt_load
     from models.yolo import Model
     from utils.downloads import attempt_download
-    from utils.general import check_requirements, set_logging
+    from utils.general import check_requirements, intersect_dicts, set_logging
     from utils.torch_utils import select_device
 
     file = Path(__file__).resolve()
@@ -49,9 +49,8 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
             model = Model(cfg, channels, classes)  # create model
             if pretrained:
                 ckpt = torch.load(attempt_download(path), map_location=device)  # load
-                msd = model.state_dict()  # model state_dict
                 csd = ckpt['model'].float().state_dict()  # checkpoint state_dict as FP32
-                csd = {k: v for k, v in csd.items() if msd[k].shape == v.shape}  # filter
+                csd = intersect_dicts(csd, model.state_dict(), exclude=['anchors'])  # intersect
                 model.load_state_dict(csd, strict=False)  # load
                 if len(ckpt['model'].names) == classes:
                     model.names = ckpt['model'].names  # set class names attribute
