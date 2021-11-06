@@ -17,7 +17,7 @@ import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.general import is_ascii, is_chinese, user_config_dir, xywh2xyxy, xyxy2xywh
+from utils.general import clip_coords, increment_path, is_ascii, is_chinese, user_config_dir, xywh2xyxy, xyxy2xywh
 from utils.metrics import fitness
 
 # Settings
@@ -115,6 +115,33 @@ class Annotator:
     def result(self):
         # Return annotated image as array
         return np.asarray(self.im)
+
+
+def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detect/exp')):
+    """
+    x:              Features to be visualized
+    module_type:    Module type
+    stage:          Module stage within model
+    n:              Maximum number of feature maps to plot
+    save_dir:       Directory to save results
+    """
+    if 'Detect' not in module_type:
+        batch, channels, height, width = x.shape  # batch, channels, height, width
+        if height > 1 and width > 1:
+            f = f"stage{stage}_{module_type.split('.')[-1]}_features.png"  # filename
+
+            blocks = torch.chunk(x[0].cpu(), channels, dim=0)  # select batch index 0, block by channels
+            n = min(n, channels)  # number of plots
+            fig, ax = plt.subplots(math.ceil(n / 8), 8, tight_layout=True)  # 8 rows x n/8 cols
+            ax = ax.ravel()
+            plt.subplots_adjust(wspace=0.05, hspace=0.05)
+            for i in range(n):
+                ax[i].imshow(blocks[i].squeeze())  # cmap='gray'
+                ax[i].axis('off')
+
+            print(f'Saving {save_dir / f}... ({n}/{channels})')
+            plt.savefig(save_dir / f, dpi=300, bbox_inches='tight')
+            plt.close()
 
 
 def hist2d(x, y, n=100):
@@ -337,37 +364,6 @@ def plot_labels(labels, names=(), save_dir=Path('')):
     plt.close()
 
 
-def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
-    # Plot iDetection '*.txt' per-image logs. from utils.plots import *; profile_idetection()
-    ax = plt.subplots(2, 4, figsize=(12, 6), tight_layout=True)[1].ravel()
-    s = ['Images', 'Free Storage (GB)', 'RAM Usage (GB)', 'Battery', 'dt_raw (ms)', 'dt_smooth (ms)', 'real-world FPS']
-    files = list(Path(save_dir).glob('frames*.txt'))
-    for fi, f in enumerate(files):
-        try:
-            results = np.loadtxt(f, ndmin=2).T[:, 90:-30]  # clip first and last rows
-            n = results.shape[1]  # number of rows
-            x = np.arange(start, min(stop, n) if stop else n)
-            results = results[:, x]
-            t = (results[0] - results[0].min())  # set t0=0s
-            results[0] = x
-            for i, a in enumerate(ax):
-                if i < len(results):
-                    label = labels[fi] if len(labels) else f.stem.replace('frames_', '')
-                    a.plot(t, results[i], marker='.', label=label, linewidth=1, markersize=5)
-                    a.set_title(s[i])
-                    a.set_xlabel('time (s)')
-                    # if fi == len(files) - 1:
-                    #     a.set_ylim(bottom=0)
-                    for side in ['top', 'right']:
-                        a.spines[side].set_visible(False)
-                else:
-                    a.remove()
-        except Exception as e:
-            print(f'Warning: Plotting error for {f}; {e}')
-    ax[1].legend()
-    plt.savefig(Path(save_dir) / 'idetection_profile.png', dpi=200)
-
-
 def plot_evolve(evolve_csv='path/to/evolve.csv'):  # from utils.plots import *; plot_evolve()
     # Plot evolve.csv hyp evolution results
     evolve_csv = Path(evolve_csv)
@@ -420,28 +416,48 @@ def plot_results(file='path/to/results.csv', dir=''):
     plt.close()
 
 
-def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detect/exp')):
-    """
-    x:              Features to be visualized
-    module_type:    Module type
-    stage:          Module stage within model
-    n:              Maximum number of feature maps to plot
-    save_dir:       Directory to save results
-    """
-    if 'Detect' not in module_type:
-        batch, channels, height, width = x.shape  # batch, channels, height, width
-        if height > 1 and width > 1:
-            f = f"stage{stage}_{module_type.split('.')[-1]}_features.png"  # filename
+def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
+    # Plot iDetection '*.txt' per-image logs. from utils.plots import *; profile_idetection()
+    ax = plt.subplots(2, 4, figsize=(12, 6), tight_layout=True)[1].ravel()
+    s = ['Images', 'Free Storage (GB)', 'RAM Usage (GB)', 'Battery', 'dt_raw (ms)', 'dt_smooth (ms)', 'real-world FPS']
+    files = list(Path(save_dir).glob('frames*.txt'))
+    for fi, f in enumerate(files):
+        try:
+            results = np.loadtxt(f, ndmin=2).T[:, 90:-30]  # clip first and last rows
+            n = results.shape[1]  # number of rows
+            x = np.arange(start, min(stop, n) if stop else n)
+            results = results[:, x]
+            t = (results[0] - results[0].min())  # set t0=0s
+            results[0] = x
+            for i, a in enumerate(ax):
+                if i < len(results):
+                    label = labels[fi] if len(labels) else f.stem.replace('frames_', '')
+                    a.plot(t, results[i], marker='.', label=label, linewidth=1, markersize=5)
+                    a.set_title(s[i])
+                    a.set_xlabel('time (s)')
+                    # if fi == len(files) - 1:
+                    #     a.set_ylim(bottom=0)
+                    for side in ['top', 'right']:
+                        a.spines[side].set_visible(False)
+                else:
+                    a.remove()
+        except Exception as e:
+            print(f'Warning: Plotting error for {f}; {e}')
+    ax[1].legend()
+    plt.savefig(Path(save_dir) / 'idetection_profile.png', dpi=200)
 
-            blocks = torch.chunk(x[0].cpu(), channels, dim=0)  # select batch index 0, block by channels
-            n = min(n, channels)  # number of plots
-            fig, ax = plt.subplots(math.ceil(n / 8), 8, tight_layout=True)  # 8 rows x n/8 cols
-            ax = ax.ravel()
-            plt.subplots_adjust(wspace=0.05, hspace=0.05)
-            for i in range(n):
-                ax[i].imshow(blocks[i].squeeze())  # cmap='gray'
-                ax[i].axis('off')
 
-            print(f'Saving {save_dir / f}... ({n}/{channels})')
-            plt.savefig(save_dir / f, dpi=300, bbox_inches='tight')
-            plt.close()
+def save_one_box(xyxy, im, file='image.jpg', gain=1.02, pad=10, square=False, BGR=False, save=True):
+    # Save image crop as {file} with crop size multiple {gain} and {pad} pixels. Save and/or return crop
+    xyxy = torch.tensor(xyxy).view(-1, 4)
+    b = xyxy2xywh(xyxy)  # boxes
+    if square:
+        b[:, 2:] = b[:, 2:].max(1)[0].unsqueeze(1)  # attempt rectangle to square
+    b[:, 2:] = b[:, 2:] * gain + pad  # box wh * gain + pad
+    xyxy = xywh2xyxy(b).long()
+    clip_coords(xyxy, im.shape)
+    crop = im[int(xyxy[0, 1]):int(xyxy[0, 3]), int(xyxy[0, 0]):int(xyxy[0, 2]), ::(1 if BGR else -1)]
+    if save:
+        file.parent.mkdir(parents=True, exist_ok=True)  # make directory
+        cv2.imwrite(str(increment_path(file).with_suffix('.jpg')), crop)
+    return crop

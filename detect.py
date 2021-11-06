@@ -26,9 +26,9 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.experimental import attempt_load
 from utils.datasets import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
 from utils.general import (LOGGER, apply_classifier, check_file, check_img_size, check_imshow, check_requirements,
-                           check_suffix, colorstr, increment_path, non_max_suppression, print_args, save_one_box,
-                           scale_coords, strip_optimizer, xyxy2xywh)
-from utils.plots import Annotator, colors
+                           check_suffix, colorstr, increment_path, non_max_suppression, print_args, scale_coords,
+                           strip_optimizer, xyxy2xywh)
+from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import load_classifier, select_device, time_sync
 
 
