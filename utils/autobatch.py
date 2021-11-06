@@ -35,11 +35,12 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
         return batch_size
 
     d = str(device).upper()  # 'CUDA:0'
-    t = torch.cuda.get_device_properties(device).total_memory / 1024 ** 3  # (GB)
-    r = torch.cuda.memory_reserved(device) / 1024 ** 3  # (GB)
-    a = torch.cuda.memory_allocated(device) / 1024 ** 3  # (GB)
+    properties = torch.cuda.get_device_properties(device)  # device properties
+    t = properties.total_memory / 1024 ** 3  # (GiB)
+    r = torch.cuda.memory_reserved(device) / 1024 ** 3  # (GiB)
+    a = torch.cuda.memory_allocated(device) / 1024 ** 3  # (GiB)
     f = t - (r + a)  # free inside reserved
-    print(f'{prefix}{d} {t:.3g}G total, {r:.3g}G reserved, {a:.3g}G allocated, {f:.3g}G free')
+    print(f'{prefix}{d} {properties.name} {t:.3g}G total, {r:.3g}G reserved, {a:.3g}G allocated, {f:.3g}G free')
 
     batch_sizes = [1, 2, 4, 8, 16]
     try:
