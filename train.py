@@ -107,7 +107,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
     assert len(names) == nc, f'{len(names)} names found for nc={nc} dataset in {data}'  # check
-    is_coco = data.endswith('coco.yaml') and nc == 80  # COCO dataset
+    is_coco = isinstance(val_path, str) and val_path.endswith('coco/val2017.txt')  # COCO dataset
 
     # Model
     check_suffix(weights, '.pt')  # check weights
