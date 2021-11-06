@@ -17,7 +17,7 @@ import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.general import is_ascii, is_chinese, user_config_dir, xywh2xyxy, xyxy2xywh, clip_coords, increment_path
+from utils.general import clip_coords, increment_path, is_ascii, is_chinese, user_config_dir, xywh2xyxy, xyxy2xywh
 from utils.metrics import fitness
 
 # Settings
