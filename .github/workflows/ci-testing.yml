@@ -20,7 +20,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         python-version: [ 3.8 ]
-        model: [ 'yolov5s' ]  # models to test
+        model: [ 'yolov5n' ]  # models to test
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
     timeout-minutes: 50
@@ -39,18 +39,19 @@ jobs:
           python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
 
       - name: Cache pip
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.6
         with:
           path: ${{ steps.pip-cache.outputs.dir }}
           key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-${{ matrix.python-version }}-pip-
 
+      # Known Keras 2.7.0 issue: https://github.com/ultralytics/yolov5/pull/5486
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -qr requirements.txt -f https://download.pytorch.org/whl/cpu/torch_stable.html
-          pip install -q onnx tensorflow-cpu  # for export
+          pip install -q onnx tensorflow-cpu keras==2.6.0  # for export
           python --version
           pip --version
           pip list
@@ -83,7 +84,7 @@ jobs:
           # Python
           python - <<EOF
           import torch
-          # Known issue, urllib.error.HTTPError: HTTP Error 403: rate limit exceeded, will be resolved in torch==1.10.0 
+          # Known issue, urllib.error.HTTPError: HTTP Error 403: rate limit exceeded, will be resolved in torch==1.10.0
           # model = torch.hub.load('ultralytics/yolov5', 'custom', path='runs/train/exp/weights/last.pt')
           EOF
 

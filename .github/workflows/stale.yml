@@ -9,7 +9,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v3
+      - uses: actions/stale@v4
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           stale-issue-message: |
@@ -21,7 +21,7 @@ jobs:
             - **Docs** – https://docs.ultralytics.com
 
             Access additional [Ultralytics](https://ultralytics.com) ⚡ resources:
-            - **Ultralytics HUB** – https://ultralytics.com
+            - **Ultralytics HUB** – https://ultralytics.com/hub
             - **Vision API** – https://ultralytics.com/yolov5
             - **About Us** – https://ultralytics.com/about
             - **Join Our Team** – https://ultralytics.com/work
@@ -31,7 +31,7 @@ jobs:
 
             Thank you for your contributions to YOLOv5 🚀 and Vision AI ⭐!
 
-          stale-pr-message: 'This issue has been automatically marked as stale because it has not had recent activity. It will be closed if no further activity occurs. Thank you for your contributions YOLOv5 🚀 and Vision AI ⭐.'
+          stale-pr-message: 'This pull request has been automatically marked as stale because it has not had recent activity. It will be closed if no further activity occurs. Thank you for your contributions YOLOv5 🚀 and Vision AI ⭐.'
           days-before-stale: 30
           days-before-close: 5
           exempt-issue-labels: 'documentation,tutorial'
