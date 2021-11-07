@@ -111,7 +111,7 @@ def run(data,
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
-        device = next(model.parameters()).device  # get model device
+        device, pt = next(model.parameters()).device, True  # get model device, PyTorch model
 
     else:  # called directly
         device = select_device(device, batch_size=batch_size)
@@ -165,13 +165,11 @@ def run(data,
     jdict, stats, ap, ap_class = [], [], [], []
     for batch_i, (im, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
         t1 = time_sync()
-        if model.onnx:
-            im = np.array(im).astype('float32')
-        else:
+        if pt:
             im = im.to(device, non_blocking=True)
             im = im.half() if half else im.float()  # uint8 to fp16/32
+            targets = targets.to(device)
         im /= 255  # 0 - 255 to 0.0 - 1.0
-        targets = targets.to(device)
         nb, _, height, width = im.shape  # batch size, channels, height, width
         t2 = time_sync()
         dt[0] += t2 - t1
