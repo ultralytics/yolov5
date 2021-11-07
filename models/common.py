@@ -277,28 +277,27 @@ class Concat(nn.Module):
 
 class DetectMultiBackend(nn.Module):
     def __init__(self, weights='yolov5s.pt', device=None, half=False, dnn=False):
+        # MultiBackend model load
         super().__init__()
-        # Load model
         w = str(weights[0] if isinstance(weights, list) else weights)
         suffix, suffixes = Path(w).suffix.lower(), ['.pt', '.onnx', '.tflite', '.pb', '']
         check_suffix(w, suffixes)  # check weights have acceptable suffix
         pt, onnx, tflite, pb, saved_model = (suffix == x for x in suffixes)  # backend booleans
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
         if pt:
-            from models.experimental import attempt_load
+            from models.experimental import attempt_load  # scoped to avoid circular import
             model = torch.jit.load(w) if 'torchscript' in w else attempt_load(weights, map_location=device)
             stride = int(model.stride.max())  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
             if half:
                 model.half()  # to FP16
-        elif onnx:
-            if dnn:  # OpenCV DNN
-                check_requirements(('opencv-python>=4.5.4',))
-                net = cv2.dnn.readNetFromONNX(w)
-            else:  # ONNX Runtime
-                check_requirements(('onnx', 'onnxruntime-gpu' if torch.has_cuda else 'onnxruntime'))
-                import onnxruntime
-                session = onnxruntime.InferenceSession(w, None)
+        elif dnn:  # ONNX OpenCV DNN
+            check_requirements(('opencv-python>=4.5.4',))
+            net = cv2.dnn.readNetFromONNX(w)
+        elif onnx:  # ONNX Runtime
+            check_requirements(('onnx', 'onnxruntime-gpu' if torch.has_cuda else 'onnxruntime'))
+            import onnxruntime
+            session = onnxruntime.InferenceSession(w, None)
         else:  # TensorFlow model (TFLite, pb, saved_model)
             import tensorflow as tf
             if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
@@ -325,24 +324,21 @@ class DetectMultiBackend(nn.Module):
                 interpreter.allocate_tensors()  # allocate
                 input_details = interpreter.get_input_details()  # inputs
                 output_details = interpreter.get_output_details()  # outputs
+        self.__dict__.update(locals())  # assign all variables to self
 
-        self.__dict__.update(locals())  # all all variables to self
-
-    def forward(self, im, augment=False, profile=False, visualize=False):
-        # Inference
+    def forward(self, im, augment=False, visualize=False):
+        # MultiBackend inference
         if self.pt:
-            y = self.model(im, augment=augment, visualize=visualize)[0]
-        elif self.onnx:
-            if self.dnn:  # OpenCV DNN
-                self.net.setInput(im)
-                y = self.net.forward()
-            else:  # ONNX Runtime
-                y = self.session.run([self.session.get_outputs()[0].name], {self.session.get_inputs()[0].name: im})[0]
+            return self.model(im, augment=augment, visualize=visualize)[0]
+        elif self.dnn:  # ONNX OpenCV DNN
+            self.net.setInput(im)
+            y = self.net.forward()
+        elif self.onnx:  # ONNX Runtime
+            y = self.session.run([self.session.get_outputs()[0].name], {self.session.get_inputs()[0].name: im})[0]
         else:  # TensorFlow model (TFLite, pb, saved_model)
-            import tensorflow as tf
             im = im.permute(0, 2, 3, 1).cpu().numpy()  # TF format (1,640,640,3)
             if self.pb:
-                y = self.frozen_func(x=tf.constant(im)).numpy()
+                y = self.frozen_func(x=self.tf.constant(im)).numpy()
             elif self.saved_model:
                 y = self.model(im, training=False).numpy()
             elif self.tflite:
@@ -361,7 +357,7 @@ class DetectMultiBackend(nn.Module):
             y[..., 1] *= im.shape[1]  # y
             y[..., 2] *= im.shape[2]  # w
             y[..., 3] *= im.shape[1]  # h
-        return y if self.pt else torch.tensor(y)
+        return torch.tensor(y)
 
 
 class AutoShape(nn.Module):
