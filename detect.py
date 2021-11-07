@@ -100,11 +100,8 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     dt, seen = [0.0, 0.0, 0.0], 0
     for path, im, im0s, vid_cap, s in dataset:
         t1 = time_sync()
-        if pt:
-            im = torch.from_numpy(im).to(device)
-            im = im.half() if half else im.float()  # uint8 to fp16/32
-        else:
-            im = im.astype('float32')
+        im = torch.from_numpy(im).to(device)
+        im = im.half() if half else im.float()  # uint8 to fp16/32
         im /= 255  # 0 - 255 to 0.0 - 1.0
         if len(im.shape) == 3:
             im = im[None]  # expand for batch dim
