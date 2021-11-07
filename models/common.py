@@ -5,10 +5,12 @@ Common modules
 
 import logging
 import math
+import platform
 import warnings
 from copy import copy
 from pathlib import Path
 
+import cv2
 import numpy as np
 import pandas as pd
 import requests
@@ -18,7 +20,8 @@ from PIL import Image
 from torch.cuda import amp
 
 from utils.datasets import exif_transpose, letterbox
-from utils.general import colorstr, increment_path, make_divisible, non_max_suppression, scale_coords, xyxy2xywh
+from utils.general import colorstr, increment_path, make_divisible, non_max_suppression, scale_coords, xyxy2xywh, \
+    check_suffix, check_requirements
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import time_sync
 
@@ -270,6 +273,95 @@ class Concat(nn.Module):
 
     def forward(self, x):
         return torch.cat(x, self.d)
+
+
+class DetectMultiBackend(nn.Module):
+    def __init__(self, weights='yolov5s.pt', device=None, half=False, dnn=False):
+        super().__init__()
+        # Load model
+        w = str(weights[0] if isinstance(weights, list) else weights)
+        suffix, suffixes = Path(w).suffix.lower(), ['.pt', '.onnx', '.tflite', '.pb', '']
+        check_suffix(w, suffixes)  # check weights have acceptable suffix
+        pt, onnx, tflite, pb, saved_model = (suffix == x for x in suffixes)  # backend booleans
+        stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
+        if pt:
+            from models.experimental import attempt_load
+            model = torch.jit.load(w) if 'torchscript' in w else attempt_load(weights, map_location=device)
+            stride = int(model.stride.max())  # model stride
+            names = model.module.names if hasattr(model, 'module') else model.names  # get class names
+            if half:
+                model.half()  # to FP16
+        elif onnx:
+            if dnn:  # OpenCV DNN
+                check_requirements(('opencv-python>=4.5.4',))
+                net = cv2.dnn.readNetFromONNX(w)
+            else:  # ONNX Runtime
+                check_requirements(('onnx', 'onnxruntime-gpu' if torch.has_cuda else 'onnxruntime'))
+                import onnxruntime
+                session = onnxruntime.InferenceSession(w, None)
+        else:  # TensorFlow model (TFLite, pb, saved_model)
+            import tensorflow as tf
+            if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
+                def wrap_frozen_graph(gd, inputs, outputs):
+                    x = tf.compat.v1.wrap_function(lambda: tf.compat.v1.import_graph_def(gd, name=""), [])  # wrapped
+                    return x.prune(tf.nest.map_structure(x.graph.as_graph_element, inputs),
+                                   tf.nest.map_structure(x.graph.as_graph_element, outputs))
+
+                graph_def = tf.Graph().as_graph_def()
+                graph_def.ParseFromString(open(w, 'rb').read())
+                frozen_func = wrap_frozen_graph(gd=graph_def, inputs="x:0", outputs="Identity:0")
+            elif saved_model:
+                model = tf.keras.models.load_model(w)
+            elif tflite:
+                if "edgetpu" in w:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
+                    import tflite_runtime.interpreter as tflri
+                    delegate = {'Linux': 'libedgetpu.so.1',  # install https://coral.ai/software/#edgetpu-runtime
+                                'Darwin': 'libedgetpu.1.dylib',
+                                'Windows': 'edgetpu.dll'}[platform.system()]
+                    interpreter = tflri.Interpreter(model_path=w,
+                                                    experimental_delegates=[tflri.load_delegate(delegate)])
+                else:
+                    interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
+                interpreter.allocate_tensors()  # allocate
+                input_details = interpreter.get_input_details()  # inputs
+                output_details = interpreter.get_output_details()  # outputs
+
+        self.__dict__.update(locals())  # all all variables to self
+
+    def forward(self, im, augment=False, profile=False, visualize=False):
+        # Inference
+        if self.pt:
+            y = self.model(im, augment=augment, visualize=visualize)[0]
+        elif self.onnx:
+            if self.dnn:  # OpenCV DNN
+                self.net.setInput(im)
+                y = self.net.forward()
+            else:  # ONNX Runtime
+                y = self.session.run([self.session.get_outputs()[0].name], {self.session.get_inputs()[0].name: im})[0]
+        else:  # TensorFlow model (TFLite, pb, saved_model)
+            import tensorflow as tf
+            im = im.permute(0, 2, 3, 1).cpu().numpy()  # TF format (1,640,640,3)
+            if self.pb:
+                y = self.frozen_func(x=tf.constant(im)).numpy()
+            elif self.saved_model:
+                y = self.model(im, training=False).numpy()
+            elif self.tflite:
+                input, output = self.input_details[0], self.output_details[0]
+                int8 = input['dtype'] == np.uint8  # is TFLite quantized uint8 model
+                if int8:
+                    scale, zero_point = input['quantization']
+                    im = (im / scale + zero_point).astype(np.uint8)  # de-scale
+                self.interpreter.set_tensor(input['index'], im)
+                self.interpreter.invoke()
+                y = self.interpreter.get_tensor(output['index'])
+                if int8:
+                    scale, zero_point = output['quantization']
+                    y = (y.astype(np.float32) - zero_point) * scale  # re-scale
+            y[..., 0] *= im.shape[2]  # x
+            y[..., 1] *= im.shape[1]  # y
+            y[..., 2] *= im.shape[2]  # w
+            y[..., 3] *= im.shape[1]  # h
+        return y if self.pt else torch.tensor(y)
 
 
 class AutoShape(nn.Module):
