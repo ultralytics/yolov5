@@ -122,7 +122,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         dt[2] += time_sync() - t3
 
         # Second-stage classifier (optional)
-        # pred = apply_classifier(pred, classifier_model, im, im0s)
+        # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
 
         # Process predictions
         for i, det in enumerate(pred):  # per image
