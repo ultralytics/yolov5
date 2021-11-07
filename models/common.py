@@ -349,6 +349,9 @@ class DetectMultiBackend(nn.Module):
             y = self.model(im) if self.jit else self.model(im, augment=augment, visualize=visualize)
             return y if val else y[0]
         elif self.coreml:  # CoreML *.mlmodel
+            im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
+            im = Image.fromarray((im[0] * 255).astype('uint8'))
+            # im = im.resize((192, 320), Image.ANTIALIAS)
             y = self.model.predict({'image': im})  # coordinates are xywh normalized
             box = xywh2xyxy(y['coordinates'] * [[w, h, w, h]])  # xyxy pixels
             conf, cls = y['confidence'].max(1), y['confidence'].argmax(1).astype(np.float)
@@ -361,7 +364,7 @@ class DetectMultiBackend(nn.Module):
             else:  # ONNX Runtime
                 y = self.session.run([self.session.get_outputs()[0].name], {self.session.get_inputs()[0].name: im})[0]
         else:  # TensorFlow model (TFLite, pb, saved_model)
-            im = im.permute(0, 2, 3, 1).cpu().numpy()  # TF format (1,h=640,w=640,3)
+            im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
             if self.pb:
                 y = self.frozen_func(x=self.tf.constant(im)).numpy()
             elif self.saved_model:
