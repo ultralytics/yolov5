@@ -312,13 +312,12 @@ class DetectMultiBackend(nn.Module):
             elif saved_model:
                 model = tf.keras.models.load_model(w)
             elif tflite:
-                if "edgetpu" in w:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
-                    import tflite_runtime.interpreter as tflri
+                if 'edgetpu' in w:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
+                    import tflite_runtime.interpreter as tfli
                     delegate = {'Linux': 'libedgetpu.so.1',  # install https://coral.ai/software/#edgetpu-runtime
                                 'Darwin': 'libedgetpu.1.dylib',
                                 'Windows': 'edgetpu.dll'}[platform.system()]
-                    interpreter = tflri.Interpreter(model_path=w,
-                                                    experimental_delegates=[tflri.load_delegate(delegate)])
+                    interpreter = tfli.Interpreter(model_path=w, experimental_delegates=[tfli.load_delegate(delegate)])
                 else:
                     interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
                 interpreter.allocate_tensors()  # allocate
