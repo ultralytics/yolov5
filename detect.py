@@ -82,7 +82,8 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
 
     # Half
     half &= pt and device.type != 'cpu'  # half precision only supported on CUDA
-    model.half() if half else model.float()
+    if pt:
+        model.model.half() if half else model.model.float()
 
     # Dataloader
     if webcam:
