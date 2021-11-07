@@ -81,7 +81,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     # Load model
     model = DetectMultiBackend(weights, device=device, half=half, dnn=dnn)
     stride, names, pt, onnx = model.stride, model.names, model.pt, model.onnx
-    imgsz = check_img_size(imgsz, s=model.stride)  # check image size
+    imgsz = check_img_size(imgsz, s=stride)  # check image size
 
     # Dataloader
     if webcam:
