@@ -113,6 +113,8 @@ def run(data,
     if training:  # called by train.py
         device, pt = next(model.parameters()).device, True  # get model device, PyTorch model
 
+        half &= pt and device.type != 'cpu'  # half precision only supported on CUDA
+        model.half() if half else model.float()
     else:  # called directly
         device = select_device(device, batch_size=batch_size)
 
@@ -129,16 +131,11 @@ def run(data,
             batch_size = 1  # export.py models default to batch-size 1
             device = torch.device('cpu')
 
-        # Multi-GPU disabled, incompatible with .half() https://github.com/ultralytics/yolov5/issues/99
-        # if device.type != 'cpu' and torch.cuda.device_count() > 1:
-        #     model = nn.DataParallel(model)
+        half &= pt and device.type != 'cpu'  # half precision only supported on CUDA
+        model.model.half() if half else model.model.float()
 
         # Data
         data = check_dataset(data)  # check
-
-    # Half
-    half &= pt and device.type != 'cpu'  # half precision only supported on CUDA
-    model.half() if half else model.float()
 
     # Configure
     model.eval()
