@@ -137,7 +137,7 @@ def run(data,
         data = check_dataset(data)  # check
 
     # Half
-    half &= device.type != 'cpu'  # half precision only supported on CUDA
+    half &= pt and device.type != 'cpu'  # half precision only supported on CUDA
     model.half() if half else model.float()
 
     # Configure
@@ -149,7 +149,7 @@ def run(data,
 
     # Dataloader
     if not training:
-        if model.pt and device.type != 'cpu':
+        if pt and device.type != 'cpu':
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.model.parameters())))  # warmup
         pad = 0.0 if task == 'speed' else 0.5
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
@@ -166,12 +166,12 @@ def run(data,
     jdict, stats, ap, ap_class = [], [], [], []
     for batch_i, (im, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
         t1 = time_sync()
+        im = im.half() if half else im.float()  # uint8 to fp16/32
         if pt:
             im = im.to(device, non_blocking=True)
-            im = im.half() if half else im.float()  # uint8 to fp16/32
             targets = targets.to(device)
-        else:
-            im = im.numpy().astype('float32')
+        # else:
+        #     im = im.numpy().astype('float32')
         im /= 255  # 0 - 255 to 0.0 - 1.0
         nb, _, height, width = im.shape  # batch size, channels, height, width
         t2 = time_sync()
