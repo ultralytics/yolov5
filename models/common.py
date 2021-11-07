@@ -277,14 +277,14 @@ class Concat(nn.Module):
 
 class DetectMultiBackend(nn.Module):
     # YOLOv5 MultiBackend class for PyTorch, TorchScript, TensorFlow, TFLite, ONNX, OpenCV DNN
-    def __init__(self, weights='yolov5s.pt', device=None, half=False, dnn=False):
+    def __init__(self, weights='yolov5s.pt', device=None, half=False, dnn=True):
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
         suffix, suffixes = Path(w).suffix.lower(), ['.pt', '.onnx', '.tflite', '.pb', '']
         check_suffix(w, suffixes)  # check weights have acceptable suffix
         pt, onnx, tflite, pb, saved_model = (suffix == x for x in suffixes)  # backend booleans
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
-        if pt:
+        if pt:  # PyTorch
             from models.experimental import attempt_load  # scoped to avoid circular import
             model = torch.jit.load(w) if 'torchscript' in w else attempt_load(weights, map_location=device)
             stride = int(model.stride.max())  # model stride
@@ -292,9 +292,11 @@ class DetectMultiBackend(nn.Module):
             if half:
                 model.half()  # to FP16
         elif dnn:  # ONNX OpenCV DNN
+            LOGGER.info(f'Loading {w} for ONNX OpenCV DNN inference...')
             check_requirements(('opencv-python>=4.5.4',))
             net = cv2.dnn.readNetFromONNX(w)
         elif onnx:  # ONNX Runtime
+            LOGGER.info(f'Loading {w} for ONNX Runtime inference...')
             check_requirements(('onnx', 'onnxruntime-gpu' if torch.has_cuda else 'onnxruntime'))
             import onnxruntime
             session = onnxruntime.InferenceSession(w, None)
@@ -306,34 +308,41 @@ class DetectMultiBackend(nn.Module):
                     return x.prune(tf.nest.map_structure(x.graph.as_graph_element, inputs),
                                    tf.nest.map_structure(x.graph.as_graph_element, outputs))
 
+                LOGGER.info(f'Loading {w} for TensorFlow *.pb inference...')
                 graph_def = tf.Graph().as_graph_def()
                 graph_def.ParseFromString(open(w, 'rb').read())
                 frozen_func = wrap_frozen_graph(gd=graph_def, inputs="x:0", outputs="Identity:0")
             elif saved_model:
+                LOGGER.info(f'Loading {w} for TensorFlow saved_model inference...')
                 model = tf.keras.models.load_model(w)
             elif tflite:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
                 if 'edgetpu' in w.lower():
+                    LOGGER.info(f'Loading {w} for TensorFlow Edge TPU inference...')
                     import tflite_runtime.interpreter as tfli
                     delegate = {'Linux': 'libedgetpu.so.1',  # install https://coral.ai/software/#edgetpu-runtime
                                 'Darwin': 'libedgetpu.1.dylib',
                                 'Windows': 'edgetpu.dll'}[platform.system()]
                     interpreter = tfli.Interpreter(model_path=w, experimental_delegates=[tfli.load_delegate(delegate)])
                 else:
+                    LOGGER.info(f'Loading {w} for TensorFlow Lite inference...')
                     interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
                 interpreter.allocate_tensors()  # allocate
                 input_details = interpreter.get_input_details()  # inputs
                 output_details = interpreter.get_output_details()  # outputs
         self.__dict__.update(locals())  # assign all variables to self
 
-    def forward(self, im, augment=False, visualize=False):
+    def forward(self, im, augment=False, visualize=False, val=False):
         # YOLOv5 MultiBackend inference
-        if self.pt:
-            return self.model(im, augment=augment, visualize=visualize)[0]
-        elif self.dnn:  # ONNX OpenCV DNN
-            self.net.setInput(im)
-            y = self.net.forward()
-        elif self.onnx:  # ONNX Runtime
-            y = self.session.run([self.session.get_outputs()[0].name], {self.session.get_inputs()[0].name: im})[0]
+        if self.pt:  # PyTorch
+            y = self.model(im, augment=augment, visualize=visualize)
+            return y if val else y[0]
+        elif self.onnx:  # ONNX
+            im = np.array(im)
+            if self.dnn:  # ONNX OpenCV DNN
+                self.net.setInput(im)
+                y = self.net.forward()
+            else:  # ONNX Runtime
+                y = self.session.run([self.session.get_outputs()[0].name], {self.session.get_inputs()[0].name: im})[0]
         else:  # TensorFlow model (TFLite, pb, saved_model)
             im = im.permute(0, 2, 3, 1).cpu().numpy()  # TF format (1,640,640,3)
             if self.pb:
@@ -356,7 +365,8 @@ class DetectMultiBackend(nn.Module):
             y[..., 1] *= im.shape[1]  # y
             y[..., 2] *= im.shape[2]  # w
             y[..., 3] *= im.shape[1]  # h
-        return torch.tensor(y)
+        y = torch.tensor(y)
+        return (y, []) if val else y
 
 
 class AutoShape(nn.Module):
