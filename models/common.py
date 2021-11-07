@@ -311,8 +311,8 @@ class DetectMultiBackend(nn.Module):
                 frozen_func = wrap_frozen_graph(gd=graph_def, inputs="x:0", outputs="Identity:0")
             elif saved_model:
                 model = tf.keras.models.load_model(w)
-            elif tflite:
-                if 'edgetpu' in w:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
+            elif tflite:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
+                if 'edgetpu' in w.lower():
                     import tflite_runtime.interpreter as tfli
                     delegate = {'Linux': 'libedgetpu.so.1',  # install https://coral.ai/software/#edgetpu-runtime
                                 'Darwin': 'libedgetpu.1.dylib',
