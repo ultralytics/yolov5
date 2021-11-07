@@ -121,10 +121,10 @@ def run(data,
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
         # Load model
-        model = DetectMultiBackend(weights, device=device, pt_half=half, dnn=dnn)
+        model = DetectMultiBackend(weights, device=device, dnn=dnn)
         stride, names, pt, onnx = model.stride, model.names, model.pt, model.onnx
         imgsz = check_img_size(imgsz, s=model.stride)  # check image size
-        if not model.pt:
+        if not pt:
             LOGGER.info(f'Forcing --batch-size 1 square inference shape(1,3,{imgsz},{imgsz}) for non-PyTorch backends')
             batch_size = 1  # export.py models default to batch-size 1
             device = torch.device('cpu')

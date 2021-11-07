@@ -74,14 +74,15 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
-    # Initialize
-    device = select_device(device)
-    half &= device.type != 'cpu'  # half precision only supported on CUDA
-
     # Load model
-    model = DetectMultiBackend(weights, device=device, pt_half=half, dnn=dnn)
+    device = select_device(device)
+    model = DetectMultiBackend(weights, device=device, dnn=dnn)
     stride, names, pt, onnx = model.stride, model.names, model.pt, model.onnx
     imgsz = check_img_size(imgsz, s=stride)  # check image size
+
+    # Half
+    half &= pt and device.type != 'cpu'  # half precision only supported on CUDA
+    model.half() if half else model.float()
 
     # Dataloader
     if webcam:
