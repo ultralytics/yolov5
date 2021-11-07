@@ -127,6 +127,7 @@ def run(data,
         if not model.pt:
             LOGGER.info(f'Forcing --batch-size 1 square inference shape(1,3,{imgsz},{imgsz}) for non-PyTorch backends')
             batch_size = 1  # export.py models default to batch-size 1
+            device = torch.device('cpu')
 
         # Multi-GPU disabled, incompatible with .half() https://github.com/ultralytics/yolov5/issues/99
         # if device.type != 'cpu' and torch.cuda.device_count() > 1:
@@ -169,6 +170,8 @@ def run(data,
             im = im.to(device, non_blocking=True)
             im = im.half() if half else im.float()  # uint8 to fp16/32
             targets = targets.to(device)
+        else:
+            im = im.numpy().astype('float32')
         im /= 255  # 0 - 255 to 0.0 - 1.0
         nb, _, height, width = im.shape  # batch size, channels, height, width
         t2 = time_sync()
