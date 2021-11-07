@@ -76,9 +76,9 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     check_suffix(w, suffixes)  # check weights have acceptable suffix
     pt, onnx, tflite, pb, saved_model = (suffix == x for x in suffixes)  # backend booleans
     stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
-    pt_jit = pt and 'torchscript' in w
+    jit = pt and 'torchscript' in w
     if pt:
-        if pt_jit:
+        if jit:
             import json
             extra_files = {'config.txt': ''}  # model metadata
             model = torch.jit.load(w, _extra_files=extra_files)
@@ -129,7 +129,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             output_details = interpreter.get_output_details()  # outputs
             int8 = input_details[0]['dtype'] == np.uint8  # is TFLite quantized uint8 model
     imgsz = check_img_size(imgsz, s=stride)  # check image size
-    if pt_jit and ts_params and imgsz != [ts_h, ts_w]:
+    if jit and ts_params and imgsz != [ts_h, ts_w]:
         print(f"Changing resolution from {imgsz} to {[ts_h, ts_w]} based to graph defaults")
         imgsz = ts_h, ts_w
 
@@ -137,10 +137,10 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     if webcam:
         view_img = check_imshow()
         cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt and not pt_jit)
+        dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt and not jit)
         bs = len(dataset)  # batch_size
     else:
-        dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt and not pt_jit)
+        dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt and not jit)
         bs = 1  # batch_size
     vid_path, vid_writer = [None] * bs, [None] * bs
 
@@ -164,7 +164,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         # Inference
         if pt:
             visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
-            if pt_jit:
+            if jit:
                 pred = model(img)[0]
             else:
                 pred = model(img, augment=augment, visualize=visualize)[0]
