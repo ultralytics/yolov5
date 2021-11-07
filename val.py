@@ -121,7 +121,7 @@ def run(data,
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
         # Load model
-        model = DetectMultiBackend(weights, device=device, half=half, dnn=dnn)
+        model = DetectMultiBackend(weights, device=device, pt_half=half, dnn=dnn)
         stride, names, pt, onnx = model.stride, model.names, model.pt, model.onnx
         imgsz = check_img_size(imgsz, s=model.stride)  # check image size
         if not model.pt:
@@ -166,12 +166,10 @@ def run(data,
     jdict, stats, ap, ap_class = [], [], [], []
     for batch_i, (im, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
         t1 = time_sync()
-        im = im.half() if half else im.float()  # uint8 to fp16/32
         if pt:
             im = im.to(device, non_blocking=True)
             targets = targets.to(device)
-        # else:
-        #     im = im.numpy().astype('float32')
+        im = im.half() if half else im.float()  # uint8 to fp16/32
         im /= 255  # 0 - 255 to 0.0 - 1.0
         nb, _, height, width = im.shape  # batch size, channels, height, width
         t2 = time_sync()
