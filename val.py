@@ -113,7 +113,7 @@ def run(data,
     if training:  # called by train.py
         device, pt = next(model.parameters()).device, True  # get model device, PyTorch model
 
-        half &= pt and device.type != 'cpu'  # half precision only supported on CUDA
+        half &= device.type != 'cpu'  # half precision only supported on CUDA
         model.half() if half else model.float()
     else:  # called directly
         device = select_device(device, batch_size=batch_size)
@@ -126,13 +126,13 @@ def run(data,
         model = DetectMultiBackend(weights, device=device, dnn=dnn)
         stride, names, pt, onnx = model.stride, model.names, model.pt, model.onnx
         imgsz = check_img_size(imgsz, s=model.stride)  # check image size
-        if not pt:
+        if pt:
+            half &= device.type != 'cpu'  # half precision only supported on CUDA
+            model.model.half() if half else model.model.float()
+        else:
             LOGGER.info(f'Forcing --batch-size 1 square inference shape(1,3,{imgsz},{imgsz}) for non-PyTorch backends')
             batch_size = 1  # export.py models default to batch-size 1
             device = torch.device('cpu')
-
-        half &= pt and device.type != 'cpu'  # half precision only supported on CUDA
-        model.model.half() if half else model.model.float()
 
         # Data
         data = check_dataset(data)  # check
