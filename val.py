@@ -126,7 +126,7 @@ def run(data,
         model = DetectMultiBackend(weights, device=device, dnn=dnn)
         stride, names, pt, onnx = model.stride, model.names, model.pt, model.onnx
         imgsz = check_img_size(imgsz, s=model.stride)  # check image size
-        half &= pt and device.type != 'cpu'  # half precision only supported on CUDA
+        half &= pt and device.type != 'cpu'  # half precision only supported by PyTorch on CUDA
         if pt:
             model.model.half() if half else model.model.float()
         else:

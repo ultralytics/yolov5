@@ -81,7 +81,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
     # Half
-    half &= pt and device.type != 'cpu'  # half precision only supported on CUDA
+    half &= pt and device.type != 'cpu'  # half precision only supported by PyTorch on CUDA
     if pt:
         model.model.half() if half else model.model.float()
 
