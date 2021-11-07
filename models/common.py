@@ -3,6 +3,7 @@
 Common modules
 """
 
+import json
 import logging
 import math
 import platform
@@ -283,8 +284,17 @@ class DetectMultiBackend(nn.Module):
         suffix, suffixes = Path(w).suffix.lower(), ['.pt', '.onnx', '.tflite', '.pb', '']
         check_suffix(w, suffixes)  # check weights have acceptable suffix
         pt, onnx, tflite, pb, saved_model = (suffix == x for x in suffixes)  # backend booleans
+        jit = pt and 'torchscript' in w.lower()
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
-        if pt:  # PyTorch
+
+        if jit:  # TorchScript
+            LOGGER.info(f'Loading {w} for TorchScript inference...')
+            extra_files = {'config.txt': ''}  # model metadata
+            model = torch.jit.load(w, _extra_files=extra_files)
+            if extra_files['config.txt']:
+                d = json.loads(extra_files['config.txt'])  # extra_files dict
+                stride, names = int(d['stride']), d['names']
+        elif pt:  # PyTorch
             from models.experimental import attempt_load  # scoped to avoid circular import
             model = torch.jit.load(w) if 'torchscript' in w else attempt_load(weights, map_location=device)
             stride = int(model.stride.max())  # model stride
@@ -332,7 +342,7 @@ class DetectMultiBackend(nn.Module):
     def forward(self, im, augment=False, visualize=False, val=False):
         # YOLOv5 MultiBackend inference
         if self.pt:  # PyTorch
-            y = self.model(im, augment=augment, visualize=visualize)
+            y = self.model(im) if self.jit else self.model(im, augment=augment, visualize=visualize)
             return y if val else y[0]
         elif self.onnx:  # ONNX
             im = im.cpu().numpy()  # torch to numpy
