@@ -17,7 +17,7 @@ from PIL import Image
 from torch.cuda import amp
 
 from utils.datasets import exif_transpose, letterbox
-from utils.general import colorstr, increment_path, make_divisible, non_max_suppression, scale_coords, xyxy2xywh, LOGGER
+from utils.general import LOGGER, colorstr, increment_path, make_divisible, non_max_suppression, scale_coords, xyxy2xywh
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import time_sync
 
