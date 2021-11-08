@@ -7,7 +7,6 @@ Usage:
 """
 
 import argparse
-import logging
 import math
 import os
 import random
@@ -201,8 +200,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # DP mode
     if cuda and RANK == -1 and torch.cuda.device_count() > 1:
-        logging.warning('DP not recommended, instead use torch.distributed.run for best DDP Multi-GPU results.\n'
-                        'See Multi-GPU Tutorial at https://github.com/ultralytics/yolov5/issues/475 to get started.')
+        LOGGER.warning('WARNING: DP not recommended, use torch.distributed.run for best DDP Multi-GPU results.\n'
+                       'See Multi-GPU Tutorial at https://github.com/ultralytics/yolov5/issues/475 to get started.')
         model = torch.nn.DataParallel(model)
 
     # SyncBatchNorm
