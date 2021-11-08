@@ -20,12 +20,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 
+from utils.general import LOGGER
+
 try:
     import thop  # for FLOPs computation
 except ImportError:
     thop = None
-
-LOGGER = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -75,7 +75,7 @@ def select_device(device='', batch_size=None):
         space = ' ' * (len(s) + 1)
         for i, d in enumerate(devices):
             p = torch.cuda.get_device_properties(i)
-            s += f"{'' if i == 0 else space}CUDA:{d} ({p.name}, {p.total_memory / 1024 ** 2}MB)\n"  # bytes to MB
+            s += f"{'' if i == 0 else space}CUDA:{d} ({p.name}, {p.total_memory / 1024 ** 2:.0f}MiB)\n"  # bytes to MB
     else:
         s += 'CPU\n'
 
@@ -111,7 +111,7 @@ def profile(input, ops, n=10, device=None):
         for m in ops if isinstance(ops, list) else [ops]:
             m = m.to(device) if hasattr(m, 'to') else m  # device
             m = m.half() if hasattr(m, 'half') and isinstance(x, torch.Tensor) and x.dtype is torch.float16 else m
-            tf, tb, t = 0., 0., [0., 0., 0.]  # dt forward, backward
+            tf, tb, t = 0, 0, [0, 0, 0]  # dt forward, backward
             try:
                 flops = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2  # GFLOPs
             except:
@@ -153,11 +153,6 @@ def de_parallel(model):
     return model.module if is_parallel(model) else model
 
 
-def intersect_dicts(da, db, exclude=()):
-    # Dictionary intersection of matching keys and shapes, omitting 'exclude' keys, using da values
-    return {k: v for k, v in da.items() if k in db and not any(x in k for x in exclude) and v.shape == db[k].shape}
-
-
 def initialize_weights(model):
     for m in model.modules():
         t = type(m)
@@ -177,7 +172,7 @@ def find_modules(model, mclass=nn.Conv2d):
 
 def sparsity(model):
     # Return global model sparsity
-    a, b = 0., 0.
+    a, b = 0, 0
     for p in model.parameters():
         a += p.numel()
         b += (p == 0).sum()
@@ -336,7 +331,7 @@ class ModelEMA:
             for k, v in self.ema.state_dict().items():
                 if v.dtype.is_floating_point:
                     v *= d
-                    v += (1. - d) * msd[k].detach()
+                    v += (1 - d) * msd[k].detach()
 
     def update_attr(self, model, include=(), exclude=('process_group', 'reducer')):
         # Update EMA attributes

@@ -109,11 +109,11 @@ the [latest YOLOv5 release](https://github.com/ultralytics/yolov5/releases) and 
 
 ```bash
 $ python detect.py --source 0  # webcam
-                            file.jpg  # image
-                            file.mp4  # video
+                            img.jpg  # image
+                            vid.mp4  # video
                             path/  # directory
                             path/*.jpg  # glob
-                            'https://youtu.be/NUsoVlDFqZg'  # YouTube
+                            'https://youtu.be/Zgi9g1ksQHc'  # YouTube
                             'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 ```
 
