@@ -123,7 +123,7 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
 
 
 def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0,
-                       border=(0, 0)):
+                       border=(0, 0), ar_thr=20):
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(0.1, 0.1), scale=(0.9, 1.1), shear=(-10, 10))
     # targets = [cls, xyxy]
 
@@ -204,7 +204,9 @@ def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, sc
             new[:, [1, 3]] = new[:, [1, 3]].clip(0, height)
 
         # filter candidates
-        i = box_candidates(box1=targets[:, 1:5].T * s, box2=new.T, area_thr=0.01 if use_segments else 0.10)
+        i = box_candidates(
+            box1=targets[:, 1:5].T * s, box2=new.T, ar_thr=ar_thr, area_thr=0.01 if use_segments else 0.10
+        )
         targets = targets[i]
         targets[:, 1:5] = new[i]
 

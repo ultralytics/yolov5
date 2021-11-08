@@ -37,3 +37,4 @@ fliplr: 0.5
 mosaic: 1.0
 mixup: 0.243
 copy_paste: 0.0
+ar_thr: 20

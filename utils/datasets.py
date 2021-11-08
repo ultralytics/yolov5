@@ -582,7 +582,8 @@ class LoadImagesAndLabels(Dataset):
                                                  translate=hyp['translate'],
                                                  scale=hyp['scale'],
                                                  shear=hyp['shear'],
-                                                 perspective=hyp['perspective'])
+                                                 perspective=hyp['perspective'],
+                                                 ar_thr=hyp['ar_thr'])
 
         nl = len(labels)  # number of labels
         if nl:
@@ -729,7 +730,8 @@ def load_mosaic(self, index):
                                        scale=self.hyp['scale'],
                                        shear=self.hyp['shear'],
                                        perspective=self.hyp['perspective'],
-                                       border=self.mosaic_border)  # border to remove
+                                       border=self.mosaic_border,  # border to remove
+                                       ar_thr=self.hyp['ar_thr'])
 
     return img4, labels4
 
@@ -803,7 +805,8 @@ def load_mosaic9(self, index):
                                        scale=self.hyp['scale'],
                                        shear=self.hyp['shear'],
                                        perspective=self.hyp['perspective'],
-                                       border=self.mosaic_border)  # border to remove
+                                       border=self.mosaic_border,  # border to remove
+                                       ar_thr=self.hyp['ar_thr'])
 
     return img9, labels9
 
