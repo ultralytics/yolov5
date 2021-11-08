@@ -1,4 +1,6 @@
 Cython==0.29.21
 pillow==7.2.0
+pandas==1.1.5
 PyYAML~=5.3
 tqdm==4.48.2
+
