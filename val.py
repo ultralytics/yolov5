@@ -23,10 +23,10 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.experimental import attempt_load
+from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.datasets import create_dataloader
-from utils.general import (LOGGER, box_iou, check_dataset, check_img_size, check_requirements, check_suffix, check_yaml,
+from utils.general import (LOGGER, box_iou, check_dataset, check_img_size, check_requirements, check_yaml,
                            coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, print_args,
                            scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, ap_per_class
@@ -100,6 +100,7 @@ def run(data,
         name='exp',  # save to project/name
         exist_ok=False,  # existing project/name ok, do not increment
         half=True,  # use FP16 half-precision inference
+        dnn=False,  # use OpenCV DNN for ONNX inference
         model=None,
         dataloader=None,
         save_dir=Path(''),
@@ -110,8 +111,10 @@ def run(data,
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
-        device = next(model.parameters()).device  # get model device
+        device, pt = next(model.parameters()).device, True  # get model device, PyTorch model
 
+        half &= device.type != 'cpu'  # half precision only supported on CUDA
+        model.half() if half else model.float()
     else:  # called directly
         device = select_device(device, batch_size=batch_size)
 
@@ -120,21 +123,20 @@ def run(data,
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
         # Load model
-        check_suffix(weights, '.pt')
-        model = attempt_load(weights, map_location=device)  # load FP32 model
-        gs = max(int(model.stride.max()), 32)  # grid size (max stride)
-        imgsz = check_img_size(imgsz, s=gs)  # check image size
-
-        # Multi-GPU disabled, incompatible with .half() https://github.com/ultralytics/yolov5/issues/99
-        # if device.type != 'cpu' and torch.cuda.device_count() > 1:
-        #     model = nn.DataParallel(model)
+        model = DetectMultiBackend(weights, device=device, dnn=dnn)
+        stride, pt = model.stride, model.pt
+        imgsz = check_img_size(imgsz, s=stride)  # check image size
+        half &= pt and device.type != 'cpu'  # half precision only supported by PyTorch on CUDA
+        if pt:
+            model.model.half() if half else model.model.float()
+        else:
+            half = False
+            batch_size = 1  # export.py models default to batch-size 1
+            device = torch.device('cpu')
+            LOGGER.info(f'Forcing --batch-size 1 square inference shape(1,3,{imgsz},{imgsz}) for non-PyTorch backends')
 
         # Data
         data = check_dataset(data)  # check
-
-    # Half
-    half &= device.type != 'cpu'  # half precision only supported on CUDA
-    model.half() if half else model.float()
 
     # Configure
     model.eval()
@@ -145,11 +147,11 @@ def run(data,
 
     # Dataloader
     if not training:
-        if device.type != 'cpu':
-            model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
+        if pt and device.type != 'cpu':
+            model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.model.parameters())))  # warmup
         pad = 0.0 if task == 'speed' else 0.5
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
-        dataloader = create_dataloader(data[task], imgsz, batch_size, gs, single_cls, pad=pad, rect=True,
+        dataloader = create_dataloader(data[task], imgsz, batch_size, stride, single_cls, pad=pad, rect=pt,
                                        prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
@@ -160,32 +162,33 @@ def run(data,
     dt, p, r, f1, mp, mr, map50, map = [0.0, 0.0, 0.0], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
-    for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
+    for batch_i, (im, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
         t1 = time_sync()
-        img = img.to(device, non_blocking=True)
-        img = img.half() if half else img.float()  # uint8 to fp16/32
-        img /= 255  # 0 - 255 to 0.0 - 1.0
-        targets = targets.to(device)
-        nb, _, height, width = img.shape  # batch size, channels, height, width
+        if pt:
+            im = im.to(device, non_blocking=True)
+            targets = targets.to(device)
+        im = im.half() if half else im.float()  # uint8 to fp16/32
+        im /= 255  # 0 - 255 to 0.0 - 1.0
+        nb, _, height, width = im.shape  # batch size, channels, height, width
         t2 = time_sync()
         dt[0] += t2 - t1
 
-        # Run model
-        out, train_out = model(img, augment=augment)  # inference and training outputs
+        # Inference
+        out, train_out = model(im) if training else model(im, augment=augment, val=True)  # inference, loss outputs
         dt[1] += time_sync() - t2
 
-        # Compute loss
+        # Loss
         if compute_loss:
             loss += compute_loss([x.float() for x in train_out], targets)[1]  # box, obj, cls
 
-        # Run NMS
+        # NMS
         targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)  # to pixels
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
         t3 = time_sync()
         out = non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=single_cls)
         dt[2] += time_sync() - t3
 
-        # Statistics per image
+        # Metrics
         for si, pred in enumerate(out):
             labels = targets[targets[:, 0] == si, 1:]
             nl = len(labels)
@@ -202,12 +205,12 @@ def run(data,
             if single_cls:
                 pred[:, 5] = 0
             predn = pred.clone()
-            scale_coords(img[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
+            scale_coords(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
 
             # Evaluate
             if nl:
                 tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
-                scale_coords(img[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
+                scale_coords(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
                 correct = process_batch(predn, labelsn, iouv)
                 if plots:
@@ -221,16 +224,16 @@ def run(data,
                 save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / (path.stem + '.txt'))
             if save_json:
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
-            callbacks.run('on_val_image_end', pred, predn, path, names, img[si])
+            callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
         # Plot images
         if plots and batch_i < 3:
             f = save_dir / f'val_batch{batch_i}_labels.jpg'  # labels
-            Thread(target=plot_images, args=(img, targets, paths, f, names), daemon=True).start()
+            Thread(target=plot_images, args=(im, targets, paths, f, names), daemon=True).start()
             f = save_dir / f'val_batch{batch_i}_pred.jpg'  # predictions
-            Thread(target=plot_images, args=(img, output_to_target(out), paths, f, names), daemon=True).start()
+            Thread(target=plot_images, args=(im, output_to_target(out), paths, f, names), daemon=True).start()
 
-    # Compute statistics
+    # Compute metrics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
         p, r, ap, f1, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
@@ -318,6 +321,7 @@ def parse_opt():
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
+    parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')
