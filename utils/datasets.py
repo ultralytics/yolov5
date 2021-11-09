@@ -388,6 +388,7 @@ class LoadImagesAndLabels(Dataset):
         self.stride = stride
         self.path = path
         self.albumentations = Albumentations() if augment else None
+        self.ar_thr = 20
 
         try:
             f = []  # image files
@@ -456,6 +457,11 @@ class LoadImagesAndLabels(Dataset):
                 self.labels[i][:, 0] = 0
                 if segment:
                     self.segments[i][:, 0] = 0
+
+        # Dataset-specific update of ar_thr to prevent filtering of correct labels
+        concatenated_labels = np.concatenate(self.labels)  # cxywh
+        dataset_max_ar = round((concatenated_labels[:, 3] / concatenated_labels[:, 4]).max())
+        self.ar_thr = max(dataset_max_ar, self.ar_thr)
 
         # Rectangular Training
         if self.rect:
@@ -582,7 +588,7 @@ class LoadImagesAndLabels(Dataset):
                                                  scale=hyp['scale'],
                                                  shear=hyp['shear'],
                                                  perspective=hyp['perspective'],
-                                                 ar_thr=hyp['ar_thr'])
+                                                 ar_thr=self.ar_thr)
 
         nl = len(labels)  # number of labels
         if nl:
@@ -730,7 +736,7 @@ def load_mosaic(self, index):
                                        shear=self.hyp['shear'],
                                        perspective=self.hyp['perspective'],
                                        border=self.mosaic_border,  # border to remove
-                                       ar_thr=self.hyp['ar_thr'])
+                                       ar_thr=self.ar_thr)
 
     return img4, labels4
 
@@ -805,7 +811,7 @@ def load_mosaic9(self, index):
                                        shear=self.hyp['shear'],
                                        perspective=self.hyp['perspective'],
                                        border=self.mosaic_border,  # border to remove
-                                       ar_thr=self.hyp['ar_thr'])
+                                       ar_thr=self.ar_thr)
 
     return img9, labels9
 
