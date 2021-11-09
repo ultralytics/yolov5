@@ -45,7 +45,7 @@ ROOT = FILE.parents[1]  # YOLOv5 root directory
 def set_logging(name=None, verbose=True):
     # Sets level and returns logger
     rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
-    logging.basicConfig(format="%(message)s", level=logging.INFO if (verbose and rank in (-1, 0)) else logging.WARN)
+    logging.basicConfig(format="%(message)s", level=logging.INFO if (verbose and rank in (-1, 0)) else logging.WARNING)
     return logging.getLogger(name)
 
 
@@ -785,7 +785,8 @@ def print_mutation(results, hyp, save_dir, bucket):
 
 
 def apply_classifier(x, model, img, im0):
-    # Apply a second stage classifier to yolo outputs
+    # Apply a second stage classifier to YOLO outputs
+    # Example model = torchvision.models.__dict__['efficientnet_b0'](pretrained=True).to(device).eval()
     im0 = [im0] if isinstance(im0, np.ndarray) else im0
     for i, d in enumerate(x):  # per image
         if d is not None and len(d):

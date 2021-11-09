@@ -27,4 +27,4 @@ names: ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 't
 
 
 # Download script/URL (optional)
-download: https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128.zip
+download: https://ultralytics.com/assets/coco128.zip

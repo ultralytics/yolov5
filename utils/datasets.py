@@ -6,7 +6,6 @@ Dataloaders and dataset utils
 import glob
 import hashlib
 import json
-import logging
 import os
 import random
 import shutil
@@ -335,7 +334,7 @@ class LoadStreams:
                 if success:
                     self.imgs[i] = im
                 else:
-                    LOGGER.warn('WARNING: Video stream unresponsive, please check your IP camera connection.')
+                    LOGGER.warning('WARNING: Video stream unresponsive, please check your IP camera connection.')
                     self.imgs[i] *= 0
                     cap.open(stream)  # re-open stream if signal was lost
             time.sleep(1 / self.fps[i])  # wait time
@@ -427,7 +426,7 @@ class LoadImagesAndLabels(Dataset):
             d = f"Scanning '{cache_path}' images and labels... {nf} found, {nm} missing, {ne} empty, {nc} corrupted"
             tqdm(None, desc=prefix + d, total=n, initial=n)  # display cache results
             if cache['msgs']:
-                logging.info('\n'.join(cache['msgs']))  # display warnings
+                LOGGER.info('\n'.join(cache['msgs']))  # display warnings
         assert nf > 0 or not augment, f'{prefix}No labels in {cache_path}. Can not train without labels. See {HELP_URL}'
 
         # Read cache
@@ -525,9 +524,9 @@ class LoadImagesAndLabels(Dataset):
 
         pbar.close()
         if msgs:
-            logging.info('\n'.join(msgs))
+            LOGGER.info('\n'.join(msgs))
         if nf == 0:
-            logging.info(f'{prefix}WARNING: No labels found in {path}. See {HELP_URL}')
+            LOGGER.warning(f'{prefix}WARNING: No labels found in {path}. See {HELP_URL}')
         x['hash'] = get_hash(self.label_files + self.img_files)
         x['results'] = nf, nm, ne, nc, len(self.img_files)
         x['msgs'] = msgs  # warnings
@@ -535,9 +534,9 @@ class LoadImagesAndLabels(Dataset):
         try:
             np.save(path, x)  # save cache for next time
             path.with_suffix('.cache.npy').rename(path)  # remove .npy suffix
-            logging.info(f'{prefix}New cache created: {path}')
+            LOGGER.info(f'{prefix}New cache created: {path}')
         except Exception as e:
-            logging.info(f'{prefix}WARNING: Cache directory {path.parent} is not writeable: {e}')  # path not writeable
+            LOGGER.warning(f'{prefix}WARNING: Cache directory {path.parent} is not writeable: {e}')  # not writeable
         return x
 
     def __len__(self):

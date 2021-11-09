@@ -3,14 +3,13 @@
 Image augmentation functions
 """
 
-import logging
 import math
 import random
 
 import cv2
 import numpy as np
 
-from utils.general import check_version, colorstr, resample_segments, segment2box
+from utils.general import LOGGER, check_version, colorstr, resample_segments, segment2box
 from utils.metrics import bbox_ioa
 
 
@@ -32,11 +31,11 @@ class Albumentations:
                 A.ImageCompression(quality_lower=75, p=0.0)],
                 bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
 
-            logging.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms if x.p))
+            LOGGER.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms if x.p))
         except ImportError:  # package not installed, skip
             pass
         except Exception as e:
-            logging.info(colorstr('albumentations: ') + f'{e}')
+            LOGGER.info(colorstr('albumentations: ') + f'{e}')
 
     def __call__(self, im, labels, p=1.0):
         if self.transform and random.random() < p:
