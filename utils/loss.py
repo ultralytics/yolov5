@@ -117,7 +117,8 @@ class ComputeLoss:
     def __call__(self, p, targets):  # predictions, targets, model
         device = targets.device
         lcls, lbox, lobj = torch.zeros(1, device=device), torch.zeros(1, device=device), torch.zeros(1, device=device)
-        tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets
+        squeezed_targets, classes = self.squeeze_targets(targets)
+        tcls, tbox, indices, anchors = self.build_targets(p, squeezed_targets)  # targets
 
         # Losses
         for i, pi in enumerate(p):  # layer index, layer predictions
@@ -145,7 +146,8 @@ class ComputeLoss:
                 # Classification
                 if self.nc > 1:  # cls loss (only if multiple classes)
                     t = torch.full_like(ps[:, 5:], self.cn, device=device)  # targets
-                    t[range(n), tcls[i]] = self.cp
+                    for j in range(n):
+                        t[j, classes[tcls[i][j]]] = self.cp
                     lcls += self.BCEcls(ps[:, 5:], t)  # BCE
 
                 # Append targets to text file
@@ -165,6 +167,32 @@ class ComputeLoss:
         bs = tobj.shape[0]  # batch size
 
         return (lbox + lobj + lcls) * bs, torch.cat((lbox, lobj, lcls)).detach()
+
+    def squeeze_targets(self, targets):
+        # input targets(image,class,x,y,w,h)
+
+        # copy the input since we need to modify it
+        targets_copy = targets.clone()
+        # convert the key (image, x, y, w, h) to string for hashing
+        keys = [np.array2string(key) for key in targets[:, [0, 2, 3, 4, 5]].cpu().numpy()]
+
+        # store all the classes for each unique box
+        classes = OrderedDict()
+        classes[keys[0]] = [targets[0, 1].long()]
+
+        squeezed_targets = [targets_copy[0]]
+        for i, t in enumerate(targets[1:]):
+            k = keys[i + 1]
+            if k in classes.keys():
+                classes[k].append(t[1].long())
+            else:
+                classes[k] = [t[1].long()]
+                # here we change the class id to the row index of class array
+                targets_copy[i + 1, 1] = len(squeezed_targets)
+                squeezed_targets.append(targets_copy[i + 1])
+
+        squeezed_targets = torch.stack(squeezed_targets)
+        return squeezed_targets, list(classes.values())
 
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
