@@ -4,11 +4,12 @@ utils/ initialization
 """
 
 
-def init_notebook():
+def notebook_init():
     # For use in YOLOv5 notebooks
-    from IPython.display import Image, clear_output  # to display images
+    from IPython.display import clear_output  # to display images
 
     from utils.torch_utils import select_device  # YOLOv5 imports
 
     clear_output()
-    return select_device(), Image
+    device, string = select_device()
+    print(f'Setup done! Using {string.rstrip()}')
