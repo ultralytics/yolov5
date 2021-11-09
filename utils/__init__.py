@@ -11,5 +11,5 @@ def notebook_init():
     from utils.torch_utils import select_device  # YOLOv5 imports
 
     clear_output()
-    device, string = select_device()
-    print(f'Setup done! Using {string.rstrip()}')
+    select_device(newline=False)
+    print(f'Setup complete.')

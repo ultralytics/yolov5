@@ -6,6 +6,7 @@ PyTorch utils
 import datetime
 import math
 import os
+import platform
 import subprocess
 import time
 from contextlib import contextmanager
@@ -17,7 +18,7 @@ import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils.general import LOGGER, emojis
+from utils.general import LOGGER
 
 try:
     import thop  # for FLOPs computation
@@ -52,7 +53,7 @@ def git_describe(path=Path(__file__).parent):  # path must be a directory
         return ''  # not a git repository
 
 
-def select_device(device='', batch_size=None, verbose=True):
+def select_device(device='', batch_size=None, newline=True):
     # device = 'cpu' or '0' or '0,1,2,3'
     s = f'YOLOv5 🚀 {git_describe() or date_modified()} torch {torch.__version__} '  # string
     device = str(device).strip().lower().replace('cuda:', '')  # to string, 'cuda:0' to '0'
@@ -76,13 +77,10 @@ def select_device(device='', batch_size=None, verbose=True):
     else:
         s += 'CPU\n'
 
-    s = emojis(s)  # emoji-safe
-    device = torch.device('cuda:0' if cuda else 'cpu')
-    if verbose:
-        LOGGER.info(s)
-        return device
-    else:
-        return device, s
+    if not newline:
+        s = s.rstrip()
+    LOGGER.info(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)  # emoji-safe
+    return torch.device('cuda:0' if cuda else 'cpu')
 
 
 def time_sync():
