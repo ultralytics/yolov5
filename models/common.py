@@ -274,8 +274,17 @@ class Concat(nn.Module):
 
 
 class DetectMultiBackend(nn.Module):
-    # YOLOv5 MultiBackend class for PyTorch, TorchScript, TensorFlow, TFLite, ONNX, OpenCV DNN
+    # YOLOv5 MultiBackend class for python inference on various backends
     def __init__(self, weights='yolov5s.pt', device=None, dnn=True):
+        # Usage:
+        #   PyTorch:      weights = *.pt
+        #   TorchScript:            *.torchscript.pt
+        #   CoreML:                 *.mlmodel
+        #   TensorFlow:             *_saved_model
+        #   TensorFlow:             *.pb
+        #   TensorFlow Lite:        *.tflite
+        #   ONNX Runtime:           *.onnx
+        #   OpenCV DNN:             *.onnx with dnn=True
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
         suffix, suffixes = Path(w).suffix.lower(), ['.pt', '.onnx', '.tflite', '.pb', '', '.mlmodel']
