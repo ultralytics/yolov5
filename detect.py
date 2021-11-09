@@ -16,7 +16,7 @@ import os
 import platform
 import sys
 from pathlib import Path
-from typing import Union, Optional, Sequence
+from typing import Optional, Sequence, Union
 
 import cv2
 import numpy as np
