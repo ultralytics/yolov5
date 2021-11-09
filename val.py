@@ -124,8 +124,8 @@ def run(data,
 
         # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn)
-        stride, names, pt, onnx = model.stride, model.names, model.pt, model.onnx
-        imgsz = check_img_size(imgsz, s=model.stride)  # check image size
+        stride, pt = model.stride, model.pt
+        imgsz = check_img_size(imgsz, s=stride)  # check image size
         half &= pt and device.type != 'cpu'  # half precision only supported by PyTorch on CUDA
         if pt:
             model.model.half() if half else model.model.float()
@@ -151,7 +151,7 @@ def run(data,
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.model.parameters())))  # warmup
         pad = 0.0 if task == 'speed' else 0.5
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
-        dataloader = create_dataloader(data[task], imgsz, batch_size, stride, single_cls, pad=pad, rect=model.pt,
+        dataloader = create_dataloader(data[task], imgsz, batch_size, stride, single_cls, pad=pad, rect=pt,
                                        prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
