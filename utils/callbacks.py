@@ -5,37 +5,33 @@ Callback utils
 
 
 class Callbacks:
-    """"
+    """ "
     Handles all registered callbacks for YOLOv5 Hooks
     """
 
     # Define the available callbacks
     _callbacks = {
-        'on_pretrain_routine_start': [],
-        'on_pretrain_routine_end': [],
-
-        'on_train_start': [],
-        'on_train_epoch_start': [],
-        'on_train_batch_start': [],
-        'optimizer_step': [],
-        'on_before_zero_grad': [],
-        'on_train_batch_end': [],
-        'on_train_epoch_end': [],
-
-        'on_val_start': [],
-        'on_val_batch_start': [],
-        'on_val_image_end': [],
-        'on_val_batch_end': [],
-        'on_val_end': [],
-
-        'on_fit_epoch_end': [],  # fit = train + val
-        'on_model_save': [],
-        'on_train_end': [],
-
-        'teardown': [],
+        "on_pretrain_routine_start": [],
+        "on_pretrain_routine_end": [],
+        "on_train_start": [],
+        "on_train_epoch_start": [],
+        "on_train_batch_start": [],
+        "optimizer_step": [],
+        "on_before_zero_grad": [],
+        "on_train_batch_end": [],
+        "on_train_epoch_end": [],
+        "on_val_start": [],
+        "on_val_batch_start": [],
+        "on_val_image_end": [],
+        "on_val_batch_end": [],
+        "on_val_end": [],
+        "on_fit_epoch_end": [],  # fit = train + val
+        "on_model_save": [],
+        "on_train_end": [],
+        "teardown": [],
     }
 
-    def register_action(self, hook, name='', callback=None):
+    def register_action(self, hook, name="", callback=None):
         """
         Register a new action to a callback hook
 
@@ -46,10 +42,10 @@ class Callbacks:
         """
         assert hook in self._callbacks, f"hook '{hook}' not found in callbacks {self._callbacks}"
         assert callable(callback), f"callback '{callback}' is not callable"
-        self._callbacks[hook].append({'name': name, 'callback': callback})
+        self._callbacks[hook].append({"name": name, "callback": callback})
 
     def get_registered_actions(self, hook=None):
-        """"
+        """ "
         Returns all the registered actions by callback hook
 
         Args:
@@ -73,4 +69,4 @@ class Callbacks:
         assert hook in self._callbacks, f"hook '{hook}' not found in callbacks {self._callbacks}"
 
         for logger in self._callbacks[hook]:
-            logger['callback'](*args, **kwargs)
+            logger["callback"](*args, **kwargs)
