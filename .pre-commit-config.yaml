@@ -30,12 +30,11 @@ repos:
         args: [--py36-plus]
         name: Upgrade code
 
-  # TODO
-  #- repo: https://github.com/PyCQA/isort
-  #  rev: 5.9.3
-  #  hooks:
-  #    - id: isort
-  #      name: imports
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.9.3
+    hooks:
+      - id: isort
+        name: Sort imports
 
   # TODO
   #- repo: https://github.com/pre-commit/mirrors-yapf

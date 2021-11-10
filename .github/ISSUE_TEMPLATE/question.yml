@@ -22,8 +22,8 @@ body:
     attributes:
       label: Question
       description: What is your question?
-      placeholder: >
-        TIP: Include as much information as possible (screenshots, links, reference etc.) to receive the most helpful response.
+      placeholder: |
+        💡 ProTip! Include as much information as possible (screenshots, logs, tracebacks etc.) to receive the most helpful response.
     validations:
       required: true
 
