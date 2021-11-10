@@ -82,13 +82,16 @@ def train(
         Path("data/hyps/hyp.scratch.yaml"),
         help="Path to hyp file.",
     ),
+    project: str = typer.Option(
+        "test_training_results",
+        help="WandB project name to upload to.",
+    ),
 ):
     import train
     import mojo_test
 
     # Some values shared between train/test scripts
     entity = "mojo-ia"
-    project = "test_training_results"
 
     #### TRAINING CODE ####
     # Create data.yaml is a root path is given (hard code extra values for now).
