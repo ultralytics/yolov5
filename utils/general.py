@@ -11,6 +11,7 @@ import os
 import platform
 import random
 import re
+import shutil
 import signal
 import time
 import urllib
@@ -834,3 +835,7 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     if mkdir:
         path.mkdir(parents=True, exist_ok=True)  # make directory
     return path
+
+
+# Variables
+NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size
