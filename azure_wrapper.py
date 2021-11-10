@@ -20,17 +20,20 @@ def _find_module_wheel_path(module_name):
     elif len(module_wheel_paths) == 0:
         raise Exception(f"Cannot find wheel associated with package: {module_name}")
     else:
-        raise Exception(f"Found several wheels associated with package: {module_name} ({module_wheel_paths})")
+        raise Exception(
+            f"Found several wheels associated with package: {module_name} ({module_wheel_paths})"
+        )
 
 
 def _setup():
     # Setting up W&B
-    if os.getenv(
-            'AZUREML_ARM_RESOURCEGROUP') is not None:  # checking if we are in Azure, unless you have really weird local env variables
+    if (
+        os.getenv("AZUREML_ARM_RESOURCEGROUP") is not None
+    ):  # checking if we are in Azure, unless you have really weird local env variables
         run = Run.get_context()
         secret_value = run.get_secret(name="WANDB-BOT-API-KEY")  # Secret called
         # WANDB-API-KEY2 was created in Azure KeyVault
-        os.environ['WANDB_API_KEY'] = secret_value
+        os.environ["WANDB_API_KEY"] = secret_value
 
     # Install aisa utils
     try:
@@ -59,8 +62,8 @@ def train(
         ...,
         help="Location of test dataset (yaml or path to root).",
     ),
-    test_video_dataset_location: Path = typer.Argument(
-        ...,
+    test_video_dataset_location: Path = typer.Option(
+        None,
         help="Location of test video dataset (root of folder with videos).",
     ),
     batch_size: int = typer.Option(
@@ -125,7 +128,7 @@ def train(
         imgsz=image_size,
         workers=workers,
         entity=entity,
-        patience=100
+        patience=100,
     )
     print("Finished training function...")
     #### END OF TRAINING CODE ####
@@ -143,24 +146,26 @@ def train(
         yaml.dump(mojo_test_data, file)
     print(f"Created data yaml at {mojo_test_yaml_file_path} containing:")
 
-    print("Running mojo testing function...")
-    mojo_test.mojo_test(
-        mojo_test_yaml_file_path,
-        [path_to_best_model],
-        batch_size=batch_size,
-        imgsz=image_size,
-        project=project,
-        name=f"{yolo_model_version}-{image_size}",
-        entity=entity,
-        test_video_root=test_video_dataset_location
-    )
-    print("Finished mojo testing function...")
+    if test_video_dataset_location is not None:
+        print("Running mojo video data testing function...")
+        mojo_test.mojo_test(
+            mojo_test_yaml_file_path,
+            [path_to_best_model],
+            batch_size=batch_size,
+            imgsz=image_size,
+            project=project,
+            name=f"{yolo_model_version}-{image_size}",
+            entity=entity,
+            test_video_root=test_video_dataset_location,
+        )
+        print("Finished mojo video data testing function...")
+    else:
+        print("WARNING: Skipping mojo video data testing function.")
 
 
 def cli():
     app()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app()
-
