@@ -43,6 +43,25 @@ def _setup():
         subprocess.run(["pip", "install", f"{aisa_utils_wheel_path}"])
 
 
+def _get_data_yaml(dataset_location: Path) -> dict:
+    dataset_data_yaml_path = dataset_location / "data.yaml"
+    if dataset_data_yaml_path.is_file():
+        with dataset_data_yaml_path.open("r") as file:
+            data_yaml = yaml.load(file)
+    else:
+        data_yaml = dict(
+            nc=1,
+            names=["Sperm"],
+        )
+
+    # Overwrite location keys to be able to launch from anywhere
+    data_yaml["path"] = str(dataset_location.as_posix())
+    data_yaml["train"] = "images/train"
+    data_yaml["val"] = "images/val"
+
+    return data_yaml
+
+
 _setup()
 # CLI app
 app = typer.Typer(add_completion=True)
@@ -96,13 +115,7 @@ def train(
     #### TRAINING CODE ####
     # Create data.yaml is a root path is given (hard code extra values for now).
     if train_dataset_location.is_dir():
-        train_data = dict(
-            path=str(train_dataset_location.as_posix()),
-            train="images/train",
-            val="images/val",
-            nc=1,
-            names=["Sperm"],
-        )
+        train_data = _get_data_yaml(train_dataset_location)
         pprint(train_data)
         train_yaml_file_path = Path("data.yaml")
         with train_yaml_file_path.open("w") as file:
@@ -138,12 +151,7 @@ def train(
 
     #### TESTING ####
 
-    mojo_test_data = dict(
-        path=str(test_dataset_location),
-        test="images/test",
-        nc=1,
-        names=["Sperm"],
-    )
+    mojo_test_data = _get_data_yaml(test_dataset_location)
     mojo_test_yaml_file_path = Path("test_data.yaml")
     with mojo_test_yaml_file_path.open("w") as file:
         yaml.dump(mojo_test_data, file)
