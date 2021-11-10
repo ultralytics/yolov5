@@ -3,7 +3,6 @@
 General utils
 """
 
-import shutil
 import contextlib
 import glob
 import logging
@@ -12,6 +11,7 @@ import os
 import platform
 import random
 import re
+import shutil
 import signal
 import time
 import urllib
