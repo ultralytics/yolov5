@@ -264,7 +264,8 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
     if isinstance(requirements, (str, Path)):  # requirements.txt file
         file = Path(requirements)
         assert file.exists(), f"{prefix} {file.resolve()} not found, check failed."
-        requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(file.open()) if x.name not in exclude]
+        with file.open() as f:
+            requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(f) if x.name not in exclude]
     else:  # list or tuple of packages
         requirements = [x for x in requirements if x not in exclude]
 
