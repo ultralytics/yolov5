@@ -5,11 +5,11 @@ Train a YOLOv5 model on a custom dataset
 Usage:
     $ python path/to/train.py --data coco128.yaml --weights yolov5s.pt --img 640
 """
-
 import argparse
 import math
 import os
 import random
+import shutil
 import sys
 import time
 from copy import deepcopy
@@ -289,7 +289,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         pbar = enumerate(train_loader)
         LOGGER.info(('\n' + '%10s' * 7) % ('Epoch', 'gpu_mem', 'box', 'obj', 'cls', 'labels', 'img_size'))
         if RANK in [-1, 0]:
-            pbar = tqdm(pbar, total=nb, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
+            # pbar = tqdm(pbar, total=nb, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
+            pbar = tqdm(pbar, total=nb, ncols=shutil.get_terminal_size().columns)
         optimizer.zero_grad()
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
             ni = i + nb * epoch  # number integrated batches (since train start)
