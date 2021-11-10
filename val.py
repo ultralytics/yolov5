@@ -339,26 +339,27 @@ def main(opt):
             LOGGER.info(f'WARNING: confidence threshold {opt.conf_thres} >> 0.001 will produce invalid mAP values.')
         run(**vars(opt))
 
-    elif opt.task == 'speed':  # speed benchmarks
-        # python val.py --task speed --data coco.yaml --batch 1 --weights yolov5n.pt yolov5s.pt...
-        for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
-            run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
-                device=opt.device, save_json=False, plots=False)
+    else:
+        weights = opt.weights if isinstance(opt.weights, list) else [opt.weights]
+        opt.half = True  # FP16 for fastest results
+        if opt.task == 'speed':  # speed benchmarks
+            # python val.py --task speed --data coco.yaml --batch 1 --weights yolov5n.pt yolov5s.pt...
+            opt.conf_thres, opt.iou_thres, opt.save_json = 0.25, 0.45, False
+            for opt.weights in weights:
+                run(**vars(opt), plots=False)
 
-    elif opt.task == 'study':  # run over a range of settings and save/plot
-        # python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n.pt yolov5s.pt...
-        x = list(range(256, 1536 + 128, 128))  # x axis (image sizes)
-        for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
-            f = f'study_{Path(opt.data).stem}_{Path(w).stem}.txt'  # filename to save to
-            y = []  # y axis
-            for i in x:  # img-size
-                LOGGER.info(f'\nRunning {f} point {i}...')
-                r, _, t = run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=i, conf_thres=opt.conf_thres,
-                              iou_thres=opt.iou_thres, device=opt.device, save_json=opt.save_json, plots=False)
-                y.append(r + t)  # results and times
-            np.savetxt(f, y, fmt='%10.4g')  # save
-        os.system('zip -r study.zip study_*.txt')
-        plot_val_study(x=x)  # plot
+        elif opt.task == 'study':  # speed vs mAP benchmarks
+            # python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n.pt yolov5s.pt...
+            for opt.weights in weights:
+                f = f'study_{Path(opt.data).stem}_{Path(opt.weights).stem}.txt'  # filename to save to
+                x, y = list(range(256, 1536 + 128, 128)), []  # x axis (image sizes), y axis
+                for opt.imgsz in x:  # img-size
+                    LOGGER.info(f'\nRunning {f} --imgsz {opt.imgsz}...')
+                    r, _, t = run(**vars(opt), plots=False)
+                    y.append(r + t)  # results and times
+                np.savetxt(f, y, fmt='%10.4g')  # save
+            os.system('zip -r study.zip study_*.txt')
+            plot_val_study(x=x)  # plot
 
 
 if __name__ == "__main__":
