@@ -9,7 +9,6 @@ import argparse
 import math
 import os
 import random
-import shutil
 import sys
 import time
 from copy import deepcopy
@@ -40,7 +39,7 @@ from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
 from utils.datasets import create_dataloader
 from utils.downloads import attempt_download
-from utils.general import (LOGGER, check_dataset, check_file, check_git_status, check_img_size, check_requirements,
+from utils.general import (LOGGER, NCOLS, check_dataset, check_file, check_git_status, check_img_size, check_requirements,
                            check_suffix, check_yaml, colorstr, get_latest_run, increment_path, init_seeds,
                            intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods, one_cycle,
                            print_args, print_mutation, strip_optimizer)
@@ -54,7 +53,6 @@ from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_devic
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
-NCOLS = shutil.get_terminal_size().columns
 
 
 def train(hyp,  # path/to/hyp.yaml or hyp dictionary
