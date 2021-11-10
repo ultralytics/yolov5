@@ -41,7 +41,6 @@ os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max t
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
-NCOLS = shutil.get_terminal_size().columns  # terminal window size
 
 
 def set_logging(name=None, verbose=True):
@@ -836,3 +835,7 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     if mkdir:
         path.mkdir(parents=True, exist_ok=True)  # make directory
     return path
+
+
+# Variables
+NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size
