@@ -913,10 +913,12 @@ def verify_image_label(args):
                 assert l.shape[1] == 5, f'labels require 5 columns, {l.shape[1]} columns detected'
                 assert (l >= 0).all(), f'negative label values {l[l < 0]}'
                 assert (l[:, 1:] <= 1).all(), f'non-normalized or out of bounds coordinates {l[:, 1:][l[:, 1:] > 1]}'
-                l = np.unique(l, axis=0)  # remove duplicate rows
-                if len(l) < nl:
-                    segments = np.unique(segments, axis=0)
-                    msg = f'{prefix}WARNING: {im_file}: {nl - len(l)} duplicate labels removed'
+                _, i = np.unique(l, axis=0, return_index=True)
+                if len(i) < nl:  # duplicate row check
+                    l = l[i]  # remove duplicates
+                    if segments:
+                        segments = segments[i]
+                    msg = f'{prefix}WARNING: {im_file}: {nl - len(i)} duplicate labels removed'
             else:
                 ne = 1  # label empty
                 l = np.zeros((0, 5), dtype=np.float32)
