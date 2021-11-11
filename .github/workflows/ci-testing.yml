@@ -57,7 +57,7 @@ jobs:
           pip --version
           pip list
         shell: bash
-        
+
       - name: wandb login
         run: |
           wandb login 345011b3fb26dc8337fd9b20e53857c1d403f2aa
