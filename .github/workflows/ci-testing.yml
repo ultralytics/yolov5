@@ -52,11 +52,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -qr requirements.txt -f https://download.pytorch.org/whl/cpu/torch_stable.html
           pip install -q onnx tensorflow-cpu keras==2.6.0  # for export
+          pip install wandb
           python --version
           pip --version
           pip list
         shell: bash
-
+        
+    - name: wandb login
+      run: |
+        wandb login 345011b3fb26dc8337fd9b20e53857c1d403f2aa
       - name: Download data
         run: |
           # curl -L -o tmp.zip https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128.zip
