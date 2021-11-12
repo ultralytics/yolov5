@@ -3,11 +3,12 @@ An example that uses TensorRT's Python api to make inferences.
 """
 import ctypes
 import os
-import shutil
 import random
+import shutil
 import sys
 import threading
 import time
+
 import cv2
 import numpy as np
 import pycuda.autoinit
@@ -15,7 +16,6 @@ import pycuda.driver as cuda
 import tensorrt as trt
 import torch
 import torchvision
-
 
 
 def get_img_path_batches(batch_size, img_dir):
@@ -69,7 +69,7 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None):
         )
 
 
-class YoLov5TRT(object):
+class YoLov5TRT:
     """
     description: A YOLOv5 class that warps TensorRT ops, preprocess and postprocess ops.
     """
@@ -340,7 +340,7 @@ class inferThread(threading.Thread):
             save_name = os.path.join('output', filename)
             # Save image
             cv2.imwrite(save_name, batch_image_raw[i])
-        print('input->{}, time->{:.2f}ms, saving into output/'.format(self.image_path_batch, use_time * 1000))
+        print(f'input->{self.image_path_batch}, time->{use_time * 1000:.2f}ms, saving into output/')
 
 
 class warmUpThread(threading.Thread):
@@ -350,7 +350,7 @@ class warmUpThread(threading.Thread):
 
     def run(self):
         batch_image_raw, use_time = self.yolov5_wrapper.infer(self.yolov5_wrapper.get_raw_image_zeros())
-        print('warm_up->{}, time->{:.2f}ms'.format(batch_image_raw[0].shape, use_time * 1000))
+        print(f'warm_up->{batch_image_raw[0].shape}, time->{use_time * 1000:.2f}ms')
 
 if __name__ == "__main__":
     # load custom plugins
@@ -383,7 +383,7 @@ if __name__ == "__main__":
     yolov5_wrapper = YoLov5TRT(engine_file_path)
     try:
         print('batch size is', yolov5_wrapper.batch_size)
-        
+
         image_dir = "../enginetest/images"
         image_path_batches = get_img_path_batches(yolov5_wrapper.batch_size, image_dir)
 
