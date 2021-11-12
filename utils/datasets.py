@@ -114,6 +114,7 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
     # Use torch.utils.data.DataLoader() if dataset.properties will update during training else InfiniteDataLoader()
     dataloader = loader(dataset,
                         batch_size=batch_size,
+                        shuffle=(sampler is None),
                         num_workers=nw,
                         sampler=sampler,
                         pin_memory=True,
