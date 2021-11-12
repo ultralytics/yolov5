@@ -9,7 +9,6 @@ import platform
 import warnings
 from copy import copy
 from pathlib import Path
-import yaml
 
 import cv2
 import numpy as np
@@ -17,6 +16,7 @@ import pandas as pd
 import requests
 import torch
 import torch.nn as nn
+import yaml
 from PIL import Image
 from torch.cuda import amp
 

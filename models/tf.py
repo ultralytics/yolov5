@@ -338,7 +338,7 @@ class TFModel:
             self.yaml['nc'] = nc  # override yaml value
         self.model, self.savelist = parse_model(deepcopy(self.yaml), ch=[ch], model=model, imgsz=imgsz)
 
-    def predict(self, inputs, tf_detect=True, tf_nms=False, agnostic_nms=False, topk_per_class=100, topk_all=100, 
+    def predict(self, inputs, tf_detect=True, tf_nms=False, agnostic_nms=False, topk_per_class=100, topk_all=100,
                 iou_thres=0.45, conf_thres=0.25):
         y = []  # outputs
         x = inputs
