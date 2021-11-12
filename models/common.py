@@ -408,7 +408,7 @@ class DetectMultiBackend(nn.Module):
                 im = (im / scale + zero_point).astype(np.uint8)  # de-scale
                 self.interpreter.set_tensor(input['index'], im)
                 self.interpreter.invoke()
-                x = [torch.tensor(self.interpreter.get_tensor(outputs[i]['index']), device=self.device) \
+                x = [torch.tensor(self.interpreter.get_tensor(outputs[i]['index']), device=self.device)
                      for i in range(self.nl)]
                 for i in range(self.nl):  # re-scale
                     scale, zero_point = outputs[i]['quantization']
