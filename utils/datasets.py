@@ -93,7 +93,7 @@ def exif_transpose(image):
 
 
 def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False, pad=0.0,
-                      rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix=''):
+                      rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix='', shuffle=False):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
     with torch_distributed_zero_first(rank):
         dataset = LoadImagesAndLabels(path, imgsz, batch_size,
@@ -109,12 +109,12 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
 
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count() // WORLD_SIZE, batch_size if batch_size > 1 else 0, workers])  # number of workers
-    sampler = torch.utils.data.distributed.DistributedSampler(dataset) if rank != -1 else None
+    sampler = torch.utils.data.distributed.DistributedSampler(dataset, shuffle=shuffle) if rank != -1 else None
     loader = torch.utils.data.DataLoader if image_weights else InfiniteDataLoader
     # Use torch.utils.data.DataLoader() if dataset.properties will update during training else InfiniteDataLoader()
     dataloader = loader(dataset,
                         batch_size=batch_size,
-                        shuffle=(sampler is None),
+                        shuffle=(shuffle and sampler is None),
                         num_workers=nw,
                         sampler=sampler,
                         pin_memory=True,
