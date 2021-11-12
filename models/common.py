@@ -284,6 +284,7 @@ class DetectMultiBackend(nn.Module):
         #   TensorFlow:             *_saved_model
         #   TensorFlow:             *.pb
         #   TensorFlow Lite:        *.tflite
+        #   TensorFlow Edge TPU:    *_edgetpu.tflite
         #   ONNX Runtime:           *.onnx
         #   OpenCV DNN:             *.onnx with dnn=True
         super().__init__()
@@ -347,7 +348,12 @@ class DetectMultiBackend(nn.Module):
                     with open(cfg) as f:
                         cfg = yaml.load(f, Loader=yaml.FullLoader)
                     anchors = cfg['anchors']
+                    nl = len(anchors)
                     nc = cfg['nc']
+                    no = nc + 5
+                    grid = [torch.zeros(1)] * nl  # init grid
+                    a = torch.tensor(anchors).float().view(nl, -1, 2).to(device)
+                    anchor_grid = a.clone().view(nl, 1, -1, 1, 2)  # shape(nl,1,na,1,2)
                 else:
                     LOGGER.info(f'Loading {w} for TensorFlow Lite inference...')
                     interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
@@ -383,7 +389,7 @@ class DetectMultiBackend(nn.Module):
                 y = self.frozen_func(x=self.tf.constant(im)).numpy()
             elif self.saved_model:
                 y = self.model(im, training=False).numpy()
-            elif self.tflite:
+            elif self.tflite and not self.edgetpu:
                 input, output = self.input_details[0], self.output_details[0]
                 int8 = input['dtype'] == np.uint8  # is TFLite quantized uint8 model
                 if int8:
@@ -397,10 +403,14 @@ class DetectMultiBackend(nn.Module):
                     y = (y.astype(np.float32) - zero_point) * scale  # re-scale
             elif self.edgetpu:
                 input, outputs = self.input_details[0], self.output_details
-                _, *imgsz, _ = input.shape
-                nl = len(self.anchors)
-                x = [torch.tensor(interpreter.get_tensor(outputs[i]['index']), device=device) for i in range(nl)]
-                for i in range(nl):
+                _, *imgsz, _ = input['shape']
+                scale, zero_point = input['quantization']
+                im = (im / scale + zero_point).astype(np.uint8)  # de-scale
+                self.interpreter.set_tensor(input['index'], im)
+                self.interpreter.invoke()
+                x = [torch.tensor(self.interpreter.get_tensor(outputs[i]['index']), device=self.device) \
+                     for i in range(self.nl)]
+                for i in range(self.nl):  # re-scale
                     scale, zero_point = outputs[i]['quantization']
                     x[i] = x[i].float()
                     x[i] = (x[i] - zero_point) * scale
@@ -409,28 +419,25 @@ class DetectMultiBackend(nn.Module):
                     yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
                     return torch.stack((xv, yv), 2).view((1, 1, ny * nx, 2)).float()
 
-                # no = nc + 5
-                grid = [torch.zeros(1)] * nl  # init grid
-                a = torch.tensor(anchors).float().view(nl, -1, 2).to(device)
-                anchor_grid = a.clone().view(nl, 1, -1, 1, 2)  # shape(nl,1,na,1,2)
                 z = []  # inference output
-                for i in range(nl):
+                for i in range(self.nl):  # reconstruct bounding boxes
                     _, _, ny_nx, _ = x[i].shape
                     r = imgsz[0] / imgsz[1]
                     nx = int(np.sqrt(ny_nx / r))
                     ny = int(r * nx)
-                    grid[i] = _make_grid(nx, ny).to(x[i].device)
+                    self.grid[i] = _make_grid(nx, ny).to(x[i].device)
                     stride = imgsz[0] // ny
                     y = x[i].sigmoid()
-                    y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + grid[i].to(x[i].device)) * stride  # xy
-                    y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * anchor_grid[i]  # wh
-                    z.append(y.view(-1, no))
+                    y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self.grid[i].to(x[i].device)) * stride  # xy
+                    y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
+                    z.append(y.view(-1, self.no))
                 y = torch.unsqueeze(torch.cat(z, 0), 0)
 
-            y[..., 0] *= w  # x
-            y[..., 1] *= h  # y
-            y[..., 2] *= w  # w
-            y[..., 3] *= h  # h
+            if not self.edgetpu:  # Edge TPU models have no xywh normalization
+                y[..., 0] *= w  # x
+                y[..., 1] *= h  # y
+                y[..., 2] *= w  # w
+                y[..., 3] *= h  # h
         y = torch.tensor(y)
         return (y, []) if val else y
 
