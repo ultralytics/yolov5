@@ -44,10 +44,15 @@ def _setup():
 
 
 def _get_data_yaml(dataset_location: Path) -> dict:
-    dataset_data_yaml_path = dataset_location / "data.yaml"
-    if dataset_data_yaml_path.is_file():
+    dataset_data_yaml_path = list(dataset_location.rglob("*data.yaml"))
+    if len(dataset_data_yaml_path) == 1:
+        dataset_data_yaml_path = dataset_data_yaml_path[0]
         with dataset_data_yaml_path.open("r") as file:
             data_yaml = yaml.load(file)
+    elif len(dataset_data_yaml_path) > 1:
+        raise Exception(
+            f"Multiple data.yaml files found at {dataset_location}: {dataset_data_yaml_path}"
+        )
     else:
         data_yaml = dict(
             nc=1,
@@ -55,7 +60,7 @@ def _get_data_yaml(dataset_location: Path) -> dict:
         )
 
     # Overwrite location keys to be able to launch from anywhere
-    data_yaml["path"] = str(dataset_location.as_posix())
+    data_yaml["path"] = str(dataset_data_yaml_path.parent.as_posix())
     data_yaml["train"] = "images/train"
     data_yaml["val"] = "images/val"
 
