@@ -53,7 +53,7 @@ def git_describe(path=Path(__file__).parent):  # path must be a directory
         return ''  # not a git repository
 
 
-def select_device(device='', batch_size=None):
+def select_device(device='', batch_size=None, newline=True):
     # device = 'cpu' or '0' or '0,1,2,3'
     s = f'YOLOv5 🚀 {git_describe() or date_modified()} torch {torch.__version__} '  # string
     device = str(device).strip().lower().replace('cuda:', '')  # to string, 'cuda:0' to '0'
@@ -77,6 +77,8 @@ def select_device(device='', batch_size=None):
     else:
         s += 'CPU\n'
 
+    if not newline:
+        s = s.rstrip()
     LOGGER.info(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)  # emoji-safe
     return torch.device('cuda:0' if cuda else 'cpu')
 

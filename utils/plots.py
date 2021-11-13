@@ -17,7 +17,8 @@ import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.general import clip_coords, increment_path, is_ascii, is_chinese, user_config_dir, xywh2xyxy, xyxy2xywh
+from utils.general import (Timeout, check_requirements, clip_coords, increment_path, is_ascii, is_chinese, try_except,
+                           user_config_dir, xywh2xyxy, xyxy2xywh)
 from utils.metrics import fitness
 
 # Settings
@@ -58,7 +59,10 @@ def check_font(font='Arial.ttf', size=10):
         url = "https://ultralytics.com/assets/" + font.name
         print(f'Downloading {url} to {font}...')
         torch.hub.download_url_to_file(url, str(font), progress=False)
-        return ImageFont.truetype(str(font), size)
+        try:
+            return ImageFont.truetype(str(font), size)
+        except TypeError:
+            check_requirements('Pillow>=8.4.0')  # known issue https://github.com/ultralytics/yolov5/issues/5374
 
 
 class Annotator:
@@ -320,6 +324,8 @@ def plot_val_study(file='', dir='', x=None):  # from utils.plots import *; plot_
     plt.savefig(f, dpi=300)
 
 
+@try_except  # known issue https://github.com/ultralytics/yolov5/issues/5395
+@Timeout(30)  # known issue https://github.com/ultralytics/yolov5/issues/5611
 def plot_labels(labels, names=(), save_dir=Path('')):
     # plot dataset labels
     print('Plotting labels... ')

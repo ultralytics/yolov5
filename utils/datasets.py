@@ -34,6 +34,7 @@ from utils.torch_utils import torch_distributed_zero_first
 HELP_URL = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 IMG_FORMATS = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
 VID_FORMATS = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
+WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))  # DPP
 NUM_THREADS = min(8, os.cpu_count())  # number of multiprocessing threads
 
 # Get orientation exif tag
@@ -107,7 +108,7 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
                                       prefix=prefix)
 
     batch_size = min(batch_size, len(dataset))
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, workers])  # number of workers
+    nw = min([os.cpu_count() // WORLD_SIZE, batch_size if batch_size > 1 else 0, workers])  # number of workers
     sampler = torch.utils.data.distributed.DistributedSampler(dataset) if rank != -1 else None
     loader = torch.utils.data.DataLoader if image_weights else InfiniteDataLoader
     # Use torch.utils.data.DataLoader() if dataset.properties will update during training else InfiniteDataLoader()
@@ -922,10 +923,12 @@ def verify_image_label(args):
                 assert l.shape[1] == 5, f'labels require 5 columns, {l.shape[1]} columns detected'
                 assert (l >= 0).all(), f'negative label values {l[l < 0]}'
                 assert (l[:, 1:] <= 1).all(), f'non-normalized or out of bounds coordinates {l[:, 1:][l[:, 1:] > 1]}'
-                l = np.unique(l, axis=0)  # remove duplicate rows
-                if len(l) < nl:
-                    segments = np.unique(segments, axis=0)
-                    msg = f'{prefix}WARNING: {im_file}: {nl - len(l)} duplicate labels removed'
+                _, i = np.unique(l, axis=0, return_index=True)
+                if len(i) < nl:  # duplicate row check
+                    l = l[i]  # remove duplicates
+                    if segments:
+                        segments = segments[i]
+                    msg = f'{prefix}WARNING: {im_file}: {nl - len(i)} duplicate labels removed'
             else:
                 ne = 1  # label empty
                 l = np.zeros((0, 5), dtype=np.float32)
@@ -972,7 +975,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
             r = max_dim / max(im.height, im.width)  # ratio
             if r < 1.0:  # image too large
                 im = im.resize((int(im.width * r), int(im.height * r)))
-            im.save(f_new, quality=75)  # save
+            im.save(f_new, 'JPEG', quality=75, optimize=True)  # save
         except Exception as e:  # use OpenCV
             print(f'WARNING: HUB ops PIL failure {f}: {e}')
             im = cv2.imread(f)

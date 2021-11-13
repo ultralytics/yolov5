@@ -11,6 +11,7 @@ import os
 import platform
 import random
 import re
+import shutil
 import signal
 import time
 import urllib
@@ -264,7 +265,8 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
     if isinstance(requirements, (str, Path)):  # requirements.txt file
         file = Path(requirements)
         assert file.exists(), f"{prefix} {file.resolve()} not found, check failed."
-        requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(file.open()) if x.name not in exclude]
+        with file.open() as f:
+            requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(f) if x.name not in exclude]
     else:  # list or tuple of packages
         requirements = [x for x in requirements if x not in exclude]
 
@@ -833,3 +835,7 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     if mkdir:
         path.mkdir(parents=True, exist_ok=True)  # make directory
     return path
+
+
+# Variables
+NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size
