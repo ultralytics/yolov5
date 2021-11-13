@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from torch.cuda import amp
 
-from utils.general import colorstr
+from utils.general import LOGGER, colorstr
 from utils.torch_utils import profile
 
 
@@ -27,11 +27,11 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
     #     model = torch.hub.load('ultralytics/yolov5', 'yolov5s', autoshape=False)
     #     print(autobatch(model))
 
-    prefix = colorstr('autobatch: ')
-    print(f'{prefix}Computing optimal batch size for --imgsz {imgsz}')
+    prefix = colorstr('AutoBatch: ')
+    LOGGER.info(f'{prefix}Computing optimal batch size for --imgsz {imgsz}')
     device = next(model.parameters()).device  # get model device
     if device.type == 'cpu':
-        print(f'{prefix}CUDA not detected, using default CPU batch-size {batch_size}')
+        LOGGER.info(f'{prefix}CUDA not detected, using default CPU batch-size {batch_size}')
         return batch_size
 
     d = str(device).upper()  # 'CUDA:0'
@@ -40,18 +40,18 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
     r = torch.cuda.memory_reserved(device) / 1024 ** 3  # (GiB)
     a = torch.cuda.memory_allocated(device) / 1024 ** 3  # (GiB)
     f = t - (r + a)  # free inside reserved
-    print(f'{prefix}{d} ({properties.name}) {t:.2f}G total, {r:.2f}G reserved, {a:.2f}G allocated, {f:.2f}G free')
+    LOGGER.info(f'{prefix}{d} ({properties.name}) {t:.2f}G total, {r:.2f}G reserved, {a:.2f}G allocated, {f:.2f}G free')
 
     batch_sizes = [1, 2, 4, 8, 16]
     try:
         img = [torch.zeros(b, 3, imgsz, imgsz) for b in batch_sizes]
         y = profile(img, model, n=3, device=device)
     except Exception as e:
-        print(f'{prefix}{e}')
+        LOGGER.warning(f'{prefix}{e}')
 
     y = [x[2] for x in y if x]  # memory [2]
     batch_sizes = batch_sizes[:len(y)]
     p = np.polyfit(batch_sizes, y, deg=1)  # first degree polynomial fit
     b = int((f * fraction - p[1]) / p[0])  # y intercept (optimal batch size)
-    print(f'{prefix}Using batch-size {b} for {d} {t * fraction:.2f}G/{t:.2f}G ({fraction * 100:.0f}%)')
+    LOGGER.info(f'{prefix}Using batch-size {b} for {d} {t * fraction:.2f}G/{t:.2f}G ({fraction * 100:.0f}%)')
     return b
