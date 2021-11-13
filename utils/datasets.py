@@ -97,7 +97,7 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
     if rect and shuffle:
         LOGGER.warning('WARNING: --rect is incompatible with Dataloader shuffle, setting shuffle=False')
         shuffle = False
-    with torch_distributed_zero_first(rank):  # Init dataset *.cache only once if DDP
+    with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
         dataset = LoadImagesAndLabels(path, imgsz, batch_size,
                                       augment=augment,  # augmentation
                                       hyp=hyp,  # hyperparameters
