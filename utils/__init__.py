@@ -20,8 +20,8 @@ def notebook_init():
     ram = psutil.virtual_memory().total
     total, used, free = shutil.disk_usage("/")
     display.clear_output()
-    s = f'{os.cpu_count()} CPUs, {ram * gb:.1f}G RAM, {used * gb:.1f}/{total * gb:.1f}G disk'
+    s = f'{os.cpu_count()} CPUs, {ram * gb:.1f} GB RAM, {used * gb:.1f}/{total * gb:.1f} GB disk'
 
     select_device(newline=False)
-    print(emojis(f'Setup complete ✅ {s}'))
+    print(emojis(f'Setup complete ✅ ({s})'))
     return display
