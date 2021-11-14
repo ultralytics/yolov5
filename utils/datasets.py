@@ -461,8 +461,13 @@ class LoadImagesAndLabels(Dataset):
                     self.segments[i][:, 0] = 0
 
         # Dataset-specific update of ar_thr to prevent filtering of correct labels
+        labels_per_example = np.array(list(map(len, self.labels)))
+        broadcasted_shapes = np.repeat(self.shapes, repeats=labels_per_example, axis=0)  # wh
         concatenated_labels = np.concatenate(self.labels)  # cxywh
-        dataset_max_ar = round((concatenated_labels[:, 3] / concatenated_labels[:, 4]).max())
+
+        unnormalized_widths = concatenated_labels[:, 3] * broadcasted_shapes[:, 0]
+        unnormalized_heights = concatenated_labels[:, 4] * broadcasted_shapes[:, 1]
+        dataset_max_ar = round((unnormalized_widths / unnormalized_heights).max())
         self.ar_thr = max(dataset_max_ar, self.ar_thr)
 
         # Rectangular Training
