@@ -17,8 +17,8 @@ import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.general import (Timeout, check_requirements, clip_coords, increment_path, is_ascii, is_chinese, try_except,
-                           user_config_dir, xywh2xyxy, xyxy2xywh)
+from utils.general import (LOGGER, Timeout, check_requirements, clip_coords, increment_path, is_ascii, is_chinese,
+                           try_except, user_config_dir, xywh2xyxy, xyxy2xywh)
 from utils.metrics import fitness
 
 # Settings
@@ -328,7 +328,7 @@ def plot_val_study(file='', dir='', x=None):  # from utils.plots import *; plot_
 @Timeout(30)  # known issue https://github.com/ultralytics/yolov5/issues/5611
 def plot_labels(labels, names=(), save_dir=Path('')):
     # plot dataset labels
-    print('Plotting labels... ')
+    LOGGER.info(f"Plotting labels to {save_dir / 'labels.jpg'}... ")
     c, b = labels[:, 0], labels[:, 1:].transpose()  # classes, boxes
     nc = int(c.max() + 1)  # number of classes
     x = pd.DataFrame(b.transpose(), columns=['x', 'y', 'width', 'height'])
