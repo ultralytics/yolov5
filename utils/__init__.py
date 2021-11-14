@@ -1,16 +1,25 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv3 🚀 by Ultralytics, GPL-3.0 license
 """
 utils/initialization
 """
 
 
 def notebook_init():
-    # For YOLOv5 notebooks
+    # For  notebooks
     print('Checking setup...')
-    from IPython import display  # to display images and clear console output
 
+    import os
+    import psutil
+    import shutil
+    from IPython import display  # to display images and clear console output
     from utils.general import emojis
-    from utils.torch_utils import select_device  # YOLOv5 imports
+    from utils.torch_utils import select_device  # imports
+
+    # System
+    gb = 1 / 1024 ** 3  # bits to GiB
+    ram = psutil.virtual_memory().total
+    total, used, free = shutil.disk_usage("/")
+    print(f'{os.cpu_count()} cpus, {ram * gb:.1f} GB RAM, {used * gb:.1f}/{total * gb:.1f} GB disk')
 
     display.clear_output()
     select_device(newline=False)
