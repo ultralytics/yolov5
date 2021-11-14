@@ -17,7 +17,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 
 from utils.datasets import LoadImagesAndLabels, img2label_paths
-from utils.general import check_dataset, check_file
+from utils.general import LOGGER, check_dataset, check_file
 
 try:
     import wandb
@@ -203,7 +203,7 @@ class WandbLogger():
         config_path = self.log_dataset_artifact(opt.data,
                                                 opt.single_cls,
                                                 'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
-        print("Created dataset config file ", config_path)
+        LOGGER.info(f"Created dataset config file {config_path}")
         with open(config_path, errors='ignore') as f:
             wandb_data_dict = yaml.safe_load(f)
         return wandb_data_dict
@@ -316,7 +316,7 @@ class WandbLogger():
         model_artifact.add_file(str(path / 'last.pt'), name='last.pt')
         wandb.log_artifact(model_artifact,
                            aliases=['latest', 'last', 'epoch ' + str(self.current_epoch), 'best' if best_model else ''])
-        print("Saving model artifact on epoch ", epoch + 1)
+        LOGGER.info(f"Saving model artifact on epoch {epoch + 1}")
 
     def log_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False):
         """
@@ -368,7 +368,7 @@ class WandbLogger():
         Useful for - referencing artifacts for evaluation.
         """
         self.val_table_path_map = {}
-        print("Mapping dataset")
+        LOGGER.info("Mapping dataset")
         for i, data in enumerate(tqdm(self.val_table.data)):
             self.val_table_path_map[data[3]] = data[0]
 
@@ -488,7 +488,13 @@ class WandbLogger():
             with all_logging_disabled():
                 if self.bbox_media_panel_images:
                     self.log_dict["BoundingBoxDebugger"] = self.bbox_media_panel_images
-                wandb.log(self.log_dict)
+                try:
+                    wandb.log(self.log_dict)
+                except BaseException as e:
+                    LOGGER.info(f"An error occurred in wandb logger. The training will proceed without interruption. More info\n{e}")
+                    self.wandb_run.finish()
+                    self.wandb_run = None
+
                 self.log_dict = {}
                 self.bbox_media_panel_images = []
             if self.result_artifact:
