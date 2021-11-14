@@ -19,9 +19,9 @@ def notebook_init():
     gb = 1 / 1024 ** 3  # bits to GiB
     ram = psutil.virtual_memory().total
     total, used, free = shutil.disk_usage("/")
+    display.clear_output()
     print(f'{os.cpu_count()} cpus, {ram * gb:.1f} GB RAM, {used * gb:.1f}/{total * gb:.1f} GB disk')
 
-    display.clear_output()
     select_device(newline=False)
     print(emojis('Setup complete ✅'))
     return display
