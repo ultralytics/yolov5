@@ -3,10 +3,10 @@
 Loss functions
 """
 
+import itertools
 from collections import OrderedDict
 
 import numpy as np
-import itertools
 import torch
 import torch.nn as nn
 
@@ -126,7 +126,7 @@ class ComputeLoss:
             squeezed_targets, cls_list, cls_nums = self.squeeze_targets(targets)
             tcls, tbox, indices, anchors = self.build_targets(p, squeezed_targets)  # targets
         else:
-            tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets	
+            tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets
 
         # Losses
         for i, pi in enumerate(p):  # layer index, layer predictions
@@ -258,5 +258,5 @@ class ComputeLoss:
 class Dictlist(dict):
     def __setitem__(self, key, value):
         if key not in self:
-            super(Dictlist, self).__setitem__(key, [])
+            super().__setitem__(key, [])
         self[key].append(value)
