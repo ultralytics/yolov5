@@ -11,6 +11,7 @@ from utils.torch_utils import is_parallel
 
 from collections import OrderedDict
 import numpy as np
+import itertools
 
 def smooth_BCE(eps=0.1):  # https://github.com/ultralytics/yolov3/issues/238#issuecomment-598028441
     # return positive, negative label smoothing BCE targets
@@ -92,8 +93,9 @@ class QFocalLoss(nn.Module):
 
 class ComputeLoss:
     # Compute losses
-    def __init__(self, model, autobalance=False):
+    def __init__(self, model, autobalance=False, multi_label=False):
         self.sort_obj_iou = False
+        self.multi_label = multi_label
         device = next(model.parameters()).device  # get model device
         h = model.hyp  # hyperparameters
 
@@ -119,8 +121,11 @@ class ComputeLoss:
     def __call__(self, p, targets):  # predictions, targets, model
         device = targets.device
         lcls, lbox, lobj = torch.zeros(1, device=device), torch.zeros(1, device=device), torch.zeros(1, device=device)
-        squeezed_targets, classes = self.squeeze_targets(targets)
-        tcls, tbox, indices, anchors = self.build_targets(p, squeezed_targets)  # targets
+        if self.multi_label:
+            squeezed_targets, cls_list, cls_nums = self.squeeze_targets(targets)
+            tcls, tbox, indices, anchors = self.build_targets(p, squeezed_targets)  # targets
+        else:
+            tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets	
 
         # Losses
         for i, pi in enumerate(p):  # layer index, layer predictions
@@ -148,8 +153,11 @@ class ComputeLoss:
                 # Classification
                 if self.nc > 1:  # cls loss (only if multiple classes)
                     t = torch.full_like(ps[:, 5:], self.cn, device=device)  # targets
-                    for j in range(n):
-                        t[j, classes[tcls[i][j]]] = self.cp
+                    if self.multi_label:
+                        tcls_npy = tcls[i].cpu().numpy()
+                        t[np.repeat(range(n), cls_nums[tcls_npy]), list(itertools.chain(*cls_list[tcls_npy]))] = self.cp
+                    else:
+                        t[range(n), tcls[i]] = self.cp
                     lcls += self.BCEcls(ps[:, 5:], t)  # BCE
 
                 # Append targets to text file
@@ -175,26 +183,21 @@ class ComputeLoss:
 
         # copy the input since we need to modify it
         targets_copy = targets.clone()
-        # convert the key (image, x, y, w, h) to string for hashing
-        keys = [np.array2string(key) for key in targets[:, [0, 2, 3, 4, 5]].cpu().numpy()]
-
+        # convert the key (image, x, y, w, h) to string hashable tuple
+        keys = tuple(map(tuple, targets[:, [0, 2, 3, 4, 5]].cpu().numpy()))
         # store all the classes for each unique box
-        classes = OrderedDict()
-        classes[keys[0]] = [targets[0, 1].long()]
+        cls = OrderedDict()
 
-        squeezed_targets = [targets_copy[0]]
-        for i, t in enumerate(targets[1:]):
-            k = keys[i + 1]
-            if k in classes.keys():
-                classes[k].append(t[1].long())
-            else:
-                classes[k] = [t[1].long()]
-                # here we change the class id to the row index of class array
-                targets_copy[i + 1, 1] = len(squeezed_targets)
-                squeezed_targets.append(targets_copy[i + 1])
+        for k, c in zip(keys, targets[:, 1].long().cpu().numpy()):
+            cls.setdefault(k, []).append(c)
 
-        squeezed_targets = torch.stack(squeezed_targets)
-        return squeezed_targets, list(classes.values())
+        squeezed_keys = cls.keys()
+        cls_num = np.fromiter(map(lambda x: len(cls[x]), squeezed_keys), np.int)
+        idx = list(map(lambda x: keys.index(x), squeezed_keys))
+        squeezed_targets = targets_copy[idx]
+        squeezed_targets[:, 1] = torch.arange(len(squeezed_targets))
+
+        return squeezed_targets, np.array(list(cls.values()), dtype=object), cls_num
 
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
@@ -250,3 +253,9 @@ class ComputeLoss:
             tcls.append(c)  # class
 
         return tcls, tbox, indices, anch
+
+class Dictlist(dict):
+    def __setitem__(self, key, value):
+        if key not in self:
+            super(Dictlist, self).__setitem__(key, [])
+        self[key].append(value)
