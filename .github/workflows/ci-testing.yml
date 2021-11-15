@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
-        python-version: [ 3.8 ]
+        python-version: [ 3.9 ]
         model: [ 'yolov5n' ]  # models to test
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
