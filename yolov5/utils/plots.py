@@ -57,7 +57,7 @@ def check_font(font='Arial.ttf', size=10):
     except Exception as e:  # download if missing
         url = "https://ultralytics.com/assets/" + font.name
         print(f'Downloading {url} to {font}...')
-        torch.hub.download_url_to_file(url, str(font), progress=False)
+        # torch.hub.download_url_to_file(url, str(font), progress=False)
         return ImageFont.truetype(str(font), size)
 
 
