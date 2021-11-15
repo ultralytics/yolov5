@@ -162,21 +162,17 @@ def train(
         yaml.dump(mojo_test_data, file)
     print(f"Created data yaml at {mojo_test_yaml_file_path} containing:")
 
-    if test_video_dataset_location is not None:
-        print("Running mojo video data testing function...")
-        mojo_test.mojo_test(
-            mojo_test_yaml_file_path,
-            [path_to_best_model],
-            batch_size=batch_size,
-            imgsz=image_size,
-            project=project,
-            name=f"{yolo_model_version}-{image_size}",
-            entity=entity,
-            test_video_root=test_video_dataset_location,
-        )
-        print("Finished mojo video data testing function...")
-    else:
-        print("WARNING: Skipping mojo video data testing function.")
+    print("Running mojo video data testing function...")
+    mojo_test.mojo_test(
+        mojo_test_yaml_file_path,
+        [path_to_best_model],
+        batch_size=batch_size,
+        imgsz=image_size,
+        project=project,
+        name=f"{yolo_model_version}-{image_size}",
+        entity=entity,
+        test_video_root=test_video_dataset_location,
+    )
 
 
 def cli():
