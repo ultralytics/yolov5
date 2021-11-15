@@ -43,7 +43,7 @@ def _setup():
         subprocess.run(["pip", "install", f"{aisa_utils_wheel_path}"])
 
 
-def _get_data_yaml(dataset_location: Path) -> dict:
+def _get_data_yaml(dataset_location: Path, add_test: bool = False) -> dict:
     dataset_data_yaml_path = list(dataset_location.rglob("*data.yaml"))
     if len(dataset_data_yaml_path) == 1:
         dataset_data_yaml_path = dataset_data_yaml_path[0]
@@ -63,6 +63,10 @@ def _get_data_yaml(dataset_location: Path) -> dict:
     data_yaml["path"] = str(dataset_data_yaml_path.parent.as_posix())
     data_yaml["train"] = "images/train"
     data_yaml["val"] = "images/val"
+    if add_test:
+        data_yaml["test"] = "images/test"
+    else:
+        data_yaml.pop("test", None)
 
     return data_yaml
 
@@ -156,13 +160,13 @@ def train(
 
     #### TESTING ####
 
-    mojo_test_data = _get_data_yaml(test_dataset_location)
+    mojo_test_data = _get_data_yaml(test_dataset_location, add_test=True)
     mojo_test_yaml_file_path = Path("test_data.yaml")
     with mojo_test_yaml_file_path.open("w") as file:
         yaml.dump(mojo_test_data, file)
     print(f"Created data yaml at {mojo_test_yaml_file_path} containing:")
 
-    print("Running mojo video data testing function...")
+    print("Running mojo testing function...")
     mojo_test.mojo_test(
         mojo_test_yaml_file_path,
         [path_to_best_model],
