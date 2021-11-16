@@ -12,6 +12,7 @@ import os
 import sys
 from pathlib import Path
 from threading import Thread
+from collections import defaultdict
 
 import numpy as np
 import torch
@@ -158,8 +159,9 @@ def run(data,
     p, r, f1, mp, mr, map50, map, t0, t1, t2 = 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
-    extra_metrics = [0.0, 0.0]
+
     extra_plots = []
+    extra_metrics = defaultdict(lambda: 0)
     ground_truths_extra = []
     preds_extra = []
     for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
@@ -195,8 +197,8 @@ def run(data,
             preds_extra += [pred.cpu().numpy()]
             ground_truths_extra += [[1]*nl]
             output_predictions = pred[:, 4].cpu().numpy()
-            extra_metrics[0] += np.abs(nl - len(np.where(output_predictions>=0.3)[0]))
-            extra_metrics[1] += np.abs(nl - len(np.where(output_predictions>=0.5)[0]))
+            extra_metrics["count@0.3"] += np.abs(nl - len(np.where(output_predictions >= 0.3)[0]))
+            extra_metrics["count@0.5"] += np.abs(nl - len(np.where(output_predictions >= 0.5)[0]))
             tcls = labels[:, 0].tolist() if nl else []  # target class
             path, shape = Path(paths[si]), shapes[si][0]
             seen += 1
@@ -307,7 +309,7 @@ def run(data,
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
-    extra_metrics = [_ / len(dataloader) for _ in extra_metrics]
+    extra_metrics = {k: v / len(dataloader) for k, v in extra_metrics.items()}
 
     return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t, extra_metrics, extra_plots
 
