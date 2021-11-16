@@ -43,7 +43,7 @@ def _setup():
         subprocess.run(["pip", "install", f"{aisa_utils_wheel_path}"])
 
 
-def _get_data_yaml(dataset_location: Path, is_test: bool = False) -> dict:
+def _get_data_yaml(dataset_location: Path, add_test: bool = False) -> dict:
     dataset_data_yaml_path = list(dataset_location.rglob("*data.yaml"))
     if len(dataset_data_yaml_path) == 1:
         dataset_data_yaml_path = dataset_data_yaml_path[0]
@@ -58,17 +58,16 @@ def _get_data_yaml(dataset_location: Path, is_test: bool = False) -> dict:
             nc=1,
             names=["Sperm"],
         )
-
+    print(dataset_location)
+    print(dataset_data_yaml_path)
     # Overwrite location keys to be able to launch from anywhere
     data_yaml["path"] = str(dataset_data_yaml_path.parent.as_posix())
-    if is_test:
+    data_yaml["train"] = "images/train"
+    data_yaml["val"] = "images/val"
+    if add_test:
         data_yaml["test"] = "images/test"
-        data_yaml["train"] = ""
-        data_yaml["val"] = ""
     else:
         data_yaml.pop("test", None)
-        data_yaml["train"] = "images/train"
-        data_yaml["val"] = "images/val"
 
     return data_yaml
 
@@ -131,7 +130,7 @@ def train(
         train_yaml_file_path = Path("data.yaml")
         with train_yaml_file_path.open("w") as file:
             yaml.dump(train_data, file)
-        print(f"Created data yaml at {train_yaml_file_path} containing: {train_data}")
+        print(f"Created data yaml at {train_yaml_file_path} containing:")
     elif train_dataset_location.is_file() and train_dataset_location.suffix == ".yaml":
         train_yaml_file_path = train_dataset_location
     else:
@@ -155,20 +154,18 @@ def train(
         workers=workers,
         entity=entity,
         patience=100,
-        cache="disk",
+        cache="disk"
     )
     print("Finished training function...")
     #### END OF TRAINING CODE ####
 
     #### TESTING ####
 
-    mojo_test_data = _get_data_yaml(test_dataset_location, is_test=True)
+    mojo_test_data = _get_data_yaml(test_dataset_location, add_test=True)
     mojo_test_yaml_file_path = Path("test_data.yaml")
     with mojo_test_yaml_file_path.open("w") as file:
         yaml.dump(mojo_test_data, file)
-    print(
-        f"Created data yaml at {mojo_test_yaml_file_path} containing: {mojo_test_data}"
-    )
+    print(f"Created data yaml at {mojo_test_yaml_file_path} containing:")
 
     print("Running mojo testing function...")
     mojo_test.mojo_test(
