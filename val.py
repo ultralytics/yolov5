@@ -294,40 +294,9 @@ def run(data,
         except Exception as e:
             print(f'pycocotools unable to run: {e}')
 
-    extra_videos = []
     if run_aisa_plots:
         fig, suggested_threshold = plot_object_count_difference_ridgeline(ground_truths_extra, preds_extra)
 
-        def video_prediction_function(frame_array):
-            n_frames = len(frame_array)
-            preds = []
-            for i in range(0, n_frames, 4):
-                frames = []
-                for frame in frame_array[i: min(i + 4, n_frames)]:
-                    from utils.datasets import letterbox
-                    img = letterbox(frame, new_shape=(imgsz,imgsz))[0]
-                    img = np.array([img, img, img])
-                    img = np.ascontiguousarray(img)
-                    frames.append(img)
-                frames = np.array(frames)
-
-                # Convert img to torch
-                img = torch.from_numpy(frames).to(device)
-                img = img.half() if device.type != "cpu" else img.float()  # uint8 to fp16/32
-                img /= 255.0  # 0 - 255 to 0.0 - 1.0
-                if img.ndimension() == 3:
-                    img = img.unsqueeze(0)
-                # Inference
-                # t1 = time_synchronized()
-                pred = model(img, augment=False)[0]
-
-                # Apply NMS
-                pred = non_max_suppression(pred, conf_thres=suggested_threshold)
-                preds += list(pred)
-            return preds
-
-        video_path = Path(r"D:\Nanovare\data\karolinska\capture_MAST_data\2020_05_27\tp49\cover1_7.avi")
-        v = make_video_results(video_path, video_prediction_function)
         extra_plots = [fig]
 
     # Return results
@@ -338,9 +307,9 @@ def run(data,
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
-    extra_metrics = [_/len(dataloader) for _ in extra_metrics]
+    extra_metrics = [_ / len(dataloader) for _ in extra_metrics]
 
-    return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t, extra_metrics, extra_plots, extra_videos
+    return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t, extra_metrics, extra_plots
 
 
 def parse_opt():

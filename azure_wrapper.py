@@ -48,7 +48,7 @@ def _get_data_yaml(dataset_location: Path, add_test: bool = False) -> dict:
     if len(dataset_data_yaml_path) == 1:
         dataset_data_yaml_path = dataset_data_yaml_path[0]
         with dataset_data_yaml_path.open("r") as file:
-            data_yaml = yaml.load(file)
+            data_yaml = yaml.load(file, Loader=yaml.FullLoader)
     elif len(dataset_data_yaml_path) > 1:
         raise Exception(
             f"Multiple data.yaml files found at {dataset_location}: {dataset_data_yaml_path}"

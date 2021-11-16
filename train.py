@@ -347,7 +347,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
             if not noval or final_epoch:  # Calculate mAP
-                results, maps, _, extra_metrics, extra_plots, extra_video = val.run(data_dict,
+                results, maps, _, extra_metrics, extra_plots = val.run(data_dict,
                                            batch_size=batch_size // WORLD_SIZE * 2,
                                            imgsz=imgsz,
                                            model=ema.ema,
@@ -403,7 +403,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         LOGGER.info(f'\n{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.')
         if not evolve:
             for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
-                results, _, _, _, extra_plots, extra_videos = val.run(data_dict,
+                results, _, _, extra_plots, extra_videos = val.run(data_dict,
                                         batch_size=batch_size // WORLD_SIZE * 2,
                                         imgsz=imgsz,
                                         model=attempt_load(m, device).half(),
