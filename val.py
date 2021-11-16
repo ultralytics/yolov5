@@ -2,11 +2,16 @@
 """
 Validate a trained YOLOv5 model accuracy on a custom dataset
 
+the tensorrt .engine file can be validated now
+
 Usage:
     $ python path/to/val.py --data coco128.yaml --weights yolov5s.pt --img 640
+
+    $ python path/to/val.py --data coco128.yaml --img 640 --engine_library xxxx.so --engine_path xxxx.engine
 """
 
 import argparse
+import ctypes
 import json
 import os
 import sys
@@ -32,6 +37,7 @@ from utils.general import (LOGGER, NCOLS, box_iou, check_dataset, check_img_size
 from utils.metrics import ConfusionMatrix, ap_per_class
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, time_sync
+from utils.yolov5_trt import YoLov5TRT
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -107,39 +113,52 @@ def run(data,
         plots=True,
         callbacks=Callbacks(),
         compute_loss=None,
+        engine_library=None,
+        engine_path=None,
         ):
     # Initialize/load model and set device
+    val_engine=engine_path is not None
     training = model is not None
-    if training:  # called by train.py
-        device, pt = next(model.parameters()).device, True  # get model device, PyTorch model
-
-        half &= device.type != 'cpu'  # half precision only supported on CUDA
-        model.half() if half else model.float()
-    else:  # called directly
+    if val_engine:
+        ctypes.CDLL(engine_library)
+        model = YoLov5TRT(engine_path,conf_thres,iou_thres)
         device = select_device(device, batch_size=batch_size)
-
-        # Directories
+        pt=False
+        stride=32
         save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+    else:
+        if training:  # called by train.py
+            device, pt = next(model.parameters()).device, True  # get model device, PyTorch model
+            half &= device.type != 'cpu'  # half precision only supported on CUDA
+            model.half() if half else model.float()
+            model.eval()
+        else:  # called directly
+            device = select_device(device, batch_size=batch_size)
 
-        # Load model
-        model = DetectMultiBackend(weights, device=device, dnn=dnn)
-        stride, pt = model.stride, model.pt
-        imgsz = check_img_size(imgsz, s=stride)  # check image size
-        half &= pt and device.type != 'cpu'  # half precision only supported by PyTorch on CUDA
-        if pt:
-            model.model.half() if half else model.model.float()
-        else:
-            half = False
-            batch_size = 1  # export.py models default to batch-size 1
-            device = torch.device('cpu')
-            LOGGER.info(f'Forcing --batch-size 1 square inference shape(1,3,{imgsz},{imgsz}) for non-PyTorch backends')
+            # Directories
+            save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
+            (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
-        # Data
-        data = check_dataset(data)  # check
+            # Load model
+            model = DetectMultiBackend(weights, device=device, dnn=dnn)
+            stride, pt = model.stride, model.pt
+            imgsz = check_img_size(imgsz, s=stride)  # check image size
+            half &= pt and device.type != 'cpu'  # half precision only supported by PyTorch on CUDA
+            if pt:
+                model.model.half() if half else model.model.float()
+            else:
+                half = False
+                batch_size = 1  # export.py models default to batch-size 1
+                device = torch.device('cpu')
+                LOGGER.info(f'Forcing --batch-size 1 square inference shape(1,3,{imgsz},{imgsz}) for non-PyTorch backends')
+
+            # Data
+              # check
+            model.eval()
 
     # Configure
-    model.eval()
+    data = check_dataset(data)
     is_coco = isinstance(data.get('val'), str) and data['val'].endswith('coco/val2017.txt')  # COCO dataset
     nc = 1 if single_cls else int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
@@ -151,12 +170,16 @@ def run(data,
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.model.parameters())))  # warmup
         pad = 0.0 if task == 'speed' else 0.5
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
-        dataloader = create_dataloader(data[task], imgsz, batch_size, stride, single_cls, pad=pad, rect=pt,
+        batch_size=model.batch_size if val_engine else batch_size
+        dataloader = create_dataloader(data[task], imgsz, batch_size, stride, single_cls, pad=pad, rect=True,
                                        prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
-    names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
+    if val_engine:
+        names = {k: v for k, v in enumerate(data['names'])}
+    else:
+        names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
     s = ('%20s' + '%11s' * 6) % ('Class', 'Images', 'Labels', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
     dt, p, r, f1, mp, mr, map50, map = [0.0, 0.0, 0.0], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
@@ -167,27 +190,38 @@ def run(data,
         t1 = time_sync()
         if pt:
             im = im.to(device, non_blocking=True)
-            targets = targets.to(device)
+        targets = targets.to(device)
         im = im.half() if half else im.float()  # uint8 to fp16/32
-        im /= 255  # 0 - 255 to 0.0 - 1.0
+        if not val_engine:
+            im /= 255  # 0 - 255 to 0.0 - 1.0
         nb, _, height, width = im.shape  # batch size, channels, height, width
         t2 = time_sync()
         dt[0] += t2 - t1
-
+        if val_engine:
+            [result_boxes, result_scores, result_classid] = model.infer(model.get_raw_image(paths))[2]
+            result_boxes = result_boxes.numpy().tolist()
+            result_scores = result_scores.numpy().tolist()
+            result_classid = result_classid.numpy().tolist()
+            result_scores = [[i] for i in result_scores]
+            result_classid = [[i] for i in result_classid]
+            out1 = np.hstack((result_boxes, result_scores, result_classid))
+            out = [torch.from_numpy(out1).to(device='cuda')]
+            targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)
+        else:
         # Inference
-        out, train_out = model(im) if training else model(im, augment=augment, val=True)  # inference, loss outputs
-        dt[1] += time_sync() - t2
+            out, train_out = model(im) if training else model(im, augment=augment, val=True)  # inference, loss outputs
+            dt[1] += time_sync() - t2
 
-        # Loss
-        if compute_loss:
-            loss += compute_loss([x.float() for x in train_out], targets)[1]  # box, obj, cls
+            # Loss
+            if compute_loss:
+                loss += compute_loss([x.float() for x in train_out], targets)[1]  # box, obj, cls
 
-        # NMS
-        targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)  # to pixels
-        lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
-        t3 = time_sync()
-        out = non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=single_cls)
-        dt[2] += time_sync() - t3
+            # NMS
+            targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)  # to pixels
+            lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
+            t3 = time_sync()
+            out = non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=single_cls)
+            dt[2] += time_sync() - t3
 
         # Metrics
         for si, pred in enumerate(out):
@@ -206,7 +240,8 @@ def run(data,
             if single_cls:
                 pred[:, 5] = 0
             predn = pred.clone()
-            scale_coords(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
+            if not val_engine:
+                scale_coords(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
 
             # Evaluate
             if nl:
@@ -228,12 +263,15 @@ def run(data,
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
         # Plot images
-        if plots and batch_i < 3:
+        if plots and batch_i < 3 and not val_engine:
             f = save_dir / f'val_batch{batch_i}_labels.jpg'  # labels
             Thread(target=plot_images, args=(im, targets, paths, f, names), daemon=True).start()
             f = save_dir / f'val_batch{batch_i}_pred.jpg'  # predictions
             Thread(target=plot_images, args=(im, output_to_target(out), paths, f, names), daemon=True).start()
-
+    if val_engine:
+        model.destroy()
+    else:
+        model.float()  # for training
     # Compute metrics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
@@ -291,7 +329,7 @@ def run(data,
             LOGGER.info(f'pycocotools unable to run: {e}')
 
     # Return results
-    model.float()  # for training
+
     if not training:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
@@ -305,6 +343,7 @@ def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
+
     parser.add_argument('--batch-size', type=int, default=32, help='batch size')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
@@ -323,6 +362,8 @@ def parse_opt():
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
+    parser.add_argument('--engine_library', type=str, default=None, help='.so file of the tensorrt file')
+    parser.add_argument('--engine_path',  type=str, default=None, help='.engine file of the tensorrt file')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')
