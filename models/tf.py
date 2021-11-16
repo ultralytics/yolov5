@@ -233,7 +233,7 @@ class TFDetect(keras.layers.Layer):
                 xy /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
                 wh /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
                 y = tf.concat([xy, wh, y[..., 4:]], -1)
-                z.append(tf.reshape(y, [-1, 3 * ny * nx, self.no]))
+                z.append(tf.reshape(y, [-1, self.na * ny * nx, self.no]))
 
         return x if self.training else (tf.concat(z, 1), x)
 
