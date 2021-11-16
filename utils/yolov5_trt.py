@@ -74,11 +74,11 @@ class YoLov5TRT:
     description: A YOLOv5 class that warps TensorRT ops, preprocess and postprocess ops.
     """
 
-    def __init__(self, engine_file_path,CONF_THRESH,IOU_THRESH):
+    def __init__(self, engine_file_path, CONF_THRESH, IOU_THRESH):
         # Create a Context on this device,
         self.ctx = cuda.Device(0).make_context()
-        self.conf_thresh=CONF_THRESH
-        self.iou_thresh=IOU_THRESH
+        self.conf_thresh = CONF_THRESH
+        self.iou_thresh = IOU_THRESH
         stream = cuda.Stream()
         TRT_LOGGER = trt.Logger(trt.Logger.INFO)
         runtime = trt.Runtime(TRT_LOGGER)
@@ -172,7 +172,7 @@ class YoLov5TRT:
         # Here we use the first row of output in that batch_size = 1
         output = host_outputs[0]
         # Do postprocess
-        categories=['person','phone','helmet','head','car','truck','boat','ship','fire','drop']
+        categories = ['person', 'phone', 'helmet', 'head', 'car', 'truck', 'boat', 'ship', 'fire', 'drop']
 
         for i in range(self.batch_size):
             result_boxes, result_scores, result_classid = self.post_process(
@@ -188,15 +188,13 @@ class YoLov5TRT:
                         categories[int(result_classid[j])], result_scores[j]
                     ),
                 )
-        return batch_image_raw, end - start,[result_boxes, result_scores, result_classid]
+        return batch_image_raw, end - start, [result_boxes, result_scores, result_classid]
 
     def destroy(self):
         # Remove any context from the top of the context stack, deactivating it.
         # self.ctx.pop()
 
         self.ctx.pop()
-
-
 
     def get_raw_image(self, image_path_batch):
         """
@@ -352,6 +350,7 @@ class warmUpThread(threading.Thread):
         batch_image_raw, use_time = self.yolov5_wrapper.infer(self.yolov5_wrapper.get_raw_image_zeros())
         print(f'warm_up->{batch_image_raw[0].shape}, time->{use_time * 1000:.2f}ms')
 
+
 if __name__ == "__main__":
     # load custom plugins
     PLUGIN_LIBRARY = "build5/libmyplugins.so"
@@ -366,15 +365,20 @@ if __name__ == "__main__":
 
     # load coco labels
 
-    categories = ["person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", "traffic light",
-            "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow",
-            "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee",
-            "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard",
-            "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple",
-            "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch",
-            "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard", "cell phone",
-            "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear",
-            "hair drier", "toothbrush"]
+    categories = ["person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat",
+                  "traffic light",
+                  "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow",
+                  "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase",
+                  "frisbee",
+                  "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard",
+                  "surfboard",
+                  "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple",
+                  "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch",
+                  "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard",
+                  "cell phone",
+                  "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
+                  "teddy bear",
+                  "hair drier", "toothbrush"]
 
     if os.path.exists('output/'):
         shutil.rmtree('output/')
@@ -393,7 +397,6 @@ if __name__ == "__main__":
             thread1.start()
             thread1.join()
         for batch in image_path_batches:
-            print("1111111111111",batch)
             # create a new thread to do inference
             thread1 = inferThread(yolov5_wrapper, batch)
             thread1.start()

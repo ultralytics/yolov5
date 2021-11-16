@@ -117,14 +117,14 @@ def run(data,
         engine_path=None,
         ):
     # Initialize/load model and set device
-    val_engine=engine_path is not None
+    val_engine = engine_path is not None
     training = model is not None
     if val_engine:
         ctypes.CDLL(engine_library)
-        model = YoLov5TRT(engine_path,conf_thres,iou_thres)
+        model = YoLov5TRT(engine_path, conf_thres, iou_thres)
         device = select_device(device, batch_size=batch_size)
-        pt=False
-        stride=32
+        pt = False
+        stride = 32
         save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
     else:
@@ -151,10 +151,11 @@ def run(data,
                 half = False
                 batch_size = 1  # export.py models default to batch-size 1
                 device = torch.device('cpu')
-                LOGGER.info(f'Forcing --batch-size 1 square inference shape(1,3,{imgsz},{imgsz}) for non-PyTorch backends')
+                LOGGER.info(
+                    f'Forcing --batch-size 1 square inference shape(1,3,{imgsz},{imgsz}) for non-PyTorch backends')
 
             # Data
-              # check
+            # check
             model.eval()
 
     # Configure
@@ -170,7 +171,7 @@ def run(data,
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.model.parameters())))  # warmup
         pad = 0.0 if task == 'speed' else 0.5
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
-        batch_size=model.batch_size if val_engine else batch_size
+        batch_size = model.batch_size if val_engine else batch_size
         dataloader = create_dataloader(data[task], imgsz, batch_size, stride, single_cls, pad=pad, rect=True,
                                        prefix=colorstr(f'{task}: '))[0]
 
@@ -208,7 +209,7 @@ def run(data,
             out = [torch.from_numpy(out1).to(device='cuda')]
             targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)
         else:
-        # Inference
+            # Inference
             out, train_out = model(im) if training else model(im, augment=augment, val=True)  # inference, loss outputs
             dt[1] += time_sync() - t2
 
@@ -363,7 +364,7 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--engine_library', type=str, default=None, help='.so file of the tensorrt file')
-    parser.add_argument('--engine_path',  type=str, default=None, help='.engine file of the tensorrt file')
+    parser.add_argument('--engine_path', type=str, default=None, help='.engine file of the tensorrt file')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')
