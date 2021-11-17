@@ -48,7 +48,7 @@ def _get_data_yaml(dataset_location: Path, is_test: bool = False) -> dict:
     if len(dataset_data_yaml_path) == 1:
         dataset_data_yaml_path = dataset_data_yaml_path[0]
         with dataset_data_yaml_path.open("r") as file:
-            data_yaml = yaml.load(file, Loader=yaml.FullLoader)
+            data_yaml = yaml.load(file)
     elif len(dataset_data_yaml_path) > 1:
         raise Exception(
             f"Multiple data.yaml files found at {dataset_location}: {dataset_data_yaml_path}"
@@ -58,7 +58,8 @@ def _get_data_yaml(dataset_location: Path, is_test: bool = False) -> dict:
             nc=1,
             names=["Sperm"],
         )
-
+    print(dataset_location)
+    print(dataset_data_yaml_path)
     # Overwrite location keys to be able to launch from anywhere
     data_yaml["path"] = str(dataset_data_yaml_path.parent.as_posix())
     if is_test:
@@ -155,20 +156,18 @@ def train(
         workers=workers,
         entity=entity,
         patience=100,
-        cache="disk",
+        cache="disk"
     )
     print("Finished training function...")
     #### END OF TRAINING CODE ####
 
     #### TESTING ####
 
-    mojo_test_data = _get_data_yaml(test_dataset_location, is_test=True)
+    mojo_test_data = _get_data_yaml(test_dataset_location, add_test=True)
     mojo_test_yaml_file_path = Path("test_data.yaml")
     with mojo_test_yaml_file_path.open("w") as file:
         yaml.dump(mojo_test_data, file)
-    print(
-        f"Created data yaml at {mojo_test_yaml_file_path} containing: {mojo_test_data}"
-    )
+    print(f"Created data yaml at {mojo_test_yaml_file_path} containing: {mojo_test_data}")
 
     print("Running mojo testing function...")
     mojo_test.mojo_test(
