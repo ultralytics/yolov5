@@ -162,7 +162,6 @@ def run(data,
     jdict, stats, ap, ap_class = [], [], [], []
 
     extra_stats = []
-    extra_plots = []
     extra_metrics = defaultdict(lambda: 0)
     for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
         t_ = time_sync()
