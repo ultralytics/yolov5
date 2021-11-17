@@ -19,8 +19,8 @@ import wandb
 import numpy as np
 import torch
 
-from mojo_val import process_fp_fn
 from utils.general import xyxy2xywhn, scale_coords, xyxy2xywh, clip_coords
+from mojo_val import plot_fp_fn
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
@@ -131,31 +131,6 @@ def mojo_test(
     if half:
         model.half()
 
-    def worst_prediction(extra_stats):
-        import tempfile
-
-        temp_folder = Path(tempfile.TemporaryDirectory().name)
-
-        iouv = np.arange(0.5, 0.95, 0.05)
-        process_fp_fn(extra_stats)
-        for image_idx, (path, preds, targets, targets_miss, pred_correct, *_) in enumerate(extra_stats):
-            targets_miss = targets_miss[:, 0]
-            pred_correct = pred_correct[:, 0]
-            frame = cv2.imread(str(path), 1)
-
-            # frame_crop = save_one_box(pred_correct, frame, save=False, BGR=True, square=False)
-            write_path = temp_folder / f"d.jpg"
-            write_path.parent.mkdir(parents=True, exist_ok=True)
-            plot_key = "FalsePositiveFalseNegative"
-            wandb_run.log({f"mojo_test/extra_plots/{plot_key}": wandb.Image(frame[:, :, -1])})
-
-        cv2.imwrite(str(write_path), frame)
-        cv2.imshow("d", frame)
-        cv2.waitKey()
-        cv2.destroyAllWindows()
-
-    worst_prediction(extra_stats)
-
     def video_prediction_function(
         frame_array, iou_thres_nms=0.45, conf_thres_nms=0.001
     ):
@@ -213,6 +188,8 @@ def mojo_test(
 
     extra_plots["object_count_difference"] = fig
     extra_plots["object_count_difference_continuous"] = fig_line
+
+    extra_plots.update(plot_fp_fn(extra_stats))
 
     print(f"suggested_threshold={suggested_threshold}")
     for plot_key in extra_plots:

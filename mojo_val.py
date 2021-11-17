@@ -21,8 +21,8 @@ def process_batch_with_missed_labels(detections, labels, iouv):
         true_positive (Array[N, 10]), for 10 IoU levels
         correct (Array[M, 10]), for 10 IoU levels
     """
-    true_positive = torch.zeros(detections.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
-    false_negative = torch.ones(labels.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
+    pred_matched = torch.zeros(detections.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
+    targets_matched = torch.zeros(labels.shape[0], dtype=torch.bool, device=iouv.device)
     iou = box_iou(labels[:, 1:], detections[:, :4])
     matches = (iou >= iouv[0]) & (labels[:, 0:1] == detections[:, 5])
     x = torch.where(matches)  # IoU above threshold and classes match
@@ -38,9 +38,9 @@ def process_batch_with_missed_labels(detections, labels, iouv):
                 np.unique(matches[:, 0], return_index=True)[1]]  # Remove one label matching two predictions
         matches = torch.Tensor(matches).to(iouv.device)
         matches_by_iou = matches[:, 2:3] >= iouv
-        false_negative = ~matches_by_iou
-        true_positive[matches[:, 1].long()] = matches_by_iou
-    return true_positive, false_negative
+        pred_matched[matches[:, 1].long()] = matches_by_iou
+        targets_matched = [l in matches_by_iou[:, 0] for l in range(len(labels))] # iou = 0.5
+    return pred_matched, targets_matched
 
 
 def plot_object_count_difference_ridgeline_from_extra(extra_stats):
@@ -89,7 +89,7 @@ def generate_crop(extra_stats, predn_with_path):
     frame_path = extra_stats[frame_idx][0]
     frame = cv2.imread(str(frame_path), 1)
 
-    frame_crop = save_one_box(crop_box, frame, BGR=False, save=False)
+    frame_crop = save_one_box(crop_box, frame, gain=1.10, BGR=False, save=False)
     return frame_crop
 
 
@@ -112,7 +112,7 @@ def plot_crops(crop_fp, title):
     return fig
 
 
-def process_fp_fn(extra_stats):
+def plot_fp_fn(extra_stats):
     iouv = torch.linspace(0.5, 0.95, 10)
     single_cls = True
     niou = len(iouv)
@@ -129,18 +129,16 @@ def process_fp_fn(extra_stats):
             tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
             scale_coords(img1_shape, tbox, img0_shape, ratio_pad)  # native-space labels
             labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
-            correct, false_negative = process_batch_with_missed_labels(predn, labelsn, iouv)
+            preds_matched, targets_matched = process_batch_with_missed_labels(predn, labelsn, iouv)
         else:
-            correct, false_negative = torch.zeros(pred.shape[0], niou, dtype=torch.bool)
-        targets_miss = false_negative[:, 0]  # iouv == 0.5
-        pred_correct = correct[:, 0].numpy()
+            preds_matched, targets_matched = torch.zeros(pred.shape[0], niou, dtype=torch.bool), torch.zeros(labelsn.shape[0], dtype=torch.bool)
+        preds_matched = preds_matched[:, 0] # iou = 0.5
         labelsn = labelsn[:, 1:]
-
         if False:
             # Draw targets that are missed or not
-            draw_targets(frame, labelsn.numpy(), np.logical_not(targets_miss.numpy()), np.ones(labels.shape[0]),  rect=True)
+            draw_targets(frame, labelsn.numpy(), np.logical_not(labels_miss.numpy()), np.ones(labels.shape[0]),  rect=True)
             # Draw wrong and good preds that are above a certain threshold
-            draw_targets(frame, predn[:, :4].numpy(), pred_correct, predn[:, 4] > 0.1)
+            draw_targets(frame, predn[:, :4].numpy(), predn[preds_matched, 0].numpy(), predn[:, 4] > 0.1)
 
             cv2.imshow("d", frame)
             cv2.waitKey()
@@ -149,26 +147,26 @@ def process_fp_fn(extra_stats):
         predn_with_path = torch.cat([predn, torch.ones((predn.shape[0], 1)) * image_idx], dim=1) # append image_idx
         labelsn_with_path = torch.cat([labelsn, torch.ones((labelsn.shape[0], 1)) * image_idx], dim=1)  # append image_idx
 
-        true_pos.append(predn_with_path[pred_correct])
-        false_pos.append(predn_with_path[np.logical_not(pred_correct)])
-        false_neg.append(labelsn_with_path[targets_miss])
+        true_pos.append(predn_with_path[preds_matched])
+        false_pos.append(predn_with_path[np.logical_not(preds_matched)])
+        false_neg.append(labelsn_with_path[np.logical_not(targets_matched)])
     true_pos = torch.cat(true_pos)
     false_pos = torch.cat(false_pos)
     false_neg = torch.cat(false_neg)
     n_worst = 10
 
-    fig = []
+    fig = dict()
 
     true_pos = true_pos[torch.argsort(true_pos[:, 4], descending=False)][:n_worst]
     crop_tp = [generate_crop(extra_stats, crop) for crop in true_pos]
-    fig.append(plot_crops(crop_tp, "True Positive with lowest confidence threshold"))
+    fig["worst_tp"] = plot_crops(crop_tp, "True Positive with lowest confidence threshold")
 
     false_pos = false_pos[torch.argsort(false_pos[:, 4], descending=True)][:n_worst]
     crop_fp = [generate_crop(extra_stats, crop) for crop in false_pos]
-    fig.append(plot_crops(crop_fp, "False Positive with highest confidence threshold"))
+    fig["worst_fp"] = plot_crops(crop_fp, "False Positive with highest confidence threshold")
 
     false_neg = false_neg[torch.argsort(false_neg[:, 4], descending=False)][:n_worst]
     crop_fn = [generate_crop(extra_stats, crop) for crop in false_neg]
-    fig.append(plot_crops(crop_fn, "False Negative with lowest confidence threshold"))
+    fig["worst_fn"] = plot_crops(crop_fn, "False Negative with lowest confidence threshold")
 
     return fig
