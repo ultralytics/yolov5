@@ -18,6 +18,8 @@ import wandb
 
 import numpy as np
 import torch
+
+from mojo_val import process_fp_fn
 from utils.general import xyxy2xywhn, scale_coords, xyxy2xywh, clip_coords
 
 FILE = Path(__file__).absolute()
@@ -102,7 +104,7 @@ def mojo_test(
         id=run_id, project=project, entity=entity, resume="allow", allow_val_change=True
     )
 
-    results, maps, t, extra_metrics, extra_videos, extra_plots, extra_stats = val.run(
+    results, maps, t, extra_stats = val.run(
         data,
         weights=weights,  # model.pt path(s)
         batch_size=batch_size,  # batch size
@@ -129,42 +131,17 @@ def mojo_test(
     if half:
         model.half()
 
-    def draw_targets(frame, bboxes, matches, mask, rect=False):
-        clip_coords(bboxes, frame.shape)
-        if not rect:
-            bboxes = xyxy2xywh(bboxes)
-        for match, bbox, m in zip(matches, bboxes, mask):
-            if m:
-                bbox = [int(_) for _ in bbox]
-                if match:
-                    color = (0, 255, 0)
-                    radius = 4
-                else:
-                    color = (0, 0, 255)
-                    radius = 2
-                if not rect:
-                    frame = cv2.circle(frame, bbox[:2], radius, color, radius)
-                else:
-                    frame = cv2.rectangle(frame, bbox[:2], bbox[2:], color, 4)
-
     def worst_prediction(extra_stats):
         import tempfile
 
         temp_folder = Path(tempfile.TemporaryDirectory().name)
 
         iouv = np.arange(0.5, 0.95, 0.05)
-
+        process_fp_fn(extra_stats)
         for image_idx, (path, preds, targets, targets_miss, pred_correct, *_) in enumerate(extra_stats):
             targets_miss = targets_miss[:, 0]
             pred_correct = pred_correct[:, 0]
             frame = cv2.imread(str(path), 1)
-
-            torch.stack(torch.ones(preds.shape[0]) * image_idx, preds, axis=0)
-
-            # Draw targets that are missed or not
-            draw_targets(frame, targets.numpy(), np.logical_not(targets_miss.numpy()), np.ones(targets.shape[0]), rect=True)
-            # Draw wrong and good preds that are above a certain threshold
-            draw_targets(frame, preds[:, :4].numpy(), pred_correct.numpy(), preds[:, 4] > 0.1)
 
             # frame_crop = save_one_box(pred_correct, frame, save=False, BGR=True, square=False)
             write_path = temp_folder / f"d.jpg"

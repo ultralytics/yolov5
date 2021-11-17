@@ -26,6 +26,8 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import Adam, SGD, lr_scheduler
 from tqdm import tqdm
 
+from mojo_val import plot_object_count_difference_ridgeline_from_extra, error_count_from_extra
+
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
@@ -276,7 +278,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         # dataset.mosaic_border = [b - imgsz, -b]  # height, width borders
 
         mloss = torch.zeros(3, device=device)  # mean losses
-        extra_metrics = [0]
         if RANK != -1:
             train_loader.sampler.set_epoch(epoch)
         pbar = enumerate(train_loader)
@@ -347,7 +348,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
             if not noval or final_epoch:  # Calculate mAP
-                results, maps, t, extra_metrics, extra_videos, extra_plots, extra_stats = val.run(data_dict,
+                results, maps, t, extra_stats = val.run(data_dict,
                                            batch_size=batch_size // WORLD_SIZE * 2,
                                            imgsz=imgsz,
                                            model=ema.ema,
@@ -358,13 +359,14 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            verbose=nc < 50 and final_epoch,
                                            plots=plots and final_epoch,
                                            callbacks=callbacks,
-                                           compute_loss=compute_loss)
+                                           compute_loss=compute_loss,
+            )
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             if fi > best_fitness:
                 best_fitness = fi
-            log_vals = list(mloss) + list(results) + lr + list(extra_metrics.values())
+            log_vals = list(mloss) + list(results) + lr + error_count_from_extra(extra_stats)
             callbacks.on_fit_epoch_end(log_vals, epoch, best_fitness, fi)
             # Save model
             if (not nosave) or (final_epoch and not evolve):  # if save
@@ -403,7 +405,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         LOGGER.info(f'\n{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.')
         if not evolve:
             for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
-                results, maps, t, extra_metrics, extra_videos, extra_plots, extra_stats = val.run(data_dict,
+                results, maps, t, extra_stats = val.run(data_dict,
                                         batch_size=batch_size // WORLD_SIZE * 2,
                                         imgsz=imgsz,
                                         model=attempt_load(m, device).half(),
@@ -412,13 +414,14 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                         dataloader=val_loader,
                                         save_dir=save_dir,
                                         save_json=True,
-                                        plots=False,
-                                        run_aisa_plots=False)
+                                        plots=False
+                                      )
             # Strip optimizers
             for f in last, best:
                 if f.exists():
                     strip_optimizer(f)  # strip optimizers
-        callbacks.on_train_end(last, best, plots, epoch, extra_plots, extra_videos)
+        extra_plots = [plot_object_count_difference_ridgeline_from_extra(extra_stats)[0]]
+        callbacks.on_train_end(last, best, plots, epoch, extra_plots, [])
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
 
     torch.cuda.empty_cache()

@@ -106,7 +106,6 @@ def run(data,
         plots=True,
         callbacks=Callbacks(),
         compute_loss=None,
-        run_aisa_plots=False
         ):
     # Initialize/load model and set device
     training = model is not None
@@ -162,7 +161,6 @@ def run(data,
     jdict, stats, ap, ap_class = [], [], [], []
 
     extra_stats = []
-    extra_metrics = defaultdict(lambda: 0)
     for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
         t_ = time_sync()
         img = img.to(device, non_blocking=True)
@@ -191,17 +189,13 @@ def run(data,
 
         # Statistics per image
         for si, pred in enumerate(out):
-
-            extra_stats.append([paths[si], pred.cpu(), targets.cpu()])
-
             labels = targets[targets[:, 0] == si, 1:]
             nl = len(labels)
-            pred_conf = extra_stats[-1][1][:, 4].numpy()
-            extra_metrics["count@0.3"] += np.abs(nl - len(np.where(pred_conf >= 0.3)[0]))
-            extra_metrics["count@0.5"] += np.abs(nl - len(np.where(pred_conf >= 0.5)[0]))
             tcls = labels[:, 0].tolist() if nl else []  # target class
             path, shape = Path(paths[si]), shapes[si][0]
             seen += 1
+
+            extra_stats.append([path, pred.cpu(), labels.cpu(), img[si].shape[1:], shape, shapes[si][1]])
 
             if len(pred) == 0:
                 if nl:
@@ -295,13 +289,6 @@ def run(data,
         except Exception as e:
             print(f'pycocotools unable to run: {e}')
 
-    if run_aisa_plots:
-        ground_truths_extra = [[1] * len(e[2]) for e in extra_stats]
-        preds_extra = [e[1].numpy() for e in extra_stats]
-        fig, suggested_threshold = plot_object_count_difference_ridgeline(ground_truths_extra, preds_extra)
-
-        extra_plots = [fig]
-
     # Return results
     model.float()  # for training
     if not training:
@@ -310,10 +297,8 @@ def run(data,
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
-    extra_metrics = {k: v / len(dataloader) for k, v in extra_metrics.items()}
-    extra_videos = []
 
-    return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t, extra_metrics, extra_videos, extra_plots, extra_stats
+    return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t, extra_stats
 
 
 def parse_opt():
