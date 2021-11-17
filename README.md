@@ -182,18 +182,22 @@ Get started in seconds with our verified environments. Click each icon below for
 
 ## <div align="center">Integrations</div>
 
-<div align="center">
-    <a href="https://wandb.ai/site?utm_campaign=repo_yolo_readme">
-        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-wb-long.png" width="49%"/>
-    </a>
-    <a href="https://roboflow.com/?ref=ultralytics">
-        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow-long.png" width="49%"/>
-    </a>
+<div  align="center" style="width: 100%;">
+    <div style="width: 50%; float: left">
+        <a href="https://wandb.ai/site?utm_campaign=repo_yolo_readme">
+            <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-wb-long.png" width="49%"/>
+        </a> <br>
+        <b>Weights and Biases</b> <br>
+        Automatically track and visualize all your YOLOv5 training runs in the cloud with <a href="https://wandb.ai/site?utm_campaign=repo_yolo_readme">Weights & Biases</a>)
+    </div>
+    <div style="margin-left: 50%">
+        <a href="https://roboflow.com/?ref=ultralytics">
+            <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow-long.png" width="49%"/>
+        </a> <br>
+        <b>Roboflow ⭐ NEW</b> <br>
+        Label and export your custom datasets directly to YOLOv5 for training with <a href="https://roboflow.com/?ref=ultralytics">Roboflow</a>
+    </div>
 </div>
-
-|                                                                    Weights and Biases                                                                     |                                                        Roboflow ⭐ NEW                                                        |
-| :-------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------: |
-| Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme) | Label and export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics) |
 
 <!-- ## <div align="center">Compete and Win</div>
 
