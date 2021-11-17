@@ -113,11 +113,11 @@ def mojo_test(
     )
     total_inference_time = np.sum(t)
     print(f"total_inference_time={total_inference_time:.1f}ms")
-    """wandb_run.log({f"mojo_test/test_metrics/mp": results[0]})
+    wandb_run.log({f"mojo_test/test_metrics/mp": results[0]})
     wandb_run.log({f"mojo_test/test_metrics/mr": results[1]})
     wandb_run.log({f"mojo_test/test_metrics/map50": results[2]})
     wandb_run.log({f"mojo_test/test_metrics/map": results[3]})
-    wandb_run.log({f"mojo_test/test_metrics/inference_time": total_inference_time})"""
+    wandb_run.log({f"mojo_test/test_metrics/inference_time": total_inference_time})
 
     # Load model
     model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -238,8 +238,8 @@ def mojo_test(
     extra_plots["object_count_difference_continuous"] = fig_line
 
     print(f"suggested_threshold={suggested_threshold}")
-    """for plot_key in extra_plots:
-        wandb_run.log({f"mojo_test/extra_plots/{plot_key}": extra_plots[plot_key]})"""
+    for plot_key in extra_plots:
+        wandb_run.log({f"mojo_test/extra_plots/{plot_key}": extra_plots[plot_key]})
 
     if test_video_root is not None:
         for video_path in Path(test_video_root).rglob("*.avi"):
@@ -247,7 +247,7 @@ def mojo_test(
                 video_path, lambda x: video_prediction_function(x, suggested_threshold)
             )
 
-            """wandb_run.log(
+            wandb_run.log(
                 {
                     f"mojo_test/extra_videos/{output_video_path.name}": wandb.Video(
                         str(output_video_path), fps=60, format="mp4"
@@ -256,7 +256,7 @@ def mojo_test(
             )
             wandb_run.log(
                 {f"mojo_test/extra_plots/{output_video_path.name}_jitter": jitter_plot}
-            )"""
+            )
 
     return None
 

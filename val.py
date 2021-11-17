@@ -33,6 +33,7 @@ from utils.callbacks import Callbacks
 
 from aisa_utils.dl_utils.utils import plot_object_count_difference_ridgeline, make_video_results
 
+
 def save_one_txt(predn, save_conf, shape, file):
     # Save one txt result
     gn = torch.tensor(shape)[[1, 0, 1, 0]]  # normalization gain whwh
@@ -77,38 +78,6 @@ def process_batch(detections, labels, iouv):
         matches = torch.Tensor(matches).to(iouv.device)
         correct[matches[:, 1].long()] = matches[:, 2:3] >= iouv
     return correct
-
-
-def process_batch_with_missed_labels(detections, labels, iouv):
-    """
-    Return correct predictions matrix. Both sets of boxes are in (x1, y1, x2, y2) format.
-    Arguments:
-        detections (Array[N, 6]), x1, y1, x2, y2, conf, class
-        labels (Array[M, 5]), class, x1, y1, x2, y2
-    Returns:
-        true_positive (Array[N, 10]), for 10 IoU levels
-        correct (Array[M, 10]), for 10 IoU levels
-    """
-    true_positive = torch.zeros(detections.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
-    false_negative = torch.ones(labels.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
-    iou = box_iou(labels[:, 1:], detections[:, :4])
-    matches = (iou >= iouv[0]) & (labels[:, 0:1] == detections[:, 5])
-    x = torch.where(matches)  # IoU above threshold and classes match
-    if x[0].shape[0]:
-        matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]),
-                            1).cpu().numpy()  # [label, detection, iou]
-        if x[0].shape[0] > 1:
-            matches = matches[matches[:, 2].argsort()[::-1]]  # Sort by IoU
-            matches = matches[
-                np.unique(matches[:, 1], return_index=True)[1]]  # Remove one prediction matching two targets
-            # matches = matches[matches[:, 2].argsort()[::-1]]
-            matches = matches[
-                np.unique(matches[:, 0], return_index=True)[1]]  # Remove one label matching two predictions
-        matches = torch.Tensor(matches).to(iouv.device)
-        matches_by_iou = matches[:, 2:3] >= iouv
-        false_negative = ~matches_by_iou
-        true_positive[matches[:, 1].long()] = matches_by_iou
-    return true_positive, false_negative
 
 
 @torch.no_grad()
@@ -195,7 +164,6 @@ def run(data,
     extra_stats = []
     extra_plots = []
     extra_metrics = defaultdict(lambda: 0)
-    ground_truths_extra = []
     for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
         t_ = time_sync()
         img = img.to(device, non_blocking=True)
@@ -224,11 +192,12 @@ def run(data,
 
         # Statistics per image
         for si, pred in enumerate(out):
+
             extra_stats.append([paths[si], pred.cpu(), targets.cpu()])
+
             labels = targets[targets[:, 0] == si, 1:]
             nl = len(labels)
-            ground_truths_extra += [[1]*nl]
-            pred_conf = extra_stats[1][:, 4].numpy()
+            pred_conf = extra_stats[-1][1][:, 4].numpy()
             extra_metrics["count@0.3"] += np.abs(nl - len(np.where(pred_conf >= 0.3)[0]))
             extra_metrics["count@0.5"] += np.abs(nl - len(np.where(pred_conf >= 0.5)[0]))
             tcls = labels[:, 0].tolist() if nl else []  # target class
@@ -251,12 +220,11 @@ def run(data,
                 tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
                 scale_coords(img[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
-                correct, false_negative = process_batch_with_missed_labels(predn, labelsn, iouv)
+                correct = process_batch(predn, labelsn, iouv)
                 if plots:
                     confusion_matrix.process_batch(predn, labelsn)
             else:
                 correct = torch.zeros(pred.shape[0], niou, dtype=torch.bool)
-                false_negative = torch.ones(labels.shape[0], niou, dtype=torch.bool)
             stats.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), tcls))  # (correct, conf, pcls, tcls)
             # Save/log
             if save_txt:
@@ -329,7 +297,9 @@ def run(data,
             print(f'pycocotools unable to run: {e}')
 
     if run_aisa_plots:
-        fig, suggested_threshold = plot_object_count_difference_ridgeline(ground_truths_extra, extra_stats)
+        ground_truths_extra = [[1] * len(e[2]) for e in extra_stats]
+        preds_extra = [e[1].numpy() for e in extra_stats]
+        fig, suggested_threshold = plot_object_count_difference_ridgeline(ground_truths_extra, preds_extra)
 
         extra_plots = [fig]
 

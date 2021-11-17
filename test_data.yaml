@@ -1,7 +1,0 @@
-names:
-- sperm
-nc: 1
-path: D:/Nanovare/repos/aisa_utils/morpho_localization_testing_yolo
-test: images/test
-train: ''
-val: ''
