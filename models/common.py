@@ -23,7 +23,7 @@ from utils.datasets import exif_transpose, letterbox
 from utils.general import (LOGGER, check_requirements, check_suffix, colorstr, increment_path, make_divisible,
                            non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
-from utils.torch_utils import time_sync
+from utils.torch_utils import copy_attr, time_sync
 
 
 def autopad(k, p=None):  # kernel, padding
@@ -405,11 +405,9 @@ class AutoShape(nn.Module):
 
     def __init__(self, model):
         super().__init__()
+        LOGGER.info('Adding AutoShape... ')
+        copy_attr(self, model, include=('yaml', 'nc', 'hyp', 'names', 'stride', 'abc'), exclude=())  # copy attributes
         self.model = model.eval()
-
-    def autoshape(self):
-        LOGGER.info('AutoShape already enabled, skipping... ')  # model already converted to model.autoshape()
-        return self
 
     def _apply(self, fn):
         # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
