@@ -8,6 +8,8 @@ Usage:
 
 import argparse
 import sys
+import tempfile
+from collections import defaultdict
 from pathlib import Path
 
 import cv2
@@ -16,7 +18,7 @@ import wandb
 
 import numpy as np
 import torch
-from utils.general import xyxy2xywhn, scale_coords
+from utils.general import xyxy2xywhn, scale_coords, xyxy2xywh, clip_coords
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
@@ -100,7 +102,7 @@ def mojo_test(
         id=run_id, project=project, entity=entity, resume="allow", allow_val_change=True
     )
 
-    results, maps, t, extra_metrics, _, _ = val.run(
+    results, maps, t, extra_metrics, extra_videos, extra_plots, extra_stats = val.run(
         data,
         weights=weights,  # model.pt path(s)
         batch_size=batch_size,  # batch size
@@ -111,11 +113,11 @@ def mojo_test(
     )
     total_inference_time = np.sum(t)
     print(f"total_inference_time={total_inference_time:.1f}ms")
-    wandb_run.log({f"mojo_test/test_metrics/mp": results[0]})
+    """wandb_run.log({f"mojo_test/test_metrics/mp": results[0]})
     wandb_run.log({f"mojo_test/test_metrics/mr": results[1]})
     wandb_run.log({f"mojo_test/test_metrics/map50": results[2]})
     wandb_run.log({f"mojo_test/test_metrics/map": results[3]})
-    wandb_run.log({f"mojo_test/test_metrics/inference_time": total_inference_time})
+    wandb_run.log({f"mojo_test/test_metrics/inference_time": total_inference_time})"""
 
     # Load model
     model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -126,6 +128,56 @@ def mojo_test(
     half = device.type != "cpu"  # half precision only supported on CUDA
     if half:
         model.half()
+
+    def draw_targets(frame, bboxes, matches, mask, rect=False):
+        clip_coords(bboxes, frame.shape)
+        if not rect:
+            bboxes = xyxy2xywh(bboxes)
+        for match, bbox, m in zip(matches, bboxes, mask):
+            if m:
+                bbox = [int(_) for _ in bbox]
+                if match:
+                    color = (0, 255, 0)
+                    radius = 4
+                else:
+                    color = (0, 0, 255)
+                    radius = 2
+                if not rect:
+                    frame = cv2.circle(frame, bbox[:2], radius, color, radius)
+                else:
+                    frame = cv2.rectangle(frame, bbox[:2], bbox[2:], color, 4)
+
+    def worst_prediction(extra_stats):
+        import tempfile
+
+        temp_folder = Path(tempfile.TemporaryDirectory().name)
+
+        iouv = np.arange(0.5, 0.95, 0.05)
+
+        for image_idx, (path, preds, targets, targets_miss, pred_correct, *_) in enumerate(extra_stats):
+            targets_miss = targets_miss[:, 0]
+            pred_correct = pred_correct[:, 0]
+            frame = cv2.imread(str(path), 1)
+
+            torch.stack(torch.ones(preds.shape[0]) * image_idx, preds, axis=0)
+
+            # Draw targets that are missed or not
+            draw_targets(frame, targets.numpy(), np.logical_not(targets_miss.numpy()), np.ones(targets.shape[0]), rect=True)
+            # Draw wrong and good preds that are above a certain threshold
+            draw_targets(frame, preds[:, :4].numpy(), pred_correct.numpy(), preds[:, 4] > 0.1)
+
+            # frame_crop = save_one_box(pred_correct, frame, save=False, BGR=True, square=False)
+            write_path = temp_folder / f"d.jpg"
+            write_path.parent.mkdir(parents=True, exist_ok=True)
+            plot_key = "FalsePositiveFalseNegative"
+            wandb_run.log({f"mojo_test/extra_plots/{plot_key}": wandb.Image(frame[:, :, -1])})
+
+        cv2.imwrite(str(write_path), frame)
+        cv2.imshow("d", frame)
+        cv2.waitKey()
+        cv2.destroyAllWindows()
+
+    worst_prediction(extra_stats)
 
     def video_prediction_function(
         frame_array, iou_thres_nms=0.45, conf_thres_nms=0.001
@@ -186,8 +238,8 @@ def mojo_test(
     extra_plots["object_count_difference_continuous"] = fig_line
 
     print(f"suggested_threshold={suggested_threshold}")
-    for plot_key in extra_plots:
-        wandb_run.log({f"mojo_test/extra_plots/{plot_key}": extra_plots[plot_key]})
+    """for plot_key in extra_plots:
+        wandb_run.log({f"mojo_test/extra_plots/{plot_key}": extra_plots[plot_key]})"""
 
     if test_video_root is not None:
         for video_path in Path(test_video_root).rglob("*.avi"):
@@ -195,7 +247,7 @@ def mojo_test(
                 video_path, lambda x: video_prediction_function(x, suggested_threshold)
             )
 
-            wandb_run.log(
+            """wandb_run.log(
                 {
                     f"mojo_test/extra_videos/{output_video_path.name}": wandb.Video(
                         str(output_video_path), fps=60, format="mp4"
@@ -204,7 +256,7 @@ def mojo_test(
             )
             wandb_run.log(
                 {f"mojo_test/extra_plots/{output_video_path.name}_jitter": jitter_plot}
-            )
+            )"""
 
     return None
 

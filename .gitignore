@@ -24,7 +24,10 @@
 # Mojo files
 *.whl
 job.yml
+
+# Mojo and ultralytics files
 data.yaml
+test_data.yaml
 
 #package
 yolov5/*
