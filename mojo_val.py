@@ -93,14 +93,24 @@ def draw_targets(frame, bboxes, matches, mask, rect=False):
                 frame = cv2.rectangle(frame, bbox[:2], bbox[2:], color, 4)
 
 
-def generate_crop(extra_stats, predn_with_path):
-
+def generate_crop(extra_stats, predn_with_path, gain=1.10):
+    """
+    Draw part of targets and predictions in several colors onto an image
+      Arguments:
+        extra_stats Array[size of val dataset, 6]
+            List of path_to_image, *whatever
+            to be used only for finding the image path linked with the prediction
+        predn_with_path Array[N, 7] x1, y1, x2, y2, *whatever, path_idx
+            Prediction with the x,y coordinates and the path idx for the image to cut a crop out of it
+    Returns:
+        image Array[gain * (y2 - y1), gain * (x2 - x1), C] Crop of the prediction in RGB with a gain
+    """
     crop_box = predn_with_path[:4]
     frame_idx = int(predn_with_path[-1])  # paths idx should be at the end
     frame_path = extra_stats[frame_idx][0]
     frame = cv2.imread(str(frame_path), 1)
 
-    frame_crop = save_one_box(crop_box, frame, gain=1.10, BGR=False, save=False)
+    frame_crop = save_one_box(crop_box, frame, gain=gain, BGR=False, save=False)
     return frame_crop
 
 
