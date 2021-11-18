@@ -12,6 +12,7 @@ TensorFlow SavedModel   | yolov5s_saved_model/      | 'saved_model'
 TensorFlow GraphDef     | yolov5s.pb                | 'pb'
 TensorFlow Lite         | yolov5s.tflite            | 'tflite'
 TensorFlow.js           | yolov5s_web_model/        | 'tfjs'
+TensorRT                | yolov5s.trt               | 'engine'
 
 Usage:
     $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx coreml saved_model pb tflite tfjs
@@ -24,6 +25,7 @@ Inference:
                                          yolov5s_saved_model
                                          yolov5s.pb
                                          yolov5s.tflite
+                                         yolov5s.trt
 
 TensorFlow.js:
     $ cd .. && git clone https://github.com/zldrobit/tfjs-yolov5-example.git && cd tfjs-yolov5-example
