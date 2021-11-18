@@ -140,8 +140,10 @@ def train(
     print("Running training function...")
     if os.name == "nt":
         workers = 1
+        cache = "disk"
     else:
         workers = 4
+        cache = "ram"
     path_to_best_model = train.run(
         cfg=f"models/{yolo_model_version}.yaml",
         weights=f"{yolo_model_version}.pt",
@@ -155,7 +157,7 @@ def train(
         workers=workers,
         entity=entity,
         patience=100,
-        cache="disk",
+        cache=cache,
     )
     print("Finished training function...")
     #### END OF TRAINING CODE ####
