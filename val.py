@@ -337,6 +337,9 @@ def main(opt):
     if opt.task in ('train', 'val', 'test'):  # run normally
         if opt.conf_thres > 0.001:  # https://github.com/ultralytics/yolov5/issues/1466
             LOGGER.info(f'WARNING: confidence threshold {opt.conf_thres} >> 0.001 will produce invalid mAP values.')
+        if opt.weights[0].endswith('.trt'):  # should be imported in current file
+            check_requirements(('pycuda',))
+            import pycuda.autoinit
         run(**vars(opt))
 
     else:
