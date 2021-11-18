@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -6,15 +7,16 @@ import cv2
 import wandb
 import numpy as np
 import torch
+import plotly.express as px
 from aisa_utils.dl_utils.utils import (
     plot_object_count_difference_ridgeline,
     make_video_results,
     plot_object_count_difference_line,
 )
-
-
-from utils.general import xyxy2xywhn, scale_coords, xyxy2xywh, clip_coords
-from mojo_val import compute_and_plot_predictions_and_labels
+from utils.general import xyxy2xywhn, scale_coords
+from mojo_val import compute_predictions_and_labels
+from aisa_utils.dl_utils.plots import plot_predictions_and_labels_crops, compute_predictions_and_labels_false_pos, \
+    plot_debug_frames
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
@@ -88,6 +90,7 @@ def mojo_test(
     )  # make dir
     run_id = torch.load(weights[0]).get("wandb_id")
 
+    os.environ['WANDB_SILENT'] = "true"
     wandb_run = wandb.init(
         id=run_id, project=project, entity=entity, resume="allow", allow_val_change=True,
     )
@@ -178,7 +181,23 @@ def mojo_test(
     extra_plots["object_count_difference"] = fig
     extra_plots["object_count_difference_continuous"] = fig_line
 
-    extra_plots.update(compute_and_plot_predictions_and_labels(extra_stats, suggested_threshold))
+    # Extract prediction & labels match from validation extra stats
+    predn, preds_matched, labelsn, labels_matched, images_paths = compute_predictions_and_labels(
+        extra_stats
+    )
+    # Draw image with preds and labels with different color depending on the matches
+
+    extra_plots.update(plot_debug_frames(
+        predn, preds_matched, labelsn, labels_matched, images_paths, threshold=suggested_threshold
+    ))
+
+    # Compute TP, TN, FP, FN and draw crops of lowest and confidence threshold preds
+    true_pos, true_neg, false_pos, false_neg = compute_predictions_and_labels_false_pos(
+        predn, preds_matched, labelsn, labels_matched, images_paths, threshold=suggested_threshold
+    )
+    extra_plots.update(plot_predictions_and_labels_crops(
+        true_pos, true_neg, false_pos, false_neg, images_paths
+    ))
 
     print("Uploading plots")
     for plot_key in extra_plots:
