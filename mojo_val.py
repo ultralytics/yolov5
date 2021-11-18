@@ -246,8 +246,6 @@ def compute_and_plot_predictions_and_labels(extra_stats, threshold):
     false_neg = torch.cat(false_neg)
 
     fig = dict()
-    for image_idx, frame in enumerate(debug_frames):
-        fig[f"Debug Image (id: {image_idx})"] = px.imshow(frame)
 
     fig.update(plot_predictions_and_labels(true_pos, true_neg, false_pos, false_neg, extra_stats, debug_frames))
 
@@ -264,7 +262,7 @@ def plot_predictions_and_labels(true_pos, true_neg, false_pos, false_neg, extra_
     n_crops_displayed = 10
     fig = dict()
     for image_idx, frame in enumerate(debug_frames):
-        fig[f"Debug Image (id: {image_idx})"] = px.imshow(frame)
+        fig[f"Debug Image (id: {image_idx})"] = px.imshow(frame[:, :, ::-1])
 
     for title, (gt_pos, assignment) in {
         "True Positive": (True, true_pos),
