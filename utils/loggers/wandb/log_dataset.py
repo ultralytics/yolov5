@@ -1,7 +1,8 @@
 import argparse
 
-from utils.general import LOGGER
 from wandb_utils import WandbLogger
+
+from utils.general import LOGGER
 
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
