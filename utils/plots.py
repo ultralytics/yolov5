@@ -144,10 +144,10 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detec
                 ax[i].imshow(blocks[i].squeeze())  # cmap='gray'
                 ax[i].axis('off')
 
-                block_arrary = blocks[i].squeeze().numpy() # tensor2numpy
-                if not os.path.exists(f'{save_dir}/{f2}'): # mkdir npy
+                block_arrary = blocks[i].squeeze().numpy()  # tensor2numpy
+                if not os.path.exists(f'{save_dir}/{f2}'):  # mkdir npy
                     os.makedirs(f'{save_dir}/{f2}')
-                np.save(f'{save_dir}/{f2}/{f2}_{i}.npy', block_arrary) # npy save
+                np.save(f'{save_dir}/{f2}/{f2}_{i}.npy', block_arrary)  # npy save
             print(f'Saving {save_dir / f}... ({n}/{channels})')
             plt.savefig(save_dir / f, dpi=300, bbox_inches='tight')
             plt.close()
