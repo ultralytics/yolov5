@@ -114,7 +114,7 @@ def generate_crop(extra_stats, predn_with_path, gain=1.10):
     return frame_crop
 
 
-def plot_crops(crops_low, crops_high, title, gt_pos):
+def plot_crops(crops_low, crops_high, title, gt_pos, *, n_cols):
     """
     Draw part of targets and predictions in several colors onto an image
     Arguments:
@@ -125,7 +125,6 @@ def plot_crops(crops_low, crops_high, title, gt_pos):
     Returns:
         fig go.Figure Figure of a grid of crops
     """
-    n_cols = 8
     titles_low = [f"{'💔' if gt_pos else '💚' } Low conf (idx: {idx})" for idx in range(len(crops_low))]
     titles_high = [f"{'💚' if gt_pos else '💔' } High conf (idx: {idx})" for idx in range(len(crops_high))]
     crops = crops_low + crops_high
@@ -139,10 +138,10 @@ def plot_crops(crops_low, crops_high, title, gt_pos):
     )
 
     for n, image in enumerate(crops_high):
-        fig.add_trace(px.imshow(image).data[0], row=int(n / n_cols) + 1, col=n % 5 + 1)
+        fig.add_trace(px.imshow(image).data[0], row=int(n / n_cols) + 1, col=n % n_cols + 1)
 
     for n, image in enumerate(crops_low):
-        fig.add_trace(px.imshow(image).data[0], row=n_rows_high + int(n / n_cols) + 1, col=n % 5 + 1)
+        fig.add_trace(px.imshow(image).data[0], row=n_rows_high + int(n / n_cols) + 1, col=n % n_cols + 1)
 
     if len(crops):
         layout = px.imshow(crops[0], color_continuous_scale='gray').layout
@@ -223,7 +222,7 @@ def plot_predictions_and_labels(extra_stats):
     true_neg = torch.cat(true_neg)
     false_pos = torch.cat(false_pos)
     false_neg = torch.cat(false_neg)
-    n_crops_displayed = 10
+    n_crops_displayed = 16
 
     for title, (gt_pos, assignment) in {
         "True Positive": (True, true_pos),
@@ -237,7 +236,7 @@ def plot_predictions_and_labels(extra_stats):
 
         thumbnail_stack_lowest = [generate_crop(extra_stats, crop) for crop in assignment_lowest]
         thumbnail_stack_highest = [generate_crop(extra_stats, crop) for crop in assignment_highest]
-        fig[title] = plot_crops(thumbnail_stack_lowest, thumbnail_stack_highest, title, gt_pos)
+        fig[title] = plot_crops(thumbnail_stack_lowest, thumbnail_stack_highest, title, gt_pos, n_cols=8)
         fig[title].show()
 
     return fig
