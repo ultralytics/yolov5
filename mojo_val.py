@@ -127,8 +127,8 @@ def plot_crops(crops_low, assignment_low, crops_high, assignment_high, title, gt
     Returns:
         fig go.Figure Figure of a grid of crops
     """
-    titles_low = [f"{'💔' if gt_pos else '💚' } Low conf (c={c:.2f}))" for c in assignment_low[:, 4]]
-    titles_high = [f"{'💚' if gt_pos else '💔' } High conf (c={c:.2f}))" for c in assignment_high[:, 4]]
+    titles_low = [f"{'💔' if gt_pos else '💚' } Low conf (c={c:.2f})" for c in assignment_low[:, 4]]
+    titles_high = [f"{'💚' if gt_pos else '💔' } High conf (c={c:.2f})" for c in assignment_high[:, 4]]
     crops = crops_low + crops_high
     n_rows_low = len(crops_low) // n_cols + 1
     n_rows_high = len(crops_high) // n_cols + 1
@@ -210,7 +210,7 @@ def plot_predictions_and_labels(extra_stats, threshold):
 
             fig[f"Debug Image (id: {image_idx})"] = px.imshow(frame)
 
-        predn_with_path = torch.cat([predn, torch.ones((predn.shape[0], 1)) * image_idx], dim=1) # append image_idx
+        predn_with_path = torch.cat([predn, torch.ones((predn.shape[0], 1)) * image_idx], dim=1)  # append image_idx
         labelsn_with_path = torch.cat([labelsn, torch.ones((labelsn.shape[0], 1)) * image_idx], dim=1)  # append image_idx
 
         true_pos.append(predn_with_path[np.logical_and(preds_matched, preds_pos)])
