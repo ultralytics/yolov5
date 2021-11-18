@@ -154,7 +154,7 @@ def plot_crops(crops_low, assignment_low, crops_high, assignment_high, title, gt
     return fig
 
 
-def plot_predictions_and_labels(extra_stats):
+def plot_predictions_and_labels(extra_stats, threshold):
     """
     Compute predictions and labels based on extra_stats given by the ultralytics val.py main loop
     Arguments:
@@ -187,19 +187,17 @@ def plot_predictions_and_labels(extra_stats):
             preds_matched, targets_matched = torch.zeros(pred.shape[0], niou, dtype=torch.bool), torch.zeros(labelsn.shape[0], dtype=torch.bool)
 
         labelsn = labelsn[:, 1:]
-        # Confidence threshold for FP/FN/TP/TN
-        conf_thresh = 0.2
         # Get pos, negn matched and non matched to compute and show FP/FN/TP/TN
         preds_matched = preds_matched[:, 0] # iou = 0.5
         preds_not_matched = np.logical_not(preds_matched)
         targets_not_matched = np.logical_not(targets_matched)
-        preds_pos = predn[:, 4] >= conf_thresh
-        preds_neg = predn[:, 4] < conf_thresh
+        preds_pos = predn[:, 4] >= threshold
+        preds_neg = predn[:, 4] < threshold
 
         # Draw one image
         if image_idx in [0, 1, 2]:
-            preds_pos = predn[:, 4] >= conf_thresh
-            preds_neg = predn[:, 4] < conf_thresh
+            preds_pos = predn[:, 4] >= threshold
+            preds_neg = predn[:, 4] < threshold
 
             frame = cv2.imread(str(path), 1)
 

@@ -189,7 +189,7 @@ def mojo_test(
     extra_plots["object_count_difference"] = fig
     extra_plots["object_count_difference_continuous"] = fig_line
 
-    extra_plots.update(plot_predictions_and_labels(extra_stats))
+    extra_plots.update(plot_predictions_and_labels(extra_stats, suggested_threshold))
 
     print(f"suggested_threshold={suggested_threshold}")
     for plot_key in extra_plots:
