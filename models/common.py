@@ -318,12 +318,14 @@ class DetectMultiBackend(nn.Module):
             check_requirements(('onnx', 'onnxruntime-gpu' if torch.has_cuda else 'onnxruntime'))
             import onnxruntime
             session = onnxruntime.InferenceSession(w, None)
-        elif engine:  # TensorRT
+        elif engine:  # TensorRT *.trt
             LOGGER.info(f'Loading {w} for TensorRT inference...')
             check_requirements(('pycuda', 'tensorrt'))
             from collections import namedtuple
-            from pycuda import autoinit, driver as drv
+
             import tensorrt as trt
+            from pycuda import autoinit
+            from pycuda import driver as drv
 
             Binding = namedtuple('Binding', ('name', 'dtype', 'shape', 'dmem', 'hmem'))
             logger = trt.Logger(trt.Logger.INFO)
