@@ -20,7 +20,7 @@ import numpy as np
 import torch
 
 from utils.general import xyxy2xywhn, scale_coords, xyxy2xywh, clip_coords
-from mojo_val import plot_fp_fn
+from mojo_val import plot_predictions_and_labels
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
@@ -189,7 +189,7 @@ def mojo_test(
     extra_plots["object_count_difference"] = fig
     extra_plots["object_count_difference_continuous"] = fig_line
 
-    extra_plots.update(plot_fp_fn(extra_stats))
+    extra_plots.update(plot_predictions_and_labels(extra_stats))
 
     print(f"suggested_threshold={suggested_threshold}")
     for plot_key in extra_plots:

@@ -13,7 +13,7 @@ from utils.general import scale_coords, xywh2xyxy, clip_coords, xyxy2xywh
 
 def process_batch_with_missed_labels(detections, labels, iouv):
     """
-    Return correct predictions matrix. Both sets of boxes are in (x1, y1, x2, y2) format.
+    Return matched predictions' and labels' matrix. Both sets of boxes are in (x1, y1, x2, y2) format.
     Arguments:
         detections (Array[N, 6]), x1, y1, x2, y2, conf, class
         labels (Array[M, 5]), class, x1, y1, x2, y2
@@ -63,9 +63,19 @@ def error_count_from_extra(extra_stats):
 
 
 def draw_targets(frame, bboxes, matches, mask, rect=False):
+    """
+    Draw part of targets and predictions in several colors onto an image
+    Arguments:
+        frame (Array[H, W, C]), images to be drawn
+        bboxes (Array[N, 4]), x1, y1, x2, y2, coordinates of the target
+        matches (Array[N,]), x1, y1, x2, y2 bool vector to show in red or green color
+        mask (Array[N]), x1, y1, x2, y2 bool vector to show or not the prediction if > conf_thresh
+    Returns:
+        None since frame has been drawn inplace
+    """
     assert bboxes.shape[0] == matches.shape[0] == mask.shape[0]
     clip_coords(bboxes, frame.shape)
-    bboxes.astype(int)
+    bboxes = bboxes.astype(int)
     if not rect:
         bboxes = xyxy2xywh(bboxes)
     for match, bbox, m in zip(matches, bboxes, mask):
@@ -84,6 +94,7 @@ def draw_targets(frame, bboxes, matches, mask, rect=False):
 
 
 def generate_crop(extra_stats, predn_with_path):
+
     crop_box = predn_with_path[:4]
     frame_idx = int(predn_with_path[-1])  # paths idx should be at the end
     frame_path = extra_stats[frame_idx][0]
@@ -94,6 +105,17 @@ def generate_crop(extra_stats, predn_with_path):
 
 
 def plot_crops(crops_low, crops_high, title, gt_pos):
+    """
+    Draw part of targets and predictions in several colors onto an image
+    Arguments:
+        crops_low Cropped images of target or predictions to be drawn with low conf
+        crops_high Cropped images of target or predictions to be drawn with high conf
+        title str Name of the category
+        gt_pos bool Whether to draw a symbol of a good or bad predictions or labels given its category
+    Returns:
+        fig go.Figure Figure of a grid of crops
+    """
+
     titles_low = [f"{'💔' if gt_pos else '💚' } Low conf (idx: {idx})" for idx in range(len(crops_low))]
     titles_high = [f"{'💚' if gt_pos else '💔' } High conf (idx: {idx})" for idx in range(len(crops_high))]
     crops = crops_low + crops_high
@@ -107,10 +129,6 @@ def plot_crops(crops_low, crops_high, title, gt_pos):
     for n, image in enumerate(crops):
         fig.add_trace(px.imshow(image).data[0], row=int(n / 5) + 1, col=n % 5 + 1)
 
-    # the layout gets lost, so we have to carry it over - but we cannot simply do
-    # fig.layout = layout since the layout has to be slightly different for subplots
-    # fig.layout.yaxis in a subplot refers only to the first axis for example
-    # update_yaxes updates *all* axis on the other hand
     if len(crops):
         layout = px.imshow(crops[0], color_continuous_scale='gray').layout
         fig.layout.coloraxis = layout.coloraxis
@@ -120,10 +138,21 @@ def plot_crops(crops_low, crops_high, title, gt_pos):
     return fig
 
 
-def plot_fp_fn(extra_stats):
+def plot_predictions_and_labels(extra_stats):
+    """
+    Compute predictions and labels based on extra_stats given by the ultralytics val.py main loop
+    Arguments:
+        extra_stats Array[size of val dataset, 6]
+            List of path_to_image, predictions, labels, shape_in, shape_out, padding_ratio
+    Returns:
+        fig Dict[go.Figure] Dictionary of debug images and good/bad preidctions labels as cropped images grid
+    """
     iouv = torch.linspace(0.5, 0.95, 10)
     single_cls = True
     niou = len(iouv)
+
+    fig = dict()
+    debug_frames = []
     true_pos, true_neg, false_pos, false_neg = [], [], [], []
     for image_idx, (path, pred, labels, img1_shape, img0_shape, ratio_pad) in enumerate(extra_stats):
         nl = len(labels)
@@ -143,7 +172,8 @@ def plot_fp_fn(extra_stats):
 
         labelsn = labelsn[:, 1:]
         # Confidence threshold for FP/FN/TP/TN
-        conf_thresh = 0.1
+        conf_thresh = 0.2
+        # Get pos, negn matched and non matched to compute and show FP/FN/TP/TN
         preds_matched = preds_matched[:, 0] # iou = 0.5
         preds_not_matched = np.logical_not(preds_matched)
         targets_not_matched = np.logical_not(targets_matched)
@@ -151,16 +181,20 @@ def plot_fp_fn(extra_stats):
         preds_neg = predn[:, 4] < conf_thresh
 
         # Draw one image
-        if False:
+        if image_idx in [0, 1, 2]:
+            preds_pos = predn[:, 4] >= conf_thresh
+            preds_neg = predn[:, 4] < conf_thresh
+
+            frame = cv2.imread(str(path), 1)
 
             # Draw targets that are missed or not
-            draw_targets(frame, labelsn.numpy(), np.logical_not(labels_miss.numpy()), np.ones(labels.shape[0]),  rect=True)
+            draw_targets(frame, labelsn.numpy(), np.logical_not(targets_not_matched.numpy()), np.ones(labels.shape[0]))
             # Draw wrong and good preds that are above a certain threshold
-            draw_targets(frame, predn[:, :4].numpy(), predn[preds_matched, 0].numpy(), predn[:, 4] > conf_thresh)
+            draw_targets(frame, predn[:, :4].numpy(), preds_matched.numpy(), preds_pos, rect=True)
 
-            cv2.imshow("Draw image with targets and preds", frame)
-            cv2.waitKey()
-            cv2.destroyAllWindows()
+            debug_frames.append(frame)
+
+            fig[f"Debug Image (id: {image_idx})"] = px.imshow(frame)
 
         predn_with_path = torch.cat([predn, torch.ones((predn.shape[0], 1)) * image_idx], dim=1) # append image_idx
         labelsn_with_path = torch.cat([labelsn, torch.ones((labelsn.shape[0], 1)) * image_idx], dim=1)  # append image_idx
@@ -176,12 +210,11 @@ def plot_fp_fn(extra_stats):
     false_neg = torch.cat(false_neg)
     n_worst = 5
 
-    fig = dict()
     for title, (gt_pos, assignment) in {
         "True Positive": (True, true_pos),
         "False Positive": (False, false_pos),
         "False Negative": (True, false_neg),
-        "True Negative": (False, true_neg)  # TODO: Tricky interpretation c- for classification  & c+ for localization
+        "True Negative": (False, true_neg)  # TODO: Tricky interpretation c- for classification & c+ for localization
     }.items():
         n_first = min(n_worst, len(assignment) // 2)
         assignment_lowest = assignment[np.argpartition(assignment[:, 4], +n_first)[:+n_first]]
