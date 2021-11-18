@@ -50,7 +50,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         nosave=False,  # do not save images/videos
         classes=None,  # filter by class: --class 0, or --class 0 2 3
         agnostic_nms=False,  # class-agnostic NMS
-        multi_label=False,  # multi-label NMS
         augment=False,  # augmented inference
         visualize=False,  # visualize features
         update=False,  # update all models
@@ -78,7 +77,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     # Load model
     device = select_device(device)
     model = DetectMultiBackend(weights, device=device, dnn=dnn)
-    stride, names, pt, jit, onnx = model.stride, model.names, model.pt, model.jit, model.onnx
+    stride, names, pt, jit, onnx, multi_label = model.stride, model.names, model.pt, model.jit, model.onnx, model.multi_label
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
     # Half
@@ -218,7 +217,6 @@ def parse_opt():
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
     parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --classes 0, or --classes 0 2 3')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
-    parser.add_argument('--multi-label', action='store_true', help='multi-label NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--visualize', action='store_true', help='visualize features')
     parser.add_argument('--update', action='store_true', help='update all models')
