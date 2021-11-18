@@ -125,19 +125,24 @@ def plot_crops(crops_low, crops_high, title, gt_pos):
     Returns:
         fig go.Figure Figure of a grid of crops
     """
-
+    n_cols = 8
     titles_low = [f"{'💔' if gt_pos else '💚' } Low conf (idx: {idx})" for idx in range(len(crops_low))]
     titles_high = [f"{'💚' if gt_pos else '💔' } High conf (idx: {idx})" for idx in range(len(crops_high))]
     crops = crops_low + crops_high
-    titles = titles_low + titles_high
+    n_rows_low = len(crops_low) // n_cols + 1
+    n_rows_high = len(crops_high) // n_cols + 1
+    titles = titles_low + [None for _ in range(n_cols - len(titles_low) % n_cols)] + titles_high
     fig = make_subplots(
-        rows=len(crops) // 5 + 1,
-        cols=5,
+        rows=n_rows_low + n_rows_high,
+        cols=n_cols,
         subplot_titles=titles
     )
 
-    for n, image in enumerate(crops):
-        fig.add_trace(px.imshow(image).data[0], row=int(n / 5) + 1, col=n % 5 + 1)
+    for n, image in enumerate(crops_high):
+        fig.add_trace(px.imshow(image).data[0], row=int(n / n_cols) + 1, col=n % 5 + 1)
+
+    for n, image in enumerate(crops_low):
+        fig.add_trace(px.imshow(image).data[0], row=n_rows_high + int(n / n_cols) + 1, col=n % 5 + 1)
 
     if len(crops):
         layout = px.imshow(crops[0], color_continuous_scale='gray').layout
@@ -218,7 +223,7 @@ def plot_predictions_and_labels(extra_stats):
     true_neg = torch.cat(true_neg)
     false_pos = torch.cat(false_pos)
     false_neg = torch.cat(false_neg)
-    n_worst = 5
+    n_crops_displayed = 10
 
     for title, (gt_pos, assignment) in {
         "True Positive": (True, true_pos),
@@ -226,12 +231,13 @@ def plot_predictions_and_labels(extra_stats):
         "False Negative": (True, false_neg),
         "True Negative": (False, true_neg)  # TODO: Tricky interpretation c- for classification & c+ for localization
     }.items():
-        n_first = min(n_worst, len(assignment) // 2)
+        n_first = min(n_crops_displayed, len(assignment) // 2)
         assignment_lowest = assignment[np.argpartition(assignment[:, 4], +n_first)[:+n_first]]
         assignment_highest = assignment[np.argpartition(assignment[:, 4], -n_first)[-n_first:]]
 
         thumbnail_stack_lowest = [generate_crop(extra_stats, crop) for crop in assignment_lowest]
         thumbnail_stack_highest = [generate_crop(extra_stats, crop) for crop in assignment_highest]
         fig[title] = plot_crops(thumbnail_stack_lowest, thumbnail_stack_highest, title, gt_pos)
+        fig[title].show()
 
     return fig
