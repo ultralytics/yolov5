@@ -114,7 +114,7 @@ def generate_crop(extra_stats, predn_with_path, gain=1.10):
     return frame_crop
 
 
-def plot_crops(crops_low, assignment_low, crops_high, assignment_high, title, gt_pos, n_cols=8):
+def plot_crops(crops_low, assignment_low, crops_high, assignment_high, title, gt_pos, *, n_cols):
     """
     Draw part of targets and predictions in several colors onto an image
     Arguments:
@@ -241,7 +241,7 @@ def plot_predictions_and_labels(extra_stats):
 
         crops_low = [generate_crop(extra_stats, pred) for pred in assignment_low]
         crops_high = [generate_crop(extra_stats, pred) for pred in assignment_high]
-        fig[title] = plot_crops(crops_low, assignment_low, crops_high, assignment_high, title, gt_pos, n_cols=8)
+        fig[title] = plot_crops(crops_low, assignment_low, crops_high, assignment_high, title, gt_pos, n_cols=5)
         fig[title].show()
 
     return fig
