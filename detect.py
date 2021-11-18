@@ -77,7 +77,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     # Load model
     device = select_device(device)
     model = DetectMultiBackend(weights, device=device, dnn=dnn)
-    stride, names, pt, jit, onnx, multi_label = model.stride, model.names, model.pt, model.jit, model.onnx, model.multi_label
+    stride, names, pt, jit, onnx, multi_label = model.stride, model.names, model.pt, model.jit, model.onnx, model.model.multi_label
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
     # Half
