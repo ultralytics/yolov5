@@ -190,6 +190,5 @@ def plot_fp_fn(extra_stats):
         thumbnail_stack_lowest = [generate_crop(extra_stats, crop) for crop in assignment_lowest]
         thumbnail_stack_highest = [generate_crop(extra_stats, crop) for crop in assignment_highest]
         fig[title] = plot_crops(thumbnail_stack_lowest, thumbnail_stack_highest, title, gt_pos)
-        fig[title].show()
 
     return fig
