@@ -177,17 +177,13 @@ def plot_fp_fn(extra_stats):
     n_worst = 5
 
     fig = dict()
-
-    fig = dict()
-
     for title, (gt_pos, assignment) in {
         "True Positive": (True, true_pos),
         "False Positive": (False, false_pos),
         "False Negative": (True, false_neg),
-        "True Negative": (False, true_neg)
+        "True Negative": (False, true_neg)  # TODO: Tricky interpretation c- for classification  & c+ for localization
     }.items():
         n_first = min(n_worst, len(assignment) // 2)
-        print(n_first)
         assignment_lowest = assignment[np.argpartition(assignment[:, 4], +n_first)[:+n_first]]
         assignment_highest = assignment[np.argpartition(assignment[:, 4], -n_first)[-n_first:]]
 
