@@ -222,7 +222,7 @@ def plot_predictions_and_labels(extra_stats, threshold):
     true_neg = torch.cat(true_neg)
     false_pos = torch.cat(false_pos)
     false_neg = torch.cat(false_neg)
-    n_crops_displayed = 16
+    n_crops_displayed = 10
 
     for title, (gt_pos, assignment) in {
         "True Positive": (True, true_pos),

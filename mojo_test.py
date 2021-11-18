@@ -185,13 +185,14 @@ def mojo_test(
 
     preds = preds_iou_thres[0.45]
     fig, suggested_threshold = plot_object_count_difference_ridgeline(labels, preds)
+    print(f"suggested_threshold={suggested_threshold}")
 
     extra_plots["object_count_difference"] = fig
     extra_plots["object_count_difference_continuous"] = fig_line
 
     extra_plots.update(plot_predictions_and_labels(extra_stats, suggested_threshold))
 
-    print(f"suggested_threshold={suggested_threshold}")
+    print("Uploading plots")
     for plot_key in extra_plots:
         wandb_run.log({f"mojo_test/extra_plots/{plot_key}": extra_plots[plot_key]})
 
