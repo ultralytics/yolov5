@@ -147,8 +147,8 @@ def plot_fp_fn(extra_stats):
         preds_matched = preds_matched[:, 0] # iou = 0.5
         preds_not_matched = np.logical_not(preds_matched)
         targets_not_matched = np.logical_not(targets_matched)
-        preds_pos = predn_with_path[:, 4] >= conf_thresh
-        preds_neg = predn_with_path[:, 4] < conf_thresh
+        preds_pos = predn[:, 4] >= conf_thresh
+        preds_neg = predn[:, 4] < conf_thresh
 
         # Draw one image
         if False:
