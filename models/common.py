@@ -285,11 +285,12 @@ class DetectMultiBackend(nn.Module):
         #   TensorFlow Lite:        *.tflite
         #   ONNX Runtime:           *.onnx
         #   OpenCV DNN:             *.onnx with dnn=True
+        #   TensorRT:               *.trt
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
-        suffix, suffixes = Path(w).suffix.lower(), ['.pt', '.onnx', '.tflite', '.pb', '', '.mlmodel']
+        suffix, suffixes = Path(w).suffix.lower(), ['.pt', '.onnx', '.trt', '.tflite', '.pb', '', '.mlmodel']
         check_suffix(w, suffixes)  # check weights have acceptable suffix
-        pt, onnx, tflite, pb, saved_model, coreml = (suffix == x for x in suffixes)  # backend booleans
+        pt, onnx, engine, tflite, pb, saved_model, coreml = (suffix == x for x in suffixes)  # backend booleans
         jit = pt and 'torchscript' in w.lower()
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
 
@@ -317,6 +318,28 @@ class DetectMultiBackend(nn.Module):
             check_requirements(('onnx', 'onnxruntime-gpu' if torch.has_cuda else 'onnxruntime'))
             import onnxruntime
             session = onnxruntime.InferenceSession(w, None)
+        elif engine:  # TensorRT
+            LOGGER.info(f'Loading {w} for TensorRT inference...')
+            check_requirements(('pycuda', 'tensorrt'))
+            from collections import namedtuple
+            from pycuda import autoinit, driver as drv
+            import tensorrt as trt
+
+            Binding = namedtuple('Binding', ('name', 'dtype', 'shape', 'dmem', 'hmem'))
+            logger = trt.Logger(trt.Logger.INFO)
+            with open(w, 'rb') as f, trt.Runtime(logger) as runtime:
+                model = runtime.deserialize_cuda_engine(f.read())
+            bindings = dict()
+            for index in range(model.num_bindings):
+                name = model.get_binding_name(index)
+                dtype = trt.nptype(model.get_binding_dtype(index))
+                shape = tuple(model.get_binding_shape(index))
+                dmem = drv.mem_alloc(dtype().itemsize * np.prod(shape).item())
+                hmem = drv.pagelocked_empty(shape, dtype) if name == 'output' else 0
+                bindings[name] = Binding(name, dtype, shape, dmem, hmem)
+            binding_addrs = [int(b.dmem) for b in bindings.values()]
+            context = model.create_execution_context()
+            stream = drv.Stream()
         else:  # TensorFlow model (TFLite, pb, saved_model)
             import tensorflow as tf
             if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
@@ -369,6 +392,14 @@ class DetectMultiBackend(nn.Module):
                 y = self.net.forward()
             else:  # ONNX Runtime
                 y = self.session.run([self.session.get_outputs()[0].name], {self.session.get_inputs()[0].name: im})[0]
+        elif self.engine:  # TensorRT
+            assert im.shape == self.bindings['images'].shape, (im.shape, self.bindings['images'].shape)
+            im = im.cpu().numpy().astype(np.dtype(self.bindings['images'].dtype))
+            self.drv.memcpy_htod_async(self.bindings['images'].dmem, im, self.stream)
+            self.context.execute_async_v2(self.binding_addrs, self.stream.handle)
+            self.drv.memcpy_dtoh_async(self.bindings['output'].hmem, self.bindings['output'].dmem, self.stream)
+            self.stream.synchronize()
+            y = self.bindings['output'].hmem.copy()
         else:  # TensorFlow model (TFLite, pb, saved_model)
             im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
             if self.pb:

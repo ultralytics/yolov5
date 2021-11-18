@@ -76,7 +76,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
         LOGGER.info(f'{prefix} export failure: {e}')
 
 
-def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:')):
+def export_onnx(model, im, file, opset, train, dynamic, simplify, buffer=None, prefix=colorstr('ONNX:')):
     # YOLOv5 ONNX export
     try:
         check_requirements(('onnx',))
@@ -85,7 +85,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
         f = file.with_suffix('.onnx')
 
-        torch.onnx.export(model, im, f, verbose=False, opset_version=opset,
+        torch.onnx.export(model, im, buffer or f, verbose=False, opset_version=opset,
                           training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
                           do_constant_folding=not train,
                           input_names=['images'],
@@ -95,7 +95,8 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
                                         } if dynamic else None)
 
         # Checks
-        model_onnx = onnx.load(f)  # load onnx model
+        buffer and buffer.seek(0)
+        model_onnx = onnx.load(buffer or f)  # load onnx model
         onnx.checker.check_model(model_onnx)  # check onnx model
         # LOGGER.info(onnx.helper.printable_graph(model_onnx.graph))  # print
 
@@ -111,7 +112,8 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
                     dynamic_input_shape=dynamic,
                     input_shapes={'images': list(im.shape)} if dynamic else None)
                 assert check, 'assert check failed'
-                onnx.save(model_onnx, f)
+                buffer and buffer.seek(0)
+                onnx.save(model_onnx, buffer or f)
             except Exception as e:
                 LOGGER.info(f'{prefix} simplifier failure: {e}')
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -263,6 +265,56 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
+def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
+    try:
+        check_requirements(('tensorrt',))
+        import io
+
+        import tensorrt as trt
+
+        opset = (12, 13)[trt.__version__[0] == '8']  # test on TensorRT 7.x and 8.x
+        onnx = io.BytesIO()
+        export_onnx(model, im, file, opset, train, False, simplify, onnx)
+        onnx.seek(0)
+
+        LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
+        f = str(file).replace('.pt', '.trt')  # TensorRT engine file
+
+        logger = trt.Logger(trt.Logger.INFO)
+        if verbose:
+            logger.min_severity = trt.Logger.Severity.VERBOSE
+
+        builder = trt.Builder(logger)
+        config = builder.create_builder_config()
+        config.max_workspace_size = workspace * 1 << 30
+
+        flag = (1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
+        network = builder.create_network(flag)
+        parser = trt.OnnxParser(network, logger)
+
+        if not parser.parse(onnx.read()):
+            raise RuntimeError(f'failed to load ONNX file: {onnx}')
+
+        inputs = [network.get_input(i) for i in range(network.num_inputs)]
+        outputs = [network.get_output(i) for i in range(network.num_outputs)]
+
+        LOGGER.info(f'{prefix} Network Description:')
+        for inp in inputs:
+            LOGGER.info(f'{prefix}     input "{inp.name}" with shape {inp.shape} and dtype {inp.dtype}')
+        for out in outputs:
+            LOGGER.info(f'{prefix}     output "{out.name}" with shape {out.shape} and dtype {out.dtype}')
+
+        half &= builder.platform_has_fast_fp16
+        LOGGER.info(f'{prefix} building FP{16 if half else 32} engine in {f}')
+        if half:
+            config.set_flag(trt.BuilderFlag.FP16)
+
+        with builder.build_engine(network, config) as engine, open(f, 'wb') as t:
+            LOGGER.info(f'{prefix} serializing engine to file: {f}')
+            t.write(engine.serialize())
+    except Exception as e:
+        LOGGER.info(f'\n{prefix} export failure: {e}')
+
 @torch.no_grad()
 def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         weights=ROOT / 'yolov5s.pt',  # weights path
@@ -277,7 +329,9 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         int8=False,  # CoreML/TF INT8 quantization
         dynamic=False,  # ONNX/TF: dynamic axes
         simplify=False,  # ONNX: simplify model
+        verbose=False,  # TensorRT: verbose log
         opset=12,  # ONNX: opset version
+        workspace=4,  # TensorRT: workspace size (GB)
         topk_per_class=100,  # TF.js NMS: topk per class to keep
         topk_all=100,  # TF.js NMS: topk for all classes to keep
         iou_thres=0.45,  # TF.js NMS: IoU threshold
@@ -322,6 +376,8 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         export_torchscript(model, im, file, optimize)
     if 'onnx' in include:
         export_onnx(model, im, file, opset, train, dynamic, simplify)
+    if 'engine' in include:
+        export_engine(model, im, file, train, half, simplify, workspace, verbose)
     if 'coreml' in include:
         export_coreml(model, im, file)
 
@@ -359,14 +415,16 @@ def parse_opt():
     parser.add_argument('--int8', action='store_true', help='CoreML/TF INT8 quantization')
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TF: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
+    parser.add_argument('--verbose', action='store_true', help='TensorRT: verbose log')
     parser.add_argument('--opset', type=int, default=13, help='ONNX: opset version')
+    parser.add_argument('--workspace', type=int, default=4, help='TensorRT: workspace size (GB)')
     parser.add_argument('--topk-per-class', type=int, default=100, help='TF.js NMS: topk per class to keep')
     parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='TF.js NMS: IoU threshold')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
     parser.add_argument('--include', nargs='+',
                         default=['torchscript', 'onnx'],
-                        help='available formats are (torchscript, onnx, coreml, saved_model, pb, tflite, tfjs)')
+                        help='available formats are (torchscript, onnx, engine, coreml, saved_model, pb, tflite, tfjs)')
     opt = parser.parse_args()
     print_args(FILE.stem, opt)
     return opt
