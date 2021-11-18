@@ -134,7 +134,7 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detec
         if height > 1 and width > 1:
             f = f"stage{stage}_{module_type.split('.')[-1]}_features.png"  # filename
             f2 = f[:-4]  # npy name
-            
+
             blocks = torch.chunk(x[0].cpu(), channels, dim=0)  # select batch index 0, block by channels
             n = min(n, channels)  # number of plots
             fig, ax = plt.subplots(math.ceil(n / 8), 8, tight_layout=True)  # 8 rows x n/8 cols
@@ -143,7 +143,7 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detec
             for i in range(n):
                 ax[i].imshow(blocks[i].squeeze())  # cmap='gray'
                 ax[i].axis('off')
-                
+
                 block_arrary = blocks[i].squeeze().numpy() # tensor2numpy
                 if not os.path.exists(f'{save_dir}/{f2}'): # mkdir npy
                     os.makedirs(f'{save_dir}/{f2}')
