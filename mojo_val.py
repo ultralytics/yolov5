@@ -114,19 +114,21 @@ def generate_crop(extra_stats, predn_with_path, gain=1.10):
     return frame_crop
 
 
-def plot_crops(crops_low, crops_high, title, gt_pos, *, n_cols):
+def plot_crops(crops_low, assignment_low, crops_high, assignment_high, title, gt_pos, n_cols=8):
     """
     Draw part of targets and predictions in several colors onto an image
     Arguments:
-        crops_low Cropped images of target or predictions to be drawn with low conf
-        crops_high Cropped images of target or predictions to be drawn with high conf
+        crops_low List[Image] (Cropped images of target or predictions to be drawn with low conf
+        assignment_low Predictions or labels associated with crop_low to retrieve confidence value
+        crops_high List[Image] Cropped images of target or predictions to be drawn with high conf
+        assignment_high Predictions or labels associated with crop_high to retrieve confidence value
         title str Name of the category
         gt_pos bool Whether to draw a symbol of a good or bad predictions or labels given its category
     Returns:
         fig go.Figure Figure of a grid of crops
     """
-    titles_low = [f"{'💔' if gt_pos else '💚' } Low conf (idx: {idx})" for idx in range(len(crops_low))]
-    titles_high = [f"{'💚' if gt_pos else '💔' } High conf (idx: {idx})" for idx in range(len(crops_high))]
+    titles_low = [f"{'💔' if gt_pos else '💚' } Low conf (c={c:.2f}))" for c in assignment_low[:, 4]]
+    titles_high = [f"{'💚' if gt_pos else '💔' } High conf (c={c:.2f}))" for c in assignment_high[:, 4]]
     crops = crops_low + crops_high
     n_rows_low = len(crops_low) // n_cols + 1
     n_rows_high = len(crops_high) // n_cols + 1
@@ -159,7 +161,7 @@ def plot_predictions_and_labels(extra_stats):
         extra_stats Array[size of val dataset, 6]
             List of path_to_image, predictions, labels, shape_in, shape_out, padding_ratio
     Returns:
-        fig Dict[go.Figure] Dictionary of debug images and good/bad preidctions labels as cropped images grid
+        fig Dict[go.Figure] Dictionary of debug images and good/bad predictions labels as cropped images grid
     """
     iouv = torch.linspace(0.5, 0.95, 10)
     single_cls = True
@@ -231,12 +233,15 @@ def plot_predictions_and_labels(extra_stats):
         "True Negative": (False, true_neg)  # TODO: Tricky interpretation c- for classification & c+ for localization
     }.items():
         n_first = min(n_crops_displayed, len(assignment) // 2)
-        assignment_lowest = assignment[np.argpartition(assignment[:, 4], +n_first)[:+n_first]]
-        assignment_highest = assignment[np.argpartition(assignment[:, 4], -n_first)[-n_first:]]
+        confidence = assignment[:, 4]
+        assignment_lowest_idx = np.argpartition(confidence, +n_first)[:+n_first]
+        assignment_highest_idx = np.argpartition(confidence, -n_first)[-n_first:]
+        assignment_low = assignment[assignment_lowest_idx]
+        assignment_high = assignment[assignment_highest_idx]
 
-        thumbnail_stack_lowest = [generate_crop(extra_stats, crop) for crop in assignment_lowest]
-        thumbnail_stack_highest = [generate_crop(extra_stats, crop) for crop in assignment_highest]
-        fig[title] = plot_crops(thumbnail_stack_lowest, thumbnail_stack_highest, title, gt_pos, n_cols=8)
+        crops_low = [generate_crop(extra_stats, pred) for pred in assignment_low]
+        crops_high = [generate_crop(extra_stats, pred) for pred in assignment_high]
+        fig[title] = plot_crops(crops_low, assignment_low, crops_high, assignment_high, title, gt_pos, n_cols=8)
         fig[title].show()
 
     return fig
