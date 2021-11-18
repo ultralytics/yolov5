@@ -93,18 +93,26 @@ def generate_crop(extra_stats, predn_with_path):
     return frame_crop
 
 
-def plot_crops(crop_fp, title):
-    fig = make_subplots(rows=len(crop_fp) // 5 + 1, cols=5)
+def plot_crops(crops_low, crops_high, title, gt_pos):
+    titles_low = [f"{'💔' if gt_pos else '💚' } Low conf (idx: {idx})" for idx in range(len(crops_low))]
+    titles_high = [f"{'💚' if gt_pos else '💔' } High conf (idx: {idx})" for idx in range(len(crops_high))]
+    crops = crops_low + crops_high
+    titles = titles_low + titles_high
+    fig = make_subplots(
+        rows=len(crops) // 5 + 1,
+        cols=5,
+        subplot_titles=titles
+    )
 
-    for n, image in enumerate(crop_fp):
+    for n, image in enumerate(crops):
         fig.add_trace(px.imshow(image).data[0], row=int(n / 5) + 1, col=n % 5 + 1)
 
     # the layout gets lost, so we have to carry it over - but we cannot simply do
     # fig.layout = layout since the layout has to be slightly different for subplots
     # fig.layout.yaxis in a subplot refers only to the first axis for example
     # update_yaxes updates *all* axis on the other hand
-    if len(crop_fp):
-        layout = px.imshow(crop_fp[0], color_continuous_scale='gray').layout
+    if len(crops):
+        layout = px.imshow(crops[0], color_continuous_scale='gray').layout
         fig.layout.coloraxis = layout.coloraxis
         fig.update_xaxes(**layout.xaxis.to_plotly_json())
         fig.update_yaxes(**layout.yaxis.to_plotly_json())
@@ -116,7 +124,7 @@ def plot_fp_fn(extra_stats):
     iouv = torch.linspace(0.5, 0.95, 10)
     single_cls = True
     niou = len(iouv)
-    false_neg, false_pos, true_pos = [], [], []
+    true_pos, true_neg, false_pos, false_neg = [], [], [], []
     for image_idx, (path, pred, labels, img1_shape, img0_shape, ratio_pad) in enumerate(extra_stats):
         nl = len(labels)
 
@@ -132,41 +140,60 @@ def plot_fp_fn(extra_stats):
             preds_matched, targets_matched = process_batch_with_missed_labels(predn, labelsn, iouv)
         else:
             preds_matched, targets_matched = torch.zeros(pred.shape[0], niou, dtype=torch.bool), torch.zeros(labelsn.shape[0], dtype=torch.bool)
-        preds_matched = preds_matched[:, 0] # iou = 0.5
+
         labelsn = labelsn[:, 1:]
+        # Confidence threshold for FP/FN/TP/TN
+        conf_thresh = 0.1
+        preds_matched = preds_matched[:, 0] # iou = 0.5
+        preds_not_matched = np.logical_not(preds_matched)
+        targets_not_matched = np.logical_not(targets_matched)
+        preds_pos = predn_with_path[:, 4] >= conf_thresh
+        preds_neg = predn_with_path[:, 4] < conf_thresh
+
+        # Draw one image
         if False:
+
             # Draw targets that are missed or not
             draw_targets(frame, labelsn.numpy(), np.logical_not(labels_miss.numpy()), np.ones(labels.shape[0]),  rect=True)
             # Draw wrong and good preds that are above a certain threshold
-            draw_targets(frame, predn[:, :4].numpy(), predn[preds_matched, 0].numpy(), predn[:, 4] > 0.1)
+            draw_targets(frame, predn[:, :4].numpy(), predn[preds_matched, 0].numpy(), predn[:, 4] > conf_thresh)
 
-            cv2.imshow("d", frame)
+            cv2.imshow("Draw image with targets and preds", frame)
             cv2.waitKey()
             cv2.destroyAllWindows()
 
         predn_with_path = torch.cat([predn, torch.ones((predn.shape[0], 1)) * image_idx], dim=1) # append image_idx
         labelsn_with_path = torch.cat([labelsn, torch.ones((labelsn.shape[0], 1)) * image_idx], dim=1)  # append image_idx
 
-        true_pos.append(predn_with_path[preds_matched])
-        false_pos.append(predn_with_path[np.logical_not(preds_matched)])
-        false_neg.append(labelsn_with_path[np.logical_not(targets_matched)])
+        true_pos.append(predn_with_path[np.logical_and(preds_matched, preds_pos)])
+        true_neg.append(predn_with_path[np.logical_and(preds_not_matched, preds_neg)])
+        false_pos.append(predn_with_path[np.logical_and(preds_not_matched, preds_pos)])
+        false_neg.append(labelsn_with_path[targets_not_matched])
+
     true_pos = torch.cat(true_pos)
+    true_neg = torch.cat(true_neg)
     false_pos = torch.cat(false_pos)
     false_neg = torch.cat(false_neg)
-    n_worst = 10
+    n_worst = 5
 
     fig = dict()
 
-    true_pos = true_pos[torch.argsort(true_pos[:, 4], descending=False)][:n_worst]
-    crop_tp = [generate_crop(extra_stats, crop) for crop in true_pos]
-    fig["worst_tp"] = plot_crops(crop_tp, "True Positive with lowest confidence threshold")
+    fig = dict()
 
-    false_pos = false_pos[torch.argsort(false_pos[:, 4], descending=True)][:n_worst]
-    crop_fp = [generate_crop(extra_stats, crop) for crop in false_pos]
-    fig["worst_fp"] = plot_crops(crop_fp, "False Positive with highest confidence threshold")
+    for title, (gt_pos, assignment) in {
+        "True Positive": (True, true_pos),
+        "False Positive": (False, false_pos),
+        "False Negative": (True, false_neg),
+        "True Negative": (False, true_neg)
+    }.items():
+        n_first = min(n_worst, len(assignment) // 2)
+        print(n_first)
+        assignment_lowest = assignment[np.argpartition(assignment[:, 4], +n_first)[:+n_first]]
+        assignment_highest = assignment[np.argpartition(assignment[:, 4], -n_first)[-n_first:]]
 
-    false_neg = false_neg[torch.argsort(false_neg[:, 4], descending=False)][:n_worst]
-    crop_fn = [generate_crop(extra_stats, crop) for crop in false_neg]
-    fig["worst_fn"] = plot_crops(crop_fn, "False Negative with lowest confidence threshold")
+        thumbnail_stack_lowest = [generate_crop(extra_stats, crop) for crop in assignment_lowest]
+        thumbnail_stack_highest = [generate_crop(extra_stats, crop) for crop in assignment_highest]
+        fig[title] = plot_crops(thumbnail_stack_lowest, thumbnail_stack_highest, title, gt_pos)
+        fig[title].show()
 
     return fig
