@@ -31,8 +31,6 @@ from utils.plots import plot_images, output_to_target, plot_study_txt
 from utils.torch_utils import select_device, time_sync
 from utils.callbacks import Callbacks
 
-from aisa_utils.dl_utils.utils import plot_object_count_difference_ridgeline, make_video_results
-
 
 def save_one_txt(predn, save_conf, shape, file):
     # Save one txt result

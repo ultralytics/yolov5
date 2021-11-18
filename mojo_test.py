@@ -1,26 +1,20 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
-"""
-Validate a trained YOLOv5 model accuracy on a custom dataset
-
-Usage:
-    $ python path/to/val.py --data coco128.yaml --weights yolov5s.pt --img 640
-"""
-
 import argparse
 import sys
-import tempfile
-from collections import defaultdict
 from pathlib import Path
 
 import cv2
-
 import wandb
-
 import numpy as np
 import torch
+from aisa_utils.dl_utils.utils import (
+    plot_object_count_difference_ridgeline,
+    make_video_results,
+    plot_object_count_difference_line,
+)
+
 
 from utils.general import xyxy2xywhn, scale_coords, xyxy2xywh, clip_coords
-from mojo_val import plot_predictions_and_labels
+from mojo_val import compute_and_plot_predictions_and_labels
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
@@ -37,12 +31,6 @@ from utils.general import (
 )
 from utils.torch_utils import select_device
 import val
-
-from aisa_utils.dl_utils.utils import (
-    plot_object_count_difference_ridgeline,
-    make_video_results,
-    plot_object_count_difference_line,
-)
 
 
 def get_images_and_labels(data):
@@ -101,7 +89,7 @@ def mojo_test(
     run_id = torch.load(weights[0]).get("wandb_id")
 
     wandb_run = wandb.init(
-        id=run_id, project=project, entity=entity, resume="allow", allow_val_change=True
+        id=run_id, project=project, entity=entity, resume="allow", allow_val_change=True,
     )
 
     results, maps, t, extra_stats = val.run(
@@ -190,7 +178,7 @@ def mojo_test(
     extra_plots["object_count_difference"] = fig
     extra_plots["object_count_difference_continuous"] = fig_line
 
-    extra_plots.update(plot_predictions_and_labels(extra_stats, suggested_threshold))
+    extra_plots.update(compute_and_plot_predictions_and_labels(extra_stats, suggested_threshold))
 
     print("Uploading plots")
     for plot_key in extra_plots:

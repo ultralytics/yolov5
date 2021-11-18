@@ -93,7 +93,29 @@ def draw_targets(frame, bboxes, matches, mask, rect=False):
                 frame = cv2.rectangle(frame, bbox[:2], bbox[2:], color, 4)
 
 
-def generate_crop(extra_stats, predn_with_path, gain=1.10):
+def xyxy2xywh(x):
+    # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right
+    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
+    y[:, 0] = (x[:, 0] + x[:, 2]) / 2  # x center
+    y[:, 1] = (x[:, 1] + x[:, 3]) / 2  # y center
+    y[:, 2] = x[:, 2] - x[:, 0]  # width
+    y[:, 3] = x[:, 3] - x[:, 1]  # height
+    return y
+
+
+def clip_coords(boxes, shape):
+    # Clip bounding xyxy bounding boxes to image shape (height, width)
+    if isinstance(boxes, torch.Tensor):  # faster individually
+        boxes[:, 0].clamp_(0, shape[1])  # x1
+        boxes[:, 1].clamp_(0, shape[0])  # y1
+        boxes[:, 2].clamp_(0, shape[1])  # x2
+        boxes[:, 3].clamp_(0, shape[0])  # y2
+    else:  # np.array (faster grouped)
+        boxes[:, [0, 2]] = boxes[:, [0, 2]].clip(0, shape[1])  # x1, x
+        boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, shape[0])  # y1, y
+
+
+def generate_crop(extra_stats, predn_with_path, BGR=False):
     """
     Draw part of targets and predictions in several colors onto an image
       Arguments:
@@ -105,12 +127,15 @@ def generate_crop(extra_stats, predn_with_path, gain=1.10):
     Returns:
         image Array[gain * (y2 - y1), gain * (x2 - x1), C] Crop of the prediction in RGB with a gain
     """
-    crop_box = predn_with_path[:4]
+    bbox = predn_with_path[:4]
     frame_idx = int(predn_with_path[-1])  # paths idx should be at the end
     frame_path = extra_stats[frame_idx][0]
     frame = cv2.imread(str(frame_path), 1)
-
-    frame_crop = save_one_box(crop_box, frame, gain=gain, BGR=False, save=False)
+    bbox = bbox.unsqueeze(0)
+    clip_coords(bbox, frame.shape)
+    bbox = bbox[0]
+    bbox = [int(b) for b in bbox]
+    frame_crop = frame[bbox[1]:bbox[3], int(bbox[0]):bbox[2], ::(1 if BGR else -1)]
     return frame_crop
 
 
@@ -154,20 +179,19 @@ def plot_crops(crops_low, assignment_low, crops_high, assignment_high, title, gt
     return fig
 
 
-def plot_predictions_and_labels(extra_stats, threshold):
+def compute_and_plot_predictions_and_labels(extra_stats, threshold):
     """
     Compute predictions and labels based on extra_stats given by the ultralytics val.py main loop
     Arguments:
         extra_stats Array[size of val dataset, 6]
             List of path_to_image, predictions, labels, shape_in, shape_out, padding_ratio
     Returns:
-        fig Dict[go.Figure] Dictionary of debug images and good/bad predictions labels as cropped images grid
+
     """
     iouv = torch.linspace(0.5, 0.95, 10)
     single_cls = True
     niou = len(iouv)
 
-    fig = dict()
     debug_frames = []
     true_pos, true_neg, false_pos, false_neg = [], [], [], []
     for image_idx, (path, pred, labels, img1_shape, img0_shape, ratio_pad) in enumerate(extra_stats):
@@ -208,8 +232,6 @@ def plot_predictions_and_labels(extra_stats, threshold):
 
             debug_frames.append(frame)
 
-            fig[f"Debug Image (id: {image_idx})"] = px.imshow(frame)
-
         predn_with_path = torch.cat([predn, torch.ones((predn.shape[0], 1)) * image_idx], dim=1)  # append image_idx
         labelsn_with_path = torch.cat([labelsn, torch.ones((labelsn.shape[0], 1)) * image_idx], dim=1)  # append image_idx
 
@@ -222,7 +244,27 @@ def plot_predictions_and_labels(extra_stats, threshold):
     true_neg = torch.cat(true_neg)
     false_pos = torch.cat(false_pos)
     false_neg = torch.cat(false_neg)
+
+    fig = dict()
+    for image_idx, frame in enumerate(debug_frames):
+        fig[f"Debug Image (id: {image_idx})"] = px.imshow(frame)
+
+    fig.update(plot_predictions_and_labels(true_pos, true_neg, false_pos, false_neg, extra_stats, debug_frames))
+
+    return fig
+
+
+def plot_predictions_and_labels(true_pos, true_neg, false_pos, false_neg, extra_stats, debug_frames):
+    """
+    Plots predictions and labels based on everything
+    Arguments:
+    Returns:
+        fig Dict[go.Figure] Dictionary of debug images and good/bad predictions labels as cropped images grid
+    """
     n_crops_displayed = 10
+    fig = dict()
+    for image_idx, frame in enumerate(debug_frames):
+        fig[f"Debug Image (id: {image_idx})"] = px.imshow(frame)
 
     for title, (gt_pos, assignment) in {
         "True Positive": (True, true_pos),
@@ -240,6 +282,5 @@ def plot_predictions_and_labels(extra_stats, threshold):
         crops_low = [generate_crop(extra_stats, pred) for pred in assignment_low]
         crops_high = [generate_crop(extra_stats, pred) for pred in assignment_high]
         fig[title] = plot_crops(crops_low, assignment_low, crops_high, assignment_high, title, gt_pos, n_cols=5)
-        fig[title].show()
 
     return fig
