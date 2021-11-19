@@ -4,7 +4,7 @@ Export a YOLOv5 PyTorch model to TorchScript, ONNX, CoreML, TensorFlow (saved_mo
 TensorFlow exports authored by https://github.com/zldrobit
 
 Usage:
-    $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx coreml saved_model pb tflite tfjs
+    $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx coreml saved_model pb tflite edgetpu tfjs
 
 Inference:
     $ python path/to/detect.py --weights yolov5s.pt
