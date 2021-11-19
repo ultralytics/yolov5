@@ -355,7 +355,7 @@ class DetectMultiBackend(nn.Module):
                 model = tf.keras.models.load_model(w)
             elif tflite:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
                 if 'edgetpu' in w.lower():
-                    LOGGER.info(f'Loading {w} for TensorFlow Edge TPU inference...')
+                    LOGGER.info(f'Loading {w} for TensorFlow Lite Edge TPU inference...')
                     import tflite_runtime.interpreter as tfli
                     delegate = {'Linux': 'libedgetpu.so.1',  # install https://coral.ai/software/#edgetpu-runtime
                                 'Darwin': 'libedgetpu.1.dylib',
