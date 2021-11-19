@@ -6,7 +6,10 @@ import subprocess
 import typer
 
 # Code in submitted run
-from azureml.core import Run
+try:
+    from azureml.core import Run
+except:
+    pass
 
 
 def _find_module_wheel_path(module_name):
