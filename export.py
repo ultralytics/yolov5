@@ -12,7 +12,7 @@ TensorFlow SavedModel   | yolov5s_saved_model/      | 'saved_model'
 TensorFlow GraphDef     | yolov5s.pb                | 'pb'
 TensorFlow Lite         | yolov5s.tflite            | 'tflite'
 TensorFlow.js           | yolov5s_web_model/        | 'tfjs'
-TensorRT                | yolov5s.trt               | 'engine'
+TensorRT                | yolov5s.engine            | 'engine'
 
 Usage:
     $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx coreml saved_model pb tflite tfjs
@@ -25,7 +25,7 @@ Inference:
                                          yolov5s_saved_model
                                          yolov5s.pb
                                          yolov5s.tflite
-                                         yolov5s.trt
+                                         yolov5s.engine
 
 TensorFlow.js:
     $ cd .. && git clone https://github.com/zldrobit/tfjs-yolov5-example.git && cd tfjs-yolov5-example
@@ -280,8 +280,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         onnx.seek(0)
 
         LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
-        f = str(file).replace('.pt', '.trt')  # TensorRT engine file
-
+        f = str(file).replace('.pt', '.engine')  # TensorRT engine file
         logger = trt.Logger(trt.Logger.INFO)
         if verbose:
             logger.min_severity = trt.Logger.Severity.VERBOSE
@@ -293,27 +292,25 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         flag = (1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
         network = builder.create_network(flag)
         parser = trt.OnnxParser(network, logger)
-
         if not parser.parse(onnx.read()):
             raise RuntimeError(f'failed to load ONNX file: {onnx}')
 
         inputs = [network.get_input(i) for i in range(network.num_inputs)]
         outputs = [network.get_output(i) for i in range(network.num_outputs)]
-
         LOGGER.info(f'{prefix} Network Description:')
         for inp in inputs:
-            LOGGER.info(f'{prefix}     input "{inp.name}" with shape {inp.shape} and dtype {inp.dtype}')
+            LOGGER.info(f'{prefix}\tinput "{inp.name}" with shape {inp.shape} and dtype {inp.dtype}')
         for out in outputs:
-            LOGGER.info(f'{prefix}     output "{out.name}" with shape {out.shape} and dtype {out.dtype}')
+            LOGGER.info(f'{prefix}\toutput "{out.name}" with shape {out.shape} and dtype {out.dtype}')
 
         half &= builder.platform_has_fast_fp16
         LOGGER.info(f'{prefix} building FP{16 if half else 32} engine in {f}')
         if half:
             config.set_flag(trt.BuilderFlag.FP16)
-
         with builder.build_engine(network, config) as engine, open(f, 'wb') as t:
-            LOGGER.info(f'{prefix} serializing engine to file: {f}')
             t.write(engine.serialize())
+        LOGGER.info(f'{prefix} serializing engine to file: {f}')
+
     except Exception as e:
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
