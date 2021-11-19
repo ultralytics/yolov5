@@ -285,10 +285,10 @@ class DetectMultiBackend(nn.Module):
         #   TensorFlow Lite:        *.tflite
         #   ONNX Runtime:           *.onnx
         #   OpenCV DNN:             *.onnx with dnn=True
-        #   TensorRT:               *.trt
+        #   TensorRT:               *.engine
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
-        suffix, suffixes = Path(w).suffix.lower(), ['.pt', '.onnx', '.trt', '.tflite', '.pb', '', '.mlmodel']
+        suffix, suffixes = Path(w).suffix.lower(), ['.pt', '.onnx', '.engine', '.tflite', '.pb', '', '.mlmodel']
         check_suffix(w, suffixes)  # check weights have acceptable suffix
         pt, onnx, engine, tflite, pb, saved_model, coreml = (suffix == x for x in suffixes)  # backend booleans
         jit = pt and 'torchscript' in w.lower()
@@ -320,14 +320,11 @@ class DetectMultiBackend(nn.Module):
             session = onnxruntime.InferenceSession(w, None)
         elif engine:  # TensorRT *.trt
             LOGGER.info(f'Loading {w} for TensorRT inference...')
-            check_requirements(('pycuda', 'tensorrt'))
+            check_requirements(('tensorrt',))
             from collections import namedtuple
 
             import tensorrt as trt
-            from pycuda import autoinit
-            from pycuda import driver as drv
-
-            Binding = namedtuple('Binding', ('name', 'dtype', 'shape', 'dmem', 'hmem'))
+            Binding = namedtuple('Binding', ('name', 'dtype', 'shape', 'data', 'ptr'))
             logger = trt.Logger(trt.Logger.INFO)
             with open(w, 'rb') as f, trt.Runtime(logger) as runtime:
                 model = runtime.deserialize_cuda_engine(f.read())
@@ -336,12 +333,11 @@ class DetectMultiBackend(nn.Module):
                 name = model.get_binding_name(index)
                 dtype = trt.nptype(model.get_binding_dtype(index))
                 shape = tuple(model.get_binding_shape(index))
-                dmem = drv.mem_alloc(dtype().itemsize * np.prod(shape).item())
-                hmem = drv.pagelocked_empty(shape, dtype) if name == 'output' else 0
-                bindings[name] = Binding(name, dtype, shape, dmem, hmem)
-            binding_addrs = [int(b.dmem) for b in bindings.values()]
+                data = torch.from_numpy(np.empty(shape, dtype=np.dtype(dtype))).to(device)
+                bindings[name] = Binding(name, dtype, shape, data, int(data.data_ptr()))
+            binding_addrs = {n: d.ptr for n, d in bindings.items()}
             context = model.create_execution_context()
-            stream = drv.Stream()
+            batch_size = bindings['images'].shape[0]
         else:  # TensorFlow model (TFLite, pb, saved_model)
             import tensorflow as tf
             if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
@@ -396,12 +392,9 @@ class DetectMultiBackend(nn.Module):
                 y = self.session.run([self.session.get_outputs()[0].name], {self.session.get_inputs()[0].name: im})[0]
         elif self.engine:  # TensorRT
             assert im.shape == self.bindings['images'].shape, (im.shape, self.bindings['images'].shape)
-            im = im.cpu().numpy().astype(np.dtype(self.bindings['images'].dtype))
-            self.drv.memcpy_htod_async(self.bindings['images'].dmem, im, self.stream)
-            self.context.execute_async_v2(self.binding_addrs, self.stream.handle)
-            self.drv.memcpy_dtoh_async(self.bindings['output'].hmem, self.bindings['output'].dmem, self.stream)
-            self.stream.synchronize()
-            y = self.bindings['output'].hmem.copy()
+            self.binding_addrs['images'] = int(im.data_ptr())
+            self.context.execute_v2(list(self.binding_addrs.values()))
+            y = self.bindings['output'].data
         else:  # TensorFlow model (TFLite, pb, saved_model)
             im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
             if self.pb:
@@ -424,7 +417,7 @@ class DetectMultiBackend(nn.Module):
             y[..., 1] *= h  # y
             y[..., 2] *= w  # w
             y[..., 3] *= h  # h
-        y = torch.tensor(y)
+        y = torch.tensor(y) if isinstance(y, np.ndarray) else y
         return (y, []) if val else y
 
 
