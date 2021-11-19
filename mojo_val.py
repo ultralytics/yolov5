@@ -6,7 +6,7 @@ from utils.general import scale_coords, xywh2xyxy
 from aisa_utils.dl_utils.utils import plot_object_count_difference_ridgeline
 
 
-def process_batch_with_missed_labels(detections, labels, iouv):
+def process_batch_with_missed_labels(detections, detections_pos, labels, iouv):
     """
     Return matched predictions' and labels' matrix. Both sets of boxes are in (x1, y1, x2, y2) format.
     Arguments:
@@ -18,8 +18,8 @@ def process_batch_with_missed_labels(detections, labels, iouv):
     """
     pred_matched = torch.zeros(detections.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
     labels_matched = torch.zeros(labels.shape[0], dtype=torch.bool, device=iouv.device)
-    iou = box_iou(labels[:, 1:], detections[:, :4])
-    matches = (iou >= iouv[0]) & (labels[:, 0:1] == detections[:, 5])
+    iou = box_iou(labels[:, 1:], detections_pos[:, :4])
+    matches = (iou >= iouv[0]) & (labels[:, 0:1] == detections_pos[:, 5])
     x = torch.where(matches)  # IoU above threshold and classes match
     if x[0].shape[0]:
         matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]),
@@ -34,7 +34,7 @@ def process_batch_with_missed_labels(detections, labels, iouv):
         matches = torch.Tensor(matches).to(iouv.device)
         matches_by_iou = matches[:, 2:3] >= iouv
         pred_matched[matches[:, 1].long()] = matches_by_iou
-        labels_matched = [l in matches_by_iou[:, 0] for l in range(len(labels))] # iou = 0.5
+        labels_matched = [l in matches[:, 0] for l in range(len(labels))] # iou = 0.5
     return pred_matched, labels_matched
 
 
@@ -84,14 +84,14 @@ def compute_predictions_and_labels(extra_stats, *, threshold):
             tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
             scale_coords(img1_shape, tbox, img0_shape, ratio_pad)  # native-space labels
             labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
-            preds_matched, labels_matched = process_batch_with_missed_labels(predn, labelsn, iouv)
+            preds_matched, labels_matched = process_batch_with_missed_labels(predn, predn[predn[:, 4] > threshold], labelsn, iouv)
         else:
-            preds_matched, labels_matched = torch.zeros(pred.shape[0], niou, dtype=torch.bool), torch.zeros(labelsn.shape[0], dtype=torch.bool)
+            preds_matched, labels_matched = torch.zeros(predn.shape[0], niou, dtype=torch.bool), torch.zeros(labelsn.shape[0], dtype=torch.bool)
 
         labelsn = labelsn[:, 1:]
         # Get pos, negn matched and non matched to compute and show FP/FN/TP/TN
         preds_matched = preds_matched[:, 0] # iou = 0.5
-        preds_matched = np.logical_and(preds_matched, predn[:, 4] > threshold)
+        # preds_matched = np.logical_and(preds_matched, predn[:, 4] > threshold)
 
         predn_all.append(predn)
         preds_matched_all.append(preds_matched)
