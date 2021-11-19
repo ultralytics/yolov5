@@ -47,13 +47,12 @@ def plot_object_count_difference_ridgeline_from_extra(extra_stats):
 def error_count_from_extra(extra_stats):
     extra_metrics = [0, 0]
     for si, extra_stat in enumerate(extra_stats):
-        targets = extra_stat[2]
-        labels = targets[targets[:, 0] == si, 1:]
+        labels = extra_stat[2]
         nl = len(labels)
         pred_conf = extra_stat[1][:, 4].numpy()
         extra_metrics[0] += np.abs(nl - len(np.where(pred_conf >= 0.3)[0]))
         extra_metrics[1] += np.abs(nl - len(np.where(pred_conf >= 0.5)[0]))
-        extra_metrics = [v / len(extra_stats) for v in extra_metrics]
+    extra_metrics = [v / len(extra_stats) for v in extra_metrics]
     return extra_metrics
 
 
