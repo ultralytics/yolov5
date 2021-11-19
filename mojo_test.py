@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import cv2
+import tqdm
 import wandb
 import numpy as np
 import torch
@@ -199,8 +200,7 @@ def mojo_test(
         true_pos, true_neg, false_pos, false_neg, images_paths
     ))
 
-    print("Uploading plots")
-    for plot_key in extra_plots:
+    for plot_key in tqdm.tqdm(extra_plots, desc="Uploading plots"):
         wandb_run.log({f"mojo_test/extra_plots/{plot_key}": extra_plots[plot_key]})
 
     if test_video_root is not None:
