@@ -24,6 +24,7 @@
 # Mojo files
 #*.whl
 #job.yml
+job.yml
 
 #package
 yolov5/*
@@ -91,7 +92,7 @@ sdist/
 var/
 wheels/
 *.egg-info/
-# wandb/
+/wandb/
 .installed.cfg
 *.egg
 
