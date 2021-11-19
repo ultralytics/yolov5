@@ -57,7 +57,7 @@ def error_count_from_extra(extra_stats):
     return extra_metrics
 
 
-def compute_predictions_and_labels(extra_stats):
+def compute_predictions_and_labels(extra_stats, *, threshold):
     """
     Compute predictions and labels based on extra_stats given by the ultralytics val.py main loop
     Arguments:
@@ -79,14 +79,16 @@ def compute_predictions_and_labels(extra_stats):
             pred[:, 5] = 0
         predn = pred.clone()
         scale_coords(img1_shape, predn[:, :4], img0_shape, ratio_pad)  # native-space pred
+        predn_positive = predn[predn[:, 4] >= threshold]
         # Evaluate
         if nl:
             tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
             scale_coords(img1_shape, tbox, img0_shape, ratio_pad)  # native-space labels
             labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
-            preds_matched, labels_matched = process_batch_with_missed_labels(predn, labelsn, iouv)
+            preds_matched, labels_matched = process_batch_with_missed_labels(predn_positive, labelsn, iouv)
         else:
-            preds_matched, labels_matched = torch.zeros(pred.shape[0], niou, dtype=torch.bool), torch.zeros(labelsn.shape[0], dtype=torch.bool)
+            preds_matched = torch.zeros(predn_positive.shape[0], niou, dtype=torch.bool)
+            labels_matched = torch.zeros(labelsn.shape[0], dtype=torch.bool)
 
         labelsn = labelsn[:, 1:]
         # Get pos, negn matched and non matched to compute and show FP/FN/TP/TN

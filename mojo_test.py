@@ -183,7 +183,7 @@ def mojo_test(
 
     # Extract prediction & labels match from validation extra stats
     predn, preds_matched, labelsn, labels_matched, images_paths = compute_predictions_and_labels(
-        extra_stats
+        extra_stats, threshold=suggested_threshold
     )
     # Draw image with preds and labels with different color depending on the matches
 
