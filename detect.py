@@ -30,9 +30,9 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import DetectMultiBackend
 from utils.datasets import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
 from utils.general import (LOGGER, check_file, check_img_size, check_imshow,
-    check_requirements, colorstr, increment_path, is_executable,
-    non_max_suppression, print_args, os_system, scale_coords, strip_optimizer,
-    xyxy2xywh)
+                           check_requirements, colorstr, increment_path, is_executable,
+                           non_max_suppression, print_args, os_system, scale_coords, strip_optimizer,
+                           xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, time_sync
 
@@ -272,7 +272,7 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--keep_audio', action='store_true',
-                    help='use FFMPEG to add audio to the saved video file (you need to install FFMPEG and to add it to your path)')
+                        help='use FFMPEG to add audio to the saved video file (you need to install FFMPEG and to add it to your path)')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(FILE.stem, opt)
