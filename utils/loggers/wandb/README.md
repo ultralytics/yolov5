@@ -71,7 +71,7 @@ You can leverage W&B artifacts and Tables integration to easily visualize and ma
    so no images will be uploaded from your system more than once.
  <details>
   <summary> <b>Usage</b> </summary>
-   <b>Code</b> <code> $ python utils/logger/wandb/log_dataset.py --data ..  --upload_data </code>
+   <b>Code</b> <code> $ python train.py --upload_data val</code>
 
 ![Screenshot (72)](https://user-images.githubusercontent.com/15766192/128979739-4cf63aeb-a76f-483f-8861-1c0100b938a5.png)
  </details>
@@ -81,7 +81,7 @@ You can leverage W&B artifacts and Tables integration to easily visualize and ma
    can be used to train a model directly from the dataset artifact. <b> This also logs evaluation </b>
  <details>
   <summary> <b>Usage</b> </summary>
-   <b>Code</b> <code> $ python utils/logger/wandb/log_dataset.py --data {data}_wandb.yaml </code>
+   <b>Code</b> <code> $ python train.py --data {data}_wandb.yaml </code>
 
 ![Screenshot (72)](https://user-images.githubusercontent.com/15766192/128979739-4cf63aeb-a76f-483f-8861-1c0100b938a5.png)
  </details>
