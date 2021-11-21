@@ -338,7 +338,7 @@ class WandbLogger():
         data = dict(self.data_dict)
         nc, names = (1, ['item']) if single_cls else (int(data['nc']), data['names'])
         names = {k: v for k, v in enumerate(names)}  # to index dictionary
-        
+
         # log train set
         if not log_val_only:
             self.train_artifact = self.create_dataset_table(LoadImagesAndLabels(
