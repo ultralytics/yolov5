@@ -28,9 +28,9 @@ import numpy as np
 import pandas as pd
 import pkg_resources as pkg
 import torch
-from torch._C import ListType
 import torchvision
 import yaml
+from torch._C import ListType
 
 from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
