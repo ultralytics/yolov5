@@ -8,7 +8,7 @@ import typer
 # Code in submitted run
 try:
     from azureml.core import Run
-except ModuleNotFoundError:
+except:
     pass
 
 
@@ -20,17 +20,20 @@ def _find_module_wheel_path(module_name):
     elif len(module_wheel_paths) == 0:
         raise Exception(f"Cannot find wheel associated with package: {module_name}")
     else:
-        raise Exception(f"Found several wheels associated with package: {module_name} ({module_wheel_paths})")
+        raise Exception(
+            f"Found several wheels associated with package: {module_name} ({module_wheel_paths})"
+        )
 
 
 def _setup():
     # Setting up W&B
-    if os.getenv(
-            'AZUREML_ARM_RESOURCEGROUP') is not None:  # checking if we are in Azure, unless you have really weird local env variables
+    if (
+        os.getenv("AZUREML_ARM_RESOURCEGROUP") is not None
+    ):  # checking if we are in Azure, unless you have really weird local env variables
         run = Run.get_context()
         secret_value = run.get_secret(name="WANDB-BOT-API-KEY")  # Secret called
         # WANDB-API-KEY2 was created in Azure KeyVault
-        os.environ['WANDB_API_KEY'] = secret_value
+        os.environ["WANDB_API_KEY"] = secret_value
 
     # Install aisa utils
     try:
@@ -38,6 +41,38 @@ def _setup():
     except ModuleNotFoundError:
         aisa_utils_wheel_path = _find_module_wheel_path("aisa_utils")
         subprocess.run(["pip", "install", f"{aisa_utils_wheel_path}"])
+
+
+def _get_data_yaml(dataset_location: Path, is_test: bool = False) -> dict:
+    dataset_data_yaml_path = list(dataset_location.rglob("*data.yaml"))
+    if len(dataset_data_yaml_path) == 1:
+        dataset_data_yaml_path = dataset_data_yaml_path[0]
+        dataset_root = dataset_data_yaml_path.parent
+        with dataset_data_yaml_path.open("r") as file:
+            data_yaml = yaml.safe_load(file)
+    elif len(dataset_data_yaml_path) > 1:
+        raise Exception(
+            f"Multiple data.yaml files found at {dataset_location}: {dataset_data_yaml_path}"
+        )
+    else:
+        dataset_root = dataset_location
+        data_yaml = dict(
+            nc=1,
+            names=["Sperm"],
+        )
+
+    # Overwrite location keys to be able to launch from anywhere
+    data_yaml["path"] = str(dataset_root.as_posix())
+    if is_test:
+        data_yaml["test"] = "images/test"
+        data_yaml["train"] = ""
+        data_yaml["val"] = ""
+    else:
+        data_yaml.pop("test", None)
+        data_yaml["train"] = "images/train"
+        data_yaml["val"] = "images/val"
+
+    return data_yaml
 
 
 _setup()
@@ -59,8 +94,8 @@ def train(
         ...,
         help="Location of test dataset (yaml or path to root).",
     ),
-    test_video_dataset_location: Path = typer.Argument(
-        ...,
+    test_video_dataset_location: Path = typer.Option(
+        None,
         help="Location of test video dataset (root of folder with videos).",
     ),
     batch_size: int = typer.Option(
@@ -79,29 +114,26 @@ def train(
         Path("data/hyps/hyp.scratch.yaml"),
         help="Path to hyp file.",
     ),
+    project: str = typer.Option(
+        "test_training_results",
+        help="WandB project name to upload to.",
+    ),
 ):
     import train
     import mojo_test
 
     # Some values shared between train/test scripts
     entity = "mojo-ia"
-    project = "test_training_results"
 
     #### TRAINING CODE ####
     # Create data.yaml is a root path is given (hard code extra values for now).
     if train_dataset_location.is_dir():
-        train_data = dict(
-            path=str(train_dataset_location.as_posix()),
-            train="images/train",
-            val="images/val",
-            nc=1,
-            names=["Sperm"],
-        )
+        train_data = _get_data_yaml(train_dataset_location)
         pprint(train_data)
         train_yaml_file_path = Path("data.yaml")
         with train_yaml_file_path.open("w") as file:
             yaml.dump(train_data, file)
-        print(f"Created data yaml at {train_yaml_file_path} containing:")
+        print(f"Created data yaml at {train_yaml_file_path} containing: {train_data}")
     elif train_dataset_location.is_file() and train_dataset_location.suffix == ".yaml":
         train_yaml_file_path = train_dataset_location
     else:
@@ -110,9 +142,10 @@ def train(
     print("Running training function...")
     if os.name == "nt":
         workers = 1
+        cache = "disk"
     else:
         workers = 4
-
+        cache = "ram"
     path_to_best_model = train.run(
         cfg=f"models/{yolo_model_version}.yaml",
         weights=f"{yolo_model_version}.pt",
@@ -125,23 +158,21 @@ def train(
         imgsz=image_size,
         workers=workers,
         entity=entity,
-        patience=100
+        patience=100,
+        cache=cache,
     )
     print("Finished training function...")
     #### END OF TRAINING CODE ####
 
     #### TESTING ####
 
-    mojo_test_data = dict(
-        path=str(test_dataset_location),
-        test="images/test",
-        nc=1,
-        names=["Sperm"],
-    )
+    mojo_test_data = _get_data_yaml(test_dataset_location, is_test=True)
     mojo_test_yaml_file_path = Path("test_data.yaml")
     with mojo_test_yaml_file_path.open("w") as file:
         yaml.dump(mojo_test_data, file)
-    print(f"Created data yaml at {mojo_test_yaml_file_path} containing:")
+    print(
+        f"Created data yaml at {mojo_test_yaml_file_path} containing: {mojo_test_data}"
+    )
 
     print("Running mojo testing function...")
     mojo_test.mojo_test(
@@ -152,15 +183,13 @@ def train(
         project=project,
         name=f"{yolo_model_version}-{image_size}",
         entity=entity,
-        test_video_root=test_video_dataset_location
+        test_video_root=test_video_dataset_location,
     )
-    print("Finished mojo testing function...")
 
 
 def cli():
     app()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app()
-

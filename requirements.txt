@@ -11,12 +11,14 @@ torch>=1.7.0
 torchvision>=0.8.1
 tqdm>=4.41.0
 
+
+
 # Nanovare extra
 typer>=0.4.0
 
 # logging -------------------------------------
 tensorboard>=2.4.1
-# wandb
+wandb
 
 # plotting ------------------------------------
 seaborn>=0.11.0
