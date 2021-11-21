@@ -7,6 +7,7 @@ import json
 import math
 import platform
 import warnings
+from collections import namedtuple
 from copy import copy
 from pathlib import Path
 
@@ -320,10 +321,7 @@ class DetectMultiBackend(nn.Module):
             session = onnxruntime.InferenceSession(w, None)
         elif engine:  # TensorRT
             LOGGER.info(f'Loading {w} for TensorRT inference...')
-            check_requirements(('tensorrt',))
-            from collections import namedtuple
-
-            import tensorrt as trt
+            import tensorrt as trt  # https://developer.nvidia.com/nvidia-tensorrt-download
             Binding = namedtuple('Binding', ('name', 'dtype', 'shape', 'data', 'ptr'))
             logger = trt.Logger(trt.Logger.INFO)
             with open(w, 'rb') as f, trt.Runtime(logger) as runtime:
