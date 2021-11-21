@@ -474,7 +474,7 @@ def parse_opt(known=False):
 
     # Weights & Biases arguments
     parser.add_argument('--entity', default=None, help='W&B: Entity')
-    parser.add_argument('--upload_dataset',nargs='?', const=True, default=False,
+    parser.add_argument('--upload_dataset', nargs='?', const=True, default=False,
                         help='W&B: log dataset, passing `val` logs val set only')
     parser.add_argument('--bbox_interval', type=int, default=-1, help='W&B: Set bounding-box image logging interval')
     parser.add_argument('--artifact_alias', type=str, default='latest', help='W&B: Version of dataset artifact to use')

@@ -364,7 +364,8 @@ class WandbLogger():
 
         if self.job_type == 'Training':  # builds correct artifact pipeline graph
             if not log_val_only:
-                self.wandb_run.log_artifact(self.train_artifact) # calling use_artifact downloads the dataset. NOT NEEDED!
+                self.wandb_run.log_artifact(
+                    self.train_artifact)  # calling use_artifact downloads the dataset. NOT NEEDED!
             self.wandb_run.use_artifact(self.val_artifact)
             self.val_artifact.wait()
             self.val_table = self.val_artifact.get('val')
@@ -384,7 +385,7 @@ class WandbLogger():
         for i, data in enumerate(tqdm(self.val_table.data)):
             self.val_table_path_map[data[3]] = data[0]
 
-    def create_dataset_table(self, dataset: LoadImagesAndLabels, class_to_id: Dict[int,str], name: str = 'dataset'):
+    def create_dataset_table(self, dataset: LoadImagesAndLabels, class_to_id: Dict[int, str], name: str = 'dataset'):
         """
         Create and return W&B artifact containing W&B Table of the dataset.
 
@@ -437,7 +438,7 @@ class WandbLogger():
         """
         class_set = wandb.Classes([{'id': id, 'name': name} for id, name in names.items()])
         box_data = []
-        avg_conf_per_class = [0]*len(self.data_dict['names'])
+        avg_conf_per_class = [0] * len(self.data_dict['names'])
         pred_class_count = {}
         for *xyxy, conf, cls in predn.tolist():
             if conf >= 0.25:
@@ -514,7 +515,8 @@ class WandbLogger():
                 try:
                     wandb.log(self.log_dict)
                 except BaseException as e:
-                    LOGGER.info(f"An error occurred in wandb logger. The training will proceed without interruption. More info\n{e}")
+                    LOGGER.info(
+                        f"An error occurred in wandb logger. The training will proceed without interruption. More info\n{e}")
                     self.wandb_run.finish()
                     self.wandb_run = None
 
