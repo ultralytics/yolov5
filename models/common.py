@@ -308,6 +308,10 @@ class DetectMultiBackend(nn.Module):
         elif coreml:  # CoreML *.mlmodel
             import coremltools as ct
             model = ct.models.MLModel(w)
+            if 'com.apple.coreml.model.preview.params' in model.user_defined_metadata:
+                preview_params = json.loads(model.user_defined_metadata['com.apple.coreml.model.preview.params'])
+                if 'names' in preview_params:
+                    names = preview_params['names']
         elif dnn:  # ONNX OpenCV DNN
             LOGGER.info(f'Loading {w} for ONNX OpenCV DNN inference...')
             check_requirements(('opencv-python>=4.5.4',))
@@ -359,9 +363,9 @@ class DetectMultiBackend(nn.Module):
             im = Image.fromarray((im[0] * 255).astype('uint8'))
             # im = im.resize((192, 320), Image.ANTIALIAS)
             y = self.model.predict({'image': im})  # coordinates are xywh normalized
-            box = xywh2xyxy(y['coordinates'] * [[w, h, w, h]])  # xyxy pixels
-            conf, cls = y['confidence'].max(1), y['confidence'].argmax(1).astype(np.float)
-            y = np.concatenate((box, conf.reshape(-1, 1), cls.reshape(-1, 1)), 1)
+            key = list(y.keys())[-1] # I think its always the last key, but tested with var_944
+            tensor_value =  torch.from_numpy(y[key])
+            return tensor_value
         elif self.onnx:  # ONNX
             im = im.cpu().numpy()  # torch to numpy
             if self.dnn:  # ONNX OpenCV DNN
