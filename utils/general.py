@@ -13,6 +13,8 @@ import random
 import re
 import shutil
 import signal
+import subprocess
+import sys
 import time
 import urllib
 from itertools import repeat
@@ -26,6 +28,7 @@ import numpy as np
 import pandas as pd
 import pkg_resources as pkg
 import torch
+from torch._C import ListType
 import torchvision
 import yaml
 
@@ -182,6 +185,15 @@ def is_colab():
 def is_pip():
     # Is file in a pip package?
     return 'site-packages' in Path(__file__).resolve().parts
+
+
+def is_executable(name) -> bool:
+    """Check whether `name` is on PATH and marked as executable.
+
+    Source: https://stackoverflow.com/a/34177358/10949679
+    """
+    # from whichcraft import which
+    return shutil.which(name) is not None
 
 
 def is_ascii(s=''):
@@ -452,6 +464,24 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
     else:
         for u in [url] if isinstance(url, (str, Path)) else url:
             download_one(u, dir)
+
+
+def os_system(command) -> None:
+    """Mimic os.system() using Popen.
+
+        Arguments:
+          args: A string, or a sequence of program arguments.
+    """
+    with subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    ) as process:
+        out, err = process.communicate()
+        sys.stdout.write(
+            out.decode(sys.stdout.encoding, errors='backslashreplace'),
+        )
+        sys.stderr.write(
+            err.decode(sys.stdout.encoding, errors='backslashreplace'),
+        )
 
 
 def make_divisible(x, divisor):

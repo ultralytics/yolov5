@@ -29,8 +29,10 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import DetectMultiBackend
 from utils.datasets import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
-from utils.general import (LOGGER, check_file, check_img_size, check_imshow, check_requirements, colorstr,
-                           increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
+from utils.general import (LOGGER, check_file, check_img_size, check_imshow,
+    check_requirements, colorstr, increment_path, is_executable,
+    non_max_suppression, print_args, os_system, scale_coords, strip_optimizer,
+    xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, time_sync
 
@@ -61,6 +63,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         hide_conf=False,  # hide confidences
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
+        keep_audio=False,  # use FFMPEG to add audio to the saved video file
         ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -191,6 +194,46 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                         vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
                     vid_writer[i].write(im0)
 
+    # Add audio to video if asked
+    if save_img and keep_audio:
+        # Kill remaining video writers
+        for writer in vid_writer:
+            if isinstance(writer, cv2.VideoWriter):
+                writer.release()
+
+        if is_executable('ffmpeg'):  # Check if ffmpeg is in the path
+            audio_source = source
+
+            os.rename(save_path, f'{save_path}.tmp')
+
+            command = [
+                'ffmpeg',
+                '-y',
+                '-i',
+                f'{save_path}.tmp',
+                '-i',
+                f'{audio_source}',
+                '-map',
+                '0:v',
+                '-map',
+                '1:a',
+                '-c:v',
+                'copy',
+                '-shortest',
+                f'{save_path}',
+            ]
+
+            LOGGER.info(' '.join(command))
+            os_system(command)
+            try:
+                os.remove(f'{save_path}.tmp')
+            except FileNotFoundError:
+                # File has already been removed
+                pass
+
+        else:
+            LOGGER.error('Audio not added, ffmpeg is not installed or is not in the path.')
+
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}' % t)
@@ -228,6 +271,8 @@ def parse_opt():
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
+    parser.add_argument('--keep_audio', action='store_true',
+                    help='use FFMPEG to add audio to the saved video file (you need to install FFMPEG and to add it to your path)')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(FILE.stem, opt)
