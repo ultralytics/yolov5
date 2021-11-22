@@ -288,13 +288,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         flag = (1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
         network = builder.create_network(flag)
         parser = trt.OnnxParser(network, logger)
-        onnx = file.with_suffix('.onnx')
-
-        try:
-            with onnx.open('rb') as o:
-                if not parser.parse(o.read()):
-                    raise RuntimeError
-        except:
+        if not parser.parse_from_file(str(onnx)):
             raise RuntimeError(f'failed to load ONNX file: {onnx}')
 
         inputs = [network.get_input(i) for i in range(network.num_inputs)]
