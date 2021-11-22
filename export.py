@@ -78,7 +78,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
         LOGGER.info(f'{prefix} export failure: {e}')
 
 
-def export_onnx(model, im, file, opset, train, dynamic, simplify, buffer=None, prefix=colorstr('ONNX:')):
+def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:')):
     # YOLOv5 ONNX export
     try:
         check_requirements(('onnx',))
@@ -87,7 +87,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, buffer=None, p
         LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
         f = file.with_suffix('.onnx')
 
-        torch.onnx.export(model, im, buffer or f, verbose=False, opset_version=opset,
+        torch.onnx.export(model, im, f, verbose=False, opset_version=opset,
                           training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
                           do_constant_folding=not train,
                           input_names=['images'],
@@ -97,8 +97,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, buffer=None, p
                                         } if dynamic else None)
 
         # Checks
-        buffer and buffer.seek(0)
-        model_onnx = onnx.load(buffer or f)  # load onnx model
+        model_onnx = onnx.load(f)  # load onnx model
         onnx.checker.check_model(model_onnx)  # check onnx model
         # LOGGER.info(onnx.helper.printable_graph(model_onnx.graph))  # print
 
@@ -114,8 +113,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, buffer=None, p
                     dynamic_input_shape=dynamic,
                     input_shapes={'images': list(im.shape)} if dynamic else None)
                 assert check, 'assert check failed'
-                buffer and buffer.seek(0)
-                onnx.save(model_onnx, buffer or f)
+                onnx.save(model_onnx, f)
             except Exception as e:
                 LOGGER.info(f'{prefix} simplifier failure: {e}')
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -270,14 +268,10 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
 def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
     try:
         check_requirements(('tensorrt',))
-        import io
-
         import tensorrt as trt
 
         opset = (12, 13)[trt.__version__[0] == '8']  # test on TensorRT 7.x and 8.x
-        onnx = io.BytesIO()
-        export_onnx(model, im, file, opset, train, False, simplify, onnx)
-        onnx.seek(0)
+        export_onnx(model, im, file, opset, train, False, simplify)
 
         LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
         f = str(file).replace('.pt', '.engine')  # TensorRT engine file
@@ -292,7 +286,13 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         flag = (1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
         network = builder.create_network(flag)
         parser = trt.OnnxParser(network, logger)
-        if not parser.parse(onnx.read()):
+        onnx = file.with_suffix('.onnx')
+
+        try:
+            with onnx.open('rb') as o:
+                if not parser.parse(o.read()):
+                    raise RuntimeError
+        except:
             raise RuntimeError(f'failed to load ONNX file: {onnx}')
 
         inputs = [network.get_input(i) for i in range(network.num_inputs)]
