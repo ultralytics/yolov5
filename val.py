@@ -111,7 +111,7 @@ def run(data,
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
-        device, pt = next(model.parameters()).device, True  # get model device, PyTorch model
+        device, pt, engine = next(model.parameters()).device, True, False  # get model device, PyTorch model
 
         half &= device.type != 'cpu'  # half precision only supported on CUDA
         model.half() if half else model.float()
@@ -124,11 +124,13 @@ def run(data,
 
         # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn)
-        stride, pt = model.stride, model.pt
+        stride, pt, engine = model.stride, model.pt, model.engine
         imgsz = check_img_size(imgsz, s=stride)  # check image size
-        half &= pt and device.type != 'cpu'  # half precision only supported by PyTorch on CUDA
+        half &= (pt or engine) and device.type != 'cpu'  # half precision only supported by PyTorch on CUDA
         if pt:
             model.model.half() if half else model.model.float()
+        elif engine:
+            batch_size = model.batch_size
         else:
             half = False
             batch_size = 1  # export.py models default to batch-size 1
@@ -165,7 +167,7 @@ def run(data,
     pbar = tqdm(dataloader, desc=s, ncols=NCOLS, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
     for batch_i, (im, targets, paths, shapes) in enumerate(pbar):
         t1 = time_sync()
-        if pt:
+        if pt or engine:
             im = im.to(device, non_blocking=True)
             targets = targets.to(device)
         im = im.half() if half else im.float()  # uint8 to fp16/32
