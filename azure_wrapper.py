@@ -114,6 +114,10 @@ def train(
         Path("data/hyps/hyp.scratch.yaml"),
         help="Path to hyp file.",
     ),
+    weights: Path = typer.Option(
+        Path("yolov5s.pt"),
+        help="Path to initial weights.",
+    ),
     project: str = typer.Option(
         "test_training_results",
         help="WandB project name to upload to.",
@@ -148,7 +152,7 @@ def train(
         cache = "ram"
     path_to_best_model = train.run(
         cfg=f"models/{yolo_model_version}.yaml",
-        weights=f"{yolo_model_version}.pt",
+        weights=f"{weights}",
         data=f"{train_yaml_file_path}",
         hyp=f"{hyp}",
         project=project,
