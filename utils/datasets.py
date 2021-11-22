@@ -22,7 +22,7 @@ import torch
 import torch.nn.functional as F
 import yaml
 from PIL import ExifTags, Image, ImageOps
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset, dataloader, distributed
 from tqdm import tqdm
 
 from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
@@ -34,7 +34,8 @@ from utils.torch_utils import torch_distributed_zero_first
 HELP_URL = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 IMG_FORMATS = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
 VID_FORMATS = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
-NUM_THREADS = min(8, os.cpu_count())  # number of multiprocessing threads
+WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))  # DPP
+NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of multiprocessing threads
 
 # Get orientation exif tag
 for orientation in ExifTags.TAGS.keys():
@@ -92,13 +93,15 @@ def exif_transpose(image):
 
 
 def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False, pad=0.0,
-                      rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix=''):
-    # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
-    with torch_distributed_zero_first(rank):
+                      rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix='', shuffle=False):
+    if rect and shuffle:
+        LOGGER.warning('WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False')
+        shuffle = False
+    with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
         dataset = LoadImagesAndLabels(path, imgsz, batch_size,
-                                      augment=augment,  # augment images
-                                      hyp=hyp,  # augmentation hyperparameters
-                                      rect=rect,  # rectangular training
+                                      augment=augment,  # augmentation
+                                      hyp=hyp,  # hyperparameters
+                                      rect=rect,  # rectangular batches
                                       cache_images=cache,
                                       single_cls=single_cls,
                                       stride=int(stride),
@@ -107,20 +110,19 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
                                       prefix=prefix)
 
     batch_size = min(batch_size, len(dataset))
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, workers])  # number of workers
-    sampler = torch.utils.data.distributed.DistributedSampler(dataset) if rank != -1 else None
-    loader = torch.utils.data.DataLoader if image_weights else InfiniteDataLoader
-    # Use torch.utils.data.DataLoader() if dataset.properties will update during training else InfiniteDataLoader()
-    dataloader = loader(dataset,
-                        batch_size=batch_size,
-                        num_workers=nw,
-                        sampler=sampler,
-                        pin_memory=True,
-                        collate_fn=LoadImagesAndLabels.collate_fn4 if quad else LoadImagesAndLabels.collate_fn)
-    return dataloader, dataset
+    nw = min([os.cpu_count() // WORLD_SIZE, batch_size if batch_size > 1 else 0, workers])  # number of workers
+    sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
+    loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
+    return loader(dataset,
+                  batch_size=batch_size,
+                  shuffle=shuffle and sampler is None,
+                  num_workers=nw,
+                  sampler=sampler,
+                  pin_memory=True,
+                  collate_fn=LoadImagesAndLabels.collate_fn4 if quad else LoadImagesAndLabels.collate_fn), dataset
 
 
-class InfiniteDataLoader(torch.utils.data.dataloader.DataLoader):
+class InfiniteDataLoader(dataloader.DataLoader):
     """ Dataloader that reuses workers
 
     Uses same syntax as vanilla DataLoader
@@ -965,7 +967,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
             r = max_dim / max(im.height, im.width)  # ratio
             if r < 1.0:  # image too large
                 im = im.resize((int(im.width * r), int(im.height * r)))
-            im.save(f_new, quality=75)  # save
+            im.save(f_new, 'JPEG', quality=75, optimize=True)  # save
         except Exception as e:  # use OpenCV
             print(f'WARNING: HUB ops PIL failure {f}: {e}')
             im = cv2.imread(f)

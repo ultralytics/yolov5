@@ -17,8 +17,8 @@ import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.general import (Timeout, check_requirements, clip_coords, increment_path, is_ascii, is_chinese, try_except,
-                           user_config_dir, xywh2xyxy, xyxy2xywh)
+from utils.general import (LOGGER, Timeout, check_requirements, clip_coords, increment_path, is_ascii, is_chinese,
+                           try_except, user_config_dir, xywh2xyxy, xyxy2xywh)
 from utils.metrics import fitness
 
 # Settings
@@ -132,7 +132,7 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detec
     if 'Detect' not in module_type:
         batch, channels, height, width = x.shape  # batch, channels, height, width
         if height > 1 and width > 1:
-            f = f"stage{stage}_{module_type.split('.')[-1]}_features.png"  # filename
+            f = save_dir / f"stage{stage}_{module_type.split('.')[-1]}_features.png"  # filename
 
             blocks = torch.chunk(x[0].cpu(), channels, dim=0)  # select batch index 0, block by channels
             n = min(n, channels)  # number of plots
@@ -143,9 +143,10 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detec
                 ax[i].imshow(blocks[i].squeeze())  # cmap='gray'
                 ax[i].axis('off')
 
-            print(f'Saving {save_dir / f}... ({n}/{channels})')
-            plt.savefig(save_dir / f, dpi=300, bbox_inches='tight')
+            print(f'Saving {f}... ({n}/{channels})')
+            plt.savefig(f, dpi=300, bbox_inches='tight')
             plt.close()
+            np.save(str(f.with_suffix('.npy')), x[0].cpu().numpy())  # npy save
 
 
 def hist2d(x, y, n=100):
@@ -328,7 +329,7 @@ def plot_val_study(file='', dir='', x=None):  # from utils.plots import *; plot_
 @Timeout(30)  # known issue https://github.com/ultralytics/yolov5/issues/5611
 def plot_labels(labels, names=(), save_dir=Path('')):
     # plot dataset labels
-    print('Plotting labels... ')
+    LOGGER.info(f"Plotting labels to {save_dir / 'labels.jpg'}... ")
     c, b = labels[:, 0], labels[:, 1:].transpose()  # classes, boxes
     nc = int(c.max() + 1)  # number of classes
     x = pd.DataFrame(b.transpose(), columns=['x', 'y', 'width', 'height'])
