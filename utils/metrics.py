@@ -301,19 +301,45 @@ def wh_iou(wh1, wh2):
 
 
 # Plots ----------------------------------------------------------------------------------------------------------------
+def list2csv(x, savePath):
+    # pr curve list2csv
+    with open(savePath, "w", newline='') as f:
+        for i in x:
+            num = 0
+            for j in i:
+                num += 1
+                if (num < len(i)):
+                    f.write(f'{j},')
+                else:
+                    f.write(f'{j}')
+            f.write('\n')
+        f.close()
 
 def plot_pr_curve(px, py, ap, save_dir='pr_curve.png', names=()):
     # Precision-recall curve
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
     py = np.stack(py, axis=1)
+    py_copy = py.copy()
 
     if 0 < len(names) < 21:  # display per-class legend if < 21 classes
         for i, y in enumerate(py.T):
             ax.plot(px, y, linewidth=1, label=f'{names[i]} {ap[i, 0]:.3f}')  # plot(recall, precision)
+        pyList_sub = py_copy.tolist()  # sub class pr
     else:
         ax.plot(px, py, linewidth=1, color='grey')  # plot(recall, precision)
+        pyList_sub = py_copy.tolist()
 
     ax.plot(px, py.mean(1), linewidth=3, color='blue', label='all classes %.3f mAP@0.5' % ap[:, 0].mean())
+    
+    px_list = px.tolist()
+    py_list = py.mean(1).tolist()
+    pr_csv = []  # mean all class pr
+    for i in range(len(px_list)):
+        pr_csv.append([px_list[i], py_list[i]])
+    pr_csv_all = np.hstack((pr_csv, pyList_sub))  # merge pr (mean, sub)
+    csv_path = str(save_dir)[:-len('pr_curve.png')]  # pathlib2str
+    list2csv(pr_csv_all, Path(csv_path)/'PR_curve.csv')  # pr curve csv save
+    
     ax.set_xlabel('Recall')
     ax.set_ylabel('Precision')
     ax.set_xlim(0, 1)
