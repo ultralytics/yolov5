@@ -330,7 +330,7 @@ def plot_pr_curve(px, py, ap, save_dir='pr_curve.png', names=()):
         pyList_sub = py_copy.tolist()
 
     ax.plot(px, py.mean(1), linewidth=3, color='blue', label='all classes %.3f mAP@0.5' % ap[:, 0].mean())
-    
+
     px_list = px.tolist()
     py_list = py.mean(1).tolist()
     pr_csv = []  # mean all class pr
@@ -339,7 +339,7 @@ def plot_pr_curve(px, py, ap, save_dir='pr_curve.png', names=()):
     pr_csv_all = np.hstack((pr_csv, pyList_sub))  # merge pr (mean, sub)
     csv_path = str(save_dir)[:-len('pr_curve.png')]  # pathlib2str
     list2csv(pr_csv_all, Path(csv_path)/'PR_curve.csv')  # pr curve csv save
-    
+
     ax.set_xlabel('Recall')
     ax.set_ylabel('Precision')
     ax.set_xlim(0, 1)
