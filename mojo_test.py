@@ -15,7 +15,7 @@ from aisa_utils.dl_utils.utils import (
     plot_object_count_difference_line,
 )
 from utils.general import xyxy2xywhn, scale_coords
-from mojo_val import compute_predictions_and_labels
+from mojo_val import compute_predictions_and_labels, log_plot_as_wandb_artifact
 from aisa_utils.dl_utils.plots import plot_predictions_and_labels_crops, compute_predictions_and_labels_false_pos, \
     plot_debug_frames
 
@@ -168,39 +168,43 @@ def mojo_test(
             preds += _
         return preds
 
-    extra_plots = dict()
+    workspace_plots, artifacts_plots = dict(), dict()
+
     preds_iou_thres = dict()
     for iout in [0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65]:
         preds_iou_thres[iout] = video_prediction_function(images, iou_thres_nms=iout)
     fig_line = plot_object_count_difference_line(labels, preds_iou_thres)
 
-    preds = preds_iou_thres[0.45]
-    fig, suggested_threshold = plot_object_count_difference_ridgeline(labels, preds)
+    fig, suggested_threshold = plot_object_count_difference_ridgeline(labels, preds_iou_thres[0.45])
     print(f"suggested_threshold={suggested_threshold}")
 
-    extra_plots["object_count_difference"] = fig
-    extra_plots["object_count_difference_continuous"] = fig_line
+    workspace_plots["object_count_difference"] = fig
+    workspace_plots["object_count_difference_continuous"] = fig_line
 
     # Extract prediction & labels match from validation extra stats
     predn, preds_matched, labelsn, labels_matched, images_paths = compute_predictions_and_labels(
         extra_stats, threshold=suggested_threshold
     )
-    # Draw image with preds and labels with different color depending on the matches
 
-    extra_plots.update(plot_debug_frames(
-        predn, preds_matched, labelsn, labels_matched, images_paths, threshold=suggested_threshold
-    ))
+    # Draw image with preds and labels with different color depending on the matches
+    artifacts_plots = plot_debug_frames(
+        predn, preds_matched, labelsn, labels_matched, images_paths, threshold=suggested_threshold,
+        n_images=3
+    )
 
     # Compute TP, TN, FP, FN and draw crops of lowest and confidence threshold preds
     true_pos, true_neg, false_pos, false_neg = compute_predictions_and_labels_false_pos(
         predn, preds_matched, labelsn, labels_matched, images_paths, threshold=suggested_threshold
     )
-    extra_plots.update(plot_predictions_and_labels_crops(
+    artifacts_plots.update(plot_predictions_and_labels_crops(
         true_pos, true_neg, false_pos, false_neg, images_paths
     ))
 
-    for plot_key in tqdm.tqdm(extra_plots, desc="Uploading plots"):
-        wandb_run.log({f"mojo_test/extra_plots/{plot_key}": extra_plots[plot_key]})
+    for fig_name, fig in tqdm.tqdm(workspace_plots.items(), desc="Uploading workspace plots"):
+        wandb_run.log({f"mojo_test/workspace_plots/{fig_name}": fig})
+
+    for fig_name, fig in tqdm.tqdm(artifacts_plots.items(), desc="Uploading artifacts plots"):
+        log_plot_as_wandb_artifact(wandb_run, fig, fig_name)
 
     if test_video_root is not None:
         for video_path in Path(test_video_root).rglob("*.avi"):
@@ -216,7 +220,7 @@ def mojo_test(
                 }
             )
             wandb_run.log(
-                {f"mojo_test/extra_plots/{output_video_path.name}_jitter": jitter_plot}
+                {f"mojo_test/workspace_plots/{output_video_path.name}_jitter": jitter_plot}
             )
 
     return None

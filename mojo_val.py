@@ -1,5 +1,8 @@
+from pathlib import Path
+import tempfile
 import numpy as np
 import torch
+import wandb
 from torchvision.ops import box_iou
 
 from utils.general import scale_coords, xywh2xyxy
@@ -42,6 +45,18 @@ def plot_object_count_difference_ridgeline_from_extra(extra_stats):
     ground_truths_extra = [[1] * len(e[2]) for e in extra_stats]
     preds_extra = [e[1].numpy() for e in extra_stats]
     return plot_object_count_difference_ridgeline(ground_truths_extra, preds_extra)
+
+
+def log_plot_as_wandb_artifact(wand_run, fig, fig_name, temp_dir=Path(tempfile.NamedTemporaryFile().name)):
+    temp_dir.mkdir(exist_ok=True)
+    fig_name = f"{fig_name}.html"
+    filepath = temp_dir / fig_name
+    fig.write_html(open(filepath, "w"))
+    artifact = wandb.Artifact("run_" + wand_run.id + fig_name, type='result')
+    # Add a file to the artifact's contents
+    artifact.add_file(filepath)
+    # Save the artifact version to W&B and mark it as the output of this run
+    wand_run.log_artifact(artifact)
 
 
 def error_count_from_extra(extra_stats):
