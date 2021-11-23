@@ -338,7 +338,7 @@ def plot_pr_curve(px, py, ap, save_dir='pr_curve.png', names=()):
         pr_csv.append([px_list[i], py_list[i]])
     pr_csv_all = np.hstack((pr_csv, pyList_sub))  # merge pr (mean, sub)
     csv_path = str(save_dir)[:-len('pr_curve.png')]  # pathlib2str
-    list2csv(pr_csv_all, Path(csv_path)/'PR_curve.csv')  # pr curve csv save
+    list2csv(pr_csv_all, Path(csv_path) / 'PR_curve.csv')  # pr curve csv save
 
     ax.set_xlabel('Recall')
     ax.set_ylabel('Precision')
