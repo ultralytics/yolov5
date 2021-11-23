@@ -1,4 +1,6 @@
 from pathlib import Path
+
+import torch
 import yaml
 import os
 from pprint import pprint
@@ -150,6 +152,12 @@ def train(
     else:
         workers = 4
         cache = "ram"
+
+    # Make sure not to reuse wandb ID when pretraining
+    model = torch.load(weights)
+    model["wandb_id"] = None
+    torch.save(model, weights)
+
     path_to_best_model = train.run(
         cfg=f"models/{yolo_model_version}.yaml",
         weights=f"{weights}",

@@ -91,7 +91,6 @@ def mojo_test(
     )  # make dir
     run_id = torch.load(weights[0]).get("wandb_id")
 
-    os.environ['WANDB_SILENT'] = "true"
     wandb_run = wandb.init(
         id=run_id, project=project, entity=entity, resume="allow", allow_val_change=True,
     )
