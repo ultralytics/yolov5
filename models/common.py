@@ -379,6 +379,7 @@ class DetectMultiBackend(nn.Module):
                 interpreter.allocate_tensors()  # allocate
                 input_details = interpreter.get_input_details()  # inputs
                 output_details = interpreter.get_output_details()  # outputs
+                output_indices = np.argsort([output_details[i]['name'] for i in range(nl)])
         self.__dict__.update(locals())  # assign all variables to self
 
     def forward(self, im, augment=False, visualize=False, val=False):
@@ -432,10 +433,10 @@ class DetectMultiBackend(nn.Module):
                 im = (im / scale + zero_point).astype(np.uint8)  # de-scale
                 self.interpreter.set_tensor(input['index'], im)
                 self.interpreter.invoke()
-                x = [torch.tensor(self.interpreter.get_tensor(outputs[i]['index']), device=self.device)
+                x = [torch.tensor(self.interpreter.get_tensor(outputs[self.output_indices[i]]['index']), device=self.device)
                      for i in range(self.nl)]
-                for i in range(self.nl):  # re-scale
-                    scale, zero_point = outputs[i]['quantization']
+                for i in range(self.nl):   # re-scale
+                    scale, zero_point = outputs[self.output_indices[i]]['quantization']
                     x[i] = x[i].float()
                     x[i] = (x[i] - zero_point) * scale
 
