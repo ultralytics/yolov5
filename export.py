@@ -71,7 +71,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
         ts = torch.jit.trace(model, im, strict=False)
         d = {"shape": im.shape, "stride": int(max(model.stride)), "names": model.names}
         extra_files = {'config.txt': json.dumps(d)}  # torch._C.ExtraFilesMap()
-        (optimize_for_mobile(ts) if optimize else ts).save(f, _extra_files=extra_files)
+        (optimize_for_mobile(ts) if optimize else ts).save(f.as_posix(), _extra_files=extra_files)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
@@ -87,7 +87,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
         f = file.with_suffix('.onnx')
 
-        torch.onnx.export(model, im, f, verbose=False, opset_version=opset,
+        torch.onnx.export(model, im, f.as_posix(), verbose=False, opset_version=opset,
                           training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
                           do_constant_folding=not train,
                           input_names=['images'],
@@ -97,7 +97,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
                                         } if dynamic else None)
 
         # Checks
-        model_onnx = onnx.load(f)  # load onnx model
+        model_onnx = onnx.load(f.as_posix())  # load onnx model
         onnx.checker.check_model(model_onnx)  # check onnx model
         # LOGGER.info(onnx.helper.printable_graph(model_onnx.graph))  # print
 
@@ -113,7 +113,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
                     dynamic_input_shape=dynamic,
                     input_shapes={'images': list(im.shape)} if dynamic else None)
                 assert check, 'assert check failed'
-                onnx.save(model_onnx, f)
+                onnx.save(model_onnx, f.as_posix())
             except Exception as e:
                 LOGGER.info(f'{prefix} simplifier failure: {e}')
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -135,7 +135,7 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
         model.train()  # CoreML exports should be placed in model.train() mode
         ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
         ct_model = ct.convert(ts, inputs=[ct.ImageType('image', shape=im.shape, scale=1 / 255, bias=[0, 0, 0])])
-        ct_model.save(f)
+        ct_model.save(f.as_posix())
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
@@ -167,7 +167,7 @@ def export_saved_model(model, im, file, dynamic,
         keras_model = keras.Model(inputs=inputs, outputs=outputs)
         keras_model.trainable = False
         keras_model.summary()
-        keras_model.save(f, save_format='tf')
+        keras_model.save(f.as_posix(), save_format='tf')
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
