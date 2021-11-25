@@ -236,7 +236,7 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
     # YOLOv5 Edge TPU export
     try:
         cmd = 'edgetpu_compiler --version'
-        out = subprocess.run(cmd, shell=True, capture_output=True)
+        out = subprocess.run(cmd, shell=True, capture_output=True, check=True)
         ver = out.stdout.decode().split()[-1]
         LOGGER.info(f'\n{prefix} starting export with Edge TPU compiler {ver}...')
         f = str(file).replace('.pt', '-int8_edgetpu.tflite')
