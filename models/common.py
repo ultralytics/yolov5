@@ -337,7 +337,10 @@ class DetectMultiBackend(nn.Module):
             context = model.create_execution_context()
             batch_size = bindings['images'].shape[0]
         else:  # TensorFlow model (TFLite, pb, saved_model)
-            import tensorflow as tf
+            if 'edgetpu' in w.lower():
+                import tflite_runtime.interpreter as tfli
+            else:
+                import tensorflow as tf
             if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
                 def wrap_frozen_graph(gd, inputs, outputs):
                     x = tf.compat.v1.wrap_function(lambda: tf.compat.v1.import_graph_def(gd, name=""), [])  # wrapped
@@ -354,7 +357,6 @@ class DetectMultiBackend(nn.Module):
             elif tflite:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
                 if 'edgetpu' in w.lower():
                     LOGGER.info(f'Loading {w} for TensorFlow Lite Edge TPU inference...')
-                    import tflite_runtime.interpreter as tfli
                     delegate = {'Linux': 'libedgetpu.so.1',  # install https://coral.ai/software/#edgetpu-runtime
                                 'Darwin': 'libedgetpu.1.dylib',
                                 'Windows': 'edgetpu.dll'}[platform.system()]
