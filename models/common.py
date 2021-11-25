@@ -383,7 +383,8 @@ class DetectMultiBackend(nn.Module):
                 interpreter.allocate_tensors()  # allocate
                 input_details = interpreter.get_input_details()  # inputs
                 output_details = interpreter.get_output_details()  # outputs
-                output_indices = np.argsort([output_details[i]['name'] for i in range(nl)])
+                if 'edgetpu' in w.lower():
+                    output_indices = np.argsort([output_details[i]['name'] for i in range(nl)])
         self.__dict__.update(locals())  # assign all variables to self
 
     def forward(self, im, augment=False, visualize=False, val=False):
