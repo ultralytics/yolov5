@@ -5,8 +5,8 @@ import os
 import sys
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Dict
 
-import pkg_resources as pkg
 import yaml
 from tqdm import tqdm
 
@@ -15,9 +15,8 @@ ROOT = FILE.parents[3]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 
-from utils.datasets import LoadImagesAndLabels
-from utils.datasets import img2label_paths
-from utils.general import check_dataset, check_file
+from utils.datasets import LoadImagesAndLabels, img2label_paths
+from utils.general import LOGGER, check_dataset, check_file
 
 try:
     import wandb
@@ -25,7 +24,7 @@ try:
     assert hasattr(wandb, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
     wandb = None
-    
+
 RANK = int(os.getenv('RANK', -1))
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
@@ -127,7 +126,7 @@ class WandbLogger():
         arguments:
         opt (namespace) -- Commandline arguments for this run
         run_id (str) -- Run ID of W&B run to be resumed
-        job_type (str) -- To set the job_type for this run 
+        job_type (str) -- To set the job_type for this run
 
        """
         # Pre-training routine --
@@ -142,7 +141,8 @@ class WandbLogger():
         self.max_imgs_to_log = 16
         self.wandb_artifact_data_dict = None
         self.data_dict = None
-        # It's more elegant to stick to 1 wandb.init call, but useful config data is overwritten in the WandbLogger's wandb.init call
+        # It's more elegant to stick to 1 wandb.init call,
+        #  but useful config data is overwritten in the WandbLogger's wandb.init call
         if isinstance(opt.resume, str):  # checks resume from artifact
             if opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
                 entity, project, run_id, model_artifact_name = get_run_info(opt.resume)
@@ -202,7 +202,7 @@ class WandbLogger():
         config_path = self.log_dataset_artifact(opt.data,
                                                 opt.single_cls,
                                                 'YOLOv5' if opt.project == 'runs/train' else Path(opt.project).stem)
-        print("Created dataset config file ", config_path)
+        LOGGER.info(f"Created dataset config file {config_path}")
         with open(config_path, errors='ignore') as f:
             wandb_data_dict = yaml.safe_load(f)
         return wandb_data_dict
@@ -212,7 +212,7 @@ class WandbLogger():
         Setup the necessary processes for training YOLO models:
           - Attempt to download model checkpoint and dataset artifacts if opt.resume stats with WANDB_ARTIFACT_PREFIX
           - Update data_dict, to contain info of previous run if resumed and the paths of dataset artifact if downloaded
-          - Setup log_dict, initialize bbox_interval 
+          - Setup log_dict, initialize bbox_interval
 
         arguments:
         opt (namespace) -- commandline arguments for this run
@@ -301,7 +301,7 @@ class WandbLogger():
         path (Path)   -- Path of directory containing the checkpoints
         opt (namespace) -- Command line arguments for this run
         epoch (int)  -- Current epoch number
-        fitness_score (float) -- fitness score for current epoch 
+        fitness_score (float) -- fitness score for current epoch
         best_model (boolean) -- Boolean representing if the current checkpoint is the best yet.
         """
         model_artifact = wandb.Artifact('run_' + wandb.run.id + '_model', type='model', metadata={
@@ -315,7 +315,7 @@ class WandbLogger():
         model_artifact.add_file(str(path / 'last.pt'), name='last.pt')
         wandb.log_artifact(model_artifact,
                            aliases=['latest', 'last', 'epoch ' + str(self.current_epoch), 'best' if best_model else ''])
-        print("Saving model artifact on epoch ", epoch + 1)
+        LOGGER.info(f"Saving model artifact on epoch {epoch + 1}")
 
     def log_dataset_artifact(self, data_file, single_cls, project, overwrite_config=False):
         """
@@ -325,7 +325,7 @@ class WandbLogger():
         data_file (str) -- the .yaml file with information about the dataset like - path, classes etc.
         single_class (boolean)  -- train multi-class data as single-class
         project (str) -- project name. Used to construct the artifact path
-        overwrite_config (boolean) -- overwrites the data.yaml file if set to true otherwise creates a new 
+        overwrite_config (boolean) -- overwrites the data.yaml file if set to true otherwise creates a new
         file with _wandb postfix. Eg -> data_wandb.yaml
 
         returns:
@@ -367,18 +367,18 @@ class WandbLogger():
         Useful for - referencing artifacts for evaluation.
         """
         self.val_table_path_map = {}
-        print("Mapping dataset")
+        LOGGER.info("Mapping dataset")
         for i, data in enumerate(tqdm(self.val_table.data)):
             self.val_table_path_map[data[3]] = data[0]
 
-    def create_dataset_table(self, dataset, class_to_id, name='dataset'):
+    def create_dataset_table(self, dataset: LoadImagesAndLabels, class_to_id: Dict[int,str], name: str = 'dataset'):
         """
         Create and return W&B artifact containing W&B Table of the dataset.
 
         arguments:
-        dataset (LoadImagesAndLabels) -- instance of LoadImagesAndLabels class used to iterate over the data to build Table
-        class_to_id (dict(int, str)) -- hash map that maps class ids to labels
-        name (str) -- name of the artifact
+        dataset -- instance of LoadImagesAndLabels class used to iterate over the data to build Table
+        class_to_id -- hash map that maps class ids to labels
+        name -- name of the artifact
 
         returns:
         dataset artifact to be logged or used
@@ -419,7 +419,7 @@ class WandbLogger():
 
         arguments:
         predn (list): list of predictions in the native space in the format - [xmin, ymin, xmax, ymax, confidence, class]
-        path (str): local path of the current evaluation image 
+        path (str): local path of the current evaluation image
         names (dict(int, str)): hash map that maps class ids to labels
         """
         class_set = wandb.Classes([{'id': id, 'name': name} for id, name in names.items()])
@@ -430,7 +430,7 @@ class WandbLogger():
                 box_data.append(
                     {"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
                      "class_id": int(cls),
-                     "box_caption": "%s %.3f" % (names[cls], conf),
+                     "box_caption": f"{names[cls]} {conf:.3f}",
                      "scores": {"class_score": conf},
                      "domain": "pixel"})
                 total_conf += conf
@@ -450,7 +450,7 @@ class WandbLogger():
         arguments:
         pred (list): list of scaled predictions in the format - [xmin, ymin, xmax, ymax, confidence, class]
         predn (list): list of predictions in the native space - [xmin, ymin, xmax, ymax, confidence, class]
-        path (str): local path of the current evaluation image 
+        path (str): local path of the current evaluation image
         """
         if self.val_table and self.result_table:  # Log Table if Val dataset is uploaded as artifact
             self.log_training_progress(predn, path, names)
@@ -459,7 +459,7 @@ class WandbLogger():
             if self.current_epoch % self.bbox_interval == 0:
                 box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
                              "class_id": int(cls),
-                             "box_caption": "%s %.3f" % (names[cls], conf),
+                             "box_caption": f"{names[cls]} {conf:.3f}",
                              "scores": {"class_score": conf},
                              "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
                 boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
@@ -486,8 +486,14 @@ class WandbLogger():
         if self.wandb_run:
             with all_logging_disabled():
                 if self.bbox_media_panel_images:
-                    self.log_dict["Bounding Box Debugger/Images"] = self.bbox_media_panel_images
-                wandb.log(self.log_dict)
+                    self.log_dict["BoundingBoxDebugger"] = self.bbox_media_panel_images
+                try:
+                    wandb.log(self.log_dict)
+                except BaseException as e:
+                    LOGGER.info(f"An error occurred in wandb logger. The training will proceed without interruption. More info\n{e}")
+                    self.wandb_run.finish()
+                    self.wandb_run = None
+
                 self.log_dict = {}
                 self.bbox_media_panel_images = []
             if self.result_artifact:
