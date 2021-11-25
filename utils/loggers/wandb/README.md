@@ -62,24 +62,24 @@ Run information streams from your environment to the W&B cloud console as you tr
 ## Advanced Usage
 You can leverage W&B artifacts and Tables integration to easily visualize and manage your datasets, models and training evaluations. Here are some quick examples to get you started.
 <details open>
- <h3>1. Visualize and Version Datasets</h3>
+ <h3> 1: Train and Log Evaluation simultaneousy </h3>
+   This is an extension of the previous section, but it'll also training after uploading the dataset. <b> This also evaluation Table</b>
+   Evaluation table compares your predictions and ground truths across the validation set for each epoch. It uses the references to the already uploaded datasets,
+   so no images will be uploaded from your system more than once.
+ <details open>
+  <summary> <b>Usage</b> </summary>
+   <b>Code</b> <code> $ python train.py --upload_data val</code>
+
+![Screenshot from 2021-11-21 17-40-06](https://user-images.githubusercontent.com/15766192/142761183-c1696d8c-3f38-45ab-991a-bb0dfd98ae7d.png)
+ </details>
+ 
+ <h3>2. Visualize and Version Datasets</h3>
  Log, visualize, dynamically query, and understand your data with <a href='https://docs.wandb.ai/guides/data-vis/tables'>W&B Tables</a>. You can use the following command to log your dataset as a W&B Table. This will generate a <code>{dataset}_wandb.yaml</code> file which can be used to train from dataset artifact.
  <details>
   <summary> <b>Usage</b> </summary>
    <b>Code</b> <code> $ python utils/logger/wandb/log_dataset.py --project ... --name ... --data .. </code>
 
  ![Screenshot (64)](https://user-images.githubusercontent.com/15766192/128486078-d8433890-98a3-4d12-8986-b6c0e3fc64b9.png)
- </details>
-
- <h3> 2: Train and Log Evaluation simultaneousy </h3>
-   This is an extension of the previous section, but it'll also training after uploading the dataset. <b> This also evaluation Table</b>
-   Evaluation table compares your predictions and ground truths across the validation set for each epoch. It uses the references to the already uploaded datasets,
-   so no images will be uploaded from your system more than once.
- <details>
-  <summary> <b>Usage</b> </summary>
-   <b>Code</b> <code> $ python train.py --upload_data val</code>
-
-![Screenshot (72)](https://user-images.githubusercontent.com/15766192/128979739-4cf63aeb-a76f-483f-8861-1c0100b938a5.png)
  </details>
 
  <h3> 3: Train using dataset artifact </h3>
