@@ -337,19 +337,21 @@ class DetectMultiBackend(nn.Module):
             context = model.create_execution_context()
             batch_size = bindings['images'].shape[0]
         else:  # TensorFlow model (TFLite, pb, saved_model)
-            import tensorflow as tf
             if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
+                LOGGER.info(f'Loading {w} for TensorFlow *.pb inference...')
+                import tensorflow as tf
+
                 def wrap_frozen_graph(gd, inputs, outputs):
                     x = tf.compat.v1.wrap_function(lambda: tf.compat.v1.import_graph_def(gd, name=""), [])  # wrapped
                     return x.prune(tf.nest.map_structure(x.graph.as_graph_element, inputs),
                                    tf.nest.map_structure(x.graph.as_graph_element, outputs))
 
-                LOGGER.info(f'Loading {w} for TensorFlow *.pb inference...')
                 graph_def = tf.Graph().as_graph_def()
                 graph_def.ParseFromString(open(w, 'rb').read())
                 frozen_func = wrap_frozen_graph(gd=graph_def, inputs="x:0", outputs="Identity:0")
             elif saved_model:
                 LOGGER.info(f'Loading {w} for TensorFlow saved_model inference...')
+                import tensorflow as tf
                 model = tf.keras.models.load_model(w)
             elif tflite:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
                 if 'edgetpu' in w.lower():
@@ -361,6 +363,7 @@ class DetectMultiBackend(nn.Module):
                     interpreter = tfli.Interpreter(model_path=w, experimental_delegates=[tfli.load_delegate(delegate)])
                 else:
                     LOGGER.info(f'Loading {w} for TensorFlow Lite inference...')
+                    import tensorflow as tf
                     interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
                 interpreter.allocate_tensors()  # allocate
                 input_details = interpreter.get_input_details()  # inputs
