@@ -2,6 +2,7 @@
 * [About Weights & Biases](#about-weights-&-biases)
 * [First-Time Setup](#first-time-setup)
 * [Viewing runs](#viewing-runs)
+* [Disabling wandb](#disabling-wandb)
 * [Advanced Usage: Dataset Versioning and Evaluation](#advanced-usage)
 * [Reports: Share your work with the world!](#reports)
 
@@ -49,9 +50,14 @@ Run information streams from your environment to the W&B cloud console as you tr
  * Environment: OS and Python types, Git repository and state, **training command**
 
 <p align="center"><img width="900" alt="Weights & Biases dashboard" src="https://user-images.githubusercontent.com/26833433/135390767-c28b050f-8455-4004-adb0-3b730386e2b2.png"></p>
-
-
 </details>
+
+ ## Disabling wandb
+* training after running `wandb disabled` inside that directory creates no wandb run
+![Screenshot (84)](https://user-images.githubusercontent.com/15766192/143441777-c780bdd7-7cb4-4404-9559-b4316030a985.png)
+
+* To enable wandb again, run `wandb online` 
+![Screenshot (85)](https://user-images.githubusercontent.com/15766192/143441866-7191b2cb-22f0-4e0f-ae64-2dc47dc13078.png)
 
 ## Advanced Usage
 You can leverage W&B artifacts and Tables integration to easily visualize and manage your datasets, models and training evaluations. Here are some quick examples to get you started.
@@ -122,7 +128,6 @@ Any run can be resumed using artifacts if the <code>--resume</code> argument sta
  </details>
 
 </details>
-
 
  <h3> Reports </h3>
 W&B Reports can be created from your saved runs for sharing online. Once a report is created you will receive a link you can use to publically share your results. Here is an example report created from the COCO128 tutorial trainings of all four YOLOv5 models ([link](https://wandb.ai/glenn-jocher/yolov5_tutorial/reports/YOLOv5-COCO128-Tutorial-Results--VmlldzozMDI5OTY)).
