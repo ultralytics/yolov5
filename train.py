@@ -76,13 +76,14 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     LOGGER.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
 
     # Save run settings
-    with open(save_dir / 'hyp.yaml', 'w') as f:
-        yaml.safe_dump(hyp, f, sort_keys=False)
-    with open(save_dir / 'opt.yaml', 'w') as f:
-        yaml.safe_dump(vars(opt), f, sort_keys=False)
-    data_dict = None
+    if not evolve:
+        with open(save_dir / 'hyp.yaml', 'w') as f:
+            yaml.safe_dump(hyp, f, sort_keys=False)
+        with open(save_dir / 'opt.yaml', 'w') as f:
+            yaml.safe_dump(vars(opt), f, sort_keys=False)
 
     # Loggers
+    data_dict = None
     if RANK in [-1, 0]:
         loggers = Loggers(save_dir, weights, opt, hyp, LOGGER)  # loggers instance
         if loggers.wandb:
@@ -474,7 +475,7 @@ def parse_opt(known=False):
 
     # Weights & Biases arguments
     parser.add_argument('--entity', default=None, help='W&B: Entity')
-    parser.add_argument('--upload_dataset', action='store_true', help='W&B: Upload dataset as artifact table')
+    parser.add_argument('--upload_dataset', nargs='?', const=True, default=False, help='W&B: Upload data, "val" option')
     parser.add_argument('--bbox_interval', type=int, default=-1, help='W&B: Set bounding-box image logging interval')
     parser.add_argument('--artifact_alias', type=str, default='latest', help='W&B: Version of dataset artifact to use')
 
