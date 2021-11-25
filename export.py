@@ -97,7 +97,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
                                         } if dynamic else None)
 
         # Checks
-        model_onnx = onnx.load(str(f))  # load onnx model
+        model_onnx = onnx.load(f)  # load onnx model
         onnx.checker.check_model(model_onnx)  # check onnx model
         # LOGGER.info(onnx.helper.printable_graph(model_onnx.graph))  # print
 
@@ -113,7 +113,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
                     dynamic_input_shape=dynamic,
                     input_shapes={'images': list(im.shape)} if dynamic else None)
                 assert check, 'assert check failed'
-                onnx.save(model_onnx, str(f))
+                onnx.save(model_onnx, f)
             except Exception as e:
                 LOGGER.info(f'{prefix} simplifier failure: {e}')
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -135,7 +135,7 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
         model.train()  # CoreML exports should be placed in model.train() mode
         ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
         ct_model = ct.convert(ts, inputs=[ct.ImageType('image', shape=im.shape, scale=1 / 255, bias=[0, 0, 0])])
-        ct_model.save(str(f))
+        ct_model.save(f)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
@@ -189,7 +189,7 @@ def export_pb(keras_model, im, file, prefix=colorstr('TensorFlow GraphDef:')):
         m = m.get_concrete_function(tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype))
         frozen_func = convert_variables_to_constants_v2(m)
         frozen_func.graph.as_graph_def()
-        tf.io.write_graph(graph_or_graph_def=frozen_func.graph, logdir=str(str(f.parent)), name=f.name, as_text=False)
+        tf.io.write_graph(graph_or_graph_def=frozen_func.graph, logdir=str(f.parent), name=f.name, as_text=False)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
