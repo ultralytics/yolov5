@@ -49,8 +49,11 @@ python3 detect.py --img 320 --weights weights/yolov5s_saved_model --no-tf-nms
 ### 4. Put TFLite models in `assets` folder of Android project, and change 
 - `inputSize` to `--img`
 - `output_width` according to new/old `inputSize` ratio
-- `anchors` to `m.anchor_grid` as https://github.com/ultralytics/yolov5/pull/1127#issuecomment-714651073
+- `anchors` to `m.anchor_grid` as https://github.com/ultralytics/yolov5/pull/1127#issuecomment-714651073 
 in android/app/src/main/java/org/tensorflow/lite/examples/detection/tflite/DetectorFactory.java
+- `labelFilename` according to the classes of the model
+in https://github.com/zldrobit/yolov5/blob/522d65e848d3e5a378eb0f29a9fbb204221400e8/android/app/src/main/java/org/tensorflow/lite/examples/detection/tflite/DetectorFactory.java#L19-L48. 
+
 
 Then run the program in Android Studio.
 
