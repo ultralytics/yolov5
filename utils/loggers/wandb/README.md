@@ -56,7 +56,7 @@ Run information streams from your environment to the W&B cloud console as you tr
 * training after running `wandb disabled` inside that directory creates no wandb run
 ![Screenshot (84)](https://user-images.githubusercontent.com/15766192/143441777-c780bdd7-7cb4-4404-9559-b4316030a985.png)
 
-* To enable wandb again, run `wandb online` 
+* To enable wandb again, run `wandb online`
 ![Screenshot (85)](https://user-images.githubusercontent.com/15766192/143441866-7191b2cb-22f0-4e0f-ae64-2dc47dc13078.png)
 
 ## Advanced Usage
