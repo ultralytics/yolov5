@@ -54,7 +54,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
         f = file.with_suffix('.torchscript.pt')
 
         ts = torch.jit.trace(model, im, strict=False)
-        (optimize_for_mobile(ts) if optimize else ts).save(f)
+        (optimize_for_mobile(ts) if optimize else ts).save(f.as_posix())
 
         print(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
