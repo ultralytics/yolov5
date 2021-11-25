@@ -277,7 +277,7 @@ class Concat(nn.Module):
 
 class DetectMultiBackend(nn.Module):
     # YOLOv5 MultiBackend class for python inference on various backends
-    def __init__(self, weights='yolov5s.pt', device=None, dnn=True, cfg=None):
+    def __init__(self, weights='yolov5s.pt', device=None, dnn=True, cfg=None, data=None):
         # Usage:
         #   PyTorch:      weights = *.pt
         #   TorchScript:            *.torchscript.pt
@@ -341,6 +341,10 @@ class DetectMultiBackend(nn.Module):
             batch_size = bindings['images'].shape[0]
         else:  # TensorFlow model (TFLite, pb, saved_model)
             import tensorflow as tf
+            if data:
+                with open(data) as f:
+                    data = yaml.load(f, Loader=yaml.FullLoader)
+                names = data['names']
             if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
                 def wrap_frozen_graph(gd, inputs, outputs):
                     x = tf.compat.v1.wrap_function(lambda: tf.compat.v1.import_graph_def(gd, name=""), [])  # wrapped
