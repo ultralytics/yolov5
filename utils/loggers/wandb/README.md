@@ -72,7 +72,7 @@ You can leverage W&B artifacts and Tables integration to easily visualize and ma
 
 ![Screenshot from 2021-11-21 17-40-06](https://user-images.githubusercontent.com/15766192/142761183-c1696d8c-3f38-45ab-991a-bb0dfd98ae7d.png)
  </details>
- 
+
  <h3>2. Visualize and Version Datasets</h3>
  Log, visualize, dynamically query, and understand your data with <a href='https://docs.wandb.ai/guides/data-vis/tables'>W&B Tables</a>. You can use the following command to log your dataset as a W&B Table. This will generate a <code>{dataset}_wandb.yaml</code> file which can be used to train from dataset artifact.
  <details>
