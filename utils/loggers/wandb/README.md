@@ -1,11 +1,11 @@
 📚 This guide explains how to use **Weights & Biases** (W&B) with YOLOv5 🚀. UPDATED 29 September 2021.
 
-* [About Weights & Biases](#about-weights-&-biases)
-* [First-Time Setup](#first-time-setup)
-* [Viewing runs](#viewing-runs)
-* [Disabling wandb](#disabling-wandb)
-* [Advanced Usage: Dataset Versioning and Evaluation](#advanced-usage)
-* [Reports: Share your work with the world!](#reports)
+- [About Weights & Biases](#about-weights-&-biases)
+- [First-Time Setup](#first-time-setup)
+- [Viewing runs](#viewing-runs)
+- [Disabling wandb](#disabling-wandb)
+- [Advanced Usage: Dataset Versioning and Evaluation](#advanced-usage)
+- [Reports: Share your work with the world!](#reports)
 
 ## About Weights & Biases
 
@@ -55,12 +55,13 @@ Run information streams from your environment to the W&B cloud console as you tr
 <p align="center"><img width="900" alt="Weights & Biases dashboard" src="https://user-images.githubusercontent.com/26833433/135390767-c28b050f-8455-4004-adb0-3b730386e2b2.png"></p>
 </details>
 
- ## Disabling wandb
-* training after running `wandb disabled` inside that directory creates no wandb run
-![Screenshot (84)](https://user-images.githubusercontent.com/15766192/143441777-c780bdd7-7cb4-4404-9559-b4316030a985.png)
+## Disabling wandb
 
-* To enable wandb again, run `wandb online`
-![Screenshot (85)](https://user-images.githubusercontent.com/15766192/143441866-7191b2cb-22f0-4e0f-ae64-2dc47dc13078.png)
+- training after running `wandb disabled` inside that directory creates no wandb run
+  ![Screenshot (84)](https://user-images.githubusercontent.com/15766192/143441777-c780bdd7-7cb4-4404-9559-b4316030a985.png)
+
+- To enable wandb again, run `wandb online`
+  ![Screenshot (85)](https://user-images.githubusercontent.com/15766192/143441866-7191b2cb-22f0-4e0f-ae64-2dc47dc13078.png)
 
 ## Advanced Usage
 
@@ -76,17 +77,19 @@ You can leverage W&B artifacts and Tables integration to easily visualize and ma
    <b>Code</b> <code> $ python train.py --upload_data val</code>
 
 ![Screenshot from 2021-11-21 17-40-06](https://user-images.githubusercontent.com/15766192/142761183-c1696d8c-3f38-45ab-991a-bb0dfd98ae7d.png)
- </details>
 
- <h3>2. Visualize and Version Datasets</h3>
+</details>
+
+<h3>2. Visualize and Version Datasets</h3>
  Log, visualize, dynamically query, and understand your data with <a href='https://docs.wandb.ai/guides/data-vis/tables'>W&B Tables</a>. You can use the following command to log your dataset as a W&B Table. This will generate a <code>{dataset}_wandb.yaml</code> file which can be used to train from dataset artifact.
 
- <details>
+<details>
   <summary> <b>Usage</b> </summary>
    <b>Code</b> <code> $ python utils/logger/wandb/log_dataset.py --project ... --name ... --data .. </code>
 
- ![Screenshot (64)](https://user-images.githubusercontent.com/15766192/128486078-d8433890-98a3-4d12-8986-b6c0e3fc64b9.png)
- </details>
+![Screenshot (64)](https://user-images.githubusercontent.com/15766192/128486078-d8433890-98a3-4d12-8986-b6c0e3fc64b9.png)
+
+</details>
 
 </details>
 
@@ -139,7 +142,7 @@ Any run can be resumed using artifacts if the <code>--resume</code> argument sta
 
 </details>
 
- <h3> Reports </h3>
+<h3> Reports </h3>
 W&B Reports can be created from your saved runs for sharing online. Once a report is created you will receive a link you can use to publically share your results. Here is an example report created from the COCO128 tutorial trainings of all four YOLOv5 models ([link](https://wandb.ai/glenn-jocher/yolov5_tutorial/reports/YOLOv5-COCO128-Tutorial-Results--VmlldzozMDI5OTY)).
 
 <img width="900" alt="Weights & Biases Reports" src="https://user-images.githubusercontent.com/26833433/135394029-a17eaf86-c6c1-4b1d-bb80-b90e83aaffa7.png">
