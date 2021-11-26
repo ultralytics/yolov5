@@ -340,7 +340,6 @@ class DetectMultiBackend(nn.Module):
             context = model.create_execution_context()
             batch_size = bindings['images'].shape[0]
         else:  # TensorFlow model (TFLite, pb, saved_model)
-            import tensorflow as tf
             if data:
                 try:
                     with open(data) as f:
