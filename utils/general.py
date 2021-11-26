@@ -838,4 +838,4 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
 
 
 # Variables
-NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size
+NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size for tqdm
