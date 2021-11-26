@@ -342,8 +342,12 @@ class DetectMultiBackend(nn.Module):
         else:  # TensorFlow model (TFLite, pb, saved_model)
             import tensorflow as tf
             if data:
-                with open(data) as f:
-                    data = yaml.load(f, Loader=yaml.FullLoader)
+                try:
+                    with open(data) as f:
+                        data = yaml.load(f, Loader=yaml.FullLoader)
+                except UnicodeDecodeError:  # switch encoding to utf-8 for Windows
+                    with open(data, encoding="utf8") as f:
+                        data = yaml.load(f, Loader=yaml.FullLoader)
                 names = data['names']
             if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
                 LOGGER.info(f'Loading {w} for TensorFlow *.pb inference...')
