@@ -421,6 +421,13 @@ class DetectMultiBackend(nn.Module):
         y = torch.tensor(y) if isinstance(y, np.ndarray) else y
         return (y, []) if val else y
 
+    def warmup(self, imgsz=(1, 3, 640, 640), half=False):
+        # Warmup model by running inference once
+        if self.pt or self.engine or self.onnx:  # warmup types
+            if isinstance(self.device, torch.device) and self.device.type != 'cpu':  # only warmup GPU models
+                im = torch.zeros(*imgsz).to(self.device).type(torch.half if half else torch.float)  # input image
+                self.forward(im)  # warmup
+
 
 class AutoShape(nn.Module):
     # YOLOv5 input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS
