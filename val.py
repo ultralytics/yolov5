@@ -149,8 +149,7 @@ def run(data,
 
     # Dataloader
     if not training:
-        if pt and device.type != 'cpu':
-            model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.model.parameters())))  # warmup
+        model.warmup(imgsz=(1, 3, imgsz, imgsz), half=half)  # warmup
         pad = 0.0 if task == 'speed' else 0.5
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
         dataloader = create_dataloader(data[task], imgsz, batch_size, stride, single_cls, pad=pad, rect=pt,
