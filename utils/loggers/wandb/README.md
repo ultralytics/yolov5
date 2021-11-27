@@ -2,6 +2,7 @@
 * [About Weights & Biases](#about-weights-&-biases)
 * [First-Time Setup](#first-time-setup)
 * [Viewing runs](#viewing-runs)
+* [Disabling wandb](#disabling-wandb)
 * [Advanced Usage: Dataset Versioning and Evaluation](#advanced-usage)
 * [Reports: Share your work with the world!](#reports)
 
@@ -49,14 +50,30 @@ Run information streams from your environment to the W&B cloud console as you tr
  * Environment: OS and Python types, Git repository and state, **training command**
 
 <p align="center"><img width="900" alt="Weights & Biases dashboard" src="https://user-images.githubusercontent.com/26833433/135390767-c28b050f-8455-4004-adb0-3b730386e2b2.png"></p>
-
-
 </details>
+
+ ## Disabling wandb
+* training after running `wandb disabled` inside that directory creates no wandb run
+![Screenshot (84)](https://user-images.githubusercontent.com/15766192/143441777-c780bdd7-7cb4-4404-9559-b4316030a985.png)
+
+* To enable wandb again, run `wandb online`
+![Screenshot (85)](https://user-images.githubusercontent.com/15766192/143441866-7191b2cb-22f0-4e0f-ae64-2dc47dc13078.png)
 
 ## Advanced Usage
 You can leverage W&B artifacts and Tables integration to easily visualize and manage your datasets, models and training evaluations. Here are some quick examples to get you started.
 <details open>
- <h3>1. Visualize and Version Datasets</h3>
+ <h3> 1: Train and Log Evaluation simultaneousy </h3>
+   This is an extension of the previous section, but it'll also training after uploading the dataset. <b> This also evaluation Table</b>
+   Evaluation table compares your predictions and ground truths across the validation set for each epoch. It uses the references to the already uploaded datasets,
+   so no images will be uploaded from your system more than once.
+ <details open>
+  <summary> <b>Usage</b> </summary>
+   <b>Code</b> <code> $ python train.py --upload_data val</code>
+
+![Screenshot from 2021-11-21 17-40-06](https://user-images.githubusercontent.com/15766192/142761183-c1696d8c-3f38-45ab-991a-bb0dfd98ae7d.png)
+ </details>
+
+ <h3>2. Visualize and Version Datasets</h3>
  Log, visualize, dynamically query, and understand your data with <a href='https://docs.wandb.ai/guides/data-vis/tables'>W&B Tables</a>. You can use the following command to log your dataset as a W&B Table. This will generate a <code>{dataset}_wandb.yaml</code> file which can be used to train from dataset artifact.
  <details>
   <summary> <b>Usage</b> </summary>
@@ -65,23 +82,12 @@ You can leverage W&B artifacts and Tables integration to easily visualize and ma
  ![Screenshot (64)](https://user-images.githubusercontent.com/15766192/128486078-d8433890-98a3-4d12-8986-b6c0e3fc64b9.png)
  </details>
 
- <h3> 2: Train and Log Evaluation simultaneousy </h3>
-   This is an extension of the previous section, but it'll also training after uploading the dataset. <b> This also evaluation Table</b>
-   Evaluation table compares your predictions and ground truths across the validation set for each epoch. It uses the references to the already uploaded datasets,
-   so no images will be uploaded from your system more than once.
- <details>
-  <summary> <b>Usage</b> </summary>
-   <b>Code</b> <code> $ python utils/logger/wandb/log_dataset.py --data ..  --upload_data </code>
-
-![Screenshot (72)](https://user-images.githubusercontent.com/15766192/128979739-4cf63aeb-a76f-483f-8861-1c0100b938a5.png)
- </details>
-
  <h3> 3: Train using dataset artifact </h3>
    When you upload a dataset as described in the first section, you get a new config file with an added `_wandb` to its name. This file contains the information that
    can be used to train a model directly from the dataset artifact. <b> This also logs evaluation </b>
  <details>
   <summary> <b>Usage</b> </summary>
-   <b>Code</b> <code> $ python utils/logger/wandb/log_dataset.py --data {data}_wandb.yaml </code>
+   <b>Code</b> <code> $ python train.py --data {data}_wandb.yaml </code>
 
 ![Screenshot (72)](https://user-images.githubusercontent.com/15766192/128979739-4cf63aeb-a76f-483f-8861-1c0100b938a5.png)
  </details>
@@ -122,7 +128,6 @@ Any run can be resumed using artifacts if the <code>--resume</code> argument sta
  </details>
 
 </details>
-
 
  <h3> Reports </h3>
 W&B Reports can be created from your saved runs for sharing online. Once a report is created you will receive a link you can use to publically share your results. Here is an example report created from the COCO128 tutorial trainings of all four YOLOv5 models ([link](https://wandb.ai/glenn-jocher/yolov5_tutorial/reports/YOLOv5-COCO128-Tutorial-Results--VmlldzozMDI5OTY)).
