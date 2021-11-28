@@ -19,12 +19,12 @@ def notebook_init(verbose=True):
         import psutil
 
         # System
-        gb = 1 / 1000 ** 3  # bytes to GiB
-        gib = 1 / 1024 ** 3  # bytes to GB
+        # gb = 1 / 1000 ** 3  # bytes to GB
+        gib = 1 / 1024 ** 3  # bytes to GiB
         ram = psutil.virtual_memory().total
         total, used, free = shutil.disk_usage("/")
         display.clear_output()
-        s = f'({os.cpu_count()} CPUs, {ram * gib:.1f} GB RAM, {(total - free) * gb:.1f}/{total * gb:.1f} GB disk)'
+        s = f'({os.cpu_count()} CPUs, {ram * gib:.1f} GB RAM, {(total - free) * gib:.1f}/{total * gib:.1f} GB disk)'
     else:
         s = ''
 
