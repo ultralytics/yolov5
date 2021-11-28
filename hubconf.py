@@ -27,6 +27,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     """
     from pathlib import Path
 
+    from models.common import AutoShape
     from models.experimental import attempt_load
     from models.yolo import Model
     from utils.downloads import attempt_download
@@ -55,7 +56,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                 if len(ckpt['model'].names) == classes:
                     model.names = ckpt['model'].names  # set class names attribute
         if autoshape:
-            model = model.autoshape()  # for file/URI/PIL/cv2/np inputs and NMS
+            model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
         return model.to(device)
 
     except Exception as e:

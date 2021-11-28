@@ -777,7 +777,7 @@ def print_mutation(results, hyp, save_dir, bucket):
         i = np.argmax(fitness(data.values[:, :7]))  #
         f.write('# YOLOv5 Hyperparameter Evolution Results\n' +
                 f'# Best generation: {i}\n' +
-                f'# Last generation: {len(data)}\n' +
+                f'# Last generation: {len(data) - 1}\n' +
                 '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:7]) + '\n' +
                 '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :7]) + '\n\n')
         yaml.safe_dump(hyp, f, sort_keys=False)
@@ -838,4 +838,4 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
 
 
 # Variables
-NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size
+NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size for tqdm
