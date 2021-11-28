@@ -10,13 +10,13 @@ def notebook_init(verbose=True):
 
     import os
     import shutil
-    from IPython import display  # to display images and clear console output
     from utils.general import emojis, check_requirements
     from utils.torch_utils import select_device  # imports
 
     if verbose:
-        check_requirements(('psutil',))
+        check_requirements(('psutil', 'IPython'))
         import psutil
+        from IPython import display  # to display images and clear console output
 
         # System
         # gb = 1 / 1000 ** 3  # bytes to GB
