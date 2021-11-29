@@ -39,10 +39,10 @@ from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
 from utils.datasets import create_dataloader
 from utils.downloads import attempt_download
-from utils.general import (LOGGER, NCOLS, check_dataset, check_file, check_git_status, check_img_size,
-                           check_requirements, check_suffix, check_yaml, colorstr, get_latest_run, increment_path,
-                           init_seeds, intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods,
-                           one_cycle, print_args, print_mutation, strip_optimizer)
+from utils.general import (LOGGER, check_dataset, check_file, check_git_status, check_img_size, check_requirements,
+                           check_suffix, check_yaml, colorstr, get_latest_run, increment_path, init_seeds,
+                           intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods, one_cycle,
+                           print_args, print_mutation, strip_optimizer)
 from utils.loggers import Loggers
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.loss import ComputeLoss
@@ -76,13 +76,14 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     LOGGER.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
 
     # Save run settings
-    with open(save_dir / 'hyp.yaml', 'w') as f:
-        yaml.safe_dump(hyp, f, sort_keys=False)
-    with open(save_dir / 'opt.yaml', 'w') as f:
-        yaml.safe_dump(vars(opt), f, sort_keys=False)
-    data_dict = None
+    if not evolve:
+        with open(save_dir / 'hyp.yaml', 'w') as f:
+            yaml.safe_dump(hyp, f, sort_keys=False)
+        with open(save_dir / 'opt.yaml', 'w') as f:
+            yaml.safe_dump(vars(opt), f, sort_keys=False)
 
     # Loggers
+    data_dict = None
     if RANK in [-1, 0]:
         loggers = Loggers(save_dir, weights, opt, hyp, LOGGER)  # loggers instance
         if loggers.wandb:
@@ -288,7 +289,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         pbar = enumerate(train_loader)
         LOGGER.info(('\n' + '%10s' * 7) % ('Epoch', 'gpu_mem', 'box', 'obj', 'cls', 'labels', 'img_size'))
         if RANK in [-1, 0]:
-            pbar = tqdm(pbar, total=nb, ncols=NCOLS, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
+            pbar = tqdm(pbar, total=nb, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
         optimizer.zero_grad()
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
             ni = i + nb * epoch  # number integrated batches (since train start)
@@ -474,7 +475,7 @@ def parse_opt(known=False):
 
     # Weights & Biases arguments
     parser.add_argument('--entity', default=None, help='W&B: Entity')
-    parser.add_argument('--upload_dataset', action='store_true', help='W&B: Upload dataset as artifact table')
+    parser.add_argument('--upload_dataset', nargs='?', const=True, default=False, help='W&B: Upload data, "val" option')
     parser.add_argument('--bbox_interval', type=int, default=-1, help='W&B: Set bounding-box image logging interval')
     parser.add_argument('--artifact_alias', type=str, default='latest', help='W&B: Version of dataset artifact to use')
 
