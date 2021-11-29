@@ -5,7 +5,7 @@ utils/initialization
 
 
 def notebook_init(verbose=True):
-    # Checks YOLOv5 software and hardware
+    # Check system software and hardware
     print('Checking setup...')
 
     import os
