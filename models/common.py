@@ -363,8 +363,8 @@ class DetectMultiBackend(nn.Module):
             im = Image.fromarray((im[0] * 255).astype('uint8'))
             # im = im.resize((192, 320), Image.ANTIALIAS)
             y = self.model.predict({'image': im})  # coordinates are xywh normalized
-            key = list(y.keys())[-1] # I think its always the last key, but tested with var_944
-            tensor_value =  torch.from_numpy(y[key])
+            key = list(y.keys())[-1]  # I think its always the last key, but tested with var_944
+            tensor_value = torch.from_numpy(y[key])
             return tensor_value
         elif self.onnx:  # ONNX
             im = im.cpu().numpy()  # torch to numpy
