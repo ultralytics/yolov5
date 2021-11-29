@@ -10,15 +10,18 @@ def notebook_init(verbose=True):
 
     import os
     import shutil
-    from utils.general import emojis, check_requirements
+    from utils.general import check_requirements, emojis, is_colab
     from utils.torch_utils import select_device  # imports
 
-    if verbose:
-        check_requirements(('psutil', 'IPython'))
-        import psutil
-        from IPython import display  # to display images and clear console output
+    check_requirements(('psutil', 'IPython'))
+    import psutil
+    from IPython import display  # to display images and clear console output
 
-        # System
+    if is_colab():
+        shutil.rmtree('sample_data', ignore_errors=True)  # remove colab /sample_data directory
+
+    if verbose:
+        # System info
         # gb = 1 / 1000 ** 3  # bytes to GB
         gib = 1 / 1024 ** 3  # bytes to GiB
         ram = psutil.virtual_memory().total
