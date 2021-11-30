@@ -276,7 +276,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         assert onnx.exists(), f'failed to export ONNX file: {onnx}'
 
         LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
-        f = str(file).replace('.pt', '.engine')  # TensorRT engine file
+        f = file.with_suffix('.engine')  # TensorRT engine file
         logger = trt.Logger(trt.Logger.INFO)
         if verbose:
             logger.min_severity = trt.Logger.Severity.VERBOSE
@@ -309,6 +309,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
 
     except Exception as e:
         LOGGER.info(f'\n{prefix} export failure: {e}')
+
 
 @torch.no_grad()
 def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
