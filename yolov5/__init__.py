@@ -4,7 +4,7 @@
 import os
 import sys
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 
 yolov5_dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, yolov5_dir_path)
