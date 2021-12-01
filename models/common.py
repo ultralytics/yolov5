@@ -7,7 +7,7 @@ import json
 import math
 import platform
 import warnings
-from collections import namedtuple
+from collections import OrderedDict, namedtuple
 from copy import copy
 from pathlib import Path
 
@@ -326,14 +326,14 @@ class DetectMultiBackend(nn.Module):
             logger = trt.Logger(trt.Logger.INFO)
             with open(w, 'rb') as f, trt.Runtime(logger) as runtime:
                 model = runtime.deserialize_cuda_engine(f.read())
-            bindings = dict()
+            bindings = OrderedDict()
             for index in range(model.num_bindings):
                 name = model.get_binding_name(index)
                 dtype = trt.nptype(model.get_binding_dtype(index))
                 shape = tuple(model.get_binding_shape(index))
                 data = torch.from_numpy(np.empty(shape, dtype=np.dtype(dtype))).to(device)
                 bindings[name] = Binding(name, dtype, shape, data, int(data.data_ptr()))
-            binding_addrs = {n: d.ptr for n, d in bindings.items()}
+            binding_addrs = OrderedDict((n, d.ptr) for n, d in bindings.items())
             context = model.create_execution_context()
             batch_size = bindings['images'].shape[0]
         else:  # TensorFlow model (TFLite, pb, saved_model)
