@@ -308,6 +308,7 @@ class DetectMultiBackend(nn.Module):
             model = attempt_load(weights, map_location=device)
             stride = int(model.stride.max())  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
+            self.model = model  # explicitly assign for to(), cpu(), cuda(), half()
         elif coreml:  # CoreML
             LOGGER.info(f'Loading {w} for CoreML inference...')
             import coremltools as ct

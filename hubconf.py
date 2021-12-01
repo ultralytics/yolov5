@@ -57,14 +57,9 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
         if autoshape:
             model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
 
-        p = next(model.model.model.parameters())  # for device and type
-        print(p.device, p.dtype)
-        model = model.to(device)
-        p = next(model.model.model.parameters())  # for device and type
-        print(p.device, p.dtype)
-        return model
+        return model.to(device)
 
-    #except Exception as e:
+    # except Exception as e:
     #    help_url = 'https://github.com/ultralytics/yolov5/issues/36'
     #    s = 'Cache may be out of date, try `force_reload=True`. See %s for help.' % help_url
     #    raise Exception(s) from e
