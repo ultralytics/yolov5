@@ -445,7 +445,7 @@ class AutoShape(nn.Module):
         LOGGER.info('Adding AutoShape... ')
         copy_attr(self, model, include=('yaml', 'nc', 'hyp', 'names', 'stride', 'abc'), exclude=())  # copy attributes
         self.dmb = isinstance(model, DetectMultiBackend)  # DetectMultiBackend() instance
-        self.pt = not self.dmb and model.pt  # PyTorch model
+        self.pt = not self.dmb or model.pt  # PyTorch model
         self.model = model.eval()
 
     def _apply(self, fn):
