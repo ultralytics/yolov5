@@ -43,7 +43,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
         device = select_device(('0' if torch.cuda.is_available() else 'cpu') if device is None else device)
 
         if pretrained and channels == 3 and classes == 80:
-            model = DetectMultiBackend(path, device='cpu')  # download/load FP32 model
+            model = DetectMultiBackend(path, device=device)  # download/load FP32 model
         else:
             cfg = list((Path(__file__).parent / 'models').rglob(f'{path.name}.yaml'))[0]  # model.yaml path
             model = Model(cfg, channels, classes)  # create model
