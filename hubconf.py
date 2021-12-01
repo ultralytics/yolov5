@@ -5,6 +5,7 @@ PyTorch Hub models https://pytorch.org/hub/ultralytics_yolov5/
 Usage:
     import torch
     model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
+    model = torch.hub.load('ultralytics/yolov5:master', 'custom', 'path/to/yolov5s.onnx')  # file from branch
 """
 
 import torch
