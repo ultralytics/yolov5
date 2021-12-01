@@ -276,7 +276,7 @@ class Concat(nn.Module):
 
 class DetectMultiBackend(nn.Module):
     # YOLOv5 MultiBackend class for python inference on various backends
-    def __init__(self, weights='yolov5s.pt', device=None, dnn=True):
+    def __init__(self, weights='yolov5s.pt', device=None, dnn=False):
         # Usage:
         #   PyTorch:      weights = *.pt
         #   TorchScript:            *.torchscript.pt
@@ -378,7 +378,7 @@ class DetectMultiBackend(nn.Module):
         if self.pt:  # PyTorch
             y = self.model(im) if self.jit else self.model(im, augment=augment, visualize=visualize)
             return y if val else y[0]
-        elif self.coreml:  # CoreML *.mlmodel
+        elif self.coreml:  # CoreML
             im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
             im = Image.fromarray((im[0] * 255).astype('uint8'))
             # im = im.resize((192, 320), Image.ANTIALIAS)
@@ -444,16 +444,19 @@ class AutoShape(nn.Module):
         super().__init__()
         LOGGER.info('Adding AutoShape... ')
         copy_attr(self, model, include=('yaml', 'nc', 'hyp', 'names', 'stride', 'abc'), exclude=())  # copy attributes
+        self.dmb = isinstance(model, DetectMultiBackend)  # DetectMultiBackend() instance
+        self.pt = not self.dmb and model.pt  # PyTorch model
         self.model = model.eval()
 
     def _apply(self, fn):
         # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
         self = super()._apply(fn)
-        m = self.model.model[-1]  # Detect()
-        m.stride = fn(m.stride)
-        m.grid = list(map(fn, m.grid))
-        if isinstance(m.anchor_grid, list):
-            m.anchor_grid = list(map(fn, m.anchor_grid))
+        if self.pt:
+            m = self.model.model.model[-1] if self.dmb else self.model.model[-1]  # Detect()
+            m.stride = fn(m.stride)
+            m.grid = list(map(fn, m.grid))
+            if isinstance(m.anchor_grid, list):
+                m.anchor_grid = list(map(fn, m.anchor_grid))
         return self
 
     @torch.no_grad()
@@ -468,10 +471,15 @@ class AutoShape(nn.Module):
         #   multiple:        = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
 
         t = [time_sync()]
-        p = next(self.model.parameters())  # for device and type
+        if self.pt:
+            p = next(self.model.model.parameters() if self.dmb else self.model.parameters())  # for device and type
+            device, tp = p.device, p.dtype
+        else:
+            device, tp = torch.device('cpu'), torch.float
+
         if isinstance(imgs, torch.Tensor):  # torch
-            with amp.autocast(enabled=p.device.type != 'cpu'):
-                return self.model(imgs.to(p.device).type_as(p), augment, profile)  # inference
+            with amp.autocast(enabled=device.type != 'cpu'):
+                return self.model(imgs.to(device).type(tp), augment, profile)  # inference
 
         # Pre-process
         n, imgs = (len(imgs), imgs) if isinstance(imgs, list) else (1, [imgs])  # number of images, list of images
@@ -492,21 +500,21 @@ class AutoShape(nn.Module):
             g = (size / max(s))  # gain
             shape1.append([y * g for y in s])
             imgs[i] = im if im.data.contiguous else np.ascontiguousarray(im)  # update
-        shape1 = [make_divisible(x, int(self.stride.max())) for x in np.stack(shape1, 0).max(0)]  # inference shape
+        shape1 = [make_divisible(x, self.stride) for x in np.stack(shape1, 0).max(0)]  # inference shape
         x = [letterbox(im, new_shape=shape1, auto=False)[0] for im in imgs]  # pad
         x = np.stack(x, 0) if n > 1 else x[0][None]  # stack
         x = np.ascontiguousarray(x.transpose((0, 3, 1, 2)))  # BHWC to BCHW
-        x = torch.from_numpy(x).to(p.device).type_as(p) / 255  # uint8 to fp16/32
+        x = torch.from_numpy(x).to(device).type(tp) / 255  # uint8 to fp16/32
         t.append(time_sync())
 
-        with amp.autocast(enabled=p.device.type != 'cpu'):
+        with amp.autocast(enabled=device.type != 'cpu'):
             # Inference
-            y = self.model(x, augment, profile)[0]  # forward
+            y = self.model(x, augment, profile)  # forward
             t.append(time_sync())
 
             # Post-process
-            y = non_max_suppression(y, self.conf, iou_thres=self.iou, classes=self.classes, agnostic=self.agnostic,
-                                    multi_label=self.multi_label, max_det=self.max_det)  # NMS
+            y = non_max_suppression(y if self.dmb else y[0], self.conf, iou_thres=self.iou, classes=self.classes,
+                                    agnostic=self.agnostic, multi_label=self.multi_label, max_det=self.max_det)  # NMS
             for i in range(n):
                 scale_coords(shape1, y[i][:, :4], shape0[i])
 
