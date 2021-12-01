@@ -39,7 +39,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
 
     name = Path(name)
     path = name.with_suffix('.pt') if name.suffix == '' else name  # checkpoint path
-    try:
+    if True:
         device = select_device(('0' if torch.cuda.is_available() else 'cpu') if device is None else device)
 
         if pretrained and channels == 3 and classes == 80:
@@ -64,10 +64,10 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
         print(p.device, p.type)
         return model
 
-    except Exception as e:
-        help_url = 'https://github.com/ultralytics/yolov5/issues/36'
-        s = 'Cache may be out of date, try `force_reload=True`. See %s for help.' % help_url
-        raise Exception(s) from e
+    #except Exception as e:
+    #    help_url = 'https://github.com/ultralytics/yolov5/issues/36'
+    #    s = 'Cache may be out of date, try `force_reload=True`. See %s for help.' % help_url
+    #    raise Exception(s) from e
 
 
 def custom(path='path/to/model.pt', autoshape=True, verbose=True, device=None):
