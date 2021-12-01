@@ -39,7 +39,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
 
     name = Path(name)
     path = name.with_suffix('.pt') if name.suffix == '' else name  # checkpoint path
-    try:
+    If True:
         device = select_device(('0' if torch.cuda.is_available() else 'cpu') if device is None else device)
 
         if pretrained and channels == 3 and classes == 80:
@@ -58,10 +58,10 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
             model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
         return model.to(device)
 
-    except Exception as e:
-        help_url = 'https://github.com/ultralytics/yolov5/issues/36'
-        s = 'Cache may be out of date, try `force_reload=True`. See %s for help.' % help_url
-        raise Exception(s) from e
+    # except Exception as e:
+    #     help_url = 'https://github.com/ultralytics/yolov5/issues/36'
+    #     s = 'Cache may be out of date, try `force_reload=True`. See %s for help.' % help_url
+    #     raise Exception(s) from e
 
 
 def custom(path='path/to/model.pt', autoshape=True, verbose=True, device=None):
@@ -120,7 +120,7 @@ def yolov5x6(pretrained=True, channels=3, classes=80, autoshape=True, verbose=Tr
 
 
 if __name__ == '__main__':
-    model = _create(name='yolov5s', pretrained=True, channels=3, classes=80, autoshape=True, verbose=True)  # pretrained
+    model = _create(name='yolov5s.onnx', pretrained=True, channels=3, classes=80, autoshape=True, verbose=True)  # pretrained
     # model = custom(path='path/to/model.pt')  # custom
 
     # Verify inference
