@@ -56,7 +56,13 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                     model.names = ckpt['model'].names  # set class names attribute
         if autoshape:
             model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
-        return model.to(device)
+
+        p = next(model.model.parameters())  # for device and type
+        print(p.device, p.type)
+        model = model.to(device)
+        p = next(model.model.parameters())  # for device and type
+        print(p.device, p.type)
+        return model
 
     except Exception as e:
         help_url = 'https://github.com/ultralytics/yolov5/issues/36'
