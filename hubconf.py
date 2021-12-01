@@ -57,11 +57,11 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
         if autoshape:
             model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
 
-        p = next(model.model.parameters())  # for device and type
-        print(p.device, p.type)
+        p = next(model.model.model.parameters())  # for device and type
+        print(p.device, p.dtype)
         model = model.to(device)
-        p = next(model.model.parameters())  # for device and type
-        print(p.device, p.type)
+        p = next(model.model.model.parameters())  # for device and type
+        print(p.device, p.dtype)
         return model
 
     #except Exception as e:
