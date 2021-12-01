@@ -27,7 +27,7 @@ try:
         wandb_login_success = wandb.login(timeout=30)
         if not wandb_login_success:
             wandb = None
-except (ImportError, AssertionError):
+except (ImportError, AssertionError, wandb.errors.UsageError):
     wandb = None
 
 
