@@ -289,6 +289,8 @@ class DetectMultiBackend(nn.Module):
         #   TensorRT:               *.engine
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
+        # from models.experimental import attempt_download
+        # attempt_download(w)
         suffix, suffixes = Path(w).suffix.lower(), ['.pt', '.onnx', '.engine', '.tflite', '.pb', '', '.mlmodel']
         check_suffix(w, suffixes)  # check weights have acceptable suffix
         pt, onnx, engine, tflite, pb, saved_model, coreml = (suffix == x for x in suffixes)  # backend booleans
@@ -308,6 +310,7 @@ class DetectMultiBackend(nn.Module):
             stride = int(model.stride.max())  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
         elif coreml:  # CoreML *.mlmodel
+            LOGGER.info(f'Loading {w} for CoreML inference...')
             import coremltools as ct
             model = ct.models.MLModel(w)
         elif dnn:  # ONNX OpenCV DNN
@@ -433,8 +436,9 @@ class AutoShape(nn.Module):
     # YOLOv5 input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS
     conf = 0.25  # NMS confidence threshold
     iou = 0.45  # NMS IoU threshold
-    classes = None  # (optional list) filter by class, i.e. = [0, 15, 16] for COCO persons, cats and dogs
+    agnostic = False  # NMS class-agnostic
     multi_label = False  # NMS multiple labels per box
+    classes = None  # (optional list) filter by class, i.e. = [0, 15, 16] for COCO persons, cats and dogs
     max_det = 1000  # maximum number of detections per image
 
     def __init__(self, model):
@@ -502,7 +506,7 @@ class AutoShape(nn.Module):
             t.append(time_sync())
 
             # Post-process
-            y = non_max_suppression(y, self.conf, iou_thres=self.iou, classes=self.classes,
+            y = non_max_suppression(y, self.conf, iou_thres=self.iou, classes=self.classes, agnostic=self.agnostic,
                                     multi_label=self.multi_label, max_det=self.max_det)  # NMS
             for i in range(n):
                 scale_coords(shape1, y[i][:, :4], shape0[i])
