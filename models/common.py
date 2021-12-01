@@ -477,6 +477,8 @@ class AutoShape(nn.Module):
         else:
             device, tp = torch.device('cpu'), torch.float
 
+        print(self.pt, self.device, self.tp)
+
         if isinstance(imgs, torch.Tensor):  # torch
             with amp.autocast(enabled=device.type != 'cpu'):
                 return self.model(imgs.to(device).type(tp), augment, profile)  # inference
