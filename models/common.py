@@ -477,7 +477,7 @@ class AutoShape(nn.Module):
         else:
             device, tp = torch.device('cpu'), torch.float
 
-        print(self.pt, self.device, self.tp)
+        print(self.pt, device, tp)
 
         if isinstance(imgs, torch.Tensor):  # torch
             with amp.autocast(enabled=device.type != 'cpu'):
