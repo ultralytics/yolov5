@@ -473,7 +473,7 @@ class AutoShape(nn.Module):
 
         t = [time_sync()]
         if self.pt:
-            p = next(self.model.model.parameters() if self.dmb else self.model.parameters())  # for device and type
+            p = next(self.model.parameters())  # for device and type
             device, tp = p.device, p.dtype
         else:
             device, tp = torch.device('cpu'), torch.float
