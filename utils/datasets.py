@@ -337,7 +337,7 @@ class LoadStreams:
                     self.imgs[i] = im
                 else:
                     LOGGER.warning('WARNING: Video stream unresponsive, please check your IP camera connection.')
-                    self.imgs[i] *= 0
+                    self.imgs[i] = np.zeros_like(self.imgs[i])
                     cap.open(stream)  # re-open stream if signal was lost
             time.sleep(1 / self.fps[i])  # wait time
 
