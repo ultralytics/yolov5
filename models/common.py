@@ -472,15 +472,10 @@ class AutoShape(nn.Module):
         #   multiple:        = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
 
         t = [time_sync()]
-        if self.pt:
-            p = next(self.model.parameters())  # for device and type
-            device, tp = p.device, p.dtype
-        else:
-            device, tp = torch.device('cpu'), torch.float
-
+        p = next(self.model.parameters()) if self.pt else torch.zeros(1)  # for device and type
         if isinstance(imgs, torch.Tensor):  # torch
-            with amp.autocast(enabled=device.type != 'cpu'):
-                return self.model(imgs.to(device).type(tp), augment, profile)  # inference
+            with amp.autocast(enabled=p.device.type != 'cpu'):
+                return self.model(imgs.to(p.device).type_as(p), augment, profile)  # inference
 
         # Pre-process
         n, imgs = (len(imgs), imgs) if isinstance(imgs, list) else (1, [imgs])  # number of images, list of images
@@ -505,10 +500,10 @@ class AutoShape(nn.Module):
         x = [letterbox(im, new_shape=shape1, auto=False)[0] for im in imgs]  # pad
         x = np.stack(x, 0) if n > 1 else x[0][None]  # stack
         x = np.ascontiguousarray(x.transpose((0, 3, 1, 2)))  # BHWC to BCHW
-        x = torch.from_numpy(x).to(device).type(tp) / 255  # uint8 to fp16/32
+        x = torch.from_numpy(x).to(p.device).type_as(p) / 255  # uint8 to fp16/32
         t.append(time_sync())
 
-        with amp.autocast(enabled=device.type != 'cpu'):
+        with amp.autocast(enabled=p.device.type != 'cpu'):
             # Inference
             y = self.model(x, augment, profile)  # forward
             t.append(time_sync())
