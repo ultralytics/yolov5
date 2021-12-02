@@ -279,7 +279,7 @@ class DetectMultiBackend(nn.Module):
     def __init__(self, weights='yolov5s.pt', device=None, dnn=False):
         # Usage:
         #   PyTorch:      weights = *.pt
-        #   TorchScript:            *.torchscript.pt
+        #   TorchScript:            *.torchscript
         #   CoreML:                 *.mlmodel
         #   TensorFlow:             *_saved_model
         #   TensorFlow:             *.pb
@@ -291,10 +291,10 @@ class DetectMultiBackend(nn.Module):
 
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
-        suffix, suffixes = Path(w).suffix.lower(), ['.pt', '.onnx', '.engine', '.tflite', '.pb', '', '.mlmodel']
+        suffix = Path(w).suffix.lower()
+        suffixes = ['.pt', '.torchscript', '.onnx', '.engine', '.tflite', '.pb', '', '.mlmodel']
         check_suffix(w, suffixes)  # check weights have acceptable suffix
-        pt, onnx, engine, tflite, pb, saved_model, coreml = (suffix == x for x in suffixes)  # backend booleans
-        jit = pt and 'torchscript' in w.lower()
+        pt, jit, onnx, engine, tflite, pb, saved_model, coreml = (suffix == x for x in suffixes)  # backend booleans
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
         attempt_download(w)  # download if not local
 
