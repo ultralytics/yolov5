@@ -5,7 +5,7 @@ Export a YOLOv5 PyTorch model to other formats. TensorFlow exports authored by h
 Format                  | Example                   | Export `include=(...)` argument
 ---                     | ---                       | ---
 PyTorch                 | yolov5s.pt                | -
-TorchScript             | yolov5s.torchscript.pt    | 'torchscript'
+TorchScript             | yolov5s.torchscript       | 'torchscript'
 ONNX                    | yolov5s.onnx              | 'onnx'
 CoreML                  | yolov5s.mlmodel           | 'coreml'
 TensorFlow SavedModel   | yolov5s_saved_model/      | 'saved_model'
@@ -19,7 +19,7 @@ Usage:
 
 Inference:
     $ python path/to/detect.py --weights yolov5s.pt
-                                         yolov5s.torchscript.pt
+                                         yolov5s.torchscript
                                          yolov5s.onnx
                                          yolov5s.mlmodel  (under development)
                                          yolov5s_saved_model
@@ -66,7 +66,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
     # YOLOv5 TorchScript model export
     try:
         LOGGER.info(f'\n{prefix} starting export with torch {torch.__version__}...')
-        f = file.with_suffix('.torchscript.pt')
+        f = file.with_suffix('.torchscript')
 
         ts = torch.jit.trace(model, im, strict=False)
         d = {"shape": im.shape, "stride": int(max(model.stride)), "names": model.names}
@@ -276,7 +276,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         assert onnx.exists(), f'failed to export ONNX file: {onnx}'
 
         LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
-        f = str(file).replace('.pt', '.engine')  # TensorRT engine file
+        f = file.with_suffix('.engine')  # TensorRT engine file
         logger = trt.Logger(trt.Logger.INFO)
         if verbose:
             logger.min_severity = trt.Logger.Severity.VERBOSE
@@ -309,6 +309,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
 
     except Exception as e:
         LOGGER.info(f'\n{prefix} export failure: {e}')
+
 
 @torch.no_grad()
 def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'

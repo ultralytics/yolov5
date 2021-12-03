@@ -7,7 +7,7 @@ import json
 import math
 import platform
 import warnings
-from collections import namedtuple
+from collections import OrderedDict, namedtuple
 from copy import copy
 from pathlib import Path
 
@@ -279,7 +279,7 @@ class DetectMultiBackend(nn.Module):
     def __init__(self, weights='yolov5s.pt', device=None, dnn=True):
         # Usage:
         #   PyTorch:      weights = *.pt
-        #   TorchScript:            *.torchscript.pt
+        #   TorchScript:            *.torchscript
         #   CoreML:                 *.mlmodel
         #   TensorFlow:             *_saved_model
         #   TensorFlow:             *.pb
@@ -289,10 +289,10 @@ class DetectMultiBackend(nn.Module):
         #   TensorRT:               *.engine
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
-        suffix, suffixes = Path(w).suffix.lower(), ['.pt', '.onnx', '.engine', '.tflite', '.pb', '', '.mlmodel']
+        suffix = Path(w).suffix.lower()
+        suffixes = ['.pt', '.torchscript', '.onnx', '.engine', '.tflite', '.pb', '', '.mlmodel']
         check_suffix(w, suffixes)  # check weights have acceptable suffix
-        pt, onnx, engine, tflite, pb, saved_model, coreml = (suffix == x for x in suffixes)  # backend booleans
-        jit = pt and 'torchscript' in w.lower()
+        pt, jit, onnx, engine, tflite, pb, saved_model, coreml = (suffix == x for x in suffixes)  # backend booleans
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
 
         if jit:  # TorchScript
@@ -304,10 +304,10 @@ class DetectMultiBackend(nn.Module):
                 stride, names = int(d['stride']), d['names']
         elif pt:  # PyTorch
             from models.experimental import attempt_load  # scoped to avoid circular import
-            model = torch.jit.load(w) if 'torchscript' in w else attempt_load(weights, map_location=device)
+            model = attempt_load(weights, map_location=device)
             stride = int(model.stride.max())  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
-        elif coreml:  # CoreML *.mlmodel
+        elif coreml:  # CoreML
             import coremltools as ct
             model = ct.models.MLModel(w)
         elif dnn:  # ONNX OpenCV DNN
@@ -326,14 +326,14 @@ class DetectMultiBackend(nn.Module):
             logger = trt.Logger(trt.Logger.INFO)
             with open(w, 'rb') as f, trt.Runtime(logger) as runtime:
                 model = runtime.deserialize_cuda_engine(f.read())
-            bindings = dict()
+            bindings = OrderedDict()
             for index in range(model.num_bindings):
                 name = model.get_binding_name(index)
                 dtype = trt.nptype(model.get_binding_dtype(index))
                 shape = tuple(model.get_binding_shape(index))
                 data = torch.from_numpy(np.empty(shape, dtype=np.dtype(dtype))).to(device)
                 bindings[name] = Binding(name, dtype, shape, data, int(data.data_ptr()))
-            binding_addrs = {n: d.ptr for n, d in bindings.items()}
+            binding_addrs = OrderedDict((n, d.ptr) for n, d in bindings.items())
             context = model.create_execution_context()
             batch_size = bindings['images'].shape[0]
         else:  # TensorFlow model (TFLite, pb, saved_model)
