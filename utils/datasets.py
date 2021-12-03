@@ -158,7 +158,7 @@ class _RepeatSampler:
 
 class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
-    def __init__(self, path, img_size=640, stride=32, auto=True):
+    def __init__(self, path, img_size=640, stride=32, auto=True, video_start_idx=0):
         p = str(Path(path).resolve())  # os-agnostic absolute path
         if '*' in p:
             files = sorted(glob.glob(p, recursive=True))  # glob
@@ -180,20 +180,27 @@ class LoadImages:
         self.video_flag = [False] * ni + [True] * nv
         self.mode = 'image'
         self.auto = auto
+        self.video_start_idx = video_start_idx
         if any(videos):
-            self.new_video(videos[0])  # new video
+            try:
+                self.new_video(videos[self.video_start_idx])  # new video
+            except:
+                self.new_video(videos[0])  # new video
         else:
             self.cap = None
         assert self.nf > 0, f'No images or videos found in {p}. ' \
                             f'Supported formats are:\nimages: {IMG_FORMATS}\nvideos: {VID_FORMATS}'
 
     def __iter__(self):
-        self.count = 0
+        self.count = self.video_start_idx
+        # self.count = 0
         return self
 
     def __next__(self):
         if self.count == self.nf:
             raise StopIteration
+        while self.count < self.video_start_idx:
+            self.count += 1
         path = self.files[self.count]
 
         if self.video_flag[self.count]:
