@@ -2,17 +2,17 @@
 """
 Export a YOLOv5 PyTorch model to other formats. TensorFlow exports authored by https://github.com/zldrobit
 
-Format                  | Example                   | Export `include=(...)` argument
+Format                  | Example                   | `--include ...` argument
 ---                     | ---                       | ---
 PyTorch                 | yolov5s.pt                | -
-TorchScript             | yolov5s.torchscript       | 'torchscript'
-ONNX                    | yolov5s.onnx              | 'onnx'
-CoreML                  | yolov5s.mlmodel           | 'coreml'
-TensorFlow SavedModel   | yolov5s_saved_model/      | 'saved_model'
-TensorFlow GraphDef     | yolov5s.pb                | 'pb'
-TensorFlow Lite         | yolov5s.tflite            | 'tflite'
-TensorFlow.js           | yolov5s_web_model/        | 'tfjs'
-TensorRT                | yolov5s.engine            | 'engine'
+TorchScript             | yolov5s.torchscript       | `torchscript`
+ONNX                    | yolov5s.onnx              | `onnx`
+CoreML                  | yolov5s.mlmodel           | `coreml`
+TensorFlow SavedModel   | yolov5s_saved_model/      | `saved_model`
+TensorFlow GraphDef     | yolov5s.pb                | `pb`
+TensorFlow Lite         | yolov5s.tflite            | `tflite`
+TensorFlow.js           | yolov5s_web_model/        | `tfjs`
+TensorRT                | yolov5s.engine            | `engine`
 
 Usage:
     $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx coreml saved_model pb tflite tfjs
