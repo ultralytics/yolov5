@@ -148,7 +148,7 @@ $ python train.py --data coco.yaml --cfg yolov5s.yaml --weights '' --batch-size 
 * [Roboflow for Datasets, Labeling, and Active Learning](https://github.com/ultralytics/yolov5/issues/4975)&nbsp; 🌟 NEW
 * [Multi-GPU Training](https://github.com/ultralytics/yolov5/issues/475)
 * [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)&nbsp; ⭐ NEW
-* [TorchScript, ONNX, CoreML Export](https://github.com/ultralytics/yolov5/issues/251) 🚀
+* [TFLite, ONNX, CoreML, TensorRT Export](https://github.com/ultralytics/yolov5/issues/251) 🚀
 * [Test-Time Augmentation (TTA)](https://github.com/ultralytics/yolov5/issues/303)
 * [Model Ensembling](https://github.com/ultralytics/yolov5/issues/318)
 * [Model Pruning/Sparsity](https://github.com/ultralytics/yolov5/issues/304)
