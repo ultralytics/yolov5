@@ -106,8 +106,8 @@ def train():
     # Model
     if opt.model.startswith('yolov5'):
         # YOLOv5 Classifier
-        model = torch.hub.load('ultralytics/yolov5', opt.model, pretrained=True, autoshape=False)
-        model.model = model.model[:8]
+        model = torch.hub.load('ultralytics/yolov5', opt.model, pretrained=True, autoshape=False).model
+        model.model = model.model[:8]  # backbone
         m = model.model[-1]  # last layer
         ch = m.conv.in_channels if hasattr(m, 'conv') else sum([x.in_channels for x in m.m])  # ch into module
         c = Classify(ch, nc)  # Classify()
