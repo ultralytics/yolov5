@@ -140,7 +140,7 @@ def train():
     # Train
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()  # loss function
-    best_fitness = 0.
+    best_fitness = 0.0
     # scaler = amp.GradScaler(enabled=cuda)
     print(f'Image sizes {imgsz} train, {imgsz} test\n'
           f'Using {nw} dataloader workers\n'
@@ -148,10 +148,10 @@ def train():
           f'Starting training for {epochs} epochs...\n\n'
           f"{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'accuracy':12s}")
     for epoch in range(epochs):  # loop over the dataset multiple times
-        mloss = 0.  # mean loss
+        mloss = 0.0  # mean loss
         model.train()
-        pbar = tqdm(enumerate(trainloader), total=len(trainloader))  # progress bar
-        for i, (images, labels) in pbar:
+        pbar = tqdm(enumerate(trainloader), total=len(trainloader), bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
+        for i, (images, labels) in pbar:  # progress bar
             images, labels = resize(images.to(device)), labels.to(device)
 
             # Forward
