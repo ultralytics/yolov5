@@ -115,6 +115,10 @@ $ python detect.py --source 0  # webcam
                             path/*.jpg  # glob
                             'https://youtu.be/Zgi9g1ksQHc'  # YouTube
                             'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
+
+
+$ python path/to/detect.py --weights yolov5s.pt --source  path/*.mp4 or avi  # directory
+                                                 --start your_video_start_index
 ```
 
 </details>
