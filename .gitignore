@@ -48,6 +48,7 @@ VOC/
 *.pt
 *.pb
 *.onnx
+*.engine
 *.mlmodel
 *.torchscript
 *.tflite

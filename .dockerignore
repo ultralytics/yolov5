@@ -15,6 +15,7 @@ data/samples/*
 **/*.pt
 **/*.pth
 **/*.onnx
+**/*.engine
 **/*.mlmodel
 **/*.torchscript
 **/*.torchscript.pt
