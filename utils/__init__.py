@@ -19,7 +19,7 @@ def notebook_init(verbose=True):
     from IPython import display  # to display images and clear console output
 
     if is_colab():
-        shutil.rmtree('sample_data', ignore_errors=True)  # remove colab /sample_data directory
+        shutil.rmtree('/content/sample_data', ignore_errors=True)  # remove colab /sample_data directory
 
     if verbose:
         # System info
