@@ -138,12 +138,14 @@ def train():
     # Scheduler
     lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) + lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
+    # scheduler = lr_scheduler.OneCycleLR(optimizer, max_lr=lr0, total_steps=epochs, pct_start=0.1,
+    #                                    final_div_factor=1 / 25 / lrf)
 
     # Train
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()  # loss function
     best_fitness = 0.0
-    scaler = amp.GradScaler(enabled=cuda)
+    # scaler = amp.GradScaler(enabled=cuda)
     print(f'Image sizes {imgsz} train, {imgsz} test\n'
           f'Using {nw} dataloader workers\n'
           f'Logging results to {save_dir}\n'
@@ -157,11 +159,11 @@ def train():
             images, labels = resize(images.to(device)), labels.to(device)
 
             # Forward
-            with amp.autocast(enabled=cuda):
+            with amp.autocast(enabled=False):  # stability issues when enabled
                 loss = criterion(model(images), labels)
 
             # Backward
-            scaler.scale(loss).backward()  # loss.backward()
+            loss.backward()  # scaler.scale(loss).backward()
 
             # Optimize
             optimizer.step()  # scaler.step(optimizer); scaler.update()
