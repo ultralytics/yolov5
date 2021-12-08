@@ -322,7 +322,7 @@ class DetectMultiBackend(nn.Module):
             LOGGER.info(f'Loading {w} for ONNX Runtime inference...')
             check_requirements(('onnx', 'onnxruntime-gpu' if torch.cuda.is_available() else 'onnxruntime'))
             import onnxruntime
-            session = onnxruntime.InferenceSession(w, None)
+            session = onnxruntime.InferenceSession(w, providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
         elif engine:  # TensorRT
             LOGGER.info(f'Loading {w} for TensorRT inference...')
             import tensorrt as trt  # https://developer.nvidia.com/nvidia-tensorrt-download
