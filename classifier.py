@@ -45,7 +45,7 @@ import torchvision.transforms as T
 from torch.cuda import amp
 from tqdm import tqdm
 
-from models.common import Classify
+from models.common import Classify, DetectMultiBackend
 from utils.general import set_logging, check_file, increment_path, check_git_status, check_requirements
 from utils.torch_utils import model_info, select_device, is_parallel
 
@@ -106,7 +106,9 @@ def train():
     # Model
     if opt.model.startswith('yolov5'):
         # YOLOv5 Classifier
-        model = torch.hub.load('ultralytics/yolov5', opt.model, pretrained=True, autoshape=False).model
+        model = torch.hub.load('ultralytics/yolov5', opt.model, pretrained=True, autoshape=False)
+        if isinstance(model, DetectMultiBackend):
+            model = model.model  # unwrap DetectMultiBackend
         model.model = model.model[:8]  # backbone
         m = model.model[-1]  # last layer
         ch = m.conv.in_channels if hasattr(m, 'conv') else sum([x.in_channels for x in m.m])  # ch into module
