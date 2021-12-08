@@ -186,6 +186,7 @@ class WandbLogger():
                 self.setup_training(opt)
 
             if self.job_type == 'Dataset Creation':
+                self.wandb_run.config.update({"upload_dataset": True})
                 self.data_dict = self.check_and_upload_dataset(opt)
 
     def check_and_upload_dataset(self, opt):
