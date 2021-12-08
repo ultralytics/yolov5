@@ -10,6 +10,7 @@ def notebook_init(verbose=True):
 
     import os
     import shutil
+
     from utils.general import check_requirements, emojis, is_colab
     from utils.torch_utils import select_device  # imports
 
