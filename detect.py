@@ -133,7 +133,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
             p = Path(p)  # to Path
-             if multi_stream:
+            if multi_stream:
                 save_path = str(save_dir / str(i))  # im.jpg
                 txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
             else:
