@@ -325,6 +325,8 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         int8=False,  # CoreML/TF INT8 quantization
         dynamic=False,  # ONNX/TF: dynamic axes
         simplify=False,  # ONNX: simplify model
+        nms=False,  # TF: add NMS to model
+        agnostic_nms=False,  # TF: add agnostic NMS to model
         opset=12,  # ONNX: opset version
         verbose=False,  # TensorRT: verbose log
         workspace=4,  # TensorRT: workspace size (GB)
@@ -381,7 +383,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     if any(tf_exports):
         pb, tflite, tfjs = tf_exports[1:]
         assert not (tflite and tfjs), 'TFLite and TF.js models must be exported separately, please pass only one type.'
-        model = export_saved_model(model, im, file, dynamic, tf_nms=tfjs, agnostic_nms=tfjs,
+        model = export_saved_model(model, im, file, dynamic, tf_nms=nms or tfjs, agnostic_nms=agnostic_nms or tfjs,
                                    topk_per_class=topk_per_class, topk_all=topk_all, conf_thres=conf_thres,
                                    iou_thres=iou_thres)  # keras model
         if pb or tfjs:  # pb prerequisite to tfjs
@@ -411,6 +413,8 @@ def parse_opt():
     parser.add_argument('--int8', action='store_true', help='CoreML/TF INT8 quantization')
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TF: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
+    parser.add_argument('--nms', action='store_true', help='TF: add NMS to model')
+    parser.add_argument('--agnostic-nms', action='store_true', help='TF: add agnostic NMS to model')
     parser.add_argument('--opset', type=int, default=14, help='ONNX: opset version')
     parser.add_argument('--verbose', action='store_true', help='TensorRT: verbose log')
     parser.add_argument('--workspace', type=int, default=4, help='TensorRT: workspace size (GB)')
