@@ -294,7 +294,6 @@ class DetectMultiBackend(nn.Module):
         suffix, suffixes = Path(w).suffix.lower(), ['.pt', '.onnx', '.engine', '.tflite', '.pb', '', '.mlmodel']
         check_suffix(w, suffixes)  # check weights have acceptable suffix
         pt, onnx, engine, tflite, pb, saved_model, coreml = (suffix == x for x in suffixes)  # backend booleans
-        edgetpu = False
         jit = pt and 'torchscript' in w.lower()
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
 
@@ -367,22 +366,11 @@ class DetectMultiBackend(nn.Module):
             elif tflite:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
                 if 'edgetpu' in w.lower():
                     LOGGER.info(f'Loading {w} for TensorFlow Lite Edge TPU inference...')
-                    edgetpu = True
                     import tflite_runtime.interpreter as tfli
                     delegate = {'Linux': 'libedgetpu.so.1',  # install https://coral.ai/software/#edgetpu-runtime
                                 'Darwin': 'libedgetpu.1.dylib',
                                 'Windows': 'edgetpu.dll'}[platform.system()]
                     interpreter = tfli.Interpreter(model_path=w, experimental_delegates=[tfli.load_delegate(delegate)])
-                    yaml_file = Path(cfg).name
-                    with open(cfg) as f:
-                        cfg = yaml.load(f, Loader=yaml.FullLoader)
-                    anchors = cfg['anchors']
-                    nl = len(anchors)
-                    nc = cfg['nc']
-                    no = nc + 5
-                    grid = [torch.zeros(1)] * nl  # init grid
-                    a = torch.tensor(anchors).float().view(nl, -1, 2).to(device)
-                    anchor_grid = a.clone().view(nl, 1, -1, 1, 2)  # shape(nl,1,na,1,2)
                 else:
                     LOGGER.info(f'Loading {w} for TensorFlow Lite inference...')
                     import tensorflow as tf
@@ -390,8 +378,6 @@ class DetectMultiBackend(nn.Module):
                 interpreter.allocate_tensors()  # allocate
                 input_details = interpreter.get_input_details()  # inputs
                 output_details = interpreter.get_output_details()  # outputs
-                if 'edgetpu' in w.lower():
-                    output_indices = np.argsort([output_details[i]['name'] for i in range(nl)])
         self.__dict__.update(locals())  # assign all variables to self
 
     def forward(self, im, augment=False, visualize=False, val=False):
@@ -426,7 +412,7 @@ class DetectMultiBackend(nn.Module):
                 y = self.frozen_func(x=self.tf.constant(im)).numpy()
             elif self.saved_model:
                 y = self.model(im, training=False).numpy()
-            elif self.tflite and not self.edgetpu:
+            elif self.tflite:
                 input, output = self.input_details[0], self.output_details[0]
                 int8 = input['dtype'] == np.uint8  # is TFLite quantized uint8 model
                 if int8:
@@ -438,43 +424,11 @@ class DetectMultiBackend(nn.Module):
                 if int8:
                     scale, zero_point = output['quantization']
                     y = (y.astype(np.float32) - zero_point) * scale  # re-scale
-            elif self.edgetpu:
-                input, outputs = self.input_details[0], self.output_details
-                _, *imgsz, _ = input['shape']
-                scale, zero_point = input['quantization']
-                im = (im / scale + zero_point).astype(np.uint8)  # de-scale
-                self.interpreter.set_tensor(input['index'], im)
-                self.interpreter.invoke()
-                x = [torch.tensor(self.interpreter.get_tensor(outputs[self.output_indices[i]]['index']), device=self.device)
-                     for i in range(self.nl)]
-                for i in range(self.nl):   # re-scale
-                    scale, zero_point = outputs[self.output_indices[i]]['quantization']
-                    x[i] = x[i].float()
-                    x[i] = (x[i] - zero_point) * scale
+            y[..., 0] *= w  # x
+            y[..., 1] *= h  # y
+            y[..., 2] *= w  # w
+            y[..., 3] *= h  # h
 
-                def _make_grid(nx=20, ny=20):
-                    yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
-                    return torch.stack((xv, yv), 2).view((1, 1, ny * nx, 2)).float()
-
-                z = []  # inference output
-                for i in range(self.nl):  # reconstruct bounding boxes
-                    _, _, ny_nx, _ = x[i].shape
-                    r = imgsz[0] / imgsz[1]
-                    nx = int(np.sqrt(ny_nx / r))
-                    ny = int(r * nx)
-                    self.grid[i] = _make_grid(nx, ny).to(x[i].device)
-                    stride = imgsz[0] // ny
-                    y = x[i].sigmoid()
-                    y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self.grid[i].to(x[i].device)) * stride  # xy
-                    y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
-                    z.append(y.view(-1, self.no))
-                y = torch.unsqueeze(torch.cat(z, 0), 0)
-
-            if not self.edgetpu:  # Edge TPU models have no xywh normalization
-                y[..., 0] *= w  # x
-                y[..., 1] *= h  # y
-                y[..., 2] *= w  # w
-                y[..., 3] *= h  # h
         y = torch.tensor(y) if isinstance(y, np.ndarray) else y
         return (y, []) if val else y
 

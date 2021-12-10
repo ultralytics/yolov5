@@ -2,25 +2,25 @@
 """
 Export a YOLOv5 PyTorch model to other formats. TensorFlow exports authored by https://github.com/zldrobit
 
-Format                  | Example                     | Export `include=(...)` argument
+Format                  | Example                     | `--include ...` argument
 ---                     | ---                         | ---
 PyTorch                 | yolov5s.pt                  | -
-TorchScript             | yolov5s.torchscript.pt      | 'torchscript'
-ONNX                    | yolov5s.onnx                | 'onnx'
-CoreML                  | yolov5s.mlmodel             | 'coreml'
-TensorFlow SavedModel   | yolov5s_saved_model/        | 'saved_model'
-TensorFlow GraphDef     | yolov5s.pb                  | 'pb'
-TensorFlow Lite         | yolov5s.tflite              | 'tflite'
-TensorFlow Edge TPU     | yolov5s-int8_edgetpu.tflite | 'edgetpu'
-TensorFlow.js           | yolov5s_web_model/          | 'tfjs'
-TensorRT                | yolov5s.engine              | 'engine'
+TorchScript             | yolov5s.torchscript         | `torchscript`
+ONNX                    | yolov5s.onnx                | `onnx`
+CoreML                  | yolov5s.mlmodel             | `coreml`
+TensorFlow SavedModel   | yolov5s_saved_model/        | `saved_model`
+TensorFlow GraphDef     | yolov5s.pb                  | `pb`
+TensorFlow Lite         | yolov5s.tflite              | `tflite`
+TensorFlow Edge TPU     | yolov5s-int8_edgetpu.tflite | `edgetpu`
+TensorFlow.js           | yolov5s_web_model/          | `tfjs`
+TensorRT                | yolov5s.engine              | `engine'
 
 Usage:
     $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx coreml saved_model pb tflite edgetpu tfjs
 
 Inference:
     $ python path/to/detect.py --weights yolov5s.pt
-                                         yolov5s.torchscript.pt
+                                         yolov5s.torchscript
                                          yolov5s.onnx
                                          yolov5s.mlmodel  (under development)
                                          yolov5s_saved_model
@@ -67,7 +67,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
     # YOLOv5 TorchScript model export
     try:
         LOGGER.info(f'\n{prefix} starting export with torch {torch.__version__}...')
-        f = file.with_suffix('.torchscript.pt')
+        f = file.with_suffix('.torchscript')
 
         ts = torch.jit.trace(model, im, strict=False)
         d = {"shape": im.shape, "stride": int(max(model.stride)), "names": model.names}
@@ -145,7 +145,7 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
     return ct_model
 
 
-def export_saved_model(model, im, file, dynamic, tf_detect=True,
+def export_saved_model(model, im, file, dynamic,
                        tf_nms=False, agnostic_nms=False, topk_per_class=100, topk_all=100, iou_thres=0.45,
                        conf_thres=0.25, prefix=colorstr('TensorFlow saved_model:')):
     # YOLOv5 TensorFlow saved_model export
@@ -161,13 +161,10 @@ def export_saved_model(model, im, file, dynamic, tf_detect=True,
         batch_size, ch, *imgsz = list(im.shape)  # BCHW
 
         tf_model = TFModel(cfg=model.yaml, model=model, nc=model.nc, imgsz=imgsz)
-        m = tf_model.model.layers[-1]
-        assert isinstance(m, TFDetect), "the last layer must be Detect"
-        m.training = not tf_detect  # setting training=True removes the detect layer
         im = tf.zeros((batch_size, *imgsz, 3))  # BHWC order for TensorFlow
-        y = tf_model.predict(im, tf_detect, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
+        y = tf_model.predict(im, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
         inputs = keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic else batch_size)
-        outputs = tf_model.predict(inputs, tf_detect, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
+        outputs = tf_model.predict(inputs, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
         keras_model = keras.Model(inputs=inputs, outputs=outputs)
         keras_model.trainable = False
         keras_model.summary()
@@ -243,7 +240,7 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
         f = str(file).replace('.pt', '-int8_edgetpu.tflite')
         f_tfl = str(file).replace('.pt', '-int8.tflite')  # TFLite model
 
-        cmd = f"edgetpu_compiler -s -a {f_tfl}"
+        cmd = f"edgetpu_compiler -s {f_tfl}"
         subprocess.run(cmd, shell=True, check=True)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -298,7 +295,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         assert onnx.exists(), f'failed to export ONNX file: {onnx}'
 
         LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
-        f = str(file).replace('.pt', '.engine')  # TensorRT engine file
+        f = file.with_suffix('.engine')  # TensorRT engine file
         logger = trt.Logger(trt.Logger.INFO)
         if verbose:
             logger.min_severity = trt.Logger.Severity.VERBOSE
@@ -332,6 +329,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
     except Exception as e:
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
+
 @torch.no_grad()
 def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         weights=ROOT / 'yolov5s.pt',  # weights path
@@ -346,7 +344,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         int8=False,  # CoreML/TF INT8 quantization
         dynamic=False,  # ONNX/TF: dynamic axes
         simplify=False,  # ONNX: simplify model
-        opset=12,  # ONNX: opset version
+        opset=14,  # ONNX: opset version
         verbose=False,  # TensorRT: verbose log
         workspace=4,  # TensorRT: workspace size (GB)
         topk_per_class=100,  # TF.js NMS: topk per class to keep
@@ -402,9 +400,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     if any(tf_exports):
         pb, tflite, edgetpu, tfjs = tf_exports[1:]
         assert not (tflite and tfjs), 'TFLite and TF.js models must be exported separately, please pass only one type.'
-        assert not (tflite and edgetpu), 'TFLite and Edge TPU models must be exported separately, please pass only one type.'
-        assert not (edgetpu and tfjs), 'Edge TPU and TF.js models must be exported separately, please pass only one type.'
-        model = export_saved_model(model, im, file, dynamic, tf_detect=not edgetpu, tf_nms=tfjs, agnostic_nms=tfjs,
+        model = export_saved_model(model, im, file, dynamic, tf_nms=tfjs, agnostic_nms=tfjs,
                                    topk_per_class=topk_per_class, topk_all=topk_all, conf_thres=conf_thres,
                                    iou_thres=iou_thres)  # keras model
         if pb or tfjs:  # pb prerequisite to tfjs
@@ -425,7 +421,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='weights path')
+    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640, 640], help='image (h, w)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
@@ -436,7 +432,7 @@ def parse_opt():
     parser.add_argument('--int8', action='store_true', help='CoreML/TF INT8 quantization')
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TF: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
-    parser.add_argument('--opset', type=int, default=13, help='ONNX: opset version')
+    parser.add_argument('--opset', type=int, default=14, help='ONNX: opset version')
     parser.add_argument('--verbose', action='store_true', help='TensorRT: verbose log')
     parser.add_argument('--workspace', type=int, default=4, help='TensorRT: workspace size (GB)')
     parser.add_argument('--topk-per-class', type=int, default=100, help='TF.js NMS: topk per class to keep')
@@ -452,7 +448,8 @@ def parse_opt():
 
 
 def main(opt):
-    run(**vars(opt))
+    for opt.weights in (opt.weights if isinstance(opt.weights, list) else [opt.weights]):
+        run(**vars(opt))
 
 
 if __name__ == "__main__":

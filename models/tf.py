@@ -337,8 +337,8 @@ class TFModel:
             self.yaml['nc'] = nc  # override yaml value
         self.model, self.savelist = parse_model(deepcopy(self.yaml), ch=[ch], model=model, imgsz=imgsz)
 
-    def predict(self, inputs, tf_detect=True, tf_nms=False, agnostic_nms=False, topk_per_class=100, topk_all=100,
-                iou_thres=0.45, conf_thres=0.25):
+    def predict(self, inputs, tf_nms=False, agnostic_nms=False, topk_per_class=100, topk_all=100, iou_thres=0.45,
+                conf_thres=0.25):
         y = []  # outputs
         x = inputs
         for i, m in enumerate(self.model.layers):
@@ -363,7 +363,7 @@ class TFModel:
                     boxes, scores, topk_per_class, topk_all, iou_thres, conf_thres, clip_boxes=False)
                 return nms, x[1]
 
-        return x[0] if tf_detect else x  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
+        return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
         # x = x[0][0]  # [x(1,6300,85), ...] to x(6300,85)
         # xywh = x[..., :4]  # x(6300,4) boxes
         # conf = x[..., 4:5]  # x(6300,1) confidences
