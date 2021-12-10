@@ -200,7 +200,7 @@ class LoadImages:
             # Read video
             self.mode = 'video'
             ret_val, img0 = self.cap.read()
-            if not ret_val:
+            while not ret_val:
                 self.count += 1
                 self.cap.release()
                 if self.count == self.nf:  # last video
@@ -337,7 +337,7 @@ class LoadStreams:
                     self.imgs[i] = im
                 else:
                     LOGGER.warning('WARNING: Video stream unresponsive, please check your IP camera connection.')
-                    self.imgs[i] *= 0
+                    self.imgs[i] = np.zeros_like(self.imgs[i])
                     cap.open(stream)  # re-open stream if signal was lost
             time.sleep(1 / self.fps[i])  # wait time
 
@@ -611,6 +611,7 @@ class LoadImagesAndLabels(Dataset):
 
             # Cutouts
             # labels = cutout(img, labels, p=0.5)
+            # nl = len(labels)  # update after cutout
 
         labels_out = torch.zeros((nl, 6))
         if nl:
@@ -974,7 +975,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
             im_height, im_width = im.shape[:2]
             r = max_dim / max(im_height, im_width)  # ratio
             if r < 1.0:  # image too large
-                im = cv2.resize(im, (int(im_width * r), int(im_height * r)), interpolation=cv2.INTER_LINEAR)
+                im = cv2.resize(im, (int(im_width * r), int(im_height * r)), interpolation=cv2.INTER_AREA)
             cv2.imwrite(str(f_new), im)
 
     zipped, data_dir, yaml_path = unzip(Path(path))
