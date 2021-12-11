@@ -52,13 +52,13 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import Classify, DetectMultiBackend
-from utils.general import download, check_file, increment_path, check_git_status, check_requirements
+from utils.general import NUM_THREADS, download, check_file, increment_path, check_git_status, check_requirements
 from utils.torch_utils import model_info, select_device, is_parallel
 
 
 def train():
     save_dir, data, bs, epochs, nw, imgsz = Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, \
-                                            min(os.cpu_count(), opt.workers), opt.img_size
+                                            min(NUM_THREADS, opt.workers), opt.img_size
 
     # Directories
     wdir = save_dir / 'weights'
@@ -253,7 +253,7 @@ if __name__ == '__main__':
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--workers', type=int, default=4, help='maximum number of dataloader workers')
+    parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
     parser.add_argument('--project', default='runs/train', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
