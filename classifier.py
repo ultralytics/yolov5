@@ -30,9 +30,9 @@ Usage-inference:
 """
 
 import argparse
-import logging
 import math
 import os
+import sys
 from copy import deepcopy
 from pathlib import Path
 
@@ -45,22 +45,15 @@ import torchvision.transforms as T
 from torch.cuda import amp
 from tqdm import tqdm
 
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
+
 from models.common import Classify, DetectMultiBackend
-from utils.general import set_logging, check_file, increment_path, check_git_status, check_requirements
+from utils.general import download, check_file, increment_path, check_git_status, check_requirements
 from utils.torch_utils import model_info, select_device, is_parallel
-
-# Settings
-logger = logging.getLogger(__name__)
-set_logging()
-
-
-# Show images
-def imshow(img):
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    plt.imshow(np.transpose((img / 2 + 0.5).numpy(), (1, 2, 0)))  # unnormalize
-    plt.savefig('images.jpg')
 
 
 def train():
@@ -73,11 +66,10 @@ def train():
     last, best = wdir / 'last.pt', wdir / 'best.pt'
 
     # Download Dataset
-    if not Path(f'../{data}').is_dir():
-        url, f = f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip', 'tmp.zip'
-        print(f'Downloading {url}...')
-        torch.hub.download_url_to_file(url, f)
-        os.system(f'unzip -q {f} -d ../ && rm {f}')  # unzip
+    data_dir = FILE.parents[1] / 'datasets' / data
+    if not data_dir.is_dir():
+        url = f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip'
+        download(url, dir=data_dir.parent)
 
     # Transforms
     trainform = T.Compose([T.RandomGrayscale(p=0.01),
@@ -90,9 +82,9 @@ def train():
     testform = T.Compose(trainform.transforms[-2:])
 
     # Dataloaders
-    trainset = torchvision.datasets.ImageFolder(root=f'../{data}/train', transform=trainform)
+    trainset = torchvision.datasets.ImageFolder(root=data_dir / 'train', transform=trainform)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=nw)
-    testset = torchvision.datasets.ImageFolder(root=f'../{data}/test', transform=testform)
+    testset = torchvision.datasets.ImageFolder(root=data_dir / 'test', transform=testform)
     testloader = torch.utils.data.DataLoader(testset, batch_size=bs, shuffle=False, num_workers=nw)
     names = trainset.classes
     nc = len(names)
@@ -238,6 +230,14 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
             print(f"{c:10s}{t.shape[0]:10s}{t.mean().item():10.5g}")
 
     return accuracy
+
+
+def imshow(img):
+    # Show images
+    import matplotlib.pyplot as plt
+    import numpy as np
+    plt.imshow(np.transpose((img / 2 + 0.5).numpy(), (1, 2, 0)))  # de-normalize
+    plt.savefig('images.jpg')
 
 
 if __name__ == '__main__':
