@@ -139,5 +139,6 @@ if __name__ == '__main__':
             np.zeros((320, 640, 3))]  # numpy
 
     results = model(imgs)  # batched inference
-    results.print()
-    results.save()
+    rl = results.tolist()
+
+    print(rl[0].pandas().xyxy[0])
