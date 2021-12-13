@@ -46,7 +46,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
             model = DetectMultiBackend(path, device=device)  # download/load FP32 model
             # model = models.experimental.attempt_load(path, map_location=device)  # download/load FP32 model
         else:
-            cfg = list((Path(__file__).parent / 'models').rglob(f'{path.name}.yaml'))[0]  # model.yaml path
+            cfg = list((Path(__file__).parent / 'models').rglob(f'{path.stem}.yaml'))[0]  # model.yaml path
             model = Model(cfg, channels, classes)  # create model
             if pretrained:
                 ckpt = torch.load(attempt_download(path), map_location=device)  # load
@@ -138,6 +138,6 @@ if __name__ == '__main__':
             Image.open('data/images/bus.jpg'),  # PIL
             np.zeros((320, 640, 3))]  # numpy
 
-    results = model(imgs)  # batched inference
+    results = model(imgs, size=320)  # batched inference
     results.print()
     results.save()
