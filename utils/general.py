@@ -11,6 +11,7 @@ import os
 import platform
 import random
 import re
+import shutil
 import signal
 import time
 import urllib
@@ -32,14 +33,15 @@ from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
 
 # Settings
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[1]  # YOLOv5 root directory
+NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
+
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
 np.set_printoptions(linewidth=320, formatter={'float_kind': '{:11.5g}'.format})  # format short g, %precision=5
 pd.options.display.max_columns = 10
 cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with PyTorch DataLoader)
-os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max threads
-
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[1]  # YOLOv5 root directory
+os.environ['NUMEXPR_MAX_THREADS'] = str(NUM_THREADS)  # NumExpr max threads
 
 
 def set_logging(name=None, verbose=True):
@@ -264,7 +266,8 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
     if isinstance(requirements, (str, Path)):  # requirements.txt file
         file = Path(requirements)
         assert file.exists(), f"{prefix} {file.resolve()} not found, check failed."
-        requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(file.open()) if x.name not in exclude]
+        with file.open() as f:
+            requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(f) if x.name not in exclude]
     else:  # list or tuple of packages
         requirements = [x for x in requirements if x not in exclude]
 
@@ -453,7 +456,9 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
 
 
 def make_divisible(x, divisor):
-    # Returns x evenly divisible by divisor
+    # Returns nearest x divisible by divisor
+    if isinstance(divisor, torch.Tensor):
+        divisor = int(divisor.max())  # to int
     return math.ceil(x / divisor) * divisor
 
 
@@ -734,7 +739,7 @@ def strip_optimizer(f='best.pt', s=''):  # from utils.general import *; strip_op
     x = torch.load(f, map_location=torch.device('cpu'))
     if x.get('ema'):
         x['model'] = x['ema']  # replace model with ema
-    for k in 'optimizer', 'training_results', 'wandb_id', 'ema', 'updates':  # keys
+    for k in 'optimizer', 'best_fitness', 'wandb_id', 'ema', 'updates':  # keys
         x[k] = None
     x['epoch'] = -1
     x['model'].half()  # to FP16
@@ -775,7 +780,7 @@ def print_mutation(results, hyp, save_dir, bucket):
         i = np.argmax(fitness(data.values[:, :7]))  #
         f.write('# YOLOv5 Hyperparameter Evolution Results\n' +
                 f'# Best generation: {i}\n' +
-                f'# Last generation: {len(data)}\n' +
+                f'# Last generation: {len(data) - 1}\n' +
                 '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:7]) + '\n' +
                 '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :7]) + '\n\n')
         yaml.safe_dump(hyp, f, sort_keys=False)
@@ -833,3 +838,7 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     if mkdir:
         path.mkdir(parents=True, exist_ok=True)  # make directory
     return path
+
+
+# Variables
+NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size for tqdm

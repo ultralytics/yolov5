@@ -89,6 +89,7 @@ def run(data,
         iou_thres=0.6,  # NMS IoU threshold
         task='val',  # train, val, test, speed or study
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        workers=8,  # max dataloader workers (per RANK in DDP mode)
         single_cls=False,  # treat as single-class dataset
         augment=False,  # augmented inference
         verbose=False,  # verbose output
@@ -111,7 +112,7 @@ def run(data,
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
-        device, pt = next(model.parameters()).device, True  # get model device, PyTorch model
+        device, pt, jit, engine = next(model.parameters()).device, True, False, False  # get model device, PyTorch model
 
         half &= device.type != 'cpu'  # half precision only supported on CUDA
         model.half() if half else model.float()
@@ -124,11 +125,13 @@ def run(data,
 
         # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn)
-        stride, pt = model.stride, model.pt
+        stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
         imgsz = check_img_size(imgsz, s=stride)  # check image size
-        half &= pt and device.type != 'cpu'  # half precision only supported by PyTorch on CUDA
-        if pt:
+        half &= (pt or jit or engine) and device.type != 'cpu'  # half precision only supported by PyTorch on CUDA
+        if pt or jit:
             model.model.half() if half else model.model.float()
+        elif engine:
+            batch_size = model.batch_size
         else:
             half = False
             batch_size = 1  # export.py models default to batch-size 1
@@ -147,12 +150,11 @@ def run(data,
 
     # Dataloader
     if not training:
-        if pt and device.type != 'cpu':
-            model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.model.parameters())))  # warmup
+        model.warmup(imgsz=(1, 3, imgsz, imgsz), half=half)  # warmup
         pad = 0.0 if task == 'speed' else 0.5
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
         dataloader = create_dataloader(data[task], imgsz, batch_size, stride, single_cls, pad=pad, rect=pt,
-                                       prefix=colorstr(f'{task}: '))[0]
+                                       workers=workers, prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
@@ -162,9 +164,10 @@ def run(data,
     dt, p, r, f1, mp, mr, map50, map = [0.0, 0.0, 0.0], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
-    for batch_i, (im, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
+    pbar = tqdm(dataloader, desc=s, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
+    for batch_i, (im, targets, paths, shapes) in enumerate(pbar):
         t1 = time_sync()
-        if pt:
+        if pt or jit or engine:
             im = im.to(device, non_blocking=True)
             targets = targets.to(device)
         im = im.half() if half else im.float()  # uint8 to fp16/32
@@ -236,7 +239,7 @@ def run(data,
     # Compute metrics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
-        p, r, ap, f1, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
+        tp, fp, p, r, f1, ap, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
         ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
         mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
         nt = np.bincount(stats[3].astype(np.int64), minlength=nc)  # number of targets per class
@@ -310,6 +313,7 @@ def parse_opt():
     parser.add_argument('--iou-thres', type=float, default=0.6, help='NMS IoU threshold')
     parser.add_argument('--task', default='val', help='train, val, test, speed or study')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
     parser.add_argument('--single-cls', action='store_true', help='treat as single-class dataset')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
@@ -338,26 +342,27 @@ def main(opt):
             LOGGER.info(f'WARNING: confidence threshold {opt.conf_thres} >> 0.001 will produce invalid mAP values.')
         run(**vars(opt))
 
-    elif opt.task == 'speed':  # speed benchmarks
-        # python val.py --task speed --data coco.yaml --batch 1 --weights yolov5n.pt yolov5s.pt...
-        for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
-            run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
-                device=opt.device, save_json=False, plots=False)
+    else:
+        weights = opt.weights if isinstance(opt.weights, list) else [opt.weights]
+        opt.half = True  # FP16 for fastest results
+        if opt.task == 'speed':  # speed benchmarks
+            # python val.py --task speed --data coco.yaml --batch 1 --weights yolov5n.pt yolov5s.pt...
+            opt.conf_thres, opt.iou_thres, opt.save_json = 0.25, 0.45, False
+            for opt.weights in weights:
+                run(**vars(opt), plots=False)
 
-    elif opt.task == 'study':  # run over a range of settings and save/plot
-        # python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n.pt yolov5s.pt...
-        x = list(range(256, 1536 + 128, 128))  # x axis (image sizes)
-        for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
-            f = f'study_{Path(opt.data).stem}_{Path(w).stem}.txt'  # filename to save to
-            y = []  # y axis
-            for i in x:  # img-size
-                LOGGER.info(f'\nRunning {f} point {i}...')
-                r, _, t = run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=i, conf_thres=opt.conf_thres,
-                              iou_thres=opt.iou_thres, device=opt.device, save_json=opt.save_json, plots=False)
-                y.append(r + t)  # results and times
-            np.savetxt(f, y, fmt='%10.4g')  # save
-        os.system('zip -r study.zip study_*.txt')
-        plot_val_study(x=x)  # plot
+        elif opt.task == 'study':  # speed vs mAP benchmarks
+            # python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n.pt yolov5s.pt...
+            for opt.weights in weights:
+                f = f'study_{Path(opt.data).stem}_{Path(opt.weights).stem}.txt'  # filename to save to
+                x, y = list(range(256, 1536 + 128, 128)), []  # x axis (image sizes), y axis
+                for opt.imgsz in x:  # img-size
+                    LOGGER.info(f'\nRunning {f} --imgsz {opt.imgsz}...')
+                    r, _, t = run(**vars(opt), plots=False)
+                    y.append(r + t)  # results and times
+                np.savetxt(f, y, fmt='%10.4g')  # save
+            os.system('zip -r study.zip study_*.txt')
+            plot_val_study(x=x)  # plot
 
 
 if __name__ == "__main__":
