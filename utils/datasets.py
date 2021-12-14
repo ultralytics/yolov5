@@ -389,7 +389,6 @@ class LoadImagesAndLabels(Dataset):
         self.stride = stride
         self.path = path
         self.albumentations = Albumentations() if augment else None
-        self.ar_thr = 20
 
         try:
             f = []  # image files
@@ -458,16 +457,6 @@ class LoadImagesAndLabels(Dataset):
                 self.labels[i][:, 0] = 0
                 if segment:
                     self.segments[i][:, 0] = 0
-
-        # Dataset-specific update of ar_thr to prevent filtering of correct labels
-        labels_per_example = np.array(list(map(len, self.labels)))
-        broadcasted_shapes = np.repeat(self.shapes, repeats=labels_per_example, axis=0)  # wh
-        concatenated_labels = np.concatenate(self.labels)  # cxywh
-
-        unnormalized_widths = concatenated_labels[:, 3] * broadcasted_shapes[:, 0]
-        unnormalized_heights = concatenated_labels[:, 4] * broadcasted_shapes[:, 1]
-        dataset_max_ar = round((unnormalized_widths / unnormalized_heights).max())
-        self.ar_thr = max(dataset_max_ar, self.ar_thr)
 
         # Rectangular Training
         if self.rect:
@@ -593,8 +582,7 @@ class LoadImagesAndLabels(Dataset):
                                                  translate=hyp['translate'],
                                                  scale=hyp['scale'],
                                                  shear=hyp['shear'],
-                                                 perspective=hyp['perspective'],
-                                                 ar_thr=self.ar_thr)
+                                                 perspective=hyp['perspective'])
 
         nl = len(labels)  # number of labels
         if nl:
@@ -742,8 +730,7 @@ def load_mosaic(self, index):
                                        scale=self.hyp['scale'],
                                        shear=self.hyp['shear'],
                                        perspective=self.hyp['perspective'],
-                                       border=self.mosaic_border,  # border to remove
-                                       ar_thr=self.ar_thr)
+                                       border=self.mosaic_border)  # border to remove
 
     return img4, labels4
 
@@ -817,8 +804,7 @@ def load_mosaic9(self, index):
                                        scale=self.hyp['scale'],
                                        shear=self.hyp['shear'],
                                        perspective=self.hyp['perspective'],
-                                       border=self.mosaic_border,  # border to remove
-                                       ar_thr=self.ar_thr)
+                                       border=self.mosaic_border)  # border to remove
 
     return img9, labels9
 
