@@ -184,7 +184,7 @@ class ComputeLoss:
 
         # copy the input since we need to modify it
         targets_copy = targets.clone()
-        # convert the key (image, x, y, w, h) to string hashable tuple
+        # convert the key (image, x, y, w, h) to hashable tuple
         keys = tuple(map(tuple, targets[:, [0, 2, 3, 4, 5]].cpu().numpy()))
         # store all the classes for each unique box
         cls = OrderedDict()
