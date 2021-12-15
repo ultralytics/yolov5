@@ -49,7 +49,7 @@ class Sum(nn.Module):
 
 class MixConv2d(nn.Module):
     # Mixed Depth-wise Conv https://arxiv.org/abs/1907.09595
-    def __init__(self, c1, c2, k=(1, 3), s=1, equal_ch=True):  # ch_in, ch_out, kernel, stride, ch_strategy
+    def __init__(self, c1, c2, k=(1, 3), s=1, equal_ch=True, act=True):  # ch_in, ch_out, kernel, stride, ch_strategy
         super().__init__()
         n = len(k)  # number of convolutions
         if equal_ch:  # equal c_ per group
@@ -66,7 +66,7 @@ class MixConv2d(nn.Module):
         self.m = nn.ModuleList(
             [nn.Conv2d(c1, int(c_), k, s, k // 2, groups=math.gcd(c1, int(c_)), bias=False) for k, c_ in zip(k, c_)])
         self.bn = nn.BatchNorm2d(c2)
-        self.act = nn.SiLU()
+        self.act = nn.SiLU() if act is True else (nn.Identity() if act is False else act(c2))
 
     def forward(self, x):
         return self.act(self.bn(torch.cat([m(x) for m in self.m], 1)))

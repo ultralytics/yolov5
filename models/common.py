@@ -106,16 +106,15 @@ class Bottleneck(nn.Module):
 
 class BottleneckCSP(nn.Module):
     # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, act=True):  # ch_in, ch_out, number, shortcut, groups, expansion
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c_, 1, 1)
-        self.cv2 = nn.Conv2d(c1, c_, 1, 1, bias=False)
-        self.cv3 = nn.Conv2d(c_, c_, 1, 1, bias=False)
-        self.cv4 = Conv(2 * c_, c2, 1, 1)
-        self.bn = nn.BatchNorm2d(2 * c_)  # applied to cat(cv2, cv3)
-        self.act = nn.SiLU()
-        self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)))
+        self.cv1 = Conv(c1, c_, 1, 1, act=act)
+        self.cv2 = Conv(c1, c_, 1, 1, act=act)
+        self.cv3 = Conv(c_, c_, 1, 1, act=act)
+        self.cv4 = Conv(2 * c_, c2, 1, 1, act=act)
+
+        self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, e=1.0, act=act) for _ in range(n)))
 
     def forward(self, x):
         y1 = self.cv3(self.m(self.cv1(x)))
