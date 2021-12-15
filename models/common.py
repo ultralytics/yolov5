@@ -296,7 +296,7 @@ class DetectMultiBackend(nn.Module):
         check_suffix(w, suffixes)  # check weights have acceptable suffix
         pt, jit, onnx, engine, tflite, pb, saved_model, coreml = (suffix == x for x in suffixes)  # backend booleans
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
-        attempt_download(w)  # download if not local
+        w = attempt_download(w)  # download if not local
 
         if jit:  # TorchScript
             LOGGER.info(f'Loading {w} for TorchScript inference...')
@@ -306,7 +306,7 @@ class DetectMultiBackend(nn.Module):
                 d = json.loads(extra_files['config.txt'])  # extra_files dict
                 stride, names = int(d['stride']), d['names']
         elif pt:  # PyTorch
-            model = attempt_load(weights, map_location=device)
+            model = attempt_load(weights if isinstance(weights, list) else w, map_location=device)
             stride = int(model.stride.max())  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
             self.model = model  # explicitly assign for to(), cpu(), cuda(), half()
