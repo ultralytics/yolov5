@@ -9,6 +9,7 @@ Usage:
 import argparse
 import sys
 from copy import deepcopy
+from inspect import signature
 from pathlib import Path
 
 FILE = Path(__file__).resolve()
@@ -240,11 +241,27 @@ class Model(nn.Module):
         return self
 
 
+def load_act(d):
+    activation_clause = d.get('activation')
+    if not activation_clause:
+        return None
+
+    activation_function = eval(activation_clause['class'])
+    args = activation_clause.get('args', [])
+    requires_channels = activation_clause.get('requires_channels', False)
+    if requires_channels:
+        return lambda c: activation_function(c, *args)
+
+    return lambda c: activation_function(*args)
+
+
 def parse_model(d, ch):  # model_dict, input_channels(3)
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
     anchors, nc, gd, gw = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple']
     na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
+
+    act = load_act(d)
 
     layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
     for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):  # from, number, module, args
@@ -281,7 +298,12 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         else:
             c2 = ch[f]
 
-        m_ = nn.Sequential(*(m(*args) for _ in range(n))) if n > 1 else m(*args)  # module
+        # keyword arguments are currently not parsed
+        kwargs = {}
+        if act is not None and 'act' in signature(m).parameters:
+            kwargs['act'] = act
+
+        m_ = nn.Sequential(*(m(*args, **kwargs) for _ in range(n))) if n > 1 else m(*args, **kwargs)  # module
         t = str(m)[8:-2].replace('__main__.', '')  # module type
         np = sum(x.numel() for x in m_.parameters())  # number params
         m_.i, m_.f, m_.type, m_.np = i, f, t, np  # attach index, 'from' index, type, number params
