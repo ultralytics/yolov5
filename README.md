@@ -34,7 +34,7 @@ Note that:
 git clone https://github.com/zldrobit/yolov5.git yolov5-android
 ```
 
-### 4 Put TFLite models in `assets` folder of Android project, and change 
+### 4. Put TFLite models in `assets` folder of Android project, and change 
 - `inputSize` to `--img`
 - `output_width` according to new/old `inputSize` ratio
 - `anchors` to `m.anchor_grid` as https://github.com/ultralytics/yolov5/pull/1127#issuecomment-714651073 
