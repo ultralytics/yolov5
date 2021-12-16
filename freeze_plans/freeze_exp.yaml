@@ -1,0 +1,33 @@
+train: # Do not modify the "train"!
+  # Define the freeze train plan
+  # [freeze strategy, epoch]
+  [
+    [strategy1, 2], # freeze no layer and train 50 epochs
+    [strategy2, 2],
+    [strategy3, 1]
+  ]
+
+
+# Define different kinds of freeze strategy
+strategy1:
+  [
+    # Wanna train the whole network structure.
+    # [layer select type, epoch]
+    [0, 2]
+  ]
+
+# [layer select type, freeze layer, epoch]
+# type: 0 means no freeze, 1 means specify layers, 2 means range select(include start and end)
+strategy2:
+  [
+    [2, '10,24', 1],
+    [2, '0,9', 2]
+  ]
+
+strategy3:
+  [
+    # [layer select type, freeze layer, epoch]
+    # 1 means specify layers, 2 means range select(include start and end)
+    [2, '10,24', 1],
+    [1,'0,1,9', 2]
+  ]
