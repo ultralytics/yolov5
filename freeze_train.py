@@ -4,25 +4,6 @@ Train a YOLOv5 model on a custom dataset
 Usage:
     $ python path/to/train.py --data coco128.yaml --weights yolov5s.pt --img 640
 """
-from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
-from utils.plots import plot_evolve, plot_labels
-from utils.metrics import fitness
-from utils.loss import ComputeLoss
-from utils.loggers.wandb.wandb_utils import check_wandb_resume
-from utils.loggers import Loggers
-from utils.general import (LOGGER, check_dataset, check_file, check_git_status, check_img_size, check_requirements,
-                           check_suffix, check_yaml, colorstr, get_latest_run, increment_path, init_seeds,
-                           intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods, one_cycle,
-                           print_args, print_mutation, strip_optimizer)
-from utils.downloads import attempt_download
-from utils.datasets import create_dataloader
-from utils.callbacks import Callbacks
-from utils.autobatch import check_train_batch_size
-from utils.autoanchor import check_anchors
-from models.yolo import Model
-from models.experimental import attempt_load
-import train
-import val  # for end-of-epoch mAP
 import argparse
 import math
 import os
@@ -42,6 +23,26 @@ from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import SGD, Adam, lr_scheduler
 from tqdm import tqdm
+
+import train
+import val  # for end-of-epoch mAP
+from models.experimental import attempt_load
+from models.yolo import Model
+from utils.autoanchor import check_anchors
+from utils.autobatch import check_train_batch_size
+from utils.callbacks import Callbacks
+from utils.datasets import create_dataloader
+from utils.downloads import attempt_download
+from utils.general import (LOGGER, check_dataset, check_file, check_git_status, check_img_size, check_requirements,
+                           check_suffix, check_yaml, colorstr, get_latest_run, increment_path, init_seeds,
+                           intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods, one_cycle,
+                           print_args, print_mutation, strip_optimizer)
+from utils.loggers import Loggers
+from utils.loggers.wandb.wandb_utils import check_wandb_resume
+from utils.loss import ComputeLoss
+from utils.metrics import fitness
+from utils.plots import plot_evolve, plot_labels
+from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
