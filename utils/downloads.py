@@ -49,9 +49,12 @@ def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads i
         name = Path(urllib.parse.unquote(str(file))).name  # decode '%2F' to '/' etc.
         if str(file).startswith(('http:/', 'https:/')):  # download
             url = str(file).replace(':/', '://')  # Pathlib turns :// -> :/
-            name = name.split('?')[0]  # parse authentication https://url.com/file.txt?auth...
-            safe_download(file=name, url=url, min_bytes=1E5)
-            return name
+            file = name.split('?')[0]  # parse authentication https://url.com/file.txt?auth...
+            if Path(file).is_file():
+                print(f'Found {url} locally at {file}')  # file already exists
+            else:
+                safe_download(file=file, url=url, min_bytes=1E5)
+            return file
 
         # GitHub assets
         file.parent.mkdir(parents=True, exist_ok=True)  # make parent dir (if required)
