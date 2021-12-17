@@ -124,7 +124,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         model = Model(cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
 
     # Freeze
-    if len(freeze) >= 2:
+    if type(freeze) == list:
         freeze = [f'model.{x}.' for x in freeze]  # specify multiple frozen layer
     else:
         freeze = [f'model.{x}.' for x in range(freeze)] # specify frozen layer up to freeze
