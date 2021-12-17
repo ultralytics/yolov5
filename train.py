@@ -475,7 +475,7 @@ def parse_opt(known=False):
     parser.add_argument('--label-smoothing', type=float, default=0.0, help='Label smoothing epsilon')
     parser.add_argument('--patience', type=int, default=100, help='EarlyStopping patience (epochs without improvement)')
     parser.add_argument('--freeze', nargs='+', type=str, default='',
-                        help='Specify the layers that you want to freeze in training. (e.g. 10 freeze up to 10, or 1,2,4,6 freeze layers 1,2,4,6)')
+                        help='Specify the layers that you want to freeze in training. (e.g. 10 represents freeze up to 10, or 1,2,4,6 represents freeze layers 1,2,4,6)')
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
 
