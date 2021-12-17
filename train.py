@@ -469,8 +469,7 @@ def parse_opt(known=False):
     parser.add_argument('--linear-lr', action='store_true', help='linear LR')
     parser.add_argument('--label-smoothing', type=float, default=0.0, help='Label smoothing epsilon')
     parser.add_argument('--patience', type=int, default=100, help='EarlyStopping patience (epochs without improvement)')
-    parser.add_argument('--freeze', nargs='+', type=int, default=0,
-                        help='Specify the layers that you want to freeze in training. (e.g. 10 represents freeze up to 10, or 1 2 4 6 represents freeze layers 1,2,4,6)')
+    parser.add_argument('--freeze', nargs='+', type=int, default=0, help='Freeze layers: backbone=10, first3=0 1 2')
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
 
