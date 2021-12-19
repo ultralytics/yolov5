@@ -270,7 +270,7 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
 
     plt.savefig(f, dpi=300, bbox_inches='tight')
     plt.close()
-    print(colorstr('imshow(): ') + f"results saved to {f}")
+    print(colorstr('imshow: ') + f"examples saved to {f}")
 
     if verbose and labels is not None:
         print('True:     ', ' '.join(f'{names[i]:3s}' for i in labels))
@@ -284,14 +284,14 @@ if __name__ == '__main__':
     parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100, mnist or mnist-fashion')
     parser.add_argument('--hyp', type=str, default='data/hyps/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=20)
-    parser.add_argument('--batch-size', type=int, default=128, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', type=int, default=64, help='train, test image sizes (pixels)')
+    parser.add_argument('--batch-size', type=int, default=256, help='total batch size for all GPUs')
+    parser.add_argument('--img-size', type=int, default=128, help='train, test image sizes (pixels)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--workers', type=int, default=0, help='max dataloader workers (per RANK in DDP mode)')
+    parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
     parser.add_argument('--project', default='runs/train', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
