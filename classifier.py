@@ -242,7 +242,7 @@ def imshow(img, labels=None, pred=None, names=None, f=Path('images.jpg')):
         print('True:     ', ' '.join(f'{names[i]:3s}' for i in labels))
     if pred is not None:
         print('Predicted:', ' '.join(f'{names[i]:3s}' for i in pred))
-    print(f'imshow() results saved to {f}')
+    print(colorstr('imshow(): ') + f"results saved to {f}")
 
 
 if __name__ == '__main__':
