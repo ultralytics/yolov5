@@ -291,7 +291,7 @@ if __name__ == '__main__':
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--workers', type=int, default=0, help='max dataloader workers (per RANK in DDP mode)')
+    parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
     parser.add_argument('--project', default='runs/train', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
