@@ -91,7 +91,7 @@ def train():
         model = torch.hub.load('ultralytics/yolov5', opt.model, pretrained=True, autoshape=False)
         if isinstance(model, DetectMultiBackend):
             model = model.model  # unwrap DetectMultiBackend
-        model.model = model.model[:13] if opt.model.endswith('6') else model.model[:11]  # backbone
+        model.model = model.model[:10] if opt.model.endswith('6') else model.model[:8]  # backbone
         m = model.model[-1]  # last layer
         ch = m.conv.in_channels if hasattr(m, 'conv') else sum([x.in_channels for x in m.m])  # ch into module
         c = Classify(ch, nc)  # Classify()
@@ -280,7 +280,7 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default='yolov5s6', help='initial weights path')
+    parser.add_argument('--model', type=str, default='yolov5s', help='initial weights path')
     parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100, mnist or mnist-fashion')
     parser.add_argument('--hyp', type=str, default='data/hyps/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=20)
