@@ -93,7 +93,7 @@ def train():
 
     # Show images
     images, labels = iter(trainloader).next()
-    imshow(torchvision.utils.make_grid(images[:16]), labels[:16], names=names, f=save_dir / 'train_images.jpg')
+    imshow(images[:64], labels[:64], names=names, f=save_dir / 'train_images.jpg')
 
     # Model
     if opt.model.startswith('yolov5'):
@@ -199,7 +199,7 @@ def train():
         images, labels = iter(testloader).next()
         images = resize(images.to(device))
         pred = torch.max(model(images), 1)[1]
-        imshow(torchvision.utils.make_grid(images), labels, pred, names, f=save_dir / 'test_pred.jpg')
+        imshow(images, labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
 
 
 def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
@@ -231,18 +231,31 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     return accuracy
 
 
-def imshow(img, labels=None, pred=None, names=None, f=Path('images.jpg')):
+def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Path('images.jpg')):
     # Show images
     import matplotlib.pyplot as plt
-    import numpy as np
+
     names = names or [f'class{i}' for i in range(1000)]
-    plt.imshow(np.transpose((img / 2 + 0.5).cpu().numpy(), (1, 2, 0)))  # de-normalize
-    plt.savefig(f)
-    if labels is not None:
-        print('True:     ', ' '.join(f'{names[i]:3s}' for i in labels))
-    if pred is not None:
-        print('Predicted:', ' '.join(f'{names[i]:3s}' for i in pred))
+    blocks = torch.chunk(denormalize(img).cpu(), len(img), dim=0)  # select batch index 0, block by channels
+    n = min(len(blocks), nmax)  # number of plots
+    fig, ax = plt.subplots(math.ceil(n / 8), 8, tight_layout=True)  # 8 rows x n/8 cols
+    ax = ax.ravel()
+    plt.subplots_adjust(wspace=0.05, hspace=0.05)
+    for i in range(n):
+        ax[i].imshow(blocks[i].squeeze().permute((1, 2, 0)))  # cmap='gray'
+        ax[i].axis('off')
+        if labels is not None:
+            s = names[labels[i]] + f' - {names[pred[i]]}' if pred is not None else ''
+            ax[i].set_title(s)
+
+    plt.savefig(f, dpi=300, bbox_inches='tight')
+    plt.close()
     print(colorstr('imshow(): ') + f"results saved to {f}")
+
+    if verbose and labels is not None:
+        print('True:     ', ' '.join(f'{names[i]:3s}' for i in labels))
+    if verbose and pred is not None:
+        print('Predicted:', ' '.join(f'{names[i]:3s}' for i in pred))
 
 
 if __name__ == '__main__':
@@ -258,7 +271,7 @@ if __name__ == '__main__':
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
+    parser.add_argument('--workers', type=int, default=0, help='max dataloader workers (per RANK in DDP mode)')
     parser.add_argument('--project', default='runs/train', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
@@ -273,7 +286,11 @@ if __name__ == '__main__':
     cuda = device.type != 'cpu'
     opt.hyp = check_file(opt.hyp)  # check files
     opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
+
+    # Functions
     resize = torch.nn.Upsample(size=(opt.img_size, opt.img_size), mode='bilinear', align_corners=False)  # image resize
+    normalize = lambda x, mean=0.5, std=0.25: (x - mean) / std
+    denormalize = lambda x, mean=0.5, std=0.25: x * std + mean
 
     # Train
     train()
