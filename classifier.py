@@ -196,11 +196,13 @@ def train():
         print(f'Training complete. Results saved to {save_dir}.')
 
     # Show predictions
-    # images, labels = iter(testloader).next()
-    # predicted = torch.max(model(images), 1)[1]
-    # imshow(torchvision.utils.make_grid(images))
-    # print('GroundTruth: ', ' '.join('%5s' % names[labels[j]] for j in range(4)))
-    # print('Predicted: ', ' '.join('%5s' % names[predicted[j]] for j in range(4)))
+    show = False
+    if show:
+        images, labels = iter(testloader).next()
+        predicted = torch.max(model(images), 1)[1]
+        imshow(torchvision.utils.make_grid(images))
+        print('GroundTruth: ', ' '.join(f'{names[labels[j]]:5s}' for j in range(4)))
+        print('Predicted: ', ' '.join(f'{names[predicted[j]]:5s}' for j in range(4)))
 
 
 def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
