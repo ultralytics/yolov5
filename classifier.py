@@ -91,7 +91,7 @@ def train():
         model = torch.hub.load('ultralytics/yolov5', opt.model, pretrained=True, autoshape=False)
         if isinstance(model, DetectMultiBackend):
             model = model.model  # unwrap DetectMultiBackend
-        model.model = model.model[:8]  # backbone
+        model.model = model.model[:13] if opt.model.endswith('6') else model.model[:11]  # backbone
         m = model.model[-1]  # last layer
         ch = m.conv.in_channels if hasattr(m, 'conv') else sum([x.in_channels for x in m.m])  # ch into module
         c = Classify(ch, nc)  # Classify()
@@ -280,7 +280,7 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default='yolov5s', help='initial weights path')
+    parser.add_argument('--model', type=str, default='yolov5s6', help='initial weights path')
     parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100, mnist or mnist-fashion')
     parser.add_argument('--hyp', type=str, default='data/hyps/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=20)
@@ -291,7 +291,7 @@ if __name__ == '__main__':
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
+    parser.add_argument('--workers', type=int, default=0, help='max dataloader workers (per RANK in DDP mode)')
     parser.add_argument('--project', default='runs/train', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
