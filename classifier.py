@@ -199,6 +199,7 @@ def train():
     show = False
     if show:
         images, labels = iter(testloader).next()
+        images = resize(images.to(device))
         predicted = torch.max(model(images), 1)[1]
         imshow(torchvision.utils.make_grid(images))
         print('GroundTruth: ', ' '.join(f'{names[labels[j]]:5s}' for j in range(4)))
@@ -238,7 +239,7 @@ def imshow(img):
     # Show images
     import matplotlib.pyplot as plt
     import numpy as np
-    plt.imshow(np.transpose((img / 2 + 0.5).numpy(), (1, 2, 0)))  # de-normalize
+    plt.imshow(np.transpose((img / 2 + 0.5).cpu().numpy(), (1, 2, 0)))  # de-normalize
     plt.savefig('images.jpg')
 
 
