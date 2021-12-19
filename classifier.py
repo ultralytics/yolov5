@@ -52,7 +52,8 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import Classify, DetectMultiBackend
-from utils.general import NUM_THREADS, download, check_file, increment_path, check_git_status, check_requirements
+from utils.general import NUM_THREADS, download, check_file, increment_path, check_git_status, check_requirements, \
+    colorstr
 from utils.torch_utils import model_info, select_device, is_parallel
 
 
@@ -85,15 +86,14 @@ def train():
     trainset = torchvision.datasets.ImageFolder(root=data_dir / 'train', transform=trainform)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=nw)
     testset = torchvision.datasets.ImageFolder(root=data_dir / 'test', transform=testform)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=bs, shuffle=False, num_workers=nw)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=bs, shuffle=True, num_workers=nw)
     names = trainset.classes
     nc = len(names)
     print(f'Training {opt.model} on {data} dataset with {nc} classes...')
 
     # Show images
-    # images, labels = iter(trainloader).next()
-    # imshow(torchvision.utils.make_grid(images[:16]))
-    # print(' '.join('%5s' % names[labels[j]] for j in range(16)))
+    images, labels = iter(trainloader).next()
+    imshow(torchvision.utils.make_grid(images[:16]), labels[:16], names=names, f=save_dir / 'train_images.jpg')
 
     # Model
     if opt.model.startswith('yolov5'):
@@ -140,7 +140,7 @@ def train():
     # scaler = amp.GradScaler(enabled=cuda)
     print(f'Image sizes {imgsz} train, {imgsz} test\n'
           f'Using {nw} dataloader workers\n'
-          f'Logging results to {save_dir}\n'
+          f"Logging results to {colorstr('bold', save_dir)}\n"
           f'Starting training for {epochs} epochs...\n\n'
           f"{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'accuracy':12s}")
     for epoch in range(epochs):  # loop over the dataset multiple times
@@ -195,15 +195,11 @@ def train():
     if final_epoch:
         print(f'Training complete. Results saved to {save_dir}.')
 
-    # Show predictions
-    show = False
-    if show:
+        # Show predictions
         images, labels = iter(testloader).next()
         images = resize(images.to(device))
-        predicted = torch.max(model(images), 1)[1]
-        imshow(torchvision.utils.make_grid(images))
-        print('GroundTruth: ', ' '.join(f'{names[labels[j]]:5s}' for j in range(4)))
-        print('Predicted: ', ' '.join(f'{names[predicted[j]]:5s}' for j in range(4)))
+        pred = torch.max(model(images), 1)[1]
+        imshow(torchvision.utils.make_grid(images), labels, pred, names, f=save_dir / 'test_pred.jpg')
 
 
 def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
@@ -235,12 +231,17 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     return accuracy
 
 
-def imshow(img):
+def imshow(img, labels=None, pred=None, names=None, f=Path('images.jpg')):
     # Show images
     import matplotlib.pyplot as plt
     import numpy as np
+    names = names or [f'class{i}' for i in range(1000)]
     plt.imshow(np.transpose((img / 2 + 0.5).cpu().numpy(), (1, 2, 0)))  # de-normalize
-    plt.savefig('images.jpg')
+    plt.savefig(f)
+    if labels is not None:
+        print('True:     ', ' '.join(f'{names[i]:3s}' for i in labels))
+    if pred is not None:
+        print('Predicted:', ' '.join(f'{names[i]:3s}' for i in pred))
 
 
 if __name__ == '__main__':
