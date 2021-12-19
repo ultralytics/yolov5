@@ -6,27 +6,12 @@ Usage-train:
     $ python path/to/classifier.py --model yolov5s --data mnist --epochs 5 --img 128 --adam
 
 Usage-inference:
-    import cv2
-    import numpy as np
-    import torch
-    import torch.nn.functional as F
+    from classifier import *
 
-    # Functions
-    resize = torch.nn.Upsample(size=(128, 128), mode='bilinear', align_corners=False)
-    normalize = lambda x, mean=0.5, std=0.25: (x - mean) / std
-
-    # Model
-    model = torch.load('runs/train/exp2/weights/best.pt')['model'].cpu().float()
-
-    # Image
-    im = cv2.imread('../mnist/test/0/10.png')[::-1]  # HWC, BGR to RGB
-    im = np.ascontiguousarray(np.asarray(im).transpose((2, 0, 1)))  # HWC to CHW
-    im = torch.tensor(im).unsqueeze(0) / 255.0  # to Tensor, to BCWH, rescale
-    im = resize(normalize(im))
-
-    # Inference
-    results = model(im)
-    p = F.softmax(results, dim=1)  # probabilities
+    model = torch.load('path/to/best.pt', map_location=torch.device('cpu'))['model'].float()
+    files = Path('../datasets/mnist/test/9').glob('*.png')
+    for f in list(files[:10]):
+        classify(model, size=128, file=f)
 """
 
 import argparse
@@ -231,6 +216,35 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     return accuracy
 
 
+def classify(model, size=128, file='../datasets/mnist/test/3/30.png', plot=False):
+    # YOLOv5 classification model inference
+    import cv2
+    import numpy as np
+    import torch.nn.functional as F
+
+    resize = torch.nn.Upsample(size=(size, size), mode='bilinear', align_corners=False)  # image resize
+    normalize = lambda x, mean=0.5, std=0.25: (x - mean) / std
+
+    # Image
+    im = cv2.imread(str(file))[..., ::-1]  # HWC, BGR to RGB
+    im = np.ascontiguousarray(np.asarray(im).transpose((2, 0, 1)))  # HWC to CHW
+    im = torch.tensor(im).float().unsqueeze(0) / 255.0  # to Tensor, to BCWH, rescale
+    im = resize(normalize(im))
+
+    # Inference
+    results = model(im)
+    p = F.softmax(results, dim=1)  # probabilities
+    i = p.argmax()  # max index
+    print(f'{file} prediction: {i} ({p[0, i]:.2f})')
+
+    # Plot
+    if plot:
+        denormalize = lambda x, mean=0.5, std=0.25: x * std + mean
+        imshow(denormalize(im), f=Path(file).name)
+
+    return p
+
+
 def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Path('images.jpg')):
     # Show classification image grid with labels (optional) and predictions (optional)
     import matplotlib.pyplot as plt
@@ -238,8 +252,9 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
     names = names or [f'class{i}' for i in range(1000)]
     blocks = torch.chunk(img.cpu(), len(img), dim=0)  # select batch index 0, block by channels
     n = min(len(blocks), nmax)  # number of plots
-    fig, ax = plt.subplots(math.ceil(n / 8), 8, tight_layout=True)  # 8 rows x n/8 cols
-    ax = ax.ravel()
+    m = min(8, round(n ** 0.5))  # 8 x 8 default
+    fig, ax = plt.subplots(math.ceil(n / m), m, tight_layout=True)  # 8 rows x n/8 cols
+    ax = ax.ravel() if m > 1 else [ax]
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
     for i in range(n):
         ax[i].imshow(blocks[i].squeeze().permute((1, 2, 0)))  # cmap='gray'
