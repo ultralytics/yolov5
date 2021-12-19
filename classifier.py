@@ -93,7 +93,7 @@ def train():
 
     # Show images
     images, labels = iter(trainloader).next()
-    imshow(images[:64], labels[:64], names=names, f=save_dir / 'train_images.jpg')
+    imshow(denormalize(images[:64]), labels[:64], names=names, f=save_dir / 'train_images.jpg')
 
     # Model
     if opt.model.startswith('yolov5'):
@@ -199,7 +199,7 @@ def train():
         images, labels = iter(testloader).next()
         images = resize(images.to(device))
         pred = torch.max(model(images), 1)[1]
-        imshow(images, labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
+        imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
 
 
 def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
@@ -232,11 +232,11 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
 
 
 def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Path('images.jpg')):
-    # Show images
+    # Show classification image grid with labels (optional) and predictions (optional)
     import matplotlib.pyplot as plt
 
     names = names or [f'class{i}' for i in range(1000)]
-    blocks = torch.chunk(denormalize(img).cpu(), len(img), dim=0)  # select batch index 0, block by channels
+    blocks = torch.chunk(img.cpu(), len(img), dim=0)  # select batch index 0, block by channels
     n = min(len(blocks), nmax)  # number of plots
     fig, ax = plt.subplots(math.ceil(n / 8), 8, tight_layout=True)  # 8 rows x n/8 cols
     ax = ax.ravel()
