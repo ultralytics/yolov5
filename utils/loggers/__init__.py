@@ -4,7 +4,6 @@ Logging utils
 """
 
 import os
-from typing import Dict
 import warnings
 from threading import Thread
 
