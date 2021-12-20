@@ -162,4 +162,4 @@ class Loggers():
         # update hyperparams or configs of the experiment
         # params: A dict containing param: value pairs
         if self.wandb:
-            self.wandb.wandb_run.config.update(params, allow_val_change = True)
+            self.wandb.wandb_run.config.update(params, allow_val_change=True)
