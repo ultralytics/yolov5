@@ -8,6 +8,7 @@ PyTorch                 | yolov5s.pt                | -
 TorchScript             | yolov5s.torchscript       | `torchscript`
 ONNX                    | yolov5s.onnx              | `onnx`
 CoreML                  | yolov5s.mlmodel           | `coreml`
+OpenVINO                | yolov5s.xml               | `openvino`
 TensorFlow SavedModel   | yolov5s_saved_model/      | `saved_model`
 TensorFlow GraphDef     | yolov5s.pb                | `pb`
 TensorFlow Lite         | yolov5s.tflite            | `tflite`
@@ -15,13 +16,14 @@ TensorFlow.js           | yolov5s_web_model/        | `tfjs`
 TensorRT                | yolov5s.engine            | `engine`
 
 Usage:
-    $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx coreml saved_model pb tflite tfjs
+    $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx coreml openvino saved_model tflite tfjs
 
 Inference:
     $ python path/to/detect.py --weights yolov5s.pt
                                          yolov5s.torchscript
                                          yolov5s.onnx
                                          yolov5s.mlmodel  (under development)
+                                         yolov5s.xml  (under development)
                                          yolov5s_saved_model
                                          yolov5s.pb
                                          yolov5s.tflite
@@ -142,6 +144,24 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
     return ct_model
+
+
+def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
+    # YOLOv5 OpenVINO export
+    ct_model = None
+    try:
+        check_requirements(('openvino',))  # https://pypi.org/project/openvino-dev/
+        import openvino.inference_engine as ie
+
+        LOGGER.info(f'\n{prefix} starting export with OpenVINO {ie.__version__}...')
+        f = file.with_suffix('.xml')
+
+        cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {file.parent}"
+        subprocess.check_output(cmd, shell=True, timeout=5).decode()
+
+        LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+    except Exception as e:
+        LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
 def export_saved_model(model, im, file, dynamic,
@@ -317,7 +337,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         imgsz=(640, 640),  # image (height, width)
         batch_size=1,  # batch size
         device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        include=('torchscript', 'onnx', 'coreml'),  # include formats
+        include=('torchscript', 'onnx'),  # include formats
         half=False,  # FP16 half-precision export
         inplace=False,  # set YOLOv5 Detect() inplace=True
         train=False,  # model.train() mode
@@ -372,12 +392,14 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     # Exports
     if 'torchscript' in include:
         export_torchscript(model, im, file, optimize)
-    if 'onnx' in include:
+    if ('onnx' in include) or ('openvino' in include):  # OpenVINO requires ONNX
         export_onnx(model, im, file, opset, train, dynamic, simplify)
     if 'engine' in include:
         export_engine(model, im, file, train, half, simplify, workspace, verbose)
     if 'coreml' in include:
         export_coreml(model, im, file)
+    if 'openvino' in include:
+        export_openvino(model, im, file)
 
     # TensorFlow Exports
     if any(tf_exports):
