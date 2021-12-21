@@ -156,10 +156,11 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
         LOGGER.info(f'\n{prefix} starting export with openvino {ie.__version__}...')
         f = [str(f) for f in (file.with_suffix('.xml'), file.with_suffix('.bin'), file.with_suffix('.mapping'))]
 
-        cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {file.parent}"
+        f = str(file.with_suffix('')) + '_openvino'
+        cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f}"
         subprocess.check_output(cmd, shell=True).decode()
 
-        LOGGER.info(f'{prefix} export success, saved as {f} ({sum(file_size(f) for f in f):.1f} MB)')
+        LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
