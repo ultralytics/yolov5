@@ -156,7 +156,7 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
         f = str(file).replace('.pt', '_openvino_model' + os.sep)
 
         cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f}"
-        subprocess.check_output(cmd, shell=True).decode()
+        subprocess.check_output(cmd, shell=True)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
