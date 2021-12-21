@@ -154,12 +154,12 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
         import openvino.inference_engine as ie
 
         LOGGER.info(f'\n{prefix} starting export with OpenVINO {ie.__version__}...')
-        f = file.with_suffix('.xml')
+        f = [file.with_suffix('.xml'), file.with_suffix('.bin'), file.with_suffix('.mapping')]
 
         cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {file.parent}"
         subprocess.check_output(cmd, shell=True).decode()
 
-        LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+        LOGGER.info(f'{prefix} export success, saved as {f} ({sum(file_size(f) for f in f):.1f} MB)')
     except Exception as e:
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
