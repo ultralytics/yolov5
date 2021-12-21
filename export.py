@@ -153,7 +153,7 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
         check_requirements(('openvino',))  # https://pypi.org/project/openvino-dev/
         import openvino.inference_engine as ie
 
-        LOGGER.info(f'\n{prefix} starting export with OpenVINO {ie.__version__}...')
+        LOGGER.info(f'\n{prefix} starting export with openvino {ie.__version__}...')
         f = [str(f) for f in (file.with_suffix('.xml'), file.with_suffix('.bin'), file.with_suffix('.mapping'))]
 
         cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {file.parent}"
@@ -345,7 +345,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         int8=False,  # CoreML/TF INT8 quantization
         dynamic=False,  # ONNX/TF: dynamic axes
         simplify=False,  # ONNX: simplify model
-        opset=14,  # ONNX: opset version
+        opset=12,  # ONNX: opset version
         verbose=False,  # TensorRT: verbose log
         workspace=4,  # TensorRT: workspace size (GB)
         nms=False,  # TF: add NMS to model
@@ -358,8 +358,11 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     t = time.time()
     include = [x.lower() for x in include]
     tf_exports = list(x in include for x in ('saved_model', 'pb', 'tflite', 'tfjs'))  # TensorFlow exports
-    imgsz *= 2 if len(imgsz) == 1 else 1  # expand
     file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)
+
+    # Checks
+    imgsz *= 2 if len(imgsz) == 1 else 1  # expand
+    opset = 12 if ('openvino' in include) else opset  # OpenVINO requires opset <= 12
 
     # Load PyTorch model
     device = select_device(device)
