@@ -8,7 +8,7 @@ PyTorch                 | yolov5s.pt                | -
 TorchScript             | yolov5s.torchscript       | `torchscript`
 ONNX                    | yolov5s.onnx              | `onnx`
 CoreML                  | yolov5s.mlmodel           | `coreml`
-OpenVINO                | yolov5s.xml               | `openvino`
+OpenVINO                | yolov5s_openvino_model/   | `openvino`
 TensorFlow SavedModel   | yolov5s_saved_model/      | `saved_model`
 TensorFlow GraphDef     | yolov5s.pb                | `pb`
 TensorFlow Lite         | yolov5s.tflite            | `tflite`
@@ -23,7 +23,7 @@ Inference:
                                          yolov5s.torchscript
                                          yolov5s.onnx
                                          yolov5s.mlmodel  (under development)
-                                         yolov5s.xml  (under development)
+                                         yolov5s_openvino_model  (under development)
                                          yolov5s_saved_model
                                          yolov5s.pb
                                          yolov5s.tflite
@@ -154,9 +154,8 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
         import openvino.inference_engine as ie
 
         LOGGER.info(f'\n{prefix} starting export with openvino {ie.__version__}...')
-        f = [str(f) for f in (file.with_suffix('.xml'), file.with_suffix('.bin'), file.with_suffix('.mapping'))]
+        f = str(file.with_suffix('')) + '_openvino_model' + os.sep
 
-        f = str(file.with_suffix('')) + '_openvino'
         cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f}"
         subprocess.check_output(cmd, shell=True).decode()
 
