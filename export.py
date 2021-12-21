@@ -154,7 +154,7 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
         import openvino.inference_engine as ie
 
         LOGGER.info(f'\n{prefix} starting export with OpenVINO {ie.__version__}...')
-        f = [file.with_suffix('.xml'), file.with_suffix('.bin'), file.with_suffix('.mapping')]
+        f = [str(f) for f in (file.with_suffix('.xml'), file.with_suffix('.bin'), file.with_suffix('.mapping'))]
 
         cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {file.parent}"
         subprocess.check_output(cmd, shell=True).decode()
