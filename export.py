@@ -157,7 +157,7 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
         f = file.with_suffix('.xml')
 
         cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {file.parent}"
-        subprocess.check_output(cmd, shell=True, timeout=5).decode()
+        subprocess.check_output(cmd, shell=True).decode()
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
     except Exception as e:
