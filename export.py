@@ -148,13 +148,12 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
 
 def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
-    ct_model = None
     try:
-        check_requirements(('openvino',))  # https://pypi.org/project/openvino-dev/
+        check_requirements(('openvino',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
         import openvino.inference_engine as ie
 
         LOGGER.info(f'\n{prefix} starting export with openvino {ie.__version__}...')
-        f = str(file.with_suffix('')) + '_openvino_model' + os.sep
+        f = str(file).replace('.pt', '_openvino_model' + os.sep)
 
         cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f}"
         subprocess.check_output(cmd, shell=True).decode()
