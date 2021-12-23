@@ -9,7 +9,7 @@ def infer_detection(weights_path: str, im: np.ndarray, confidence: float):
         weights=weights_path,
         preprocessing_file_path=None,
         conf_thresh=confidence,
-        classes={'0': {'name': 'zero', 'color': [255, 0, 0]},
+        labels={'0': {'name': 'zero', 'color': [255, 0, 0]},
                  '1': {'name': 'un', 'color': [0, 255, 0]},
                  '2': {'name': 'deux', 'color': [0, 0, 255]}},
     )
