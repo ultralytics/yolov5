@@ -600,14 +600,14 @@ def main(opt, callbacks=Callbacks()):
                 hyp[k] = max(hyp[k], v[1])  # lower limit
                 hyp[k] = min(hyp[k], v[2])  # upper limit
                 hyp[k] = round(hyp[k], 5)  # significant digits
-            
+
             # Recheck fix anchor configuration
             with open(opt.hyp, errors='ignore') as f:
                 mom = yaml.safe_load(f)  # load hyps dict
                 if 'anchors' in mom:
                     if mom['anchors'] == 0:
                         hyp['anchors'] = 0
-            
+
             # Train mutation
             results = train(hyp.copy(), opt, device, callbacks)
 
