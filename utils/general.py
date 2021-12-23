@@ -33,18 +33,21 @@ from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
 
 # Settings
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[1]  # YOLOv5 root directory
+NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
+
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
 np.set_printoptions(linewidth=320, formatter={'float_kind': '{:11.5g}'.format})  # format short g, %precision=5
 pd.options.display.max_columns = 10
 cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with PyTorch DataLoader)
-os.environ['NUMEXPR_MAX_THREADS'] = str(min(os.cpu_count(), 8))  # NumExpr max threads
-
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[1]  # YOLOv5 root directory
+os.environ['NUMEXPR_MAX_THREADS'] = str(NUM_THREADS)  # NumExpr max threads
 
 
 def set_logging(name=None, verbose=True):
     # Sets level and returns logger
+    for h in logging.root.handlers:
+        logging.root.removeHandler(h)  # remove all handlers associated with the root logger object
     rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
     logging.basicConfig(format="%(message)s", level=logging.INFO if (verbose and rank in (-1, 0)) else logging.WARNING)
     return logging.getLogger(name)
@@ -247,14 +250,16 @@ def check_python(minimum='3.6.2'):
     check_version(platform.python_version(), minimum, name='Python ', hard=True)
 
 
-def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=False, hard=False):
+def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=False, hard=False, verbose=False):
     # Check version vs. required version
     current, minimum = (pkg.parse_version(x) for x in (current, minimum))
     result = (current == minimum) if pinned else (current >= minimum)  # bool
-    if hard:  # assert min requirements met
-        assert result, f'{name}{minimum} required by YOLOv5, but {name}{current} is currently installed'
-    else:
-        return result
+    s = f'{name}{minimum} required by YOLOv5, but {name}{current} is currently installed'  # string
+    if hard:
+        assert result, s  # assert min requirements met
+    if verbose and not result:
+        LOGGER.warning(s)
+    return result
 
 
 @try_except
@@ -738,7 +743,7 @@ def strip_optimizer(f='best.pt', s=''):  # from utils.general import *; strip_op
     x = torch.load(f, map_location=torch.device('cpu'))
     if x.get('ema'):
         x['model'] = x['ema']  # replace model with ema
-    for k in 'optimizer', 'training_results', 'wandb_id', 'ema', 'updates':  # keys
+    for k in 'optimizer', 'best_fitness', 'wandb_id', 'ema', 'updates':  # keys
         x[k] = None
     x['epoch'] = -1
     x['model'].half()  # to FP16

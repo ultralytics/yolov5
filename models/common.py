@@ -22,8 +22,8 @@ from PIL import Image
 from torch.cuda import amp
 
 from utils.datasets import exif_transpose, letterbox
-from utils.general import (LOGGER, check_requirements, check_suffix, colorstr, increment_path, make_divisible,
-                           non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh)
+from utils.general import (LOGGER, check_requirements, check_suffix, check_version, colorstr, increment_path,
+                           make_divisible, non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, time_sync
 
@@ -298,7 +298,7 @@ class DetectMultiBackend(nn.Module):
         check_suffix(w, suffixes)  # check weights have acceptable suffix
         pt, jit, onnx, engine, tflite, pb, saved_model, coreml = (suffix == x for x in suffixes)  # backend booleans
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
-        attempt_download(w)  # download if not local
+        w = attempt_download(w)  # download if not local
 
         if jit:  # TorchScript
             LOGGER.info(f'Loading {w} for TorchScript inference...')
@@ -308,7 +308,7 @@ class DetectMultiBackend(nn.Module):
                 d = json.loads(extra_files['config.txt'])  # extra_files dict
                 stride, names = int(d['stride']), d['names']
         elif pt:  # PyTorch
-            model = attempt_load(weights, map_location=device)
+            model = attempt_load(weights if isinstance(weights, list) else w, map_location=device)
             stride = int(model.stride.max())  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
             self.model = model  # explicitly assign for to(), cpu(), cuda(), half()
@@ -330,6 +330,7 @@ class DetectMultiBackend(nn.Module):
         elif engine:  # TensorRT
             LOGGER.info(f'Loading {w} for TensorRT inference...')
             import tensorrt as trt  # https://developer.nvidia.com/nvidia-tensorrt-download
+            check_version(trt.__version__, '8.0.0', verbose=True)  # version requirement
             Binding = namedtuple('Binding', ('name', 'dtype', 'shape', 'data', 'ptr'))
             logger = trt.Logger(trt.Logger.INFO)
             with open(w, 'rb') as f, trt.Runtime(logger) as runtime:
@@ -389,7 +390,7 @@ class DetectMultiBackend(nn.Module):
     def forward(self, im, augment=False, visualize=False, val=False):
         # YOLOv5 MultiBackend inference
         b, ch, h, w = im.shape  # batch, channel, height, width
-        if self.pt:  # PyTorch
+        if self.pt or self.jit:  # PyTorch
             y = self.model(im) if self.jit else self.model(im, augment=augment, visualize=visualize)
             return y if val else y[0]
         elif self.coreml:  # CoreML
@@ -536,7 +537,7 @@ class AutoShape(nn.Module):
 
 class Detections:
     # YOLOv5 detections class for inference results
-    def __init__(self, imgs, pred, files, times=None, names=None, shape=None):
+    def __init__(self, imgs, pred, files, times=(0, 0, 0, 0), names=None, shape=None):
         super().__init__()
         d = pred[0].device  # device
         gn = [torch.tensor([*(im.shape[i] for i in [1, 0, 1, 0]), 1, 1], device=d) for im in imgs]  # normalizations
@@ -544,6 +545,7 @@ class Detections:
         self.pred = pred  # list of tensors pred[0] = (xyxy, conf, cls)
         self.names = names  # class names
         self.files = files  # image filenames
+        self.times = times  # profiling times
         self.xyxy = pred  # xyxy pixels
         self.xywh = [xyxy2xywh(x) for x in pred]  # xywh pixels
         self.xyxyn = [x / g for x, g in zip(self.xyxy, gn)]  # xyxy normalized
@@ -623,10 +625,11 @@ class Detections:
 
     def tolist(self):
         # return a list of Detections objects, i.e. 'for result in results.tolist():'
-        x = [Detections([self.imgs[i]], [self.pred[i]], names=self.names, shape=self.s) for i in range(self.n)]
-        for d in x:
-            for k in ['imgs', 'pred', 'xyxy', 'xyxyn', 'xywh', 'xywhn']:
-                setattr(d, k, getattr(d, k)[0])  # pop out of list
+        r = range(self.n)  # iterable
+        x = [Detections([self.imgs[i]], [self.pred[i]], [self.files[i]], self.times, self.names, self.s) for i in r]
+        # for d in x:
+        #    for k in ['imgs', 'pred', 'xyxy', 'xyxyn', 'xywh', 'xywhn']:
+        #        setattr(d, k, getattr(d, k)[0])  # pop out of list
         return x
 
     def __len__(self):
