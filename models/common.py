@@ -347,13 +347,9 @@ class DetectMultiBackend(nn.Module):
             batch_size = bindings['images'].shape[0]
         else:  # TensorFlow model (TFLite, pb, saved_model)
             if data:
-                try:
-                    with open(data) as f:
-                        data = yaml.load(f, Loader=yaml.FullLoader)
-                except UnicodeDecodeError:  # switch encoding to utf-8 for Windows
-                    with open(data, encoding="utf8") as f:
-                        data = yaml.load(f, Loader=yaml.FullLoader)
-                names = data['names']
+                with open(data, errors='ignore') as f:
+                    data = yaml.safe_load(f)  # dictionary
+                names = data['names']  # class names
             if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
                 LOGGER.info(f'Loading {w} for TensorFlow *.pb inference...')
                 import tensorflow as tf
