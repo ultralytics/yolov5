@@ -46,6 +46,8 @@ os.environ['NUMEXPR_MAX_THREADS'] = str(NUM_THREADS)  # NumExpr max threads
 
 def set_logging(name=None, verbose=True):
     # Sets level and returns logger
+    for h in logging.root.handlers:
+        logging.root.removeHandler(h)  # remove all handlers associated with the root logger object
     rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
     logging.basicConfig(format="%(message)s", level=logging.INFO if (verbose and rank in (-1, 0)) else logging.WARNING)
     return logging.getLogger(name)
@@ -248,14 +250,16 @@ def check_python(minimum='3.6.2'):
     check_version(platform.python_version(), minimum, name='Python ', hard=True)
 
 
-def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=False, hard=False):
+def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=False, hard=False, verbose=False):
     # Check version vs. required version
     current, minimum = (pkg.parse_version(x) for x in (current, minimum))
     result = (current == minimum) if pinned else (current >= minimum)  # bool
-    if hard:  # assert min requirements met
-        assert result, f'{name}{minimum} required by YOLOv5, but {name}{current} is currently installed'
-    else:
-        return result
+    s = f'{name}{minimum} required by YOLOv5, but {name}{current} is currently installed'  # string
+    if hard:
+        assert result, s  # assert min requirements met
+    if verbose and not result:
+        LOGGER.warning(s)
+    return result
 
 
 @try_except
