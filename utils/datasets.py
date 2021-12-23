@@ -199,6 +199,16 @@ class LoadImages:
             # Read video
             self.mode = 'video'
             ret_val, img0 = self.cap.read()
+
+            if not ret_val and self.frame < self.frames - 1:
+                fake_frame_skip = 1000
+                while not ret_val and fake_frame_skip > 0:
+                    fake_frame_skip -= 1
+                    ret_val, img0 = self.cap.read()
+                if not ret_val:
+                    raise Exception(
+                        f'Video stream ended unexpectedly. See this issue for details: https://github.com/ultralytics/yolov5/issues/2064')
+
             while not ret_val:
                 self.count += 1
                 self.cap.release()
