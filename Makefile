@@ -40,8 +40,8 @@ dist: clean
 	env/bin/twine check dist/*
 
 tag:
-	git tag -a -m "Auto-generated tag" `sed -rn 's/^__version__\s*=\s*"(.+)"/\1/p' yolov5/__init__.py`
-	git push --tags
+	git tag -f -a -m "Auto-generated tag" `sed -rn 's/^__version__\s*=\s*"(.+)"/\1/p' yolov5/__init__.py`
+	git push --tags --force
 
 release: clean dist tag
 	env/bin/twine upload dist/* --repository-url https://pypi.psycle.dev/
