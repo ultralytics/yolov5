@@ -159,7 +159,7 @@ class Loggers():
                 self.wandb = WandbLogger(self.opt)
 
     def on_params_update(self, params):
-        # update hyperparams or configs of the experiment
-        # params: A dict containing param: value pairs
+        # Update hyperparams or configs of the experiment
+        # params: A dict containing {param: value} pairs
         if self.wandb:
             self.wandb.wandb_run.config.update(params, allow_val_change=True)
