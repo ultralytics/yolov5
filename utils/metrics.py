@@ -233,14 +233,14 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
                 v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
                 with torch.no_grad():
                     alpha = v / (v - iou + (1 + eps))
-                return iou - (rho2 / c2 + v * alpha)  # CIoU
-            else:
-                return iou - rho2 / c2  # DIoU
-        else:  # GIoU https://arxiv.org/pdf/1902.09630.pdf
-            c_area = cw * ch + eps  # convex area
-            return iou - (c_area - union) / c_area  # GIoU
-    else:
-        return iou  # IoU
+                return iou - (rho2 / c2 + v * alpha)
+            # DIoU
+            return iou - rho2 / c2
+        # GIoU https://arxiv.org/pdf/1902.09630.pdf
+        c_area = cw * ch + eps  # convex area
+        return iou - (c_area - union) / c_area
+    # IoU
+    return iou
 
 
 def box_iou(box1, box2):
