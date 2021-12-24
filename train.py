@@ -371,7 +371,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             if fi > best_fitness:
                 best_fitness = fi
                 if loggers.wandb:
-                    br = np.concatenate([np.array(results).reshape(-1)[:4], epoch])
+                    br = np.concatenate([np.array(results).reshape(-1)[:4], [epoch]])
                     for i, name in enumerate(['P', 'R', 'mAP@.5', 'mAP@.5-.95', 'epoch']):
                         loggers.wandb.wandb_run.summary[f'best/{name}'] = br[i]  # log best results in the summary
             log_vals = list(mloss) + list(results) + lr
