@@ -100,7 +100,7 @@ results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 To get the bounding boxes and the class of the object detected
 
 ```
-results.pandas().xyxy 
+results.pandas().xyxy
 
 # xyxy indicates the format of the result. formats available are:
 # xyxy (xmin,ymin,xmax,ymax)
