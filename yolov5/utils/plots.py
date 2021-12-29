@@ -5,18 +5,14 @@ Plotting utils
 
 import math
 import os
-from copy import copy
 from pathlib import Path
 
 import cv2
 import numpy as np
-import pandas as pd
-import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
 from yolov5.utils.general import user_config_dir, is_ascii, is_chinese, xywh2xyxy, xyxy2xywh
-from yolov5.utils.metrics import fitness
 
 # Settings
 CONFIG_DIR = user_config_dir()  # Ultralytics settings dir
