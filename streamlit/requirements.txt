@@ -1,7 +1,8 @@
 Repsycle==3.5.14
-torch>=1.8
-#torchvision==0.9.0
+torch==1.8
+torchvision==0.9.0
 streamlit==1.3.1
 opencv-python==4.5.5.62
 #scipy==1.7.3
 #pycocotools==2.0.2
+PyYAML==6.0

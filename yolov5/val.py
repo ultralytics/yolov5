@@ -11,7 +11,6 @@ import json
 import os
 import sys
 from pathlib import Path
-from threading import Thread
 
 import numpy as np
 import torch
@@ -29,7 +28,7 @@ from yolov5.utils.general import box_iou, coco80_to_coco91_class, colorstr, chec
     check_requirements, check_suffix, check_yaml, increment_path, non_max_suppression, print_args, scale_coords, \
     xyxy2xywh, xywh2xyxy, LOGGER
 from yolov5.utils.metrics import ap_per_class, ConfusionMatrix
-from yolov5.utils.plots import output_to_target, plot_images, plot_val_study
+from yolov5.utils.plots import plot_val_study
 from yolov5.utils.torch_utils import select_device, time_sync
 from yolov5.utils.callbacks import Callbacks
 
@@ -103,7 +102,6 @@ def run(data,
         model=None,
         dataloader=None,
         save_dir=Path(''),
-        plots=True,
         callbacks=Callbacks(),
         compute_loss=None,
         ):
@@ -210,8 +208,6 @@ def run(data,
                 scale_coords(img[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
                 correct = process_batch(predn, labelsn, iouv)
-                if plots:
-                    confusion_matrix.process_batch(predn, labelsn)
             else:
                 correct = torch.zeros(pred.shape[0], niou, dtype=torch.bool)
             stats.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), tcls))  # (correct, conf, pcls, tcls)
@@ -223,17 +219,10 @@ def run(data,
                 save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
             callbacks.run('on_val_image_end', pred, predn, path, names, img[si])
 
-        # Plot images
-        if plots and batch_i < 3:
-            f = save_dir / f'val_batch{batch_i}_labels.jpg'  # labels
-            Thread(target=plot_images, args=(img, targets, paths, f, names), daemon=True).start()
-            f = save_dir / f'val_batch{batch_i}_pred.jpg'  # predictions
-            Thread(target=plot_images, args=(img, output_to_target(out), paths, f, names), daemon=True).start()
-
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
-        p, r, ap, f1, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
+        p, r, ap, f1, ap_class = ap_per_class(*stats, save_dir=save_dir, names=names)
         ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
         mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
         nt = np.bincount(stats[3].astype(np.int64), minlength=nc)  # number of targets per class
@@ -254,11 +243,6 @@ def run(data,
     if not training:
         shape = (batch_size, 3, imgsz, imgsz)
         LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {shape}' % t)
-
-    # Plots
-    if plots:
-        confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        callbacks.run('on_val_end')
 
     # Save JSON
     if save_json and len(jdict):
@@ -336,7 +320,7 @@ def main(opt):
         # python val.py --task speed --data coco.yaml --batch 1 --weights yolov5n.pt yolov5s.pt...
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
             run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
-                device=opt.device, save_json=False, plots=False)
+                device=opt.device, save_json=False)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         # python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n.pt yolov5s.pt...
@@ -347,7 +331,7 @@ def main(opt):
             for i in x:  # img-size
                 LOGGER.info(f'\nRunning {f} point {i}...')
                 r, _, t = run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=i, conf_thres=opt.conf_thres,
-                              iou_thres=opt.iou_thres, device=opt.device, save_json=opt.save_json, plots=False)
+                              iou_thres=opt.iou_thres, device=opt.device, save_json=opt.save_json)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')
