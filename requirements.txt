@@ -1,7 +1,12 @@
 Cython==0.29.25
+numpy>=1.19.1
+torch>=1.8
+PyYAML==6.0
+tqdm==4.48.2
+
 matplotlib
 Pillow>=7.2.0
 pandas>=1.1.5
 PyYAML==6.0
 seaborn==0.11.2
-tqdm==4.48.2
+torchvision>=0.9.0
