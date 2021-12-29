@@ -3,9 +3,13 @@ numpy>=1.19.1
 torch>=1.8
 PyYAML==6.0
 tqdm==4.48.2
+requests==2.26.0
+Pillow>=7.2.0
+# opencv-python==4.4.0.42 # Only for x86
+
 
 matplotlib
-Pillow>=7.2.0
+
 pandas>=1.1.5
 PyYAML==6.0
 seaborn==0.11.2
