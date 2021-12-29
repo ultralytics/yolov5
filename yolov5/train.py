@@ -7,7 +7,9 @@ Usage:
 """
 
 # Trick to allow using train.py inside lib
-import os, sys
+import os
+import sys
+
 dir_path = os.getcwd()
 sys.path.insert(0, dir_path)
 
@@ -49,7 +51,6 @@ from yolov5.utils.general import labels_to_class_weights, increment_path, labels
     check_file, check_yaml, check_suffix, print_args, print_mutation, one_cycle, colorstr, methods, LOGGER
 from yolov5.utils.downloads import attempt_download
 from yolov5.utils.loss import ComputeLoss
-from yolov5.utils.plots import plot_labels, plot_evolve
 from yolov5.utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, intersect_dicts, select_device, \
     torch_distributed_zero_first
 from yolov5.utils.loggers.wandb.wandb_utils import check_wandb_resume
@@ -102,7 +103,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             callbacks.register_action(k, callback=getattr(loggers, k))
 
     # Config
-    plots = not evolve  # create plots
     cuda = device.type != 'cpu'
     init_seeds(1 + RANK)
     with torch_distributed_zero_first(LOCAL_RANK):
@@ -236,8 +236,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             # c = torch.tensor(labels[:, 0])  # classes
             # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
             # model._initialize_biases(cf.to(device))
-            if plots:
-                plot_labels(labels, names, save_dir)
 
             # Anchors
             if not opt.noautoanchor:
@@ -347,7 +345,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
                 pbar.set_description(('%10s' * 2 + '%10.4g' * 5) % (
                     f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
-                callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, plots, opt.sync_bn)
+                callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, False, opt.sync_bn)
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
@@ -434,7 +432,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                     if is_coco:
                         callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
 
-        callbacks.run('on_train_end', last, best, plots, epoch, results)
+        callbacks.run('on_train_end', last, best, False, epoch, results)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
 
     torch.cuda.empty_cache()
@@ -609,8 +607,6 @@ def main(opt, callbacks=Callbacks()):
             # Write mutation results
             print_mutation(results, hyp.copy(), save_dir, opt.bucket)
 
-        # Plot results
-        plot_evolve(evolve_csv)
         LOGGER.info(f'Hyperparameter evolution finished\n'
                     f"Results saved to {colorstr('bold', save_dir)}\n"
                     f'Use best hyperparameters example: $ python train.py --hyp {evolve_yaml}')

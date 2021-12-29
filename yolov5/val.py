@@ -28,7 +28,6 @@ from yolov5.utils.general import box_iou, coco80_to_coco91_class, colorstr, chec
     check_requirements, check_suffix, check_yaml, increment_path, non_max_suppression, print_args, scale_coords, \
     xyxy2xywh, xywh2xyxy, LOGGER
 from yolov5.utils.metrics import ap_per_class, ConfusionMatrix
-from yolov5.utils.plots import plot_val_study
 from yolov5.utils.torch_utils import select_device, time_sync
 from yolov5.utils.callbacks import Callbacks
 
@@ -335,7 +334,6 @@ def main(opt):
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')
-        plot_val_study(x=x)  # plot
 
 
 if __name__ == "__main__":
