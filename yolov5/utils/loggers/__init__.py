@@ -9,7 +9,6 @@ from threading import Thread
 
 import pkg_resources as pkg
 import torch
-from torch.utils.tensorboard import SummaryWriter
 
 from yolov5.utils.general import colorstr, emojis
 from yolov5.utils.loggers.wandb.wandb_utils import WandbLogger
@@ -56,10 +55,6 @@ class Loggers():
 
         # TensorBoard
         s = self.save_dir
-        if 'tb' in self.include and not self.opt.evolve:
-            prefix = colorstr('TensorBoard: ')
-            self.logger.info(f"{prefix}Start with 'tensorboard --logdir {s.parent}', view at http://localhost:6006/")
-            self.tb = SummaryWriter(str(s))
 
         # W&B
         if wandb and 'wandb' in self.include:
@@ -144,11 +139,7 @@ class Loggers():
         if self.wandb:
             self.wandb.log({"Results": [wandb.Image(str(f), caption=f.name) for f in files]})
             # Calling wandb.log. TODO: Refactor this into WandbLogger.log_model
-            if not self.opt.evolve:
-                wandb.log_artifact(str(best if best.exists() else last), type='model',
-                                   name='run_' + self.wandb.wandb_run.id + '_model',
-                                   aliases=['latest', 'best', 'stripped'])
-                self.wandb.finish_run()
-            else:
-                self.wandb.finish_run()
-                self.wandb = WandbLogger(self.opt)
+            wandb.log_artifact(str(best if best.exists() else last), type='model',
+                               name='run_' + self.wandb.wandb_run.id + '_model',
+                               aliases=['latest', 'best', 'stripped'])
+            self.wandb.finish_run()
