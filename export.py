@@ -2,26 +2,28 @@
 """
 Export a YOLOv5 PyTorch model to other formats. TensorFlow exports authored by https://github.com/zldrobit
 
-Format                  | Example                   | Export `include=(...)` argument
+Format                  | Example                   | `--include ...` argument
 ---                     | ---                       | ---
 PyTorch                 | yolov5s.pt                | -
-TorchScript             | yolov5s.torchscript.pt    | 'torchscript'
-ONNX                    | yolov5s.onnx              | 'onnx'
-CoreML                  | yolov5s.mlmodel           | 'coreml'
-TensorFlow SavedModel   | yolov5s_saved_model/      | 'saved_model'
-TensorFlow GraphDef     | yolov5s.pb                | 'pb'
-TensorFlow Lite         | yolov5s.tflite            | 'tflite'
-TensorFlow.js           | yolov5s_web_model/        | 'tfjs'
-TensorRT                | yolov5s.engine            | 'engine'
+TorchScript             | yolov5s.torchscript       | `torchscript`
+ONNX                    | yolov5s.onnx              | `onnx`
+CoreML                  | yolov5s.mlmodel           | `coreml`
+OpenVINO                | yolov5s_openvino_model/   | `openvino`
+TensorFlow SavedModel   | yolov5s_saved_model/      | `saved_model`
+TensorFlow GraphDef     | yolov5s.pb                | `pb`
+TensorFlow Lite         | yolov5s.tflite            | `tflite`
+TensorFlow.js           | yolov5s_web_model/        | `tfjs`
+TensorRT                | yolov5s.engine            | `engine`
 
 Usage:
-    $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx coreml saved_model pb tflite tfjs
+    $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx coreml openvino saved_model tflite tfjs
 
 Inference:
     $ python path/to/detect.py --weights yolov5s.pt
-                                         yolov5s.torchscript.pt
+                                         yolov5s.torchscript
                                          yolov5s.onnx
                                          yolov5s.mlmodel  (under development)
+                                         yolov5s_openvino_model  (under development)
                                          yolov5s_saved_model
                                          yolov5s.pb
                                          yolov5s.tflite
@@ -66,7 +68,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
     # YOLOv5 TorchScript model export
     try:
         LOGGER.info(f'\n{prefix} starting export with torch {torch.__version__}...')
-        f = file.with_suffix('.torchscript.pt')
+        f = file.with_suffix('.torchscript')
 
         ts = torch.jit.trace(model, im, strict=False)
         d = {"shape": im.shape, "stride": int(max(model.stride)), "names": model.names}
@@ -142,6 +144,23 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
     return ct_model
+
+
+def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
+    # YOLOv5 OpenVINO export
+    try:
+        check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
+        import openvino.inference_engine as ie
+
+        LOGGER.info(f'\n{prefix} starting export with openvino {ie.__version__}...')
+        f = str(file).replace('.pt', '_openvino_model' + os.sep)
+
+        cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f}"
+        subprocess.check_output(cmd, shell=True)
+
+        LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+    except Exception as e:
+        LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
 def export_saved_model(model, im, file, dynamic,
@@ -276,7 +295,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         assert onnx.exists(), f'failed to export ONNX file: {onnx}'
 
         LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
-        f = str(file).replace('.pt', '.engine')  # TensorRT engine file
+        f = file.with_suffix('.engine')  # TensorRT engine file
         logger = trt.Logger(trt.Logger.INFO)
         if verbose:
             logger.min_severity = trt.Logger.Severity.VERBOSE
@@ -310,13 +329,14 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
     except Exception as e:
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
+
 @torch.no_grad()
 def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         weights=ROOT / 'yolov5s.pt',  # weights path
         imgsz=(640, 640),  # image (height, width)
         batch_size=1,  # batch size
         device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        include=('torchscript', 'onnx', 'coreml'),  # include formats
+        include=('torchscript', 'onnx'),  # include formats
         half=False,  # FP16 half-precision export
         inplace=False,  # set YOLOv5 Detect() inplace=True
         train=False,  # model.train() mode
@@ -327,6 +347,8 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         opset=12,  # ONNX: opset version
         verbose=False,  # TensorRT: verbose log
         workspace=4,  # TensorRT: workspace size (GB)
+        nms=False,  # TF: add NMS to model
+        agnostic_nms=False,  # TF: add agnostic NMS to model
         topk_per_class=100,  # TF.js NMS: topk per class to keep
         topk_all=100,  # TF.js NMS: topk for all classes to keep
         iou_thres=0.45,  # TF.js NMS: IoU threshold
@@ -335,8 +357,11 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     t = time.time()
     include = [x.lower() for x in include]
     tf_exports = list(x in include for x in ('saved_model', 'pb', 'tflite', 'tfjs'))  # TensorFlow exports
-    imgsz *= 2 if len(imgsz) == 1 else 1  # expand
     file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)
+
+    # Checks
+    imgsz *= 2 if len(imgsz) == 1 else 1  # expand
+    opset = 12 if ('openvino' in include) else opset  # OpenVINO requires opset <= 12
 
     # Load PyTorch model
     device = select_device(device)
@@ -369,20 +394,22 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     # Exports
     if 'torchscript' in include:
         export_torchscript(model, im, file, optimize)
-    if 'onnx' in include:
+    if ('onnx' in include) or ('openvino' in include):  # OpenVINO requires ONNX
         export_onnx(model, im, file, opset, train, dynamic, simplify)
     if 'engine' in include:
         export_engine(model, im, file, train, half, simplify, workspace, verbose)
     if 'coreml' in include:
         export_coreml(model, im, file)
+    if 'openvino' in include:
+        export_openvino(model, im, file)
 
     # TensorFlow Exports
     if any(tf_exports):
         pb, tflite, tfjs = tf_exports[1:]
         assert not (tflite and tfjs), 'TFLite and TF.js models must be exported separately, please pass only one type.'
-        model = export_saved_model(model, im, file, dynamic, tf_nms=tfjs, agnostic_nms=tfjs,
-                                   topk_per_class=topk_per_class, topk_all=topk_all, conf_thres=conf_thres,
-                                   iou_thres=iou_thres)  # keras model
+        model = export_saved_model(model, im, file, dynamic, tf_nms=nms or agnostic_nms or tfjs,
+                                   agnostic_nms=agnostic_nms or tfjs, topk_per_class=topk_per_class, topk_all=topk_all,
+                                   conf_thres=conf_thres, iou_thres=iou_thres)  # keras model
         if pb or tfjs:  # pb prerequisite to tfjs
             export_pb(model, im, file)
         if tflite:
@@ -399,7 +426,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='weights path')
+    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640, 640], help='image (h, w)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
@@ -410,9 +437,11 @@ def parse_opt():
     parser.add_argument('--int8', action='store_true', help='CoreML/TF INT8 quantization')
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TF: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
-    parser.add_argument('--opset', type=int, default=13, help='ONNX: opset version')
+    parser.add_argument('--opset', type=int, default=12, help='ONNX: opset version')
     parser.add_argument('--verbose', action='store_true', help='TensorRT: verbose log')
     parser.add_argument('--workspace', type=int, default=4, help='TensorRT: workspace size (GB)')
+    parser.add_argument('--nms', action='store_true', help='TF: add NMS to model')
+    parser.add_argument('--agnostic-nms', action='store_true', help='TF: add agnostic NMS to model')
     parser.add_argument('--topk-per-class', type=int, default=100, help='TF.js NMS: topk per class to keep')
     parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='TF.js NMS: IoU threshold')
@@ -426,7 +455,8 @@ def parse_opt():
 
 
 def main(opt):
-    run(**vars(opt))
+    for opt.weights in (opt.weights if isinstance(opt.weights, list) else [opt.weights]):
+        run(**vars(opt))
 
 
 if __name__ == "__main__":
