@@ -233,7 +233,7 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
                 v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
                 with torch.no_grad():
                     alpha = v / (v - iou + (1 + eps))
-                return iou - (rho2 / c2 + v * alpha)
+                return iou - (rho2 / c2 + v * alpha)  # CIoU
             # DIoU
             return iou - rho2 / c2
         # GIoU https://arxiv.org/pdf/1902.09630.pdf
