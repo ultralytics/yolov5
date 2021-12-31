@@ -299,6 +299,9 @@ class DetectMultiBackend(nn.Module):
         pt, jit, onnx, engine, tflite, pb, saved_model, coreml = (suffix == x for x in suffixes)  # backend booleans
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
         w = attempt_download(w)  # download if not local
+        if data:  # data.yaml path (optional)
+            with open(data, errors='ignore') as f:
+                names = yaml.safe_load(f)['names']  # class names
 
         if jit:  # TorchScript
             LOGGER.info(f'Loading {w} for TorchScript inference...')
@@ -345,11 +348,7 @@ class DetectMultiBackend(nn.Module):
             binding_addrs = OrderedDict((n, d.ptr) for n, d in bindings.items())
             context = model.create_execution_context()
             batch_size = bindings['images'].shape[0]
-        else:  # TensorFlow model (TFLite, pb, saved_model)
-            if data:
-                with open(data, errors='ignore') as f:
-                    data = yaml.safe_load(f)  # dictionary
-                names = data['names']  # class names
+        else:  # TensorFlow (TFLite, pb, saved_model)
             if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
                 LOGGER.info(f'Loading {w} for TensorFlow *.pb inference...')
                 import tensorflow as tf
