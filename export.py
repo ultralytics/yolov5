@@ -248,6 +248,24 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
+def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
+    # YOLOv5 Edge TPU export https://coral.ai/docs/edgetpu/models-intro/
+    try:
+        cmd = 'edgetpu_compiler --version'
+        out = subprocess.run(cmd, shell=True, capture_output=True, check=True)
+        ver = out.stdout.decode().split()[-1]
+        LOGGER.info(f'\n{prefix} starting export with Edge TPU compiler {ver}...')
+        f = str(file).replace('.pt', '-int8_edgetpu.tflite')
+        f_tfl = str(file).replace('.pt', '-int8.tflite')  # TFLite model
+
+        cmd = f"edgetpu_compiler -s {f_tfl}"
+        subprocess.run(cmd, shell=True, check=True)
+
+        LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
+    except Exception as e:
+        LOGGER.info(f'\n{prefix} export failure: {e}')
+
+
 def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
     # YOLOv5 TensorFlow.js export
     try:
@@ -285,6 +303,7 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
 
 
 def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
+    # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
     try:
         check_requirements(('tensorrt',))
         import tensorrt as trt
@@ -356,7 +375,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         ):
     t = time.time()
     include = [x.lower() for x in include]
-    tf_exports = list(x in include for x in ('saved_model', 'pb', 'tflite', 'tfjs'))  # TensorFlow exports
+    tf_exports = list(x in include for x in ('saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'))  # TensorFlow exports
     file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)
 
     # Checks
@@ -405,15 +424,17 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
 
     # TensorFlow Exports
     if any(tf_exports):
-        pb, tflite, tfjs = tf_exports[1:]
+        pb, tflite, edgetpu, tfjs = tf_exports[1:]
         assert not (tflite and tfjs), 'TFLite and TF.js models must be exported separately, please pass only one type.'
         model = export_saved_model(model, im, file, dynamic, tf_nms=nms or agnostic_nms or tfjs,
                                    agnostic_nms=agnostic_nms or tfjs, topk_per_class=topk_per_class, topk_all=topk_all,
                                    conf_thres=conf_thres, iou_thres=iou_thres)  # keras model
         if pb or tfjs:  # pb prerequisite to tfjs
             export_pb(model, im, file)
-        if tflite:
-            export_tflite(model, im, file, int8=int8, data=data, ncalib=100)
+        if tflite or edgetpu:
+            export_tflite(model, im, file, int8=int8 or edgetpu, data=data, ncalib=100)
+        if edgetpu:
+            export_edgetpu(model, im, file)
         if tfjs:
             export_tfjs(model, im, file)
 
