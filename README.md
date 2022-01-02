@@ -127,8 +127,8 @@ results. [Models](https://github.com/ultralytics/yolov5/tree/master/models)
 and [datasets](https://github.com/ultralytics/yolov5/tree/master/data) download automatically from the latest
 YOLOv5 [release](https://github.com/ultralytics/yolov5/releases). Training times for YOLOv5n/s/m/l/x are
 1/2/4/6/8 days on a V100 GPU ([Multi-GPU](https://github.com/ultralytics/yolov5/issues/475) times faster). Use the
-largest `--batch-size` your GPU allows, or use `--batch-size -1` for
-YOLOv5 [AutoBatch](https://github.com/ultralytics/yolov5/pull/5092)). Batch sizes shown for V100-16GB.
+largest `--batch-size` possible, or pass `--batch-size -1` for
+YOLOv5 [AutoBatch](https://github.com/ultralytics/yolov5/pull/5092). Batch sizes shown for V100-16GB.
 
 ```bash
 python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 128
