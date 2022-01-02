@@ -32,7 +32,7 @@ class Callbacks:
             'on_fit_epoch_end': [],  # fit = train + val
             'on_model_save': [],
             'on_train_end': [],
-
+            'on_params_update': [],
             'teardown': [],
         }
 

@@ -40,7 +40,8 @@ from utils.torch_utils import select_device, time_sync
 def run(
         weights: Union[str, Path] = ROOT / 'yolov5s.pt',
         source: Union[str, Path] = ROOT / 'data/images',
-        imgsz: Sequence[int] = (640, 640),  # inference size (height, width)
+        data=ROOT / 'data/coco128.yaml',
+        imgsz: Sequence[int] = (640, 640),
         conf_thres: float = 0.25,
         iou_thres: float = 0.45,
         max_det: int = 1000,
@@ -69,7 +70,8 @@ def run(
     Args:
         weights: model path(s)
         source: file/dir/URL/glob, 0 for webcam
-        imgsz: inference size h,w
+        data: dataset.yaml path
+        imgsz: inference size (height, width)
         conf_thres: confidence threshold
         iou_thres: NMS IoU threshold
         max_det: maximum detections per image
@@ -110,7 +112,7 @@ def run(
 
     # Load model
     device = select_device(device)
-    model = DetectMultiBackend(weights, device=device, dnn=dnn)
+    model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data)
     stride, names, pt, jit, onnx, engine = model.stride, model.names, model.pt, model.jit, model.onnx, model.engine
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 

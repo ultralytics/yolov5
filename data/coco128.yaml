@@ -1,5 +1,5 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
-# COCO128 dataset https://www.kaggle.com/ultralytics/coco128 (first 128 images from COCO train2017)
+# COCO128 dataset https://www.kaggle.com/ultralytics/coco128 (first 128 images from COCO train2017) by Ultralytics
 # Example usage: python train.py --data coco128.yaml
 # parent
 # ├── yolov5
