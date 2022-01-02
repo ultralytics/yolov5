@@ -65,9 +65,6 @@ See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on tr
 Clone repo and install [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) in a
 [**Python>=3.6.0**](https://www.python.org/) environment, including
 [**PyTorch>=1.7**](https://pytorch.org/get-started/locally/).
-[Models](https://github.com/ultralytics/yolov5/tree/master/models)
-and [datasets](https://github.com/ultralytics/yolov5/tree/master/data) download automatically from the latest
-YOLOv5 [release](https://github.com/ultralytics/yolov5/releases).
 
 ```bash
 git clone https://github.com/ultralytics/yolov5  # clone
@@ -109,13 +106,13 @@ results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 the latest YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) and saving results to `runs/detect`.
 
 ```bash
-python path/to/detect.py --source 0              # webcam
-                                  img.jpg        # image
-                                  vid.mp4        # video
-                                  path/          # directory
-                                  path/*.jpg     # glob
-                                  'https://youtu.be/Zgi9g1ksQHc'  # YouTube
-                                  'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
+$ python detect.py --source 0  # webcam
+                            img.jpg  # image
+                            vid.mp4  # video
+                            path/  # directory
+                            path/*.jpg  # glob
+                            'https://youtu.be/Zgi9g1ksQHc'  # YouTube
+                            'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 ```
 
 </details>
@@ -123,12 +120,14 @@ python path/to/detect.py --source 0              # webcam
 <details>
 <summary>Training</summary>
 
-Run commands below to reproduce results
-on [COCO](https://github.com/ultralytics/yolov5/blob/master/data/scripts/get_coco.sh) dataset (dataset auto-downloads on
-first use). Training times for YOLOv5n/s/m/l/x are 1/2/4/6/8 days on a V100
-GPU ([Multi-GPU](https://github.com/ultralytics/yolov5/issues/475) times faster). Use the largest `--batch-size` your
-GPU allows (💡 ProTip! Use `--batch-size -1` for YOLOv5 [AutoBatch](https://github.com/ultralytics/yolov5/pull/5092)).
-Batch sizes shown for V100-16GB.
+
+The commands below reproduce YOLOv5 [COCO](https://github.com/ultralytics/yolov5/blob/master/data/scripts/get_coco.sh) 
+results. [Models](https://github.com/ultralytics/yolov5/tree/master/models)
+and [datasets](https://github.com/ultralytics/yolov5/tree/master/data) download automatically from the latest
+YOLOv5 [release](https://github.com/ultralytics/yolov5/releases). Training times for YOLOv5n/s/m/l/x are
+1/2/4/6/8 days on a V100 GPU ([Multi-GPU](https://github.com/ultralytics/yolov5/issues/475) times faster). Use the
+largest `--batch-size` your GPU allows, or use `--batch-size -1` for
+YOLOv5 [AutoBatch](https://github.com/ultralytics/yolov5/pull/5092)). Batch sizes shown for V100-16GB.
 
 ```bash
 python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 128
