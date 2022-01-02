@@ -112,8 +112,10 @@ def train():
     # Optimizer
     lr0 = 0.0001 * bs  # intial lr
     lrf = 0.01  # final lr (fraction of lr0)
-    if opt.adam:
+    if opt.optimizer == 'Adam':
         optimizer = optim.Adam(model.parameters(), lr=lr0 / 10)
+    elif opt.optimizer == 'AdamW':
+        optimizer = optim.AdamW(model.parameters(), lr=lr0 / 10)
     else:
         optimizer = optim.SGD(model.parameters(), lr=lr0, momentum=0.9, nesterov=True)
 
@@ -287,7 +289,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=128, help='total batch size for all GPUs')
     parser.add_argument('--img-size', type=int, default=128, help='train, test image sizes (pixels)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
-    parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
+    parser.add_argument('--optimizer', type=str, choices=['SGD', 'Adam', 'AdamW'], default='SGD', help='optimizer')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
