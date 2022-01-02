@@ -106,7 +106,7 @@ results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 <summary>Inference with detect.py</summary>
 
 `detect.py` runs inference on a variety of sources, downloading models automatically from
-the [latest YOLOv5 release](https://github.com/ultralytics/yolov5/releases) and saving results to `runs/detect`.
+the latest YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) and saving results to `runs/detect`.
 
 ```bash
 python path/to/detect.py --source 0              # webcam
