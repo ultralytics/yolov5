@@ -12,7 +12,7 @@ OpenVINO                    | yolov5s_openvino_model/       | `openvino`
 TensorFlow SavedModel       | yolov5s_saved_model/          | `saved_model`
 TensorFlow GraphDef         | yolov5s.pb                    | `pb`
 TensorFlow Lite             | yolov5s.tflite                | `tflite`
-TensorFlow Edge TPU:        | yolov5s_edgetpu.tflite        | `edgetpu`
+TensorFlow Edge TPU         | yolov5s_edgetpu.tflite        | `edgetpu`
 TensorFlow.js               | yolov5s_web_model/            | `tfjs`
 TensorRT                    | yolov5s.engine                | `engine`
 
