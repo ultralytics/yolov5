@@ -2,10 +2,10 @@
 """
 Train a YOLOv5 classifier model on a classification dataset
 
-Usage-train:
-    $ python path/to/classifier.py --model yolov5s --data mnist --epochs 5 --img 128 --optimizer AdamW
+Usage - train:
+    $ python path/to/classifier.py --model yolov5s --data mnist --epochs 5 --img 128
 
-Usage-inference:
+Usage - inference:
     from classifier import *
 
     model = torch.load('path/to/best.pt', map_location=torch.device('cpu'))['model'].float()
@@ -289,7 +289,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=128, help='total batch size for all GPUs')
     parser.add_argument('--img-size', type=int, default=128, help='train, test image sizes (pixels)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
-    parser.add_argument('--optimizer', type=str, choices=['SGD', 'Adam', 'AdamW'], default='SGD', help='optimizer')
+    parser.add_argument('--optimizer', type=str, choices=['SGD', 'Adam', 'AdamW'], default='Adam', help='optimizer')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
