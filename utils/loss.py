@@ -90,7 +90,8 @@ class QFocalLoss(nn.Module):
 
 class ComputeLoss:
     # Compute losses
-    def __init__(self, model, autobalance=False):
+    def __init__(self, model, autobalance=False, adapt_to_batch_size=True):
+        self.adapt_to_batch_size = adapt_to_batch_size
         self.sort_obj_iou = False
         device = next(model.parameters()).device  # get model device
         h = model.hyp  # hyperparameters
@@ -163,8 +164,9 @@ class ComputeLoss:
         lobj *= self.hyp['obj']
         lcls *= self.hyp['cls']
         bs = tobj.shape[0]  # batch size
+        scale = bs if self.adapt_to_batch_size else 1
 
-        return (lbox + lobj + lcls) * bs, torch.cat((lbox, lobj, lcls)).detach()
+        return (lbox + lobj + lcls) * scale, torch.cat((lbox, lobj, lcls)).detach()
 
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
