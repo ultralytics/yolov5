@@ -2,14 +2,26 @@
 """
 Run inference on images, videos, directories, streams, etc.
 
-Usage:
-    $ python path/to/detect.py --weights yolov5s.pt --source 0  # webcam
-                                                             img.jpg  # image
-                                                             vid.mp4  # video
-                                                             path/  # directory
-                                                             path/*.jpg  # glob
+Usage - sources:
+    $ python path/to/detect.py --weights yolov5s.pt --source 0              # webcam
+                                                             img.jpg        # image
+                                                             vid.mp4        # video
+                                                             path/          # directory
+                                                             path/*.jpg     # glob
                                                              'https://youtu.be/Zgi9g1ksQHc'  # YouTube
                                                              'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
+
+Usage - formats:
+    $ python path/to/detect.py --weights yolov5s.pt                 # PyTorch
+                                         yolov5s.torchscript        # TorchScript
+                                         yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
+                                         yolov5s.mlmodel            # CoreML (under development)
+                                         yolov5s_openvino_model     # OpenVINO (under development)
+                                         yolov5s_saved_model        # TensorFlow SavedModel
+                                         yolov5s.pb                 # TensorFlow protobuf
+                                         yolov5s.tflite             # TensorFlow Lite
+                                         yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
+                                         yolov5s.engine             # TensorRT
 """
 
 import argparse

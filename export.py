@@ -2,18 +2,19 @@
 """
 Export a YOLOv5 PyTorch model to other formats. TensorFlow exports authored by https://github.com/zldrobit
 
-Format                  | Example                   | `--include ...` argument
----                     | ---                       | ---
-PyTorch                 | yolov5s.pt                | -
-TorchScript             | yolov5s.torchscript       | `torchscript`
-ONNX                    | yolov5s.onnx              | `onnx`
-CoreML                  | yolov5s.mlmodel           | `coreml`
-OpenVINO                | yolov5s_openvino_model/   | `openvino`
-TensorFlow SavedModel   | yolov5s_saved_model/      | `saved_model`
-TensorFlow GraphDef     | yolov5s.pb                | `pb`
-TensorFlow Lite         | yolov5s.tflite            | `tflite`
-TensorFlow.js           | yolov5s_web_model/        | `tfjs`
-TensorRT                | yolov5s.engine            | `engine`
+Format                      | Example                       | `--include ...` argument
+---                         | ---                           | ---
+PyTorch                     | yolov5s.pt                    | -
+TorchScript                 | yolov5s.torchscript           | `torchscript`
+ONNX                        | yolov5s.onnx                  | `onnx`
+CoreML                      | yolov5s.mlmodel               | `coreml`
+OpenVINO                    | yolov5s_openvino_model/       | `openvino`
+TensorFlow SavedModel       | yolov5s_saved_model/          | `saved_model`
+TensorFlow GraphDef         | yolov5s.pb                    | `pb`
+TensorFlow Lite             | yolov5s.tflite                | `tflite`
+TensorFlow Edge TPU         | yolov5s_edgetpu.tflite        | `edgetpu`
+TensorFlow.js               | yolov5s_web_model/            | `tfjs`
+TensorRT                    | yolov5s.engine                | `engine`
 
 Usage:
     $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx coreml openvino saved_model tflite tfjs
@@ -27,6 +28,7 @@ Inference:
                                          yolov5s_saved_model
                                          yolov5s.pb
                                          yolov5s.tflite
+                                         yolov5s_edgetpu.tflite
                                          yolov5s.engine
 
 TensorFlow.js:

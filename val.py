@@ -3,7 +3,19 @@
 Validate a trained YOLOv5 model accuracy on a custom dataset
 
 Usage:
-    $ python path/to/val.py --data coco128.yaml --weights yolov5s.pt --img 640
+    $ python path/to/val.py --weights yolov5s.pt --data coco128.yaml --img 640
+
+Usage - formats:
+    $ python path/to/val.py --weights yolov5s.pt                 # PyTorch
+                                      yolov5s.torchscript        # TorchScript
+                                      yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
+                                      yolov5s.mlmodel            # CoreML (under development)
+                                      yolov5s_openvino_model     # OpenVINO (under development)
+                                      yolov5s_saved_model        # TensorFlow SavedModel
+                                      yolov5s.pb                 # TensorFlow protobuf
+                                      yolov5s.tflite             # TensorFlow Lite
+                                      yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
+                                      yolov5s.engine             # TensorRT
 """
 
 import argparse
