@@ -20,16 +20,16 @@ Usage:
     $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx coreml openvino saved_model tflite tfjs
 
 Inference:
-    $ python path/to/detect.py --weights yolov5s.pt
-                                         yolov5s.torchscript
-                                         yolov5s.onnx
-                                         yolov5s.mlmodel  (under development)
-                                         yolov5s_openvino_model  (under development)
-                                         yolov5s_saved_model
-                                         yolov5s.pb
-                                         yolov5s.tflite
-                                         yolov5s_edgetpu.tflite
-                                         yolov5s.engine
+    $ python path/to/detect.py --weights yolov5s.pt                 # PyTorch
+                                         yolov5s.torchscript        # TorchScript
+                                         yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
+                                         yolov5s.mlmodel            # CoreML (under development)
+                                         yolov5s.xml                # OpenVINO
+                                         yolov5s_saved_model        # TensorFlow SavedModel
+                                         yolov5s.pb                 # TensorFlow protobuf
+                                         yolov5s.tflite             # TensorFlow Lite
+                                         yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
+                                         yolov5s.engine             # TensorRT
 
 TensorFlow.js:
     $ cd .. && git clone https://github.com/zldrobit/tfjs-yolov5-example.git && cd tfjs-yolov5-example

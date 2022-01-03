@@ -282,6 +282,7 @@ class DetectMultiBackend(nn.Module):
         #   PyTorch:      weights = *.pt
         #   TorchScript:            *.torchscript
         #   CoreML:                 *.mlmodel
+        #   OpenVINO:               *.xml
         #   TensorFlow:             *_saved_model
         #   TensorFlow:             *.pb
         #   TensorFlow Lite:        *.tflite
@@ -294,31 +295,38 @@ class DetectMultiBackend(nn.Module):
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
         suffix = Path(w).suffix.lower()
-        suffixes = ['.pt', '.torchscript', '.onnx', '.engine', '.tflite', '.pb', '', '.mlmodel']
+        suffixes = ['.pt', '.torchscript', '.onnx', '.engine', '.tflite', '.pb', '', '.mlmodel', '.xml']
         check_suffix(w, suffixes)  # check weights have acceptable suffix
-        pt, jit, onnx, engine, tflite, pb, saved_model, coreml = (suffix == x for x in suffixes)  # backend booleans
+        pt, jit, onnx, engine, tflite, pb, saved_model, coreml, xml = (suffix == x for x in suffixes)  # backends
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
         w = attempt_download(w)  # download if not local
         if data:  # data.yaml path (optional)
             with open(data, errors='ignore') as f:
                 names = yaml.safe_load(f)['names']  # class names
 
-        if jit:  # TorchScript
+        if pt:  # PyTorch
+            model = attempt_load(weights if isinstance(weights, list) else w, map_location=device)
+            stride = int(model.stride.max())  # model stride
+            names = model.module.names if hasattr(model, 'module') else model.names  # get class names
+            self.model = model  # explicitly assign for to(), cpu(), cuda(), half()
+        elif jit:  # TorchScript
             LOGGER.info(f'Loading {w} for TorchScript inference...')
             extra_files = {'config.txt': ''}  # model metadata
             model = torch.jit.load(w, _extra_files=extra_files)
             if extra_files['config.txt']:
                 d = json.loads(extra_files['config.txt'])  # extra_files dict
                 stride, names = int(d['stride']), d['names']
-        elif pt:  # PyTorch
-            model = attempt_load(weights if isinstance(weights, list) else w, map_location=device)
-            stride = int(model.stride.max())  # model stride
-            names = model.module.names if hasattr(model, 'module') else model.names  # get class names
-            self.model = model  # explicitly assign for to(), cpu(), cuda(), half()
         elif coreml:  # CoreML
             LOGGER.info(f'Loading {w} for CoreML inference...')
             import coremltools as ct
             model = ct.models.MLModel(w)
+        elif xml:  # OpenVINO
+            LOGGER.info(f'Loading {w} for OpenVINO inference...')
+            check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
+            import openvino.inference_engine as ie
+            core = ie.IECore()
+            network = core.read_network(model=w, weights=Path(w).with_suffix('.bin'))  # *.xml, *.bin paths
+            executable_network = core.load_network(network, device_name='CPU', num_requests=1)
         elif dnn:  # ONNX OpenCV DNN
             LOGGER.info(f'Loading {w} for ONNX OpenCV DNN inference...')
             check_requirements(('opencv-python>=4.5.4',))
@@ -403,6 +411,13 @@ class DetectMultiBackend(nn.Module):
                 y = self.net.forward()
             else:  # ONNX Runtime
                 y = self.session.run([self.session.get_outputs()[0].name], {self.session.get_inputs()[0].name: im})[0]
+        elif self.xml:  # OpenVINO
+            im = im.cpu().numpy()  # FP32
+            desc = self.ie.TensorDesc(precision='FP32', dims=im.shape, layout='NCHW')  # Tensor Description
+            request = self.executable_network.requests[0]  # inference request
+            request.set_blob(blob_name='images', blob=self.ie.Blob(desc, im))  # name=next(iter(request.input_blobs))
+            request.infer()
+            y = request.output_blobs['output'].buffer  # name=next(iter(request.output_blobs))
         elif self.engine:  # TensorRT
             assert im.shape == self.bindings['images'].shape, (im.shape, self.bindings['images'].shape)
             self.binding_addrs['images'] = int(im.data_ptr())
