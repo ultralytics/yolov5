@@ -8,8 +8,6 @@
 #                   P         R     mAP.5 mAP.5:.95       box       obj       cls
 # Metrics:        0.6     0.936     0.896     0.684    0.0115   0.00805   0.00146
 
-lr0: 0.0032
-lrf: 0.12
 momentum: 0.843
 weight_decay: 0.00036
 warmup_epochs: 2.0
