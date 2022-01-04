@@ -423,13 +423,13 @@ class DetectMultiBackend(nn.Module):
             box = xywh2xyxy(y['coordinates'] * [[w, h, w, h]])  # xyxy pixels
             conf, cls = y['confidence'].max(1), y['confidence'].argmax(1).astype(np.float)
             y = np.concatenate((box, conf.reshape(-1, 1), cls.reshape(-1, 1)), 1)
-        else:  # TensorFlow model (TFLite, pb, saved_model)
+        else:  # TensorFlow (SavedModel, GraphDef, Lite, Edge TPU)
             im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
-            if self.pb:
-                y = self.frozen_func(x=self.tf.constant(im)).numpy()
-            elif self.saved_model:
+            if self.saved_model:  # SavedModel
                 y = self.model(im, training=False).numpy()
-            elif self.tflite:
+            elif self.pb:  # GraphDef
+                y = self.frozen_func(x=self.tf.constant(im)).numpy()
+            elif self.tflite:  # Lite
                 input, output = self.input_details[0], self.output_details[0]
                 int8 = input['dtype'] == np.uint8  # is TFLite quantized uint8 model
                 if int8:
@@ -451,7 +451,7 @@ class DetectMultiBackend(nn.Module):
 
     def warmup(self, imgsz=(1, 3, 640, 640), half=False):
         # Warmup model by running inference once
-        if self.pt or self.engine or self.onnx:  # warmup types
+        if self.pt or self.jit or self.onnx or self.engine:  # warmup types
             if isinstance(self.device, torch.device) and self.device.type != 'cpu':  # only warmup GPU models
                 im = torch.zeros(*imgsz).to(self.device).type(torch.half if half else torch.float)  # input image
                 self.forward(im)  # warmup
