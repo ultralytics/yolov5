@@ -174,13 +174,16 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         check_requirements(('tensorrt',))
         import tensorrt as trt
 
-        anchor_grid = model.model[-1].anchor_grid
-        model.model[-1].anchor_grid = [a[..., :1, :1, :] for a in anchor_grid]
         opset = (12, 13)[trt.__version__[0] == '8']  # test on TensorRT 7.x and 8.x
-        export_onnx(model, im, file, opset, train, False, simplify)
+        if opset == 12:  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
+            grid = model.model[-1].anchor_grid
+            model.model[-1].anchor_grid = [a[..., :1, :1, :] for a in grid]
+            export_onnx(model, im, file, opset, train, False, simplify)
+            model.model[-1].anchor_grid = grid
+        else:  # TensorRT >= 8
+            export_onnx(model, im, file, opset, train, False, simplify)
         onnx = file.with_suffix('.onnx')
         assert onnx.exists(), f'failed to export ONNX file: {onnx}'
-        model.model[-1].anchor_grid = anchor_grid
 
         LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
         f = file.with_suffix('.engine')  # TensorRT engine file
