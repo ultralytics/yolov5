@@ -337,7 +337,7 @@ class DetectMultiBackend(nn.Module):
         elif engine:  # TensorRT
             LOGGER.info(f'Loading {w} for TensorRT inference...')
             import tensorrt as trt  # https://developer.nvidia.com/nvidia-tensorrt-download
-            check_version(trt.__version__, '8.0.0', verbose=True)  # version requirement
+            check_version(trt.__version__, '7.0.0', hard=True)  # require tensorrt>=7.0.0
             Binding = namedtuple('Binding', ('name', 'dtype', 'shape', 'data', 'ptr'))
             logger = trt.Logger(trt.Logger.INFO)
             with open(w, 'rb') as f, trt.Runtime(logger) as runtime:
