@@ -289,10 +289,13 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         check_requirements(('tensorrt',))
         import tensorrt as trt
 
+        anchor_grid = model.model[-1].anchor_grid
+        model.model[-1].anchor_grid = [a[..., :1, :1, :] for a in anchor_grid]
         opset = (12, 13)[trt.__version__[0] == '8']  # test on TensorRT 7.x and 8.x
         export_onnx(model, im, file, opset, train, False, simplify)
         onnx = file.with_suffix('.onnx')
         assert onnx.exists(), f'failed to export ONNX file: {onnx}'
+        model.model[-1].anchor_grid = anchor_grid
 
         LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
         f = file.with_suffix('.engine')  # TensorRT engine file
@@ -394,10 +397,10 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     # Exports
     if 'torchscript' in include:
         export_torchscript(model, im, file, optimize)
-    if ('onnx' in include) or ('openvino' in include):  # OpenVINO requires ONNX
-        export_onnx(model, im, file, opset, train, dynamic, simplify)
     if 'engine' in include:
         export_engine(model, im, file, train, half, simplify, workspace, verbose)
+    if ('onnx' in include) or ('openvino' in include):  # OpenVINO requires ONNX
+        export_onnx(model, im, file, opset, train, dynamic, simplify)
     if 'coreml' in include:
         export_coreml(model, im, file)
     if 'openvino' in include:
