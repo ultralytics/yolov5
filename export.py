@@ -180,7 +180,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
             export_onnx(model, im, file, 12, train, False, simplify)  # opset 12
             model.model[-1].anchor_grid = grid
         else:  # TensorRT >= 8
-            check_version(trt.__version__, '8.0.0', hard=True, verbose=True)
+            check_version(trt.__version__, '7.0.0', hard=True)  # require tensorrt>=8.0.0
             export_onnx(model, im, file, 13, train, False, simplify)  # opset 13
         onnx = file.with_suffix('.onnx')
         assert onnx.exists(), f'failed to export ONNX file: {onnx}'
