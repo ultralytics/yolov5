@@ -16,7 +16,7 @@ Usage - formats:
                                          yolov5s.torchscript        # TorchScript
                                          yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
                                          yolov5s.mlmodel            # CoreML (under development)
-                                         yolov5s_openvino_model     # OpenVINO (under development)
+                                         yolov5s.xml                # OpenVINO
                                          yolov5s_saved_model        # TensorFlow SavedModel
                                          yolov5s.pb                 # TensorFlow protobuf
                                          yolov5s.tflite             # TensorFlow Lite
