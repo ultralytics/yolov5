@@ -421,7 +421,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     # Exports
     if 'torchscript' in include:
         export_torchscript(model, im, file, optimize)
-    if 'engine' in include:
+    if 'engine' in include:  # TensorRT required before ONNX
         export_engine(model, im, file, train, half, simplify, workspace, verbose)
     if ('onnx' in include) or ('openvino' in include):  # OpenVINO requires ONNX
         export_onnx(model, im, file, opset, train, dynamic, simplify)
