@@ -38,8 +38,9 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import DetectMultiBackend
 from utils.datasets import LoadImages
-from utils.general import (non_max_suppression, scale_coords, check_img_size)
+from utils.general import check_img_size, non_max_suppression, scale_coords
 from utils.torch_utils import select_device
+
 
 def run_model(weights, data, conf_thres, iou_thres, max_det, source, device = '', half = False, imgsz = [640,640]):
     # Load model
