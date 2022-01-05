@@ -25,7 +25,7 @@ Inference:
                                          yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
                                          yolov5s.xml                # OpenVINO
                                          yolov5s.engine             # TensorRT
-                                         yolov5s.mlmodel            # CoreML (under development)
+                                         yolov5s.mlmodel            # CoreML (MacOS-only)
                                          yolov5s_saved_model        # TensorFlow SavedModel
                                          yolov5s.pb                 # TensorFlow GraphDef
                                          yolov5s.tflite             # TensorFlow Lite
@@ -156,7 +156,6 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
         LOGGER.info(f'\n{prefix} starting export with coremltools {ct.__version__}...')
         f = file.with_suffix('.mlmodel')
 
-        model.train()  # CoreML exports should be placed in model.train() mode
         ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
         ct_model = ct.convert(ts, inputs=[ct.ImageType('image', shape=im.shape, scale=1 / 255, bias=[0, 0, 0])])
         ct_model.save(f)
