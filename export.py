@@ -287,7 +287,6 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
         converter.optimizations = [tf.lite.Optimize.DEFAULT]
         if int8:
             from models.tf import representative_dataset_gen
-            check_requirements(('flatbuffers==1.12',))  # https://github.com/ultralytics/yolov5/issues/5707
             dataset = LoadImages(check_dataset(data)['train'], img_size=imgsz, auto=False)  # representative data
             converter.representative_dataset = lambda: representative_dataset_gen(dataset, ncalib)
             converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
@@ -391,6 +390,8 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     # Checks
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
     opset = 12 if ('openvino' in include) else opset  # OpenVINO requires opset <= 12
+    if (('tflite' in include) or ('edgetpu' in include)) and int8:
+        check_requirements(('flatbuffers==1.12',))  # TFLite fix https://github.com/ultralytics/yolov5/issues/5707
 
     # Load PyTorch model
     device = select_device(device)
