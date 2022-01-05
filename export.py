@@ -275,8 +275,6 @@ def export_pb(keras_model, im, file, prefix=colorstr('TensorFlow GraphDef:')):
 def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('TensorFlow Lite:')):
     # YOLOv5 TensorFlow Lite export
     try:
-        if int8:
-            check_requirements(('flatbuffers==1.12',))  # issue https://github.com/ultralytics/yolov5/issues/5707
         import tensorflow as tf
 
         LOGGER.info(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
@@ -289,6 +287,7 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
         converter.optimizations = [tf.lite.Optimize.DEFAULT]
         if int8:
             from models.tf import representative_dataset_gen
+            check_requirements(('flatbuffers==1.12',))  # https://github.com/ultralytics/yolov5/issues/5707
             dataset = LoadImages(check_dataset(data)['train'], img_size=imgsz, auto=False)  # representative data
             converter.representative_dataset = lambda: representative_dataset_gen(dataset, ncalib)
             converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
