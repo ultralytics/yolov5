@@ -311,7 +311,7 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
         cmd = 'edgetpu_compiler --version'
         help = 'See https://coral.ai/docs/edgetpu/compiler/'
         assert platform.system() == 'Linux', f'export only supported on Linux. {help}'
-        assert subprocess.run(cmd + ' &> /dev/null', shell=True).returncode == 0, f'requires edgetpu-compiler. {help}'
+        assert subprocess.run(cmd, shell=True).returncode == 0, f'requires edgetpu-compiler. {help}'
         out = subprocess.run(cmd, shell=True, capture_output=True, check=True)
         ver = out.stdout.decode().split()[-1]
 
