@@ -316,7 +316,7 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
         ver = out.stdout.decode().split()[-1]
 
         LOGGER.info(f'\n{prefix} starting export with Edge TPU compiler {ver}...')
-        f = str(file).replace('.pt', '-int8_edgetpu.tflite')
+        f = str(file).replace('.pt', '-int8_edgetpu.tflite')  # Edge TPU model
         f_tfl = str(file).replace('.pt', '-int8.tflite')  # TFLite model
 
         cmd = f"edgetpu_compiler -s {f_tfl}"
