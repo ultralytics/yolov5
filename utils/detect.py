@@ -36,6 +36,10 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
 from models.common import DetectMultiBackend
 from utils.datasets import LoadImages
 from utils.general import check_img_size, non_max_suppression, scale_coords
@@ -43,6 +47,7 @@ from utils.torch_utils import select_device
 
 
 def run_model(weights, data, conf_thres, iou_thres, max_det, source, device = '', half = False, imgsz = [640,640]):
+    print("[INFO] Computing face mask detections...")
     # Load model
     device = select_device(device)
     model = DetectMultiBackend(weights, device=device, data=data)
@@ -61,11 +66,13 @@ def run_model(weights, data, conf_thres, iou_thres, max_det, source, device = ''
     model.warmup(imgsz=(1, 3, *imgsz), half=half)  # warmup
     for _, im, im0s, _, _ in dataset:
         faces, locs = detect_on_image(im, im0s, model, conf_thres, iou_thres, max_det, device, half)
+    print("[INFO] Find", len(faces), "mask faces")
+    return faces, locs
 
 def find_points(x1, y1, x2, y2):
     w = x2 - x1
     h = y2 - y1
-    return (int(x1 - w * 0.114), int(y1 - h * 0.434)), (int(x2 + w * 0.114), int(y2))
+    return (int(x1 - w * 0.114), int(y1 - h * 0.434), int(x2 + w * 0.114), int(y2))
 
 def detect_on_image(im, im0s, model, conf_thres, iou_thres, max_det, device, half):
         im = torch.from_numpy(im).to(device)
@@ -88,15 +95,15 @@ def detect_on_image(im, im0s, model, conf_thres, iou_thres, max_det, device, hal
         # Process predictions
         for det in pred:  # per image
             im0 = im0s.copy()
-
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
 
                 # Write results
-                for *xyxy, _, _ in reversed(det):
-                    # find_points
-                    (startX, startY, endX, endY) = xyxy
-                    faces.append(im0[int(startY):int(endY), int(startX):int(endX)])
-                    locs.append((startX, startY, endX, endY))
+                for *xyxy, _, cls in reversed(det):
+                    c = int(cls)
+                    if (c == 0):
+                        (startX, startY, endX, endY) = find_points(xyxy[0],xyxy[1],xyxy[2],xyxy[3])
+                        faces.append(im0[startY:endY, startX:endX])
+                        locs.append((startX, startY, endX, endY))
         return faces, locs
