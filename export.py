@@ -17,7 +17,7 @@ TensorFlow Edge TPU         | `edgetpu`                     | yolov5s_edgetpu.tf
 TensorFlow.js               | `tfjs`                        | yolov5s_web_model/
 
 Usage:
-    $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx coreml openvino saved_model tflite tfjs
+    $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx openvino engine coreml tflite ...
 
 Inference:
     $ python path/to/detect.py --weights yolov5s.pt                 # PyTorch
@@ -179,7 +179,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
             export_onnx(model, im, file, 12, train, False, simplify)  # opset 12
             model.model[-1].anchor_grid = grid
         else:  # TensorRT >= 8
-            check_version(trt.__version__, '7.0.0', hard=True)  # require tensorrt>=8.0.0
+            check_version(trt.__version__, '8.0.0', hard=True)  # require tensorrt>=8.0.0
             export_onnx(model, im, file, 13, train, False, simplify)  # opset 13
         onnx = file.with_suffix('.onnx')
         assert onnx.exists(), f'failed to export ONNX file: {onnx}'
@@ -308,7 +308,7 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
 def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
     # YOLOv5 Edge TPU export https://coral.ai/docs/edgetpu/models-intro/
     try:
-        cmd = 'edgetpu_compiler --version'
+        cmd = 'edgetpu_compiler --version'  # install https://coral.ai/docs/edgetpu/compiler/
         out = subprocess.run(cmd, shell=True, capture_output=True, check=True)
         ver = out.stdout.decode().split()[-1]
         LOGGER.info(f'\n{prefix} starting export with Edge TPU compiler {ver}...')

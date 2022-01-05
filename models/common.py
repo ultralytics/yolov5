@@ -376,8 +376,8 @@ class DetectMultiBackend(nn.Module):
             elif tflite:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
                 if 'edgetpu' in w.lower():  # Edge TPU
                     LOGGER.info(f'Loading {w} for TensorFlow Lite Edge TPU inference...')
-                    import tflite_runtime.interpreter as tfli
-                    delegate = {'Linux': 'libedgetpu.so.1',  # install https://coral.ai/software/#edgetpu-runtime
+                    import tflite_runtime.interpreter as tfli  # install https://coral.ai/software/#edgetpu-runtime
+                    delegate = {'Linux': 'libedgetpu.so.1',
                                 'Darwin': 'libedgetpu.1.dylib',
                                 'Windows': 'edgetpu.dll'}[platform.system()]
                     interpreter = tfli.Interpreter(model_path=w, experimental_delegates=[tfli.load_delegate(delegate)])
