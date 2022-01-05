@@ -309,9 +309,9 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
     # YOLOv5 Edge TPU export https://coral.ai/docs/edgetpu/models-intro/
     try:
         cmd = 'edgetpu_compiler --version'
-        help_url = 'https://coral.ai/docs/edgetpu/compiler/'
-        assert platform.system() == 'Linux', f'export only supported on Linux. See {help_url}'
-        assert subprocess.run(cmd, shell=True, check=True), f'export requires edgetpu-compiler. See {help_url}'
+        help = 'See https://coral.ai/docs/edgetpu/compiler/'
+        assert platform.system() == 'Linux', f'export only supported on Linux. {help}'
+        assert subprocess.run(cmd + ' &> /dev/null', shell=True).returncode == 0, f'requires edgetpu-compiler. {help}'
         out = subprocess.run(cmd, shell=True, capture_output=True, check=True)
         ver = out.stdout.decode().split()[-1]
 
