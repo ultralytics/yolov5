@@ -287,7 +287,6 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
         converter.optimizations = [tf.lite.Optimize.DEFAULT]
         if int8:
             from models.tf import representative_dataset_gen
-            check_requirements(('flatbuffers==1.12',))  # https://github.com/ultralytics/yolov5/issues/5707
             dataset = LoadImages(check_dataset(data)['train'], img_size=imgsz, auto=False)  # representative data
             converter.representative_dataset = lambda: representative_dataset_gen(dataset, ncalib)
             converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
@@ -435,6 +434,8 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     # TensorFlow Exports
     if any(tf_exports):
         pb, tflite, edgetpu, tfjs = tf_exports[1:]
+        if (tflite or edgetpu) and int8:  # TFLite --int8 bug https://github.com/ultralytics/yolov5/issues/5707
+            check_requirements(('flatbuffers==1.12',))  # required before `import tensorflow`
         assert not (tflite and tfjs), 'TFLite and TF.js models must be exported separately, please pass only one type.'
         model = export_saved_model(model, im, file, dynamic, tf_nms=nms or agnostic_nms or tfjs,
                                    agnostic_nms=agnostic_nms or tfjs, topk_per_class=topk_per_class, topk_all=topk_all,
