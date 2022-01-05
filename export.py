@@ -41,6 +41,7 @@ TensorFlow.js:
 import argparse
 import json
 import os
+import platform
 import subprocess
 import sys
 import time
@@ -307,9 +308,13 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
 def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
     # YOLOv5 Edge TPU export https://coral.ai/docs/edgetpu/models-intro/
     try:
-        cmd = 'edgetpu_compiler --version'  # install https://coral.ai/docs/edgetpu/compiler/
+        cmd = 'edgetpu_compiler --version'
+        help_url = 'https://coral.ai/docs/edgetpu/compiler/'
+        assert platform.system() == 'Linux', 'export only supported on Linux'
+        assert subprocess.run(cmd, shell=True, check=True), f'export requires edgetpu-compiler. See {help_url}'
         out = subprocess.run(cmd, shell=True, capture_output=True, check=True)
         ver = out.stdout.decode().split()[-1]
+
         LOGGER.info(f'\n{prefix} starting export with Edge TPU compiler {ver}...')
         f = str(file).replace('.pt', '-int8_edgetpu.tflite')
         f_tfl = str(file).replace('.pt', '-int8.tflite')  # TFLite model
