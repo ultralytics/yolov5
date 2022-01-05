@@ -1,0 +1,9 @@
+train: ../images/train/ 
+val:  ../images/val/
+test: ../images/test/
+
+# number of classes
+nc: 2
+
+# class names
+names: ["with_mask","without_mask"]
