@@ -41,6 +41,7 @@ TensorFlow.js:
 import argparse
 import json
 import os
+import platform
 import subprocess
 import sys
 import time
@@ -277,8 +278,6 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
     try:
         import tensorflow as tf
 
-        from models.tf import representative_dataset_gen
-
         LOGGER.info(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
         batch_size, ch, *imgsz = list(im.shape)  # BCHW
         f = str(file).replace('.pt', '-fp16.tflite')
@@ -288,6 +287,7 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
         converter.target_spec.supported_types = [tf.float16]
         converter.optimizations = [tf.lite.Optimize.DEFAULT]
         if int8:
+            from models.tf import representative_dataset_gen
             dataset = LoadImages(check_dataset(data)['train'], img_size=imgsz, auto=False)  # representative data
             converter.representative_dataset = lambda: representative_dataset_gen(dataset, ncalib)
             converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
@@ -308,11 +308,20 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
 def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
     # YOLOv5 Edge TPU export https://coral.ai/docs/edgetpu/models-intro/
     try:
-        cmd = 'edgetpu_compiler --version'  # install https://coral.ai/docs/edgetpu/compiler/
-        out = subprocess.run(cmd, shell=True, capture_output=True, check=True)
-        ver = out.stdout.decode().split()[-1]
+        cmd = 'edgetpu_compiler --version'
+        help_url = 'https://coral.ai/docs/edgetpu/compiler/'
+        assert platform.system() == 'Linux', f'export only supported on Linux. See {help_url}'
+        if subprocess.run(cmd, shell=True).returncode != 0:
+            LOGGER.info(f'\n{prefix} export requires Edge TPU compiler. Attempting install from {help_url}')
+            for c in ['curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -',
+                      'echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list',
+                      'sudo apt-get update',
+                      'sudo apt-get install edgetpu-compiler']:
+                subprocess.run(c, shell=True, check=True)
+        ver = subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1]
+
         LOGGER.info(f'\n{prefix} starting export with Edge TPU compiler {ver}...')
-        f = str(file).replace('.pt', '-int8_edgetpu.tflite')
+        f = str(file).replace('.pt', '-int8_edgetpu.tflite')  # Edge TPU model
         f_tfl = str(file).replace('.pt', '-int8.tflite')  # TFLite model
 
         cmd = f"edgetpu_compiler -s {f_tfl}"
@@ -435,6 +444,8 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     # TensorFlow Exports
     if any(tf_exports):
         pb, tflite, edgetpu, tfjs = tf_exports[1:]
+        if int8 or edgetpu:  # TFLite --int8 bug https://github.com/ultralytics/yolov5/issues/5707
+            check_requirements(('flatbuffers==1.12',))  # required before `import tensorflow`
         assert not (tflite and tfjs), 'TFLite and TF.js models must be exported separately, please pass only one type.'
         model = export_saved_model(model, im, file, dynamic, tf_nms=nms or agnostic_nms or tfjs,
                                    agnostic_nms=agnostic_nms or tfjs, topk_per_class=topk_per_class, topk_all=topk_all,
