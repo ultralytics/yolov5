@@ -174,7 +174,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         check_requirements(('tensorrt',))
         import tensorrt as trt
 
-        if trt.__version__[0] == 7:  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
+        if trt.__version__[0] == '7':  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
             grid = model.model[-1].anchor_grid
             model.model[-1].anchor_grid = [a[..., :1, :1, :] for a in grid]
             export_onnx(model, im, file, 12, train, False, simplify)  # opset 12
