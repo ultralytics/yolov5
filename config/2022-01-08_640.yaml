@@ -1,9 +1,0 @@
-# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-path: ./data/2022-01-08_640_yolo  # dataset root dir
-train: images  # train images (relative to 'path') 
-val: images  # val images (relative to 'path') 
-test:  # test images (optional)
-
-# Classes
-nc: 3  # number of classes
-names: ['peeling', 'scuff', 'white']  # class names must match with the orders in dataset_root_dir/class_map.json
