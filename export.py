@@ -345,8 +345,8 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
         f_pb = file.with_suffix('.pb')  # *.pb path
         f_json = f + '/model.json'  # *.json path
 
-        cmd = f"tensorflowjs_converter --input_format=tf_frozen_model " \
-              f"--output_node_names='Identity,Identity_1,Identity_2,Identity_3' {f_pb} {f}"
+        cmd = f'tensorflowjs_converter --input_format=tf_frozen_model ' \
+              f'--output_node_names="Identity,Identity_1,Identity_2,Identity_3" {f_pb} {f}'
         subprocess.run(cmd, shell=True)
 
         json = open(f_json).read()
