@@ -1,10 +1,16 @@
 import torch
+import numpy as np
+from utils.datasets import LoadStreams, LoadImages
 
-def preprocess_function(image_np: np.ndarray) -> torch.tensor:
-    # transform to pytorch tensor
-    img_torch = torch.from_numpy(image_np)
-    return img_torch
+def preprocess_function(input_pre: dict,  model, input_parameters: dict) -> dict:
+    stride = int(model.stride.max())
+    names = model.module.names if hasattr(model, 'module') else model.names  # get class names
+    img = torch.from_numpy(np.array(input_pre))
+    img = img / 255.0  # 0 - 255 to 0.0 - 1.0
+    if len(img.shape) == 3:
+        img = img[None]  # expand for batch dim
+    return img
 
-
+# You need to pass a torch.tensor back.
 def postprocess_function(image_torch: torch.tensor) -> torch.tensor:
     return image_torch
