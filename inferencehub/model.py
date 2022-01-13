@@ -2,6 +2,7 @@
 from models.experimental import Ensemble, attempt_load
 from utils.general import non_max_suppression
 import torch
+import torch.nn as nn
 
 class ModelWrapper(nn.Module):
     def __init__(self, network_pkl):
