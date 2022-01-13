@@ -182,6 +182,16 @@ def is_colab():
         return False
 
 
+def is_kaggle():
+    # Is environment a Kaggle Notebook?
+    try:
+        assert os.environ.get('PWD') == '/kaggle/working'
+        assert os.environ.get('KAGGLE_URL_BASE') == 'https://www.kaggle.com'
+        return True
+    except AssertionError:
+        return False
+
+
 def is_pip():
     # Is file in a pip package?
     return 'site-packages' in Path(__file__).resolve().parts
