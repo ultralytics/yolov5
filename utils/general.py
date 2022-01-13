@@ -44,6 +44,16 @@ cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with Py
 os.environ['NUMEXPR_MAX_THREADS'] = str(NUM_THREADS)  # NumExpr max threads
 
 
+def is_kaggle():
+    # Is environment a Kaggle Notebook?
+    try:
+        assert os.environ.get('PWD') == '/kaggle/working'
+        assert os.environ.get('KAGGLE_URL_BASE') == 'https://www.kaggle.com'
+        return True
+    except AssertionError:
+        return False
+
+
 def set_logging(name=None, verbose=True):
     # Sets level and returns logger
     if is_kaggle():
@@ -180,16 +190,6 @@ def is_colab():
         import google.colab
         return True
     except ImportError:
-        return False
-
-
-def is_kaggle():
-    # Is environment a Kaggle Notebook?
-    try:
-        assert os.environ.get('PWD') == '/kaggle/working'
-        assert os.environ.get('KAGGLE_URL_BASE') == 'https://www.kaggle.com'
-        return True
-    except AssertionError:
         return False
 
 
