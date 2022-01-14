@@ -253,8 +253,8 @@ def export_saved_model(model, im, file, dynamic,
     try:
         import tensorflow as tf
         from tensorflow import keras
-        from tensorflow.python.saved_model import signature_constants, tag_constants
         from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
+        from tensorflow.python.saved_model import signature_constants, tag_constants
 
         from models.tf import TFDetect, TFModel
 
