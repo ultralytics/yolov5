@@ -443,6 +443,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
         callbacks.run('on_train_end', last, best, plots, epoch, results)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
+        LOGGER.handlers[0].close()
         Path(LOGGER.handlers[0].baseFilename).rename(save_dir / 'log.txt')  # move log to save_dir
 
     torch.cuda.empty_cache()
