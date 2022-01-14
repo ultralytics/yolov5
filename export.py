@@ -46,6 +46,7 @@ import argparse
 import json
 import os
 import platform
+import shutil
 import subprocess
 import sys
 import time
@@ -252,6 +253,8 @@ def export_saved_model(model, im, file, dynamic,
     try:
         import tensorflow as tf
         from tensorflow import keras
+        from tensorflow.python.saved_model import signature_constants, tag_constants
+        from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
         from models.tf import TFDetect, TFModel
 
@@ -267,8 +270,25 @@ def export_saved_model(model, im, file, dynamic,
         keras_model = keras.Model(inputs=inputs, outputs=outputs)
         keras_model.trainable = False
         keras_model.summary()
-        keras_model.save(f, save_format='tf')
-
+        m = tf.function(lambda x: keras_model(x))  # full model
+        m = m.get_concrete_function(tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype))
+        frozen_func = convert_variables_to_constants_v2(m)
+        # export saved model using TensorFlow v1.x API
+        shutil.rmtree(f, ignore_errors=True)
+        builder = tf.compat.v1.saved_model.builder.SavedModelBuilder(f)
+        with tf.compat.v1.Session(graph=frozen_func.graph) as sess:
+            g = sess.graph
+            tinp = g.get_tensor_by_name("x:0")
+            toup = g.get_tensor_by_name("Identity:0")
+            sigs = {}
+            sigs[signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY] = \
+                tf.compat.v1.saved_model.signature_def_utils.predict_signature_def(
+                    {"images": tinp},
+                    {"output": toup})
+            builder.add_meta_graph_and_variables(sess,
+                                                 [tag_constants.SERVING],
+                                                  signature_def_map=sigs)
+        builder.save()
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
         return keras_model, f
     except Exception as e:
