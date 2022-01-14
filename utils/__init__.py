@@ -11,7 +11,7 @@ def notebook_init(verbose=True):
     import os
     import shutil
 
-    from utils.general import check_requirements, emojis, is_colab
+    from utils.general import check_requirements, emojis, is_colab, is_kaggle
     from utils.torch_utils import select_device  # imports
 
     check_requirements(('psutil', 'IPython'))
@@ -20,6 +20,11 @@ def notebook_init(verbose=True):
 
     if is_colab():
         shutil.rmtree('/content/sample_data', ignore_errors=True)  # remove colab /sample_data directory
+
+    if is_kaggle():
+        import logging
+        for h in logging.root.handlers:
+            logging.root.removeHandler(h)  # remove all handlers associated with the root logger object
 
     if verbose:
         # System info
