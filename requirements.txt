@@ -1,32 +1,12 @@
-# pip install -r requirements.txt
-
-# base ----------------------------------------
-matplotlib>=3.2.2
-numpy>=1.18.5
-opencv-python>=4.1.2
-Pillow>=8.0.0
-PyYAML>=5.3.1
-scipy>=1.4.1
-torch>=1.7.0
-torchvision>=0.8.1
-tqdm>=4.41.0
-
-# logging -------------------------------------
-tensorboard>=2.4.1
-# wandb
-
-# plotting ------------------------------------
-seaborn>=0.11.0
+torch
+torchvision
+pillow
+numpy
+click
+scipy
+imageio
+imgui
+seaborn
 pandas
-
-# export --------------------------------------
-# coremltools>=4.1
-# onnx>=1.9.0
-# scikit-learn==0.19.2  # for coreml quantization
-# tensorflow==2.4.1  # for TFLite export
-
-# extras --------------------------------------
-# Cython  # for pycocotools https://github.com/cocodataset/cocoapi/issues/172
-# pycocotools>=2.0  # COCO mAP
-# albumentations>=1.0.3
-thop  # FLOPs computation
+opencv-python
+yaml2

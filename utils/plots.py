@@ -62,7 +62,6 @@ def check_font(font='Arial.ttf', size=10):
 
 
 class Annotator:
-    check_font()  # download TTF if necessary
 
     # YOLOv5 Annotator for train/val mosaics and jpgs and detect/hub inference annotations
     def __init__(self, im, line_width=None, font_size=None, font='Arial.ttf', pil=True):

@@ -1,5 +1,3 @@
- 
-from models.experimental import Ensemble, attempt_load
 from utils.general import non_max_suppression
 import torch
 import torch.nn as nn
@@ -24,5 +22,5 @@ class ModelWrapper(nn.Module):
                                 max_det=input_parameters.get('max_det', 1000))
        return pred
 
-def get_model(weights_path=None, map_location="cpu") -> torch.nn.Module:
+def get_model(weights_path=None, map_location="cpu", model_initialization_parameters={}) -> torch.nn.Module:
     return ModelWrapper(network_pkl=weights_path)
