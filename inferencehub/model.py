@@ -1,4 +1,5 @@
 from utils.general import non_max_suppression
+from models.experimental import attempt_load
 import torch
 import torch.nn as nn
 
