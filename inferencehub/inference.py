@@ -3,8 +3,6 @@ import numpy as np
 from utils.datasets import LoadStreams, LoadImages
 
 def preprocess_function(input_pre: dict,  model, input_parameters: dict) -> dict:
-    stride = int(model.stride.max())
-    names = model.module.names if hasattr(model, 'module') else model.names  # get class names
     img = torch.from_numpy(np.array(input_pre))
     img = img / 255.0  # 0 - 255 to 0.0 - 1.0
     if len(img.shape) == 3:
