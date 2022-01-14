@@ -65,6 +65,7 @@ def set_logging(name=None, verbose=True):
 
 
 LOGGER = set_logging(__name__)  # define globally (used in train.py, val.py, detect.py, etc.)
+LOGGER.addHandler(logging.FileHandler('log.txt', 'w', delay=True))  # add log FileHandler
 
 
 class Profile(contextlib.ContextDecorator):
