@@ -63,7 +63,7 @@ def select_device(device='', batch_size=0, newline=True):
     elif device:  # non-cpu device requested
         nd = torch.cuda.device_count()  # number of CUDA devices
         assert torch.cuda.is_available(), 'CUDA is not available, use `--device cpu` or do not pass a --device'
-        assert nd > int(max(device.split(','))), f'Invalid --device {device} request, valid devices are 0 - {nd - 1}'
+        assert nd > int(max(device.split(','))), f'Invalid `--device {device}` request, valid devices are 0 - {nd - 1}'
         os.environ['CUDA_VISIBLE_DEVICES'] = device  # set environment variable (must be after asserts)
 
     cuda = not cpu and torch.cuda.is_available()
