@@ -983,7 +983,7 @@ def dataset_stats(path='coco128.yaml', verbose=False, profile=False, hub=False):
         data = yaml.safe_load(f)  # data dict
         if zipped:
             data['path'] = data_dir  # TODO: should this be dir.resolve()?
-    check_dataset(data, autodownload=False)  # download dataset if missing
+    check_dataset(data, autodownload=False)
     hub_dir = Path(data['path'] + ('-hub' if hub else ''))
     stats = {'nc': data['nc'], 'names': data['names']}  # statistics dictionary
     for split in 'train', 'val', 'test':
