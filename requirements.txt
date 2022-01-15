@@ -10,3 +10,4 @@ seaborn
 pandas
 opencv-python
 yaml2
+tqdm
