@@ -61,7 +61,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
 
     except Exception as e:
         help_url = 'https://github.com/ultralytics/yolov5/issues/36'
-        s = 'Cache may be out of date, try `force_reload=True`. See %s for help.' % help_url
+        s = f'{e}. Cache may be out of date, try `force_reload=True` or see {help_url} for help.'
         raise Exception(s) from e
 
 
