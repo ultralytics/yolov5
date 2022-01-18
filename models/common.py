@@ -359,7 +359,6 @@ class DetectMultiBackend(nn.Module):
             if saved_model:  # SavedModel
                 LOGGER.info(f'Loading {w} for TensorFlow SavedModel inference...')
                 import tensorflow as tf
-                from tensorflow.python.saved_model import tag_constants
                 model = tf.saved_model.load(w)
             elif pb:  # GraphDef https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
                 LOGGER.info(f'Loading {w} for TensorFlow GraphDef inference...')
