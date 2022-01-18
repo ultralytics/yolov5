@@ -186,7 +186,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         onnx = file.with_suffix('.onnx')
 
         LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
-        assert im.device.type != 'cpu', 'export must be done on GPU, i.e. try `python export.py --device 0`'
+        assert im.device.type != 'cpu', 'export running on CPU but must be on GPU, i.e. `python export.py --device 0`'
         assert onnx.exists(), f'failed to export ONNX file: {onnx}'
         f = file.with_suffix('.engine')  # TensorRT engine file
         logger = trt.Logger(trt.Logger.INFO)
