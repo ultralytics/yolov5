@@ -280,7 +280,7 @@ def export_saved_model(model, im, file, dynamic,
             tfm,
             f,
             options=tf.saved_model.SaveOptions() if parse_version(tf.__version__) < parse_version("2.6") else
-                tf.saved_model.SaveOptions(experimental_custom_gradients=False))
+            tf.saved_model.SaveOptions(experimental_custom_gradients=False))
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
         return keras_model, f
     except Exception as e:
