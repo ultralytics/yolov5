@@ -273,7 +273,7 @@ def export_saved_model(model, im, file, dynamic,
         m = m.get_concrete_function(tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype))
         frozen_func = convert_variables_to_constants_v2(m)
         tfm = tf.Module()
-        tfm.__call__ = tf.function(lambda x: frozen_func(x),
+        tfm.__call__ = tf.function(frozen_func,
                                    [tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype)])
         tfm.__call__(im)
         tf.saved_model.save(
