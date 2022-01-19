@@ -36,6 +36,7 @@ from utils.metrics import box_iou, fitness
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
+VERBOSE = str(os.getenv('VERBOSE', True)).lower() == 'true'  # global verbose mode
 
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
 np.set_printoptions(linewidth=320, formatter={'float_kind': '{:11.5g}'.format})  # format short g, %precision=5
@@ -54,7 +55,7 @@ def is_kaggle():
         return False
 
 
-def set_logging(name=None, verbose=True):
+def set_logging(name=None, verbose=VERBOSE):
     # Sets level and returns logger
     if is_kaggle():
         for h in logging.root.handlers:
