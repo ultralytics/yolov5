@@ -427,7 +427,8 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         elif isinstance(m, Detect):
             m.inplace = inplace
             m.onnx_dynamic = dynamic
-            # m.forward = m.forward_export  # assign forward (optional)
+            if hasattr(m, 'forward_export'):
+                m.forward = m.forward_export  # assign custom forward (optional)
 
     for _ in range(2):
         y = model(im)  # dry runs
