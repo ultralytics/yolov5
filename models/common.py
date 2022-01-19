@@ -292,9 +292,9 @@ class DetectMultiBackend(nn.Module):
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
         suffix = Path(w).suffix.lower()
-        suffixes = ['.pt', '.torchscript', '.onnx', '.engine', '.tflite', '.pb', '', '.mlmodel']
+        suffixes = ['.pt', '.torchscript', '.onnx', '.engine', '.tflite', '.pb', '', '.mlmodel', '.xml']
         check_suffix(w, suffixes)  # check weights have acceptable suffix
-        pt, jit, onnx, engine, tflite, pb, saved_model, coreml = (suffix == x for x in suffixes)  # backend booleans
+        pt, jit, onnx, engine, tflite, pb, saved_model, coreml, openvino = (suffix == x for x in suffixes)  # backend booleans
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
         attempt_download(w)  # download if not local
 
@@ -323,6 +323,14 @@ class DetectMultiBackend(nn.Module):
             check_requirements(('onnx', 'onnxruntime-gpu' if torch.cuda.is_available() else 'onnxruntime'))
             import onnxruntime
             session = onnxruntime.InferenceSession(w, None)
+        elif openvino:
+            LOGGER.info(f'Loading {w} for OpenVINO inference...')
+            from openvino.inference_engine import IECore
+            ie = IECore()
+            net = ie.read_network(model=w)
+            self.exec_net = ie.load_network(network=net, device_name="CPU")
+            self.input_key = list(self.exec_net.input_info.keys())[0]
+            self.output_key = list(self.exec_net.outputs.keys())[-1]
         elif engine:  # TensorRT
             LOGGER.info(f'Loading {w} for TensorRT inference...')
             import tensorrt as trt  # https://developer.nvidia.com/nvidia-tensorrt-download
@@ -388,6 +396,9 @@ class DetectMultiBackend(nn.Module):
             box = xywh2xyxy(y['coordinates'] * [[w, h, w, h]])  # xyxy pixels
             conf, cls = y['confidence'].max(1), y['confidence'].argmax(1).astype(np.float)
             y = np.concatenate((box, conf.reshape(-1, 1), cls.reshape(-1, 1)), 1)
+        elif self.openvino:
+            im = im.cpu().numpy()  # torch to numpy
+            y = self.exec_net.infer({self.input_key: im})[self.output_key]
         elif self.onnx:  # ONNX
             im = im.cpu().numpy()  # torch to numpy
             if self.dnn:  # ONNX OpenCV DNN
