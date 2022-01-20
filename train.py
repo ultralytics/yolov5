@@ -352,6 +352,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 pbar.set_description(('%10s' * 2 + '%10.4g' * 5) % (
                     f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
                 callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, plots, opt.sync_bn)
+                if callbacks.stop_training:
+                    return
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
@@ -381,6 +383,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 best_fitness = fi
             log_vals = list(mloss) + list(results) + lr
             callbacks.run('on_fit_epoch_end', log_vals, epoch, best_fitness, fi)
+            if callbacks.stop_training:
+                return
 
             # Save model
             if (not nosave) or (final_epoch and not evolve):  # if save
@@ -401,6 +405,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                     torch.save(ckpt, w / f'epoch{epoch}.pt')
                 del ckpt
                 callbacks.run('on_model_save', last, epoch, final_epoch, best_fitness, fi)
+                if callbacks.stop_training:
+                    return
 
             # Stop Single-GPU
             if RANK == -1 and stopper(epoch=epoch, fitness=fi):
@@ -440,6 +446,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                             compute_loss=compute_loss)  # val best model with plots
                     if is_coco:
                         callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
+                        if callbacks.stop_training:
+                            return
 
         callbacks.run('on_train_end', last, best, plots, epoch, results)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
