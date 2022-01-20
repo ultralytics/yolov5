@@ -612,7 +612,7 @@ def main(opt, callbacks=Callbacks()):
 
             # Train mutation
             results = train(hyp.copy(), opt, device, callbacks)
-
+            callbacks = Callbacks()
             # Write mutation results
             print_mutation(results, hyp.copy(), save_dir, opt.bucket)
 
