@@ -22,6 +22,7 @@ from utils.general import (LOGGER, check_requirements, check_suffix, check_versi
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, time_sync
 
+
 def autopad(k, p=None):  # kernel, padding
     # Pad to 'same'
     if p is None:
@@ -125,7 +126,7 @@ class C3_4(nn.Module):
         self.cv3 = Conv(2 * c_, c2, 1)  # act=FReLU(c2)
         self.m1 = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(5)))
         self.m2 = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(4)))
-                
+
         # self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)))
         # self.m = nn.Sequential(*[CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)])
 

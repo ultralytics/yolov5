@@ -22,6 +22,7 @@ from utils.general import (LOGGER, check_requirements, check_suffix, check_versi
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, time_sync
 
+
 def autopad(k, p=None):  # kernel, padding
     # Pad to 'same'
     if p is None:
@@ -67,7 +68,7 @@ class Conv_new(nn.Module):
 
         global count    # layerid (i初始化为0)
         i = count + 1      # tensor id
-        if i in arr:    # offload tensor i-1 
+        if i in arr:    # offload tensor i-1
             with torch.autograd.graph.save_on_cpu():
                 x = self.conv(x)
         else:
@@ -302,7 +303,7 @@ class C3_4(nn.Module):
             Bottleneck_001110(c_, c_, shortcut, g, e=1.0),
             *(Bottleneck_in111110(c_, c_, shortcut, g, e=1.0) for _ in range(2))
             )
-                
+
         # self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)))
 
         # self.m = nn.Sequential(*[CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)])
@@ -449,7 +450,7 @@ class SPPF_re(nn.Module):
             y1 = self.m(x)
             y2 = self.m(y1)
             return self.cv2(torch.cat([x, y1, y2, self.m(y2)], 1))
-    
+
     def forward(self, x):
         #x.requires_grad_()
         x = cp.checkpoint(self.ckpt1, x)
