@@ -693,17 +693,13 @@ def load_mosaic(self, index):
         # place img in img4
         if i == 0:  # top left
             img4 = np.full((s * 2, s * 2, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
-            padw = s - w
-            padh = s - h
+            padw, padh = s - w, s - h
         elif i == 1:  # top right
-            padw = s
-            padh = s - h
+            padw, padh = s, s - h
         elif i == 2:  # bottom left
-            padw = s - w
-            padh = s
+            padw, padh = s - w, s
         else:  # bottom right
-            padw = s
-            padh = s
+            padw, padh = s, s
 
         img4[padh:padh + h, padw:padw + w] = img
 
@@ -717,8 +713,6 @@ def load_mosaic(self, index):
 
     # Concat/clip labels
     labels4 = np.concatenate(labels4, 0)
-    for x in (labels4[:, 1:], *segments4):
-        np.clip(x, 0, 2 * s, out=x)  # clip when using random_perspective()
     # img4, labels4 = replicate(img4, labels4)  # replicate
 
     # Augment
