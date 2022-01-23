@@ -35,9 +35,7 @@ class Callbacks:
             'on_params_update': [],
             'teardown': [],
         }
-
-        # Set this to True in your callback handler to prematurely stop training
-        self.stop_training = False
+        self.stop_training = False  # set True to interrupt training
 
     def register_action(self, hook, name='', callback=None):
         """
