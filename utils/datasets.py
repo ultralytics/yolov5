@@ -670,7 +670,7 @@ def load_image(self, i):
             path = self.img_files[i]
             im = cv2.imread(path)  # BGR
             if im is None:
-                gif = cv2.VideoCapture(path) # handle gif
+                gif = cv2.VideoCapture(path)  # handle gif
                 ret, im = gif.read()
                 gif.release()
                 assert im is not None, f'Image Not Found {path}'
