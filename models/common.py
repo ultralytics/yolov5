@@ -383,8 +383,11 @@ class DetectMultiBackend(nn.Module):
                     interpreter = tfli.Interpreter(model_path=w, experimental_delegates=[tfli.load_delegate(delegate)])
                 else:  # Lite
                     LOGGER.info(f'Loading {w} for TensorFlow Lite inference...')
-                    import tensorflow as tf
-                    interpreter = tf.lite.Interpreter(model_path=w)  # load TFLite model
+                    try:
+                        import tensorflow.lite as tflite
+                    except ImportError:
+                        import tflite_runtime.interpreter as tflite
+                    interpreter = tflite.Interpreter(model_path=w)  # load TFLite model
                 interpreter.allocate_tensors()  # allocate
                 input_details = interpreter.get_input_details()  # inputs
                 output_details = interpreter.get_output_details()  # outputs
