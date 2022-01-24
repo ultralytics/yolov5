@@ -142,6 +142,13 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
                                        yolov5x                                16
 ```
 
+To train with a Kili dataset, set the `KILI_API_KEY` environment variable with your Kili API key, modify the `data/kili.yaml`
+according to your needs, then run:
+
+```bash
+python train.py --data kili.yaml
+```
+
 <img width="800" src="https://user-images.githubusercontent.com/26833433/90222759-949d8800-ddc1-11ea-9fa1-1c97eed2b963.png">
 
 </details>

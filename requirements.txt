@@ -34,4 +34,5 @@ seaborn>=0.11.0
 # Cython  # for pycocotools https://github.com/cocodataset/cocoapi/issues/172
 # pycocotools>=2.0  # COCO mAP
 # roboflow
+# kili  # to use a Kili dataset (see data/kili.yaml)
 thop  # FLOPs computation
