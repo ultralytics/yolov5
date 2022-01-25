@@ -41,6 +41,7 @@ from utils.general import print_args
 def run(weights=ROOT / 'yolov5s.pt',  # weights path
         imgsz=(640, 640),  # inference size h,w
         batch_size=1,  # batch size
+        data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         ):
     formats = 'torchscript', 'onnx', 'openvino', 'engine', 'coreml', 'saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'
     suffixes = ['.pt', '.torchscript', '.onnx', '.xml', '.engine', '.mlmodel', '_saved_model', '.pb', '.tflite',
@@ -48,7 +49,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
 
     for format in formats:
         files = export.run(weights=weights, imgsz=imgsz, include=[format])
-        result = val.run(weights=files[-1], imgsz=imgsz)
+        result = val.run(data=data, weights=files[-1], imgsz=imgsz)
         print(result)
 
 
@@ -57,6 +58,7 @@ def parse_opt():
     parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='weights path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
+    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(FILE.stem, opt)
