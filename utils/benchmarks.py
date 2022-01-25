@@ -39,7 +39,7 @@ from utils.general import print_args
 
 
 def run(weights=ROOT / 'yolov5s.pt',  # weights path
-        imgsz=(640, 640),  # inference size h,w
+        imgsz=640,  # inference size (pixels)
         batch_size=1,  # batch size
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         ):
@@ -47,20 +47,26 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
     suffixes = ['.pt', '.torchscript', '.onnx', '.xml', '.engine', '.mlmodel', '_saved_model', '.pb', '.tflite',
                 'edgetpu.tflite', '_web_model']
 
-    for format in formats:
-        files = export.run(weights=weights, imgsz=imgsz, include=[format])
-        result = val.run(data=data, weights=files[-1], imgsz=imgsz)
-        print(result)
+    y = []
+    for f in formats[:2]:
+        file = export.run(weights=weights, imgsz=[imgsz], include=[f])[-1]
+        result = val.run(data=data, weights=file, imgsz=imgsz, batch_size=batch_size, plots=False)
+        m = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
+        t = result[2]  # times (preprocess, inference, postprocess)
+
+        # y.append([f, file, *m, *t])
+        y.append([f, Path(file).name, m[3], t[1]])  # mAP, t_inference
+
+    print(y)
 
 
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='weights path')
-    parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
+    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=64, help='inference size (pixels)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     opt = parser.parse_args()
-    opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(FILE.stem, opt)
     return opt
 
