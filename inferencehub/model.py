@@ -16,9 +16,12 @@ class ModelWrapper(nn.Module):
         self.add_module("model", self.model)
 
     def forward(self, x: dict, input_parameters: dict) -> torch.tensor:
+        print("Attempting warmup")
         self.warmup_forward(x, input_parameters)
+        print("Warm up finished!")
         pred = self.model(x, augment=input_parameters.get('augment', False),
                           visualize=input_parameters.get('visualize', False))[0]
+        print("Prediction finished")
         pred = non_max_suppression(pred,
                                    input_parameters.get('conf_thres', 0.25),
                                    input_parameters.get('iou_thres', 0.45),
@@ -29,7 +32,8 @@ class ModelWrapper(nn.Module):
 
     def warmup_forward(self, x: dict, input_parameters: dict):
         if not self.warmup:
-            self.model(torch.zeros(1, 3, input_parameters.get("imgsz", 64)).to("cpu").type_as(next(self.model.parameters())))  # run once
+            self.model(torch.zeros(1, 3, input_parameters.get("imgsz", 64), input_parameters.get("imgsz", 64)).to(
+                "cpu").type_as(next(self.model.parameters())))  # run once
             self.warmup = True
 
 
