@@ -34,6 +34,10 @@ class Callbacks:
             'on_train_end': [],
             'on_params_update': [],
             'teardown': [],
+            
+            'on_polygon_train_batch_end': [],  # fit = train + val
+            'on_polygon_train_end': [],
+            'on_polygon_fit_epoch_end': [],
         }
 
     def register_action(self, hook, name='', callback=None):

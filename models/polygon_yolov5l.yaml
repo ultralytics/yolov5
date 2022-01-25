@@ -1,7 +1,7 @@
 # parameters
 nc: 80  # number of classes
-depth_multiple: 0.67  # model depth multiple
-width_multiple: 0.75  # layer channel multiple
+depth_multiple: 1.0  # model depth multiple
+width_multiple: 1.0  # layer channel multiple
 
 # anchors
 anchors:
@@ -44,5 +44,5 @@ head:
    [[-1, 10], 1, Concat, [1]],  # cat head P5
    [-1, 3, C3, [1024, False]],  # 23 (P5/32-large)
 
-   [[17, 20, 23], 1, Detect, [nc, anchors]],  # Detect(P3, P4, P5)
+   [[17, 20, 23], 1, Polygon_Detect, [nc, anchors]],  # Polygon_Detect(P3, P4, P5)
   ]

@@ -120,6 +120,9 @@ class Model(nn.Module):
         self.info()
         LOGGER.info('')
 
+    def __init__(self):
+        super().__init__()
+
     def forward(self, x, augment=False, profile=False, visualize=False):
         if augment:
             return self._forward_augment(x)  # augmented inference, None

@@ -13,7 +13,6 @@ from torch.utils.tensorboard import SummaryWriter
 
 from utils.general import colorstr, emojis
 from utils.loggers.wandb.wandb_utils import WandbLogger
-from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
 
 LOGGERS = ('csv', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
@@ -80,9 +79,10 @@ class Loggers():
         if self.wandb:
             self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
 
-    def on_train_batch_end(self, ni, model, imgs, targets, paths, plots, sync_bn):
+    def on_train_batch_end(self, ni, model, imgs, targets, paths, plots, sync_bn, plot_images):
         # Callback runs on train batch end
         if plots:
+            # from utils.plots import plot_images
             if ni == 0:
                 if not sync_bn:  # tb.add_graph() --sync known issue https://github.com/ultralytics/yolov5/issues/3754
                     with warnings.catch_warnings():
@@ -139,7 +139,7 @@ class Loggers():
             if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
                 self.wandb.log_model(last.parent, self.opt, epoch, fi, best_model=best_fitness == fi)
 
-    def on_train_end(self, last, best, plots, epoch, results):
+    def on_train_end(self, last, best, plots, epoch, results, plot_results):
         # Callback runs on training end
         if plots:
             plot_results(file=self.save_dir / 'results.csv')  # save results.png
@@ -169,3 +169,26 @@ class Loggers():
         # params: A dict containing {param: value} pairs
         if self.wandb:
             self.wandb.wandb_run.config.update(params, allow_val_change=True)
+
+    def on_polygon_fit_epoch_end(self, s, results, mloss, lr, epoch, best_fitness, fi):
+        # Write
+        results_file = self.save_dir / 'results.csv'
+        with open(results_file, 'a') as f:
+            f.write(s + '%10.4g' * 7 % results + '\n')  # append metrics, val_loss
+
+        vals = list(mloss) + list(results) + lr
+        x = {k: v for k, v in zip(self.keys, vals)}  # dict
+        if self.tb:
+            for k, v in x.items():
+                self.tb.add_scalar(k, v, epoch)
+
+        if self.wandb:
+            if best_fitness == fi:
+                best_results = [epoch] + vals[3:7]
+                for i, name in enumerate(self.best_keys):
+                    self.wandb.wandb_run.summary[name] = best_results[i]  # log best results in the summary
+            self.wandb.log(x)
+            self.wandb.end_epoch(best_result=best_fitness == fi)
+
+
+
