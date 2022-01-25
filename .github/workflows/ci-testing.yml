@@ -69,7 +69,7 @@ jobs:
         run: |
           # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
           d=cpu  # device
-          best=runs/train/exp/weights/best.pt
+          weights=runs/train/exp/weights/best.pt
 
           # Train
           python train.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --cfg ${{ matrix.model }}.yaml --epochs 1 --device $d
