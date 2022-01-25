@@ -65,7 +65,7 @@ def set_logging(name=None, verbose=VERBOSE):
     return logging.getLogger(name)
 
 
-LOGGER = set_logging(__name__)  # define globally (used in train.py, val.py, detect.py, etc.)
+LOGGER = set_logging('yolov5')  # define globally (used in train.py, val.py, detect.py, etc.)
 
 
 class Profile(contextlib.ContextDecorator):
