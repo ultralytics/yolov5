@@ -43,20 +43,16 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
         batch_size=1,  # batch size
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         ):
-    formats = 'torchscript', 'onnx', 'openvino', 'engine', 'coreml', 'saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'
-    suffixes = ['.pt', '.torchscript', '.onnx', '.xml', '.engine', '.mlmodel', '_saved_model', '.pb', '.tflite',
-                'edgetpu.tflite', '_web_model']
+    formats = 'openvino', 'torch', 'torchscript', 'onnx', 'openvino', 'engine', 'coreml', 'saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'
+    # suffixes = ['.pt', '.torchscript', '.onnx', '.xml', '.engine', '.mlmodel', '_saved_model', '.pb', '.tflite', 'edgetpu.tflite', '_web_model']
 
     y = []
-    for f in formats[:2]:
-        file = export.run(weights=weights, imgsz=[imgsz], include=[f])[-1]
+    for f in formats[:3]:
+        file = weights if f == 'torch' else export.run(weights=weights, imgsz=[imgsz], include=[f])[-1]
         result = val.run(data=data, weights=file, imgsz=imgsz, batch_size=batch_size, plots=False)
         m = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
         t = result[2]  # times (preprocess, inference, postprocess)
-
-        # y.append([f, file, *m, *t])
         y.append([f, Path(file).name, m[3], t[1]])  # mAP, t_inference
-
     print(y)
 
 
