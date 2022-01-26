@@ -385,8 +385,8 @@ def check_dataset(data, autodownload=True):
     # Download (optional)
     extract_dir = ''
     if isinstance(data, (str, Path)) and str(data).endswith('.zip'):  # i.e. gs://bucket/dir/coco128.zip
-        download(data, dir='../datasets', unzip=True, delete=False, curl=False, threads=1)
-        data = next((Path('../datasets') / Path(data).stem).rglob('*.yaml'))
+        download(data, dir=str(ROOT / '../datasets'), unzip=True, delete=False, curl=False, threads=1)
+        data = next((ROOT / '../datasets' / Path(data).stem).rglob('*.yaml'))
         extract_dir, autodownload = data.parent, False
 
     # Read yaml (optional)
@@ -405,7 +405,7 @@ def check_dataset(data, autodownload=True):
         data['names'] = [f'class{i}' for i in range(data['nc'])]  # assign class names if missing
     train, val, test, s = (data.get(x) for x in ('train', 'val', 'test', 'download'))
     if val:
-        val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
+        val = [Path(ROOT / x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
             LOGGER.info('\nDataset not found, missing paths: %s' % [str(x) for x in val if not x.exists()])
             if s and autodownload:  # download script
