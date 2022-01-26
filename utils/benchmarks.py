@@ -45,13 +45,12 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
         batch_size=1,  # batch size
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         ):
-    formats = 'torch', 'torchscript', 'onnx', 'openvino', 'engine', 'coreml', 'saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'
-    # suffixes = ['.pt', '.torchscript', '.onnx', '.xml', '.engine', '.mlmodel', '_saved_model', '.pb', '.tflite', 'edgetpu.tflite', '_web_model']
 
     y = []
+    formats = 'torch', 'torchscript', 'onnx', 'openvino', 'engine', 'coreml', 'saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'
     for f in formats[:-1]:
-        file = weights if f == 'torch' else export.run(weights=weights, imgsz=[imgsz], include=[f])[-1]
-        result = val.run(data=data, weights=file, imgsz=imgsz, batch_size=batch_size, plots=False)
+        file = weights if f == 'torch' else export.run(weights=weights, imgsz=[imgsz], include=[f], device='cpu')[-1]
+        result = val.run(data=data, weights=file, imgsz=imgsz, batch_size=batch_size, plots=False, device='cpu')
         m = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
         t = result[2]  # times (preprocess, inference, postprocess)
         y.append([f, Path(file).name, m[3], t[1]])  # mAP, t_inference
@@ -64,7 +63,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='weights path')
-    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=64, help='inference size (pixels)')
+    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     opt = parser.parse_args()

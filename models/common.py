@@ -35,6 +35,22 @@ def autopad(k, p=None):  # kernel, padding
     return p
 
 
+def model_type(p='path/to/model.pt'):
+    # Return model type from model path, i.e. path='path/to/model.onnx' -> type=onnx
+    formats = 'torch', 'torchscript', 'onnx', 'openvino', 'engine', 'coreml', \
+              'saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'
+    suffixes = '.pt', '.torchscript', '.onnx', '.xml', '_openvino_model', '.engine', '.mlmodel', \
+               '_saved_model', '.pb', '.tflite', '_edgetpu.tflite', '_web_model'
+
+    # suffix = Path(p).suffix.lower()
+    # suffixes = ['.pt', '.torchscript', '.onnx', '.xml', '.engine', '.tflite', '.pb', '', '.mlmodel']
+    # check_suffix(p, suffixes)  # check weights have acceptable suffix
+    pt, jit, onnx, xml, xml2, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = (p.endswith(x) for x in suffixes)
+    tflite = tflite and not edgetpu
+    xml |= xml2  # *.xml or *_openvino_model
+    return pt, jit, onnx, xml, xml2, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs
+
+
 class Conv(nn.Module):
     # Standard convolution
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
