@@ -28,14 +28,17 @@ import argparse
 import sys
 from pathlib import Path
 
+import pandas as pd
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 # ROOT = ROOT.relative_to(Path.cwd())  # relative
 
+
 import export, val
-from utils.general import print_args
+from utils.general import LOGGER, print_args
 
 
 def run(weights=ROOT / 'yolov5s.pt',  # weights path
@@ -43,7 +46,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
         batch_size=1,  # batch size
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         ):
-    formats = 'openvino', 'torch', 'torchscript', 'onnx', 'openvino', 'engine', 'coreml', 'saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'
+    formats = 'torch', 'torchscript', 'onnx', 'openvino', 'engine', 'coreml', 'saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'
     # suffixes = ['.pt', '.torchscript', '.onnx', '.xml', '.engine', '.mlmodel', '_saved_model', '.pb', '.tflite', 'edgetpu.tflite', '_web_model']
 
     y = []
@@ -53,7 +56,10 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
         m = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
         t = result[2]  # times (preprocess, inference, postprocess)
         y.append([f, Path(file).name, m[3], t[1]])  # mAP, t_inference
-    print(y)
+
+    py = pd.DataFrame(y, columns=['Format', 'Weights', 'mAP@0.5:0.95', 'Inference time (ms)'])
+    LOGGER.info('\nBenchmarks finished.')
+    LOGGER.info(py)
 
 
 def parse_opt():
