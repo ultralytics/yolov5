@@ -774,17 +774,8 @@ def load_mosaic9(self, index):
         img9[y1:y2, x1:x2] = img[y1 - pady:, x1 - padx:]  # img9[ymin:ymax, xmin:xmax]
         hp, wp = h, w  # height, width previous
 
-    # Offset
-    yc, xc = (int(random.uniform(0, s)) for _ in self.mosaic_border)  # mosaic center x, y
-    img9 = img9[yc:yc + 2 * s, xc:xc + 2 * s]
-
     # Concat/clip labels
     labels9 = np.concatenate(labels9, 0)
-    labels9[:, [1, 3]] -= xc
-    labels9[:, [2, 4]] -= yc
-    c = np.array([xc, yc])  # centers
-    segments9 = [x - c for x in segments9]
-
     for x in (labels9[:, 1:], *segments9):
         np.clip(x, 0, 2 * s, out=x)  # clip when using random_perspective()
     # img9, labels9 = replicate(img9, labels9)  # replicate
@@ -792,11 +783,11 @@ def load_mosaic9(self, index):
     # Augment
     img9, labels9 = random_perspective(img9, labels9, segments9,
                                        degrees=self.hyp['degrees'],
-                                       translate=self.hyp['translate'],
+                                       translate=1.0 + self.hyp['translate'],
                                        scale=self.hyp['scale'],
                                        shear=self.hyp['shear'],
                                        perspective=self.hyp['perspective'],
-                                       border=self.mosaic_border)  # border to remove
+                                       border=[x - int(s/2) for x in self.mosaic_border])  # border to remove
 
     return img9, labels9
 
