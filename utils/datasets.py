@@ -777,7 +777,7 @@ def load_mosaic9(self, index):
     # Concat/clip labels
     labels9 = np.concatenate(labels9, 0)
     for x in (labels9[:, 1:], *segments9):
-        np.clip(x, 0, 2 * s, out=x)  # clip when using random_perspective()
+        np.clip(x, 0, 3 * s, out=x)  # clip when using random_perspective()
     # img9, labels9 = replicate(img9, labels9)  # replicate
 
     # Augment
