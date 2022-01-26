@@ -53,6 +53,15 @@ def git_describe(path=Path(__file__).parent):  # path must be a directory
         return ''  # not a git repository
 
 
+def device_count():
+    # Returns number of CUDA devices available. Safe version of torch.cuda.device_count().
+    try:
+        cmd = 'nvidia-smi -L | wc -l'
+        return int(subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1])
+    except Exception as e:
+        return 0
+
+
 def select_device(device='', batch_size=0, newline=True):
     # device = 'cpu' or '0' or '0,1,2,3'
     s = f'YOLOv5 🚀 {git_describe() or date_modified()} torch {torch.__version__} '  # string
@@ -61,10 +70,10 @@ def select_device(device='', batch_size=0, newline=True):
     if cpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force torch.cuda.is_available() = False
     elif device:  # non-cpu device requested
-        nd = len(os.getenv('CUDA_VISIBLE_DEVICES', '').replace(',', ''))  # number of CUDA devices
-        assert nd > int(max(device.split(','))), f'Invalid `--device {device}` request, valid devices are 0 - {nd - 1}'
+        nd = device_count()  # number of CUDA devices
         assert torch.cuda.is_available(), 'CUDA is not available, use `--device cpu` or do not pass a --device'
-        os.environ['CUDA_VISIBLE_DEVICES'] = device  # set environment variable (before assert cuda.is_available)
+        assert nd > int(max(device.split(','))), f'Invalid `--device {device}` request, valid devices are 0 - {nd - 1}'
+        os.environ['CUDA_VISIBLE_DEVICES'] = device  # set environment variable
 
     cuda = not cpu and torch.cuda.is_available()
     if cuda:
