@@ -36,7 +36,6 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 # ROOT = ROOT.relative_to(Path.cwd())  # relative
 
-
 import export, val
 from utils.general import LOGGER, print_args
 
@@ -50,7 +49,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
     # suffixes = ['.pt', '.torchscript', '.onnx', '.xml', '.engine', '.mlmodel', '_saved_model', '.pb', '.tflite', 'edgetpu.tflite', '_web_model']
 
     y = []
-    for f in formats[:3]:
+    for f in formats[:-1]:
         file = weights if f == 'torch' else export.run(weights=weights, imgsz=[imgsz], include=[f])[-1]
         result = val.run(data=data, weights=file, imgsz=imgsz, batch_size=batch_size, plots=False)
         m = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
