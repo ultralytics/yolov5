@@ -36,7 +36,7 @@ HELP_URL = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 IMG_FORMATS = ['bmp', 'dng', 'jpeg', 'jpg', 'mpo', 'png', 'tif', 'tiff', 'webp']  # include image suffixes
 VID_FORMATS = ['asf', 'avi', 'gif', 'm4v', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'wmv']  # include video suffixes
 # DEVICE_COUNT = max(torch.cuda.device_count(), 1)
-DEVICE_COUNT = max(torch.cuda.device_count(), 1)
+DEVICE_COUNT = max(len(os.getenv('CUDA_VISIBLE_DEVICES', '').replace(',', '')), 1)  # known issue with cuda.device_count
 
 # Get orientation exif tag
 for orientation in ExifTags.TAGS.keys():
