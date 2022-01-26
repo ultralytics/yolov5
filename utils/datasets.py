@@ -711,7 +711,6 @@ def load_mosaic(self, index):
         labels4.append(labels)
         segments4.extend(segments)
 
-    # Concat/clip labels
     labels4 = np.concatenate(labels4, 0)
     # img4, labels4 = replicate(img4, labels4)  # replicate
 
