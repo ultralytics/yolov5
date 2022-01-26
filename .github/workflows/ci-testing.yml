@@ -78,7 +78,7 @@ jobs:
           python val.py --img 64 --batch 32 --weights $weights --device $d
           # Detect
           #python detect.py --weights ${{ matrix.model }}.pt --device $d
-          python detect.py --weights runs/train/exp/weights/last.pt --device $di
+          python detect.py --weights runs/train/exp/weights/last.pt --device $d
           python hubconf.py  # hub
           # Export
           python models/yolo.py --cfg ${{ matrix.model }}.yaml  # build PyTorch model
