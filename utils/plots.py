@@ -57,7 +57,7 @@ def check_font(font='Arial.ttf', size=10):
         return ImageFont.truetype(str(font) if font.exists() else font.name, size)
     except Exception as e:  # download if missing
         url = "https://ultralytics.com/assets/" + font.name
-        print(f'Downloading {url} to {font}...')
+        LOGGER.info(f'Downloading {url} to {font}...')
         torch.hub.download_url_to_file(url, str(font), progress=False)
         try:
             return ImageFont.truetype(str(font), size)
@@ -143,7 +143,7 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detec
                 ax[i].imshow(blocks[i].squeeze())  # cmap='gray'
                 ax[i].axis('off')
 
-            print(f'Saving {f}... ({n}/{channels})')
+            LOGGER.info(f'Saving {f}... ({n}/{channels})')
             plt.savefig(f, dpi=300, bbox_inches='tight')
             plt.close()
             np.save(str(f.with_suffix('.npy')), x[0].cpu().numpy())  # npy save
@@ -417,7 +417,7 @@ def plot_results(file='path/to/results.csv', dir=''):
                 # if j in [8, 9, 10]:  # share train and val loss y axes
                 #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
         except Exception as e:
-            print(f'Warning: Plotting error for {f}: {e}')
+            LOGGER.info(f'Warning: Plotting error for {f}: {e}')
     ax[1].legend()
     fig.savefig(save_dir / 'results.png', dpi=200)
     plt.close()
