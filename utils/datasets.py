@@ -787,7 +787,7 @@ def load_mosaic9(self, index):
                                        scale=self.hyp['scale'],
                                        shear=self.hyp['shear'],
                                        perspective=self.hyp['perspective'],
-                                       border=[x - int(s/2) for x in self.mosaic_border])  # border to remove
+                                       border=[x - int(s / 2) for x in self.mosaic_border])  # border to remove
 
     return img9, labels9
 
