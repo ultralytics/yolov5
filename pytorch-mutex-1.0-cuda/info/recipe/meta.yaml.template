@@ -1,0 +1,29 @@
+{% set version = "1.0" %}
+{% set build = 0 %}
+
+{% if build_variant == 'cuda' %}
+# prefer cuda builds via a build number offset
+{% set build = build + 100 %}
+{% endif %}
+
+package:
+  name: pytorch-mutex
+  version: {{ version }}
+build:
+  number: {{ build }}
+  string: {{ build_variant }}
+  noarch: generic
+  # also lower cpu priority with track_features
+  {% if build_variant == 'cpu' %}
+  track_features:
+      - pytorch-mutex
+  {% endif %}
+  run_exports:
+    - {{ pin_subpackage('pytorch-mutex', exact=True) }}
+requirements: {}
+  # None, pytorch should depend on pytorch-mutex
+test:
+  commands:
+    - echo "pytorch-mutex metapackage is created."
+about:
+  summary: Metapackage to select the PyTorch variant. Use conda's pinning mechanism in your environment to control which variant you want.

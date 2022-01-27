@@ -1,0 +1,33 @@
+blas_impl: mkl
+c_compiler: vs2019
+cpu_optimization_target: nocona
+cran_mirror: https://cran.r-project.org
+cross_compiler_target_platform: win-64
+cxx_compiler: vs2019
+extend_keys:
+- ignore_build_only_deps
+- extend_keys
+- pin_run_as_build
+- ignore_version
+fortran_compiler: gfortran
+ignore_build_only_deps:
+- numpy
+- python
+lua: '5'
+numpy: '1.16'
+perl: 5.26.2
+pin_run_as_build:
+  python:
+    min_pin: x.x
+    max_pin: x.x
+  r-base:
+    min_pin: x.x
+    max_pin: x.x
+python: '3.9'
+r_base: '3.4'
+target_platform: win-64
+vc: '14'
+zip_keys:
+- - vc
+  - c_compiler
+  - cxx_compiler

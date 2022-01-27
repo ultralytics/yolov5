@@ -1,0 +1,97 @@
+# This file created by conda-build 3.21.7
+# meta.yaml template originally from:
+# C:\w\b\conda\pytorch-nightly, last modified Fri Dec 10 23:57:27 2021
+# ------------------------------------------------
+
+package:
+  name: pytorch
+  version: 1.10.1
+source:
+  path: C:/w/b/tmp_conda_3.9_000458/pytorch
+build:
+  detect_binary_files_with_prefix: false
+  number: '0'
+  script_env:
+    - BUILD_SPLIT_CUDA
+    - CMAKE_ARGS
+    - CONDA_CUDATOOLKIT_CONSTRAINT
+    - CUDA_VERSION
+    - CUDNN_VERSION
+    - DEBUG
+    - DEVELOPER_DIR
+    - EXTRA_CAFFE2_CMAKE_FLAGS
+    - USE_CUDA
+    - USE_FBGEMM
+    - USE_SCCACHE
+  string: py3.9_cuda10.2_cudnn7_0
+requirements:
+  build:
+    - bzip2 1.0.8 he774522_0
+    - cmake 3.19.6 h9ad04ae_0
+    - libuv 1.40.0 he774522_0
+    - lz4-c 1.9.3 h2bbff1b_1
+    - vc 14.2 h21ff451_1
+    - vs2015_runtime 14.27.29016 h5e58377_2
+    - vs2019_win-64 15.4.27004.2010 h4f2c42c_0
+    - xz 5.2.5 h62dcd97_0
+    - zlib 1.2.11 h62dcd97_4
+    - zstd 1.4.9 h19a0ad4_0
+  host:
+    - blas 1.0 mkl
+    - ca-certificates 2021.10.26 haa95532_2
+    - certifi 2021.10.8 py39haa95532_0
+    - intel-openmp 2021.4.0 haa95532_3556
+    - libllvm9 9.0.1 h21ff451_0
+    - libuv 1.40.0 he774522_0
+    - llvm-tools 9.0.1 h21ff451_0
+    - llvmdev 9.0.1 h21ff451_0
+    - mkl 2020.2 256
+    - mkl-include 2021.4.0 haa95532_640
+    - mkl-service 2.3.0 py39h196d8e1_0
+    - mkl_fft 1.3.0 py39h46781fe_0
+    - mkl_random 1.0.2 py39h848d8c7_0
+    - ninja 1.10.2 py39h559b2a2_3
+    - numpy 1.19.2 py39h729668d_0
+    - numpy-base 1.19.2 py39hbd0edd7_0
+    - openssl 1.1.1l h2bbff1b_0
+    - pip 21.2.4 py39haa95532_0
+    - python 3.9.7 h6244533_1
+    - pyyaml 6.0 py39h2bbff1b_1
+    - setuptools 58.0.4 py39haa95532_0
+    - six 1.16.0 pyhd3eb1b0_0
+    - sqlite 3.36.0 h2bbff1b_0
+    - typing_extensions 3.10.0.2 pyh06a4308_0
+    - tzdata 2021e hda174b7_0
+    - vc 14.2 h21ff451_1
+    - vs2015_runtime 14.27.29016 h5e58377_2
+    - wheel 0.37.0 pyhd3eb1b0_1
+    - wincertstore 0.2 py39haa95532_2
+    - yaml 0.2.5 he774522_0
+  run:
+    - blas * mkl
+    - cudatoolkit >=10.2,<10.3
+    - intel-openmp
+    - libuv >=1.40.0,<2.0a0
+    - mkl >=2018
+    - python >=3.9,<3.10.0a0
+    - pytorch-mutex 1.0 cuda
+    - typing_extensions
+  run_constrained:
+    - cpuonly <0
+test:
+  commands:
+    - python ./test/run_test.py
+  imports:
+    - torch
+  source_files:
+    - test
+about:
+  home: http://pytorch.org/
+  license: BSD 3-Clause
+  license_family: BSD
+  license_file: LICENSE
+  summary: PyTorch is an optimized tensor library for deep learning using GPUs and
+    CPUs.
+extra:
+  copy_test_source_files: true
+  final: true

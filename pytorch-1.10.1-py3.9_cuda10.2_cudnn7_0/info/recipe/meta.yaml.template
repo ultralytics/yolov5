@@ -1,0 +1,94 @@
+{% set build_variant = environ.get('PYTORCH_BUILD_VARIANT', 'cuda') %}
+
+package:
+  name: pytorch
+  version: "{{ environ.get('PYTORCH_BUILD_VERSION') }}"
+
+source:
+  path: "{{ environ.get('PYTORCH_GITHUB_ROOT_DIR') }}"
+
+requirements:
+  build:
+    - cmake
+    - {{ compiler('c') }} # [win]
+
+  host:
+    - python
+    # Conda has some pretty unpredictable behavior when it comes to channel priority
+    # so to be safe on which numpy version we want we default to 1.19
+    - numpy=1.19
+    - setuptools
+    - pyyaml
+    - mkl=2020.2 # [x86_64]
+    - mkl-include # [x86_64]
+    - typing_extensions
+    - dataclasses # [py36]
+    - ninja
+    - libuv # [win]
+    - libuv # [unix]
+    - pkg-config # [unix]
+{{ environ.get('PYTORCH_LLVM_PACKAGE', '    - llvmdev=9') }}
+{{ environ.get('MAGMA_PACKAGE', '') }}
+
+  run:
+    - python
+    - mkl >=2018 # [x86_64]
+    - dataclasses # [py36]
+    - libuv # [win]
+    - intel-openmp # [win]
+    - typing_extensions
+    - blas * mkl
+    - pytorch-mutex 1.0 {{ build_variant }}  # [not osx ]
+{{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT', '') }}
+
+  {% if build_variant == 'cpu' %}
+  run_constrained:
+    - cpuonly
+  {% elif not osx %}
+  run_constrained:
+     - cpuonly <0
+  {% endif %}
+
+build:
+  number: {{ environ.get('PYTORCH_BUILD_NUMBER', '1') }}
+  detect_binary_files_with_prefix: False
+  string: "{{ environ.get('PYTORCH_BUILD_STRING') }}"
+  script_env:
+    - BUILD_SPLIT_CUDA
+    - CUDA_VERSION
+    - CUDNN_VERSION
+    - CONDA_CUDATOOLKIT_CONSTRAINT
+    - USE_CUDA
+    - CMAKE_ARGS
+    - EXTRA_CAFFE2_CMAKE_FLAGS
+    - DEVELOPER_DIR
+    - DEBUG
+    - USE_FBGEMM
+    - USE_GLOO_WITH_OPENSSL # [unix]
+    - USE_SCCACHE # [win]
+    - USE_DISTRIBUTED # [unix]
+    - CMAKE_OSX_ARCHITECTURES # [unix]
+    - USE_MKLDNN # [unix]
+    - USE_NNPACK # [unix]
+    - USE_QNNPACK # [unix]
+    - USE_WHOLE_CUDNN # [unix]
+    - BUILD_TEST # [unix]
+    - USE_PYTORCH_METAL_EXPORT # [osx]
+    - USE_COREML_DELEGATE # [osx]
+
+test:
+ imports:
+    - torch
+ source_files:
+   - test
+ commands:
+   - OMP_NUM_THREADS=4 python ./test/run_test.py || true # [not win]
+   - python ./test/run_test.py # [win]
+
+
+about:
+  home: http://pytorch.org/
+  license: BSD 3-Clause
+  license_family: BSD
+  license_file: LICENSE
+  summary: PyTorch is an optimized tensor library for deep learning using GPUs and CPUs.

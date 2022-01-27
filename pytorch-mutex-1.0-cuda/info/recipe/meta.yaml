@@ -1,0 +1,26 @@
+# This file created by conda-build 3.21.4
+# meta.yaml template originally from:
+# /home/yashchuk/builder/conda/pytorch-mutex, last modified Wed Aug  4 07:41:55 2021
+# ------------------------------------------------
+
+package:
+  name: pytorch-mutex
+  version: '1.0'
+build:
+  noarch: generic
+  number: '100'
+  run_exports:
+    - pytorch-mutex 1.0 cuda
+  string: cuda
+requirements:
+  build: []
+  run: []
+test:
+  commands:
+    - echo "pytorch-mutex metapackage is created."
+about:
+  summary: Metapackage to select the PyTorch variant. Use conda's pinning mechanism
+    in your environment to control which variant you want.
+extra:
+  copy_test_source_files: true
+  final: true
