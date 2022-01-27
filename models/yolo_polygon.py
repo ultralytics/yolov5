@@ -13,6 +13,10 @@ from pathlib import Path
 sys.path.append(Path(__file__).parent.parent.absolute().__str__())  # to run '$ python *.py' files in subdirectories
 logger = logging.getLogger(__name__)
 
+from models.common import *
+from utils.general_polygon import polygon_non_max_suppression, polygon_scale_coords
+from utils.plots_polygon import polygon_plot_one_box
+
 from models.yolo import *
 from models.experimental import *
 from utils.autoanchor_polygon import check_anchor_order
@@ -42,8 +46,8 @@ def polygon_parse_model(d, ch):  # model_dict, input_channels(3)
                 pass
 
         n = max(round(n * gd), 1) if n > 1 else n  # depth gain
-        if m in [Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP,
-                 C3, C3TR]:
+        if m in [Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv,
+                 BottleneckCSP, C3, C3TR, C3SPP, C3Ghost]:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
                 c2 = make_divisible(c2 * gw, 8)
@@ -222,10 +226,6 @@ class Polygon_Model(Model):
         copy_attr(m, self, include=('yaml', 'nc', 'hyp', 'names', 'stride'), exclude=())  # copy attributes
         return m
 
-from models.common import *
-from utils.general_polygon import polygon_non_max_suppression, polygon_scale_coords
-from utils.plots_polygon import polygon_plot_one_box
-
 # Ancillary functions with polygon anchor boxes-------------------------------------------------------------------------------------------
 
 class Polygon_NMS(nn.Module):
@@ -392,32 +392,32 @@ class Polygon_Detections:
         return self.n
 
 
-class GhostConv(nn.Module):
-    # Ghost Convolution https://github.com/huawei-noah/ghostnet
-    def __init__(self, c1, c2, k=1, s=1, g=1, act=True):  # ch_in, ch_out, kernel, stride, groups
-        super(GhostConv, self).__init__()
-        c_ = c2 // 2  # hidden channels
-        self.cv1 = Conv(c1, c_, k, s, None, g, act)
-        self.cv2 = Conv(c_, c_, 5, 1, None, c_, act)
+# class GhostConv(nn.Module):
+#     # Ghost Convolution https://github.com/huawei-noah/ghostnet
+#     def __init__(self, c1, c2, k=1, s=1, g=1, act=True):  # ch_in, ch_out, kernel, stride, groups
+#         super(GhostConv, self).__init__()
+#         c_ = c2 // 2  # hidden channels
+#         self.cv1 = Conv(c1, c_, k, s, None, g, act)
+#         self.cv2 = Conv(c_, c_, 5, 1, None, c_, act)
 
-    def forward(self, x):
-        y = self.cv1(x)
-        return torch.cat([y, self.cv2(y)], 1)
+#     def forward(self, x):
+#         y = self.cv1(x)
+#         return torch.cat([y, self.cv2(y)], 1)
 
 
-class GhostBottleneck(nn.Module):
-    # Ghost Bottleneck https://github.com/huawei-noah/ghostnet
-    def __init__(self, c1, c2, k=3, s=1):  # ch_in, ch_out, kernel, stride
-        super(GhostBottleneck, self).__init__()
-        c_ = c2 // 2
-        self.conv = nn.Sequential(GhostConv(c1, c_, 1, 1),  # pw
-                                  DWConv(c_, c_, k, s, act=False) if s == 2 else nn.Identity(),  # dw
-                                  GhostConv(c_, c2, 1, 1, act=False))  # pw-linear
-        self.shortcut = nn.Sequential(DWConv(c1, c1, k, s, act=False),
-                                      Conv(c1, c2, 1, 1, act=False)) if s == 2 else nn.Identity()
+# class GhostBottleneck(nn.Module):
+#     # Ghost Bottleneck https://github.com/huawei-noah/ghostnet
+#     def __init__(self, c1, c2, k=3, s=1):  # ch_in, ch_out, kernel, stride
+#         super(GhostBottleneck, self).__init__()
+#         c_ = c2 // 2
+#         self.conv = nn.Sequential(GhostConv(c1, c_, 1, 1),  # pw
+#                                   DWConv(c_, c_, k, s, act=False) if s == 2 else nn.Identity(),  # dw
+#                                   GhostConv(c_, c2, 1, 1, act=False))  # pw-linear
+#         self.shortcut = nn.Sequential(DWConv(c1, c1, k, s, act=False),
+#                                       Conv(c1, c2, 1, 1, act=False)) if s == 2 else nn.Identity()
 
-    def forward(self, x):
-        return self.conv(x) + self.shortcut(x)
+#     def forward(self, x):
+#         return self.conv(x) + self.shortcut(x)
 
 
 

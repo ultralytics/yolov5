@@ -22,7 +22,7 @@ from utils.torch_utils import select_device, time_sync
 
 # polygon_test.py is specially for polygon boxes
 @torch.no_grad()
-def test(data,
+def run(data,
          weights=None,  # model.pt path(s)
          batch_size=32,  # batch size
          imgsz=640,  # inference size (pixels)
@@ -45,7 +45,7 @@ def test(data,
          dataloader=None,
          save_dir=Path(''),
          plots=True,
-         wandb_logger=None,
+         callbacks=None,
          compute_loss=None,
          ):
     # Initialize/load model and set device
@@ -87,10 +87,6 @@ def test(data,
     index_ap50 = 0   # index for ap 0.5
     niou = iouv.numel()
 
-    # Logging
-    log_imgs = 0
-    if wandb_logger and wandb_logger.wandb:
-        log_imgs = min(wandb_logger.log_imgs, 100)
     # Dataloader
     if not training:
         if device.type != 'cpu':
@@ -164,24 +160,6 @@ def test(data,
                     line = (cls, *xyxyxyxyn, conf) if save_conf else (cls, *xyxyxyxyn)  # label format
                     with open(save_dir / 'labels' / (path.stem + '.txt'), 'a') as f:
                         f.write(('%g ' * len(line)).rstrip() % line + '\n')
-
-            # W&B logging - Media Panel plots
-            if wandb_logger and wandb_logger.wandb:
-                # check for test operations
-                if ((wandb_logger.current_epoch > 0) and (wandb_logger.bbox_interval > 1) 
-                    and (wandb_logger.current_epoch % wandb_logger.bbox_interval == 0)):
-                    if batch_i == 0:
-                        if wandb_logger.current_epoch == wandb_logger.bbox_interval:
-                            f = save_dir / f'test_batch{batch_i}_labels.jpg'  # predictions
-                            polygon_plot_images(img, targets, paths, f, names)
-                            current_batches = [wandb_logger.wandb.Image(str(f), caption=f.name)]
-                            wandb_logger.log({f"Validation-targeted-labels": current_batches})
-                        f = save_dir / f'test_batch{batch_i}_pred_epoch{wandb_logger.current_epoch}.jpg'  # predictions
-                        polygon_plot_images(img, polygon_output_to_target(out), paths, f, names)
-                        current_batches = [wandb_logger.wandb.Image(str(f), caption=f.name)]
-                        wandb_logger.log({f"Validation-epoch{wandb_logger.current_epoch}": current_batches})
-
-            wandb_logger.log_training_progress(predn, path, names) if wandb_logger and wandb_logger.wandb_run else None
 
             # Append to pycocotools JSON dictionary
             if save_json:
@@ -265,9 +243,6 @@ def test(data,
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        if wandb_logger and wandb_logger.wandb:
-            val_batches = [wandb_logger.wandb.Image(str(f), caption=f.name) for f in sorted(save_dir.glob('test*.jpg'))]
-            wandb_logger.log({"Validation": val_batches})
 
     # Save JSON
     if save_json and len(jdict):
@@ -319,11 +294,11 @@ if __name__ == '__main__':
     check_requirements(exclude=('tensorboard', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
-        test(**vars(opt))
+        run(**vars(opt))
 
     elif opt.task == 'speed':  # speed benchmarks
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
-            test(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
+            run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
                  save_json=False, plots=False)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
@@ -334,7 +309,7 @@ if __name__ == '__main__':
             y = []  # y axis
             for i in x:  # img-size
                 print(f'\nRunning {f} point {i}...')
-                r, _, t = test(opt.data, weights=w, batch_size=opt.batch_size, imgsz=i, conf_thres=opt.conf_thres,
+                r, _, t = run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=i, conf_thres=opt.conf_thres,
                                iou_thres=opt.iou_thres, save_json=opt.save_json, plots=False)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save

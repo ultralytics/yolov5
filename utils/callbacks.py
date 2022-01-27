@@ -35,8 +35,6 @@ class Callbacks:
             'on_params_update': [],
             'teardown': [],
             
-            'on_polygon_train_batch_end': [],  # fit = train + val
-            'on_polygon_train_end': [],
             'on_polygon_fit_epoch_end': [],
         }
 

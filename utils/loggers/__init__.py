@@ -82,7 +82,6 @@ class Loggers():
     def on_train_batch_end(self, ni, model, imgs, targets, paths, plots, sync_bn, plot_images):
         # Callback runs on train batch end
         if plots:
-            # from utils.plots import plot_images
             if ni == 0:
                 if not sync_bn:  # tb.add_graph() --sync known issue https://github.com/ultralytics/yolov5/issues/3754
                     with warnings.catch_warnings():
