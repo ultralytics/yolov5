@@ -39,7 +39,7 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.experimental import attempt_load
-from models.yolo_polygon import Model, Polygon_Model
+from models.yolo import Model, Polygon_Model
 from utils.autoanchor_polygon import check_anchors, polygon_check_anchors
 from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
