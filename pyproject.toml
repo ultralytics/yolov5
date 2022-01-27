@@ -1,0 +1,84 @@
+[tool.poetry]
+name = "yolov5"
+version = "0.1.0"
+description = ""
+authors = ["Martin Højland <martin@goautonomous.io>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+matplotlib = "^3.2.2"
+numpy = "^1.18.5"
+opencv-python = "^4.5.5.62"
+Pillow = "^7.1.2"
+PyYAML = "^5.3.1"
+requests = "^2.23.0"
+scipy = "^1.4.1"
+torch = "^1.7.0"
+torchvision = "^0.8.1"
+tqdm = "^4.41.0"
+tensorboard = "^2.4.1"
+pandas = "^1.1.4"
+seaborn = "^0.11.0"
+thop = "^0.0.31-2005241907"
+
+[tool.poetry.dev-dependencies]
+black = {version = "^20.8b1", allow-prereleases = true}
+ipykernel = "^5.3.4"
+ipywidgets = "^7.6.3"
+jupyterlab = "^2.2.9"
+mypy = "^0.770"
+isort = "^4.3.21"
+autoflake = "^1.3.1"
+flake8 = "^3.7.9"
+poethepoet = "^0.10.0"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov --cov-report=xml:cov.xml --black"
+testpaths = "tests src"
+
+[tool.coverage.paths]
+source = ["src/", "*/site-packages"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 40
+exclude_lines = [
+  "pragma: no cover",
+  "raise NotImplementedError"
+]
+[tool.poe.env]
+DS_BUILD_CPU_ADAM = "1"
+
+[tool.poe.tasks]
+install_cuda_torch = "pip install torch==1.9.1+cu111 -f https://download.pytorch.org/whl/torch_stable.html"
+install_cuda_deepspeed = 'pip install deepspeed =>0.5.3 --global-option="build_ext" --global-option="-j8"'
+install_cuda_libs = ["install_cuda_torch", "install_cuda_deepspeed"]
+
+[tool.black]
+line-length = 135
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs         # exclude a few common directories in the
+  | \.git          # root of the project
+  | \.mypy_cache
+  | \.venv
+  | \.vscode
+  | _build
+  | buck-out
+  | build
+  | dist
+  | tmp
+)/
+'''
+
+[tool.isort]
+multi_line_output = 3
+line_length = 88
+include_trailing_comma = true
+
+[build-system]
+requires = ["poetry => 1.1.8"]
+build-backend = "poetry.masonry.api"
