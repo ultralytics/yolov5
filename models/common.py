@@ -624,10 +624,10 @@ class Detections:
         save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True)
         (save_dir / 'labels').mkdir(parents=True, exist_ok=True)  # make dir
         for img_name, pred, img in zip(self.files, self.pred, self.imgs):
-            gn = torch.tensor(img.shape)[[1, 0, 1, 0]] # normalization gain whwh
+            gn = torch.tensor(img.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             for *xyxy, conf, cls in reversed(pred):
-                xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist() # normalized xywh
-                line = (cls, *xywh, conf) # label format
+                xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                line = (cls, *xywh, conf)  # label format
                 with open(save_dir / 'labels' / (img_name.split('.')[0] + '.txt'), 'a') as f:
                     f.write(('%g ' * len(line)).rstrip() % line + '\n')
         if save_imgs:
