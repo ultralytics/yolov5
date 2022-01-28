@@ -270,8 +270,8 @@ def polygon_plot_results(file=''):
     bucket=''
     id=()
     labels=()
-    files = list(Path(save_dir).glob('results*.csv'))
-    assert len(files), f'No results.txt files found in {save_dir.resolve()}, nothing to plot.'
+    files = list(Path(file).glob('results*.csv'))
+    assert len(files), f'No results.txt files found in {file.resolve()}, nothing to plot.'
     for fi, f in enumerate(files):
         try:
             results = np.loadtxt(f, usecols=[2, 3, 4, 8, 9, 12, 13, 14, 10, 11], ndmin=2).T
@@ -291,7 +291,7 @@ def polygon_plot_results(file=''):
             print('Warning: Plotting error for %s; %s' % (f, e))
 
     ax[1].legend()
-    fig.savefig(Path(save_dir) / 'results.png', dpi=200)
+    fig.savefig(Path(file) / 'results.png', dpi=200)
 
 
 def plot_one_box(x, im, color=(128, 128, 128), label=None, line_thickness=3):
