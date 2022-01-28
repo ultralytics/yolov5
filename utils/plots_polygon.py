@@ -259,7 +259,7 @@ def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots impo
     print('\nPlot saved as evolve.png')
 
 
-def polygon_plot_results(save_dir=''):
+def polygon_plot_results(file=''):
     # Plot training 'results*.txt'. from utils.plots import *; plot_results(save_dir='runs/train/exp')
     fig, ax = plt.subplots(2, 5, figsize=(12, 6), tight_layout=True)
     ax = ax.ravel()
