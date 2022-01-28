@@ -8,6 +8,7 @@ import math
 import os
 import platform
 import subprocess
+import sys
 import time
 from contextlib import contextmanager
 from copy import deepcopy
@@ -54,7 +55,8 @@ def git_describe(path=Path(__file__).parent):  # path must be a directory
 
 
 def device_count():
-    # Returns number of CUDA devices available. Safe version of torch.cuda.device_count().
+    # Returns number of CUDA devices available. Safe version of torch.cuda.device_count(). Only works on Linux.
+    assert sys.platform == 'Linux'
     try:
         cmd = 'nvidia-smi -L | wc -l'
         return int(subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1])
@@ -63,6 +65,7 @@ def device_count():
 
 
 def select_device(device='', batch_size=0, newline=True):
+    print(device)
     # device = 'cpu' or '0' or '0,1,2,3'
     s = f'YOLOv5 🚀 {git_describe() or date_modified()} torch {torch.__version__} '  # string
     device = str(device).strip().lower().replace('cuda:', '')  # to string, 'cuda:0' to '0'
@@ -70,10 +73,10 @@ def select_device(device='', batch_size=0, newline=True):
     if cpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force torch.cuda.is_available() = False
     elif device:  # non-cpu device requested
-        nd = device_count()  # number of CUDA devices
-        assert nd > int(max(device.split(','))), f'Invalid `--device {device}` request, valid devices are 0 - {nd - 1}'
         os.environ['CUDA_VISIBLE_DEVICES'] = device  # set environment variable - must be before assert is_available()
-        assert torch.cuda.is_available(), 'CUDA is not available, use `--device cpu` or do not pass a --device'
+        nd = torch.cuda.device_count()  # number of CUDA devices
+        assert torch.cuda.is_available(), f'CUDA `--device {device}` requested but `torch.cuda.is_available()=False`'
+        assert nd > 0, f'Invalid CUDA `--device {device}` requested, use `--device cpu` or pass valid CUDA device(s)'
 
     cuda = not cpu and torch.cuda.is_available()
     if cuda:
