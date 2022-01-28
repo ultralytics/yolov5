@@ -8,7 +8,6 @@ import math
 import os
 import platform
 import subprocess
-import sys
 import time
 from contextlib import contextmanager
 from copy import deepcopy
@@ -56,7 +55,7 @@ def git_describe(path=Path(__file__).parent):  # path must be a directory
 
 def device_count():
     # Returns number of CUDA devices available. Safe version of torch.cuda.device_count(). Only works on Linux.
-    assert sys.platform == 'Linux'
+    assert platform.system() == 'Linux'
     try:
         cmd = 'nvidia-smi -L | wc -l'
         return int(subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1])
