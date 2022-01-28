@@ -27,7 +27,7 @@
    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-twitter.png" width="2%"/>
    </a>
    <img width="2%" />
-   <a href="https://www.producthunt.com/upcoming/ultralytics-hub">
+   <a href="https://www.producthunt.com/@glenn_jocher">
    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-producthunt.png" width="2%"/>
    </a>
    <img width="2%" />
@@ -286,7 +286,7 @@ professional support requests please visit [https://ultralytics.com/contact](htt
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-twitter.png" width="3%"/>
     </a>
     <img width="3%" />
-    <a href="https://www.producthunt.com/upcoming/ultralytics-hub">
+    <a href="https://www.producthunt.com/@glenn_jocher">
     <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-producthunt.png" width="3%"/>
     </a>
     <img width="3%" />
