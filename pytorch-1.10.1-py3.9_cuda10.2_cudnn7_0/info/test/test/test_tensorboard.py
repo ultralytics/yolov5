@@ -1,10 +1,11 @@
 import io
-import numpy as np
 import os
 import shutil
 import sys
 import unittest
 import uuid
+
+import numpy as np
 
 TEST_TENSORBOARD = True
 try:
@@ -39,7 +40,8 @@ except ImportError:
 skipIfNoMatplotlib = unittest.skipIf(not TEST_MATPLOTLIB, "no matplotlib")
 
 import torch
-from torch.testing._internal.common_utils import TestCase, run_tests, TEST_WITH_ASAN
+from torch.testing._internal.common_utils import TEST_WITH_ASAN, TestCase, run_tests
+
 
 def tensor_N(shape, dtype=float):
     numel = np.prod(shape)
@@ -59,7 +61,7 @@ class BaseTestCase(TestCase):
         return SummaryWriter(temp_dir)
 
     def tearDown(self):
-        super(BaseTestCase, self).tearDown()
+        super().tearDown()
         # Remove directories created by SummaryWriter
         for temp_dir in self.temp_dirs:
             if os.path.exists(temp_dir):
@@ -67,14 +69,15 @@ class BaseTestCase(TestCase):
 
 
 if TEST_TENSORBOARD:
-    from tensorboard.compat.proto.graph_pb2 import GraphDef
-    from torch.utils.tensorboard import summary, SummaryWriter
-    from torch.utils.tensorboard._utils import _prepare_video, convert_to_HWC
-    from torch.utils.tensorboard._convert_np import make_np
-    from torch.utils.tensorboard import _caffe2_graph as c2_graph
-    from torch.utils.tensorboard._pytorch_graph import graph
     from google.protobuf import text_format
     from PIL import Image
+    from tensorboard.compat.proto.graph_pb2 import GraphDef
+    from torch.utils.tensorboard import SummaryWriter
+    from torch.utils.tensorboard import _caffe2_graph as c2_graph
+    from torch.utils.tensorboard import summary
+    from torch.utils.tensorboard._convert_np import make_np
+    from torch.utils.tensorboard._pytorch_graph import graph
+    from torch.utils.tensorboard._utils import _prepare_video, convert_to_HWC
 
 class TestTensorBoardPyTorchNumpy(BaseTestCase):
     def test_pytorch_np(self):
@@ -507,7 +510,7 @@ def get_expected_file(function_ptr):
 def read_expected_content(function_ptr):
     expected_file = get_expected_file(function_ptr)
     assert os.path.exists(expected_file)
-    with open(expected_file, "r") as f:
+    with open(expected_file) as f:
         return f.read()
 
 def compare_image_proto(actual_proto, function_ptr):
@@ -543,7 +546,7 @@ class TestTensorBoardPytorchGraph(BaseTestCase):
 
         class myLinear(torch.nn.Module):
             def __init__(self):
-                super(myLinear, self).__init__()
+                super().__init__()
                 self.l = torch.nn.Linear(3, 5)
 
             def forward(self, x):
@@ -558,15 +561,15 @@ class TestTensorBoardPytorchGraph(BaseTestCase):
         expected_proto = GraphDef()
         text_format.Parse(expected_str, expected_proto)
 
-        self.assertEquals(len(expected_proto.node), len(actual_proto.node))
+        self.assertEqual(len(expected_proto.node), len(actual_proto.node))
         for i in range(len(expected_proto.node)):
             expected_node = expected_proto.node[i]
             actual_node = actual_proto.node[i]
-            self.assertEquals(expected_node.name, actual_node.name)
-            self.assertEquals(expected_node.op, actual_node.op)
-            self.assertEquals(expected_node.input, actual_node.input)
-            self.assertEquals(expected_node.device, actual_node.device)
-            self.assertEquals(
+            self.assertEqual(expected_node.name, actual_node.name)
+            self.assertEqual(expected_node.op, actual_node.op)
+            self.assertEqual(expected_node.input, actual_node.input)
+            self.assertEqual(expected_node.device, actual_node.device)
+            self.assertEqual(
                 sorted(expected_node.attr.keys()), sorted(actual_node.attr.keys()))
 
     def test_pytorch_graph_dict_input(self):
@@ -615,7 +618,7 @@ class TestTensorBoardPytorchGraph(BaseTestCase):
         # the add_graph call and still continue.
         class myMLP(torch.nn.Module):
             def __init__(self):
-                super(myMLP, self).__init__()
+                super().__init__()
                 self.input_len = 1 * 28 * 28
                 self.fc1 = torch.nn.Linear(self.input_len, 1200)
                 self.fc2 = torch.nn.Linear(1200, 1200)

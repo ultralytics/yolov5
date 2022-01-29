@@ -9,9 +9,9 @@ import torch.nn as nn
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(pytorch_test_dir)
+from torch.onnx import OperatorExportTypes
 from torch.testing._internal.common_utils import suppress_warnings
 from torch.testing._internal.jit_utils import JitTestCase
-from torch.onnx import OperatorExportTypes
 
 if __name__ == '__main__':
     raise RuntimeError("This test file is not meant to be run directly, use:\n\n"
@@ -41,7 +41,7 @@ class TestONNXExport(JitTestCase):
 
         class TraceMe(torch.nn.Module):
             def __init__(self):
-                super(TraceMe, self).__init__()
+                super().__init__()
                 self.foo = Foo()
 
             def forward(self, x):
@@ -64,7 +64,7 @@ class TestONNXExport(JitTestCase):
     def test_onnx_export_script_module(self):
         class ModuleToExport(torch.jit.ScriptModule):
             def __init__(self):
-                super(ModuleToExport, self).__init__()
+                super().__init__()
 
             @torch.jit.script_method
             def forward(self, x):
@@ -83,7 +83,7 @@ class TestONNXExport(JitTestCase):
 
         class WarningTest(torch.nn.Module):
             def __init__(self):
-                super(WarningTest, self).__init__()
+                super().__init__()
 
             def forward(self, x):
                 return func_with_warning(x)
@@ -95,7 +95,7 @@ class TestONNXExport(JitTestCase):
     def test_onnx_export_script_python_fail(self):
         class PythonModule(torch.jit.ScriptModule):
             def __init__(self):
-                super(PythonModule, self).__init__()
+                super().__init__()
 
             @torch.jit.ignore
             def forward(self, x):
@@ -103,7 +103,7 @@ class TestONNXExport(JitTestCase):
 
         class ModuleToExport(torch.jit.ScriptModule):
             def __init__(self):
-                super(ModuleToExport, self).__init__()
+                super().__init__()
                 self.mod = PythonModule()
 
             @torch.jit.script_method
@@ -119,14 +119,14 @@ class TestONNXExport(JitTestCase):
     def test_onnx_export_script_inline_trace(self):
         class ModuleToInline(torch.nn.Module):
             def __init__(self):
-                super(ModuleToInline, self).__init__()
+                super().__init__()
 
             def forward(self, x):
                 return torch.neg(x)
 
         class ModuleToExport(torch.jit.ScriptModule):
             def __init__(self):
-                super(ModuleToExport, self).__init__()
+                super().__init__()
                 self.mod = torch.jit.trace(ModuleToInline(), torch.zeros(1, 2, 3))
 
             @torch.jit.script_method
@@ -141,7 +141,7 @@ class TestONNXExport(JitTestCase):
     def test_onnx_export_script_inline_script(self):
         class ModuleToInline(torch.jit.ScriptModule):
             def __init__(self):
-                super(ModuleToInline, self).__init__()
+                super().__init__()
 
             @torch.jit.script_method
             def forward(self, x):
@@ -149,7 +149,7 @@ class TestONNXExport(JitTestCase):
 
         class ModuleToExport(torch.jit.ScriptModule):
             def __init__(self):
-                super(ModuleToExport, self).__init__()
+                super().__init__()
                 self.mod = ModuleToInline()
 
             @torch.jit.script_method
@@ -164,7 +164,7 @@ class TestONNXExport(JitTestCase):
     def test_onnx_export_script_module_loop(self):
         class ModuleToExport(torch.jit.ScriptModule):
             def __init__(self):
-                super(ModuleToExport, self).__init__()
+                super().__init__()
 
             @torch.jit.script_method
             def forward(self, x):
@@ -183,7 +183,7 @@ class TestONNXExport(JitTestCase):
     def test_onnx_export_script_truediv(self):
         class ModuleToExport(torch.jit.ScriptModule):
             def __init__(self):
-                super(ModuleToExport, self).__init__()
+                super().__init__()
 
             @torch.jit.script_method
             def forward(self, x):
@@ -198,7 +198,7 @@ class TestONNXExport(JitTestCase):
     def test_onnx_export_script_non_alpha_add_sub(self):
         class ModuleToExport(torch.jit.ScriptModule):
             def __init__(self):
-                super(ModuleToExport, self).__init__()
+                super().__init__()
 
             @torch.jit.script_method
             def forward(self, x):
@@ -212,7 +212,7 @@ class TestONNXExport(JitTestCase):
     def test_onnx_export_script_module_if(self):
         class ModuleToExport(torch.jit.ScriptModule):
             def __init__(self):
-                super(ModuleToExport, self).__init__()
+                super().__init__()
 
             @torch.jit.script_method
             def forward(self, x):
@@ -227,7 +227,7 @@ class TestONNXExport(JitTestCase):
     def test_onnx_export_script_inline_params(self):
         class ModuleToInline(torch.jit.ScriptModule):
             def __init__(self):
-                super(ModuleToInline, self).__init__()
+                super().__init__()
                 self.m = torch.nn.Parameter(torch.ones(3, 3))
                 self.unused = torch.nn.Parameter(torch.ones(1, 2, 3))
 
@@ -237,7 +237,7 @@ class TestONNXExport(JitTestCase):
 
         class ModuleToExport(torch.jit.ScriptModule):
             def __init__(self):
-                super(ModuleToExport, self).__init__()
+                super().__init__()
                 self.mod = ModuleToInline()
                 self.param = torch.nn.Parameter(torch.ones(3, 4))
 
@@ -257,7 +257,7 @@ class TestONNXExport(JitTestCase):
 
         class Foo(torch.jit.ScriptModule):
             def __init__(self, m):
-                super(Foo, self).__init__()
+                super().__init__()
                 self.m = m
 
             @torch.jit.script_method

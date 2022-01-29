@@ -12,12 +12,7 @@ import sys
 import tempfile
 import unittest
 
-from torch.distributed.elastic.multiprocessing.redirects import (
-    redirect,
-    redirect_stderr,
-    redirect_stdout,
-)
-
+from torch.distributed.elastic.multiprocessing.redirects import redirect, redirect_stderr, redirect_stdout
 
 libc = ctypes.CDLL("libc.so.6")
 c_stderr = ctypes.c_void_p.in_dll(libc, "stderr")
@@ -53,7 +48,7 @@ class RedirectsTest(unittest.TestCase):
         libc.printf(b"foo again from c\n")
         os.system("echo foo again from cmd")
 
-        with open(stdout_log, "r") as f:
+        with open(stdout_log) as f:
             # since we print from python, c, cmd -> the stream is not ordered
             # do a set comparison
             lines = set(f.readlines())
@@ -77,7 +72,7 @@ class RedirectsTest(unittest.TestCase):
         libc.fprintf(c_stderr, b"bar again from c\n")
         os.system("echo bar again from cmd 1>&2")
 
-        with open(stderr_log, "r") as f:
+        with open(stderr_log) as f:
             lines = set(f.readlines())
             self.assertEqual(
                 {"bar from python\n", "bar from c\n", "bar from cmd\n"}, lines
@@ -102,13 +97,13 @@ class RedirectsTest(unittest.TestCase):
         print("again stdout from python")
         libc.fprintf(c_stderr, b"again stderr from c\n")
 
-        with open(stdout_log, "r") as f:
+        with open(stdout_log) as f:
             lines = set(f.readlines())
             self.assertEqual(
                 {"redir stdout from python\n", "redir stdout from c\n"}, lines
             )
 
-        with open(stderr_log, "r") as f:
+        with open(stderr_log) as f:
             lines = set(f.readlines())
             self.assertEqual(
                 {"redir stderr from python\n", "redir stderr from c\n"}, lines

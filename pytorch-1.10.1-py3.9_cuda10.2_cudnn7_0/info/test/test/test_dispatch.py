@@ -1,12 +1,12 @@
-import torch._C as C
-from torch.testing._internal.common_utils import TestCase, run_tests
-from torch._python_dispatcher import PythonDispatcher
-
-from collections import namedtuple
 import itertools
 import os
 import re
+from collections import namedtuple
+
+import torch._C as C
 import torch.utils.cpp_extension
+from torch._python_dispatcher import PythonDispatcher
+from torch.testing._internal.common_utils import TestCase, run_tests
 
 # TODO: Expand the dispatcher API to be a generic API for interfacing with
 # the dispatcher from Python!
@@ -99,15 +99,15 @@ class TestDispatch(TestCase):
 
         # double underscore to make it less likely we conflict with something
         # else
-        test_namespace = "__test{}__".format(self.namespace_index)
+        test_namespace = f"__test{self.namespace_index}__"
 
         def check_invariants(actual_provenance):
             C._dispatch_check_invariants(name)
             # Normalize the test namespace so that expected outputs are stable
             actual_state = C._dispatch_dump(
-                "{}::{}".format(test_namespace, name)).replace(test_namespace, "test")
+                f"{test_namespace}::{name}").replace(test_namespace, "test")
             actual_table = C._dispatch_dump_table(
-                "{}::{}".format(test_namespace, name)).replace(test_namespace, "test")
+                f"{test_namespace}::{name}").replace(test_namespace, "test")
             expected_state, expected_table, expected_provenance = results.setdefault(
                 frozenset(active_ops),
                 Result(actual_state, actual_table, actual_provenance)
@@ -136,7 +136,7 @@ class TestDispatch(TestCase):
             active_ops.add(op_ix)
             try:
                 ops[op_ix](refs[op_ix])
-                check_invariants("running ctors {}".format(ctor_order[:i + 1]))
+                check_invariants(f"running ctors {ctor_order[:i + 1]}")
             except RuntimeError as e:
                 if not expect_raises:
                     raise
@@ -144,7 +144,7 @@ class TestDispatch(TestCase):
                 actual = actual.split("\nException raised from ")[0]
                 expected, _, expected_provenance = results.setdefault(
                     frozenset(active_ops),
-                    Result(actual, "", "error after running ctors {}".format(ctor_order[:i + 1]))
+                    Result(actual, "", f"error after running ctors {ctor_order[:i + 1]}")
                 )
                 self.assertMultiLineEqual(expected, actual, expected_provenance)
                 set_to_report = frozenset(active_ops)

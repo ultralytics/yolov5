@@ -10,15 +10,8 @@ if not dist.is_available():
     sys.exit(0)
 
 from torch.testing._internal.common_utils import IS_IN_CI, run_tests
-from torch.testing._internal.distributed.rpc.tensorpipe_rpc_agent_test_fixture import (
-    TensorPipeRpcAgentTestFixture,
-)
-from torch.testing._internal.distributed.rpc_utils import (
-    GENERIC_TESTS,
-    TENSORPIPE_TESTS,
-    generate_tests,
-)
-
+from torch.testing._internal.distributed.rpc.tensorpipe_rpc_agent_test_fixture import TensorPipeRpcAgentTestFixture
+from torch.testing._internal.distributed.rpc_utils import GENERIC_TESTS, TENSORPIPE_TESTS, generate_tests
 
 # On CircleCI these tests are already run on CPU jobs, thus to save resources do
 # not run them on GPU jobs, since thet wouldn't provide additional test signal.

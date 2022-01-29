@@ -9,15 +9,12 @@ import torch
 import torch.nn as nn
 import torch.optim
 import torch.utils.data
-from torch.testing._internal.common_cuda import TEST_MULTIGPU
-from torch.testing._internal.common_utils import (
-    TestCase, run_tests, TEST_WITH_ASAN, TEST_WITH_ROCM, IS_WINDOWS,
-    TemporaryFileName, TemporaryDirectoryName)
 from torch.autograd.profiler import profile as _profile
-from torch.profiler import (
-    kineto_available, profile, record_function, supported_activities,
-    DeviceType, ProfilerAction, ProfilerActivity
-)
+from torch.profiler import (DeviceType, ProfilerAction, ProfilerActivity, kineto_available, profile, record_function,
+                            supported_activities)
+from torch.testing._internal.common_cuda import TEST_MULTIGPU
+from torch.testing._internal.common_utils import (IS_WINDOWS, TEST_WITH_ASAN, TEST_WITH_ROCM, TemporaryDirectoryName,
+                                                  TemporaryFileName, TestCase, run_tests)
 
 try:
     import psutil
@@ -55,7 +52,7 @@ class TestProfilerCUDA(TestCase):
         for idx in range(1, len(last_rss)):
             max_diff = max(max_diff, last_rss[idx] - last_rss[idx - 1])
         self.assertTrue(not (is_increasing and max_diff > 100 * 1024),
-                        msg='memory usage is increasing, {}'.format(str(last_rss)))
+                        msg=f'memory usage is increasing, {str(last_rss)}')
 
 class TestProfiler(TestCase):
     def test_source(self):
@@ -77,7 +74,7 @@ class TestProfiler(TestCase):
 
         class DummyModule(nn.Module):
             def __init__(self):
-                super(DummyModule, self).__init__()
+                super().__init__()
                 self.conv = torch.nn.Conv2d(3, 2, kernel_size=1, stride=2, padding=3, bias=False)
 
             def forward(self, x):
@@ -233,7 +230,7 @@ class TestProfiler(TestCase):
                     with record_function("test_user_scope_dealloc"):
                         del x
                 prof.export_chrome_trace(fname)
-                with io.open(fname, 'r') as f:
+                with open(fname, 'r') as f:
                     trace = json.load(f)
                     assert "traceEvents" in trace
                     events = trace["traceEvents"]
@@ -323,7 +320,7 @@ class TestProfiler(TestCase):
     def test_module_hierarchy(self):
         class A(nn.Module):
             def __init__(self):
-                super(A, self).__init__()
+                super().__init__()
 
             def my_new_method(self, x):
                 return x * 3
@@ -337,14 +334,14 @@ class TestProfiler(TestCase):
 
         class B(nn.Module):
             def __init__(self):
-                super(B, self).__init__()
+                super().__init__()
 
             def forward(self, x):
                 return x + 2
 
         class C(nn.Module):
             def __init__(self):
-                super(C, self).__init__()
+                super().__init__()
                 self.A0 = A()
                 self.B0 = B()
 
@@ -369,7 +366,7 @@ class TestProfiler(TestCase):
             with profile(activities=[torch.profiler.ProfilerActivity.CPU], with_modules=True,) as prof:
                 model(input_a, input_b)
             prof.export_chrome_trace(fname)
-            with io.open(fname, 'r') as f:
+            with open(fname, 'r') as f:
                 trace = json.load(f)
                 assert "traceEvents" in trace
                 events = trace["traceEvents"]
@@ -400,7 +397,7 @@ class TestProfiler(TestCase):
 
         class TwoLayerNet(torch.nn.Module):
             def __init__(self, D_in, H, D_out):
-                super(TwoLayerNet, self).__init__()
+                super().__init__()
                 self.linear1 = torch.nn.Linear(D_in, H)
                 self.linear2 = torch.nn.Linear(H, D_out)
 
@@ -411,7 +408,7 @@ class TestProfiler(TestCase):
 
         class CustomSGD(torch.optim.SGD):
             def __init__(self, *args, **kwargs):
-                super(CustomSGD, self).__init__(*args, **kwargs)
+                super().__init__(*args, **kwargs)
 
         def train():
             for _, data in enumerate(dataloader):
@@ -574,7 +571,7 @@ class TestProfiler(TestCase):
 
         with TemporaryFileName(mode="w+") as fname:
             p.export_stacks(fname)
-            with io.open(fname, 'r') as f:
+            with open(fname, 'r') as f:
                 lines = f.readlines()
             assert len(lines) > 0, "Empty stacks file"
             for line in lines:
@@ -662,7 +659,7 @@ class TestProfiler(TestCase):
 
         with TemporaryFileName(mode="w+") as fname:
             prof.export_chrome_trace(fname)
-            with io.open(fname, 'r') as f:
+            with open(fname, 'r') as f:
                 trace = json.load(f)
                 assert "test_key1" in trace
                 assert trace["test_key1"] == "test_value1"
@@ -678,7 +675,7 @@ class TestProfiler(TestCase):
             prof.export_chrome_trace(fname)
             # read the trace and expect valid json
             # if the JSON generated by export_chrome_trace is not valid, this will throw and fail the test.
-            with io.open(fname, 'r') as f:
+            with open(fname, 'r') as f:
                 json.load(f)
 
         # test empty trace
@@ -701,7 +698,7 @@ class TestProfiler(TestCase):
         with TemporaryFileName(mode="w+") as fname:
             prof.export_chrome_trace(fname)
             # Now validate the json
-            with io.open(fname, 'r') as f:
+            with open(fname, 'r') as f:
                 json.load(f)
 
     def test_profiler_tracing(self):
@@ -718,7 +715,7 @@ class TestProfiler(TestCase):
             loss.backward()
         with TemporaryFileName(mode="w+") as fname:
             prof.export_chrome_trace(fname)
-            with io.open(fname, 'r') as f:
+            with open(fname, 'r') as f:
                 j = json.load(f)
                 events = j["traceEvents"]
                 ts_to_name = {}

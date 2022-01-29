@@ -2,17 +2,14 @@ import fnmatch
 import io
 import shutil
 import tempfile
+from pathlib import Path
+
 import torch
 import torch.utils.show_pickle
 # from torch.utils.mobile_optimizer import optimize_for_mobile
-from torch.jit.mobile import (
-    _load_for_lite_interpreter,
-    _get_model_bytecode_version,
-    _get_model_ops_and_info,
-    _backport_for_mobile_to_buffer,
-    _backport_for_mobile)
+from torch.jit.mobile import (_backport_for_mobile, _backport_for_mobile_to_buffer, _get_model_bytecode_version,
+                              _get_model_ops_and_info, _load_for_lite_interpreter)
 from torch.testing._internal.common_utils import TestCase, run_tests
-from pathlib import Path
 
 pytorch_test_dir = Path(__file__).resolve().parents[1]
 

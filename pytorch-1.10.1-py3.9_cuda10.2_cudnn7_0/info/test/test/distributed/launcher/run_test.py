@@ -24,10 +24,7 @@ from torch.distributed.elastic.multiprocessing.errors import ChildFailedError
 from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
 from torch.distributed.elastic.utils import get_socket_with_port
 from torch.distributed.elastic.utils.distributed import get_free_port
-from torch.testing._internal.common_utils import (
-    TEST_WITH_DEV_DBG_ASAN,
-    sandcastle_skip_if,
-)
+from torch.testing._internal.common_utils import TEST_WITH_DEV_DBG_ASAN, sandcastle_skip_if
 
 
 def launch_in_proc(args):
@@ -497,7 +494,7 @@ class ElasticLaunchTest(unittest.TestCase):
             ]
         )
 
-        with open(out_file, "r") as fp:
+        with open(out_file) as fp:
             is_torchelastic_launched = fp.readline()
             self.assertEqual("True", is_torchelastic_launched)
 
@@ -519,7 +516,7 @@ class ElasticLaunchTest(unittest.TestCase):
             ],
         ):
             runpy.run_path(sys.argv[0], run_name="__main__")
-            with open(out_file, "r") as fp:
+            with open(out_file) as fp:
                 is_torchelastic_launched = fp.readline()
                 self.assertEqual("False", is_torchelastic_launched)
 

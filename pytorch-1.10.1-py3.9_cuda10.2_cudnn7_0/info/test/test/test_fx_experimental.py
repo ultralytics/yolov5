@@ -3,42 +3,27 @@ import numbers
 import operator
 import sys
 import unittest
-from typing import Callable, Dict, Union, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 import torch
 import torch.fx.experimental.optimization as optimization
 from torch.fx._symbolic_trace import symbolic_trace
 from torch.fx.experimental import merge_matmul
 from torch.fx.experimental.accelerator_partitioner import Partitioner
-from torch.fx.experimental.normalize import NormalizeOperators, NormalizeArgs
-from torch.fx.passes import graph_manipulation
-from torch.fx.passes.param_fetch import lift_lowering_attrs_to_nodes
-from torch.fx.experimental.partitioner_utils import (
-    NodeLatency,
-    get_partition_to_latency_mapping,
-    get_latency_of_partitioned_graph,
-    Device,
-    PartitionerConfig,
-    PartitionMode,
-)
+from torch.fx.experimental.normalize import NormalizeArgs, NormalizeOperators
+from torch.fx.experimental.partitioner_utils import (Device, NodeLatency, PartitionerConfig, PartitionMode,
+                                                     get_latency_of_partitioned_graph, get_partition_to_latency_mapping)
 from torch.fx.experimental.rewriter import RewritingTracer
 from torch.fx.experimental.schema_type_annotation import AnnotateTypesWithSchema
 from torch.fx.graph_module import GraphModule
 from torch.fx.node import Node
-from torch.fx.operator_schemas import (
-    _torchscript_type_to_python_type,
-    normalize_function,
-    normalize_module,
-    type_matches,
-    create_type_hint,
-)
-from torch.fx.passes.shape_prop import _extract_tensor_metadata, ShapeProp
+from torch.fx.operator_schemas import (_torchscript_type_to_python_type, create_type_hint, normalize_function,
+                                       normalize_module, type_matches)
+from torch.fx.passes import graph_manipulation
+from torch.fx.passes.param_fetch import lift_lowering_attrs_to_nodes
+from torch.fx.passes.shape_prop import ShapeProp, _extract_tensor_metadata
 from torch.fx.passes.split_module import split_module
-from torch.testing._internal.common_device_type import (
-    ops,
-    onlyCPU,
-    instantiate_device_type_tests,
-)
+from torch.testing._internal.common_device_type import instantiate_device_type_tests, onlyCPU, ops
 from torch.testing._internal.common_methods_invocations import op_db
 from torch.testing._internal.common_nn import module_tests, new_module_tests
 from torch.testing._internal.common_utils import run_tests
@@ -327,7 +312,7 @@ class TestFXExperimental(JitTestCase):
                 return layers
 
             def __init__(self):
-                super(MyRecommendationModule, self).__init__()
+                super().__init__()
                 layers = self.create_mlp(4, 4, 4)
                 self.bottom_layers = torch.nn.Sequential(*layers)
                 layers = self.create_mlp(3, 24, 24)
@@ -381,7 +366,7 @@ class TestFXExperimental(JitTestCase):
     def test_partition_latency(self):
         class TestModule(torch.nn.Module):
             def __init__(self):
-                super(TestModule, self).__init__()
+                super().__init__()
                 self.linear = torch.nn.Linear(4, 4)
 
             def forward(self, a):
@@ -500,7 +485,7 @@ class TestFXExperimental(JitTestCase):
         def test_kl_based_partition(self):
             class TestModule(torch.nn.Module):
                 def __init__(self):
-                    super(TestModule, self).__init__()
+                    super().__init__()
                     self.linear = torch.nn.Linear(4, 4)
                     self.b = torch.rand(4)
                     self.c = torch.rand(4)
@@ -553,7 +538,7 @@ class TestFXExperimental(JitTestCase):
         def test_aot_based_partition(self):
             class TestModule(torch.nn.Module):
                 def __init__(self):
-                    super(TestModule, self).__init__()
+                    super().__init__()
                     self.b = torch.rand(4)
                     self.c = torch.rand(4)
 
@@ -612,7 +597,7 @@ class TestFXExperimental(JitTestCase):
     def test_saturate_host(self):
         class TestModule(torch.nn.Module):
             def __init__(self):
-                super(TestModule, self).__init__()
+                super().__init__()
                 self.linear = torch.nn.Linear(4, 4)
 
             def forward(self, a):
@@ -906,7 +891,7 @@ terrible spacing
             ) -> bool:
                 # `leaves` contains the set of standard `nn.Modules` that are not
                 # currently symbolically traceable. Ideally this set would be empty
-                leaves = set([torch.nn.BatchNorm2d])
+                leaves = {torch.nn.BatchNorm2d}
                 return type(m) in leaves
 
         traced = torch.fx.GraphModule(m, FunctionalTracer().trace(m))
@@ -1076,7 +1061,7 @@ class {test_classname}(torch.nn.Module):
             ) -> bool:
                 # `leaves` contains the set of standard `nn.Modules` that are not
                 # currently symbolically traceable. Ideally this set would be empty
-                leaves = set([torch.nn.BatchNorm2d])
+                leaves = {torch.nn.BatchNorm2d}
                 return type(m) in leaves
 
         traced_functionals = torch.fx.GraphModule(m, FunctionalTracer().trace(m))
@@ -1138,7 +1123,7 @@ class {test_classname}(torch.nn.Module):
     def test_to_folder(self):
         class Test(torch.nn.Module):
             def __init__(self):
-                super(Test, self).__init__()
+                super().__init__()
                 self.W = torch.nn.Parameter(torch.randn(2))
                 self.seq = torch.nn.Sequential(torch.nn.BatchNorm1d(2, 2))
                 self.linear = torch.nn.Linear(2, 2)
@@ -1340,13 +1325,13 @@ class {test_classname}(torch.nn.Module):
 
     def test_type_matches(self):
         should_be_equal = [
-            (int, type(5)),
-            (numbers.Number, type(5)),
-            (numbers.Number, type(5.0)),
+            (int, int),
+            (numbers.Number, int),
+            (numbers.Number, float),
             (int, type(torch.float)),
-            (Union[int, float], type(5)),
-            (Union[int, float], type(5.0)),
-            (List[int], type(5)),
+            (Union[int, float], int),
+            (Union[int, float], float),
+            (List[int], int),
             (List[int], create_type_hint([int, int])),
             (List[int], create_type_hint((int, int))),
             (List[torch.Tensor], create_type_hint([torch.Tensor, torch.Tensor])),

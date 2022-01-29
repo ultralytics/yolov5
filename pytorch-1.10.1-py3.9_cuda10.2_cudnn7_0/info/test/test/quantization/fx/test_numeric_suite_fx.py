@@ -6,68 +6,33 @@ import unittest
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.quantization import default_dynamic_qconfig
 import torch.nn.quantized as nnq
+from torch.quantization import default_dynamic_qconfig
+
 toq = torch.ops.quantized
-from torch.quantization.quantize_fx import (
-    convert_fx,
-    prepare_fx,
-    prepare_qat_fx,
-)
-from torch.testing._internal.common_quantization import (
-    ConvBnModel,
-    ConvBnReLUModel,
-    ConvModel,
-    QuantizationTestCase,
-    skipIfNoFBGEMM,
-    SingleLayerLinearDynamicModel,
-    SingleLayerLinearModel,
-    LSTMwithHiddenDynamicModel,
-    SparseNNModel,
-    skip_if_no_torchvision,
-)
-from torch.quantization.quantization_mappings import (
-    get_default_static_quant_module_mappings,
-    get_default_dynamic_quant_module_mappings,
-    get_default_float_to_quantized_operator_mappings,
-)
-from torch.testing._internal.common_quantization import NodeSpec as ns
-from torch.quantization.fx.pattern_utils import get_default_quant_patterns
 import torch.quantization.fx.quantization_patterns as qp
-from torch.ao.ns.fx.pattern_utils import (
-    get_type_a_related_to_b,
-)
-from torch.ao.ns.fx.graph_matcher import (
-    get_matching_subgraph_pairs,
-    GraphMatchingException,
-)
-from torch.ao.ns.fx.utils import (
-    compute_sqnr,
-    compute_normalized_l2_error,
-    compute_cosine_similarity,
-)
-from torch.ao.ns.fx.mappings import (
-    get_node_type_to_io_type_map,
-    get_unmatchable_types_map,
-    get_base_name_to_sets_of_related_ops,
-    get_base_name_for_op,
-    add_op_to_sets_of_related_ops,
-)
-from torch.ao.ns.fx.weight_utils import (
-    get_op_to_type_to_weight_extraction_fn,
-)
-from torch.ao.ns._numeric_suite_fx import (
-    extract_weights,
-    _extract_weights_impl,
-    add_loggers,
-    _add_loggers_impl,
-    OutputLogger,
-    add_shadow_loggers,
-    _add_shadow_loggers_impl,
-    extract_logger_info,
-    extract_shadow_logger_info,
-    extend_logger_results_with_comparison,
-)
+from torch.ao.ns._numeric_suite_fx import (OutputLogger, _add_loggers_impl, _add_shadow_loggers_impl,
+                                           _extract_weights_impl, add_loggers, add_shadow_loggers,
+                                           extend_logger_results_with_comparison, extract_logger_info,
+                                           extract_shadow_logger_info, extract_weights)
+from torch.ao.ns.fx.graph_matcher import GraphMatchingException, get_matching_subgraph_pairs
+from torch.ao.ns.fx.mappings import (add_op_to_sets_of_related_ops, get_base_name_for_op,
+                                     get_base_name_to_sets_of_related_ops, get_node_type_to_io_type_map,
+                                     get_unmatchable_types_map)
+from torch.ao.ns.fx.pattern_utils import get_type_a_related_to_b
+from torch.ao.ns.fx.utils import compute_cosine_similarity, compute_normalized_l2_error, compute_sqnr
+from torch.ao.ns.fx.weight_utils import get_op_to_type_to_weight_extraction_fn
+from torch.quantization.fx.pattern_utils import get_default_quant_patterns
+from torch.quantization.quantization_mappings import (get_default_dynamic_quant_module_mappings,
+                                                      get_default_float_to_quantized_operator_mappings,
+                                                      get_default_static_quant_module_mappings)
+from torch.quantization.quantize_fx import convert_fx, prepare_fx, prepare_qat_fx
+from torch.testing._internal.common_quantization import (ConvBnModel, ConvBnReLUModel, ConvModel,
+                                                         LSTMwithHiddenDynamicModel)
+from torch.testing._internal.common_quantization import NodeSpec as ns
+from torch.testing._internal.common_quantization import (QuantizationTestCase, SingleLayerLinearDynamicModel,
+                                                         SingleLayerLinearModel, SparseNNModel, skip_if_no_torchvision,
+                                                         skipIfNoFBGEMM)
 
 
 # Note: these models are not for use outside of this file. While it's good

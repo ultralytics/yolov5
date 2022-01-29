@@ -1,24 +1,25 @@
-import numpy as np
-import math
-import torch
 import io
+import math
 import unittest
 from copy import deepcopy
+
+import numpy as np
+import torch
+import torch.testing._internal.hypothesis_utils as hu
 from hypothesis import given
 from hypothesis import strategies as st
-from torch.testing._internal.common_utils import TemporaryFileName
 from torch.testing._internal.common_cuda import TEST_CUDA
-from torch.testing._internal.common_utils import TestCase, TEST_WITH_ROCM
-import torch.testing._internal.hypothesis_utils as hu
+from torch.testing._internal.common_utils import TEST_WITH_ROCM, TemporaryFileName, TestCase
 
 hu.assert_deadline_disabled()
 
 import itertools
 import tempfile
 
+
 class Foo(torch.nn.Module):
     def __init__(self):
-        super(Foo, self).__init__()
+        super().__init__()
         self.qscheme = torch.per_tensor_symmetric
 
 def _calculate_dynamic_qparams(X, dtype, reduce_range=False):
@@ -1038,7 +1039,7 @@ class TestQuantizedTensor(TestCase):
                 __constants__ = ['fname']
 
                 def __init__(self):
-                    super(M, self).__init__()
+                    super().__init__()
                     self.fname = fname
 
                 @torch.jit.script_method
@@ -1066,7 +1067,7 @@ class TestQuantizedTensor(TestCase):
     def test_jit_serialization(self):
         class SimpleQTensor(torch.jit.ScriptModule):
             def __init__(self, per_channel):
-                super(SimpleQTensor, self).__init__()
+                super().__init__()
                 x = torch.rand(5, 5).float()
                 if not per_channel:
                     x_q = torch.quantize_per_tensor(x, 0.2, 10, torch.quint8)

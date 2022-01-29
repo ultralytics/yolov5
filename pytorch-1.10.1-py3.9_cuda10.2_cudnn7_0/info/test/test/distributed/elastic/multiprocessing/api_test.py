@@ -22,27 +22,12 @@ from unittest.mock import patch
 import torch
 import torch.multiprocessing as mp
 from torch.distributed.elastic.multiprocessing import ProcessFailure, start_processes
-from torch.distributed.elastic.multiprocessing.api import (
-    MultiprocessContext,
-    RunProcsResult,
-    SignalException,
-    Std,
-    _validate_full_rank,
-    _wrap,
-    to_map,
-)
+from torch.distributed.elastic.multiprocessing.api import (MultiprocessContext, RunProcsResult, SignalException, Std,
+                                                           _validate_full_rank, _wrap, to_map)
 from torch.distributed.elastic.multiprocessing.errors.error_handler import _write_error
-from torch.testing._internal.common_utils import (
-    IS_IN_CI,
-    IS_MACOS,
-    IS_WINDOWS,
-    NO_MULTIPROCESSING_SPAWN,
-    TEST_WITH_ASAN,
-    TEST_WITH_DEV_DBG_ASAN,
-    TEST_WITH_TSAN,
-    run_tests,
-    sandcastle_skip_if,
-)
+from torch.testing._internal.common_utils import (IS_IN_CI, IS_MACOS, IS_WINDOWS, NO_MULTIPROCESSING_SPAWN,
+                                                  TEST_WITH_ASAN, TEST_WITH_DEV_DBG_ASAN, TEST_WITH_TSAN, run_tests,
+                                                  sandcastle_skip_if)
 
 
 class RunProcResultsTest(unittest.TestCase):
@@ -238,7 +223,7 @@ if not (TEST_WITH_DEV_DBG_ASAN or IS_WINDOWS or IS_MACOS):
 
         def assert_in_file(self, expected: List[str], filename: str) -> None:
             expected = [f"{line.rstrip()}\n" for line in expected]
-            with open(filename, "r") as fp:
+            with open(filename) as fp:
                 actual = fp.readlines()
                 for line in expected:
                     self.assertIn(line, actual)

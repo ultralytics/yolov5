@@ -1,22 +1,19 @@
-import torch
-import unittest
-import math
-from contextlib import contextmanager
-from itertools import product
-import itertools
 import doctest
 import inspect
+import itertools
+import math
+import unittest
+from contextlib import contextmanager
+from itertools import product
+from typing import List, Optional
 
-from torch.testing._internal.common_utils import \
-    (TestCase, run_tests, TEST_NUMPY, TEST_LIBROSA, TEST_MKL)
-from torch.testing._internal.common_device_type import \
-    (instantiate_device_type_tests, ops, dtypes, onlyOnCPUAndCUDA,
-     skipCPUIfNoFFT, deviceCountAtLeast, onlyCUDA, OpDTypes, skipIf)
-from torch.testing._internal.common_methods_invocations import spectral_funcs, SpectralFuncInfo
-
+import torch
 from setuptools import distutils
-from typing import Optional, List
-
+from torch.testing._internal.common_device_type import (OpDTypes, deviceCountAtLeast, dtypes,
+                                                        instantiate_device_type_tests, onlyCUDA, onlyOnCPUAndCUDA, ops,
+                                                        skipCPUIfNoFFT, skipIf)
+from torch.testing._internal.common_methods_invocations import SpectralFuncInfo, spectral_funcs
+from torch.testing._internal.common_utils import TEST_LIBROSA, TEST_MKL, TEST_NUMPY, TestCase, run_tests
 
 if TEST_NUMPY:
     import numpy as np

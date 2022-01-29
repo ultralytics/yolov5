@@ -130,7 +130,7 @@ def output_graph(a, b, c, iters: int):
 
 class SubModule(nn.Module):
     def __init__(self):
-        super(SubModule, self).__init__()
+        super().__init__()
         self.a = 11
         self.b = 2
 
@@ -140,7 +140,7 @@ class SubModule(nn.Module):
 
 class SubModule2(nn.Module):
     def __init__(self):
-        super(SubModule2, self).__init__()
+        super().__init__()
         self.a = 12
         self.b = 2
 
@@ -151,7 +151,7 @@ class SubModule2(nn.Module):
 
 class TestModule(nn.Module):
     def __init__(self):
-        super(TestModule, self).__init__()
+        super().__init__()
         self.sub1 = SubModule()
         self.sub2 = SubModule2()
         self.a = 3

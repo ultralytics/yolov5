@@ -12,14 +12,8 @@ import unittest
 from dataclasses import asdict
 from unittest.mock import patch
 
-from torch.distributed.elastic.events import (
-    Event,
-    EventSource,
-    NodeState,
-    RdzvEvent,
-    _get_or_create_logger,
-    construct_and_record_rdzv_event,
-)
+from torch.distributed.elastic.events import (Event, EventSource, NodeState, RdzvEvent, _get_or_create_logger,
+                                              construct_and_record_rdzv_event)
 from torch.testing._internal.common_utils import run_tests
 
 

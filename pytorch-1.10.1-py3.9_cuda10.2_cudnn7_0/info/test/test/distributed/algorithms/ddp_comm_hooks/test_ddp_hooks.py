@@ -1,29 +1,18 @@
-
 import os
 import sys
 
 import torch
-from torch import nn
 import torch.distributed as dist
+from torch import nn
 
 if not dist.is_available():
     print("Distributed not available, skipping tests", file=sys.stderr)
     sys.exit(0)
 
-from torch.distributed.algorithms.ddp_comm_hooks import (
-    DDPCommHookType,
-    register_ddp_comm_hook,
-)
+from torch.distributed.algorithms.ddp_comm_hooks import DDPCommHookType, register_ddp_comm_hook
 from torch.nn.parallel import DistributedDataParallel
-from torch.testing._internal.common_distributed import (
-    MultiProcessTestCase,
-    requires_nccl,
-    skip_if_lt_x_gpu,
-)
-from torch.testing._internal.common_utils import (
-    run_tests,
-    TEST_WITH_DEV_DBG_ASAN,
-)
+from torch.testing._internal.common_distributed import MultiProcessTestCase, requires_nccl, skip_if_lt_x_gpu
+from torch.testing._internal.common_utils import TEST_WITH_DEV_DBG_ASAN, run_tests
 
 if TEST_WITH_DEV_DBG_ASAN:
     print("Multiprocessing spawn is not compatible with dev/dbg asan", file=sys.stderr)
@@ -42,7 +31,7 @@ def gpus_for_rank(world_size):
 
 class Task(nn.Module):
     def __init__(self):
-        super(Task, self).__init__()
+        super().__init__()
         torch.manual_seed(0)
         self.p = nn.Parameter(torch.randn(40, 20))
 
@@ -61,7 +50,7 @@ class TestDdpCommHook(nn.Module):
 
 class DistributedDataParallelCommHookTest(MultiProcessTestCase):
     def setUp(self):
-        super(DistributedDataParallelCommHookTest, self).setUp()
+        super().setUp()
         self._spawn_processes()
 
     def tearDown(self):

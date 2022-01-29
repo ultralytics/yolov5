@@ -1,15 +1,13 @@
-import torch
-import warnings
-import unittest
-import random
 import itertools
+import random
+import unittest
+import warnings
 
+import torch
 from torch.testing import make_tensor
-from torch.testing._internal.common_utils import \
-    (IS_MACOS, IS_WINDOWS, TestCase, run_tests, load_tests, coalescedonoff)
-from torch.testing._internal.common_device_type import \
-    (instantiate_device_type_tests, dtypes, onlyCPU, onlyCUDA)
+from torch.testing._internal.common_device_type import dtypes, instantiate_device_type_tests, onlyCPU, onlyCUDA
 from torch.testing._internal.common_dtype import floating_types, get_all_dtypes
+from torch.testing._internal.common_utils import IS_MACOS, IS_WINDOWS, TestCase, coalescedonoff, load_tests, run_tests
 
 # load_tests from torch.testing._internal.common_utils is used to automatically filter tests for
 # sharding on sandcastle. This line silences flake warnings
@@ -257,14 +255,14 @@ class TestSparseCSR(TestCase):
             values_shape = torch.Size((nnz,))
             col_indices_shape = torch.Size((nnz,))
             crow_indices_shape = torch.Size((shape[0] + 1,))
-            printed.append("# shape: {}".format(torch.Size(shape)))
-            printed.append("# nnz: {}".format(nnz))
-            printed.append("# crow_indices shape: {}".format(crow_indices_shape))
-            printed.append("# col_indices shape: {}".format(col_indices_shape))
-            printed.append("# values_shape: {}".format(values_shape))
+            printed.append(f"# shape: {torch.Size(shape)}")
+            printed.append(f"# nnz: {nnz}")
+            printed.append(f"# crow_indices shape: {crow_indices_shape}")
+            printed.append(f"# col_indices shape: {col_indices_shape}")
+            printed.append(f"# values_shape: {values_shape}")
             for index_dtype in [torch.int32, torch.int64]:
                 for dtype in floating_types():
-                    printed.append("########## {}/{} ##########".format(dtype, index_dtype))
+                    printed.append(f"########## {dtype}/{index_dtype} ##########")
                     x = torch.sparse_csr_tensor(torch.tensor([0, 2, 4], dtype=index_dtype),
                                                 torch.tensor([0, 1, 0, 1], dtype=index_dtype),
                                                 torch.tensor([1, 2, 3, 4]), dtype=dtype, device=device)

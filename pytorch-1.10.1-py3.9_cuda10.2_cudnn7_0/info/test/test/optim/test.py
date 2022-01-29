@@ -1,4 +1,5 @@
 import json
+
 import torch
 import torch.legacy.optim as optim
 
@@ -27,7 +28,7 @@ algorithms = {
     'lbfgs': optim.lbfgs,
 }
 
-with open('tests.json', 'r') as f:
+with open('tests.json') as f:
     tests = json.loads(f.read())
 
 for test in tests:
@@ -38,4 +39,4 @@ for test in tests:
         params = torch.DoubleTensor((1.5, 1.5))
         for i in range(100):
             algorithm(lambda x: (rosenbrock(x), drosenbrock(x)), params, config)
-            print('{:.8f}\t{:.8f}\t'.format(params[0], params[1]))
+            print(f'{params[0]:.8f}\t{params[1]:.8f}\t')

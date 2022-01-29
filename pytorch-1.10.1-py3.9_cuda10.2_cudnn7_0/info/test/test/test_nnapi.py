@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-import os
 import ctypes
-import torch
+import os
 from typing import Tuple
+
+import torch
 from torch.backends._nnapi.prepare import convert_model_to_nnapi
 from torch.testing._internal.common_utils import TestCase, run_tests
 
@@ -502,7 +503,7 @@ class TestNNAPI(TestCase):
         for kind in ["float", "float-nhwc", "quant", "quant-nhwc"]:
             for case in cases:
                 in_ch, out_ch, kernel, stride, padding, groups, bias, input_dim, name = case
-                with self.subTest("{}-{}".format(kind, name)):
+                with self.subTest(f"{kind}-{name}"):
                     inp = torch.randn(input_dim)
                     model = torch.nn.Conv2d(in_ch, out_ch, kernel, stride, padding, groups=groups, bias=bool(bias))
                     output_size = model(inp).numel()

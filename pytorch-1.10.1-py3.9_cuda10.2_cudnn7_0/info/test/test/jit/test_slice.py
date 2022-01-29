@@ -1,8 +1,8 @@
 import os
 import sys
+from typing import List
 
 import torch
-from typing import List
 
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -131,7 +131,7 @@ class TestSlice(JitTestCase):
         self.assertEqual(scripted_fn(torch.tensor(1)), (2, 3))
         tuple_graph = scripted_fn.graph
         slices = tuple_graph.findAllNodes("prim::TupleConstruct")
-        num_outputs = set(len(x.output().type().elements()) for x in slices)
+        num_outputs = {len(x.output().type().elements()) for x in slices}
         # there should be only one tupleSlice with length of 2
         self.assertTrue(num_outputs == {2})
         self.run_pass('lower_all_tuples', tuple_graph)

@@ -1,12 +1,11 @@
 import os
 import re
-import yaml
 import textwrap
-import torch
-
-from torch.testing._internal.common_utils import TestCase, run_tests
 from collections import namedtuple
 
+import torch
+import yaml
+from torch.testing._internal.common_utils import TestCase, run_tests
 
 path = os.path.dirname(os.path.realpath(__file__))
 aten_native_yaml = os.path.join(path, '../aten/src/ATen/native/native_functions.yaml')
@@ -28,7 +27,7 @@ class TestNamedTupleAPI(TestCase):
     def test_native_functions_yaml(self):
         operators_found = set()
         regex = re.compile(r"^(\w*)(\(|\.)")
-        file = open(aten_native_yaml, 'r')
+        file = open(aten_native_yaml)
         for f in yaml.safe_load(file.read()):
             f = f['func']
             ret = f.split('->')[1].strip()
@@ -138,7 +137,7 @@ class TestNamedTupleAPI(TestCase):
                     ret3 = meth(*op.input)
                     check_namedtuple(ret3, op.names)
 
-        all_covered_operators = set([x for y in operators for x in y.operators])
+        all_covered_operators = {x for y in operators for x in y.operators}
 
         self.assertEqual(all_operators_with_namedtuple_return, all_covered_operators, textwrap.dedent('''
         The set of covered operators does not match the `all_operators_with_namedtuple_return` of

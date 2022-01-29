@@ -1,28 +1,24 @@
-import torch
-import numpy as np
-
-import warnings
 import math
-from itertools import product, chain
-from numbers import Number
 import random
 import unittest
+import warnings
+from itertools import chain, product
+from numbers import Number
 
+import numpy as np
+import torch
 from torch._six import inf, nan
-from torch.testing._internal.common_utils import (
-    TestCase, run_tests, torch_to_numpy_dtype_dict, numpy_to_torch_dtype_dict,
-    suppress_warnings, TEST_SCIPY, slowTest, skipIfNoSciPy, IS_WINDOWS)
-from torch.testing._internal.common_methods_invocations import (
-    unary_ufuncs, _NOTHING)
-from torch.testing._internal.common_device_type import (
-    instantiate_device_type_tests, ops, dtypes, onlyCPU, onlyOnCPUAndCUDA,
-    onlyCUDA, dtypesIfCUDA, precisionOverride, skipCUDAIfRocm, dtypesIfCPU,
-    OpDTypes)
 from torch.testing import make_tensor
-from torch.testing._internal.common_dtype import (
-    floating_types_and, all_types_and_complex_and, floating_and_complex_types_and, get_all_dtypes, get_all_math_dtypes,
-    get_all_int_dtypes, get_all_fp_dtypes, get_all_complex_dtypes
-)
+from torch.testing._internal.common_device_type import (OpDTypes, dtypes, dtypesIfCPU, dtypesIfCUDA,
+                                                        instantiate_device_type_tests, onlyCPU, onlyCUDA,
+                                                        onlyOnCPUAndCUDA, ops, precisionOverride, skipCUDAIfRocm)
+from torch.testing._internal.common_dtype import (all_types_and_complex_and, floating_and_complex_types_and,
+                                                  floating_types_and, get_all_complex_dtypes, get_all_dtypes,
+                                                  get_all_fp_dtypes, get_all_int_dtypes, get_all_math_dtypes)
+from torch.testing._internal.common_methods_invocations import _NOTHING, unary_ufuncs
+from torch.testing._internal.common_utils import (IS_WINDOWS, TEST_SCIPY, TestCase, numpy_to_torch_dtype_dict,
+                                                  run_tests, skipIfNoSciPy, slowTest, suppress_warnings,
+                                                  torch_to_numpy_dtype_dict)
 
 if TEST_SCIPY:
     import scipy
@@ -211,7 +207,7 @@ class TestUnaryUfuncs(TestCase):
             torch.neg(t)
 
     @dtypes(*floating_types_and(torch.bfloat16, torch.half))
-    @ops((_fn for _fn in unary_ufuncs if _fn.domain != (None, None)))
+    @ops(_fn for _fn in unary_ufuncs if _fn.domain != (None, None))
     def test_float_domains(self, device, dtype, op):
         if not op.supports_dtype(dtype, torch.device(device).type):
             raise unittest.SkipTest('unsupported dtype')
@@ -233,8 +229,8 @@ class TestUnaryUfuncs(TestCase):
 
                 result = op(lower_tensor)
                 self.assertEqual(result.item(), float('nan'),
-                                 msg=("input of {0} outside lower domain boundary"
-                                      " {1} produced {2}, not nan!").format(lower_tensor.item(),
+                                 msg=("input of {} outside lower domain boundary"
+                                      " {} produced {}, not nan!").format(lower_tensor.item(),
                                                                             low,
                                                                             result.item()))
 
@@ -249,8 +245,8 @@ class TestUnaryUfuncs(TestCase):
 
                 result = op(higher_tensor)
                 self.assertEqual(result.item(), float('nan'),
-                                 msg=("input of {0} outside upper domain boundary"
-                                      " {1} produced {2}, not nan!").format(higher_tensor.item(),
+                                 msg=("input of {} outside upper domain boundary"
+                                      " {} produced {}, not nan!").format(higher_tensor.item(),
                                                                             high,
                                                                             result.item()))
 
@@ -314,8 +310,8 @@ class TestUnaryUfuncs(TestCase):
             # Crafts a custom error message for smaller, printable tensors
             if t.numel() < 10:
                 msg = ("Failed to produce expected results! Input tensor was"
-                       " {0}, torch result is {1}, and reference result is"
-                       " {2}.").format(t, actual, expected)
+                       " {}, torch result is {}, and reference result is"
+                       " {}.").format(t, actual, expected)
             else:
                 msg = None
 

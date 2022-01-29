@@ -7,7 +7,6 @@
 import pytest
 import torch
 import torch.cuda
-
 from torch.distributed.pipeline.sync.microbatch import Batch, check, gather, scatter
 
 

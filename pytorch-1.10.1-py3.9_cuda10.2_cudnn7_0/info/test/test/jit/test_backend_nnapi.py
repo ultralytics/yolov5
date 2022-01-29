@@ -1,10 +1,10 @@
 import os
 import sys
 import unittest
+from pathlib import Path
 
 import torch
 import torch._C
-from pathlib import Path
 from test_nnapi import TestNNAPI
 from torch.testing._internal.common_utils import TEST_WITH_ASAN
 

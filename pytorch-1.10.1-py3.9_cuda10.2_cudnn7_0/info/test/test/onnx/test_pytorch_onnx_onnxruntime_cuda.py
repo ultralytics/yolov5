@@ -1,13 +1,11 @@
 import unittest
+
 import onnxruntime  # noqa: F401
 import torch
-
+from test_pytorch_common import skipIfNoCuda, skipIfUnsupportedMinOpsetVersion
+from test_pytorch_onnx_onnxruntime import TestONNXRuntime
 from torch.cuda.amp import autocast
 
-from test_pytorch_common import skipIfUnsupportedMinOpsetVersion
-from test_pytorch_common import skipIfNoCuda
-
-from test_pytorch_onnx_onnxruntime import TestONNXRuntime
 
 class TestONNXRuntime_cuda(unittest.TestCase):
     from torch.onnx.symbolic_helper import _export_onnx_opset_version
@@ -30,7 +28,7 @@ class TestONNXRuntime_cuda(unittest.TestCase):
     def test_layer_norm_fp16(self):
         class LayerNormModel(torch.nn.Module):
             def __init__(self):
-                super(LayerNormModel, self).__init__()
+                super().__init__()
                 self.layer_norm = torch.nn.LayerNorm([10, 10])
 
             def forward(self, x):
@@ -45,7 +43,7 @@ class TestONNXRuntime_cuda(unittest.TestCase):
     def test_softmaxCrossEntropy_fusion_fp16(self):
         class FusionModel(torch.nn.Module):
             def __init__(self):
-                super(FusionModel, self).__init__()
+                super().__init__()
                 self.loss = torch.nn.NLLLoss(reduction="none")
                 self.m = torch.nn.LogSoftmax(dim=1)
 

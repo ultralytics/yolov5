@@ -1,24 +1,23 @@
-import torch
-import unittest
-import io
-import tempfile
-import os
-import sys
-import zipfile
-import warnings
-import gzip
 import copy
+import gzip
+import io
+import os
+import pathlib
 import pickle
 import shutil
-import pathlib
+import sys
+import tempfile
+import unittest
+import warnings
+import zipfile
 
-from torch._utils_internal import get_file_path_2
+import torch
 from torch._utils import _rebuild_tensor
+from torch._utils_internal import get_file_path_2
 from torch.serialization import check_module_version_greater_or_equal
-
-from torch.testing._internal.common_utils import TestCase, IS_WINDOWS, \
-    TEST_DILL, run_tests, download_file, BytesIOContext, TemporaryFileName
 from torch.testing._internal.common_device_type import instantiate_device_type_tests
+from torch.testing._internal.common_utils import (IS_WINDOWS, TEST_DILL, BytesIOContext, TemporaryFileName, TestCase,
+                                                  download_file, run_tests)
 
 # These tests were all copied from `test/test_torch.py` at some point, so see
 # the actual blame, see this revision
@@ -40,7 +39,7 @@ with warnings.catch_warnings(record=True) as warns:
                 break
 
 
-class FilelikeMock(object):
+class FilelikeMock:
     def __init__(self, data, has_fileno=True, has_readinto=False):
         if has_readinto:
             self.readinto = self.readinto_opt
@@ -73,7 +72,7 @@ class FilelikeMock(object):
         return name in self.calls
 
 
-class SerializationMixin(object):
+class SerializationMixin:
     def _test_serialization_data(self):
         a = [torch.randn(5, 5).float() for i in range(2)]
         b = [a[i % 2] for i in range(4)]  # 0-3
@@ -288,7 +287,7 @@ class SerializationMixin(object):
         x[1][1] = 1
         x = x.to_sparse()
 
-        class TensorSerializationSpoofer(object):
+        class TensorSerializationSpoofer:
             def __init__(self, tensor):
                 self.tensor = tensor
 
@@ -339,7 +338,7 @@ class SerializationMixin(object):
         self.assertEqual(c[1], c[3], atol=0, rtol=0)
 
         # test some old tensor serialization mechanism
-        class OldTensorBase(object):
+        class OldTensorBase:
             def __init__(self, new_tensor):
                 self.new_tensor = new_tensor
 
@@ -374,7 +373,7 @@ class SerializationMixin(object):
         with warnings.catch_warnings(record=True) as warns:
             with tempfile.NamedTemporaryFile() as checkpoint:
                 x = torch.save(torch.nn.Linear(2, 3), checkpoint)
-                self.assertEquals(len(warns), 0)
+                self.assertEqual(len(warns), 0)
 
     def test_serialization_map_location(self):
         test_file_path = download_file('https://download.pytorch.org/test_data/gpu_tensors.pt')
@@ -401,7 +400,7 @@ class SerializationMixin(object):
             torch.device('cuda', 0)
         ]
         gpu_last_map_locations = [
-            'cuda:{}'.format(torch.cuda.device_count() - 1),
+            f'cuda:{torch.cuda.device_count() - 1}',
         ]
 
         def check_map_locations(map_locations, tensor_class, intended_device):
@@ -564,7 +563,7 @@ class SerializationMixin(object):
             torch.load(resource)
 
 
-class serialization_method(object):
+class serialization_method:
     def __init__(self, use_zip):
         self.use_zip = use_zip
         self.torch_save = torch.save
@@ -606,7 +605,7 @@ class TestOldSerialization(TestCase, SerializationMixin):
     # the warning module is the same, it is not raised again.
     def _test_serialization_container(self, unique_key, filecontext_lambda):
 
-        tmpmodule_name = 'tmpmodule{}'.format(unique_key)
+        tmpmodule_name = f'tmpmodule{unique_key}'
 
         def import_module(name, filename):
             import importlib.util
@@ -628,7 +627,7 @@ class TestOldSerialization(TestCase, SerializationMixin):
                 loaded = torch.load(checkpoint)
                 self.assertTrue(isinstance(loaded, module.Net))
                 if can_retrieve_source:
-                    self.assertEquals(len(w), 0)
+                    self.assertEqual(len(w), 0)
 
             # Replace the module with different source
             fname = get_file_path_2(os.path.dirname(os.path.dirname(torch.__file__)), 'torch', 'testing',
@@ -639,7 +638,7 @@ class TestOldSerialization(TestCase, SerializationMixin):
                 loaded = torch.load(checkpoint)
                 self.assertTrue(isinstance(loaded, module.Net))
                 if can_retrieve_source:
-                    self.assertEquals(len(w), 1)
+                    self.assertEqual(len(w), 1)
                     self.assertTrue(w[0].category, 'SourceChangeWarning')
 
     def test_serialization_container(self):
@@ -694,7 +693,7 @@ class TestOldSerialization(TestCase, SerializationMixin):
 
     def run(self, *args, **kwargs):
         with serialization_method(use_zip=False):
-            return super(TestOldSerialization, self).run(*args, **kwargs)
+            return super().run(*args, **kwargs)
 
 
 class TestWrapperSubclass(torch.Tensor):
@@ -828,7 +827,7 @@ class TestSerialization(TestCase, SerializationMixin):
 
     def run(self, *args, **kwargs):
         with serialization_method(use_zip=True):
-            return super(TestSerialization, self).run(*args, **kwargs)
+            return super().run(*args, **kwargs)
 
 instantiate_device_type_tests(TestBothSerialization, globals())
 

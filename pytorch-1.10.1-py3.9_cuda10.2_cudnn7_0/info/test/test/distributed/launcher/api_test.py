@@ -14,7 +14,7 @@ import time
 import unittest
 import uuid
 from contextlib import closing
-from typing import Optional, Any, Dict
+from typing import Any, Dict, Optional
 from unittest import mock
 from unittest.mock import Mock, patch
 
@@ -24,15 +24,8 @@ from torch.distributed.elastic.agent.server.api import RunResult, WorkerState
 from torch.distributed.elastic.multiprocessing.errors import ChildFailedError
 from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
 from torch.distributed.elastic.utils import get_socket_with_port
-from torch.distributed.launcher.api import (
-    LaunchConfig,
-    elastic_launch,
-    _get_entrypoint_name,
-)
-from torch.testing._internal.common_utils import (
-    TEST_WITH_DEV_DBG_ASAN,
-    sandcastle_skip_if,
-)
+from torch.distributed.launcher.api import LaunchConfig, _get_entrypoint_name, elastic_launch
+from torch.testing._internal.common_utils import TEST_WITH_DEV_DBG_ASAN, sandcastle_skip_if
 
 
 def path(script):

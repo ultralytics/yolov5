@@ -1,9 +1,10 @@
 import inspect
-import torch
 from unittest import mock
 from unittest.mock import MagicMock, patch
+
+import torch
 from torch.testing import floating_types
-from torch.testing._internal.common_device_type import instantiate_device_type_tests, dtypes
+from torch.testing._internal.common_device_type import dtypes, instantiate_device_type_tests
 from torch.testing._internal.common_quantization import skipIfNoFBGEMM
 from torch.testing._internal.common_utils import TestCase, run_tests
 

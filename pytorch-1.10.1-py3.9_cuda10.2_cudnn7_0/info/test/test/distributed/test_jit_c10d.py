@@ -1,11 +1,11 @@
-import tempfile
 import sys
-import torch
-import torch.distributed as c10d
+import tempfile
 import time
 from typing import List
 
-from torch.testing._internal.common_distributed import requires_nccl, create_tcp_store
+import torch
+import torch.distributed as c10d
+from torch.testing._internal.common_distributed import create_tcp_store, requires_nccl
 from torch.testing._internal.common_utils import load_tests, run_tests, sandcastle_skip_if
 from torch.testing._internal.jit_utils import JitTestCase
 
@@ -112,7 +112,7 @@ class ProcessGroupNCCLJitTest(JitTestCase):
     def test_process_group_nccl_serialization(self):
         class TestModule(torch.nn.Module):
             def __init__(self, pg_nccl):
-                super(TestModule, self).__init__()
+                super().__init__()
                 self.pg = pg_nccl
 
             def forward(self, input: torch.Tensor):
@@ -127,7 +127,7 @@ class ProcessGroupNCCLJitTest(JitTestCase):
 
 class StoreTest(JitTestCase):
     def setUp(self):
-        super(StoreTest, self).setUp()
+        super().setUp()
         self.file = tempfile.NamedTemporaryFile(delete=False)
         self.filestore = torch.classes.dist_c10d.FileStore(self.file.name, 1)
         self.prefix = "test_prefix"
@@ -184,7 +184,7 @@ class C10dProcessGroupSerialization(JitTestCase):
     def test_process_group_as_module_member(self):
         class TestModule(torch.nn.Module):
             def __init__(self):
-                super(TestModule, self).__init__()
+                super().__init__()
                 tcp_store = create_tcp_store(jit_class=True)
 
                 name = unique_process_group_name("module_member_process_group")

@@ -80,7 +80,7 @@ class TestDiGraph(PackageTestCase):
         for n in g:
             nodes.add(n)
 
-        self.assertEqual(nodes, set([1, 2, 3]))
+        self.assertEqual(nodes, {1, 2, 3})
 
     def test_contains(self):
         g = DiGraph()

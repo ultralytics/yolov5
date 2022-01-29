@@ -1,4 +1,3 @@
-
 import os
 import random
 import signal
@@ -6,8 +5,8 @@ import sys
 import time
 import unittest
 
-from torch.testing._internal.common_utils import (TestCase, run_tests, IS_WINDOWS, NO_MULTIPROCESSING_SPAWN)
 import torch.multiprocessing as mp
+from torch.testing._internal.common_utils import IS_WINDOWS, NO_MULTIPROCESSING_SPAWN, TestCase, run_tests
 
 
 def test_success_func(i):
@@ -85,7 +84,7 @@ def test_nested(i, pids_queue, nested_child_sleep, start_method):
     # Kill self. This should take down the child processes as well.
     os.kill(os.getpid(), signal.SIGTERM)
 
-class _TestMultiProcessing(object):
+class _TestMultiProcessing:
     start_method = None
 
     def test_success(self):

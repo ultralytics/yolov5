@@ -7,7 +7,6 @@ import sys
 import torch
 import torch.optim
 
-
 HEADER = """
 #include <torch/types.h>
 
@@ -98,7 +97,7 @@ def emit(optimizer_parameter_map):
             print("    {")
             for parameter in sample:
                 parameter_values = "{{{}}}".format(", ".join(map(str, parameter)))
-                print("      torch::tensor({}),".format(parameter_values))
+                print(f"      torch::tensor({parameter_values}),")
             print("    },")
         print("  };")
         print("}\n")
@@ -115,7 +114,7 @@ def main():
 
     optimizer_parameter_map = {}
     for optimizer in OPTIMIZERS.keys():
-        sys.stderr.write('Evaluating {} ...\n'.format(optimizer))
+        sys.stderr.write(f'Evaluating {optimizer} ...\n')
         optimizer_parameter_map[optimizer] = run(
             optimizer, options.iterations, options.sample_every
         )

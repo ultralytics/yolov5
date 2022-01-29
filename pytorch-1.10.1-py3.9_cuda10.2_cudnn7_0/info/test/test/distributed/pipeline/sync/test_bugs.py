@@ -6,9 +6,8 @@
 # LICENSE file in the root directory of this source tree.
 import pytest
 import torch
-from torch import nn
 import torch.nn.functional as F
-
+from torch import nn
 from torch.distributed.pipeline.sync import Pipe
 
 

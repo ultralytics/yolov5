@@ -1,20 +1,18 @@
-# -*- coding: utf-8 -*-
-
-import sys
 import os
+import sys
 import unittest
+
 # torch
 import torch
 import torch.nn as nn
+import torch.nn.intrinsic.quantized as nniq
 import torch.nn.quantized as nnq
 import torch.nn.quantized.dynamic as nnqd
-import torch.nn.intrinsic.quantized as nniq
-
-# Testing utils
-from torch.testing._internal.common_utils import TestCase, IS_AVX512_VNNI_SUPPORTED
-from torch.testing._internal.common_quantized import override_qengines, qengine_is_fbgemm
-
 from torch.quantization import MinMaxObserver, PerChannelMinMaxObserver
+from torch.testing._internal.common_quantized import override_qengines, qengine_is_fbgemm
+# Testing utils
+from torch.testing._internal.common_utils import IS_AVX512_VNNI_SUPPORTED, TestCase
+
 
 def remove_prefix(text, prefix):
     if text.startswith(prefix):
@@ -35,7 +33,7 @@ def get_filenames(self, subname):
     subname_output = ""
     if subname:
         base_name += "_" + subname
-        subname_output = " ({})".format(subname)
+        subname_output = f" ({subname})"
 
     input_file = base_name + ".input.pt"
     state_dict_file = base_name + ".state_dict.pt"
@@ -283,7 +281,7 @@ class TestSerialization(TestCase):
     def test_default_qat_qconfig(self):
         class Model(nn.Module):
             def __init__(self):
-                super(Model, self).__init__()
+                super().__init__()
                 self.linear = nn.Linear(5, 5)
                 self.relu = nn.ReLU()
 

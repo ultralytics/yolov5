@@ -10,11 +10,11 @@ import multiprocessing as mp
 import os
 import shutil
 import signal
+import socket
 import tempfile
 import time
 import unittest
 import uuid
-import socket
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Tuple
 from unittest import mock
@@ -24,21 +24,14 @@ import torch
 import torch.distributed as dist
 import torch.distributed.elastic.rendezvous.registry as rdzv_registry
 import torch.distributed.rpc as rpc
-from torch.distributed.elastic.agent.server.api import (
-    RunResult,
-    WorkerSpec,
-    WorkerState,
-)
+from torch.distributed.elastic.agent.server.api import RunResult, WorkerSpec, WorkerState
 from torch.distributed.elastic.agent.server.local_elastic_agent import LocalElasticAgent
 from torch.distributed.elastic.multiprocessing import Std
 from torch.distributed.elastic.multiprocessing.errors import ChildFailedError, record
 from torch.distributed.elastic.rendezvous import RendezvousParameters
 from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
 from torch.distributed.rpc.backend_registry import BackendType
-from torch.testing._internal.common_utils import (
-    TEST_WITH_DEV_DBG_ASAN,
-    sandcastle_skip_if,
-)
+from torch.testing._internal.common_utils import TEST_WITH_DEV_DBG_ASAN, sandcastle_skip_if
 
 
 def init_rpc(name, backend):
@@ -624,7 +617,7 @@ class LocalElasticAgentTest(unittest.TestCase):
 
             rank, failure = cm.exception.get_first_failure()
             failure_data = failure.error_file_data["message"]
-            with open(replyfile, "r") as fp:
+            with open(replyfile) as fp:
                 data = json.load(fp)["message"]
 
                 # ran two; both failed; first failure is either rank 0 or 1

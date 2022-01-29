@@ -10,16 +10,11 @@ from typing import ClassVar, cast
 from unittest import TestCase
 
 from etcd import EtcdKeyNotFound  # type: ignore[import]
-
+from rendezvous_backend_test import RendezvousBackendTestMixin
 from torch.distributed.elastic.rendezvous import RendezvousConnectionError, RendezvousParameters
-from torch.distributed.elastic.rendezvous.etcd_rendezvous_backend import (
-    EtcdRendezvousBackend,
-    create_backend,
-)
+from torch.distributed.elastic.rendezvous.etcd_rendezvous_backend import EtcdRendezvousBackend, create_backend
 from torch.distributed.elastic.rendezvous.etcd_server import EtcdServer
 from torch.distributed.elastic.rendezvous.etcd_store import EtcdStore
-
-from rendezvous_backend_test import RendezvousBackendTestMixin
 
 
 class EtcdRendezvousBackendTest(TestCase, RendezvousBackendTestMixin):

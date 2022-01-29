@@ -1,19 +1,16 @@
-import torch
-import numpy as np
-
 import random
-from torch._six import nan
 from itertools import permutations, product
 
+import numpy as np
+import torch
+from torch._six import nan
 from torch.testing import make_tensor
-from torch.testing._internal.common_dtype import (
-    all_types, all_types_and, floating_types_and, get_all_dtypes, get_all_int_dtypes, get_all_fp_dtypes,
-)
-from torch.testing._internal.common_utils import \
-    (TEST_WITH_ROCM, TestCase, run_tests, slowTest)
-from torch.testing._internal.common_device_type import \
-    (instantiate_device_type_tests, dtypes, onlyOnCPUAndCUDA,
-     skipCUDAIfRocm, onlyCUDA, dtypesIfCUDA, dtypesIfCPU, onlyCPU, largeTensorTest)
+from torch.testing._internal.common_device_type import (dtypes, dtypesIfCPU, dtypesIfCUDA,
+                                                        instantiate_device_type_tests, largeTensorTest, onlyCPU,
+                                                        onlyCUDA, onlyOnCPUAndCUDA, skipCUDAIfRocm)
+from torch.testing._internal.common_dtype import (all_types, all_types_and, floating_types_and, get_all_dtypes,
+                                                  get_all_fp_dtypes, get_all_int_dtypes)
+from torch.testing._internal.common_utils import TEST_WITH_ROCM, TestCase, run_tests, slowTest
 
 # TODO: remove this
 SIZE = 100
@@ -33,12 +30,12 @@ class TestSortAndSelect(TestCase):
                 # see above
                 return ((b != b) | (a <= b)).all().item()
         else:
-            error('unknown order "{}", must be "ascending" or "descending"'.format(order))
+            error(f'unknown order "{order}", must be "ascending" or "descending"')
 
         are_ordered = True
         for k in range(1, SIZE):
             self.assertTrue(check_order(mxx[:, k - 1], mxx[:, k]),
-                            'torch.sort ({}) values unordered for {}'.format(order, task))
+                            f'torch.sort ({order}) values unordered for {task}')
 
         seen = set()
         indicesCorrect = True
@@ -51,7 +48,7 @@ class TestSortAndSelect(TestCase):
             seen.clear()
             for j in range(size):
                 self.assertEqual(x[k][ixx[k][j]], mxx[k][j],
-                                 msg='torch.sort ({}) indices wrong for {}'.format(order, task))
+                                 msg=f'torch.sort ({order}) indices wrong for {task}')
                 seen.add(ixx[k][j])
             self.assertEqual(len(seen), size)
 

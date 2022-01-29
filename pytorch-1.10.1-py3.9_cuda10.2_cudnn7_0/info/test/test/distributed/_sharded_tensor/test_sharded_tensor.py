@@ -1,43 +1,20 @@
-import math
 import io
 import itertools
+import math
 import pickle
 import sys
+
 import torch
 import torch.distributed as dist
-from torch.distributed import rpc
-from torch.distributed import _sharded_tensor
-from torch.distributed._sharded_tensor import (
-    load_with_process_group,
-    pre_load_state_dict_hook,
-    shard_parameter,
-    state_dict_hook,
-)
-from torch.distributed._sharding_spec import (
-    ChunkShardingSpec,
-    EnumerableShardingSpec,
-    ShardMetadata
-)
-from torch.distributed._sharded_tensor.api import (
-    CreateOp,
-    TensorInitParams,
-    TensorProperties,
-    _create_tensor_from_params,
-)
-from torch.testing._internal.common_distributed import (
-    requires_nccl,
-    skip_if_lt_x_gpu,
-)
-from torch.testing._internal.common_utils import (
-    TestCase,
-    TEST_WITH_DEV_DBG_ASAN,
-    run_tests,
-    sandcastle_skip_if,
-)
-from torch.testing._internal.distributed._sharded_tensor import (
-    ShardedTensorTestBase,
-    with_comms,
-)
+from torch.distributed import _sharded_tensor, rpc
+from torch.distributed._sharded_tensor import (load_with_process_group, pre_load_state_dict_hook, shard_parameter,
+                                               state_dict_hook)
+from torch.distributed._sharded_tensor.api import (CreateOp, TensorInitParams, TensorProperties,
+                                                   _create_tensor_from_params)
+from torch.distributed._sharding_spec import ChunkShardingSpec, EnumerableShardingSpec, ShardMetadata
+from torch.testing._internal.common_distributed import requires_nccl, skip_if_lt_x_gpu
+from torch.testing._internal.common_utils import TEST_WITH_DEV_DBG_ASAN, TestCase, run_tests, sandcastle_skip_if
+from torch.testing._internal.distributed._sharded_tensor import ShardedTensorTestBase, with_comms
 
 if TEST_WITH_DEV_DBG_ASAN:
     print("Skip dev-asan as torch + multiprocessing spawn have known issues", file=sys.stderr)
@@ -45,7 +22,7 @@ if TEST_WITH_DEV_DBG_ASAN:
 
 class MyShardedModel2(torch.nn.Module):
     def __init__(self, spec=None, group=None):
-        super(MyShardedModel2, self).__init__()
+        super().__init__()
         if spec is not None:
             self.sharded_tensor2 = _sharded_tensor.empty(spec, 10, 20, process_group=group, init_rrefs=True)
         else:
@@ -55,7 +32,7 @@ class MyShardedModel2(torch.nn.Module):
 
 class MyShardedModel1(torch.nn.Module):
     def __init__(self, spec=None, group=None):
-        super(MyShardedModel1, self).__init__()
+        super().__init__()
         if spec is not None:
             self.sharded_tensor1 = _sharded_tensor.empty(spec, 10, 20, process_group=group, init_rrefs=True)
         else:

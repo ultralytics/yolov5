@@ -1,15 +1,15 @@
-from typing import Any, Dict, List, Optional, Tuple
-
-from torch.testing._internal.jit_utils import JitTestCase, make_global
-from torch.testing import FileCheck
-from torch import jit
-from jit.test_module_interface import TestModuleInterface  # noqa: F401
-import unittest
 import os
 import sys
+import unittest
+from typing import Any, Dict, List, Optional, Tuple
+
 import torch
-import torch.testing._internal.jit_utils
 import torch.nn as nn
+import torch.testing._internal.jit_utils
+from jit.test_module_interface import TestModuleInterface  # noqa: F401
+from torch import jit
+from torch.testing import FileCheck
+from torch.testing._internal.jit_utils import JitTestCase, make_global
 
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -50,7 +50,7 @@ class TestMisc(JitTestCase):
         from dataclasses import dataclass
 
         @dataclass
-        class NormalizationInfo(object):
+        class NormalizationInfo:
             mean: float = 0.0
 
             def compute(self, total_rows):
@@ -208,7 +208,7 @@ class TestMisc(JitTestCase):
             sub : OneTwoModule
 
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.sub = BarMod()
 
             def forward(self, x: torch.Tensor) -> torch.Tensor:

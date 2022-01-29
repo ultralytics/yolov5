@@ -10,7 +10,6 @@ from itertools import chain
 import pytest
 import torch
 from torch import nn, optim
-
 from torch.distributed.pipeline.sync.batchnorm import DeferredBatchNorm
 
 CHUNKS = 4

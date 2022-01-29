@@ -1,12 +1,13 @@
-import torch
-from torch.testing._internal.common_utils import TestCase, run_tests
-from torch.utils._pytree import tree_map
-from torch.utils._python_dispatch import enable_python_mode
-
-from typing import Iterator, List
-import logging
 import contextlib
 import itertools
+import logging
+from typing import Iterator, List
+
+import torch
+from torch.testing._internal.common_utils import TestCase, run_tests
+from torch.utils._python_dispatch import enable_python_mode
+from torch.utils._pytree import tree_map
+
 
 # TODO: move this into library proper
 @contextlib.contextmanager
@@ -229,7 +230,7 @@ $5 = torch._ops.aten.kl_div($0, $1, 2, log_target=True)''')
                 return "arf"
 
         # Wobbles depending on NDEBUG mode of pybind11
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             RuntimeError, "Unable to cast", lambda: A(torch.zeros(1)).neg(),
         )
         self.assertExpectedRaisesInline(

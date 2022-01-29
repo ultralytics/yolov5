@@ -13,14 +13,8 @@ import unittest
 
 import torch.distributed.elastic.timer as timer
 import torch.multiprocessing as torch_mp
-from torch.testing._internal.common_utils import (
-    TEST_WITH_DEV_DBG_ASAN,
-    run_tests,
-    IS_WINDOWS,
-    IS_MACOS,
-    sandcastle_skip_if,
-)
-
+from torch.testing._internal.common_utils import (IS_MACOS, IS_WINDOWS, TEST_WITH_DEV_DBG_ASAN, run_tests,
+                                                  sandcastle_skip_if)
 
 logging.basicConfig(
     level=logging.INFO, format="[%(levelname)s] %(asctime)s %(module)s: %(message)s"

@@ -1,39 +1,29 @@
-import math
-import sys
+import ctypes
 import errno
+import faulthandler
+import gc
+import itertools
+import math
 import multiprocessing
 import os
-import ctypes
-import faulthandler
-import torch
-import gc
-import time
 import signal
-import unittest
-import itertools
-import warnings
+import sys
 import tempfile
-from torch import multiprocessing as mp
-from torch.utils.data import (
-    ChainDataset,
-    ConcatDataset,
-    DataLoader,
-    DataLoader2,
-    Dataset,
-    IterableDataset,
-    Subset,
-    TensorDataset,
-    communication,
-    _utils
-)
-from torch.utils.data._utils import MP_STATUS_CHECK_INTERVAL
-from torch.utils.data.dataset import random_split
-from torch.utils.data.datapipes.iter import IterableWrapper
-from torch._utils import ExceptionWrapper
-from torch.testing._internal.common_utils import (TestCase, run_tests, TEST_NUMPY, IS_WINDOWS,
-                                                  IS_IN_CI, NO_MULTIPROCESSING_SPAWN, skipIfRocm, slowTest,
-                                                  load_tests, TEST_WITH_TSAN, IS_SANDCASTLE)
+import time
+import unittest
+import warnings
 
+import torch
+from torch import multiprocessing as mp
+from torch._utils import ExceptionWrapper
+from torch.testing._internal.common_utils import (IS_IN_CI, IS_SANDCASTLE, IS_WINDOWS, NO_MULTIPROCESSING_SPAWN,
+                                                  TEST_NUMPY, TEST_WITH_TSAN, TestCase, load_tests, run_tests,
+                                                  skipIfRocm, slowTest)
+from torch.utils.data import (ChainDataset, ConcatDataset, DataLoader, DataLoader2, Dataset, IterableDataset, Subset,
+                              TensorDataset, _utils, communication)
+from torch.utils.data._utils import MP_STATUS_CHECK_INTERVAL
+from torch.utils.data.datapipes.iter import IterableWrapper
+from torch.utils.data.dataset import random_split
 
 try:
     import psutil
@@ -49,6 +39,7 @@ except ImportError:
 
 try:
     import dill
+
     # XXX: By default, dill writes the Pickler dispatch table to inject its
     # own logic there. This globally affects the behavior of the standard library
     # pickler for any user who transitively depends on this module!
@@ -140,7 +131,7 @@ class TestDatasetRandomSplit(TestCase):
                 self.test_object = test_object
 
             def __getitem__(self, key):
-                self.test_object.assertEqual(type(key), type(0))
+                self.test_object.assertEqual(type(key), int)
                 return self.data[key]
 
             def __len__(self):
@@ -212,7 +203,7 @@ class TestDatasetRandomSplit(TestCase):
 
 class CUDACountingDataset(Dataset):
     def __init__(self, n):
-        super(CUDACountingDataset, self).__init__()
+        super().__init__()
         self.n = n
 
     def __getitem__(self, i):
@@ -224,7 +215,7 @@ class CUDACountingDataset(Dataset):
 
 class CountingDataset(Dataset):
     def __init__(self, n):
-        super(CountingDataset, self).__init__()
+        super().__init__()
         self.n = n
 
     def __getitem__(self, i):
@@ -236,7 +227,7 @@ class CountingDataset(Dataset):
 
 class CountingIterableDataset(IterableDataset):
     def __init__(self, n):
-        super(CountingIterableDataset, self).__init__()
+        super().__init__()
         self.n = n
 
     def __iter__(self):
@@ -388,7 +379,7 @@ class ErrorTrackingProcess(mp.Process):
     # Setting disable_stderr=True may generate a lot of unrelated error outputs
     # but could be helpful for debugging.
     def __init__(self, disable_stderr=True, **kwargs):
-        super(ErrorTrackingProcess, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._pconn, self._cconn = mp.Pipe()
         self._exception = None
         self.disable_stderr = disable_stderr
@@ -400,7 +391,7 @@ class ErrorTrackingProcess(mp.Process):
             with open(os.devnull, 'w') as devnull:
                 os.dup2(devnull.fileno(), sys.stderr.fileno())
         try:
-            super(ErrorTrackingProcess, self).run()
+            super().run()
             self._cconn.send(None)
         except Exception:
             self._cconn.send(ExceptionWrapper(sys.exc_info()))
@@ -755,7 +746,7 @@ def _test_worker_info_init_fn(worker_id):
     except RuntimeError as e:
         assert str(e) == "Cannot assign attributes to WorkerInfo objects"
     for k in ['id', 'num_workers', 'seed', 'dataset']:
-        assert "{}=".format(k) in repr(worker_info)
+        assert f"{k}=" in repr(worker_info)
     dataset.value = [worker_id, os.getpid()]
 
 
@@ -837,7 +828,7 @@ class BulkLoadingSampler(torch.utils.data.Sampler):
 class TestDataLoader(TestCase):
 
     def setUp(self):
-        super(TestDataLoader, self).setUp()
+        super().setUp()
         self.data = torch.randn(100, 2, 3, 5)
         self.labels = torch.randperm(50).repeat(2)
         self.dataset = TensorDataset(self.data, self.labels)
@@ -920,6 +911,7 @@ class TestDataLoader(TestCase):
 
     def test_typing(self):
         from typing import List
+
         # Make sure there is no TypeError
 
         class SomeDatasetClass(Dataset[List[torch.Tensor]]):
@@ -1256,7 +1248,7 @@ except RuntimeError as e:
             dataloader_iter = iter(dataloader)
             fetched = list(dataloader_iter)
             self.assertEqual(len(fetched), 4)
-            fetched = set(tuple(t.tolist()) for t in fetched)
+            fetched = {tuple(t.tolist()) for t in fetched}
             self.assertEqual(fetched, {tuple(range(4)), tuple(range(7)), tuple(range(7, 14)), tuple(range(14, 20))})
 
             # [auto-batching] test that workers exit gracefully
@@ -1294,7 +1286,7 @@ except RuntimeError as e:
             dataloader_iter = iter(dataloader)
             fetched = list(dataloader_iter)
             self.assertEqual(len(fetched), 2)
-            fetched = set(tuple(t.tolist()) for t in fetched)
+            fetched = {tuple(t.tolist()) for t in fetched}
             self.assertEqual(fetched, {tuple(range(7)), tuple(range(7, 14))})
 
             # [auto-batching & drop_last] test that workers exit gracefully
@@ -1369,7 +1361,7 @@ except RuntimeError as e:
         num_workers = 6
         batch_size = 1
         dataset = SynchronizedSeedDataset(num_workers, batch_size, num_workers)
-        self.assertEqual(set(int(batch) for batch in get_dataloader()), set(int(batch) for batch in get_dataloader()))
+        self.assertEqual({int(batch) for batch in get_dataloader()}, {int(batch) for batch in get_dataloader()})
 
     def test_worker_init_fn(self):
         dataset = SeedDataset(4)
@@ -1426,6 +1418,7 @@ except RuntimeError as e:
     def test_random_sampler(self):
 
         from collections import Counter
+
         from torch.utils.data import RandomSampler
 
         def sample_stat(sampler, num_samples):
@@ -1461,6 +1454,7 @@ except RuntimeError as e:
 
     def test_random_sampler_len_with_replacement(self):
         from torch.utils.data import RandomSampler
+
         # add 5 extra samples
         num_samples = len(self.dataset) + 5
         sampler = RandomSampler(self.dataset,
@@ -1512,7 +1506,7 @@ except RuntimeError as e:
         self.assertEqual(scanned_data.size(), scanned_data.unique().size())
 
     def test_sampler_reproducibility(self):
-        from torch.utils.data import RandomSampler, WeightedRandomSampler, SubsetRandomSampler
+        from torch.utils.data import RandomSampler, SubsetRandomSampler, WeightedRandomSampler
 
         weights = [0.1, 0.9, 0.4, 0.7, 3.0, 0.6]
         for fn in (
@@ -1612,6 +1606,7 @@ except RuntimeError as e:
     @unittest.skipIf(not TEST_NUMPY, "numpy unavailable")
     def test_numpy_gen_state(self):
         from torch.utils.data._utils.worker import _generate_state
+
         # Using NumPy generated states as the reference to test `_generate_state`
         # having the same result.
         # Test case: ((worker_id, base_seed), expected_state)
@@ -1713,11 +1708,11 @@ except RuntimeError as e:
                     continue
 
                 desc = []
-                desc.append('is_iterable_dataset={}'.format(is_iterable_dataset))
-                desc.append('use_workers={}'.format(use_workers))
-                desc.append('pin_memory={}'.format(pin_memory))
-                desc.append('hold_iter_reference={}'.format(hold_iter_reference))
-                desc.append('exit_method={}'.format(exit_method))
+                desc.append(f'is_iterable_dataset={is_iterable_dataset}')
+                desc.append(f'use_workers={use_workers}')
+                desc.append(f'pin_memory={pin_memory}')
+                desc.append(f'hold_iter_reference={hold_iter_reference}')
+                desc.append(f'exit_method={exit_method}')
                 desc = 'test_proper_exit with ' + ', '.join(desc)
 
                 # Event that the loader process uses to signal testing process
@@ -1745,9 +1740,9 @@ except RuntimeError as e:
                 if not loader_setup_event.is_set():
                     fail_msg = desc + ': loader process failed to setup within given time'
                     if loader_p.exception is not None:
-                        fail_msg += ', and had exception {}'.format(loader_p.exception)
+                        fail_msg += f', and had exception {loader_p.exception}'
                     elif not loader_p.is_alive():
-                        fail_msg += ', and exited with code {} but had no exception'.format(loader_p.exitcode)
+                        fail_msg += f', and exited with code {loader_p.exitcode} but had no exception'
                     else:
                         fail_msg += ', and is still alive.'
                     if loader_p.is_alive():
@@ -1766,18 +1761,18 @@ except RuntimeError as e:
                     if reason is None:
                         err_msg = desc
                     else:
-                        err_msg = '{}: {}'.format(desc, reason)
+                        err_msg = f'{desc}: {reason}'
                     err_msg += '\nLoader info:\n\t'
                     if loader_psutil_p.is_running():
                         err_msg += str(loader_psutil_p.as_dict(attrs=report_psutil_attrs))
                         # this may kill the process, needs to run after the above line
                         loader_p.print_traces_of_all_threads()
                     else:
-                        err_msg += 'exited with code {}'.format(loader_p.exitcode)
+                        err_msg += f'exited with code {loader_p.exitcode}'
                     if use_workers:
                         err_msg += '\nWorker(s) info:'
                         for idx, worker_psutil_p in enumerate(worker_psutil_ps):
-                            err_msg += '\n\tWorker {}:\n\t\t'.format(idx)
+                            err_msg += f'\n\tWorker {idx}:\n\t\t'
                             if worker_psutil_p.is_running():
                                 err_msg += str(worker_psutil_p.as_dict(attrs=report_psutil_attrs))
                                 # this may kill the process, needs to run after the above line
@@ -1793,7 +1788,7 @@ except RuntimeError as e:
                     if loader_p.is_alive():
                         fail_reason = 'loader process did not terminate'
                         if loader_p.exception is not None:
-                            fail(fail_reason + ', and had exception {}'.format(loader_p.exception))
+                            fail(fail_reason + f', and had exception {loader_p.exception}')
                         else:
                             fail(fail_reason + ', and had no exception')
                     _, alive = psutil.wait_procs(worker_psutil_ps, timeout=(MP_STATUS_CHECK_INTERVAL + JOIN_TIMEOUT))
@@ -1802,7 +1797,7 @@ except RuntimeError as e:
                             ', '.join(str(p.pid) for p in alive)))
                     if exit_method is None:
                         if loader_p.exitcode != 0:
-                            fail('loader process had nonzero exitcode {}'.format(loader_p.exitcode))
+                            fail(f'loader process had nonzero exitcode {loader_p.exitcode}')
                     else:
                         if loader_p.exitcode == 0:
                             fail('loader process had zero exitcode')
@@ -2045,7 +2040,7 @@ class StringDataset(Dataset):
     "fork is not supported. Dying (set die_after_fork=0 to override)")
 class TestStringDataLoader(TestCase):
     def setUp(self):
-        super(TestStringDataLoader, self).setUp()
+        super().setUp()
         self.dataset = StringDataset()
 
     @unittest.skipIf(not TEST_CUDA, "CUDA unavailable")
@@ -2075,7 +2070,7 @@ class DictDataset(Dataset):
     "fork is not supported. Dying (set die_after_fork=0 to override)")
 class TestDictDataLoader(TestCase):
     def setUp(self):
-        super(TestDictDataLoader, self).setUp()
+        super().setUp()
         self.dataset = DictDataset()
 
     def test_sequential_batch(self):
@@ -2135,7 +2130,7 @@ class DummyDataset(torch.utils.data.Dataset):
 class TestDataLoaderPersistentWorkers(TestDataLoader):
 
     def setUp(self):
-        super(TestDataLoaderPersistentWorkers, self).setUp()
+        super().setUp()
         self.persistent_workers = True
 
     @unittest.skipIf(IS_SANDCASTLE, "subprocess doesn't work in FB internal CI")
@@ -2212,7 +2207,7 @@ class NamedTupleDataset(Dataset):
     "fork is not supported. Dying (set die_after_fork=0 to override)")
 class TestNamedTupleDataLoader(TestCase):
     def setUp(self):
-        super(TestNamedTupleDataLoader, self).setUp()
+        super().setUp()
         self.dataset = NamedTupleDataset()
 
     def test_dataloader_with_namedtuple(self):
@@ -2232,7 +2227,7 @@ class TestNamedTupleDataLoader(TestCase):
             self.assertIsInstance(batch.data, NamedTupleDataset.Data)
             self.assertNotIsInstance(batch.data.positive, torch.Tensor)
 
-class SimpleCustomBatch(object):
+class SimpleCustomBatch:
     def __init__(self, data):
         transposed_data = list(zip(*data))
         self.inp = torch.stack(transposed_data[0], 0)
@@ -2275,7 +2270,7 @@ def collate_into_packed_sequence_batch_first(batch):
     "fork is not supported. Dying (set die_after_fork=0 to override)")
 class TestCustomPinFn(TestCase):
     def setUp(self):
-        super(TestCustomPinFn, self).setUp()
+        super().setUp()
         inps = torch.arange(10 * 5, dtype=torch.float32).view(10, 5)
         tgts = torch.arange(10 * 5, dtype=torch.float32).view(10, 5)
         self.dataset = TensorDataset(inps, tgts)
@@ -2330,7 +2325,7 @@ class TestWorkerQueueDataset(Dataset):
     "fork is not supported. Dying (set die_after_fork=0 to override)")
 class TestIndividualWorkerQueue(TestCase):
     def setUp(self):
-        super(TestIndividualWorkerQueue, self).setUp()
+        super().setUp()
         self.dataset = TestWorkerQueueDataset(list(range(128)))
 
     def _run_ind_worker_queue_test(self, batch_size, num_workers):

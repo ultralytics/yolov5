@@ -9,53 +9,47 @@ import operator
 import os
 import pickle
 import sys
-import torch
 import traceback
-import typing
 import types
-import warnings
+import typing
 import unittest
-from math import sqrt
-from torch.multiprocessing import Process
-from torch.testing import FileCheck
-from torch.testing._internal.common_methods_invocations import op_db
-from torch.testing._internal.common_device_type import ops, onlyCPU, instantiate_device_type_tests
-import torch.utils._pytree as pytree
-import torch.fx._pytree as fx_pytree
-from torch.fx import symbolic_trace, Proxy, Node, GraphModule, Interpreter, Tracer, Transformer, Graph, wrap, PH
-import torch._C._fx
-from torch.fx.node import Target, Argument
-from torch.fx.passes import shape_prop
-from torch.fx.immutable_collections import immutable_dict, immutable_list
-from torch.fx.experimental.rewriter import RewritingTracer
-from torch.fx.operator_schemas import get_signature_for_torch_op
-from copy import deepcopy
+import warnings
 from collections import namedtuple
+from copy import deepcopy
+from math import sqrt
 
-from torch.fx.proxy import TraceError
-from torch.fx._compatibility import _BACK_COMPAT_OBJECTS, _MARKED_WITH_COMATIBLITY
-
-from fx.test_subgraph_rewriter import TestSubgraphRewriter  # noqa: F401
+import torch
+import torch._C._fx
+import torch.fx._pytree as fx_pytree
+import torch.utils._pytree as pytree
 from fx.test_dce_pass import TestDCE  # noqa: F401
 from fx.test_fx_const_fold import TestConstFold  # noqa: F401
 from fx.test_fx_param_shape_control_flow import TestConstParamShapeInControlFlow  # noqa: F401
+from fx.test_subgraph_rewriter import TestSubgraphRewriter  # noqa: F401
+from torch.fx import PH, Graph, GraphModule, Interpreter, Node, Proxy, Tracer, Transformer, symbolic_trace, wrap
+from torch.fx._compatibility import _BACK_COMPAT_OBJECTS, _MARKED_WITH_COMATIBLITY
+from torch.fx.experimental.rewriter import RewritingTracer
+from torch.fx.immutable_collections import immutable_dict, immutable_list
+from torch.fx.node import Argument, Target
+from torch.fx.operator_schemas import get_signature_for_torch_op
+from torch.fx.passes import shape_prop
+from torch.fx.proxy import TraceError
+from torch.multiprocessing import Process
+from torch.testing import FileCheck
+from torch.testing._internal.common_device_type import instantiate_device_type_tests, onlyCPU, ops
+from torch.testing._internal.common_methods_invocations import op_db
 
 if sys.version_info >= (3, 7):
     from fx.test_gradual_type import AnnotationsTest  # noqa: F401
 if sys.version_info >= (3, 7):
     from fx.test_gradual_type import TypeCheckerTest  # noqa: F401
-from typing import Any, Callable, Dict, NamedTuple, List, Optional, Tuple, Union
-from torch.testing._internal.common_utils import (
-    IS_FBCODE,
-    IS_MACOS,
-    IS_WINDOWS,
-    TEST_WITH_ROCM,
-    find_library_location,
-    run_tests,
-)
-from torch.testing._internal.jit_utils import JitTestCase
+
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from fx.named_tup import MyNamedTup
+from torch.testing._internal.common_utils import (IS_FBCODE, IS_MACOS, IS_WINDOWS, TEST_WITH_ROCM,
+                                                  find_library_location, run_tests)
+from torch.testing._internal.jit_utils import JitTestCase
 
 try:
     from torchvision import models as torchvision_models
@@ -125,7 +119,7 @@ class Pair(NamedTuple):
     y : torch.Tensor
 
 # for testing pytrees
-class Foo(object):  # noqa: B209
+class Foo:  # noqa: B209
     def __init__(self, a, b):
         self.a = a
         self.b = b
@@ -406,7 +400,7 @@ class TestFX(JitTestCase):
 
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.batchnorm1d = torch.nn.BatchNorm1d(2, affine=False)
 
             def forward(self, x: torch.Tensor):
@@ -1370,8 +1364,8 @@ class TestFX(JitTestCase):
             if node.op == 'output':
                 output_shape = node.args[0].meta['tensor_meta'].shape
                 output_stride = node.args[0].meta['tensor_meta'].stride
-        self.assertEqual(opcodes, set(['placeholder', 'get_attr', 'call_function', 'call_method',
-                                       'call_module', 'output']))
+        self.assertEqual(opcodes, {'placeholder', 'get_attr', 'call_function', 'call_method',
+                                       'call_module', 'output'})
 
         # Test shape propogation and make sure results match actual
         self.assertEqual(output_shape, ref_out.shape)
@@ -1574,8 +1568,8 @@ class TestFX(JitTestCase):
         interp = Interpreter(symbolic_trace(rn18))
         inp = torch.rand(5, 3, 224, 224)
         out = interp.run(inp)
-        env_key_names = set(n.name for n in interp.env.keys())
-        self.assertEqual(env_key_names, set(['output']))
+        env_key_names = {n.name for n in interp.env.keys()}
+        self.assertEqual(env_key_names, {'output'})
 
     def test_transformer_noop(self):
         class MyModule(torch.nn.Module):
@@ -1755,7 +1749,7 @@ class TestFX(JitTestCase):
 
         for orig_node, new_node in zip(g.nodes, copied_graph.nodes):
             orig_users = set(orig_node.users.keys())
-            orig_users_equiv = set(val_map[u] for u in orig_users)
+            orig_users_equiv = {val_map[u] for u in orig_users}
             new_users = set(new_node.users.keys())
             self.assertEqual(orig_users_equiv, new_users)
 
@@ -1901,7 +1895,7 @@ class TestFX(JitTestCase):
 
         users_of_x = x.node.users
         self.assertEqual(len(users_of_x), 3)
-        expected_ops = set(['relu', 'add', 'neg'])
+        expected_ops = {'relu', 'add', 'neg'}
         for use in users_of_x:
             assert any(use.name.startswith(prefix) for prefix in expected_ops)
 
@@ -2118,7 +2112,7 @@ class TestFX(JitTestCase):
 
         class FooBar1234(torch.nn.Module):
             def __init__(self):
-                super(FooBar1234, self).__init__()
+                super().__init__()
                 self.f = torch.classes._TorchScriptTesting._StackString(["3", "4"])
 
             def forward(self):
@@ -2133,7 +2127,7 @@ class TestFX(JitTestCase):
 
         class FooBar2341(torch.nn.Module):
             def __init__(self):
-                super(FooBar2341, self).__init__()
+                super().__init__()
                 self.f = torch.classes._TorchScriptTesting._ReLUClass()
 
             def forward(self, x):
@@ -2251,7 +2245,7 @@ class TestFX(JitTestCase):
     def test_snake_case(self):
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.activations = torch.nn.ModuleDict([
                     ["snake_case", torch.nn.ReLU()],
                     ["PascalCase", torch.nn.LeakyReLU()],
@@ -2317,7 +2311,7 @@ class TestFX(JitTestCase):
     def test_custom_traceback_raised_when_exception_source_is_graphmodule(self):
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.W = torch.nn.Parameter(torch.randn(5))
 
             def forward(self, x):
@@ -2525,7 +2519,7 @@ class TestFX(JitTestCase):
     def test_ast_rewriter_wrap_with_submodule(self):
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.batchnorm1d = torch.nn.BatchNorm1d(2, affine=False)
 
             def forward(self, x: torch.Tensor):
@@ -2544,7 +2538,7 @@ class TestFX(JitTestCase):
     def test_submodule_manipulation_API(self):
         class C(torch.nn.Module):
             def __init__(self):
-                super(C, self).__init__()
+                super().__init__()
                 self.conv = torch.nn.Conv2d(16, 33, 3, stride=2)
                 self.param = torch.nn.Parameter(torch.rand(2, 3))
 
@@ -2553,7 +2547,7 @@ class TestFX(JitTestCase):
 
         class B(torch.nn.Module):
             def __init__(self):
-                super(B, self).__init__()
+                super().__init__()
                 self.linear = torch.nn.Linear(100, 200)
                 self.register_buffer("buf", torch.randn(2, 3))
                 self.net_c = C()
@@ -2563,7 +2557,7 @@ class TestFX(JitTestCase):
 
         class A(torch.nn.Module):
             def __init__(self):
-                super(A, self).__init__()
+                super().__init__()
                 self.net_b = B()
                 self.param = torch.nn.Parameter(torch.rand(2, 3))
 
@@ -2902,7 +2896,7 @@ class TestFX(JitTestCase):
                      "`annotations` is not defined in Python <3.7")
     def test_annotation_with_future(self):
         try:
-            import fx.test_future    # noqa: F401
+            import fx.test_future  # noqa: F401
         finally:
             del sys.modules["__future__"]
 
@@ -3043,17 +3037,17 @@ class TestFX(JitTestCase):
             nf = symbolic_trace(f, concrete_args={'x': inp})
             self.assertEqual(nf(val), orig_out)
             assert num_flat_args == 0 or "tree_flatten_spec" in nf.code
-            assert(sum([i.op == 'placeholder' for i in nf.graph.nodes]) == num_flat_args)
+            assert(sum(i.op == 'placeholder' for i in nf.graph.nodes) == num_flat_args)
 
             nf = symbolic_trace(nf)
             self.assertEqual(nf(val), orig_out)
             assert "tree_flatten_spec" not in nf.code
-            assert(sum([i.op == 'placeholder' for i in nf.graph.nodes]) == 1)
+            assert(sum(i.op == 'placeholder' for i in nf.graph.nodes) == 1)
 
             nf = symbolic_trace(nf, concrete_args={'x': inp})
             self.assertEqual(nf(val), orig_out)
             assert num_flat_args == 0 or "tree_flatten_spec" in nf.code
-            assert(sum([i.op == 'placeholder' for i in nf.graph.nodes]) == num_flat_args)
+            assert(sum(i.op == 'placeholder' for i in nf.graph.nodes) == num_flat_args)
 
             pickled = pickle.dumps(nf)
             nf = pickle.loads(pickled)

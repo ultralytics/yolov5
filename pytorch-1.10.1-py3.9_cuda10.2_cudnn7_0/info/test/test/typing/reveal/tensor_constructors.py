@@ -1,6 +1,7 @@
 # flake8: noqa
 import torch
 from torch.testing._internal.common_utils import TEST_NUMPY
+
 if TEST_NUMPY:
     import numpy as np
 

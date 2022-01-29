@@ -1,36 +1,15 @@
 import torch
 import torch.nn as nn
-import torch.nn.quantized as nnq
 import torch.nn.intrinsic as nni
-import torch.nn.intrinsic.quantized as nniq
 import torch.nn.intrinsic.qat as nniqat
-from torch.quantization import (
-    quantize,
-    prepare,
-    convert,
-    prepare_qat,
-    quantize_qat,
-    fuse_modules,
-    QConfig,
-    default_qconfig,
-    default_qat_qconfig,
-)
-
-from torch.testing._internal.common_quantization import (
-    QuantizationTestCase,
-    ModelForFusion,
-    ModelWithSequentialFusion,
-    ModelForLinearBNFusion,
-    ModelForFusionWithBias,
-    test_only_eval_fn,
-    test_only_train_fn,
-    skipIfNoFBGEMM,
-)
-
-from torch.testing._internal.common_quantized import (
-    override_quantized_engine,
-    supported_qengines,
-)
+import torch.nn.intrinsic.quantized as nniq
+import torch.nn.quantized as nnq
+from torch.quantization import (QConfig, convert, default_qat_qconfig, default_qconfig, fuse_modules, prepare,
+                                prepare_qat, quantize, quantize_qat)
+from torch.testing._internal.common_quantization import (ModelForFusion, ModelForFusionWithBias, ModelForLinearBNFusion,
+                                                         ModelWithSequentialFusion, QuantizationTestCase,
+                                                         skipIfNoFBGEMM, test_only_eval_fn, test_only_train_fn)
+from torch.testing._internal.common_quantized import override_quantized_engine, supported_qengines
 
 
 @skipIfNoFBGEMM

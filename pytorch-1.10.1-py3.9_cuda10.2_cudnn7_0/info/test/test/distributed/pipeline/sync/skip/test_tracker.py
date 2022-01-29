@@ -4,13 +4,12 @@
 #
 # This source code is licensed under the BSD license found in the
 # LICENSE file in the root directory of this source tree.
-from queue import Queue
 import threading
+from queue import Queue
 
 import pytest
 import torch
 from torch import nn
-
 from torch.distributed.pipeline.sync.checkpoint import enable_checkpointing, enable_recomputing
 from torch.distributed.pipeline.sync.microbatch import Batch
 from torch.distributed.pipeline.sync.skip import pop, skippable, stash

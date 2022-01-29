@@ -2,21 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.quantized as nnq
 import torch.utils.bundled_inputs
-from torch.quantization import (
-    default_qconfig,
-    float_qparams_weight_only_qconfig,
-)
-
+from torch.quantization import default_qconfig, float_qparams_weight_only_qconfig
 # graph mode quantization based on fx
-from torch.quantization.quantize_fx import (
-    prepare_fx,
-    convert_fx,
-)
+from torch.quantization.quantize_fx import convert_fx, prepare_fx
+from torch.testing._internal.common_quantization import LinearModelWithSubmodule
 from torch.testing._internal.common_quantization import NodeSpec as ns
-from torch.testing._internal.common_quantization import (
-    QuantizationLiteTestCase,
-    LinearModelWithSubmodule,
-)
+from torch.testing._internal.common_quantization import QuantizationLiteTestCase
 
 
 class TestLiteFuseFx(QuantizationLiteTestCase):
@@ -52,7 +43,7 @@ class TestLiteFuseFx(QuantizationLiteTestCase):
     def test_conv2d(self):
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.conv1 = nn.Conv2d(1, 1, 1)
                 self.conv2 = nn.Conv2d(1, 1, 1)
 

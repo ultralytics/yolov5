@@ -1,18 +1,17 @@
-
+import io
+import itertools
 import math
+import pickle
 import random
 import string
 import unittest
-import io
 import unittest.mock as mock
-import itertools
 import warnings
-import pickle
-from copy import deepcopy
-from itertools import repeat, product
-from functools import reduce
-from operator import mul
 from collections import OrderedDict
+from copy import deepcopy
+from functools import reduce
+from itertools import product, repeat
+from operator import mul
 
 import torch
 
@@ -20,42 +19,41 @@ import torch
 # NN tests use double as the default dtype
 torch.set_default_dtype(torch.double)
 
-from torch._six import inf, nan
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
-import torch.nn.utils.rnn as rnn_utils
-from torch.nn.utils import clip_grad_norm_, clip_grad_value_
 import torch.nn.utils.parametrize as parametrize
 import torch.nn.utils.prune as prune
-from torch.nn.utils import parameters_to_vector, vector_to_parameters
-from torch.nn import Parameter
-from torch.nn.parameter import UninitializedParameter, UninitializedBuffer
-from torch.nn.parallel._functions import Broadcast
-from torch.testing._internal.common_dtype import integral_types, get_all_fp_dtypes, get_all_math_dtypes
-from torch.testing._internal.common_utils import freeze_rng_state, run_tests, TestCase, skipIfNoLapack, skipIfRocm, \
-    skipIfRocmVersionLessThan, skipIfNotMiopenSuggestNHWC, TEST_NUMPY, TEST_SCIPY, TEST_WITH_ROCM, download_file, \
-    get_function_arglist, load_tests, repeat_test_for_types, ALL_TENSORTYPES, \
-    ALL_TENSORTYPES2, suppress_warnings, TemporaryFileName, TEST_WITH_UBSAN, IS_PPC
-from torch.testing._internal.common_cuda import TEST_CUDA, TEST_MULTIGPU, TEST_CUDNN, TEST_CUDNN_VERSION
-from torch.testing._internal.common_nn import NNTestCase, NewModuleTest, CriterionTest, \
-    module_tests, criterion_tests, loss_reference_fns, \
-    ctcloss_reference, new_module_tests, single_batch_reference_fn
-from torch.testing._internal.common_device_type import instantiate_device_type_tests, dtypes, \
-    dtypesIfCUDA, precisionOverride, skipCUDAIfNoCudnn, skipCUDAIfCudnnVersionLessThan, onlyCUDA, onlyCPU, \
-    skipCUDAIfRocm, skipCUDAIf, skipCUDAIfNotRocm, skipCUDAIfRocmVersionLessThan, skipCUDAIfNotMiopenSuggestNHWC, \
-    onlyOnCPUAndCUDA, deviceCountAtLeast, largeTensorTest, expectedFailureMeta, skipMeta
-from torch.nn import MultiheadAttention
-
-from hypothesis import given
+import torch.nn.utils.rnn as rnn_utils
 import torch.testing._internal.hypothesis_utils as hu
-from torch.testing._internal.common_utils import _assertGradAndGradgradChecks, gradcheck, gradgradcheck, \
-    GRADCHECK_NONDET_TOL
-from torch.testing._internal.common_utils import dtype2prec_DONTUSE
-from torch.testing._internal.common_cuda import tf32_on_and_off, tf32_is_not_fp32, tf32_off, tf32_on
+from hypothesis import given
+from torch._six import inf, nan
+from torch.nn import MultiheadAttention, Parameter
+from torch.nn.parallel._functions import Broadcast
+from torch.nn.parameter import UninitializedBuffer, UninitializedParameter
+from torch.nn.utils import clip_grad_norm_, clip_grad_value_, parameters_to_vector, vector_to_parameters
+from torch.testing._internal.common_cuda import (TEST_CUDA, TEST_CUDNN, TEST_CUDNN_VERSION, TEST_MULTIGPU,
+                                                 tf32_is_not_fp32, tf32_off, tf32_on, tf32_on_and_off)
+from torch.testing._internal.common_device_type import (deviceCountAtLeast, dtypes, dtypesIfCUDA, expectedFailureMeta,
+                                                        instantiate_device_type_tests, largeTensorTest, onlyCPU,
+                                                        onlyCUDA, onlyOnCPUAndCUDA, precisionOverride, skipCUDAIf,
+                                                        skipCUDAIfCudnnVersionLessThan, skipCUDAIfNoCudnn,
+                                                        skipCUDAIfNotMiopenSuggestNHWC, skipCUDAIfNotRocm,
+                                                        skipCUDAIfRocm, skipCUDAIfRocmVersionLessThan, skipMeta)
+from torch.testing._internal.common_dtype import get_all_fp_dtypes, get_all_math_dtypes, integral_types
+from torch.testing._internal.common_nn import (CriterionTest, NewModuleTest, NNTestCase, criterion_tests,
+                                               ctcloss_reference, loss_reference_fns, module_tests, new_module_tests,
+                                               single_batch_reference_fn)
+from torch.testing._internal.common_utils import (ALL_TENSORTYPES, ALL_TENSORTYPES2, GRADCHECK_NONDET_TOL, IS_PPC,
+                                                  TEST_NUMPY, TEST_SCIPY, TEST_WITH_ROCM, TEST_WITH_UBSAN,
+                                                  TemporaryFileName, TestCase, _assertGradAndGradgradChecks,
+                                                  download_file, dtype2prec_DONTUSE, freeze_rng_state,
+                                                  get_function_arglist, gradcheck, gradgradcheck, load_tests,
+                                                  repeat_test_for_types, run_tests, skipIfNoLapack,
+                                                  skipIfNotMiopenSuggestNHWC, skipIfRocm, skipIfRocmVersionLessThan,
+                                                  suppress_warnings)
 from torch.types import _TensorOrTensors
-
 
 AMPERE_OR_ROCM = TEST_WITH_ROCM or tf32_is_not_fp32()
 
@@ -64,8 +62,8 @@ AMPERE_OR_ROCM = TEST_WITH_ROCM or tf32_is_not_fp32()
 load_tests = load_tests
 
 if TEST_SCIPY:
-    from scipy import stats
     import scipy.ndimage
+    from scipy import stats
 
 if TEST_NUMPY:
     import numpy as np
@@ -94,7 +92,7 @@ class PackedSequenceTest(TestCase):
     }
 
     def __init__(self, *args, **kwargs):
-        super(PackedSequenceTest, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.batch_size = 5
         self.max_length = 6
 
@@ -377,13 +375,13 @@ class TestNN(NNTestCase):
     def _create_basic_net(self):
         class Layer(nn.Module):
             def __init__(self):
-                super(Layer, self).__init__()
+                super().__init__()
                 self.layer_dummy_param = Parameter(torch.empty(3, 5))
                 self.register_buffer('layer_dummy_buf', torch.zeros(1, 3, 3, 7))
 
         class Net(nn.Module):
             def __init__(self):
-                super(Net, self).__init__()
+                super().__init__()
                 self.l1 = Layer()
                 self.dummy_param = Parameter(torch.empty(3, 5))
                 self.register_buffer('dummy_buf', torch.zeros(7, 3, 3, 1))
@@ -418,6 +416,7 @@ class TestNN(NNTestCase):
 
     def test_conv_backcompat(self):
         from torch.serialization import SourceChangeWarning
+
         # This file was generated by running on PyTorch 1.0.1 on Python 2:
         #
         #     import torch
@@ -436,7 +435,7 @@ class TestNN(NNTestCase):
     def test_share_memory(self):
         class Net(nn.Module):
             def __init__(self):
-                super(Net, self).__init__()
+                super().__init__()
                 self.p = nn.Parameter(torch.eye(5))
                 self.par = nn.ParameterList()
                 self.par.append(nn.Parameter(torch.randn(10)))
@@ -1120,7 +1119,7 @@ class TestNN(NNTestCase):
     def test_call_supports_python_dict_output(self):
         class Net(nn.Module):
             def __init__(self):
-                super(Net, self).__init__()
+                super().__init__()
                 self.l1 = nn.Linear(10, 20)
                 self.register_backward_hook(self.hook)
                 self.check_backward_hook_flag = False
@@ -1148,7 +1147,7 @@ class TestNN(NNTestCase):
     def test_train_errors_for_invalid_mode(self):
         class SubclassNet(nn.Module):
             def __init__(self):
-                super(SubclassNet, self).__init__()
+                super().__init__()
                 self.l1 = nn.Linear(2, 2)
 
             def forward(self, inputs):
@@ -1221,7 +1220,7 @@ class TestNN(NNTestCase):
     def test_modules(self):
         class Net(nn.Module):
             def __init__(self):
-                super(Net, self).__init__()
+                super().__init__()
                 self.l1 = l
                 self.l2 = l
                 self.param = torch.empty(3, 5)
@@ -1234,7 +1233,7 @@ class TestNN(NNTestCase):
     def test_named_modules(self):
         class Net(nn.Module):
             def __init__(self):
-                super(Net, self).__init__()
+                super().__init__()
                 self.l1 = l
                 self.l2 = l
                 self.param = torch.empty(3, 5)
@@ -3837,14 +3836,14 @@ class TestNN(NNTestCase):
         # Pruning one of them causes one of the weights to become a tensor
         prune.l1_unstructured(l, 'weight_ih_l0', 0.5)
         assert (
-            sum([isinstance(p, torch.nn.Parameter) for p in l._flat_weights])
+            sum(isinstance(p, torch.nn.Parameter) for p in l._flat_weights)
             == 3
         )
 
         # Removing the pruning reparametrization restores the Parameter
         prune.remove(l, 'weight_ih_l0')
         assert (
-            sum([isinstance(p, torch.nn.Parameter) for p in l._flat_weights])
+            sum(isinstance(p, torch.nn.Parameter) for p in l._flat_weights)
             == 4
         )
 
@@ -3869,14 +3868,14 @@ class TestNN(NNTestCase):
             # Applying weight norm on one of them causes it to become a tensor
             l = torch.nn.utils.weight_norm(l, name=name)
             self.assertEqual(
-                sum([isinstance(p, torch.nn.Parameter) for p in l._flat_weights]),
+                sum(isinstance(p, torch.nn.Parameter) for p in l._flat_weights),
                 num_params - 1,
             )
 
             # Removing the weight norm reparametrization restores the Parameter
             l = torch.nn.utils.remove_weight_norm(l, name=name)
             self.assertEqual(
-                sum([isinstance(p, torch.nn.Parameter) for p in l._flat_weights]),
+                sum(isinstance(p, torch.nn.Parameter) for p in l._flat_weights),
                 num_params,
             )
 
@@ -5038,7 +5037,7 @@ class TestNN(NNTestCase):
         def _multihead_attn_test_helper(add_key_padding_mask=False, add_bias_kv=False, add_zero_attn=False,
                                         saved_kv=False, same_embed_dim=False, byte_mask=False):
             for _ in range(100):
-                batch_sz, seq_len = [random.randint(2, 10) for r in range(2)]
+                batch_sz, seq_len = (random.randint(2, 10) for r in range(2))
                 d_head = random.randint(3, 10)
                 nheads = random.randint(3, 10)
                 d_model = d_head * nheads
@@ -5287,7 +5286,7 @@ class TestNN(NNTestCase):
     def test_adaptive_pooling_input_size(self):
         for numel in (2, 3):
             for pool_type in ('Max', 'Avg'):
-                cls_name = 'Adaptive{}Pool{}d'.format(pool_type, numel)
+                cls_name = f'Adaptive{pool_type}Pool{numel}d'
                 module_cls = getattr(nn, cls_name)
                 output_size = (2,) * numel
                 module = module_cls(output_size)
@@ -5298,7 +5297,7 @@ class TestNN(NNTestCase):
     def test_adaptive_pooling_size_none(self):
         for numel in (2, 3):
             for pool_type in ('Max', 'Avg'):
-                cls_name = 'Adaptive{}Pool{}d'.format(pool_type, numel)
+                cls_name = f'Adaptive{pool_type}Pool{numel}d'
                 module_cls = getattr(nn, cls_name)
                 output_size = (2,) * (numel - 1) + (None,)
                 module = module_cls(output_size)
@@ -5615,7 +5614,7 @@ class TestNN(NNTestCase):
 
         class CustomState(nn.Module):
             def __init__(self):
-                super(CustomState, self).__init__()
+                super().__init__()
                 self.param = torch.nn.Parameter(torch.ones(1))
                 self.sub = torch.nn.Linear(5, 5)
 
@@ -6399,7 +6398,7 @@ class TestNN(NNTestCase):
     def test_container_copy(self):
         class Model(nn.Module):
             def __init__(self):
-                super(Model, self).__init__()
+                super().__init__()
                 self.linear = nn.Linear(4, 5)
 
             def forward(self, input):
@@ -9692,8 +9691,8 @@ class TestNN(NNTestCase):
         self.assertEqual(F.cosine_similarity(input1, input2, dim=1).size(), expected_size)
 
         # Check numerical precision, issue #18057
-        vv1 = torch.tensor(list([float(i) for i in range(84)])).unsqueeze(0)
-        vv2 = torch.tensor(list([float(i) for i in range(84)])).unsqueeze(0)
+        vv1 = torch.tensor(list(float(i) for i in range(84))).unsqueeze(0)
+        vv2 = torch.tensor(list(float(i) for i in range(84))).unsqueeze(0)
         out = F.cosine_similarity(vv1, vv2)
         self.assertLessEqual(out, 1.0)
 
@@ -9992,7 +9991,7 @@ class TestNN(NNTestCase):
                                     [[3.0000004768, 6.5000000000, 5.0000, 4.6675000191, 9.2500],
                                      [1.0000000000, 7.1665000916, 5.0000, 5.0000000000, 9.2500]]).view(1, 1, 2, 5)
                         else:
-                            raise AssertionError("missing groundtruth test for padding mode '{}'".format(padding_mode))
+                            raise AssertionError(f"missing groundtruth test for padding mode '{padding_mode}'")
                     elif mode == 'nearest':
                         if padding_mode == 'zeros':
                             if align_corners:
@@ -10022,7 +10021,7 @@ class TestNN(NNTestCase):
                                     [[1., 8., 5., 7., 9.],
                                      [1., 8., 5., 8., 9.]]).view(1, 1, 2, 5)
                         else:
-                            raise AssertionError("missing groundtruth test for padding mode '{}'".format(padding_mode))
+                            raise AssertionError(f"missing groundtruth test for padding mode '{padding_mode}'")
                     elif mode == 'bicubic':
                         if padding_mode == 'zeros':
                             if align_corners:
@@ -10052,10 +10051,10 @@ class TestNN(NNTestCase):
                                     [[2.7993753, 6.6050020, 4.25, 4.7138715, 10.269531],
                                      [0.8125000, 7.2822485, 4.25, 5.0000052, 9.332031]]).view(1, 1, 2, 5)
                         else:
-                            raise AssertionError("missing groundtruth test for padding mode '{}'".format(padding_mode))
+                            raise AssertionError(f"missing groundtruth test for padding mode '{padding_mode}'")
 
                     else:
-                        raise AssertionError("missing groundtruth test for interpolation mode '{}'".format(mode))
+                        raise AssertionError(f"missing groundtruth test for interpolation mode '{mode}'")
                     output = F.grid_sample(input, grid, mode=mode, padding_mode=padding_mode,
                                            align_corners=align_corners)
                     self.assertEqual(output, groundtruth, atol=1e-5, rtol=0,
@@ -10104,7 +10103,7 @@ class TestNN(NNTestCase):
                                     [[[[-0., -0.], [-0., 0.], [-0., -0.], [-0., 0.]],
                                       [[0., 0.], [0., 0.], [0., 0.], [0., 0.]]]]).view(1, 2, 4, 2)
                         else:
-                            raise AssertionError("missing gradient groundtruth test for padding mode '{}'".format(padding_mode))
+                            raise AssertionError(f"missing gradient groundtruth test for padding mode '{padding_mode}'")
                     elif mode == 'nearest':
                         groundtruth = torch.tensor(
                             [[[[-0., -0.], [-0., 0.], [-0., -0.], [-0., 0.]],
@@ -10139,9 +10138,9 @@ class TestNN(NNTestCase):
                                     [[[[0., 0.], [0., 0.], [1.875, 0.], [1.875, 0.]],
                                       [[0., 0.], [0., 0.], [1.875, 0.], [1.875, 0.]]]]).view(1, 2, 4, 2)
                         else:
-                            raise AssertionError("missing gradient groundtruth test for padding mode '{}'".format(padding_mode))
+                            raise AssertionError(f"missing gradient groundtruth test for padding mode '{padding_mode}'")
                     else:
-                        raise AssertionError("missing gradient groundtruth test for interpolation mode '{}'".format(mode))
+                        raise AssertionError(f"missing gradient groundtruth test for interpolation mode '{mode}'")
                     F.grid_sample(input, grid, mode=mode, padding_mode=padding_mode,
                                   align_corners=align_corners).sum().backward()
                     self.assertEqual(grid.grad, groundtruth, atol=1e-5, rtol=0,
@@ -11554,7 +11553,7 @@ class TestNN(NNTestCase):
 
 class TestNNInit(TestCase):
     def setUp(self):
-        super(TestNNInit, self).setUp()
+        super().setUp()
         random.seed(123)
 
     def _is_normal(self, tensor, mean, std):
@@ -12234,7 +12233,7 @@ for test_params in criterion_tests:
 
 class UnpoolingNet(nn.Module):
     def __init__(self, pool, unpool):
-        super(UnpoolingNet, self).__init__()
+        super().__init__()
         self.pool = pool
         self.unpool = unpool
 
@@ -12402,7 +12401,7 @@ def _buildEquivalentAffineTransforms2d(device, input_size, output_size, angle_ra
         outtrans_ary)
     grid_ary = np.dot(np.dot(np.dot(reorder_ary, rotation_ary.T), outscale_ary), outtrans_ary)
 
-    transform_tensor = torch.from_numpy((rotation_ary)).to(device, torch.float32)
+    transform_tensor = torch.from_numpy(rotation_ary).to(device, torch.float32)
     transform_tensor = transform_tensor[:2].unsqueeze(0)
 
     return transform_tensor, transform_ary, grid_ary
@@ -12475,7 +12474,7 @@ def _buildEquivalentAffineTransforms3d(device, input_size, output_size, angle_ra
         outtrans_ary)
     grid_ary = np.dot(np.dot(np.dot(reorder_ary, np.linalg.inv(scipyRotation_ary)), outscale_ary), outtrans_ary)
 
-    transform_tensor = torch.from_numpy((torchRotation_ary)).to(device, torch.float32)
+    transform_tensor = torch.from_numpy(torchRotation_ary).to(device, torch.float32)
     transform_tensor = transform_tensor[:3].unsqueeze(0)
 
     return transform_tensor, transform_ary, grid_ary
@@ -14324,7 +14323,7 @@ class TestNNDeviceType(NNTestCase):
     def test_adaptive_pooling_no_suppot_input(self, device, dtype):
         for numel in (2, 3):
             for pool_type in ('Max', 'Avg'):
-                cls_name = 'Adaptive{}Pool{}d'.format(pool_type, numel)
+                cls_name = f'Adaptive{pool_type}Pool{numel}d'
                 module_cls = getattr(nn, cls_name)
                 output_size = (2,) * numel
                 module = module_cls(output_size)
@@ -15118,9 +15117,9 @@ class TestNNDeviceType(NNTestCase):
                 w = w.expand([nc, int(nc / groups)] + list(w.shape))
                 w = w.detach().requires_grad_()
                 x = torch.randn([1, nc] + ([5] * dim), device=device, requires_grad=True)
-                y = getattr(F, 'conv{}d'.format(dim))(x, w, groups=groups)
+                y = getattr(F, f'conv{dim}d')(x, w, groups=groups)
                 y.sum().backward()
-                y = getattr(F, 'conv_transpose{}d'.format(dim))(x, w, groups=groups)
+                y = getattr(F, f'conv_transpose{dim}d')(x, w, groups=groups)
                 y.sum().backward()
 
     def test_conv_noncontig_weights_and_bias(self, device):
@@ -16552,9 +16551,9 @@ class TestNNDeviceType(NNTestCase):
                 return torch.stack([col, col + 2], 1).view(2, 2, 2, 2)
 
         if adaptive:
-            cls_name = 'AdaptiveMaxPool{}d'.format(num_dim)
+            cls_name = f'AdaptiveMaxPool{num_dim}d'
         else:
-            cls_name = 'MaxPool{}d'.format(num_dim)
+            cls_name = f'MaxPool{num_dim}d'
         module_cls = getattr(nn, cls_name)
         module = module_cls(2, return_indices=True).to(device, dtype=dtype)
         numel = 4 ** (num_dim + 1)
@@ -16664,7 +16663,7 @@ class TestNNDeviceType(NNTestCase):
     def test_max_pool_nan_inf(self, device, dtype):
         for adaptive in ['', 'adaptive_']:
             for num_dim in [1, 2, 3]:
-                fn_name = '{}max_pool{}d'.format(adaptive, num_dim)
+                fn_name = f'{adaptive}max_pool{num_dim}d'
                 fn = getattr(F, fn_name)
 
                 x = torch.full([1, 1] + num_dim * [3], nan, device=device, dtype=dtype, requires_grad=True)
@@ -16770,7 +16769,7 @@ class TestNNDeviceType(NNTestCase):
     @onlyOnCPUAndCUDA  # TODO: Fails on XLA
     def test_fractional_max_pool_nan_inf(self, device, dtype):
         for num_dim in [2, 3]:
-            fn_name = 'FractionalMaxPool{}d'.format(num_dim)
+            fn_name = f'FractionalMaxPool{num_dim}d'
             fn = getattr(nn, fn_name)(kernel_size=2, output_size=1)
             x = torch.full([1, 1] + num_dim * [3], nan, device=device, dtype=dtype, requires_grad=True)
             res = fn(x)
@@ -16786,13 +16785,13 @@ class TestNNDeviceType(NNTestCase):
     def test_pooling_zero_stride(self, device):
         for op in ('max', 'avg'):
             for num_dim in [1, 2, 3]:
-                fn_name = '{}_pool{}d'.format(op, num_dim)
+                fn_name = f'{op}_pool{num_dim}d'
                 fn = getattr(F, fn_name)
                 x = torch.ones([1, 2] + num_dim * [4], device=device, dtype=torch.float)
                 self.assertRaisesRegex(RuntimeError, r"stride should not be zero|stride must be greater than zero",
                                        lambda: fn(x, kernel_size=2, stride=0))
 
-                fn_module_name = '{}Pool{}d'.format(op.title(), num_dim)
+                fn_module_name = f'{op.title()}Pool{num_dim}d'
                 fn_module = getattr(nn, fn_module_name)(kernel_size=2, stride=0)
                 self.assertRaisesRegex(RuntimeError, r"stride should not be zero|stride must be greater than zero",
                                        lambda: fn_module(x))
@@ -16802,7 +16801,7 @@ class TestNNDeviceType(NNTestCase):
     def test_pool_large_size(self, device, dtype):
         for op in ('max', 'avg'):
             for num_dim in [1, 2, 3]:
-                fn_name = '{}_pool{}d'.format(op, num_dim)
+                fn_name = f'{op}_pool{num_dim}d'
                 fn = getattr(F, fn_name)
                 # 16777217 is the smallest integer not expressible in float32
                 x = torch.ones([1, 1, 16777217] + (num_dim - 1) * [1],
@@ -16816,7 +16815,7 @@ class TestNNDeviceType(NNTestCase):
     def test_pool_invalid_size(self, device, dtype):
         for op in ('max', 'avg'):
             for num_dim in [1, 2, 3]:
-                fn_name = '{}_pool{}d'.format(op, num_dim)
+                fn_name = f'{op}_pool{num_dim}d'
                 if op == 'max':
                     # New implementation without indices supports empty tensors
                     # TODO(Heitor) change once with_indices code is updated
@@ -17667,7 +17666,7 @@ class TestNNDeviceType(NNTestCase):
     def test_clip_grad_norm_multi_device(self, devices):
         class TestModel(nn.Module):
             def __init__(self):
-                super(TestModel, self).__init__()
+                super().__init__()
                 self.layer1 = nn.Linear(10, 10)
                 self.layer2 = nn.Linear(10, 10)
 
@@ -18696,7 +18695,7 @@ class TestLazyModules(TestCase):
     def test_chained_initialization(self):
         class MyNetwork(torch.nn.Module):
             def __init__(self):
-                super(MyNetwork, self).__init__()
+                super().__init__()
                 self.linear_1 = torch.nn.LazyLinear(15)
                 self.linear_2 = torch.nn.LazyLinear(10)
 
@@ -18812,7 +18811,7 @@ class TestStateDictHooks(TestCase):
         # Test with module instance method as hook
         class MyModule(nn.Module):
             def __init__(self):
-                super(MyModule, self).__init__()
+                super().__init__()
                 self.foo = torch.nn.Parameter(torch.rand(10))
 
             def my_pre_load_hook(self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs):

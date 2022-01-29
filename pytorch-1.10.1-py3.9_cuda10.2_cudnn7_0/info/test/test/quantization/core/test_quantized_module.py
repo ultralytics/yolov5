@@ -5,33 +5,23 @@ import torch.nn.intrinsic.quantized as nniq
 import torch.nn.quantized as nnq
 import torch.nn.quantized.dynamic as nnqd
 import torch.quantization
-
-from torch.quantization import (
-    get_default_static_quant_module_mappings,
-    default_float_qparams_observer,
-    PerChannelMinMaxObserver,
-)
-from torch.testing._internal.common_quantization import (
-    QuantizationTestCase,
-    prepare_dynamic,
-    _make_conv_test_input,
-    skipIfNoFBGEMM,
-    lengths_to_offsets
-)
-from torch.testing._internal.common_quantized import (
-    _calculate_dynamic_qparams,
-    override_quantized_engine,
-    override_qengines,
-)
+import torch.testing._internal.hypothesis_utils as hu
 from hypothesis import assume, given
 from hypothesis import strategies as st
-import torch.testing._internal.hypothesis_utils as hu
+from torch.quantization import (PerChannelMinMaxObserver, default_float_qparams_observer,
+                                get_default_static_quant_module_mappings)
+from torch.testing._internal.common_quantization import (QuantizationTestCase, _make_conv_test_input,
+                                                         lengths_to_offsets, prepare_dynamic, skipIfNoFBGEMM)
+from torch.testing._internal.common_quantized import (_calculate_dynamic_qparams, override_qengines,
+                                                      override_quantized_engine)
+
 hu.assert_deadline_disabled()
 
 import copy
 import io
-import numpy as np
 import itertools
+
+import numpy as np
 
 """
 Note that tests in this file are just API test, to make sure we wrapped the
@@ -1000,12 +990,12 @@ class TestDynamicQuantizedModule(QuantizationTestCase):
         for layer in range(num_layers):
             for direction in range(num_directions):
                 suffix = '_reverse' if direction == 1 else ''
-                key_name1 = 'weight_ih_l{layer_idx}{suffix}'.format(layer_idx=layer, suffix=suffix)
-                key_name2 = 'weight_hh_l{layer_idx}{suffix}'.format(layer_idx=layer, suffix=suffix)
+                key_name1 = f'weight_ih_l{layer}{suffix}'
+                key_name2 = f'weight_hh_l{layer}{suffix}'
                 weight_keys.append(key_name1)
                 weight_keys.append(key_name2)
-                key_name1 = 'bias_ih_l{layer_idx}{suffix}'.format(layer_idx=layer, suffix=suffix)
-                key_name2 = 'bias_hh_l{layer_idx}{suffix}'.format(layer_idx=layer, suffix=suffix)
+                key_name1 = f'bias_ih_l{layer}{suffix}'
+                key_name2 = f'bias_hh_l{layer}{suffix}'
                 bias_keys.append(key_name1)
                 bias_keys.append(key_name2)
 

@@ -1,24 +1,23 @@
-import torch
-import itertools
 import functools
+import itertools
 import operator
 import random
-from collections import defaultdict
 import unittest
-from torch.testing import make_tensor
-from torch.testing._internal.common_utils import TestCase, run_tests, skipIfRocm, do_test_dtypes, \
-    do_test_empty_full, load_tests, TEST_NUMPY, TEST_SCIPY, IS_WINDOWS, gradcheck, coalescedonoff, \
-    DeterministicGuard
-from torch.testing._internal.common_cuda import TEST_CUDA, _get_torch_cuda_version
+from collections import defaultdict
 from numbers import Number
-from typing import Dict, Any
-from torch.testing._internal.common_device_type import \
-    (instantiate_device_type_tests, ops, dtypes, dtypesIfCPU, onlyCPU, onlyCUDA, deviceCountAtLeast)
-from torch.testing._internal.common_methods_invocations import \
-    (sparse_unary_ufuncs)
-from torch.testing._internal.common_dtype import (
-    floating_and_complex_types, floating_and_complex_types_and, get_all_dtypes, get_all_int_dtypes,
-)
+from typing import Any, Dict
+
+import torch
+from torch.testing import make_tensor
+from torch.testing._internal.common_cuda import TEST_CUDA, _get_torch_cuda_version
+from torch.testing._internal.common_device_type import (deviceCountAtLeast, dtypes, dtypesIfCPU,
+                                                        instantiate_device_type_tests, onlyCPU, onlyCUDA, ops)
+from torch.testing._internal.common_dtype import (floating_and_complex_types, floating_and_complex_types_and,
+                                                  get_all_dtypes, get_all_int_dtypes)
+from torch.testing._internal.common_methods_invocations import sparse_unary_ufuncs
+from torch.testing._internal.common_utils import (IS_WINDOWS, TEST_NUMPY, TEST_SCIPY, DeterministicGuard, TestCase,
+                                                  coalescedonoff, do_test_dtypes, do_test_empty_full, gradcheck,
+                                                  load_tests, run_tests, skipIfRocm)
 
 if TEST_SCIPY:
     import scipy.sparse
@@ -99,11 +98,11 @@ class TestSparse(TestCase):
         for shape, sparse_dim, nnz in shape_sparse_dim_nnz:
             indices_shape = torch.Size((sparse_dim, nnz))
             values_shape = torch.Size((nnz,) + shape[sparse_dim:])
-            printed.append("# shape: {}".format(torch.Size(shape)))
-            printed.append("# nnz: {}".format(nnz))
-            printed.append("# sparse_dim: {}".format(sparse_dim))
-            printed.append("# indices shape: {}".format(indices_shape))
-            printed.append("# values shape: {}".format(values_shape))
+            printed.append(f"# shape: {torch.Size(shape)}")
+            printed.append(f"# nnz: {nnz}")
+            printed.append(f"# sparse_dim: {sparse_dim}")
+            printed.append(f"# indices shape: {indices_shape}")
+            printed.append(f"# values shape: {values_shape}")
 
             indices = torch.arange(indices_shape.numel(), dtype=self.index_tensor(0).dtype,
                                    device=device).view(indices_shape)
@@ -122,7 +121,7 @@ class TestSparse(TestCase):
             else:
                 dtypes.append(torch.double)
             for dtype in dtypes:
-                printed.append("########## {} ##########".format(dtype))
+                printed.append(f"########## {dtype} ##########")
                 x = sp_tensor.detach().to(dtype)
                 printed.append("# sparse tensor")
                 printed.append(str(x))

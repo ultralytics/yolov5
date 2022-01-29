@@ -8,7 +8,6 @@
 
 import time
 
-
 if __name__ == "__main__":
     time.sleep(600)
     print("finished work")

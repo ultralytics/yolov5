@@ -1,6 +1,5 @@
 import torch
-
-from torch.testing._internal.common_utils import TestCase, run_tests, gradcheck
+from torch.testing._internal.common_utils import TestCase, gradcheck, run_tests
 
 
 class TestAutogradComplex(TestCase):

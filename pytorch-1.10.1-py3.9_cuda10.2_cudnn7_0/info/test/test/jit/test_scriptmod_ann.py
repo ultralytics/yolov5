@@ -1,9 +1,9 @@
 import os
 import sys
 import warnings
+from typing import Dict, List, Optional
 
 import torch
-from typing import List, Dict, Optional
 
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -52,7 +52,7 @@ class TestScriptModuleInstanceAttributeTypeAnnotation(JitTestCase):
     def test_annotated_empty_tensor(self):
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.x: torch.Tensor = torch.empty(0)
 
             def forward(self, x: torch.Tensor):
@@ -66,7 +66,7 @@ class TestScriptModuleInstanceAttributeTypeAnnotation(JitTestCase):
     def test_annotated_with_jit_attribute(self):
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.x = torch.jit.Attribute([], List[int])
 
             def forward(self, x: List[int]):

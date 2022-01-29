@@ -1,17 +1,19 @@
 # The model is from here:
 #   https://github.com/pytorch/examples/blob/master/word_language_model/model.py
 
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 from torch import Tensor
-from typing import Tuple, Optional
+
 
 class RNNModel(nn.Module):
     """Container module with an encoder, a recurrent module, and a decoder."""
 
     def __init__(self, rnn_type, ntoken, ninp, nhid, nlayers,
                  dropout=0.5, tie_weights=False, batchsize=2):
-        super(RNNModel, self).__init__()
+        super().__init__()
         self.drop = nn.Dropout(dropout)
         self.encoder = nn.Embedding(ntoken, ninp)
         if rnn_type in ['LSTM', 'GRU']:

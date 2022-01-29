@@ -13,10 +13,7 @@ from contextlib import closing
 
 import torch.distributed.launch as launch
 from torch.distributed.elastic.utils import get_socket_with_port
-from torch.testing._internal.common_utils import (
-    TEST_WITH_DEV_DBG_ASAN,
-    sandcastle_skip_if,
-)
+from torch.testing._internal.common_utils import TEST_WITH_DEV_DBG_ASAN, sandcastle_skip_if
 
 
 def path(script):

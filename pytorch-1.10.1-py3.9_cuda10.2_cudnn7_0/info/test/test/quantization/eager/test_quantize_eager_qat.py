@@ -1,45 +1,26 @@
 import math
+
 import torch
-import torch.nn as nn
 import torch.backends.mkldnn
-from torch.nn import Conv2d, BatchNorm2d, ReLU, init
-from torch.nn.intrinsic.qat import ConvBn2d, ConvBnReLU2d
-from torch.nn.modules.utils import _pair
+import torch.nn as nn
 import torch.nn.quantized as nnq
-from torch.quantization import (
-    prepare,
-    convert,
-    prepare_qat,
-    quantize_qat,
-    QuantStub,
-    DeQuantStub,
-    default_qconfig,
-    default_qat_qconfig,
-    FixedQParamsFakeQuantize,
-)
-from torch.testing._internal.common_utils import TestCase
-
-from torch.testing._internal.common_quantization import (
-    QuantizationTestCase,
-    QuantStubModel,
-    ManualLinearQATModel,
-    ManualConvLinearQATModel,
-    TwoLayerLinearModel,
-    test_only_eval_fn,
-    test_only_train_fn,
-)
-
-from torch.testing._internal.common_quantized import (
-    override_quantized_engine,
-    supported_qengines,
-    override_qengines,
-)
-
+import torch.testing._internal.hypothesis_utils as hu
 from hypothesis import given
 from hypothesis import strategies as st
-import torch.testing._internal.hypothesis_utils as hu
+from torch.nn import BatchNorm2d, Conv2d, ReLU, init
+from torch.nn.intrinsic.qat import ConvBn2d, ConvBnReLU2d
+from torch.nn.modules.utils import _pair
+from torch.quantization import (DeQuantStub, FixedQParamsFakeQuantize, QuantStub, convert, default_qat_qconfig,
+                                default_qconfig, prepare, prepare_qat, quantize_qat)
+from torch.testing._internal.common_quantization import (ManualConvLinearQATModel, ManualLinearQATModel,
+                                                         QuantizationTestCase, QuantStubModel, TwoLayerLinearModel,
+                                                         test_only_eval_fn, test_only_train_fn)
+from torch.testing._internal.common_quantized import override_qengines, override_quantized_engine, supported_qengines
+from torch.testing._internal.common_utils import TestCase
+
 hu.assert_deadline_disabled()
 from functools import reduce
+
 
 class TestQuantizationAwareTraining(QuantizationTestCase):
     def test_manual(self):
@@ -394,7 +375,7 @@ class _ReferenceConvBnNd(torch.nn.Conv2d, torch.nn.modules.conv._ConvNd):
             init.uniform_(self.bias, -bound, bound)
 
     def reset_parameters(self):
-        super(_ReferenceConvBnNd, self).reset_parameters()
+        super().reset_parameters()
         # A hack to avoid resetting on undefined parameters
         if hasattr(self, 'gamma'):
             self.reset_bn_parameters()
@@ -465,7 +446,7 @@ class _ReferenceConvBnNd(torch.nn.Conv2d, torch.nn.modules.conv._ConvNd):
 
     def extra_repr(self):
         # TODO(jerryzh): extend
-        return super(_ReferenceConvBnNd, self).extra_repr()
+        return super().extra_repr()
 
     def forward(self, input):
         return self.activation_post_process(self._forward(input))

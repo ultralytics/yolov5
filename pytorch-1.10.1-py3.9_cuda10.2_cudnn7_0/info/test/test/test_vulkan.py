@@ -1,10 +1,11 @@
+import io
 import unittest
+
 import torch
 from torch.nn import functional as F
-
-from torch.testing._internal.common_utils import TestCase, run_tests
 from torch.testing import FileCheck
-import io
+from torch.testing._internal.common_utils import TestCase, run_tests
+
 
 @unittest.skipUnless(torch.is_vulkan_available(),
                      "Vulkan backend must be available for these tests.")
@@ -65,7 +66,7 @@ class TestVulkanRewritePass(TestCase):
 
         class Conv2D(torch.nn.Module):
             def __init__(self):
-                super(Conv2D, self).__init__()
+                super().__init__()
                 self.weight = torch.nn.Parameter(torch.rand(conv_weight_shape), requires_grad=False)
                 self.bias = torch.nn.Parameter(torch.rand(conv_bias_shape), requires_grad=False)
                 self.strides = strides
@@ -85,7 +86,7 @@ class TestVulkanRewritePass(TestCase):
 
         class Conv2DRelu(torch.nn.Module):
             def __init__(self):
-                super(Conv2DRelu, self).__init__()
+                super().__init__()
                 self.weight = torch.nn.Parameter(torch.rand(conv_weight_shape), requires_grad=False)
                 self.bias = torch.nn.Parameter(torch.rand(conv_bias_shape), requires_grad=False)
                 self.strides = strides
@@ -124,7 +125,7 @@ class TestVulkanRewritePass(TestCase):
 
         class Conv2DHardtanh(torch.nn.Module):
             def __init__(self):
-                super(Conv2DHardtanh, self).__init__()
+                super().__init__()
                 self.weight = torch.nn.Parameter(torch.rand(conv_weight_shape), requires_grad=False)
                 self.bias = torch.nn.Parameter(torch.rand(conv_bias_shape), requires_grad=False)
                 self.strides = strides

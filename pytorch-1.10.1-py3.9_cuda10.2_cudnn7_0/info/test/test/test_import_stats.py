@@ -1,10 +1,9 @@
+import pathlib
 import subprocess
 import sys
 import unittest
-import pathlib
 
-from torch.testing._internal.common_utils import TestCase, run_tests, IS_LINUX, IS_IN_CI
-
+from torch.testing._internal.common_utils import IS_IN_CI, IS_LINUX, TestCase, run_tests
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 

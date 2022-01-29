@@ -2,12 +2,7 @@ from io import BytesIO
 
 import torch
 from torch.fx import Graph, GraphModule, symbolic_trace
-from torch.package import (
-    ObjMismatchError,
-    PackageExporter,
-    PackageImporter,
-    sys_importer,
-)
+from torch.package import ObjMismatchError, PackageExporter, PackageImporter, sys_importer
 from torch.testing._internal.common_utils import run_tests
 
 try:
@@ -123,7 +118,7 @@ class TestPackageFX(PackageTestCase):
 
     def test_package_fx_custom_tracer(self):
         from package_a.test_all_leaf_modules_tracer import TestAllLeafModulesTracer
-        from package_a.test_module import SimpleTest, ModWithTwoSubmodsAndTensor
+        from package_a.test_module import ModWithTwoSubmodsAndTensor, SimpleTest
 
         class SpecialGraphModule(torch.fx.GraphModule):
             def __init__(self, root, graph, info):

@@ -7,7 +7,6 @@
 import pytest
 import torch
 from torch import nn
-
 from torch.distributed.pipeline.sync import Pipe
 
 

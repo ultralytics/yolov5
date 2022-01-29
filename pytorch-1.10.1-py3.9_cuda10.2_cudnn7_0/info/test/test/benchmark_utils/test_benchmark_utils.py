@@ -4,15 +4,14 @@ import os
 import re
 import textwrap
 import timeit
-from typing import Any, List, Tuple
 import unittest
+from typing import Any, List, Tuple
 
-import torch
-import torch.utils.benchmark as benchmark_utils
-from torch.testing._internal.common_utils import TestCase, run_tests, IS_SANDCASTLE, IS_WINDOWS, slowTest
 import expecttest
 import numpy as np
-
+import torch
+import torch.utils.benchmark as benchmark_utils
+from torch.testing._internal.common_utils import IS_SANDCASTLE, IS_WINDOWS, TestCase, run_tests, slowTest
 
 CALLGRIND_ARTIFACTS: str = os.path.join(
     os.path.split(os.path.abspath(__file__))[0],
@@ -68,7 +67,7 @@ def load_callgrind_artifacts() -> Tuple[benchmark_utils.CallgrindStats, benchmar
     testing are stored in raw string form for easier inspection and to avoid
     baking any implementation details into the artifact itself.
     """
-    with open(CALLGRIND_ARTIFACTS, "rt") as f:
+    with open(CALLGRIND_ARTIFACTS) as f:
         artifacts = json.load(f)
 
     pattern = re.compile(r"^\s*([0-9]+)\s(.+)$")

@@ -1,16 +1,18 @@
 import collections
+
 import torch
-from torch.testing._internal.common_utils import TestCase, run_tests
 from torch.testing._internal.autocast_test_lists import AutocastCPUTestLists
+from torch.testing._internal.common_utils import TestCase, run_tests
+
 
 class TestAutocastCPU(TestCase):
     def setUp(self):
-        super(TestAutocastCPU, self).setUp()
+        super().setUp()
         self.autocast_lists = AutocastCPUTestLists(torch.device('cpu'))
 
     def tearDown(self):
         del self.autocast_lists
-        super(TestAutocastCPU, self).tearDown()
+        super().tearDown()
 
     def _run_autocast_outofplace(self, op, args, run_as_type, out_type=None, module=torch, add_kwargs=None):
         # helper to cast args
@@ -78,7 +80,7 @@ class TestAutocastCPU(TestCase):
                     control = getattr(args[0].to(run_as_type), op)(*cast(args[1:], run_as_type), **add_kwargs)
                 self.assertTrue(type(output_to_compare) == type(control))
                 comparison = compare(output_to_compare, control)
-                self.assertTrue(comparison, "torch.{} result did not match control".format(op))
+                self.assertTrue(comparison, f"torch.{op} result did not match control")
             self.assertTrue(torch.is_autocast_cpu_enabled())
         self.assertFalse(torch.is_autocast_cpu_enabled())
 

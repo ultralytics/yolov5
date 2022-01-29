@@ -1,19 +1,14 @@
-import torch
-import numpy as np
-import inspect
-import functools
-import pprint
-import pickle
 import collections
+import functools
+import inspect
+import pickle
+import pprint
 
+import numpy as np
+import torch
+from torch.overrides import (get_overridable_functions, get_testing_overrides, handle_torch_function,
+                             has_torch_function, is_tensor_method_or_property)
 from torch.testing._internal.common_utils import TestCase, run_tests
-from torch.overrides import (
-    handle_torch_function,
-    has_torch_function,
-    get_overridable_functions,
-    get_testing_overrides,
-    is_tensor_method_or_property
-)
 
 Tensor = torch.Tensor
 
@@ -76,7 +71,7 @@ def implements_diagonal(torch_function):
         return func
     return decorator
 
-class DiagonalTensor(object):
+class DiagonalTensor:
     """A class with __torch_function__ and a specific diagonal representation
 
     This class has limited utility and is mostly useful for verifying that the
@@ -121,7 +116,7 @@ class DiagonalTensor(object):
         self._i = value
 
     def __repr__(self):
-        return "DiagonalTensor(N={}, value={})".format(self._N, self._i)
+        return f"DiagonalTensor(N={self._N}, value={self._i})"
 
     def __array__(self):
         return self._i * np.eye(self._N)
@@ -263,7 +258,7 @@ class SubDiagonalTensor(DiagonalTensor):
     handled_functions = HANDLED_FUNCTIONS_SUB_DIAGONAL
 
     def __repr__(self):
-        return "SubDiagonalTensor(N={}, value={})".format(self._N, self._i)
+        return f"SubDiagonalTensor(N={self._N}, value={self._i})"
 
 
 @implements_sub_diagonal(torch.mean)
@@ -328,7 +323,7 @@ def generate_tensor_like_torch_implementations():
     for namespace, funcs in get_overridable_functions().items():
         for func in funcs:
             if func not in testing_overrides and func.__name__ not in testing_ignore:
-                untested_funcs.append("{}.{}".format(namespace, func.__name__))
+                untested_funcs.append(f"{namespace}.{func.__name__}")
     msg = (
         "The following functions are not tested for __torch_function__ "
         "support, please ensure there is an entry in the dict returned by "
@@ -350,7 +345,7 @@ def generate_tensor_like_torch_implementations():
 
 generate_tensor_like_torch_implementations()
 
-class TensorLike(object):
+class TensorLike:
     """A class that overrides the full torch API
 
     This class is used to explicitly test that the full torch.tensor API
@@ -674,7 +669,7 @@ def generate_tensor_like_override_tests(cls):
         if module:
             name = 'test_{}_{}'.format(module.replace('.', '_'), func.__name__)
         else:
-            name = 'test_{}'.format(func.__name__)
+            name = f'test_{func.__name__}'
         test_method.__name__ = name
         setattr(cls, name, test_method)
 

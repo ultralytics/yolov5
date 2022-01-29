@@ -1,23 +1,21 @@
+import glob
 import os
+import re
 import shutil
+import subprocess
 import sys
+import tempfile
+import textwrap
 import unittest
 import warnings
-import re
-import tempfile
-import subprocess
-import glob
-
-import textwrap
 from multiprocessing import Process
 
-import torch.testing._internal.common_utils as common
 import torch
 import torch.backends.cudnn
+import torch.testing._internal.common_utils as common
 import torch.utils.cpp_extension
+from torch.testing._internal.common_utils import TEST_WITH_ASAN, gradcheck, has_breakpad
 from torch.utils.cpp_extension import CUDA_HOME, ROCM_HOME
-from torch.testing._internal.common_utils import gradcheck, TEST_WITH_ASAN, has_breakpad
-
 
 TEST_CUDA = torch.cuda.is_available() and CUDA_HOME is not None
 TEST_CUDNN = False
@@ -135,7 +133,7 @@ class TestCppExtensionJIT(common.TestCase):
                                                           err, output))
 
             actual_arches = sorted(re.findall(r'sm_\d\d', output))
-            expected_arches = sorted(['sm_' + xx for xx in expected_values])
+            expected_arches = sorted('sm_' + xx for xx in expected_values)
             self.assertEqual(actual_arches, expected_arches,
                              msg="Flags: {},  Actual: {},  Expected: {}\n"
                                  "Stderr: {}\nOutput: {}".format(
@@ -190,7 +188,7 @@ class TestCppExtensionJIT(common.TestCase):
         # expected values is length-2 tuple: (list of ELF, list of PTX)
         # note: there should not be more than one PTX value
         archflags = {
-            '': (['{}{}'.format(capability[0], capability[1]) for capability in capabilities], None),
+            '': ([f'{capability[0]}{capability[1]}' for capability in capabilities], None),
             "Maxwell+Tegra;6.1": (['53', '61'], None),
             "Pascal 3.5": (['35', '60', '61'], None),
             "Volta": (['70'], ['70']),
@@ -513,7 +511,7 @@ class TestCppExtensionJIT(common.TestCase):
         # Create a torch.nn.Module which uses the C++ module as a submodule.
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.x = torch.nn.Parameter(torch.tensor(1.0))
                 self.net = extension.Net(3, 5)
 

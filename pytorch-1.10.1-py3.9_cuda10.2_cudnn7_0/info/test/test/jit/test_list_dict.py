@@ -1,15 +1,15 @@
+import inspect
 import os
 import sys
-import inspect
+import types
 import unittest
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
-from textwrap import dedent
 from collections import OrderedDict
+from textwrap import dedent
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
-from torch import Tensor
 import torch
 import torch.nn as nn
-import types
+from torch import Tensor
 from torch.testing import FileCheck
 
 # Make the helper files in test/ importable
@@ -1334,7 +1334,7 @@ class TestList(JitTestCase):
 
 class TestDict(JitTestCase):
     def dict(self):
-        return {u'a': torch.ones(1), u'b': torch.ones(1) + 1, u'c': torch.ones(1) + 2}
+        return {'a': torch.ones(1), 'b': torch.ones(1) + 1, 'c': torch.ones(1) + 2}
 
     def dict2(self):
         return {'x': torch.ones(1) + 100, 'y': torch.ones(1) + 101, 'z': torch.ones(1) + 102}
@@ -1401,7 +1401,7 @@ class TestDict(JitTestCase):
             li.append(3)
             return li
 
-        self.assertTrue(set(specialized_list()) == set([1, 2, 3]))
+        self.assertTrue(set(specialized_list()) == {1, 2, 3})
 
     def test_values(self):
         @torch.jit.script
@@ -1837,7 +1837,7 @@ class TestNamedTuple(JitTestCase):
 
         class MyModule(types.ModuleType):
             def __init__(self):
-                super(MyModule, self).__init__('MyModule')
+                super().__init__('MyModule')
 
             def __getattr__(self, attr):
                 return TheType
@@ -2424,7 +2424,7 @@ class TestScriptList(JitTestCase):
         """
         Test extend.
         """
-        class Iterable(object):
+        class Iterable:
             def __init__(self, limit: int):
                 self.limit = limit
                 self.value = 0

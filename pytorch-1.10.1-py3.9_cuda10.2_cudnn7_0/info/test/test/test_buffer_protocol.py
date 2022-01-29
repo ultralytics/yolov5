@@ -1,12 +1,9 @@
+import numpy
+import torch
 import torch.testing._internal.common_utils as common
 from torch.testing import make_tensor
-from torch.testing._internal.common_device_type import (
-    instantiate_device_type_tests,
-    dtypes
-)
+from torch.testing._internal.common_device_type import dtypes, instantiate_device_type_tests
 
-import torch
-import numpy
 
 def get_dtype_size(dtype):
     return int(torch.empty((), dtype=dtype).element_size())

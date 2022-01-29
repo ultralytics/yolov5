@@ -11,20 +11,15 @@ from contextlib import suppress
 from typing import Any, List, Type, cast
 
 import numpy as np
-
 import torch
 import torch.distributed as dist
 
 if not dist.is_available():
     print("Distributed not available, skipping tests", file=sys.stderr)
     sys.exit(0)
-from torch.distributed.algorithms.ddp_comm_hooks.ddp_zero_hook import (
-    hook_with_zero_step,
-    hook_with_zero_step_interleaved,
-)
-from torch.distributed.algorithms.ddp_comm_hooks.default_hooks import (
-    allreduce_hook,
-)
+from torch.distributed.algorithms.ddp_comm_hooks.ddp_zero_hook import (hook_with_zero_step,
+                                                                       hook_with_zero_step_interleaved)
+from torch.distributed.algorithms.ddp_comm_hooks.default_hooks import allreduce_hook
 from torch.distributed.algorithms.join import Join, Joinable, JoinHook
 from torch.distributed.optim import ZeroRedundancyOptimizer
 from torch.distributed.optim.zero_redundancy_optimizer import _broadcast_object
@@ -61,7 +56,7 @@ def check_same_model_params(model_a: torch.nn.Module, model_b: torch.nn.Module, 
 
 class TestZeroRedundancyOptimizer(common_distributed.MultiProcessTestCase):
     def setUp(self):
-        super(TestZeroRedundancyOptimizer, self).setUp()
+        super().setUp()
         os.environ["WORLD_SIZE"] = str(self.world_size)
 
         self._spawn_processes()
@@ -384,7 +379,7 @@ class TestZeroRedundancyOptimizerDistributed(TestZeroRedundancyOptimizer):
         for size in sizes * self.world_size:
             params.append(torch.rand(size, 1))
         o = ZeroRedundancyOptimizer(params, optimizer_class=SGD, lr=0.1)
-        self.assertEqual(sum([x.numel() for x in o.optim.param_groups[0]["params"]]), sum(sizes))
+        self.assertEqual(sum(x.numel() for x in o.optim.param_groups[0]["params"]), sum(sizes))
 
     def test_add_param_group(self):
         """Check that ZeroRedundancyOptimizer properly handles adding a new param_group a posteriori,
@@ -416,7 +411,7 @@ class TestZeroRedundancyOptimizerDistributed(TestZeroRedundancyOptimizer):
 
             assert len(o.param_groups) == 2
             # Verify that added group is added to the correct partition making all have the same elements.
-            assert sum([x.numel() for g in o.optim.param_groups for x in g["params"]]) == sum(sizes)
+            assert sum(x.numel() for g in o.optim.param_groups for x in g["params"]) == sum(sizes)
             assert len(o.optim.param_groups) == 2
 
         # Test a pathological config with a first big non-trainable param
@@ -584,7 +579,7 @@ class TestZeroRedundancyOptimizerDistributed(TestZeroRedundancyOptimizer):
                     torch.nn.Linear(3, 3),
                     torch.nn.Linear(3, 3),
                 )
-                model.register_buffer("test_buffer", torch.ones((1)) * self.rank)
+                model.register_buffer("test_buffer", torch.ones(1) * self.rank)
                 model.to(self.device)
 
                 sharded_optimizer = ZeroRedundancyOptimizer(

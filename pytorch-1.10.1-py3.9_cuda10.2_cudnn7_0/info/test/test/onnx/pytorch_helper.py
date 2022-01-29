@@ -1,9 +1,9 @@
 import io
-import torch.onnx
-import onnx
-from caffe2.python.onnx.backend import Caffe2Backend
-from caffe2.python.core import BlobReference, Net
 
+import onnx
+import torch.onnx
+from caffe2.python.core import BlobReference, Net
+from caffe2.python.onnx.backend import Caffe2Backend
 
 _next_idx = 0
 # Clone net takes a dict instead of a lambda
@@ -11,7 +11,7 @@ _next_idx = 0
 # We fake dict here
 
 
-class _FakeDict(object):
+class _FakeDict:
     def __init__(self, fn):
         self.fn = fn
 
@@ -60,7 +60,7 @@ def PyTorchModule(helper, model, sample_arguments, caffe2_inputs, prefix_name=No
     init_net, predict_net = Caffe2Backend.onnx_graph_to_caffe2_net(
         onnx_model)
 
-    initialized = set([x.name for x in onnx_model.graph.initializer])
+    initialized = {x.name for x in onnx_model.graph.initializer}
     uninitialized_inputs = {x.name: i for i, x in enumerate(
         onnx_model.graph.input) if x.name not in initialized}
 
@@ -80,6 +80,6 @@ def PyTorchModule(helper, model, sample_arguments, caffe2_inputs, prefix_name=No
     init_net = Net(init_net).Clone("anon", _FakeDict(remap_blob_name))
     helper.param_init_net.AppendNet(init_net)
 
-    results = tuple([BlobReference(remap_blob_name(x.name), helper.net)
-                     for x in onnx_model.graph.output])
+    results = tuple(BlobReference(remap_blob_name(x.name), helper.net)
+                     for x in onnx_model.graph.output)
     return results

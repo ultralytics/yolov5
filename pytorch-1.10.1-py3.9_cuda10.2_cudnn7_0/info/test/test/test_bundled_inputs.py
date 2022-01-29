@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import io
 import textwrap
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 import torch
 import torch.utils.bundled_inputs
@@ -192,7 +192,7 @@ class TestBundledInputs(TestCase):
 
         # Check helper that work on all functions
         all_info = loaded.get_bundled_inputs_functions_and_info()
-        self.assertEqual(set(all_info.keys()), set(['forward', 'foo']))
+        self.assertEqual(set(all_info.keys()), {'forward', 'foo'})
         self.assertEqual(all_info['forward']['get_inputs_function_name'], ['get_all_bundled_inputs_for_forward'])
         self.assertEqual(all_info['foo']['get_inputs_function_name'], ['get_all_bundled_inputs_for_foo'])
         self.assertEqual(all_info['forward']['info'], info)
@@ -433,7 +433,7 @@ class TestBundledInputs(TestCase):
         # two args which have InflatableArg with fmt_fn
         # 1 * 2 * 2 = 4
         self.assertEqual(
-            sum([method.startswith("_inflate_helper") for method in methods]), 4
+            sum(method.startswith("_inflate_helper") for method in methods), 4
         )
 
 

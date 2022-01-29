@@ -1,33 +1,30 @@
-import torch
-import numpy as np
-
 import itertools
-from itertools import product
 import math
+import operator
 import random
 import unittest
 import warnings
-import operator
 from functools import partial
+from itertools import product
 
+import numpy as np
+import torch
 from torch._six import inf, nan
-from torch.testing._internal.common_utils import (
-    TestCase, iter_indices, TEST_WITH_ASAN, run_tests,
-    torch_to_numpy_dtype_dict, TEST_SCIPY, set_default_dtype)
-from torch.testing._internal.common_device_type import (
-    instantiate_device_type_tests, onlyCUDA, onlyCPU, dtypes, dtypesIfCUDA,
-    dtypesIfCPU, deviceCountAtLeast, precisionOverride, onlyOnCPUAndCUDA,
-    skipCUDAIfRocm, skipIf, ops)
 from torch.testing import make_tensor
-from torch.testing._internal.common_dtype import (
-    all_types_and_complex_and, integral_types_and, get_all_dtypes, get_all_int_dtypes, get_all_math_dtypes,
-    get_all_complex_dtypes, get_all_fp_dtypes,
-)
+from torch.testing._internal.common_device_type import (deviceCountAtLeast, dtypes, dtypesIfCPU, dtypesIfCUDA,
+                                                        instantiate_device_type_tests, onlyCPU, onlyCUDA,
+                                                        onlyOnCPUAndCUDA, ops, precisionOverride, skipCUDAIfRocm,
+                                                        skipIf)
+from torch.testing._internal.common_dtype import (all_types_and_complex_and, get_all_complex_dtypes, get_all_dtypes,
+                                                  get_all_fp_dtypes, get_all_int_dtypes, get_all_math_dtypes,
+                                                  integral_types_and)
 from torch.testing._internal.common_methods_invocations import binary_ufuncs
+from torch.testing._internal.common_utils import (TEST_SCIPY, TEST_WITH_ASAN, TestCase, iter_indices, run_tests,
+                                                  set_default_dtype, torch_to_numpy_dtype_dict)
 
 if TEST_SCIPY:
-    import scipy.special
     import scipy.integrate
+    import scipy.special
 
 # TODO: remove this
 def _generate_input(shape, dtype, device, with_extremal):
@@ -1498,12 +1495,12 @@ class TestBinaryUfuncs(TestCase):
         mi = torch.min(a, b)
 
         for i in range(750):
-            self.assertTrue(torch.isnan(ma[i]), "max(a, b): {}, a: {}, b: {}".format(ma[i], a[i], b[i]))
-            self.assertTrue(torch.isnan(mi[i]), "min(a, b): {}, a: {}, b: {}".format(mi[i], a[i], b[i]))
+            self.assertTrue(torch.isnan(ma[i]), f"max(a, b): {ma[i]}, a: {a[i]}, b: {b[i]}")
+            self.assertTrue(torch.isnan(mi[i]), f"min(a, b): {mi[i]}, a: {a[i]}, b: {b[i]}")
 
         for i in range(750, 1000):
-            self.assertFalse(torch.isnan(ma[i]), "max(a, b): {}, a: {}, b: {}".format(ma[i], a[i], b[i]))
-            self.assertFalse(torch.isnan(mi[i]), "min(a, b): {}, a: {}, b: {}".format(mi[i], a[i], b[i]))
+            self.assertFalse(torch.isnan(ma[i]), f"max(a, b): {ma[i]}, a: {a[i]}, b: {b[i]}")
+            self.assertFalse(torch.isnan(mi[i]), f"min(a, b): {mi[i]}, a: {a[i]}, b: {b[i]}")
 
     @dtypes(*product(get_all_dtypes(include_complex=False),
                      get_all_dtypes(include_complex=False)))
@@ -3115,8 +3112,8 @@ def generate_not_implemented_tests(cls):
         return test
 
     for op in tensor_binary_ops:
-        test_name = "test_{}_not_implemented".format(op)
-        assert not hasattr(cls, test_name), "{0} already in {1}".format(
+        test_name = f"test_{op}_not_implemented"
+        assert not hasattr(cls, test_name), "{} already in {}".format(
             test_name, cls.__name__)
 
         setattr(cls, test_name, create_test_func(op))

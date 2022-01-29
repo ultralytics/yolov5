@@ -1,34 +1,27 @@
-import torch
-import math
-from typing import Tuple
-from torch.quantization import (
-    FakeQuantize,
-    MovingAverageMinMaxObserver,
-    default_observer,
-    default_affine_fixed_qparams_fake_quant,
-)
-
-from torch.ao.quantization._learnable_fake_quantize import _LearnableFakeQuantize
-from torch.testing._internal.common_quantized import (
-    _fake_quantize_per_channel_affine_reference,
-    _fake_quantize_per_channel_affine_grad_reference,
-    to_tensor,
-)
-import torch.nn as nn
-
 # Standard library
 import io
 import itertools
+import math
 import unittest
-import numpy as np
+from typing import Tuple
 
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.testing._internal.hypothesis_utils as hu
 # Testing utils
 from hypothesis import given, settings
 from hypothesis import strategies as st
-import torch.testing._internal.hypothesis_utils as hu
+from torch.ao.quantization._learnable_fake_quantize import _LearnableFakeQuantize
+from torch.quantization import (FakeQuantize, MovingAverageMinMaxObserver, default_affine_fixed_qparams_fake_quant,
+                                default_observer)
+from torch.testing._internal.common_quantized import (_fake_quantize_per_channel_affine_grad_reference,
+                                                      _fake_quantize_per_channel_affine_reference, to_tensor)
+
 hu.assert_deadline_disabled()
 from torch.testing._internal.common_cuda import TEST_CUDA
 from torch.testing._internal.common_utils import TestCase
+
 
 # Reference method for fake quantize
 # Note: because scale/zero_point are left as float in the actual kernel, this mimics how fake_quant works for float16/64
@@ -624,7 +617,7 @@ class TestFakeQuantizeOps(TestCase):
     def test_fake_quant_preserves_qparam_shapes_for_activations(self):
         class Model(nn.Module):
             def __init__(self):
-                super(Model, self).__init__()
+                super().__init__()
                 self.linear = nn.Linear(4, 4)
 
             def forward(self, x):

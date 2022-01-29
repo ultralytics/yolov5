@@ -1,26 +1,28 @@
-import sys
-import os
 import contextlib
 import io
+import os
+import random
 import re
 import shutil
-import random
 import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
+from urllib.error import URLError
+
 import torch
-import torch.nn as nn
-import torch.utils.data
-from torch.utils.data import DataLoader
 import torch.cuda
-from torch.utils.checkpoint import checkpoint, checkpoint_sequential
-import torch.utils.cpp_extension
 import torch.hub as hub
+import torch.nn as nn
+import torch.utils.cpp_extension
+import torch.utils.data
 from torch.autograd._functions.utils import check_onnx_broadcast
 from torch.onnx.symbolic_opset9 import _prepare_onnx_paddings
-from torch.testing._internal.common_utils import has_breakpad, load_tests, retry, IS_SANDCASTLE, IS_WINDOWS, TEST_WITH_ASAN
-from urllib.error import URLError
+from torch.testing._internal.common_utils import (IS_SANDCASTLE, IS_WINDOWS, TEST_WITH_ASAN, has_breakpad, load_tests,
+                                                  retry)
+from torch.utils.checkpoint import checkpoint, checkpoint_sequential
+from torch.utils.data import DataLoader
 
 # load_tests from torch.testing._internal.common_utils is used to automatically filter tests for
 # sharding on sandcastle. This line silences flake warnings
@@ -92,7 +94,7 @@ class TestCheckpoint(TestCase):
         class Net(nn.Module):
 
             def __init__(self):
-                super(Net, self).__init__()
+                super().__init__()
                 self.counter = 0
 
             def forward(self, input_var):
@@ -158,7 +160,7 @@ class TestCheckpoint(TestCase):
     def test_checkpoint_module_list(self):
         class ModuleListNet(nn.Module):
             def __init__(self):
-                super(ModuleListNet, self).__init__()
+                super().__init__()
                 module_list = [
                     nn.Linear(100, 50),
                     nn.ReLU(),
@@ -436,11 +438,11 @@ class TestBottleneck(TestCase):
 
     def _run_bottleneck(self, test_file, scriptargs=''):
         curdir = os.path.dirname(os.path.abspath(__file__))
-        filepath = '{}/{}'.format(curdir, test_file)
+        filepath = f'{curdir}/{test_file}'
         if scriptargs != '':
-            scriptargs = ' {}'.format(scriptargs)
+            scriptargs = f' {scriptargs}'
         rc, out, err = self._run(
-            '{} -m torch.utils.bottleneck {}{}'.format(sys.executable, filepath, scriptargs))
+            f'{sys.executable} -m torch.utils.bottleneck {filepath}{scriptargs}')
         return rc, out, err
 
     def _check_run_args(self):
@@ -453,7 +455,7 @@ class TestBottleneck(TestCase):
         self.assertEqual(rc, 0, atol=0, rtol=0, msg=self._fail_msg('Should pass args to script', out + err))
 
     def _fail_msg(self, msg, output):
-        return '{}, output was:\n{}'.format(msg, output)
+        return f'{msg}, output was:\n{output}'
 
     def _check_environment_summary(self, output):
         results = re.search('Environment Summary', output)
@@ -494,7 +496,7 @@ class TestBottleneck(TestCase):
     @unittest.skipIf(HAS_CUDA, 'CPU-only test')
     def test_bottleneck_cpu_only(self):
         rc, out, err = self._run_bottleneck('bottleneck_test/test.py')
-        self.assertEqual(rc, 0, msg='Run failed with\n{}'.format(err))
+        self.assertEqual(rc, 0, msg=f'Run failed with\n{err}')
 
         self._check_run_args()
         self._check_environment_summary(out)
@@ -505,7 +507,7 @@ class TestBottleneck(TestCase):
     @unittest.skipIf(not HAS_CUDA, 'No CUDA')
     def test_bottleneck_cuda(self):
         rc, out, err = self._run_bottleneck('bottleneck_test/test_cuda.py')
-        self.assertEqual(rc, 0, msg='Run failed with\n{}'.format(err))
+        self.assertEqual(rc, 0, msg=f'Run failed with\n{err}')
 
         self._check_run_args()
         self._check_environment_summary(out)
@@ -835,7 +837,7 @@ class TestStandaloneCPPJIT(TestCase):
             shutil.rmtree(build_dir)
 
 
-class DummyXPUModule(object):
+class DummyXPUModule:
     @staticmethod
     def is_available():
         return True

@@ -14,19 +14,20 @@
 # 4. Compare Python/C++ functional's forward output. If they are the same, then we
 # have implementation parity between Python/C++ module.
 
+import os
+import pprint
+import re
 import tempfile
 from string import Template
-import re
-import pprint
-import os
 
 import torch
-from cpp_api_parity.utils import TorchNNFunctionalTestParams, TORCH_NN_COMMON_TEST_HARNESS, \
-    compile_cpp_code_inline, set_python_tensors_requires_grad, move_python_tensors_to_device, \
-    add_test, compute_cpp_args_construction_stmts_and_forward_arg_symbols, serialize_arg_dict_as_script_module, \
-    compute_arg_dict, decorate_test_fn, compute_temp_file_path, generate_error_msg, is_torch_nn_functional_test, \
-    try_remove_folder
 from cpp_api_parity.sample_functional import SAMPLE_FUNCTIONAL_CPP_SOURCE
+from cpp_api_parity.utils import (TORCH_NN_COMMON_TEST_HARNESS, TorchNNFunctionalTestParams, add_test,
+                                  compile_cpp_code_inline, compute_arg_dict,
+                                  compute_cpp_args_construction_stmts_and_forward_arg_symbols, compute_temp_file_path,
+                                  decorate_test_fn, generate_error_msg, is_torch_nn_functional_test,
+                                  move_python_tensors_to_device, serialize_arg_dict_as_script_module,
+                                  set_python_tensors_requires_grad, try_remove_folder)
 
 # Expected substitutions:
 #
@@ -90,7 +91,7 @@ def test_forward(unit_test_class, test_params):
     arg_dict_file_path = compute_temp_file_path(cpp_tmp_folder, functional_variant_name, 'arg_dict')
     serialize_arg_dict_as_script_module(test_params.arg_dict).save(arg_dict_file_path)
 
-    cpp_test_name = '{}_test_forward'.format(test_params.functional_variant_name)
+    cpp_test_name = f'{test_params.functional_variant_name}_test_forward'
     cpp_test_fn = getattr(unit_test_class.functional_impl_check_cpp_module, cpp_test_name)
 
     def run_cpp_test_fn_and_check_output():
@@ -194,7 +195,7 @@ def write_test_to_test_class(
             test_instance_class=test_instance_class,
         )
         try_remove_folder(test_params.cpp_tmp_folder)
-        unit_test_name = 'test_torch_nn_functional_{}'.format(test_params.functional_variant_name)
+        unit_test_name = f'test_torch_nn_functional_{test_params.functional_variant_name}'
         unit_test_class.functional_test_params_map[unit_test_name] = test_params
 
         def test_fn(self):
@@ -227,7 +228,7 @@ def build_cpp_tests(unit_test_class, print_cpp_source=False):
     functions = []
     for test_name, test_params in unit_test_class.functional_test_params_map.items():
         cpp_sources += generate_test_cpp_sources(test_params=test_params, template=TORCH_NN_FUNCTIONAL_TEST_FORWARD)
-        functions.append('{}_test_forward'.format(test_params.functional_variant_name))
+        functions.append(f'{test_params.functional_variant_name}_test_forward')
     if print_cpp_source:
         print(cpp_sources)
 

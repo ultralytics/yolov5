@@ -1,9 +1,10 @@
-
-import torch.distributed as c10d
-import torch
 import argparse
-import os
 import logging
+import os
+
+import torch
+import torch.distributed as c10d
+
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 if __name__ == "__main__":
@@ -31,7 +32,7 @@ if __name__ == "__main__":
         work = process_group.allreduce(torch.rand(10).cuda(rank))
         logging.info('Waiting for allreduce to complete...')
         work.wait()
-        logging.info('Second allreduce successful: {}'.format(work.is_success()))
+        logging.info(f'Second allreduce successful: {work.is_success()}')
     else:
         logging.info('Aborting all other ranks.')
         os.abort()

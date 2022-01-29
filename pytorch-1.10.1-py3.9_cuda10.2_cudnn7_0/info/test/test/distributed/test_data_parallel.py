@@ -1,20 +1,19 @@
 import contextlib
-import io
-from copy import deepcopy
-from collections import OrderedDict
-from itertools import product
 import functools
+import io
+from collections import OrderedDict
+from copy import deepcopy
+from itertools import product
 
 import torch
+import torch.nn.functional as F
+import torch.nn.parallel as dp
 from torch import nn
 from torch.cuda.amp import autocast
-import torch.nn.parallel as dp
-from torch.testing._internal.common_cuda import TEST_MULTIGPU, TEST_CUDA
-from torch.testing._internal.common_utils import run_tests, TestCase, repeat_test_for_types, ALL_TENSORTYPES
-from torch.testing._internal.common_utils import _assertGradAndGradgradChecks, gradcheck
-from torch.testing._internal.common_utils import dtype2prec_DONTUSE
-from torch.testing._internal.common_utils import sandcastle_skip_if
-import torch.nn.functional as F
+from torch.testing._internal.common_cuda import TEST_CUDA, TEST_MULTIGPU
+from torch.testing._internal.common_utils import (ALL_TENSORTYPES, TestCase, _assertGradAndGradgradChecks,
+                                                  dtype2prec_DONTUSE, gradcheck, repeat_test_for_types, run_tests,
+                                                  sandcastle_skip_if)
 
 torch.set_default_dtype(torch.double)
 
@@ -30,7 +29,7 @@ class TestDataParallel(TestCase):
     def test_data_parallel_buffers_requiring_grad(self):
         class TestModule(nn.Module):
             def __init__(self, t):
-                super(TestModule, self).__init__()
+                super().__init__()
                 self.register_buffer('t_rg', t)
                 self.register_buffer('t_not_rg', t.clone().detach())
 
@@ -54,7 +53,7 @@ class TestDataParallel(TestCase):
         class TestModule(torch.nn.Module):
 
             def __init__(self):
-                super(TestModule, self).__init__()
+                super().__init__()
                 self.rnn = torch.nn.LSTM(300, 1024, 1, batch_first=True, bidirectional=True)
 
             def forward(self, x):
@@ -242,7 +241,7 @@ class TestDataParallel(TestCase):
             if isinstance(device_ids[0], torch.device):
                 expect_device = device_ids[0]
             else:
-                expect_device = torch.device("cuda:{}".format(device_ids[0]))
+                expect_device = torch.device(f"cuda:{device_ids[0]}")
 
             if should_fail:
                 def assert_correct():
@@ -302,7 +301,7 @@ class TestDataParallel(TestCase):
 
         class Model(nn.Module):
             def __init__(self):
-                super(Model, self).__init__()
+                super().__init__()
                 self.linear = nn.Linear(1, 1)
 
             def forward(self, x):
@@ -448,7 +447,7 @@ class TestDataParallel(TestCase):
     def test_data_parallel_module_kwargs_only(self, dtype=torch.float):
         class Net(nn.Module):
             def __init__(self):
-                super(Net, self).__init__()
+                super().__init__()
                 self.l = l
 
             def forward(self, input):
@@ -467,7 +466,7 @@ class TestDataParallel(TestCase):
     def test_data_parallel_module_kwargs_only_empty_list(self, dtype=torch.float):
         class Net(nn.Module):
             def __init__(self):
-                super(Net, self).__init__()
+                super().__init__()
                 self.l = l
 
             def forward(self, input):
@@ -486,7 +485,7 @@ class TestDataParallel(TestCase):
     def test_data_parallel_module_kwargs_only_empty_dict(self, dtype=torch.float):
         class Net(nn.Module):
             def __init__(self):
-                super(Net, self).__init__()
+                super().__init__()
                 self.l = l
 
             def forward(self, input):
@@ -505,7 +504,7 @@ class TestDataParallel(TestCase):
     def test_data_parallel_module_kwargs_only_empty_tuple(self, dtype=torch.float):
         class Net(nn.Module):
             def __init__(self):
-                super(Net, self).__init__()
+                super().__init__()
                 self.l = l
 
             def forward(self, input):
@@ -714,7 +713,7 @@ class TestDataParallel(TestCase):
 
         class Net(torch.nn.Module):
             def __init__(self, testcase):
-                super(Net, self).__init__()
+                super().__init__()
                 self._testcase = testcase
 
             def forward(self, x):
@@ -732,11 +731,11 @@ class TestDataParallel(TestCase):
     def test_autocast(self):
         class Model(torch.nn.Linear):
             def __init__(self):
-                super(Model, self).__init__(8, 8)
+                super().__init__(8, 8)
 
             @torch.cuda.amp.autocast()
             def forward(self, input):
-                return super(Model, self).forward(input)
+                return super().forward(input)
 
         model = dp.DataParallel(Model().cuda().to(dtype=torch.float32))
         input = torch.randn((8, 8), dtype=torch.float32, device="cuda")
@@ -756,7 +755,7 @@ class TestDataParallel(TestCase):
     def test_strided_grad_layout(self):
         class ConvNet(nn.Module):
             def __init__(self, layouts, dtypes):
-                super(ConvNet, self).__init__()
+                super().__init__()
                 self.dtypes = dtypes
                 self.conv0 = torch.nn.Conv2d(8, 16, (2, 2)).to(memory_format=layouts[0], dtype=dtypes[0])
                 self.conv1 = torch.nn.Conv2d(16, 32, (2, 2)).to(memory_format=layouts[1], dtype=dtypes[1])
@@ -785,7 +784,7 @@ class TestDataParallel(TestCase):
 
         with torch.backends.cudnn.flags(enabled=True, deterministic=True, benchmark=False):
             for formats, dtypes in product(layer_formats, layer_dtypes):
-                model_msg = "formats = {} dtypes = {}".format(formats, dtypes)
+                model_msg = f"formats = {formats} dtypes = {dtypes}"
                 try:
                     m = ConvNet(formats, dtypes).cuda(device="cuda:0")
                     m_dp = dp.DataParallel(deepcopy(m), device_ids=device_ids)
@@ -799,7 +798,7 @@ class TestDataParallel(TestCase):
                     raise
                 # 2 iters:  First iter creates grads, second iter tries zeroed grads.
                 for it in range(2):
-                    iter_msg = "iter = {} ".format(it) + model_msg
+                    iter_msg = f"iter = {it} " + model_msg
                     named_msg = iter_msg
                     try:
                         F.mse_loss(m(input).float(), target).backward()
@@ -826,7 +825,7 @@ class TestDataParallel(TestCase):
     def test_parameter_list_dict_replica(self):
         class MyMod(torch.nn.Module):
             def __init__(self, data):
-                super(MyMod, self).__init__()
+                super().__init__()
                 self.data = data
 
             def forward(self, inp):

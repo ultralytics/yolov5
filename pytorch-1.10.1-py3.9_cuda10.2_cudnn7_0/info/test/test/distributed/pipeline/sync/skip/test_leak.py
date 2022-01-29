@@ -7,7 +7,6 @@
 import pytest
 import torch
 from torch import nn
-
 from torch.distributed.pipeline.sync import Pipe, is_checkpointing, is_recomputing
 from torch.distributed.pipeline.sync.skip import pop, skippable, stash
 from torch.distributed.pipeline.sync.skip.tracker import current_skip_tracker

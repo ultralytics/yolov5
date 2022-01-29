@@ -10,23 +10,14 @@ if not c10d.is_available():
     sys.exit(0)
 
 from test_c10d_common import LOOPBACK
-from torch.testing._internal.common_distributed import (
-    MultiProcessTestCase,
-    requires_nccl,
-    requires_gloo,
-    skip_if_lt_x_gpu,
-    with_dist_debug_levels,
-    create_device,
-)
-from torch.testing._internal.common_utils import (
-    run_tests,
-    TEST_WITH_DEV_DBG_ASAN,
-)
+from torch.testing._internal.common_distributed import (MultiProcessTestCase, create_device, requires_gloo,
+                                                        requires_nccl, skip_if_lt_x_gpu, with_dist_debug_levels)
+from torch.testing._internal.common_utils import TEST_WITH_DEV_DBG_ASAN, run_tests
 
 
 class AbstractProcessGroupWrapperTest(MultiProcessTestCase):
     def setUp(self):
-        super(AbstractProcessGroupWrapperTest, self).setUp()
+        super().setUp()
         self._spawn_processes()
 
     def _validate_error(self, exception, op_type, rank, tensor):
@@ -289,7 +280,7 @@ if not TEST_WITH_DEV_DBG_ASAN:
 @requires_gloo()
 class ProcessGroupGlooWrapperTest(AbstractProcessGroupWrapperTest):
     def setUp(self):
-        super(ProcessGroupGlooWrapperTest, self).setUp()
+        super().setUp()
 
     def opts(self, threads=2, timeout=10.0):
         opts = c10d.ProcessGroupGloo._Options()

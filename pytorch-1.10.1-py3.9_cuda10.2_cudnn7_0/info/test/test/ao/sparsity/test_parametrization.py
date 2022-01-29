@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
-
 import logging
 
+import torch
 from torch import nn
 from torch.ao.sparsity.sparsifier import utils
 from torch.nn.utils import parametrize
-
-import torch
 from torch.testing._internal.common_utils import TestCase
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)

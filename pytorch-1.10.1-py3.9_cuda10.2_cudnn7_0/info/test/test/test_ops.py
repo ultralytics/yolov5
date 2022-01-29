@@ -1,23 +1,20 @@
+import warnings
 from collections.abc import Sequence
 from functools import partial, wraps
-import warnings
 
 import torch
-
-from torch.testing import FileCheck, make_tensor
-from torch.testing._internal.common_dtype import floating_and_complex_types_and, get_all_dtypes
-from torch.testing._internal.common_utils import \
-    (TestCase, is_iterable_of_tensors, run_tests, IS_SANDCASTLE, clone_input_helper,
-     gradcheck, gradgradcheck, IS_IN_CI, suppress_warnings)
-from torch.testing._internal.common_methods_invocations import \
-    (op_db, _NOTHING, UnaryUfuncInfo, ReductionOpInfo, SpectralFuncInfo)
-from torch.testing._internal.common_device_type import \
-    (deviceCountAtLeast, instantiate_device_type_tests, ops, onlyCUDA, onlyOnCPUAndCUDA, skipCUDAIfRocm, OpDTypes)
-from torch.testing._internal.common_jit import JitCommonTestCase, check_against_reference
-from torch.testing._internal.jit_metaprogramming_utils import create_script_fn, create_traced_fn, \
-    check_alias_annotation
-from torch.testing._internal.jit_utils import disable_autodiff_subgraph_inlining
 import torch.testing._internal.opinfo_helper as opinfo_helper
+from torch.testing import FileCheck, make_tensor
+from torch.testing._internal.common_device_type import (OpDTypes, deviceCountAtLeast, instantiate_device_type_tests,
+                                                        onlyCUDA, onlyOnCPUAndCUDA, ops, skipCUDAIfRocm)
+from torch.testing._internal.common_dtype import floating_and_complex_types_and, get_all_dtypes
+from torch.testing._internal.common_jit import JitCommonTestCase, check_against_reference
+from torch.testing._internal.common_methods_invocations import (_NOTHING, ReductionOpInfo, SpectralFuncInfo,
+                                                                UnaryUfuncInfo, op_db)
+from torch.testing._internal.common_utils import (IS_IN_CI, IS_SANDCASTLE, TestCase, clone_input_helper, gradcheck,
+                                                  gradgradcheck, is_iterable_of_tensors, run_tests, suppress_warnings)
+from torch.testing._internal.jit_metaprogramming_utils import check_alias_annotation, create_script_fn, create_traced_fn
+from torch.testing._internal.jit_utils import disable_autodiff_subgraph_inlining
 
 # variant testing is only done with torch.float and torch.cfloat to avoid
 #   excessive test times and maximize signal to noise ratio
@@ -141,14 +138,14 @@ class TestCommon(TestCase):
 
         supported_but_unclaimed = supported_dtypes - claimed_supported
         claimed_but_unsupported = claimed_supported - supported_dtypes
-        msg = """The supported dtypes for {0} on {1} according to its OpInfo are
-        {2}, but the detected supported dtypes are {3}.
+        msg = """The supported dtypes for {} on {} according to its OpInfo are
+        {}, but the detected supported dtypes are {}.
         """.format(op.name, device_type, claimed_supported, supported_dtypes)
 
         if len(supported_but_unclaimed) > 0:
-            msg += "The following dtypes should be added to the OpInfo: {0}. ".format(supported_but_unclaimed)
+            msg += f"The following dtypes should be added to the OpInfo: {supported_but_unclaimed}. "
         if len(claimed_but_unsupported) > 0:
-            msg += "The following dtypes should be removed from the OpInfo: {0}.".format(claimed_but_unsupported)
+            msg += f"The following dtypes should be removed from the OpInfo: {claimed_but_unsupported}."
 
         self.assertEqual(supported_dtypes, claimed_supported, msg=msg)
 
@@ -160,14 +157,14 @@ class TestCommon(TestCase):
 
         supported_but_unclaimed = supported_backward_dtypes - claimed_backward_supported
         claimed_but_unsupported = claimed_backward_supported - supported_backward_dtypes
-        msg = """The supported backward dtypes for {0} on {1} according to its OpInfo are
-        {2}, but the detected supported backward dtypes are {3}.
+        msg = """The supported backward dtypes for {} on {} according to its OpInfo are
+        {}, but the detected supported backward dtypes are {}.
         """.format(op.name, device_type, claimed_backward_supported, supported_backward_dtypes)
 
         if len(supported_but_unclaimed) > 0:
-            msg += "The following backward dtypes should be added to the OpInfo: {0}. ".format(supported_but_unclaimed)
+            msg += f"The following backward dtypes should be added to the OpInfo: {supported_but_unclaimed}. "
         if len(claimed_but_unsupported) > 0:
-            msg += "The following backward dtypes should be removed from the OpInfo: {0}.".format(claimed_but_unsupported)
+            msg += f"The following backward dtypes should be removed from the OpInfo: {claimed_but_unsupported}."
 
         self.assertEqual(supported_backward_dtypes, claimed_backward_supported, msg=msg)
 
@@ -819,7 +816,7 @@ class TestJit(JitCommonTestCase):
     _alias_ops = partial(ops, dtypes=OpDTypes.supported,
                          allowed_dtypes=(torch.float,))
 
-    @_alias_ops((op for op in op_db if op.aliases))
+    @_alias_ops(op for op in op_db if op.aliases)
     def test_jit_alias_remapping(self, device, dtype, op):
         # Required to avoid undefined value: tensor error in JIT compilation of the function template
         tensor = torch.tensor

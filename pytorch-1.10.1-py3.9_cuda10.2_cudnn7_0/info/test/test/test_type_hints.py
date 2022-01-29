@@ -1,11 +1,12 @@
-import unittest
-from torch.testing._internal.common_utils import TestCase, run_tests, set_cwd
-import tempfile
-import torch
 import doctest
-import os
 import inspect
+import os
+import tempfile
+import unittest
 from pathlib import Path
+
+import torch
+from torch.testing._internal.common_utils import TestCase, run_tests, set_cwd
 
 try:
     import mypy.api

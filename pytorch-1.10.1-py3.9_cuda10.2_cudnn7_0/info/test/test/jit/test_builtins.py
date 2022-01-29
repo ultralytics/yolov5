@@ -1,6 +1,6 @@
+import inspect
 import os
 import sys
-import inspect
 import unittest
 from typing import Dict, List
 
@@ -10,7 +10,7 @@ from torch.testing import FileCheck
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(pytorch_test_dir)
-from torch.testing._internal.jit_utils import JitTestCase, RUN_CUDA
+from torch.testing._internal.jit_utils import RUN_CUDA, JitTestCase
 
 if __name__ == '__main__':
     raise RuntimeError("This test file is not meant to be run directly, use:\n\n"
@@ -26,17 +26,17 @@ class TestBuiltins(JitTestCase):
     def test_has_attr(self):
         class HasA(torch.nn.Module):
             def __init__(self):
-                super(HasA, self).__init__()
+                super().__init__()
                 self.a = 0
 
         class HasB(torch.nn.Module):
             def __init__(self):
-                super(HasB, self).__init__()
+                super().__init__()
                 self.b = 1
 
         class Mod(torch.nn.Module):
             def __init__(self):
-                super(Mod, self).__init__()
+                super().__init__()
                 self.mods = torch.nn.ModuleList([HasA(), HasB()])
 
             def forward(self):
@@ -57,7 +57,7 @@ class TestBuiltins(JitTestCase):
     def test_has_attr_invalid_args(self):
         class Mod(torch.nn.Module):
             def __init__(self):
-                super(Mod, self).__init__()
+                super().__init__()
                 self.mod = torch.nn.Linear(1, 1)
 
             def forward(self, name):
@@ -69,7 +69,7 @@ class TestBuiltins(JitTestCase):
 
         class Mod(torch.nn.Module):
             def __init__(self):
-                super(Mod, self).__init__()
+                super().__init__()
 
             def forward(self, name):
                 # not allowed, `torch.rand` is not a class type
@@ -158,20 +158,20 @@ class TestTensorBuiltins(JitTestCase):
             return x.{}
         """
 
-        EQUALITY_MISMATCH = set([
+        EQUALITY_MISMATCH = {
             # TorchScript doesn't have real enums so they return an int instead
             # of the actual value
             'dtype',
             'layout',
-        ])
-        MISSING_PROPERTIES = set([
+        }
+        MISSING_PROPERTIES = {
             'grad_fn',
             # This is an undocumented property so it's not included
             "output_nr",
             # This has a longer implementation, maybe not worth copying to
             # TorchScript if named tensors don't work there anyways
             'names',
-        ])
+        }
 
         for p in properties:
             if p in MISSING_PROPERTIES:

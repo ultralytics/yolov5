@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-import sys
-import os
-import io
 import functools
+import io
+import os
+import sys
 import tempfile
-import urllib
 import unittest
+import urllib
 
 import torch
-import torch.utils.model_dump
 import torch.utils.mobile_optimizer
-from torch.testing._internal.common_utils import TestCase, run_tests, IS_WINDOWS
+import torch.utils.model_dump
 from torch.testing._internal.common_quantized import supported_qengines
+from torch.testing._internal.common_utils import IS_WINDOWS, TestCase, run_tests
 
 
 class SimpleModel(torch.nn.Module):

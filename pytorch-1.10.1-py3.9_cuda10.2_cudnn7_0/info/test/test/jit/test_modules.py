@@ -1,6 +1,7 @@
-import torch
 import os
 import sys
+
+import torch
 from torch.testing._internal.jit_utils import JitTestCase
 
 # Make the helper files in test/ importable

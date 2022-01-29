@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
-from torch import nn
-from torch.ao.sparsity import WeightNormSparsifier
-from torch.ao.sparsity import BaseScheduler, LambdaSL
+import warnings
 
+from torch import nn
+from torch.ao.sparsity import BaseScheduler, LambdaSL, WeightNormSparsifier
 from torch.testing._internal.common_utils import TestCase
 
-import warnings
 
 class ImplementedScheduler(BaseScheduler):
     def get_sl(self):

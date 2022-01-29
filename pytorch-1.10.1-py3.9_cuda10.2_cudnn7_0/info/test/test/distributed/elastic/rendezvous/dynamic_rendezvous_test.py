@@ -18,33 +18,17 @@ from unittest import TestCase
 from unittest.mock import MagicMock, Mock, call, patch
 
 from torch.distributed import Store
-from torch.distributed.elastic.rendezvous import (
-    RendezvousClosedError,
-    RendezvousError,
-    RendezvousParameters,
-    RendezvousStateError,
-    RendezvousTimeoutError,
-)
-from torch.distributed.elastic.rendezvous.dynamic_rendezvous import (
-    DynamicRendezvousHandler,
-    RendezvousBackend,
-    RendezvousSettings,
-    RendezvousTimeout,
-    Token,
-    _Action,
-    _BackendRendezvousStateHolder,
-    _DistributedRendezvousOpExecutor,
-    _NodeDesc,
-    _NodeDescGenerator,
-    _RendezvousCloseOp,
-    _RendezvousContext,
-    _RendezvousExitOp,
-    _RendezvousJoinOp,
-    _RendezvousKeepAliveOp,
-    _RendezvousState,
-    _RendezvousStateHolder,
-    create_handler,
-)
+from torch.distributed.elastic.rendezvous import (RendezvousClosedError, RendezvousError, RendezvousParameters,
+                                                  RendezvousStateError, RendezvousTimeoutError)
+from torch.distributed.elastic.rendezvous.dynamic_rendezvous import (DynamicRendezvousHandler, RendezvousBackend,
+                                                                     RendezvousSettings, RendezvousTimeout, Token,
+                                                                     _Action, _BackendRendezvousStateHolder,
+                                                                     _DistributedRendezvousOpExecutor, _NodeDesc,
+                                                                     _NodeDescGenerator, _RendezvousCloseOp,
+                                                                     _RendezvousContext, _RendezvousExitOp,
+                                                                     _RendezvousJoinOp, _RendezvousKeepAliveOp,
+                                                                     _RendezvousState, _RendezvousStateHolder,
+                                                                     create_handler)
 
 
 class CustomAssertMixin:

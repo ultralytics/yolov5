@@ -4,6 +4,7 @@ import torch.backends.xnnpack
 import torch.nn.functional as F
 from torch.testing._internal.jit_utils import JitTestCase
 
+
 class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
     def check_replacement(
         self,
@@ -37,7 +38,7 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
     def test_replace_conv1d_with_conv2d(self):
         class TestConv1d(torch.nn.Module):
             def __init__(self, weight, bias):
-                super(TestConv1d, self).__init__()
+                super().__init__()
                 self.weight = weight
                 self.bias = bias
 
@@ -72,10 +73,7 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
                 conv_transpose2d_weight,
                 conv_transpose2d_bias,
             ):
-                super(
-                    TestPrepackedLinearBeforeInlineAndConv2dOp,
-                    self,
-                ).__init__()
+                super().__init__()
                 self.linear_weight = linear_weight.float()
                 self.linear_bias = linear_bias.float()
                 self.conv2d_weight = conv2d_weight.float()
@@ -162,7 +160,7 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
                 conv2d_weight,
                 conv2d_bias,
             ):
-                super(TestFuseActivationLinearConv2d, self).__init__()
+                super().__init__()
                 self.linear_weight = linear_weight
                 self.linear_bias = linear_bias
                 self.conv2d_weight = conv2d_weight

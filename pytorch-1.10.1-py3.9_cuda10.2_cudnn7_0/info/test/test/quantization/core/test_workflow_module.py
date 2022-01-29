@@ -1,58 +1,33 @@
 # Torch
-import torch
-from torch.quantization import (
-    MinMaxObserver,
-    PerChannelMinMaxObserver,
-    MovingAverageMinMaxObserver,
-    MovingAveragePerChannelMinMaxObserver,
-    HistogramObserver,
-    RecordingObserver,
-    PlaceholderObserver,
-    NoopObserver,
-    FakeQuantize,
-    FixedQParamsFakeQuantize,
-    default_debug_qconfig,
-    default_observer,
-    default_histogram_observer,
-    default_per_channel_weight_observer,
-    get_observer_dict,
-    prepare,
-    QConfig,
-    FusedMovingAvgObsFakeQuantize,
-)
-
-import torch.nn as nn
-
 # Standard library
 import copy
 import io
 import itertools
-import unittest
 import math
-import numpy as np
+import unittest
 
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.testing._internal.hypothesis_utils as hu
 # Testing utils
 from hypothesis import given, settings
 from hypothesis import strategies as st
-import torch.testing._internal.hypothesis_utils as hu
-hu.assert_deadline_disabled()
-from torch.testing._internal.common_cuda import TEST_MULTIGPU, TEST_CUDA
-from torch.testing._internal.common_utils import TestCase
-from torch.testing._internal.common_quantization import (
-    QuantizationTestCase,
-    AnnotatedSingleLayerLinearModel,
-    test_only_eval_fn,
-    SingleLayerLinearModel,
-)
+from torch.quantization import (FakeQuantize, FixedQParamsFakeQuantize, FusedMovingAvgObsFakeQuantize,
+                                HistogramObserver, MinMaxObserver, MovingAverageMinMaxObserver,
+                                MovingAveragePerChannelMinMaxObserver, NoopObserver, PerChannelMinMaxObserver,
+                                PlaceholderObserver, QConfig, RecordingObserver, default_debug_qconfig,
+                                default_histogram_observer, default_observer, default_per_channel_weight_observer,
+                                get_observer_dict, prepare)
 
-from torch.testing._internal.common_quantized import (
-    override_quantized_engine,
-    supported_qengines,
-    override_qengines,
-    _fake_quantize_per_channel_affine_reference,
-    _fake_quantize_per_channel_affine_grad_reference,
-    to_tensor,
-)
+hu.assert_deadline_disabled()
+from torch.testing._internal.common_cuda import TEST_CUDA, TEST_MULTIGPU
+from torch.testing._internal.common_quantization import (AnnotatedSingleLayerLinearModel, QuantizationTestCase,
+                                                         SingleLayerLinearModel, test_only_eval_fn)
+from torch.testing._internal.common_quantized import (_fake_quantize_per_channel_affine_grad_reference,
+                                                      _fake_quantize_per_channel_affine_reference, override_qengines,
+                                                      override_quantized_engine, supported_qengines, to_tensor)
+from torch.testing._internal.common_utils import TestCase
 
 NP_RANDOM_SEED = 19
 tolerance = 1e-6
@@ -747,7 +722,7 @@ class TestDistributed(QuantizationTestCase):
             self.assertEqual(
                 buffer_ids_before,
                 buffer_ids_after,
-                msg="{}: Buffers must be modified in place".format(str(observer)))
+                msg=f"{str(observer)}: Buffers must be modified in place")
 
     def test_fake_quant_preserves_buffers(self):
         """
@@ -824,7 +799,7 @@ class TestDistributed(QuantizationTestCase):
             # create conv-bn
             class Model(nn.Module):
                 def __init__(self):
-                    super(Model, self).__init__()
+                    super().__init__()
                     self.conv = nn.Conv2d(4, 1, 3, padding=1)
                     self.bn = nn.BatchNorm2d(1)
 
@@ -873,7 +848,7 @@ class TestDistributed(QuantizationTestCase):
         class Model(nn.Module):
 
             def __init__(self):
-                super(Model, self).__init__()
+                super().__init__()
                 self.conv = nn.Conv2d(1, 1, 1)
                 self.bn = nn.BatchNorm2d(1)
                 self.relu = nn.ReLU()
@@ -1105,7 +1080,7 @@ class TestFusedObsFakeQuantModule(TestCase):
     def test_default_fused_qat_config(self):
         class Model(nn.Module):
             def __init__(self):
-                super(Model, self).__init__()
+                super().__init__()
                 self.linear = nn.Linear(2, 2)
                 self.relu = nn.ReLU()
 

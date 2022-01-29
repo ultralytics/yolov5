@@ -1,7 +1,8 @@
-from torch.testing._internal.common_utils import TestCase
-
 import importlib
 from typing import List
+
+from torch.testing._internal.common_utils import TestCase
+
 
 class AOMigrationTestCase(TestCase):
     def _test_package_import(self, package_name: str):

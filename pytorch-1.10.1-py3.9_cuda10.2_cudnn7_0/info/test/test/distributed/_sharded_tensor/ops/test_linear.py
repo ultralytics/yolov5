@@ -1,23 +1,11 @@
 import sys
-import torch
 
-from torch.distributed._sharded_tensor import (
-    shard_parameter,
-)
-from torch.distributed._sharding_spec import (
-    ChunkShardingSpec,
-)
-from torch.testing._internal.common_distributed import (
-    requires_nccl,
-    skip_if_lt_x_gpu,
-)
-from torch.testing._internal.distributed._sharded_tensor import (
-    ShardedTensorTestBase,
-    with_comms,
-)
-from torch.testing._internal.common_utils import (
-    TEST_WITH_DEV_DBG_ASAN,
-)
+import torch
+from torch.distributed._sharded_tensor import shard_parameter
+from torch.distributed._sharding_spec import ChunkShardingSpec
+from torch.testing._internal.common_distributed import requires_nccl, skip_if_lt_x_gpu
+from torch.testing._internal.common_utils import TEST_WITH_DEV_DBG_ASAN
+from torch.testing._internal.distributed._sharded_tensor import ShardedTensorTestBase, with_comms
 
 if TEST_WITH_DEV_DBG_ASAN:
     print("Skip dev-asan as torch + multiprocessing spawn have known issues", file=sys.stderr)

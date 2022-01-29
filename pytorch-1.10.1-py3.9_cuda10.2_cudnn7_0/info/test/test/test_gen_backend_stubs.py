@@ -1,8 +1,8 @@
 import os
 import tempfile
 
-from torch.testing._internal.common_utils import TestCase, run_tests
 import tools.codegen.gen_backend_stubs
+from torch.testing._internal.common_utils import TestCase, run_tests
 
 path = os.path.dirname(os.path.realpath(__file__))
 gen_backend_stubs_path = os.path.join(path, '../tools/codegen/gen_backend_stubs.py')

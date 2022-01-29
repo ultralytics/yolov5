@@ -1,21 +1,16 @@
-import torch
 import os
-import torch.cuda
 import sys
+
+import torch
+import torch.cuda
 import torch.distributed as dist
 import torch.distributed.algorithms.quantization.quantization as quant
 from torch.distributed.algorithms.quantization.quantization import DQuantType
-from torch.testing._internal.common_distributed import (
-    MultiProcessTestCase,
-    requires_gloo,
-    skip_if_rocm,
-    skip_if_lt_x_gpu,
-    requires_nccl,
-)
-from torch.testing._internal.distributed.distributed_test import (
-    apply_hack_for_nccl
-)
-from torch.testing._internal.common_utils import sandcastle_skip_if, run_tests, TEST_WITH_DEV_DBG_ASAN, NO_MULTIPROCESSING_SPAWN
+from torch.testing._internal.common_distributed import (MultiProcessTestCase, requires_gloo, requires_nccl,
+                                                        skip_if_lt_x_gpu, skip_if_rocm)
+from torch.testing._internal.common_utils import (NO_MULTIPROCESSING_SPAWN, TEST_WITH_DEV_DBG_ASAN, run_tests,
+                                                  sandcastle_skip_if)
+from torch.testing._internal.distributed.distributed_test import apply_hack_for_nccl
 
 torch.backends.cuda.matmul.allow_tf32 = False
 
@@ -43,12 +38,12 @@ if BACKEND == "gloo" or BACKEND == "nccl":
     class DistQuantizationTests(MultiProcessTestCase):
 
         def setUp(self):
-            super(DistQuantizationTests, self).setUp()
+            super().setUp()
             self._spawn_processes()
             torch.backends.cudnn.flags(allow_tf32=False).__enter__()
 
         def tearDown(self):
-            super(DistQuantizationTests, self).tearDown()
+            super().tearDown()
             try:
                 os.remove(self.file_name)
             except OSError:

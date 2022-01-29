@@ -1,15 +1,12 @@
-from test_pytorch_common import TestCase, run_tests
-
-import torch
-import torch.onnx
-from torch.nn import Module
-
-import onnx
-
 import io
 
-from torch.onnx.symbolic_helper import _export_onnx_opset_version
+import onnx
+import torch
+import torch.onnx
+from test_pytorch_common import TestCase, run_tests
+from torch.nn import Module
 from torch.onnx import ir_version, producer_name, producer_version
+from torch.onnx.symbolic_helper import _export_onnx_opset_version
 
 
 def check_onnx_opset_operator(model, ops, opset_version=_export_onnx_opset_version):
@@ -128,7 +125,7 @@ class TestONNXOpset(TestCase):
     def test_upsample(self):
         class MyModule(Module):
             def __init__(self):
-                super(MyModule, self).__init__()
+                super().__init__()
 
             def forward(self, x):
                 size = [v * 2 for v in x.size()[2:]]
@@ -136,10 +133,10 @@ class TestONNXOpset(TestCase):
                 return torch.nn.functional.interpolate(x, size=size, mode="nearest")
 
         module = MyModule()
-        ops8 = [{"op_name" : "Upsample", "attributes" : [{"name": "mode", "s": ("nearest").encode(), "type": 3},
+        ops8 = [{"op_name" : "Upsample", "attributes" : [{"name": "mode", "s": (b"nearest"), "type": 3},
                 {"name": "scales", "floats": [1.0, 1.0, 2.0, 2.0], "type": 6}]}]
         ops9 = [{"op_name" : "Constant"},
-                {"op_name" : "Upsample", "attributes" : [{"name": "mode", "s": ("nearest").encode(), "type": 3}]}]
+                {"op_name" : "Upsample", "attributes" : [{"name": "mode", "s": (b"nearest"), "type": 3}]}]
         ops = {8 : ops8, 9 : ops9}
         x = torch.randn(2, 2, 2, 2)
         check_onnx_opsets_operator(module, x, ops, opset_versions=[8, 9])
@@ -147,7 +144,7 @@ class TestONNXOpset(TestCase):
     def test_cast_constant(self):
         class MyModule(Module):
             def __init__(self):
-                super(MyModule, self).__init__()
+                super().__init__()
 
             def forward(self, x):
                 return x - 1
@@ -229,7 +226,7 @@ class TestONNXOpset(TestCase):
     def test_dropout(self):
         class MyModule(Module):
             def __init__(self):
-                super(MyModule, self).__init__()
+                super().__init__()
                 self.dropout = torch.nn.Dropout(0.5)
 
             def forward(self, x):
@@ -290,7 +287,7 @@ class TestONNXOpset(TestCase):
                  {"op_name" : "Concat"},
                  {"op_name" : "Upsample",
                   "attributes" :
-                  [{"name": "mode", "s": ("nearest").encode(), "type": 3}]}]
+                  [{"name": "mode", "s": (b"nearest"), "type": 3}]}]
         ops_10 = [{"op_name" : "Shape"},
                   {"op_name" : "Constant"},
                   {"op_name" : "Gather"},
@@ -316,7 +313,7 @@ class TestONNXOpset(TestCase):
                   {"op_name" : "Concat"},
                   {"op_name" : "Resize",
                    "attributes" :
-                   [{"name": "mode", "s": ("nearest").encode(), "type": 3}]}]
+                   [{"name": "mode", "s": (b"nearest"), "type": 3}]}]
 
         ops = {9 : ops_9, 10 : ops_10}
         x = torch.randn(1, 2, 3, 4, requires_grad=True)
@@ -331,7 +328,7 @@ class TestONNXOpset(TestCase):
                  {"op_name" : "Concat"},
                  {"op_name" : "Upsample",
                   "attributes" :
-                  [{"name": "mode", "s": ("nearest").encode(), "type": 3}]}]
+                  [{"name": "mode", "s": (b"nearest"), "type": 3}]}]
         ops_10 = [{"op_name" : "Constant"},
                   {"op_name" : "Shape"},
                   {"op_name" : "Constant"},
@@ -358,11 +355,11 @@ class TestONNXOpset(TestCase):
         ops_9 = [{"op_name" : "Constant"},
                  {"op_name" : "Upsample",
                   "attributes" :
-                  [{"name": "mode", "s": ("nearest").encode(), "type": 3}]}]
+                  [{"name": "mode", "s": (b"nearest"), "type": 3}]}]
         ops_10 = [{"op_name" : "Constant"},
                   {"op_name" : "Resize",
                    "attributes" :
-                   [{"name": "mode", "s": ("nearest").encode(), "type": 3}]}]
+                   [{"name": "mode", "s": (b"nearest"), "type": 3}]}]
         ops = {9 : ops_9, 10 : ops_10}
         x = torch.randn(20, 16, 50)
         check_onnx_opsets_operator(MyDynamicModel(), x, ops, opset_versions=[9, 10])

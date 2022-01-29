@@ -4,21 +4,15 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import socket
 import threading
 import time
-import socket
 from datetime import timedelta
 from typing import List
 from unittest import TestCase
 
-from torch.distributed.elastic.rendezvous.utils import (
-    _PeriodicTimer,
-    _delay,
-    _matches_machine_hostname,
-    _parse_rendezvous_config,
-    _try_parse_port,
-    parse_rendezvous_endpoint,
-)
+from torch.distributed.elastic.rendezvous.utils import (_delay, _matches_machine_hostname, _parse_rendezvous_config,
+                                                        _PeriodicTimer, _try_parse_port, parse_rendezvous_endpoint)
 
 
 class UtilsTest(TestCase):

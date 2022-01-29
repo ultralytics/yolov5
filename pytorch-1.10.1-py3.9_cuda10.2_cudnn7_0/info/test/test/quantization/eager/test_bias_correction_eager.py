@@ -1,22 +1,12 @@
-import torch
-import torch.nn as nn
-from torch.testing._internal.common_quantization import QuantizationTestCase
-from torch.testing._internal.common_quantization import skipIfNoFBGEMM
-
-from torch.quantization import default_qconfig
-from torch.quantization import QuantWrapper
-import torch.ao.ns._numeric_suite as ns
-
-from torch.ao.quantization._correct_bias import (
-    _supported_modules,
-    _supported_modules_quantized,
-    bias_correction,
-    get_module,
-    get_param,
-    parent_child_names
-)
-
 import copy
+
+import torch
+import torch.ao.ns._numeric_suite as ns
+import torch.nn as nn
+from torch.ao.quantization._correct_bias import (_supported_modules, _supported_modules_quantized, bias_correction,
+                                                 get_module, get_param, parent_child_names)
+from torch.quantization import QuantWrapper, default_qconfig
+from torch.testing._internal.common_quantization import QuantizationTestCase, skipIfNoFBGEMM
 
 
 class TestBiasCorrection(QuantizationTestCase):
@@ -66,7 +56,7 @@ class TestBiasCorrection(QuantizationTestCase):
     def test_linear_chain(self):
         class LinearChain(nn.Module):
             def __init__(self):
-                super(LinearChain, self).__init__()
+                super().__init__()
                 self.linear1 = nn.Linear(3, 4)
                 self.linear2 = nn.Linear(4, 5)
                 self.linear3 = nn.Linear(5, 6)
@@ -85,7 +75,7 @@ class TestBiasCorrection(QuantizationTestCase):
     def test_conv_chain(self):
         class ConvChain(nn.Module):
             def __init__(self):
-                super(ConvChain, self).__init__()
+                super().__init__()
                 self.conv2d1 = nn.Conv2d(3, 4, 5, 5)
                 self.conv2d2 = nn.Conv2d(4, 5, 5, 5)
                 self.conv2d3 = nn.Conv2d(5, 6, 5, 5)

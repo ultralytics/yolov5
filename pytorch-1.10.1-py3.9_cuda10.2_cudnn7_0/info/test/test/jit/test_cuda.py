@@ -1,13 +1,13 @@
+import gc
 import os
 import sys
-import gc
 import unittest
+from typing import NamedTuple
 
 import torch
-from typing import NamedTuple
 from torch.testing import FileCheck
+from torch.testing._internal.common_utils import skipCUDANonDefaultStreamIf, skipIfRocm
 from torch.testing._internal.jit_utils import JitTestCase
-from torch.testing._internal.common_utils import skipIfRocm, skipCUDANonDefaultStreamIf
 
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -43,12 +43,12 @@ class TestCUDA(JitTestCase):
     A suite of tests for the CUDA API in TorchScript.
     """
     def setUp(self):
-        super(TestCUDA, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         gc.collect()
         torch.cuda.empty_cache()
-        super(TestCUDA, self).tearDown()
+        super().tearDown()
 
     @skipIfRocm
     @unittest.skipIf(not TEST_MULTIGPU, "detected only one GPU")

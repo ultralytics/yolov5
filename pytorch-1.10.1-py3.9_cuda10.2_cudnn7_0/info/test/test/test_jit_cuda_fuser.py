@@ -1,17 +1,13 @@
-import unittest
-import os
-
-import torch
-
-from torch.testing._internal.common_utils import run_tests, ProfilingMode, GRAPH_EXECUTOR
-from torch.testing._internal.codegen.random_topo_test import runDefaultTestWithSeed
-
-from test_jit import JitTestCase, RUN_CUDA
-
-from jit.test_fuser_common import TestFuserCommon  # noqa: F401
-
 import itertools
+import os
+import unittest
+
 import numpy as np
+import torch
+from jit.test_fuser_common import TestFuserCommon  # noqa: F401
+from test_jit import RUN_CUDA, JitTestCase
+from torch.testing._internal.codegen.random_topo_test import runDefaultTestWithSeed
+from torch.testing._internal.common_utils import GRAPH_EXECUTOR, ProfilingMode, run_tests
 
 os.environ['PYTORCH_CUDA_FUSER_DISABLE_FALLBACK'] = '1'
 os.environ['PYTORCH_CUDA_FUSER_DISABLE_FMA'] = '1'
@@ -45,7 +41,7 @@ class TestCudaFuser(JitTestCase):
         return ret[1]
 
     def setUp(self):
-        super(TestCudaFuser, self).setUp()
+        super().setUp()
         self.old_cpu_fuse = torch._C._jit_can_fuse_on_cpu()
         self.old_gpu_fuse = torch._C._jit_can_fuse_on_gpu()
         torch._C._jit_override_can_fuse_on_cpu(False)
@@ -61,7 +57,7 @@ class TestCudaFuser(JitTestCase):
         torch._C._jit_override_can_fuse_on_cpu(self.old_cpu_fuse)
         torch._C._jit_override_can_fuse_on_gpu(self.old_gpu_fuse)
         torch._C._jit_set_nvfuser_guard_mode(self.old_guard)
-        super(TestCudaFuser, self).tearDown()
+        super().tearDown()
 
     def _run_helper(self, jit_op, op, *args):
         torch.cuda.manual_seed_all(123)
@@ -620,7 +616,7 @@ class TestCudaFuser(JitTestCase):
             __constants__ = ['reduction_axis']
 
             def __init__(self):
-                super(MyReduction, self).__init__()
+                super().__init__()
                 self.reduction_axis = reduction_axis
 
             def forward(self, x: torch.Tensor, y: torch.Tensor):

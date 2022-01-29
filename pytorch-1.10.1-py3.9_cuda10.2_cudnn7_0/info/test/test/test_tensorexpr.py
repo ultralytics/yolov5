@@ -1,11 +1,10 @@
+import unittest
+
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn
-import unittest
-
-from torch.testing._internal.common_utils import suppress_warnings, num_profiled_runs, run_tests
-
+from torch.testing._internal.common_utils import num_profiled_runs, run_tests, suppress_warnings
 from torch.testing._internal.jit_utils import JitTestCase
 
 
@@ -603,7 +602,7 @@ class TestTensorExprFuser(BaseTestClass):
 
         xs = [(torch.rand(4) * 3 + 1).to(torch.int32) for i in range(3)]
         x, y, z = xs
-        xn, yn, zn = [t.numpy() for t in xs]
+        xn, yn, zn = (t.numpy() for t in xs)
         traced = torch.jit.trace(test, (x, y, z))
         res = warmup_and_run_forward(traced, x, y, z)
         self.assertLastGraphAllFused()
@@ -1134,11 +1133,11 @@ class TestTensorExprFuser(BaseTestClass):
             return torch.add(torch.add(x, y, alpha=a), z, alpha=b)
 
         for test in (test_float, test_int):
-            x, y, z = [torch.rand(4) for i in range(3)]
+            x, y, z = (torch.rand(4) for i in range(3))
             a, b = 1, 2
             test(x, y, z, a, b)
             r = test(x, y, z, a, b)
-            xn, yn, zn = [t.numpy() for t in (x, y, z)]
+            xn, yn, zn = (t.numpy() for t in (x, y, z))
             np.testing.assert_allclose(r.numpy(), xn + yn * a + zn * b)
 
     def test_loop(self):
@@ -1297,7 +1296,7 @@ class TestTensorExprFuser(BaseTestClass):
             @torch.jit.script
             def test(x, y, z):
                 return x * y * z
-            x, y, z = [torch.rand(4, 8).cuda() for _ in range(3)]
+            x, y, z = (torch.rand(4, 8).cuda() for _ in range(3))
             ref = test(x, y, z)
             _ = test(*[torch.rand(6, 8).cuda() for _ in range(3)])
             res = test(x, y, z)
@@ -1308,7 +1307,7 @@ class TestTensorExprFuser(BaseTestClass):
             y = torch.rand(1, 8).cuda()
             z = torch.rand(4, 1).cuda()
             res = test(x, y, z)
-            xn, yn, zn = [t.cpu().numpy() for t in (x, y, z)]
+            xn, yn, zn = (t.cpu().numpy() for t in (x, y, z))
             np.testing.assert_allclose(res.cpu().numpy(), xn * yn * zn)
 
             # Mismatched shapes shouldn't reach codegen.
@@ -1455,7 +1454,7 @@ class TestTensorExprFuser(BaseTestClass):
     def test_alias_analysis_module(self):
         class AliasModule(nn.Module):
             def __init__(self):
-                super(AliasModule, self).__init__()
+                super().__init__()
                 torch.manual_seed(1337)
                 self.a = torch.randn(128, 128)
                 self.b = torch.randn(128, 128)
@@ -1493,7 +1492,7 @@ class TestTensorExprFuser(BaseTestClass):
     def test_alias_analysis_inputs(self):
         class AliasModule(nn.Module):
             def __init__(self):
-                super(AliasModule, self).__init__()
+                super().__init__()
                 torch.manual_seed(1337)
                 self.a = torch.randn(128, 128)
                 self.b = torch.randn(128, 128)
@@ -1526,7 +1525,7 @@ class TestTensorExprFuser(BaseTestClass):
     def test_alias_analysis_input_and_module(self):
         class AliasModule(nn.Module):
             def __init__(self):
-                super(AliasModule, self).__init__()
+                super().__init__()
                 torch.manual_seed(1337)
                 self.a = torch.randn(128, 128)
                 self.b = torch.randn(128, 128)

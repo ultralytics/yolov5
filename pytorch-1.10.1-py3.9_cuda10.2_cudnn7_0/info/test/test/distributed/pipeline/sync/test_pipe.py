@@ -4,17 +4,15 @@
 #
 # This source code is licensed under the BSD license found in the
 # LICENSE file in the root directory of this source tree.
+import random
+import time
 from collections import OrderedDict
 from copy import deepcopy
-import time
 
 import pytest
-import random
 import torch
-from torch import nn
-from torch import Tensor
-
-from torch.distributed.pipeline.sync import Pipe, NoChunk, WithDevice
+from torch import Tensor, nn
+from torch.distributed.pipeline.sync import NoChunk, Pipe, WithDevice
 from torch.distributed.pipeline.sync.pipe import PipeSequential
 
 skip_if_no_cuda = pytest.mark.skipif(not torch.cuda.is_available(), reason="cuda required")
@@ -660,7 +658,7 @@ def test_named_children(setup_rpc):
     model = nn.Sequential(OrderedDict([("a", a), ("b", b)]))
     model = Pipe(model)
 
-    names = set(n for n, _ in model.named_modules())
+    names = {n for n, _ in model.named_modules()}
     assert "partitions.0.0" in names
     assert "partitions.1.0" in names
 

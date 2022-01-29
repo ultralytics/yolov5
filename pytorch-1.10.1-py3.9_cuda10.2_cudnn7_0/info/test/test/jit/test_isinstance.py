@@ -1,9 +1,9 @@
 import os
 import sys
+import warnings
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
-import warnings
-from typing import List, Any, Dict, Tuple, Optional
 
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))

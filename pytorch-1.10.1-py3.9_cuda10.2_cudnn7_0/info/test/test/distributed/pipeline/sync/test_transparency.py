@@ -6,13 +6,12 @@
 # LICENSE file in the root directory of this source tree.
 import torch
 from torch import nn
-
 from torch.distributed.pipeline.sync import Pipe
 
 
 def test_simple_linears(setup_rpc):
     def sum_grad(parameters):
-        return sum([p.grad.sum() for p in parameters if p.grad is not None])
+        return sum(p.grad.sum() for p in parameters if p.grad is not None)
 
     def zero_grad(parameters):
         for p in parameters:

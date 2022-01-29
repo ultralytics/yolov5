@@ -1,21 +1,9 @@
 import torch
-from torch.testing._internal.common_utils import TestCase
-from torch.distributed._sharding_spec import (
-    ChunkShardingSpec,
-    DevicePlacementSpec,
-    EnumerableShardingSpec,
-    ShardMetadata,
-)
-from torch.distributed._sharding_spec._internals import (
-    check_tensor,
-    get_split_size,
-    get_chunked_dim_size,
-)
+from torch.distributed._sharding_spec import (ChunkShardingSpec, DevicePlacementSpec, EnumerableShardingSpec,
+                                              ShardMetadata)
+from torch.distributed._sharding_spec._internals import check_tensor, get_chunked_dim_size, get_split_size
+from torch.testing._internal.common_utils import TestCase, run_tests, sandcastle_skip_if
 
-from torch.testing._internal.common_utils import (
-    run_tests,
-    sandcastle_skip_if,
-)
 
 class TestShardingSpec(TestCase):
 

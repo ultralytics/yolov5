@@ -4,8 +4,7 @@ import tempfile
 import torch
 import torch.distributed as c10d
 import torch.multiprocessing as mp
-from torch.testing._internal.common_utils import NO_MULTIPROCESSING_SPAWN
-from torch.testing._internal.common_utils import load_tests
+from torch.testing._internal.common_utils import NO_MULTIPROCESSING_SPAWN, load_tests
 
 # Torch distributed.nn is not available in windows
 # check #42095, it errors on import.
@@ -28,7 +27,7 @@ if NO_MULTIPROCESSING_SPAWN:
     sys.exit(0)
 
 
-class AbstractProcessGroupShareTensorTest(object):
+class AbstractProcessGroupShareTensorTest:
     world_size = 2
 
     def _test_multiprocess(self, f, shared_tensors, init_pg, n_output):

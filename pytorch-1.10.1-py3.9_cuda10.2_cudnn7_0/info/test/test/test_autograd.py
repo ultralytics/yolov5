@@ -2,6 +2,7 @@ import gc
 import io
 import math
 import os
+import pickle
 import random
 import sys
 import tempfile
@@ -10,38 +11,33 @@ import time
 import unittest
 import uuid
 import warnings
-from copy import deepcopy
 from collections import OrderedDict
-from itertools import product, permutations
+from copy import deepcopy
+from functools import partial, reduce
+from itertools import permutations, product
 from operator import mul
-from functools import reduce, partial
-import torch
 
+import torch
+import torch.autograd.forward_ad as fwAD
+import torch.autograd.functional as autogradF
 from torch import nn
 from torch._six import inf, nan
-from torch.autograd.function import once_differentiable
-from torch.autograd.profiler import (profile, record_function, emit_nvtx)
-from torch.autograd.profiler_util import (_format_time, EventList, FunctionEvent, FunctionEventAvg)
-import torch.autograd.functional as autogradF
-from torch.utils.checkpoint import checkpoint
+from torch.autograd import Function, Variable, detect_anomaly, kineto_available
+from torch.autograd.function import InplaceFunction, once_differentiable
+from torch.autograd.profiler import emit_nvtx, profile, record_function
+from torch.autograd.profiler_util import EventList, FunctionEvent, FunctionEventAvg, _format_time
 from torch.testing import make_tensor
 from torch.testing._internal.common_cuda import TEST_CUDA
-from torch.testing._internal.common_utils import (TestCase, run_tests, skipIfNoLapack,
-                                                  suppress_warnings, slowTest,
-                                                  IS_WINDOWS, IS_MACOS, CudaMemoryLeakCheck,
-                                                  TEST_WITH_ROCM, disable_gc,
-                                                  gradcheck, gradgradcheck)
-from torch.autograd import Variable, Function, detect_anomaly, kineto_available
-from torch.autograd.function import InplaceFunction
-import torch.autograd.forward_ad as fwAD
-from torch.testing._internal.common_methods_invocations import mask_not_all_zeros
-from torch.testing._internal.common_device_type import (instantiate_device_type_tests, skipCUDAIfRocm,
-                                                        onlyCPU, onlyCUDA, onlyOnCPUAndCUDA, dtypes, dtypesIfCUDA,
-                                                        deviceCountAtLeast, skipCUDAIfCudnnVersionLessThan,
-                                                        skipCUDAIf, skipMeta)
+from torch.testing._internal.common_device_type import (deviceCountAtLeast, dtypes, dtypesIfCUDA,
+                                                        instantiate_device_type_tests, onlyCPU, onlyCUDA,
+                                                        onlyOnCPUAndCUDA, skipCUDAIf, skipCUDAIfCudnnVersionLessThan,
+                                                        skipCUDAIfRocm, skipMeta)
 from torch.testing._internal.common_dtype import get_all_dtypes
-
-import pickle
+from torch.testing._internal.common_methods_invocations import mask_not_all_zeros
+from torch.testing._internal.common_utils import (IS_MACOS, IS_WINDOWS, TEST_WITH_ROCM, CudaMemoryLeakCheck, TestCase,
+                                                  disable_gc, gradcheck, gradgradcheck, run_tests, skipIfNoLapack,
+                                                  slowTest, suppress_warnings)
+from torch.utils.checkpoint import checkpoint
 
 
 def graph_desc(fn):
@@ -2890,7 +2886,7 @@ class TestAutograd(TestCase):
         for evt in p.function_events:
             if evt.name in names:
                 found_indices.add(names.index(evt.name))
-        self.assertEquals(len(found_indices), len(names))
+        self.assertEqual(len(found_indices), len(names))
 
     def test_profiler_seq_nr(self):
         with profile(use_kineto=kineto_available()) as p:
@@ -3310,7 +3306,7 @@ class TestAutograd(TestCase):
         # its output. Previously, this created a reference cycle.
         dealloc = [0]
 
-        class IncrementOnDelete(object):
+        class IncrementOnDelete:
             def __del__(self):
                 dealloc[0] += 1
 
@@ -3597,7 +3593,7 @@ class TestAutograd(TestCase):
             #
             # We want to test that when grad goes out of scope at the end of this function that PyObject is destroyed
             # We can test this by seeing whether Foo is not kept alive once t is destroyed
-            class Foo(object):
+            class Foo:
                 pass
             my_obj = Foo()
             meta_dict = t.grad_fn.metadata
@@ -3656,7 +3652,7 @@ class TestAutograd(TestCase):
                     with detect_anomaly():
                         ginp.backward()
 
-            class Foo(object):
+            class Foo:
                 pass
             my_obj = Foo()
             meta_dict = out.grad_fn.metadata
@@ -5318,8 +5314,8 @@ for shape in [(1,), ()]:
         gradgradcheck(lambda x: x.nansum(), a)
 
         # Single dim
-        gradcheck(lambda x: x.nansum((0)), a)
-        gradgradcheck(lambda x: x.nansum((0)), a)
+        gradcheck(lambda x: x.nansum(0), a)
+        gradgradcheck(lambda x: x.nansum(0), a)
 
         # Multi dim
         gradcheck(lambda x: x.nansum((0, 2)), a)
@@ -7913,7 +7909,7 @@ class TestAutogradDeviceType(TestCase):
             if dtype.is_floating_point:
                 f()
             else:
-                with self.assertRaisesRegex(RuntimeError, 'floating point', msg="dt: {} device: {}".format(a.dtype, a.device)):
+                with self.assertRaisesRegex(RuntimeError, 'floating point', msg=f"dt: {a.dtype} device: {a.device}"):
                     f()
 
     @onlyCUDA
@@ -8211,7 +8207,7 @@ class TestAutogradDeviceType(TestCase):
     def _test_rnn_mod(self, mod, inp):
         def flatten_out(mod, inp):
             out = mod(inp)
-            return tuple([t if isinstance(t, torch.Tensor) else tt for t in out for tt in t])
+            return tuple(t if isinstance(t, torch.Tensor) else tt for t in out for tt in t)
         gradcheckfunc = partial(flatten_out, mod)
         with torch.backends.cudnn.flags(enabled=False):
             gradcheck(gradcheckfunc, inp, check_batched_grad=False)
@@ -9177,12 +9173,12 @@ class TestMultithreadAutograd(TestCase):
             def run(self):
                 self.exception = None
                 try:
-                    self.ret = super(PropagatingThread, self).run()
+                    self.ret = super().run()
                 except Exception as e:
                     self.exception = e
 
             def join(self, timeout=None):
-                super(PropagatingThread, self).join(timeout)
+                super().join(timeout)
                 if self.exception:
                     raise self.exception from self.exception
                 return self.ret

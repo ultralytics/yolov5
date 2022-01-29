@@ -21,15 +21,8 @@ import torch.nn.functional as F
 import torch.testing._internal.common_utils as common
 from torch import nn
 from torch.nn.parallel import DistributedDataParallel
-from torch.testing._internal.common_distributed import (
-    MultiProcessTestCase,
-)
-from torch.testing._internal.common_utils import (
-    TestCase,
-    load_tests,
-    run_tests,
-    TEST_WITH_DEV_DBG_ASAN,
-)
+from torch.testing._internal.common_distributed import MultiProcessTestCase
+from torch.testing._internal.common_utils import TEST_WITH_DEV_DBG_ASAN, TestCase, load_tests, run_tests
 
 if TEST_WITH_DEV_DBG_ASAN:
     print("Multiprocessing spawn is not compatible with dev/dbg asan", file=sys.stderr)
@@ -63,7 +56,7 @@ def gpus_for_rank(world_size):
     return gpus_for_rank
 
 
-class AbstractTimeoutTest(object):
+class AbstractTimeoutTest:
     def _test_store_timeout(self, backend, init_method, c2p):
         try:
             c10d.distributed_c10d.init_process_group(
@@ -113,12 +106,12 @@ class AbstractTimeoutTest(object):
                 # let @retry_on_connect_failures handle the error
                 raise c2p[0]
             else:
-                raise RuntimeError("Unexpected type {}".format(type(c2p[0])))
+                raise RuntimeError(f"Unexpected type {type(c2p[0])}")
 
 
 class Net(nn.Module):
     def __init__(self):
-        super(Net, self).__init__()
+        super().__init__()
         self.fc1 = nn.Linear(2, 10, bias=False)
         self.fc2 = nn.Linear(10, 50, bias=False)
         self.fc3 = nn.Linear(50, 4, bias=False)
@@ -133,7 +126,7 @@ class Net(nn.Module):
 
 class DoubleGpuNet(nn.Module):
     def __init__(self, gpus):
-        super(DoubleGpuNet, self).__init__()
+        super().__init__()
         self.fc1 = nn.Linear(2, 10, bias=False).to(gpus[0])
         self.fc2 = nn.Linear(10, 50, bias=False).to(gpus[1])
         self.fc3 = nn.Linear(50, 4, bias=False).to(gpus[1])
@@ -153,7 +146,7 @@ class DoubleGpuNet(nn.Module):
 
 class QuadraGpuNet(nn.Module):
     def __init__(self, gpus):
-        super(QuadraGpuNet, self).__init__()
+        super().__init__()
         self.fc1 = nn.Linear(2, 10, bias=False).to(gpus[0])
         self.fc2 = nn.Linear(10, 50, bias=False).to(gpus[1])
         self.fc3 = nn.Linear(50, 4, bias=False).to(gpus[2])
@@ -177,7 +170,7 @@ class QuadraGpuNet(nn.Module):
 
 class ConvNet(nn.Module):
     def __init__(self, gpus, layouts, dtypes):
-        super(ConvNet, self).__init__()
+        super().__init__()
         self.dtypes = dtypes
         if isinstance(gpus, list):
             self.layer_gpus = gpus
@@ -229,14 +222,14 @@ class ModuleForDdpCommHook(nn.Module):
 
 class SparseGradientModule(nn.Module):
     def __init__(self):
-        super(SparseGradientModule, self).__init__()
+        super().__init__()
         self.embedding = nn.EmbeddingBag(10, 10, sparse=True)
 
     def forward(self, x):
         return F.softmax(self.embedding(x), dim=1)
 
 
-class AbstractDistributedDataParallelTest(object):
+class AbstractDistributedDataParallelTest:
     def tearDown(self):
         # DistributedDataParallel test doesn't seem to call FileStore destructor
         # TODO: investigate this test and the test is known to have issues
@@ -285,7 +278,7 @@ class AbstractDistributedDataParallelTest(object):
     ):
         self.assertTrue(
             len(devices) == 2 or len(devices) == 4,
-            "unexpected devices for ddp tests {}".format(devices),
+            f"unexpected devices for ddp tests {devices}",
         )
         if len(devices) == 2:
             model = DoubleGpuNet(devices)
@@ -446,7 +439,7 @@ class DistributedDataParallelTest(
     AbstractDistributedDataParallelTest, MultiProcessTestCase
 ):
     def setUp(self):
-        super(DistributedDataParallelTest, self).setUp()
+        super().setUp()
         self._spawn_processes()
 
     def test_invalid_powerSGD_state(self):
@@ -527,7 +520,7 @@ class ComputeBucketAssignmentTest(TestCase):
         self.assertEqual(per_bucket_size_limits, [200, 200, 400, 400])
 
 
-class AbstractCommTest(object):
+class AbstractCommTest:
     @property
     def op_timeout_sec(self):
         return 1
@@ -656,11 +649,11 @@ class AbstractCommTest(object):
 
 class CommTest(AbstractCommTest, MultiProcessTestCase):
     def setUp(self):
-        super(CommTest, self).setUp()
+        super().setUp()
         self._spawn_processes()
 
     def tearDown(self):
-        super(CommTest, self).tearDown()
+        super().tearDown()
         try:
             os.remove(self.file_name)
         except OSError:

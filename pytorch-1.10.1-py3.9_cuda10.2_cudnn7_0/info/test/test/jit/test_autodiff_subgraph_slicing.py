@@ -1,18 +1,19 @@
 import os
 import sys
 import unittest
-from torch.testing._internal.common_utils import GRAPH_EXECUTOR, ProfilingMode, \
-    num_profiled_runs, enable_profiling_mode_for_profiling_tests
-from torch.testing._internal.common_jit import check_against_reference
+
 import torch
+from torch.testing._internal.common_jit import check_against_reference
+from torch.testing._internal.common_utils import (GRAPH_EXECUTOR, ProfilingMode,
+                                                  enable_profiling_mode_for_profiling_tests, num_profiled_runs)
 
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(pytorch_test_dir)
-from torch.testing._internal.jit_utils import JitTestCase, disable_autodiff_subgraph_inlining
-from torch.testing import FileCheck
+from typing import List, Optional, Tuple
 
-from typing import List, Tuple, Optional
+from torch.testing import FileCheck
+from torch.testing._internal.jit_utils import JitTestCase, disable_autodiff_subgraph_inlining
 
 if __name__ == '__main__':
     raise RuntimeError("This test file is not meant to be run directly, use:\n\n"
@@ -85,7 +86,7 @@ class TestAutodiffSubgraphSlicing(JitTestCase):
         with enable_profiling_mode_for_profiling_tests():
             class M(torch.nn.Module):
                 def __init__(self, has_bias):
-                    super(M, self).__init__()
+                    super().__init__()
                     self.ll = torch.nn.Linear(10, 10, has_bias)
 
                 def forward(self, x, y):

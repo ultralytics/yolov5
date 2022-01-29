@@ -20,31 +20,13 @@ import test_c10d_common
 import torch.distributed as dist
 import torch.nn.functional as F
 import torch.testing._internal.common_utils as common
-from test_c10d_common import (
-    LOOPBACK,
-    gpus_for_rank,
-    Task,
-    ModuleForDdpCommHook,
-    SparseGradientModule,
-)
+from test_c10d_common import LOOPBACK, ModuleForDdpCommHook, SparseGradientModule, Task, gpus_for_rank
 from torch import nn
 from torch.nn.parallel import DistributedDataParallel
-from torch.testing._internal.common_distributed import (
-    MultiProcessTestCase,
-    requires_gloo,
-    skip_if_lt_x_gpu,
-    simple_sparse_reduce_tests,
-    skip_if_win32,
-    create_device,
-    verify_ddp_error_logged,
-    skip_if_rocm,
-)
-from torch.testing._internal.common_utils import (
-    TestCase,
-    run_tests,
-    retry_on_connect_failures,
-    sandcastle_skip,
-)
+from torch.testing._internal.common_distributed import (MultiProcessTestCase, create_device, requires_gloo,
+                                                        simple_sparse_reduce_tests, skip_if_lt_x_gpu, skip_if_rocm,
+                                                        skip_if_win32, verify_ddp_error_logged)
+from torch.testing._internal.common_utils import TestCase, retry_on_connect_failures, run_tests, sandcastle_skip
 
 
 def simple_reduce_tests(rank, world_size):
@@ -209,7 +191,7 @@ class ProcessGroupGlooTest(MultiProcessTestCase):
         return pg
 
     def setUp(self):
-        super(ProcessGroupGlooTest, self).setUp()
+        super().setUp()
         self._spawn_processes()
 
     def opts(self, threads=2):
@@ -624,7 +606,7 @@ class ProcessGroupGlooTest(MultiProcessTestCase):
             self.assertEqualIgnoreType(
                 self._expected_output(i),
                 result,
-                msg="Mismatch in iteration {}".format(i),
+                msg=f"Mismatch in iteration {i}",
             )
 
     @requires_gloo()
@@ -646,7 +628,7 @@ class ProcessGroupGlooTest(MultiProcessTestCase):
             self.assertEqualIgnoreType(
                 self._expected_output(i),
                 fut.wait(),
-                msg="Mismatch in iteration {}".format(i),
+                msg=f"Mismatch in iteration {i}",
             )
 
     @requires_gloo()
@@ -1447,7 +1429,7 @@ class DistributedDataParallelTest(
     test_c10d_common.AbstractDistributedDataParallelTest, MultiProcessTestCase
 ):
     def setUp(self):
-        super(DistributedDataParallelTest, self).setUp()
+        super().setUp()
         self._spawn_processes()
 
     def _test_gloo_backend(
@@ -1512,7 +1494,7 @@ class DistributedDataParallelTest(
 
         class GlobalLocalUnusedParamModule(nn.Module):
             def __init__(self):
-                super(GlobalLocalUnusedParamModule, self).__init__()
+                super().__init__()
                 self.t0 = Task()
                 self.t1 = Task()
                 self.task_unused = Task()
@@ -1597,7 +1579,7 @@ class DistributedDataParallelTest(
 
         class FindUnusedParamModule(nn.Module):
             def __init__(self):
-                super(FindUnusedParamModule, self).__init__()
+                super().__init__()
                 self.t0 = Task()
                 self.t1 = Task()
 
@@ -1652,7 +1634,7 @@ class DistributedDataParallelTest(
 
         class IgnoredOutput(nn.Module):
             def __init__(self):
-                super(IgnoredOutput, self).__init__()
+                super().__init__()
                 self.fc1 = nn.Linear(2, 10, bias=False)
                 self.fc2 = nn.Linear(10, 4, bias=False)
                 self.relu = nn.ReLU()
@@ -1695,7 +1677,7 @@ class DistributedDataParallelTest(
 
         class IgnoredOutputWithUnusedParameters(nn.Module):
             def __init__(self):
-                super(IgnoredOutputWithUnusedParameters, self).__init__()
+                super().__init__()
                 self.fc1 = nn.Linear(2, 10, bias=False)
                 self.fc2 = nn.Linear(10, 4, bias=False)
                 self.fc3 = nn.Linear(4, 4, bias=False)
@@ -1760,7 +1742,7 @@ class DistributedDataParallelTest(
 
         class TestModel(nn.Module):
             def __init__(self):
-                super(TestModel, self).__init__()
+                super().__init__()
                 self.fc1 = nn.Linear(2, 10, bias=False)
                 self.fc2 = nn.Linear(10, 4, bias=False)
                 self.relu = nn.ReLU()
@@ -2066,7 +2048,7 @@ class DistributedDataParallelTest(
 
 class ReducerModule(nn.Module):
     def __init__(self):
-        super(ReducerModule, self).__init__()
+        super().__init__()
         self.fc1 = nn.Linear(2, 10, bias=False)
         self.fc2 = nn.Linear(10, 4, bias=False)
         self.fc3 = nn.Linear(4, 4, bias=False)
@@ -2216,11 +2198,11 @@ class ReducerTest(TestCase):
 
 class CommTest(test_c10d_common.AbstractCommTest, MultiProcessTestCase):
     def setUp(self):
-        super(CommTest, self).setUp()
+        super().setUp()
         self._spawn_processes()
 
     def tearDown(self):
-        super(CommTest, self).tearDown()
+        super().tearDown()
         try:
             os.remove(self.file_name)
         except OSError:

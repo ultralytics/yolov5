@@ -1,12 +1,11 @@
-
 import torch
+from torch.testing._internal.common_utils import TemporaryFileName, TestCase, run_tests
 from torch.utils import ThroughputBenchmark
 
-from torch.testing._internal.common_utils import run_tests, TestCase, TemporaryFileName
 
 class TwoLayerNet(torch.jit.ScriptModule):
     def __init__(self, D_in, H, D_out):
-        super(TwoLayerNet, self).__init__()
+        super().__init__()
         self.linear1 = torch.nn.Linear(D_in, H)
         self.linear2 = torch.nn.Linear(2 * H, D_out)
 
@@ -20,7 +19,7 @@ class TwoLayerNet(torch.jit.ScriptModule):
 
 class TwoLayerNetModule(torch.nn.Module):
     def __init__(self, D_in, H, D_out):
-        super(TwoLayerNetModule, self).__init__()
+        super().__init__()
         self.linear1 = torch.nn.Linear(D_in, H)
         self.linear2 = torch.nn.Linear(2 * H, D_out)
 

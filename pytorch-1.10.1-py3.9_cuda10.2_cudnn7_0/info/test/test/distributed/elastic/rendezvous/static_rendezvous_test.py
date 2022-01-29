@@ -7,9 +7,7 @@ import unittest
 from contextlib import closing
 
 from torch.distributed.elastic.rendezvous import RendezvousParameters
-from torch.distributed.elastic.rendezvous.static_tcp_rendezvous import (
-    create_rdzv_handler,
-)
+from torch.distributed.elastic.rendezvous.static_tcp_rendezvous import create_rdzv_handler
 from torch.distributed.elastic.utils import get_socket_with_port
 
 

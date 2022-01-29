@@ -1,10 +1,10 @@
 import os
 import sys
+from enum import Enum
+from typing import Any, List
 
 import torch
 from torch.testing import FileCheck
-from enum import Enum
-from typing import Any, List
 
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -216,7 +216,7 @@ class TestEnum(JitTestCase):
             return a.RED.value
 
         FileCheck() \
-            .check("prim::Constant[value={}]".format(a.RED.value)) \
+            .check(f"prim::Constant[value={a.RED.value}]") \
             .check_next("return") \
             .run(str(closed_over_aliased_type.graph))
 
@@ -229,7 +229,7 @@ class TestEnum(JitTestCase):
             return b.value
 
         FileCheck() \
-            .check("prim::Constant[value={}]".format(b.value)) \
+            .check(f"prim::Constant[value={b.value}]") \
             .check_next("return") \
             .run(str(closed_over_aliased_value.graph))
 
@@ -242,7 +242,7 @@ class TestEnum(JitTestCase):
 
         class TestModule(torch.nn.Module):
             def __init__(self, e: Color):
-                super(TestModule, self).__init__()
+                super().__init__()
                 self.e = e
 
             def forward(self):
@@ -268,7 +268,7 @@ class TestEnum(JitTestCase):
 
         class TestModule(torch.nn.Module):
             def __init__(self, e: Color):
-                super(TestModule, self).__init__()
+                super().__init__()
                 self.e = e
 
             def forward(self):
@@ -304,7 +304,7 @@ class TestEnum(JitTestCase):
 
         class TestModule(torch.nn.Module):
             def __init__(self, e: Color):
-                super(TestModule, self).__init__()
+                super().__init__()
                 self.e = e
 
             def forward(self):

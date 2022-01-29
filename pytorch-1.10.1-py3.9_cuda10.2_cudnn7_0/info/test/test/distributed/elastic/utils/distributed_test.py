@@ -12,11 +12,7 @@ import sys
 import unittest
 from contextlib import closing
 
-from torch.distributed.elastic.utils.distributed import (
-    create_c10d_store,
-    get_free_port,
-    get_socket_with_port,
-)
+from torch.distributed.elastic.utils.distributed import create_c10d_store, get_free_port, get_socket_with_port
 from torch.testing._internal.common_utils import IS_MACOS, IS_WINDOWS, run_tests
 
 
@@ -25,7 +21,7 @@ def _create_c10d_store_mp(is_server, server_addr, port, world_size):
     if store is None:
         raise AssertionError()
 
-    store.set(f"test_key/{os.getpid()}", "test_value".encode("UTF-8"))
+    store.set(f"test_key/{os.getpid()}", b"test_value")
 
 
 if IS_WINDOWS or IS_MACOS:

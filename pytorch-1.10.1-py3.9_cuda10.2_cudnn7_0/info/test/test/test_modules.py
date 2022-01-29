@@ -1,14 +1,13 @@
-from itertools import product
-from inspect import signature, isgenerator
-from copy import deepcopy
 import tempfile
+from copy import deepcopy
+from inspect import isgenerator, signature
+from itertools import product
+from unittest.mock import patch
 
 import torch
 from torch.testing._internal.common_device_type import instantiate_device_type_tests
 from torch.testing._internal.common_modules import module_db, modules
-from torch.testing._internal.common_utils import (
-    TestCase, run_tests, freeze_rng_state, mock_wrapper, get_tensors_from)
-from unittest.mock import patch
+from torch.testing._internal.common_utils import TestCase, freeze_rng_state, get_tensors_from, mock_wrapper, run_tests
 
 
 class TestModule(TestCase):

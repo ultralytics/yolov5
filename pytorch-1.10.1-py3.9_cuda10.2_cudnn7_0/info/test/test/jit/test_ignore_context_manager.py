@@ -7,8 +7,8 @@ import torch
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(pytorch_test_dir)
-from torch.testing._internal.jit_utils import JitTestCase
 from torch.jit.frontend import _IS_ASTUNPARSE_INSTALLED
+from torch.testing._internal.jit_utils import JitTestCase
 
 if __name__ == "__main__":
     raise RuntimeError("This test file is not meant to be run directly, use:\n\n"
@@ -20,7 +20,7 @@ class TestIgnoreContextManager(JitTestCase):
     def test_with_ignore_context_manager_with_inp_out(self):
         class A(torch.nn.Module):
             def __init__(self):
-                super(A, self).__init__()
+                super().__init__()
 
             def forward(self):
                 a: int = 4
@@ -39,7 +39,7 @@ class TestIgnoreContextManager(JitTestCase):
 
         class B(torch.nn.Module):
             def __init__(self):
-                super(B, self).__init__()
+                super().__init__()
 
             def forward(self):
                 a: int = 4
@@ -56,7 +56,7 @@ class TestIgnoreContextManager(JitTestCase):
 
         class C(torch.nn.Module):
             def __init__(self):
-                super(C, self).__init__()
+                super().__init__()
 
             def forward(self):
                 a: int = 4
@@ -74,7 +74,7 @@ class TestIgnoreContextManager(JitTestCase):
     def test_with_ignore_context_manager_with_just_inp(self):
         class A(torch.nn.Module):
             def __init__(self):
-                super(A, self).__init__()
+                super().__init__()
 
             def forward(self):
                 a: int = 4
@@ -91,7 +91,7 @@ class TestIgnoreContextManager(JitTestCase):
     def test_with_ignore_context_manager_with_just_out(self):
         class A(torch.nn.Module):
             def __init__(self):
-                super(A, self).__init__()
+                super().__init__()
 
             def forward(self):
                 with torch.jit._IgnoreContextManager(c="out:List[int]"):

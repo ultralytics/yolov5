@@ -2,7 +2,7 @@ import os
 import sys
 
 import torch
-from torch.fx import symbolic_trace, subgraph_rewriter
+from torch.fx import subgraph_rewriter, symbolic_trace
 from torch.fx.annotate import annotate
 # Make the helper files in test/ importable
 from torch.fx.experimental.rewriter import RewritingTracer

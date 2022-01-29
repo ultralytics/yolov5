@@ -1,14 +1,14 @@
 # Some standard imports
+import unittest
+
 import numpy as np
-from torch import nn
-import torch.onnx
 import torch.nn.init as init
+import torch.onnx
+from caffe2.python.core import workspace
 from caffe2.python.model_helper import ModelHelper
 from pytorch_helper import PyTorchModule
-import unittest
-from caffe2.python.core import workspace
-
 from test_pytorch_common import skipIfNoLapack
+from torch import nn
 
 
 class TestCaffe2Backend(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestCaffe2Backend(unittest.TestCase):
 
         class SuperResolutionNet(nn.Module):
             def __init__(self, upscale_factor, inplace=False):
-                super(SuperResolutionNet, self).__init__()
+                super().__init__()
 
                 self.relu = nn.ReLU(inplace=inplace)
                 self.conv1 = nn.Conv2d(1, 64, (5, 5), (1, 1), (2, 2))

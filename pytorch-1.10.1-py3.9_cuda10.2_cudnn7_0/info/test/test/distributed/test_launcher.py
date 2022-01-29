@@ -10,11 +10,7 @@ if not dist.is_available():
     print("Distributed not available, skipping tests", file=sys.stderr)
     sys.exit(0)
 
-from torch.testing._internal.common_utils import (
-    TEST_WITH_DEV_DBG_ASAN,
-    TestCase,
-    run_tests,
-)
+from torch.testing._internal.common_utils import TEST_WITH_DEV_DBG_ASAN, TestCase, run_tests
 
 
 def path(script):

@@ -1,11 +1,9 @@
 import os
 import sys
-
 from typing import Any, List
 
 import torch
 from torch.testing._internal.jit_utils import JitTestCase, make_global
-
 
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -30,7 +28,7 @@ class TestWith(JitTestCase):
         to targets work as expected.
         """
         @torch.jit.script
-        class Context(object):
+        class Context:
             """
             This class implements a basic context manager interface for use in
             the unit tests. Unlike Context, the stateful part of this class
@@ -187,7 +185,7 @@ class TestWith(JitTestCase):
         to targets work as expected.
         """
         @torch.jit.script
-        class Context(object):
+        class Context:
             """
             This class implements a basic context manager interface for use in
             the unit tests. Unlike Context, the stateful part of this class
@@ -343,7 +341,7 @@ class TestWith(JitTestCase):
         handled correctly.
         """
         @torch.jit.script
-        class Context(object):
+        class Context:
             """
             This class implements a basic context manager interface for use in
             the unit tests. Unlike Context, the stateful part of this class
@@ -431,7 +429,7 @@ class TestWith(JitTestCase):
         """
 
         @torch.jit.script
-        class NoEnterNoExit(object):
+        class NoEnterNoExit:
             """
             This class is missing __enter__ and __exit__ methods.
             """
@@ -440,7 +438,7 @@ class TestWith(JitTestCase):
                 self.count = 1
 
         @torch.jit.script
-        class BadEnter(object):
+        class BadEnter:
             """
             This class has an __enter__ method with an incorrect signature.
             """
@@ -455,7 +453,7 @@ class TestWith(JitTestCase):
                 pass
 
         @torch.jit.script
-        class BadExit(object):
+        class BadExit:
             """
             This class has an __exit__ method with an incorrect signature.
             """
@@ -470,7 +468,7 @@ class TestWith(JitTestCase):
                 pass
 
         @torch.jit.script
-        class ExitIncorrectTypes(object):
+        class ExitIncorrectTypes:
             """
             This class has an __exit__ method with unsupported argument types.
             """

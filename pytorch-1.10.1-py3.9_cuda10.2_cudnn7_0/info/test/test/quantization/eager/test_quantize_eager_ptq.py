@@ -1,75 +1,38 @@
-
 import torch
 import torch.nn as nn
 import torch.nn.quantized as nnq
-from torch.nn.utils.rnn import PackedSequence
-from torch.quantization import (
-    quantize,
-    prepare,
-    convert,
-    prepare_qat,
-    quantize_dynamic,
-    QuantWrapper,
-    QuantStub,
-    DeQuantStub,
-    default_qconfig,
-    default_dynamic_qconfig,
-    per_channel_dynamic_qconfig,
-    float16_dynamic_qconfig,
-    float_qparams_weight_only_qconfig,
-    PerChannelMinMaxObserver,
-    QConfigDynamic,
-    default_dynamic_quant_observer,
-)
-
-from torch.testing._internal.common_quantization import (
-    QuantizationTestCase,
-    AnnotatedSingleLayerLinearModel,
-    QuantStubModel,
-    ModelWithFunctionals,
-    SingleLayerLinearDynamicModel,
-    TwoLayerLinearModel,
-    NestedModel,
-    ResNetBase,
-    RNNDynamicModel,
-    RNNCellDynamicModel,
-    ActivationsTestModel,
-    NormalizationTestModel,
-    test_only_eval_fn,
-    prepare_dynamic,
-    convert_dynamic,
-    skipIfNoFBGEMM,
-    EmbeddingBagModule,
-    EmbeddingModule,
-    EmbeddingWithLinear,
-    LinearReluLinearModel,
-)
-
-# annotated models
-from torch.testing._internal.common_quantization import (
-    AnnotatedTwoLayerLinearModel,
-    AnnotatedNestedModel,
-    AnnotatedSubNestedModel,
-    AnnotatedCustomConfigNestedModel,
-    AnnotatedSkipQuantModel,
-)
-
-from torch.testing._internal.common_quantized import (
-    override_quantized_engine,
-    supported_qengines,
-    override_qengines,
-)
-from torch.testing._internal.jit_utils import JitTestCase
+import torch.testing._internal.hypothesis_utils as hu
 from hypothesis import given
 from hypothesis import strategies as st
-import torch.testing._internal.hypothesis_utils as hu
+from torch.nn.utils.rnn import PackedSequence
+from torch.quantization import (DeQuantStub, PerChannelMinMaxObserver, QConfigDynamic, QuantStub, QuantWrapper, convert,
+                                default_dynamic_qconfig, default_dynamic_quant_observer, default_qconfig,
+                                float16_dynamic_qconfig, float_qparams_weight_only_qconfig, per_channel_dynamic_qconfig,
+                                prepare, prepare_qat, quantize, quantize_dynamic)
+# annotated models
+from torch.testing._internal.common_quantization import (ActivationsTestModel, AnnotatedCustomConfigNestedModel,
+                                                         AnnotatedNestedModel, AnnotatedSingleLayerLinearModel,
+                                                         AnnotatedSkipQuantModel, AnnotatedSubNestedModel,
+                                                         AnnotatedTwoLayerLinearModel, EmbeddingBagModule,
+                                                         EmbeddingModule, EmbeddingWithLinear, LinearReluLinearModel,
+                                                         ModelWithFunctionals, NestedModel, NormalizationTestModel,
+                                                         QuantizationTestCase, QuantStubModel, ResNetBase,
+                                                         RNNCellDynamicModel, RNNDynamicModel,
+                                                         SingleLayerLinearDynamicModel, TwoLayerLinearModel,
+                                                         convert_dynamic, prepare_dynamic, skipIfNoFBGEMM,
+                                                         test_only_eval_fn)
+from torch.testing._internal.common_quantized import override_qengines, override_quantized_engine, supported_qengines
+from torch.testing._internal.jit_utils import JitTestCase
+
 hu.assert_deadline_disabled()
 
-# Standard library
-from typing import Tuple
 import io
 import unittest
+# Standard library
+from typing import Tuple
+
 import numpy as np
+
 
 class TestPostTrainingStatic(QuantizationTestCase):
 
@@ -806,7 +769,7 @@ class TestPostTrainingDynamic(QuantizationTestCase):
 
             # Test set qconfig
             model = SingleLayerLinearDynamicModel()
-            quantize_dynamic(model, set([nn.Linear]), inplace=True, dtype=dtype)
+            quantize_dynamic(model, {nn.Linear}, inplace=True, dtype=dtype)
             checkQuantized(model)
 
     def test_two_layers(self):
@@ -1048,7 +1011,7 @@ class TestPostTrainingDynamic(QuantizationTestCase):
 
             class ScriptWrapperPackedLSTM(torch.nn.Module):
                 def __init__(self, cell):
-                    super(ScriptWrapperPackedLSTM, self).__init__()
+                    super().__init__()
                     self.cell = cell
 
                 def forward(self, x: PackedSequence) -> Tuple[PackedSequence, Tuple[torch.Tensor, torch.Tensor]]:
@@ -1056,7 +1019,7 @@ class TestPostTrainingDynamic(QuantizationTestCase):
 
             class ScriptWrapperPackedGRU(torch.nn.Module):
                 def __init__(self, cell):
-                    super(ScriptWrapperPackedGRU, self).__init__()
+                    super().__init__()
                     self.cell = cell
 
                 def forward(self, x: PackedSequence) -> Tuple[PackedSequence, torch.Tensor]:

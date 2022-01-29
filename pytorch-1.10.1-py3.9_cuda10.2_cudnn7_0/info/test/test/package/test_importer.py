@@ -1,13 +1,7 @@
 from io import BytesIO
 
 import torch
-from torch.package import (
-    Importer,
-    OrderedImporter,
-    PackageExporter,
-    PackageImporter,
-    sys_importer,
-)
+from torch.package import Importer, OrderedImporter, PackageExporter, PackageImporter, sys_importer
 from torch.testing._internal.common_utils import run_tests
 
 try:

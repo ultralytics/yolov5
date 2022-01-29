@@ -1,105 +1,47 @@
+import copy
+import io
+import itertools
+import operator
 import os
+import unittest
+from typing import Callable
+
 import torch
-import torch.nn.functional as F
+import torch.multiprocessing as mp
 import torch.nn as nn
-import torch.nn.quantized as nnq
-import torch.nn.quantized._reference as nnqr
-import torch.nn.quantized.dynamic as nnqd
+import torch.nn.functional as F
 import torch.nn.intrinsic as nni
 import torch.nn.intrinsic.quantized as nniq
 import torch.nn.intrinsic.quantized.dynamic as nniqd
-import torch.multiprocessing as mp
-
-# graph mode quantization based on fx
-from torch.quantization.quantize_fx import (
-    prepare_fx,
-    convert_fx,
-    prepare_qat_fx,
-)
-
-from torch.quantization.fx.quantization_patterns import DefaultNodeQuantizeHandler
-
-from torch.quantization.fx.match_utils import (
-    is_match,
-    MatchAllNode,
-)
-
-from torch.ao.quantization import (
-    QuantType,
-    quant_type_to_str,
-)
-
-from torch.quantization import (
-    QuantStub,
-    DeQuantStub,
-    QuantWrapper,
-    default_qconfig,
-    default_dynamic_qconfig,
-    default_qat_qconfig,
-    per_channel_dynamic_qconfig,
-    float16_dynamic_qconfig,
-    float16_static_qconfig,
-    float_qparams_weight_only_qconfig,
-    get_default_qconfig,
-    get_default_qat_qconfig,
-    fuse_modules,
-    prepare,
-    prepare_qat,
-    convert,
-    quantize_dynamic,
-    default_placeholder_observer,
-    PerChannelMinMaxObserver,
-    QConfigDynamic,
-    FixedQParamsFakeQuantize,
-    FusedMovingAvgObsFakeQuantize,
-    FakeQuantize,
-    MovingAverageMinMaxObserver,
-    QConfig,
-)
-
+import torch.nn.quantized as nnq
+import torch.nn.quantized._reference as nnqr
+import torch.nn.quantized.dynamic as nnqd
 # test utils
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from torch.testing._internal.common_cuda import TEST_MULTIGPU, TEST_CUDA
-from torch.testing._internal.common_quantization import (
-    LinearReluLinearModel,
-    LinearReluModel,
-    QuantizationTestCase,
-    skipIfNoFBGEMM,
-    skip_if_no_torchvision,
-    train_one_epoch,
-    run_ddp,
-    test_only_eval_fn,
-    test_only_train_fn,
-)
-
-from torch.testing._internal.common_quantization import (
-    LinearModelWithSubmodule,
-    ResNetBase,
-    RNNDynamicModel,
-    RNNCellDynamicModel,
-)
-
-from torch.testing._internal.common_quantized import (
-    supported_qengines,
-    override_qengines,
-    override_quantized_engine,
-)
-
-from torch.testing._internal.common_utils import TemporaryFileName
-
-from torch.testing._internal.common_quantization import NodeSpec as ns
-
-from torch.testing._internal.common_quantization import ConvModel
-
+from torch.ao.quantization import QuantType, quant_type_to_str
+from torch.quantization import (DeQuantStub, FakeQuantize, FixedQParamsFakeQuantize, FusedMovingAvgObsFakeQuantize,
+                                MovingAverageMinMaxObserver, PerChannelMinMaxObserver, QConfig, QConfigDynamic,
+                                QuantStub, QuantWrapper, convert, default_dynamic_qconfig, default_placeholder_observer,
+                                default_qat_qconfig, default_qconfig, float16_dynamic_qconfig, float16_static_qconfig,
+                                float_qparams_weight_only_qconfig, fuse_modules, get_default_qat_qconfig,
+                                get_default_qconfig, per_channel_dynamic_qconfig, prepare, prepare_qat,
+                                quantize_dynamic)
+from torch.quantization.fx.match_utils import MatchAllNode, is_match
+from torch.quantization.fx.quantization_patterns import DefaultNodeQuantizeHandler
+# graph mode quantization based on fx
+from torch.quantization.quantize_fx import convert_fx, prepare_fx, prepare_qat_fx
 from torch.testing import FileCheck
-
-import copy
-import itertools
-import operator
-import unittest
-import io
-from typing import Callable
+from torch.testing._internal.common_cuda import TEST_CUDA, TEST_MULTIGPU
+from torch.testing._internal.common_quantization import (ConvModel, LinearModelWithSubmodule, LinearReluLinearModel,
+                                                         LinearReluModel)
+from torch.testing._internal.common_quantization import NodeSpec as ns
+from torch.testing._internal.common_quantization import (QuantizationTestCase, ResNetBase, RNNCellDynamicModel,
+                                                         RNNDynamicModel, run_ddp, skip_if_no_torchvision,
+                                                         skipIfNoFBGEMM, test_only_eval_fn, test_only_train_fn,
+                                                         train_one_epoch)
+from torch.testing._internal.common_quantized import override_qengines, override_quantized_engine, supported_qengines
+from torch.testing._internal.common_utils import TemporaryFileName
 
 TEST_WITH_ROCM = os.getenv('PYTORCH_TEST_WITH_ROCM', '0') == '1'
 
@@ -228,6 +170,7 @@ class TestFuseFx(QuantizationTestCase):
         # test eval mode
         m = M().eval()
         from torch.quantization.quantize_fx import fuse_fx
+
         # fuse_fx is a top level api and only supports eval mode
         m = fuse_fx(m)
         expected_nodes = [
@@ -825,7 +768,7 @@ class TestQuantizeFx(QuantizationTestCase):
         class Model(nn.Module):
 
             def __init__(self):
-                super(Model, self).__init__()
+                super().__init__()
                 self.conv = nn.Conv2d(1, 1, 1)
                 self.bn = nn.BatchNorm2d(1)
                 self.relu = nn.ReLU()
@@ -1069,7 +1012,7 @@ class TestQuantizeFx(QuantizationTestCase):
     def test_qconfig_none(self):
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.conv1 = nn.Conv2d(1, 1, 1)
                 self.conv2 = nn.Conv2d(1, 1, 1)
 
@@ -1098,7 +1041,7 @@ class TestQuantizeFx(QuantizationTestCase):
     def test_qconfig_module_type(self):
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.conv1 = nn.Conv2d(1, 1, 1)
                 self.conv2 = nn.Conv2d(1, 1, 1)
 
@@ -1166,7 +1109,7 @@ class TestQuantizeFx(QuantizationTestCase):
     def test_qconfig_function(self):
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
 
             def forward(self, x, y):
                 return x + y
@@ -1189,7 +1132,7 @@ class TestQuantizeFx(QuantizationTestCase):
     def test_qconfig_module_name_regex(self):
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.conv1 = nn.Conv2d(1, 1, 1)
                 self.conv2 = nn.Conv2d(1, 1, 1)
 
@@ -1218,7 +1161,7 @@ class TestQuantizeFx(QuantizationTestCase):
         for device in get_supported_device_types():
             class M(torch.nn.Module):
                 def __init__(self):
-                    super(M, self).__init__()
+                    super().__init__()
                     self.linear = nn.Linear(1, 1)
                     self.conv = nn.Conv2d(1, 1, 1)
                     self.module_conv1 = nn.Conv2d(1, 1, 1)
@@ -3052,7 +2995,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
     def test_linear_module(self):
         class ModuleLinear(torch.nn.Module):
             def __init__(self, has_relu=False, f_relu=False):
-                super(ModuleLinear, self).__init__()
+                super().__init__()
                 self.linear = torch.nn.Linear(30, 4).float()
                 if has_relu:
                     if f_relu:
@@ -3089,7 +3032,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
     def test_functional_linear(self):
         class FuncLinear(torch.nn.Module):
             def __init__(self, use_bias, has_relu, f_relu):
-                super(FuncLinear, self).__init__()
+                super().__init__()
                 self.w = torch.randn(4, 30)
                 self.b = torch.randn(4)
                 self.use_bias = use_bias
@@ -3166,7 +3109,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
     def test_linear_dynamic_fp16(self):
         class FuncLinear(torch.nn.Module):
             def __init__(self, use_bias, has_relu, f_relu):
-                super(FuncLinear, self).__init__()
+                super().__init__()
                 self.w = torch.randn(4, 30)
                 self.b = torch.randn(4)
                 self.use_bias = use_bias
@@ -3221,7 +3164,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
     def test_linear_static_fp16(self):
         class FuncLinear(torch.nn.Module):
             def __init__(self, use_bias, has_relu, f_relu):
-                super(FuncLinear, self).__init__()
+                super().__init__()
                 self.w = torch.randn(4, 30)
                 self.b = torch.randn(4)
                 self.use_bias = use_bias
@@ -3285,7 +3228,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
 
         class ConvWrapper(torch.nn.Module):
             def __init__(self, dim):
-                super(ConvWrapper, self).__init__()
+                super().__init__()
                 self.conv = conv_module[dim](3, 3, 3).float()
 
             def forward(self, x):
@@ -3413,7 +3356,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
 
         class ConvNdRelu(torch.nn.Module):
             def __init__(self, dim, inplace):
-                super(ConvNdRelu, self).__init__()
+                super().__init__()
                 self.conv = conv_module[dim](3, 3, 3).float()
                 self.relu = torch.nn.ReLU(inplace)
 
@@ -3422,7 +3365,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
 
         class ConvNdFunctionalRelu(torch.nn.Module):
             def __init__(self, dim):
-                super(ConvNdFunctionalRelu, self).__init__()
+                super().__init__()
                 self.conv = conv_module[dim](3, 3, 3).float()
 
             def forward(self, x):
@@ -3430,7 +3373,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
 
         class ConvNdInplaceFunctionalRelu(torch.nn.Module):
             def __init__(self, dim):
-                super(ConvNdInplaceFunctionalRelu, self).__init__()
+                super().__init__()
                 self.conv = conv_module[dim](3, 3, 3).float()
 
             def forward(self, x):
@@ -3775,7 +3718,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
 
         class M(torch.nn.Module):
             def __init__(self, dim):
-                super(M, self).__init__()
+                super().__init__()
                 self.bn = bn_module[dim](3).to(torch.float)
 
             def forward(self, x):
@@ -3804,7 +3747,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
 
         class BNRelu(torch.nn.Module):
             def __init__(self, dim, inplace):
-                super(BNRelu, self).__init__()
+                super().__init__()
                 self.bn = bn_module[dim](3).to(torch.float)
                 self.relu = torch.nn.ReLU(inplace=inplace)
 
@@ -3813,7 +3756,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
 
         class BNFuncRelu(torch.nn.Module):
             def __init__(self, dim):
-                super(BNFuncRelu, self).__init__()
+                super().__init__()
                 self.bn = bn_module[dim](3).to(torch.float)
 
             def forward(self, x):
@@ -3821,7 +3764,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
 
         class BNFuncInplaceRelu(torch.nn.Module):
             def __init__(self, dim):
-                super(BNFuncInplaceRelu, self).__init__()
+                super().__init__()
                 self.bn = bn_module[dim](3).to(torch.float)
 
             def forward(self, x):
@@ -3852,7 +3795,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
         '''
         class M(torch.nn.Module):
             def __init__(self, is_module, inplace):
-                super(M, self).__init__()
+                super().__init__()
                 self.is_module = is_module
                 self.inplace = inplace
                 if self.is_module:
@@ -3902,7 +3845,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
         '''
         class M(torch.nn.Module):
             def __init__(self, is_module):
-                super(M, self).__init__()
+                super().__init__()
                 self.is_module = is_module
                 if self.is_module:
                     self.op = float_module(*op_args)
@@ -3937,7 +3880,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
         '''
         class M(torch.nn.Module):
             def __init__(self, is_module):
-                super(M, self).__init__()
+                super().__init__()
                 self.is_module = is_module
                 if self.is_module:
                     self.op = float_module(*op_args)
@@ -4200,7 +4143,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
     def test_clamp(self):
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.conv = torch.nn.Conv2d(2, 2, 2).float()
                 self.relu6 = torch.nn.ReLU6()
                 self.relu6_ = torch.nn.ReLU6(True)
@@ -4270,7 +4213,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
         """
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.maxpool1d = torch.nn.MaxPool1d(kernel_size=3)
                 self.maxpool2d = torch.nn.MaxPool2d(kernel_size=3)
                 self.maxpool3d = torch.nn.MaxPool3d(kernel_size=3)
@@ -4401,7 +4344,7 @@ class TestQuantizeFxOps(QuantizationTestCase):
                 self.avg_pool1d = torch.nn.AvgPool1d(3)
                 self.avg_pool2d = torch.nn.AvgPool2d(3)
                 self.avg_pool3d = torch.nn.AvgPool3d(3)
-                self.adaptive_avg_pool1d = torch.nn.AdaptiveAvgPool1d((1))
+                self.adaptive_avg_pool1d = torch.nn.AdaptiveAvgPool1d(1)
                 self.adaptive_avg_pool2d = torch.nn.AdaptiveAvgPool2d((1, 1))
                 self.adaptive_avg_pool3d = torch.nn.AdaptiveAvgPool3d((1, 1, 1))
 
@@ -4980,7 +4923,7 @@ class TestQuantizeFxModels(QuantizationTestCase):
 
         class Net(nn.Module):
             def __init__(self):
-                super(Net, self).__init__()
+                super().__init__()
                 self.relu1 = nn.ReLU()
                 self.conv1 = nn.Conv2d(1, 6, 5)
                 self.linear1 = nn.Linear(120, 1)
@@ -5005,7 +4948,7 @@ class TestQuantizeFxModels(QuantizationTestCase):
 
         class Net(nn.Module):
             def __init__(self):
-                super(Net, self).__init__()
+                super().__init__()
                 self.relu1 = nn.ReLU()
                 self.conv1 = nn.Conv2d(1, 6, 5)
                 self.linear1 = nn.Linear(120, 1)
@@ -5032,7 +4975,7 @@ class TestQuantizeFxModels(QuantizationTestCase):
     def test_prepare_serialize_switch_device_convert(self):
         class Net(nn.Module):
             def __init__(self):
-                super(Net, self).__init__()
+                super().__init__()
                 self.conv1 = nn.Conv2d(1, 6, 5)
                 self.linear1 = nn.Linear(120, 1)
 
@@ -5242,7 +5185,7 @@ class TestQuantizeFxModels(QuantizationTestCase):
         model_list = get_available_classification_models(models)
         quantized_model_list = get_available_classification_models(quantized_models)
 
-        no_pretrained_model = set(['shufflenet_v2_x0_5', 'shufflenet_v2_x1_5', 'shufflenet_v2_x2_0'])
+        no_pretrained_model = {'shufflenet_v2_x0_5', 'shufflenet_v2_x1_5', 'shufflenet_v2_x2_0'}
         quantized_model_list = set(quantized_model_list) - no_pretrained_model
         # test eager and graph consistency
         model_list = quantized_model_list

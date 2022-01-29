@@ -1,33 +1,29 @@
-# -*- coding: utf-8 -*-
-import torch
-import numpy as np
-
-import unittest
 import itertools
-import warnings
 import math
-from math import inf, nan, isnan
 import random
-from random import randrange
-from itertools import product
+import unittest
+import warnings
 from functools import reduce
+from itertools import product
+from math import inf, isnan, nan
+from random import randrange
 
-from torch.testing._internal.common_utils import \
-    (TestCase, run_tests, TEST_SCIPY, IS_MACOS, IS_WINDOWS, slowTest,
-     TEST_WITH_ASAN, TEST_WITH_ROCM, IS_FBCODE, IS_REMOTE_GPU,
-     iter_indices, gradcheck, gradgradcheck)
-from torch.testing._internal.common_device_type import \
-    (instantiate_device_type_tests, dtypes,
-     onlyCPU, skipCUDAIf, skipCUDAIfNoMagma, skipCPUIfNoLapack, precisionOverride,
-     skipCUDAIfNoMagmaAndNoCusolver, skipCUDAIfRocm, onlyOnCPUAndCUDA, dtypesIfCUDA,
-     onlyCUDA, skipCUDAVersionIn, skipMeta, skipCUDAIfNoCusolver)
-from torch.testing import make_tensor
-from torch.testing._internal.common_dtype import (
-    all_types, floating_types, floating_and_complex_types, get_all_dtypes, get_all_int_dtypes, get_all_complex_dtypes,
-    get_all_fp_dtypes,
-)
-from torch.testing._internal.common_cuda import SM53OrLater, tf32_on_and_off, CUDA11OrLater, CUDA9
+import numpy as np
+import torch
 from torch.distributions.binomial import Binomial
+from torch.testing import make_tensor
+from torch.testing._internal.common_cuda import CUDA9, CUDA11OrLater, SM53OrLater, tf32_on_and_off
+from torch.testing._internal.common_device_type import (dtypes, dtypesIfCUDA, instantiate_device_type_tests, onlyCPU,
+                                                        onlyCUDA, onlyOnCPUAndCUDA, precisionOverride,
+                                                        skipCPUIfNoLapack, skipCUDAIf, skipCUDAIfNoCusolver,
+                                                        skipCUDAIfNoMagma, skipCUDAIfNoMagmaAndNoCusolver,
+                                                        skipCUDAIfRocm, skipCUDAVersionIn, skipMeta)
+from torch.testing._internal.common_dtype import (all_types, floating_and_complex_types, floating_types,
+                                                  get_all_complex_dtypes, get_all_dtypes, get_all_fp_dtypes,
+                                                  get_all_int_dtypes)
+from torch.testing._internal.common_utils import (IS_FBCODE, IS_MACOS, IS_REMOTE_GPU, IS_WINDOWS, TEST_SCIPY,
+                                                  TEST_WITH_ASAN, TEST_WITH_ROCM, TestCase, gradcheck, gradgradcheck,
+                                                  iter_indices, run_tests, slowTest)
 
 # Protects against includes accidentally setting the default dtype
 # NOTE: jit_metaprogramming_utils sets the default dtype to double!
@@ -1760,7 +1756,7 @@ class TestLinalg(TestCase):
     @precisionOverride({torch.cfloat: 2e-4})
     def test_norm_complex(self, device, dtype):
         def gen_error_message(input_size, ord, keepdim, dim=None):
-            return "complex norm failed for input size %s, ord=%s, keepdim=%s, dim=%s" % (
+            return "complex norm failed for input size {}, ord={}, keepdim={}, dim={}".format(
                 input_size, ord, keepdim, dim)
 
         vector_ords = [None, 0, 1, 2, 3, inf, -1, -2, -3, -inf]
@@ -2083,7 +2079,7 @@ class TestLinalg(TestCase):
         self.assertRaisesRegex(
             RuntimeError,
             'input should be 2 dimensional',
-            lambda: torch.eig(torch.ones((2))))
+            lambda: torch.eig(torch.ones(2)))
         self.assertRaisesRegex(
             RuntimeError,
             'input should be square',
@@ -2430,7 +2426,7 @@ class TestLinalg(TestCase):
     @skipCPUIfNoLapack
     def test_norm_old(self, device):
         def gen_error_message(input_size, p, keepdim, dim=None):
-            return "norm failed for input size %s, p=%s, keepdim=%s, dim=%s" % (
+            return "norm failed for input size {}, p={}, keepdim={}, dim={}".format(
                 input_size, p, keepdim, dim)
 
         for keepdim in [False, True]:
@@ -2502,7 +2498,7 @@ class TestLinalg(TestCase):
     @skipCPUIfNoLapack
     def test_norm_complex_old(self, device):
         def gen_error_message(input_size, p, keepdim, dim=None):
-            return "complex norm failed for input size %s, p=%s, keepdim=%s, dim=%s" % (
+            return "complex norm failed for input size {}, p={}, keepdim={}, dim={}".format(
                 input_size, p, keepdim, dim)
 
         for keepdim in [False, True]:
@@ -5372,7 +5368,7 @@ class TestLinalg(TestCase):
         for p in [1, 2, 3, 4, inf]:
             res = x.renorm(p, 1, 1)
             expected = x / x.norm(p, 0, keepdim=True).clamp(min=1)
-            self.assertEqual(res, expected, msg="renorm failed for {}-norm".format(p))
+            self.assertEqual(res, expected, msg=f"renorm failed for {p}-norm")
 
     @skipCPUIfNoLapack
     @skipCUDAIfNoCusolver
@@ -5626,9 +5622,9 @@ class TestLinalg(TestCase):
         self._test_lobpcg_method(device, dtype, 'ortho')
 
     def _test_lobpcg_method(self, device, dtype, method):
-        from torch.testing._internal.common_utils import random_symmetric_pd_matrix, random_sparse_pd_matrix
         from torch._linalg_utils import matmul, qform
         from torch._lobpcg import lobpcg
+        from torch.testing._internal.common_utils import random_sparse_pd_matrix, random_symmetric_pd_matrix
 
         def test_tracker(worker):
             k = worker.iparams['k']
@@ -5744,8 +5740,8 @@ class TestLinalg(TestCase):
     @onlyCPU
     @dtypes(torch.double)
     def test_lobpcg_torchscript(self, device, dtype):
-        from torch.testing._internal.common_utils import random_sparse_pd_matrix
         from torch._linalg_utils import matmul as mm
+        from torch.testing._internal.common_utils import random_sparse_pd_matrix
 
         lobpcg = torch.jit.script(torch.lobpcg)
 
@@ -5765,10 +5761,11 @@ class TestLinalg(TestCase):
         """Compare torch and scipy.sparse.linalg implementations of lobpcg
         """
         import time
-        from torch.testing._internal.common_utils import random_sparse_pd_matrix
-        from torch._linalg_utils import matmul as mm
-        from scipy.sparse.linalg import lobpcg as scipy_lobpcg
+
         import scipy.sparse
+        from scipy.sparse.linalg import lobpcg as scipy_lobpcg
+        from torch._linalg_utils import matmul as mm
+        from torch.testing._internal.common_utils import random_sparse_pd_matrix
 
         def toscipy(A):
             if A.layout == torch.sparse_coo:
@@ -6889,8 +6886,8 @@ scipy_lobpcg  | {:10.2e}  | {:10.2e}  | {:6} | N/A
     @precisionOverride({torch.float32: 1e-3, torch.complex64: 1e-3,
                         torch.float64: 1e-8, torch.complex128: 1e-8})
     def test_slogdet(self, device, dtype):
-        from torch.testing._internal.common_utils import (random_hermitian_matrix, random_hermitian_psd_matrix,
-                                                          random_hermitian_pd_matrix, random_square_matrix_of_rank)
+        from torch.testing._internal.common_utils import (random_hermitian_matrix, random_hermitian_pd_matrix,
+                                                          random_hermitian_psd_matrix, random_square_matrix_of_rank)
 
         # mat_chars denotes matrix characteristics
         # possible values are: hermitian, hermitian_psd, hermitian_pd, singular, non_singular
@@ -7003,15 +7000,15 @@ scipy_lobpcg  | {:10.2e}  | {:10.2e}  | {:6} | N/A
 
             # Test det
             self.assertEqual(det, target_sdet * target_logabsdet.exp(),
-                             atol=1e-7, rtol=0, msg='{} (det)'.format(desc))
+                             atol=1e-7, rtol=0, msg=f'{desc} (det)')
 
             # Test slogdet
             # Compare the overall value rather than individual parts because of
             # precision issues when det is near zero.
             self.assertEqual(sdet * logabsdet.exp(), target_sdet * target_logabsdet.exp(),
-                             atol=1e-7, rtol=0, msg='{} (slogdet)'.format(desc))
+                             atol=1e-7, rtol=0, msg=f'{desc} (slogdet)')
             self.assertEqual(linalg_sdet * linalg_logabsdet.exp(), target_sdet * target_logabsdet.exp(),
-                             atol=1e-7, rtol=0, msg='{} (linalg_slogdet)'.format(desc))
+                             atol=1e-7, rtol=0, msg=f'{desc} (linalg_slogdet)')
 
             # Test logdet
             # Compare logdet against our own pytorch slogdet because they should
@@ -7019,10 +7016,10 @@ scipy_lobpcg  | {:10.2e}  | {:10.2e}  | {:6} | N/A
             # slogdet implementations when det is near zero due to precision
             # issues.
             if sdet.item() < 0:
-                self.assertTrue(logdet.item() != logdet.item(), '{} (logdet negative case)'.format(desc))
+                self.assertTrue(logdet.item() != logdet.item(), f'{desc} (logdet negative case)')
             else:
                 self.assertEqual(logdet.exp(), target_logabsdet.exp(),
-                                 atol=1e-7, rtol=0, msg='{} (logdet non-negative case)'.format(desc))
+                                 atol=1e-7, rtol=0, msg=f'{desc} (logdet non-negative case)')
 
         eye = torch.eye(5, dtype=dtype, device=device)
         test_single_det(eye, (torch.ones((), dtype=dtype, device=device), torch.zeros((), dtype=dtype, device=device)), 'identity')
@@ -7160,8 +7157,8 @@ scipy_lobpcg  | {:10.2e}  | {:10.2e}  | {:6} | N/A
     @skipCPUIfNoLapack
     @dtypes(torch.double)
     def test_det_logdet_slogdet_batched(self, device, dtype):
-        from torch.testing._internal.common_utils import (random_symmetric_matrix, random_symmetric_psd_matrix,
-                                                          random_symmetric_pd_matrix, random_square_matrix_of_rank)
+        from torch.testing._internal.common_utils import (random_square_matrix_of_rank, random_symmetric_matrix,
+                                                          random_symmetric_pd_matrix, random_symmetric_psd_matrix)
 
         # mat_chars denotes matrix characteristics
         # possible values are: sym, sym_psd, sym_pd, sing, non_sym

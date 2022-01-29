@@ -1,16 +1,15 @@
-from torch.autograd import Variable
-from onnx import numpy_helper
-
 import io
-import onnx
 import os
 import shutil
-import torch
 import traceback
 
+import onnx
 import test_onnx_common
-from torch.testing._internal.common_nn import module_tests
+import torch
+from onnx import numpy_helper
 from test_nn import new_module_tests
+from torch.autograd import Variable
+from torch.testing._internal.common_nn import module_tests
 
 
 # Take a test case (a dict) as input, return the test name.
@@ -49,7 +48,7 @@ def gen_module(testcase):
 
 
 def print_stats(FunctionalModule_nums, nn_module):
-    print("{} functional modules detected.".format(FunctionalModule_nums))
+    print(f"{FunctionalModule_nums} functional modules detected.")
     supported = []
     unsupported = []
     not_fully_supported = []
@@ -69,17 +68,17 @@ def print_stats(FunctionalModule_nums, nn_module):
     # Fully Supported Ops: All related test cases of these ops have been exported
     # Semi-Supported Ops: Part of related test cases of these ops have been exported
     # Unsupported Ops: None of related test cases of these ops have been exported
-    for info, l in [["{} Fully Supported Operators:".format(len(supported)),
+    for info, l in [[f"{len(supported)} Fully Supported Operators:",
                      supported],
-                    ["{} Semi-Supported Operators:".format(len(not_fully_supported)),
+                    [f"{len(not_fully_supported)} Semi-Supported Operators:",
                      not_fully_supported],
-                    ["{} Unsupported Operators:".format(len(unsupported)),
+                    [f"{len(unsupported)} Unsupported Operators:",
                      unsupported]]:
         fun(info, l)
 
 
 def convert_tests(testcases, sets=1):
-    print("Collect {} test cases from PyTorch.".format(len(testcases)))
+    print(f"Collect {len(testcases)} test cases from PyTorch.")
     failed = 0
     FunctionalModule_nums = 0
     nn_module = {}
@@ -110,16 +109,16 @@ def convert_tests(testcases, sets=1):
 
             for i in range(sets):
                 output = module(input)
-                data_dir = os.path.join(output_dir, "test_data_set_{}".format(i))
+                data_dir = os.path.join(output_dir, f"test_data_set_{i}")
                 os.makedirs(data_dir)
 
                 for index, var in enumerate([input]):
                     tensor = numpy_helper.from_array(var.data.numpy())
-                    with open(os.path.join(data_dir, "input_{}.pb".format(index)), "wb") as file:
+                    with open(os.path.join(data_dir, f"input_{index}.pb"), "wb") as file:
                         file.write(tensor.SerializeToString())
                 for index, var in enumerate([output]):
                     tensor = numpy_helper.from_array(var.data.numpy())
-                    with open(os.path.join(data_dir, "output_{}.pb".format(index)), "wb") as file:
+                    with open(os.path.join(data_dir, f"output_{index}.pb"), "wb") as file:
                         file.write(tensor.SerializeToString())
                 input = gen_input(t)
                 if (module_name != "FunctionalModule"):
@@ -132,7 +131,7 @@ def convert_tests(testcases, sets=1):
 
     print("Collect {} test cases from PyTorch repo, failed to export {} cases.".format(
         len(testcases), failed))
-    print("PyTorch converted cases are stored in {}.".format(test_onnx_common.pytorch_converted_dir))
+    print(f"PyTorch converted cases are stored in {test_onnx_common.pytorch_converted_dir}.")
     print_stats(FunctionalModule_nums, nn_module)
 
 if __name__ == "__main__":

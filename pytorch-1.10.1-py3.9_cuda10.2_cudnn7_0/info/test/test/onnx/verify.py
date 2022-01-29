@@ -1,14 +1,12 @@
+import difflib
+import io
+
+import numpy as np
+import onnx
+import onnx.helper
 import torch
 import torch.jit
 import torch.onnx
-
-import onnx
-import onnx.helper
-
-import numpy as np
-
-import difflib
-import io
 
 
 def colonize(msg, sep=": "):
@@ -18,7 +16,7 @@ def colonize(msg, sep=": "):
         return msg + sep
 
 
-class Errors(object):
+class Errors:
     """
     An error-collecting object which supports error recovery.
 
@@ -71,7 +69,7 @@ class Errors(object):
                                            equal_nan=True, verbose=True)
             except AssertionError as e:
                 raise
-                k("{}{}".format(colonize(msg), str(e).lstrip()))
+                k(f"{colonize(msg)}{str(e).lstrip()}")
         else:
             raise RuntimeError("Unsupported almost equal test")
 
@@ -101,7 +99,7 @@ class Errors(object):
             # Use numpy for the comparison
             t1 = onnx.numpy_helper.to_array(x)
             t2 = onnx.numpy_helper.to_array(y)
-            new_msg = "{}In embedded parameter '{}'".format(colonize(msg), x.name)
+            new_msg = f"{colonize(msg)}In embedded parameter '{x.name}'"
             self.equalAndThen(t1, t2, new_msg, k)
         elif isinstance(x, np.ndarray) and isinstance(y, np.ndarray):
             try:
@@ -120,7 +118,7 @@ class Errors(object):
                     k("\n{}The value\n{}\n{}\n{}\n\ndoes not equal\n\n{}\n{}\n{}"
                         .format(colonize(msg, ":\n"), l, sx, l, l, sy, l))
                 else:
-                    k("{}{} != {}".format(colonize(msg), sx, sy))
+                    k(f"{colonize(msg)}{sx} != {sy}")
 
     def requireMultiLineEqual(self, x, y, msg=None):
         """
@@ -186,7 +184,7 @@ class Errors(object):
         """
         parent_self = self
 
-        class Recover(object):
+        class Recover:
             def __enter__(self):
                 pass
 
@@ -206,7 +204,7 @@ class Errors(object):
         """
         parent_self = self
 
-        class AddContext(object):
+        class AddContext:
             def __enter__(self):
                 parent_self.context.append(msg)
 
@@ -304,8 +302,7 @@ def verify(model, args, backend, verbose=False, training=torch.onnx.TrainingMode
                 return
             elif isinstance(obj, (list, tuple)):
                 for o in obj:
-                    for var in _iter(o):
-                        yield var
+                    yield from _iter(o)
             elif allow_unknown:
                 yield obj
             else:
@@ -464,7 +461,7 @@ def verify(model, args, backend, verbose=False, training=torch.onnx.TrainingMode
                            "it indicates a bug in PyTorch/ONNX; please file a bug report.")
             with Errors(msg, rtol=rtol, atol=atol) as errs, errs.addErrCtxt(result_hint):
                 for i, (x, y) in enumerate(zip(torch_out, backend_out)):
-                    errs.checkAlmostEqual(x.data.cpu().numpy(), y, "In output {}".format(i))
+                    errs.checkAlmostEqual(x.data.cpu().numpy(), y, f"In output {i}")
 
         run_helper(torch_out, args, remained_onnx_input_idx)
 

@@ -9,18 +9,18 @@ import unittest
 from typing import Any, Callable, Iterator, List, Tuple
 
 import torch
-
-from torch.testing import make_tensor
-from torch.testing._internal.common_utils import \
-    (IS_FBCODE, IS_SANDCASTLE, IS_WINDOWS, TestCase, run_tests, skipIfRocm, slowTest,
-     parametrize, subtest, instantiate_parametrized_tests, dtype_name)
-from torch.testing._internal.common_device_type import \
-    (PYTORCH_TESTING_DEVICE_EXCEPT_FOR_KEY, PYTORCH_TESTING_DEVICE_ONLY_FOR_KEY, dtypes,
-     get_device_type_test_bases, instantiate_device_type_tests, onlyCUDA, onlyOnCPUAndCUDA,
-     deviceCountAtLeast, ops)
-from torch.testing._internal.common_methods_invocations import op_db
 import torch.testing._internal.opinfo_helper as opinfo_helper
+from torch.testing import make_tensor
+from torch.testing._internal.common_device_type import (PYTORCH_TESTING_DEVICE_EXCEPT_FOR_KEY,
+                                                        PYTORCH_TESTING_DEVICE_ONLY_FOR_KEY, deviceCountAtLeast, dtypes,
+                                                        get_device_type_test_bases, instantiate_device_type_tests,
+                                                        onlyCUDA, onlyOnCPUAndCUDA, ops)
 from torch.testing._internal.common_dtype import get_all_dtypes
+from torch.testing._internal.common_methods_invocations import op_db
+from torch.testing._internal.common_utils import (IS_FBCODE, IS_SANDCASTLE, IS_WINDOWS, TestCase, dtype_name,
+                                                  instantiate_parametrized_tests, parametrize, run_tests, skipIfRocm,
+                                                  slowTest, subtest)
+
 
 # For testing TestCase methods and torch.testing functions
 class TestTesting(TestCase):
@@ -122,7 +122,7 @@ class TestTesting(TestCase):
         a = torch.tensor(((0, 6), (7, 9)), device=device, dtype=torch.float32)
         b = torch.tensor(((0, 7), (7, 22)), device=device, dtype=torch.float32)
         result, debug_msg = self._compareTensors(a, b)
-        expected_msg = ("With rtol=1.3e-06 and atol={0}, found 2 element(s) (out of 4) "
+        expected_msg = ("With rtol=1.3e-06 and atol={}, found 2 element(s) (out of 4) "
                         "whose difference(s) exceeded the margin of error (including 0 nan comparisons). "
                         "The greatest difference was 13.0 (9.0 vs. 22.0), "
                         "which occurred at index (1, 1).").format(atol)
@@ -132,7 +132,7 @@ class TestTesting(TestCase):
         a = torch.tensor((float('inf'), 5, float('inf')), device=device, dtype=torch.float32)
         b = torch.tensor((float('inf'), float('nan'), float('-inf')), device=device, dtype=torch.float32)
         result, debug_msg = self._compareTensors(a, b)
-        expected_msg = ("With rtol=1.3e-06 and atol={0}, found 2 element(s) (out of 3) "
+        expected_msg = ("With rtol=1.3e-06 and atol={}, found 2 element(s) (out of 3) "
                         "whose difference(s) exceeded the margin of error (including 1 nan comparisons). "
                         "The greatest difference was nan (5.0 vs. nan), "
                         "which occurred at index 1.").format(atol)
@@ -142,7 +142,7 @@ class TestTesting(TestCase):
         a = torch.tensor((20, -6), device=device, dtype=torch.float32)
         b = torch.tensor((-1, float('nan')), device=device, dtype=torch.float32)
         result, debug_msg = self._compareTensors(a, b)
-        expected_msg = ("With rtol=1.3e-06 and atol={0}, found 2 element(s) (out of 2) "
+        expected_msg = ("With rtol=1.3e-06 and atol={}, found 2 element(s) (out of 2) "
                         "whose difference(s) exceeded the margin of error (including 1 nan comparisons). "
                         "The greatest difference was nan (-6.0 vs. nan), "
                         "which occurred at index 1.").format(atol)
@@ -1428,7 +1428,7 @@ class TestAssertCloseQuantized(TestCase):
 
 def _get_test_names_for_test_class(test_cls):
     """ Convenience function to get all test names for a given test class. """
-    test_names = ['{}.{}'.format(test_cls.__name__, key) for key in test_cls.__dict__
+    test_names = [f'{test_cls.__name__}.{key}' for key in test_cls.__dict__
                   if key.startswith('test_')]
     return sorted(test_names)
 
@@ -1473,7 +1473,7 @@ class TestTestParametrization(TestCase):
             def test_three_things_composition_custom_names(self, x, y, z):
                 pass
 
-            @parametrize("x,y", [(1, 2), (1, 3), (1, 4)], name_fn=lambda x, y: '{}__{}'.format(x, y))
+            @parametrize("x,y", [(1, 2), (1, 3), (1, 4)], name_fn=lambda x, y: f'{x}__{y}')
             def test_two_things_custom_names_alternate(self, x, y):
                 pass
 
@@ -1552,7 +1552,7 @@ class TestTestParametrizationDeviceType(TestCase):
 
         instantiate_device_type_tests(TestParametrized, locals(), only_for=device)
 
-        device_cls = locals()['TestParametrized{}'.format(device.upper())]
+        device_cls = locals()[f'TestParametrized{device.upper()}']
         expected_test_names = [name.format(device_cls.__name__, device) for name in (
             '{}.test_device_dtype_specific_{}_float32',
             '{}.test_device_dtype_specific_{}_float64',
@@ -1576,7 +1576,7 @@ class TestTestParametrizationDeviceType(TestCase):
 
         instantiate_device_type_tests(TestParametrized, locals(), only_for=device)
 
-        device_cls = locals()['TestParametrized{}'.format(device.upper())]
+        device_cls = locals()[f'TestParametrized{device.upper()}']
         expected_test_names = [name.format(device_cls.__name__, device) for name in (
             '{}.test_default_names_x_0_{}',
             '{}.test_default_names_x_1_{}',
@@ -1610,13 +1610,13 @@ class TestTestParametrizationDeviceType(TestCase):
             def test_three_things_composition_custom_names(self, device, x, y, z):
                 pass
 
-            @parametrize("x,y", [(1, 2), (1, 3), (1, 4)], name_fn=lambda x, y: '{}__{}'.format(x, y))
+            @parametrize("x,y", [(1, 2), (1, 3), (1, 4)], name_fn=lambda x, y: f'{x}__{y}')
             def test_two_things_custom_names_alternate(self, device, x, y):
                 pass
 
         instantiate_device_type_tests(TestParametrized, locals(), only_for=device)
 
-        device_cls = locals()['TestParametrized{}'.format(device.upper())]
+        device_cls = locals()[f'TestParametrized{device.upper()}']
         expected_test_names = [name.format(device_cls.__name__, device) for name in (
             '{}.test_custom_names_bias_{}',
             '{}.test_custom_names_no_bias_{}',
@@ -1652,7 +1652,7 @@ class TestTestParametrizationDeviceType(TestCase):
 
         instantiate_device_type_tests(TestParametrized, locals(), only_for=device)
 
-        device_cls = locals()['TestParametrized{}'.format(device.upper())]
+        device_cls = locals()[f'TestParametrized{device.upper()}']
         expected_test_names = [name.format(device_cls.__name__, device) for name in (
             '{}.test_custom_names_bias_{}',
             '{}.test_custom_names_no_bias_{}',
@@ -1680,13 +1680,13 @@ class TestTestParametrizationDeviceType(TestCase):
 
         instantiate_device_type_tests(TestParametrized, locals(), only_for=device)
 
-        device_cls = locals()['TestParametrized{}'.format(device.upper())]
+        device_cls = locals()[f'TestParametrized{device.upper()}']
         expected_test_names = []
         for op in op_db:
             for dtype in op.default_test_dtypes(device):
                 for flag_part in ('_flag_disabled_', '_flag_enabled_'):
                     op_name = '{}{}'.format(op.name, '_' + op.variant_test_name if op.variant_test_name else '')
-                    part1 = '{}.test_op_parametrized_{}'.format(device_cls.__name__, op_name)
+                    part1 = f'{device_cls.__name__}.test_op_parametrized_{op_name}'
                     expected_test_names.append(part1 + '_' + dtype_name(dtype) + flag_part + device)
 
         test_names = _get_test_names_for_test_class(device_cls)
@@ -1705,7 +1705,7 @@ class TestTestParametrizationDeviceType(TestCase):
 
         instantiate_device_type_tests(TestParametrized, locals(), only_for=device)
 
-        device_cls = locals()['TestParametrized{}'.format(device.upper())]
+        device_cls = locals()[f'TestParametrized{device.upper()}']
         expected_test_names = [name.format(device_cls.__name__, device) for name in (
             '{}.test_parametrized_x_0_{}_float32',
             '{}.test_parametrized_x_0_{}_float64',

@@ -1,26 +1,17 @@
-# -*- coding: utf-8 -*-
-from torch.testing._internal.common_utils import run_tests
-
 import copy
-import numpy as np
 import io
 import logging
 from itertools import product
 
+import numpy as np
 import torch
 import torch.quantization as tq
-
 from torch import nn
 from torch.ao.nn.sparse import quantized as ao_nn_sq
 from torch.ao.nn.sparse.quantized.utils import LinearBlockSparsePattern
-
-from torch.testing._internal.common_utils import TestCase
-from torch.testing._internal.common_quantized import (
-    override_cpu_allocator_for_qnnpack,
-    override_qengines,
-    qengine_is_qnnpack,
-    qengine_is_fbgemm,
-)
+from torch.testing._internal.common_quantized import (override_cpu_allocator_for_qnnpack, override_qengines,
+                                                      qengine_is_fbgemm, qengine_is_qnnpack)
+from torch.testing._internal.common_utils import TestCase, run_tests
 
 # TODO: Once more test files are created, move the contents to a ao folder.
 

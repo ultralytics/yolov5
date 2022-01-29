@@ -1,12 +1,13 @@
-import torch
+import cmath
 import os
 import sys
-from torch.testing._internal.jit_utils import JitTestCase, execWrapper
-from torch.testing._internal.common_utils import IS_MACOS
-from typing import List, Dict
 from itertools import product
 from textwrap import dedent
-import cmath
+from typing import Dict, List
+
+import torch
+from torch.testing._internal.common_utils import IS_MACOS
+from torch.testing._internal.jit_utils import JitTestCase, execWrapper
 
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))

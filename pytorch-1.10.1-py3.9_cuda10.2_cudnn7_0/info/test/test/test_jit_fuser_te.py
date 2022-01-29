@@ -1,11 +1,12 @@
-import operator
-import unittest
 import contextlib
 import math
+import operator
+import unittest
+from typing import List
+
 import torch
 import torch.nn.functional as F
 from torch.testing import FileCheck
-from typing import List
 
 # these needs to be set before `common_utils`
 # infers `GRAPH_EXECUTOR`.
@@ -16,27 +17,23 @@ from typing import List
 torch._C._jit_set_profiling_executor(True)
 torch._C._jit_set_profiling_mode(True)
 
-from torch.testing._internal.common_utils import run_tests, ProfilingMode, GRAPH_EXECUTOR, \
-    enable_profiling_mode_for_profiling_tests, TestCase
-from torch.testing._internal.jit_utils import JitTestCase, \
-    RUN_CUDA, RUN_CUDA_HALF, RUN_CUDA_MULTI_GPU, warmup_backward, set_fusion_group_inlining
-
-from torch.testing._internal.common_methods_invocations import op_db
-from torch.testing._internal.common_device_type import ops, onlyCPU, instantiate_device_type_tests
-
+from itertools import permutations, product
 from textwrap import dedent
-from itertools import product, permutations
-
-from test_jit import backward_graph, get_lstm_inputs, get_milstm_inputs, \
-    LSTMCellC, LSTMCellF, LSTMCellS, MiLSTMCell
 
 from jit.test_fuser_common import TestFuserCommon  # noqa: F401
+from test_jit import LSTMCellC, LSTMCellF, LSTMCellS, MiLSTMCell, backward_graph, get_lstm_inputs, get_milstm_inputs
+from torch.testing._internal.common_device_type import instantiate_device_type_tests, onlyCPU, ops
+from torch.testing._internal.common_methods_invocations import op_db
+from torch.testing._internal.common_utils import (GRAPH_EXECUTOR, ProfilingMode, TestCase,
+                                                  enable_profiling_mode_for_profiling_tests, run_tests)
+from torch.testing._internal.jit_utils import (RUN_CUDA, RUN_CUDA_HALF, RUN_CUDA_MULTI_GPU, JitTestCase,
+                                               set_fusion_group_inlining, warmup_backward)
 
 FUSION_GROUP = 'prim::TensorExprGroup'
 LLVM_ENABLED = torch._C._llvm_enabled()
 
 def strip_profiling_nodes(nodes):
-    profiling_opcodes = set(['prim::BailoutTemplate', 'prim::BailOut'])
+    profiling_opcodes = {'prim::BailoutTemplate', 'prim::BailOut'}
     return [n for n in nodes if n.kind() not in profiling_opcodes]
 
 def warmup_forward(f, *args, profiling_count=2):
@@ -896,7 +893,7 @@ class TestTEFuser(JitTestCase):
             __constants__ = ['d']
 
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
                 self.d = torch.device('cuda')
 
             @torch.jit.script_method
@@ -1137,7 +1134,7 @@ class TestTEFuser(JitTestCase):
 
         class MyMod(torch.nn.Module):
             def __init__(self, dtype):
-                super(MyMod, self).__init__()
+                super().__init__()
                 self.dtype = dtype
 
             def forward(self, x):
@@ -1476,7 +1473,7 @@ class TestTEFuser(JitTestCase):
                 self.assertEqual(ref, t(x))
             except Exception as e:
                 raise RuntimeError(
-                    "Failed: {} {} {} {}".format(dtype, op.__name__, device, scalar)
+                    f"Failed: {dtype} {op.__name__} {device} {scalar}"
                 )
 
     def test_binary_pow(self):

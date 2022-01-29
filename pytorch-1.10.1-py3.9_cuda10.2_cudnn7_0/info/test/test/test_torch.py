@@ -1,56 +1,49 @@
-# -*- coding: utf-8 -*-
-import torch
-import torch.utils.data
-import numpy as np
-
 import contextlib
+import copy
 import gc
-import io
 import inspect
+import io
 import itertools
 import math
+import os
+import pickle
 import random
 import re
-import copy
-import os
+import subprocess
+import sys
 import tempfile
+import textwrap
+import types
 import unittest
 import warnings
-import types
-import pickle
-import textwrap
-import subprocess
 import weakref
-import sys
-from torch.utils.dlpack import from_dlpack, to_dlpack
-from torch._six import inf, nan, string_classes
-from itertools import product, combinations, permutations
 from functools import partial
-from torch import multiprocessing as mp
-from torch.testing import make_tensor
-from torch.testing._internal.common_utils import (
-    TestCase, TEST_WITH_ROCM, run_tests,
-    IS_WINDOWS, IS_FILESYSTEM_UTF8_ENCODING, NO_MULTIPROCESSING_SPAWN,
-    do_test_dtypes, IS_SANDCASTLE, IS_FBCODE, IS_REMOTE_GPU, load_tests, slowTest,
-    skipCUDAMemoryLeakCheckIf, BytesIOContext, noarchTest,
-    skipIfRocm, skipIfNoSciPy, TemporaryFileName, TemporaryDirectoryName,
-    wrapDeterministicFlagAPITest, DeterministicGuard, CudaSyncGuard)
+from itertools import combinations, permutations, product
 from multiprocessing.reduction import ForkingPickler
-from torch.testing._internal.common_device_type import (
-    instantiate_device_type_tests,
-    skipCUDAVersionIn,
-    onlyCUDA, onlyCPU,
-    dtypes, dtypesIfCUDA, dtypesIfCPU, deviceCountAtLeast,
-    skipMeta,
-    PYTORCH_CUDA_MEMCHECK, largeTensorTest, onlyOnCPUAndCUDA,
-    expectedAlertNondeterministic)
 from typing import Dict, List, Tuple
+
+import numpy as np
+import torch
 import torch.backends.quantized
 import torch.testing._internal.data
-from torch.testing._internal.common_cuda import tf32_on_and_off, tf32_is_not_fp32
-from torch.testing._internal.common_dtype import (
-    get_all_fp_dtypes, get_all_int_dtypes, get_all_math_dtypes, get_all_dtypes, get_all_complex_dtypes
-)
+import torch.utils.data
+from torch import multiprocessing as mp
+from torch._six import inf, nan, string_classes
+from torch.testing import make_tensor
+from torch.testing._internal.common_cuda import tf32_is_not_fp32, tf32_on_and_off
+from torch.testing._internal.common_device_type import (PYTORCH_CUDA_MEMCHECK, deviceCountAtLeast, dtypes, dtypesIfCPU,
+                                                        dtypesIfCUDA, expectedAlertNondeterministic,
+                                                        instantiate_device_type_tests, largeTensorTest, onlyCPU,
+                                                        onlyCUDA, onlyOnCPUAndCUDA, skipCUDAVersionIn, skipMeta)
+from torch.testing._internal.common_dtype import (get_all_complex_dtypes, get_all_dtypes, get_all_fp_dtypes,
+                                                  get_all_int_dtypes, get_all_math_dtypes)
+from torch.testing._internal.common_utils import (IS_FBCODE, IS_FILESYSTEM_UTF8_ENCODING, IS_REMOTE_GPU, IS_SANDCASTLE,
+                                                  IS_WINDOWS, NO_MULTIPROCESSING_SPAWN, TEST_WITH_ROCM, BytesIOContext,
+                                                  CudaSyncGuard, DeterministicGuard, TemporaryDirectoryName,
+                                                  TemporaryFileName, TestCase, do_test_dtypes, load_tests, noarchTest,
+                                                  run_tests, skipCUDAMemoryLeakCheckIf, skipIfNoSciPy, skipIfRocm,
+                                                  slowTest, wrapDeterministicFlagAPITest)
+from torch.utils.dlpack import from_dlpack, to_dlpack
 
 # Protects against includes accidentally setting the default dtype
 assert torch.get_default_dtype() is torch.float32
@@ -154,9 +147,10 @@ class AbstractTestCases:
 
         def test_doc_template(self) -> None:
             from torch._torch_docs import __file__ as doc_file
-            from torch._torch_docs import multi_dim_common, single_dim_common, factory_common_args, factory_like_common_args
+            from torch._torch_docs import (factory_common_args, factory_like_common_args, multi_dim_common,
+                                           single_dim_common)
 
-            with open(doc_file, "r", encoding="utf-8") as f:
+            with open(doc_file, encoding="utf-8") as f:
                 doc_strs = f.read()
 
             for doc_str in re.findall(r'add_docstr\((.*?),.*?("""|\'\'\')(.*?)("""|\'\'\')\)', doc_strs, re.MULTILINE | re.DOTALL):
@@ -177,7 +171,7 @@ class AbstractTestCases:
                 skip_regexes = []
                 for r in skips:
                     if isinstance(r, string_classes):
-                        skip_regexes.append(re.compile('^{}$'.format(re.escape(r))))
+                        skip_regexes.append(re.compile(f'^{re.escape(r)}$'))
                     else:
                         skip_regexes.append(r)
 
@@ -199,7 +193,7 @@ class AbstractTestCases:
                                          'New docs have been added for {}, please remove '
                                          'it from the skipped list in TestTorch.test_doc'.format(full_name))
                     else:
-                        self.assertTrue(has_doc, '{} is missing documentation'.format(full_name))
+                        self.assertTrue(has_doc, f'{full_name} is missing documentation')
 
             # FIXME: All of the following should be marked as expected failures
             # so that it is easier to tell when missing has been added.
@@ -403,7 +397,7 @@ class AbstractTestCases:
                     return "device(type='{type}', index={index})".format(
                         type=device.type, index=device.index)
 
-                return "device(type='{type}')".format(type=device.type)
+                return f"device(type='{device.type}')"
 
             for device in device_set:
                 dev = torch.device(device)
@@ -421,7 +415,7 @@ class AbstractTestCases:
                 devices = [t.device]
                 if t.device.type == 'cuda':
                     if t.device.index == -1:
-                        devices.append('cuda:{}'.format(torch.cuda.current_device()))
+                        devices.append(f'cuda:{torch.cuda.current_device()}')
                     elif t.device.index == torch.cuda.current_device():
                         devices.append('cuda')
                 for device in devices:
@@ -821,7 +815,7 @@ class AbstractTestCases:
             for seed, expected_initial_seed in test_cases:
                 torch.manual_seed(seed)
                 actual_initial_seed = torch.initial_seed()
-                msg = "expected initial_seed() = %x after calling manual_seed(%x), but got %x instead" % (
+                msg = "expected initial_seed() = {:x} after calling manual_seed({:x}), but got {:x} instead".format(
                     expected_initial_seed, seed, actual_initial_seed)
                 self.assertEqual(expected_initial_seed, actual_initial_seed, msg=msg)
             for invalid_seed in [min_int64 - 1, max_uint64 + 1]:
@@ -1428,11 +1422,11 @@ class AbstractTestCases:
 
             self.assertRaisesRegex(
                 RuntimeError,
-                "Tensor.__contains__ only supports Tensor or scalar, but you passed in a {}.".format(type("foo")),
+                f"Tensor.__contains__ only supports Tensor or scalar, but you passed in a {str}.",
                 lambda: "foo" in x)
             self.assertRaisesRegex(
                 RuntimeError,
-                "Tensor.__contains__ only supports Tensor or scalar, but you passed in a {}.".format(type([1, 2])),
+                f"Tensor.__contains__ only supports Tensor or scalar, but you passed in a {type([1, 2])}.",
                 lambda: [1, 2] in x)
 
         def test_deepcopy_parameter(self):
@@ -1715,9 +1709,9 @@ class AbstractTestCases:
 
             # fail parse with > 1 element variables
             self.assertRaises(TypeError, lambda: torch.ones(torch.tensor(3, 3)))
-            self.assertRaises(TypeError, lambda: torch.ones((torch.tensor(3, 3))))
+            self.assertRaises(TypeError, lambda: torch.ones(torch.tensor(3, 3)))
             self.assertRaises(TypeError, lambda: torch.ones(np.array(3, 3)))
-            self.assertRaises(TypeError, lambda: torch.ones((np.array(3, 3))))
+            self.assertRaises(TypeError, lambda: torch.ones(np.array(3, 3)))
 
             # fail parse with additional positional args after intlist arg
             self.assertRaisesRegex(TypeError,
@@ -7028,7 +7022,7 @@ else:
                 self.assertEqual(result, result_c)
                 self.assertTrue(
                     result.is_contiguous(memory_format=memory_format),
-                    "result of the '{}' is not in '{}' format".format(inspect.getsource(fn).strip(), memory_format))
+                    f"result of the '{inspect.getsource(fn).strip()}' is not in '{memory_format}' format")
 
             for fn in bias_fns:
                 x_c = x.contiguous()
@@ -7038,7 +7032,7 @@ else:
                 self.assertEqual(result, result_c)
                 self.assertTrue(
                     result.is_contiguous(memory_format=memory_format),
-                    "result of the '{}' is not in '{}' format".format(inspect.getsource(fn).strip(), memory_format))
+                    f"result of the '{inspect.getsource(fn).strip()}' is not in '{memory_format}' format")
 
             for fn in return_contig_fns:
                 x_c = x.contiguous()
@@ -7048,7 +7042,7 @@ else:
                 self.assertEqual(result, result_c)
                 self.assertTrue(
                     result.is_contiguous(memory_format=torch.contiguous_format),
-                    "result of the '{}' is not in '{}' format".format(inspect.getsource(fn).strip(), torch.contiguous_format))
+                    f"result of the '{inspect.getsource(fn).strip()}' is not in '{torch.contiguous_format}' format")
 
         _test_helper(
             torch.randn((4, 3, 8, 8), device=device).contiguous(memory_format=torch.channels_last),

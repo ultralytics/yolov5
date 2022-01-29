@@ -1,20 +1,19 @@
-from itertools import product as product
-from typing import NamedTuple, Optional
 import io
 import os
 import pathlib
 import random
 import sys
+from itertools import product as product
+from typing import NamedTuple, Optional
 
+import torch
 from torch import Tensor
 from torch.testing._internal.common_utils import TemporaryFileName
-import torch
 
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(pytorch_test_dir)
-from torch.testing._internal.jit_utils import (JitTestCase,
-                                               clear_class_registry)
+from torch.testing._internal.jit_utils import JitTestCase, clear_class_registry
 
 if __name__ == "__main__":
     raise RuntimeError(
@@ -39,7 +38,7 @@ class TestSaveLoad(JitTestCase):
         """
         class MyModule(torch.nn.Module):
             def __init__(self):
-                super(MyModule, self).__init__()
+                super().__init__()
 
             def forward(self, a, b, alpha: float):
                 no_alpha = torch._test_serialization_subcmul(a, b)
@@ -114,7 +113,7 @@ class TestSaveLoad(JitTestCase):
         # Tensor x Tensor
         class MyModule(torch.nn.Module):
             def __init__(self):
-                super(MyModule, self).__init__()
+                super().__init__()
 
             def forward(self, a, b):
                 result_0 = a / b
@@ -161,7 +160,7 @@ class TestSaveLoad(JitTestCase):
 
         class MyModule(torch.nn.Module):
             def __init__(self):
-                super(MyModule, self).__init__()
+                super().__init__()
 
             def forward(self, a, b):
                 a /= b
@@ -207,7 +206,7 @@ class TestSaveLoad(JitTestCase):
 
         class MyModule(torch.nn.Module):
             def __init__(self):
-                super(MyModule, self).__init__()
+                super().__init__()
 
             def forward(self, a, b, out):
                 return a.div(b, out=out)
@@ -257,14 +256,14 @@ class TestSaveLoad(JitTestCase):
 
         class MyModuleFloat(torch.nn.Module):
             def __init__(self):
-                super(MyModuleFloat, self).__init__()
+                super().__init__()
 
             def forward(self, a, b: float):
                 return a / b
 
         class MyModuleInt(torch.nn.Module):
             def __init__(self):
-                super(MyModuleInt, self).__init__()
+                super().__init__()
 
             def forward(self, a, b: int):
                 return a / b
@@ -317,14 +316,14 @@ class TestSaveLoad(JitTestCase):
 
         class MyModuleFloat(torch.nn.Module):
             def __init__(self):
-                super(MyModuleFloat, self).__init__()
+                super().__init__()
 
             def forward(self, a, b: float):
                 return b / a
 
         class MyModuleInt(torch.nn.Module):
             def __init__(self):
-                super(MyModuleInt, self).__init__()
+                super().__init__()
 
             def forward(self, a, b: int):
                 return b / a
@@ -388,7 +387,7 @@ class TestSaveLoad(JitTestCase):
 
         class MyModuleFloat(torch.nn.Module):
             def __init__(self):
-                super(MyModuleFloat, self).__init__()
+                super().__init__()
 
             def forward(self, a, b: float):
                 a /= b
@@ -396,7 +395,7 @@ class TestSaveLoad(JitTestCase):
 
         class MyModuleInt(torch.nn.Module):
             def __init__(self):
-                super(MyModuleInt, self).__init__()
+                super().__init__()
 
             def forward(self, a, b: int):
                 a /= b
@@ -447,7 +446,7 @@ class TestSaveLoad(JitTestCase):
     def test_versioned_div_scalar_scalar(self):
         class MyModule(torch.nn.Module):
             def __init__(self):
-                super(MyModule, self).__init__()
+                super().__init__()
 
             def forward(self, a: float, b: int, c: float, d: int):
                 result_0 = a / b
@@ -480,7 +479,7 @@ class TestSaveLoad(JitTestCase):
     def test_versioned_full_integer_value(self):
         class MyModule(torch.nn.Module):
             def __init__(self):
-                super(MyModule, self).__init__()
+                super().__init__()
 
             def forward(self, int_fill: int):
                 size = torch.Size(2, 2)
@@ -517,7 +516,7 @@ class TestSaveLoad(JitTestCase):
     def test_versioned_full_preserved(self):
         class MyModule(torch.nn.Module):
             def __init__(self):
-                super(MyModule, self).__init__()
+                super().__init__()
 
             def forward(self, float_fill: float):
                 size = (2, 2)
@@ -567,7 +566,7 @@ class TestSaveLoad(JitTestCase):
         """
         class Foo(torch.nn.Module):
             def __init__(self):
-                super(Foo, self).__init__()
+                super().__init__()
                 self.foo = torch.nn.Linear(2, 2)
                 self.bar = torch.nn.Linear(2, 2)
 
@@ -585,7 +584,7 @@ class TestSaveLoad(JitTestCase):
 
         class Foo(torch.nn.Module):
             def __init__(self):
-                super(Foo, self).__init__()
+                super().__init__()
                 self.foo = torch.nn.Linear(2, 2)
 
             def forward(self, x):
@@ -680,12 +679,12 @@ class TestSaveLoad(JitTestCase):
         in two different CompilationUnits on save/load.
         """
         @torch.jit.interface
-        class MyInterface(object):
+        class MyInterface:
             def bar(self, x: Tensor) -> Tensor:
                 pass
 
         @torch.jit.script
-        class ImplementInterface(object):
+        class ImplementInterface:
             def __init__(self):
                 pass
 
@@ -710,12 +709,12 @@ class TestSaveLoad(JitTestCase):
         clear_class_registry()
 
         @torch.jit.interface
-        class MyInterface(object):
+        class MyInterface:
             def not_bar(self, x: Tensor) -> Tensor:
                 pass
 
         @torch.jit.script  # noqa: F811
-        class ImplementInterface(object):  # noqa: F811
+        class ImplementInterface:  # noqa: F811
             def __init__(self):
                 pass
 
@@ -765,12 +764,12 @@ class TestSaveLoad(JitTestCase):
             a: int
 
         @torch.jit.interface
-        class MyInterface(object):
+        class MyInterface:
             def bar(self, x: Tensor) -> Tensor:
                 pass
 
         @torch.jit.script
-        class ImplementInterface(object):
+        class ImplementInterface:
             def __init__(self):
                 pass
 
@@ -806,12 +805,12 @@ class TestSaveLoad(JitTestCase):
         clear_class_registry()
 
         @torch.jit.interface
-        class MyInterface(object):
+        class MyInterface:
             def not_bar(self, x: Tensor) -> Tensor:
                 pass
 
         @torch.jit.script
-        class ImplementInterface(object):  # noqa: F811
+        class ImplementInterface:  # noqa: F811
             def __init__(self):
                 pass
 

@@ -15,47 +15,23 @@ import unittest
 import warnings
 import zipfile
 from functools import partial
-from typing import (
-    Any,
-    Awaitable,
-    Dict,
-    Generic,
-    Iterator,
-    List,
-    NamedTuple,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Awaitable, Dict, Generic, Iterator, List, NamedTuple, Optional, Set, Tuple, Type, TypeVar, Union
 from unittest import skipIf
 
 import numpy as np
-
 import torch
 import torch.utils.data.backward_compatibility
 import torch.utils.data.datapipes as dp
 import torch.utils.data.graph
 import torch.utils.data.sharding
 from torch.testing._internal.common_utils import TestCase, run_tests, suppress_warnings
-from torch.utils.data import (
-    DataLoader,
-    DataChunk,
-    IterDataPipe,
-    MapDataPipe,
-    RandomSampler,
-    argument_validation,
-    runtime_validation,
-    runtime_validation_disabled,
-)
-from torch.utils.data.datapipes.utils.decoder import (
-    basichandlers as decoder_basichandlers,
-)
+from torch.utils.data import (DataChunk, DataLoader, IterDataPipe, MapDataPipe, RandomSampler, argument_validation,
+                              runtime_validation, runtime_validation_disabled)
+from torch.utils.data.datapipes.utils.decoder import basichandlers as decoder_basichandlers
 
 try:
     import dill
+
     # XXX: By default, dill writes the Pickler dispatch table to inject its
     # own logic there. This globally affects the behavior of the standard library
     # pickler for any user who transitively depends on this module!
@@ -184,7 +160,7 @@ class TestIterableDataPipeBasic(TestCase):
             self.temp_sub_dir.cleanup()
             self.temp_dir.cleanup()
         except Exception as e:
-            warnings.warn("TestIterableDatasetBasic was not able to cleanup temp dir due to {}".format(str(e)))
+            warnings.warn(f"TestIterableDatasetBasic was not able to cleanup temp dir due to {str(e)}")
 
     def test_listdirfiles_iterable_datapipe(self):
         temp_dir = self.temp_dir.name
@@ -205,10 +181,7 @@ class TestIterableDataPipeBasic(TestCase):
 
     def test_loadfilesfromdisk_iterable_datapipe(self):
         # test import datapipe class directly
-        from torch.utils.data.datapipes.iter import (
-            FileLister,
-            FileLoader,
-        )
+        from torch.utils.data.datapipes.iter import FileLister, FileLoader
 
         temp_dir = self.temp_dir.name
         datapipe1 = FileLister(temp_dir, '')
@@ -525,7 +498,7 @@ def setUpLocalServerInThread():
         socketserver.TCPServer.allow_reuse_address = True
 
         server = socketserver.TCPServer(("", 0), Handler)
-        server_addr = "{host}:{port}".format(host=server.server_address[0], port=server.server_address[1])
+        server_addr = f"{server.server_address[0]}:{server.server_address[1]}"
         server_thread = threading.Thread(target=server.serve_forever)
         server_thread.start()
 
@@ -542,7 +515,7 @@ def create_temp_files_for_serving(tmp_dir, file_count, file_size,
     furl_local_file = os.path.join(tmp_dir, "urls_list")
     with open(furl_local_file, 'w') as fsum:
         for i in range(0, file_count):
-            f = os.path.join(tmp_dir, "webfile_test_{num}.data".format(num=i))
+            f = os.path.join(tmp_dir, f"webfile_test_{i}.data")
 
             write_chunk = 1024 * 1024 * 16
             rmn_size = file_size
@@ -566,7 +539,7 @@ class TestIterableDataPipeHttp(TestCase):
              cls.__server) = setUpLocalServerInThread()
         except Exception as e:
             warnings.warn("TestIterableDataPipeHttp could\
-                          not set up due to {0}".format(str(e)))
+                          not set up due to {}".format(str(e)))
 
     @classmethod
     def tearDownClass(cls):
@@ -576,7 +549,7 @@ class TestIterableDataPipeHttp(TestCase):
         except Exception as e:
             warnings.warn("TestIterableDataPipeHttp could\
                            not tear down (clean up temp directory or terminate\
-                           local server) due to {0}".format(str(e)))
+                           local server) due to {}".format(str(e)))
 
     def _http_test_base(self, test_file_size, test_file_count, timeout=None,
                         chunk=None):
@@ -640,8 +613,7 @@ class IDP_NoLen(IterDataPipe):
     # Prevent in-place modification
     def __iter__(self):
         input_dp = self.input_dp if isinstance(self.input_dp, IterDataPipe) else copy.deepcopy(self.input_dp)
-        for i in input_dp:
-            yield i
+        yield from input_dp
 
 
 class MDP(MapDataPipe):
@@ -1683,8 +1655,7 @@ class TestTyping(TestCase):
 
         class DP2(IterDataPipe[T_co]):
             def __iter__(self) -> Iterator[T_co]:
-                for d in range(10):
-                    yield d  # type: ignore[misc]
+                yield from range(10)
 
         self.assertTrue(issubclass(DP2, IterDataPipe))
         dp2 = DP2()  # type: ignore[var-annotated]
@@ -1786,8 +1757,7 @@ class TestTyping(TestCase):
 
             @runtime_validation
             def __iter__(self) -> Iterator[Tuple[int, T_co]]:
-                for d in self.ds:
-                    yield d
+                yield from self.ds
 
         dss = ([(1, '1'), (2, '2')],
                [(1, 1), (2, '2')])
@@ -1822,8 +1792,7 @@ class TestTyping(TestCase):
 
             @runtime_validation
             def __iter__(self) -> Iterator[T]:
-                for d in self.ds:
-                    yield d
+                yield from self.ds
 
         ds = list(range(10))
         # Valid type reinforcement
@@ -1854,8 +1823,7 @@ class NumbersDataset(IterDataPipe):
         self.size = size
 
     def __iter__(self):
-        for i in range(self.size):
-            yield i
+        yield from range(self.size)
 
 
 class TestGraph(TestCase):

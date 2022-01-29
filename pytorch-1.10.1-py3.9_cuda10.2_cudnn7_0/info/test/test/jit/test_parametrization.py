@@ -1,10 +1,7 @@
-
 import torch
-from torch import nn
 import torch.nn.utils.parametrize as parametrize
-
+from torch import nn
 from torch.testing._internal.jit_utils import JitTestCase
-
 
 if __name__ == '__main__':
     raise RuntimeError("This test file is not meant to be run directly, use:\n\n"

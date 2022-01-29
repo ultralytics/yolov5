@@ -6,24 +6,15 @@
 
 import os
 import tempfile
-
 from base64 import b64encode
 from datetime import timedelta
-from typing import ClassVar, cast, Callable
+from typing import Callable, ClassVar, cast
 from unittest import TestCase, mock
 
-from torch.distributed import TCPStore, FileStore
-
-from torch.distributed.elastic.rendezvous import (
-    RendezvousConnectionError,
-    RendezvousParameters,
-    RendezvousError)
-from torch.distributed.elastic.rendezvous.c10d_rendezvous_backend import (
-    C10dRendezvousBackend,
-    create_backend,
-)
-
 from rendezvous_backend_test import RendezvousBackendTestMixin
+from torch.distributed import FileStore, TCPStore
+from torch.distributed.elastic.rendezvous import RendezvousConnectionError, RendezvousError, RendezvousParameters
+from torch.distributed.elastic.rendezvous.c10d_rendezvous_backend import C10dRendezvousBackend, create_backend
 
 
 class TCPStoreBackendTest(TestCase, RendezvousBackendTestMixin):

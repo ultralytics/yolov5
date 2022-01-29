@@ -12,13 +12,7 @@ import unittest.mock as mock
 import torch.distributed.elastic.timer as timer
 from torch.distributed.elastic.timer.api import TimerRequest
 from torch.distributed.elastic.timer.local_timer import MultiprocessingRequestQueue
-from torch.testing._internal.common_utils import (
-    run_tests,
-    IS_WINDOWS,
-    IS_MACOS,
-    TEST_WITH_DEV_DBG_ASAN,
-)
-
+from torch.testing._internal.common_utils import IS_MACOS, IS_WINDOWS, TEST_WITH_DEV_DBG_ASAN, run_tests
 
 # timer is not supported on windows or macos
 if not (IS_WINDOWS or IS_MACOS or TEST_WITH_DEV_DBG_ASAN):

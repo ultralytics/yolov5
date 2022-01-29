@@ -1,27 +1,24 @@
-import torch
-import numpy as np
-
 import math
-from typing import Dict, List, Sequence
 import random
-from functools import partial
-from itertools import product, combinations, permutations
 import warnings
+from functools import partial
+from itertools import combinations, permutations, product
+from typing import Dict, List, Sequence
 
+import numpy as np
+import torch
 from torch._six import inf, nan
 from torch.testing import make_tensor
-from torch.testing._internal.common_dtype import (
-    get_all_dtypes, get_all_math_dtypes, get_all_int_dtypes, get_all_complex_dtypes, get_all_fp_dtypes,
-    integral_types_and, floating_and_complex_types_and
-)
-from torch.testing._internal.common_utils import (
-    TestCase, run_tests, skipIfNoSciPy, slowTest, torch_to_numpy_dtype_dict,
-    IS_WINDOWS)
-from torch.testing._internal.common_device_type import (
-    OpDTypes, instantiate_device_type_tests, onlyCPU, dtypes, dtypesIfCUDA, dtypesIfCPU,
-    onlyOnCPUAndCUDA, onlyCUDA, largeTensorTest, ops, precisionOverride)
-from torch.testing._internal.common_methods_invocations import (
-    ReductionOpInfo, reduction_ops)
+from torch.testing._internal.common_device_type import (OpDTypes, dtypes, dtypesIfCPU, dtypesIfCUDA,
+                                                        instantiate_device_type_tests, largeTensorTest, onlyCPU,
+                                                        onlyCUDA, onlyOnCPUAndCUDA, ops, precisionOverride)
+from torch.testing._internal.common_dtype import (floating_and_complex_types_and, get_all_complex_dtypes,
+                                                  get_all_dtypes, get_all_fp_dtypes, get_all_int_dtypes,
+                                                  get_all_math_dtypes, integral_types_and)
+from torch.testing._internal.common_methods_invocations import ReductionOpInfo, reduction_ops
+from torch.testing._internal.common_utils import (IS_WINDOWS, TestCase, run_tests, skipIfNoSciPy, slowTest,
+                                                  torch_to_numpy_dtype_dict)
+
 
 # TODO: replace with make_tensor
 def _generate_input(shape, dtype, device, with_extremal):
@@ -77,7 +74,7 @@ def _reduced_shape(shape, dim=None, keepdim=False):
 
     # Wrap negative dims
     dim = dim if isinstance(dim, Sequence) else [dim]
-    dim = set(i if i >= 0 else len(shape) + i for i in dim)
+    dim = {i if i >= 0 else len(shape) + i for i in dim}
 
     result = []
     for i, size in enumerate(shape):
@@ -1767,9 +1764,9 @@ class TestReductions(TestCase):
             a[2, 2] = nan
             actual = f(a.to(device)).cpu()
             expected = f(a).cpu()
-            self.assertEqual(torch.isnan(actual), torch.isnan(expected), msg='nans for {}'.format(name))
+            self.assertEqual(torch.isnan(actual), torch.isnan(expected), msg=f'nans for {name}')
             self.assertEqual(actual[~torch.isnan(actual)],
-                             expected[~torch.isnan(expected)], msg='nans for {}'.format(name))
+                             expected[~torch.isnan(expected)], msg=f'nans for {name}')
 
     # TODO: make this test generic using OpInfos
     @onlyCUDA
@@ -2002,16 +1999,16 @@ class TestReductions(TestCase):
                 fn_tuple(y, 1, keepdim=False, out=(values[:, 1], indices[:, 1]))
                 values_expected, indices_expected = fn_tuple(y, 1, keepdim=False)
                 self.assertEqual(values[:, 1], values_expected,
-                                 msg='{} values with out= kwarg'.format(fn_name))
+                                 msg=f'{fn_name} values with out= kwarg')
                 self.assertEqual(indices[:, 1], indices_expected,
-                                 msg='{} indices with out= kwarg'.format(fn_name))
+                                 msg=f'{fn_name} indices with out= kwarg')
                 continue
 
             x = torch.randn(5, 3, device=device)
             y = torch.randn(5, 3, device=device)
             fn(y, 1, keepdim=False, out=x[:, 1])
             expected = fn(y, 1, keepdim=False)
-            self.assertEqual(x[:, 1], expected, msg='{} with out= kwarg'.format(fn_name))
+            self.assertEqual(x[:, 1], expected, msg=f'{fn_name} with out= kwarg')
 
     @onlyCUDA
     @largeTensorTest('10GB')

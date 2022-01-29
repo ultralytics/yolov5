@@ -1,6 +1,7 @@
 import torch
 from torch.testing._internal.common_utils import TestCase
 
+
 class TestAtenPow(TestCase):
     def test_aten_pow_zero_negative_exponent(self):
         '''

@@ -7,7 +7,6 @@ from collections import defaultdict
 import torch
 from torch._C import parse_schema
 
-
 # The date specifies how long the allowlist exclusion should apply to.
 #
 #   - If we NEVER give BC guarantee for an operator, you can put the
@@ -143,7 +142,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     existing_schema_dict = dict()
     slist = []
-    with open(args.existing_schemas, "r") as f:
+    with open(args.existing_schemas) as f:
         while True:
             line = f.readline()
             if not line:

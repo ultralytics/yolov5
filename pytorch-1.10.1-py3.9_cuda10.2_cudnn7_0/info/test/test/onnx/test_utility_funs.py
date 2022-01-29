@@ -1,23 +1,17 @@
-from test_pytorch_common import TestCase, run_tests
-
-import torch
-import torch.onnx
-from torch.onnx import utils, OperatorExportTypes, TrainingMode
-from torch.onnx.symbolic_helper import _set_opset_version, _set_operator_export_type, _set_onnx_shape_inference
-import torch.utils.cpp_extension
-from test_pytorch_common import (skipIfUnsupportedMinOpsetVersion,
-                                 skipIfUnsupportedMaxOpsetVersion)
-import caffe2.python.onnx.backend as backend
-from verify import verify
-
-import torchvision
-
-import onnx
-
-import io
 import copy
+import io
 import unittest
 
+import caffe2.python.onnx.backend as backend
+import onnx
+import torch
+import torch.onnx
+import torch.utils.cpp_extension
+import torchvision
+from test_pytorch_common import TestCase, run_tests, skipIfUnsupportedMaxOpsetVersion, skipIfUnsupportedMinOpsetVersion
+from torch.onnx import OperatorExportTypes, TrainingMode, utils
+from torch.onnx.symbolic_helper import _set_onnx_shape_inference, _set_operator_export_type, _set_opset_version
+from verify import verify
 
 skip = unittest.skip
 
@@ -272,7 +266,7 @@ class TestUtilityFuns(TestCase):
     def test_constant_fold_unsqueeze_multi_axies(self):
         class PReluModel(torch.nn.Module):
             def __init__(self):
-                super(PReluModel, self).__init__()
+                super().__init__()
                 self.prelu = torch.nn.PReLU()
 
             def forward(self, x):
@@ -365,7 +359,7 @@ class TestUtilityFuns(TestCase):
     def test_constant_fold_lstm(self):
         class GruNet(torch.nn.Module):
             def __init__(self):
-                super(GruNet, self).__init__()
+                super().__init__()
                 self.mygru = torch.nn.GRU(7, 3, 1, bidirectional=False)
 
             def forward(self, input, initial_state):
@@ -392,7 +386,7 @@ class TestUtilityFuns(TestCase):
     def test_constant_fold_transpose_matmul(self):
         class MatMulNet(torch.nn.Module):
             def __init__(self):
-                super(MatMulNet, self).__init__()
+                super().__init__()
                 self.B = torch.nn.Parameter(torch.ones(5, 3))
 
             def forward(self, A):
@@ -411,7 +405,7 @@ class TestUtilityFuns(TestCase):
     def test_constant_fold_reshape(self):
         class ReshapeModule(torch.nn.Module):
             def __init__(self, ):
-                super(ReshapeModule, self).__init__()
+                super().__init__()
                 self.register_buffer("weight", torch.ones(5))
 
             def forward(self, x):
@@ -431,7 +425,7 @@ class TestUtilityFuns(TestCase):
     def test_constant_fold_div(self):
         class Module(torch.nn.Module):
             def __init__(self, ):
-                super(Module, self).__init__()
+                super().__init__()
                 self.register_buffer("weight", torch.ones(5))
 
             def forward(self, x):
@@ -451,7 +445,7 @@ class TestUtilityFuns(TestCase):
     def test_constant_fold_mul(self):
         class Module(torch.nn.Module):
             def __init__(self, ):
-                super(Module, self).__init__()
+                super().__init__()
                 self.register_buffer("weight", torch.ones(5))
 
             def forward(self, x):
@@ -471,7 +465,7 @@ class TestUtilityFuns(TestCase):
     def test_constant_fold_add(self):
         class Module(torch.nn.Module):
             def __init__(self, ):
-                super(Module, self).__init__()
+                super().__init__()
                 self.register_buffer("weight", torch.ones(5))
 
             def forward(self, x):
@@ -497,7 +491,7 @@ class TestUtilityFuns(TestCase):
     def test_constant_fold_sub(self):
         class Module(torch.nn.Module):
             def __init__(self, ):
-                super(Module, self).__init__()
+                super().__init__()
                 self.register_buffer("weight", torch.ones(5))
 
             def forward(self, x):
@@ -522,7 +516,7 @@ class TestUtilityFuns(TestCase):
     def test_constant_fold_sqrt(self):
         class Module(torch.nn.Module):
             def __init__(self, ):
-                super(Module, self).__init__()
+                super().__init__()
                 self.register_buffer("weight", torch.ones(5))
 
             def forward(self, x):
@@ -540,7 +534,7 @@ class TestUtilityFuns(TestCase):
     def test_constant_fold_shape(self):
         class ShapeModule(torch.nn.Module):
             def __init__(self):
-                super(ShapeModule, self).__init__()
+                super().__init__()
                 self.register_buffer("weight", torch.ones(5))
 
             def forward(self, x):
@@ -702,7 +696,7 @@ class TestUtilityFuns(TestCase):
         # Test Quantized op
         class QModule(torch.nn.Module):
             def __init__(self):
-                super(QModule, self).__init__()
+                super().__init__()
                 self.quant1 = torch.quantization.QuantStub()
                 self.dequant = torch.quantization.DeQuantStub()
 
@@ -778,7 +772,7 @@ class TestUtilityFuns(TestCase):
     def test_unused_initializers(self):
         class Model(torch.nn.Module):
             def __init__(self):
-                super(Model, self).__init__()
+                super().__init__()
                 self.conv2 = torch.nn.ConvTranspose2d(16, 33, (3, 5), stride=(2, 1), padding=(4, 2), dilation=(1, 1))
                 self.k_proj = torch.nn.Linear(5, 5, bias=True)
 
@@ -799,7 +793,7 @@ class TestUtilityFuns(TestCase):
     def test_scripting_param(self):
         class MyModule(torch.nn.Module):
             def __init__(self):
-                super(MyModule, self).__init__()
+                super().__init__()
                 self.conv = torch.nn.Conv2d(3, 16, kernel_size=1, stride=2, padding=3, bias=True)
                 self.bn = torch.nn.BatchNorm2d(16, affine=True)
 
@@ -824,7 +818,7 @@ class TestUtilityFuns(TestCase):
     def test_modifying_params(self):
         class MyModel(torch.nn.Module):
             def __init__(self):
-                super(MyModel, self).__init__()
+                super().__init__()
                 self.param = torch.nn.Parameter(torch.tensor([2.0]))
 
             def forward(self, x):
@@ -838,7 +832,7 @@ class TestUtilityFuns(TestCase):
     def test_fuse_conv_bn(self):
         class Fuse(torch.nn.Module):
             def __init__(self):
-                super(Fuse, self).__init__()
+                super().__init__()
                 self.conv = torch.nn.Conv2d(3, 2, kernel_size=1, stride=2, padding=3, bias=True)
                 self.bn = torch.nn.BatchNorm2d(2)
 
@@ -875,7 +869,7 @@ class TestUtilityFuns(TestCase):
 
         class MyModule(torch.nn.Module):
             def __init__(self):
-                super(MyModule, self).__init__()
+                super().__init__()
 
             def forward(self, x, y):
                 return f(x, y)
@@ -897,27 +891,27 @@ class TestUtilityFuns(TestCase):
 
 
 # opset 10 tests
-TestUtilityFuns_opset10 = type(str("TestUtilityFuns_opset10"),
+TestUtilityFuns_opset10 = type("TestUtilityFuns_opset10",
                                (TestCase,),
                                dict(TestUtilityFuns.__dict__, opset_version=10))
 
 # opset 11 tests
-TestUtilityFuns_opset11 = type(str("TestUtilityFuns_opset11"),
+TestUtilityFuns_opset11 = type("TestUtilityFuns_opset11",
                                (TestCase,),
                                dict(TestUtilityFuns.__dict__, opset_version=11))
 
 # opset 12 tests
-TestUtilityFuns_opset12 = type(str("TestUtilityFuns_opset12"),
+TestUtilityFuns_opset12 = type("TestUtilityFuns_opset12",
                                (TestCase,),
                                dict(TestUtilityFuns.__dict__, opset_version=12))
 
 # opset 13 tests
-TestUtilityFuns_opset13 = type(str("TestUtilityFuns_opset13"),
+TestUtilityFuns_opset13 = type("TestUtilityFuns_opset13",
                                (TestCase,),
                                dict(TestUtilityFuns.__dict__, opset_version=13))
 
 # opset 14 tests
-TestUtilityFuns_opset14 = type(str("TestUtilityFuns_opset14"),
+TestUtilityFuns_opset14 = type("TestUtilityFuns_opset14",
                                (TestCase,),
                                dict(TestUtilityFuns.__dict__, opset_version=14))
 

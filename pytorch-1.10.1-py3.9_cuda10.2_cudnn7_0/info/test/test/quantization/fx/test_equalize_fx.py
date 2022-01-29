@@ -1,55 +1,33 @@
+# Standard Libraries
+import copy
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.intrinsic.quantized as nniq
 import torch.nn.quantized as nnq
-from torch.quantization import default_qconfig
-from torch.quantization.observer import MinMaxObserver, PerChannelMinMaxObserver
-from torch.quantization.quantize_fx import prepare_fx, convert_fx
-from torch.quantization.fx._equalize import (
-    _InputEqualizationObserver,
-    _WeightEqualizationObserver,
-    calculate_equalization_scale,
-    default_equalization_qconfig,
-    _convert_equalization_ref,
-    get_layer_sqnr_dict,
-    get_equalization_qconfig_dict,
-)
-
-from torch.testing._internal.common_quantization import (
-    NodeSpec as ns,
-    QuantizationTestCase,
-    SingleLayerLinearModel,
-    TwoLayerLinearModel,
-    LinearAddModel,
-    SingleLayerFunctionalLinearModel,
-    TwoLayerFunctionalLinearModel,
-    FunctionalLinearAddModel,
-    ConvModel,
-    TwoLayerConvModel,
-    SingleLayerFunctionalConvModel,
-    TwoLayerFunctionalConvModel,
-    skipIfNoFBGEMM,
-    LinearReluModel,
-    LinearReluLinearModel,
-    LinearReluAddModel,
-    FunctionalLinearReluModel,
-    FunctionalLinearReluLinearModel,
-    ConvReluModel,
-    ConvReluConvModel,
-    ConvReluAddModel,
-    FunctionalConvReluModel,
-    FunctionalConvReluConvModel,
-)
-
-# Standard Libraries
-import copy
-import numpy as np
-
 # Testing utils
 from hypothesis import given
 from hypothesis import strategies as st
-
+from torch.quantization import default_qconfig
+from torch.quantization.fx._equalize import (_convert_equalization_ref, _InputEqualizationObserver,
+                                             _WeightEqualizationObserver, calculate_equalization_scale,
+                                             default_equalization_qconfig, get_equalization_qconfig_dict,
+                                             get_layer_sqnr_dict)
+from torch.quantization.observer import MinMaxObserver, PerChannelMinMaxObserver
+from torch.quantization.quantize_fx import convert_fx, prepare_fx
+from torch.testing._internal.common_quantization import (ConvModel, ConvReluAddModel, ConvReluConvModel, ConvReluModel,
+                                                         FunctionalConvReluConvModel, FunctionalConvReluModel,
+                                                         FunctionalLinearAddModel, FunctionalLinearReluLinearModel,
+                                                         FunctionalLinearReluModel, LinearAddModel, LinearReluAddModel,
+                                                         LinearReluLinearModel, LinearReluModel)
+from torch.testing._internal.common_quantization import NodeSpec as ns
+from torch.testing._internal.common_quantization import (QuantizationTestCase, SingleLayerFunctionalConvModel,
+                                                         SingleLayerFunctionalLinearModel, SingleLayerLinearModel,
+                                                         TwoLayerConvModel, TwoLayerFunctionalConvModel,
+                                                         TwoLayerFunctionalLinearModel, TwoLayerLinearModel,
+                                                         skipIfNoFBGEMM)
 
 default_qconfig_dict = {"": default_qconfig}
 

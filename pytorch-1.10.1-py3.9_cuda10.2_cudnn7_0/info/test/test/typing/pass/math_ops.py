@@ -1,6 +1,7 @@
 # flake8: noqa
-import torch
 import math
+
+import torch
 
 a = torch.randn(4)
 b = torch.randn(4)

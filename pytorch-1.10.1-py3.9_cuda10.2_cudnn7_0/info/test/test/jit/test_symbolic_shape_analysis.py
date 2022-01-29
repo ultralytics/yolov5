@@ -1,12 +1,10 @@
-import torch
-from torch.testing._internal.jit_utils import JitTestCase, execWrapper
 import operator
+from textwrap import dedent
 
-
+import torch
 from torch.testing import FileCheck
 from torch.testing._internal.common_utils import make_tensor
-
-from textwrap import dedent
+from torch.testing._internal.jit_utils import JitTestCase, execWrapper
 
 if __name__ == '__main__':
     raise RuntimeError("This test file is not meant to be run directly, use:\n\n"

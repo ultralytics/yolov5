@@ -1,15 +1,15 @@
-from collections import namedtuple
-from typing import Dict, List, Optional, Tuple
-
-from torch.testing._internal.jit_utils import JitTestCase
-from torch.testing import FileCheck
-from textwrap import dedent
-from jit.test_module_interface import TestModuleInterface  # noqa: F401
 import inspect
 import os
 import sys
+from collections import namedtuple
+from textwrap import dedent
+from typing import Dict, List, Optional, Tuple
+
 import torch
 import torch.testing._internal.jit_utils
+from jit.test_module_interface import TestModuleInterface  # noqa: F401
+from torch.testing import FileCheck
+from torch.testing._internal.jit_utils import JitTestCase
 
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -37,7 +37,7 @@ class TestTypesAndAnnotation(JitTestCase):
         expected = fn(x)
         scripted = torch.jit.script(fn)(x)
 
-        self.assertEquals(expected, scripted)
+        self.assertEqual(expected, scripted)
 
     def test_types_as_values(self):
         def fn(m: torch.Tensor) -> torch.device:
@@ -82,7 +82,7 @@ class TestTypesAndAnnotation(JitTestCase):
 
         class M(torch.nn.Module):
             def __init__(self):
-                super(M, self).__init__()
+                super().__init__()
 
             def forward(self, in_batch: Dict[str, Optional[torch.Tensor]]) -> torch.Tensor:
                 self.dropout_modality(in_batch)
@@ -97,7 +97,7 @@ class TestTypesAndAnnotation(JitTestCase):
         FileCheck().check("dropout_modality").check("in_batch").run(str(sm.graph))
 
     def test_python_callable(self):
-        class MyPythonClass(object):
+        class MyPythonClass:
             @torch.jit.ignore
             def __call__(self, *args) -> str:
                 return str(type(args[0]))

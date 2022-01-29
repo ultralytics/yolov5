@@ -1,12 +1,7 @@
 from io import BytesIO
 
 from torch.package import PackageExporter, PackageImporter
-from torch.package._mangling import (
-    PackageMangler,
-    demangle,
-    get_mangle_prefix,
-    is_mangled,
-)
+from torch.package._mangling import PackageMangler, demangle, get_mangle_prefix, is_mangled
 from torch.testing._internal.common_utils import run_tests
 
 try:

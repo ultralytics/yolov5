@@ -1,12 +1,12 @@
 import os
 import sys
-
+import unittest
 from itertools import product
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.testing import FileCheck
-import unittest
 
 try:
     import torchvision
@@ -107,7 +107,7 @@ class TestFunctionalToInplaceActivation(JitTestCase):
         # at the global scope
         class Test3(nn.Module):
             def __init__(self, x):
-                super(Test3, self).__init__()
+                super().__init__()
                 self.x = x
 
             def forward(self):

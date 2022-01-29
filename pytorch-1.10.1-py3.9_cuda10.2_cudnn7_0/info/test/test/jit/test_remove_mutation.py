@@ -1,9 +1,9 @@
 import os
 import sys
+from typing import List
 
 import torch
 from torch.testing import FileCheck
-from typing import List
 
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -246,7 +246,7 @@ class TestRemoveMutation(JitTestCase):
         for op in ["cat", "stack", "vstack", "hstack", "dstack"]:
             class OpMod(torch.nn.Module):
                 def __init__(self, op):
-                    super(OpMod, self).__init__()
+                    super().__init__()
                     self.op = torch_op
 
                 def forward(self):

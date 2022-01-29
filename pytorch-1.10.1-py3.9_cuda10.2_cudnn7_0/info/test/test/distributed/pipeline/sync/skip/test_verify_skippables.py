@@ -6,7 +6,6 @@
 # LICENSE file in the root directory of this source tree.
 import pytest
 from torch import nn
-
 from torch.distributed.pipeline.sync.skip import Namespace, skippable, verify_skippables
 
 

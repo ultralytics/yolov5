@@ -1,10 +1,10 @@
-import torch
-from torch.testing._internal.jit_utils import JitTestCase, RUN_CUDA, _inline_everything
-from torch import nn
-from torch.testing import FileCheck
+import unittest
 from typing import Callable, List
 
-import unittest
+import torch
+from torch import nn
+from torch.testing import FileCheck
+from torch.testing._internal.jit_utils import RUN_CUDA, JitTestCase, _inline_everything
 
 if __name__ == '__main__':
     raise RuntimeError("This test file is not meant to be run directly, use:\n\n"
@@ -192,7 +192,7 @@ class TestPeephole(JitTestCase):
         for mod in modules:
             class ConvDim(torch.nn.Module):
                 def __init__(self):
-                    super(ConvDim, self).__init__()
+                    super().__init__()
                     self.conv = mod(3, 32, kernel_size=3, stride=2, bias=False)
 
                 def forward(self, x):
@@ -206,7 +206,7 @@ class TestPeephole(JitTestCase):
 
             class ConvDimMutate(torch.nn.Module):
                 def __init__(self):
-                    super(ConvDimMutate, self).__init__()
+                    super().__init__()
                     self.conv = mod(3, 32, kernel_size=3, stride=2, bias=False)
 
                 def forward(self, x):

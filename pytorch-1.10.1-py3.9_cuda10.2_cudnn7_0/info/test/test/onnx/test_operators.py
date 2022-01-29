@@ -1,22 +1,20 @@
-
-from test_pytorch_common import TestCase, run_tests, flatten, skipIfNoLapack, \
-    BATCH_SIZE, RNN_SEQUENCE_LENGTH, RNN_INPUT_SIZE, RNN_HIDDEN_SIZE
-
-import torch
-import torch.onnx
-from torch.onnx.symbolic_helper import parse_args, _get_tensor_dim_size, _get_tensor_sizes
-from torch.onnx import register_custom_op_symbolic, unregister_custom_op_symbolic
-from torch.autograd import Variable, Function
-from torch.nn import Module, functional
-import torch.nn as nn
-
-import itertools
-import io
-import inspect
 import glob
+import inspect
+import io
+import itertools
 import os
 import shutil
+
+import torch
+import torch.nn as nn
+import torch.onnx
 import torch.testing._internal.common_utils as common
+from test_pytorch_common import (BATCH_SIZE, RNN_HIDDEN_SIZE, RNN_INPUT_SIZE, RNN_SEQUENCE_LENGTH, TestCase, flatten,
+                                 run_tests, skipIfNoLapack)
+from torch.autograd import Function, Variable
+from torch.nn import Module, functional
+from torch.onnx import register_custom_op_symbolic, unregister_custom_op_symbolic
+from torch.onnx.symbolic_helper import _get_tensor_dim_size, _get_tensor_sizes, parse_args
 
 '''Usage: python test/onnx/test_operators.py [--no-onnx] [--produce-onnx-test-data]
           --no-onnx: no onnx python dependence
@@ -45,7 +43,7 @@ class FuncModule(Module):
     def __init__(self, f, params=None):
         if params is None:
             params = ()
-        super(FuncModule, self).__init__()
+        super().__init__()
         self.f = f
         self.params = nn.ParameterList(list(params))
 
@@ -81,7 +79,7 @@ class TestOperators(TestCase):
                 # Assume:
                 #     1) the old test should be delete before the test.
                 #     2) only one assertONNX in each test, otherwise will override the data.
-                assert not os.path.exists(output_dir), "{} should not exist!".format(output_dir)
+                assert not os.path.exists(output_dir), f"{output_dir} should not exist!"
                 os.makedirs(output_dir)
                 with open(os.path.join(output_dir, "model.onnx"), "wb") as file:
                     file.write(model_def.SerializeToString())
@@ -91,14 +89,14 @@ class TestOperators(TestCase):
                     args = (args,)
                 for index, var in enumerate(flatten(args)):
                     tensor = onnx.numpy_helper.from_array(var.data.numpy())
-                    with open(os.path.join(data_dir, "input_{}.pb".format(index)), "wb") as file:
+                    with open(os.path.join(data_dir, f"input_{index}.pb"), "wb") as file:
                         file.write(tensor.SerializeToString())
                 outputs = m(*args)
                 if isinstance(outputs, Variable):
                     outputs = (outputs,)
                 for index, var in enumerate(flatten(outputs)):
                     tensor = onnx.numpy_helper.from_array(var.data.numpy())
-                    with open(os.path.join(data_dir, "output_{}.pb".format(index)), "wb") as file:
+                    with open(os.path.join(data_dir, f"output_{index}.pb"), "wb") as file:
                         file.write(tensor.SerializeToString())
 
     def assertONNXRaises(self, err, f, args, params=None, **kwargs):
@@ -731,7 +729,7 @@ class TestOperators(TestCase):
     def test_c2_op(self):
         class MyModel(torch.nn.Module):
             def __init__(self):
-                super(MyModel, self).__init__()
+                super().__init__()
 
             def forward(self, scores, bbox_deltas, im_info, anchors):
                 a, b = torch.ops._caffe2.GenerateProposals(

@@ -9,9 +9,9 @@ import torch.distributed as c10d
 import torch.nn as nn
 from test_c10d_spawn import _torch_dist_nn_available
 from torch.testing._internal.common_cuda import TEST_CUDA, TEST_MULTIGPU
-from torch.testing._internal.common_distributed import requires_gloo, \
-    create_device, MultiProcessTestCase, skip_if_lt_x_gpu
-from torch.testing._internal.common_utils import TestCase, run_tests, sandcastle_skip_if, TEST_WITH_DEV_DBG_ASAN
+from torch.testing._internal.common_distributed import (MultiProcessTestCase, create_device, requires_gloo,
+                                                        skip_if_lt_x_gpu)
+from torch.testing._internal.common_utils import TEST_WITH_DEV_DBG_ASAN, TestCase, run_tests, sandcastle_skip_if
 
 # Fails on Python-3.9, see https://github.com/pytorch/pytorch/issues/51619
 if sys.version_info < (3, 9):
@@ -145,7 +145,7 @@ class DistributedDataParallelSingleProcessTest(TestCase):
 
         class Net(nn.Module):
             def __init__(self, input_dim, hidden_dim, output_dim, hidden_layers):
-                super(Net, self).__init__()
+                super().__init__()
                 self.input_dim = input_dim
                 self.hidden_dim = hidden_dim
                 self.output_dim = output_dim
@@ -176,11 +176,11 @@ class DistributedDataParallelSingleProcessTest(TestCase):
 if not TEST_WITH_DEV_DBG_ASAN:
     class TestDistributedNNFunctions(MultiProcessTestCase):
         def setUp(self):
-            super(TestDistributedNNFunctions, self).setUp()
+            super().setUp()
             self._spawn_processes()
 
         def tearDown(self):
-            super(TestDistributedNNFunctions, self).tearDown()
+            super().tearDown()
             try:
                 os.remove(self.file_name)
             except OSError:

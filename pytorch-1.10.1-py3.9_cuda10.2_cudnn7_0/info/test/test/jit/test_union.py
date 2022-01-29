@@ -1,12 +1,12 @@
 import io
 import os
 import sys
-
-import torch
-from torch.testing import FileCheck
 from enum import Enum
 from textwrap import dedent
 from typing import Dict, List, Optional, Tuple, Union
+
+import torch
+from torch.testing import FileCheck
 
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -96,7 +96,7 @@ class TestUnion(JitTestCase):
     def test_union_in_class_constructor(self):
 
         @torch.jit.script
-        class A(object):    # noqa: B903
+        class A:    # noqa: B903
             def __init__(self, x: Union[int, str]) -> None:
                 self.x = x
 

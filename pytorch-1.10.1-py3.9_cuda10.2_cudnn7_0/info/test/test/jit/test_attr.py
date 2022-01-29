@@ -1,7 +1,6 @@
+import torch
 from torch.testing import FileCheck
 from torch.testing._internal.jit_utils import JitTestCase
-import torch
-
 
 if __name__ == '__main__':
     raise RuntimeError("This test file is not meant to be run directly, use:\n\n"
@@ -14,7 +13,7 @@ class TestGetDefaultAttr(JitTestCase):
 
         class A(torch.nn.Module):
             def __init__(self):
-                super(A, self).__init__()
+                super().__init__()
                 self.init_attr_val = 1.0
 
             def forward(self, x):

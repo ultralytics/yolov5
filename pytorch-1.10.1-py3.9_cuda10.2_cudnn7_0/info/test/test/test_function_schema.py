@@ -1,7 +1,6 @@
-
 import torch
-from torch.testing._internal.common_utils import TestCase, run_tests
 from torch._C import parse_schema
+from torch.testing._internal.common_utils import TestCase, run_tests
 
 
 class TestFunctionSchema(TestCase):
@@ -110,7 +109,7 @@ class TestFunctionSchema(TestCase):
     def test_string_optional_parameter_default_value(self):
         schema_a = parse_schema("example::op(str? order=\"NCHW\") -> (Tensor)")
         schema_b = parse_schema(str(schema_a))
-        self.assertEquals(schema_a, schema_b)
+        self.assertEqual(schema_a, schema_b)
 
     def test_schema_error(self):
         with self.assertRaisesRegex(RuntimeError, r"schemas with vararg \(...\) can't have default value args"):

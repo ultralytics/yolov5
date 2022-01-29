@@ -11,11 +11,8 @@ if not dist.is_available():
     sys.exit(0)
 
 from torch.distributed.algorithms.join import Join, Joinable, JoinHook
-from torch.testing._internal.common_distributed import (
-    MultiProcessTestCase,
-    require_n_gpus_for_nccl_backend,
-)
-from torch.testing._internal.common_utils import run_tests, TEST_WITH_DEV_DBG_ASAN
+from torch.testing._internal.common_distributed import MultiProcessTestCase, require_n_gpus_for_nccl_backend
+from torch.testing._internal.common_utils import TEST_WITH_DEV_DBG_ASAN, run_tests
 
 if TEST_WITH_DEV_DBG_ASAN:
     print("Skip dev-asan as torch + multiprocessing spawn have known issues", file=sys.stderr)
@@ -81,7 +78,7 @@ class AllReducer(Joinable):
     per-iteration collective communication.
     """
     def __init__(self, device, process_group):
-        super(AllReducer, self).__init__()
+        super().__init__()
         self.device = device
         self.process_group = process_group
         self.post_hook_tensor = torch.tensor([BEFORE_CONSTANT], device=self.device)
@@ -137,7 +134,7 @@ class AllReducer(Joinable):
 class TestJoin(MultiProcessTestCase):
     r"""Test cases for the generic join context."""
     def setUp(self):
-        super(TestJoin, self).setUp()
+        super().setUp()
         os.environ["WORLD_SIZE"] = str(self.world_size)
         os.environ["BACKEND"] = BACKEND
         self._spawn_processes()

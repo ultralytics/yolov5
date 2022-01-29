@@ -1,5 +1,3 @@
-from itertools import repeat, chain, product
-from typing import NamedTuple
 import collections
 import contextlib
 import ctypes
@@ -11,22 +9,23 @@ import sys
 import tempfile
 import threading
 import unittest
+from itertools import chain, product, repeat
+from typing import NamedTuple
 
 import torch
 import torch.cuda
 import torch.cuda.comm as comm
-from torch.nn.parallel import scatter_gather
-from torch.utils.checkpoint import checkpoint_sequential
-from torch._six import inf, nan
-
 from test_torch import AbstractTestCases
-
-from torch.testing._internal.common_methods_invocations import tri_tests_args, tri_large_tests_args, \
-    _compare_trilu_indices, _compare_large_trilu_indices
-from torch.testing._internal.common_utils import TestCase, freeze_rng_state, run_tests, \
-    NO_MULTIPROCESSING_SPAWN, skipIfRocm, load_tests, IS_REMOTE_GPU, IS_SANDCASTLE, IS_WINDOWS, \
-    slowTest, skipCUDANonDefaultStreamIf, skipCUDAMemoryLeakCheckIf, TEST_WITH_ROCM, TEST_NUMPY
+from torch._six import inf, nan
+from torch.nn.parallel import scatter_gather
 from torch.testing._internal.autocast_test_lists import AutocastTestLists
+from torch.testing._internal.common_methods_invocations import (_compare_large_trilu_indices, _compare_trilu_indices,
+                                                                tri_large_tests_args, tri_tests_args)
+from torch.testing._internal.common_utils import (IS_REMOTE_GPU, IS_SANDCASTLE, IS_WINDOWS, NO_MULTIPROCESSING_SPAWN,
+                                                  TEST_NUMPY, TEST_WITH_ROCM, TestCase, freeze_rng_state, load_tests,
+                                                  run_tests, skipCUDAMemoryLeakCheckIf, skipCUDANonDefaultStreamIf,
+                                                  skipIfRocm, slowTest)
+from torch.utils.checkpoint import checkpoint_sequential
 
 # load_tests from common_utils is used to automatically filter tests for
 # sharding on sandcastle. This line silences flake warnings
@@ -101,12 +100,12 @@ class TestCuda(TestCase):
     FIFTY_MIL_CYCLES = 50000000
 
     def setUp(self):
-        super(TestCuda, self).setUp()
+        super().setUp()
         self.autocast_lists = AutocastTestLists(torch.device('cuda:0'))
 
     def tearDown(self):
         del self.autocast_lists
-        super(TestCuda, self).tearDown()
+        super().tearDown()
 
     def _check_memory_stat_consistency(self):
         snapshot = torch.cuda.memory_snapshot()
@@ -1773,7 +1772,7 @@ except RuntimeError as e:
 
         class StreamModel(torch.nn.Module):
             def __init__(self):
-                super(StreamModel, self).__init__()
+                super().__init__()
                 self.event = torch.cuda.Event()
                 self.stream0 = torch.cuda.Stream()
                 self.stream1 = torch.cuda.Stream()
@@ -2766,7 +2765,7 @@ torch.cuda.synchronize()
                     control = getattr(args[0].to(run_as_type), op)(*cast(args[1:], run_as_type), **add_kwargs)
                 self.assertTrue(type(output_to_compare) == type(control))
                 comparison = compare(output_to_compare, control)
-                self.assertTrue(comparison, "torch.{} result did not match control".format(op))
+                self.assertTrue(comparison, f"torch.{op} result did not match control")
             self.assertTrue(torch.is_autocast_enabled())
         self.assertFalse(torch.is_autocast_enabled())
 
@@ -3566,7 +3565,7 @@ torch.cuda.synchronize()
                     stat = stat + pool_string + ".current"
                     current = postcapture_stats[stat] - precapture_stats[stat]
                     self.assertEqual(current, expected, "Pre to post capture delta of " +
-                                     stat + " = {}, expected = {}, numel = {}".format(current, expected, numel))
+                                     stat + f" = {current}, expected = {expected}, numel = {numel}")
 
                 g.replay()
                 self.assertEqual(b.sum().item(), 6 * numel)
@@ -3587,7 +3586,7 @@ torch.cuda.synchronize()
                 stat = stat + pool_string + ".current"
                 current = postdel_stats[stat] - precapture_stats[stat]
                 self.assertEqual(current, expected, "Pre capture to post graph delete delta of " +
-                                 stat + " = {}, expected = {}, numel = {}".format(current, expected, numel))
+                                 stat + f" = {current}, expected = {expected}, numel = {numel}")
 
             # del a, b before the next case is essential, otherwise overwriting a and b in the next case
             # can throw off its allocation/deallocation counts.

@@ -1,9 +1,9 @@
-import sys
-import torch.cuda
 import os
+import sys
+
+import torch.cuda
 from setuptools import setup
-from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension
-from torch.utils.cpp_extension import CUDA_HOME, ROCM_HOME
+from torch.utils.cpp_extension import CUDA_HOME, ROCM_HOME, BuildExtension, CppExtension, CUDAExtension
 
 if sys.platform == 'win32':
     vc_version = os.getenv('VCToolsVersion', '')

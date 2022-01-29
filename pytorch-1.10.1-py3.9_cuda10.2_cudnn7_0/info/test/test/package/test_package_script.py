@@ -4,11 +4,7 @@ from unittest import skipIf
 
 import torch
 from torch.package import PackageExporter, PackageImporter
-from torch.testing._internal.common_utils import (
-    IS_FBCODE,
-    IS_SANDCASTLE,
-    run_tests,
-)
+from torch.testing._internal.common_utils import IS_FBCODE, IS_SANDCASTLE, run_tests
 
 try:
     from .common import PackageTestCase
@@ -291,11 +287,7 @@ class TestPackageScript(PackageTestCase):
         PyTorchStreamReader isn't having code hidden from
         PyTorchStreamWriter writing ScriptModule code files multiple times.
         """
-        from package_a.test_module import (
-            ModWithSubmodAndTensor,
-            ModWithTensor,
-            SimpleTest,
-        )
+        from package_a.test_module import ModWithSubmodAndTensor, ModWithTensor, SimpleTest
 
         scripted_mod_0 = torch.jit.script(SimpleTest())
         scripted_mod_1 = torch.jit.script(ModWithTensor(torch.rand(1, 2, 3)))
@@ -452,11 +444,7 @@ class TestPackageScript(PackageTestCase):
         Test loading of single ScriptModule shared by multiple eager
         modules in single pickle (ScriptModule objects should be the same).
         """
-        from package_a.test_module import (
-            ModWithMultipleSubmods,
-            ModWithSubmod,
-            SimpleTest,
-        )
+        from package_a.test_module import ModWithMultipleSubmods, ModWithSubmod, SimpleTest
 
         scripted_mod = torch.jit.script(SimpleTest())
 
@@ -513,10 +501,7 @@ class TestPackageScript(PackageTestCase):
         Test tensors shared across eager and ScriptModules on load
         are the same.
         """
-        from package_a.test_module import (
-            ModWithTensor,
-            ModWithTwoSubmodsAndTensor,
-        )
+        from package_a.test_module import ModWithTensor, ModWithTwoSubmodsAndTensor
 
         shared_tensor = torch.ones(3, 3)
 
@@ -561,10 +546,7 @@ class TestPackageScript(PackageTestCase):
         the backing cpp TensorImpl is. We load/save storages based off of this
         cpp TensorImpl and not the python identity.
         """
-        from package_a.test_module import (
-            ModWithTensor,
-            ModWithTwoSubmodsAndTensor,
-        )
+        from package_a.test_module import ModWithTensor, ModWithTwoSubmodsAndTensor
 
         shared_tensor = torch.ones(3, 3)
 

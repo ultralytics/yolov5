@@ -1,8 +1,8 @@
 import os
 import sys
+from typing import List
 
 import torch
-from typing import List
 
 # Make the helper files in test/ importable
 pytorch_test_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -144,7 +144,7 @@ class TestStringFormatting(JitTestCase):
     def test_string_interpolation_with_too_many_arguments(self):
         @torch.jit.script
         def fn(arg1: str, arg2: str) -> str:
-            return "%s in template" % (arg1, arg2)    # noqa: F507
+            return f"{arg1} in template"    # noqa: F507
 
         with self.assertRaisesRegexWithHighlight(RuntimeError,
                                                  "Too many arguments for format string",

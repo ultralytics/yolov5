@@ -1,12 +1,11 @@
-import torch
-import torch.nn as nn
-
-from torch.testing._internal.common_quantization import QuantizationTestCase
-from torch.ao.quantization.fuse_modules import fuse_modules
-
-import torch.ao.quantization._equalize as _equalize
-
 import copy
+
+import torch
+import torch.ao.quantization._equalize as _equalize
+import torch.nn as nn
+from torch.ao.quantization.fuse_modules import fuse_modules
+from torch.testing._internal.common_quantization import QuantizationTestCase
+
 
 class TestEqualizeEager(QuantizationTestCase):
     def checkChannelsEqualized(self, tensor1, tensor2, output_axis, input_axis):
@@ -71,7 +70,7 @@ class TestEqualizeEager(QuantizationTestCase):
         '''
         class ChainModule(nn.Module):
             def __init__(self):
-                super(ChainModule, self).__init__()
+                super().__init__()
                 self.linear1 = nn.Linear(3, 4)
                 self.linear2 = nn.Linear(4, 5)
                 self.linear3 = nn.Linear(5, 6)

@@ -5,10 +5,11 @@
 # This source code is licensed under the BSD license found in the
 # LICENSE file in the root directory of this source tree.
 import tempfile
-import pytest
 
+import pytest
 import torch
 import torch.distributed as dist
+
 
 @pytest.fixture(autouse=True)
 def manual_seed_zero():
@@ -46,7 +47,7 @@ def setup_rpc(scope="session"):
         rank=0,
         world_size=1,
         rpc_backend_options=dist.rpc.TensorPipeRpcBackendOptions(
-            init_method="file://{}".format(file.name),
+            init_method=f"file://{file.name}",
         )
     )
     yield

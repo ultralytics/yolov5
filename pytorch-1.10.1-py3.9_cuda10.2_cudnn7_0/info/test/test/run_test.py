@@ -2,8 +2,6 @@
 
 import argparse
 import copy
-from datetime import datetime
-from distutils.util import strtobool
 import os
 import pathlib
 import shutil
@@ -11,33 +9,24 @@ import signal
 import subprocess
 import sys
 import tempfile
+from datetime import datetime
+from distutils.util import strtobool
+from typing import Dict, List, Optional
 
 import torch
-from torch.utils import cpp_extension
-from torch.testing._internal.common_utils import (
-    FILE_SCHEMA,
-    IS_IN_CI,
-    TEST_WITH_ROCM,
-    shell,
-    set_cwd,
-)
 import torch.distributed as dist
-from typing import Dict, Optional, List
+from torch.testing._internal.common_utils import FILE_SCHEMA, IS_IN_CI, TEST_WITH_ROCM, set_cwd, shell
+from torch.utils import cpp_extension
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 try:
     # using tools/ to optimize test run.
     sys.path.append(str(REPO_ROOT))
-    from tools.testing.test_selections import (
-        export_S3_test_times,
-        get_shard_based_on_S3,
-        # NS: Disable target determination
-        # get_slow_tests_based_on_S3,
-        get_specified_test_cases,
-        get_reordered_tests,
-        get_test_case_configs,
-    )
+    from tools.testing.test_selections import (  # NS: Disable target determination; get_slow_tests_based_on_S3,
+        export_S3_test_times, get_reordered_tests, get_shard_based_on_S3, get_specified_test_cases,
+        get_test_case_configs)
+
     # NS: Disable target determination
     # from tools.testing.modulefinder_determinator import (
     #     should_run_test,
@@ -441,7 +430,7 @@ def run_test(
     argv = [test_module + ".py"] + unittest_args
 
     command = (launcher_cmd or []) + executable + argv
-    print_to_stderr("Executing {} ... [{}]".format(command, datetime.now()))
+    print_to_stderr(f"Executing {command} ... [{datetime.now()}]")
     return shell(command, test_directory)
 
 
@@ -608,7 +597,7 @@ def parse_test_module(test):
 
 class TestChoices(list):
     def __init__(self, *args, **kwargs):
-        super(TestChoices, self).__init__(args[0])
+        super().__init__(args[0])
 
     def __contains__(self, item):
         return list.__contains__(self, parse_test_module(item))
@@ -816,7 +805,7 @@ def exclude_tests(exclude_list, selected_tests, exclude_message=None):
         for test in tests_copy:
             if test.startswith(exclude_test):
                 if exclude_message is not None:
-                    print_to_stderr("Excluding {} {}".format(test, exclude_message))
+                    print_to_stderr(f"Excluding {test} {exclude_message}")
                 selected_tests.remove(test)
     return selected_tests
 
@@ -910,7 +899,7 @@ def run_test_module(test: str, test_directory: str, options) -> Optional[str]:
     test_module = parse_test_module(test)
 
     # Printing the date here can help diagnose which tests are slow
-    print_to_stderr("Running {} ... [{}]".format(test, datetime.now()))
+    print_to_stderr(f"Running {test} ... [{datetime.now()}]")
     handler = CUSTOM_HANDLERS.get(test_module, run_test)
     return_code = handler(test_module, test_directory, options)
     assert isinstance(return_code, int) and not isinstance(
