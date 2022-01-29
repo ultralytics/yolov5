@@ -37,9 +37,7 @@ class FocalLoss(nn.Module):
     def __init__(self, loss_fcn, gamma=1.5):
         super().__init__()
         self.loss_fcn = loss_fcn  # must be nn.BCEWithLogitsLoss()
-        pw = self.loss_fcn.pos_weight
         self.gamma = gamma
-        self.alpha = pw / (1 + pw)
         self.reduction = loss_fcn.reduction
         self.loss_fcn.reduction = 'none'  # required to apply FL to each element
 
@@ -51,9 +49,8 @@ class FocalLoss(nn.Module):
         # TF implementation https://github.com/tensorflow/addons/blob/v0.7.1/tensorflow_addons/losses/focal_loss.py
         pred_prob = torch.sigmoid(pred)  # prob from logits
         p_t = true * pred_prob + (1 - true) * (1 - pred_prob)
-        alpha_factor = true * self.alpha + (1 - true) * (1 - self.alpha)
         modulating_factor = (1.0 - p_t) ** self.gamma
-        loss *= alpha_factor * modulating_factor
+        loss *= modulating_factor # we don't need alpha factor because it's already considered on BCELoss
 
         if self.reduction == 'mean':
             return loss.mean()
