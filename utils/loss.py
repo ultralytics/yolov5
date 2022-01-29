@@ -50,7 +50,7 @@ class FocalLoss(nn.Module):
         pred_prob = torch.sigmoid(pred)  # prob from logits
         p_t = true * pred_prob + (1 - true) * (1 - pred_prob)
         modulating_factor = (1.0 - p_t) ** self.gamma
-        loss *= modulating_factor # we don't need alpha factor because it's already considered on BCELoss
+        loss *= modulating_factor  # we don't need alpha factor because it's already considered on BCELoss
 
         if self.reduction == 'mean':
             return loss.mean()
