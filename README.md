@@ -20,7 +20,6 @@ YOLOv5 🚀 is a family of object detection architectures and models pretrained 
  open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
 </p>
 
-<br>
 <div align="center">
    <a href="https://github.com/ultralytics">
    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-github.png" width="2%"/>
@@ -50,7 +49,6 @@ YOLOv5 🚀 is a family of object detection architectures and models pretrained 
    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-instagram.png" width="2%"/>
    </a>
 </div>
-<br>
 
 <!--
 <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
