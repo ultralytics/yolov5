@@ -19,7 +19,7 @@
 YOLOv5 🚀 is a family of object detection architectures and models pretrained on the COCO dataset, and represents <a href="https://ultralytics.com">Ultralytics</a>
  open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
 </p>
-   
+
 <br>
 <div align="center">
    <a href="https://github.com/ultralytics">
@@ -51,7 +51,7 @@ YOLOv5 🚀 is a family of object detection architectures and models pretrained 
    </a>
 </div>
 <br>
-   
+
 <!--
 <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
 <img width="800" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-api.png"></a>
