@@ -1,0 +1,72 @@
+name: release
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [closed]
+
+env:
+  APPLICATION_NAME: yolov5
+
+jobs:
+  tag_and_release:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.version.outputs.new_tag }}
+    steps:
+      - uses: actions/checkout@main
+        with:
+          fetch-depth: "0"
+
+      - name: "Git: Configure local settings"
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+      - name: "Setup: Calculate next version number"
+        uses: mathieudutour/github-tag-action@v5.6
+        id: version
+        with:
+          tag_prefix: "v"
+          dry_run: true
+          default_bump: patch
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Changelog: Create full changelog for commit"
+        uses: Hojland/github-changelog-action@v1.0.1
+        with:
+          filename: CHANGELOG.md
+          next_version: ${{ steps.version.outputs.new_version }}
+
+      - name: "Git: Commit changed files and tag release"
+        run: |
+          git add CHANGELOG.md
+          git commit -m "Changelog updated" CHANGELOG.md
+          git tag -m "$Tagged new version: ${{ steps.version.outputs.new_version }}" -fa ${{ steps.version.outputs.new_tag }}
+          git push --tags
+
+      - name: "Github: Create release"
+        uses: actions/create-release@v1
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.new_tag }}
+          release_name: Release ${{ steps.version.outputs.new_version }}
+          draft: false
+          prerelease: ${{ steps.changelog.outputs.changelog }} # removed body here when i added release.yml with github
+
+      - name: Update version in pyproject.toml with release tag
+        uses: ciiiii/toml-editor@1.0.0
+        with:
+          file: "pyproject.toml"
+          key: "tool.poetry.version"
+          value: ${{ steps.version.outputs.new_tag }}
+
+      - name: Commit & Push changes
+        uses: actions-js/push@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          message: "chore: Bump version in pyproject ${{ needs.tag_and_release.outputs.release_tag }}"
+          branch: main
