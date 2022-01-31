@@ -39,11 +39,13 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+from models.experimental import attempt_load
 from models.common import DetectMultiBackend
 from utils.datasets import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
-from utils.general import (LOGGER, check_file, check_img_size, check_imshow, check_requirements, colorstr,
-                           increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
-from utils.plots import Annotator, colors, save_one_box
+from utils.general_polygon import (LOGGER, check_file, check_img_size, check_imshow, check_requirements, colorstr,
+                           increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh,
+                           polygon_non_max_suppression, polygon_scale_coords)
+from utils.plots_polygon import Annotator, colors, save_one_box, polygon_plot_one_box
 from utils.torch_utils import select_device, time_sync
 
 
@@ -74,6 +76,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         hide_conf=False,  # hide confidences
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
+        polygon=False
         ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -89,14 +92,28 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
 
     # Load model
     device = select_device(device)
-    model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data)
-    stride, names, pt, jit, onnx, engine = model.stride, model.names, model.pt, model.jit, model.onnx, model.engine
+    if polygon:
+        model = attempt_load(weights, map_location=device)  # load FP32 model
+    else:
+        model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data)
+    
+    
+    if polygon:
+        stride = int(model.stride.max())  # model stride
+        names = model.module.names if hasattr(model, 'module') else model.names  # get class names
+        pt, jit, onnx, engine = True, False, False, False
+    else:
+        stride, names, pt, jit, onnx, engine = model.stride, model.names, model.pt, model.jit, model.onnx, model.engine
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
     # Half
     half &= (pt or jit or onnx or engine) and device.type != 'cpu'  # FP16 supported on limited backends with CUDA
     if pt or jit:
         model.model.half() if half else model.model.float()
+    if polygon:
+        # Polygon does not support second-stage classifier
+        classify = False
+        assert not classify, "polygon does not support second-stage classifier"
 
     # Dataloader
     if webcam:
@@ -110,7 +127,11 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     vid_path, vid_writer = [None] * bs, [None] * bs
 
     # Run inference
-    model.warmup(imgsz=(1, 3, *imgsz), half=half)  # warmup
+    if polygon:
+        if device.type != 'cpu':
+            model(torch.zeros(1, 3, imgsz[0],imgsz[1]).to(device).type_as(next(model.parameters())))  # run once
+    else:
+        model.warmup(imgsz=(1, 3, *imgsz), half=half)  # warmup
     dt, seen = [0.0, 0.0, 0.0], 0
     for path, im, im0s, vid_cap, s in dataset:
         t1 = time_sync()
@@ -129,7 +150,10 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         dt[1] += t3 - t2
 
         # NMS
-        pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
+        if polygon:
+            pred = polygon_non_max_suppression(pred[0], conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
+        else:
+            pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
         dt[2] += time_sync() - t3
 
         # Second-stage classifier (optional)
@@ -153,7 +177,10 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
             if len(det):
                 # Rescale boxes from img_size to im0 size
-                det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
+                if polygon:
+                    det[:, :8] = polygon_scale_coords(im.shape[2:], det[:, :8], im0.shape).round()
+                else:
+                    det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
 
                 # Print results
                 for c in det[:, -1].unique():
@@ -161,6 +188,19 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Write results
+            if polygon:
+                for *xyxyxyxy, conf, cls in reversed(det):
+                            if save_txt:  # Write to file
+                                xyxyxyxyn = (torch.tensor(xyxyxyxy).view(1, 8) / gn).view(-1).tolist()  # normalized xyxyxyxy
+                                line = (cls, *xyxyxyxyn, conf) if save_conf else (cls, *xyxyxyxyn)  # label format
+                                with open(txt_path + '.txt', 'a') as f:
+                                    f.write(('%g ' * len(line)).rstrip() % line + '\n')
+
+                            if save_img or view_img:  # Add bbox to image
+                                c = int(cls)  # integer class
+                                label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
+                                polygon_plot_one_box(torch.tensor(xyxyxyxy).cpu().numpy(), im0, label=label, color=colors(c, True), line_thickness=line_thickness)
+            else:
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
@@ -215,8 +255,9 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path(s)')
-    parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob, 0 for webcam')
+    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'best.pt', help='model path(s)')
+    # parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob, 0 for webcam')
+    parser.add_argument('--source', type=str, default=r'D:\Datasets\tables\test', help='file/dir/URL/glob, 0 for webcam')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
@@ -241,6 +282,7 @@ def parse_opt():
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
+    parser.add_argument('--polygon', default=False, help='true to train polygon labels')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(FILE.stem, opt)

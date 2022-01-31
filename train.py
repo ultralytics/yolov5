@@ -38,13 +38,12 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-import val  # for end-of-epoch mAP
 from models.experimental import attempt_load
-from models.yolo import Model
-from utils.autoanchor import check_anchors
+from models.yolo import Model, Polygon_Model
+from utils.autoanchor_polygon import check_anchors, polygon_check_anchors
 from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
-from utils.datasets import create_dataloader
+from utils.datasets_polygon import create_dataloader, polygon_create_dataloader
 from utils.downloads import attempt_download
 from utils.general import (LOGGER, check_dataset, check_file, check_git_status, check_img_size, check_requirements,
                            check_suffix, check_yaml, colorstr, get_latest_run, increment_path, init_seeds,
@@ -52,9 +51,9 @@ from utils.general import (LOGGER, check_dataset, check_file, check_git_status, 
                            print_args, print_mutation, strip_optimizer)
 from utils.loggers import Loggers
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
-from utils.loss import ComputeLoss
+from utils.loss_polygon import ComputeLoss, Polygon_ComputeLoss
 from utils.metrics import fitness
-from utils.plots import plot_evolve, plot_labels
+from utils.plots_polygon import plot_evolve, plot_labels, plot_images, plot_results, plot_evolution, polygon_plot_images, polygon_plot_labels, polygon_plot_results
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
@@ -74,7 +73,29 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Directories
     w = save_dir / 'weights'  # weights dir
     (w.parent if evolve else w).mkdir(parents=True, exist_ok=True)  # make dir
-    last, best = w / 'last.pt', w / 'best.pt'
+
+    if opt.polygon:
+        last, best = w / 'polygon_last.pt', w / 'polygon_best.pt'
+        __model = Polygon_Model
+        __create_dataloader = polygon_create_dataloader
+        __plot_labels = polygon_plot_labels
+        __check_anchors = polygon_check_anchors
+        __computeLoss = Polygon_ComputeLoss
+        __plot_images = polygon_plot_images
+        __plot_results = polygon_plot_results
+        import polygon_test as val  # for end-of-epoch mAP
+    
+    else:
+        last, best = w / 'last.pt', w / 'best.pt'
+        __model = Model
+        __create_dataloader = create_dataloader
+        __plot_labels = plot_labels
+        __check_anchors = check_anchors
+        __computeLoss = ComputeLoss
+        __plot_images = plot_images
+        __plot_results = plot_results
+        import val as val  # for end-of-epoch mAP
+        
 
     # Hyperparameters
     if isinstance(hyp, str):
@@ -121,14 +142,14 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         with torch_distributed_zero_first(LOCAL_RANK):
             weights = attempt_download(weights)  # download if not found locally
         ckpt = torch.load(weights, map_location=device)  # load checkpoint
-        model = Model(cfg or ckpt['model'].yaml, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
+        model = __model(cfg or ckpt['model'].yaml, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
         exclude = ['anchor'] if (cfg or hyp.get('anchors')) and not resume else []  # exclude keys
         csd = ckpt['model'].float().state_dict()  # checkpoint state_dict as FP32
         csd = intersect_dicts(csd, model.state_dict(), exclude=exclude)  # intersect
         model.load_state_dict(csd, strict=False)  # load
         LOGGER.info(f'Transferred {len(csd)}/{len(model.state_dict())} items from {weights}')  # report
     else:
-        model = Model(cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
+        model = __model(cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
 
     # Freeze
     freeze = [f'model.{x}.' for x in (freeze if len(freeze) > 1 else range(freeze[0]))]  # layers to freeze
@@ -220,7 +241,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         LOGGER.info('Using SyncBatchNorm()')
 
     # Trainloader
-    train_loader, dataset = create_dataloader(train_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
+    train_loader, dataset = __create_dataloader(train_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
                                               hyp=hyp, augment=True, cache=opt.cache, rect=opt.rect, rank=LOCAL_RANK,
                                               workers=workers, image_weights=opt.image_weights, quad=opt.quad,
                                               prefix=colorstr('train: '), shuffle=True)
@@ -230,7 +251,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # Process 0
     if RANK in [-1, 0]:
-        val_loader = create_dataloader(val_path, imgsz, batch_size // WORLD_SIZE * 2, gs, single_cls,
+        val_loader = __create_dataloader(val_path, imgsz, batch_size // WORLD_SIZE * 2, gs, single_cls,
                                        hyp=hyp, cache=None if noval else opt.cache, rect=True, rank=-1,
                                        workers=workers, pad=0.5,
                                        prefix=colorstr('val: '))[0]
@@ -241,11 +262,11 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
             # model._initialize_biases(cf.to(device))
             if plots:
-                plot_labels(labels, names, save_dir)
+                __plot_labels(labels, names, save_dir)
 
             # Anchors
             if not opt.noautoanchor:
-                check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
+                __check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
             model.half().float()  # pre-reduce anchor precision
 
         callbacks.run('on_pretrain_routine_end')
@@ -262,6 +283,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     hyp['label_smoothing'] = opt.label_smoothing
     model.nc = nc  # attach number of classes to model
     model.hyp = hyp  # attach hyperparameters to model
+    if opt.polygon:
+        model.gr = 0.0  # iou loss ratio (obj_loss = 1.0 or iou)
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device) * nc  # attach class weights
     model.names = names
 
@@ -275,7 +298,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
     stopper = EarlyStopping(patience=opt.patience)
-    compute_loss = ComputeLoss(model)  # init loss class
+    compute_loss = __computeLoss(model)  # init loss class
     LOGGER.info(f'Image sizes {imgsz} train, {imgsz} val\n'
                 f'Using {train_loader.num_workers * WORLD_SIZE} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
@@ -349,11 +372,12 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             if RANK in [-1, 0]:
                 mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
                 mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
-                pbar.set_description(('%10s' * 2 + '%10.4g' * 5) % (
-                    f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
-                callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, plots, opt.sync_bn)
-                if callbacks.stop_training:
-                    return
+                s = ('%10s' * 2 + '%10.4g' * 5) % (
+                    f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1])
+                pbar.set_description(s)
+                
+                callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, plots, opt.sync_bn,__plot_images)
+
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
@@ -363,7 +387,10 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         if RANK in [-1, 0]:
             # mAP
             callbacks.run('on_train_epoch_end', epoch=epoch)
-            ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
+            if opt.polygon:
+                ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride', 'class_weights'])
+            else:
+                ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = (epoch + 1 == epochs) or stopper.possible_stop
             if not noval or final_epoch:  # Calculate mAP
                 results, maps, _ = val.run(data_dict,
@@ -443,7 +470,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                     if is_coco:
                         callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
 
-        callbacks.run('on_train_end', last, best, plots, epoch, results)
+        callbacks.run('on_train_end', last, best, plots, epoch, results, __plot_results)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
 
     torch.cuda.empty_cache()
@@ -452,15 +479,16 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='initial weights path')
-    parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
-    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.scratch.yaml', help='hyperparameters path')
+    parser.add_argument('--weights', type=str, default='', help='initial weights path')
+    parser.add_argument('--cfg', type=str, default=r'D:\VS\YOLO_V5_PROJECTS\-original\yolov5-and-polygon\models\polygon_yolov5s.yaml', help='model.yaml path')
+    parser.add_argument('--data', type=str, default='data/lpr.yaml', help='dataset.yaml path')
+    parser.add_argument('--hyp', type=str, default='data/hyps/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs, -1 for autobatch')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='train, val image size (pixels)')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
+    parser.add_argument('--polygon', default=False, help='true to train polygon labels')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--noval', action='store_true', help='only validate final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable AutoAnchor')

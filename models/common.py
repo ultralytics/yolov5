@@ -26,6 +26,8 @@ from utils.general import (LOGGER, check_requirements, check_suffix, check_versi
                            make_divisible, non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, time_sync
+from utils.general_polygon import polygon_non_max_suppression, polygon_scale_coords
+from utils.plots_polygon import polygon_plot_one_box
 
 
 def autopad(k, p=None):  # kernel, padding
@@ -662,3 +664,175 @@ class Classify(nn.Module):
     def forward(self, x):
         z = torch.cat([self.aap(y) for y in (x if isinstance(x, list) else [x])], 1)  # cat if list
         return self.flat(self.conv(z))  # flatten to x(b,c2)
+
+
+class Polygon_NMS(nn.Module):
+    # Non-Maximum Suppression (NMS) module for Polygon Anchors
+    conf = 0.25  # confidence threshold
+    iou = 0.45  # IoU threshold
+    classes = None  # (optional list) filter by class
+    max_det = 1000  # maximum number of detections per image
+
+    def __init__(self):
+        super(Polygon_NMS, self).__init__()
+        
+    def forward(self, x):
+        return polygon_non_max_suppression(x[0], self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)
+    
+    
+class Polygon_AutoShape(nn.Module):
+    # input-robust polygon model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and Polygon_NMS
+    conf = 0.25  # Polygon NMS confidence threshold
+    iou = 0.45  # Polygon NMS IoU threshold
+    classes = None  # (optional list) filter by class
+    max_det = 1000  # maximum number of detections per image
+
+    def __init__(self, model):
+        super(Polygon_AutoShape, self).__init__()
+        self.model = model.eval()
+
+    def autoshape(self):
+        print('Polygon_AutoShape already enabled, skipping... ')  # model already converted to model.autoshape()
+        return self
+
+    @torch.no_grad()
+    def forward(self, imgs, size=640, augment=False, profile=False):
+        # Inference from various sources. For height=640, width=1280, RGB images example inputs are:
+        #   filename:   imgs = 'data/images/zidane.jpg'
+        #   URI:             = 'https://github.com/ultralytics/yolov5/releases/download/v1.0/zidane.jpg'
+        #   OpenCV:          = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(640,1280,3)
+        #   PIL:             = Image.open('image.jpg')  # HWC x(640,1280,3)
+        #   numpy:           = np.zeros((640,1280,3))  # HWC
+        #   torch:           = torch.zeros(16,3,320,640)  # BCHW (scaled to size=640, 0-1 values)
+        #   multiple:        = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
+
+        t = [time_sync()]
+        p = next(self.model.parameters())  # for device and type
+        if isinstance(imgs, torch.Tensor):  # torch
+            with amp.autocast(enabled=p.device.type != 'cpu'):
+                return self.model(imgs.to(p.device).type_as(p), augment, profile)  # inference
+
+        # Pre-process
+        n, imgs = (len(imgs), imgs) if isinstance(imgs, list) else (1, [imgs])  # number of images, list of images
+        shape0, shape1, files = [], [], []  # image and inference shapes, filenames
+        for i, im in enumerate(imgs):
+            f = f'image{i}'  # filename
+            if isinstance(im, str):  # filename or uri
+                im, f = np.asarray(Image.open(requests.get(im, stream=True).raw if im.startswith('http') else im)), im
+            elif isinstance(im, Image.Image):  # PIL Image
+                im, f = np.asarray(im), getattr(im, 'filename', f) or f
+            files.append(Path(f).with_suffix('.jpg').name)
+            if im.shape[0] < 5:  # image in CHW
+                im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
+            im = im[:, :, :3] if im.ndim == 3 else np.tile(im[:, :, None], 3)  # enforce 3ch input
+            s = im.shape[:2]  # HWC
+            shape0.append(s)  # image shape
+            g = (size / max(s))  # gain
+            shape1.append([y * g for y in s])
+            imgs[i] = im if im.data.contiguous else np.ascontiguousarray(im)  # update
+        shape1 = [make_divisible(x, int(self.stride.max())) for x in np.stack(shape1, 0).max(0)]  # inference shape
+        x = [letterbox(im, new_shape=shape1, auto=False)[0] for im in imgs]  # pad
+        x = np.stack(x, 0) if n > 1 else x[0][None]  # stack
+        x = np.ascontiguousarray(x.transpose((0, 3, 1, 2)))  # BHWC to BCHW
+        x = torch.from_numpy(x).to(p.device).type_as(p) / 255.  # uint8 to fp16/32
+        t.append(time_sync())
+
+        with amp.autocast(enabled=p.device.type != 'cpu'):
+            # Inference
+            y = self.model(x, augment, profile)[0]  # forward
+            t.append(time_sync())
+            
+            # Post-process
+            y = polygon_non_max_suppression(y, self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)  # Polygon NMS
+
+            for i in range(n):
+                polygon_scale_coords(shape1, y[i][:, :8], shape0[i])
+
+            t.append(time_sync())
+            return Polygon_Detections(imgs, y, files, t, self.names, x.shape)
+        
+        
+class Polygon_Detections:
+    # polygon detections class for YOLOv5 inference results
+    def __init__(self, imgs, pred, files, times=None, names=None, shape=None):
+        super(Polygon_Detections, self).__init__()
+        d = pred[0].device  # device
+        gn = [torch.tensor([*[im.shape[i] for i in [1, 0, 1, 0, 1, 0, 1, 0]], 1., 1.], device=d) for im in imgs]  # normalizations
+        self.imgs = imgs  # list of images as numpy arrays, images should be pixel-level and with shape (height, width, channel)
+        self.pred = pred  # list of tensors: pred[0] = (xyxyxyxy, conf, cls)
+        self.names = names  # class names
+        self.files = files  # image filenames
+        self.xyxyxyxy = pred  # xyxyxyxy pixels
+        self.xyxyxyxyn = [x / g for x, g in zip(self.xyxyxyxy, gn)]  # xyxyxyxy normalized
+        self.n = len(self.pred)  # number of images (batch size)
+        self.t = tuple((times[i + 1] - times[i]) * 1000 / self.n for i in range(3))  # timestamps (ms)
+        self.s = shape  # inference BCHW shape
+
+    def display(self, pprint=False, show=False, save=False, crop=False, render=False, save_dir=Path('')):
+        assert not crop, 'polygon does not support crop and cutout.'
+        for i, (im, pred) in enumerate(zip(self.imgs, self.pred)):
+            str = f'image {i + 1}/{len(self.pred)}: {im.shape[0]}x{im.shape[1]} '
+            if pred is not None:
+                for c in pred[:, -1].unique():
+                    n = (pred[:, -1] == c).sum()  # detections per class
+                    str += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
+                if show or save or render:
+                    for *box, conf, cls in pred:  # xyxyxyxy, confidence, class
+                        label = f'{self.names[int(cls)]} {conf:.2f}'
+                        polygon_plot_one_box(torch.tensor(box, device='cpu').numpy(), im, label=label, color=colors(cls))
+            im = Image.fromarray(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im  # from np
+            if pprint:
+                print(str.rstrip(', '))
+            if show:
+                im.show(self.files[i])  # show
+            if save:
+                f = self.files[i]
+                im.save(save_dir / f)  # save
+                print(f"{'Saved' * (i == 0)} {f}", end=',' if i < self.n - 1 else f' to {save_dir}\n')
+            if render:
+                self.imgs[i] = np.asarray(im)
+
+    def print(self):
+        self.display(pprint=True)  # print results
+        print(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' % self.t)
+
+    def show(self):
+        self.display(show=True)  # show results
+
+    def save(self, save_dir='runs/hub/exp'):
+        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/hub/exp', mkdir=True)  # increment save_dir
+        self.display(save=True, save_dir=save_dir)  # save results
+    
+    # polygon does not support cutout
+
+    def render(self):
+        self.display(render=True)  # render results
+        return self.imgs
+
+    def pandas(self):
+        # return detections as pandas DataFrames, i.e. print(results.pandas().xyxyxyxy[0])
+        new = copy(self)  # return copy
+        ca = 'x1', 'y1', 'x2', 'y2', 'x3', 'y3', 'x4', 'y4', 'confidence', 'class', 'name'  # xyxyxyxy columns
+        for k, c in zip(['xyxyxyxy', 'xyxyxyxyn'], [ca, ca]):
+            a = [[x[:9] + [int(x[9]), self.names[int(x[9])]] for x in x.tolist()] for x in getattr(self, k)]  # update
+            setattr(new, k, [pd.DataFrame(x, columns=c) for x in a])
+        return new
+
+    def tolist(self):
+        # return a list of Polygon_Detections objects, i.e. 'for result in results.tolist():'
+        x = [Polygon_Detections([self.imgs[i]], [self.pred[i]], self.names, self.s) for i in range(self.n)]
+        for d in x:
+            for k in ['imgs', 'pred', 'xyxyxyxy', 'xyxyxyxyn']:
+                setattr(d, k, getattr(d, k)[0])  # pop out of list
+        return x
+
+    def __len__(self):
+        return self.n
+
+
+
+
+
+
+
+

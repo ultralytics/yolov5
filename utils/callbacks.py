@@ -34,6 +34,8 @@ class Callbacks:
             'on_train_end': [],
             'on_params_update': [],
             'teardown': [],
+            
+            'on_polygon_fit_epoch_end': [],
         }
         self.stop_training = False  # set True to interrupt training
 
