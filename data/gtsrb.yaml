@@ -1,0 +1,8 @@
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: ../../../../datasets/gtsrb  # dataset root dir
+train: train_paths.txt  # train images (relative to 'path') 118287 images
+test: test_paths.txt  # 20288 of 40670 images, submit to https://competitions.codalab.org/competitions/20794
+
+# Classes
+nc: 43  # number of classes
+names: ['Geschwindigkeitsbegrenzung 20 km/h', 'Geschwindigkeitsbegrenzung 30 km/h', 'Geschwindigkeitsbegrenzung 50 km/h', 'Geschwindigkeitsbegrenzung 60 km/h', 'Geschwindigkeitsbegrenzung 70 km/h', 'Geschwindigkeitsbegrenzung 80 km/h', 'Geschwindigkeitsbegrenzung aufgehoben', 'Geschwindigkeitsbegrenzung 100 km/h', 'Geschwindigkeitsbegrenzung 120 km/h',  'Überholverbot',  'Überholverbot für LKW', 'Vorfahrt',  'Vorfahrtsstraße', 'Vorfahrt gewähren', 'Stopschild',  'Verbot für Fahrzeuge aller Art', 'Verbot für LKW',  'Verbot der Einfahrt',  'Gefahrstelle',  'Kurve links',  'Kurve rechts',  'Doppelkuve',  'Unebene Fahrbahn', 'Schleudergefahr',  'Einseitig verengte Fahrbahn', 'Baustelle', 'Lichtzeichenanlage',  'Fußgängerüberweg', 'spielende Kinder',  'Radfahrer kreuzen', 'Schnee- und Eisglätte', 'Achtung Wildwechsel', 'Alle Streckenverbote aufgehoben', 'Vorgeschriebene Fahrtrichtung rechts',  'Vorgeschriebene Fahrtrichtung links',  'Vorgeschriebene Fahrtrichtung geradeaus', 'Vorgeschriebene Fahrtrichtung geradeaus oder rechts', 'Vorgeschriebene Fahrtrichtung geradeaus oder links', 'Rechts vorbei', 'links vorbei', 'Kreisverkehr',  'Überholverbot aufgehoben',  'Überholverbot für LKW aufgehoben']  # class names
