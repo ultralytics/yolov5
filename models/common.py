@@ -464,16 +464,16 @@ class DetectMultiBackend(nn.Module):
 
 class AutoShape(nn.Module):
     # YOLOv5 input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS
-    conf = 0.25  # NMS confidence threshold
-    iou = 0.45  # NMS IoU threshold
     agnostic = False  # NMS class-agnostic
     multi_label = False  # NMS multiple labels per box
     classes = None  # (optional list) filter by class, i.e. = [0, 15, 16] for COCO persons, cats and dogs
     max_det = 1000  # maximum number of detections per image
     amp = False  # Automatic Mixed Precision (AMP) inference
 
-    def __init__(self, model):
+    def __init__(self, model,conf = 0.25, iou=0.45):
         super().__init__()
+        self.conf = conf
+        self.iou = iou
         LOGGER.info('Adding AutoShape... ')
         copy_attr(self, model, include=('yaml', 'nc', 'hyp', 'names', 'stride', 'abc'), exclude=())  # copy attributes
         self.dmb = isinstance(model, DetectMultiBackend)  # DetectMultiBackend() instance

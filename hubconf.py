@@ -11,7 +11,7 @@ Usage:
 import torch
 
 
-def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True, device=None):
+def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True, device=None, conf=0.25, iou=0.45):
     """Creates or loads a YOLOv5 model
 
     Arguments:
@@ -65,9 +65,9 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
         raise Exception(s) from e
 
 
-def custom(path='path/to/model.pt', autoshape=True, verbose=True, device=None):
+def custom(path='path/to/model.pt', autoshape=True, verbose=True, device=None, conf=0.25,iou=0.45):
     # YOLOv5 custom or local model
-    return _create(path, autoshape=autoshape, verbose=verbose, device=device)
+    return _create(path, autoshape=autoshape, verbose=verbose, device=device,conf=conf,iou=iou)
 
 
 def yolov5n(pretrained=True, channels=3, classes=80, autoshape=True, verbose=True, device=None):
