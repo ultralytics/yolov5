@@ -18,7 +18,7 @@ def train_test_split(lst_pairs: List[Any], test_size: float = 0.2, seed: int = 4
 
 
 def main():
-    path = Path("datasets/cols")
+    path = Path("datasets/vision_2_in_table_3700")
     image_paths = []
     for ext in ("*.png", "*.jpg", "*.jpeg"):
         image_paths.extend(sorted((path / "images").glob(f"**/{ext}")))
