@@ -6,13 +6,12 @@
 # └── datasets
 #     └── coco128  ← downloads here
 
-
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-path: ../datasets/cols  # dataset root dir
-train: images/train  # train images (relative to 'path') 128 images (it will then find labels by replace 'images' with 'labels')
-val: images/val  # val images (relative to 'path') 128 images (it will then find labels by replace 'images' with 'labels')
-test: images/test # test images (optional) (it will then find labels by replace 'images' with 'labels')
+path: datasets/cols # dataset root dir
+train: images/train_split # train images (relative to 'path') 128 images (it will then find labels by replace 'images' with 'labels')
+val: images/val_split # val images (relative to 'path') 128 images (it will then find labels by replace 'images' with 'labels')
+test: images/test_split # test images (optional) (it will then find labels by replace 'images' with 'labels')
 
 # Classes
-nc: 2  # number of classes
-names: ['header', 'line']  # class names
+nc: 2 # number of classes
+names: ["header", "line"] # class names

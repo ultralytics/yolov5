@@ -14,7 +14,6 @@ PyYAML = "^5.3.1"
 requests = "^2.23.0"
 scipy = "^1.4.1"
 torch = "^1.7.0"
-torchvision = "^0.8.1"
 tqdm = "^4.41.0"
 tensorboard = "^2.4.1"
 pandas = "^1.1.4"
@@ -52,8 +51,8 @@ exclude_lines = [
 DS_BUILD_CPU_ADAM = "1"
 
 [tool.poe.tasks]
-install_cuda_torch = "pip install torch==1.9.1+cu111 -f https://download.pytorch.org/whl/torch_stable.html"
-install_cuda_deepspeed = 'pip install deepspeed =>0.5.3 --global-option="build_ext" --global-option="-j8"'
+install_cuda_torch = "pip3 install torch==1.10.0+cu113 torchvision==0.11.1+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html"
+install_cuda_deepspeed = 'pip install deepspeed==0.5.3 --global-option="build_ext" --global-option="-j8"'
 install_cuda_libs = ["install_cuda_torch", "install_cuda_deepspeed"]
 
 [tool.black]
