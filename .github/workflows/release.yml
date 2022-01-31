@@ -3,7 +3,7 @@ name: release
 on:
   pull_request:
     branches:
-      - main
+      - master
     types: [closed]
 
 env:
@@ -16,7 +16,7 @@ jobs:
     outputs:
       release_tag: ${{ steps.version.outputs.new_tag }}
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@master
         with:
           fetch-depth: "0"
 
