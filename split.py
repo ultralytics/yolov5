@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, List
 
 import numpy as np
+from loguru import logger
 
 
 def train_test_split(lst_pairs: List[Any], test_size: float = 0.2, seed: int = 42):
@@ -18,7 +19,7 @@ def train_test_split(lst_pairs: List[Any], test_size: float = 0.2, seed: int = 4
 
 
 def main():
-    path = Path("datasets/cols")
+    path = Path("datasets/vision2-table")
     image_paths = []
     for ext in ("*.png", "*.jpg", "*.jpeg"):
         image_paths.extend(sorted((path / "images").glob(f"**/{ext}")))
@@ -39,25 +40,37 @@ def main():
     (path / "labels/test_split").mkdir(parents=True, exist_ok=True)
 
     for image_path in image_train_paths:
-        new_image_path = str(image_path.absolute()).replace("/train/", "/train_split/")
-        label_path = str(image_path.absolute()).replace("/images/", "/labels/").replace(".jpeg", ".txt")
-        new_label_path = label_path.replace("/train/", "/train_split/")
-        shutil.move(str(image_path.absolute()), new_image_path)
-        shutil.move(label_path, new_label_path)
+        try:
+            new_image_path = str(image_path.absolute()).replace("/train/", "/train_split/")
+            label_path = str(image_path.absolute()).replace("/images/", "/labels/").replace(".jpeg", ".txt")
+            new_label_path = label_path.replace("/train/", "/train_split/")
+            shutil.move(str(image_path.absolute()), new_image_path)
+            shutil.move(label_path, new_label_path)
+        except Exception as e:
+            logger.info(f"Exception ignored: {e}")
+            continue
 
     for image_path in image_val_paths:
-        new_image_path = str(image_path.absolute()).replace("/train/", "/val_split/")
-        label_path = str(image_path.absolute()).replace("/images/", "/labels/").replace(".jpeg", ".txt")
-        new_label_path = label_path.replace("/train/", "/val_split/")
-        shutil.move(str(image_path.absolute()), new_image_path)
-        shutil.move(label_path, new_label_path)
+        try:
+            new_image_path = str(image_path.absolute()).replace("/train/", "/val_split/")
+            label_path = str(image_path.absolute()).replace("/images/", "/labels/").replace(".jpeg", ".txt")
+            new_label_path = label_path.replace("/train/", "/val_split/")
+            shutil.move(str(image_path.absolute()), new_image_path)
+            shutil.move(label_path, new_label_path)
+        except Exception as e:
+            logger.info(f"Exception ignored: {e}")
+            continue
 
     for image_path in image_test_paths:
-        new_image_path = str(image_path.absolute()).replace("/train/", "/test_split/")
-        label_path = str(image_path.absolute()).replace("/images/", "/labels/").replace(".jpeg", ".txt")
-        new_label_path = label_path.replace("/train/", "/test_split/")
-        shutil.move(str(image_path.absolute()), new_image_path)
-        shutil.move(label_path, new_label_path)
+        try:
+            new_image_path = str(image_path.absolute()).replace("/train/", "/test_split/")
+            label_path = str(image_path.absolute()).replace("/images/", "/labels/").replace(".jpeg", ".txt")
+            new_label_path = label_path.replace("/train/", "/test_split/")
+            shutil.move(str(image_path.absolute()), new_image_path)
+            shutil.move(label_path, new_label_path)
+        except Exception as e:
+            logger.info(f"Exception ignored: {e}")
+            continue
 
 
 if __name__ == "__main__":

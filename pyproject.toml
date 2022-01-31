@@ -20,6 +20,7 @@ tensorboard = "^2.4.1"
 pandas = "^1.1.4"
 seaborn = "^0.11.0"
 thop = "^0.0.31-2005241907"
+loguru = "^0.6.0"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^20.8b1", allow-prereleases = true}
