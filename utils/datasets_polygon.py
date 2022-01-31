@@ -422,11 +422,11 @@ def polygon_verify_image_label(params):
         # verify labels
         if os.path.isfile(lb_file):
             nf = 1  # label found
-            ll = np.loadtxt(lb_file, dtype=np.float32)
+            l = np.loadtxt(lb_file, dtype=np.float32)
             with open(lb_file) as f:
-                ll = np.array([x.split() for x in f.readlines() if len(x)>1], dtype=np.float32)  # labels # ata_landmark_change
-            l=np.zeros((ll.shape[0], 9))
-            l[:,1:] =ll[:,5:]
+                l = np.array([x.split() for x in f.readlines() if len(x)>1], dtype=np.float32)  # labels # ata_landmark_change
+            # l=np.zeros((ll.shape[0], 9))
+            # l[:,1:] =ll[:,5:]
             if len(l.shape)==1: l = l[None, :]
             segments = [l[0][1:].reshape(-1, 2) for x in l]  # ((x1, y1), (x2, y2), ...)
             if len(l):
