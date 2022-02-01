@@ -45,6 +45,7 @@ import platform
 import subprocess
 import sys
 import time
+import warnings
 from pathlib import Path
 
 import torch
@@ -508,8 +509,10 @@ def parse_opt():
 
 
 def main(opt):
-    for opt.weights in (opt.weights if isinstance(opt.weights, list) else [opt.weights]):
-        run(**vars(opt))
+    with warnings.catch_warnings():
+        warnings.filterwarnings(action='ignore', category=torch.jit.TracerWarning)  # suppress TracerWarning
+        for opt.weights in (opt.weights if isinstance(opt.weights, list) else [opt.weights]):
+            run(**vars(opt))
 
 
 if __name__ == "__main__":
