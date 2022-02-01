@@ -45,6 +45,7 @@ import platform
 import subprocess
 import sys
 import time
+import warnings
 from pathlib import Path
 
 import torch
@@ -469,10 +470,10 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     f = [str(x) for x in f if x]  # filter out '' and None
     LOGGER.info(f'\nExport complete ({time.time() - t:.2f}s)'
                 f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
-                f"\nVisualize with https://netron.app"
-                f"\nDetect with `python detect.py --weights {f[-1]}`"
-                f" or `model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
-                f"\nValidate with `python val.py --weights {f[-1]}`")
+                f"\nDetect:          python detect.py --weights {f[-1]}"
+                f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
+                f"\nValidate:        python val.py --weights {f[-1]}"
+                f"\nVisualize:       https://netron.app")
     return f  # return list of exported files/dirs
 
 
@@ -508,8 +509,10 @@ def parse_opt():
 
 
 def main(opt):
-    for opt.weights in (opt.weights if isinstance(opt.weights, list) else [opt.weights]):
-        run(**vars(opt))
+    with warnings.catch_warnings():
+        warnings.filterwarnings(action='ignore', category=torch.jit.TracerWarning)  # suppress TracerWarning
+        for opt.weights in (opt.weights if isinstance(opt.weights, list) else [opt.weights]):
+            run(**vars(opt))
 
 
 if __name__ == "__main__":
