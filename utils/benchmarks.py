@@ -49,7 +49,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
     y, t = [], time.time()
     formats = 'torch', 'torchscript', 'onnx', 'openvino', 'engine', 'coreml', \
               'saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'
-    for f in formats[:4]:
+    for f in formats[:]:
         try:
             w = weights if f == 'torch' else export.run(weights=weights, imgsz=[imgsz], include=[f], device='cpu')[-1]
             result = val.run(data=data, weights=w, imgsz=imgsz, batch_size=batch_size, plots=False, device='cpu')
