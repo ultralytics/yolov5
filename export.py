@@ -509,9 +509,9 @@ def parse_opt():
 
 
 def main(opt):
-    for opt.weights in (opt.weights if isinstance(opt.weights, list) else [opt.weights]):
-        with warnings.catch_warnings():
-            warnings.filterwarnings(action='ignore', category=torch.jit.TracerWarning)  # suppress TracerWarning
+    with warnings.catch_warnings():
+        warnings.filterwarnings(action='ignore', category=torch.jit.TracerWarning)  # suppress TracerWarning
+        for opt.weights in (opt.weights if isinstance(opt.weights, list) else [opt.weights]):
             run(**vars(opt))
 
 
