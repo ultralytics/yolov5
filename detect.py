@@ -163,7 +163,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                         with open(txt_path + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
-                            
+
                     if save_csv:  # write all results to one csv
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()
                         line = (frame, cls, *xywh, conf) if save_conf else (frame, cls, *xywh)
