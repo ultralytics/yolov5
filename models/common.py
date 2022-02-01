@@ -446,10 +446,7 @@ class DetectMultiBackend(nn.Module):
                 if int8:
                     scale, zero_point = output['quantization']
                     y = (y.astype(np.float32) - zero_point) * scale  # re-scale
-            y[..., 0] *= w  # x
-            y[..., 1] *= h  # y
-            y[..., 2] *= w  # w
-            y[..., 3] *= h  # h
+            y[..., :4] *= [w, h, w, h]  # xywh normalized to pixels
 
         y = torch.tensor(y) if isinstance(y, np.ndarray) else y
         return (y, []) if val else y
