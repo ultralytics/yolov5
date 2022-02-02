@@ -23,7 +23,7 @@ jobs:
         model: [ 'yolov5n' ]  # models to test
 
     # Timeout: https://stackoverflow.com/a/59076067/4521646
-    timeout-minutes: 50
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -60,35 +60,34 @@ jobs:
       # - name: W&B login
       #   run: wandb login 345011b3fb26dc8337fd9b20e53857c1d403f2aa
 
-      - name: Download data
-        run: |
-          # curl -L -o tmp.zip https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128.zip
-          # unzip -q tmp.zip -d ../
-          # rm tmp.zip
+      # - name: Download data
+      #   run: |
+      #     curl -L -o tmp.zip https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128.zip
+      #     unzip -q tmp.zip -d ../datasets
 
       - name: Tests workflow
         run: |
           # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
-          di=cpu  # device
+          d=cpu  # device
+          weights=runs/train/exp/weights/best.pt
 
           # Train
-          python train.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --cfg ${{ matrix.model }}.yaml --epochs 1 --device $di
+          python train.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --cfg ${{ matrix.model }}.yaml --epochs 1 --device $d
           # Val
-          python val.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --device $di
-          python val.py --img 64 --batch 32 --weights runs/train/exp/weights/last.pt --device $di
+          python val.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --device $d
+          python val.py --img 64 --batch 32 --weights $weights --device $d
           # Detect
-          python detect.py --weights ${{ matrix.model }}.pt --device $di
-          python detect.py --weights runs/train/exp/weights/last.pt --device $di
+          python detect.py --weights ${{ matrix.model }}.pt --device $d
+          python detect.py --weights $weights --device $d
           python hubconf.py  # hub
           # Export
           python models/yolo.py --cfg ${{ matrix.model }}.yaml  # build PyTorch model
           python models/tf.py --weights ${{ matrix.model }}.pt  # build TensorFlow model
-          python export.py --img 64 --batch 1 --weights ${{ matrix.model }}.pt --include torchscript onnx  # export
+          python export.py --weights ${{ matrix.model }}.pt --img 64 --include torchscript onnx  # export
           # Python
           python - <<EOF
           import torch
-          # Known issue, urllib.error.HTTPError: HTTP Error 403: rate limit exceeded, will be resolved in torch==1.10.0
-          # model = torch.hub.load('ultralytics/yolov5', 'custom', path='runs/train/exp/weights/last.pt')
+          # model = torch.hub.load('ultralytics/yolov5', 'custom', path=$weights)
           EOF
 
         shell: bash

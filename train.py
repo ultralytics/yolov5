@@ -352,6 +352,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 pbar.set_description(('%10s' * 2 + '%10.4g' * 5) % (
                     f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
                 callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, plots, opt.sync_bn)
+                if callbacks.stop_training:
+                    return
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler

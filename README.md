@@ -27,6 +27,10 @@
    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-twitter.png" width="2%"/>
    </a>
    <img width="2%" />
+   <a href="https://www.producthunt.com/@glenn_jocher">
+   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-producthunt.png" width="2%"/>
+   </a>
+   <img width="2%" />
    <a href="https://youtube.com/ultralytics">
    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-youtube.png" width="2%"/>
    </a>
@@ -63,7 +67,7 @@ See the [YOLOv5 Docs](https://docs.ultralytics.com) for full documentation on tr
 <summary>Install</summary>
 
 Clone repo and install [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt) in a
-[**Python>=3.6.0**](https://www.python.org/) environment, including
+[**Python>=3.7.0**](https://www.python.org/) environment, including
 [**PyTorch>=1.7**](https://pytorch.org/get-started/locally/).
 
 ```bash
@@ -280,6 +284,10 @@ professional support requests please visit [https://ultralytics.com/contact](htt
     <img width="3%" />
     <a href="https://twitter.com/ultralytics">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-twitter.png" width="3%"/>
+    </a>
+    <img width="3%" />
+    <a href="https://www.producthunt.com/@glenn_jocher">
+    <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-producthunt.png" width="3%"/>
     </a>
     <img width="3%" />
     <a href="https://youtube.com/ultralytics">
