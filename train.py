@@ -82,7 +82,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         __check_anchors = polygon_check_anchors
         __computeLoss = Polygon_ComputeLoss
         __plot_images = polygon_plot_images
-        __plot_results = polygon_plot_results
         import polygon_test as val  # for end-of-epoch mAP
     
     else:
@@ -93,7 +92,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         __check_anchors = check_anchors
         __computeLoss = ComputeLoss
         __plot_images = plot_images
-        __plot_results = plot_results
         import val as val  # for end-of-epoch mAP
         
 
@@ -470,7 +468,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                     if is_coco:
                         callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
 
-        callbacks.run('on_train_end', last, best, plots, epoch, results, __plot_results)
+        callbacks.run('on_train_end', last, best, plots, epoch, results, plot_results)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
 
     torch.cuda.empty_cache()
