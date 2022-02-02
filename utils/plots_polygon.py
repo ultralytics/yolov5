@@ -261,6 +261,7 @@ def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots impo
 
 def polygon_plot_results(file=''):
     # Plot training 'results*.txt'. from utils.plots import *; plot_results(save_dir='runs/train/exp')
+    save_dir = Path(file).parent if file else Path(dir)
     fig, ax = plt.subplots(2, 5, figsize=(12, 6), tight_layout=True)
     ax = ax.ravel()
     s = ['Box', 'Objectness', 'Classification', 'Precision', 'Recall',
@@ -270,7 +271,7 @@ def polygon_plot_results(file=''):
     bucket=''
     id=()
     labels=()
-    files = list(Path(file).glob('results*.csv'))
+    files = list(Path(save_dir).glob('results*.csv'))
     assert len(files), f'No results.txt files found in {file.resolve()}, nothing to plot.'
     for fi, f in enumerate(files):
         try:
