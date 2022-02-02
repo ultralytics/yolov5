@@ -16,6 +16,10 @@ TensorFlow Lite             | `tflite`                      | yolov5s.tflite
 TensorFlow Edge TPU         | `edgetpu`                     | yolov5s_edgetpu.tflite
 TensorFlow.js               | `tfjs`                        | yolov5s_web_model/
 
+Requirements:
+    $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU
+    $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime-gpu openvino-dev tensorflow  # GPU
+
 Usage:
     $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx openvino engine coreml tflite ...
 
@@ -45,6 +49,7 @@ import platform
 import subprocess
 import sys
 import time
+import warnings
 from pathlib import Path
 
 import torch
@@ -436,6 +441,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
 
     # Exports
     f = [''] * 10  # exported filenames
+    warnings.filterwarnings(action='ignore', category=torch.jit.TracerWarning)  # suppress TracerWarning
     if 'torchscript' in include:
         f[0] = export_torchscript(model, im, file, optimize)
     if 'engine' in include:  # TensorRT required before ONNX
@@ -469,10 +475,10 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     f = [str(x) for x in f if x]  # filter out '' and None
     LOGGER.info(f'\nExport complete ({time.time() - t:.2f}s)'
                 f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
-                f"\nVisualize with https://netron.app"
-                f"\nDetect with `python detect.py --weights {f[-1]}`"
-                f" or `model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
-                f"\nValidate with `python val.py --weights {f[-1]}`")
+                f"\nDetect:          python detect.py --weights {f[-1]}"
+                f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
+                f"\nValidate:        python val.py --weights {f[-1]}"
+                f"\nVisualize:       https://netron.app")
     return f  # return list of exported files/dirs
 
 

@@ -394,12 +394,15 @@ def check_dataset(data, autodownload=True):
         with open(data, errors='ignore') as f:
             data = yaml.safe_load(f)  # dictionary
 
-    # Parse yaml
-    path = extract_dir or Path(data.get('path') or '')  # optional 'path' default to '.'
+    # Resolve paths
+    path = Path(extract_dir or data.get('path') or '')  # optional 'path' default to '.'
+    if not path.is_absolute():
+        path = (ROOT / path).resolve()
     for k in 'train', 'val', 'test':
         if data.get(k):  # prepend path
             data[k] = str(path / data[k]) if isinstance(data[k], str) else [str(path / x) for x in data[k]]
 
+    # Parse yaml
     assert 'nc' in data, "Dataset 'nc' key missing."
     if 'names' not in data:
         data['names'] = [f'class{i}' for i in range(data['nc'])]  # assign class names if missing
