@@ -53,7 +53,8 @@ from utils.loggers import Loggers
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.loss_polygon import ComputeLoss, Polygon_ComputeLoss
 from utils.metrics import fitness
-from utils.plots_polygon import plot_evolve, plot_labels, plot_images, plot_results, plot_evolution, polygon_plot_images, polygon_plot_labels, polygon_plot_results
+from utils.plots_polygon import (plot_evolution, plot_evolve, plot_images, plot_labels, plot_results,
+                                 polygon_plot_images, polygon_plot_labels, polygon_plot_results)
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
@@ -83,7 +84,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         __computeLoss = Polygon_ComputeLoss
         __plot_images = polygon_plot_images
         import polygon_test as val  # for end-of-epoch mAP
-    
+
     else:
         last, best = w / 'last.pt', w / 'best.pt'
         __model = Model
@@ -93,7 +94,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         __computeLoss = ComputeLoss
         __plot_images = plot_images
         import val as val  # for end-of-epoch mAP
-        
+
 
     # Hyperparameters
     if isinstance(hyp, str):
@@ -373,7 +374,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 s = ('%10s' * 2 + '%10.4g' * 5) % (
                     f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1])
                 pbar.set_description(s)
-                
+
                 callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, plots, opt.sync_bn,__plot_images)
 
             # end batch ------------------------------------------------------------------------------------------------

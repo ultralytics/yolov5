@@ -1,8 +1,10 @@
-from utils.general import *
 from shapely import geometry, geos
+
+from utils.general import *
+
 try:
     # if error in importing polygon_inter_union_cuda, polygon_b_inter_union_cuda, please cd to ./iou_cuda and run "python setup.py install"
-    from polygon_inter_union_cuda import polygon_inter_union_cuda, polygon_b_inter_union_cuda
+    from polygon_inter_union_cuda import polygon_b_inter_union_cuda, polygon_inter_union_cuda
     polygon_inter_union_cuda_enable = True
     polygon_b_inter_union_cuda_enable = True
 except Exception as e:
@@ -63,7 +65,7 @@ def polygon_clip_coords(boxes, img_shape):
     # Clip bounding xyxy bounding boxes to image shape (height, width)
     boxes[:, 0::2].clamp_(0, img_shape[1])  # x1x2x3x4
     boxes[:, 1::2].clamp_(0, img_shape[0])  # y1y2y3y4
-    
+
 
 def polygon_inter_union_cpu(boxes1, boxes2):
     """
@@ -72,7 +74,7 @@ def polygon_inter_union_cpu(boxes1, boxes2):
         Boxes have shape nx8 and Anchors have mx8;
         Return intersection and union of boxes[i, :] and anchors[j, :] with shape of (n, m).
     """
-    
+
     n, m = boxes1.shape[0], boxes2.shape[0]
     inter = torch.zeros(n, m)
     union = torch.zeros(n, m)
@@ -100,14 +102,14 @@ def polygon_box_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
         boxes1, boxes2 = order_corners(boxes1.clone().to(device)), order_corners(boxes2.clone().to(device))
     else:
         boxes1, boxes2 = boxes1.clone().to(device), boxes2.clone().to(device)
-        
+
     if torch.cuda.is_available() and polygon_inter_union_cuda_enable and boxes1.is_cuda:
         # using cuda extension to compute
         # the boxes1 and boxes2 go inside polygon_inter_union_cuda must be torch.cuda.float, not double type
         boxes1_ = boxes1.float().contiguous().view(-1)
         boxes2_ = boxes2.float().contiguous().view(-1)
         inter, union = polygon_inter_union_cuda(boxes2_, boxes1_)  # Careful that order should be: boxes2_, boxes1_.
-        
+
         inter_nan, union_nan = inter.isnan(), union.isnan()
         if inter_nan.any() or union_nan.any():
             inter2, union2 = polygon_inter_union_cuda(boxes1_, boxes2_)  # Careful that order should be: boxes1_, boxes2_.
@@ -122,7 +124,7 @@ def polygon_box_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
     iou[torch.isnan(inter)] = 0.0
     iou[torch.logical_and(torch.isnan(inter), torch.isnan(union))] = 1.0
     iou[torch.isnan(iou)] = 0.0
-    
+
     if GIoU or DIoU or CIoU:
         # minimum bounding box of boxes1 and boxes2
         b1_x1, b1_x2 = boxes1[:, 0::2].min(dim=1)[0], boxes1[:, 0::2].max(dim=1)[0] # 1xn
@@ -183,14 +185,14 @@ def polygon_bbox_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-
         boxes1, boxes2 = order_corners(boxes1.clone().to(device)), order_corners(boxes2.clone().to(device))
     else:
         boxes1, boxes2 = boxes1.clone().to(device), boxes2.clone().to(device)
-    
+
     if torch.cuda.is_available() and polygon_b_inter_union_cuda_enable and boxes1.is_cuda:
         # using cuda extension to compute
         # the boxes1 and boxes2 go inside inter_union_cuda must be torch.cuda.float, not double type or half type
         boxes1_ = boxes1.float().contiguous().view(-1)
         boxes2_ = boxes2.float().contiguous().view(-1)
         inter, union = polygon_b_inter_union_cuda(boxes2_, boxes1_)  # Careful that order should be: boxes2_, boxes1_.
-        
+
         inter_nan, union_nan = inter.isnan(), union.isnan()
         if inter_nan.any() or union_nan.any():
             inter2, union2 = polygon_b_inter_union_cuda(boxes1_, boxes2_)  # Careful that order should be: boxes1_, boxes2_.
@@ -239,7 +241,7 @@ def polygon_non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, cla
         Runs Non-Maximum Suppression (NMS) on inference results for polygon boxes
         Returns:  list of detections, on (n,10) tensor per image [xyxyxyxy, conf, cls]
     """
-    
+
     # prediction has the shape of (bs, all potential anchors, 89)
     assert not agnostic, "polygon does not support agnostic"
     nc = prediction.shape[2] - 9  # number of classes
@@ -311,7 +313,7 @@ def polygon_non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, cla
             x = x[x[:, 8].argsort(descending=True)[:max_nms]]  # sort by confidence
 
         # Polygon NMS does not support Batch NMS and Agnostic
-        # x is the sorted predictions with boxes x[:, :8], confidence x[:, 8], class x[:, 9]         
+        # x is the sorted predictions with boxes x[:, :8], confidence x[:, 8], class x[:, 9]
         # cannot use torchvision.ops.nms, which only deals with axis-aligned boxes
         i = polygon_nms_kernel(x, iou_thres)  # polygon-NMS
         if i.shape[0] > max_det:  # limit detections
@@ -336,22 +338,22 @@ def polygon_non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, cla
 def polygon_nms_kernel(x, iou_thres):
     """
         non maximum suppression kernel for polygon-enabled boxes
-        x is the prediction with boxes x[:, :8], confidence x[:, 8], class x[:, 9] 
+        x is the prediction with boxes x[:, :8], confidence x[:, 8], class x[:, 9]
         Return the selected indices
     """
-    
+
     unique_labels = x[:, 9].unique()
     _, scores_sort_index = torch.sort(x[:, 8], descending=True)
     x = x[scores_sort_index]
     x[:, :8] = order_corners(x[:, :8])
     indices = scores_sort_index
     selected_indices = []
-    
+
     # Iterate through all predicted classes
     for unique_label in unique_labels:
         x_ = x[x[:, 9]==unique_label]
         indices_ = indices[x[:, 9]==unique_label]
-        
+
         while x_.shape[0]:
             # Save the indice with the highest confidence
             selected_indices.append(indices_[0])
@@ -361,17 +363,17 @@ def polygon_nms_kernel(x, iou_thres):
             # Remove overlapping detections with IoU >= NMS threshold
             x_ = x_[1:][iou < iou_thres]
             indices_ = indices_[1:][iou < iou_thres]
-            
+
     return torch.LongTensor(selected_indices)
 
 
 def order_corners(boxes):
     """
         Return sorted corners for loss.py::class Polygon_ComputeLoss::build_targets
-        Sorted corners have the following restrictions: 
+        Sorted corners have the following restrictions:
                                 y3, y4 >= y1, y2; x1 <= x2; x4 <= x3
     """
-    
+
     boxes = boxes.view(-1, 4, 2)
     x = boxes[..., 0]
     y = boxes[..., 1]
@@ -395,17 +397,3 @@ def wh_iou(wh1, wh2, eps=1e-7):
     wh2 = wh2[None]  # [1,M,2]
     inter = torch.min(wh1, wh2).prod(2)  # [N,M]
     return inter / (wh1.prod(2) + wh2.prod(2) - inter + eps)  # iou = inter / (area1 + area2 - inter)
-
-
-
-
-
-
-
-
-
-
-
-
-
-

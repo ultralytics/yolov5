@@ -1,7 +1,8 @@
 # Dataset utils and dataloaders
 
-from utils.general_polygon import xyxyxyxyn2xyxyxyxy, LOGGER, colorstr
 from utils.datasets import *
+from utils.general_polygon import LOGGER, colorstr, xyxyxyxyn2xyxyxyxy
+
 help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 img_formats = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
 vid_formats = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
@@ -54,7 +55,7 @@ class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
         self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
         self.path = path
-        
+
         # albumentation
         self.albumentations = Albumentations() if augment else None
 
@@ -66,14 +67,14 @@ class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
                     f += glob.glob(str(p / '**' / '*.*'), recursive=True)
                     # f = list(p.rglob('**/*.*'))  # pathlib
                 elif p.is_file():  # file
-                    with open(p, 'r') as t:
+                    with open(p) as t:
                         t = t.read().strip().splitlines()
                         parent = str(p.parent) + os.sep
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
                         # f += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
                 else:
                     raise Exception(f'{prefix}{p} does not exist')
-            self.img_files = sorted([x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in img_formats])
+            self.img_files = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in img_formats)
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in img_formats])  # pathlib
             assert self.img_files, f'{prefix}No images found'
         except Exception as e:
@@ -190,7 +191,7 @@ class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
     #     print('ran dataset iter')
     #     #self.shuffled_vector = np.random.permutation(self.nF) if self.augment else np.arange(self.nF)
     #     return self
-    
+
     def __getitem__(self, index):
         index = self.indices[index]  # linear, shuffled, or image_weights
 
@@ -217,7 +218,7 @@ class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
             img, ratio, pad = letterbox(img, shape, auto=False, scaleup=self.augment)
             shapes = (h0, w0), ((h / h0, w / w0), pad)  # for COCO mAP rescaling
 
-            labels = self.labels[index].copy() 
+            labels = self.labels[index].copy()
             if labels.size:  # normalized format to pixel xyxyxyxy format
                 labels[:, 1:] = xyxyxyxyn2xyxyxyxy(labels[:, 1:], ratio[0] * w, ratio[1] * h, padw=pad[0], padh=pad[1])
 
@@ -243,7 +244,7 @@ class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
         if self.augment:
             # albumentation
             img = self.albumentations(img)
-            
+
             # flip up-down for all y
             if random.random() < hyp['flipud']:
                 img = np.flipud(img)
@@ -273,14 +274,14 @@ class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
         for i, l in enumerate(label):
             l[:, 0] = i  # add target image index for build_targets()
         return torch.stack(img, 0), torch.cat(label, 0), path, shapes
-    
-    
+
+
 def polygon_load_mosaic(self, index):
     # loads images in a 4-mosaic, with polygon boxes
 
     labels4, segments4 = [], []
     s = self.img_size
-    yc, xc = [int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border]  # mosaic center x, y
+    yc, xc = (int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border)  # mosaic center x, y
     indices = [index] + random.choices(self.indices, k=3)  # 3 additional image indices
     for i, index in enumerate(indices):
         # Load image
@@ -365,13 +366,13 @@ def polygon_load_mosaic9(self, index):
             c = s - w, s + h0 - hp - h, s, s + h0 - hp
 
         padx, pady = c[:2]
-        x1, y1, x2, y2 = [max(x, 0) for x in c]  # allocate coords
+        x1, y1, x2, y2 = (max(x, 0) for x in c)  # allocate coords
 
         # Labels
         labels, segments = self.labels[index].copy(), self.segments[index].copy()
         if labels.size:
             # from normalized, unpadded xyxyxyxy to pixel, padded xyxyxyxy format
-            labels[:, 1:] = xyxyxyxyn2xyxyxyxy(labels[:, 1:], w, h, padx, pady)  
+            labels[:, 1:] = xyxyxyxyn2xyxyxyxy(labels[:, 1:], w, h, padx, pady)
             segments = [xyxyxyxyn2xyxyxyxy(x, w, h, padx, pady) for x in segments]
         labels9.append(labels)
         segments9.extend(segments)
@@ -381,7 +382,7 @@ def polygon_load_mosaic9(self, index):
         hp, wp = h, w  # height, width previous
 
     # Offset
-    yc, xc = [int(random.uniform(0, s)) for _ in self.mosaic_border]  # mosaic center x, y
+    yc, xc = (int(random.uniform(0, s)) for _ in self.mosaic_border)  # mosaic center x, y
     img9 = img9[yc:yc + 2 * s, xc:xc + 2 * s]
 
     # Concat/clip labels
@@ -500,7 +501,7 @@ def polygon_random_perspective(img, targets=(), segments=(), degrees=10, transla
     #         new[:, 0::2] = (new[:, 0::2]+left)*w_r
     #         new[:, 1::2] = (new[:, 1::2]+bottom)*h_r
     #         return img, new
-            
+
     height = img.shape[0] + border[0] * 2  # shape(h,w,c)
     width = img.shape[1] + border[1] * 2
 
@@ -547,19 +548,19 @@ def polygon_random_perspective(img, targets=(), segments=(), degrees=10, transla
         xy[:, :2] = targets[:, 1:].reshape(n * 4, 2)
         xy = xy @ M.T  # transform
         new = (xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2]).reshape(n, 8)  # perspective rescale or affine
-        
+
         if not mosaic:
             # Compute Top, Bottom, Left, Right Padding to Include Polygon Boxes inside Image
             top = max(new[:, 1::2].max().item()-height, 0)
             bottom = abs(min(new[:, 1::2].min().item(), 0))
             left = abs(min(new[:, 0::2].min().item(), 0))
             right = max(new[:, 0::2].max().item()-width, 0)
-            
+
             R2 = np.eye(3)
             r = min(height/(height+top+bottom), width/(width+left+right))
             R2[:2] = cv2.getRotationMatrix2D(angle=0., center=(0, 0), scale=r)
             M2 = T @ S @ R @ R2 @ P @ C  # order of operations (right to left) is IMPORTANT
-            
+
             if (border[0] != 0) or (border[1] != 0) or (M2 != np.eye(3)).any():  # image changed
                 if perspective:
                     img = cv2.warpPerspective(img, M2, dsize=(width, height), borderValue=(114, 114, 114))
@@ -572,20 +573,20 @@ def polygon_random_perspective(img, targets=(), segments=(), degrees=10, transla
                 xy = xy @ M2.T  # transform
                 new = (xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2]).reshape(n, 8)  # perspective rescale or affine
             # img, new = restrict(img, new, (height, width), (top, bottom, left, right))
-        
+
         # Use the following two lines can result in slightly tilting for few labels.
         # new[:, 0::2] = new[:, 0::2].clip(0., width)
         # new[:, 1::2] = new[:, 1::2].clip(0., height)
         # If use following codes instead, can mitigate tilting problems, but result in few label exceeding problems.
         cx, cy = new[:, 0::2].mean(-1), new[:, 1::2].mean(-1)
         new[(cx>width)|(cx<-0.)|(cy>height)|(cy<-0.)] = 0.
-        
+
         # filter candidates
         # 0.1 for axis-aligned rectangle, 0.01 for segmentation, so choose intermediate 0.08
-        i = polygon_box_candidates(box1=targets[:, 1:].T * s, box2=new.T, area_thr=0.08) 
+        i = polygon_box_candidates(box1=targets[:, 1:].T * s, box2=new.T, area_thr=0.08)
         targets = targets[i]
         targets[:, 1:] = new[i]
-        
+
     if not image_transformed:
         M = T @ S @ R @ P @ C  # order of operations (right to left) is IMPORTANT
         if (border[0] != 0) or (border[1] != 0) or (M != np.eye(3)).any():  # image changed
@@ -594,7 +595,7 @@ def polygon_random_perspective(img, targets=(), segments=(), degrees=10, transla
             else:  # affine
                 img = cv2.warpAffine(img, M[:2], dsize=(width, height), borderValue=(114, 114, 114))
             image_transformed = True
-        
+
     return img, targets
 
 
@@ -608,13 +609,3 @@ def polygon_box_candidates(box1, box2, wh_thr=3, ar_thr=20, area_thr=0.1, eps=1e
     w2, h2 = box2[0::2].max(axis=0)-box2[0::2].min(axis=0), box2[1::2].max(axis=0)-box2[1::2].min(axis=0)
     ar = np.maximum(w2 / (h2 + eps), h2 / (w2 + eps))  # aspect ratio
     return (w2 > wh_thr) & (h2 > wh_thr) & (w2 * h2 / (w1 * h1 + eps) > area_thr) & (ar < ar_thr)  # candidates
-
-
-
-
-
-
-
-
-
-

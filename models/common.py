@@ -24,10 +24,10 @@ from torch.cuda import amp
 from utils.datasets import exif_transpose, letterbox
 from utils.general import (LOGGER, check_requirements, check_suffix, check_version, colorstr, increment_path,
                            make_divisible, non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh)
-from utils.plots import Annotator, colors, save_one_box
-from utils.torch_utils import copy_attr, time_sync
 from utils.general_polygon import polygon_non_max_suppression, polygon_scale_coords
+from utils.plots import Annotator, colors, save_one_box
 from utils.plots_polygon import polygon_plot_one_box
+from utils.torch_utils import copy_attr, time_sync
 
 
 def autopad(k, p=None):  # kernel, padding
@@ -671,12 +671,12 @@ class Polygon_NMS(nn.Module):
     max_det = 1000  # maximum number of detections per image
 
     def __init__(self):
-        super(Polygon_NMS, self).__init__()
-        
+        super().__init__()
+
     def forward(self, x):
         return polygon_non_max_suppression(x[0], self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)
-    
-    
+
+
 class Polygon_AutoShape(nn.Module):
     # input-robust polygon model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and Polygon_NMS
     conf = 0.25  # Polygon NMS confidence threshold
@@ -685,7 +685,7 @@ class Polygon_AutoShape(nn.Module):
     max_det = 1000  # maximum number of detections per image
 
     def __init__(self, model):
-        super(Polygon_AutoShape, self).__init__()
+        super().__init__()
         self.model = model.eval()
 
     def autoshape(self):
@@ -738,7 +738,7 @@ class Polygon_AutoShape(nn.Module):
             # Inference
             y = self.model(x, augment, profile)[0]  # forward
             t.append(time_sync())
-            
+
             # Post-process
             y = polygon_non_max_suppression(y, self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)  # Polygon NMS
 
@@ -747,12 +747,12 @@ class Polygon_AutoShape(nn.Module):
 
             t.append(time_sync())
             return Polygon_Detections(imgs, y, files, t, self.names, x.shape)
-        
-        
+
+
 class Polygon_Detections:
     # polygon detections class for YOLOv5 inference results
     def __init__(self, imgs, pred, files, times=None, names=None, shape=None):
-        super(Polygon_Detections, self).__init__()
+        super().__init__()
         d = pred[0].device  # device
         gn = [torch.tensor([*[im.shape[i] for i in [1, 0, 1, 0, 1, 0, 1, 0]], 1., 1.], device=d) for im in imgs]  # normalizations
         self.imgs = imgs  # list of images as numpy arrays, images should be pixel-level and with shape (height, width, channel)
@@ -799,7 +799,7 @@ class Polygon_Detections:
     def save(self, save_dir='runs/hub/exp'):
         save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/hub/exp', mkdir=True)  # increment save_dir
         self.display(save=True, save_dir=save_dir)  # save results
-    
+
     # polygon does not support cutout
 
     def render(self):
@@ -825,11 +825,3 @@ class Polygon_Detections:
 
     def __len__(self):
         return self.n
-
-
-
-
-
-
-
-

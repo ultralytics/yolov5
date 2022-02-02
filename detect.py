@@ -39,13 +39,13 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.experimental import attempt_load
 from models.common import DetectMultiBackend
+from models.experimental import attempt_load
 from utils.datasets import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
 from utils.general_polygon import (LOGGER, check_file, check_img_size, check_imshow, check_requirements, colorstr,
-                           increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh,
-                           polygon_non_max_suppression, polygon_scale_coords)
-from utils.plots_polygon import Annotator, colors, save_one_box, polygon_plot_one_box
+                                   increment_path, non_max_suppression, polygon_non_max_suppression,
+                                   polygon_scale_coords, print_args, scale_coords, strip_optimizer, xyxy2xywh)
+from utils.plots_polygon import Annotator, colors, polygon_plot_one_box, save_one_box
 from utils.torch_utils import select_device, time_sync
 
 
@@ -96,8 +96,8 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         model = attempt_load(weights, map_location=device)  # load FP32 model
     else:
         model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data)
-    
-    
+
+
     if polygon:
         stride = int(model.stride.max())  # model stride
         names = model.module.names if hasattr(model, 'module') else model.names  # get class names

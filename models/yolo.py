@@ -303,7 +303,7 @@ class Polygon_Detect(Detect):
     onnx_dynamic = False  # ONNX export parameter
 
     def __init__(self, nc=80, anchors=(), ch=(), inplace=True):  # detection layer for polygon
-        super(Polygon_Detect, self).__init__(nc, anchors, ch, inplace)        
+        super().__init__(nc, anchors, ch, inplace)
         self.no = nc + 9  # number of outputs per anchor
         a = torch.tensor(anchors).float().view(self.nl, -1, 2)
         # self.register_buffer('anchor_grid', a.clone().view(self.nl, 1, -1, 1, 1, 2))  # shape(nl,1,na,1,1,2)
@@ -331,9 +331,9 @@ class Polygon_Detect(Detect):
                     xyxyxyxy = (y[..., :8] + self.grid[i].repeat((1, 1, 1, 1, 4))) * self.stride[i]  # xyxyxyxy
                     y = torch.cat((xyxyxyxy, y[..., 8:]), -1)
                 z.append(y.view(bs, -1, self.no))
-                
+
         return x if self.training else (torch.cat(z, 1), x)
-    
+
     @staticmethod
     def _make_grid(nx=20, ny=20):
         yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
@@ -342,7 +342,7 @@ class Polygon_Detect(Detect):
 class Polygon_Model(Model):
     # Polygon_Model class for model with polygon anchor boxes
     def __init__(self, cfg='polygon_yolov5s.yaml', ch=3, nc=None, anchors=None):  # model, input channels, number of classes
-        super(Polygon_Model, self).__init__(cfg, ch, nc, anchors,polygon_train=True)
+        super().__init__(cfg, ch, nc, anchors,polygon_train=True)
 
     def _descale_pred(self, p, flips, scale, img_size):
         # de-scale predictions following augmented inference (inverse operation)
@@ -360,7 +360,7 @@ class Polygon_Model(Model):
                 xyxyxyxy[...,0:8:2] = img_size[1] - xyxyxyxy[...,0:8:2]  # de-flip lr
             p = torch.cat((xyxyxyxy, p[..., 8:]), -1)
         return p
-    
+
     def _initialize_biases(self, cf=None):  # initialize biases into Polygon_Detect(), cf is class frequency
         # https://arxiv.org/abs/1708.02002 section 3.3
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
@@ -445,16 +445,3 @@ if __name__ == '__main__':
     # tb_writer = SummaryWriter('.')
     # LOGGER.info("Run 'tensorboard --logdir=models' to view tensorboard at http://localhost:6006/")
     # tb_writer.add_graph(torch.jit.trace(model, img, strict=False), [])  # add model graph
-
-
-
-
-
-
-
-
-
-
-
-
-

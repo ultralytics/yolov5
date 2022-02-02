@@ -185,6 +185,3 @@ class Loggers():
                     self.wandb.wandb_run.summary[name] = best_results[i]  # log best results in the summary
             self.wandb.log(x)
             self.wandb.end_epoch(best_result=best_fitness == fi)
-
-
-

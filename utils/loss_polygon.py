@@ -3,17 +3,16 @@
 import torch
 import torch.nn as nn
 
-from utils.general_polygon import polygon_bbox_iou, order_corners, wh_iou
-from utils.torch_utils import is_parallel
-
+from utils.general_polygon import order_corners, polygon_bbox_iou, wh_iou
 from utils.loss import *
+from utils.torch_utils import is_parallel
 
 
 class Polygon_ComputeLoss:
     # Compute losses for polygon anchors
-    
+
     def __init__(self, model, autobalance=False):
-        super(Polygon_ComputeLoss, self).__init__()
+        super().__init__()
         device = next(model.parameters()).device  # get model device
         h = model.hyp  # hyperparameters
 
@@ -36,18 +35,18 @@ class Polygon_ComputeLoss:
         for k in 'na', 'nc', 'nl', 'anchors':
             setattr(self, k, getattr(det, k))
 
-            
+
     def __call__(self, p, targets):  # predictions, targets, model
         """"
             targets: total anchors for this batch x 10
-            p: nl (number of anchor layers) x bs x na (number of anchors per layer) 
+            p: nl (number of anchor layers) x bs x na (number of anchors per layer)
               x ny (grid width) x nx (grid height) x no (89, number of outputs per anchor)
             self.anchors: nl (number of prediction layers) x na (number of anchors per layer) x 2 (width and height)
         """
         device = targets.device
         lcls, lbox, lobj = torch.zeros(1, device=device), torch.zeros(1, device=device), torch.zeros(1, device=device)
         tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets for computing loss
-        
+
         # Losses
         for i, pi in enumerate(p):  # layer index, layer predictions
             # pi: bs x na x ny x nx x no
@@ -60,11 +59,11 @@ class Polygon_ComputeLoss:
 
                 # Regression
                 pbox = ps[:, :8]  # predicted polygon box
-                
+
                 # tbox[i] is ordered, and pbox from model will learn the sequential order naturally: so specify ordered=True
                 iou = polygon_bbox_iou(pbox, tbox[i], CIoU=True, device=device, ordered=True)  # iou(prediction, target)
                 # lbox += (1.0 - iou).mean()  # iou loss
-                
+
                 zero = torch.tensor(0., device=device)
                 # Include the restrictions on predicting sequence: y3, y4 >= y1, y2; x1 <= x2; x4 <= x3
                 lbox += (torch.max(zero, ps[:, 1]-ps[:, 5])**2).mean()/6 + (torch.max(zero, ps[:, 3]-ps[:, 5])**2).mean()/6 + \
@@ -72,7 +71,7 @@ class Polygon_ComputeLoss:
                         (torch.max(zero, ps[:, 0]-ps[:, 2])**2).mean()/6 + (torch.max(zero, ps[:, 6]-ps[:, 4])**2).mean()/6
                 # include the values of each vertice of poligon into loss function
                 lbox += nn.SmoothL1Loss(beta=0.11)(pbox, tbox[i])
-                
+
                 # Objectness
                 tobj[b, a, gj, gi] = (1.0 - self.gr) + self.gr * iou.detach().clamp(0).type(tobj.dtype)  # iou ratio
 
@@ -98,14 +97,14 @@ class Polygon_ComputeLoss:
         loss = lbox + lobj + lcls
         return loss * bs, torch.cat((lbox, lobj, lcls)).detach()
 
-    
+
     def build_targets(self, p, targets):
         """
             Build targets for Polygon_ComputeLoss
             p: nl x bs x na x ny x nx x no
             targets: image,class,x1,y1,x2,y2,x3,y3,x4,y4 (x1, y1...represent the relative positions)
         """
-        
+
         na, nt = self.na, targets.shape[0]  # number of anchors, targets
         tcls, tbox, indices, anch = [], [], [], []
         # gain has 11 elements: img id, class id, xyxyxyxy, anchor id
@@ -131,20 +130,20 @@ class Polygon_ComputeLoss:
                 t_width = (t[..., 2:10:2].max(dim=-1)[0]-t[..., 2:10:2].min(dim=-1)[0])[..., None]
                 t_height = (t[..., 3:10:2].max(dim=-1)[0]-t[..., 3:10:2].min(dim=-1)[0])[..., None]
                 wh = torch.cat((t_width, t_height), dim=-1)
-                
+
                 # Using shape matches
                 # r = wh / anchors[:, None]  # wh ratio
                 # j = torch.max(r, 1. / r).max(2)[0] < self.hyp['anchor_t']  # compare
-                
+
                 # Consider only best anchors
                 # max_ious, max_ious_idx = wh_iou(anchors, wh[0]).max(dim=0)
                 # mask = max_ious > self.hyp['iou_t']
                 # t = t[max_ious_idx[mask], mask]
-                
+
                 # Consider all anchors that exceed the iou threshold
                 j = wh_iou(anchors, wh[0]) > self.hyp['iou_t'] # iou criterion
                 t = t[j]  # filter
-                
+
                 # now t has shape nt x 11
                 # Offsets
                 center_x = t[:, 2:10:2].mean(dim=-1)[:, None]
@@ -174,15 +173,15 @@ class Polygon_ComputeLoss:
             t[:, 2:10] = order_corners(t[:, 2:10])
             a = t[:, 10].long()  # anchor indices
             indices.append((b, a, gj.clamp_(0, gain[3] - 1), gi.clamp_(0, gain[2] - 1)))  # image, anchor, grid indices
-            
+
             # same corners, different center points, different relative positions
             tbox.append(t[:, 2:10]-gij.repeat(1, 4))  # polygon box
             # different corners, different center points, same relative positions
             # gij_origin = (gxy-0).long()
             # tbox.append(t[:, 2:10]-gij_origin.repeat(1, 4))
-            
+
             anch.append(anchors[a])  # anchors
             tcls.append(c)  # class
 
         return tcls, tbox, indices, anch
-    
+

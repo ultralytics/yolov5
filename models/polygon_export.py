@@ -18,7 +18,7 @@ from torch.utils.mobile_optimizer import optimize_for_mobile
 import models
 from models.experimental import attempt_load
 from utils.activations import Hardswish, SiLU
-from utils.general import colorstr, check_img_size, check_requirements, file_size, set_logging
+from utils.general import check_img_size, check_requirements, colorstr, file_size, set_logging
 from utils.torch_utils import select_device
 
 

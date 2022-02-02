@@ -338,6 +338,7 @@ def intersect_dicts(da, db, exclude=()):
 
 import torchvision
 
+
 def load_classifier(name='resnet101', n=2):
     # Loads a pretrained model reshaped to n-class output
     model = torchvision.models.__dict__[name](pretrained=True)
@@ -355,14 +356,3 @@ def load_classifier(name='resnet101', n=2):
     model.fc.weight = nn.Parameter(torch.zeros(n, filters), requires_grad=True)
     model.fc.out_features = n
     return model
-
-
-
-
-
-
-
-
-
-
-

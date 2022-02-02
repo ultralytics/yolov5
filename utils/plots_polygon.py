@@ -7,7 +7,7 @@ def polygon_plot_one_box(x, im, color=(128, 128, 128), label=None, line_thicknes
         Plots one bounding box on image 'im' using OpenCV
         im is np.array with shape (W, H, Ch), x is pixel-level xyxyxyxy
     """
-    
+
     assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to polygon_plot_one_box() input image.'
     tl = line_thickness or round(0.002 * (im.shape[0] + im.shape[1]) / 2) + 1  # line/font thickness
     c = x.cpu().numpy().reshape(-1, 1, 2).astype(np.int32) if isinstance(x, torch.Tensor) else np.array(x).reshape(-1, 1, 2).astype(np.int32)
@@ -105,7 +105,7 @@ def polygon_plot_images(images, targets, paths=None, fname='images.jpg', names=N
                 color = colors(cls)
                 cls = names[cls] if names else cls
                 if labels or conf[j] > 0.25:  # 0.25 conf thresh
-                    label = '%s' % cls if labels else '%s %.1f' % (cls, conf[j])
+                    label = '%s' % cls if labels else f'{cls} {conf[j]:.1f}'
                     polygon_plot_one_box(box, mosaic, label=label, color=color, line_thickness=tl)
 
         # Draw image filename labels
@@ -136,7 +136,7 @@ def polygon_plot_test_txt():  # from utils.plots import *; polygon_plot_test_txt
     ax.hist2d(cx, cy, bins=600, cmax=10, cmin=0)
     ax.set_aspect('equal')
     plt.savefig('hist2d.png', dpi=300)
-    
+
     fig, ax = plt.subplots(1, 2, figsize=(12, 6), tight_layout=True)
     ax[0].hist(cx, bins=600)
     ax[1].hist(cy, bins=600)
@@ -151,11 +151,11 @@ def polygon_plot_targets_txt():  # from utils.plots import *; polygon_plot_targe
     fig, ax = plt.subplots(4, 2, figsize=(16, 8), tight_layout=True)
     ax = ax.ravel()
     for i in range(8):
-        ax[i].hist(x[i], bins=100, label='%.3g +/- %.3g' % (x[i].mean(), x[i].std()))
+        ax[i].hist(x[i], bins=100, label=f'{x[i].mean():.3g} +/- {x[i].std():.3g}')
         ax[i].legend()
         ax[i].set_title(s[i])
     plt.savefig('targets.jpg', dpi=200)
-    
+
 
 def polygon_plot_labels(labels, names=(), save_dir=Path(''), loggers=None):
     # plot dataset labels
@@ -174,7 +174,7 @@ def polygon_plot_labels(labels, names=(), save_dir=Path(''), loggers=None):
     matplotlib.use('svg')  # faster
     ax = plt.subplots(3, 2, figsize=(12, 8), tight_layout=True)[1].ravel()
     y = ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
-    # [y[2].patches[i].set_color([x / 255 for x in colors(i)]) for i in range(nc)]  # update colors bug #3195 
+    # [y[2].patches[i].set_color([x / 255 for x in colors(i)]) for i in range(nc)]  # update colors bug #3195
     ax[0].set_ylabel('instances')
     if 0 < len(names) < 30:
         ax[0].set_xticks(range(len(names)))
@@ -251,7 +251,7 @@ def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots impo
         plt.subplot(6, 5, i + 1)
         plt.scatter(y, f, c=hist2d(y, f, 20), cmap='viridis', alpha=.8, edgecolors='none')
         plt.plot(mu, f.max(), 'k+', markersize=15)
-        plt.title('%s = %.3g' % (k, mu), fontdict={'size': 9})  # limit to 40 characters
+        plt.title(f'{k} = {mu:.3g}', fontdict={'size': 9})  # limit to 40 characters
         if i % 5 != 0:
             plt.yticks([])
         print('%15s: %.3g' % (k, mu))
@@ -289,7 +289,7 @@ def polygon_plot_results(file=''):
                 # if i in [5, 6, 7]:  # share train and val loss y axes
                 #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
         except Exception as e:
-            print('Warning: Plotting error for %s; %s' % (f, e))
+            print(f'Warning: Plotting error for {f}; {e}')
 
     ax[1].legend()
     fig.savefig(Path(file) / 'results.png', dpi=200)
@@ -307,18 +307,3 @@ def plot_one_box(x, im, color=(128, 128, 128), label=None, line_thickness=3):
         c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
         cv2.rectangle(im, c1, c2, color, -1, cv2.LINE_AA)  # filled
         cv2.putText(im, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

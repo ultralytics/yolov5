@@ -1,4 +1,3 @@
-
 from utils.autoanchor import *
 
 # Ancillary functions with polygon anchor boxes-------------------------------------------------------------------------------------------
@@ -45,12 +44,12 @@ def polygon_check_anchors(dataset, model, thr=4.0, imgsz=640):
             LOGGER.info(f'{PREFIX}Original anchors better than new anchors. Proceeding with original anchors.')
     print('')  # newline
 
-    
-    
+
+
 def polygon_kmean_anchors(path='./data/polygon_coco.yaml', n=9, img_size=640, thr=4.0, gen=1000, verbose=True):
     """ Create kmeans-evolved anchors from polygon-enabled training dataset
        Utilize the minimum outter bounding box as approximations
-       
+
         Arguments:
             path: path to dataset *.yaml, or a loaded dataset
             n: number of anchors

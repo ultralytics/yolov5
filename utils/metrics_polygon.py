@@ -1,11 +1,12 @@
-from utils.metrics import *
 from utils.general_polygon import polygon_box_iou
+from utils.metrics import *
+
 # Ancillary functions with polygon anchor boxes-------------------------------------------------------------------------------------------
 
 class Polygon_ConfusionMatrix(ConfusionMatrix):
     # Updated version of https://github.com/kaanakan/object_detection_confusion_matrix
     def __init__(self, nc, conf=0.25, iou_thres=0.45):
-        super(Polygon_ConfusionMatrix, self).__init__(nc, conf, iou_thres)
+        super().__init__(nc, conf, iou_thres)
 
     def process_batch(self, detections, labels):
         """
@@ -17,7 +18,7 @@ class Polygon_ConfusionMatrix(ConfusionMatrix):
             Returns:
                 None, updates confusion matrix accordingly
         """
-        
+
         detections = detections[detections[:, 8] > self.conf]
         gt_classes = labels[:, 0].int()
         detection_classes = detections[:, 9].int()
@@ -109,5 +110,3 @@ def polygon_ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.
 
     i = f1.mean(0).argmax()  # max F1 index
     return p[:, i], r[:, i], ap, f1[:, i], unique_classes.astype('int32')
-
-

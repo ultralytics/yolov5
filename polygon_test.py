@@ -1,10 +1,10 @@
 import argparse
 import json
 import os
+import time
 from pathlib import Path
 from threading import Thread
 
-import time
 import numpy as np
 import torch
 import yaml
@@ -12,11 +12,13 @@ from tqdm import tqdm
 
 from models.experimental import attempt_load
 from utils.datasets_polygon import create_dataloader  # specify polygon=True to enable polygon anchor boxes
-from utils.general_polygon import coco80_to_coco91_class, check_dataset, check_file, check_img_size, check_requirements, \
-    box_iou, non_max_suppression, scale_coords, xyxy2xywh, xywh2xyxy, set_logging, increment_path, colorstr, \
-    polygon_box_iou, polygon_non_max_suppression, polygon_scale_coords
-from utils.metrics_polygon import polygon_ap_per_class, ConfusionMatrix, Polygon_ConfusionMatrix
-from utils.plots_polygon import plot_images, output_to_target, plot_study_txt, polygon_plot_images, polygon_output_to_target
+from utils.general_polygon import (box_iou, check_dataset, check_file, check_img_size, check_requirements,
+                                   coco80_to_coco91_class, colorstr, increment_path, non_max_suppression,
+                                   polygon_box_iou, polygon_non_max_suppression, polygon_scale_coords, scale_coords,
+                                   set_logging, xywh2xyxy, xyxy2xywh)
+from utils.metrics_polygon import ConfusionMatrix, Polygon_ConfusionMatrix, polygon_ap_per_class
+from utils.plots_polygon import (output_to_target, plot_images, plot_study_txt, polygon_output_to_target,
+                                 polygon_plot_images)
 from utils.torch_utils import select_device, time_sync
 
 
@@ -126,11 +128,11 @@ def run(data,
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
         t = time_sync()
         # out is list of detections, on (n,10) tensor per image [xyxyxyxy, conf, cls]
-        
+
         # polygon_non_max_suppression takes most of the time to operate
         # For UCAS-AOD dataset, multi_label=False
         # Polygon does not support agnostic
-        out = polygon_non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=False)    
+        out = polygon_non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=False)
         t2 += time_sync() - t
 
         # Statistics per image
@@ -284,7 +286,7 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
-    
+
     opt = parser.parse_args()
     assert "polygon" in opt.data.lower(), "polygon_test.py is designed for polygon cases"
     opt.save_json |= opt.data.endswith('coco.yaml')

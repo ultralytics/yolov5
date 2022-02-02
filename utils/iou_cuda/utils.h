@@ -9,7 +9,7 @@
 
 struct float6
 {
-  float x1, y1, x2, y2, s, c; 
+  float x1, y1, x2, y2, s, c;
 };
 
 inline __host__ __device__ float6 make_float6(float4 f, float2 t)
