@@ -565,6 +565,7 @@ class Detections:
         self.n = len(self.pred)  # number of images (batch size)
         self.t = tuple((times[i + 1] - times[i]) * 1000 / self.n for i in range(3))  # timestamps (ms)
         self.s = shape  # inference BCHW shape
+        self.save_dir = None
 
     def display(self, pprint=False, show=False, save=False, crop=False, render=False, save_dir=Path('')):
         crops = []
@@ -602,6 +603,7 @@ class Detections:
                 self.imgs[i] = np.asarray(im)
         if crop:
             if save:
+                save_dir /= 'crops'
                 LOGGER.info(f'Saved results to {save_dir}\n')
             return crops
 
@@ -614,26 +616,27 @@ class Detections:
         self.display(show=True)  # show results
 
     def save(self, save_dir='runs/detect/exp'):
-        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True)  # increment save_dir
-        self.display(save=True, save_dir=save_dir)  # save results
-        
-    def save_txt(self, save_imgs=False, save_dir='runs/detect/exp'):
-        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True)
-        (save_dir / 'labels').mkdir(parents=True, exist_ok=True)  # make dir
+        self.save_dir = self.save_dir if self.save_dir is not None \
+            else increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True)  # increment save_dir
+        self.display(save=True, save_dir=self.save_dir)  # save results
+
+    def save_txt(self, save_dir='runs/detect/exp'):
+        self.save_dir = self.save_dir if self.save_dir is not None \
+            else increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True)  # increment save_dir
+        (self.save_dir / 'labels').mkdir(parents=True, exist_ok=True)  # make dir
         for img_name, pred, img in zip(self.files, self.pred, self.imgs):
             gn = torch.tensor(img.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             for *xyxy, conf, cls in reversed(pred):
                 xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                 line = (cls, *xywh, conf)  # label format
-                with open(save_dir / 'labels' / (img_name.split('.')[0] + '.txt'), 'a') as f:
+                with open(self.save_dir / 'labels' / (img_name.split('.')[0] + '.txt'), 'a') as f:
                     f.write(('%g ' * len(line)).rstrip() % line + '\n')
-        if save_imgs:
-            self.display(save=True, save_dir=save_dir)
-        LOGGER.info(f"Saved {self.n} label{'s' * (self.n > 1)} to {colorstr('bold', save_dir / 'labels') }")
+        LOGGER.info(f"Saved {self.n} label{'s' * (self.n > 1)} to {colorstr('bold', self.save_dir / 'labels') }")
 
     def crop(self, save=True, save_dir='runs/detect/exp'):
-        save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True) if save else None
-        return self.display(crop=True, save=save, save_dir=save_dir)  # crop results
+        self.save_dir = self.save_dir if self.save_dir is not None and save\
+            else increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True)  # increment save_dir
+        return self.display(crop=True, save=save, save_dir=self.save_dir)  # crop results
 
     def render(self):
         self.display(render=True)  # render results
