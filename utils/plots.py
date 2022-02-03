@@ -17,12 +17,11 @@ import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.general import (LOGGER, Timeout, check_requirements, clip_coords, increment_path, is_ascii, is_chinese,
-                           try_except, user_config_dir, xywh2xyxy, xyxy2xywh)
+from utils.general import (LOGGER, CONFIG_DIR, FONT, Timeout, check_requirements, clip_coords, check_font,
+                           increment_path, is_ascii, is_chinese, try_except, xywh2xyxy, xyxy2xywh)
 from utils.metrics import fitness
 
 # Settings
-CONFIG_DIR = user_config_dir()  # Ultralytics settings dir
 RANK = int(os.getenv('RANK', -1))
 matplotlib.rc('font', **{'size': 11})
 matplotlib.use('Agg')  # for writing to files only
@@ -49,16 +48,14 @@ class Colors:
 colors = Colors()  # create instance for 'from utils.plots import colors'
 
 
-def check_font(font='Arial.ttf', size=10):
+def check_pil_font(font=FONT, size=10):
     # Return a PIL TrueType Font, downloading to CONFIG_DIR if necessary
     font = Path(font)
     font = font if font.exists() else (CONFIG_DIR / font.name)
     try:
         return ImageFont.truetype(str(font) if font.exists() else font.name, size)
     except Exception as e:  # download if missing
-        url = "https://ultralytics.com/assets/" + font.name
-        LOGGER.info(f'Downloading {url} to {font}...')
-        torch.hub.download_url_to_file(url, str(font), progress=False)
+        check_font(font)
         try:
             return ImageFont.truetype(str(font), size)
         except TypeError:
@@ -67,7 +64,7 @@ def check_font(font='Arial.ttf', size=10):
 
 class Annotator:
     if RANK in (-1, 0):
-        check_font()  # download TTF if necessary
+        check_pil_font()  # download TTF if necessary
 
     # YOLOv5 Annotator for train/val mosaics and jpgs and detect/hub inference annotations
     def __init__(self, im, line_width=None, font_size=None, font='Arial.ttf', pil=False, example='abc'):
@@ -76,8 +73,8 @@ class Annotator:
         if self.pil:  # use PIL
             self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
             self.draw = ImageDraw.Draw(self.im)
-            self.font = check_font(font='Arial.Unicode.ttf' if is_chinese(example) else font,
-                                   size=font_size or max(round(sum(self.im.size) / 2 * 0.035), 12))
+            self.font = check_pil_font(font='Arial.Unicode.ttf' if is_chinese(example) else font,
+                                       size=font_size or max(round(sum(self.im.size) / 2 * 0.035), 12))
         else:  # use cv2
             self.im = im
         self.lw = line_width or max(round(sum(im.shape) / 2 * 0.003), 2)  # line width
