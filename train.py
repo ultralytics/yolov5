@@ -96,7 +96,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         if loggers.wandb:
             data_dict = loggers.wandb.data_dict
             if resume:
-                weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp
+                weights, epochs, hyp, batch_size = opt.weights, opt.epochs, opt.hyp, opt.batch_size
 
         # Register actions
         for k in methods(loggers):
