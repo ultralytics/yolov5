@@ -325,9 +325,7 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
                       'echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list',
                       'sudo apt-get update',
                       'sudo apt-get install edgetpu-compiler']:
-                c_ = c if sudo else c.replace('sudo ', '')
-                print(c_)
-                subprocess.run(c_, shell=True, check=True)
+                subprocess.run(c if sudo else c.replace('sudo ', ''), shell=True, check=True)
         ver = subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1]
 
         LOGGER.info(f'\n{prefix} starting export with Edge TPU compiler {ver}...')
