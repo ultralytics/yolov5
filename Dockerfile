@@ -40,7 +40,7 @@ ADD https://ultralytics.com/assets/Arial.ttf /root/.config/Ultralytics/
 # t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all -v "$(pwd)"/datasets:/usr/src/datasets $t
 
 # Kill all
-# sudo docker kill $(sudo docker ps -q)
+# sudo docker rm $(sudo docker ps -q)
 
 # Kill all image-based
 # sudo docker kill $(sudo docker ps -qa --filter ancestor=ultralytics/yolov5:latest)
