@@ -321,7 +321,7 @@ def plot_pr_curve(px, py, ap, save_dir='pr_curve.png', names=(), plot_per_class=
     plt.close()
 
 
-def plot_mc_curve(px, py, save_dir='mc_curve.png', names=(), xlabel='Confidence', ylabel='Metric'):
+def plot_mc_curve(px, py, save_dir='mc_curve.png', names=(), xlabel='Confidence', ylabel='Metric', plot_per_class=True):
     # Metric-confidence curve
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
 
