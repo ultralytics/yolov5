@@ -374,19 +374,20 @@ class DetectMultiBackend(nn.Module):
                 graph_def.ParseFromString(open(w, 'rb').read())
                 frozen_func = wrap_frozen_graph(gd=graph_def, inputs="x:0", outputs="Identity:0")
             elif tflite:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
-                try:
-                    import tflite_runtime.interpreter as tfl  # prefer tflite_runtime if installed
+                try:  # prefer tflite_runtime if installed
+                    from tflite_runtime.interpreter import Interpreter, load_delegate
                 except ImportError:
-                    import tensorflow.lite as tfl
+                    import tensorflow.lite.experimental.load_delegate as load_delegate
+                    import tensorflow.lite.Interpreter as Interpreter
                 if 'edgetpu' in w.lower():  # Edge TPU https://coral.ai/software/#edgetpu-runtime
                     LOGGER.info(f'Loading {w} for TensorFlow Lite Edge TPU inference...')
                     delegate = {'Linux': 'libedgetpu.so.1',
                                 'Darwin': 'libedgetpu.1.dylib',
                                 'Windows': 'edgetpu.dll'}[platform.system()]
-                    interpreter = tfl.Interpreter(model_path=w, experimental_delegates=[tfl.load_delegate(delegate)])
+                    interpreter = Interpreter(model_path=w, experimental_delegates=[load_delegate(delegate)])
                 else:  # Lite
                     LOGGER.info(f'Loading {w} for TensorFlow Lite inference...')
-                    interpreter = tfl.Interpreter(model_path=w)  # load TFLite model
+                    interpreter = Interpreter(model_path=w)  # load TFLite model
                 interpreter.allocate_tensors()  # allocate
                 input_details = interpreter.get_input_details()  # inputs
                 output_details = interpreter.get_output_details()  # outputs
