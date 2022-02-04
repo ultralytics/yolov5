@@ -1,6 +1,7 @@
 from utils.general_polygon import polygon_box_iou
 from utils.metrics import *
 
+
 # Ancillary functions with polygon anchor
 # boxes-------------------------------------------------------------------------------------------
 class Polygon_ConfusionMatrix(ConfusionMatrix):

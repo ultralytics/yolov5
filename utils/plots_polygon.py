@@ -1,5 +1,6 @@
 from utils.plots import *
 
+
 # Ancillary functions with polygon anchor
 # boxes-------------------------------------------------------------------------------------------
 def polygon_plot_one_box(x, im, color=(128, 128, 128), label=None, line_thickness=3):
