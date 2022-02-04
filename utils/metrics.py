@@ -18,7 +18,7 @@ def fitness(x):
     return (x[:, :4] * w).sum(1)
 
 
-def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names=(), eps=1e-16):
+def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names=(), eps=1e-16, plot_per_class=True):
     """ Compute the average precision, given the recall and precision curves.
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
     # Arguments
@@ -74,10 +74,11 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names
     names = [v for k, v in names.items() if k in unique_classes]  # list: only classes that have data
     names = {i: v for i, v in enumerate(names)}  # to dict
     if plot:
-        plot_pr_curve(px, py, ap, Path(save_dir) / 'PR_curve.png', names)
-        plot_mc_curve(px, f1, Path(save_dir) / 'F1_curve.png', names, ylabel='F1')
-        plot_mc_curve(px, p, Path(save_dir) / 'P_curve.png', names, ylabel='Precision')
-        plot_mc_curve(px, r, Path(save_dir) / 'R_curve.png', names, ylabel='Recall')
+        plot_pr_curve(px, py, ap, Path(save_dir) / 'PR_curve.png', names, plot_per_class=plot_per_class)
+        plot_mc_curve(px, f1, Path(save_dir) / 'F1_curve.png', names, ylabel='F1', plot_per_class=plot_per_class)
+        plot_mc_curve(px, p, Path(save_dir) / 'P_curve.png', names, ylabel='Precision', plot_per_class=plot_per_class)
+        plot_mc_curve(px, r, Path(save_dir) / 'R_curve.png', names, ylabel='Recall', plot_per_class=plot_per_class)
+
 
     i = f1.mean(0).argmax()  # max F1 index
     p, r, f1 = p[:, i], r[:, i], f1[:, i]
@@ -298,16 +299,17 @@ def wh_iou(wh1, wh2):
 
 # Plots ----------------------------------------------------------------------------------------------------------------
 
-def plot_pr_curve(px, py, ap, save_dir='pr_curve.png', names=()):
+def plot_pr_curve(px, py, ap, save_dir='pr_curve.png', names=(), plot_per_class=True):
     # Precision-recall curve
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
     py = np.stack(py, axis=1)
 
-    if 0 < len(names) < 21:  # display per-class legend if < 21 classes
-        for i, y in enumerate(py.T):
-            ax.plot(px, y, linewidth=1, label=f'{names[i]} {ap[i, 0]:.3f}')  # plot(recall, precision)
-    else:
-        ax.plot(px, py, linewidth=1, color='grey')  # plot(recall, precision)
+    if plot_per_class:
+        if 0 < len(names) < 21:  # display per-class legend if < 21 classes
+            for i, y in enumerate(py.T):
+                ax.plot(px, y, linewidth=1, label=f'{names[i]} {ap[i, 0]:.3f}')  # plot(recall, precision)
+        else:
+            ax.plot(px, py, linewidth=1, color='grey')  # plot(recall, precision)
 
     ax.plot(px, py.mean(1), linewidth=3, color='blue', label='all classes %.3f mAP@0.5' % ap[:, 0].mean())
     ax.set_xlabel('Recall')
@@ -323,11 +325,12 @@ def plot_mc_curve(px, py, save_dir='mc_curve.png', names=(), xlabel='Confidence'
     # Metric-confidence curve
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
 
-    if 0 < len(names) < 21:  # display per-class legend if < 21 classes
-        for i, y in enumerate(py):
-            ax.plot(px, y, linewidth=1, label=f'{names[i]}')  # plot(confidence, metric)
-    else:
-        ax.plot(px, py.T, linewidth=1, color='grey')  # plot(confidence, metric)
+    if plot_per_class:
+        if 0 < len(names) < 21:  # display per-class legend if < 21 classes
+            for i, y in enumerate(py):
+                ax.plot(px, y, linewidth=1, label=f'{names[i]}')  # plot(confidence, metric)
+        else:
+            ax.plot(px, py.T, linewidth=1, color='grey')  # plot(confidence, metric)
 
     y = py.mean(0)
     ax.plot(px, y, linewidth=3, color='blue', label=f'all classes {y.max():.2f} at {px[y.argmax()]:.3f}')
