@@ -37,6 +37,8 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
 VERBOSE = str(os.getenv('YOLOv5_VERBOSE', True)).lower() == 'true'  # global verbose mode
+FONT = 'Arial.ttf'  # https://ultralytics.com/assets/Arial.ttf
+
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
 np.set_printoptions(linewidth=320, formatter={'float_kind': '{:11.5g}'.format})  # format short g, %precision=5
 pd.options.display.max_columns = 10
@@ -53,6 +55,21 @@ def is_kaggle():
         return False
 
 
+def is_writeable(dir, test=False):
+    # Return True if directory has write permissions, test opening a file with write permissions if test=True
+    if test:  # method 1
+        file = Path(dir) / 'tmp.txt'
+        try:
+            with open(file, 'w'):  # open file with write permissions
+                pass
+            file.unlink()  # remove file
+            return True
+        except OSError:
+            return False
+    else:  # method 2
+        return os.access(dir, os.R_OK)  # possible issues on Windows
+
+
 def set_logging(name=None, verbose=VERBOSE):
     # Sets level and returns logger
     if is_kaggle():
@@ -65,6 +82,26 @@ def set_logging(name=None, verbose=VERBOSE):
 
 LOGGER = set_logging('yolov5')  # define globally (used in train.py, val.py, detect.py, etc.)
 
+<<<<<<< HEAD
+=======
+
+def user_config_dir(dir='Ultralytics', env_var='YOLOV5_CONFIG_DIR'):
+    # Return path of user configuration directory. Prefer environment variable if exists. Make dir if required.
+    env = os.getenv(env_var)
+    if env:
+        path = Path(env)  # use environment variable
+    else:
+        cfg = {'Windows': 'AppData/Roaming', 'Linux': '.config', 'Darwin': 'Library/Application Support'}  # 3 OS dirs
+        path = Path.home() / cfg.get(platform.system(), '')  # OS-specific config dir
+        path = (path if is_writeable(path) else Path('/tmp')) / dir  # GCP and AWS lambda fix, only /tmp is writeable
+    path.mkdir(exist_ok=True)  # make if required
+    return path
+
+
+CONFIG_DIR = user_config_dir()  # Ultralytics settings dir
+
+
+>>>>>>> origin/master
 class Profile(contextlib.ContextDecorator):
     # Usage: @Profile() decorator or 'with Profile():' context manager
     def __enter__(self):
@@ -154,6 +191,7 @@ def get_latest_run(search_dir='.'):
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
+<<<<<<< HEAD
 def user_config_dir(dir='Ultralytics', env_var='YOLOV5_CONFIG_DIR'):
     # Return path of user configuration directory.  Prefer environment variable
     # if exists.  Make dir if required.
@@ -183,6 +221,8 @@ def is_writeable(dir, test=False):
     else:  # method 2
         return os.access(dir, os.R_OK)  # possible issues on Windows
 
+=======
+>>>>>>> origin/master
 def is_docker():
     # Is environment a Docker container?
     return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
@@ -210,7 +250,7 @@ def is_ascii(s=''):
 
 def is_chinese(s='人工智能'):
     # Is string composed of any Chinese characters?
-    return re.search('[\u4e00-\u9fff]', s)
+    return True if re.search('[\u4e00-\u9fff]', str(s)) else False
 
 
 def emojis(str=''):
@@ -380,6 +420,19 @@ def check_file(file, suffix=''):
         assert len(files) == 1, f"Multiple files match '{file}', specify exact path: {files}"  # assert unique
         return files[0]  # return file
 
+<<<<<<< HEAD
+=======
+
+def check_font(font=FONT):
+    # Download font to CONFIG_DIR if necessary
+    font = Path(font)
+    if not font.exists() and not (CONFIG_DIR / font.name).exists():
+        url = "https://ultralytics.com/assets/" + font.name
+        LOGGER.info(f'Downloading {url} to {CONFIG_DIR / font.name}...')
+        torch.hub.download_url_to_file(url, str(font), progress=False)
+
+
+>>>>>>> origin/master
 def check_dataset(data, autodownload=True):
     # Download and/or unzip dataset if not found locally
     # Usage:
