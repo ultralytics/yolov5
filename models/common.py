@@ -59,7 +59,8 @@ class DWConv(Conv):
 
 
 class TransformerLayer(nn.Module):
-    # Transformer layer https://arxiv.org/abs/2010.11929 (LayerNorm layers removed for better performance)
+    # Transformer layer https://arxiv.org/abs/2010.11929 (LayerNorm layers
+    # removed for better performance)
     def __init__(self, c, num_heads):
         super().__init__()
         self.q = nn.Linear(c, c, bias=False)
@@ -135,7 +136,8 @@ class C3(nn.Module):
         self.cv2 = Conv(c1, c_, 1, 1)
         self.cv3 = Conv(2 * c_, c2, 1)  # act=FReLU(c2)
         self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)))
-        # self.m = nn.Sequential(*[CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)])
+        # self.m = nn.Sequential(*[CrossConv(c_, c_, 3, 1, g, 1.0, shortcut)
+        # for _ in range(n)])
 
     def forward(self, x):
         return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))
@@ -210,7 +212,6 @@ class Focus(nn.Module):
         return self.conv(torch.cat([x[..., ::2, ::2], x[..., 1::2, ::2], x[..., ::2, 1::2], x[..., 1::2, 1::2]], 1))
         # return self.conv(self.contract(x))
 
-
 class GhostConv(nn.Module):
     # Ghost Convolution https://github.com/huawei-noah/ghostnet
     def __init__(self, c1, c2, k=1, s=1, g=1, act=True):  # ch_in, ch_out, kernel, stride, groups
@@ -240,7 +241,8 @@ class GhostBottleneck(nn.Module):
 
 
 class Contract(nn.Module):
-    # Contract width-height into channels, i.e. x(1,64,80,80) to x(1,256,40,40)
+    # Contract width-height into channels, i.e.  x(1,64,80,80) to
+    # x(1,256,40,40)
     def __init__(self, gain=2):
         super().__init__()
         self.gain = gain
@@ -252,9 +254,8 @@ class Contract(nn.Module):
         x = x.permute(0, 3, 5, 1, 2, 4).contiguous()  # x(1,2,2,64,40,40)
         return x.view(b, c * s * s, h // s, w // s)  # x(1,256,40,40)
 
-
 class Expand(nn.Module):
-    # Expand channels into width-height, i.e. x(1,64,80,80) to x(1,16,160,160)
+    # Expand channels into width-height, i.e.  x(1,64,80,80) to x(1,16,160,160)
     def __init__(self, gain=2):
         super().__init__()
         self.gain = gain
@@ -265,7 +266,6 @@ class Expand(nn.Module):
         x = x.view(b, s, s, c // s ** 2, h, w)  # x(1,2,2,16,80,80)
         x = x.permute(0, 3, 4, 1, 5, 2).contiguous()  # x(1,16,80,2,80,2)
         return x.view(b, c // s ** 2, h * s, w * s)  # x(1,16,160,160)
-
 
 class Concat(nn.Module):
     # Concatenate a list of tensors along dimension
@@ -281,17 +281,17 @@ class DetectMultiBackend(nn.Module):
     # YOLOv5 MultiBackend class for python inference on various backends
     def __init__(self, weights='yolov5s.pt', device=None, dnn=False, data=None):
         # Usage:
-        #   PyTorch:      weights = *.pt
-        #   TorchScript:            *.torchscript
-        #   CoreML:                 *.mlmodel
-        #   OpenVINO:               *.xml
-        #   TensorFlow:             *_saved_model
-        #   TensorFlow:             *.pb
-        #   TensorFlow Lite:        *.tflite
-        #   TensorFlow Edge TPU:    *_edgetpu.tflite
-        #   ONNX Runtime:           *.onnx
-        #   OpenCV DNN:             *.onnx with dnn=True
-        #   TensorRT:               *.engine
+        #   PyTorch: weights = *.pt
+        #   TorchScript: *.torchscript
+        #   CoreML: *.mlmodel
+        #   OpenVINO: *.xml
+        #   TensorFlow: *_saved_model
+        #   TensorFlow: *.pb
+        #   TensorFlow Lite: *.tflite
+        #   TensorFlow Edge TPU: *_edgetpu.tflite
+        #   ONNX Runtime: *.onnx
+        #   OpenCV DNN: *.onnx with dnn=True
+        #   TensorRT: *.engine
         from models.experimental import attempt_download, attempt_load  # scoped to avoid circular import
 
         super().__init__()
@@ -460,14 +460,15 @@ class DetectMultiBackend(nn.Module):
                 im = torch.zeros(*imgsz).to(self.device).type(torch.half if half else torch.float)  # input image
                 self.forward(im)  # warmup
 
-
 class AutoShape(nn.Module):
-    # YOLOv5 input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS
+    # YOLOv5 input-robust model wrapper for passing cv2/np/PIL/torch inputs.
+    # Includes preprocessing, inference and NMS
     conf = 0.25  # NMS confidence threshold
     iou = 0.45  # NMS IoU threshold
     agnostic = False  # NMS class-agnostic
     multi_label = False  # NMS multiple labels per box
-    classes = None  # (optional list) filter by class, i.e. = [0, 15, 16] for COCO persons, cats and dogs
+    classes = None  # (optional list) filter by class, i.e.  = [0, 15, 16] for COCO persons, cats
+                    # and dogs
     max_det = 1000  # maximum number of detections per image
     amp = False  # Automatic Mixed Precision (AMP) inference
 
@@ -480,7 +481,8 @@ class AutoShape(nn.Module):
         self.model = model.eval()
 
     def _apply(self, fn):
-        # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
+        # Apply to(), cpu(), cuda(), half() to model tensors that are not
+        # parameters or registered buffers
         self = super()._apply(fn)
         if self.pt:
             m = self.model.model.model[-1] if self.dmb else self.model.model[-1]  # Detect()
@@ -492,14 +494,19 @@ class AutoShape(nn.Module):
 
     @torch.no_grad()
     def forward(self, imgs, size=640, augment=False, profile=False):
-        # Inference from various sources. For height=640, width=1280, RGB images example inputs are:
-        #   file:       imgs = 'data/images/zidane.jpg'  # str or PosixPath
-        #   URI:             = 'https://ultralytics.com/images/zidane.jpg'
-        #   OpenCV:          = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(640,1280,3)
-        #   PIL:             = Image.open('image.jpg') or ImageGrab.grab()  # HWC x(640,1280,3)
-        #   numpy:           = np.zeros((640,1280,3))  # HWC
-        #   torch:           = torch.zeros(16,3,320,640)  # BCHW (scaled to size=640, 0-1 values)
-        #   multiple:        = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
+        # Inference from various sources.  For height=640, width=1280, RGB
+        # images example inputs are:
+        #   file: imgs = 'data/images/zidane.jpg' # str or PosixPath
+        #   URI: = 'https://ultralytics.com/images/zidane.jpg'
+        #   OpenCV: = cv2.imread('image.jpg')[:,:,::-1] # HWC BGR to RGB
+        #   x(640,1280,3)
+        #   PIL: = Image.open('image.jpg') or ImageGrab.grab() # HWC
+        #   x(640,1280,3)
+        #   numpy: = np.zeros((640,1280,3)) # HWC
+        #   torch: = torch.zeros(16,3,320,640) # BCHW (scaled to size=640, 0-1
+        #   values)
+        #   multiple: = [Image.open('image1.jpg'), Image.open('image2.jpg'),
+        #   ...] # list of images
 
         t = [time_sync()]
         p = next(self.model.parameters()) if self.pt else torch.zeros(1)  # for device and type
@@ -609,8 +616,7 @@ class Detections:
 
     def print(self):
         self.display(pprint=True)  # print results
-        LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' %
-                    self.t)
+        LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' % self.t)
 
     def show(self):
         self.display(show=True)  # show results
@@ -628,7 +634,8 @@ class Detections:
         return self.imgs
 
     def pandas(self):
-        # return detections as pandas DataFrames, i.e. print(results.pandas().xyxy[0])
+        # return detections as pandas DataFrames, i.e.
+        # print(results.pandas().xyxy[0])
         new = copy(self)  # return copy
         ca = 'xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name'  # xyxy columns
         cb = 'xcenter', 'ycenter', 'width', 'height', 'confidence', 'class', 'name'  # xywh columns
@@ -638,12 +645,13 @@ class Detections:
         return new
 
     def tolist(self):
-        # return a list of Detections objects, i.e. 'for result in results.tolist():'
+        # return a list of Detections objects, i.e.  'for result in
+        # results.tolist():'
         r = range(self.n)  # iterable
         x = [Detections([self.imgs[i]], [self.pred[i]], [self.files[i]], self.times, self.names, self.s) for i in r]
         # for d in x:
         #    for k in ['imgs', 'pred', 'xyxy', 'xyxyn', 'xywh', 'xywhn']:
-        #        setattr(d, k, getattr(d, k)[0])  # pop out of list
+        #        setattr(d, k, getattr(d, k)[0]) # pop out of list
         return x
 
     def __len__(self):
@@ -651,7 +659,7 @@ class Detections:
 
 
 class Classify(nn.Module):
-    # Classification head, i.e. x(b,c1,20,20) to x(b,c2)
+    # Classification head, i.e.  x(b,c1,20,20) to x(b,c2)
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1):  # ch_in, ch_out, kernel, stride, padding, groups
         super().__init__()
         self.aap = nn.AdaptiveAvgPool2d(1)  # to x(b,c1,1,1)
@@ -661,7 +669,6 @@ class Classify(nn.Module):
     def forward(self, x):
         z = torch.cat([self.aap(y) for y in (x if isinstance(x, list) else [x])], 1)  # cat if list
         return self.flat(self.conv(z))  # flatten to x(b,c2)
-
 
 class Polygon_NMS(nn.Module):
     # Non-Maximum Suppression (NMS) module for Polygon Anchors
@@ -678,7 +685,8 @@ class Polygon_NMS(nn.Module):
 
 
 class Polygon_AutoShape(nn.Module):
-    # input-robust polygon model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and Polygon_NMS
+    # input-robust polygon model wrapper for passing cv2/np/PIL/torch inputs.
+    # Includes preprocessing, inference and Polygon_NMS
     conf = 0.25  # Polygon NMS confidence threshold
     iou = 0.45  # Polygon NMS IoU threshold
     classes = None  # (optional list) filter by class
@@ -694,14 +702,19 @@ class Polygon_AutoShape(nn.Module):
 
     @torch.no_grad()
     def forward(self, imgs, size=640, augment=False, profile=False):
-        # Inference from various sources. For height=640, width=1280, RGB images example inputs are:
-        #   filename:   imgs = 'data/images/zidane.jpg'
-        #   URI:             = 'https://github.com/ultralytics/yolov5/releases/download/v1.0/zidane.jpg'
-        #   OpenCV:          = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(640,1280,3)
-        #   PIL:             = Image.open('image.jpg')  # HWC x(640,1280,3)
-        #   numpy:           = np.zeros((640,1280,3))  # HWC
-        #   torch:           = torch.zeros(16,3,320,640)  # BCHW (scaled to size=640, 0-1 values)
-        #   multiple:        = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
+        # Inference from various sources.  For height=640, width=1280, RGB
+        # images example inputs are:
+        #   filename: imgs = 'data/images/zidane.jpg'
+        #   URI: =
+        #   'https://github.com/ultralytics/yolov5/releases/download/v1.0/zidane.jpg'
+        #   OpenCV: = cv2.imread('image.jpg')[:,:,::-1] # HWC BGR to RGB
+        #   x(640,1280,3)
+        #   PIL: = Image.open('image.jpg') # HWC x(640,1280,3)
+        #   numpy: = np.zeros((640,1280,3)) # HWC
+        #   torch: = torch.zeros(16,3,320,640) # BCHW (scaled to size=640, 0-1
+        #   values)
+        #   multiple: = [Image.open('image1.jpg'), Image.open('image2.jpg'),
+        #   ...] # list of images
 
         t = [time_sync()]
         p = next(self.model.parameters())  # for device and type
@@ -755,7 +768,8 @@ class Polygon_Detections:
         super().__init__()
         d = pred[0].device  # device
         gn = [torch.tensor([*[im.shape[i] for i in [1, 0, 1, 0, 1, 0, 1, 0]], 1., 1.], device=d) for im in imgs]  # normalizations
-        self.imgs = imgs  # list of images as numpy arrays, images should be pixel-level and with shape (height, width, channel)
+        self.imgs = imgs  # list of images as numpy arrays, images should be pixel-level and with shape
+                          # (height, width, channel)
         self.pred = pred  # list of tensors: pred[0] = (xyxyxyxy, conf, cls)
         self.names = names  # class names
         self.files = files  # image filenames
@@ -807,7 +821,8 @@ class Polygon_Detections:
         return self.imgs
 
     def pandas(self):
-        # return detections as pandas DataFrames, i.e. print(results.pandas().xyxyxyxy[0])
+        # return detections as pandas DataFrames, i.e.
+        # print(results.pandas().xyxyxyxy[0])
         new = copy(self)  # return copy
         ca = 'x1', 'y1', 'x2', 'y2', 'x3', 'y3', 'x4', 'y4', 'confidence', 'class', 'name'  # xyxyxyxy columns
         for k, c in zip(['xyxyxyxy', 'xyxyxyxyn'], [ca, ca]):
@@ -816,7 +831,8 @@ class Polygon_Detections:
         return new
 
     def tolist(self):
-        # return a list of Polygon_Detections objects, i.e. 'for result in results.tolist():'
+        # return a list of Polygon_Detections objects, i.e.  'for result in
+        # results.tolist():'
         x = [Polygon_Detections([self.imgs[i]], [self.pred[i]], self.names, self.s) for i in range(self.n)]
         for d in x:
             for k in ['imgs', 'pred', 'xyxyxyxy', 'xyxyxyxyn']:

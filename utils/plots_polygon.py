@@ -1,7 +1,7 @@
 from utils.plots import *
 
-# Ancillary functions with polygon anchor boxes-------------------------------------------------------------------------------------------
-
+# Ancillary functions with polygon anchor
+# boxes-------------------------------------------------------------------------------------------
 def polygon_plot_one_box(x, im, color=(128, 128, 128), label=None, line_thickness=3):
     """
         Plots one bounding box on image 'im' using OpenCV
@@ -41,7 +41,8 @@ def polygon_plot_one_box_PIL(x, im, color=(128, 128, 128), label=None, line_thic
 
 
 def polygon_output_to_target(output):
-    # Convert model output to target format [batch_id, class_id, x1, y1, x2, y2, x3, y3, x4, y4, conf]
+    # Convert model output to target format [batch_id, class_id, x1, y1, x2,
+    # y2, x3, y3, x4, y4, conf]
     targets = []
     for i, o in enumerate(output):
         for *box, conf, cls in o.cpu().numpy():
@@ -93,7 +94,8 @@ def polygon_plot_images(images, targets, paths=None, fname='images.jpg', names=N
             conf = None if labels else image_targets[:, 10]  # check for confidence presence (label vs pred)
 
             if boxes.shape[1]:
-                if boxes.max() <= 2.:  # if normalized with tolerance 1.0 (large tolerance allows four corners to be out of images)
+                if boxes.max() <= 2.:  # if normalized with tolerance 1.0 (large tolerance allows four corners to be
+                                       # out of images)
                     boxes[0::2] *= w  # scale to pixels
                     boxes[1::2] *= h
                 elif scale_factor < 1:  # absolute coords need scale if image scales
@@ -121,7 +123,8 @@ def polygon_plot_images(images, targets, paths=None, fname='images.jpg', names=N
     if fname:
         r = min(1280. / max(h, w) / ns, 1.0)  # ratio to limit image size
         mosaic = cv2.resize(mosaic, (int(ns * w * r), int(ns * h * r)), interpolation=cv2.INTER_AREA)
-        # cv2.imwrite(fname, cv2.cvtColor(mosaic, cv2.COLOR_BGR2RGB))  # cv2 save
+        # cv2.imwrite(fname, cv2.cvtColor(mosaic, cv2.COLOR_BGR2RGB)) # cv2
+        # save
         Image.fromarray(mosaic).save(fname)  # PIL save
     return mosaic
 
@@ -174,7 +177,8 @@ def polygon_plot_labels(labels, names=(), save_dir=Path(''), loggers=None):
     matplotlib.use('svg')  # faster
     ax = plt.subplots(3, 2, figsize=(12, 8), tight_layout=True)[1].ravel()
     y = ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
-    # [y[2].patches[i].set_color([x / 255 for x in colors(i)]) for i in range(nc)]  # update colors bug #3195
+    # [y[2].patches[i].set_color([x / 255 for x in colors(i)]) for i in
+    # range(nc)] # update colors bug #3195
     ax[0].set_ylabel('instances')
     if 0 < len(names) < 30:
         ax[0].set_xticks(range(len(names)))
@@ -182,7 +186,7 @@ def polygon_plot_labels(labels, names=(), save_dir=Path(''), loggers=None):
     else:
         ax[0].set_xlabel('classes')
     for i in range(2, 6):
-        sn.histplot(x, x=x.columns[2*(i-2)], y=x.columns[2*(i-2)+1], ax=ax[i], bins=50, pmax=0.9)
+        sn.histplot(x, x=x.columns[2 * (i - 2)], y=x.columns[2 * (i - 2) + 1], ax=ax[i], bins=50, pmax=0.9)
 
     # rectangles
     labels[:, 1:] *= 2000
@@ -208,7 +212,8 @@ def plot_study_txt(path='', x=None):  # from utils.plots import *; plot_study_tx
         ax = plt.subplots(2, 4, figsize=(10, 6), tight_layout=True)[1].ravel()
 
     fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
-    # for f in [Path(path) / f'study_coco_{x}.txt' for x in ['yolov5s6', 'yolov5m6', 'yolov5l6', 'yolov5x6']]:
+    # for f in [Path(path) / f'study_coco_{x}.txt' for x in ['yolov5s6',
+    # 'yolov5m6', 'yolov5l6', 'yolov5x6']]:
     for f in sorted(Path(path).glob('study*.txt')):
         y = np.loadtxt(f, dtype=np.float32, usecols=[0, 1, 2, 3, 7, 8, 9], ndmin=2).T
         x = np.arange(y.shape[1]) if x is None else np.array(x)
@@ -241,12 +246,12 @@ def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots impo
         hyp = yaml.safe_load(f)
     x = np.loadtxt('evolve.txt', ndmin=2)
     f = fitness(x)
-    # weights = (f - f.min()) ** 2  # for weighted results
+    # weights = (f - f.min()) ** 2 # for weighted results
     plt.figure(figsize=(10, 12), tight_layout=True)
     matplotlib.rc('font', **{'size': 8})
     for i, (k, v) in enumerate(hyp.items()):
         y = x[:, i + 7]
-        # mu = (y * weights).sum() / weights.sum()  # best weighted result
+        # mu = (y * weights).sum() / weights.sum() # best weighted result
         mu = y[f.argmax()]  # best single result
         plt.subplot(6, 5, i + 1)
         plt.scatter(y, f, c=hist2d(y, f, 20), cmap='viridis', alpha=.8, edgecolors='none')
@@ -260,17 +265,18 @@ def plot_evolution(yaml_file='data/hyp.finetune.yaml'):  # from utils.plots impo
 
 
 def polygon_plot_results(file=''):
-    # Plot training 'results*.txt'. from utils.plots import *; plot_results(save_dir='runs/train/exp')
+    # Plot training 'results*.txt'.  from utils.plots import *;
+    # plot_results(save_dir='runs/train/exp')
     save_dir = Path(file).parent if file else Path(dir)
     fig, ax = plt.subplots(2, 5, figsize=(12, 6), tight_layout=True)
     ax = ax.ravel()
     s = ['Box', 'Objectness', 'Classification', 'Precision', 'Recall',
          'val Box', 'val Objectness', 'val Classification', 'mAP@0.5', 'mAP@0.5:0.95']
-    start=0
-    stop=0
-    bucket=''
-    id=()
-    labels=()
+    start = 0
+    stop = 0
+    bucket = ''
+    id = ()
+    labels = ()
     files = list(Path(save_dir).glob('results*.csv'))
     assert len(files), f'No results.txt files found in {file.resolve()}, nothing to plot.'
     for fi, f in enumerate(files):
@@ -282,11 +288,11 @@ def polygon_plot_results(file=''):
                 y = results[i, x]
                 if i in [0, 1, 2, 5, 6, 7]:
                     y[y == 0] = np.nan  # don't show zero loss values
-                    # y /= y[0]  # normalize
+                    # y /= y[0] # normalize
                 label = labels[fi] if len(labels) else f.stem
                 ax[i].plot(x, y, marker='.', label=label, linewidth=2, markersize=8)
                 ax[i].set_title(s[i])
-                # if i in [5, 6, 7]:  # share train and val loss y axes
+                # if i in [5, 6, 7]: # share train and val loss y axes
                 #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
         except Exception as e:
             print(f'Warning: Plotting error for {f}; {e}')

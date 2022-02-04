@@ -26,14 +26,16 @@ class BCEBlurWithLogitsLoss(nn.Module):
         loss = self.loss_fcn(pred, true)
         pred = torch.sigmoid(pred)  # prob from logits
         dx = pred - true  # reduce only missing label effects
-        # dx = (pred - true).abs()  # reduce missing label and false label effects
+        # dx = (pred - true).abs() # reduce missing label and false label
+                                # effects
         alpha_factor = 1 - torch.exp((dx - 1) / (self.alpha + 1e-4))
         loss *= alpha_factor
         return loss.mean()
 
 
 class FocalLoss(nn.Module):
-    # Wraps focal loss around existing loss_fcn(), i.e. criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
+    # Wraps focal loss around existing loss_fcn(), i.e.  criteria =
+    # FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
     def __init__(self, loss_fcn, gamma=1.5, alpha=0.25):
         super().__init__()
         self.loss_fcn = loss_fcn  # must be nn.BCEWithLogitsLoss()
@@ -45,9 +47,11 @@ class FocalLoss(nn.Module):
     def forward(self, pred, true):
         loss = self.loss_fcn(pred, true)
         # p_t = torch.exp(-loss)
-        # loss *= self.alpha * (1.000001 - p_t) ** self.gamma  # non-zero power for gradient stability
+        # loss *= self.alpha * (1.000001 - p_t) ** self.gamma # non-zero power
+        # for gradient stability
 
-        # TF implementation https://github.com/tensorflow/addons/blob/v0.7.1/tensorflow_addons/losses/focal_loss.py
+        # TF implementation
+        # https://github.com/tensorflow/addons/blob/v0.7.1/tensorflow_addons/losses/focal_loss.py
         pred_prob = torch.sigmoid(pred)  # prob from logits
         p_t = true * pred_prob + (1 - true) * (1 - pred_prob)
         alpha_factor = true * self.alpha + (1 - true) * (1 - self.alpha)
@@ -63,7 +67,8 @@ class FocalLoss(nn.Module):
 
 
 class QFocalLoss(nn.Module):
-    # Wraps Quality focal loss around existing loss_fcn(), i.e. criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
+    # Wraps Quality focal loss around existing loss_fcn(), i.e.  criteria =
+    # FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
     def __init__(self, loss_fcn, gamma=1.5, alpha=0.25):
         super().__init__()
         self.loss_fcn = loss_fcn  # must be nn.BCEWithLogitsLoss()
@@ -150,7 +155,8 @@ class ComputeLoss:
 
                 # Append targets to text file
                 # with open('targets.txt', 'a') as file:
-                #     [file.write('%11.5g ' * 4 % tuple(x) + '\n') for x in torch.cat((txy[i], twh[i]), 1)]
+                #     [file.write('%11.5g ' * 4 % tuple(x) + '\n') for x in
+                #     torch.cat((txy[i], twh[i]), 1)]
 
             obji = self.BCEobj(pi[..., 4], tobj)
             lobj += obji * self.balance[i]  # obj loss
@@ -177,7 +183,7 @@ class ComputeLoss:
         g = 0.5  # bias
         off = torch.tensor([[0, 0],
                             [1, 0], [0, 1], [-1, 0], [0, -1],  # j,k,l,m
-                            # [1, 1], [1, -1], [-1, 1], [-1, -1],  # jk,jm,lk,lm
+                            # [1, 1], [1, -1], [-1, 1], [-1, -1], # jk,jm,lk,lm
                             ], device=targets.device).float() * g  # offsets
 
         for i in range(self.nl):
@@ -190,7 +196,8 @@ class ComputeLoss:
                 # Matches
                 r = t[:, :, 4:6] / anchors[:, None]  # wh ratio
                 j = torch.max(r, 1 / r).max(2)[0] < self.hyp['anchor_t']  # compare
-                # j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
+                # j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t'] #
+                                                                                        # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
                 t = t[j]  # filter
 
                 # Offsets

@@ -8,7 +8,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-# SiLU https://arxiv.org/pdf/1606.08415.pdf ----------------------------------------------------------------------------
+# SiLU https://arxiv.org/pdf/1606.08415.pdf
+# ----------------------------------------------------------------------------
 class SiLU(nn.Module):  # export-friendly version of nn.SiLU()
     @staticmethod
     def forward(x):
@@ -18,11 +19,12 @@ class SiLU(nn.Module):  # export-friendly version of nn.SiLU()
 class Hardswish(nn.Module):  # export-friendly version of nn.Hardswish()
     @staticmethod
     def forward(x):
-        # return x * F.hardsigmoid(x)  # for TorchScript and CoreML
+        # return x * F.hardsigmoid(x) # for TorchScript and CoreML
         return x * F.hardtanh(x + 3, 0.0, 6.0) / 6.0  # for TorchScript, CoreML and ONNX
 
 
-# Mish https://github.com/digantamisra98/Mish --------------------------------------------------------------------------
+# Mish https://github.com/digantamisra98/Mish
+# --------------------------------------------------------------------------
 class Mish(nn.Module):
     @staticmethod
     def forward(x):
@@ -47,7 +49,8 @@ class MemoryEfficientMish(nn.Module):
         return self.F.apply(x)
 
 
-# FReLU https://arxiv.org/abs/2007.11824 -------------------------------------------------------------------------------
+# FReLU https://arxiv.org/abs/2007.11824
+# -------------------------------------------------------------------------------
 class FReLU(nn.Module):
     def __init__(self, c1, k=3):  # ch_in, kernel
         super().__init__()
@@ -58,7 +61,8 @@ class FReLU(nn.Module):
         return torch.max(x, self.bn(self.conv(x)))
 
 
-# ACON https://arxiv.org/pdf/2009.04759.pdf ----------------------------------------------------------------------------
+# ACON https://arxiv.org/pdf/2009.04759.pdf
+# ----------------------------------------------------------------------------
 class AconC(nn.Module):
     r""" ACON activation (activate or not).
     AconC: (p1*x-p2*x) * sigmoid(beta*(p1*x-p2*x)) + p2*x, beta is a learnable parameter
@@ -94,8 +98,10 @@ class MetaAconC(nn.Module):
 
     def forward(self, x):
         y = x.mean(dim=2, keepdims=True).mean(dim=3, keepdims=True)
-        # batch-size 1 bug/instabilities https://github.com/ultralytics/yolov5/issues/2891
-        # beta = torch.sigmoid(self.bn2(self.fc2(self.bn1(self.fc1(y)))))  # bug/unstable
+        # batch-size 1 bug/instabilities
+        # https://github.com/ultralytics/yolov5/issues/2891
+        # beta = torch.sigmoid(self.bn2(self.fc2(self.bn1(self.fc1(y))))) #
+        # bug/unstable
         beta = torch.sigmoid(self.fc2(self.fc1(y)))  # bug patch BN layers removed
         dpx = (self.p1 - self.p2) * x
         return dpx * torch.sigmoid(beta * dpx) + self.p2 * x

@@ -19,8 +19,7 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
-# ROOT = ROOT.relative_to(Path.cwd())  # relative
-
+# ROOT = ROOT.relative_to(Path.cwd()) # relative
 import numpy as np
 import tensorflow as tf
 import torch
@@ -38,8 +37,7 @@ class TFBN(keras.layers.Layer):
     # TensorFlow BatchNormalization wrapper
     def __init__(self, w=None):
         super().__init__()
-        self.bn = keras.layers.BatchNormalization(
-            beta_initializer=keras.initializers.Constant(w.bias.numpy()),
+        self.bn = keras.layers.BatchNormalization(beta_initializer=keras.initializers.Constant(w.bias.numpy()),
             gamma_initializer=keras.initializers.Constant(w.weight.numpy()),
             moving_mean_initializer=keras.initializers.Constant(w.running_mean.numpy()),
             moving_variance_initializer=keras.initializers.Constant(w.running_var.numpy()),
@@ -65,11 +63,12 @@ class TFConv(keras.layers.Layer):
         super().__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
         assert isinstance(k, int), "Convolution with multiple kernels are not allowed."
-        # TensorFlow convolution padding is inconsistent with PyTorch (e.g. k=3 s=2 'SAME' padding)
-        # see https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
+        # TensorFlow convolution padding is inconsistent with PyTorch (e.g.
+        # k=3 s=2 'SAME' padding)
+        # see
+        # https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
 
-        conv = keras.layers.Conv2D(
-            c2, k, s, 'SAME' if s == 1 else 'VALID', use_bias=False if hasattr(w, 'bn') else True,
+        conv = keras.layers.Conv2D(c2, k, s, 'SAME' if s == 1 else 'VALID', use_bias=False if hasattr(w, 'bn') else True,
             kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()),
             bias_initializer='zeros' if hasattr(w, 'bn') else keras.initializers.Constant(w.conv.bias.numpy()))
         self.conv = conv if s == 1 else keras.Sequential([TFPad(autopad(k, p)), conv])
@@ -97,7 +96,7 @@ class TFFocus(keras.layers.Layer):
         self.conv = TFConv(c1 * 4, c2, k, s, p, g, act, w.conv)
 
     def call(self, inputs):  # x(b,w,h,c) -> y(b,w/2,h/2,4c)
-        # inputs = inputs / 255  # normalize 0-255 to 0-1
+        # inputs = inputs / 255 # normalize 0-255 to 0-1
         return self.conv(tf.concat([inputs[:, ::2, ::2, :],
                                     inputs[:, 1::2, ::2, :],
                                     inputs[:, ::2, 1::2, :],
@@ -122,10 +121,9 @@ class TFConv2d(keras.layers.Layer):
     def __init__(self, c1, c2, k, s=1, g=1, bias=True, w=None):
         super().__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
-        self.conv = keras.layers.Conv2D(
-            c2, k, s, 'VALID', use_bias=bias,
+        self.conv = keras.layers.Conv2D(c2, k, s, 'VALID', use_bias=bias,
             kernel_initializer=keras.initializers.Constant(w.weight.permute(2, 3, 1, 0).numpy()),
-            bias_initializer=keras.initializers.Constant(w.bias.numpy()) if bias else None, )
+            bias_initializer=keras.initializers.Constant(w.bias.numpy()) if bias else None,)
 
     def call(self, inputs):
         return self.conv(inputs)
@@ -249,10 +247,14 @@ class TFUpsample(keras.layers.Layer):
         super().__init__()
         assert scale_factor == 2, "scale_factor must be 2"
         self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * 2, x.shape[2] * 2), method=mode)
-        # self.upsample = keras.layers.UpSampling2D(size=scale_factor, interpolation=mode)
+        # self.upsample = keras.layers.UpSampling2D(size=scale_factor,
+        # interpolation=mode)
         # with default arguments: align_corners=False, half_pixel_centers=False
         # self.upsample = lambda x: tf.raw_ops.ResizeNearestNeighbor(images=x,
-        #                                                            size=(x.shape[1] * 2, x.shape[2] * 2))
+        #                                                            size=(x.shape[1]
+        #                                                            * 2,
+        #                                                            x.shape[2]
+        #                                                            * 2))
 
     def call(self, inputs):
         return self.upsample(inputs)
@@ -359,20 +361,21 @@ class TFModel:
                 return nms, x[1]
             else:
                 boxes = tf.expand_dims(boxes, 2)
-                nms = tf.image.combined_non_max_suppression(
-                    boxes, scores, topk_per_class, topk_all, iou_thres, conf_thres, clip_boxes=False)
+                nms = tf.image.combined_non_max_suppression(boxes, scores, topk_per_class, topk_all, iou_thres, conf_thres, clip_boxes=False)
                 return nms, x[1]
 
         return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
-        # x = x[0][0]  # [x(1,6300,85), ...] to x(6300,85)
-        # xywh = x[..., :4]  # x(6300,4) boxes
-        # conf = x[..., 4:5]  # x(6300,1) confidences
-        # cls = tf.reshape(tf.cast(tf.argmax(x[..., 5:], axis=1), tf.float32), (-1, 1))  # x(6300,1)  classes
-        # return tf.concat([conf, cls, xywh], 1)
+        # x = x[0][0] # [x(1,6300,85), ...] to x(6300,85)
+                           # xywh = x[..., :4] # x(6300,4) boxes
+                           # conf = x[..., 4:5] # x(6300,1) confidences
+                           # cls = tf.reshape(tf.cast(tf.argmax(x[..., 5:], axis=1), tf.float32),
+                           # (-1, 1)) # x(6300,1) classes
+                           # return tf.concat([conf, cls, xywh], 1)
 
     @staticmethod
     def _xywh2xyxy(xywh):
-        # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+        # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where
+        # xy1=top-left, xy2=bottom-right
         x, y, w, h = tf.split(xywh, num_or_size_splits=4, axis=-1)
         return tf.concat([x - w / 2, y - h / 2, x + w / 2, y + h / 2], axis=-1)
 
@@ -380,7 +383,8 @@ class TFModel:
 class AgnosticNMS(keras.layers.Layer):
     # TF Agnostic NMS
     def call(self, input, topk_all, iou_thres, conf_thres):
-        # wrap map_fn to avoid TypeSpec related error https://stackoverflow.com/a/65809989/3036450
+        # wrap map_fn to avoid TypeSpec related error
+        # https://stackoverflow.com/a/65809989/3036450
         return tf.map_fn(lambda x: self._nms(x, topk_all, iou_thres, conf_thres), input,
                          fn_output_signature=(tf.float32, tf.float32, tf.float32, tf.int32),
                          name='agnostic_nms')
@@ -390,8 +394,7 @@ class AgnosticNMS(keras.layers.Layer):
         boxes, classes, scores = x
         class_inds = tf.cast(tf.argmax(classes, axis=-1), tf.float32)
         scores_inp = tf.reduce_max(scores, -1)
-        selected_inds = tf.image.non_max_suppression(
-            boxes, scores_inp, max_output_size=topk_all, iou_threshold=iou_thres, score_threshold=conf_thres)
+        selected_inds = tf.image.non_max_suppression(boxes, scores_inp, max_output_size=topk_all, iou_threshold=iou_thres, score_threshold=conf_thres)
         selected_boxes = tf.gather(boxes, selected_inds)
         padded_boxes = tf.pad(selected_boxes,
                               paddings=[[0, topk_all - tf.shape(selected_boxes)[0]], [0, 0]],
@@ -409,7 +412,8 @@ class AgnosticNMS(keras.layers.Layer):
 
 
 def representative_dataset_gen(dataset, ncalib=100):
-    # Representative dataset generator for use with converter.representative_dataset, returns a generator of np arrays
+    # Representative dataset generator for use with
+    # converter.representative_dataset, returns a generator of np arrays
     for n, (path, img, im0s, vid_cap, string) in enumerate(dataset):
         input = np.transpose(img, [1, 2, 0])
         input = np.expand_dims(input, axis=0).astype(np.float32)

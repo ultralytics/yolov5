@@ -37,13 +37,11 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
 VERBOSE = str(os.getenv('YOLOv5_VERBOSE', True)).lower() == 'true'  # global verbose mode
-
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
 np.set_printoptions(linewidth=320, formatter={'float_kind': '{:11.5g}'.format})  # format short g, %precision=5
 pd.options.display.max_columns = 10
 cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with PyTorch DataLoader)
 os.environ['NUMEXPR_MAX_THREADS'] = str(NUM_THREADS)  # NumExpr max threads
-
 
 def is_kaggle():
     # Is environment a Kaggle Notebook?
@@ -67,7 +65,6 @@ def set_logging(name=None, verbose=VERBOSE):
 
 LOGGER = set_logging('yolov5')  # define globally (used in train.py, val.py, detect.py, etc.)
 
-
 class Profile(contextlib.ContextDecorator):
     # Usage: @Profile() decorator or 'with Profile():' context manager
     def __enter__(self):
@@ -78,7 +75,8 @@ class Profile(contextlib.ContextDecorator):
 
 
 class Timeout(contextlib.ContextDecorator):
-    # Usage: @Timeout(seconds) decorator or 'with Timeout(seconds):' context manager
+    # Usage: @Timeout(seconds) decorator or 'with Timeout(seconds):' context
+    # manager
     def __init__(self, seconds, *, timeout_msg='', suppress_timeout_errors=True):
         self.seconds = int(seconds)
         self.timeout_message = timeout_msg
@@ -98,7 +96,8 @@ class Timeout(contextlib.ContextDecorator):
 
 
 class WorkingDirectory(contextlib.ContextDecorator):
-    # Usage: @WorkingDirectory(dir) decorator or 'with WorkingDirectory(dir):' context manager
+    # Usage: @WorkingDirectory(dir) decorator or 'with WorkingDirectory(dir):'
+    # context manager
     def __init__(self, new_dir):
         self.dir = new_dir  # new dir
         self.cwd = Path.cwd().resolve()  # current dir
@@ -111,7 +110,7 @@ class WorkingDirectory(contextlib.ContextDecorator):
 
 
 def try_except(func):
-    # try-except function. Usage: @try_except decorator
+    # try-except function.  Usage: @try_except decorator
     def handler(*args, **kwargs):
         try:
             func(*args, **kwargs)
@@ -132,8 +131,10 @@ def print_args(name, opt):
 
 
 def init_seeds(seed=0):
-    # Initialize random number generator (RNG) seeds https://pytorch.org/docs/stable/notes/randomness.html
-    # cudnn seed 0 settings are slower and more reproducible, else faster and less reproducible
+    # Initialize random number generator (RNG) seeds
+    # https://pytorch.org/docs/stable/notes/randomness.html
+    # cudnn seed 0 settings are slower and more reproducible, else faster and
+    # less reproducible
     import torch.backends.cudnn as cudnn
     random.seed(seed)
     np.random.seed(seed)
@@ -142,18 +143,20 @@ def init_seeds(seed=0):
 
 
 def intersect_dicts(da, db, exclude=()):
-    # Dictionary intersection of matching keys and shapes, omitting 'exclude' keys, using da values
+    # Dictionary intersection of matching keys and shapes, omitting 'exclude'
+    # keys, using da values
     return {k: v for k, v in da.items() if k in db and not any(x in k for x in exclude) and v.shape == db[k].shape}
 
 
 def get_latest_run(search_dir='.'):
-    # Return path to most recent 'last.pt' in /runs (i.e. to --resume from)
+    # Return path to most recent 'last.pt' in /runs (i.e.  to --resume from)
     last_list = glob.glob(f'{search_dir}/**/last*.pt', recursive=True)
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
 def user_config_dir(dir='Ultralytics', env_var='YOLOV5_CONFIG_DIR'):
-    # Return path of user configuration directory. Prefer environment variable if exists. Make dir if required.
+    # Return path of user configuration directory.  Prefer environment variable
+    # if exists.  Make dir if required.
     env = os.getenv(env_var)
     if env:
         path = Path(env)  # use environment variable
@@ -166,7 +169,8 @@ def user_config_dir(dir='Ultralytics', env_var='YOLOV5_CONFIG_DIR'):
 
 
 def is_writeable(dir, test=False):
-    # Return True if directory has write permissions, test opening a file with write permissions if test=True
+    # Return True if directory has write permissions, test opening a file with
+    # write permissions if test=True
     if test:  # method 1
         file = Path(dir) / 'tmp.txt'
         try:
@@ -179,11 +183,9 @@ def is_writeable(dir, test=False):
     else:  # method 2
         return os.access(dir, os.R_OK)  # possible issues on Windows
 
-
 def is_docker():
     # Is environment a Docker container?
     return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
-
 
 def is_colab():
     # Is environment a Google Colab instance?
@@ -200,8 +202,9 @@ def is_pip():
 
 
 def is_ascii(s=''):
-    # Is string composed of all ASCII (no UTF) characters? (note str().isascii() introduced in python 3.7)
-    s = str(s)  # convert list, tuple, None, etc. to str
+    # Is string composed of all ASCII (no UTF) characters?  (note
+    # str().isascii() introduced in python 3.7)
+    s = str(s)  # convert list, tuple, None, etc.  to str
     return len(s.encode().decode('ascii', 'ignore')) == len(s)
 
 
@@ -256,14 +259,13 @@ def check_git_status():
         s += f'up to date with {url} ✅'
     LOGGER.info(emojis(s))  # emoji-safe
 
-
 def check_python(minimum='3.6.2'):
-    # Check current python version vs. required python version
+    # Check current python version vs.  required python version
     check_version(platform.python_version(), minimum, name='Python ', hard=True)
 
 
 def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=False, hard=False, verbose=False):
-    # Check version vs. required version
+    # Check version vs.  required version
     current, minimum = (pkg.parse_version(x) for x in (current, minimum))
     result = (current == minimum) if pinned else (current >= minimum)  # bool
     s = f'{name}{minimum} required by YOLOv5, but {name}{current} is currently installed'  # string
@@ -276,7 +278,8 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
 
 @try_except
 def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True):
-    # Check installed dependencies meet requirements (pass *.txt file or list of packages)
+    # Check installed dependencies meet requirements (pass *.txt file or list
+    # of packages)
     prefix = colorstr('red', 'bold', 'requirements:')
     check_python()  # check python version
     if isinstance(requirements, (str, Path)):  # requirements.txt file
@@ -313,9 +316,9 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
 
 def check_img_size(imgsz, s=32, floor=0):
     # Verify image size is a multiple of stride s in each dimension
-    if isinstance(imgsz, int):  # integer i.e. img_size=640
+    if isinstance(imgsz, int):  # integer i.e.  img_size=640
         new_size = max(make_divisible(imgsz, int(s)), floor)
-    else:  # list i.e. img_size=[640, 480]
+    else:  # list i.e.  img_size=[640, 480]
         new_size = [max(make_divisible(x, int(s)), floor) for x in imgsz]
     if new_size != imgsz:
         LOGGER.warning(f'WARNING: --img-size {imgsz} must be multiple of max stride {s}, updating to {new_size}')
@@ -377,14 +380,14 @@ def check_file(file, suffix=''):
         assert len(files) == 1, f"Multiple files match '{file}', specify exact path: {files}"  # assert unique
         return files[0]  # return file
 
-
 def check_dataset(data, autodownload=True):
     # Download and/or unzip dataset if not found locally
-    # Usage: https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128_with_yaml.zip
+    # Usage:
+    # https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128_with_yaml.zip
 
     # Download (optional)
     extract_dir = ''
-    if isinstance(data, (str, Path)) and str(data).endswith('.zip'):  # i.e. gs://bucket/dir/coco128.zip
+    if isinstance(data, (str, Path)) and str(data).endswith('.zip'):  # i.e.  gs://bucket/dir/coco128.zip
         download(data, dir='../datasets', unzip=True, delete=False, curl=False, threads=1)
         data = next((Path('../datasets') / Path(data).stem).rglob('*.yaml'))
         extract_dir, autodownload = data.parent, False
@@ -412,7 +415,7 @@ def check_dataset(data, autodownload=True):
         if not all(x.exists() for x in val):
             LOGGER.info('\nDataset not found, missing paths: %s' % [str(x) for x in val if not x.exists()])
             if s and autodownload:  # download script
-                root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
+                root = path.parent if 'path' in data else '..'  # unzip directory i.e.  '../'
                 if s.startswith('http') and s.endswith('.zip'):  # URL
                     f = Path(s).name  # filename
                     LOGGER.info(f'Downloading {s} to {f}...')
@@ -432,16 +435,16 @@ def check_dataset(data, autodownload=True):
 
     return data  # dictionary
 
-
 def url2file(url):
-    # Convert URL to filename, i.e. https://url.com/file.txt?auth -> file.txt
+    # Convert URL to filename, i.e.  https://url.com/file.txt?auth -> file.txt
     url = str(Path(url)).replace(':/', '://')  # Pathlib turns :// -> :/
     file = Path(urllib.parse.unquote(url)).name.split('?')[0]  # '%2F' to '/', split https://url.com/file.txt?auth
     return file
 
 
 def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
-    # Multi-threaded file download and unzip function, used in data.yaml for autodownload
+    # Multi-threaded file download and unzip function, used in data.yaml for
+    # autodownload
     def download_one(url, dir):
         # Download 1 file
         f = dir / Path(url).name  # filename
@@ -487,7 +490,8 @@ def clean_str(s):
 
 
 def one_cycle(y1=0.0, y2=1.0, steps=100):
-    # lambda function for sinusoidal ramp from y1 to y2 https://arxiv.org/pdf/1812.01187.pdf
+    # lambda function for sinusoidal ramp from y1 to y2
+    # https://arxiv.org/pdf/1812.01187.pdf
     return lambda x: ((1 - math.cos(x * math.pi / steps)) / 2) * (y2 - y1) + y1
 
 
@@ -526,8 +530,10 @@ def labels_to_class_weights(labels, nc=80):
     weights = np.bincount(classes, minlength=nc)  # occurrences per class
 
     # Prepend gridpoint count (for uCE training)
-    # gpi = ((320 / 32 * np.array([1, 2, 4])) ** 2 * 3).sum()  # gridpoints per image
-    # weights = np.hstack([gpi * len(labels)  - weights.sum() * 9, weights * 9]) ** 0.5  # prepend gridpoints to start
+    # gpi = ((320 / 32 * np.array([1, 2, 4])) ** 2 * 3).sum() # gridpoints per
+    # image
+    # weights = np.hstack([gpi * len(labels) - weights.sum() * 9, weights * 9])
+    # ** 0.5 # prepend gridpoints to start
 
     weights[weights == 0] = 1  # replace empty bins with 1
     weights = 1 / weights  # number of targets per class
@@ -539,16 +545,19 @@ def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
     # Produces image weights based on class_weights and image contents
     class_counts = np.array([np.bincount(x[:, 0].astype(np.int), minlength=nc) for x in labels])
     image_weights = (class_weights.reshape(1, nc) * class_counts).sum(1)
-    # index = random.choices(range(n), weights=image_weights, k=1)  # weight image sample
+    # index = random.choices(range(n), weights=image_weights, k=1) # weight
+    # image sample
     return image_weights
 
 
 def coco80_to_coco91_class():  # converts 80-index (val2014) to 91-index (paper)
     # https://tech.amikelive.com/node-718/what-object-categories-labels-are-in-coco-dataset/
-    # a = np.loadtxt('data/coco.names', dtype='str', delimiter='\n')
-    # b = np.loadtxt('data/coco_paper.names', dtype='str', delimiter='\n')
-    # x1 = [list(a[i] == b).index(True) + 1 for i in range(80)]  # darknet to coco
-    # x2 = [list(b[i] == a).index(True) if any(b[i] == a) else None for i in range(91)]  # coco to darknet
+                                 # a = np.loadtxt('data/coco.names', dtype='str', delimiter='\n')
+                                 # b = np.loadtxt('data/coco_paper.names', dtype='str', delimiter='\n')
+                                 # x1 = [list(a[i] == b).index(True) + 1 for i in range(80)] # darknet to
+                                 # coco
+                                 # x2 = [list(b[i] == a).index(True) if any(b[i] == a) else None for i in
+                                 # range(91)] # coco to darknet
     x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 28, 31, 32, 33, 34,
          35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
          64, 65, 67, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90]
@@ -556,7 +565,8 @@ def coco80_to_coco91_class():  # converts 80-index (val2014) to 91-index (paper)
 
 
 def xyxy2xywh(x):
-    # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where xy1=top-left, xy2=bottom-right
+    # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] where
+    # xy1=top-left, xy2=bottom-right
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[:, 0] = (x[:, 0] + x[:, 2]) / 2  # x center
     y[:, 1] = (x[:, 1] + x[:, 3]) / 2  # y center
@@ -566,7 +576,8 @@ def xyxy2xywh(x):
 
 
 def xywh2xyxy(x):
-    # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+    # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where
+    # xy1=top-left, xy2=bottom-right
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[:, 0] = x[:, 0] - x[:, 2] / 2  # top left x
     y[:, 1] = x[:, 1] - x[:, 3] / 2  # top left y
@@ -576,7 +587,8 @@ def xywh2xyxy(x):
 
 
 def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
-    # Convert nx4 boxes from [x, y, w, h] normalized to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+    # Convert nx4 boxes from [x, y, w, h] normalized to [x1, y1, x2, y2] where
+    # xy1=top-left, xy2=bottom-right
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[:, 0] = w * (x[:, 0] - x[:, 2] / 2) + padw  # top left x
     y[:, 1] = h * (x[:, 1] - x[:, 3] / 2) + padh  # top left y
@@ -586,7 +598,8 @@ def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
 
 
 def xyxy2xywhn(x, w=640, h=640, clip=False, eps=0.0):
-    # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] normalized where xy1=top-left, xy2=bottom-right
+    # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] normalized where
+    # xy1=top-left, xy2=bottom-right
     if clip:
         clip_coords(x, (h - eps, w - eps))  # warning: inplace clip
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
@@ -606,21 +619,21 @@ def xyn2xy(x, w=640, h=640, padw=0, padh=0):
 
 
 def segment2box(segment, width=640, height=640):
-    # Convert 1 segment label to 1 box label, applying inside-image constraint, i.e. (xy1, xy2, ...) to (xyxy)
+    # Convert 1 segment label to 1 box label, applying inside-image constraint,
+    # i.e.  (xy1, xy2, ...) to (xyxy)
     x, y = segment.T  # segment xy
     inside = (x >= 0) & (y >= 0) & (x <= width) & (y <= height)
     x, y, = x[inside], y[inside]
     return np.array([x.min(), y.min(), x.max(), y.max()]) if any(x) else np.zeros((1, 4))  # xyxy
 
-
 def segments2boxes(segments):
-    # Convert segment labels to box labels, i.e. (cls, xy1, xy2, ...) to (cls, xywh)
+    # Convert segment labels to box labels, i.e.  (cls, xy1, xy2, ...) to (cls,
+    # xywh)
     boxes = []
     for s in segments:
         x, y = s.T  # segment xy
         boxes.append([x.min(), y.min(), x.max(), y.max()])  # cls, xyxy
     return xyxy2xywh(np.array(boxes))  # cls, xywh
-
 
 def resample_segments(segments, n=1000):
     # Up-sample an (n,2) segment
@@ -634,7 +647,7 @@ def resample_segments(segments, n=1000):
 def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
     # Rescale coords (xyxy) from img1_shape to img0_shape
     if ratio_pad is None:  # calculate from img0_shape
-        gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
+        gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain = old / new
         pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
     else:
         gain = ratio_pad[0][0]
@@ -657,7 +670,6 @@ def clip_coords(boxes, shape):
     else:  # np.array (faster grouped)
         boxes[:, [0, 2]] = boxes[:, [0, 2]].clip(0, shape[1])  # x1, x2
         boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, shape[0])  # y1, y2
-
 
 def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False,
                         labels=(), max_det=300):
@@ -686,7 +698,8 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     output = [torch.zeros((0, 6), device=prediction.device)] * prediction.shape[0]
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
-        # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
+                                               # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0 #
+                                               # width-height
         x = x[xc[xi]]  # confidence
 
         # Cat apriori labels if autolabelling
@@ -797,20 +810,16 @@ def print_mutation(results, hyp, save_dir, bucket):
         data = pd.read_csv(evolve_csv)
         data = data.rename(columns=lambda x: x.strip())  # strip keys
         i = np.argmax(fitness(data.values[:, :7]))  #
-        f.write('# YOLOv5 Hyperparameter Evolution Results\n' +
-                f'# Best generation: {i}\n' +
-                f'# Last generation: {len(data) - 1}\n' +
-                '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:7]) + '\n' +
-                '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :7]) + '\n\n')
+        f.write('# YOLOv5 Hyperparameter Evolution Results\n' + f'# Best generation: {i}\n' + f'# Last generation: {len(data) - 1}\n' + '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:7]) + '\n' + '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :7]) + '\n\n')
         yaml.safe_dump(hyp, f, sort_keys=False)
 
     if bucket:
         os.system(f'gsutil cp {evolve_csv} {evolve_yaml} gs://{bucket}')  # upload
 
-
 def apply_classifier(x, model, img, im0):
     # Apply a second stage classifier to YOLO outputs
-    # Example model = torchvision.models.__dict__['efficientnet_b0'](pretrained=True).to(device).eval()
+    # Example model =
+    # torchvision.models.__dict__['efficientnet_b0'](pretrained=True).to(device).eval()
     im0 = [im0] if isinstance(im0, np.ndarray) else im0
     for i, d in enumerate(x):  # per image
         if d is not None and len(d):
@@ -845,7 +854,8 @@ def apply_classifier(x, model, img, im0):
 
 
 def increment_path(path, exist_ok=False, sep='', mkdir=False):
-    # Increment file or directory path, i.e. runs/exp --> runs/exp{sep}2, runs/exp{sep}3, ... etc.
+    # Increment file or directory path, i.e.  runs/exp --> runs/exp{sep}2,
+    # runs/exp{sep}3, ...  etc.
     path = Path(path)  # os-agnostic
     if path.exists() and not exist_ok:
         path, suffix = (path.with_suffix(''), path.suffix) if path.is_file() else (path, '')

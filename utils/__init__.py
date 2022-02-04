@@ -23,7 +23,7 @@ def notebook_init(verbose=True):
 
     if verbose:
         # System info
-        # gb = 1 / 1000 ** 3  # bytes to GB
+        # gb = 1 / 1000 ** 3 # bytes to GB
         gib = 1 / 1024 ** 3  # bytes to GiB
         ram = psutil.virtual_memory().total
         total, used, free = shutil.disk_usage("/")

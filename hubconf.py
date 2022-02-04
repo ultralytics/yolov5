@@ -44,7 +44,8 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
 
         if pretrained and channels == 3 and classes == 80:
             model = DetectMultiBackend(path, device=device)  # download/load FP32 model
-            # model = models.experimental.attempt_load(path, map_location=device)  # download/load FP32 model
+            # model = models.experimental.attempt_load(path,
+                                                                       # map_location=device) # download/load FP32 model
         else:
             cfg = list((Path(__file__).parent / 'models').rglob(f'{path.stem}.yaml'))[0]  # model.yaml path
             model = Model(cfg, channels, classes)  # create model
@@ -122,7 +123,7 @@ def yolov5x6(pretrained=True, channels=3, classes=80, autoshape=True, verbose=Tr
 
 if __name__ == '__main__':
     model = _create(name='yolov5s', pretrained=True, channels=3, classes=80, autoshape=True, verbose=True)  # pretrained
-    # model = custom(path='path/to/model.pt')  # custom
+    # model = custom(path='path/to/model.pt') # custom
 
     # Verify inference
     from pathlib import Path

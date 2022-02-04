@@ -16,13 +16,14 @@ import torch
 
 
 def gsutil_getsize(url=''):
-    # gs://bucket/file size https://cloud.google.com/storage/docs/gsutil/commands/du
+    # gs://bucket/file size
+    # https://cloud.google.com/storage/docs/gsutil/commands/du
     s = subprocess.check_output(f'gsutil du {url}', shell=True).decode('utf-8')
     return eval(s.split(' ')[0]) if len(s) else 0  # bytes
 
-
 def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
-    # Attempts to download file from url or url2, checks and removes incomplete downloads < min_bytes
+    # Attempts to download file from url or url2, checks and removes incomplete
+    # downloads < min_bytes
     file = Path(file)
     assert_msg = f"Downloaded file '{file}' does not exist or size is < min_bytes={min_bytes}"
     try:  # url1
@@ -60,8 +61,8 @@ def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads i
         file.parent.mkdir(parents=True, exist_ok=True)  # make parent dir (if required)
         try:
             response = requests.get(f'https://api.github.com/repos/{repo}/releases/latest').json()  # github api
-            assets = [x['name'] for x in response['assets']]  # release assets, i.e. ['yolov5s.pt', 'yolov5m.pt', ...]
-            tag = response['tag_name']  # i.e. 'v1.0'
+            assets = [x['name'] for x in response['assets']]  # release assets, i.e.  ['yolov5s.pt', 'yolov5m.pt', ...]
+            tag = response['tag_name']  # i.e.  'v1.0'
         except:  # fallback plan
             assets = ['yolov5n.pt', 'yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt',
                       'yolov5n6.pt', 'yolov5s6.pt', 'yolov5m6.pt', 'yolov5l6.pt', 'yolov5x6.pt']
@@ -73,7 +74,8 @@ def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads i
         if name in assets:
             safe_download(file,
                           url=f'https://github.com/{repo}/releases/download/{tag}/{name}',
-                          # url2=f'https://storage.googleapis.com/{repo}/ckpt/{name}',  # backup url (optional)
+                          # url2=f'https://storage.googleapis.com/{repo}/ckpt/{name}',
+                          # # backup url (optional)
                           min_bytes=1E5,
                           error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/')
 
@@ -81,7 +83,8 @@ def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads i
 
 
 def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', file='tmp.zip'):
-    # Downloads a file from Google Drive. from yolov5.utils.downloads import *; gdrive_download()
+    # Downloads a file from Google Drive.  from yolov5.utils.downloads import
+    # *; gdrive_download()
     t = time.time()
     file = Path(file)
     cookie = Path('cookie')  # gdrive cookie

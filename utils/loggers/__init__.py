@@ -83,7 +83,8 @@ class Loggers():
         # Callback runs on train batch end
         if plots:
             if ni == 0:
-                if not sync_bn:  # tb.add_graph() --sync known issue https://github.com/ultralytics/yolov5/issues/3754
+                if not sync_bn:  # tb.add_graph() --sync known issue
+                                 # https://github.com/ultralytics/yolov5/issues/3754
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore')  # suppress jit trace warning
                         self.tb.add_graph(torch.jit.trace(de_parallel(model), imgs[0:1], strict=False), [])
@@ -153,7 +154,8 @@ class Loggers():
         if self.wandb:
             self.wandb.log({k: v for k, v in zip(self.keys[3:10], results)})  # log best.pt val results
             self.wandb.log({"Results": [wandb.Image(str(f), caption=f.name) for f in files]})
-            # Calling wandb.log. TODO: Refactor this into WandbLogger.log_model
+            # Calling wandb.log.  TODO: Refactor this into
+            # WandbLogger.log_model
             if not self.opt.evolve:
                 wandb.log_artifact(str(best if best.exists() else last), type='model',
                                    name='run_' + self.wandb.wandb_run.id + '_model',

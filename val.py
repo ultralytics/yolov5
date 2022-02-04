@@ -34,7 +34,6 @@ ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.datasets import create_dataloader
@@ -57,7 +56,8 @@ def save_one_txt(predn, save_conf, shape, file):
 
 
 def save_one_json(predn, jdict, path, class_map):
-    # Save one JSON result {"image_id": 42, "category_id": 18, "bbox": [258.15, 41.29, 348.26, 243.78], "score": 0.236}
+    # Save one JSON result {"image_id": 42, "category_id": 18, "bbox": [258.15,
+    # 41.29, 348.26, 243.78], "score": 0.236}
     image_id = int(path.stem) if path.stem.isnumeric() else path.stem
     box = xyxy2xywh(predn[:, :4])  # xywh
     box[:, :2] -= box[:, 2:] / 2  # xy center to top-left corner
@@ -100,7 +100,7 @@ def run(data,
         conf_thres=0.001,  # confidence threshold
         iou_thres=0.6,  # NMS IoU threshold
         task='val',  # train, val, test, speed or study
-        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        device='',  # cuda device, i.e.  0 or 0,1,2,3 or cpu
         workers=8,  # max dataloader workers (per RANK in DDP mode)
         single_cls=False,  # treat as single-class dataset
         augment=False,  # augmented inference
@@ -119,8 +119,7 @@ def run(data,
         save_dir=Path(''),
         plots=True,
         callbacks=Callbacks(),
-        compute_loss=None,
-        ):
+        compute_loss=None,):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -358,13 +357,15 @@ def main(opt):
         weights = opt.weights if isinstance(opt.weights, list) else [opt.weights]
         opt.half = True  # FP16 for fastest results
         if opt.task == 'speed':  # speed benchmarks
-            # python val.py --task speed --data coco.yaml --batch 1 --weights yolov5n.pt yolov5s.pt...
+            # python val.py --task speed --data coco.yaml --batch 1 --weights
+                                           # yolov5n.pt yolov5s.pt...
             opt.conf_thres, opt.iou_thres, opt.save_json = 0.25, 0.45, False
             for opt.weights in weights:
                 run(**vars(opt), plots=False)
 
         elif opt.task == 'study':  # speed vs mAP benchmarks
-            # python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n.pt yolov5s.pt...
+            # python val.py --task study --data coco.yaml --iou 0.7 --weights
+                                             # yolov5n.pt yolov5s.pt...
             for opt.weights in weights:
                 f = f'study_{Path(opt.data).stem}_{Path(opt.weights).stem}.txt'  # filename to save to
                 x, y = list(range(256, 1536 + 128, 128)), []  # x axis (image sizes), y axis
@@ -375,7 +376,6 @@ def main(opt):
                 np.savetxt(f, y, fmt='%10.4g')  # save
             os.system('zip -r study.zip study_*.txt')
             plot_val_study(x=x)  # plot
-
 
 if __name__ == "__main__":
     opt = parse_opt()

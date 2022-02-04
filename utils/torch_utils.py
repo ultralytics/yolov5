@@ -39,22 +39,23 @@ def torch_distributed_zero_first(local_rank: int):
 
 
 def date_modified(path=__file__):
-    # return human-readable file modification date, i.e. '2021-3-26'
+    # return human-readable file modification date, i.e.  '2021-3-26'
     t = datetime.datetime.fromtimestamp(Path(path).stat().st_mtime)
     return f'{t.year}-{t.month}-{t.day}'
 
 
 def git_describe(path=Path(__file__).parent):  # path must be a directory
-    # return human-readable git description, i.e. v5.0-5-g3e25f1e https://git-scm.com/docs/git-describe
+    # return human-readable git description, i.e.  v5.0-5-g3e25f1e
+                                                 # https://git-scm.com/docs/git-describe
     s = f'git -C {path} describe --tags --long --always'
     try:
         return subprocess.check_output(s, shell=True, stderr=subprocess.STDOUT).decode()[:-1]
     except subprocess.CalledProcessError as e:
         return ''  # not a git repository
 
-
 def device_count():
-    # Returns number of CUDA devices available. Safe version of torch.cuda.device_count(). Only works on Linux.
+    # Returns number of CUDA devices available.  Safe version of
+    # torch.cuda.device_count().  Only works on Linux.
     assert platform.system() == 'Linux', 'device_count() function only works on Linux'
     try:
         cmd = 'nvidia-smi -L | wc -l'
@@ -77,7 +78,7 @@ def select_device(device='', batch_size=0, newline=True):
 
     cuda = not cpu and torch.cuda.is_available()
     if cuda:
-        devices = device.split(',') if device else '0'  # range(torch.cuda.device_count())  # i.e. 0,1,6,7
+        devices = device.split(',') if device else '0'  # range(torch.cuda.device_count()) # i.e.  0,1,6,7
         n = len(devices)  # device count
         if n > 1 and batch_size > 0:  # check batch_size is divisible by device_count
             assert batch_size % n == 0, f'batch-size {batch_size} not multiple of GPU count {n}'
@@ -108,7 +109,7 @@ def profile(input, ops, n=10, device=None):
     #     input = torch.randn(16, 3, 640, 640)
     #     m1 = lambda x: x * torch.sigmoid(x)
     #     m2 = nn.SiLU()
-    #     profile(input, [m1, m2], n=100)  # profile over 100 iterations
+    #     profile(input, [m1, m2], n=100) # profile over 100 iterations
 
     results = []
     device = device or select_device()
@@ -136,7 +137,7 @@ def profile(input, ops, n=10, device=None):
                         _ = (sum(yi.sum() for yi in y) if isinstance(y, list) else y).sum().backward()
                         t[2] = time_sync()
                     except Exception as e:  # no backward method
-                        # print(e)  # for debug
+                        # print(e) # for debug
                         t[2] = float('nan')
                     tf += (t[1] - t[0]) * 1000 / n  # ms per op forward
                     tb += (t[2] - t[1]) * 1000 / n  # ms per op backward
@@ -159,7 +160,8 @@ def is_parallel(model):
 
 
 def de_parallel(model):
-    # De-parallelize a model: returns single-GPU model if model is of type DP or DDP
+    # De-parallelize a model: returns single-GPU model if model is of type DP
+    # or DDP
     return model.module if is_parallel(model) else model
 
 
@@ -201,7 +203,8 @@ def prune(model, amount=0.3):
 
 
 def fuse_conv_and_bn(conv, bn):
-    # Fuse convolution and batchnorm layers https://tehnokv.com/posts/fusing-batchnorm-and-conv/
+    # Fuse convolution and batchnorm layers
+    # https://tehnokv.com/posts/fusing-batchnorm-and-conv/
     fusedconv = nn.Conv2d(conv.in_channels,
                           conv.out_channels,
                           kernel_size=conv.kernel_size,
@@ -224,15 +227,15 @@ def fuse_conv_and_bn(conv, bn):
 
 
 def model_info(model, verbose=False, img_size=640):
-    # Model information. img_size may be int or list, i.e. img_size=640 or img_size=[640, 320]
+    # Model information.  img_size may be int or list, i.e.  img_size=640 or
+    # img_size=[640, 320]
     n_p = sum(x.numel() for x in model.parameters())  # number parameters
     n_g = sum(x.numel() for x in model.parameters() if x.requires_grad)  # number gradients
     if verbose:
         print(f"{'layer':>5} {'name':>40} {'gradient':>9} {'parameters':>12} {'shape':>20} {'mu':>10} {'sigma':>10}")
         for i, (name, p) in enumerate(model.named_parameters()):
             name = name.replace('module_list.', '')
-            print('%5g %40s %9s %12g %20s %10.3g %10.3g' %
-                  (i, name, p.requires_grad, p.numel(), list(p.shape), p.mean(), p.std()))
+            print('%5g %40s %9s %12g %20s %10.3g %10.3g' % (i, name, p.requires_grad, p.numel(), list(p.shape), p.mean(), p.std()))
 
     try:  # FLOPs
         from thop import profile
@@ -259,9 +262,9 @@ def scale_img(img, ratio=1.0, same_shape=False, gs=32):  # img(16,3,256,416)
             h, w = (math.ceil(x * ratio / gs) * gs for x in (h, w))
         return F.pad(img, [0, w - s[1], 0, h - s[0]], value=0.447)  # value = imagenet mean
 
-
 def copy_attr(a, b, include=(), exclude=()):
-    # Copy attributes from b to a, options to only include [...] and to exclude [...]
+    # Copy attributes from b to a, options to only include [...] and to exclude
+    # [...]
     for k, v in b.__dict__.items():
         if (len(include) and k not in include) or k.startswith('_') or k in exclude:
             continue
@@ -272,7 +275,7 @@ def copy_attr(a, b, include=(), exclude=()):
 class EarlyStopping:
     # YOLOv5 simple early stopper
     def __init__(self, patience=30):
-        self.best_fitness = 0.0  # i.e. mAP
+        self.best_fitness = 0.0  # i.e.  mAP
         self.best_epoch = 0
         self.patience = patience or float('inf')  # epochs to wait after fitness stops improving to stop
         self.possible_stop = False  # possible stop may occur next epoch
@@ -306,7 +309,7 @@ class ModelEMA:
         # Create EMA
         self.ema = deepcopy(de_parallel(model)).eval()  # FP32 EMA
         # if next(model.parameters()).device.type != 'cpu':
-        #     self.ema.half()  # FP16 EMA
+        #     self.ema.half() # FP16 EMA
         self.updates = updates  # number of EMA updates
         self.decay = lambda x: decay * (1 - math.exp(-x / 2000))  # decay exponential ramp (to help early epochs)
         for p in self.ema.parameters():
@@ -331,7 +334,8 @@ class ModelEMA:
 
 
 def intersect_dicts(da, db, exclude=()):
-    # Dictionary intersection of matching keys and shapes, omitting 'exclude' keys, using da values
+    # Dictionary intersection of matching keys and shapes, omitting 'exclude'
+    # keys, using da values
     return {k: v for k, v in da.items() if k in db and not any(x in k for x in exclude) and v.shape == db[k].shape}
 
 

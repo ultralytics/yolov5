@@ -63,8 +63,7 @@ class MixConv2d(nn.Module):
             a[0] = 1
             c_ = np.linalg.lstsq(a, b, rcond=None)[0].round()  # solve for equal weight indices, ax = b
 
-        self.m = nn.ModuleList(
-            [nn.Conv2d(c1, int(c_), k, s, k // 2, groups=math.gcd(c1, int(c_)), bias=False) for k, c_ in zip(k, c_)])
+        self.m = nn.ModuleList([nn.Conv2d(c1, int(c_), k, s, k // 2, groups=math.gcd(c1, int(c_)), bias=False) for k, c_ in zip(k, c_)])
         self.bn = nn.BatchNorm2d(c2)
         self.act = nn.SiLU()
 
@@ -81,16 +80,16 @@ class Ensemble(nn.ModuleList):
         y = []
         for module in self:
             y.append(module(x, augment, profile, visualize)[0])
-        # y = torch.stack(y).max(0)[0]  # max ensemble
-        # y = torch.stack(y).mean(0)  # mean ensemble
+        # y = torch.stack(y).max(0)[0] # max ensemble
+        # y = torch.stack(y).mean(0) # mean ensemble
         y = torch.cat(y, 1)  # nms ensemble
         return y, None  # inference, train output
-
 
 def attempt_load(weights, map_location=None, inplace=True, fuse=True):
     from models.yolo import Detect, Model
 
-    # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a
+    # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a]
+    # or weights=a
     model = Ensemble()
     for w in weights if isinstance(weights, list) else [weights]:
         ckpt = torch.load(attempt_download(w), map_location=map_location)  # load

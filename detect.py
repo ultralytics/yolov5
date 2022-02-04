@@ -38,7 +38,6 @@ ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-
 from models.common import DetectMultiBackend
 from models.experimental import attempt_load
 from utils.datasets import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
@@ -57,7 +56,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         conf_thres=0.25,  # confidence threshold
         iou_thres=0.45,  # NMS IOU threshold
         max_det=1000,  # maximum detections per image
-        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        device='',  # cuda device, i.e.  0 or 0,1,2,3 or cpu
         view_img=False,  # show results
         save_txt=False,  # save results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
@@ -76,8 +75,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         hide_conf=False,  # hide confidences
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
-        polygon=False
-        ):
+        polygon=False):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
@@ -157,7 +155,8 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         dt[2] += time_sync() - t3
 
         # Second-stage classifier (optional)
-        # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
+        # pred = utils.general.apply_classifier(pred, classifier_model, im,
+        # im0s)
 
         # Process predictions
         for i, det in enumerate(pred):  # per image
@@ -251,7 +250,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
     if update:
         strip_optimizer(weights)  # update model (to fix SourceChangeWarning)
-
 
 def parse_opt():
     parser = argparse.ArgumentParser()

@@ -15,8 +15,7 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
-# ROOT = ROOT.relative_to(Path.cwd())  # relative
-
+# ROOT = ROOT.relative_to(Path.cwd()) # relative
 from models.common import *
 from models.experimental import *
 from utils.autoanchor import check_anchor_order
@@ -44,7 +43,7 @@ class Detect(nn.Module):
         self.anchor_grid = [torch.zeros(1)] * self.nl  # init anchor grid
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
-        self.inplace = inplace  # use in-place ops (e.g. slice assignment)
+        self.inplace = inplace  # use in-place ops (e.g.  slice assignment)
 
     def forward(self, x):
         z = []  # inference output
@@ -61,7 +60,8 @@ class Detect(nn.Module):
                 if self.inplace:
                     y[..., 0:2] = (y[..., 0:2] * 2 - 0.5 + self.grid[i]) * self.stride[i]  # xy
                     y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
-                else:  # for YOLOv5 on AWS Inferentia https://github.com/ultralytics/yolov5/pull/2953
+                else:  # for YOLOv5 on AWS Inferentia
+                       # https://github.com/ultralytics/yolov5/pull/2953
                     xy = (y[..., 0:2] * 2 - 0.5 + self.grid[i]) * self.stride[i]  # xy
                     wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
                     y = torch.cat((xy, wh, y[..., 4:]), -1)
@@ -133,7 +133,8 @@ class Model(nn.Module):
         for si, fi in zip(s, f):
             xi = scale_img(x.flip(fi) if fi else x, si, gs=int(self.stride.max()))
             yi = self._forward_once(xi)[0]  # forward
-            # cv2.imwrite(f'img_{si}.jpg', 255 * xi[0].cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
+            # cv2.imwrite(f'img_{si}.jpg', 255 *
+                                                      # xi[0].cpu().numpy().transpose((1, 2, 0))[:, :, ::-1]) # save
             yi = self._descale_pred(yi, fi, si, img_size)
             y.append(yi)
         y = self._clip_augmented(y)  # clip augmented tails
@@ -153,7 +154,8 @@ class Model(nn.Module):
         return x
 
     def _descale_pred(self, p, flips, scale, img_size):
-        # de-scale predictions following augmented inference (inverse operation)
+        # de-scale predictions following augmented inference (inverse
+        # operation)
         if self.inplace:
             p[..., :4] /= scale  # de-scale
             if flips == 2:
@@ -195,7 +197,8 @@ class Model(nn.Module):
 
     def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
         # https://arxiv.org/abs/1708.02002 section 3.3
-        # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
+                                                  # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:,
+                                                  # 0]).long(), minlength=nc) + 1.
         m = self.model[-1]  # Detect() module
         for mi, s in zip(m.m, m.stride):  # from
             b = mi.bias.view(m.na, -1)  # conv.bias(255) to (3,85)
@@ -207,13 +210,13 @@ class Model(nn.Module):
         m = self.model[-1]  # Detect() module
         for mi in m.m:  # from
             b = mi.bias.detach().view(m.na, -1).T  # conv.bias(255) to (3,85)
-            LOGGER.info(
-                ('%6g Conv2d.bias:' + '%10.3g' * 6) % (mi.weight.shape[1], *b[:5].mean(1).tolist(), b[5:].mean()))
+            LOGGER.info(('%6g Conv2d.bias:' + '%10.3g' * 6) % (mi.weight.shape[1], *b[:5].mean(1).tolist(), b[5:].mean()))
 
     # def _print_weights(self):
     #     for m in self.model.modules():
     #         if type(m) is Bottleneck:
-    #             LOGGER.info('%10.3g' % (m.w.detach().sigmoid() * 2))  # shortcut weights
+    #             LOGGER.info('%10.3g' % (m.w.detach().sigmoid() * 2)) #
+    #             shortcut weights
 
     def fuse(self):  # fuse model Conv2d() + BatchNorm2d() layers
         LOGGER.info('Fusing layers... ')
@@ -229,7 +232,8 @@ class Model(nn.Module):
         model_info(self, verbose, img_size)
 
     def _apply(self, fn):
-        # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
+        # Apply to(), cpu(), cuda(), half() to model tensors that are not
+        # parameters or registered buffers
         self = super()._apply(fn)
         m = self.model[-1]  # Detect()
         if isinstance(m, Detect):
@@ -306,12 +310,13 @@ class Polygon_Detect(Detect):
         super().__init__(nc, anchors, ch, inplace)
         self.no = nc + 9  # number of outputs per anchor
         a = torch.tensor(anchors).float().view(self.nl, -1, 2)
-        # self.register_buffer('anchor_grid', a.clone().view(self.nl, 1, -1, 1, 1, 2))  # shape(nl,1,na,1,1,2)
+        # self.register_buffer('anchor_grid', a.clone().view(self.nl, 1, -1, 1,
+        # 1, 2)) # shape(nl,1,na,1,1,2)
         self.anchor_grid = a.clone().view(self.nl, 1, -1, 1, 1, 2)  # shape(nl,1,na,1,1,2)
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
 
     def forward(self, x):
-        # x = x.copy()  # for profiling
+        # x = x.copy() # for profiling
         z = []  # inference output
         for i in range(self.nl):
             x[i] = self.m[i](x[i])  # conv
@@ -324,7 +329,8 @@ class Polygon_Detect(Detect):
 
                 y = x[i].clone()
                 y[..., 8:] = y[..., 8:].sigmoid()
-                # y[..., 8], y[..., 9:] = y[..., 8].sigmoid(), y[..., 9:].softmax(dim=-1)    # softmax loss for classes
+                # y[..., 8], y[..., 9:] = y[..., 8].sigmoid(), y[...,
+                # 9:].softmax(dim=-1) # softmax loss for classes
                 if self.inplace:
                     y[..., :8] = (y[..., :8] + self.grid[i].repeat((1, 1, 1, 1, 4))) * self.stride[i]  # xyxyxyxy
                 else:
@@ -345,7 +351,8 @@ class Polygon_Model(Model):
         super().__init__(cfg, ch, nc, anchors,polygon_train=True)
 
     def _descale_pred(self, p, flips, scale, img_size):
-        # de-scale predictions following augmented inference (inverse operation)
+        # de-scale predictions following augmented inference (inverse
+        # operation)
         if self.inplace:
             p[..., :8] /= scale  # de-scale
             if flips == 2:
@@ -363,7 +370,8 @@ class Polygon_Model(Model):
 
     def _initialize_biases(self, cf=None):  # initialize biases into Polygon_Detect(), cf is class frequency
         # https://arxiv.org/abs/1708.02002 section 3.3
-        # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
+                                                  # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:,
+                                                  # 0]).long(), minlength=nc) + 1.
         m = self.model[-1]  # Polygon_Detect() module
         for mi, s in zip(m.m, m.stride):  # from
             b = mi.bias.view(m.na, -1)  # conv.bias(267) to (3,89)
@@ -375,8 +383,7 @@ class Polygon_Model(Model):
         m = self.model[-1]  # Polygon_Detect() module
         for mi in m.m:  # from
             b = mi.bias.detach().view(m.na, -1).T  # conv.bias(267) to (3,89)
-            LOGGER.info(
-                ('%6g Conv2d.bias:' + '%10.3g' * 10) % (mi.weight.shape[1], *b[:9].mean(1).tolist(), b[9:].mean()))
+            LOGGER.info(('%6g Conv2d.bias:' + '%10.3g' * 10) % (mi.weight.shape[1], *b[:9].mean(1).tolist(), b[9:].mean()))
 
     def nms(self, mode=True):  # add or remove Polygon_NMS module
         present = type(self.model[-1]) is Polygon_NMS  # last layer is Polygon_NMS

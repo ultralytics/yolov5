@@ -1,7 +1,7 @@
 from utils.autoanchor import *
 
-# Ancillary functions with polygon anchor boxes-------------------------------------------------------------------------------------------
-
+# Ancillary functions with polygon anchor
+# boxes-------------------------------------------------------------------------------------------
 def polygon_check_anchors(dataset, model, thr=4.0, imgsz=640):
     # Check anchor fit to data, recompute if necessary
     m = model.module.model[-1] if hasattr(model, 'module') else model.model[-1]  # Polygon_Detect()
@@ -9,8 +9,8 @@ def polygon_check_anchors(dataset, model, thr=4.0, imgsz=640):
     scale = np.random.uniform(0.9, 1.1, size=(shapes.shape[0], 1))  # augment scale
     prefix = colorstr('autoanchor: ')
     print(f'\n{prefix}Analyzing anchors... ', end='')
-    original_wh = [np.array([l[:, 1::2].max(axis=1)-l[:, 1::2].min(axis=1),
-                     l[:, 2::2].max(axis=1)-l[:, 2::2].min(axis=1)]).T for l in dataset.labels]
+    original_wh = [np.array([l[:, 1::2].max(axis=1) - l[:, 1::2].min(axis=1),
+                     l[:, 2::2].max(axis=1) - l[:, 2::2].min(axis=1)]).T for l in dataset.labels]
     wh = torch.tensor(np.concatenate([l * s for s, l in zip(shapes * scale, original_wh)])).float()  # wh of minimum outter bounding box
 
     def metric(k):  # compute metric
@@ -45,7 +45,6 @@ def polygon_check_anchors(dataset, model, thr=4.0, imgsz=640):
     print('')  # newline
 
 
-
 def polygon_kmean_anchors(path='./data/polygon_coco.yaml', n=9, img_size=640, thr=4.0, gen=1000, verbose=True):
     """ Create kmeans-evolved anchors from polygon-enabled training dataset
        Utilize the minimum outter bounding box as approximations
@@ -72,7 +71,7 @@ def polygon_kmean_anchors(path='./data/polygon_coco.yaml', n=9, img_size=640, th
     def metric(k, wh):  # compute metrics
         r = wh[:, None] / k[None]
         x = torch.min(r, 1. / r).min(2)[0]  # ratio metric
-        # x = wh_iou(wh, torch.tensor(k))  # iou metric
+        # x = wh_iou(wh, torch.tensor(k)) # iou metric
         return x, x.max(1)[0]  # x, best_x
 
     def anchor_fitness(k):  # mutation fitness
@@ -100,8 +99,8 @@ def polygon_kmean_anchors(path='./data/polygon_coco.yaml', n=9, img_size=640, th
 
     # Get label wh
     shapes = img_size * dataset.shapes / dataset.shapes.max(1, keepdims=True)
-    original_wh = [np.array([l[:, 1::2].max(axis=1)-l[:, 1::2].min(axis=1),
-                     l[:, 2::2].max(axis=1)-l[:, 2::2].min(axis=1)]).T for l in dataset.labels]
+    original_wh = [np.array([l[:, 1::2].max(axis=1) - l[:, 1::2].min(axis=1),
+                     l[:, 2::2].max(axis=1) - l[:, 2::2].min(axis=1)]).T for l in dataset.labels]
     wh0 = np.concatenate([l * s for s, l in zip(shapes, original_wh)])  # wh of minimum outter bounding box
 
     # Filter
@@ -109,7 +108,8 @@ def polygon_kmean_anchors(path='./data/polygon_coco.yaml', n=9, img_size=640, th
     if i:
         print(f'{prefix}WARNING: Extremely small objects found. {i} of {len(wh0)} labels are < 3 pixels in size.')
     wh = wh0[(wh0 >= 3.0).any(1)]  # filter > 3 pixels
-    # wh = wh * (np.random.rand(wh.shape[0], 1) * 0.9 + 0.1)  # multiply by random scale 0-1
+    # wh = wh * (np.random.rand(wh.shape[0], 1) * 0.9 + 0.1) # multiply by
+                                     # random scale 0-1
 
     # Kmeans calculation
     print(f'{prefix}Running kmeans for {n} anchors on {len(wh)} points...')
@@ -124,11 +124,11 @@ def polygon_kmean_anchors(path='./data/polygon_coco.yaml', n=9, img_size=640, th
     # Plot
     # k, d = [None] * 20, [None] * 20
     # for i in tqdm(range(1, 21)):
-    #     k[i-1], d[i-1] = kmeans(wh / s, i)  # points, mean distance
+    #     k[i-1], d[i-1] = kmeans(wh / s, i) # points, mean distance
     # fig, ax = plt.subplots(1, 2, figsize=(14, 7), tight_layout=True)
     # ax = ax.ravel()
     # ax[0].plot(np.arange(1, 21), np.array(d) ** 2, marker='.')
-    # fig, ax = plt.subplots(1, 2, figsize=(14, 7))  # plot wh
+    # fig, ax = plt.subplots(1, 2, figsize=(14, 7)) # plot wh
     # ax[0].hist(wh[wh[:, 0]<100, 0],400)
     # ax[1].hist(wh[wh[:, 1]<100, 1],400)
     # fig.savefig('wh.png', dpi=200)

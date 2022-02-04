@@ -49,7 +49,6 @@ def get_hash(paths):
     h.update(''.join(paths).encode())  # hash paths
     return h.hexdigest()  # return hash
 
-
 def exif_size(img):
     # Returns exif-corrected PIL size
     s = img.size  # (width, height)
@@ -157,7 +156,8 @@ class _RepeatSampler:
 
 
 class LoadImages:
-    # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
+    # YOLOv5 image/video dataloader, i.e.  `python detect.py --source
+    # image.jpg/vid.mp4`
     def __init__(self, path, img_size=640, stride=32, auto=True):
         p = str(Path(path).resolve())  # os-agnostic absolute path
         if '*' in p:
@@ -237,9 +237,8 @@ class LoadImages:
     def __len__(self):
         return self.nf  # number of files
 
-
 class LoadWebcam:  # for inference
-    # YOLOv5 local webcam dataloader, i.e. `python detect.py --source 0`
+    # YOLOv5 local webcam dataloader, i.e.  `python detect.py --source 0`
     def __init__(self, pipe='0', img_size=640, stride=32):
         self.img_size = img_size
         self.stride = stride
@@ -281,7 +280,8 @@ class LoadWebcam:  # for inference
 
 
 class LoadStreams:
-    # YOLOv5 streamloader, i.e. `python detect.py --source 'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP streams`
+    # YOLOv5 streamloader, i.e.  `python detect.py --source
+    # 'rtsp://example.com/media.mp4' # RTSP, RTMP, HTTP streams`
     def __init__(self, sources='streams.txt', img_size=640, stride=32, auto=True):
         self.mode = 'stream'
         self.img_size = img_size
@@ -304,7 +304,7 @@ class LoadStreams:
                 check_requirements(('pafy', 'youtube_dl'))
                 import pafy
                 s = pafy.new(s).getbest(preftype="mp4").url  # YouTube URL
-            s = eval(s) if s.isnumeric() else s  # i.e. s = '0' local webcam
+            s = eval(s) if s.isnumeric() else s  # i.e.  s = '0' local webcam
             cap = cv2.VideoCapture(s)
             assert cap.isOpened(), f'{st}Failed to open {s}'
             w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -368,7 +368,6 @@ class LoadStreams:
     def __len__(self):
         return len(self.sources)  # 1E12 frames = 32 streams at 30 FPS for 30 years
 
-
 def img2label_paths(img_paths):
     # Define label paths as a function of image paths
     sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
@@ -376,7 +375,8 @@ def img2label_paths(img_paths):
 
 
 class LoadImagesAndLabels(Dataset):
-    # YOLOv5 train_loader/val_loader, loads images and labels for training and validation
+    # YOLOv5 train_loader/val_loader, loads images and labels for training and
+    # validation
     cache_version = 0.6  # dataset labels *.cache version
 
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
@@ -398,17 +398,19 @@ class LoadImagesAndLabels(Dataset):
                 p = Path(p)  # os-agnostic
                 if p.is_dir():  # dir
                     f += glob.glob(str(p / '**' / '*.*'), recursive=True)
-                    # f = list(p.rglob('*.*'))  # pathlib
+                    # f = list(p.rglob('*.*')) # pathlib
                 elif p.is_file():  # file
                     with open(p) as t:
                         t = t.read().strip().splitlines()
                         parent = str(p.parent) + os.sep
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
-                        # f += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
+                        # f += [p.parent / x.lstrip(os.sep) for x in t] # local
+                                                                                                                      # to global path (pathlib)
                 else:
                     raise Exception(f'{prefix}{p} does not exist')
             self.img_files = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
-            # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in IMG_FORMATS])  # pathlib
+            # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in
+            # IMG_FORMATS]) # pathlib
             assert self.img_files, f'{prefix}No images found'
         except Exception as e:
             raise Exception(f'{prefix}Error loading data from {path}: {e}\nSee {HELP_URL}')
@@ -484,7 +486,8 @@ class LoadImagesAndLabels(Dataset):
 
             self.batch_shapes = np.ceil(np.array(shapes) * img_size / stride + pad).astype(np.int) * stride
 
-        # Cache images into memory for faster training (WARNING: large datasets may exceed system RAM)
+        # Cache images into memory for faster training (WARNING: large datasets
+        # may exceed system RAM)
         self.imgs, self.img_npy = [None] * n, [None] * n
         if cache_images:
             if cache_images == 'disk':
@@ -548,7 +551,8 @@ class LoadImagesAndLabels(Dataset):
     # def __iter__(self):
     #     self.count = -1
     #     print('ran dataset iter')
-    #     #self.shuffled_vector = np.random.permutation(self.nF) if self.augment else np.arange(self.nF)
+    #     #self.shuffled_vector = np.random.permutation(self.nF) if
+    #     self.augment else np.arange(self.nF)
     #     return self
 
     def __getitem__(self, index):
@@ -612,7 +616,7 @@ class LoadImagesAndLabels(Dataset):
 
             # Cutouts
             # labels = cutout(img, labels, p=0.5)
-            # nl = len(labels)  # update after cutout
+            # nl = len(labels) # update after cutout
 
         labels_out = torch.zeros((nl, 6))
         if nl:
@@ -640,11 +644,10 @@ class LoadImagesAndLabels(Dataset):
         ho = torch.tensor([[0.0, 0, 0, 1, 0, 0]])
         wo = torch.tensor([[0.0, 0, 1, 0, 0, 0]])
         s = torch.tensor([[1, 1, 0.5, 0.5, 0.5, 0.5]])  # scale
-        for i in range(n):  # zidane torch.zeros(16,3,720,1280)  # BCHW
+        for i in range(n):  # zidane torch.zeros(16,3,720,1280) # BCHW
             i *= 4
             if random.random() < 0.5:
-                im = F.interpolate(img[i].unsqueeze(0).float(), scale_factor=2.0, mode='bilinear', align_corners=False)[
-                    0].type(img[i].type())
+                im = F.interpolate(img[i].unsqueeze(0).float(), scale_factor=2.0, mode='bilinear', align_corners=False)[0].type(img[i].type())
                 l = label[i]
             else:
                 im = torch.cat((torch.cat((img[i], img[i + 1]), 1), torch.cat((img[i + 2], img[i + 3]), 1)), 2)
@@ -658,7 +661,8 @@ class LoadImagesAndLabels(Dataset):
         return torch.stack(img4, 0), torch.cat(label4, 0), path4, shapes4
 
 
-# Ancillary functions --------------------------------------------------------------------------------------------------
+# Ancillary functions
+# --------------------------------------------------------------------------------------------------
 def load_image(self, i):
     # loads 1 image from dataset index 'i', returns im, original hw, resized hw
     im = self.imgs[i]
@@ -679,9 +683,9 @@ def load_image(self, i):
     else:
         return self.imgs[i], self.img_hw0[i], self.img_hw[i]  # im, hw_original, hw_resized
 
-
 def load_mosaic(self, index):
-    # YOLOv5 4-mosaic loader. Loads 1 image + 3 random images into a 4-image mosaic
+    # YOLOv5 4-mosaic loader.  Loads 1 image + 3 random images into a 4-image
+    # mosaic
     labels4, segments4 = [], []
     s = self.img_size
     yc, xc = (int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border)  # mosaic center x, y
@@ -722,7 +726,7 @@ def load_mosaic(self, index):
     labels4 = np.concatenate(labels4, 0)
     for x in (labels4[:, 1:], *segments4):
         np.clip(x, 0, 2 * s, out=x)  # clip when using random_perspective()
-    # img4, labels4 = replicate(img4, labels4)  # replicate
+    # img4, labels4 = replicate(img4, labels4) # replicate
 
     # Augment
     img4, labels4, segments4 = copy_paste(img4, labels4, segments4, p=self.hyp['copy_paste'])
@@ -738,7 +742,8 @@ def load_mosaic(self, index):
 
 
 def load_mosaic9(self, index):
-    # YOLOv5 9-mosaic loader. Loads 1 image + 8 random images into a 9-image mosaic
+    # YOLOv5 9-mosaic loader.  Loads 1 image + 8 random images into a 9-image
+    # mosaic
     labels9, segments9 = [], []
     s = self.img_size
     indices = [index] + random.choices(self.indices, k=8)  # 8 additional image indices
@@ -797,7 +802,7 @@ def load_mosaic9(self, index):
 
     for x in (labels9[:, 1:], *segments9):
         np.clip(x, 0, 2 * s, out=x)  # clip when using random_perspective()
-    # img9, labels9 = replicate(img9, labels9)  # replicate
+    # img9, labels9 = replicate(img9, labels9) # replicate
 
     # Augment
     img9, labels9 = random_perspective(img9, labels9, segments9,
@@ -817,7 +822,6 @@ def create_folder(path='./new'):
         shutil.rmtree(path)  # delete output folder
     os.makedirs(path)  # make new output folder
 
-
 def flatten_recursive(path='../datasets/coco128'):
     # Flatten a recursive directory by bringing all files to top level
     new_path = Path(path + '_flat')
@@ -827,7 +831,8 @@ def flatten_recursive(path='../datasets/coco128'):
 
 
 def extract_boxes(path='../datasets/coco128'):  # from utils.datasets import *; extract_boxes()
-    # Convert detection dataset into classification dataset, with one directory per class
+    # Convert detection dataset into classification dataset, with one directory
+                                                  # per class
     path = Path(path)  # images dir
     shutil.rmtree(path / 'classifier') if (path / 'classifier').is_dir() else None  # remove existing
     files = list(path.rglob('*.*'))
@@ -851,7 +856,7 @@ def extract_boxes(path='../datasets/coco128'):  # from utils.datasets import *; 
                         f.parent.mkdir(parents=True)
 
                     b = x[1:] * [w, h, w, h]  # box
-                    # b[2:] = b[2:].max()  # rectangle to square
+                    # b[2:] = b[2:].max() # rectangle to square
                     b[2:] = b[2:] * 1.2 + 3  # pad
                     b = xywh2xyxy(b.reshape(-1, 4)).ravel().astype(np.int)
 
@@ -882,7 +887,6 @@ def autosplit(path='../datasets/coco128/images', weights=(0.9, 0.1, 0.0), annota
         if not annotated_only or Path(img2label_paths([str(img)])[0]).exists():  # check label
             with open(path.parent / txt[i], 'a') as f:
                 f.write('./' + img.relative_to(path.parent).as_posix() + '\n')  # add image to txt file
-
 
 def verify_image_label(args):
     # Verify one image-label pair
@@ -952,7 +956,8 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         return [[int(c), *(round(x, 4) for x in points)] for c, *points in labels]
 
     def unzip(path):
-        # Unzip data.zip TODO: CONSTRAINT: path/to/abc.zip MUST unzip to 'path/to/abc/'
+        # Unzip data.zip TODO: CONSTRAINT: path/to/abc.zip MUST unzip to
+        # 'path/to/abc/'
         if str(path).endswith('.zip'):  # path is data.zip
             assert Path(path).is_file(), f'Error unzipping {path}, file not found'
             ZipFile(path).extractall(path=path.parent)  # unzip
@@ -962,7 +967,8 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
             return False, None, path
 
     def hub_ops(f, max_dim=1920):
-        # HUB ops for 1 image 'f': resize and save at reduced quality in /dataset-hub for web/app viewing
+        # HUB ops for 1 image 'f': resize and save at reduced quality in
+        # /dataset-hub for web/app viewing
         f_new = im_dir / Path(f).name  # dataset-hub image filename
         try:  # use PIL
             im = Image.open(f)
@@ -989,7 +995,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
     stats = {'nc': data['nc'], 'names': data['names']}  # statistics dictionary
     for split in 'train', 'val', 'test':
         if data.get(split) is None:
-            stats[split] = None  # i.e. no test set
+            stats[split] = None  # i.e.  no test set
             continue
         x = []
         dataset = LoadImagesAndLabels(data[split])  # load dataset

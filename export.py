@@ -61,7 +61,6 @@ ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-
 from models.common import Conv
 from models.experimental import attempt_load
 from models.yolo import Detect
@@ -113,7 +112,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         # Checks
         model_onnx = onnx.load(f)  # load onnx model
         onnx.checker.check_model(model_onnx)  # check onnx model
-        # LOGGER.info(onnx.helper.printable_graph(model_onnx.graph))  # print
+        # LOGGER.info(onnx.helper.printable_graph(model_onnx.graph)) # print
 
         # Simplify
         if simplify:
@@ -122,8 +121,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
                 import onnxsim
 
                 LOGGER.info(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
-                model_onnx, check = onnxsim.simplify(
-                    model_onnx,
+                model_onnx, check = onnxsim.simplify(model_onnx,
                     dynamic_input_shape=dynamic,
                     input_shapes={'images': list(im.shape)} if dynamic else None)
                 assert check, 'assert check failed'
@@ -260,7 +258,8 @@ def export_saved_model(model, im, file, dynamic,
 
 
 def export_pb(keras_model, im, file, prefix=colorstr('TensorFlow GraphDef:')):
-    # YOLOv5 TensorFlow GraphDef *.pb export https://github.com/leimao/Frozen_Graph_TensorFlow
+    # YOLOv5 TensorFlow GraphDef *.pb export
+    # https://github.com/leimao/Frozen_Graph_TensorFlow
     try:
         import tensorflow as tf
         from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
@@ -359,8 +358,7 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
 
         json = open(f_json).read()
         with open(f_json, 'w') as j:  # sort JSON Identity_* in ascending order
-            subst = re.sub(
-                r'{"outputs": {"Identity.?.?": {"name": "Identity.?.?"}, '
+            subst = re.sub(r'{"outputs": {"Identity.?.?": {"name": "Identity.?.?"}, '
                 r'"Identity.?.?": {"name": "Identity.?.?"}, '
                 r'"Identity.?.?": {"name": "Identity.?.?"}, '
                 r'"Identity.?.?": {"name": "Identity.?.?"}}}',
@@ -382,7 +380,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         weights=ROOT / 'yolov5s.pt',  # weights path
         imgsz=(640, 640),  # image (height, width)
         batch_size=1,  # batch size
-        device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        device='cpu',  # cuda device, i.e.  0 or 0,1,2,3 or cpu
         include=('torchscript', 'onnx'),  # include formats
         half=False,  # FP16 half-precision export
         inplace=False,  # set YOLOv5 Detect() inplace=True
@@ -480,7 +478,6 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
                 f"\nValidate:        python val.py --weights {f[-1]}"
                 f"\nVisualize:       https://netron.app")
     return f  # return list of exported files/dirs
-
 
 def parse_opt():
     parser = argparse.ArgumentParser()

@@ -31,7 +31,7 @@ def run(data,
          conf_thres=0.001,  # confidence threshold
          iou_thres=0.6,  # NMS IoU threshold
          task='val',  # train, val, test, speed or study
-         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+         device='',  # cuda device, i.e.  0 or 0,1,2,3 or cpu
          single_cls=False,  # treat as single-class dataset
          augment=False,  # augmented inference
          verbose=False,  # verbose output
@@ -48,8 +48,7 @@ def run(data,
          save_dir=Path(''),
          plots=True,
          callbacks=None,
-         compute_loss=None,
-         ):
+         compute_loss=None,):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by polygon_train.py
@@ -68,7 +67,8 @@ def run(data,
         gs = max(int(model.stride.max()), 32)  # grid size (max stride)
         imgsz = check_img_size(imgsz, s=gs)  # check image size
 
-        # Multi-GPU disabled, incompatible with .half() https://github.com/ultralytics/yolov5/issues/99
+        # Multi-GPU disabled, incompatible with .half()
+        # https://github.com/ultralytics/yolov5/issues/99
         # if device.type != 'cpu' and torch.cuda.device_count() > 1:
         #     model = nn.DataParallel(model)
 
@@ -84,7 +84,7 @@ def run(data,
             data = yaml.safe_load(f)
     check_dataset(data)  # check
     nc = 1 if single_cls else int(data['nc'])  # number of classes
-    is_coco = data['val'].endswith('coco/val2017.txt') and (nc==80)  # COCO dataset
+    is_coco = data['val'].endswith('coco/val2017.txt') and (nc == 80)  # COCO dataset
     iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
     index_ap50 = 0   # index for ap 0.5
     niou = iouv.numel()
@@ -127,7 +127,8 @@ def run(data,
         targets[:, 2:] *= torch.Tensor([width, height, width, height, width, height, width, height]).to(device)  # to pixels
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
         t = time_sync()
-        # out is list of detections, on (n,10) tensor per image [xyxyxyxy, conf, cls]
+        # out is list of detections, on (n,10) tensor per image [xyxyxyxy,
+        # conf, cls]
 
         # polygon_non_max_suppression takes most of the time to operate
         # For UCAS-AOD dataset, multi_label=False
@@ -165,7 +166,8 @@ def run(data,
 
             # Append to pycocotools JSON dictionary
             if save_json:
-                # [{"image_id": 42, "category_id": 18, "polygon_box": [x1, y1, x2, y2, x3, y3, x4, y4], "score": 0.236}, ...
+                # [{"image_id": 42, "category_id": 18, "polygon_box": [x1, y1,
+                # x2, y2, x3, y3, x4, y4], "score": 0.236}, ...
                 image_id = int(path.stem) if path.stem.isnumeric() else path.stem
                 box = predn[:, :8]  # xyxyxyxy
                 for p, b in zip(pred.tolist(), box.tolist()):
@@ -195,7 +197,7 @@ def run(data,
                     if pi.shape[0]:
                         # Prediction to target ious
                         ious, i = polygon_box_iou(predn[pi, :8], tbox[ti], device=device).max(1)  # best ious, indices
-                        ious=ious.cuda()
+                        ious = ious.cuda()
                         # Append detections
                         detected_set = set()
                         for j in (ious > iouv[index_ap50]).nonzero(as_tuple=False):
@@ -304,7 +306,8 @@ if __name__ == '__main__':
                  save_json=False, plots=False)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
-        # python test.py --task study --data coco.yaml --iou 0.7 --weights yolov5s.pt yolov5m.pt yolov5l.pt yolov5x.pt
+        # python test.py --task study --data coco.yaml --iou 0.7 --weights
+                                     # yolov5s.pt yolov5m.pt yolov5l.pt yolov5x.pt
         x = list(range(256, 1536 + 128, 128))  # x axis (image sizes)
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
             f = f'study_{Path(opt.data).stem}_{Path(w).stem}.txt'  # filename to save to

@@ -27,7 +27,6 @@ RANK = int(os.getenv('RANK', -1))
 matplotlib.rc('font', **{'size': 11})
 matplotlib.use('Agg')  # for writing to files only
 
-
 class Colors:
     # Ultralytics color palette https://ultralytics.com/
     def __init__(self):
@@ -48,7 +47,6 @@ class Colors:
 
 colors = Colors()  # create instance for 'from utils.plots import colors'
 
-
 def check_font(font='Arial.ttf', size=10):
     # Return a PIL TrueType Font, downloading to CONFIG_DIR if necessary
     font = Path(font)
@@ -64,12 +62,12 @@ def check_font(font='Arial.ttf', size=10):
         except TypeError:
             check_requirements('Pillow>=8.4.0')  # known issue https://github.com/ultralytics/yolov5/issues/5374
 
-
 class Annotator:
     if RANK in (-1, 0):
         check_font()  # download TTF if necessary
 
-    # YOLOv5 Annotator for train/val mosaics and jpgs and detect/hub inference annotations
+    # YOLOv5 Annotator for train/val mosaics and jpgs and detect/hub inference
+    # annotations
     def __init__(self, im, line_width=None, font_size=None, font='Arial.ttf', pil=False, example='abc'):
         assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to Annotator() input images.'
         self.pil = pil or not is_ascii(example) or is_chinese(example)
@@ -93,7 +91,8 @@ class Annotator:
                                      box[1] - h if outside else box[1],
                                      box[0] + w + 1,
                                      box[1] + 1 if outside else box[1] + h + 1], fill=color)
-                # self.draw.text((box[0], box[1]), label, fill=txt_color, font=self.font, anchor='ls')  # for PIL>8.0
+                # self.draw.text((box[0], box[1]), label, fill=txt_color,
+                # font=self.font, anchor='ls') # for PIL>8.0
                 self.draw.text((box[0], box[1] - h if outside else box[1]), label, fill=txt_color, font=self.font)
         else:  # cv2
             p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
@@ -148,7 +147,6 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detec
             plt.close()
             np.save(str(f.with_suffix('.npy')), x[0].cpu().numpy())  # npy save
 
-
 def hist2d(x, y, n=100):
     # 2d histogram used in labels.png and evolve.png
     xedges, yedges = np.linspace(x.min(), x.max(), n), np.linspace(y.min(), y.max(), n)
@@ -170,9 +168,9 @@ def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
     b, a = butter_lowpass(cutoff, fs, order=order)
     return filtfilt(b, a, data)  # forward-backward filter
 
-
 def output_to_target(output):
-    # Convert model output to target format [batch_id, class_id, x, y, w, h, conf]
+    # Convert model output to target format [batch_id, class_id, x, y, w, h,
+    # conf]
     targets = []
     for i, o in enumerate(output):
         for *box, conf, cls in o.cpu().numpy():
@@ -240,7 +238,6 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
                     annotator.box_label(box, label, color=color)
     annotator.im.save(fname)  # save
 
-
 def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=''):
     # Plot LR simulating training for full epochs
     optimizer, scheduler = copy(optimizer), copy(scheduler)  # do not modify originals
@@ -296,7 +293,8 @@ def plot_val_study(file='', dir='', x=None):  # from utils.plots import *; plot_
         ax = plt.subplots(2, 4, figsize=(10, 6), tight_layout=True)[1].ravel()
 
     fig2, ax2 = plt.subplots(1, 1, figsize=(8, 4), tight_layout=True)
-    # for f in [save_dir / f'study_coco_{x}.txt' for x in ['yolov5n6', 'yolov5s6', 'yolov5m6', 'yolov5l6', 'yolov5x6']]:
+    # for f in [save_dir / f'study_coco_{x}.txt' for x in ['yolov5n6',
+    # 'yolov5s6', 'yolov5m6', 'yolov5l6', 'yolov5x6']]:
     for f in sorted(save_dir.glob('study*.txt')):
         y = np.loadtxt(f, dtype=np.float32, usecols=[0, 1, 2, 3, 7, 8, 9], ndmin=2).T
         x = np.arange(y.shape[1]) if x is None else np.array(x)
@@ -343,7 +341,8 @@ def plot_labels(labels, names=(), save_dir=Path('')):
     matplotlib.use('svg')  # faster
     ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)[1].ravel()
     y = ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
-    # [y[2].patches[i].set_color([x / 255 for x in colors(i)]) for i in range(nc)]  # update colors bug #3195
+    # [y[2].patches[i].set_color([x / 255 for x in colors(i)]) for i in
+    # range(nc)] # update colors bug #3195
     ax[0].set_ylabel('instances')
     if 0 < len(names) < 30:
         ax[0].set_xticks(range(len(names)))
@@ -398,7 +397,8 @@ def plot_evolve(evolve_csv='path/to/evolve.csv'):  # from utils.plots import *; 
 
 
 def plot_results(file='path/to/results.csv', dir=''):
-    # Plot training results.csv. Usage: from utils.plots import *; plot_results('path/to/results.csv')
+    # Plot training results.csv.  Usage: from utils.plots import *;
+    # plot_results('path/to/results.csv')
     save_dir = Path(file).parent if file else Path(dir)
     fig, ax = plt.subplots(2, 5, figsize=(12, 6), tight_layout=True)
     ax = ax.ravel()
@@ -411,10 +411,10 @@ def plot_results(file='path/to/results.csv', dir=''):
             x = data.values[:, 0]
             for i, j in enumerate([1, 2, 3, 4, 5, 8, 9, 10, 6, 7]):
                 y = data.values[:, j]
-                # y[y == 0] = np.nan  # don't show zero values
+                # y[y == 0] = np.nan # don't show zero values
                 ax[i].plot(x, y, marker='.', label=f.stem, linewidth=2, markersize=8)
                 ax[i].set_title(s[j], fontsize=12)
-                # if j in [8, 9, 10]:  # share train and val loss y axes
+                # if j in [8, 9, 10]: # share train and val loss y axes
                 #     ax[i].get_shared_y_axes().join(ax[i], ax[i - 5])
         except Exception as e:
             LOGGER.info(f'Warning: Plotting error for {f}: {e}')
@@ -424,7 +424,8 @@ def plot_results(file='path/to/results.csv', dir=''):
 
 
 def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
-    # Plot iDetection '*.txt' per-image logs. from utils.plots import *; profile_idetection()
+    # Plot iDetection '*.txt' per-image logs.  from utils.plots import *;
+    # profile_idetection()
     ax = plt.subplots(2, 4, figsize=(12, 6), tight_layout=True)[1].ravel()
     s = ['Images', 'Free Storage (GB)', 'RAM Usage (GB)', 'Battery', 'dt_raw (ms)', 'dt_smooth (ms)', 'real-world FPS']
     files = list(Path(save_dir).glob('frames*.txt'))
@@ -455,7 +456,8 @@ def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
 
 
 def save_one_box(xyxy, im, file='image.jpg', gain=1.02, pad=10, square=False, BGR=False, save=True):
-    # Save image crop as {file} with crop size multiple {gain} and {pad} pixels. Save and/or return crop
+    # Save image crop as {file} with crop size multiple {gain} and {pad}
+    # pixels.  Save and/or return crop
     xyxy = torch.tensor(xyxy).view(-1, 4)
     b = xyxy2xywh(xyxy)  # boxes
     if square:

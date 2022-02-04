@@ -21,8 +21,7 @@ class Albumentations:
             import albumentations as A
             check_version(A.__version__, '1.0.3', hard=True)  # version requirement
 
-            self.transform = A.Compose([
-                A.Blur(p=0.01),
+            self.transform = A.Compose([A.Blur(p=0.01),
                 A.MedianBlur(p=0.01),
                 A.ToGray(p=0.01),
                 A.CLAHE(p=0.01),
@@ -59,7 +58,6 @@ def augment_hsv(im, hgain=0.5, sgain=0.5, vgain=0.5):
         im_hsv = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val)))
         cv2.cvtColor(im_hsv, cv2.COLOR_HSV2BGR, dst=im)  # no return needed
 
-
 def hist_equalize(im, clahe=True, bgr=False):
     # Equalize histogram on BGR image 'im' with im.shape(n,m,3) and range 0-255
     yuv = cv2.cvtColor(im, cv2.COLOR_BGR2YUV if bgr else cv2.COLOR_RGB2YUV)
@@ -69,7 +67,6 @@ def hist_equalize(im, clahe=True, bgr=False):
     else:
         yuv[:, :, 0] = cv2.equalizeHist(yuv[:, :, 0])  # equalize Y channel histogram
     return cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR if bgr else cv2.COLOR_YUV2RGB)  # convert YUV image to RGB
-
 
 def replicate(im, labels):
     # Replicate labels
@@ -123,7 +120,8 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
 
 def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0,
                        border=(0, 0)):
-    # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(0.1, 0.1), scale=(0.9, 1.1), shear=(-10, 10))
+    # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(0.1,
+    # 0.1), scale=(0.9, 1.1), shear=(-10, 10))
     # targets = [cls, xyxy]
 
     height = im.shape[0] + border[0] * 2  # shape(h,w,c)
@@ -142,7 +140,8 @@ def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, sc
     # Rotation and Scale
     R = np.eye(3)
     a = random.uniform(-degrees, degrees)
-    # a += random.choice([-180, -90, 0, 90])  # add 90deg rotations to small rotations
+    # a += random.choice([-180, -90, 0, 90]) # add 90deg rotations to small
+    # rotations
     s = random.uniform(1 - scale, 1 + scale)
     # s = 2 ** random.uniform(-scale, scale)
     R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=s)
@@ -168,8 +167,8 @@ def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, sc
     # Visualize
     # import matplotlib.pyplot as plt
     # ax = plt.subplots(1, 2, figsize=(12, 6))[1].ravel()
-    # ax[0].imshow(im[:, :, ::-1])  # base
-    # ax[1].imshow(im2[:, :, ::-1])  # warped
+    # ax[0].imshow(im[:, :, ::-1]) # base
+    # ax[1].imshow(im2[:, :, ::-1]) # warped
 
     # Transform label coordinates
     n = len(targets)
@@ -211,7 +210,8 @@ def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, sc
 
 
 def copy_paste(im, labels, segments, p=0.5):
-    # Implement Copy-Paste augmentation https://arxiv.org/abs/2012.07177, labels as nx5 np.array(cls, xyxy)
+    # Implement Copy-Paste augmentation https://arxiv.org/abs/2012.07177,
+    # labels as nx5 np.array(cls, xyxy)
     n = len(segments)
     if p and n:
         h, w, c = im.shape  # height, width, channels
@@ -228,8 +228,8 @@ def copy_paste(im, labels, segments, p=0.5):
         result = cv2.bitwise_and(src1=im, src2=im_new)
         result = cv2.flip(result, 1)  # augment segments (flip left-right)
         i = result > 0  # pixels to replace
-        # i[:, :] = result.max(2).reshape(h, w, 1)  # act over ch
-        im[i] = result[i]  # cv2.imwrite('debug.jpg', im)  # debug
+        # i[:, :] = result.max(2).reshape(h, w, 1) # act over ch
+        im[i] = result[i]  # cv2.imwrite('debug.jpg', im) # debug
 
     return im, labels, segments
 
@@ -270,7 +270,8 @@ def mixup(im, labels, im2, labels2):
 
 
 def box_candidates(box1, box2, wh_thr=2, ar_thr=100, area_thr=0.1, eps=1e-16):  # box1(4,n), box2(4,n)
-    # Compute candidate boxes: box1 before augment, box2 after augment, wh_thr (pixels), aspect_ratio_thr, area_ratio
+    # Compute candidate boxes: box1 before augment, box2 after augment, wh_thr
+                                                                                  # (pixels), aspect_ratio_thr, area_ratio
     w1, h1 = box1[2] - box1[0], box1[3] - box1[1]
     w2, h2 = box2[2] - box2[0], box2[3] - box2[1]
     ar = np.maximum(w2 / (h2 + eps), h2 / (w2 + eps))  # aspect ratio

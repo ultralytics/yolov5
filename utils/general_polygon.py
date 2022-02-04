@@ -3,7 +3,9 @@ from shapely import geometry, geos
 from utils.general import *
 
 try:
-    # if error in importing polygon_inter_union_cuda, polygon_b_inter_union_cuda, please cd to ./iou_cuda and run "python setup.py install"
+    # if error in importing polygon_inter_union_cuda,
+    # polygon_b_inter_union_cuda, please cd to ./iou_cuda and run "python
+    # setup.py install"
     from polygon_inter_union_cuda import polygon_b_inter_union_cuda, polygon_inter_union_cuda
     polygon_inter_union_cuda_enable = True
     polygon_b_inter_union_cuda_enable = True
@@ -12,8 +14,8 @@ except Exception as e:
     print(f'The Exception is: {e}.')
     polygon_inter_union_cuda_enable = False
     polygon_b_inter_union_cuda_enable = False
-# Ancillary functions with polygon anchor boxes-------------------------------------------------------------------------------------------
-
+# Ancillary functions with polygon anchor
+# boxes-------------------------------------------------------------------------------------------
 def xyxyxyxyn2xyxyxyxy(x, w=640, h=640, padw=0, padh=0):
     # Convert normalized xyxyxyxy or segments into pixel xyxyxyxy or segments
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
@@ -23,7 +25,8 @@ def xyxyxyxyn2xyxyxyxy(x, w=640, h=640, padw=0, padh=0):
 
 
 def polygon_segment2box(segment, width=640, height=640):
-    # Convert 1 segment label to 1 polygon box label, applying inside-image constraint, i.e. (xy1, xy2, ...) to (xyxyxyxy)
+    # Convert 1 segment label to 1 polygon box label, applying inside-image
+    # constraint, i.e.  (xy1, xy2, ...) to (xyxyxyxy)
     x, y = segment.T  # segment xy
     inside = (x >= 0) & (y >= 0) & (x <= width) & (y <= height)
     x, y = x[inside].reshape(-1, 1), y[inside].reshape(-1, 1)
@@ -34,21 +37,20 @@ def polygon_segment2box(segment, width=640, height=640):
     polygon_box[1::2] = polygon_box[1::2].clip(0., height)
     return polygon_box if any(x) else np.zeros((1, 8))  # xyxyxyxy
 
-
 def polygon_segments2boxes(segments, img_shapes=None):
-    # Convert segment labels to polygon box labels, i.e. (xy1, xy2, ...) to polygon (xyxyxyxy)
+    # Convert segment labels to polygon box labels, i.e.  (xy1, xy2, ...) to
+    # polygon (xyxyxyxy)
     boxes = []
-    img_shapes = [None]*len(segments) if img_shapes is None else img_shapes
+    img_shapes = [None] * len(segments) if img_shapes is None else img_shapes
     for segment, img_shape in zip(segments, img_shapes):
         polygon_box = polygon_segment2box(segment) if img_shape is None else polygon_segment2box(segment, img_shape[1], img_shape[0])
         boxes.append(polygon_box)  # list with item of xyxyxyxy
     return np.array(boxes)  # numpy array with row of xyxyxyxy
 
-
 def polygon_scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
     # Rescale coords (xyxyxyxy) from img1_shape to img0_shape
     if ratio_pad is None:  # calculate from img0_shape
-        gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
+        gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain = old / new
         pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
     else:
         gain = ratio_pad[0][0]
@@ -65,7 +67,6 @@ def polygon_clip_coords(boxes, img_shape):
     # Clip bounding xyxy bounding boxes to image shape (height, width)
     boxes[:, 0::2].clamp_(0, img_shape[1])  # x1x2x3x4
     boxes[:, 1::2].clamp_(0, img_shape[0])  # y1y2y3y4
-
 
 def polygon_inter_union_cpu(boxes1, boxes2):
     """
@@ -105,7 +106,8 @@ def polygon_box_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
 
     if torch.cuda.is_available() and polygon_inter_union_cuda_enable and boxes1.is_cuda:
         # using cuda extension to compute
-        # the boxes1 and boxes2 go inside polygon_inter_union_cuda must be torch.cuda.float, not double type
+        # the boxes1 and boxes2 go inside polygon_inter_union_cuda must be
+        # torch.cuda.float, not double type
         boxes1_ = boxes1.float().contiguous().view(-1)
         boxes2_ = boxes2.float().contiguous().view(-1)
         inter, union = polygon_inter_union_cuda(boxes2_, boxes1_)  # Careful that order should be: boxes2_, boxes1_.
@@ -136,13 +138,12 @@ def polygon_box_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
             ch = torch.max(b1_y2[i], b2_y2) - torch.min(b1_y1[i], b2_y1)  # convex height
             if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
                 c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
-                rho2 = ((b2_x1 + b2_x2 - b1_x1[i] - b1_x2[i]) ** 2 +
-                        (b2_y1 + b2_y2 - b1_y1[i] - b1_y2[i]) ** 2) / 4  # center distance squared
+                rho2 = ((b2_x1 + b2_x2 - b1_x1[i] - b1_x2[i]) ** 2 + (b2_y1 + b2_y2 - b1_y1[i] - b1_y2[i]) ** 2) / 4  # center distance squared
                 if DIoU:
                     iou[i, :] -= rho2 / c2  # DIoU
                 elif CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
-                    w2, h2 = b2_x2-b2_x1, b2_y2-b2_y1+eps
-                    w1, h1 = b1_x2[i]-b1_x1[i], b1_y2[i]-b1_y1[i]+eps
+                    w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
+                    w1, h1 = b1_x2[i] - b1_x1[i], b1_y2[i] - b1_y1[i] + eps
                     v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
                     with torch.no_grad():
                         alpha = v / (v - iou[i, :] + (1 + eps))
@@ -151,7 +152,6 @@ def polygon_box_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
                 c_area = cw * ch + eps  # convex area
                 iou[i, :] -= (c_area - union[i, :]) / c_area  # GIoU
     return iou  # IoU
-
 
 def polygon_b_inter_union_cpu(boxes1, boxes2):
     """
@@ -188,7 +188,8 @@ def polygon_bbox_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-
 
     if torch.cuda.is_available() and polygon_b_inter_union_cuda_enable and boxes1.is_cuda:
         # using cuda extension to compute
-        # the boxes1 and boxes2 go inside inter_union_cuda must be torch.cuda.float, not double type or half type
+        # the boxes1 and boxes2 go inside inter_union_cuda must be
+        # torch.cuda.float, not double type or half type
         boxes1_ = boxes1.float().contiguous().view(-1)
         boxes2_ = boxes2.float().contiguous().view(-1)
         inter, union = polygon_b_inter_union_cuda(boxes2_, boxes1_)  # Careful that order should be: boxes2_, boxes1_.
@@ -218,13 +219,12 @@ def polygon_bbox_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-
         ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)  # convex height
         if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
             c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
-            rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 +
-                    (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center distance squared
+            rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 + (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center distance squared
             if DIoU:
                 iou -= rho2 / c2  # DIoU
             elif CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
-                w2, h2 = b2_x2-b2_x1, b2_y2-b2_y1+eps
-                w1, h1 = b1_x2-b1_x1, b1_y2-b1_y1+eps
+                w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
+                w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + eps
                 v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
                 with torch.no_grad():
                     alpha = v / (v - iou + (1 + eps))
@@ -233,7 +233,6 @@ def polygon_bbox_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-
             c_area = cw * ch + eps  # convex area
             iou -= (c_area - union) / c_area  # GIoU
     return iou  # IoU
-
 
 def polygon_non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False,
                         labels=(), max_det=300):
@@ -263,9 +262,12 @@ def polygon_non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, cla
     output = [torch.zeros((0, 10), device=prediction.device)] * prediction.shape[0]
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
-        # xw = (x[..., 0:8:2].max(dim=-1)[0] - x[..., 0:8:2].min(dim=-1)[0]).view(-1, 1)
-        # xh = (x[..., 1:8:2].max(dim=-1)[0] - x[..., 1:8:2].min(dim=-1)[0]).view(-1, 1)
-        # x[((xw < min_wh) | (xw > max_wh) | (xh < min_wh) | (xh > max_wh)).any(1), 8] = 0  # width-height
+                                               # xw = (x[..., 0:8:2].max(dim=-1)[0] - x[...,
+                                               # 0:8:2].min(dim=-1)[0]).view(-1, 1)
+                                               # xh = (x[..., 1:8:2].max(dim=-1)[0] - x[...,
+                                               # 1:8:2].min(dim=-1)[0]).view(-1, 1)
+                                               # x[((xw < min_wh) | (xw > max_wh) | (xh < min_wh) | (xh >
+                                               # max_wh)).any(1), 8] = 0 # width-height
         x = x[xc[xi]]  # confidence
 
         # Cat apriori labels if autolabelling
@@ -288,7 +290,8 @@ def polygon_non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, cla
         box = x[:, :8].clone()
 
         # Detections matrix nx10 (xyxyxyxy, conf, cls)
-        # Transfer sigmoid probabilities of classes (e.g. three classes [0.567, 0.907, 0.01]) to selected classes (1.0)
+        # Transfer sigmoid probabilities of classes (e.g.  three classes
+        # [0.567, 0.907, 0.01]) to selected classes (1.0)
         if multi_label:
             i, j = (x[:, 9:] > conf_thres).nonzero(as_tuple=False).T
             # concat satisfied boxes (multi-label-enabled) along 0 dimension
@@ -313,8 +316,10 @@ def polygon_non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, cla
             x = x[x[:, 8].argsort(descending=True)[:max_nms]]  # sort by confidence
 
         # Polygon NMS does not support Batch NMS and Agnostic
-        # x is the sorted predictions with boxes x[:, :8], confidence x[:, 8], class x[:, 9]
-        # cannot use torchvision.ops.nms, which only deals with axis-aligned boxes
+        # x is the sorted predictions with boxes x[:, :8], confidence x[:, 8],
+        # class x[:, 9]
+        # cannot use torchvision.ops.nms, which only deals with axis-aligned
+        # boxes
         i = polygon_nms_kernel(x, iou_thres)  # polygon-NMS
         if i.shape[0] > max_det:  # limit detections
             i = i[:max_det]
@@ -351,8 +356,8 @@ def polygon_nms_kernel(x, iou_thres):
 
     # Iterate through all predicted classes
     for unique_label in unique_labels:
-        x_ = x[x[:, 9]==unique_label]
-        indices_ = indices[x[:, 9]==unique_label]
+        x_ = x[x[:, 9] == unique_label]
+        indices_ = indices[x[:, 9] == unique_label]
 
         while x_.shape[0]:
             # Save the indice with the highest confidence
@@ -392,7 +397,7 @@ def order_corners(boxes):
 
 
 def wh_iou(wh1, wh2, eps=1e-7):
-    # Returns the nxm IoU matrix. wh1 is nx2, wh2 is mx2
+    # Returns the nxm IoU matrix.  wh1 is nx2, wh2 is mx2
     wh1 = wh1[:, None]  # [N,1,2]
     wh2 = wh2[None]  # [1,M,2]
     inter = torch.min(wh1, wh2).prod(2)  # [N,M]

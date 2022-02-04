@@ -10,7 +10,6 @@ import time
 from pathlib import Path
 
 sys.path.append(Path(__file__).parent.parent.absolute().__str__())  # to run '$ python *.py' files in subdirectories
-
 import torch
 import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
@@ -25,7 +24,7 @@ from utils.torch_utils import select_device
 def export(weights='./yolov5s.pt',  # weights path
            img_size=(640, 640),  # image (height, width)
            batch_size=1,  # batch size
-           device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+           device='cpu',  # cuda device, i.e.  0 or 0,1,2,3 or cpu
            include=('torchscript', 'onnx', 'coreml'),  # include formats
            half=False,  # FP16 half-precision export
            inplace=False,  # set YOLOv5 Detect() inplace=True
@@ -64,13 +63,14 @@ def export(weights='./yolov5s.pt',  # weights path
         elif isinstance(m, models.yolo.Detect):
             m.inplace = inplace
             m.onnx_dynamic = dynamic
-            # m.forward = m.forward_export  # assign forward (optional)
+            # m.forward = m.forward_export # assign forward (optional)
 
     for _ in range(2):
         y = model(img)  # dry runs
     print(f"\n{colorstr('PyTorch:')} starting from {weights} ({file_size(weights):.1f} MB)")
 
-    # TorchScript export -----------------------------------------------------------------------------------------------
+    # TorchScript export
+    # -----------------------------------------------------------------------------------------------
     if 'torchscript' in include or 'coreml' in include:
         prefix = colorstr('TorchScript:')
         try:
@@ -82,7 +82,8 @@ def export(weights='./yolov5s.pt',  # weights path
         except Exception as e:
             print(f'{prefix} export failure: {e}')
 
-    # ONNX export ------------------------------------------------------------------------------------------------------
+    # ONNX export
+    # ------------------------------------------------------------------------------------------------------
     if 'onnx' in include:
         prefix = colorstr('ONNX:')
         try:
@@ -102,7 +103,7 @@ def export(weights='./yolov5s.pt',  # weights path
             # Checks
             model_onnx = onnx.load(f)  # load onnx model
             onnx.checker.check_model(model_onnx)  # check onnx model
-            # print(onnx.helper.printable_graph(model_onnx.graph))  # print
+            # print(onnx.helper.printable_graph(model_onnx.graph)) # print
 
             # Simplify
             if simplify:
@@ -111,8 +112,7 @@ def export(weights='./yolov5s.pt',  # weights path
                     import onnxsim
 
                     print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
-                    model_onnx, check = onnxsim.simplify(
-                        model_onnx,
+                    model_onnx, check = onnxsim.simplify(model_onnx,
                         dynamic_input_shape=dynamic,
                         input_shapes={'images': list(img.shape)} if dynamic else None)
                     assert check, 'assert check failed'
@@ -123,7 +123,8 @@ def export(weights='./yolov5s.pt',  # weights path
         except Exception as e:
             print(f'{prefix} export failure: {e}')
 
-    # CoreML export ----------------------------------------------------------------------------------------------------
+    # CoreML export
+    # ----------------------------------------------------------------------------------------------------
     if 'coreml' in include:
         prefix = colorstr('CoreML:')
         try:

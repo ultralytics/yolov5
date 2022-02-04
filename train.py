@@ -37,7 +37,6 @@ ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-
 from models.experimental import attempt_load
 from models.yolo import Model, Polygon_Model
 from utils.autoanchor_polygon import check_anchors, polygon_check_anchors
@@ -65,8 +64,7 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           opt,
           device,
-          callbacks
-          ):
+          callbacks):
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
         opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze
@@ -257,7 +255,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
         if not resume:
             labels = np.concatenate(dataset.labels, 0)
-            # c = torch.tensor(labels[:, 0])  # classes
+            # c = torch.tensor(labels[:, 0]) # classes
             # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
             # model._initialize_biases(cf.to(device))
             if plots:
@@ -290,7 +288,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Start training
     t0 = time.time()
     nw = max(round(hyp['warmup_epochs'] * nb), 1000)  # number of warmup iterations, max(3 epochs, 1k iterations)
-    # nw = min(nw, (epochs - start_epoch) / 2 * nb)  # limit warmup to < 1/2 of training
+    # nw = min(nw, (epochs - start_epoch) / 2 * nb) # limit warmup to < 1/2 of
+                                                        # training
     last_opt_step = -1
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
@@ -313,7 +312,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
         # Update mosaic border (optional)
         # b = int(random.uniform(0.25 * imgsz, 0.75 * imgsz + gs) // gs * gs)
-        # dataset.mosaic_border = [b - imgsz, -b]  # height, width borders
+        # dataset.mosaic_border = [b - imgsz, -b] # height, width borders
 
         mloss = torch.zeros(3, device=device)  # mean losses
         if RANK != -1:
@@ -330,10 +329,12 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             # Warmup
             if ni <= nw:
                 xi = [0, nw]  # x interp
-                # compute_loss.gr = np.interp(ni, xi, [0.0, 1.0])  # iou loss ratio (obj_loss = 1.0 or iou)
+                # compute_loss.gr = np.interp(ni, xi, [0.0, 1.0]) # iou loss
+                                            # ratio (obj_loss = 1.0 or iou)
                 accumulate = max(1, np.interp(ni, xi, [1, nbs / batch_size]).round())
                 for j, x in enumerate(optimizer.param_groups):
-                    # bias lr falls from 0.1 to lr0, all other lrs rise from 0.0 to lr0
+                    # bias lr falls from 0.1 to lr0, all other lrs rise from
+                    # 0.0 to lr0
                     x['lr'] = np.interp(ni, xi, [hyp['warmup_bias_lr'] if j == 2 else 0.0, x['initial_lr'] * lf(epoch)])
                     if 'momentum' in x:
                         x['momentum'] = np.interp(ni, xi, [hyp['warmup_momentum'], hyp['momentum']])
@@ -371,13 +372,13 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             if RANK in [-1, 0]:
                 mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
                 mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
-                s = ('%10s' * 2 + '%10.4g' * 5) % (
-                    f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1])
+                s = ('%10s' * 2 + '%10.4g' * 5) % (f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1])
                 pbar.set_description(s)
 
                 callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, plots, opt.sync_bn,__plot_images)
 
-            # end batch ------------------------------------------------------------------------------------------------
+            # end batch
+            # ------------------------------------------------------------------------------------------------
 
         # Scheduler
         lr = [x['lr'] for x in optimizer.param_groups]  # for loggers
@@ -434,18 +435,22 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             if RANK == -1 and stopper(epoch=epoch, fitness=fi):
                 break
 
-            # Stop DDP TODO: known issues shttps://github.com/ultralytics/yolov5/pull/4576
+            # Stop DDP TODO: known issues
+            # shttps://github.com/ultralytics/yolov5/pull/4576
             # stop = stopper(epoch=epoch, fitness=fi)
             # if RANK == 0:
-            #    dist.broadcast_object_list([stop], 0)  # broadcast 'stop' to all ranks
+            #    dist.broadcast_object_list([stop], 0) # broadcast 'stop' to
+            #    all ranks
 
         # Stop DPP
         # with torch_distributed_zero_first(RANK):
         # if stop:
-        #    break  # must break all DDP ranks
+        #    break # must break all DDP ranks
 
-        # end epoch ----------------------------------------------------------------------------------------------------
-    # end training -----------------------------------------------------------------------------------------------------
+        # end epoch
+        # ----------------------------------------------------------------------------------------------------
+    # end training
+    # -----------------------------------------------------------------------------------------------------
     if RANK in [-1, 0]:
         LOGGER.info(f'\n{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.')
         for f in last, best:
@@ -566,7 +571,8 @@ def main(opt, callbacks=Callbacks()):
 
     # Evolve hyperparameters (optional)
     else:
-        # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit, upper_limit)
+        # Hyperparameter evolution metadata (mutation scale 0-1, lower_limit,
+        # upper_limit)
         meta = {'lr0': (1, 1e-5, 1e-1),  # initial learning rate (SGD=1E-2, Adam=1E-3)
                 'lrf': (1, 0.01, 1.0),  # final OneCycleLR learning rate (lr0 * lrf)
                 'momentum': (0.3, 0.6, 0.98),  # SGD momentum/Adam beta1
@@ -602,7 +608,8 @@ def main(opt, callbacks=Callbacks()):
             if 'anchors' not in hyp:  # anchors commented in hyp.yaml
                 hyp['anchors'] = 3
         opt.noval, opt.nosave, save_dir = True, True, Path(opt.save_dir)  # only val/save final epoch
-        # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
+        # ei = [isinstance(x, (int, float)) for x in hyp.values()] # evolvable
+                                                                                # indices
         evolve_yaml, evolve_csv = save_dir / 'hyp_evolve.yaml', save_dir / 'evolve.csv'
         if opt.bucket:
             os.system(f'gsutil cp gs://{opt.bucket}/evolve.csv {save_dir}')  # download evolve.csv if exists
@@ -616,7 +623,7 @@ def main(opt, callbacks=Callbacks()):
                 x = x[np.argsort(-fitness(x))][:n]  # top n mutations
                 w = fitness(x) - fitness(x).min() + 1E-6  # weights (sum > 0)
                 if parent == 'single' or len(x) == 1:
-                    # x = x[random.randint(0, n - 1)]  # random selection
+                    # x = x[random.randint(0, n - 1)] # random selection
                     x = x[random.choices(range(n), weights=w)[0]]  # weighted selection
                 elif parent == 'weighted':
                     x = (x * w.reshape(n, 1)).sum(0) / w.sum()  # weighted combination
@@ -653,7 +660,8 @@ def main(opt, callbacks=Callbacks()):
 
 
 def run(**kwargs):
-    # Usage: import train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
+    # Usage: import train; train.run(data='coco128.yaml', imgsz=320,
+    # weights='yolov5m.pt')
     opt = parse_opt(True)
     for k, v in kwargs.items():
         setattr(opt, k, v)

@@ -1,5 +1,4 @@
 # Dataset utils and dataloaders
-
 from utils.datasets import *
 from utils.general_polygon import LOGGER, colorstr, xyxyxyxyn2xyxyxyxy
 
@@ -7,7 +6,8 @@ help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 img_formats = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
 vid_formats = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
 num_threads = min(8, os.cpu_count())  # number of multiprocessing threads
-# Ancillary functions with polygon anchor boxes-------------------------------------------------------------------------------------------
+# Ancillary functions with polygon anchor
+                                    # boxes-------------------------------------------------------------------------------------------
 def polygon_create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False, pad=0.0,
                       rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix='', shuffle=False):
     if rect and shuffle:
@@ -65,17 +65,19 @@ class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
                 p = Path(p)  # os-agnostic
                 if p.is_dir():  # dir
                     f += glob.glob(str(p / '**' / '*.*'), recursive=True)
-                    # f = list(p.rglob('**/*.*'))  # pathlib
+                    # f = list(p.rglob('**/*.*')) # pathlib
                 elif p.is_file():  # file
                     with open(p) as t:
                         t = t.read().strip().splitlines()
                         parent = str(p.parent) + os.sep
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
-                        # f += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
+                        # f += [p.parent / x.lstrip(os.sep) for x in t] # local
+                                                                                                                      # to global path (pathlib)
                 else:
                     raise Exception(f'{prefix}{p} does not exist')
             self.img_files = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in img_formats)
-            # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in img_formats])  # pathlib
+            # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in
+            # img_formats]) # pathlib
             assert self.img_files, f'{prefix}No images found'
         except Exception as e:
             raise Exception(f'{prefix}Error loading data from {path}: {e}\nSee {help_url}')
@@ -140,7 +142,8 @@ class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
 
             self.batch_shapes = np.ceil(np.array(shapes) * img_size / stride + pad).astype(np.int) * stride
 
-        # Cache images into memory for faster training (WARNING: large datasets may exceed system RAM)
+        # Cache images into memory for faster training (WARNING: large datasets
+        # may exceed system RAM)
         self.imgs, self.img_npy = [None] * n, [None] * n
         if cache_images:
             gb = 0  # Gigabytes of cached images
@@ -189,7 +192,8 @@ class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
     # def __iter__(self):
     #     self.count = -1
     #     print('ran dataset iter')
-    #     #self.shuffled_vector = np.random.permutation(self.nF) if self.augment else np.arange(self.nF)
+    #     #self.shuffled_vector = np.random.permutation(self.nF) if
+    #     self.augment else np.arange(self.nF)
     #     return self
 
     def __getitem__(self, index):
@@ -256,7 +260,8 @@ class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
                 img = np.fliplr(img)
                 if nL:
                     labels[:, 1::2] = 1 - labels[:, 1::2]
-        # original label shape is (nL, 9), add one column for target image index for build_targets()
+        # original label shape is (nL, 9), add one column for target image
+        # index for build_targets()
         labels_out = torch.zeros((nL, 10))
         if nL:
             labels_out[:, 1:] = torch.from_numpy(labels)
@@ -309,7 +314,8 @@ def polygon_load_mosaic(self, index):
         # Labels
         labels, segments = self.labels[index].copy(), self.segments[index].copy()
         if labels.size:
-            # from normalized, unpadded xyxyxyxy to pixel, padded xyxyxyxy format
+            # from normalized, unpadded xyxyxyxy to pixel, padded xyxyxyxy
+            # format
             labels[:, 1:] = xyxyxyxyn2xyxyxyxy(labels[:, 1:], w, h, padw, padh)
             segments = [xyxyxyxyn2xyxyxyxy(x, w, h, padw, padh) for x in segments]
         labels4.append(labels)
@@ -371,7 +377,8 @@ def polygon_load_mosaic9(self, index):
         # Labels
         labels, segments = self.labels[index].copy(), self.segments[index].copy()
         if labels.size:
-            # from normalized, unpadded xyxyxyxy to pixel, padded xyxyxyxy format
+            # from normalized, unpadded xyxyxyxy to pixel, padded xyxyxyxy
+            # format
             labels[:, 1:] = xyxyxyxyn2xyxyxyxy(labels[:, 1:], w, h, padx, pady)
             segments = [xyxyxyxyn2xyxyxyxy(x, w, h, padx, pady) for x in segments]
         labels9.append(labels)
@@ -426,16 +433,18 @@ def polygon_verify_image_label(params):
             nf = 1  # label found
             l = np.loadtxt(lb_file, dtype=np.float32)
             with open(lb_file) as f:
-                l = np.array([x.split() for x in f.readlines() if len(x)>1], dtype=np.float32)  # labels # ata_landmark_change
+                l = np.array([x.split() for x in f.readlines() if len(x) > 1], dtype=np.float32)  # labels # ata_landmark_change
             # l=np.zeros((ll.shape[0], 9))
-            # l[:,1:] =ll[:,5:]
-            if len(l.shape)==1: l = l[None, :]
+                                                                                                            # l[:,1:] =ll[:,5:]
+            if len(l.shape) == 1: l = l[None, :]
             segments = [l[0][1:].reshape(-1, 2) for x in l]  # ((x1, y1), (x2, y2), ...)
             if len(l):
                 assert l.shape[1] == 9, 'labels require 9 columns each'
-                # Common out following lines to enable: polygon corners can be out of images
+                # Common out following lines to enable: polygon corners can be
+                # out of images
                 # assert (l >= 0).all(), 'negative labels'
-                # assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels'
+                # assert (l[:, 1:] <= 1).all(), 'non-normalized or out of
+                # bounds coordinate labels'
                 assert np.unique(l, axis=0).shape[0] == l.shape[0], 'duplicate labels'
             else:
                 ne = 1  # label empty
@@ -451,14 +460,14 @@ def polygon_verify_image_label(params):
 
 
 class Albumentations:
-    # Polygon YOLOv5 Albumentations class (optional, only used if package is installed)
+    # Polygon YOLOv5 Albumentations class (optional, only used if package is
+    # installed)
     def __init__(self):
         self.transform = None
         try:
             import albumentations as A
 
-            self.transform = A.Compose([
-                A.MedianBlur(p=0.05),
+            self.transform = A.Compose([A.MedianBlur(p=0.05),
                 A.ToGray(p=0.1),
                 A.RandomBrightnessContrast(p=0.35),
                 A.CLAHE(p=0.2),
@@ -481,22 +490,30 @@ class Albumentations:
 def polygon_random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0,
                        border=(0, 0), mosaic=False):
     # """
-    #     torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
+    #     torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1,
+    #     .1), scale=(.9, 1.1), shear=(-10, 10))
     #     targets = [cls, xyxyxyxy]
     # """
     #     To restrict the polygon boxes within images
     #     def restrict(img, new, shape0, padding=(0, 0, 0, 0)):
     #         height, width = shape0
-    #         top0, bottom0, left0, right0 = np.ceil(padding[0]), np.floor(padding[1]), np.floor(padding[2]), np.ceil(padding[3])
+    #         top0, bottom0, left0, right0 = np.ceil(padding[0]),
+    #         np.floor(padding[1]), np.floor(padding[2]), np.ceil(padding[3])
     #         # keep the original shape of image
     #         if (height/width) < ((height+bottom0+top0)/(width+left0+right0)):
-    #             dw = int((height+bottom0+top0)/height*width)-(width+left0+right0)
-    #             top, bottom, left, right = map(int, (top0, bottom0, left0+dw/2, right0+dw/2))
+    #             dw =
+    #             int((height+bottom0+top0)/height*width)-(width+left0+right0)
+    #             top, bottom, left, right = map(int, (top0, bottom0,
+    #             left0+dw/2, right0+dw/2))
     #         else:
-    #             dh = int((width+left0+right0)*height/width)-(height+bottom0+top0)
-    #             top, bottom, left, right = map(int, (top0+dh/2, bottom0+dh/2, left0, right0))
-    #         img = cv2.copyMakeBorder(img, bottom, top, left, right, cv2.BORDER_CONSTANT, value=(114, 114, 114))
-    #         img = cv2.resize(img, (width, height), interpolation=cv2.INTER_LINEAR)
+    #             dh =
+    #             int((width+left0+right0)*height/width)-(height+bottom0+top0)
+    #             top, bottom, left, right = map(int, (top0+dh/2, bottom0+dh/2,
+    #             left0, right0))
+    #         img = cv2.copyMakeBorder(img, bottom, top, left, right,
+    #         cv2.BORDER_CONSTANT, value=(114, 114, 114))
+    #         img = cv2.resize(img, (width, height),
+    #         interpolation=cv2.INTER_LINEAR)
     #         w_r, h_r = width/(width+left+right), height/(height+bottom+top)
     #         new[:, 0::2] = (new[:, 0::2]+left)*w_r
     #         new[:, 1::2] = (new[:, 1::2]+bottom)*h_r
@@ -518,7 +535,8 @@ def polygon_random_perspective(img, targets=(), segments=(), degrees=10, transla
     # Rotation and Scale
     R = np.eye(3)
     a = random.uniform(-degrees, degrees)
-    # a += random.choice([-180, -90, 0, 90])  # add 90deg rotations to small rotations
+    # a += random.choice([-180, -90, 0, 90]) # add 90deg rotations to small
+    # rotations
     s = random.uniform(1 - scale, 1 + scale)
     # s = 2 ** random.uniform(-scale, scale)
     R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=s)
@@ -542,7 +560,8 @@ def polygon_random_perspective(img, targets=(), segments=(), degrees=10, transla
     if n:
         # if using segments: please use general.py::polygon_segment2box
         # segment is unnormalized np.array([[(x1, y1), (x2, y2), ...], ...])
-        # targets is unnormalized np.array([[class id, x1, y1, x2, y2, ...], ...])
+        # targets is unnormalized np.array([[class id, x1, y1, x2, y2, ...],
+        # ...])
         new = np.zeros((n, 8))
         xy = np.ones((n * 4, 3))
         xy[:, :2] = targets[:, 1:].reshape(n * 4, 2)
@@ -550,14 +569,15 @@ def polygon_random_perspective(img, targets=(), segments=(), degrees=10, transla
         new = (xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2]).reshape(n, 8)  # perspective rescale or affine
 
         if not mosaic:
-            # Compute Top, Bottom, Left, Right Padding to Include Polygon Boxes inside Image
-            top = max(new[:, 1::2].max().item()-height, 0)
+            # Compute Top, Bottom, Left, Right Padding to Include Polygon Boxes
+            # inside Image
+            top = max(new[:, 1::2].max().item() - height, 0)
             bottom = abs(min(new[:, 1::2].min().item(), 0))
             left = abs(min(new[:, 0::2].min().item(), 0))
-            right = max(new[:, 0::2].max().item()-width, 0)
+            right = max(new[:, 0::2].max().item() - width, 0)
 
             R2 = np.eye(3)
-            r = min(height/(height+top+bottom), width/(width+left+right))
+            r = min(height / (height + top + bottom), width / (width + left + right))
             R2[:2] = cv2.getRotationMatrix2D(angle=0., center=(0, 0), scale=r)
             M2 = T @ S @ R @ R2 @ P @ C  # order of operations (right to left) is IMPORTANT
 
@@ -572,17 +592,21 @@ def polygon_random_perspective(img, targets=(), segments=(), degrees=10, transla
                 xy[:, :2] = targets[:, 1:].reshape(n * 4, 2)
                 xy = xy @ M2.T  # transform
                 new = (xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2]).reshape(n, 8)  # perspective rescale or affine
-            # img, new = restrict(img, new, (height, width), (top, bottom, left, right))
+            # img, new = restrict(img, new, (height, width), (top, bottom,
+                                                                                                      # left, right))
 
-        # Use the following two lines can result in slightly tilting for few labels.
+        # Use the following two lines can result in slightly tilting for few
+        # labels.
         # new[:, 0::2] = new[:, 0::2].clip(0., width)
         # new[:, 1::2] = new[:, 1::2].clip(0., height)
-        # If use following codes instead, can mitigate tilting problems, but result in few label exceeding problems.
+        # If use following codes instead, can mitigate tilting problems, but
+        # result in few label exceeding problems.
         cx, cy = new[:, 0::2].mean(-1), new[:, 1::2].mean(-1)
-        new[(cx>width)|(cx<-0.)|(cy>height)|(cy<-0.)] = 0.
+        new[(cx > width) | (cx < -0.) | (cy > height) | (cy < -0.)] = 0.
 
         # filter candidates
-        # 0.1 for axis-aligned rectangle, 0.01 for segmentation, so choose intermediate 0.08
+        # 0.1 for axis-aligned rectangle, 0.01 for segmentation, so choose
+        # intermediate 0.08
         i = polygon_box_candidates(box1=targets[:, 1:].T * s, box2=new.T, area_thr=0.08)
         targets = targets[i]
         targets[:, 1:] = new[i]
@@ -605,7 +629,7 @@ def polygon_box_candidates(box1, box2, wh_thr=3, ar_thr=20, area_thr=0.1, eps=1e
         Use the minimum bounding box as the approximation to polygon
         Compute candidate boxes: box1 before augment, box2 after augment, wh_thr (pixels), aspect_ratio_thr, area_ratio
     """
-    w1, h1 = box1[0::2].max(axis=0)-box1[0::2].min(axis=0), box1[1::2].max(axis=0)-box1[1::2].min(axis=0)
-    w2, h2 = box2[0::2].max(axis=0)-box2[0::2].min(axis=0), box2[1::2].max(axis=0)-box2[1::2].min(axis=0)
+    w1, h1 = box1[0::2].max(axis=0) - box1[0::2].min(axis=0), box1[1::2].max(axis=0) - box1[1::2].min(axis=0)
+    w2, h2 = box2[0::2].max(axis=0) - box2[0::2].min(axis=0), box2[1::2].max(axis=0) - box2[1::2].min(axis=0)
     ar = np.maximum(w2 / (h2 + eps), h2 / (w2 + eps))  # aspect ratio
     return (w2 > wh_thr) & (h2 > wh_thr) & (w2 * h2 / (w1 * h1 + eps) > area_thr) & (ar < ar_thr)  # candidates
