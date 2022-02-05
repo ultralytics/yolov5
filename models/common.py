@@ -374,7 +374,7 @@ class DetectMultiBackend(nn.Module):
                 graph_def.ParseFromString(open(w, 'rb').read())
                 frozen_func = wrap_frozen_graph(gd=graph_def, inputs="x:0", outputs="Identity:0")
             elif tflite:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
-                try:  # prefer tflite_runtime if installed
+                try:  # https://coral.ai/docs/edgetpu/tflite-python/#update-existing-tf-lite-code-for-the-edge-tpu
                     from tflite_runtime.interpreter import Interpreter, load_delegate
                 except ImportError:
                     import tensorflow as tf
