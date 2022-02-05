@@ -743,6 +743,7 @@ def load_mosaic9(self, index):
     s = self.img_size
     indices = [index] + random.choices(self.indices, k=8)  # 8 additional image indices
     random.shuffle(indices)
+    hp, wp = -1, -1  # height, width previous
     for i, index in enumerate(indices):
         # Load image
         img, _, (h, w) = load_image(self, index)
