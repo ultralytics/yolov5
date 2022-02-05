@@ -295,7 +295,7 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
     for r in requirements:
         try:
             pkg.require(r)
-        except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
+        except Exception:  # DistributionNotFound or VersionConflict if requirements not met
             s = f"{prefix} {r} not found and is required by YOLOv5"
             if install:
                 LOGGER.info(f"{s}, attempting auto-update...")
@@ -688,7 +688,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     assert 0 <= iou_thres <= 1, f'Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0'
 
     # Settings
-    min_wh, max_wh = 2, 7680  # (pixels) minimum and maximum box width and height
+    max_wh = 7680  # (pixels) maximum box width and height
     max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
     time_limit = 10.0  # seconds to quit after
     redundant = True  # require redundant detections
@@ -783,7 +783,8 @@ def strip_optimizer(f='best.pt', s=''):  # from utils.general import *; strip_op
 
 
 def print_mutation(results, hyp, save_dir, bucket):
-    evolve_csv, results_csv, evolve_yaml = save_dir / 'evolve.csv', save_dir / 'results.csv', save_dir / 'hyp_evolve.yaml'
+    evolve_csv = save_dir / 'evolve.csv'
+    evolve_yaml = save_dir / 'hyp_evolve.yaml'
     keys = ('metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
             'val/box_loss', 'val/obj_loss', 'val/cls_loss') + tuple(hyp.keys())  # [results + hyps]
     keys = tuple(x.strip() for x in keys)
