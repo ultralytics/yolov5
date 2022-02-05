@@ -374,11 +374,11 @@ class DetectMultiBackend(nn.Module):
                 graph_def.ParseFromString(open(w, 'rb').read())
                 frozen_func = wrap_frozen_graph(gd=graph_def, inputs="x:0", outputs="Identity:0")
             elif tflite:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
-                try:  # prefer tflite_runtime if installed
+                try:  # https://coral.ai/docs/edgetpu/tflite-python/#update-existing-tf-lite-code-for-the-edge-tpu
                     from tflite_runtime.interpreter import Interpreter, load_delegate
                 except ImportError:
-                    import tensorflow.lite.experimental.load_delegate as load_delegate
-                    import tensorflow.lite.Interpreter as Interpreter
+                    import tensorflow as tf
+                    Interpreter, load_delegate = tf.lite.Interpreter, tf.lite.experimental.load_delegate,
                 if 'edgetpu' in w.lower():  # Edge TPU https://coral.ai/software/#edgetpu-runtime
                     LOGGER.info(f'Loading {w} for TensorFlow Lite Edge TPU inference...')
                     delegate = {'Linux': 'libedgetpu.so.1',
