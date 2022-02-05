@@ -407,15 +407,16 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     tf_exports = list(x in include for x in ('saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'))  # TensorFlow exports
     file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)
 
-    # Checks
-    imgsz *= 2 if len(imgsz) == 1 else 1  # expand
-    opset = 12 if ('openvino' in include) else opset  # OpenVINO requires opset <= 12
-
     # Load PyTorch model
     device = select_device(device)
     assert not (device.type == 'cpu' and half), '--half only compatible with GPU export, i.e. use --device 0'
     model = attempt_load(weights, map_location=device, inplace=True, fuse=True)  # load FP32 model
-    # nc, names = model.nc, model.names  # number of classes, class names
+    nc, names = model.nc, model.names  # number of classes, class names
+
+    # Checks
+    imgsz *= 2 if len(imgsz) == 1 else 1  # expand
+    opset = 12 if ('openvino' in include) else opset  # OpenVINO requires opset <= 12
+    assert nc == len(names), f'Model class count {nc} != len(names) {len(names)}'
 
     # Input
     gs = int(max(model.stride))  # grid size (max stride)
@@ -437,8 +438,9 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
                 m.forward = m.forward_export  # assign custom forward (optional)
 
     for _ in range(2):
-        _ = model(im)  # dry runs
-    LOGGER.info(f"\n{colorstr('PyTorch:')} starting from {file} ({file_size(file):.1f} MB)")
+        y = model(im)  # dry runs
+    shape = tuple(y[0].shape)  # model output shape
+    LOGGER.info(f"\n{colorstr('PyTorch:')} starting from {file} with output shape {shape} ({file_size(file):.1f} MB)")
 
     # Exports
     f = [''] * 10  # exported filenames
