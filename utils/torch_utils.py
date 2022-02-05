@@ -124,7 +124,7 @@ def profile(input, ops, n=10, device=None):
             tf, tb, t = 0, 0, [0, 0, 0]  # dt forward, backward
             try:
                 flops = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2  # GFLOPs
-            except:
+            except Exception:
                 flops = 0
 
             try:
