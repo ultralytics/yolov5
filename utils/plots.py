@@ -88,14 +88,8 @@ class Annotator:
                 self.draw.rectangle((box[0],
                                      box[1] - h if outside else box[1],
                                      box[0] + w + 1,
-<<<<<<< HEAD
-                                     box[1] + 1 if outside else box[1] + h + 1], fill=color)
-                # self.draw.text((box[0], box[1]), label, fill=txt_color,
-                # font=self.font, anchor='ls') # for PIL>8.0
-=======
                                      box[1] + 1 if outside else box[1] + h + 1), fill=color)
                 # self.draw.text((box[0], box[1]), label, fill=txt_color, font=self.font, anchor='ls')  # for PIL>8.0
->>>>>>> origin/master
                 self.draw.text((box[0], box[1] - h if outside else box[1]), label, fill=txt_color, font=self.font)
         else:  # cv2
             p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
