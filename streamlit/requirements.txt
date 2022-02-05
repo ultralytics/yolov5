@@ -1,7 +1,0 @@
-Repsycle==3.5.7
-torch>=1.8
-torchvision==0.9.0
-streamlit==1.2.0
-opencv-python==4.5.4.58
-scipy==1.7.3
-pycocotools==2.0.2
