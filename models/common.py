@@ -568,7 +568,7 @@ class Detections:
         self.s = shape  # inference BCHW shape
         self.save_dir = None
 
-    def display(self, pprint=False, show=False, save=False, crop=False, render=False, save_dir=Path('')):
+    def display(self, pprint=False, show=False, save=False, save_txt=False, crop=False, render=False, save_dir=Path('')):
         crops = []
         for i, (im, pred) in enumerate(zip(self.imgs, self.pred)):
             s = f'image {i + 1}/{len(self.pred)}: {im.shape[0]}x{im.shape[1]} '  # string
@@ -576,14 +576,18 @@ class Detections:
                 for c in pred[:, -1].unique():
                     n = (pred[:, -1] == c).sum()  # detections per class
                     s += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
-                if show or save or render or crop:
+                if show or save or render or crop or save_txt:
                     annotator = Annotator(im, example=str(self.names))
-                    for *box, conf, cls in reversed(pred):  # xyxy, confidence, class
+                    for j, (*box, conf, cls) in reversed(list(enumerate(pred))):  # xyxy, confidence, class
                         label = f'{self.names[int(cls)]} {conf:.2f}'
                         if crop:
-                            file = save_dir / 'crops' / self.names[int(cls)] / self.files[i] if save else None
+                            file = save_dir / 'crops' / self.names[int(cls)] / (self.files[i].split('.')[0] + str(j)) if save else None
                             crops.append({'box': box, 'conf': conf, 'cls': cls, 'label': label,
                                           'im': save_one_box(box, im, file=file, save=save)})
+                        elif save_txt:
+                            line = (cls, *self.xywhn[i][j][:4], conf)  # label format
+                            with open((save_dir / 'labels' / self.files[i]).with_suffix('.txt'), 'a') as f:
+                                f.write(('%g ' * len(line)).rstrip() % line + '\n')
                         else:  # all others
                             annotator.box_label(box, label, color=colors(cls))
                     im = annotator.im
@@ -625,13 +629,7 @@ class Detections:
         self.save_dir = self.save_dir if self.save_dir is not None \
             else increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True)  # increment save_dir
         (self.save_dir / 'labels').mkdir(parents=True, exist_ok=True)  # make dir
-        for img_name, pred, img in zip(self.files, self.pred, self.imgs):
-            gn = torch.tensor(img.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-            for *xyxy, conf, cls in reversed(pred):
-                xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                line = (cls, *xywh, conf)  # label format
-                with open(self.save_dir / 'labels' / (img_name.split('.')[0] + '.txt'), 'a') as f:
-                    f.write(('%g ' * len(line)).rstrip() % line + '\n')
+        self.display(save_txt=True, save_dir=self.save_dir)
         LOGGER.info(f"Saved {self.n} label{'s' * (self.n > 1)} to {colorstr('bold', self.save_dir / 'labels') }")
 
     def crop(self, save=True, save_dir='runs/detect/exp'):
