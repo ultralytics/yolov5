@@ -484,7 +484,7 @@ class LoadImagesAndLabels(Dataset):
 
             self.batch_shapes = np.ceil(np.array(shapes) * img_size / stride + pad).astype(np.int) * stride
 
-        # Cache images into memory for faster training (WARNING: large datasets may exceed system RAM)
+        # Cache images into RAM/disk for faster training (WARNING: large datasets may exceed system resources)
         self.imgs, self.img_npy = [None] * n, [None] * n
         if cache_images:
             if cache_images == 'disk':
@@ -500,7 +500,7 @@ class LoadImagesAndLabels(Dataset):
                     if not self.img_npy[i].exists():
                         np.save(self.img_npy[i].as_posix(), x[0])
                     gb += self.img_npy[i].stat().st_size
-                else:
+                else:  # 'ram'
                     self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # im, hw_orig, hw_resized = load_image(self, i)
                     gb += self.imgs[i].nbytes
                 pbar.desc = f'{prefix}Caching images ({gb / 1E9:.1f}GB {cache_images})'
