@@ -8,8 +8,10 @@ Datasets: https://github.com/ultralytics/yolov5/tree/master/data
 Tutorial: https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data
 
 Usage:
-    $ python path/to/train.py --data coco128.yaml --weights yolov5s.pt --img 640  # from pretrained (RECOMMENDED)
-    $ python path/to/train.py --data coco128.yaml --weights '' --cfg yolov5s.yaml --img 640  # from scratch
+    $ python path/to/train.py --data coco128.yaml --weights yolov5s.pt --img 640
+    # from pretrained (RECOMMENDED)
+    $ python path/to/train.py --data coco128.yaml --weights '' --cfg yolov5s.yaml --img 640
+    # from scratch
 """
 
 import argparse
@@ -32,11 +34,6 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import SGD, Adam, AdamW, lr_scheduler
 from tqdm import tqdm
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.experimental import attempt_load
 from models.yolo import Model, Polygon_Model
 from utils.autoanchor_polygon import check_anchors, polygon_check_anchors
@@ -52,9 +49,15 @@ from utils.loggers import Loggers
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.loss_polygon import ComputeLoss, Polygon_ComputeLoss
 from utils.metrics import fitness
-from utils.plots_polygon import (plot_evolution, plot_evolve, plot_images, plot_labels, plot_results,
-                                 polygon_plot_images, polygon_plot_labels, polygon_plot_results)
+from utils.plots_polygon import (plot_evolve, plot_images, plot_labels, plot_results,
+                                 polygon_plot_images, polygon_plot_labels)
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
+
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -92,7 +95,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         __computeLoss = ComputeLoss
         __plot_images = plot_images
         import val as val  # for end-of-epoch mAP
-
 
     # Hyperparameters
     if isinstance(hyp, str):
@@ -239,9 +241,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # Trainloader
     train_loader, dataset = __create_dataloader(train_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
-                                              hyp=hyp, augment=True, cache=opt.cache, rect=opt.rect, rank=LOCAL_RANK,
-                                              workers=workers, image_weights=opt.image_weights, quad=opt.quad,
-                                              prefix=colorstr('train: '), shuffle=True)
+                                                hyp=hyp, augment=True, cache=opt.cache, rect=opt.rect, rank=LOCAL_RANK,
+                                                workers=workers, image_weights=opt.image_weights, quad=opt.quad,
+                                                prefix=colorstr('train: '), shuffle=True)
     mlc = int(np.concatenate(dataset.labels, 0)[:, 0].max())  # max label class
     nb = len(train_loader)  # number of batches
     assert mlc < nc, f'Label class {mlc} exceeds nc={nc} in {data}. Possible class labels are 0-{nc - 1}'
@@ -249,9 +251,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Process 0
     if RANK in [-1, 0]:
         val_loader = __create_dataloader(val_path, imgsz, batch_size // WORLD_SIZE * 2, gs, single_cls,
-                                       hyp=hyp, cache=None if noval else opt.cache, rect=True, rank=-1,
-                                       workers=workers, pad=0.5,
-                                       prefix=colorstr('val: '))[0]
+                                         hyp=hyp, cache=None if noval else opt.cache, rect=True, rank=-1,
+                                         workers=workers, pad=0.5,
+                                         prefix=colorstr('val: '))[0]
 
         if not resume:
             labels = np.concatenate(dataset.labels, 0)
@@ -289,7 +291,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     t0 = time.time()
     nw = max(round(hyp['warmup_epochs'] * nb), 1000)  # number of warmup iterations, max(3 epochs, 1k iterations)
     # nw = min(nw, (epochs - start_epoch) / 2 * nb) # limit warmup to < 1/2 of
-                                                        # training
+    # training
     last_opt_step = -1
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
@@ -330,7 +332,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             if ni <= nw:
                 xi = [0, nw]  # x interp
                 # compute_loss.gr = np.interp(ni, xi, [0.0, 1.0]) # iou loss
-                                            # ratio (obj_loss = 1.0 or iou)
+                # ratio (obj_loss = 1.0 or iou)
                 accumulate = max(1, np.interp(ni, xi, [1, nbs / batch_size]).round())
                 for j, x in enumerate(optimizer.param_groups):
                     # bias lr falls from 0.1 to lr0, all other lrs rise from
@@ -372,10 +374,11 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             if RANK in [-1, 0]:
                 mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
                 mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
-                s = ('%10s' * 2 + '%10.4g' * 5) % (f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1])
+                s = ('%10s' * 2 + '%10.4g' * 5) % (f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0],
+                                                   imgs.shape[-1])
                 pbar.set_description(s)
 
-                callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, plots, opt.sync_bn,__plot_images)
+                callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, plots, opt.sync_bn, __plot_images)
 
             # end batch
             # ------------------------------------------------------------------------------------------------
@@ -483,13 +486,18 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='initial weights path')
+    parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt',
+                        help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
-    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.scratch.yaml', help='hyperparameters path')
+    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml',
+                        help='dataset.yaml path')
+    parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.scratch.yaml',
+                        help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs, -1 for autobatch')
-    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='train, val image size (pixels)')
+    parser.add_argument('--batch-size', type=int, default=16, 
+                        help='total batch size for all GPUs, -1 for autobatch')
+    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, 
+                        help='train, val image size (pixels)')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
     parser.add_argument('--polygon', default=False, help='true to train polygon labels')

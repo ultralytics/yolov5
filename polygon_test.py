@@ -25,30 +25,30 @@ from utils.torch_utils import select_device, time_sync
 # polygon_test.py is specially for polygon boxes
 @torch.no_grad()
 def run(data,
-         weights=None,  # model.pt path(s)
-         batch_size=32,  # batch size
-         imgsz=640,  # inference size (pixels)
-         conf_thres=0.001,  # confidence threshold
-         iou_thres=0.6,  # NMS IoU threshold
-         task='val',  # train, val, test, speed or study
-         device='',  # cuda device, i.e.  0 or 0,1,2,3 or cpu
-         single_cls=False,  # treat as single-class dataset
-         augment=False,  # augmented inference
-         verbose=False,  # verbose output
-         save_txt=False,  # save results to *.txt
-         save_hybrid=False,  # save label+prediction hybrid results to *.txt
-         save_conf=False,  # save confidences in --save-txt labels
-         save_json=False,  # save a cocoapi-compatible JSON results file
-         project='runs/test',  # save to project/name
-         name='exp',  # save to project/name
-         exist_ok=False,  # existing project/name ok, do not increment
-         half=True,  # use FP16 half-precision inference
-         model=None,
-         dataloader=None,
-         save_dir=Path(''),
-         plots=True,
-         callbacks=None,
-         compute_loss=None,):
+        weights=None,  # model.pt path(s)
+        batch_size=32,  # batch size
+        imgsz=640,  # inference size (pixels)
+        conf_thres=0.001,  # confidence threshold
+        iou_thres=0.6,  # NMS IoU threshold
+        task='val',  # train, val, test, speed or study
+        device='',  # cuda device, i.e.  0 or 0,1,2,3 or cpu
+        single_cls=False,  # treat as single-class dataset
+        augment=False,  # augmented inference
+        verbose=False,  # verbose output
+        save_txt=False,  # save results to *.txt
+        save_hybrid=False,  # save label+prediction hybrid results to *.txt
+        save_conf=False,  # save confidences in --save-txt labels
+        save_json=False,  # save a cocoapi-compatible JSON results file
+        project='runs/test',  # save to project/name
+        name='exp',  # save to project/name
+        exist_ok=False,  # existing project/name ok, do not increment
+        half=True,  # use FP16 half-precision inference
+        model=None,
+        dataloader=None,
+        save_dir=Path(''),
+        plots=True,
+        callbacks=None,
+        compute_loss=None,):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by polygon_train.py
@@ -124,7 +124,8 @@ def run(data,
             loss += compute_loss([x.float() for x in train_out], targets)[1][:3]  # box, obj, cls
 
         # Run Polygon NMS
-        targets[:, 2:] *= torch.Tensor([width, height, width, height, width, height, width, height]).to(device)  # to pixels
+        targets[:, 2:] *= torch.Tensor([width, height, width, height, width, height, width, height]).to(device)
+        # to pixels
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
         t = time_sync()
         # out is list of detections, on (n,10) tensor per image [xyxyxyxy,
@@ -303,11 +304,11 @@ if __name__ == '__main__':
     elif opt.task == 'speed':  # speed benchmarks
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
             run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
-                 save_json=False, plots=False)
+                save_json=False, plots=False)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
         # python test.py --task study --data coco.yaml --iou 0.7 --weights
-                                     # yolov5s.pt yolov5m.pt yolov5l.pt yolov5x.pt
+        # yolov5s.pt yolov5m.pt yolov5l.pt yolov5x.pt
         x = list(range(256, 1536 + 128, 128))  # x axis (image sizes)
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
             f = f'study_{Path(opt.data).stem}_{Path(w).stem}.txt'  # filename to save to
@@ -315,7 +316,7 @@ if __name__ == '__main__':
             for i in x:  # img-size
                 print(f'\nRunning {f} point {i}...')
                 r, _, t = run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=i, conf_thres=opt.conf_thres,
-                               iou_thres=opt.iou_thres, save_json=opt.save_json, plots=False)
+                              iou_thres=opt.iou_thres, save_json=opt.save_json, plots=False)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')

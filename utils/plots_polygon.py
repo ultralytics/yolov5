@@ -96,7 +96,7 @@ def polygon_plot_images(images, targets, paths=None, fname='images.jpg', names=N
 
             if boxes.shape[1]:
                 if boxes.max() <= 2.:  # if normalized with tolerance 1.0 (large tolerance allows four corners to be
-                                       # out of images)
+                    # out of images)
                     boxes[0::2] *= w  # scale to pixels
                     boxes[1::2] *= h
                 elif scale_factor < 1:  # absolute coords need scale if image scales
@@ -133,7 +133,7 @@ def polygon_plot_images(images, targets, paths=None, fname='images.jpg', names=N
 def polygon_plot_test_txt():  # from utils.plots import *; polygon_plot_test_txt()
     # Plot test.txt histograms
     x = np.loadtxt('test.txt', dtype=np.float32)
-    box = x[:, :8]    #xyxyxyxy
+    box = x[:, :8]  # xyxyxyxy
     # using center points instead
     cx, cy = box[:, 0::2].mean(axis=1), box[:, 1::2].mean(axis=1)
     fig, ax = plt.subplots(1, 1, figsize=(6, 6), tight_layout=True)
@@ -151,7 +151,7 @@ def polygon_plot_targets_txt():  # from utils.plots import *; polygon_plot_targe
     # Plot targets.txt histograms
     x = np.loadtxt('targets.txt', dtype=np.float32).T
     s = ['x1 targets', 'y1 targets', 'x2 targets', 'y2 targets',
-        'x3 targets', 'y3 targets', 'x4 targets', 'y4 targets']
+         'x3 targets', 'y3 targets', 'x4 targets', 'y4 targets']
     fig, ax = plt.subplots(4, 2, figsize=(16, 8), tight_layout=True)
     ax = ax.ravel()
     for i in range(8):

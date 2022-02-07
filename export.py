@@ -56,11 +56,6 @@ import torch
 import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import Conv
 from models.experimental import attempt_load
 from models.yolo import Detect
@@ -69,6 +64,12 @@ from utils.datasets import LoadImages
 from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_version, colorstr,
                            file_size, print_args, url2file)
 from utils.torch_utils import select_device
+
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 
 def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):
@@ -122,8 +123,8 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
 
                 LOGGER.info(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
                 model_onnx, check = onnxsim.simplify(model_onnx,
-                    dynamic_input_shape=dynamic,
-                    input_shapes={'images': list(im.shape)} if dynamic else None)
+                                                     dynamic_input_shape=dynamic,
+                                                     input_shapes={'images': list(im.shape)} if dynamic else None)
                 assert check, 'assert check failed'
                 onnx.save(model_onnx, f)
             except Exception as e:
@@ -321,7 +322,8 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
             LOGGER.info(f'\n{prefix} export requires Edge TPU compiler. Attempting install from {help_url}')
             sudo = subprocess.run('sudo --version >/dev/null', shell=True).returncode == 0  # sudo installed on system
             for c in ['curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -',
-                      'echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list',
+                      'echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" |\
+                       sudo tee /etc/apt/sources.list.d/coral-edgetpu.list',
                       'sudo apt-get update',
                       'sudo apt-get install edgetpu-compiler']:
                 subprocess.run(c if sudo else c.replace('sudo ', ''), shell=True, check=True)
@@ -360,14 +362,14 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
         json = open(f_json).read()
         with open(f_json, 'w') as j:  # sort JSON Identity_* in ascending order
             subst = re.sub(r'{"outputs": {"Identity.?.?": {"name": "Identity.?.?"}, '
-                r'"Identity.?.?": {"name": "Identity.?.?"}, '
-                r'"Identity.?.?": {"name": "Identity.?.?"}, '
-                r'"Identity.?.?": {"name": "Identity.?.?"}}}',
-                r'{"outputs": {"Identity": {"name": "Identity"}, '
-                r'"Identity_1": {"name": "Identity_1"}, '
-                r'"Identity_2": {"name": "Identity_2"}, '
-                r'"Identity_3": {"name": "Identity_3"}}}',
-                json)
+                           r'"Identity.?.?": {"name": "Identity.?.?"}, '
+                           r'"Identity.?.?": {"name": "Identity.?.?"}, '
+                           r'"Identity.?.?": {"name": "Identity.?.?"}}}',
+                           r'{"outputs": {"Identity": {"name": "Identity"}, '
+                           r'"Identity_1": {"name": "Identity_1"}, '
+                           r'"Identity_2": {"name": "Identity_2"}, '
+                           r'"Identity_3": {"name": "Identity_3"}}}',
+                           json)
             j.write(subst)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -481,6 +483,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
                 f"\nValidate:        python val.py --weights {f[-1]}"
                 f"\nVisualize:       https://netron.app")
     return f  # return list of exported files/dirs
+
 
 def parse_opt():
     parser = argparse.ArgumentParser()

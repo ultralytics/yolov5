@@ -26,6 +26,7 @@ RANK = int(os.getenv('RANK', -1))
 matplotlib.rc('font', **{'size': 11})
 matplotlib.use('Agg')  # for writing to files only
 
+
 class Colors:
     # Ultralytics color palette https://ultralytics.com/
     def __init__(self):
@@ -59,6 +60,7 @@ def check_pil_font(font=FONT, size=10):
             return ImageFont.truetype(str(font), size)
         except TypeError:
             check_requirements('Pillow>=8.4.0')  # known issue https://github.com/ultralytics/yolov5/issues/5374
+
 
 class Annotator:
     if RANK in (-1, 0):
@@ -144,6 +146,7 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detec
             plt.close()
             np.save(str(f.with_suffix('.npy')), x[0].cpu().numpy())  # npy save
 
+
 def hist2d(x, y, n=100):
     # 2d histogram used in labels.png and evolve.png
     xedges, yedges = np.linspace(x.min(), x.max(), n), np.linspace(y.min(), y.max(), n)
@@ -164,6 +167,7 @@ def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
 
     b, a = butter_lowpass(cutoff, fs, order=order)
     return filtfilt(b, a, data)  # forward-backward filter
+
 
 def output_to_target(output):
     # Convert model output to target format [batch_id, class_id, x, y, w, h,
@@ -234,6 +238,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
                     label = f'{cls}' if labels else f'{cls} {conf[j]:.1f}'
                     annotator.box_label(box, label, color=color)
     annotator.im.save(fname)  # save
+
 
 def plot_lr_scheduler(optimizer, scheduler, epochs=300, save_dir=''):
     # Plot LR simulating training for full epochs

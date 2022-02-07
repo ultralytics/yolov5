@@ -45,6 +45,7 @@ pd.options.display.max_columns = 10
 cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with PyTorch DataLoader)
 os.environ['NUMEXPR_MAX_THREADS'] = str(NUM_THREADS)  # NumExpr max threads
 
+
 def is_kaggle():
     # Is environment a Kaggle Notebook?
     try:
@@ -192,6 +193,7 @@ def is_docker():
     # Is environment a Docker container?
     return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
 
+
 def is_colab():
     # Is environment a Google Colab instance?
     try:
@@ -263,6 +265,7 @@ def check_git_status():
     else:
         s += f'up to date with {url} ✅'
     LOGGER.info(emojis(s))  # emoji-safe
+
 
 def check_python(minimum='3.6.2'):
     # Check current python version vs.  required python version
@@ -450,6 +453,7 @@ def check_dataset(data, autodownload=True):
 
     return data  # dictionary
 
+
 def url2file(url):
     # Convert URL to filename, i.e.  https://url.com/file.txt?auth -> file.txt
     url = str(Path(url)).replace(':/', '://')  # Pathlib turns :// -> :/
@@ -567,12 +571,12 @@ def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
 
 def coco80_to_coco91_class():  # converts 80-index (val2014) to 91-index (paper)
     # https://tech.amikelive.com/node-718/what-object-categories-labels-are-in-coco-dataset/
-                                 # a = np.loadtxt('data/coco.names', dtype='str', delimiter='\n')
-                                 # b = np.loadtxt('data/coco_paper.names', dtype='str', delimiter='\n')
-                                 # x1 = [list(a[i] == b).index(True) + 1 for i in range(80)] # darknet to
-                                 # coco
-                                 # x2 = [list(b[i] == a).index(True) if any(b[i] == a) else None for i in
-                                 # range(91)] # coco to darknet
+    # a = np.loadtxt('data/coco.names', dtype='str', delimiter='\n')
+    # b = np.loadtxt('data/coco_paper.names', dtype='str', delimiter='\n')
+    # x1 = [list(a[i] == b).index(True) + 1 for i in range(80)] # darknet to
+    # coco
+    # x2 = [list(b[i] == a).index(True) if any(b[i] == a) else None for i in
+    # range(91)] # coco to darknet
     x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 28, 31, 32, 33, 34,
          35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
          64, 65, 67, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90]
@@ -641,6 +645,7 @@ def segment2box(segment, width=640, height=640):
     x, y, = x[inside], y[inside]
     return np.array([x.min(), y.min(), x.max(), y.max()]) if any(x) else np.zeros((1, 4))  # xyxy
 
+
 def segments2boxes(segments):
     # Convert segment labels to box labels, i.e.  (cls, xy1, xy2, ...) to (cls,
     # xywh)
@@ -649,6 +654,7 @@ def segments2boxes(segments):
         x, y = s.T  # segment xy
         boxes.append([x.min(), y.min(), x.max(), y.max()])  # cls, xyxy
     return xyxy2xywh(np.array(boxes))  # cls, xywh
+
 
 def resample_segments(segments, n=1000):
     # Up-sample an (n,2) segment
@@ -685,6 +691,7 @@ def clip_coords(boxes, shape):
     else:  # np.array (faster grouped)
         boxes[:, [0, 2]] = boxes[:, [0, 2]].clip(0, shape[1])  # x1, x2
         boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, shape[0])  # y1, y2
+
 
 def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False,
                         labels=(), max_det=300):
@@ -825,11 +832,16 @@ def print_mutation(results, hyp, save_dir, bucket):
         data = pd.read_csv(evolve_csv)
         data = data.rename(columns=lambda x: x.strip())  # strip keys
         i = np.argmax(fitness(data.values[:, :7]))  #
-        f.write('# YOLOv5 Hyperparameter Evolution Results\n' + f'# Best generation: {i}\n' + f'# Last generation: {len(data) - 1}\n' + '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:7]) + '\n' + '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :7]) + '\n\n')
+        f.write(
+            '# YOLOv5 Hyperparameter Evolution Results\n' + f'# Best generation: {i}\n' +
+            f'# Last generation: {len(data) - 1}\n' + '# ' + ', '.join(
+                f'{x.strip():>20s}' for x in keys[:7]) + '\n' + '# ' + ', '.join(
+                f'{x:>20.5g}' for x in data.values[i, :7]) + '\n\n')
         yaml.safe_dump(hyp, f, sort_keys=False)
 
     if bucket:
         os.system(f'gsutil cp {evolve_csv} {evolve_yaml} gs://{bucket}')  # upload
+
 
 def apply_classifier(x, model, img, im0):
     # Apply a second stage classifier to YOLO outputs

@@ -9,7 +9,6 @@ import sys
 import time
 from pathlib import Path
 
-sys.path.append(Path(__file__).parent.parent.absolute().__str__())  # to run '$ python *.py' files in subdirectories
 import torch
 import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
@@ -19,6 +18,7 @@ from models.experimental import attempt_load
 from utils.activations import Hardswish, SiLU
 from utils.general import check_img_size, check_requirements, colorstr, file_size, set_logging
 from utils.torch_utils import select_device
+sys.path.append(Path(__file__).parent.parent.absolute().__str__())  # to run '$ python *.py' files in subdirectories
 
 
 def export(weights='./yolov5s.pt',  # weights path
@@ -113,8 +113,8 @@ def export(weights='./yolov5s.pt',  # weights path
 
                     print(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
                     model_onnx, check = onnxsim.simplify(model_onnx,
-                        dynamic_input_shape=dynamic,
-                        input_shapes={'images': list(img.shape)} if dynamic else None)
+                                                         dynamic_input_shape=dynamic,
+                                                         input_shapes={'images': list(img.shape)} if dynamic else None)
                     assert check, 'assert check failed'
                     onnx.save(model_onnx, f)
                 except Exception as e:

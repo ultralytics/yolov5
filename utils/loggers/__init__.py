@@ -33,7 +33,7 @@ except (ImportError, AssertionError):
     wandb = None
 
 
-class Loggers():
+class Loggers:
     # YOLOv5 Loggers class
     def __init__(self, save_dir=None, weights=None, opt=None, hyp=None, logger=None, include=LOGGERS):
         self.save_dir = save_dir
@@ -46,7 +46,7 @@ class Loggers():
                      'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',  # metrics
                      'val/box_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
                      'x/lr0', 'x/lr1', 'x/lr2']  # params
-        self.best_keys = ['best/epoch', 'best/precision', 'best/recall', 'best/mAP_0.5', 'best/mAP_0.5:0.95',]
+        self.best_keys = ['best/epoch', 'best/precision', 'best/recall', 'best/mAP_0.5', 'best/mAP_0.5:0.95', ]
         for k in LOGGERS:
             setattr(self, k, None)  # init empty logger dictionary
         self.csv = True  # always log to csv
@@ -84,7 +84,7 @@ class Loggers():
         if plots:
             if ni == 0:
                 if not sync_bn:  # tb.add_graph() --sync known issue
-                                 # https://github.com/ultralytics/yolov5/issues/3754
+                    # https://github.com/ultralytics/yolov5/issues/3754
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore')  # suppress jit trace warning
                         self.tb.add_graph(torch.jit.trace(de_parallel(model), imgs[0:1], strict=False), [])

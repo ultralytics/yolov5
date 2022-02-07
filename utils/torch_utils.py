@@ -17,6 +17,7 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision
 
 from utils.general import LOGGER
 
@@ -46,12 +47,13 @@ def date_modified(path=__file__):
 
 def git_describe(path=Path(__file__).parent):  # path must be a directory
     # return human-readable git description, i.e.  v5.0-5-g3e25f1e
-                                                 # https://git-scm.com/docs/git-describe
+    # https://git-scm.com/docs/git-describe
     s = f'git -C {path} describe --tags --long --always'
     try:
         return subprocess.check_output(s, shell=True, stderr=subprocess.STDOUT).decode()[:-1]
     except subprocess.CalledProcessError:
         return ''  # not a git repository
+
 
 def device_count():
     # Returns number of CUDA devices available.  Safe version of
@@ -235,7 +237,8 @@ def model_info(model, verbose=False, img_size=640):
         print(f"{'layer':>5} {'name':>40} {'gradient':>9} {'parameters':>12} {'shape':>20} {'mu':>10} {'sigma':>10}")
         for i, (name, p) in enumerate(model.named_parameters()):
             name = name.replace('module_list.', '')
-            print('%5g %40s %9s %12g %20s %10.3g %10.3g' % (i, name, p.requires_grad, p.numel(), list(p.shape), p.mean(), p.std()))
+            print('%5g %40s %9s %12g %20s %10.3g %10.3g' % (i, name, p.requires_grad, p.numel(), list(p.shape),
+                                                            p.mean(), p.std()))
 
     try:  # FLOPs
         from thop import profile
@@ -261,6 +264,7 @@ def scale_img(img, ratio=1.0, same_shape=False, gs=32):  # img(16,3,256,416)
         if not same_shape:  # pad/crop img
             h, w = (math.ceil(x * ratio / gs) * gs for x in (h, w))
         return F.pad(img, [0, w - s[1], 0, h - s[0]], value=0.447)  # value = imagenet mean
+
 
 def copy_attr(a, b, include=(), exclude=()):
     # Copy attributes from b to a, options to only include [...] and to exclude
@@ -332,15 +336,10 @@ class ModelEMA:
         copy_attr(self.ema, model, include, exclude)
 
 
-
 def intersect_dicts(da, db, exclude=()):
     # Dictionary intersection of matching keys and shapes, omitting 'exclude'
     # keys, using da values
     return {k: v for k, v in da.items() if k in db and not any(x in k for x in exclude) and v.shape == db[k].shape}
-
-
-
-import torchvision
 
 
 def load_classifier(name='resnet101', n=2):

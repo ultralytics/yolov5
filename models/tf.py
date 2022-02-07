@@ -15,11 +15,6 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[1]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-# ROOT = ROOT.relative_to(Path.cwd()) # relative
 import numpy as np
 import tensorflow as tf
 import torch
@@ -32,16 +27,22 @@ from models.yolo import Detect
 from utils.activations import SiLU
 from utils.general import LOGGER, make_divisible, print_args
 
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[1]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
+# ROOT = ROOT.relative_to(Path.cwd()) # relative
+
 
 class TFBN(keras.layers.Layer):
     # TensorFlow BatchNormalization wrapper
     def __init__(self, w=None):
         super().__init__()
         self.bn = keras.layers.BatchNormalization(beta_initializer=keras.initializers.Constant(w.bias.numpy()),
-            gamma_initializer=keras.initializers.Constant(w.weight.numpy()),
-            moving_mean_initializer=keras.initializers.Constant(w.running_mean.numpy()),
-            moving_variance_initializer=keras.initializers.Constant(w.running_var.numpy()),
-            epsilon=w.eps)
+                                                  gamma_initializer=keras.initializers.Constant(w.weight.numpy()),
+                                                  moving_mean_initializer=keras.initializers.Constant(w.running_mean.numpy()),
+                                                  moving_variance_initializer=keras.initializers.Constant(w.running_var.numpy()),
+                                                  epsilon=w.eps)
 
     def call(self, inputs):
         return self.bn(inputs)
@@ -69,8 +70,8 @@ class TFConv(keras.layers.Layer):
         # https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
 
         conv = keras.layers.Conv2D(c2, k, s, 'SAME' if s == 1 else 'VALID', use_bias=False if hasattr(w, 'bn') else True,
-            kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()),
-            bias_initializer='zeros' if hasattr(w, 'bn') else keras.initializers.Constant(w.conv.bias.numpy()))
+                                   kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()),
+                                   bias_initializer='zeros' if hasattr(w, 'bn') else keras.initializers.Constant(w.conv.bias.numpy()))
         self.conv = conv if s == 1 else keras.Sequential([TFPad(autopad(k, p)), conv])
         self.bn = TFBN(w.bn) if hasattr(w, 'bn') else tf.identity
 
@@ -122,8 +123,8 @@ class TFConv2d(keras.layers.Layer):
         super().__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
         self.conv = keras.layers.Conv2D(c2, k, s, 'VALID', use_bias=bias,
-            kernel_initializer=keras.initializers.Constant(w.weight.permute(2, 3, 1, 0).numpy()),
-            bias_initializer=keras.initializers.Constant(w.bias.numpy()) if bias else None,)
+                                        kernel_initializer=keras.initializers.Constant(w.weight.permute(2, 3, 1, 0).numpy()),
+                                        bias_initializer=keras.initializers.Constant(w.bias.numpy()) if bias else None,)
 
     def call(self, inputs):
         return self.conv(inputs)
@@ -361,16 +362,17 @@ class TFModel:
                 return nms, x[1]
             else:
                 boxes = tf.expand_dims(boxes, 2)
-                nms = tf.image.combined_non_max_suppression(boxes, scores, topk_per_class, topk_all, iou_thres, conf_thres, clip_boxes=False)
+                nms = tf.image.combined_non_max_suppression(boxes, scores, topk_per_class, topk_all, iou_thres,
+                                                            conf_thres, clip_boxes=False)
                 return nms, x[1]
 
         return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
         # x = x[0][0] # [x(1,6300,85), ...] to x(6300,85)
-                           # xywh = x[..., :4] # x(6300,4) boxes
-                           # conf = x[..., 4:5] # x(6300,1) confidences
-                           # cls = tf.reshape(tf.cast(tf.argmax(x[..., 5:], axis=1), tf.float32),
-                           # (-1, 1)) # x(6300,1) classes
-                           # return tf.concat([conf, cls, xywh], 1)
+        # xywh = x[..., :4] # x(6300,4) boxes
+        # conf = x[..., 4:5] # x(6300,1) confidences
+        # cls = tf.reshape(tf.cast(tf.argmax(x[..., 5:], axis=1), tf.float32),
+        # (-1, 1)) # x(6300,1) classes
+        # return tf.concat([conf, cls, xywh], 1)
 
     @staticmethod
     def _xywh2xyxy(xywh):
@@ -394,7 +396,8 @@ class AgnosticNMS(keras.layers.Layer):
         boxes, classes, scores = x
         class_inds = tf.cast(tf.argmax(classes, axis=-1), tf.float32)
         scores_inp = tf.reduce_max(scores, -1)
-        selected_inds = tf.image.non_max_suppression(boxes, scores_inp, max_output_size=topk_all, iou_threshold=iou_thres, score_threshold=conf_thres)
+        selected_inds = tf.image.non_max_suppression(boxes, scores_inp, max_output_size=topk_all,
+                                                     iou_threshold=iou_thres, score_threshold=conf_thres)
         selected_boxes = tf.gather(boxes, selected_inds)
         padded_boxes = tf.pad(selected_boxes,
                               paddings=[[0, topk_all - tf.shape(selected_boxes)[0]], [0, 0]],

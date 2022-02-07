@@ -212,6 +212,7 @@ class Focus(nn.Module):
         return self.conv(torch.cat([x[..., ::2, ::2], x[..., 1::2, ::2], x[..., ::2, 1::2], x[..., 1::2, 1::2]], 1))
         # return self.conv(self.contract(x))
 
+
 class GhostConv(nn.Module):
     # Ghost Convolution https://github.com/huawei-noah/ghostnet
     def __init__(self, c1, c2, k=1, s=1, g=1, act=True):  # ch_in, ch_out, kernel, stride, groups
@@ -254,6 +255,7 @@ class Contract(nn.Module):
         x = x.permute(0, 3, 5, 1, 2, 4).contiguous()  # x(1,2,2,64,40,40)
         return x.view(b, c * s * s, h // s, w // s)  # x(1,256,40,40)
 
+
 class Expand(nn.Module):
     # Expand channels into width-height, i.e.  x(1,64,80,80) to x(1,16,160,160)
     def __init__(self, gain=2):
@@ -266,6 +268,7 @@ class Expand(nn.Module):
         x = x.view(b, s, s, c // s ** 2, h, w)  # x(1,2,2,16,80,80)
         x = x.permute(0, 3, 4, 1, 5, 2).contiguous()  # x(1,16,80,2,80,2)
         return x.view(b, c // s ** 2, h * s, w * s)  # x(1,16,160,160)
+
 
 class Concat(nn.Module):
     # Concatenate a list of tensors along dimension
@@ -461,6 +464,7 @@ class DetectMultiBackend(nn.Module):
                 im = torch.zeros(*imgsz).to(self.device).type(torch.half if half else torch.float)  # input image
                 self.forward(im)  # warmup
 
+
 class AutoShape(nn.Module):
     # YOLOv5 input-robust model wrapper for passing cv2/np/PIL/torch inputs.
     # Includes preprocessing, inference and NMS
@@ -468,8 +472,7 @@ class AutoShape(nn.Module):
     iou = 0.45  # NMS IoU threshold
     agnostic = False  # NMS class-agnostic
     multi_label = False  # NMS multiple labels per box
-    classes = None  # (optional list) filter by class, i.e.  = [0, 15, 16] for COCO persons, cats
-                    # and dogs
+    classes = None  # (optional list) filter by class, i.e.  = [0, 15, 16] for COCO persons, cats and dogs
     max_det = 1000  # maximum number of detections per image
     amp = False  # Automatic Mixed Precision (AMP) inference
 
@@ -617,7 +620,8 @@ class Detections:
 
     def print(self):
         self.display(pprint=True)  # print results
-        LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' % self.t)
+        LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image\
+         at shape {tuple(self.s)}' % self.t)
 
     def show(self):
         self.display(show=True)  # show results
@@ -671,6 +675,7 @@ class Classify(nn.Module):
         z = torch.cat([self.aap(y) for y in (x if isinstance(x, list) else [x])], 1)  # cat if list
         return self.flat(self.conv(z))  # flatten to x(b,c2)
 
+
 class Polygon_NMS(nn.Module):
     # Non-Maximum Suppression (NMS) module for Polygon Anchors
     conf = 0.25  # confidence threshold
@@ -682,7 +687,8 @@ class Polygon_NMS(nn.Module):
         super().__init__()
 
     def forward(self, x):
-        return polygon_non_max_suppression(x[0], self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)
+        return polygon_non_max_suppression(x[0], self.conf, iou_thres=self.iou,
+                                           classes=self.classes, max_det=self.max_det)
 
 
 class Polygon_AutoShape(nn.Module):
@@ -754,7 +760,8 @@ class Polygon_AutoShape(nn.Module):
             t.append(time_sync())
 
             # Post-process
-            y = polygon_non_max_suppression(y, self.conf, iou_thres=self.iou, classes=self.classes, max_det=self.max_det)  # Polygon NMS
+            y = polygon_non_max_suppression(y, self.conf, iou_thres=self.iou,
+                                            classes=self.classes, max_det=self.max_det)  # Polygon NMS
 
             for i in range(n):
                 polygon_scale_coords(shape1, y[i][:, :8], shape0[i])
@@ -768,9 +775,10 @@ class Polygon_Detections:
     def __init__(self, imgs, pred, files, times=None, names=None, shape=None):
         super().__init__()
         d = pred[0].device  # device
-        gn = [torch.tensor([*[im.shape[i] for i in [1, 0, 1, 0, 1, 0, 1, 0]], 1., 1.], device=d) for im in imgs]  # normalizations
+        gn = [torch.tensor([*[im.shape[i] for i in [1, 0, 1, 0, 1, 0, 1, 0]], 1., 1.], device=d) for im in imgs]  #
+        # normalizations
         self.imgs = imgs  # list of images as numpy arrays, images should be pixel-level and with shape
-                          # (height, width, channel)
+        # (height, width, channel)
         self.pred = pred  # list of tensors: pred[0] = (xyxyxyxy, conf, cls)
         self.names = names  # class names
         self.files = files  # image filenames
@@ -791,7 +799,8 @@ class Polygon_Detections:
                 if show or save or render:
                     for *box, conf, cls in pred:  # xyxyxyxy, confidence, class
                         label = f'{self.names[int(cls)]} {conf:.2f}'
-                        polygon_plot_one_box(torch.tensor(box, device='cpu').numpy(), im, label=label, color=colors(cls))
+                        polygon_plot_one_box(torch.tensor(box, device='cpu').numpy(), im, label=label,
+                                             color=colors(cls))
             im = Image.fromarray(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im  # from np
             if pprint:
                 print(str.rstrip(', '))

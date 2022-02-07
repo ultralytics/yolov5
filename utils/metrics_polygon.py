@@ -24,7 +24,7 @@ class Polygon_ConfusionMatrix(ConfusionMatrix):
         detections = detections[detections[:, 8] > self.conf]
         gt_classes = labels[:, 0].int()
         detection_classes = detections[:, 9].int()
-        iou = polygon_box_iou(labels[:, 1:], detections[:, :8], device=detections.device) # iou has shape M x N
+        iou = polygon_box_iou(labels[:, 1:], detections[:, :8], device=detections.device)  # iou has shape M x N
         x = torch.where(iou > self.iou_thres)
         if x[0].shape[0]:
             matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy()
@@ -49,6 +49,7 @@ class Polygon_ConfusionMatrix(ConfusionMatrix):
             for i, dc in enumerate(detection_classes):
                 if not any(m1 == i):
                     self.matrix[dc, self.nc] += 1  # background FN
+
 
 def polygon_ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names=()):
     """ Compute the average precision, given the recall and precision curves.

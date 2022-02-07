@@ -27,7 +27,7 @@ class BCEBlurWithLogitsLoss(nn.Module):
         pred = torch.sigmoid(pred)  # prob from logits
         dx = pred - true  # reduce only missing label effects
         # dx = (pred - true).abs() # reduce missing label and false label
-                                # effects
+        # effects
         alpha_factor = 1 - torch.exp((dx - 1) / (self.alpha + 1e-4))
         loss *= alpha_factor
         return loss.mean()
@@ -197,7 +197,7 @@ class ComputeLoss:
                 r = t[:, :, 4:6] / anchors[:, None]  # wh ratio
                 j = torch.max(r, 1 / r).max(2)[0] < self.hyp['anchor_t']  # compare
                 # j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t'] #
-                                                                                        # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
+                # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
                 t = t[j]  # filter
 
                 # Offsets

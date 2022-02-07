@@ -7,6 +7,7 @@ try:
     # polygon_b_inter_union_cuda, please cd to ./iou_cuda and run "python
     # setup.py install"
     from polygon_inter_union_cuda import polygon_b_inter_union_cuda, polygon_inter_union_cuda
+
     polygon_inter_union_cuda_enable = True
     polygon_b_inter_union_cuda_enable = True
 except Exception as e:
@@ -14,6 +15,8 @@ except Exception as e:
     print(f'The Exception is: {e}.')
     polygon_inter_union_cuda_enable = False
     polygon_b_inter_union_cuda_enable = False
+
+
 # Ancillary functions with polygon anchor
 # boxes-------------------------------------------------------------------------------------------
 def xyxyxyxyn2xyxyxyxy(x, w=640, h=640, padw=0, padh=0):
@@ -37,15 +40,18 @@ def polygon_segment2box(segment, width=640, height=640):
     polygon_box[1::2] = polygon_box[1::2].clip(0., height)
     return polygon_box if any(x) else np.zeros((1, 8))  # xyxyxyxy
 
+
 def polygon_segments2boxes(segments, img_shapes=None):
     # Convert segment labels to polygon box labels, i.e.  (xy1, xy2, ...) to
     # polygon (xyxyxyxy)
     boxes = []
     img_shapes = [None] * len(segments) if img_shapes is None else img_shapes
     for segment, img_shape in zip(segments, img_shapes):
-        polygon_box = polygon_segment2box(segment) if img_shape is None else polygon_segment2box(segment, img_shape[1], img_shape[0])
+        polygon_box = polygon_segment2box(segment) if img_shape is None else polygon_segment2box(segment, img_shape[1],
+                                                                                                 img_shape[0])
         boxes.append(polygon_box)  # list with item of xyxyxyxy
     return np.array(boxes)  # numpy array with row of xyxyxyxy
+
 
 def polygon_scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
     # Rescale coords (xyxyxyxy) from img1_shape to img0_shape
@@ -68,6 +74,7 @@ def polygon_clip_coords(boxes, img_shape):
     boxes[:, 0::2].clamp_(0, img_shape[1])  # x1x2x3x4
     boxes[:, 1::2].clamp_(0, img_shape[0])  # y1y2y3y4
 
+
 def polygon_inter_union_cpu(boxes1, boxes2):
     """
         Reference: https://github.com/ming71/yolov3-polygon/blob/master/utils/utils.py ;
@@ -80,9 +87,9 @@ def polygon_inter_union_cpu(boxes1, boxes2):
     inter = torch.zeros(n, m)
     union = torch.zeros(n, m)
     for i in range(n):
-        polygon1 = geometry.Polygon(boxes1[i, :].view(4,2)).convex_hull
+        polygon1 = geometry.Polygon(boxes1[i, :].view(4, 2)).convex_hull
         for j in range(m):
-            polygon2 = geometry.Polygon(boxes2[j, :].view(4,2)).convex_hull
+            polygon2 = geometry.Polygon(boxes2[j, :].view(4, 2)).convex_hull
             if polygon1.intersects(polygon2):
                 try:
                     inter[i, j] = polygon1.intersection(polygon2).area
@@ -114,7 +121,8 @@ def polygon_box_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
 
         inter_nan, union_nan = inter.isnan(), union.isnan()
         if inter_nan.any() or union_nan.any():
-            inter2, union2 = polygon_inter_union_cuda(boxes1_, boxes2_)  # Careful that order should be: boxes1_, boxes2_.
+            inter2, union2 = polygon_inter_union_cuda(boxes1_,
+                                                      boxes2_)  # Careful that order should be: boxes1_, boxes2_.
             inter2, union2 = inter2.T, union2.T
             inter = torch.where(inter_nan, inter2, inter)
             union = torch.where(union_nan, union2, union)
@@ -129,16 +137,17 @@ def polygon_box_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
 
     if GIoU or DIoU or CIoU:
         # minimum bounding box of boxes1 and boxes2
-        b1_x1, b1_x2 = boxes1[:, 0::2].min(dim=1)[0], boxes1[:, 0::2].max(dim=1)[0] # 1xn
-        b1_y1, b1_y2 = boxes1[:, 1::2].min(dim=1)[0], boxes1[:, 1::2].max(dim=1)[0] # 1xn
-        b2_x1, b2_x2 = boxes2[:, 0::2].min(dim=1)[0], boxes2[:, 0::2].max(dim=1)[0] # 1xm
-        b2_y1, b2_y2 = boxes2[:, 1::2].min(dim=1)[0], boxes2[:, 1::2].max(dim=1)[0] # 1xm
+        b1_x1, b1_x2 = boxes1[:, 0::2].min(dim=1)[0], boxes1[:, 0::2].max(dim=1)[0]  # 1xn
+        b1_y1, b1_y2 = boxes1[:, 1::2].min(dim=1)[0], boxes1[:, 1::2].max(dim=1)[0]  # 1xn
+        b2_x1, b2_x2 = boxes2[:, 0::2].min(dim=1)[0], boxes2[:, 0::2].max(dim=1)[0]  # 1xm
+        b2_y1, b2_y2 = boxes2[:, 1::2].min(dim=1)[0], boxes2[:, 1::2].max(dim=1)[0]  # 1xm
         for i in range(boxes1.shape[0]):
             cw = torch.max(b1_x2[i], b2_x2) - torch.min(b1_x1[i], b2_x1)  # convex (smallest enclosing box) width
             ch = torch.max(b1_y2[i], b2_y2) - torch.min(b1_y1[i], b2_y1)  # convex height
             if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
                 c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
-                rho2 = ((b2_x1 + b2_x2 - b1_x1[i] - b1_x2[i]) ** 2 + (b2_y1 + b2_y2 - b1_y1[i] - b1_y2[i]) ** 2) / 4  # center distance squared
+                rho2 = ((b2_x1 + b2_x2 - b1_x1[i] - b1_x2[i]) ** 2 + (
+                        b2_y1 + b2_y2 - b1_y1[i] - b1_y2[i]) ** 2) / 4  # center distance squared
                 if DIoU:
                     iou[i, :] -= rho2 / c2  # DIoU
                 elif CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
@@ -153,6 +162,7 @@ def polygon_box_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
                 iou[i, :] -= (c_area - union[i, :]) / c_area  # GIoU
     return iou  # IoU
 
+
 def polygon_b_inter_union_cpu(boxes1, boxes2):
     """
         iou computation (polygon) with cpu for class Polygon_ComputeLoss in loss.py;
@@ -161,11 +171,11 @@ def polygon_b_inter_union_cpu(boxes1, boxes2):
     """
 
     n = boxes1.shape[0]
-    inter = torch.zeros(n,)
-    union = torch.zeros(n,)
+    inter = torch.zeros(n, )
+    union = torch.zeros(n, )
     for i in range(n):
-        polygon1 = geometry.Polygon(boxes1[i, :].view(4,2)).convex_hull
-        polygon2 = geometry.Polygon(boxes2[i, :].view(4,2)).convex_hull
+        polygon1 = geometry.Polygon(boxes1[i, :].view(4, 2)).convex_hull
+        polygon2 = geometry.Polygon(boxes2[i, :].view(4, 2)).convex_hull
         if polygon1.intersects(polygon2):
             try:
                 inter[i] = polygon1.intersection(polygon2).area
@@ -196,7 +206,8 @@ def polygon_bbox_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-
 
         inter_nan, union_nan = inter.isnan(), union.isnan()
         if inter_nan.any() or union_nan.any():
-            inter2, union2 = polygon_b_inter_union_cuda(boxes1_, boxes2_)  # Careful that order should be: boxes1_, boxes2_.
+            inter2, union2 = polygon_b_inter_union_cuda(boxes1_,
+                                                        boxes2_)  # Careful that order should be: boxes1_, boxes2_.
             inter2, union2 = inter2.T, union2.T
             inter = torch.where(inter_nan, inter2, inter)
             union = torch.where(union_nan, union2, union)
@@ -211,15 +222,16 @@ def polygon_bbox_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-
     iou = iou.to(device='cuda')
     if GIoU or DIoU or CIoU:
         # minimum bounding box of boxes1 and boxes2
-        b1_x1, b1_x2 = boxes1[:, 0::2].min(dim=1)[0], boxes1[:, 0::2].max(dim=1)[0] # n,
-        b1_y1, b1_y2 = boxes1[:, 1::2].min(dim=1)[0], boxes1[:, 1::2].max(dim=1)[0] # n,
-        b2_x1, b2_x2 = boxes2[:, 0::2].min(dim=1)[0], boxes2[:, 0::2].max(dim=1)[0] # n,
-        b2_y1, b2_y2 = boxes2[:, 1::2].min(dim=1)[0], boxes2[:, 1::2].max(dim=1)[0] # n,
+        b1_x1, b1_x2 = boxes1[:, 0::2].min(dim=1)[0], boxes1[:, 0::2].max(dim=1)[0]  # n,
+        b1_y1, b1_y2 = boxes1[:, 1::2].min(dim=1)[0], boxes1[:, 1::2].max(dim=1)[0]  # n,
+        b2_x1, b2_x2 = boxes2[:, 0::2].min(dim=1)[0], boxes2[:, 0::2].max(dim=1)[0]  # n,
+        b2_y1, b2_y2 = boxes2[:, 1::2].min(dim=1)[0], boxes2[:, 1::2].max(dim=1)[0]  # n,
         cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)  # convex (smallest enclosing box) width
         ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)  # convex height
         if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
             c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
-            rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 + (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center distance squared
+            rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 + (
+                    b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center distance squared
             if DIoU:
                 iou -= rho2 / c2  # DIoU
             elif CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
@@ -234,8 +246,10 @@ def polygon_bbox_iou(boxes1, boxes2, GIoU=False, DIoU=False, CIoU=False, eps=1e-
             iou -= (c_area - union) / c_area  # GIoU
     return iou  # IoU
 
-def polygon_non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False,
-                        labels=(), max_det=300):
+
+def polygon_non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False,
+                                multi_label=False,
+                                labels=(), max_det=300):
     """
         Runs Non-Maximum Suppression (NMS) on inference results for polygon boxes
         Returns:  list of detections, on (n,10) tensor per image [xyxyxyxy, conf, cls]
@@ -262,21 +276,21 @@ def polygon_non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, cla
     output = [torch.zeros((0, 10), device=prediction.device)] * prediction.shape[0]
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
-                                               # xw = (x[..., 0:8:2].max(dim=-1)[0] - x[...,
-                                               # 0:8:2].min(dim=-1)[0]).view(-1, 1)
-                                               # xh = (x[..., 1:8:2].max(dim=-1)[0] - x[...,
-                                               # 1:8:2].min(dim=-1)[0]).view(-1, 1)
-                                               # x[((xw < min_wh) | (xw > max_wh) | (xh < min_wh) | (xh >
-                                               # max_wh)).any(1), 8] = 0 # width-height
+        # xw = (x[..., 0:8:2].max(dim=-1)[0] - x[...,
+        # 0:8:2].min(dim=-1)[0]).view(-1, 1)
+        # xh = (x[..., 1:8:2].max(dim=-1)[0] - x[...,
+        # 1:8:2].min(dim=-1)[0]).view(-1, 1)
+        # x[((xw < min_wh) | (xw > max_wh) | (xh < min_wh) | (xh >
+        # max_wh)).any(1), 8] = 0 # width-height
         x = x[xc[xi]]  # confidence
 
         # Cat apriori labels if autolabelling
         if labels and len(labels[xi]):
-            l = labels[xi]
-            v = torch.zeros((len(l), nc + 9), device=x.device)
-            v[:, :8] = l[:, 1:9]  # box
+            lb = labels[xi]
+            v = torch.zeros((len(lb), nc + 9), device=x.device)
+            v[:, :8] = lb[:, 1:9]  # box
             v[:, 8] = 1.0  # conf
-            v[range(len(l)), l[:, 0].long() + 9] = 1.0  # cls
+            v[range(len(lb)), lb[:, 0].long() + 9] = 1.0  # cls
             x = torch.cat((x, v), 0)
 
         # If none remain process next image
@@ -362,7 +376,8 @@ def polygon_nms_kernel(x, iou_thres):
         while x_.shape[0]:
             # Save the indice with the highest confidence
             selected_indices.append(indices_[0])
-            if len(x_) == 1: break
+            if len(x_) == 1:
+                break
             # Compute the IOUs for all other the polygon boxes
             iou = polygon_box_iou(x_[0:1, :8], x_[1:, :8], device=x.device, ordered=True).view(-1)
             # Remove overlapping detections with IoU >= NMS threshold
@@ -382,7 +397,7 @@ def order_corners(boxes):
     boxes = boxes.view(-1, 4, 2)
     x = boxes[..., 0]
     y = boxes[..., 1]
-    y_sorted, y_indices = torch.sort(y) # sort y
+    y_sorted, y_indices = torch.sort(y)  # sort y
     x_sorted = torch.zeros_like(x, dtype=x.dtype)
     for i in range(x.shape[0]):
         x_sorted[i] = x[i, y_indices[i]]
@@ -392,8 +407,6 @@ def order_corners(boxes):
         y_sorted[i, :2] = y_sorted[i, :2][x_bottom_indices[i]]
         y_sorted[i, 2:4] = y_sorted[i, 2:4][x_top_indices[i]]
     return torch.stack((x_sorted, y_sorted), dim=2).view(-1, 8).contiguous()
-
-
 
 
 def wh_iou(wh1, wh2, eps=1e-7):

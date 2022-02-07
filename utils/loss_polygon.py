@@ -34,7 +34,6 @@ class Polygon_ComputeLoss:
         for k in 'na', 'nc', 'nl', 'anchors':
             setattr(self, k, getattr(det, k))
 
-
     def __call__(self, p, targets):  # predictions, targets, model
         """"
             targets: total anchors for this batch x 10
@@ -67,9 +66,12 @@ class Polygon_ComputeLoss:
                 zero = torch.tensor(0., device=device)
                 # Include the restrictions on predicting sequence: y3, y4 >=
                 # y1, y2; x1 <= x2; x4 <= x3
-                lbox += (torch.max(zero, ps[:, 1] - ps[:, 5]) ** 2).mean() / 6 + (torch.max(zero, ps[:, 3] - ps[:, 5]) ** 2).mean() / 6 + \
-                        (torch.max(zero, ps[:, 1] - ps[:, 7]) ** 2).mean() / 6 + (torch.max(zero, ps[:, 3] - ps[:, 7]) ** 2).mean() / 6 + \
-                        (torch.max(zero, ps[:, 0] - ps[:, 2]) ** 2).mean() / 6 + (torch.max(zero, ps[:, 6] - ps[:, 4]) ** 2).mean() / 6
+                lbox += (torch.max(zero, ps[:, 1] - ps[:, 5]) ** 2).mean() / 6 + (
+                            torch.max(zero, ps[:, 3] - ps[:, 5]) ** 2).mean() / 6 + \
+                        (torch.max(zero, ps[:, 1] - ps[:, 7]) ** 2).mean() / 6 + (
+                                    torch.max(zero, ps[:, 3] - ps[:, 7]) ** 2).mean() / 6 + \
+                        (torch.max(zero, ps[:, 0] - ps[:, 2]) ** 2).mean() / 6 + (
+                                    torch.max(zero, ps[:, 6] - ps[:, 4]) ** 2).mean() / 6
                 # include the values of each vertice of poligon into loss
                 # function
                 lbox += nn.SmoothL1Loss(beta=0.11)(pbox, tbox[i])
@@ -83,7 +85,7 @@ class Polygon_ComputeLoss:
                     t[range(n), tcls[i]] = self.cp
                     lcls += self.BCEcls(ps[:, 9:], t)  # BCE
                     # lcls += nn.CrossEntropyLoss()(ps[:, 9:],
-                                                                         # t.long().argmax(dim=1)) # softmax loss
+                    # t.long().argmax(dim=1)) # softmax loss
 
             obji = self.BCEobj(pi[..., 8], tobj)
             lobj += obji * self.balance[i]  # obj loss
@@ -99,7 +101,6 @@ class Polygon_ComputeLoss:
 
         loss = lbox + lobj + lcls
         return loss * bs, torch.cat((lbox, lobj, lcls)).detach()
-
 
     def build_targets(self, p, targets):
         """
@@ -145,7 +146,7 @@ class Polygon_ComputeLoss:
                 # t = t[max_ious_idx[mask], mask]
 
                 # Consider all anchors that exceed the iou threshold
-                j = wh_iou(anchors, wh[0]) > self.hyp['iou_t'] # iou criterion
+                j = wh_iou(anchors, wh[0]) > self.hyp['iou_t']  # iou criterion
                 t = t[j]  # filter
 
                 # now t has shape nt x 11
@@ -183,9 +184,9 @@ class Polygon_ComputeLoss:
             # positions
             tbox.append(t[:, 2:10] - gij.repeat(1, 4))  # polygon box
             # different corners, different center points, same relative
-                                                                  # positions
-                                                                  # gij_origin = (gxy-0).long()
-                                                                  # tbox.append(t[:, 2:10]-gij_origin.repeat(1, 4))
+            # positions
+            # gij_origin = (gxy-0).long()
+            # tbox.append(t[:, 2:10]-gij_origin.repeat(1, 4))
 
             anch.append(anchors[a])  # anchors
             tcls.append(c)  # class

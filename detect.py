@@ -33,11 +33,6 @@ import cv2
 import torch
 import torch.backends.cudnn as cudnn
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import DetectMultiBackend
 from models.experimental import attempt_load
 from utils.datasets import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
@@ -46,6 +41,12 @@ from utils.general_polygon import (LOGGER, check_file, check_img_size, check_ims
                                    polygon_scale_coords, print_args, scale_coords, strip_optimizer, xyxy2xywh)
 from utils.plots_polygon import Annotator, colors, polygon_plot_one_box, save_one_box
 from utils.torch_utils import select_device, time_sync
+
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 
 @torch.no_grad()
@@ -95,7 +96,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     else:
         model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data)
 
-
     if polygon:
         stride = int(model.stride.max())  # model stride
         names = model.module.names if hasattr(model, 'module') else model.names  # get class names
@@ -127,7 +127,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     # Run inference
     if polygon:
         if device.type != 'cpu':
-            model(torch.zeros(1, 3, imgsz[0],imgsz[1]).to(device).type_as(next(model.parameters())))  # run once
+            model(torch.zeros(1, 3, imgsz[0], imgsz[1]).to(device).type_as(next(model.parameters())))  # run once
     else:
         model.warmup(imgsz=(1 if pt else bs, 3, *imgsz), half=half)  # warmup
     dt, seen = [0.0, 0.0, 0.0], 0
@@ -189,16 +189,17 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                 # Write results
             if polygon:
                 for *xyxyxyxy, conf, cls in reversed(det):
-                            if save_txt:  # Write to file
-                                xyxyxyxyn = (torch.tensor(xyxyxyxy).view(1, 8) / gn).view(-1).tolist()  # normalized xyxyxyxy
-                                line = (cls, *xyxyxyxyn, conf) if save_conf else (cls, *xyxyxyxyn)  # label format
-                                with open(txt_path + '.txt', 'a') as f:
-                                    f.write(('%g ' * len(line)).rstrip() % line + '\n')
+                    if save_txt:  # Write to file
+                        xyxyxyxyn = (torch.tensor(xyxyxyxy).view(1, 8) / gn).view(-1).tolist()  # normalized xyxyxyxy
+                        line = (cls, *xyxyxyxyn, conf) if save_conf else (cls, *xyxyxyxyn)  # label format
+                        with open(txt_path + '.txt', 'a') as f:
+                            f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-                            if save_img or view_img:  # Add bbox to image
-                                c = int(cls)  # integer class
-                                label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
-                                polygon_plot_one_box(torch.tensor(xyxyxyxy).cpu().numpy(), im0, label=label, color=colors(c, True), line_thickness=line_thickness)
+                    if save_img or view_img:  # Add bbox to image
+                        c = int(cls)  # integer class
+                        label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
+                        polygon_plot_one_box(torch.tensor(xyxyxyxy).cpu().numpy(), im0, label=label,
+                                             color=colors(c, True), line_thickness=line_thickness)
             else:
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
@@ -250,6 +251,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
     if update:
         strip_optimizer(weights)  # update model (to fix SourceChangeWarning)
+
 
 def parse_opt():
     parser = argparse.ArgumentParser()
