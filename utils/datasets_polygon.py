@@ -350,6 +350,7 @@ def polygon_load_mosaic9(self, index):
     labels9, segments9 = [], []
     s = self.img_size
     indices = [index] + random.choices(self.indices, k=8)  # 8 additional image indices
+    h0, w0, hp, wp = 0, 0, 0, 0
     for i, index in enumerate(indices):
         # Load image
         img, _, (h, w) = load_image(self, index)

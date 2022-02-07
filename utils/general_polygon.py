@@ -11,7 +11,7 @@ try:
     polygon_inter_union_cuda_enable = True
     polygon_b_inter_union_cuda_enable = True
 except Exception as e:
-    print(f'Warning: "polygon_inter_union_cuda" and "polygon_b_inter_union_cuda" are not installed.')
+    print('Warning: "polygon_inter_union_cuda" and "polygon_b_inter_union_cuda" are not installed.')
     print(f'The Exception is: {e}.')
     polygon_inter_union_cuda_enable = False
     polygon_b_inter_union_cuda_enable = False

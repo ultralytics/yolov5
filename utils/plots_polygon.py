@@ -165,7 +165,6 @@ def polygon_plot_labels(labels, names=(), save_dir=Path(''), loggers=None):
     # plot dataset labels
     LOGGER.info(f"Plotting labels to {save_dir / 'labels.jpg'}... ")
     c, b = labels[:, 0], labels[:, 1:].transpose()  # classes, boxes
-    nc = int(c.max() + 1)  # number of classes
     x = pd.DataFrame(b.transpose(), columns=['x1', 'y1', 'x2', 'y2',
                                              'x3', 'y3', 'x4', 'y4'])
 
