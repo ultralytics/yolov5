@@ -29,6 +29,12 @@ import os
 import sys
 from pathlib import Path
 
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
+
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
@@ -41,12 +47,6 @@ from utils.general_polygon import (LOGGER, check_file, check_img_size, check_ims
                                    polygon_scale_coords, print_args, scale_coords, strip_optimizer, xyxy2xywh)
 from utils.plots_polygon import Annotator, colors, polygon_plot_one_box, save_one_box
 from utils.torch_utils import select_device, time_sync
-
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 
 @torch.no_grad()
