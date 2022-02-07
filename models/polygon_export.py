@@ -18,6 +18,7 @@ from models.experimental import attempt_load
 from utils.activations import Hardswish, SiLU
 from utils.general import check_img_size, check_requirements, colorstr, file_size, set_logging
 from utils.torch_utils import select_device
+
 sys.path.append(Path(__file__).parent.parent.absolute().__str__())  # to run '$ python *.py' files in subdirectories
 
 
