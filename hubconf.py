@@ -12,10 +12,10 @@ import torch
 
 
 def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True, device=None):
-    """Creates a specified YOLOv5 model
+    """Creates or loads a YOLOv5 model
 
     Arguments:
-        name (str): name of model, i.e. 'yolov5s'
+        name (str): model name 'yolov5s' or path 'path/to/best.pt'
         pretrained (bool): load pretrained weights into the model
         channels (int): number of input channels
         classes (int): number of model classes
@@ -24,19 +24,19 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
         device (str, torch.device, None): device to use for model parameters
 
     Returns:
-        YOLOv5 pytorch model
+        YOLOv5 model
     """
     from pathlib import Path
 
     from models.common import AutoShape, DetectMultiBackend
     from models.yolo import Model
     from utils.downloads import attempt_download
-    from utils.general import check_requirements, intersect_dicts, set_logging
+    from utils.general import LOGGER, check_requirements, intersect_dicts, logging
     from utils.torch_utils import select_device
 
+    if not verbose:
+        LOGGER.setLevel(logging.WARNING)
     check_requirements(exclude=('tensorboard', 'thop', 'opencv-python'))
-    set_logging(verbose=verbose)
-
     name = Path(name)
     path = name.with_suffix('.pt') if name.suffix == '' else name  # checkpoint path
     try:
