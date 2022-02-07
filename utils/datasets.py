@@ -653,7 +653,7 @@ class LoadImagesAndLabels(Dataset):
         random.shuffle(indices)
         for i, index in enumerate(indices):
             # Load image
-            img, _, (h, w) = load_image(self, index)
+            img, _, (h, w) = self.load_image(index)
 
             # place img in img4
             if i == 0:  # top left
@@ -699,7 +699,7 @@ class LoadImagesAndLabels(Dataset):
         random.shuffle(indices)
         for i, index in enumerate(indices):
             # Load image
-            img, _, (h, w) = load_image(self, index)
+            img, _, (h, w) = self.load_image(index)
 
             # place img in img9
             if i == 0:  # center
