@@ -6,24 +6,28 @@ help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 img_formats = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
 vid_formats = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
 num_threads = min(8, os.cpu_count())  # number of multiprocessing threads
+
+
 # Ancillary functions with polygon anchor
-                                    # boxes-------------------------------------------------------------------------------------------
-def polygon_create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False, pad=0.0,
-                      rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix='', shuffle=False):
+# boxes-------------------------------------------------------------------------------------------
+def polygon_create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False,
+                              pad=0.0,
+                              rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix='',
+                              shuffle=False):
     if rect and shuffle:
         LOGGER.warning('WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False')
         shuffle = False
     with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
         dataset = Polygon_LoadImagesAndLabels(path, imgsz, batch_size,
-                                      augment=augment,  # augmentation
-                                      hyp=hyp,  # hyperparameters
-                                      rect=rect,  # rectangular batches
-                                      cache_images=cache,
-                                      single_cls=single_cls,
-                                      stride=int(stride),
-                                      pad=pad,
-                                      image_weights=image_weights,
-                                      prefix=prefix)
+                                              augment=augment,  # augmentation
+                                              hyp=hyp,  # hyperparameters
+                                              rect=rect,  # rectangular batches
+                                              cache_images=cache,
+                                              single_cls=single_cls,
+                                              stride=int(stride),
+                                              pad=pad,
+                                              image_weights=image_weights,
+                                              prefix=prefix)
 
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()  # number of CUDA devices
@@ -39,11 +43,11 @@ def polygon_create_dataloader(path, imgsz, batch_size, stride, single_cls=False,
                   collate_fn=Polygon_LoadImagesAndLabels.collate_fn4 if quad else Polygon_LoadImagesAndLabels.collate_fn), dataset
 
 
-
 class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
     """
         Polygon_LoadImagesAndLabels for polygon boxes
     """
+
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
                  cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
         self.img_size = img_size
@@ -72,7 +76,7 @@ class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
                         parent = str(p.parent) + os.sep
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
                         # f += [p.parent / x.lstrip(os.sep) for x in t] # local
-                                                                                                                      # to global path (pathlib)
+                        # to global path (pathlib)
                 else:
                     raise Exception(f'{prefix}{p} does not exist')
             self.img_files = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in img_formats)
@@ -162,8 +166,9 @@ class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
         nm, nf, ne, nc = 0, 0, 0, 0  # number missing, found, empty, corrupt
         desc = f"{prefix}Scanning '{path.parent / path.stem}' images and labels..."
         with Pool(num_threads) as pool:
-            pbar = tqdm(pool.imap_unordered(polygon_verify_image_label, zip(self.img_files, self.label_files, repeat(prefix))),
-                        desc=desc, total=len(self.img_files))
+            pbar = tqdm(
+                pool.imap_unordered(polygon_verify_image_label, zip(self.img_files, self.label_files, repeat(prefix))),
+                desc=desc, total=len(self.img_files))
             for im_file, l, shape, segments, nm_f, nf_f, ne_f, nc_f in pbar:
                 nm += nm_f
                 nf += nf_f
@@ -431,28 +436,29 @@ def polygon_verify_image_label(params):
         # verify labels
         if os.path.isfile(lb_file):
             nf = 1  # label found
-            l = np.loadtxt(lb_file, dtype=np.float32)
             with open(lb_file) as f:
-                l = np.array([x.split() for x in f.readlines() if len(x) > 1], dtype=np.float32)  # labels # ata_landmark_change
+                lb = np.array([x.split() for x in f.readlines() if len(x) > 1],
+                              dtype=np.float32)  # labels # ata_landmark_change
             # l=np.zeros((ll.shape[0], 9))
-                                                                                                            # l[:,1:] =ll[:,5:]
-            if len(l.shape) == 1: l = l[None, :]
-            segments = [l[0][1:].reshape(-1, 2) for x in l]  # ((x1, y1), (x2, y2), ...)
-            if len(l):
-                assert l.shape[1] == 9, 'labels require 9 columns each'
+            # l[:,1:] =ll[:,5:]
+            if len(lb.shape) == 1:
+                lb = lb[None, :]
+            segments = [lb[0][1:].reshape(-1, 2) for x in lb]  # ((x1, y1), (x2, y2), ...)
+            if len(lb):
+                assert lb.shape[1] == 9, 'labels require 9 columns each'
                 # Common out following lines to enable: polygon corners can be
                 # out of images
                 # assert (l >= 0).all(), 'negative labels'
                 # assert (l[:, 1:] <= 1).all(), 'non-normalized or out of
                 # bounds coordinate labels'
-                assert np.unique(l, axis=0).shape[0] == l.shape[0], 'duplicate labels'
+                assert np.unique(lb, axis=0).shape[0] == lb.shape[0], 'duplicate labels'
             else:
                 ne = 1  # label empty
-                l = np.zeros((0, 9), dtype=np.float32)
+                lb = np.zeros((0, 9), dtype=np.float32)
         else:
             nm = 1  # label missing
-            l = np.zeros((0, 9), dtype=np.float32)
-        return im_file, l, shape, segments, nm, nf, ne, nc
+            lb = np.zeros((0, 9), dtype=np.float32)
+        return im_file, lb, shape, segments, nm, nf, ne, nc
     except Exception as e:
         nc = 1
         LOGGER.info(f'{prefix}WARNING: Ignoring corrupted image and/or label {im_file}: {e}')
@@ -468,11 +474,11 @@ class Albumentations:
             import albumentations as A
 
             self.transform = A.Compose([A.MedianBlur(p=0.05),
-                A.ToGray(p=0.1),
-                A.RandomBrightnessContrast(p=0.35),
-                A.CLAHE(p=0.2),
-                A.InvertImg(p=0.3)],)
-                # Not support for any position change to image
+                                        A.ToGray(p=0.1),
+                                        A.RandomBrightnessContrast(p=0.35),
+                                        A.CLAHE(p=0.2),
+                                        A.InvertImg(p=0.3)], )
+            # Not support for any position change to image
 
             LOGGER.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms if x.p))
         except ImportError:  # package not installed, skip
@@ -487,8 +493,9 @@ class Albumentations:
         return im
 
 
-def polygon_random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0,
-                       border=(0, 0), mosaic=False):
+def polygon_random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, scale=.1, shear=10,
+                               perspective=0.0,
+                               border=(0, 0), mosaic=False):
     # """
     #     torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1,
     #     .1), scale=(.9, 1.1), shear=(-10, 10))
@@ -587,13 +594,13 @@ def polygon_random_perspective(img, targets=(), segments=(), degrees=10, transla
                 else:  # affine
                     img = cv2.warpAffine(img, M2[:2], dsize=(width, height), borderValue=(114, 114, 114))
                 image_transformed = True
-                new = np.zeros((n, 8))
                 xy = np.ones((n * 4, 3))
                 xy[:, :2] = targets[:, 1:].reshape(n * 4, 2)
                 xy = xy @ M2.T  # transform
-                new = (xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2]).reshape(n, 8)  # perspective rescale or affine
+                new = (xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2]).reshape(n, 8)
+                # perspective rescale or affine
             # img, new = restrict(img, new, (height, width), (top, bottom,
-                                                                                                      # left, right))
+            # left, right))
 
         # Use the following two lines can result in slightly tilting for few
         # labels.

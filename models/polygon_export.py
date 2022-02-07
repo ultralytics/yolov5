@@ -43,7 +43,6 @@ def export(weights='./yolov5s.pt',  # weights path
     device = select_device(device)
     assert not (device.type == 'cpu' and opt.half), '--half only compatible with GPU export, i.e. use --device 0'
     model = attempt_load(weights, map_location=device)  # load FP32 model
-    labels = model.names
 
     # Input
     gs = int(max(model.stride))  # grid size (max stride)
@@ -66,8 +65,6 @@ def export(weights='./yolov5s.pt',  # weights path
             m.onnx_dynamic = dynamic
             # m.forward = m.forward_export # assign forward (optional)
 
-    for _ in range(2):
-        y = model(img)  # dry runs
     print(f"\n{colorstr('PyTorch:')} starting from {weights} ({file_size(weights):.1f} MB)")
 
     # TorchScript export

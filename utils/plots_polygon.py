@@ -177,7 +177,7 @@ def polygon_plot_labels(labels, names=(), save_dir=Path(''), loggers=None):
     # matplotlib labels
     matplotlib.use('svg')  # faster
     ax = plt.subplots(3, 2, figsize=(12, 8), tight_layout=True)[1].ravel()
-    y = ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
+    # y = ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
     # [y[2].patches[i].set_color([x / 255 for x in colors(i)]) for i in
     # range(nc)] # update colors bug #3195
     ax[0].set_ylabel('instances')
@@ -275,8 +275,8 @@ def polygon_plot_results(file=''):
          'val Box', 'val Objectness', 'val Classification', 'mAP@0.5', 'mAP@0.5:0.95']
     start = 0
     stop = 0
-    bucket = ''
-    id = ()
+    # bucket = ''
+    # id = ()
     labels = ()
     files = list(Path(save_dir).glob('results*.csv'))
     assert len(files), f'No results.txt files found in {file.resolve()}, nothing to plot.'

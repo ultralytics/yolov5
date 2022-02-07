@@ -10,9 +10,10 @@ def polygon_check_anchors(dataset, model, thr=4.0, imgsz=640):
     scale = np.random.uniform(0.9, 1.1, size=(shapes.shape[0], 1))  # augment scale
     prefix = colorstr('autoanchor: ')
     print(f'\n{prefix}Analyzing anchors... ', end='')
-    original_wh = [np.array([l[:, 1::2].max(axis=1) - l[:, 1::2].min(axis=1),
-                     l[:, 2::2].max(axis=1) - l[:, 2::2].min(axis=1)]).T for l in dataset.labels]
-    wh = torch.tensor(np.concatenate([l * s for s, l in zip(shapes * scale, original_wh)])).float()  # wh of minimum outter bounding box
+    original_wh = [np.array([lb[:, 1::2].max(axis=1) - lb[:, 1::2].min(axis=1),
+                   lb[:, 2::2].max(axis=1) - lb[:, 2::2].min(axis=1)]).T for lb in dataset.labels]
+    wh = torch.tensor(np.concatenate([l * s for s, l in zip(shapes * scale, original_wh)])).float()
+    # wh of minimum outter bounding box
 
     def metric(k):  # compute metric
         r = wh[:, None] / k[None]
@@ -100,8 +101,8 @@ def polygon_kmean_anchors(path='./data/polygon_coco.yaml', n=9, img_size=640, th
 
     # Get label wh
     shapes = img_size * dataset.shapes / dataset.shapes.max(1, keepdims=True)
-    original_wh = [np.array([l[:, 1::2].max(axis=1) - l[:, 1::2].min(axis=1),
-                     l[:, 2::2].max(axis=1) - l[:, 2::2].min(axis=1)]).T for l in dataset.labels]
+    original_wh = [np.array([lb[:, 1::2].max(axis=1) - lb[:, 1::2].min(axis=1),
+                   lb[:, 2::2].max(axis=1) - lb[:, 2::2].min(axis=1)]).T for lb in dataset.labels]
     wh0 = np.concatenate([l * s for s, l in zip(shapes, original_wh)])  # wh of minimum outter bounding box
 
     # Filter
@@ -110,7 +111,7 @@ def polygon_kmean_anchors(path='./data/polygon_coco.yaml', n=9, img_size=640, th
         print(f'{prefix}WARNING: Extremely small objects found. {i} of {len(wh0)} labels are < 3 pixels in size.')
     wh = wh0[(wh0 >= 3.0).any(1)]  # filter > 3 pixels
     # wh = wh * (np.random.rand(wh.shape[0], 1) * 0.9 + 0.1) # multiply by
-                                     # random scale 0-1
+    # random scale 0-1
 
     # Kmeans calculation
     print(f'{prefix}Running kmeans for {n} anchors on {len(wh)} points...')

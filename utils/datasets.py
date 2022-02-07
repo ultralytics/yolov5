@@ -49,6 +49,7 @@ def get_hash(paths):
     h.update(''.join(paths).encode())  # hash paths
     return h.hexdigest()  # return hash
 
+
 def exif_size(img):
     # Returns exif-corrected PIL size
     s = img.size  # (width, height)
@@ -237,6 +238,7 @@ class LoadImages:
     def __len__(self):
         return self.nf  # number of files
 
+
 class LoadWebcam:  # for inference
     # YOLOv5 local webcam dataloader, i.e.  `python detect.py --source 0`
     def __init__(self, pipe='0', img_size=640, stride=32):
@@ -368,6 +370,7 @@ class LoadStreams:
     def __len__(self):
         return len(self.sources)  # 1E12 frames = 32 streams at 30 FPS for 30 years
 
+
 def img2label_paths(img_paths):
     # Define label paths as a function of image paths
     sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
@@ -405,7 +408,7 @@ class LoadImagesAndLabels(Dataset):
                         parent = str(p.parent) + os.sep
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
                         # f += [p.parent / x.lstrip(os.sep) for x in t] # local
-                                                                                                                      # to global path (pathlib)
+                        # to global path (pathlib)
                 else:
                     raise Exception(f'{prefix}{p} does not exist')
             self.img_files = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
@@ -684,6 +687,7 @@ def load_image(self, i):
     else:
         return self.imgs[i], self.img_hw0[i], self.img_hw[i]  # im, hw_original, hw_resized
 
+
 def load_mosaic(self, index):
     # YOLOv5 4-mosaic loader.  Loads 1 image + 3 random images into a 4-image
     # mosaic
@@ -824,6 +828,7 @@ def create_folder(path='./new'):
         shutil.rmtree(path)  # delete output folder
     os.makedirs(path)  # make new output folder
 
+
 def flatten_recursive(path='../datasets/coco128'):
     # Flatten a recursive directory by bringing all files to top level
     new_path = Path(path + '_flat')
@@ -834,7 +839,7 @@ def flatten_recursive(path='../datasets/coco128'):
 
 def extract_boxes(path='../datasets/coco128'):  # from utils.datasets import *; extract_boxes()
     # Convert detection dataset into classification dataset, with one directory
-                                                  # per class
+    # per class
     path = Path(path)  # images dir
     shutil.rmtree(path / 'classifier') if (path / 'classifier').is_dir() else None  # remove existing
     files = list(path.rglob('*.*'))
@@ -889,6 +894,7 @@ def autosplit(path='../datasets/coco128/images', weights=(0.9, 0.1, 0.0), annota
         if not annotated_only or Path(img2label_paths([str(img)])[0]).exists():  # check label
             with open(path.parent / txt[i], 'a') as f:
                 f.write('./' + img.relative_to(path.parent).as_posix() + '\n')  # add image to txt file
+
 
 def verify_image_label(args):
     # Verify one image-label pair

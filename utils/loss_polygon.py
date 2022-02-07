@@ -67,11 +67,11 @@ class Polygon_ComputeLoss:
                 # Include the restrictions on predicting sequence: y3, y4 >=
                 # y1, y2; x1 <= x2; x4 <= x3
                 lbox += (torch.max(zero, ps[:, 1] - ps[:, 5]) ** 2).mean() / 6 + (
-                            torch.max(zero, ps[:, 3] - ps[:, 5]) ** 2).mean() / 6 + \
-                        (torch.max(zero, ps[:, 1] - ps[:, 7]) ** 2).mean() / 6 + (
-                                    torch.max(zero, ps[:, 3] - ps[:, 7]) ** 2).mean() / 6 + \
-                        (torch.max(zero, ps[:, 0] - ps[:, 2]) ** 2).mean() / 6 + (
-                                    torch.max(zero, ps[:, 6] - ps[:, 4]) ** 2).mean() / 6
+                    torch.max(zero, ps[:, 3] - ps[:, 5]) ** 2).mean() / 6 + \
+                    (torch.max(zero, ps[:, 1] - ps[:, 7]) ** 2).mean() / 6 + (
+                    torch.max(zero, ps[:, 3] - ps[:, 7]) ** 2).mean() / 6 + \
+                    (torch.max(zero, ps[:, 0] - ps[:, 2]) ** 2).mean() / 6 + (
+                    torch.max(zero, ps[:, 6] - ps[:, 4]) ** 2).mean() / 6
                 # include the values of each vertice of poligon into loss
                 # function
                 lbox += nn.SmoothL1Loss(beta=0.11)(pbox, tbox[i])

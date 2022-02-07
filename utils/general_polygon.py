@@ -265,7 +265,6 @@ def polygon_non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, cla
     assert 0 <= iou_thres <= 1, f'Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0'
 
     # Settings
-    min_wh, max_wh = 3, 4096  # (pixels) minimum and maximum box width and height
     max_nms = 30000  # maximum number of boxes into polygon_nms_kernel, can increase this value
     time_limit = 10.0  # seconds to quit after
     redundant = True  # require redundant detections
