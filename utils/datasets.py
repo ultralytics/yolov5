@@ -493,7 +493,7 @@ class LoadImagesAndLabels(Dataset):
                 self.im_cache_dir.mkdir(parents=True, exist_ok=True)
             gb = 0  # Gigabytes of cached images
             self.img_hw0, self.img_hw = [None] * n, [None] * n
-            results = ThreadPool(NUM_THREADS).imap(lambda x: self.load_image(*x), range(n))
+            results = ThreadPool(NUM_THREADS).imap(self.load_image, range(n))
             pbar = tqdm(enumerate(results), total=n)
             for i, x in pbar:
                 if cache_images == 'disk':
