@@ -55,8 +55,8 @@ from utils.loggers import Loggers
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.loss_polygon import ComputeLoss, Polygon_ComputeLoss
 from utils.metrics import fitness
-from utils.plots_polygon import (plot_evolve, plot_images, plot_labels, plot_results,
-                                 polygon_plot_images, polygon_plot_labels)
+from utils.plots_polygon import (plot_evolve, plot_images, plot_labels, plot_results, polygon_plot_images,
+                                 polygon_plot_labels)
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
 
 
@@ -495,9 +495,9 @@ def parse_opt(known=False):
     parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.scratch.yaml',
                         help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=16, 
+    parser.add_argument('--batch-size', type=int, default=16,
                         help='total batch size for all GPUs, -1 for autobatch')
-    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, 
+    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640,
                         help='train, val image size (pixels)')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
