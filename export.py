@@ -475,8 +475,8 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
             f[9] = export_tfjs(model, im, file)
 
     # Finish
+    f = [str(x) for x in f if x]  # filter out '' and None
     if any(f):
-        f = [str(x) for x in f if x]  # filter out '' and None
         LOGGER.info(f'\nExport complete ({time.time() - t:.2f}s)'
                     f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
                     f"\nDetect:          python detect.py --weights {f[-1]}"
