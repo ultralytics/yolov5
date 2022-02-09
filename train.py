@@ -634,6 +634,7 @@ def run(**kwargs):
     for k, v in kwargs.items():
         setattr(opt, k, v)
     main(opt)
+    return opt
 
 
 if __name__ == "__main__":
