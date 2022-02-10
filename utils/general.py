@@ -817,8 +817,8 @@ def print_mutation(results, hyp, save_dir, bucket, prefix=colorstr('evolve: ')):
         yaml.safe_dump(data.loc[i][7:].to_dict(), f, sort_keys=False)
 
     # Print to screen
-    LOGGER.info(prefix + f'{generations} generations finished. Last generation result:\n',
-                prefix + ', '.join(f'{x.strip():>20s}' for x in keys) + '\n',
+    LOGGER.info(prefix + f'{generations} generations finished, current result:\n' +
+                prefix + ', '.join(f'{x.strip():>20s}' for x in keys) + '\n' +
                 prefix + ', '.join(f'{x:20.5g}' for x in vals) + '\n\n')
 
     if bucket:
