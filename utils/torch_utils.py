@@ -49,8 +49,18 @@ def git_describe(path=Path(__file__).parent):  # path must be a directory
     s = f'git -C {path} describe --tags --long --always'
     try:
         return subprocess.check_output(s, shell=True, stderr=subprocess.STDOUT).decode()[:-1]
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         return ''  # not a git repository
+
+
+def device_count():
+    # Returns number of CUDA devices available. Safe version of torch.cuda.device_count(). Only works on Linux.
+    assert platform.system() == 'Linux', 'device_count() function only works on Linux'
+    try:
+        cmd = 'nvidia-smi -L | wc -l'
+        return int(subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1])
+    except Exception:
+        return 0
 
 
 def select_device(device='', batch_size=0, newline=True):
@@ -61,10 +71,9 @@ def select_device(device='', batch_size=0, newline=True):
     if cpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force torch.cuda.is_available() = False
     elif device:  # non-cpu device requested
-        nd = torch.cuda.device_count()  # number of CUDA devices
-        assert torch.cuda.is_available(), 'CUDA is not available, use `--device cpu` or do not pass a --device'
-        assert nd > int(max(device.split(','))), f'Invalid `--device {device}` request, valid devices are 0 - {nd - 1}'
-        os.environ['CUDA_VISIBLE_DEVICES'] = device  # set environment variable (must be after asserts)
+        os.environ['CUDA_VISIBLE_DEVICES'] = device  # set environment variable - must be before assert is_available()
+        assert torch.cuda.is_available() and torch.cuda.device_count() >= len(device.replace(',', '')), \
+            f"Invalid CUDA '--device {device}' requested, use '--device cpu' or pass valid CUDA device(s)"
 
     cuda = not cpu and torch.cuda.is_available()
     if cuda:
@@ -115,7 +124,7 @@ def profile(input, ops, n=10, device=None):
             tf, tb, t = 0, 0, [0, 0, 0]  # dt forward, backward
             try:
                 flops = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2  # GFLOPs
-            except:
+            except Exception:
                 flops = 0
 
             try:
@@ -126,7 +135,7 @@ def profile(input, ops, n=10, device=None):
                     try:
                         _ = (sum(yi.sum() for yi in y) if isinstance(y, list) else y).sum().backward()
                         t[2] = time_sync()
-                    except Exception as e:  # no backward method
+                    except Exception:  # no backward method
                         # print(e)  # for debug
                         t[2] = float('nan')
                     tf += (t[1] - t[0]) * 1000 / n  # ms per op forward
