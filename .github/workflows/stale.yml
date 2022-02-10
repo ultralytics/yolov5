@@ -34,5 +34,5 @@ jobs:
           stale-pr-message: 'This pull request has been automatically marked as stale because it has not had recent activity. It will be closed if no further activity occurs. Thank you for your contributions YOLOv5 🚀 and Vision AI ⭐.'
           days-before-stale: 30
           days-before-close: 5
-          exempt-issue-labels: 'documentation,tutorial'
+          exempt-issue-labels: 'documentation,tutorial,TODO'
           operations-per-run: 100  # The maximum number of operations per run, used to control rate limiting.

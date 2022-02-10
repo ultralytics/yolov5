@@ -244,7 +244,7 @@ def export_saved_model(model, im, file, dynamic,
 
         tf_model = TFModel(cfg=model.yaml, model=model, nc=model.nc, imgsz=imgsz)
         im = tf.zeros((batch_size, *imgsz, 3))  # BHWC order for TensorFlow
-        y = tf_model.predict(im, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
+        _ = tf_model.predict(im, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
         inputs = keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic else batch_size)
         outputs = tf_model.predict(inputs, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
         keras_model = keras.Model(inputs=inputs, outputs=outputs)
@@ -318,13 +318,14 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
         cmd = 'edgetpu_compiler --version'
         help_url = 'https://coral.ai/docs/edgetpu/compiler/'
         assert platform.system() == 'Linux', f'export only supported on Linux. See {help_url}'
-        if subprocess.run(cmd, shell=True).returncode != 0:
+        if subprocess.run(cmd + ' >/dev/null', shell=True).returncode != 0:
             LOGGER.info(f'\n{prefix} export requires Edge TPU compiler. Attempting install from {help_url}')
+            sudo = subprocess.run('sudo --version >/dev/null', shell=True).returncode == 0  # sudo installed on system
             for c in ['curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -',
                       'echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list',
                       'sudo apt-get update',
                       'sudo apt-get install edgetpu-compiler']:
-                subprocess.run(c, shell=True, check=True)
+                subprocess.run(c if sudo else c.replace('sudo ', ''), shell=True, check=True)
         ver = subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1]
 
         LOGGER.info(f'\n{prefix} starting export with Edge TPU compiler {ver}...')
@@ -406,15 +407,16 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     tf_exports = list(x in include for x in ('saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'))  # TensorFlow exports
     file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)
 
-    # Checks
-    imgsz *= 2 if len(imgsz) == 1 else 1  # expand
-    opset = 12 if ('openvino' in include) else opset  # OpenVINO requires opset <= 12
-
     # Load PyTorch model
     device = select_device(device)
     assert not (device.type == 'cpu' and half), '--half only compatible with GPU export, i.e. use --device 0'
     model = attempt_load(weights, map_location=device, inplace=True, fuse=True)  # load FP32 model
     nc, names = model.nc, model.names  # number of classes, class names
+
+    # Checks
+    imgsz *= 2 if len(imgsz) == 1 else 1  # expand
+    opset = 12 if ('openvino' in include) else opset  # OpenVINO requires opset <= 12
+    assert nc == len(names), f'Model class count {nc} != len(names) {len(names)}'
 
     # Input
     gs = int(max(model.stride))  # grid size (max stride)
@@ -437,7 +439,8 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
 
     for _ in range(2):
         y = model(im)  # dry runs
-    LOGGER.info(f"\n{colorstr('PyTorch:')} starting from {file} ({file_size(file):.1f} MB)")
+    shape = tuple(y[0].shape)  # model output shape
+    LOGGER.info(f"\n{colorstr('PyTorch:')} starting from {file} with output shape {shape} ({file_size(file):.1f} MB)")
 
     # Exports
     f = [''] * 10  # exported filenames
@@ -473,12 +476,13 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
 
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
-    LOGGER.info(f'\nExport complete ({time.time() - t:.2f}s)'
-                f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
-                f"\nDetect:          python detect.py --weights {f[-1]}"
-                f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
-                f"\nValidate:        python val.py --weights {f[-1]}"
-                f"\nVisualize:       https://netron.app")
+    if any(f):
+        LOGGER.info(f'\nExport complete ({time.time() - t:.2f}s)'
+                    f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
+                    f"\nDetect:          python detect.py --weights {f[-1]}"
+                    f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
+                    f"\nValidate:        python val.py --weights {f[-1]}"
+                    f"\nVisualize:       https://netron.app")
     return f  # return list of exported files/dirs
 
 
