@@ -356,6 +356,7 @@ class WandbLogger():
         # create a _wandb.yaml file with artifacts links if both train and test set are logged
         if not log_val_only:
             path = (path.stem if overwrite_config else path.stem + '_wandb') + '.yaml'  # updated data.yaml path
+            os.makedirs('data', exist_ok=True)
             path = Path('data') / path
             data.pop('download', None)
             data.pop('path', None)
