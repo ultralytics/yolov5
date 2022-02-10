@@ -811,13 +811,13 @@ def print_mutation(results, hyp, save_dir, bucket):
     with open(evolve_yaml, 'w') as f:
         data = pd.read_csv(evolve_csv)
         data = data.rename(columns=lambda x: x.strip())  # strip keys
-        i = np.argmax(fitness(data.values[:, :7]))  #
+        i = np.argmax(fitness(data.values[:, :4]))  #
         f.write('# YOLOv5 Hyperparameter Evolution Results\n' +
                 f'# Best generation: {i}\n' +
                 f'# Last generation: {len(data) - 1}\n' +
                 '# ' + ', '.join(f'{x.strip():>20s}' for x in keys[:7]) + '\n' +
                 '# ' + ', '.join(f'{x:>20.5g}' for x in data.values[i, :7]) + '\n\n')
-        yaml.safe_dump(hyp, f, sort_keys=False)
+        yaml.safe_dump(data.loc[i][7:], f, sort_keys=False)
 
     if bucket:
         os.system(f'gsutil cp {evolve_csv} {evolve_yaml} gs://{bucket}')  # upload
