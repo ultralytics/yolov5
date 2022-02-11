@@ -72,7 +72,7 @@ from utils.general import (LOGGER, check_dataset, check_img_size, check_requirem
 from utils.torch_utils import select_device
 
 
-def export_torchscript(model, im, file, torchscript_quantize,  optimize, prefix=colorstr('TorchScript:')):
+def export_torchscript(model, im, file, torchscript_quantize, optimize, prefix=colorstr('TorchScript:')):
     # YOLOv5 TorchScript model export
     try:
         LOGGER.info(f'\n{prefix} starting export with torch {torch.__version__}...')
