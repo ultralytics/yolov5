@@ -78,14 +78,14 @@ def export_formats():
     x = [['PyTorch', '-', '.pt'],
          ['TorchScript', 'torchscript', '.torchscript'],
          ['ONNX', 'onnx', '.onnx'],
-         ['OpenVINO', 'openvino', '_openvino_model/'],
+         ['OpenVINO', 'openvino', '_openvino_model'],
          ['TensorRT', 'engine', '.engine'],
          ['CoreML', 'coreml', '.mlmodel'],
-         ['TensorFlow SavedModel', 'saved_model', '_saved_model/'],
+         ['TensorFlow SavedModel', 'saved_model', '_saved_model'],
          ['TensorFlow GraphDef', 'pb', '.pb'],
          ['TensorFlow Lite', 'tflite', '.tflite'],
          ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite'],
-         ['TensorFlow.js', 'tfjs', '_web_model/']]
+         ['TensorFlow.js', 'tfjs', '_web_model']]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix'])
 
 

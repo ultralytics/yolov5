@@ -52,7 +52,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
     for i, (name, f, suffix) in formats.iterrows():  # index, (name, file, suffix)
         try:
             w = weights if f == '-' else export.run(weights=weights, imgsz=[imgsz], include=[f], device='cpu')[-1]
-            assert str(w).endswith(suffix), 'export failed'
+            assert suffix in str(w), 'export failed'
             result = val.run(data, w, batch_size, imgsz=imgsz, plots=False, device='cpu', task='benchmark')
             metrics = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
             speeds = result[2]  # times (preprocess, inference, postprocess)
