@@ -66,7 +66,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
     notebook_init()  # print system info
     py = pd.DataFrame(y, columns=['Format', 'mAP@0.5:0.95', 'Inference time (ms)'])
     LOGGER.info(f'\nBenchmarks complete ({time.time() - t:.2f}s)')
-    LOGGER.info(py)
+    LOGGER.info(str(py))
     return py
 
 
