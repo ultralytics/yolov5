@@ -72,12 +72,17 @@ from utils.general import (LOGGER, check_dataset, check_img_size, check_requirem
 from utils.torch_utils import select_device
 
 
-def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):
+def export_torchscript(model, im, file, torchscript_quantize,  optimize, prefix=colorstr('TorchScript:')):
     # YOLOv5 TorchScript model export
     try:
         LOGGER.info(f'\n{prefix} starting export with torch {torch.__version__}...')
+        if torchscript_quantize:
+            torch.backends.quantized.engine = "qnnpack"
+            qconfig = torch.quantization.default_qconfig
+            model.qconfig = qconfig
+            model = torch.quantization.prepare(model)
+            model = torch.quantization.convert(model)
         f = file.with_suffix('.torchscript')
-
         ts = torch.jit.trace(model, im, strict=False)
         d = {"shape": im.shape, "stride": int(max(model.stride)), "names": model.names}
         extra_files = {'config.txt': json.dumps(d)}  # torch._C.ExtraFilesMap()
@@ -389,6 +394,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         inplace=False,  # set YOLOv5 Detect() inplace=True
         train=False,  # model.train() mode
         optimize=False,  # TorchScript: optimize for mobile
+        torchscript_quantize=False,  # TorchScript: quantize
         int8=False,  # CoreML/TF INT8 quantization
         dynamic=False,  # ONNX/TF: dynamic axes
         simplify=False,  # ONNX: simplify model
@@ -446,7 +452,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     f = [''] * 10  # exported filenames
     warnings.filterwarnings(action='ignore', category=torch.jit.TracerWarning)  # suppress TracerWarning
     if 'torchscript' in include:
-        f[0] = export_torchscript(model, im, file, optimize)
+        f[0] = export_torchscript(model, im, file, export_torchscript, optimize)
     if 'engine' in include:  # TensorRT required before ONNX
         f[1] = export_engine(model, im, file, train, half, simplify, workspace, verbose)
     if ('onnx' in include) or ('openvino' in include):  # OpenVINO requires ONNX
@@ -497,6 +503,7 @@ def parse_opt():
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--train', action='store_true', help='model.train() mode')
     parser.add_argument('--optimize', action='store_true', help='TorchScript: optimize for mobile')
+    parser.add_argument('--torchscript-quantize', action='store_true', help='TorchScript: quantize')
     parser.add_argument('--int8', action='store_true', help='CoreML/TF INT8 quantization')
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TF: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
