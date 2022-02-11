@@ -38,6 +38,7 @@ if str(ROOT) not in sys.path:
 # ROOT = ROOT.relative_to(Path.cwd())  # relative
 
 import export, val
+from utils import notebook_init
 from utils.general import LOGGER, print_args
 
 
@@ -55,12 +56,15 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
             result = val.run(data=data, weights=w, imgsz=imgsz, batch_size=batch_size, plots=False, device='cpu')
             metrics = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
             speeds = result[2]  # times (preprocess, inference, postprocess)
-            y.append([Path(w).name, metrics[3], speeds[1]])  # mAP, t_inference
+            y.append([name, metrics[3], speeds[1]])  # mAP, t_inference
         except Exception as e:
-            LOGGER.warning(f'WARNING: Benchmark failure for {f}: {e}')
-            y.append([f, None, None])  # mAP, t_inference
+            LOGGER.warning(f'WARNING: Benchmark failure for {name}: {e}')
+            y.append([name, None, None])  # mAP, t_inference
 
-    py = pd.DataFrame(y, columns=['Weights', 'mAP@0.5:0.95', 'Inference time (ms)'])
+    LOGGER.info('\n')
+    parse_opt()
+    notebook_init()  # print system info
+    py = pd.DataFrame(y, columns=['Format', 'mAP@0.5:0.95', 'Inference time (ms)'])
     LOGGER.info(f'\nBenchmarks complete ({time.time() - t:.2f}s)')
     LOGGER.info(py)
     return py
