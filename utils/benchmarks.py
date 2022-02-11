@@ -53,7 +53,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
         try:
             w = weights if f == '-' else export.run(weights=weights, imgsz=[imgsz], include=[f], device='cpu')[-1]
             assert str(w).endswith(suffix), 'export failed'
-            result = val.run(data=data, weights=w, imgsz=imgsz, batch_size=batch_size, plots=False, device='cpu')
+            result = val.run(data, w, batch_size, imgsz=imgsz, plots=False, device='cpu', task='benchmark')
             metrics = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
             speeds = result[2]  # times (preprocess, inference, postprocess)
             y.append([name, metrics[3], speeds[1]])  # mAP, t_inference
