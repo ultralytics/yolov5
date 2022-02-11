@@ -61,6 +61,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
             LOGGER.warning(f'WARNING: Benchmark failure for {name}: {e}')
             y.append([name, None, None])  # mAP, t_inference
 
+    # Print results
     LOGGER.info('\n')
     parse_opt()
     notebook_init()  # print system info
