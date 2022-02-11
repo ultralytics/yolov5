@@ -422,7 +422,7 @@ def check_dataset(data, autodownload=True):
         data['names'] = [f'class{i}' for i in range(data['nc'])]  # assign class names if missing
     train, val, test, s = (data.get(x) for x in ('train', 'val', 'test', 'download'))
     if val:
-        val = [Path(ROOT / x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
+        val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
             LOGGER.info('\nDataset not found, missing paths: %s' % [str(x) for x in val if not x.exists()])
             if s and autodownload:  # download script
