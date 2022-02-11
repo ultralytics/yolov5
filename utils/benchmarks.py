@@ -47,11 +47,11 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         ):
     y, t = [], time.time()
-    formats = 'torch', 'torchscript', 'onnx', 'openvino', 'engine', 'coreml', \
-              'saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'
-    for f in formats[:]:
+    formats = export.export_formats()
+    for i, (name, f, suffix) in formats.iterrows():  # index, (name, file, suffix)
         try:
-            w = weights if f == 'torch' else export.run(weights=weights, imgsz=[imgsz], include=[f], device='cpu')[-1]
+            w = weights if f == '-' else export.run(weights=weights, imgsz=[imgsz], include=[f], device='cpu')[-1]
+            assert str(w).endswith(suffix), 'export failed'
             result = val.run(data=data, weights=w, imgsz=imgsz, batch_size=batch_size, plots=False, device='cpu')
             metrics = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
             speeds = result[2]  # times (preprocess, inference, postprocess)
