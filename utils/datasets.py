@@ -693,7 +693,7 @@ class LoadImagesAndLabels(Dataset):
 
     def load_mosaic9(self, index):
         # YOLOv5 9-mosaic loader. Loads 1 image + 8 random images into a 9-image mosaic
-        labels9, segments9 = [], []
+        labels9, segments9, hp, wp = [], [], 0, 0
         s = self.img_size
         indices = [index] + random.choices(self.indices, k=8)  # 8 additional image indices
         random.shuffle(indices)
