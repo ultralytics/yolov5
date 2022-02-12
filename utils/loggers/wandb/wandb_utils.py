@@ -252,6 +252,8 @@ class WandbLogger():
                 self.map_val_table_path()
         if opt.bbox_interval == -1:
             self.bbox_interval = opt.bbox_interval = (opt.epochs // 10) if opt.epochs > 10 else 1
+            if opt.evolve:
+                self.bbox_interval = opt.bbox_interval = opt.epochs + 1
         train_from_artifact = self.train_artifact_path is not None and self.val_artifact_path is not None
         # Update the the data_dict to point to local artifacts dir
         if train_from_artifact:
