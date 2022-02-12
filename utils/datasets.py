@@ -27,7 +27,7 @@ from torch.utils.data import DataLoader, Dataset, dataloader, distributed
 from tqdm import tqdm
 
 from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
-from utils.general import (LOGGER, NUM_THREADS, check_dataset, check_requirements, check_yaml, clean_str,
+from utils.general import (DATASETS_DIR, LOGGER, NUM_THREADS, check_dataset, check_requirements, check_yaml, clean_str,
                            segments2boxes, xyn2xy, xywh2xyxy, xywhn2xyxy, xyxy2xywhn)
 from utils.torch_utils import torch_distributed_zero_first
 
@@ -301,7 +301,7 @@ class LoadStreams:
             # Start thread to read frames from video stream
             st = f'{i + 1}/{n}: {s}... '
             if 'youtube.com/' in s or 'youtu.be/' in s:  # if source is YouTube video
-                check_requirements(('pafy', 'youtube_dl'))
+                check_requirements(('pafy', 'youtube_dl==2020.12.2'))
                 import pafy
                 s = pafy.new(s).getbest(preftype="mp4").url  # YouTube URL
             s = eval(s) if s.isnumeric() else s  # i.e. s = '0' local webcam
@@ -797,15 +797,15 @@ def create_folder(path='./new'):
     os.makedirs(path)  # make new output folder
 
 
-def flatten_recursive(path='../datasets/coco128'):
+def flatten_recursive(path=DATASETS_DIR / 'coco128'):
     # Flatten a recursive directory by bringing all files to top level
-    new_path = Path(path + '_flat')
+    new_path = Path(str(path) + '_flat')
     create_folder(new_path)
     for file in tqdm(glob.glob(str(Path(path)) + '/**/*.*', recursive=True)):
         shutil.copyfile(file, new_path / Path(file).name)
 
 
-def extract_boxes(path='../datasets/coco128'):  # from utils.datasets import *; extract_boxes()
+def extract_boxes(path=DATASETS_DIR / 'coco128'):  # from utils.datasets import *; extract_boxes()
     # Convert detection dataset into classification dataset, with one directory per class
     path = Path(path)  # images dir
     shutil.rmtree(path / 'classifier') if (path / 'classifier').is_dir() else None  # remove existing
@@ -839,7 +839,7 @@ def extract_boxes(path='../datasets/coco128'):  # from utils.datasets import *; 
                     assert cv2.imwrite(str(f), im[b[1]:b[3], b[0]:b[2]]), f'box failure in {f}'
 
 
-def autosplit(path='../datasets/coco128/images', weights=(0.9, 0.1, 0.0), annotated_only=False):
+def autosplit(path=DATASETS_DIR / 'coco128/images', weights=(0.9, 0.1, 0.0), annotated_only=False):
     """ Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
     Usage: from utils.datasets import *; autosplit()
     Arguments
@@ -919,7 +919,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
     """ Return dataset statistics dictionary with images and instances counts per split per class
     To run in parent directory: export PYTHONPATH="$PWD/yolov5"
     Usage1: from utils.datasets import *; dataset_stats('coco128.yaml', autodownload=True)
-    Usage2: from utils.datasets import *; dataset_stats('../datasets/coco128_with_yaml.zip')
+    Usage2: from utils.datasets import *; dataset_stats('path/to/coco128_with_yaml.zip')
     Arguments
         path:           Path to data.yaml or data.zip (with data.yaml inside data.zip)
         autodownload:   Attempt to download dataset if not found locally

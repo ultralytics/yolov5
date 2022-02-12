@@ -515,17 +515,20 @@ def main(opt, callbacks=Callbacks()):
             check_file(opt.data), check_yaml(opt.cfg), check_yaml(opt.hyp), str(opt.weights), str(opt.project)  # checks
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         if opt.evolve:
-            opt.project = str(ROOT / 'runs/evolve')
+            if opt.project == str(ROOT / 'runs/train'):  # if default project name, rename to runs/evolve
+                opt.project = str(ROOT / 'runs/evolve')
             opt.exist_ok, opt.resume = opt.resume, False  # pass resume to exist_ok and disable resume
         opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))
 
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
     if LOCAL_RANK != -1:
+        msg = 'is not compatible with YOLOv5 Multi-GPU DDP training'
+        assert not opt.image_weights, f'--image-weights {msg}'
+        assert not opt.evolve, f'--evolve {msg}'
+        assert opt.batch_size != -1, f'AutoBatch with --batch-size -1 {msg}, please pass a valid --batch-size'
+        assert opt.batch_size % WORLD_SIZE == 0, f'--batch-size {opt.batch_size} must be multiple of WORLD_SIZE'
         assert torch.cuda.device_count() > LOCAL_RANK, 'insufficient CUDA devices for DDP command'
-        assert opt.batch_size % WORLD_SIZE == 0, '--batch-size must be multiple of CUDA device count'
-        assert not opt.image_weights, '--image-weights argument is not compatible with DDP training'
-        assert not opt.evolve, '--evolve argument is not compatible with DDP training'
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device('cuda', LOCAL_RANK)
         dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
@@ -620,9 +623,9 @@ def main(opt, callbacks=Callbacks()):
 
         # Plot results
         plot_evolve(evolve_csv)
-        LOGGER.info(f'Hyperparameter evolution finished\n'
+        LOGGER.info(f'Hyperparameter evolution finished {opt.evolve} generations\n'
                     f"Results saved to {colorstr('bold', save_dir)}\n"
-                    f'Use best hyperparameters example: $ python train.py --hyp {evolve_yaml}')
+                    f'Usage example: $ python train.py --hyp {evolve_yaml}')
 
 
 def run(**kwargs):
@@ -631,6 +634,7 @@ def run(**kwargs):
     for k, v in kwargs.items():
         setattr(opt, k, v)
     main(opt)
+    return opt
 
 
 if __name__ == "__main__":
