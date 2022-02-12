@@ -653,11 +653,11 @@ class LoadImagesAndLabels(Dataset):
         random.shuffle(indices)
         for i, index in enumerate(indices):
             # Load image
-            img, _, (h, w) = self.load_image(index)
+            im, _, (h, w) = self.load_image(index)
 
-            # place img in img4
+            # place im in im4
             if i == 0:  # top left
-                img4 = np.full((s * 2, s * 2, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
+                im4 = np.full((s * 2, s * 2, im.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
                 padw, padh = s - w, s - h
             elif i == 1:  # top right
                 padw, padh = s, s - h
@@ -666,7 +666,7 @@ class LoadImagesAndLabels(Dataset):
             else:  # bottom right
                 padw, padh = s, s
 
-            img4[padh:padh + h, padw:padw + w] = img
+            im4[padh:padh + h, padw:padw + w] = im
 
             # Labels
             labels, segments = self.labels[index].copy(), self.segments[index].copy()
@@ -677,19 +677,19 @@ class LoadImagesAndLabels(Dataset):
             segments4.extend(segments)
 
         labels4 = np.concatenate(labels4, 0)
-        # img4, labels4 = replicate(img4, labels4)  # replicate
+        # im4, labels4 = replicate(im4, labels4)  # replicate
 
         # Augment
-        img4, labels4, segments4 = copy_paste(img4, labels4, segments4, p=self.hyp['copy_paste'])
-        img4, labels4 = random_perspective(img4, labels4, segments4,
-                                           degrees=self.hyp['degrees'],
-                                           translate=0.5 + self.hyp['translate'],
-                                           scale=self.hyp['scale'],
-                                           shear=self.hyp['shear'],
-                                           perspective=self.hyp['perspective'],
-                                           border=self.mosaic_border)  # border to remove
+        im4, labels4, segments4 = copy_paste(im4, labels4, segments4, p=self.hyp['copy_paste'])
+        im4, labels4 = random_perspective(im4, labels4, segments4,
+                                          degrees=self.hyp['degrees'],
+                                          translate=0.5 + self.hyp['translate'],
+                                          scale=self.hyp['scale'],
+                                          shear=self.hyp['shear'],
+                                          perspective=self.hyp['perspective'],
+                                          border=self.mosaic_border)  # border to remove
 
-        return img4, labels4
+        return im4, labels4
 
     def load_mosaic9(self, index):
         # YOLOv5 9-mosaic loader. Loads 1 image + 8 random images into a 9-image mosaic
@@ -699,11 +699,11 @@ class LoadImagesAndLabels(Dataset):
         random.shuffle(indices)
         for i, index in enumerate(indices):
             # Load image
-            img, _, (h, w) = self.load_image(index)
+            im, _, (h, w) = self.load_image(index)
 
-            # place img in img9
+            # place im in im9
             if i == 0:  # center
-                img9 = np.full((s * 3, s * 3, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
+                im9 = np.full((s * 3, s * 3, im.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
                 h0, w0 = h, w
                 c = s, s, s + w, s + h  # xmin, ymin, xmax, ymax (base) coordinates
             elif i == 1:  # top
@@ -735,25 +735,25 @@ class LoadImagesAndLabels(Dataset):
             segments9.extend(segments)
 
             # Image
-            img9[y1:y2, x1:x2] = img[y1 - pady:, x1 - padx:]  # img9[ymin:ymax, xmin:xmax]
+            im9[y1:y2, x1:x2] = im[y1 - pady:, x1 - padx:]  # im9[ymin:ymax, xmin:xmax]
             hp, wp = h, w  # height, width previous
 
         # Concat/clip labels
         labels9 = np.concatenate(labels9, 0)
         for x in (labels9[:, 1:], *segments9):
             np.clip(x, 0, 3 * s, out=x)  # clip when using random_perspective()
-        # img9, labels9 = replicate(img9, labels9)  # replicate
+        # im9, labels9 = replicate(im9, labels9)  # replicate
 
         # Augment
-        img9, labels9 = random_perspective(img9, labels9, segments9,
-                                           degrees=self.hyp['degrees'],
-                                           translate=1.0 + self.hyp['translate'],
-                                           scale=self.hyp['scale'],
-                                           shear=self.hyp['shear'],
-                                           perspective=self.hyp['perspective'],
-                                           border=[x - int(s / 2) for x in self.mosaic_border])  # border to remove
+        im9, labels9 = random_perspective(im9, labels9, segments9,
+                                          degrees=self.hyp['degrees'],
+                                          translate=1.0 + self.hyp['translate'],
+                                          scale=self.hyp['scale'],
+                                          shear=self.hyp['shear'],
+                                          perspective=self.hyp['perspective'],
+                                          border=[x - int(s / 2) for x in self.mosaic_border])  # border to remove
 
-        return img9, labels9
+        return im9, labels9
 
     @staticmethod
     def collate_fn(batch):
