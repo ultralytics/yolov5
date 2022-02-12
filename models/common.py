@@ -461,12 +461,12 @@ class DetectMultiBackend(nn.Module):
     @staticmethod
     def model_type(p='path/to/model.pt'):
         # Return model type from model path, i.e. path='path/to/model.onnx' -> type=onnx
-        check_suffix(p, ['.pt', '.torchscript', '.onnx', '.xml', '.engine', '.mlmodel', '.pb', '.tflite', ''])  # checks
-        ends = '.pt', '.torchscript', '.onnx', '.xml', '_openvino_model', '.engine', '.mlmodel', \
-               '_saved_model', '.pb', '.tflite', '_edgetpu.tflite', '_web_model'
+        from export import export_formats
+        suffixes = list(export_formats().Suffix) + ['.xml']  # export suffixes
+        check_suffix(p, suffixes)  # checks
         p = Path(p).name  # eliminate trailing separators
-        pt, jit, onnx, xml, xml2, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = (p.endswith(x) for x in ends)
-        xml |= xml2  # *.xml or *_openvino_model
+        pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, xml2 = (s in p for s in suffixes)
+        xml |= xml2  # *_openvino_model or *.xml
         tflite &= not edgetpu  # *.tflite
         return pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs
 
