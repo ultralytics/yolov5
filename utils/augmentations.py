@@ -3,7 +3,6 @@
 Image augmentation functions
 """
 
-import math
 import random
 
 import cv2
@@ -149,8 +148,8 @@ def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, sc
 
     # Shear
     S = np.eye(3)
-    S[0, 1] = math.tan(random.uniform(-shear, shear) * math.pi / 180)  # x shear (deg)
-    S[1, 0] = math.tan(random.uniform(-shear, shear) * math.pi / 180)  # y shear (deg)
+    S[0, 1] = np.tan(random.uniform(-shear, shear) * np.pi / 180)  # x shear (deg)
+    S[1, 0] = np.tan(random.uniform(-shear, shear) * np.pi / 180)  # y shear (deg)
 
     # Translation
     T = np.eye(3)
