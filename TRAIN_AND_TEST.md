@@ -18,6 +18,8 @@ The following commands assume that the LMI_AI_Solution repo is cloned in `~/LMI_
 
 ```bash
 source ~/LMI_AI_Solutions/lmi_ai.env
+#if you are running a different directory other than current yolo folder
+source PATH_TO_YOLO/yolo.env
 ```
 
 ## Prepare the datasets
@@ -54,7 +56,6 @@ The following commands show that
 - move it to `./pretrained-models`.
 
 ```bash
-mkdir ./pretrained-models
 wget https://github.com/ultralytics/yolov5/releases/download/v6.0/yolov5s.pt -P ./pretrained-models
 ```
 
@@ -69,7 +70,7 @@ The command below trains the datasets in the yaml file with the following argume
 - exist-ok: if it's okay to overwrite the existing output subfolder
 
 ```bash
-python train.py --img 640 --batch 16 --epoch 600 --data ./config/2022-01-08_640.yaml --weights ./pretrained-models/yolov5s.pt --project ./training --name 2022-01-08_640 --exist-ok
+python -m train --img 640 --batch 16 --epoch 600 --data ./config/2022-01-08_640.yaml --weights ./pretrained-models/yolov5s.pt --project ./training --name 2022-01-08_640 --exist-ok
 ```
 
 ## Monitor the training progress
@@ -97,6 +98,6 @@ The command below run the inference using the following arguments:
 - save-csv: save the outputs as a csv file
 
 ```bash
-python detect.py --source ./data/2022-01-04_640_yolo/images --weights ./trained-inference-models/2022-01-05_640/best.pt --img 640 --project ./validation --name 2022-01-08_640 --save-csv
+python -m detect --source ./data/2022-01-04_640_yolo/images --weights ./trained-inference-models/2022-01-05_640/best.pt --img 640 --project ./validation --name 2022-01-08_640 --save-csv
 ```
 The output results are saved in `./validation/2022-01-08_640`.
