@@ -487,7 +487,7 @@ class WandbLogger():
             if self.current_epoch % self.bbox_interval == 0:
                 box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
                              "class_id": int(cls),
-                             "box_caption": f"{names[cls]} {conf:.3f}",
+                             "box_caption": f"{names[int(cls)]} {conf:.3f}",
                              "scores": {"class_score": conf},
                              "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
                 boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
