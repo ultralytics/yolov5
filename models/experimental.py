@@ -9,8 +9,8 @@ import torch
 import torch.nn as nn
 
 from models.common import Conv
-from utils.downloads import attempt_download
 from models.yolo import Polygon_Detect
+from utils.downloads import attempt_download
 
 
 class CrossConv(nn.Module):
