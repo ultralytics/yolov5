@@ -1,5 +1,5 @@
 #MODEL_PATH="./runs/CBAM@17_leakyReLU_litter_xinbuju_blend_less50/exp/weights/best.pt"
-MODEL_PATH="./runs/test_openvino/exp4/weights/"
+MODEL_PATH="./runs/Garbage_yolov5s_attn_raw_14-02-2022/exp2/weights/"
 PT="best.pt"
 IMG_SIZE=512
 BATCH=1
@@ -12,7 +12,9 @@ python ./export.py \
 --include 'onnx' \
 --opset 10
 
-echo "copy onnx to /inference/$(date +"%d-%m-%Y")"
-mkdir -p ./inference/$(date +"%d-%m-%Y")
-cp "${MODEL_PATH}best.onnx" ./inference/$(date +"%d-%m-%Y")
+echo "copy onnx to /onnx/$(date +"%d-%m-%Y")"
+cd ./onnx/
+mkdir $(date +"%d-%m-%Y")
+cd ..
+cp "${MODEL_PATH}best.onnx" ./onnx/$(date +"%d-%m-%Y")
 

@@ -82,6 +82,7 @@ def process_batch(detections, labels, iouv):
 
 @torch.no_grad()
 def run(data,
+        test_scene,
         weights=None,  # model.pt path(s)
         batch_size=32,  # batch size
         imgsz=640,  # inference size (pixels)
@@ -148,8 +149,18 @@ def run(data,
         if device.type != 'cpu':
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
-        dataloader = create_dataloader(data[task], imgsz, batch_size, gs, single_cls, pad=0.5, rect=True,
-                                       prefix=colorstr(f'{task}: '))[0]
+        
+        # override test data
+        if test_scene == '':
+            task_loaded = data[task]
+        else:
+            task_loaded = '{}/{}'.format(data['path'],test_scene)
+        print('-----current data loaded at: {}'.format(task_loaded))
+        try:
+            dataloader = create_dataloader(task_loaded, imgsz, batch_size, gs, single_cls, pad=0.5, rect=True,
+                                           prefix=colorstr(f'{task}: '))[0]
+        except:
+            raise Exception('dataset <{}> not found'.format(task_loaded))
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
@@ -242,6 +253,12 @@ def run(data,
     # Print results
     pf = '%20s' + '%11i' * 2 + '%11.3g' * 4  # print format
     print(pf % ('all', seen, nt.sum(), mp, mr, map50, map))
+    # save results
+    ppf = '%20s' + '%11s' * 2 + '%11.3s' * 4  # print format
+    with open("{}/eval_results.txt".format(project), 'a') as f:
+        f.write(ppf % (test_scene, '|', '', 'P', 'R', 'mAP50', 'mAP95')+'\n')
+        f.write(pf % ('all', seen, nt.sum(), mp, mr, map50, map)+'\n\n')
+    print("evalation results saved to txt")
 
     # Print results per class
     if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
@@ -299,6 +316,7 @@ def run(data,
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
+    parser.add_argument('--test_scene', type=str, default='', help='each testing scenes')
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--batch-size', type=int, default=32, help='batch size')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
@@ -334,7 +352,7 @@ def main(opt):
 
     elif opt.task == 'speed':  # speed benchmarks
         for w in opt.weights if isinstance(opt.weights, list) else [opt.weights]:
-            run(opt.data, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
+            run(opt.data, opt.test_scene, weights=w, batch_size=opt.batch_size, imgsz=opt.imgsz, conf_thres=.25, iou_thres=.45,
                 save_json=False, plots=False)
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
