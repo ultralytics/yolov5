@@ -63,10 +63,6 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-import torch
-import torch.nn as nn
-from torch.utils.mobile_optimizer import optimize_for_mobile
-
 from models.common import Conv
 from models.experimental import attempt_load
 from models.yolo import Detect
