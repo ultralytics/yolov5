@@ -720,7 +720,7 @@ class LoadImagesAndLabels(Dataset):
                 c = s + w0 - wp - w, s + h0, s + w0 - wp, s + h0 + h
             elif i == 7:  # left
                 c = s - w, s + h0 - h, s, s + h0
-            elif i == 8:  # top left
+            else:  # top left
                 c = s - w, s + h0 - hp - h, s, s + h0 - hp
 
             padx, pady = c[:2]
@@ -747,7 +747,7 @@ class LoadImagesAndLabels(Dataset):
         # Augment
         im9, labels9 = random_perspective(im9, labels9, segments9,
                                           degrees=self.hyp['degrees'],
-                                          translate=1.0 + self.hyp['translate'],
+                                          translate=random.uniform(0, 0.18) + 0.82 + self.hyp['translate'],
                                           scale=self.hyp['scale'],
                                           shear=self.hyp['shear'],
                                           perspective=self.hyp['perspective'],
