@@ -10,6 +10,7 @@ import torch.nn as nn
 
 from models.common import Conv
 from utils.downloads import attempt_download
+from models.yolo import Polygon_Detect
 
 
 class CrossConv(nn.Module):
@@ -102,9 +103,9 @@ def attempt_load(weights, map_location=None, inplace=True, fuse=True):
 
     # Compatibility updates
     for m in model.modules():
-        if type(m) in [nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Detect, Model]:
+        if type(m) in [nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Detect, Model, Polygon_Detect]:
             m.inplace = inplace  # pytorch 1.7.0 compatibility
-            if type(m) is Detect:
+            if type(m) in [Detect, Polygon_Detect]:
                 if not isinstance(m.anchor_grid, list):  # new Detect Layer compatibility
                     delattr(m, 'anchor_grid')
                     setattr(m, 'anchor_grid', [torch.zeros(1)] * m.nl)
