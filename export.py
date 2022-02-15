@@ -52,6 +52,7 @@ import time
 import warnings
 from pathlib import Path
 
+import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
@@ -70,6 +71,22 @@ from utils.datasets import LoadImages
 from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_version, colorstr,
                            file_size, print_args, url2file)
 from utils.torch_utils import select_device
+
+
+def export_formats():
+    # YOLOv5 export formats
+    x = [['PyTorch', '-', '.pt'],
+         ['TorchScript', 'torchscript', '.torchscript'],
+         ['ONNX', 'onnx', '.onnx'],
+         ['OpenVINO', 'openvino', '_openvino_model'],
+         ['TensorRT', 'engine', '.engine'],
+         ['CoreML', 'coreml', '.mlmodel'],
+         ['TensorFlow SavedModel', 'saved_model', '_saved_model'],
+         ['TensorFlow GraphDef', 'pb', '.pb'],
+         ['TensorFlow Lite', 'tflite', '.tflite'],
+         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite'],
+         ['TensorFlow.js', 'tfjs', '_web_model']]
+    return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix'])
 
 
 def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):

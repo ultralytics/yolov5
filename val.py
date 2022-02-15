@@ -163,9 +163,10 @@ def run(data,
     # Dataloader
     if not training:
         model.warmup(imgsz=(1 if pt else batch_size, 3, imgsz, imgsz), half=half)  # warmup
-        pad = 0.0 if task == 'speed' else 0.5
+        pad = 0.0 if task in ('speed', 'benchmark') else 0.5
+        rect = False if task == 'benchmark' else pt  # square inference for benchmarks
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
-        dataloader = create_dataloader(data[task], imgsz, batch_size, stride, single_cls, pad=pad, rect=pt,
+        dataloader = create_dataloader(data[task], imgsz, batch_size, stride, single_cls, pad=pad, rect=rect,
                                        workers=workers, prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
