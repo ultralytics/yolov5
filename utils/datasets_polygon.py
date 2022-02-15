@@ -152,10 +152,10 @@ class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
         if cache_images:
             gb = 0  # Gigabytes of cached images
             self.img_hw0, self.img_hw = [None] * n, [None] * n
-            results = ThreadPool(num_threads).imap(lambda x: load_image(*x), zip(repeat(self), range(n)))
+            results = ThreadPool(num_threads).imap(lambda x: polygon_load_image(*x), zip(repeat(self), range(n)))
             pbar = tqdm(enumerate(results), total=n)
             for i, x in pbar:
-                self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = load_image(self, i)
+                self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # img, hw_original, hw_resized = polygon_load_image(self, i)
                 gb += self.imgs[i].nbytes
                 pbar.desc = f'{prefix}Caching images ({gb / 1E9:.1f}GB)'
             pbar.close()
@@ -220,7 +220,7 @@ class Polygon_LoadImagesAndLabels(Dataset):  # for training/testing
 
         else:
             # Load image
-            img, (h0, w0), (h, w) = load_image(self, index)
+            img, (h0, w0), (h, w) = polygon_load_image(self, index)
 
             # Letterbox
             shape = self.batch_shapes[self.batch[index]] if self.rect else self.img_size  # final letterboxed shape
@@ -295,7 +295,7 @@ def polygon_load_mosaic(self, index):
     indices = [index] + random.choices(self.indices, k=3)  # 3 additional image indices
     for i, index in enumerate(indices):
         # Load image
-        img, _, (h, w) = load_image(self, index)
+        img, _, (h, w) = polygon_load_image(self, index)
 
         # place img in img4
         if i == 0:  # top left
@@ -353,7 +353,7 @@ def polygon_load_mosaic9(self, index):
     h0, w0, hp, wp = 0, 0, 0, 0
     for i, index in enumerate(indices):
         # Load image
-        img, _, (h, w) = load_image(self, index)
+        img, _, (h, w) = polygon_load_image(self, index)
 
         # place img in img9
         if i == 0:  # center
@@ -641,3 +641,25 @@ def polygon_box_candidates(box1, box2, wh_thr=3, ar_thr=20, area_thr=0.1, eps=1e
     w2, h2 = box2[0::2].max(axis=0) - box2[0::2].min(axis=0), box2[1::2].max(axis=0) - box2[1::2].min(axis=0)
     ar = np.maximum(w2 / (h2 + eps), h2 / (w2 + eps))  # aspect ratio
     return (w2 > wh_thr) & (h2 > wh_thr) & (w2 * h2 / (w1 * h1 + eps) > area_thr) & (ar < ar_thr)  # candidates
+
+
+def polygon_load_image(self, i):
+    # loads 1 image from dataset index 'i', returns im, original hw, resized hw
+    im = self.imgs[i]
+    if im is None:  # not cached in ram
+        npy = self.img_npy[i]
+        if npy and npy.exists():  # load npy
+            im = np.load(npy)
+        else:  # read image
+            path = self.img_files[i]
+            im = cv2.imread(path)  # BGR
+            assert im is not None, f'Image Not Found {path}'
+        h0, w0 = im.shape[:2]  # orig hw
+        r = self.img_size / max(h0, w0)  # ratio
+        if r != 1:  # if sizes are not equal
+            im = cv2.resize(im, (int(w0 * r), int(h0 * r)),
+                            interpolation=cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR)
+        return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
+    else:
+        return self.imgs[i], self.img_hw0[i], self.img_hw[i]  # im, hw_original, hw_resized
+
