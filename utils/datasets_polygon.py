@@ -662,4 +662,3 @@ def polygon_load_image(self, i):
         return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
     else:
         return self.imgs[i], self.img_hw0[i], self.img_hw[i]  # im, hw_original, hw_resized
-
