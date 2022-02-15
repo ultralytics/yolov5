@@ -8,8 +8,8 @@ source ~/virtual_env/bin/activate
 ## Install the libraries
 
 ```bash
-git clone --recursive https://github.com/fringe-ai/LMI_AI_Solutions.git
-git clone -b YJ https://github.com/fringe-ai/yolov5.git
+git clone --recursive https://github.com/lmitechnologies/LMI_AI_Solutions.git
+git clone https://github.com/lmitechnologies/yolov5.git
 cd yolov5
 pip install -r requirements.txt
 ```
@@ -32,7 +32,7 @@ Assume that the original annotated files are in `./data/allImages_1024`. After e
 Below are the example commands:
 ```bash
 python -m resize_images_with_csv -i ./data/allImages_1024 --out_imsz 640,640 -o ./data/2022-01-08_640
-python ./preprocess/convert_data_to_yolo.py -i ./data/2022-01-08_640 -o ./data/2022-01-08_640_yolo
+python -m convert_data_to_yolo -i ./data/2022-01-08_640 -o ./data/2022-01-08_640_yolo
 ```
 
 ## Create a yaml file indicating the locations of datasets
