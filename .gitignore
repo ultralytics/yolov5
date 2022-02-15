@@ -62,6 +62,7 @@ VOC/
 *_openvino_model/
 darknet53.conv.74
 yolov3-tiny.conv.15
+*.wts
 
 # GitHub Python GitIgnore ----------------------------------------------------------------------------------------------
 # Byte-compiled / optimized / DLL files
@@ -254,3 +255,9 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+#ignore folders
+validation/
+training/
+pretrained-models/
+trained-inference-models/
