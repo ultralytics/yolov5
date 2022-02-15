@@ -9,7 +9,6 @@ import torch
 import torch.nn as nn
 
 from models.common import Conv
-from models.yolo import Polygon_Detect
 from utils.downloads import attempt_download
 
 
@@ -89,7 +88,7 @@ class Ensemble(nn.ModuleList):
 
 
 def attempt_load(weights, map_location=None, inplace=True, fuse=True):
-    from models.yolo import Detect, Model
+    from models.yolo import Detect, Model, Polygon_Detect
 
     # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a]
     # or weights=a
