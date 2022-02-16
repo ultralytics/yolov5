@@ -89,7 +89,7 @@ def export_formats():
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix'])
 
 
-def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):
+def export_torchscript(model, im, optimize, prefix=colorstr('TorchScript:')):
     # YOLOv5 TorchScript model export
     try:
         LOGGER.info(f'\n{prefix} starting export with torch {torch.__version__}...')
@@ -256,7 +256,11 @@ def export_saved_model(model, im, file, dynamic,
         from models.tf import TFDetect, TFModel
 
         LOGGER.info(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
-        f = str(file).replace('.pt', '_saved_model')
+        file_str = str(file)
+        if file_str.endswith('.pt'):
+            f = file_str.replace('.pt', '_saved_model')
+        else:
+            f = file_str + '_saved_model'
         batch_size, ch, *imgsz = list(im.shape)  # BCHW
 
         tf_model = TFModel(cfg=model.yaml, model=model, nc=model.nc, imgsz=imgsz)
@@ -398,6 +402,7 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
 @torch.no_grad()
 def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         weights=ROOT / 'yolov5s.pt',  # weights path
+        output_prefix='', # output prefix
         imgsz=(640, 640),  # image (height, width)
         batch_size=1,  # batch size
         device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
@@ -422,7 +427,10 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     t = time.time()
     include = [x.lower() for x in include]
     tf_exports = list(x in include for x in ('saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'))  # TensorFlow exports
-    file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)
+    if output_prefix == '':
+        file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)
+    else:
+        file = Path(output_prefix)
 
     # Load PyTorch model
     device = select_device(device)
@@ -507,6 +515,7 @@ def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
+    parser.add_argument('--output-prefix', type=str, default='', help='prefix of output file')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640, 640], help='image (h, w)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
