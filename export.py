@@ -89,7 +89,7 @@ def export_formats():
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix'])
 
 
-def export_torchscript(model, im, optimize, prefix=colorstr('TorchScript:')):
+def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):
     # YOLOv5 TorchScript model export
     try:
         LOGGER.info(f'\n{prefix} starting export with torch {torch.__version__}...')
