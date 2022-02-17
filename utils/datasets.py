@@ -11,7 +11,6 @@ import os
 import random
 import shutil
 import time
-import eventlet
 from itertools import repeat
 from multiprocessing.pool import Pool, ThreadPool
 from pathlib import Path
@@ -19,6 +18,7 @@ from threading import Thread
 from zipfile import ZipFile
 
 import cv2
+import eventlet
 import numpy as np
 import torch
 import torch.nn.functional as F
