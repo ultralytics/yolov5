@@ -9,9 +9,9 @@ RUN apt update && apt install -y zip htop screen libgl1-mesa-glx
 # Install python dependencies
 COPY requirements.txt .
 RUN python -m pip install --upgrade pip
-RUN pip uninstall -y nvidia-tensorboard nvidia-tensorboard-plugin-dlprof torch torchvision
-RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook
+RUN pip uninstall -y torch torchvision torchtext
 RUN pip install --no-cache torch==1.10.2+cu113 torchvision==0.11.3+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook
 # RUN pip install --no-cache -U torch torchvision
 
 # Create working directory
