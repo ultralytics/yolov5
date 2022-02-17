@@ -11,6 +11,7 @@ import os
 import random
 import shutil
 import time
+import eventlet
 from itertools import repeat
 from multiprocessing.pool import Pool, ThreadPool
 from pathlib import Path
@@ -340,7 +341,7 @@ class LoadStreams:
                     LOGGER.warning('WARNING: Video stream unresponsive, please check your IP camera connection.')
                     self.imgs[i] = np.zeros_like(self.imgs[i])
                     cap.open(stream)  # re-open stream if signal was lost
-            time.sleep(1 / self.fps[i])  # wait time
+            eventlet.sleep(1 / self.fps[i])  # wait time
 
     def __iter__(self):
         self.count = -1
