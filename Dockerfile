@@ -1,7 +1,7 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 
 # Start FROM Nvidia PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
-FROM nvcr.io/nvidia/pytorch:21.10-py3
+FROM nvcr.io/nvidia/pytorch:22.01-py3
 
 # Install linux packages
 RUN apt update && apt install -y zip htop screen libgl1-mesa-glx
