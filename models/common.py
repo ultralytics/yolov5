@@ -379,7 +379,7 @@ class DetectMultiBackend(nn.Module):
                 except ImportError:
                     import tensorflow as tf
                     Interpreter, load_delegate = tf.lite.Interpreter, tf.lite.experimental.load_delegate,
-                if 'edgetpu' in w.lower():  # Edge TPU https://coral.ai/software/#edgetpu-runtime
+                if edgetpu:  # Edge TPU https://coral.ai/software/#edgetpu-runtime
                     LOGGER.info(f'Loading {w} for TensorFlow Lite Edge TPU inference...')
                     delegate = {'Linux': 'libedgetpu.so.1',
                                 'Darwin': 'libedgetpu.1.dylib',
