@@ -359,7 +359,8 @@ class DetectMultiBackend(nn.Module):
             if saved_model:  # SavedModel
                 LOGGER.info(f'Loading {w} for TensorFlow SavedModel inference...')
                 import tensorflow as tf
-                model = tf.keras.models.load_model(w)
+                keras = False  # assume TF1 saved_model
+                model = tf.keras.models.load_model(w) if keras else tf.saved_model.load(w)
             elif pb:  # GraphDef https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
                 LOGGER.info(f'Loading {w} for TensorFlow GraphDef inference...')
                 import tensorflow as tf
@@ -431,7 +432,7 @@ class DetectMultiBackend(nn.Module):
         else:  # TensorFlow (SavedModel, GraphDef, Lite, Edge TPU)
             im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
             if self.saved_model:  # SavedModel
-                y = self.model(im, training=False).numpy()
+                y = (self.model(im, training=False) if self.keras else self.model(im)[0]).numpy()
             elif self.pb:  # GraphDef
                 y = self.frozen_func(x=self.tf.constant(im)).numpy()
             elif self.tflite:  # Lite
