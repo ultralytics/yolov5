@@ -247,7 +247,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
 
 def export_saved_model(model, im, file, dynamic,
                        tf_nms=False, agnostic_nms=False, topk_per_class=100, topk_all=100, iou_thres=0.45,
-                       conf_thres=0.25, use_keras=False, prefix=colorstr('TensorFlow SavedModel:')):
+                       conf_thres=0.25, keras=False, prefix=colorstr('TensorFlow SavedModel:')):
     # YOLOv5 TensorFlow SavedModel export
     try:
         import tensorflow as tf
@@ -267,7 +267,7 @@ def export_saved_model(model, im, file, dynamic,
         keras_model = tf.keras.Model(inputs=inputs, outputs=outputs)
         keras_model.trainable = False
         keras_model.summary()
-        if use_keras:
+        if keras:
             keras_model.save(f, save_format='tf')
         else:
             m = tf.function(lambda x: keras_model(x))  # full model
