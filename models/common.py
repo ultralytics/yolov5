@@ -359,12 +359,8 @@ class DetectMultiBackend(nn.Module):
             if saved_model:  # SavedModel
                 LOGGER.info(f'Loading {w} for TensorFlow SavedModel inference...')
                 import tensorflow as tf
-                try:
-                    model = tf.saved_model.load(w)
-                    keras = False
-                except Exception:
-                    model = tf.keras.models.load_model(w)
-                    keras = True
+                keras = False  # assume TF1 saved_model
+                model = tf.keras.models.load_model(w) if keras else tf.saved_model.load(w)
             elif pb:  # GraphDef https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
                 LOGGER.info(f'Loading {w} for TensorFlow GraphDef inference...')
                 import tensorflow as tf
