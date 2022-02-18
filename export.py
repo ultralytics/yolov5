@@ -251,7 +251,6 @@ def export_saved_model(model, im, file, dynamic,
     # YOLOv5 TensorFlow SavedModel export
     try:
         import tensorflow as tf
-        from tensorflow import keras
         from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
         from models.tf import TFDetect, TFModel
@@ -263,20 +262,20 @@ def export_saved_model(model, im, file, dynamic,
         tf_model = TFModel(cfg=model.yaml, model=model, nc=model.nc, imgsz=imgsz)
         im = tf.zeros((batch_size, *imgsz, 3))  # BHWC order for TensorFlow
         _ = tf_model.predict(im, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
-        inputs = keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic else batch_size)
+        inputs = tf.keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic else batch_size)
         outputs = tf_model.predict(inputs, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
-        keras_model = keras.Model(inputs=inputs, outputs=outputs)
+        keras_model = tf.keras.Model(inputs=inputs, outputs=outputs)
         keras_model.trainable = False
         keras_model.summary()
         if use_keras:
             keras_model.save(f, save_format='tf')
         else:
             m = tf.function(lambda x: keras_model(x))  # full model
-            m = m.get_concrete_function(tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype))
+            spec = tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype)
+            m = m.get_concrete_function(spec)
             frozen_func = convert_variables_to_constants_v2(m)
             tfm = tf.Module()
-            tfm.__call__ = tf.function(lambda x: frozen_func(x),
-                                       [tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype)])
+            tfm.__call__ = tf.function(lambda x: frozen_func(x), [spec])
             tfm.__call__(im)
             tf.saved_model.save(
                 tfm,
