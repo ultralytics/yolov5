@@ -469,7 +469,6 @@ class DetectMultiBackend(nn.Module):
         p = Path(p).name  # eliminate trailing separators
         pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, xml2 = (s in p for s in suffixes)
         xml |= xml2  # *_openvino_model or *.xml
-        tflite &= not edgetpu  # *.tflite
         return pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs
 
 
