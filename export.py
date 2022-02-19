@@ -435,7 +435,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     t = time.time()
     include = [x.lower() for x in include]  # to lowercase
     formats = tuple(export_formats()['Argument'][1:])  # --include arguments
-    flags = (x in include for x in formats)
+    flags = [x in include for x in formats]
     assert sum(flags) == len(include), f'ERROR: Invalid --include {include}, valid --include arguments are {formats}'
     jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = flags  # export booleans
     file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)  # PyTorch weights
