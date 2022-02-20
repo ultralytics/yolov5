@@ -405,9 +405,11 @@ def check_dataset(data, autodownload=True):
 
     # Read yaml (optional)
     if isinstance(data, (str, Path)):
+        yaml_path = os.path.dirname(os.path.abspath(data))
         with open(data, errors='ignore') as f:
             data = yaml.safe_load(f)  # dictionary
-
+            data["path"] = yaml_path
+            
     # Resolve paths
     path = Path(extract_dir or data.get('path') or '')  # optional 'path' default to '.'
     if not path.is_absolute():
