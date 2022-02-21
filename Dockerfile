@@ -1,64 +1,48 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+FROM nvidia/cuda:11.1.1-cudnn8-devel-ubuntu20.04
 
-# Start FROM Nvidia PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
-FROM nvcr.io/nvidia/pytorch:21.10-py3
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        apt-transport-https \
+        git && \
+rm -rf /var/lib/apt/lists/*
 
-# Install linux packages
-RUN apt update && apt install -y zip htop screen libgl1-mesa-glx
+# Required for nvidia-docker v1
+RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
+    echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
 
-# Install python dependencies
-COPY requirements.txt .
-RUN python -m pip install --upgrade pip
-RUN pip uninstall -y nvidia-tensorboard nvidia-tensorboard-plugin-dlprof
-RUN pip install --no-cache -r requirements.txt albumentations coremltools onnx gsutil notebook numpy Pillow wandb>=0.12.2
-RUN pip install --no-cache torch==1.10.1+cu113 torchvision==0.11.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
-# RUN pip install --no-cache -U torch torchvision
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y --no-install-recommends \
+        wget \
+        curl \
+        cpio \
+        unzip \
+        vim \
+        libgl1-mesa-glx \
+        openssh-server \
+        openssh-client \
+        python3 \
+        python3-dev \
+        python3-pip && \
+    cd /usr/bin && \
+    ln -s python3.8 python && \
+    rm -rf /var/lib/apt/lists/*
 
-# Create working directory
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
+ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
 
-# Copy contents
-COPY . /usr/src/app
+# nvidia-container-runtime
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
 # Downloads to user config dir
 ADD https://ultralytics.com/assets/Arial.ttf /root/.config/Ultralytics/
 
-# Set environment variables
-# ENV HOME=/usr/src/app
+# Create working directory
+RUN mkdir -p /root/work
+WORKDIR /root/work
 
-
-# Usage Examples -------------------------------------------------------------------------------------------------------
-
-# Build and Push
-# t=ultralytics/yolov5:latest && sudo docker build -t $t . && sudo docker push $t
-
-# Pull and Run
-# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all $t
-
-# Pull and Run with local directory access
-# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all -v "$(pwd)"/datasets:/usr/src/datasets $t
-
-# Kill all
-# sudo docker kill $(sudo docker ps -q)
-
-# Kill all image-based
-# sudo docker kill $(sudo docker ps -qa --filter ancestor=ultralytics/yolov5:latest)
-
-# Bash into running container
-# sudo docker exec -it 5a9b5863d93d bash
-
-# Bash into stopped container
-# id=$(sudo docker ps -qa) && sudo docker start $id && sudo docker exec -it $id bash
-
-# Clean up
-# docker system prune -a --volumes
-
-# Update Ubuntu drivers
-# https://www.maketecheasier.com/install-nvidia-drivers-ubuntu/
-
-# DDP test
-# python -m torch.distributed.run --nproc_per_node 2 --master_port 1 train.py --epochs 3
-
-# GCP VM from Image
-# docker.io/ultralytics/yolov5:latest
+RUN cd /root/work \
+    && git clone https://github.com/Adlik/yolov5.git \
+    && cd yolov5 \
+    && pip3 install --no-cache -r requirements.txt \
+    && pip3 install --no-cache torch==1.9.0+cu111 torchvision==0.10.0+cu111 -f https://download.pytorch.org/whl/torch_stable.html

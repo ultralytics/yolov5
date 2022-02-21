@@ -22,8 +22,8 @@ seaborn>=0.11.0
 
 # Export --------------------------------------
 # coremltools>=4.1  # CoreML export
-# onnx>=1.9.0  # ONNX export
-# onnx-simplifier>=0.3.6  # ONNX simplifier
+onnx>=1.9.0  # ONNX export
+onnx-simplifier>=0.3.6  # ONNX simplifier
 # scikit-learn==0.19.2  # CoreML quantization
 # tensorflow>=2.4.1  # TFLite export
 # tensorflowjs>=3.9.0  # TF.js export
@@ -31,7 +31,9 @@ seaborn>=0.11.0
 
 # Extras --------------------------------------
 # albumentations>=1.0.3
-# Cython  # for pycocotools https://github.com/cocodataset/cocoapi/issues/172
-# pycocotools>=2.0  # COCO mAP
+Cython  # for pycocotools https://github.com/cocodataset/cocoapi/issues/172
+pycocotools>=2.0  # COCO mAP
 # roboflow
 thop  # FLOPs computation
+gsutil
+progress>=1.6
