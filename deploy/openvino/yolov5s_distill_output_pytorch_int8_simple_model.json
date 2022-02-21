@@ -1,0 +1,27 @@
+{
+    "model": {
+        "model_name": "yolov5s-distill-output",
+        "model": "./weights/yolov5s-distill-output.xml",
+        "weights": "./weights/yolov5s-distill-output.bin"
+    },
+    "engine": {
+        "type": "simplified",
+        "data_source": "../datasets/coco_calib"
+    },
+    "compression": {
+        "algorithms": [
+            {
+                "name": "DefaultQuantization",
+                "params": {
+		            "preset": "mixed",   // "preset": "performance",
+                    "stat_subset_size": 1000,   // Not less than 300,
+                    "ignored": {
+                        "scope": ["Mul_222","Add_226", "Mul_228", "Mul_235", "Pow_237","Mul_239", "Mul_347",
+                            "Mul_276","Add_280", "Mul_282","Mul_289","Pow_291","Mul_293", "Mul_330","Add_334",
+                            "Mul_336","Mul_343","Pow_345","Mul_347"]
+                    }
+                }
+            }
+        ]
+    }
+}
