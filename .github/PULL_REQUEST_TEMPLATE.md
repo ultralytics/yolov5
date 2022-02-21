@@ -1,14 +1,9 @@
-# Before submitting
+<!--
+Thank you for submitting a YOLOv5 🚀 Pull Request! We want to make contributing to YOLOv5 as easy and transparent as possible. A few tips to help get your work merged with YOLOv5:
 
-- [ ] Was this discussed/approved via a Github issue? (no need for typos and docs improvements)
-- [ ] Did you make sure to update the docs?
-- [ ] Did you write any new necessary tests?
+- Search existing YOLOv5 [PRs](https://github.com/ultralytics/yolov5/pull) to see if a similar PR already exists.
+- Link this PR to a YOLOv5 [issue](https://github.com/ultralytics/yolov5/issues) to help us understand what bug fix or feature is being implemented.
+- Provide before and after profiling/inference/training results to help us quantify the improvement your PR provides (if applicable).
 
-## What does this PR do?
-
-Fixes # (issue).
-
-## PR review
-
-Anyone in the community is free to review the PR once the tests have passed.
-If we didn't discuss your PR in Github issues there's a high chance it will not be merged.
+Please see our ✅ [Contributing Guide](https://github.com/ultralytics/yolov5/blob/master/CONTRIBUTING.md) for a detailed guide on PRs. 
+--->
