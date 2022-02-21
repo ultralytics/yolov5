@@ -327,3 +327,8 @@ class ModelEMA:
     def update_attr(self, model, include=(), exclude=('process_group', 'reducer')):
         # Update EMA attributes
         copy_attr(self.ema, model, include, exclude)
+
+
+def intersect_dicts(da, db, exclude=()):
+    # Dictionary intersection of matching keys and shapes, omitting 'exclude' keys, using da values
+    return {k: v for k, v in da.items() if k in db and not any(x in k for x in exclude) and v.shape == db[k].shape}
