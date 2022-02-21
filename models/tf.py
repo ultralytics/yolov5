@@ -248,7 +248,7 @@ class TFUpsample(keras.layers.Layer):
     def __init__(self, size, scale_factor, mode, w=None):  # warning: all arguments needed including 'w'
         super().__init__()
         assert scale_factor == 2, "scale_factor must be 2"
-        self.upsample = lambda x: tf.image.resize(x, (x.shape[1] * 2, x.shape[2] * 2), method=mode)
+        self.upsample = lambda x: tf.image_path.resize(x, (x.shape[1] * 2, x.shape[2] * 2), method=mode)
         # self.upsample = keras.layers.UpSampling2D(size=scale_factor, interpolation=mode)
         # with default arguments: align_corners=False, half_pixel_centers=False
         # self.upsample = lambda x: tf.raw_ops.ResizeNearestNeighbor(images=x,
@@ -359,7 +359,7 @@ class TFModel:
                 return nms, x[1]
             else:
                 boxes = tf.expand_dims(boxes, 2)
-                nms = tf.image.combined_non_max_suppression(
+                nms = tf.image_path.combined_non_max_suppression(
                     boxes, scores, topk_per_class, topk_all, iou_thres, conf_thres, clip_boxes=False)
                 return nms, x[1]
 
@@ -390,7 +390,7 @@ class AgnosticNMS(keras.layers.Layer):
         boxes, classes, scores = x
         class_inds = tf.cast(tf.argmax(classes, axis=-1), tf.float32)
         scores_inp = tf.reduce_max(scores, -1)
-        selected_inds = tf.image.non_max_suppression(
+        selected_inds = tf.image_path.non_max_suppression(
             boxes, scores_inp, max_output_size=topk_all, iou_threshold=iou_thres, score_threshold=conf_thres)
         selected_boxes = tf.gather(boxes, selected_inds)
         padded_boxes = tf.pad(selected_boxes,
