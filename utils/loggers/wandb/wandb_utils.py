@@ -225,9 +225,9 @@ class WandbLogger():
             if modeldir:
                 self.weights = Path(modeldir) / "last.pt"
                 config = self.wandb_run.config
-                opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs, opt.hyp = str(
-                    self.weights), config.save_period, config.batch_size, config.bbox_interval, config.epochs, \
-                                                                                                       config.hyp
+                opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs, opt.hyp, opt.imgsz = str(
+                    self.weights), config.save_period, config.batch_size, config.bbox_interval, config.epochs,\
+                    config.hyp, config.imgsz
         data_dict = self.data_dict
         if self.val_artifact is None:  # If --upload_dataset is set, use the existing artifact, don't download
             self.train_artifact_path, self.train_artifact = self.download_dataset_artifact(data_dict.get('train'),
@@ -252,6 +252,8 @@ class WandbLogger():
                 self.map_val_table_path()
         if opt.bbox_interval == -1:
             self.bbox_interval = opt.bbox_interval = (opt.epochs // 10) if opt.epochs > 10 else 1
+            if opt.evolve:
+                self.bbox_interval = opt.bbox_interval = opt.epochs + 1
         train_from_artifact = self.train_artifact_path is not None and self.val_artifact_path is not None
         # Update the the data_dict to point to local artifacts dir
         if train_from_artifact:
@@ -288,7 +290,7 @@ class WandbLogger():
             model_artifact = wandb.use_artifact(remove_prefix(opt.resume, WANDB_ARTIFACT_PREFIX) + ":latest")
             assert model_artifact is not None, 'Error: W&B model artifact doesn\'t exist'
             modeldir = model_artifact.download()
-            epochs_trained = model_artifact.metadata.get('epochs_trained')
+            # epochs_trained = model_artifact.metadata.get('epochs_trained')
             total_epochs = model_artifact.metadata.get('total_epochs')
             is_finished = total_epochs is None
             assert not is_finished, 'training is finished, can only resume incomplete runs.'
@@ -356,7 +358,7 @@ class WandbLogger():
         # create a _wandb.yaml file with artifacts links if both train and test set are logged
         if not log_val_only:
             path = (path.stem if overwrite_config else path.stem + '_wandb') + '.yaml'  # updated data.yaml path
-            path = Path('data') / path
+            path = ROOT / 'data' / path
             data.pop('download', None)
             data.pop('path', None)
             with open(path, 'w') as f:
@@ -485,7 +487,7 @@ class WandbLogger():
             if self.current_epoch % self.bbox_interval == 0:
                 box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
                              "class_id": int(cls),
-                             "box_caption": f"{names[cls]} {conf:.3f}",
+                             "box_caption": f"{names[int(cls)]} {conf:.3f}",
                              "scores": {"class_score": conf},
                              "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
                 boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
