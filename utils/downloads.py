@@ -92,7 +92,7 @@ def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', file='tmp.zip'):
     # Attempt file download
     out = "NUL" if platform.system() == "Windows" else "/dev/null"
     os.system(f'curl -c ./cookie -s -L "drive.google.com/uc?export=download&id={id}" > {out}')
-    if os.path.exists('cookie'):  # large file
+    if cookie.exists():  # large file
         s = f'curl -Lb ./cookie "drive.google.com/uc?export=download&confirm={get_token()}&id={id}" -o {file}'
     else:  # small file
         s = f'curl -s -L -o {file} "drive.google.com/uc?export=download&id={id}"'

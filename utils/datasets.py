@@ -44,7 +44,7 @@ for orientation in ExifTags.TAGS.keys():
 
 def get_hash(paths):
     # Returns a single hash value of a list of paths (files or dirs)
-    size = sum(os.path.getsize(p) for p in paths if os.path.exists(p))  # sizes
+    size = sum(os.path.getsize(p) for p in paths if Path(p).exists())  # sizes
     h = hashlib.md5(str(size).encode())  # hash sizes
     h.update(''.join(paths).encode())  # hash paths
     return h.hexdigest()  # return hash
@@ -287,7 +287,7 @@ class LoadStreams:
         self.img_size = img_size
         self.stride = stride
 
-        if os.path.isfile(sources):
+        if Path(sources).is_file():
             with open(sources) as f:
                 sources = [x.strip() for x in f.read().strip().splitlines() if len(x.strip())]
         else:
@@ -812,9 +812,8 @@ class LoadImagesAndLabels(Dataset):
 # Ancillary functions --------------------------------------------------------------------------------------------------
 def create_folder(path='./new'):
     # Create folder
-    if os.path.exists(path):
-        shutil.rmtree(path)  # delete output folder
-    os.makedirs(path)  # make new output folder
+    shutil.rmtree(path, ignore_errors=True)  # delete output folder
+    Path(path).mkdir(parents=True)  # make new output folder
 
 
 def flatten_recursive(path=DATASETS_DIR / 'coco128'):
@@ -902,7 +901,7 @@ def verify_image_label(args):
                     msg = f'{prefix}WARNING: {im_file}: corrupt JPEG restored and saved'
 
         # verify labels
-        if os.path.isfile(lb_file):
+        if Path(lb_file).is_file():
             nf = 1  # label found
             with open(lb_file) as f:
                 lb = [x.split() for x in f.read().strip().splitlines() if len(x)]
