@@ -4,37 +4,37 @@
 # See Hyperparameter Evolution tutorial for details https://github.com/ultralytics/yolov5#tutorials
 
 # YOLOv5 Hyperparameter Evolution Results
-# Best generation: 301
-# Last generation: 318
+# Best generation: 319
+# Last generation: 405
 #    metrics/precision,       metrics/recall,      metrics/mAP_0.5, metrics/mAP_0.5:0.95,         val/box_loss,         val/obj_loss,         val/cls_loss
-#              0.86695,                0.857,              0.91007,              0.72302,             0.012122,            0.0056053,             0.002082
+#              0.86236,              0.86184,              0.91274,              0.72647,            0.0077056,            0.0042449,            0.0013846
 
-lr0: 0.00485
-lrf: 0.14489
-momentum: 0.71437
-weight_decay: 0.00021
-warmup_epochs: 2.5665
-warmup_momentum: 0.6656
-warmup_bias_lr: 0.19622
-box: 0.03173
-cls: 0.245
-cls_pw: 0.83144
-obj: 0.51484
-obj_pw: 0.94821
+lr0: 0.0033
+lrf: 0.15184
+momentum: 0.74747
+weight_decay: 0.00025
+warmup_epochs: 3.4278
+warmup_momentum: 0.59032
+warmup_bias_lr: 0.18742
+box: 0.02
+cls: 0.21563
+cls_pw: 0.5
+obj: 0.50843
+obj_pw: 0.6729
 iou_t: 0.2
-anchor_t: 3.5122
+anchor_t: 3.4172
 fl_gamma: 0.0
-hsv_h: 0.00927
-hsv_s: 0.49328
-hsv_v: 0.353
+hsv_h: 0.01032
+hsv_s: 0.5562
+hsv_v: 0.28255
 degrees: 0.0
-translate: 0.06707
-scale: 0.88166
+translate: 0.04575
+scale: 0.73711
 shear: 0.0
 perspective: 0.0
 flipud: 0.0
 fliplr: 0.5
-mosaic: 0.74641
-mixup: 0.03712
+mosaic: 0.87158
+mixup: 0.04294
 copy_paste: 0.0
-anchors: 3.3634
+anchors: 3.3556
