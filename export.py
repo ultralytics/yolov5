@@ -52,6 +52,7 @@ import time
 import warnings
 from pathlib import Path
 
+import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
@@ -70,6 +71,22 @@ from utils.datasets import LoadImages
 from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_version, colorstr,
                            file_size, print_args, url2file)
 from utils.torch_utils import select_device
+
+
+def export_formats():
+    # YOLOv5 export formats
+    x = [['PyTorch', '-', '.pt'],
+         ['TorchScript', 'torchscript', '.torchscript'],
+         ['ONNX', 'onnx', '.onnx'],
+         ['OpenVINO', 'openvino', '_openvino_model'],
+         ['TensorRT', 'engine', '.engine'],
+         ['CoreML', 'coreml', '.mlmodel'],
+         ['TensorFlow SavedModel', 'saved_model', '_saved_model'],
+         ['TensorFlow GraphDef', 'pb', '.pb'],
+         ['TensorFlow Lite', 'tflite', '.tflite'],
+         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite'],
+         ['TensorFlow.js', 'tfjs', '_web_model']]
+    return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix'])
 
 
 def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):
@@ -230,11 +247,11 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
 
 def export_saved_model(model, im, file, dynamic,
                        tf_nms=False, agnostic_nms=False, topk_per_class=100, topk_all=100, iou_thres=0.45,
-                       conf_thres=0.25, prefix=colorstr('TensorFlow SavedModel:')):
+                       conf_thres=0.25, keras=False, prefix=colorstr('TensorFlow SavedModel:')):
     # YOLOv5 TensorFlow SavedModel export
     try:
         import tensorflow as tf
-        from tensorflow import keras
+        from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
         from models.tf import TFDetect, TFModel
 
@@ -245,13 +262,26 @@ def export_saved_model(model, im, file, dynamic,
         tf_model = TFModel(cfg=model.yaml, model=model, nc=model.nc, imgsz=imgsz)
         im = tf.zeros((batch_size, *imgsz, 3))  # BHWC order for TensorFlow
         _ = tf_model.predict(im, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
-        inputs = keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic else batch_size)
+        inputs = tf.keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic else batch_size)
         outputs = tf_model.predict(inputs, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
-        keras_model = keras.Model(inputs=inputs, outputs=outputs)
+        keras_model = tf.keras.Model(inputs=inputs, outputs=outputs)
         keras_model.trainable = False
         keras_model.summary()
-        keras_model.save(f, save_format='tf')
-
+        if keras:
+            keras_model.save(f, save_format='tf')
+        else:
+            m = tf.function(lambda x: keras_model(x))  # full model
+            spec = tf.TensorSpec(keras_model.inputs[0].shape, keras_model.inputs[0].dtype)
+            m = m.get_concrete_function(spec)
+            frozen_func = convert_variables_to_constants_v2(m)
+            tfm = tf.Module()
+            tfm.__call__ = tf.function(lambda x: frozen_func(x), [spec])
+            tfm.__call__(im)
+            tf.saved_model.save(
+                tfm,
+                f,
+                options=tf.saved_model.SaveOptions(experimental_custom_gradients=False) if
+                check_version(tf.__version__, '2.6') else tf.saved_model.SaveOptions())
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
         return keras_model, f
     except Exception as e:
@@ -403,9 +433,12 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         conf_thres=0.25  # TF.js NMS: confidence threshold
         ):
     t = time.time()
-    include = [x.lower() for x in include]
-    tf_exports = list(x in include for x in ('saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'))  # TensorFlow exports
-    file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)
+    include = [x.lower() for x in include]  # to lowercase
+    formats = tuple(export_formats()['Argument'][1:])  # --include arguments
+    flags = [x in include for x in formats]
+    assert sum(flags) == len(include), f'ERROR: Invalid --include {include}, valid --include arguments are {formats}'
+    jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = flags  # export booleans
+    file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)  # PyTorch weights
 
     # Load PyTorch model
     device = select_device(device)
@@ -445,20 +478,19 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     # Exports
     f = [''] * 10  # exported filenames
     warnings.filterwarnings(action='ignore', category=torch.jit.TracerWarning)  # suppress TracerWarning
-    if 'torchscript' in include:
+    if jit:
         f[0] = export_torchscript(model, im, file, optimize)
-    if 'engine' in include:  # TensorRT required before ONNX
+    if engine:  # TensorRT required before ONNX
         f[1] = export_engine(model, im, file, train, half, simplify, workspace, verbose)
-    if ('onnx' in include) or ('openvino' in include):  # OpenVINO requires ONNX
+    if onnx or xml:  # OpenVINO requires ONNX
         f[2] = export_onnx(model, im, file, opset, train, dynamic, simplify)
-    if 'openvino' in include:
+    if xml:  # OpenVINO
         f[3] = export_openvino(model, im, file)
-    if 'coreml' in include:
+    if coreml:
         _, f[4] = export_coreml(model, im, file)
 
     # TensorFlow Exports
-    if any(tf_exports):
-        pb, tflite, edgetpu, tfjs = tf_exports[1:]
+    if any((saved_model, pb, tflite, edgetpu, tfjs)):
         if int8 or edgetpu:  # TFLite --int8 bug https://github.com/ultralytics/yolov5/issues/5707
             check_requirements(('flatbuffers==1.12',))  # required before `import tensorflow`
         assert not (tflite and tfjs), 'TFLite and TF.js models must be exported separately, please pass only one type.'
@@ -476,12 +508,13 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
 
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
-    LOGGER.info(f'\nExport complete ({time.time() - t:.2f}s)'
-                f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
-                f"\nDetect:          python detect.py --weights {f[-1]}"
-                f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
-                f"\nValidate:        python val.py --weights {f[-1]}"
-                f"\nVisualize:       https://netron.app")
+    if any(f):
+        LOGGER.info(f'\nExport complete ({time.time() - t:.2f}s)'
+                    f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
+                    f"\nDetect:          python detect.py --weights {f[-1]}"
+                    f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
+                    f"\nValidate:        python val.py --weights {f[-1]}"
+                    f"\nVisualize:       https://netron.app")
     return f  # return list of exported files/dirs
 
 
