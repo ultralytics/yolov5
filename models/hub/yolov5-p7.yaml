@@ -4,7 +4,7 @@
 nc: 80  # number of classes
 depth_multiple: 1.0  # model depth multiple
 width_multiple: 1.0  # layer channel multiple
-anchors: 3  # auto-anchor 3 anchors per P output layer
+anchors: 3  # AutoAnchor evolves 3 anchors per P output layer
 
 # YOLOv5 v6.0 backbone
 backbone:
@@ -25,7 +25,7 @@ backbone:
    [-1, 1, SPPF, [1280, 5]],  # 13
   ]
 
-# YOLOv5 head
+# YOLOv5 v6.0 head with (P3, P4, P5, P6, P7) outputs
 head:
   [[-1, 1, Conv, [1024, 1, 1]],
    [-1, 1, nn.Upsample, [None, 2, 'nearest']],

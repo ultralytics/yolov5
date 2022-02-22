@@ -3,7 +3,19 @@
 Validate a trained YOLOv5 model accuracy on a custom dataset
 
 Usage:
-    $ python path/to/val.py --data coco128.yaml --weights yolov5s.pt --img 640
+    $ python path/to/val.py --weights yolov5s.pt --data coco128.yaml --img 640
+
+Usage - formats:
+    $ python path/to/val.py --weights yolov5s.pt                 # PyTorch
+                                      yolov5s.torchscript        # TorchScript
+                                      yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
+                                      yolov5s.xml                # OpenVINO
+                                      yolov5s.engine             # TensorRT
+                                      yolov5s.mlmodel            # CoreML (MacOS-only)
+                                      yolov5s_saved_model        # TensorFlow SavedModel
+                                      yolov5s.pb                 # TensorFlow GraphDef
+                                      yolov5s.tflite             # TensorFlow Lite
+                                      yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
 """
 
 import argparse
@@ -125,9 +137,9 @@ def run(data,
 
         # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data)
-        stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
+        stride, pt, jit, onnx, engine = model.stride, model.pt, model.jit, model.onnx, model.engine
         imgsz = check_img_size(imgsz, s=stride)  # check image size
-        half &= (pt or jit or engine) and device.type != 'cpu'  # half precision only supported by PyTorch on CUDA
+        half &= (pt or jit or onnx or engine) and device.type != 'cpu'  # FP16 supported on limited backends with CUDA
         if pt or jit:
             model.model.half() if half else model.model.float()
         elif engine:
@@ -150,10 +162,11 @@ def run(data,
 
     # Dataloader
     if not training:
-        model.warmup(imgsz=(1, 3, imgsz, imgsz), half=half)  # warmup
-        pad = 0.0 if task == 'speed' else 0.5
+        model.warmup(imgsz=(1 if pt else batch_size, 3, imgsz, imgsz), half=half)  # warmup
+        pad = 0.0 if task in ('speed', 'benchmark') else 0.5
+        rect = False if task == 'benchmark' else pt  # square inference for benchmarks
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
-        dataloader = create_dataloader(data[task], imgsz, batch_size, stride, single_cls, pad=pad, rect=pt,
+        dataloader = create_dataloader(data[task], imgsz, batch_size, stride, single_cls, pad=pad, rect=rect,
                                        workers=workers, prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
