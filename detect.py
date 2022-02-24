@@ -32,6 +32,7 @@ from pathlib import Path
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
+import torch.nn as nn
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -52,6 +53,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         source=ROOT / 'data/images',  # file/dir/URL/glob, 0 for webcam
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         imgsz=(640, 640),  # inference size (height, width)
+        batch_size=1, # default size of 1
         conf_thres=0.25,  # confidence threshold
         iou_thres=0.45,  # NMS IOU threshold
         max_det=1000,  # maximum detections per image
@@ -105,14 +107,14 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt)
         bs = len(dataset)  # batch_size
     else:
-        dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
-        bs = 1  # batch_size
+        dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, batch_size=batch_size)
+        bs = batch_size  # batch_size
     vid_path, vid_writer = [None] * bs, [None] * bs
 
     # Run inference
-    model.warmup(imgsz=(1 if pt else bs, 3, *imgsz), half=half)  # warmup
+    model.warmup(imgsz=(1, 3, *imgsz), half=half)  # warmup
     dt, seen = [0.0, 0.0, 0.0], 0
-    for path, im, im0s, vid_cap, s in dataset:
+    for path, im, im0s, vid_cap, s in dataset:  # images of 'batch-size'
         t1 = time_sync()
         im = torch.from_numpy(im).to(device)
         im = im.half() if half else im.float()  # uint8 to fp16/32
@@ -123,7 +125,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         dt[0] += t2 - t1
 
         # Inference
-        visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
+        visualize = increment_path(save_dir / Path(path[0]).stem, mkdir=True) if visualize else False
         pred = model(im, augment=augment, visualize=visualize)
         t3 = time_sync()
         dt[1] += t3 - t2
@@ -133,39 +135,39 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         dt[2] += time_sync() - t3
 
         # Second-stage classifier (optional)
-        # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
+        # for i, pred in enumerate(preds):
+        #     preds[i] = utils.general.apply_classifier(pred, classifier_model, im, im0s)
 
         # Process predictions
+        cls_res = {}
         for i, det in enumerate(pred):  # per image
             seen += 1
             if webcam:  # batch_size >= 1
-                p, im0, frame = path[i], im0s[i].copy(), dataset.count
-                s += f'{i}: '
+                p, im0, frame = path[i][0], im0s[i].copy(), dataset.count
+                #s += f'{i}: '
             else:
-                p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
+                p, im0, frame = path[i], im0s[i].copy(), getattr(dataset, 'frame', 0)
 
             p = Path(p)  # to Path
-            save_path = str(save_dir / p.name)  # im.jpg
+            save_path = str(save_dir / p.name)#.replace('.jpg', f'_{i}.jpg')  # im_[i].jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
-            s += '%gx%g ' % im.shape[2:]  # print string
-            gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+            gn = torch.tensor(im0.shape[1:3])[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
             if len(det):
                 # Rescale boxes from img_size to im0 size
-                det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
-
+                det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape[:2]).round()
                 # Print results
                 for c in det[:, -1].unique():
                     n = (det[:, -1] == c).sum()  # detections per class
-                    s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
+                    cls_res[names[int(c)]] = ((cls_res[names[int(c)]] + int(n)) if names[int(c)] in cls_res else int(n))
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                        with open(txt_path + '.txt', 'a') as f:
+                        with open(txt_path + str(i) + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
                     if save_img or save_crop or view_img:  # Add bbox to image
@@ -175,10 +177,16 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                         if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
+            # add this image results to output
+            s += f"image {os.path.basename(p)} -> {cls_res}\n"
+            cls_res = {}
+
+
             # Stream results
             im0 = annotator.result()
             if view_img:
-                cv2.imshow(str(p), im0)
+                #fp, ext = os.path.splitext(p)
+                cv2.imshow(f'{p}', im0)
                 cv2.waitKey(1)  # 1 millisecond
 
             # Save results (image with detections)
@@ -219,6 +227,7 @@ def parse_opt():
     parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob, 0 for webcam')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
+    parser.add_argument('--batch-size', type=int, default=1, help='batch size for inference')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
