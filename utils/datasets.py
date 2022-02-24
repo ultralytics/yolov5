@@ -195,7 +195,7 @@ class LoadImages:
     def __next__(self):
         if self.count == self.nf:
             raise StopIteration
-            
+
         # return arrays
         paths = []
         imgs = []
@@ -204,7 +204,7 @@ class LoadImages:
         for _ in range(self.batch_size):
             if self.count == self.nf:
                 return paths, np.array(imgs), np.array(img0s), self.cap, s
-            
+
             path = self.files[self.count]
             paths.append(path)
 
@@ -240,7 +240,7 @@ class LoadImages:
                 else:
                     # single image
                     s = f'image {self.count} out of {self.nf} in directory: {os.path.dirname(path)}\n'
-                
+
 
             # Padded resize
             img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
