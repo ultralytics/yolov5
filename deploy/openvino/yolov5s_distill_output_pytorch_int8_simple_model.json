@@ -1,8 +1,8 @@
 {
     "model": {
-        "model_name": "yolov5s-distill-output",
-        "model": "./weights/yolov5s-distill-output.xml",
-        "weights": "./weights/yolov5s-distill-output.bin"
+        "model_name": "yolov5s-distill-",
+        "model": "./weights/yolov5s-distill.xml",
+        "weights": "./weights/yolov5s-distill.bin"
     },
     "engine": {
         "type": "simplified",

@@ -19,6 +19,7 @@ from __future__ import print_function, division
 import json
 import logging
 import sys
+import time
 import torch
 from argparse import ArgumentParser, SUPPRESS
 import numpy as np
@@ -150,6 +151,7 @@ def main():
     n, c, h, w = net.input_info[input_blob].input_data.shape
 
     for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader)):
+        t1 = time.time()
         img = img.float().to(device, non_blocking=True)
 
         targets = targets.to(device)
@@ -157,15 +159,20 @@ def main():
 
         # tensor.cuda --> numpy.cpu
         img = img.numpy()
+        t2 = time.time()
+        infer_time[0] += t2 - t1
 
         # Run model
         outputs = exec_net.infer(inputs={input_blob: img})
+        infer_time[1] += time.time() - t2
 
         # Run NMS
         targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)  # to pixels
 
+        t3 = time.time()
         out = non_max_suppression(torch.from_numpy(outputs['Concat_358']), args.conf_thres,
                                   args.iou_thres, multi_label=True)
+        infer_time[2] += time.time() - t3
 
         for si, pred in enumerate(out):
             seen += 1
