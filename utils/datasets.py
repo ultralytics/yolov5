@@ -224,7 +224,7 @@ class LoadImages:
 
                 img0s.append(img0)
                 self.frame += 1
-                s = (f'video {self.nf}, frame {self.frame}/{self.frames}: {path}\n')
+                s = (f'video {self.nf}, processed {self.frame} frames out of {self.frames}: {path}\n')
 
             else:
                 # Read image

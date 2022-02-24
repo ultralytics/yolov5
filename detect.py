@@ -32,7 +32,6 @@ from pathlib import Path
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
-import torch.nn as nn
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -178,7 +177,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
             # add this image results to output
-            s += f"image {os.path.basename(p)} -> {cls_res}\n"
+            s += f"{os.path.basename(p)} -> {cls_res}\n"
             cls_res = {}
 
 
