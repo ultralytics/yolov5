@@ -183,7 +183,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)  # plot_lr_scheduler(optimizer, scheduler, epochs)
 
     # EMA
-    ema = ModelEMA(model, k=0.001 * (nbs / batch_size)) if RANK in [-1, 0] else None
+    ema = ModelEMA(model, k=0.001 * (batch_size / nbs)) if RANK in [-1, 0] else None
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
