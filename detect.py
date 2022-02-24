@@ -52,7 +52,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         source=ROOT / 'data/images',  # file/dir/URL/glob, 0 for webcam
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         imgsz=(640, 640),  # inference size (height, width)
-        batch_size=1, # default size of 1
+        batch_size=1,  # default size of 1
         conf_thres=0.25,  # confidence threshold
         iou_thres=0.45,  # NMS IOU threshold
         max_det=1000,  # maximum detections per image
@@ -143,12 +143,12 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             seen += 1
             if webcam:  # batch_size >= 1
                 p, im0, frame = path[i][0], im0s[i].copy(), dataset.count
-                #s += f'{i}: '
+                # s += f'{i}: '
             else:
                 p, im0, frame = path[i], im0s[i].copy(), getattr(dataset, 'frame', 0)
 
             p = Path(p)  # to Path
-            save_path = str(save_dir / p.name)#.replace('.jpg', f'_{i}.jpg')  # im_[i].jpg
+            save_path = str(save_dir / p.name)  # .replace('.jpg', f'_{i}.jpg')  # im_[i].jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
             gn = torch.tensor(im0.shape[1:3])[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
@@ -180,11 +180,9 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             s += f"{os.path.basename(p)} -> {cls_res}\n"
             cls_res = {}
 
-
             # Stream results
             im0 = annotator.result()
             if view_img:
-                #fp, ext = os.path.splitext(p)
                 cv2.imshow(f'{p}', im0)
                 cv2.waitKey(1)  # 1 millisecond
 

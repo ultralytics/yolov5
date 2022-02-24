@@ -202,9 +202,6 @@ class LoadImages:
         img0s = []
 
         for _ in range(self.batch_size):
-            if self.count == self.nf:
-                return paths, np.array(imgs), np.array(img0s), self.cap, s
-            
             path = self.files[self.count]
             paths.append(path)
 
@@ -235,8 +232,8 @@ class LoadImages:
                 if len(imgs) > 1:
                     # multiple images text
                     s = f'images {self.count-len(imgs)}-{self.count} ' \
-                                f'out of {self.nf} ' \
-                                f'in directory: {os.path.dirname(path)}\n'
+                        f'out of {self.nf} ' \
+                        f'in directory: {os.path.dirname(path)}\n'
                 else:
                     # single image
                     s = f'image {self.count} out of {self.nf} in directory: {os.path.dirname(path)}\n'
@@ -250,6 +247,10 @@ class LoadImages:
             img = np.ascontiguousarray(img)
             img0s.append(img0)
             imgs.append(img)
+
+            # return if at end of file list
+            if self.count == self.nf:
+                return paths, np.array(imgs), np.array(img0s), self.cap, s
 
         return paths, np.array(imgs), np.array(img0s), self.cap, s
 
