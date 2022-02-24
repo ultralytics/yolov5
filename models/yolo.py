@@ -267,7 +267,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         else:
             if isinstance(f,str):
                 f=namedict[f]
-        
+
         m = eval(m) if isinstance(m, str) else m  # eval strings
         for j, a in enumerate(args):
             try:
