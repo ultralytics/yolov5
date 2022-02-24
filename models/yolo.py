@@ -247,7 +247,27 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
 
     layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
-    for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):  # from, number, module, args
+    namedict={}
+    for i, _lines in enumerate(d['backbone'] + d['head']):  # from, number, module, args
+        layer_name=f'L{i}'
+        if len(_lines) == 4:
+            (f, n, m, args) =_lines
+        else:
+            (f, n, m, args,layer_name) =_lines
+        namedict[layer_name] = i
+        if isinstance(f,list):
+            _f=[]
+            for fi in f :
+                if isinstance(fi,int):
+                    _f.append(fi)
+                else:
+                    _f.append(namedict[fi])
+            f=_f
+
+        else:
+            if isinstance(f,str):
+                f=namedict[f]
+        
         m = eval(m) if isinstance(m, str) else m  # eval strings
         for j, a in enumerate(args):
             try:
@@ -285,13 +305,14 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         t = str(m)[8:-2].replace('__main__.', '')  # module type
         np = sum(x.numel() for x in m_.parameters())  # number params
         m_.i, m_.f, m_.type, m_.np = i, f, t, np  # attach index, 'from' index, type, number params
+        m_.layer_name = layer_name
         LOGGER.info(f'{i:>3}{str(f):>18}{n_:>3}{np:10.0f}  {t:<40}{str(args):<30}')  # print
         save.extend(x % i for x in ([f] if isinstance(f, int) else f) if x != -1)  # append to savelist
         layers.append(m_)
         if i == 0:
             ch = []
         ch.append(c2)
-    return nn.Sequential(*layers), sorted(save)
+    return nn.ModuleList(layers), sorted(save)
 
 
 if __name__ == '__main__':
