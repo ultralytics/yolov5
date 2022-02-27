@@ -95,6 +95,8 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
 
     # Half
     half &= (pt or jit or onnx or engine) and device.type != 'cpu'  # FP16 supported on limited backends with CUDA
+    if engine:
+        assert (model.trt_fp16_input == half), 'model ' + ('requires' if model.trt_fp16_input else 'incompatible with') + ' --half'
     if pt or jit:
         model.model.half() if half else model.model.float()
 

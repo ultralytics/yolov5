@@ -296,6 +296,7 @@ class DetectMultiBackend(nn.Module):
         w = str(weights[0] if isinstance(weights, list) else weights)
         pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = self.model_type(w)  # get backend
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
+        trt_fp16_input = False
         w = attempt_download(w)  # download if not local
         if data:  # data.yaml path (optional)
             with open(data, errors='ignore') as f:
@@ -348,6 +349,8 @@ class DetectMultiBackend(nn.Module):
                 shape = tuple(model.get_binding_shape(index))
                 data = torch.from_numpy(np.empty(shape, dtype=np.dtype(dtype))).to(device)
                 bindings[name] = Binding(name, dtype, shape, data, int(data.data_ptr()))
+                if model.binding_is_input(index) and dtype == np.float16:
+                    trt_fp16_input = dtype == np.float16
             binding_addrs = OrderedDict((n, d.ptr) for n, d in bindings.items())
             context = model.create_execution_context()
             batch_size = bindings['images'].shape[0]

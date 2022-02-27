@@ -143,6 +143,7 @@ def run(data,
         if pt or jit:
             model.model.half() if half else model.model.float()
         elif engine:
+            assert (model.trt_fp16_input == half), 'model ' + ('requires' if model.trt_fp16_input else 'incompatible with') + ' --half'
             batch_size = model.batch_size
         else:
             half = False
