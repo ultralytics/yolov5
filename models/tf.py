@@ -236,7 +236,7 @@ class TFDetect(keras.layers.Layer):
                 y = tf.concat([xy, wh, y[..., 4:]], -1)
                 z.append(tf.reshape(y, [-1, self.na * ny * nx, self.no]))
 
-        return x if self.training else (tf.concat(z, 1), x)
+        return tf.transpose(x, [0, 2, 1, 3]) if self.training else (tf.concat(z, 1), x)
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
