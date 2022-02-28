@@ -123,7 +123,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
                           do_constant_folding=not train,
                           input_names=['images'],
                           output_names=['output'],
-                          dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
+                          dynamic_axes={'images': {0: 'batch', 1: 'height', 2: 'width'},  # shape(1,3,640,640)
                                         'output': {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
                                         } if dynamic else None)
 
