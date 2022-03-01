@@ -16,12 +16,13 @@ OpenVINO™ is an open-source toolkit for optimizing and deploying AI inference.
 
 **Benchmark in COCO**
 
-|  Model  |   Compression<br>strategy   | Input size <br>[h, w] | mAP<sup>val<br>0.5:0.95 | Pretrain weight |
-| ------- | --------------------------- | --------------------- | ----------------------- | --------------- |
-| yolov5s | baseline                    | [640, 640]            | 37.2                    | Download        |
-| yolov5s | distillation                | [640, 640]            | 39.3                    | Download        |
-| yolov5s | quantization                | [640, 640]            | 36.5                    | Download        |
-| yolov5s | distillation + quantization | [640, 640]            | 38.6                    | Download        |
+|  Model  |   Compression<br>strategy   | Input size <br>[h, w] | mAP<sup>val<br>0.5:0.95 |                                                                                   Pretrain weight                                                                                    |
+| ------- | --------------------------- | --------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| yolov5s | baseline                    | [640, 640]            | 37.2                    | [pth](https://github.com/ultralytics/yolov5/releases/download/v6.0/yolov5s.pt) &#124; [onnx](https://adlik-yolov5.oss-cn-beijing.aliyuncs.com/yolov5s.onnx)                          |
+| yolov5s | distillation                | [640, 640]            | 39.3                    | [pth](https://adlik-yolov5.oss-cn-beijing.aliyuncs.com/yolov5s-distill-39.3.pt) &#124; [onnx](https://adlik-yolov5.oss-cn-beijing.aliyuncs.com/yolov5s-distill-39.3.onnx)            |
+| yolov5s | quantization                | [640, 640]            | 36.5                    | [xml](https://adlik-yolov5.oss-cn-beijing.aliyuncs.com/yolov5s-int8-mixed.xml) &#124; [bin](https://adlik-yolov5.oss-cn-beijing.aliyuncs.com/yolov5s-int8-mixed.bin)                 |
+| yolov5s | distillation + quantization | [640, 640]            | 38.6                    | [xml](https://adlik-yolov5.oss-cn-beijing.aliyuncs.com/yolov5s-distill-int8-mixed.xml) &#124; [bin](https://adlik-yolov5.oss-cn-beijing.aliyuncs.com/yolov5s-distill-int8-mixed.bin) |
+
 
 **CPU Performance is measured Intel(R) Xeon(R) Platinum 8260 CPU based on OpenVINO**
 
@@ -31,12 +32,13 @@ OpenVINO™ is an open-source toolkit for optimizing and deploying AI inference.
 | yolov5s | FP32, IR   | [1, 3, 640, 640]        | 12.95   ms            | 55.53      ms          | 77.22              | 215.39              |
 | yolov5s | INT8, IR   | [1, 3, 640, 640]        | 6.56     ms           | 24.07       ms         | 152.51             | 497.28              |
 
-**Table Notes:**
+Table Notes:
 
 * All mAP results denote COCO val2017 accuracy.
 * Latency is measured by Openvino's Benchmark tool and uses 12 threads for asynchronous inference.
 * INT8 quantization uses OpenVINO's POT tool.
 * Download pre-trained models and find more models in Model Zoo
+* yolov5s.pt is the yolov5 v6.0.
 
 ## Update
 
@@ -76,7 +78,7 @@ COCO dataset is more difficult to be used as the training target of object detec
 python -m torch.distributed.launch --nproc_per_node 8 train_distillation.py --batch 256 --data coco.yaml --cfg yolov5s.yaml --weights '' --t_weights ./weights/yolov5m.pt --epochs 1000 --device 0,1,2,3,4,5,6,7
 ```
 
-**Notes :**
+Notes :
 
 * nproc_per_node specifies how many GPUs you would like to use. We use 8 V100 GPUs.
 * batch is the total batch-size. It will be divided evenly for each GPU. After many experiments, we set 256/8=32 per GPU for best performance.
@@ -98,7 +100,7 @@ Convert ONNX to IR:
 python <INSTALL_DIR>/deployment_tools/model_optimizer/mo.py --input_model weights/yolov5s.onnx --model_name weights/yolov5s-output -s 255 --output Concat_358
 ```
 
-**Notes:**
+Notes:
 
 * <INSTALL_DIR> is the path to OpenVINO installation. My default path is /opt/intel/openvino_2021.4.689.
 * Concat_358 is the name of the last output node of the ONNX model.
@@ -119,7 +121,7 @@ python ./deploy/openvino/eval_openvino_yolov5.py  -m ./weights/yolov5s.xml
 python <INSTALL_DIR>/deployment_tools/tools/benchmark_tool/benchmark_app.py -i <INSTALL_DIR>/deployment_tools/demo/car.png -m ./weights/yolov5s.xml -d CPU -api sync -progress
 ```
 
-**Notes:**
+Notes:
 
 * <INSTALL_DIR> is the path to OpenVINO installation. My default path is /opt/intel/openvino_2021.4.689.
 * Test asynchronous latency, set -api = async.
@@ -132,7 +134,12 @@ We use the defaultQuantization algorithm that designed to perform a fast and in 
 pot -c ./deploy/openvino/yolov5s_output_pytorch_int8_simple_model.json --output-dir ./weights --progress-bar
 ```
 
-**Notes:**
+Notes:
 
 * JSON file in the deploy/openvino directory.
 * For coco, you can also download calibration images coco_calib from [GoogleDrive](https://drive.google.com/drive/folders/1s7jE9DtOngZMzJC1uL307J2MiaGwdRSI?usp=sharing) or [BaiduPan](https://pan.baidu.com/s/1GOm_-JobpyLMAqZWCDUhKg) pwd: a9wh.
+
+## Acknowledgements
+
+- [https://github.com/ultralytics/yolov5](https://github.com/ultralytics/yolov5)
+- [https://github.com/openvinotoolkit/openvino](https://github.com/openvinotoolkit/openvino)
