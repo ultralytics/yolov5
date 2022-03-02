@@ -191,7 +191,7 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
         return None, None
 
 
-def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
+def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:'),tf32=False):
     # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
     try:
         check_requirements(('tensorrt',))
@@ -237,8 +237,11 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         LOGGER.info(f'{prefix} building FP{16 if half else 32} engine in {f}')
         if half:
             config.set_flag(trt.BuilderFlag.FP16)
+        elif tf32:
+            config.set_flag(trt.BuilderFlag.TF32)
         with builder.build_engine(network, config) as engine, open(f, 'wb') as t:
             t.write(engine.serialize())
+        
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
         return f
     except Exception as e:
@@ -420,6 +423,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         train=False,  # model.train() mode
         optimize=False,  # TorchScript: optimize for mobile
         int8=False,  # CoreML/TF INT8 quantization
+        tf32=False,  # CoreML/TF INT8 quantization
         dynamic=False,  # ONNX/TF: dynamic axes
         simplify=False,  # ONNX: simplify model
         opset=12,  # ONNX: opset version
@@ -481,7 +485,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     if jit:
         f[0] = export_torchscript(model, im, file, optimize)
     if engine:  # TensorRT required before ONNX
-        f[1] = export_engine(model, im, file, train, half, simplify, workspace, verbose)
+        f[1] = export_engine(model, im, file, train, half, simplify, workspace, verbose,tf32)
     if onnx or xml:  # OpenVINO requires ONNX
         f[2] = export_onnx(model, im, file, opset, train, dynamic, simplify)
     if xml:  # OpenVINO
@@ -530,6 +534,7 @@ def parse_opt():
     parser.add_argument('--train', action='store_true', help='model.train() mode')
     parser.add_argument('--optimize', action='store_true', help='TorchScript: optimize for mobile')
     parser.add_argument('--int8', action='store_true', help='CoreML/TF INT8 quantization')
+    parser.add_argument('--tf32', action='store_true', help='TF32 mode for TensorRT')
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TF: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
     parser.add_argument('--opset', type=int, default=12, help='ONNX: opset version')
