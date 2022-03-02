@@ -241,7 +241,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
             config.set_flag(trt.BuilderFlag.TF32)
         with builder.build_engine(network, config) as engine, open(f, 'wb') as t:
             t.write(engine.serialize())
-        
+
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
         return f
     except Exception as e:
