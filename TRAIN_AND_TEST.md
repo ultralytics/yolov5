@@ -31,7 +31,7 @@ Assume that the original annotated files are in `./data/allImages_1024`. After e
 
 Below are the example commands:
 ```bash
-python -m resize_images_with_csv -i ./data/allImages_1024 --out_imsz 640,640 -o ./data/2022-01-08_640
+python -m resize_with_csv -i ./data/allImages_1024 --out_imsz 640,640 -o ./data/2022-01-08_640
 python -m convert_data_to_yolo -i ./data/2022-01-08_640 -o ./data/2022-01-08_640_yolo
 ```
 
