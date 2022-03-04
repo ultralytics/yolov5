@@ -217,7 +217,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
 
         builder = trt.Builder(logger)
         config = builder.create_builder_config()
-        config.set_memory_pool_limit = workspace << 30  # max_workspace_size deprecated replacement
+        config.set_memory_pool_limit(workspace << 30)  # max_workspace_size deprecated replacement
 
         flag = (1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
         network = builder.create_network(flag)
