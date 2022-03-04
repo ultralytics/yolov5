@@ -227,7 +227,6 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
 
         inputs = [network.get_input(i) for i in range(network.num_inputs)]
         outputs = [network.get_output(i) for i in range(network.num_outputs)]
-        network.get_input(0).dtype = trt.DataType.FLOAT
         LOGGER.info(f'{prefix} Network Description:')
         for inp in inputs:
             # default to FP32 input precision unless specified otherwise; then let TensorRT decide
