@@ -135,7 +135,7 @@ def kmean_anchors(dataset='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen
     except Exception:
         LOGGER.warning(f'{PREFIX}WARNING: switching strategies from kmeans to random init')
         k = np.sort(npr.rand(n * 2)).reshape(n, 2) * img_size  # random init
-    wh, wh0 = [torch.tensor(x, dtype=torch.float32) for x in (wh, wh0)]
+    wh, wh0 = (torch.tensor(x, dtype=torch.float32) for x in (wh, wh0))
     k = print_results(k, verbose=False)
 
     # Plot
