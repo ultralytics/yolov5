@@ -125,7 +125,7 @@ def kmean_anchors(dataset='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen
     wh = wh0[(wh0 >= 2.0).any(1)]  # filter > 2 pixels
     # wh = wh * (npr.rand(wh.shape[0], 1) * 0.9 + 0.1)  # multiply by random scale 0-1
 
-    # Kmeans calculation
+    # Kmeans init
     try:
         LOGGER.info(f'{PREFIX}Running kmeans for {n} anchors on {len(wh)} points...')
         assert n <= len(wh)  # apply overdetermined constraint
@@ -135,10 +135,7 @@ def kmean_anchors(dataset='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen
     except Exception:
         LOGGER.warning(f'{PREFIX}WARNING: switching strategies from kmeans to random init')
         k = np.sort(npr.rand(n * 2)).reshape(n, 2) * img_size  # random init
-
-    # k, wh, wh0 = [x.to(wh.device).type(torch.float32) for x in (k, wh, wh0)]
-    wh = torch.tensor(wh, dtype=torch.float32)  # filtered
-    wh0 = torch.tensor(wh0, dtype=torch.float32)  # unfiltered
+    wh, wh0 = [torch.tensor(x, dtype=torch.float32) for x in (wh, wh0)]
     k = print_results(k, verbose=False)
 
     # Plot
