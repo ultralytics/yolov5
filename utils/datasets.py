@@ -53,14 +53,14 @@ def get_hash(paths):
 def exif_size(img):
     # Returns exif-corrected PIL size
     s = img.size  # (width, height)
-    try:
-        rotation = dict(img._getexif().items())[orientation]
+    
+    exif = img._getexif()
+    if exif != None:
+        rotation = dict(exif.items())[orientation]
         if rotation == 6:  # rotation 270
             s = (s[1], s[0])
         elif rotation == 8:  # rotation 90
             s = (s[1], s[0])
-    except Exception as ex:
-        pass
 
     return s
 
@@ -667,16 +667,15 @@ class LoadImagesAndLabels(Dataset):
         s = torch.tensor([[1, 1, 0.5, 0.5, 0.5, 0.5]])  # scale
         for i in range(n):  # zidane torch.zeros(16,3,720,1280)  # BCHW
             i *= 4
-            l = None
             if random.random() < 0.5:
                 im = F.interpolate(img[i].unsqueeze(0).float(), scale_factor=2.0, mode='bilinear', align_corners=False)[
                     0].type(img[i].type())
-                l = label[i]
+                lab4 = label[i]
             else:
                 im = torch.cat((torch.cat((img[i], img[i + 1]), 1), torch.cat((img[i + 2], img[i + 3]), 1)), 2)
-                l = torch.cat((label[i], label[i + 1] + ho, label[i + 2] + wo, label[i + 3] + ho + wo), 0) * s
+                lab4 = torch.cat((label[i], label[i + 1] + ho, label[i + 2] + wo, label[i + 3] + ho + wo), 0) * s
             img4.append(im)
-            label4.append(l)
+            label4.append(lab4)
 
         for i, l in enumerate(label4):
             l[:, 0] = i  # add target image index for build_targets()
@@ -932,32 +931,31 @@ def verify_image_label(args):
         # verify labels
         if os.path.isfile(lb_file):
             nf = 1  # label found
-            l = None
             with open(lb_file) as f:
-                l = [x.split() for x in f.read().strip().splitlines() if len(x)]
-                if any([len(x) > 8 for x in l]):  # is segment
-                    classes = np.array([x[0] for x in l], dtype=np.float32)
-                    segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in l]  # (cls, xy1...)
-                    l = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
-                l = np.array(l, dtype=np.float32)
-            nl = len(l)
+                lab = [x.split() for x in f.read().strip().splitlines() if len(x)]
+                if any([len(x) > 8 for x in lab]):  # is segment
+                    classes = np.array([x[0] for x in lab], dtype=np.float32)
+                    segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in lab]  # (cls, xy1...)
+                    lab = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
+                lab = np.array(lab, dtype=np.float32)
+            nl = len(lab)
             if nl:
-                assert l.shape[1] == 5, f'labels require 5 columns, {l.shape[1]} columns detected'
-                assert (l >= 0).all(), f'negative label values {l[l < 0]}'
-                assert (l[:, 1:] <= 1).all(), f'non-normalized or out of bounds coordinates {l[:, 1:][l[:, 1:] > 1]}'
-                _, i = np.unique(l, axis=0, return_index=True)
+                assert lab.shape[1] == 5, f'labels require 5 columns, {lab.shape[1]} columns detected'
+                assert (lab >= 0).all(), f'negative label values {lab[lab < 0]}'
+                assert (lab[:, 1:] <= 1).all(), f'non-normalized or out of bounds coordinates {lab[:, 1:][lab[:, 1:] > 1]}'
+                _, i = np.unique(lab, axis=0, return_index=True)
                 if len(i) < nl:  # duplicate row check
-                    l = l[i]  # remove duplicates
+                    lab = lab[i]  # remove duplicates
                     if segments:
                         segments = segments[i]
                     msg = f'{prefix}WARNING: {im_file}: {nl - len(i)} duplicate labels removed'
             else:
                 ne = 1  # label empty
-                l = np.zeros((0, 5), dtype=np.float32)
+                lab = np.zeros((0, 5), dtype=np.float32)
         else:
             nm = 1  # label missing
-            l = np.zeros((0, 5), dtype=np.float32)
-        return im_file, l, shape, segments, nm, nf, ne, nc, msg
+            lab = np.zeros((0, 5), dtype=np.float32)
+        return im_file, lab, shape, segments, nm, nf, ne, nc, msg
     except Exception as e:
         nc = 1
         msg = f'{prefix}WARNING: {im_file}: ignoring corrupt image/label: {e}'
