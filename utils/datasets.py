@@ -8,6 +8,7 @@ import hashlib
 import json
 import math
 import os
+import pickle
 import random
 import shutil
 import time
@@ -16,7 +17,7 @@ from multiprocessing.pool import Pool, ThreadPool
 from pathlib import Path
 from threading import Thread
 from zipfile import ZipFile
-import pickle
+
 import cv2
 import numpy as np
 import torch
