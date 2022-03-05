@@ -16,6 +16,7 @@ from multiprocessing.pool import Pool, ThreadPool
 from pathlib import Path
 from threading import Thread
 from zipfile import ZipFile
+import pickle
 
 import cv2
 import numpy as np
@@ -59,7 +60,7 @@ def exif_size(img):
             s = (s[1], s[0])
         elif rotation == 8:  # rotation 90
             s = (s[1], s[0])
-    except:
+    except Exception as ex:
         pass
 
     return s
@@ -237,7 +238,6 @@ class LoadImages:
                 else:
                     # single image
                     s = f'image {self.count} out of {self.nf} in directory: {os.path.dirname(path)}\n'
-
 
             # Padded resize
             img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
@@ -445,7 +445,8 @@ class LoadImagesAndLabels(Dataset):
             cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
             assert cache['version'] == self.cache_version  # same version
             assert cache['hash'] == get_hash(self.label_files + self.img_files)  # same hash
-        except:
+        except (OSError, pickle.UnpicklingError, AssertionError) as ex:
+            print(f"An exception occured: {ex}\nloading from cache...")
             cache, exists = self.cache_labels(cache_path, prefix), False  # cache
 
         # Display cache
@@ -667,6 +668,7 @@ class LoadImagesAndLabels(Dataset):
         s = torch.tensor([[1, 1, 0.5, 0.5, 0.5, 0.5]])  # scale
         for i in range(n):  # zidane torch.zeros(16,3,720,1280)  # BCHW
             i *= 4
+            l = None
             if random.random() < 0.5:
                 im = F.interpolate(img[i].unsqueeze(0).float(), scale_factor=2.0, mode='bilinear', align_corners=False)[
                     0].type(img[i].type())
@@ -768,6 +770,7 @@ def load_mosaic9(self, index):
     s = self.img_size
     indices = [index] + random.choices(self.indices, k=8)  # 8 additional image indices
     random.shuffle(indices)
+    hp, wp = 0, 0
     for i, index in enumerate(indices):
         # Load image
         img, _, (h, w) = load_image(self, index)
@@ -930,6 +933,7 @@ def verify_image_label(args):
         # verify labels
         if os.path.isfile(lb_file):
             nf = 1  # label found
+            l = None
             with open(lb_file) as f:
                 l = [x.split() for x in f.read().strip().splitlines() if len(x)]
                 if any([len(x) > 8 for x in l]):  # is segment
