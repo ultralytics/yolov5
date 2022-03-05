@@ -17,7 +17,6 @@ from pathlib import Path
 from threading import Thread
 from zipfile import ZipFile
 import pickle
-
 import cv2
 import numpy as np
 import torch
