@@ -56,7 +56,7 @@ def exif_size(img):
     s = img.size  # (width, height)
 
     exif = img._getexif()
-    if exif != None:
+    if exif is not None:
         rotation = dict(exif.items())[orientation]
         if rotation == 6:  # rotation 270
             s = (s[1], s[0])
