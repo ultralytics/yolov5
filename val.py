@@ -144,6 +144,10 @@ def run(data,
             model.model.half() if half else model.model.float()
         elif engine:
             batch_size = model.batch_size
+            if model.trt_fp16_input != half:
+                LOGGER.info('model ' + (
+                    'requires' if model.trt_fp16_input else 'incompatible with') + ' --half. Adjusting automatically.')
+                half = model.trt_fp16_input
         else:
             half = False
             batch_size = 1  # export.py models default to batch-size 1
