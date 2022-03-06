@@ -338,6 +338,7 @@ class DetectMultiBackend(nn.Module):
             import tensorrt as trt  # https://developer.nvidia.com/nvidia-tensorrt-download
             check_version(trt.__version__, '7.0.0', hard=True)  # require tensorrt>=7.0.0
             Binding = namedtuple('Binding', ('name', 'dtype', 'shape', 'data', 'ptr'))
+            trt_fp16_input = False
             logger = trt.Logger(trt.Logger.INFO)
             with open(w, 'rb') as f, trt.Runtime(logger) as runtime:
                 model = runtime.deserialize_cuda_engine(f.read())
@@ -348,6 +349,8 @@ class DetectMultiBackend(nn.Module):
                 shape = tuple(model.get_binding_shape(index))
                 data = torch.from_numpy(np.empty(shape, dtype=np.dtype(dtype))).to(device)
                 bindings[name] = Binding(name, dtype, shape, data, int(data.data_ptr()))
+                if model.binding_is_input(index) and dtype == np.float16:
+                    trt_fp16_input = True
             binding_addrs = OrderedDict((n, d.ptr) for n, d in bindings.items())
             context = model.create_execution_context()
             batch_size = bindings['images'].shape[0]
