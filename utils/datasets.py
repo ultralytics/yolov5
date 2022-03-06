@@ -490,14 +490,12 @@ class LoadImagesAndLabels(Dataset):
         if cache_images:
             gb = 0  # Gigabytes of cached images
             self.im_hw0, self.im_hw = [None] * n, [None] * n
-            results = ThreadPool(NUM_THREADS).imap(self.load_image, range(n))
+            fcn = self.cache_images_to_disk if cache_images == 'disk' else self.load_image
+            results = ThreadPool(NUM_THREADS).imap(fcn, range(n))
             pbar = tqdm(enumerate(results), total=n)
             for i, x in pbar:
                 if cache_images == 'disk':
-                    f = self.npy_files[i]
-                    if not f.exists():
-                        np.save(f.as_posix(), x[0])
-                    gb += f.stat().st_size
+                    gb += self.npy_files[i].stat().st_size
                 else:  # 'ram'
                     self.ims[i], self.im_hw0[i], self.im_hw[i] = x  # im, hw_orig, hw_resized = load_image(self, i)
                     gb += self.ims[i].nbytes
@@ -640,6 +638,12 @@ class LoadImagesAndLabels(Dataset):
             return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
         else:
             return self.ims[i], self.im_hw0[i], self.im_hw[i]  # im, hw_original, hw_resized
+
+    def cache_images_to_disk(self, i):
+        # save an image as an *.npy file for faster loading
+        fn = self.npy_files[i],
+        if not fn.exists():
+            np.save(fn.as_posix(), cv2.imread(self.im_files[i]))
 
     def load_mosaic(self, index):
         # YOLOv5 4-mosaic loader. Loads 1 image + 3 random images into a 4-image mosaic
