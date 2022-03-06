@@ -229,8 +229,6 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         outputs = [network.get_output(i) for i in range(network.num_outputs)]
         LOGGER.info(f'{prefix} Network Description:')
         for inp in inputs:
-            # if not half:  # default to FP32 input unless specified otherwise; then let TensorRT decide
-            #     inp.dtype = trt.DataType.FLOAT
             LOGGER.info(f'{prefix}\tinput "{inp.name}" with shape {inp.shape} and dtype {inp.dtype}')
         for out in outputs:
             LOGGER.info(f'{prefix}\toutput "{out.name}" with shape {out.shape} and dtype {out.dtype}')
