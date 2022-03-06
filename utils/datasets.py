@@ -533,6 +533,7 @@ class LoadImagesAndLabels(Dataset):
         x['version'] = self.cache_version  # cache version
         try:
             np.save(path, x)  # save cache for next time
+            path.with_suffix('.cache.npy').rename(path)  # remove .npy suffix
             LOGGER.info(f'{prefix}New cache created: {path}')
         except Exception as e:
             LOGGER.warning(f'{prefix}WARNING: Cache directory {path.parent} is not writeable: {e}')  # not writeable
