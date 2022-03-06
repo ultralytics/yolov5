@@ -485,21 +485,18 @@ class LoadImagesAndLabels(Dataset):
             self.batch_shapes = np.ceil(np.array(shapes) * img_size / stride + pad).astype(np.int) * stride
 
         # Cache images into RAM/disk for faster training (WARNING: large datasets may exceed system resources)
-        self.imgs, self.img_npy = [None] * n, [None] * n
+        self.imgs = [None] * n
         if cache_images:
-            if cache_images == 'disk':
-                self.im_cache_dir = Path(Path(self.img_files[0]).parent.as_posix() + '_npy')
-                self.img_npy = [self.im_cache_dir / Path(f).with_suffix('.npy').name for f in self.img_files]
-                self.im_cache_dir.mkdir(parents=True, exist_ok=True)
             gb = 0  # Gigabytes of cached images
             self.img_hw0, self.img_hw = [None] * n, [None] * n
             results = ThreadPool(NUM_THREADS).imap(self.load_image, range(n))
             pbar = tqdm(enumerate(results), total=n)
             for i, x in pbar:
                 if cache_images == 'disk':
-                    if not self.img_npy[i].exists():
-                        np.save(self.img_npy[i].as_posix(), x[0])
-                    gb += self.img_npy[i].stat().st_size
+                    f = Path(self.img_files[i]).with_suffix('.npy')
+                    if not f.exists():
+                        np.save(f.as_posix(), x[0])
+                    gb += f.stat().st_size
                 else:  # 'ram'
                     self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # im, hw_orig, hw_resized = load_image(self, i)
                     gb += self.imgs[i].nbytes
@@ -536,7 +533,6 @@ class LoadImagesAndLabels(Dataset):
         x['version'] = self.cache_version  # cache version
         try:
             np.save(path, x)  # save cache for next time
-            path.with_suffix('.cache.npy').rename(path)  # remove .npy suffix
             LOGGER.info(f'{prefix}New cache created: {path}')
         except Exception as e:
             LOGGER.warning(f'{prefix}WARNING: Cache directory {path.parent} is not writeable: {e}')  # not writeable
@@ -628,11 +624,11 @@ class LoadImagesAndLabels(Dataset):
         # loads 1 image from dataset index 'i', returns (im, original hw, resized hw)
         im = self.imgs[i]
         if im is None:  # not cached in RAM
-            npy = self.img_npy[i]
-            if npy and npy.exists():  # load npy
-                im = np.load(npy)
+            f = self.img_files[i]
+            fn = Path(f).with_suffix('.npy')  # disk-cached file
+            if fn.exists():  # load npy
+                im = np.load(fn)
             else:  # read image
-                f = self.img_files[i]
                 im = cv2.imread(f)  # BGR
                 assert im is not None, f'Image Not Found {f}'
             h0, w0 = im.shape[:2]  # orig hw
