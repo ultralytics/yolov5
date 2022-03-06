@@ -490,7 +490,7 @@ class LoadImagesAndLabels(Dataset):
         if cache_images:
             gb = 0  # Gigabytes of cached images
             self.im_hw0, self.im_hw = [None] * n, [None] * n
-            results = ThreadPool(NUM_THREADS).imap(self.load_image, zip(range(n), repeat(True)))
+            results = ThreadPool(NUM_THREADS).imap(self.load_image, range(n))
             pbar = tqdm(enumerate(results), total=n)
             for i, x in pbar:
                 if cache_images == 'disk':
@@ -622,7 +622,7 @@ class LoadImagesAndLabels(Dataset):
 
         return torch.from_numpy(img), labels_out, self.im_files[index], shapes
 
-    def load_image(self, i, resize=True):
+    def load_image(self, i):
         # loads 1 image from dataset index 'i', returns (im, original hw, resized hw)
         im, f, fn = self.ims[i], self.im_files[i], self.npy_files[i],
         if im is None:  # not cached in RAM
@@ -633,7 +633,7 @@ class LoadImagesAndLabels(Dataset):
                 assert im is not None, f'Image Not Found {f}'
             h0, w0 = im.shape[:2]  # orig hw
             r = self.img_size / max(h0, w0)  # ratio
-            if (r != 1) and resize:  # if sizes are not equal
+            if r != 1:  # if sizes are not equal
                 im = cv2.resize(im,
                                 (int(w0 * r), int(h0 * r)),
                                 interpolation=cv2.INTER_LINEAR if (self.augment or r > 1) else cv2.INTER_AREA)
