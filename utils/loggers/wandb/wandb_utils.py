@@ -225,9 +225,9 @@ class WandbLogger():
             if modeldir:
                 self.weights = Path(modeldir) / "last.pt"
                 config = self.wandb_run.config
-                opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs, opt.hyp = str(
-                    self.weights), config.save_period, config.batch_size, config.bbox_interval, config.epochs, \
-                                                                                                       config.hyp
+                opt.weights, opt.save_period, opt.batch_size, opt.bbox_interval, opt.epochs, opt.hyp, opt.imgsz = str(
+                    self.weights), config.save_period, config.batch_size, config.bbox_interval, config.epochs,\
+                    config.hyp, config.imgsz
         data_dict = self.data_dict
         if self.val_artifact is None:  # If --upload_dataset is set, use the existing artifact, don't download
             self.train_artifact_path, self.train_artifact = self.download_dataset_artifact(data_dict.get('train'),
@@ -252,6 +252,8 @@ class WandbLogger():
                 self.map_val_table_path()
         if opt.bbox_interval == -1:
             self.bbox_interval = opt.bbox_interval = (opt.epochs // 10) if opt.epochs > 10 else 1
+            if opt.evolve:
+                self.bbox_interval = opt.bbox_interval = opt.epochs + 1
         train_from_artifact = self.train_artifact_path is not None and self.val_artifact_path is not None
         # Update the the data_dict to point to local artifacts dir
         if train_from_artifact:
@@ -401,7 +403,7 @@ class WandbLogger():
         # TODO: Explore multiprocessing to slpit this loop parallely| This is essential for speeding up the the logging
         artifact = wandb.Artifact(name=name, type="dataset")
         img_files = tqdm([dataset.path]) if isinstance(dataset.path, str) and Path(dataset.path).is_dir() else None
-        img_files = tqdm(dataset.img_files) if not img_files else img_files
+        img_files = tqdm(dataset.im_files) if not img_files else img_files
         for img_file in img_files:
             if Path(img_file).is_dir():
                 artifact.add_dir(img_file, name='data/images')
@@ -485,7 +487,7 @@ class WandbLogger():
             if self.current_epoch % self.bbox_interval == 0:
                 box_data = [{"position": {"minX": xyxy[0], "minY": xyxy[1], "maxX": xyxy[2], "maxY": xyxy[3]},
                              "class_id": int(cls),
-                             "box_caption": f"{names[cls]} {conf:.3f}",
+                             "box_caption": f"{names[int(cls)]} {conf:.3f}",
                              "scores": {"class_score": conf},
                              "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
                 boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space

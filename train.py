@@ -176,10 +176,10 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     del g0, g1, g2
 
     # Scheduler
-    if opt.linear_lr:
-        lf = lambda x: (1 - x / (epochs - 1)) * (1.0 - hyp['lrf']) + hyp['lrf']  # linear
-    else:
+    if opt.cos_lr:
         lf = one_cycle(1, hyp['lrf'], epochs)  # cosine 1->hyp['lrf']
+    else:
+        lf = lambda x: (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']  # linear
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)  # plot_lr_scheduler(optimizer, scheduler, epochs)
 
     # EMA
@@ -221,8 +221,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # Trainloader
     train_loader, dataset = create_dataloader(train_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
-                                              hyp=hyp, augment=True, cache=opt.cache, rect=opt.rect, rank=LOCAL_RANK,
-                                              workers=workers, image_weights=opt.image_weights, quad=opt.quad,
+                                              hyp=hyp, augment=True, cache=None if opt.cache == 'val' else opt.cache,
+                                              rect=opt.rect, rank=LOCAL_RANK, workers=workers,
+                                              image_weights=opt.image_weights, quad=opt.quad,
                                               prefix=colorstr('train: '), shuffle=True)
     mlc = int(np.concatenate(dataset.labels, 0)[:, 0].max())  # max label class
     nb = len(train_loader)  # number of batches
@@ -231,8 +232,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Process 0
     if RANK in [-1, 0]:
         val_loader = create_dataloader(val_path, imgsz, batch_size // WORLD_SIZE * 2, gs, single_cls,
-                                       hyp=hyp, cache=None if noval else opt.cache, rect=True, rank=-1,
-                                       workers=workers, pad=0.5,
+                                       hyp=hyp, cache=None if noval else opt.cache,
+                                       rect=True, rank=-1, workers=workers * 2, pad=0.5,
                                        prefix=colorstr('val: '))[0]
 
         if not resume:
@@ -267,7 +268,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # Start training
     t0 = time.time()
-    nw = max(round(hyp['warmup_epochs'] * nb), 1000)  # number of warmup iterations, max(3 epochs, 1k iterations)
+    nw = max(round(hyp['warmup_epochs'] * nb), 100)  # number of warmup iterations, max(3 epochs, 100 iterations)
     # nw = min(nw, (epochs - start_epoch) / 2 * nb)  # limit warmup to < 1/2 of training
     last_opt_step = -1
     maps = np.zeros(nc)  # mAP per class
@@ -455,7 +456,7 @@ def parse_opt(known=False):
     parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.scratch.yaml', help='hyperparameters path')
+    parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.scratch-low.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs, -1 for autobatch')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='train, val image size (pixels)')
@@ -478,7 +479,7 @@ def parse_opt(known=False):
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--quad', action='store_true', help='quad dataloader')
-    parser.add_argument('--linear-lr', action='store_true', help='linear LR')
+    parser.add_argument('--cos-lr', action='store_true', help='cosine LR scheduler')
     parser.add_argument('--label-smoothing', type=float, default=0.0, help='Label smoothing epsilon')
     parser.add_argument('--patience', type=int, default=100, help='EarlyStopping patience (epochs without improvement)')
     parser.add_argument('--freeze', nargs='+', type=int, default=[0], help='Freeze layers: backbone=10, first3=0 1 2')
@@ -581,7 +582,7 @@ def main(opt, callbacks=Callbacks()):
         # ei = [isinstance(x, (int, float)) for x in hyp.values()]  # evolvable indices
         evolve_yaml, evolve_csv = save_dir / 'hyp_evolve.yaml', save_dir / 'evolve.csv'
         if opt.bucket:
-            os.system(f'gsutil cp gs://{opt.bucket}/evolve.csv {save_dir}')  # download evolve.csv if exists
+            os.system(f'gsutil cp gs://{opt.bucket}/evolve.csv {evolve_csv}')  # download evolve.csv if exists
 
         for _ in range(opt.evolve):  # generations to evolve
             if evolve_csv.exists():  # if evolve.csv exists: select best hyps and mutate
