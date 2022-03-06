@@ -641,9 +641,9 @@ class LoadImagesAndLabels(Dataset):
 
     def cache_images_to_disk(self, i):
         # save an image as an *.npy file for faster loading
-        fn = self.npy_files[i],
-        if not fn.exists():
-            np.save(fn.as_posix(), cv2.imread(self.im_files[i]))
+        f = self.npy_files[i],
+        if not f.exists():
+            np.save(f.as_posix(), cv2.imread(self.im_files[i]))
 
     def load_mosaic(self, index):
         # YOLOv5 4-mosaic loader. Loads 1 image + 3 random images into a 4-image mosaic
