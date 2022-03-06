@@ -296,7 +296,6 @@ class DetectMultiBackend(nn.Module):
         w = str(weights[0] if isinstance(weights, list) else weights)
         pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = self.model_type(w)  # get backend
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
-        trt_fp16_input = False
         w = attempt_download(w)  # download if not local
         if data:  # data.yaml path (optional)
             with open(data, errors='ignore') as f:
