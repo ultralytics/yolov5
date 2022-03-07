@@ -191,7 +191,7 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
         return None, None
 
 
-def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
+def export_engine(model, im, file, train, half, simplify, workspace=4096, verbose=False, prefix=colorstr('TensorRT:')):
     # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
     try:
         check_requirements(('tensorrt',))
@@ -217,7 +217,10 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
 
         builder = trt.Builder(logger)
         config = builder.create_builder_config()
-        config.max_workspace_size = workspace * 1 << 30
+        if workspace < 100:
+            LOGGER.info(f'{prefix} very small workspace size of {workspace}MB detected. Adjusting to {workspace << 10}MB')
+            workspace = workspace << 10
+        config.max_workspace_size = workspace * 1 << 20
 
         flag = (1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
         network = builder.create_network(flag)
@@ -423,7 +426,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         simplify=False,  # ONNX: simplify model
         opset=12,  # ONNX: opset version
         verbose=False,  # TensorRT: verbose log
-        workspace=4,  # TensorRT: workspace size (GB)
+        workspace=4096,  # TensorRT: workspace size (MB)
         nms=False,  # TF: add NMS to model
         agnostic_nms=False,  # TF: add agnostic NMS to model
         topk_per_class=100,  # TF.js NMS: topk per class to keep
@@ -533,7 +536,7 @@ def parse_opt():
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
     parser.add_argument('--opset', type=int, default=12, help='ONNX: opset version')
     parser.add_argument('--verbose', action='store_true', help='TensorRT: verbose log')
-    parser.add_argument('--workspace', type=int, default=4, help='TensorRT: workspace size (GB)')
+    parser.add_argument('--workspace', type=int, default=4096, help='TensorRT: workspace size (MB)')
     parser.add_argument('--nms', action='store_true', help='TF: add NMS to model')
     parser.add_argument('--agnostic-nms', action='store_true', help='TF: add agnostic NMS to model')
     parser.add_argument('--topk-per-class', type=int, default=100, help='TF.js NMS: topk per class to keep')
