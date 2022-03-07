@@ -144,6 +144,10 @@ def run(data,
             model.model.half() if half else model.model.float()
         elif engine:
             batch_size = model.batch_size
+            if model.trt_fp16_input != half:
+                LOGGER.info('model ' + (
+                    'requires' if model.trt_fp16_input else 'incompatible with') + ' --half. Adjusting automatically.')
+                half = model.trt_fp16_input
         else:
             half = False
             batch_size = 1  # export.py models default to batch-size 1
@@ -162,10 +166,11 @@ def run(data,
 
     # Dataloader
     if not training:
-        model.warmup(imgsz=(1, 3, imgsz, imgsz), half=half)  # warmup
-        pad = 0.0 if task == 'speed' else 0.5
+        model.warmup(imgsz=(1 if pt else batch_size, 3, imgsz, imgsz), half=half)  # warmup
+        pad = 0.0 if task in ('speed', 'benchmark') else 0.5
+        rect = False if task == 'benchmark' else pt  # square inference for benchmarks
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
-        dataloader = create_dataloader(data[task], imgsz, batch_size, stride, single_cls, pad=pad, rect=pt,
+        dataloader = create_dataloader(data[task], imgsz, batch_size, stride, single_cls, pad=pad, rect=rect,
                                        workers=workers, prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
@@ -296,7 +301,7 @@ def run(data,
             pred = anno.loadRes(pred_json)  # init predictions api
             eval = COCOeval(anno, pred, 'bbox')
             if is_coco:
-                eval.params.imgIds = [int(Path(x).stem) for x in dataloader.dataset.img_files]  # image IDs to evaluate
+                eval.params.imgIds = [int(Path(x).stem) for x in dataloader.dataset.im_files]  # image IDs to evaluate
             eval.evaluate()
             eval.accumulate()
             eval.summarize()
