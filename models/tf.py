@@ -226,10 +226,10 @@ class TFDetect(keras.layers.Layer):
 
             if not self.training:  # inference
                 y = tf.sigmoid(x[i])
-                grid = tf.transpose(self.grid[i], [0, 2, 1, 3])
-                anchor_grid = tf.transpose(self.anchor_grid[i], [0, 2, 1, 3])
-                xy = (y[..., 0:2] * 2 - 0.5 + grid) * self.stride[i]  # xy
-                wh = (y[..., 2:4] * 2) ** 2 * anchor_grid
+                grid = tf.transpose(self.grid[i], [0, 2, 1, 3]) - 0.5
+                anchor_grid = tf.transpose(self.anchor_grid[i], [0, 2, 1, 3]) * 4
+                xy = (y[..., 0:2] * 2 + grid) * self.stride[i]  # xy
+                wh = y[..., 2:4] ** 2 * anchor_grid
                 # Normalize xywh to 0-1 to reduce calibration error
                 xy /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
                 wh /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
