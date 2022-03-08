@@ -663,6 +663,17 @@ class Detections:
         #        setattr(d, k, getattr(d, k)[0])  # pop out of list
         return x
 
+    def json(self):
+        """Creates a JSON object out of pandas() method"""
+        df = self.pandas().xyxy[0]
+        out_array = []
+
+        for item in df.itertuples(index=True):
+            temp_dict = {"name" : item.name, "confidence": item.confidence, "xmin": item.xmin, "ymin": item.ymin, "xmax": item.xmax, "ymax": item.ymax}
+            out_array.append(temp_dict)
+
+        return json.dumps(out_array)
+
     def __len__(self):
         return self.n
 
