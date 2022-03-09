@@ -224,7 +224,8 @@ def emojis(str=''):
 
 def file_age(path=__file__):
     # Return days since last file update
-    return (datetime.now() - datetime.fromtimestamp(Path(path).stat().st_mtime)).seconds / 86400  # days
+    dt = (datetime.now() - datetime.fromtimestamp(Path(path).stat().st_mtime))  # delta
+    return dt.days  # + dt.seconds / 86400  # fractional days
 
 
 def file_update_date(path=__file__):
