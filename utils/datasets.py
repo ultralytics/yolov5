@@ -23,7 +23,7 @@ import torch
 import torch.nn.functional as F
 import yaml
 from PIL import ExifTags, Image, ImageOps
-from torch.utils.data import DataLoader, Dataset, dataloader, distributed
+from torch.utils.data import DataLoader, Dataset, distributed
 from tqdm import tqdm
 
 from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
@@ -112,48 +112,14 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
     nd = torch.cuda.device_count()  # number of CUDA devices
     nw = min([os.cpu_count() // max(nd, 1), batch_size if batch_size > 1 else 0, workers])  # number of workers
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
-    loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
-    return loader(dataset,
-                  batch_size=batch_size,
-                  shuffle=shuffle and sampler is None,
-                  num_workers=nw,
-                  sampler=sampler,
-                  pin_memory=True,
-                  collate_fn=LoadImagesAndLabels.collate_fn4 if quad else LoadImagesAndLabels.collate_fn), dataset
-
-
-class InfiniteDataLoader(dataloader.DataLoader):
-    """ Dataloader that reuses workers
-
-    Uses same syntax as vanilla DataLoader
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        object.__setattr__(self, 'batch_sampler', _RepeatSampler(self.batch_sampler))
-        self.iterator = super().__iter__()
-
-    def __len__(self):
-        return len(self.batch_sampler.sampler)
-
-    def __iter__(self):
-        for i in range(len(self)):
-            yield next(self.iterator)
-
-
-class _RepeatSampler:
-    """ Sampler that repeats forever
-
-    Args:
-        sampler (Sampler)
-    """
-
-    def __init__(self, sampler):
-        self.sampler = sampler
-
-    def __iter__(self):
-        while True:
-            yield from iter(self.sampler)
+    return DataLoader(dataset,
+                      batch_size=batch_size,
+                      shuffle=shuffle and sampler is None,
+                      num_workers=nw,
+                      sampler=sampler,
+                      pin_memory=True,
+                      persistent_workers=True,
+                      collate_fn=LoadImagesAndLabels.collate_fn4 if quad else LoadImagesAndLabels.collate_fn), dataset
 
 
 class LoadImages:
