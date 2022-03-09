@@ -173,7 +173,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     if save_csv: # save to a dict first
                         x1y1 = [int(xyxy[0].item()), int(xyxy[1].item())]
                         x2y2 = [int(xyxy[2].item()), int(xyxy[3].item())]
-                        R = Rect(im_name=p.name, fullpath=p, category=names[int(cls)], up_left=x1y1, bottom_right=x2y2)
+                        R = Rect(im_name=p.name, fullpath=p, category=names[int(cls)], up_left=x1y1, bottom_right=x2y2, confidence=conf.item())
                         fname_to_shapes[p.name].append(R)
 
                     if save_txt:  # Write to file
