@@ -15,6 +15,7 @@ import shutil
 import signal
 import time
 import urllib
+from datetime import datetime
 from itertools import repeat
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -221,6 +222,18 @@ def emojis(str=''):
     return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
 
 
+def file_age(path=__file__):
+    # Return days since last file update
+    dt = (datetime.now() - datetime.fromtimestamp(Path(path).stat().st_mtime))  # delta
+    return dt.days  # + dt.seconds / 86400  # fractional days
+
+
+def file_update_date(path=__file__):
+    # Return human-readable file modification date, i.e. '2021-3-26'
+    t = datetime.fromtimestamp(Path(path).stat().st_mtime)
+    return f'{t.year}-{t.month}-{t.day}'
+
+
 def file_size(path):
     # Return file/dir size (MB)
     mb = 1 << 20  # bytes to MiB (1024 ** 2)
@@ -241,6 +254,14 @@ def check_online():
         return True
     except OSError:
         return False
+
+
+def git_describe(path=ROOT):  # path must be a directory
+    # Return human-readable git description, i.e. v5.0-5-g3e25f1e https://git-scm.com/docs/git-describe
+    try:
+        return check_output(f'git -C {path} describe --tags --long --always', shell=True).decode()[:-1]
+    except Exception:
+        return ''
 
 
 @try_except

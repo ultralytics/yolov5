@@ -3,7 +3,6 @@
 PyTorch utils
 """
 
-import datetime
 import math
 import os
 import platform
@@ -12,14 +11,13 @@ import time
 import warnings
 from contextlib import contextmanager
 from copy import deepcopy
-from pathlib import Path
 
 import torch
 import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils.general import LOGGER
+from utils.general import LOGGER, file_update_date, git_describe
 
 try:
     import thop  # for FLOPs computation
@@ -40,21 +38,6 @@ def torch_distributed_zero_first(local_rank: int):
         dist.barrier(device_ids=[0])
 
 
-def date_modified(path=__file__):
-    # Return human-readable file modification date, i.e. '2021-3-26'
-    t = datetime.datetime.fromtimestamp(Path(path).stat().st_mtime)
-    return f'{t.year}-{t.month}-{t.day}'
-
-
-def git_describe(path=Path(__file__).parent):  # path must be a directory
-    # Return human-readable git description, i.e. v5.0-5-g3e25f1e https://git-scm.com/docs/git-describe
-    s = f'git -C {path} describe --tags --long --always'
-    try:
-        return subprocess.check_output(s, shell=True, stderr=subprocess.STDOUT).decode()[:-1]
-    except subprocess.CalledProcessError:
-        return ''  # not a git repository
-
-
 def device_count():
     # Returns number of CUDA devices available. Safe version of torch.cuda.device_count(). Only works on Linux.
     assert platform.system() == 'Linux', 'device_count() function only works on Linux'
@@ -67,7 +50,7 @@ def device_count():
 
 def select_device(device='', batch_size=0, newline=True):
     # device = 'cpu' or '0' or '0,1,2,3'
-    s = f'YOLOv5 🚀 {git_describe() or date_modified()} torch {torch.__version__} '  # string
+    s = f'YOLOv5 🚀 {git_describe() or file_update_date()} torch {torch.__version__} '  # string
     device = str(device).strip().lower().replace('cuda:', '')  # to string, 'cuda:0' to '0'
     cpu = device == 'cpu'
     if cpu:
