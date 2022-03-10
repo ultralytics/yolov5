@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import supervisely_lib as sly
-from supervisely_lib.io.fs import get_file_name_with_ext
+from supervisely.io.fs import get_file_name_with_ext
 import os
 from pathlib import Path
 import yaml
