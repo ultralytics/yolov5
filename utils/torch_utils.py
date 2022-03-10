@@ -97,8 +97,10 @@ def profile(input, ops, n=10, device=None):
 
     results = []
     device = device or select_device()
-    print(f"{'Params':>12s}{'GFLOPs':>12s}{'GPU_mem (GB)':>14s}{'forward (ms)':>14s}{'backward (ms)':>14s}"
-          f"{'input':>24s}{'output':>24s}")
+    print(
+        f"{'Params':>12s}{'GFLOPs':>12s}{'GPU_mem (GB)':>14s}{'forward (ms)':>14s}{'backward (ms)':>14s}"
+        f"{'input':>24s}{'output':>24s}"
+    )
 
     for x in input if isinstance(input, list) else [input]:
         x = x.to(device)
@@ -108,7 +110,7 @@ def profile(input, ops, n=10, device=None):
             m = m.half() if hasattr(m, 'half') and isinstance(x, torch.Tensor) and x.dtype is torch.float16 else m
             tf, tb, t = 0, 0, [0, 0, 0]  # dt forward, backward
             try:
-                flops = thop.profile(m, inputs=(x,), verbose=False)[0] / 1E9 * 2  # GFLOPs
+                flops = thop.profile(m, inputs=(x, ), verbose=False)[0] / 1E9 * 2  # GFLOPs
             except Exception:
                 flops = 0
 
@@ -187,13 +189,15 @@ def prune(model, amount=0.3):
 
 def fuse_conv_and_bn(conv, bn):
     # Fuse Conv2d() and BatchNorm2d() layers https://tehnokv.com/posts/fusing-batchnorm-and-conv/
-    fusedconv = nn.Conv2d(conv.in_channels,
-                          conv.out_channels,
-                          kernel_size=conv.kernel_size,
-                          stride=conv.stride,
-                          padding=conv.padding,
-                          groups=conv.groups,
-                          bias=True).requires_grad_(False).to(conv.weight.device)
+    fusedconv = nn.Conv2d(
+        conv.in_channels,
+        conv.out_channels,
+        kernel_size=conv.kernel_size,
+        stride=conv.stride,
+        padding=conv.padding,
+        groups=conv.groups,
+        bias=True
+    ).requires_grad_(False).to(conv.weight.device)
 
     # Prepare filters
     w_conv = conv.weight.clone().view(conv.out_channels, -1)
@@ -216,14 +220,16 @@ def model_info(model, verbose=False, img_size=640):
         print(f"{'layer':>5} {'name':>40} {'gradient':>9} {'parameters':>12} {'shape':>20} {'mu':>10} {'sigma':>10}")
         for i, (name, p) in enumerate(model.named_parameters()):
             name = name.replace('module_list.', '')
-            print('%5g %40s %9s %12g %20s %10.3g %10.3g' %
-                  (i, name, p.requires_grad, p.numel(), list(p.shape), p.mean(), p.std()))
+            print(
+                '%5g %40s %9s %12g %20s %10.3g %10.3g' %
+                (i, name, p.requires_grad, p.numel(), list(p.shape), p.mean(), p.std())
+            )
 
     try:  # FLOPs
         from thop import profile
         stride = max(int(model.stride.max()), 32) if hasattr(model, 'stride') else 32
         img = torch.zeros((1, model.yaml.get('ch', 3), stride, stride), device=next(model.parameters()).device)  # input
-        flops = profile(deepcopy(model), inputs=(img,), verbose=False)[0] / 1E9 * 2  # stride GFLOPs
+        flops = profile(deepcopy(model), inputs=(img, ), verbose=False)[0] / 1E9 * 2  # stride GFLOPs
         img_size = img_size if isinstance(img_size, list) else [img_size, img_size]  # expand if int/float
         fs = ', %.1f GFLOPs' % (flops * img_size[0] / stride * img_size[1] / stride)  # 640x640 GFLOPs
     except (ImportError, Exception):
@@ -270,10 +276,12 @@ class EarlyStopping:
         self.possible_stop = delta >= (self.patience - 1)  # possible stop may occur next epoch
         stop = delta >= self.patience  # stop training if patience exceeded
         if stop:
-            LOGGER.info(f'Stopping training early as no improvement observed in last {self.patience} epochs. '
-                        f'Best results observed at epoch {self.best_epoch}, best model saved as best.pt.\n'
-                        f'To update EarlyStopping(patience={self.patience}) pass a new patience value, '
-                        f'i.e. `python train.py --patience 300` or use `--patience 0` to disable EarlyStopping.')
+            LOGGER.info(
+                f'Stopping training early as no improvement observed in last {self.patience} epochs. '
+                f'Best results observed at epoch {self.best_epoch}, best model saved as best.pt.\n'
+                f'To update EarlyStopping(patience={self.patience}) pass a new patience value, '
+                f'i.e. `python train.py --patience 300` or use `--patience 0` to disable EarlyStopping.'
+            )
         return stop
 
 

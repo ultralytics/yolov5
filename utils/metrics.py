@@ -184,9 +184,19 @@ class ConfusionMatrix:
             labels = (0 < nn < 99) and (nn == nc)  # apply names to ticklabels
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')  # suppress empty matrix RuntimeWarning: All-NaN slice encountered
-                sn.heatmap(array, annot=nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True, vmin=0.0,
-                           xticklabels=names + ['background FP'] if labels else "auto",
-                           yticklabels=names + ['background FN'] if labels else "auto").set_facecolor((1, 1, 1))
+                sn.heatmap(
+                    array,
+                    annot=nc < 30,
+                    annot_kws={
+                        "size": 8
+                    },
+                    cmap='Blues',
+                    fmt='.2f',
+                    square=True,
+                    vmin=0.0,
+                    xticklabels=names + ['background FP'] if labels else "auto",
+                    yticklabels=names + ['background FN'] if labels else "auto"
+                ).set_facecolor((1, 1, 1))
             fig.axes[0].set_xlabel('True')
             fig.axes[0].set_ylabel('Predicted')
             fig.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
@@ -227,11 +237,11 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
         cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)  # convex (smallest enclosing box) width
         ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)  # convex height
         if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
-            c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
-            rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 +
-                    (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center distance squared
+            c2 = cw**2 + ch**2 + eps  # convex diagonal squared
+            rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2)**2 +
+                    (b2_y1 + b2_y2 - b1_y1 - b1_y2)**2) / 4  # center distance squared
             if CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
-                v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
+                v = (4 / math.pi**2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
                 with torch.no_grad():
                     alpha = v / (v - iou + (1 + eps))
                 return iou - (rho2 / c2 + v * alpha)  # CIoU
@@ -299,6 +309,7 @@ def wh_iou(wh1, wh2):
 
 
 # Plots ----------------------------------------------------------------------------------------------------------------
+
 
 def plot_pr_curve(px, py, ap, save_dir='pr_curve.png', names=()):
     # Precision-recall curve

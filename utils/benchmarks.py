@@ -43,11 +43,12 @@ from utils import notebook_init
 from utils.general import LOGGER, print_args
 
 
-def run(weights=ROOT / 'yolov5s.pt',  # weights path
-        imgsz=640,  # inference size (pixels)
-        batch_size=1,  # batch size
-        data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
-        ):
+def run(
+    weights=ROOT / 'yolov5s.pt',  # weights path
+    imgsz=640,  # inference size (pixels)
+    batch_size=1,  # batch size
+    data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
+):
     y, t = [], time.time()
     formats = export.export_formats()
     for i, (name, f, suffix) in formats.iterrows():  # index, (name, file, suffix)

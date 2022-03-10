@@ -59,12 +59,13 @@ class MixConv2d(nn.Module):
             b = [c2] + [0] * n
             a = np.eye(n + 1, n, k=-1)
             a -= np.roll(a, 1, axis=1)
-            a *= np.array(k) ** 2
+            a *= np.array(k)**2
             a[0] = 1
             c_ = np.linalg.lstsq(a, b, rcond=None)[0].round()  # solve for equal weight indices, ax = b
 
-        self.m = nn.ModuleList(
-            [nn.Conv2d(c1, int(c_), k, s, k // 2, groups=math.gcd(c1, int(c_)), bias=False) for k, c_ in zip(k, c_)])
+        self.m = nn.ModuleList([
+            nn.Conv2d(c1, int(c_), k, s, k // 2, groups=math.gcd(c1, int(c_)), bias=False) for k, c_ in zip(k, c_)
+        ])
         self.bn = nn.BatchNorm2d(c2)
         self.act = nn.SiLU()
 

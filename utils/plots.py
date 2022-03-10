@@ -17,8 +17,10 @@ import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.general import (CONFIG_DIR, FONT, LOGGER, Timeout, check_font, check_requirements, clip_coords,
-                           increment_path, is_ascii, is_chinese, try_except, xywh2xyxy, xyxy2xywh)
+from utils.general import (
+    CONFIG_DIR, FONT, LOGGER, Timeout, check_font, check_requirements, clip_coords, increment_path, is_ascii,
+    is_chinese, try_except, xywh2xyxy, xyxy2xywh
+)
 from utils.metrics import fitness
 
 # Settings
@@ -31,8 +33,10 @@ class Colors:
     # Ultralytics color palette https://ultralytics.com/
     def __init__(self):
         # hex = matplotlib.colors.TABLEAU_COLORS.values()
-        hex = ('FF3838', 'FF9D97', 'FF701F', 'FFB21D', 'CFD231', '48F90A', '92CC17', '3DDB86', '1A9334', '00D4BB',
-               '2C99A8', '00C2FF', '344593', '6473FF', '0018EC', '8438FF', '520085', 'CB38FF', 'FF95C8', 'FF37C7')
+        hex = (
+            'FF3838', 'FF9D97', 'FF701F', 'FFB21D', 'CFD231', '48F90A', '92CC17', '3DDB86', '1A9334', '00D4BB',
+            '2C99A8', '00C2FF', '344593', '6473FF', '0018EC', '8438FF', '520085', 'CB38FF', 'FF95C8', 'FF37C7'
+        )
         self.palette = [self.hex2rgb('#' + c) for c in hex]
         self.n = len(self.palette)
 
@@ -73,8 +77,10 @@ class Annotator:
         if self.pil:  # use PIL
             self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
             self.draw = ImageDraw.Draw(self.im)
-            self.font = check_pil_font(font='Arial.Unicode.ttf' if is_chinese(example) else font,
-                                       size=font_size or max(round(sum(self.im.size) / 2 * 0.035), 12))
+            self.font = check_pil_font(
+                font='Arial.Unicode.ttf' if is_chinese(example) else font,
+                size=font_size or max(round(sum(self.im.size) / 2 * 0.035), 12)
+            )
         else:  # use cv2
             self.im = im
         self.lw = line_width or max(round(sum(im.shape) / 2 * 0.003), 2)  # line width
@@ -86,10 +92,13 @@ class Annotator:
             if label:
                 w, h = self.font.getsize(label)  # text width, height
                 outside = box[1] - h >= 0  # label fits outside box
-                self.draw.rectangle((box[0],
-                                     box[1] - h if outside else box[1],
-                                     box[0] + w + 1,
-                                     box[1] + 1 if outside else box[1] + h + 1), fill=color,)
+                self.draw.rectangle(
+                    (
+                        box[0], box[1] - h if outside else box[1], box[0] + w + 1,
+                        box[1] + 1 if outside else box[1] + h + 1
+                    ),
+                    fill=color,
+                )
                 # self.draw.text((box[0], box[1]), label, fill=txt_color, font=self.font, anchor='ls')  # for PIL>8.0
                 self.draw.text((box[0], box[1] - h if outside else box[1]), label, fill=txt_color, font=self.font)
         else:  # cv2
@@ -101,8 +110,15 @@ class Annotator:
                 outside = p1[1] - h - 3 >= 0  # label fits outside box
                 p2 = p1[0] + w, p1[1] - h - 3 if outside else p1[1] + h + 3
                 cv2.rectangle(self.im, p1, p2, color, -1, cv2.LINE_AA)  # filled
-                cv2.putText(self.im, label, (p1[0], p1[1] - 2 if outside else p1[1] + h + 2), 0, self.lw / 3, txt_color,
-                            thickness=tf, lineType=cv2.LINE_AA)
+                cv2.putText(
+                    self.im,
+                    label, (p1[0], p1[1] - 2 if outside else p1[1] + h + 2),
+                    0,
+                    self.lw / 3,
+                    txt_color,
+                    thickness=tf,
+                    lineType=cv2.LINE_AA
+                )
 
     def rectangle(self, xy, fill=None, outline=None, width=1):
         # Add rectangle to image (PIL-only)
@@ -187,7 +203,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
         images *= 255  # de-normalise (optional)
     bs, _, h, w = images.shape  # batch size, _, height, width
     bs = min(bs, max_subplots)  # limit plot images
-    ns = np.ceil(bs ** 0.5)  # number of subplots (square)
+    ns = np.ceil(bs**0.5)  # number of subplots (square)
 
     # Build Image
     mosaic = np.full((int(ns * h), int(ns * w), 3), 255, dtype=np.uint8)  # init
@@ -304,11 +320,23 @@ def plot_val_study(file='', dir='', x=None):  # from utils.plots import *; plot_
                 ax[i].set_title(s[i])
 
         j = y[3].argmax() + 1
-        ax2.plot(y[5, 1:j], y[3, 1:j] * 1E2, '.-', linewidth=2, markersize=8,
-                 label=f.stem.replace('study_coco_', '').replace('yolo', 'YOLO'))
+        ax2.plot(
+            y[5, 1:j],
+            y[3, 1:j] * 1E2,
+            '.-',
+            linewidth=2,
+            markersize=8,
+            label=f.stem.replace('study_coco_', '').replace('yolo', 'YOLO')
+        )
 
-    ax2.plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [34.6, 40.5, 43.0, 47.5, 49.7, 51.5],
-             'k.-', linewidth=2, markersize=8, alpha=.25, label='EfficientDet')
+    ax2.plot(
+        1E3 / np.array([209, 140, 97, 58, 35, 18]), [34.6, 40.5, 43.0, 47.5, 49.7, 51.5],
+        'k.-',
+        linewidth=2,
+        markersize=8,
+        alpha=.25,
+        label='EfficientDet'
+    )
 
     ax2.grid(alpha=0.2)
     ax2.set_yticks(np.arange(20, 60, 5))

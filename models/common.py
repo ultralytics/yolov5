@@ -22,8 +22,10 @@ from PIL import Image
 from torch.cuda import amp
 
 from utils.datasets import exif_transpose, letterbox
-from utils.general import (LOGGER, check_requirements, check_suffix, check_version, colorstr, increment_path,
-                           make_divisible, non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh)
+from utils.general import (
+    LOGGER, check_requirements, check_suffix, check_version, colorstr, increment_path, make_divisible,
+    non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh
+)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, time_sync
 
@@ -227,11 +229,13 @@ class GhostBottleneck(nn.Module):
     def __init__(self, c1, c2, k=3, s=1):  # ch_in, ch_out, kernel, stride
         super().__init__()
         c_ = c2 // 2
-        self.conv = nn.Sequential(GhostConv(c1, c_, 1, 1),  # pw
-                                  DWConv(c_, c_, k, s, act=False) if s == 2 else nn.Identity(),  # dw
-                                  GhostConv(c_, c2, 1, 1, act=False))  # pw-linear
-        self.shortcut = nn.Sequential(DWConv(c1, c1, k, s, act=False),
-                                      Conv(c1, c2, 1, 1, act=False)) if s == 2 else nn.Identity()
+        self.conv = nn.Sequential(
+            GhostConv(c1, c_, 1, 1),  # pw
+            DWConv(c_, c_, k, s, act=False) if s == 2 else nn.Identity(),  # dw
+            GhostConv(c_, c2, 1, 1, act=False)
+        )  # pw-linear
+        self.shortcut = nn.Sequential(DWConv(c1, c1, k, s, act=False), Conv(c1, c2, 1, 1,
+                                                                            act=False)) if s == 2 else nn.Identity()
 
     def forward(self, x):
         return self.conv(x) + self.shortcut(x)
@@ -260,9 +264,9 @@ class Expand(nn.Module):
     def forward(self, x):
         b, c, h, w = x.size()  # assert C / s ** 2 == 0, 'Indivisible gain'
         s = self.gain
-        x = x.view(b, s, s, c // s ** 2, h, w)  # x(1,2,2,16,80,80)
+        x = x.view(b, s, s, c // s**2, h, w)  # x(1,2,2,16,80,80)
         x = x.permute(0, 3, 4, 1, 5, 2).contiguous()  # x(1,16,80,2,80,2)
-        return x.view(b, c // s ** 2, h * s, w * s)  # x(1,16,160,160)
+        return x.view(b, c // s**2, h * s, w * s)  # x(1,16,160,160)
 
 
 class Concat(nn.Module):
@@ -315,7 +319,7 @@ class DetectMultiBackend(nn.Module):
                 stride, names = int(d['stride']), d['names']
         elif dnn:  # ONNX OpenCV DNN
             LOGGER.info(f'Loading {w} for ONNX OpenCV DNN inference...')
-            check_requirements(('opencv-python>=4.5.4',))
+            check_requirements(('opencv-python>=4.5.4', ))
             net = cv2.dnn.readNetFromONNX(w)
         elif onnx:  # ONNX Runtime
             LOGGER.info(f'Loading {w} for ONNX Runtime inference...')
@@ -326,7 +330,7 @@ class DetectMultiBackend(nn.Module):
             session = onnxruntime.InferenceSession(w, providers=providers)
         elif xml:  # OpenVINO
             LOGGER.info(f'Loading {w} for OpenVINO inference...')
-            check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
+            check_requirements(('openvino-dev', ))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
             import openvino.inference_engine as ie
             core = ie.IECore()
             if not Path(w).is_file():  # if not *.xml
@@ -384,9 +388,11 @@ class DetectMultiBackend(nn.Module):
                     Interpreter, load_delegate = tf.lite.Interpreter, tf.lite.experimental.load_delegate,
                 if edgetpu:  # Edge TPU https://coral.ai/software/#edgetpu-runtime
                     LOGGER.info(f'Loading {w} for TensorFlow Lite Edge TPU inference...')
-                    delegate = {'Linux': 'libedgetpu.so.1',
-                                'Darwin': 'libedgetpu.1.dylib',
-                                'Windows': 'edgetpu.dll'}[platform.system()]
+                    delegate = {
+                        'Linux': 'libedgetpu.so.1',
+                        'Darwin': 'libedgetpu.1.dylib',
+                        'Windows': 'edgetpu.dll'
+                    }[platform.system()]
                     interpreter = Interpreter(model_path=w, experimental_delegates=[load_delegate(delegate)])
                 else:  # Lite
                     LOGGER.info(f'Loading {w} for TensorFlow Lite inference...')
@@ -557,8 +563,15 @@ class AutoShape(nn.Module):
             t.append(time_sync())
 
             # Post-process
-            y = non_max_suppression(y if self.dmb else y[0], self.conf, iou_thres=self.iou, classes=self.classes,
-                                    agnostic=self.agnostic, multi_label=self.multi_label, max_det=self.max_det)  # NMS
+            y = non_max_suppression(
+                y if self.dmb else y[0],
+                self.conf,
+                iou_thres=self.iou,
+                classes=self.classes,
+                agnostic=self.agnostic,
+                multi_label=self.multi_label,
+                max_det=self.max_det
+            )  # NMS
             for i in range(n):
                 scale_coords(shape1, y[i][:, :4], shape0[i])
 
@@ -599,8 +612,13 @@ class Detections:
                         label = f'{self.names[int(cls)]} {conf:.2f}'
                         if crop:
                             file = save_dir / 'crops' / self.names[int(cls)] / self.files[i] if save else None
-                            crops.append({'box': box, 'conf': conf, 'cls': cls, 'label': label,
-                                          'im': save_one_box(box, im, file=file, save=save)})
+                            crops.append({
+                                'box': box,
+                                'conf': conf,
+                                'cls': cls,
+                                'label': label,
+                                'im': save_one_box(box, im, file=file, save=save)
+                            })
                         else:  # all others
                             annotator.box_label(box, label, color=colors(cls))
                     im = annotator.im
@@ -626,8 +644,9 @@ class Detections:
 
     def print(self):
         self.display(pprint=True)  # print results
-        LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' %
-                    self.t)
+        LOGGER.info(
+            f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' % self.t
+        )
 
     def show(self):
         self.display(show=True)  # show results

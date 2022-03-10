@@ -51,7 +51,7 @@ class FocalLoss(nn.Module):
         pred_prob = torch.sigmoid(pred)  # prob from logits
         p_t = true * pred_prob + (1 - true) * (1 - pred_prob)
         alpha_factor = true * self.alpha + (1 - true) * (1 - self.alpha)
-        modulating_factor = (1.0 - p_t) ** self.gamma
+        modulating_factor = (1.0 - p_t)**self.gamma
         loss *= alpha_factor * modulating_factor
 
         if self.reduction == 'mean':
@@ -77,7 +77,7 @@ class QFocalLoss(nn.Module):
 
         pred_prob = torch.sigmoid(pred)  # prob from logits
         alpha_factor = true * self.alpha + (1 - true) * (1 - self.alpha)
-        modulating_factor = torch.abs(true - pred_prob) ** self.gamma
+        modulating_factor = torch.abs(true - pred_prob)**self.gamma
         loss *= alpha_factor * modulating_factor
 
         if self.reduction == 'mean':
@@ -130,7 +130,7 @@ class ComputeLoss:
 
                 # Regression
                 pxy = ps[:, :2].sigmoid() * 2 - 0.5
-                pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anchors[i]
+                pwh = (ps[:, 2:4].sigmoid() * 2)**2 * anchors[i]
                 pbox = torch.cat((pxy, pwh), 1)  # predicted box
                 iou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, CIoU=True)  # iou(prediction, target)
                 lbox += (1.0 - iou).mean()  # iou loss
@@ -175,10 +175,17 @@ class ComputeLoss:
         targets = torch.cat((targets.repeat(na, 1, 1), ai[:, :, None]), 2)  # append anchor indices
 
         g = 0.5  # bias
-        off = torch.tensor([[0, 0],
-                            [1, 0], [0, 1], [-1, 0], [0, -1],  # j,k,l,m
-                            # [1, 1], [1, -1], [-1, 1], [-1, -1],  # jk,jm,lk,lm
-                            ], device=targets.device).float() * g  # offsets
+        off = torch.tensor(
+            [
+                [0, 0],
+                [1, 0],
+                [0, 1],
+                [-1, 0],
+                [0, -1],  # j,k,l,m
+                # [1, 1], [1, -1], [-1, 1], [-1, -1],  # jk,jm,lk,lm
+            ],
+            device=targets.device
+        ).float() * g  # offsets
 
         for i in range(self.nl):
             anchors = self.anchors[i]
