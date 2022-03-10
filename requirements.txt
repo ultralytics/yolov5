@@ -1,6 +1,6 @@
 # pip install -r requirements.txt
-supervisely==6.1.80
-
+supervisely==6.7.12
+supervisely[apps]==6.7.12
 # base ----------------------------------------
 PyYAML==5.4.1
 tensorboard==2.4.1
