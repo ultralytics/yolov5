@@ -253,7 +253,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # DDP mode
     if cuda and RANK != -1:
-        model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
+        model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK, static_graph=True)
 
     # Model attributes
     nl = de_parallel(model).model[-1].nl  # number of detection layers (to scale hyps)
