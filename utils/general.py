@@ -780,7 +780,7 @@ def strip_optimizer(f='best.pt', s=''):  # from utils.general import *; strip_op
     for p in x['model'].parameters():
         p.requires_grad = False
     torch.save(x, s or f)
-    mb = os.path.getsize(s or f) / 1E6  # filesize
+    mb = Path(s or f).stat().st_size / 1E6  # filesize
     LOGGER.info(f"Optimizer stripped from {f},{(' saved as %s,' % s) if s else ''} {mb:.1f}MB")
 
 
