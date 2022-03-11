@@ -136,7 +136,7 @@ def run(data,
 
         # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, half=half)
-        stride, pt, jit, onnx, engine = model.stride, model.pt, model.jit, model.onnx, model.engine
+        stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
         imgsz = check_img_size(imgsz, s=stride)  # check image size
         half = model.half  # FP16 supported on limited backends with CUDA
         if engine:
