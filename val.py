@@ -125,7 +125,6 @@ def run(data,
     training = model is not None
     if training:  # called by train.py
         device, pt, jit, engine = next(model.parameters()).device, True, False, False  # get model device, PyTorch model
-
         half &= device.type != 'cpu'  # half precision only supported on CUDA
         model.half() if half else model.float()
     else:  # called directly
@@ -136,23 +135,17 @@ def run(data,
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
         # Load model
-        model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data)
-        stride, pt, jit, onnx, engine = model.stride, model.pt, model.jit, model.onnx, model.engine
+        model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+        stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
         imgsz = check_img_size(imgsz, s=stride)  # check image size
-        half &= (pt or jit or onnx or engine) and device.type != 'cpu'  # FP16 supported on limited backends with CUDA
-        if pt or jit:
-            model.model.half() if half else model.model.float()
-        elif engine:
+        half = model.fp16  # FP16 supported on limited backends with CUDA
+        if engine:
             batch_size = model.batch_size
-            if model.trt_fp16_input != half:
-                LOGGER.info('model ' + (
-                    'requires' if model.trt_fp16_input else 'incompatible with') + ' --half. Adjusting automatically.')
-                half = model.trt_fp16_input
         else:
-            half = False
-            batch_size = 1  # export.py models default to batch-size 1
-            device = torch.device('cpu')
-            LOGGER.info(f'Forcing --batch-size 1 square inference shape(1,3,{imgsz},{imgsz}) for non-PyTorch backends')
+            device = model.device
+            if not pt or jit:
+                batch_size = 1  # export.py models default to batch-size 1
+                LOGGER.info(f'Forcing --batch-size 1 square inference (1,3,{imgsz},{imgsz}) for non-PyTorch models')
 
         # Data
         data = check_dataset(data)  # check
@@ -166,7 +159,7 @@ def run(data,
 
     # Dataloader
     if not training:
-        model.warmup(imgsz=(1 if pt else batch_size, 3, imgsz, imgsz), half=half)  # warmup
+        model.warmup(imgsz=(1 if pt else batch_size, 3, imgsz, imgsz))  # warmup
         pad = 0.0 if task in ('speed', 'benchmark') else 0.5
         rect = False if task == 'benchmark' else pt  # square inference for benchmarks
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
