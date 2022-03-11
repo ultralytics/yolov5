@@ -144,6 +144,10 @@ def run(data,
             model.model.half() if half else model.model.float()
         elif engine:
             batch_size = model.batch_size
+            if model.trt_fp16_input != half:
+                LOGGER.info('model ' + (
+                    'requires' if model.trt_fp16_input else 'incompatible with') + ' --half. Adjusting automatically.')
+                half = model.trt_fp16_input
         else:
             half = False
             batch_size = 1  # export.py models default to batch-size 1
@@ -297,7 +301,7 @@ def run(data,
             pred = anno.loadRes(pred_json)  # init predictions api
             eval = COCOeval(anno, pred, 'bbox')
             if is_coco:
-                eval.params.imgIds = [int(Path(x).stem) for x in dataloader.dataset.img_files]  # image IDs to evaluate
+                eval.params.imgIds = [int(Path(x).stem) for x in dataloader.dataset.im_files]  # image IDs to evaluate
             eval.evaluate()
             eval.accumulate()
             eval.summarize()

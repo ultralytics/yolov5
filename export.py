@@ -218,6 +218,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         builder = trt.Builder(logger)
         config = builder.create_builder_config()
         config.max_workspace_size = workspace * 1 << 30
+        # config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, workspace << 30)  # fix TRT 8.4 deprecation notice
 
         flag = (1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
         network = builder.create_network(flag)
@@ -233,9 +234,8 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         for out in outputs:
             LOGGER.info(f'{prefix}\toutput "{out.name}" with shape {out.shape} and dtype {out.dtype}')
 
-        half &= builder.platform_has_fast_fp16
-        LOGGER.info(f'{prefix} building FP{16 if half else 32} engine in {f}')
-        if half:
+        LOGGER.info(f'{prefix} building FP{16 if builder.platform_has_fast_fp16 else 32} engine in {f}')
+        if builder.platform_has_fast_fp16:
             config.set_flag(trt.BuilderFlag.FP16)
         with builder.build_engine(network, config) as engine, open(f, 'wb') as t:
             t.write(engine.serialize())

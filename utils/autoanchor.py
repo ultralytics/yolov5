@@ -125,15 +125,17 @@ def kmean_anchors(dataset='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen
     wh = wh0[(wh0 >= 2.0).any(1)]  # filter > 2 pixels
     # wh = wh * (npr.rand(wh.shape[0], 1) * 0.9 + 0.1)  # multiply by random scale 0-1
 
-    # Kmeans calculation
-    LOGGER.info(f'{PREFIX}Running kmeans for {n} anchors on {len(wh)} points...')
-    s = wh.std(0)  # sigmas for whitening
-    k = kmeans(wh / s, n, iter=30)[0] * s  # points
-    if len(k) != n:  # kmeans may return fewer points than requested if wh is insufficient or too similar
-        LOGGER.warning(f'{PREFIX}WARNING: scipy.cluster.vq.kmeans returned only {len(k)} of {n} requested points')
+    # Kmeans init
+    try:
+        LOGGER.info(f'{PREFIX}Running kmeans for {n} anchors on {len(wh)} points...')
+        assert n <= len(wh)  # apply overdetermined constraint
+        s = wh.std(0)  # sigmas for whitening
+        k = kmeans(wh / s, n, iter=30)[0] * s  # points
+        assert n == len(k)  # kmeans may return fewer points than requested if wh is insufficient or too similar
+    except Exception:
+        LOGGER.warning(f'{PREFIX}WARNING: switching strategies from kmeans to random init')
         k = np.sort(npr.rand(n * 2)).reshape(n, 2) * img_size  # random init
-    wh = torch.tensor(wh, dtype=torch.float32)  # filtered
-    wh0 = torch.tensor(wh0, dtype=torch.float32)  # unfiltered
+    wh, wh0 = (torch.tensor(x, dtype=torch.float32) for x in (wh, wh0))
     k = print_results(k, verbose=False)
 
     # Plot
