@@ -277,7 +277,7 @@ class Concat(nn.Module):
 
 class DetectMultiBackend(nn.Module):
     # YOLOv5 MultiBackend class for python inference on various backends
-    def __init__(self, weights='yolov5s.pt', device=None, dnn=False, data=None):
+    def __init__(self, weights='yolov5s.pt', device=torch.device('cpu'), dnn=False, data=None, fp16=False):
         # Usage:
         #   PyTorch:              weights = *.pt
         #   TorchScript:                    *.torchscript
@@ -297,6 +297,7 @@ class DetectMultiBackend(nn.Module):
         pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = self.model_type(w)  # get backend
         stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
         w = attempt_download(w)  # download if not local
+        fp16 &= (pt or jit or onnx or engine) and device.type != 'cpu'  # FP16
         if data:  # data.yaml path (optional)
             with open(data, errors='ignore') as f:
                 names = yaml.safe_load(f)['names']  # class names
@@ -305,11 +306,13 @@ class DetectMultiBackend(nn.Module):
             model = attempt_load(weights if isinstance(weights, list) else w, map_location=device)
             stride = max(int(model.stride.max()), 32)  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
+            model.half() if fp16 else model.float()
             self.model = model  # explicitly assign for to(), cpu(), cuda(), half()
         elif jit:  # TorchScript
             LOGGER.info(f'Loading {w} for TorchScript inference...')
             extra_files = {'config.txt': ''}  # model metadata
             model = torch.jit.load(w, _extra_files=extra_files)
+            model.half() if fp16 else model.float()
             if extra_files['config.txt']:
                 d = json.loads(extra_files['config.txt'])  # extra_files dict
                 stride, names = int(d['stride']), d['names']
@@ -338,11 +341,11 @@ class DetectMultiBackend(nn.Module):
             import tensorrt as trt  # https://developer.nvidia.com/nvidia-tensorrt-download
             check_version(trt.__version__, '7.0.0', hard=True)  # require tensorrt>=7.0.0
             Binding = namedtuple('Binding', ('name', 'dtype', 'shape', 'data', 'ptr'))
-            trt_fp16_input = False
             logger = trt.Logger(trt.Logger.INFO)
             with open(w, 'rb') as f, trt.Runtime(logger) as runtime:
                 model = runtime.deserialize_cuda_engine(f.read())
             bindings = OrderedDict()
+            fp16 = False  # default updated below
             for index in range(model.num_bindings):
                 name = model.get_binding_name(index)
                 dtype = trt.nptype(model.get_binding_dtype(index))
@@ -350,7 +353,7 @@ class DetectMultiBackend(nn.Module):
                 data = torch.from_numpy(np.empty(shape, dtype=np.dtype(dtype))).to(device)
                 bindings[name] = Binding(name, dtype, shape, data, int(data.data_ptr()))
                 if model.binding_is_input(index) and dtype == np.float16:
-                    trt_fp16_input = True
+                    fp16 = True
             binding_addrs = OrderedDict((n, d.ptr) for n, d in bindings.items())
             context = model.create_execution_context()
             batch_size = bindings['images'].shape[0]
@@ -458,11 +461,11 @@ class DetectMultiBackend(nn.Module):
         y = torch.tensor(y) if isinstance(y, np.ndarray) else y
         return (y, []) if val else y
 
-    def warmup(self, imgsz=(1, 3, 640, 640), half=False):
+    def warmup(self, imgsz=(1, 3, 640, 640)):
         # Warmup model by running inference once
         if self.pt or self.jit or self.onnx or self.engine:  # warmup types
             if isinstance(self.device, torch.device) and self.device.type != 'cpu':  # only warmup GPU models
-                im = torch.zeros(*imgsz).to(self.device).type(torch.half if half else torch.float)  # input image
+                im = torch.zeros(*imgsz).to(self.device).type(torch.half if self.fp16 else torch.float)  # input image
                 self.forward(im)  # warmup
 
     @staticmethod
