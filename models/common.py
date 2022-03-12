@@ -527,7 +527,7 @@ class AutoShape(nn.Module):
         autocast = self.amp and (p.device.type != 'cpu')  # Automatic Mixed Precision (AMP) inference
         if isinstance(imgs, torch.Tensor):  # torch
             with amp.autocast(enabled=autocast):
-                return self.model(imgs.to(p.device, dtype=p.dtype), augment, profile)  # inference
+                return self.model(imgs.to(p.device).type_as(p), augment, profile)  # inference
 
         # Pre-process
         n, imgs = (len(imgs), imgs) if isinstance(imgs, list) else (1, [imgs])  # number of images, list of images
@@ -551,7 +551,7 @@ class AutoShape(nn.Module):
         shape1 = [make_divisible(x, self.stride) if self.pt else size for x in np.array(shape1).max(0)]  # inf shape
         x = [letterbox(im, new_shape=shape1, auto=False)[0] for im in imgs]  # pad
         x = np.ascontiguousarray(np.array(x).transpose((0, 3, 1, 2)))  # stack and BHWC to BCHW
-        x = torch.tensor(x, device=p.device, dtype=p.dtype) / 255  # uint8 to fp16/32
+        x = torch.from_numpy(x).to(p.device).type_as(p) / 255  # uint8 to fp16/32
         t.append(time_sync())
 
         with amp.autocast(enabled=autocast):
