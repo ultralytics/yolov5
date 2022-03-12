@@ -49,15 +49,19 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
         batch_size=1,  # batch size
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        half=False,  # use FP16 half-precision inference
         ):
     y, t = [], time.time()
     formats = export.export_formats()
     device = select_device(device)
     for i, (name, f, suffix) in formats.iterrows():  # index, (name, file, suffix)
         try:
-            w = weights if f == '-' else export.run(weights=weights, imgsz=[imgsz], include=[f], device=device)[-1]
+            if f == '-':  # PyTorch
+                w = weights
+            else:
+                w = export.run(weights=weights, imgsz=[imgsz], include=[f], device=device, half=half)[-1]
             assert suffix in str(w), 'export failed'
-            result = val.run(data, w, batch_size, imgsz=imgsz, plots=False, device=device, task='benchmark', half=False)
+            result = val.run(data, w, batch_size, imgsz, plots=False, device=device, task='benchmark', half=half)
             metrics = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
             speeds = result[2]  # times (preprocess, inference, postprocess)
             y.append([name, metrics[3], speeds[1]])  # mAP, t_inference
@@ -82,6 +86,7 @@ def parse_opt():
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     opt = parser.parse_args()
     print_args(FILE.stem, opt)
     return opt
