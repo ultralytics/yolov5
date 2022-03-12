@@ -143,7 +143,7 @@ def run(data,
             batch_size = model.batch_size
         else:
             device = model.device
-            if not pt or jit:
+            if not (pt or jit):
                 batch_size = 1  # export.py models default to batch-size 1
                 LOGGER.info(f'Forcing --batch-size 1 square inference (1,3,{imgsz},{imgsz}) for non-PyTorch models')
 
