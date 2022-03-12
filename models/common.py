@@ -458,14 +458,15 @@ class DetectMultiBackend(nn.Module):
                     y = (y.astype(np.float32) - zero_point) * scale  # re-scale
             y[..., :4] *= [w, h, w, h]  # xywh normalized to pixels
 
-        y = torch.tensor(y) if isinstance(y, np.ndarray) else y
+        if isinstance(y, np.ndarray):
+            y = torch.tensor(y, device=self.device)
         return (y, []) if val else y
 
     def warmup(self, imgsz=(1, 3, 640, 640)):
         # Warmup model by running inference once
         if self.pt or self.jit or self.onnx or self.engine:  # warmup types
             if isinstance(self.device, torch.device) and self.device.type != 'cpu':  # only warmup GPU models
-                im = torch.zeros(*imgsz).to(self.device).type(torch.half if self.fp16 else torch.float)  # input image
+                im = torch.zeros(*imgsz, dtype=torch.half if self.fp16 else torch.float, device=self.device)  # input
                 self.forward(im)  # warmup
 
     @staticmethod

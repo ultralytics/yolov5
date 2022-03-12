@@ -87,7 +87,7 @@ def process_batch(detections, labels, iouv):
             matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
             # matches = matches[matches[:, 2].argsort()[::-1]]
             matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
-        matches = torch.Tensor(matches).to(iouv.device)
+        matches = torch.from_numpy(matches).to(iouv.device)
         correct[matches[:, 1].long()] = matches[:, 2:3] >= iouv
     return correct
 
@@ -143,7 +143,7 @@ def run(data,
             batch_size = model.batch_size
         else:
             device = model.device
-            if not pt or jit:
+            if not (pt or jit):
                 batch_size = 1  # export.py models default to batch-size 1
                 LOGGER.info(f'Forcing --batch-size 1 square inference (1,3,{imgsz},{imgsz}) for non-PyTorch models')
 
@@ -152,9 +152,10 @@ def run(data,
 
     # Configure
     model.eval()
+    cuda = device.type != 'cpu'
     is_coco = isinstance(data.get('val'), str) and data['val'].endswith('coco/val2017.txt')  # COCO dataset
     nc = 1 if single_cls else int(data['nc'])  # number of classes
-    iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
+    iouv = torch.linspace(0.5, 0.95, 10, device=device)  # iou vector for mAP@0.5:0.95
     niou = iouv.numel()
 
     # Dataloader
@@ -177,7 +178,7 @@ def run(data,
     pbar = tqdm(dataloader, desc=s, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
     for batch_i, (im, targets, paths, shapes) in enumerate(pbar):
         t1 = time_sync()
-        if pt or jit or engine:
+        if cuda:
             im = im.to(device, non_blocking=True)
             targets = targets.to(device)
         im = im.half() if half else im.float()  # uint8 to fp16/32
@@ -195,7 +196,7 @@ def run(data,
             loss += compute_loss([x.float() for x in train_out], targets)[1]  # box, obj, cls
 
         # NMS
-        targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)  # to pixels
+        targets[:, 2:] *= torch.tensor((width, height, width, height), device=device)  # to pixels
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
         t3 = time_sync()
         out = non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=single_cls)
