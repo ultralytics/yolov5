@@ -465,7 +465,7 @@ class DetectMultiBackend(nn.Module):
     def warmup(self, imgsz=(1, 3, 640, 640)):
         # Warmup model by running inference once
         if self.pt or self.jit or self.onnx or self.engine:  # warmup types
-            if isinstance(self.device, torch.device) and self.device.type != 'cpu':  # only warmup GPU models
+            if self.device.type != 'cpu':  # only warmup GPU models
                 im = torch.zeros(*imgsz, dtype=torch.half if self.fp16 else torch.float, device=self.device)  # input
                 self.forward(im)  # warmup
 
