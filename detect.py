@@ -78,7 +78,6 @@ def run(
         dnn: bool = False,
 ):
     """
-
     Args:
         weights: model path(s)
         source: file/dir/URL/glob, 0 for webcam
@@ -107,6 +106,7 @@ def run(
         half: use FP16 half-precision inference
         dnn: use OpenCV DNN for ONNX inference
     """
+    print_args()
     source = str(source)
     if not isinstance(imgsz, Sequence):
         imgsz = [imgsz]

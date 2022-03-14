@@ -3,6 +3,7 @@
 General utils
 """
 
+import inspect
 import contextlib
 import glob
 import logging
@@ -21,6 +22,7 @@ from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from subprocess import check_output
 from zipfile import ZipFile
+from typing import Optional
 
 import cv2
 import numpy as np
@@ -161,9 +163,15 @@ def methods(instance):
     return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith("__")]
 
 
-def print_args(name, opt):
-    # Print argparser arguments
-    LOGGER.info(colorstr(f'{name}: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
+def print_args(args: Optional[dict] = None, show_file=True, show_fcn=False):
+    # Print function arguments (optional args dict)
+    x = inspect.currentframe().f_back  # previous frame
+    file, _, fcn, _, _ = inspect.getframeinfo(x)
+    if args is None:  # get args automatically
+        args, _, _, frm = inspect.getargvalues(x)
+        args = {k: v for k, v in frm.items() if k in args}
+    s = (colorstr(f'{Path(file).stem}: ') if show_file else '') + (colorstr(f'{fcn}: ') if show_fcn else '')
+    LOGGER.info(s + ', '.join(f'{k}={v}' for k, v in args.items()))
 
 
 def init_seeds(seed=0):
