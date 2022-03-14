@@ -57,10 +57,10 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
     device = select_device(device)
     for i, (name, f, suffix) in formats.iterrows():  # index, (name, file, suffix)
         try:
-            if f == '-':  # PyTorch
-                w = weights
+            if f == '-':
+                w = weights  # PyTorch format
             else:
-                w = export.run(weights=weights, imgsz=[imgsz], include=[f], device=device, half=half)[-1]
+                w = export.run(weights=weights, imgsz=[imgsz], include=[f], device=device, half=half)[-1]  # all others
             assert suffix in str(w), 'export failed'
             result = val.run(data, w, batch_size, imgsz, plots=False, device=device, task='benchmark', half=half)
             metrics = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
