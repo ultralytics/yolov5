@@ -36,7 +36,7 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parent  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
-ROOT = Path(os.path.relpath(ROOT, Path.cwd())) # relative
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import val  # for end-of-epoch mAP
 from models.experimental import attempt_load
