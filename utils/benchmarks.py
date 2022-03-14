@@ -55,8 +55,10 @@ def run(weights=ROOT / 'yolov5s.pt',  # weights path
     y, t = [], time.time()
     formats = export.export_formats()
     device = select_device(device)
-    for i, (name, f, suffix) in formats.iterrows():  # index, (name, file, suffix)
+    for i, (name, f, suffix, gpu) in formats.iterrows():  # index, (name, file, suffix, gpu-capable)
         try:
+            if device.type != 'cpu':
+                assert gpu, f'{name} inference not supported on GPU'
             if f == '-':
                 w = weights  # PyTorch format
             else:
