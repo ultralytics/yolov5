@@ -80,7 +80,7 @@ def export_formats():
          ['ONNX', 'onnx', '.onnx', True],
          ['OpenVINO', 'openvino', '_openvino_model', False],
          ['TensorRT', 'engine', '.engine', True],
-         ['CoreML', 'coreml', '.mlmodel', True],
+         ['CoreML', 'coreml', '.mlmodel', False],
          ['TensorFlow SavedModel', 'saved_model', '_saved_model', True],
          ['TensorFlow GraphDef', 'pb', '.pb', True],
          ['TensorFlow Lite', 'tflite', '.tflite', False],
