@@ -170,8 +170,8 @@ def print_args(args: Optional[dict] = None, show_file=True, show_fcn=False):
     if args is None:  # get args automatically
         args, _, _, frm = inspect.getargvalues(x)
         args = {k: v for k, v in frm.items() if k in args}
-    s = (colorstr(f'{Path(file).stem}: ') if show_file else '') + (colorstr(f'{fcn}: ') if show_fcn else '')
-    LOGGER.info(s + ', '.join(f'{k}={v}' for k, v in args.items()))
+    s = (f'{Path(file).stem}: ' if show_file else '') + (f'{fcn}: ' if show_fcn else '')
+    LOGGER.info(colorstr(s) + ', '.join(f'{k}={v}' for k, v in args.items()))
 
 
 def init_seeds(seed=0):
