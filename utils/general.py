@@ -3,9 +3,9 @@
 General utils
 """
 
-import inspect
 import contextlib
 import glob
+import inspect
 import logging
 import math
 import os
@@ -21,8 +21,8 @@ from itertools import repeat
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from subprocess import check_output
-from zipfile import ZipFile
 from typing import Optional
+from zipfile import ZipFile
 
 import cv2
 import numpy as np
