@@ -18,7 +18,7 @@ import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
 from sparseml.pytorch.utils import ModuleExporter
-from sparseml.pytorch.utils.quantization import skip_onnx_input_quantize
+from sparseml.pytorch.sparsification.quantization import skip_onnx_input_quantize
 
 import models
 from models.experimental import attempt_load
