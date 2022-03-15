@@ -150,7 +150,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # .replace('.jpg', f'_{i}.jpg')  # im_[i].jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
-            gn = torch.tensor(im0.shape[1:3])[[1, 0, 1, 0]]  # normalization gain whwh
+            gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
             if len(det):
@@ -166,10 +166,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                        print(f"XYXY: {xyxy}")
-                        print(f"XYWH: {torch.tensor(xyxy).view(1, 4)}")
-                        print(f"XYWH: {xyxy2xywh(torch.tensor(xyxy).view(1, 4))}")
-                        print(f"LINE: {line}")
                         with open(txt_path + str(i) + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
