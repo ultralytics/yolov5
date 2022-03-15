@@ -543,7 +543,7 @@ class LoadImagesAndLabels(Dataset):
                 ne += ne_f
                 nc += nc_f
                 if im_file:
-                    x[im_file] = [l, shape, segments]
+                    x[im_file] = [lb, shape, segments]
                 if msg:
                     msgs.append(msg)
                 pbar.desc = f"{desc}{nf} found, {nm} missing, {ne} empty, {nc} corrupt"
@@ -823,7 +823,7 @@ class LoadImagesAndLabels(Dataset):
             if random.random() < 0.5:
                 im = F.interpolate(img[i].unsqueeze(0).float(), scale_factor=2.0, mode='bilinear', align_corners=False)[
                     0].type(img[i].type())
-                lab4 = label[i]
+                lb = label[i]
             else:
                 im = torch.cat((torch.cat((img[i], img[i + 1]), 1), torch.cat((img[i + 2], img[i + 3]), 1)), 2)
                 lb = torch.cat((label[i], label[i + 1] + ho, label[i + 2] + wo, label[i + 3] + ho + wo), 0) * s
@@ -1093,22 +1093,22 @@ def verify_image_label(args):
                 lb = np.array(lb, dtype=np.float32)
             nl = len(lb)
             if nl:
-                assert lab.shape[1] == 5, f'labels require 5 columns, {lab.shape[1]} columns detected'
-                assert (lab >= 0).all(), f'negative label values {lab[lab < 0]}'
-                assert (lab[:, 1:] <= 1).all(), f'non-normalized or out of bounds coordinates {lab[:, 1:][lab[:, 1:] > 1]}'
+                assert lb.shape[1] == 5, f'labels require 5 columns, {lab.shape[1]} columns detected'
+                assert (lb >= 0).all(), f'negative label values {lab[lab < 0]}'
+                assert (lb[:, 1:] <= 1).all(), f'non-normalized or out of bounds coordinates {lab[:, 1:][lab[:, 1:] > 1]}'
                 _, i = np.unique(lab, axis=0, return_index=True)
                 if len(i) < nl:  # duplicate row check
-                    lab = lab[i]  # remove duplicates
+                    lb = lb[i]  # remove duplicates
                     if segments:
                         segments = segments[i]
                     msg = f'{prefix}WARNING: {im_file}: {nl - len(i)} duplicate labels removed'
             else:
                 ne = 1  # label empty
-                lab = np.zeros((0, 5), dtype=np.float32)
+                lb = np.zeros((0, 5), dtype=np.float32)
         else:
             nm = 1  # label missing
-            lab = np.zeros((0, 5), dtype=np.float32)
-        return im_file, lab, shape, segments, nm, nf, ne, nc, msg
+            lb = np.zeros((0, 5), dtype=np.float32)
+        return im_file, lb, shape, segments, nm, nf, ne, nc, msg
     except Exception as e:
         nc = 1
         msg = f'{prefix}WARNING: {im_file}: ignoring corrupt image/label: {e}'
