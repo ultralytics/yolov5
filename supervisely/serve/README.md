@@ -30,7 +30,9 @@ App deploys YOLO v5 model (pretrained on COCO or custom one) as REST API service
 3. Communicate with NN in custom python script (see section <a href="#For-developers">for developers</a>)
 4. App illustrates how to use NN weights. For example: you can train model in Supervisely, download its weights and use them the way you want.
 
-Watch usage demo:
+Model serving allows to apply model to image (URL, local file, Supervisely image id) with 2 modes (full image, image ROI). Also app sources can be used as example how to use downloaded model weights outside Supervisely.
+
+**Watch usage demo:**
 
 <a data-key="sly-embeded-video-link" href="https://youtu.be/cMBhn1Erluk" data-video-code="cMBhn1Erluk">
     <img src="https://i.imgur.com/UlEMeem.png" alt="SLY_EMBEDED_VIDEO_LINK"  style="max-width:100%;">

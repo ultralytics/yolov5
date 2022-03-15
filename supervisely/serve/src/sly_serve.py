@@ -71,14 +71,9 @@ def get_custom_inference_settings(api: sly.Api, task_id, context, state, app_log
     my_app.send_response(request_id, data={"settings": default_settings_str})
 
 
-@sly.process_image_with_crop
+@sly.process_image_roi
 def inference_image_path(image_path, project_meta, context, state, app_logger):
     app_logger.debug("Input path", extra={"path": image_path})
-
-    rect = None
-    if "rectangle" in state:
-        top, left, bottom, right = state["rectangle"]
-        rect = sly.Rectangle(top, left, bottom, right)
 
     settings = state.get("settings", {})
     for key, value in default_settings.items():
@@ -90,17 +85,6 @@ def inference_image_path(image_path, project_meta, context, state, app_logger):
     augment = settings.get("augment", default_settings["augment"])
 
     image = sly.image.read(image_path)  # RGB image
-    if rect is not None:
-        canvas_rect = sly.Rectangle.from_size(image.shape[:2])
-        results = rect.crop(canvas_rect)
-        if len(results) != 1:
-            return {
-                "message": "roi rectangle out of image bounds",
-                "roi": state["rectangle"],
-                "img_size": {"height": image.shape[0], "width": image.shape[1]}
-            }
-        rect = results[0]
-        image = sly.image.crop(image, rect)
     ann_json = inference(model, half, device, imgsz, stride, image, meta,
                          conf_thres=conf_thres, iou_thres=iou_thres, augment=augment,
                          debug_visualization=debug_visualization)
