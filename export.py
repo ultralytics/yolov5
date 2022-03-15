@@ -75,18 +75,18 @@ from utils.torch_utils import select_device
 
 def export_formats():
     # YOLOv5 export formats
-    x = [['PyTorch', '-', '.pt'],
-         ['TorchScript', 'torchscript', '.torchscript'],
-         ['ONNX', 'onnx', '.onnx'],
-         ['OpenVINO', 'openvino', '_openvino_model'],
-         ['TensorRT', 'engine', '.engine'],
-         ['CoreML', 'coreml', '.mlmodel'],
-         ['TensorFlow SavedModel', 'saved_model', '_saved_model'],
-         ['TensorFlow GraphDef', 'pb', '.pb'],
-         ['TensorFlow Lite', 'tflite', '.tflite'],
-         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite'],
-         ['TensorFlow.js', 'tfjs', '_web_model']]
-    return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix'])
+    x = [['PyTorch', '-', '.pt', True],
+         ['TorchScript', 'torchscript', '.torchscript', True],
+         ['ONNX', 'onnx', '.onnx', True],
+         ['OpenVINO', 'openvino', '_openvino_model', False],
+         ['TensorRT', 'engine', '.engine', True],
+         ['CoreML', 'coreml', '.mlmodel', False],
+         ['TensorFlow SavedModel', 'saved_model', '_saved_model', True],
+         ['TensorFlow GraphDef', 'pb', '.pb', True],
+         ['TensorFlow Lite', 'tflite', '.tflite', False],
+         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False],
+         ['TensorFlow.js', 'tfjs', '_web_model', False]]
+    return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'GPU'])
 
 
 def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):
@@ -218,6 +218,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         builder = trt.Builder(logger)
         config = builder.create_builder_config()
         config.max_workspace_size = workspace * 1 << 30
+        # config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, workspace << 30)  # fix TRT 8.4 deprecation notice
 
         flag = (1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
         network = builder.create_network(flag)
@@ -233,9 +234,8 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         for out in outputs:
             LOGGER.info(f'{prefix}\toutput "{out.name}" with shape {out.shape} and dtype {out.dtype}')
 
-        half &= builder.platform_has_fast_fp16
-        LOGGER.info(f'{prefix} building FP{16 if half else 32} engine in {f}')
-        if half:
+        LOGGER.info(f'{prefix} building FP{16 if builder.platform_has_fast_fp16 else 32} engine in {f}')
+        if builder.platform_has_fast_fp16:
             config.set_flag(trt.BuilderFlag.FP16)
         with builder.build_engine(network, config) as engine, open(f, 'wb') as t:
             t.write(engine.serialize())
@@ -260,9 +260,9 @@ def export_saved_model(model, im, file, dynamic,
         batch_size, ch, *imgsz = list(im.shape)  # BCHW
 
         tf_model = TFModel(cfg=model.yaml, model=model, nc=model.nc, imgsz=imgsz)
-        im = tf.zeros((batch_size, *imgsz, 3))  # BHWC order for TensorFlow
+        im = tf.zeros((batch_size, *imgsz, ch))  # BHWC order for TensorFlow
         _ = tf_model.predict(im, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
-        inputs = tf.keras.Input(shape=(*imgsz, 3), batch_size=None if dynamic else batch_size)
+        inputs = tf.keras.Input(shape=(*imgsz, ch), batch_size=None if dynamic else batch_size)
         outputs = tf_model.predict(inputs, tf_nms, agnostic_nms, topk_per_class, topk_all, iou_thres, conf_thres)
         keras_model = tf.keras.Model(inputs=inputs, outputs=outputs)
         keras_model.trainable = False
@@ -331,7 +331,7 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
             converter.target_spec.supported_types = []
             converter.inference_input_type = tf.uint8  # or tf.int8
             converter.inference_output_type = tf.uint8  # or tf.int8
-            converter.experimental_new_quantizer = False
+            converter.experimental_new_quantizer = True
             f = str(file).replace('.pt', '-int8.tflite')
 
         tflite_model = converter.convert()
@@ -494,7 +494,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         if int8 or edgetpu:  # TFLite --int8 bug https://github.com/ultralytics/yolov5/issues/5707
             check_requirements(('flatbuffers==1.12',))  # required before `import tensorflow`
         assert not (tflite and tfjs), 'TFLite and TF.js models must be exported separately, please pass only one type.'
-        model, f[5] = export_saved_model(model, im, file, dynamic, tf_nms=nms or agnostic_nms or tfjs,
+        model, f[5] = export_saved_model(model.cpu(), im, file, dynamic, tf_nms=nms or agnostic_nms or tfjs,
                                          agnostic_nms=agnostic_nms or tfjs, topk_per_class=topk_per_class,
                                          topk_all=topk_all, conf_thres=conf_thres, iou_thres=iou_thres)  # keras model
         if pb or tfjs:  # pb prerequisite to tfjs

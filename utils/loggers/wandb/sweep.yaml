@@ -88,7 +88,7 @@ parameters:
   fl_gamma:
     distribution: uniform
     min: 0.0
-    max: 0.1
+    max: 4.0
   hsv_h:
     distribution: uniform
     min: 0.0
