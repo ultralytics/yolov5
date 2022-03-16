@@ -199,7 +199,7 @@ class LoadImages:
         imgs = []
         img0s = []
         s = ''
-        
+
         if self.count == self.nf:
             raise StopIteration
 
