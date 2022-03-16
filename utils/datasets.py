@@ -196,6 +196,7 @@ class LoadImages:
     def __next__(self):
         if self.count == self.nf:
             raise StopIteration
+            return paths, np.array(imgs), np.array(img0s), self.cap, s
 
         # return arrays
         paths = []
