@@ -102,7 +102,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         bs = len(dataset)  # batch_size
     else:
         dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, batch_size=batch_size)
-        bs = batch_size  # batch_size
+        bs = 1  # number of videos
     vid_path, vid_writer = [None] * bs, [None] * bs
 
     # Run inference
@@ -161,7 +161,8 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                        with open(txt_path + '.txt', 'a') as f:
+                        txt_path_suffix = f"_{str(i)}" if 'image' not in dataset.mode else ''
+                        with open(txt_path + txt_path_suffix + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
                     if save_img or save_crop or view_img:  # Add bbox to image
@@ -186,10 +187,11 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                 if dataset.mode == 'image':
                     cv2.imwrite(save_path, im0)
                 else:  # 'video' or 'stream'
-                    if vid_path[i] != save_path:  # new video
-                        vid_path[i] = save_path
-                        if isinstance(vid_writer[i], cv2.VideoWriter):
-                            vid_writer[i].release()  # release previous video writer
+                    # account for batch size
+                    if vid_path[0] != save_path:  # new video
+                        vid_path[0] = save_path
+                        if isinstance(vid_writer[0], cv2.VideoWriter):
+                            vid_writer[0].release()  # release previous video writer
                         if vid_cap:  # video
                             fps = vid_cap.get(cv2.CAP_PROP_FPS)
                             w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -197,8 +199,8 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                         else:  # stream
                             fps, w, h = 30, im0.shape[1], im0.shape[0]
                         save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
-                        vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                    vid_writer[i].write(im0)
+                        vid_writer[0] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                    vid_writer[0].write(im0)
 
         # Print time (inference-only)
         LOGGER.info(f'{s}Done. ({t3 - t2:.3f}s)')

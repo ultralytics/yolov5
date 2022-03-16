@@ -215,13 +215,13 @@ class LoadImages:
                     self.count += 1
                     self.cap.release()
                     if self.count == self.nf:  # last video
-                        raise StopIteration
+                        return paths, np.array(imgs), np.array(img0s), self.cap, s
+                        #raise StopIteration
                     else:
                         path = self.files[self.count]
                         self.new_video(path)
                         ret_val, img0 = self.cap.read()
 
-                img0s.append(img0)
                 self.frame += 1
                 s = (f'video {self.nf}, processed {self.frame} frames out of {self.frames}: {path}\n')
 
