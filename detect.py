@@ -142,6 +142,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             else:
                 p, im0, frame = path[i], im0s[i].copy(), getattr(dataset, 'frame', 0)
 
+            print(path)
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # .replace('.jpg', f'_{i}.jpg')  # im_[i].jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
@@ -173,7 +174,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
             # add this image results to output
-            s += f"{os.path.basename(p)} -> {cls_res}\n"
+            s += f"{i if webcam else os.path.basename(p)} -> {cls_res}\n"
             cls_res = {}
 
             # Stream results
