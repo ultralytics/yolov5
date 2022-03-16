@@ -445,7 +445,7 @@ class LoadImagesAndLabels(Dataset):
         try:
             cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
             assert cache['version'] == self.cache_version  # same version
-            assert cache['hash'] == get_hash(self.label_files + self.img_files)  # same hash
+            assert cache['hash'] == get_hash(self.label_files + self.im_files)  # same hash
         except (OSError, pickle.UnpicklingError, AssertionError) as ex:
             print(f"An exception occured: {ex}\nloading from cache...")
             cache, exists = self.cache_labels(cache_path, prefix), False  # cache
