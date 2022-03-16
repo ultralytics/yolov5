@@ -202,8 +202,6 @@ class LoadImages:
         
         if self.count == self.nf:
             raise StopIteration
-            #return paths, np.array(imgs), np.array(img0s), self.cap, s
-
 
         for _ in range(self.batch_size):
             path = self.files[self.count]
