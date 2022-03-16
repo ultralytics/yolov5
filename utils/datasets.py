@@ -194,15 +194,16 @@ class LoadImages:
         return self
 
     def __next__(self):
-        if self.count == self.nf:
-            raise StopIteration
-            return paths, np.array(imgs), np.array(img0s), self.cap, s
-
         # return arrays
         paths = []
         imgs = []
         img0s = []
         s = ''
+        
+        if self.count == self.nf:
+            raise StopIteration
+            #return paths, np.array(imgs), np.array(img0s), self.cap, s
+
 
         for _ in range(self.batch_size):
             path = self.files[self.count]
@@ -216,7 +217,10 @@ class LoadImages:
                     self.count += 1
                     self.cap.release()
                     if self.count == self.nf:  # last video
-                        return paths, np.array(imgs), np.array(img0s), self.cap, s
+                        if len(imgs) > 0:
+                            return paths, np.array(imgs), np.array(img0s), self.cap, s
+                        else:
+                            raise StopIteration
                     else:
                         path = self.files[self.count]
                         self.new_video(path)
@@ -251,7 +255,10 @@ class LoadImages:
 
             # return if at end of file list
             if self.count == self.nf:
-                return paths, np.array(imgs), np.array(img0s), self.cap, s
+                if len(imgs) > 0:
+                    return paths, np.array(imgs), np.array(img0s), self.cap, s
+                else:
+                    raise StopIteration
 
         return paths, np.array(imgs), np.array(img0s), self.cap, s
 
