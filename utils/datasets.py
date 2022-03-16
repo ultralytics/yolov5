@@ -202,6 +202,7 @@ class LoadImages:
         paths = []
         imgs = []
         img0s = []
+        s = ''
 
         for _ in range(self.batch_size):
             path = self.files[self.count]
@@ -216,7 +217,6 @@ class LoadImages:
                     self.cap.release()
                     if self.count == self.nf:  # last video
                         return paths, np.array(imgs), np.array(img0s), self.cap, s
-                        #raise StopIteration
                     else:
                         path = self.files[self.count]
                         self.new_video(path)
@@ -1093,10 +1093,10 @@ def verify_image_label(args):
                 lb = np.array(lb, dtype=np.float32)
             nl = len(lb)
             if nl:
-                assert lb.shape[1] == 5, f'labels require 5 columns, {lab.shape[1]} columns detected'
-                assert (lb >= 0).all(), f'negative label values {lab[lab < 0]}'
-                assert (lb[:, 1:] <= 1).all(), f'non-normalized or out of bounds coordinates {lab[:, 1:][lab[:, 1:] > 1]}'
-                _, i = np.unique(lab, axis=0, return_index=True)
+                assert lb.shape[1] == 5, f'labels require 5 columns, {lb.shape[1]} columns detected'
+                assert (lb >= 0).all(), f'negative label values {lb[lb < 0]}'
+                assert (lb[:, 1:] <= 1).all(), f'non-normalized or out of bounds coordinates {lb[:, 1:][lb[:, 1:] > 1]}'
+                _, i = np.unique(lb, axis=0, return_index=True)
                 if len(i) < nl:  # duplicate row check
                     lb = lb[i]  # remove duplicates
                     if segments:
