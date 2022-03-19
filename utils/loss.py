@@ -209,14 +209,12 @@ class ComputeLoss:
                 offsets = 0
 
             # Define
-            b, c = t[:, :2].long().T  # image, class
-            gxy = t[:, 2:4]  # grid xy
-            gwh = t[:, 4:6]  # grid wh
+            bc, gxy, gwh, a = torch.unsafe_chunk(t, chunks=4, dim=1)  # (image, class), grid xy, grid wh, anchors
+            a, (b, c) = a.long(), bc.long().T  # anchors, image, class
             gij = (gxy - offsets).long()
-            gi, gj = gij.T  # grid xy indices
+            gi, gj = gij.T  # grid indices
 
             # Append
-            a = t[:, 6].long()  # anchor indices
             indices.append((b, a, gj.clamp_(0, gain[3] - 1), gi.clamp_(0, gain[2] - 1)))  # image, anchor, grid indices
             tbox.append(torch.cat((gxy - gij, gwh), 1))  # box
             anch.append(anchors[a])  # anchors
