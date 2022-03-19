@@ -75,18 +75,18 @@ from utils.torch_utils import select_device
 
 def export_formats():
     # YOLOv5 export formats
-    x = [['PyTorch', '-', '.pt'],
-         ['TorchScript', 'torchscript', '.torchscript'],
-         ['ONNX', 'onnx', '.onnx'],
-         ['OpenVINO', 'openvino', '_openvino_model'],
-         ['TensorRT', 'engine', '.engine'],
-         ['CoreML', 'coreml', '.mlmodel'],
-         ['TensorFlow SavedModel', 'saved_model', '_saved_model'],
-         ['TensorFlow GraphDef', 'pb', '.pb'],
-         ['TensorFlow Lite', 'tflite', '.tflite'],
-         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite'],
-         ['TensorFlow.js', 'tfjs', '_web_model']]
-    return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix'])
+    x = [['PyTorch', '-', '.pt', True],
+         ['TorchScript', 'torchscript', '.torchscript', True],
+         ['ONNX', 'onnx', '.onnx', True],
+         ['OpenVINO', 'openvino', '_openvino_model', False],
+         ['TensorRT', 'engine', '.engine', True],
+         ['CoreML', 'coreml', '.mlmodel', False],
+         ['TensorFlow SavedModel', 'saved_model', '_saved_model', True],
+         ['TensorFlow GraphDef', 'pb', '.pb', True],
+         ['TensorFlow Lite', 'tflite', '.tflite', False],
+         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False],
+         ['TensorFlow.js', 'tfjs', '_web_model', False]]
+    return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'GPU'])
 
 
 def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):
@@ -275,7 +275,7 @@ def export_saved_model(model, im, file, dynamic,
             m = m.get_concrete_function(spec)
             frozen_func = convert_variables_to_constants_v2(m)
             tfm = tf.Module()
-            tfm.__call__ = tf.function(lambda x: frozen_func(x), [spec])
+            tfm.__call__ = tf.function(lambda x: frozen_func(x)[0], [spec])
             tfm.__call__(im)
             tf.saved_model.save(
                 tfm,
@@ -331,7 +331,7 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
             converter.target_spec.supported_types = []
             converter.inference_input_type = tf.uint8  # or tf.int8
             converter.inference_output_type = tf.uint8  # or tf.int8
-            converter.experimental_new_quantizer = False
+            converter.experimental_new_quantizer = True
             f = str(file).replace('.pt', '-int8.tflite')
 
         tflite_model = converter.convert()
@@ -494,7 +494,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         if int8 or edgetpu:  # TFLite --int8 bug https://github.com/ultralytics/yolov5/issues/5707
             check_requirements(('flatbuffers==1.12',))  # required before `import tensorflow`
         assert not (tflite and tfjs), 'TFLite and TF.js models must be exported separately, please pass only one type.'
-        model, f[5] = export_saved_model(model, im, file, dynamic, tf_nms=nms or agnostic_nms or tfjs,
+        model, f[5] = export_saved_model(model.cpu(), im, file, dynamic, tf_nms=nms or agnostic_nms or tfjs,
                                          agnostic_nms=agnostic_nms or tfjs, topk_per_class=topk_per_class,
                                          topk_all=topk_all, conf_thres=conf_thres, iou_thres=iou_thres)  # keras model
         if pb or tfjs:  # pb prerequisite to tfjs
