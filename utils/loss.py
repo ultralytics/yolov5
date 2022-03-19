@@ -210,7 +210,7 @@ class ComputeLoss:
 
             # Define
             bc, gxy, gwh, a = torch.unsafe_chunk(t, chunks=4, dim=1)  # (image, class), grid xy, grid wh, anchors
-            a, (b, c) = a.long(), bc.long().T  # anchors, image, class
+            a, (b, c) = a.long().view(-1), bc.long().T  # anchors, image, class
             gij = (gxy - offsets).long()
             gi, gj = gij.T  # grid indices
 
