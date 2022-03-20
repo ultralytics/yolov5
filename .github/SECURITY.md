@@ -1,6 +1,6 @@
 # Security Policy
 
-We aim to make YOLOv5 🚀 as secure as possible! If you find any potential vulnerabilities or if you have any concerns please let us know.
+We aim to make YOLOv5 🚀 as secure as possible! If you find potential vulnerabilities or have any concerns please let us know so we can investigate and take corrective action if needed.
 
 ### Reporting a Vulnerability
 
