@@ -245,7 +245,7 @@ class LoadImages:
 
             # Padded resize
             img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
-            
+
             # check shapes are the same for each image in batch
             if i == 0:
                 self.img_shape = img.shape
@@ -254,7 +254,7 @@ class LoadImages:
                     s = f"Size of image {path} does not match the other images in batch\n"
                     self.count = self.nf
                     return paths, np.array(imgs), np.array(img0s), self.cap, s
-                    
+
             # Convert
             img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
             img = np.ascontiguousarray(img)
