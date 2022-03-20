@@ -7,6 +7,7 @@ import math
 import os
 from copy import copy
 from pathlib import Path
+from urllib.error import URLError
 
 import cv2
 import matplotlib
@@ -55,11 +56,13 @@ def check_pil_font(font=FONT, size=10):
     try:
         return ImageFont.truetype(str(font) if font.exists() else font.name, size)
     except Exception:  # download if missing
-        check_font(font)
         try:
+            check_font(font)
             return ImageFont.truetype(str(font), size)
         except TypeError:
             check_requirements('Pillow>=8.4.0')  # known issue https://github.com/ultralytics/yolov5/issues/5374
+        except URLError:  # not online
+            return ImageFont.load_default()
 
 
 class Annotator:
