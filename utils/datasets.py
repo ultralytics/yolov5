@@ -15,6 +15,7 @@ from itertools import repeat
 from multiprocessing.pool import Pool, ThreadPool
 from pathlib import Path
 from threading import Thread
+from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import cv2
@@ -35,6 +36,7 @@ from utils.torch_utils import torch_distributed_zero_first
 HELP_URL = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 IMG_FORMATS = 'bmp', 'dng', 'jpeg', 'jpg', 'mpo', 'png', 'tif', 'tiff', 'webp'  # include image suffixes
 VID_FORMATS = 'asf', 'avi', 'gif', 'm4v', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'ts', 'wmv'  # include video suffixes
+BAR_FORMAT = '{l_bar}{bar:10}{r_bar}{bar:-10b}'  # tqdm bar format
 
 # Get orientation exif tag
 for orientation in ExifTags.TAGS.keys():
@@ -300,7 +302,7 @@ class LoadStreams:
         for i, s in enumerate(sources):  # index, source
             # Start thread to read frames from video stream
             st = f'{i + 1}/{n}: {s}... '
-            if 'youtube.com/' in s or 'youtu.be/' in s:  # if source is YouTube video
+            if urlparse(s).hostname in ('youtube.com', 'youtu.be'):  # if source is YouTube video
                 check_requirements(('pafy', 'youtube_dl==2020.12.2'))
                 import pafy
                 s = pafy.new(s).getbest(preftype="mp4").url  # YouTube URL
@@ -427,7 +429,7 @@ class LoadImagesAndLabels(Dataset):
         nf, nm, ne, nc, n = cache.pop('results')  # found, missing, empty, corrupt, total
         if exists:
             d = f"Scanning '{cache_path}' images and labels... {nf} found, {nm} missing, {ne} empty, {nc} corrupt"
-            tqdm(None, desc=prefix + d, total=n, initial=n)  # display cache results
+            tqdm(None, desc=prefix + d, total=n, initial=n, bar_format=BAR_FORMAT)  # display cache results
             if cache['msgs']:
                 LOGGER.info('\n'.join(cache['msgs']))  # display warnings
         assert nf > 0 or not augment, f'{prefix}No labels in {cache_path}. Can not train without labels. See {HELP_URL}'
@@ -492,7 +494,7 @@ class LoadImagesAndLabels(Dataset):
             self.im_hw0, self.im_hw = [None] * n, [None] * n
             fcn = self.cache_images_to_disk if cache_images == 'disk' else self.load_image
             results = ThreadPool(NUM_THREADS).imap(fcn, range(n))
-            pbar = tqdm(enumerate(results), total=n)
+            pbar = tqdm(enumerate(results), total=n, bar_format=BAR_FORMAT)
             for i, x in pbar:
                 if cache_images == 'disk':
                     gb += self.npy_files[i].stat().st_size
@@ -509,7 +511,7 @@ class LoadImagesAndLabels(Dataset):
         desc = f"{prefix}Scanning '{path.parent / path.stem}' images and labels..."
         with Pool(NUM_THREADS) as pool:
             pbar = tqdm(pool.imap(verify_image_label, zip(self.im_files, self.label_files, repeat(prefix))),
-                        desc=desc, total=len(self.im_files))
+                        desc=desc, total=len(self.im_files), bar_format=BAR_FORMAT)
             for im_file, lb, shape, segments, nm_f, nf_f, ne_f, nc_f, msg in pbar:
                 nm += nm_f
                 nf += nf_f
