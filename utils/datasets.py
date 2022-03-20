@@ -255,7 +255,6 @@ class LoadImages:
                     self.count = self.nf
                     return paths, np.array(imgs), np.array(img0s), self.cap, s
                     
-
             # Convert
             img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
             img = np.ascontiguousarray(img)
