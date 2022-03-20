@@ -56,7 +56,7 @@ class Loggers():
         if not wandb:
             prefix = colorstr('Weights & Biases: ')
             s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs (RECOMMENDED)"
-            print(emojis(s))
+            self.logger.info(emojis(s))
 
         # TensorBoard
         s = self.save_dir
