@@ -176,6 +176,7 @@ class LoadImages:
 
         self.img_size = img_size
         self.stride = stride
+        self.img_shape = None
         self.batch_size = batch_size
         self.files = images + videos
         self.nf = ni + nv  # number of files
@@ -203,7 +204,7 @@ class LoadImages:
         if self.count == self.nf:
             raise StopIteration
 
-        for _ in range(self.batch_size):
+        for i in range(self.batch_size):
             path = self.files[self.count]
             paths.append(path)
 
@@ -244,6 +245,16 @@ class LoadImages:
 
             # Padded resize
             img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
+            
+            # check shapes are the same for each image in batch
+            if i == 0:
+                self.img_shape = img.shape
+            else:
+                if self.img_shape != img.shape and self.batch_size > 1:
+                    s = f"Size of image {path} does not match the other images in batch\n"
+                    self.count = self.nf
+                    return paths, np.array(imgs), np.array(img0s), self.cap, s
+                    
 
             # Convert
             img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
