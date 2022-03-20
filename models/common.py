@@ -31,7 +31,7 @@ from utils.torch_utils import copy_attr, time_sync
 def autopad(k, p=None):  # kernel, padding
     # Pad to 'same'
     if p is None:
-        p = k // 2 if isinstance(k, int) else [x // 2 for x in k]  # auto-pad
+        p = k // 2 if isinstance(k, int) else (x // 2 for x in k)  # auto-pad
     return p
 
 
@@ -133,7 +133,7 @@ class C3(nn.Module):
         self.cv2 = Conv(c1, c_, 1, 1)
         self.cv3 = Conv(2 * c_, c2, 1)  # act=FReLU(c2)
         self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)))
-        # self.m = nn.Sequential(*[CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)])
+        # self.m = nn.Sequential(*(CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)))
 
     def forward(self, x):
         return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))
@@ -194,7 +194,7 @@ class SPPF(nn.Module):
             warnings.simplefilter('ignore')  # suppress torch 1.9.0 max_pool2d() warning
             y1 = self.m(x)
             y2 = self.m(y1)
-            return self.cv2(torch.cat([x, y1, y2, self.m(y2)], 1))
+            return self.cv2(torch.cat((x, y1, y2, self.m(y2)), 1))
 
 
 class Focus(nn.Module):
@@ -205,7 +205,7 @@ class Focus(nn.Module):
         # self.contract = Contract(gain=2)
 
     def forward(self, x):  # x(b,c,w,h) -> y(b,4c,w/2,h/2)
-        return self.conv(torch.cat([x[..., ::2, ::2], x[..., 1::2, ::2], x[..., ::2, 1::2], x[..., 1::2, 1::2]], 1))
+        return self.conv(torch.cat((x[..., ::2, ::2], x[..., 1::2, ::2], x[..., ::2, 1::2], x[..., 1::2, 1::2]), 1))
         # return self.conv(self.contract(x))
 
 
@@ -219,7 +219,7 @@ class GhostConv(nn.Module):
 
     def forward(self, x):
         y = self.cv1(x)
-        return torch.cat([y, self.cv2(y)], 1)
+        return torch.cat((y, self.cv2(y)), 1)
 
 
 class GhostBottleneck(nn.Module):
