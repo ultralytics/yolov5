@@ -2,11 +2,15 @@ import argparse
 
 from wandb_utils import WandbLogger
 
+from utils.general import LOGGER
+
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
 
 def create_dataset_artifact(opt):
     logger = WandbLogger(opt, None, job_type='Dataset Creation')  # TODO: return value unused
+    if not logger.wandb:
+        LOGGER.info("install wandb using `pip install wandb` to log the dataset")
 
 
 if __name__ == '__main__':
