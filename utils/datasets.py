@@ -240,7 +240,7 @@ class LoadImages:
         self.frame = 0
         self.cap = cv2.VideoCapture(path)
         self.frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.fps = self.cap.get(cv2.CAP_PROP_FPS)
+        
 
     def __len__(self):
         return self.nf  # number of files
