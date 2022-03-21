@@ -194,11 +194,7 @@ class LoadImages:
         return self
 
     def __next__(self):
-        self.timestamp_ms= self.cap.get(cv2.CAP_PROP_POS_MSEC)
-        self.timestamp_ms_disp= self.timestamp_ms % 1000
-        self.timestamp_sec=int((self.timestamp_ms/1000)%60)
-        self.timestamp_min=int((self.timestamp_ms/(1000*60))%60)
-        self.timestamp_string = f"{self.timestamp_min:.2f}:{self.timestamp_sec:.2f}:{self.timestamp_ms_disp:.2f}"
+        self.timestamp_string = ''
         if self.count == self.nf:
             raise StopIteration
         path = self.files[self.count]
@@ -207,6 +203,12 @@ class LoadImages:
             # Read video
             self.mode = 'video'
             ret_val, img0 = self.cap.read()
+            self.timestamp_ms= self.cap.get(cv2.CAP_PROP_POS_MSEC)
+            self.timestamp_ms_disp= self.timestamp_ms % 1000
+            self.timestamp_sec=int((self.timestamp_ms/1000)%60)
+            self.timestamp_min=int((self.timestamp_ms/(1000*60))%60)
+            self.timestamp_string = f"{self.timestamp_min:.2f}:{self.timestamp_sec:.2f}:{self.timestamp_ms_disp:.2f}"
+
             while not ret_val:
                 self.count += 1
                 self.cap.release()
