@@ -157,7 +157,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     n = (det[:, -1] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
                     n_t += n.item()
-                    
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file

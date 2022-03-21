@@ -198,7 +198,7 @@ class LoadImages:
         self.timestamp_ms_disp= self.timestamp_ms % 1000
         self.timestamp_sec=int((self.timestamp_ms/1000)%60)
         self.timestamp_min=int((self.timestamp_ms/(1000*60))%60)
-        self.timestamp_string = "{:.2f}:{:.2f}:{:.2f}".format(self.timestamp_min, self.timestamp_sec, self.timestamp_ms_disp)
+        self.timestamp_string = f"{self.timestamp_min:.2f}:{self.timestamp_sec:.2f}:{self.timestamp_ms_disp:.2f}"
         if self.count == self.nf:
             raise StopIteration
         path = self.files[self.count]
