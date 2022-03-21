@@ -189,6 +189,11 @@ class LoadImages:  # for inference
         return self
 
     def __next__(self):
+        self.timestamp_ms= self.cap.get(cv2.CAP_PROP_POS_MSEC)
+        self.timestamp_ms_disp= self.timestamp_ms % 1000
+        self.timestamp_sec=int((self.timestamp_ms/1000)%60)
+        self.timestamp_min=int((self.timestamp_ms/(1000*60))%60)
+        self.timestamp_string = "{:.2f}:{:.2f}:{:.2f}".format(self.timestamp_min, self.timestamp_sec, self.timestamp_ms_disp)
         if self.count == self.nf:
             raise StopIteration
         path = self.files[self.count]
@@ -205,7 +210,7 @@ class LoadImages:  # for inference
                 else:
                     path = self.files[self.count]
                     self.new_video(path)
-                    ret_val, img0 = self.cap.read()
+                    ret_val, img0 = self.cap.read()                    
 
             self.frame += 1
             print(f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: ', end='')
@@ -230,6 +235,7 @@ class LoadImages:  # for inference
         self.frame = 0
         self.cap = cv2.VideoCapture(path)
         self.frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.fps = self.cap.get(cv2.CAP_PROP_FPS)
 
     def __len__(self):
         return self.nf  # number of files
