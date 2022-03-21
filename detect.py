@@ -73,7 +73,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         hide_labels=False,  # hide labels
         hide_conf=False,  # hide confidences
         half=False,  # use FP16 half-precision inference
-        timestamp = False,   #display time when an object is detected.
+        timestamp=False,  # display time when an object is detected.
         dnn=False,  # use OpenCV DNN for ONNX inference
         ):
     source = str(source)
@@ -109,7 +109,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     model.warmup(imgsz=(1 if pt else bs, 3, *imgsz))  # warmup
     dt, seen = [0.0, 0.0, 0.0], 0
     for path, im, im0s, vid_cap,s in dataset:
-        n_t =  0
+        n_t = 0
         t1 = time_sync()
         im = torch.from_numpy(im).to(device)
         im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -242,7 +242,7 @@ def parse_opt():
     parser.add_argument('--hide-labels', default=False, action='store_true', help='hide labels')
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
-    parser.add_argument('--timestamp',default = False, action='store_true', help='display Timestamp of detection events(min,sec,ms )')
+    parser.add_argument('--timestamp',default=False, action='store_true', help='display Timestamp of detection events(min,sec,ms )')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand

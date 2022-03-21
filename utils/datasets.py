@@ -203,10 +203,10 @@ class LoadImages:
             # Read video
             self.mode = 'video'
             ret_val, img0 = self.cap.read()
-            self.timestamp_ms= self.cap.get(cv2.CAP_PROP_POS_MSEC)
-            self.timestamp_ms_disp= self.timestamp_ms % 1000
-            self.timestamp_sec=int((self.timestamp_ms/1000)%60)
-            self.timestamp_min=int((self.timestamp_ms/(1000*60))%60)
+            self.timestamp_ms = self.cap.get(cv2.CAP_PROP_POS_MSEC)
+            self.timestamp_ms_disp = self.timestamp_ms % 1000
+            self.timestamp_sec = int((self.timestamp_ms / 1000) % 60)
+            self.timestamp_min = int((self.timestamp_ms / (1000 * 60)) % 60)
             self.timestamp_string = f"{self.timestamp_min:.2f}:{self.timestamp_sec:.2f}:{self.timestamp_ms_disp:.2f}"
 
             while not ret_val:
@@ -242,7 +242,6 @@ class LoadImages:
         self.frame = 0
         self.cap = cv2.VideoCapture(path)
         self.frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
 
     def __len__(self):
         return self.nf  # number of files
