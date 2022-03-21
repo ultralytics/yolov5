@@ -73,7 +73,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         hide_labels=False,  # hide labels
         hide_conf=False,  # hide confidences
         half=False,  # use FP16 half-precision inference
-        timestamp = False,   #display time when an object is detected. 
+        timestamp = False,   #display time when an object is detected.
         dnn=False,  # use OpenCV DNN for ONNX inference
         ):
     source = str(source)
@@ -133,7 +133,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         # pred = utils.general.apply_classifier(pred, classifier_model, im, im0s)
 
         # Process predictions
-        for i, det in enumerate(pred):  # per image          
+        for i, det in enumerate(pred):  # per image
             seen += 1
             if webcam:  # batch_size >= 1
                 p, im0, frame = path[i], im0s[i].copy(), dataset.count
@@ -151,7 +151,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
-                
+
                 # Print results
                 for c in det[:, -1].unique():
                     n = (det[:, -1] == c).sum()  # detections per class
@@ -174,7 +174,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
 
             # Print time (inference-only)
             print(f'{s}Done. ({t3 - t2:.3f}s)')
-            if (timestamp and n_t != 0):                
+            if (timestamp and n_t != 0):
                 print(dataset.timestamp_string)
             "show image"
             # Stream results
