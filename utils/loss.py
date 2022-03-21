@@ -141,7 +141,7 @@ class ComputeLoss:
                 # Objectness
                 iou = iou.detach().clamp(0).type(tobj.dtype)
                 if self.sort_obj_iou:
-                    j = torch.argsort(iou)
+                    j = iou.argsort()
                     b, a, gj, gi, iou = b[j], a[j], gj[j], gi[j], iou[j]
                 if self.gr < 1:
                     iou = (1.0 - self.gr) + self.gr * iou
