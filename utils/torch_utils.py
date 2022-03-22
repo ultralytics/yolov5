@@ -11,6 +11,7 @@ import time
 import warnings
 from contextlib import contextmanager
 from copy import deepcopy
+from pathlib import Path
 
 import torch
 import torch.distributed as dist
@@ -229,7 +230,7 @@ def model_info(model, verbose=False, img_size=640):
     except (ImportError, Exception):
         fs = ''
 
-    name = model.yaml_file.rstrip('.yaml').replace('yolov5', 'YOLOv5') if hasattr(model, 'yaml_file') else 'Model'
+    name = Path(model.yaml_file).stem.replace('yolov5', 'YOLOv5') if hasattr(model, 'yaml_file') else 'Model'
     LOGGER.info(f"{name} summary: {len(list(model.modules()))} layers, {n_p} parameters, {n_g} gradients{fs}")
 
 
