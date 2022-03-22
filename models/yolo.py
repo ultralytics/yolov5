@@ -77,7 +77,7 @@ class Detect(nn.Module):
         else:
             yv, xv = torch.meshgrid(torch.arange(ny, device=d), torch.arange(nx, device=d))
         grid = torch.stack((xv, yv), 2).expand(shape).float()
-        anchor_grid = (self.anchors[i].clone() * self.stride[i]).view((1, self.na, 1, 1, 2)).expand(shape).float()
+        anchor_grid = (self.anchors[i] * self.stride[i]).view((1, self.na, 1, 1, 2)).expand(shape).float()
         return grid, anchor_grid
 
 
