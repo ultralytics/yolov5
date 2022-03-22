@@ -121,7 +121,7 @@ class BottleneckCSP(nn.Module):
     def forward(self, x):
         y1 = self.cv3(self.m(self.cv1(x)))
         y2 = self.cv2(x)
-        return self.cv4(self.act(self.bn(torch.cat((y1, y2), dim=1))))
+        return self.cv4(self.act(self.bn(torch.cat((y1, y2), 1))))
 
 
 class C3(nn.Module):
@@ -136,7 +136,7 @@ class C3(nn.Module):
         # self.m = nn.Sequential(*(CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)))
 
     def forward(self, x):
-        return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))
+        return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), 1))
 
 
 class C3TR(C3):
@@ -527,7 +527,7 @@ class AutoShape(nn.Module):
         p = next(self.model.parameters()) if self.pt else torch.zeros(1)  # for device and type
         autocast = self.amp and (p.device.type != 'cpu')  # Automatic Mixed Precision (AMP) inference
         if isinstance(imgs, torch.Tensor):  # torch
-            with amp.autocast(enabled=autocast):
+            with amp.autocast(autocast):
                 return self.model(imgs.to(p.device).type_as(p), augment, profile)  # inference
 
         # Pre-process
@@ -550,19 +550,19 @@ class AutoShape(nn.Module):
             shape1.append([y * g for y in s])
             imgs[i] = im if im.data.contiguous else np.ascontiguousarray(im)  # update
         shape1 = [make_divisible(x, self.stride) if self.pt else size for x in np.array(shape1).max(0)]  # inf shape
-        x = [letterbox(im, new_shape=shape1, auto=False)[0] for im in imgs]  # pad
+        x = [letterbox(im, shape1, auto=False)[0] for im in imgs]  # pad
         x = np.ascontiguousarray(np.array(x).transpose((0, 3, 1, 2)))  # stack and BHWC to BCHW
         x = torch.from_numpy(x).to(p.device).type_as(p) / 255  # uint8 to fp16/32
         t.append(time_sync())
 
-        with amp.autocast(enabled=autocast):
+        with amp.autocast(autocast):
             # Inference
             y = self.model(x, augment, profile)  # forward
             t.append(time_sync())
 
             # Post-process
-            y = non_max_suppression(y if self.dmb else y[0], self.conf, iou_thres=self.iou, classes=self.classes,
-                                    agnostic=self.agnostic, multi_label=self.multi_label, max_det=self.max_det)  # NMS
+            y = non_max_suppression(y if self.dmb else y[0], self.conf, self.iou, self.classes, self.agnostic,
+                                    self.multi_label, max_det=self.max_det)  # NMS
             for i in range(n):
                 scale_coords(shape1, y[i][:, :4], shape0[i])
 
