@@ -24,6 +24,7 @@ download: |
   from tqdm import tqdm
   from utils.general import np, pd, Path, download, xyxy2xywh
 
+
   # Download
   dir = Path(yaml['path'])  # dataset root dir
   parent = Path(dir.parent)  # download dir
