@@ -904,5 +904,20 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     return path
 
 
-# Variables
+# OpenCV Chinese-friendly functions ------------------------------------------------------------------------------------
+def imread(path):
+    return cv2.imdecode(np.fromfile(path, np.uint8), cv2.IMREAD_COLOR)
+
+
+def imwrite(path, im):
+    try:
+        cv2.imencode(Path(path).suffix, im)[1].tofile(path)
+        return True
+    except Exception:
+        return False
+
+
+cv2.imread, cv2.imwrite = imread, imwrite  # redefine
+
+# Variables ------------------------------------------------------------------------------------------------------------
 NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size for tqdm
