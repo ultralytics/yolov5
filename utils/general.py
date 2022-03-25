@@ -921,7 +921,7 @@ def imwrite(path, im):
 
 
 def imshow(path, im):
-    imshow_(path.encode().decode('utf-8', 'ignore'), im)
+    imshow_(path.encode('unicode_escape').decode(), im)
 
 
 cv2.imread, cv2.imwrite, cv2.imshow = imread, imwrite, imshow  # redefine
