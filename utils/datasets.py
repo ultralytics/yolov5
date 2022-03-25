@@ -168,7 +168,7 @@ class LoadImages:
         if '*' in p:
             files = sorted(glob.glob(p, recursive=True))  # glob
         elif os.path.isdir(p):
-            files = sorted(glob.glob(os.path.join(p, '*.*')))  # dir
+            files = sorted(glob.glob(os.path.join(glob.escape(p), '*.*')))  # dir
         elif os.path.isfile(p):
             files = [p]  # files
         else:
