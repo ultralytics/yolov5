@@ -904,5 +904,12 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     return path
 
 
-# Variables
+# OpenCV Chinese-friendly functions ------------------------------------------------------------------------------------
+def imshow(p, im):
+    cv2.imshow(p.encode('string_escape') if is_chinese(p) else p, im)
+
+
+cv2.imshow = imshow
+
+# Variables ------------------------------------------------------------------------------------------------------------
 NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size for tqdm
