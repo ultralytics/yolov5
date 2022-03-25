@@ -919,11 +919,11 @@ def imwrite(path, im):
     except Exception:
         return False
 
-      
+
 def imshow(path, im):
     imshow_(path.encode().decode('utf-8', 'ignore'), im)
 
-    
+
 cv2.imread, cv2.imwrite, cv2.imshow = imread, imwrite, imshow  # redefine
 
 # Variables ------------------------------------------------------------------------------------------------------------
