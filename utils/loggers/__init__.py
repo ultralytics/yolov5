@@ -148,6 +148,9 @@ class Loggers():
 
         if self.tb:
             import cv2
+            import numpy as np
+
+            cv2.imread = lambda x: cv2.imdecode(np.fromfile(x, np.uint8), cv2.IMREAD_COLOR)  # remap for Chinese files
             for f in files:
                 self.tb.add_image(f.stem, cv2.imread(str(f))[..., ::-1], epoch, dataformats='HWC')
 
