@@ -130,6 +130,8 @@ if __name__ == '__main__':
     import cv2
     import numpy as np
     from PIL import Image
+    from utils.general import imread
+    cv2.imread = imread
 
     imgs = ['data/images/zidane.jpg',  # filename
             Path('data/images/zidane.jpg'),  # Path

@@ -903,6 +903,19 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
         path.mkdir(parents=True, exist_ok=True)  # make directory
     return path
 
+# For file paths containing non-ASCII characters
+
+def imread(path):
+    return cv2.imdecode(np.fromfile(path, np.uint8), cv2.IMREAD_COLOR)
+
+
+def imwrite(path, img):
+    try:
+        cv2.imencode(Path(path).suffix, img)[1].tofile(path)
+        return True
+    except:
+        return False
+
 
 # Variables
 NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size for tqdm
