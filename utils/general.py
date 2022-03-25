@@ -906,7 +906,7 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
 
 # OpenCV Chinese-friendly functions ------------------------------------------------------------------------------------
 def imshow(p, im):
-    cv2.imshow(p.encode('unicode_escape'), im)
+    cv2.imshow(str(p).encode().decode('utf-8', 'ignore'), im)
 
 
 cv2.imshow = imshow
