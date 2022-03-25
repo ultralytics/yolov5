@@ -149,7 +149,7 @@ class Loggers():
         if self.tb:
             import cv2
             cv2.imread = imread
-            
+
             for f in files:
                 self.tb.add_image(f.stem, cv2.imread(str(f))[..., ::-1], epoch, dataformats='HWC')
 
