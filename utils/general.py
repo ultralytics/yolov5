@@ -903,19 +903,28 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
         path.mkdir(parents=True, exist_ok=True)  # make directory
     return path
 
-# For file paths containing non-ASCII characters
+
+# OpenCV Chinese-friendly functions ------------------------------------------------------------------------------------
+imshow_ = cv2.imshow  # copy to avoid recursion
+
 
 def imread(path):
     return cv2.imdecode(np.fromfile(path, np.uint8), cv2.IMREAD_COLOR)
 
 
-def imwrite(path, img):
+def imwrite(path, im):
     try:
-        cv2.imencode(Path(path).suffix, img)[1].tofile(path)
+        cv2.imencode(Path(path).suffix, im)[1].tofile(path)
         return True
-    except:
+    except Exception:
         return False
 
 
-# Variables
+def imshow(path, im):
+    imshow_(path, im)
+
+
+cv2.imread, cv2.imwrite, cv2.imshow = imread, imwrite, imshow  # redefine
+
+# Variables ------------------------------------------------------------------------------------------------------------
 NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size for tqdm
