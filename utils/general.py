@@ -905,7 +905,7 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
 
 
 # OpenCV Chinese-friendly functions ------------------------------------------------------------------------------------
-imshow_ = cv2.imshow  # copy to avoid recursion
+imshow_ = cv2.imshow  # copy to avoid recursion errors
 
 
 def imshow(path, im):
