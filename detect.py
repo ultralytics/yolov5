@@ -29,7 +29,6 @@ import os
 import sys
 from pathlib import Path
 
-import cv2
 import torch
 import torch.backends.cudnn as cudnn
 
@@ -41,9 +40,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import DetectMultiBackend
 from utils.datasets import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
-from utils.general import (LOGGER, check_file, check_img_size, check_imshow, check_requirements, colorstr,
-                           increment_path, is_chinese, non_max_suppression, print_args, scale_coords, strip_optimizer,
-                           xyxy2xywh)
+from utils.general import (LOGGER, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
+                           increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, time_sync
 
@@ -174,7 +172,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             # Stream results
             im0 = annotator.result()
             if view_img:
-                cv2.imshow(str(str(p).encode("unicode_escape")), im0) if is_chinese(str(p)) else cv2.imshow(str(p), im0)
+                cv2.imshow(str(p), im0)
                 cv2.waitKey(1)  # 1 millisecond
 
             # Save results (image with detections)
