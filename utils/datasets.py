@@ -402,7 +402,7 @@ class LoadImagesAndLabels(Dataset):
             for p in path if isinstance(path, list) else [path]:
                 p = Path(p)  # os-agnostic
                 if p.is_dir():  # dir
-                    f += glob.glob(str(p / '**' / '*.*'), recursive=True)
+                    f += glob.glob(str(Path(glob.escape(p)) / '**' / '*.*'), recursive=True)
                     # f = list(p.rglob('*.*'))  # pathlib
                 elif p.is_file():  # file
                     with open(p) as t:
@@ -826,7 +826,7 @@ def flatten_recursive(path=DATASETS_DIR / 'coco128'):
     # Flatten a recursive directory by bringing all files to top level
     new_path = Path(str(path) + '_flat')
     create_folder(new_path)
-    for file in tqdm(glob.glob(str(Path(path)) + '/**/*.*', recursive=True)):
+    for file in tqdm(str(Path(glob.escape(path)) / '**' / '*.*'), recursive=True):
         shutil.copyfile(file, new_path / Path(file).name)
 
 

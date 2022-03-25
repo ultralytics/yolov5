@@ -185,7 +185,7 @@ def intersect_dicts(da, db, exclude=()):
 
 def get_latest_run(search_dir='.'):
     # Return path to most recent 'last.pt' in /runs (i.e. to --resume from)
-    last_list = glob.glob(f'{search_dir}/**/last*.pt', recursive=True)
+    last_list = glob.glob(str(Path(glob.escape(search_dir)) / '**' / 'last*.pt'), recursive=True)
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
@@ -402,7 +402,7 @@ def check_file(file, suffix=''):
     else:  # search
         files = []
         for d in 'data', 'models', 'utils':  # search directories
-            files.extend(glob.glob(str(ROOT / d / '**' / file), recursive=True))  # find file
+            files.extend(glob.glob(str(Path(glob.escape(ROOT / d)) / '**' / glob.escape(file)), recursive=True))  # find file
         assert len(files), f'File not found: {file}'  # assert file was found
         assert len(files) == 1, f"Multiple files match '{file}', specify exact path: {files}"  # assert unique
         return files[0]  # return file
@@ -894,7 +894,8 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     path = Path(path)  # os-agnostic
     if path.exists() and not exist_ok:
         path, suffix = (path.with_suffix(''), path.suffix) if path.is_file() else (path, '')
-        dirs = glob.glob(f"{path}{sep}*")  # similar paths
+        escaped = glob.escape(f"{path}{sep}")
+        dirs = glob.glob(f"{escaped}*")  # similar paths
         matches = [re.search(rf"%s{sep}(\d+)" % path.stem, d) for d in dirs]
         i = [int(m.groups()[0]) for m in matches if m]  # indices
         n = max(i) + 1 if i else 2  # increment number
