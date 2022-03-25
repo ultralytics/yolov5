@@ -19,6 +19,7 @@ if str(ROOT) not in sys.path:
 
 from models.common import *
 from models.experimental import *
+from utils.activations import replace_activations
 from utils.autoanchor import check_anchor_order
 from utils.general import LOGGER, check_version, check_yaml, make_divisible, print_args
 from utils.plots import feature_visualization
@@ -33,6 +34,7 @@ except ImportError:
 class Detect(nn.Module):
     stride = None  # strides computed during build
     onnx_dynamic = False  # ONNX export parameter
+    export = True  # onnx export
 
     def __init__(self, nc=80, anchors=(), ch=(), inplace=True):  # detection layer
         super().__init__()
@@ -53,7 +55,7 @@ class Detect(nn.Module):
             bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
             x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
-            if not self.training:  # inference
+            if not self.training and self.export:  # inference
                 if self.onnx_dynamic or self.grid[i].shape[2:4] != x[i].shape[2:4]:
                     self.grid[i], self.anchor_grid[i] = self._make_grid(nx, ny, i)
 
@@ -67,7 +69,7 @@ class Detect(nn.Module):
                     y = torch.cat((xy, wh, y[..., 4:]), -1)
                 z.append(y.view(bs, -1, self.no))
 
-        return x if self.training else (torch.cat(z, 1), x)
+        return x if self.training or not self.export else (torch.cat(z, 1), x)
 
     def _make_grid(self, nx=20, ny=20, i=0):
         d = self.anchors[i].device
@@ -291,7 +293,15 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         if i == 0:
             ch = []
         ch.append(c2)
-    return nn.Sequential(*layers), sorted(save)
+
+    model = nn.Sequential(*layers)
+
+    # override all activations in model if provided in config
+    if 'act' in d:
+        LOGGER.info(f'overriding activations in model to {d["act"]}')
+        replace_activations(model, d["act"])
+
+    return model, sorted(save)
 
 
 if __name__ == '__main__':

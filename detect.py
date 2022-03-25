@@ -45,6 +45,7 @@ from utils.general import (LOGGER, check_file, check_img_size, check_imshow, che
                            increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, time_sync
+from export import load_checkpoint
 
 
 @torch.no_grad()
@@ -89,7 +90,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
 
     # Load model
     device = select_device(device)
-    model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+    model, extras = load_checkpoint(type_='val', weights=weights, device=device) # load FP32 model
     stride, names, pt = model.stride, model.names, model.pt
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 

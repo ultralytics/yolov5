@@ -40,6 +40,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import val  # for end-of-epoch mAP
 from models.experimental import attempt_load
+from export import load_checkpoint, create_checkpoint
 from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
@@ -56,6 +57,7 @@ from utils.loss import ComputeLoss
 from utils.metrics import fitness
 from utils.plots import plot_evolve, plot_labels
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
+from utils.sparse import SparseMLWrapper
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -85,9 +87,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Save run settings
     if not evolve:
         with open(save_dir / 'hyp.yaml', 'w') as f:
-            yaml.safe_dump(hyp, f, sort_keys=False)
+            yaml.dump(hyp, f, sort_keys=False)
         with open(save_dir / 'opt.yaml', 'w') as f:
-            yaml.safe_dump(vars(opt), f, sort_keys=False)
+            yaml.dump(vars(opt), f, sort_keys=False)
 
     # Loggers
     data_dict = None
@@ -105,6 +107,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Config
     plots = not evolve  # create plots
     cuda = device.type != 'cpu'
+    half_precision = cuda
     init_seeds(1 + RANK)
     with torch_distributed_zero_first(LOCAL_RANK):
         data_dict = data_dict or check_dataset(data)  # check if None
@@ -115,20 +118,27 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     is_coco = isinstance(val_path, str) and val_path.endswith('coco/val2017.txt')  # COCO dataset
 
     # Model
-    check_suffix(weights, '.pt')  # check weights
-    pretrained = weights.endswith('.pt')
+    check_suffix(weights, ['.pt', '.pth'])  # check weights
+    pretrained = weights.endswith('.pt') or weights.endswith('.pth') or weights.startswith('zoo:')
     if pretrained:
-        with torch_distributed_zero_first(LOCAL_RANK):
-            weights = attempt_download(weights)  # download if not found locally
-        ckpt = torch.load(weights, map_location='cpu')  # load checkpoint to CPU to avoid CUDA memory leak
-        model = Model(cfg or ckpt['model'].yaml, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
-        exclude = ['anchor'] if (cfg or hyp.get('anchors')) and not resume else []  # exclude keys
-        csd = ckpt['model'].float().state_dict()  # checkpoint state_dict as FP32
-        csd = intersect_dicts(csd, model.state_dict(), exclude=exclude)  # intersect
-        model.load_state_dict(csd, strict=False)  # load
-        LOGGER.info(f'Transferred {len(csd)}/{len(model.state_dict())} items from {weights}')  # report
+        model, extras = load_checkpoint(
+            type_ = 'train', 
+            weights=weights, 
+            device=device, 
+            cfg=opt.cfg, 
+            hyp=hyp, 
+            nc=nc, 
+            recipe=opt.recipe, 
+            resume=opt.resume, 
+            rank=LOCAL_RANK
+            )
+        ckpt, state_dict, sparseml_wrapper = extras['ckpt'], extras['state_dict'], extras['sparseml_wrapper']
+        LOGGER.info(extras['report'])
     else:
         model = Model(cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
+        sparseml_wrapper = SparseMLWrapper(model, opt.recipe)
+        sparseml_wrapper.initialize(start_epoch=0.0)
+        ckpt = None
 
     # Freeze
     freeze = [f'model.{x}.' for x in (freeze if len(freeze) > 1 else range(freeze[0]))]  # layers to freeze
@@ -183,11 +193,22 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)  # plot_lr_scheduler(optimizer, scheduler, epochs)
 
     # EMA
-    ema = ModelEMA(model) if RANK in [-1, 0] else None
+    ema = ModelEMA(model, enabled=not opt.disable_ema) if RANK in [-1, 0] else None
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
     if pretrained:
+        # Epochs
+        start_epoch = ckpt['epoch'] + 1
+        if opt.resume:
+            assert start_epoch > 0, '%s training to %g epochs is finished, nothing to resume.' % (weights, epochs)
+        if epochs < start_epoch:
+            LOGGER.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
+                        (weights, ckpt['epoch'], epochs))
+            epochs += ckpt['epoch']  # finetune additional epochs
+        if sparseml_wrapper.qat_active(start_epoch):
+            ema.enabled = False
+
         # Optimizer
         if ckpt['optimizer'] is not None:
             optimizer.load_state_dict(ckpt['optimizer'])
@@ -198,15 +219,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             ema.ema.load_state_dict(ckpt['ema'].float().state_dict())
             ema.updates = ckpt['updates']
 
-        # Epochs
-        start_epoch = ckpt['epoch'] + 1
-        if resume:
-            assert start_epoch > 0, f'{weights} training to {epochs} epochs is finished, nothing to resume.'
-        if epochs < start_epoch:
-            LOGGER.info(f"{weights} has been trained for {ckpt['epoch']} epochs. Fine-tuning for {epochs} more epochs.")
-            epochs += ckpt['epoch']  # finetune additional epochs
-
-        del ckpt, csd
+        del ckpt
 
     # DP mode
     if cuda and RANK == -1 and torch.cuda.device_count() > 1:
@@ -247,7 +260,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             # Anchors
             if not opt.noautoanchor:
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
-            model.half().float()  # pre-reduce anchor precision
 
         callbacks.run('on_pretrain_routine_end')
 
@@ -273,15 +285,29 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     last_opt_step = -1
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
-    scheduler.last_epoch = start_epoch - 1  # do not move
-    scaler = amp.GradScaler(enabled=cuda)
+    if scheduler:
+        scheduler.last_epoch = start_epoch - 1  # do not mov
+    scaler = amp.GradScaler(enabled=half_precision)
     stopper = EarlyStopping(patience=opt.patience)
     compute_loss = ComputeLoss(model)  # init loss class
     LOGGER.info(f'Image sizes {imgsz} train, {imgsz} val\n'
                 f'Using {train_loader.num_workers * WORLD_SIZE} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
                 f'Starting training for {epochs} epochs...')
+    
+    # SparseML Integration
+    if RANK in [-1, 0]:
+        sparseml_wrapper.initialize_loggers(loggers.logger, loggers.tb, loggers.wandb)
+    scaler = sparseml_wrapper.modify(scaler, optimizer, model, train_loader)
+    scheduler = sparseml_wrapper.check_lr_override(scheduler, RANK)
+    epochs = sparseml_wrapper.check_epoch_override(epochs, RANK)
+
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
+        if sparseml_wrapper.qat_active(epoch):
+            LOGGER.info('Disabling half precision and EMA, QAT scheduled to run')
+            half_precision = False
+            scaler._enabled = False
+            ema.enabled = False
         model.train()
 
         # Update image weights (optional, single-GPU only)
@@ -313,7 +339,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 accumulate = max(1, np.interp(ni, xi, [1, nbs / batch_size]).round())
                 for j, x in enumerate(optimizer.param_groups):
                     # bias lr falls from 0.1 to lr0, all other lrs rise from 0.0 to lr0
-                    x['lr'] = np.interp(ni, xi, [hyp['warmup_bias_lr'] if j == 2 else 0.0, x['initial_lr'] * lf(epoch)])
+                    if scheduler:
+                        x['lr'] = np.interp(ni, xi, [hyp['warmup_bias_lr'] if j == 2 else 0.0, x['initial_lr'] * lf(epoch)])
                     if 'momentum' in x:
                         x['momentum'] = np.interp(ni, xi, [hyp['warmup_momentum'], hyp['momentum']])
 
@@ -326,7 +353,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                     imgs = nn.functional.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
 
             # Forward
-            with amp.autocast(enabled=cuda):
+            with amp.autocast(enabled=half_precision):
                 pred = model(imgs)  # forward
                 loss, loss_items = compute_loss(pred, targets.to(device))  # loss scaled by batch_size
                 if RANK != -1:
@@ -345,6 +372,11 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 if ema:
                     ema.update(model)
                 last_opt_step = ni
+            elif hasattr(scaler, "emulated_step"):
+                # Call for SparseML integration since the number of steps per epoch can vary
+                # This keeps the number of steps per epoch equivalent to the number of batches per epoch
+                # Does not step the scaler or the optimizer
+                scaler.emulated_step()
 
             # Log
             if RANK in [-1, 0]:
@@ -359,7 +391,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
         # Scheduler
         lr = [x['lr'] for x in optimizer.param_groups]  # for loggers
-        scheduler.step()
+        if scheduler:
+            scheduler.step()
 
         if RANK in [-1, 0]:
             # mAP
@@ -376,25 +409,23 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            save_dir=save_dir,
                                            plots=False,
                                            callbacks=callbacks,
-                                           compute_loss=compute_loss)
+                                           compute_loss=compute_loss,
+                                           half=half_precision)
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
-            if fi > best_fitness:
+            if fi > best_fitness or sparseml_wrapper.reset_best(epoch):
                 best_fitness = fi
             log_vals = list(mloss) + list(results) + lr
             callbacks.run('on_fit_epoch_end', log_vals, epoch, best_fitness, fi)
 
             # Save model
-            if (not nosave) or (final_epoch and not evolve):  # if save
-                ckpt = {'epoch': epoch,
-                        'best_fitness': best_fitness,
-                        'model': deepcopy(de_parallel(model)).half(),
-                        'ema': deepcopy(ema.ema).half(),
-                        'updates': ema.updates,
-                        'optimizer': optimizer.state_dict(),
-                        'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None,
-                        'date': datetime.now().isoformat()}
+            if (not opt.nosave) or (final_epoch and not opt.evolve):  # if save
+                ckpt_extras = {'nc': nc,
+                               'best_fitness': best_fitness,
+                               'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None,
+                               'date': datetime.now().isoformat()}
+                ckpt = create_checkpoint(epoch, model, optimizer, ema, sparseml_wrapper, **ckpt_extras)
 
                 # Save last, best and delete
                 torch.save(ckpt, last)
@@ -422,7 +453,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training -----------------------------------------------------------------------------------------------------
     if RANK in [-1, 0]:
-        LOGGER.info(f'\n{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.')
+        LOGGER.info(f'\n{epochs - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.')
         for f in last, best:
             if f.exists():
                 strip_optimizer(f)  # strip optimizers
@@ -431,7 +462,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                     results, _, _ = val.run(data_dict,
                                             batch_size=batch_size // WORLD_SIZE * 2,
                                             imgsz=imgsz,
-                                            model=attempt_load(f, device).half(),
+                                            model=load_checkpoint(type_='ensemble', weights=best, device=device)[0],
                                             iou_thres=0.65 if is_coco else 0.60,  # best pycocotools results at 0.65
                                             single_cls=single_cls,
                                             dataloader=val_loader,
@@ -440,7 +471,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                             verbose=True,
                                             plots=True,
                                             callbacks=callbacks,
-                                            compute_loss=compute_loss)  # val best model with plots
+                                            compute_loss=compute_loss,  # val best model with plots
+                                            half=half_precision)
                     if is_coco:
                         callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
 
@@ -491,6 +523,9 @@ def parse_opt(known=False):
     parser.add_argument('--upload_dataset', nargs='?', const=True, default=False, help='W&B: Upload data, "val" option')
     parser.add_argument('--bbox_interval', type=int, default=-1, help='W&B: Set bounding-box image logging interval')
     parser.add_argument('--artifact_alias', type=str, default='latest', help='W&B: Version of dataset artifact to use')
+    parser.add_argument('--recipe', type=str, default=None, help='Path to a sparsification recipe, '
+                                                                 'see https://github.com/neuralmagic/sparseml for more information')
+    parser.add_argument('--disable-ema', action='store_true', help='Disable EMA model updates (enabled by default)')
 
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
@@ -508,7 +543,7 @@ def main(opt, callbacks=Callbacks()):
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         with open(Path(ckpt).parent.parent / 'opt.yaml', errors='ignore') as f:
-            opt = argparse.Namespace(**yaml.safe_load(f))  # replace
+            opt = argparse.Namespace(**yaml.load(f, Loader=yaml.SafeLoader))  # replace
         opt.cfg, opt.weights, opt.resume = '', ckpt, True  # reinstate
         LOGGER.info(f'Resuming training from {ckpt}')
     else:
@@ -518,8 +553,8 @@ def main(opt, callbacks=Callbacks()):
         if opt.evolve:
             if opt.project == str(ROOT / 'runs/train'):  # if default project name, rename to runs/evolve
                 opt.project = str(ROOT / 'runs/evolve')
-            opt.exist_ok, opt.resume = opt.resume, False  # pass resume to exist_ok and disable resume
-        opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))
+            opt.exist_ok, opt.resume = opt.resume, False  # pass resume to exist_ok and disable resume       
+        opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok)  # increment run
 
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
@@ -575,7 +610,7 @@ def main(opt, callbacks=Callbacks()):
                 'copy_paste': (1, 0.0, 1.0)}  # segment copy-paste (probability)
 
         with open(opt.hyp, errors='ignore') as f:
-            hyp = yaml.safe_load(f)  # load hyps dict
+            hyp = yaml.load(f, Loader=yaml.SafeLoader) # load hyps dict
             if 'anchors' not in hyp:  # anchors commented in hyp.yaml
                 hyp['anchors'] = 3
         opt.noval, opt.nosave, save_dir = True, True, Path(opt.save_dir)  # only val/save final epoch

@@ -169,6 +169,10 @@ class WandbLogger():
                 if opt.upload_dataset:
                     if not opt.resume:
                         self.wandb_artifact_data_dict = self.check_and_upload_dataset(opt)
+                        self.wandb_run.config.update({
+                        'opt': vars(opt),
+                        'data_dict': self.wandb_artifact_data_dict
+                    }, allow_val_change=True)
 
                 if opt.resume:
                     # resume from artifact

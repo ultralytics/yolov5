@@ -43,6 +43,7 @@ TensorFlow.js:
 """
 
 import argparse
+from copy import deepcopy
 import json
 import os
 import platform
@@ -57,20 +58,26 @@ import torch
 import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
+from sparseml.pytorch.utils import ModuleExporter
+from sparseml.pytorch.sparsification.quantization import skip_onnx_input_quantize
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.common import Conv
+from models.common import Conv, DetectMultiBackend
 from models.experimental import attempt_load
-from models.yolo import Detect
+from models.yolo import Detect, Model
 from utils.activations import SiLU
 from utils.datasets import LoadImages
 from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_version, colorstr,
-                           file_size, print_args, url2file)
-from utils.torch_utils import select_device
+                           file_size, print_args, url2file, intersect_dicts)
+from utils.torch_utils import select_device, torch_distributed_zero_first, is_parallel
+from utils.downloads import attempt_download
+from utils.sparse import SparseMLWrapper, check_download_sparsezoo_weights
+
 
 
 def export_formats():
@@ -118,14 +125,33 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
         f = file.with_suffix('.onnx')
 
-        torch.onnx.export(model, im, f, verbose=False, opset_version=opset,
-                          training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
-                          do_constant_folding=not train,
-                          input_names=['images'],
-                          output_names=['output'],
-                          dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
-                                        'output': {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
-                                        } if dynamic else None)
+        # export through SparseML so quantized and pruned graphs can be corrected
+        save_dir = f.parent.absolute()
+        save_name = str(f).split(os.path.sep)[-1]
+
+        # get the number of outputs so we know how to name and change dynamic axes
+        # nested outputs can be returned if model is exported with dynamic
+        def _count_outputs(outputs):
+            count = 0
+            if isinstance(outputs, list) or isinstance(outputs, tuple):
+                for out in outputs:
+                    count += _count_outputs(out)
+            else:
+                count += 1
+            return count
+
+        outputs = model(im)
+        num_outputs = _count_outputs(outputs)
+        input_names = ['input']
+        output_names = [f'out_{i}' for i in range(num_outputs)]
+        dynamic_axes = {k: {0: 'batch'} for k in (input_names + output_names)} if dynamic else None
+        exporter = ModuleExporter(model, save_dir)
+        exporter.export_onnx(im, name=save_name, convert_qat=True,
+                                input_names=input_names, output_names=output_names, dynamic_axes=dynamic_axes)
+        try:
+            skip_onnx_input_quantize(f, f)
+        except:
+            pass
 
         # Checks
         model_onnx = onnx.load(f)  # load onnx model
@@ -407,6 +433,128 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
     except Exception as e:
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
+def create_checkpoint(epoch, model, optimizer, ema, sparseml_wrapper, **kwargs):
+    pickle = not sparseml_wrapper.qat_active(epoch)  # qat does not support pickled exports
+    ckpt_model = deepcopy(model.module if is_parallel(model) else model).float()
+    yaml = ckpt_model.yaml
+    if not pickle:
+        ckpt_model = ckpt_model.state_dict()
+
+    version = 6 if isinstance([module for module in model.model.modules()][1], Conv) else 5
+
+    return {'epoch': epoch,
+            'model': ckpt_model,
+            'optimizer': optimizer.state_dict(),
+            'yaml': yaml,
+            'hyp': model.hyp,
+            'version': version,
+            **ema.state_dict(pickle),
+            **sparseml_wrapper.state_dict(),
+            **kwargs}
+
+def load_checkpoint(
+    type_, 
+    weights, 
+    device, 
+    cfg=None, 
+    hyp=None, 
+    nc=None, 
+    data=None, 
+    dnn=False, 
+    half = False, 
+    recipe=None, 
+    resume=None, 
+    rank=-1
+    ):
+    with torch_distributed_zero_first(rank):
+        # download if not found locally or from sparsezoo if stub
+        weights = attempt_download(weights) or check_download_sparsezoo_weights(weights)
+    ckpt = torch.load(weights[0] if isinstance(weights, list) or isinstance(weights, tuple)
+                      else weights, map_location="cpu")  # load checkpoint
+    start_epoch = ckpt['epoch'] + 1 if 'epoch' in ckpt else 0
+    pickled = isinstance(ckpt['model'], nn.Module)
+    train_type = type_ == 'train'
+    ensemble_type = type_ == 'ensemble'
+    val_type = type_ =='val'
+
+    if pickled and ensemble_type:
+        cfg = None
+        if ensemble_type:
+            model = attempt_load(weights, map_location=device) # load ensemble using pickled
+            state_dict = model.state_dict()
+        elif val_type:
+            model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+            state_dict = model.model.state_dict()
+    else:
+        # load model from config and weights
+        cfg = cfg or (ckpt['yaml'] if 'yaml' in ckpt else None) or \
+              (ckpt['model'].yaml if pickled else None)
+        model = Model(cfg, ch=3, nc=ckpt['nc'] if ('nc' in ckpt and not nc) else nc,
+                      anchors=hyp.get('anchors') if hyp else None).to(device)
+        model_key = 'ema' if (not train_type and 'ema' in ckpt and ckpt['ema']) else 'model'
+        state_dict = ckpt[model_key].float().state_dict() if pickled else ckpt[model_key]
+        if val_type:
+            model = DetectMultiBackend(model=model, device=device, dnn=dnn, data=data, fp16=half)
+
+    # turn gradients for params back on in case they were removed
+    for p in model.parameters():
+        p.requires_grad = True
+
+    # load sparseml recipe for applying pruning and quantization
+    recipe = recipe or (ckpt['recipe'] if 'recipe' in ckpt else None)
+    sparseml_wrapper = SparseMLWrapper(model.model if val_type else model, recipe)
+    exclude_anchors = train_type and (cfg or hyp.get('anchors')) and not resume
+    loaded = False
+
+    if not train_type:
+         # update param names for yolov5x5 models (model.x -> model.model.x)
+        '''
+        if ('version' not in ckpt or ckpt['version'] < 6) and sparseml_wrapper.manager is not None:
+            for modifier in sparseml_wrapper.manager.pruning_modifiers:
+                updated_params = []
+                for param in modifier.params:
+                    updated_params.append(
+                        "model." + param if (param.startswith('model.') and 
+                        not param.startswith('model.model.')) else param
+                )
+                modifier.params = updated_params
+        '''
+        # apply the recipe to create the final state of the model when not training
+        sparseml_wrapper.apply()
+    else:
+        # intialize the recipe for training and restore the weights before if no quantized weights
+        quantized_state_dict = any([name.endswith('.zero_point') for name in state_dict.keys()])
+        if not quantized_state_dict:
+            state_dict = load_state_dict(model, state_dict, train=True, exclude_anchors=exclude_anchors)
+            loaded = True
+        sparseml_wrapper.initialize(start_epoch)
+
+    if not loaded:
+        state_dict = load_state_dict(model, state_dict, train=train_type, exclude_anchors=exclude_anchors)
+
+    model.float()
+    report = 'Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights)
+
+    return model, {
+        'ckpt': ckpt,
+        'state_dict': state_dict,
+        'start_epoch': start_epoch,
+        'sparseml_wrapper': sparseml_wrapper,
+        'report': report,
+    }
+
+
+def load_state_dict(model, state_dict, train, exclude_anchors):
+    # fix older state_dict names not porting to the new model setup
+    state_dict = {key if not key.startswith("module.") else key[7:]: val for key, val in state_dict.items()}
+
+    if train:
+        # load any missing weights from the model
+        state_dict = intersect_dicts(state_dict, model.state_dict(), exclude=['anchor'] if exclude_anchors else [])
+
+    model.load_state_dict(state_dict, strict=not train)  # load
+
+    return state_dict
 
 @torch.no_grad()
 def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
@@ -414,7 +562,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         imgsz=(640, 640),  # image (height, width)
         batch_size=1,  # batch size
         device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        include=('torchscript', 'onnx'),  # include formats
+        include=('onnx'),  # include formats
         half=False,  # FP16 half-precision export
         inplace=False,  # set YOLOv5 Detect() inplace=True
         train=False,  # model.train() mode
@@ -430,7 +578,8 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         topk_per_class=100,  # TF.js NMS: topk per class to keep
         topk_all=100,  # TF.js NMS: topk for all classes to keep
         iou_thres=0.45,  # TF.js NMS: IoU threshold
-        conf_thres=0.25  # TF.js NMS: confidence threshold
+        conf_thres=0.25,  # TF.js NMS: confidence threshold
+        remove_grid=False,
         ):
     t = time.time()
     include = [x.lower() for x in include]  # to lowercase
@@ -443,8 +592,9 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     # Load PyTorch model
     device = select_device(device)
     assert not (device.type == 'cpu' and half), '--half only compatible with GPU export, i.e. use --device 0'
-    model = attempt_load(weights, map_location=device, inplace=True, fuse=True)  # load FP32 model
-    nc, names = model.nc, model.names  # number of classes, class names
+    model, extras = load_checkpoint(type_='ensemble', weights=weights, device=device)  # load FP32 model
+    sparseml_wrapper = extras['sparseml_wrapper']
+    nc, names = extras["ckpt"]["nc"], model.names  # number of classes, class names
 
     # Checks
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
@@ -469,6 +619,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
             m.onnx_dynamic = dynamic
             if hasattr(m, 'forward_export'):
                 m.forward = m.forward_export  # assign custom forward (optional)
+    model.model[-1].export = not remove_grid  # set Detect() layer grid export
 
     for _ in range(2):
         y = model(im)  # dry runs
@@ -541,6 +692,7 @@ def parse_opt():
     parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='TF.js NMS: IoU threshold')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
+    parser.add_argument("--remove-grid", action="store_true", help="remove export of Detect() layer grid")
     parser.add_argument('--include', nargs='+',
                         default=['torchscript', 'onnx'],
                         help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')

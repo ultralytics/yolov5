@@ -285,27 +285,47 @@ class ModelEMA:
     For EMA details see https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage
     """
 
-    def __init__(self, model, decay=0.9999, tau=2000, updates=0):
+    def __init__(self, model, decay=0.9999, tau=2000, updates=0, enabled=True):
         # Create EMA
-        self.ema = deepcopy(de_parallel(model)).eval()  # FP32 EMA
+        self._model = model
+        self._ema = deepcopy(de_parallel(model)).eval()  # FP32 EMA
         # if next(model.parameters()).device.type != 'cpu':
         #     self.ema.half()  # FP16 EMA
         self.updates = updates  # number of EMA updates
         self.decay = lambda x: decay * (1 - math.exp(-x / tau))  # decay exponential ramp (to help early epochs)
-        for p in self.ema.parameters():
+        self.enabled=enabled
+        for p in self._ema.parameters():
             p.requires_grad_(False)
 
+    @property
+    def ema(self):
+        if not self.enabled:
+            return deepcopy(self._model.module if is_parallel(self._model) else self._model).eval()
+        return self._ema
+
+    def state_dict(self, pickle=True):
+        ema = deepcopy(self.ema).float()
+        return {
+            'ema': ema if pickle else ema.state_dict(),
+            'updates': self.updates,
+        }
+
     def update(self, model):
+        self._model = model
+        if not self.enabled:
+            return
         # Update EMA parameters
         with torch.no_grad():
+            msd = model.module.state_dict() if is_parallel(model) else model.state_dict()  # model state_dict
             self.updates += 1
             d = self.decay(self.updates)
 
-            msd = de_parallel(model).state_dict()  # model state_dict
             for k, v in self.ema.state_dict().items():
                 if v.dtype.is_floating_point:
+                    mv = msd[k].detach()
                     v *= d
-                    v += (1 - d) * msd[k].detach()
+                    v += (1. - d) * mv
+                    v *= mv != 0  # preserve pruned parameters in model (equal to 0)
 
     def update_attr(self, model, include=(), exclude=('process_group', 'reducer')):
         # Update EMA attributes

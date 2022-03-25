@@ -42,6 +42,9 @@ def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
 
 def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads import *; attempt_download()
     # Attempt file download if does not exist
+    if not isinstance(file, (Path, str)) or str(file).startswith("zoo:"):
+        return
+
     file = Path(str(file).strip().replace("'", ''))
 
     if not file.exists():
