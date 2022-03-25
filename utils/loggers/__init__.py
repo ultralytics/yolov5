@@ -11,7 +11,7 @@ import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from utils.general import colorstr, emojis
+from utils.general import colorstr, cv2, emojis
 from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
@@ -147,10 +147,6 @@ class Loggers():
         files = [(self.save_dir / f) for f in files if (self.save_dir / f).exists()]  # filter
 
         if self.tb:
-            import cv2
-            import numpy as np
-
-            cv2.imread = lambda x: cv2.imdecode(np.fromfile(x, np.uint8), cv2.IMREAD_COLOR)  # remap for Chinese files
             for f in files:
                 self.tb.add_image(f.stem, cv2.imread(str(f))[..., ::-1], epoch, dataformats='HWC')
 

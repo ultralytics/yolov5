@@ -908,11 +908,23 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
 imshow_ = cv2.imshow  # copy to avoid recursion errors
 
 
+def imread(path):
+    return cv2.imdecode(np.fromfile(path, np.uint8), cv2.IMREAD_COLOR)
+
+
+def imwrite(path, im):
+    try:
+        cv2.imencode(Path(path).suffix, im)[1].tofile(path)
+        return True
+    except Exception:
+        return False
+
+      
 def imshow(path, im):
     imshow_(path.encode().decode('utf-8', 'ignore'), im)
 
-
-cv2.imshow = imshow  # redefine
+    
+cv2.imread, cv2.imwrite, cv2.imshow = imread, imwrite, imshow  # redefine
 
 # Variables ------------------------------------------------------------------------------------------------------------
 NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size for tqdm
