@@ -220,8 +220,8 @@ def is_chinese(s='人工智能'):
 
 
 def emojis(str=''):
-    # Return emoji-safe version of string
-    return str.encode().decode('utf-8', 'ignore')
+    # Return platform-dependent emoji-safe version of string
+    return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
 
 
 def file_age(path=__file__):
