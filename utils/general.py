@@ -709,6 +709,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
          list of detections, on (n,6) tensor per image [xyxy, conf, cls]
     """
 
+    bs = prediction.shape[0]  # batch size
     nc = prediction.shape[2] - 5  # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
 
@@ -719,13 +720,13 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     # Settings
     min_wh, max_wh = 2, 7680  # (pixels) minimum and maximum box width and height
     max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
-    time_limit = 10.0  # seconds to quit after
+    time_limit = 0.030 * bs  # seconds to quit after
     redundant = True  # require redundant detections
     multi_label &= nc > 1  # multiple labels per box (adds 0.5ms/img)
     merge = False  # use merge-NMS
 
-    t = time.time()
-    output = [torch.zeros((0, 6), device=prediction.device)] * prediction.shape[0]
+    t, warn_time = time.time(), True
+    output = [torch.zeros((0, 6), device=prediction.device)] * bs
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
         x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
@@ -789,7 +790,9 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
 
         output[xi] = x[i]
         if (time.time() - t) > time_limit:
-            LOGGER.warning(f'WARNING: NMS time limit {time_limit}s exceeded')
+            if warn_time:
+                LOGGER.warning(f'WARNING: NMS time limit {time_limit:3f}s exceeded')
+                warn_time = False
             break  # time limit exceeded
 
     return output
@@ -905,5 +908,27 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     return path
 
 
-# Variables
+# OpenCV Chinese-friendly functions ------------------------------------------------------------------------------------
+imshow_ = cv2.imshow  # copy to avoid recursion errors
+
+
+def imread(path):
+    return cv2.imdecode(np.fromfile(path, np.uint8), cv2.IMREAD_COLOR)
+
+
+def imwrite(path, im):
+    try:
+        cv2.imencode(Path(path).suffix, im)[1].tofile(path)
+        return True
+    except Exception:
+        return False
+
+
+def imshow(path, im):
+    imshow_(path.encode('unicode_escape').decode(), im)
+
+
+cv2.imread, cv2.imwrite, cv2.imshow = imread, imwrite, imshow  # redefine
+
+# Variables ------------------------------------------------------------------------------------------------------------
 NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size for tqdm
