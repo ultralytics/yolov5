@@ -7,6 +7,7 @@ Usage:
 """
 
 import argparse
+import os
 import sys
 from copy import deepcopy
 from pathlib import Path
