@@ -314,7 +314,7 @@ if __name__ == '__main__':
 
     # Profile
     if opt.profile:
-        img = torch.rand(8 if torch.cuda.is_available() else 1, 3, 640, 640).to(device)
+        img = torch.rand(16 if torch.cuda.is_available() else 1, 3, 640, 640).to(device)
         y = model(img, profile=True)
 
     # Test all models
