@@ -38,10 +38,9 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.datasets import create_dataloader
-from utils.general import (
-    LOGGER, box_iou, check_dataset, check_img_size, check_requirements, check_yaml, coco80_to_coco91_class, colorstr,
-    increment_path, non_max_suppression, print_args, scale_coords, xywh2xyxy, xyxy2xywh
-)
+from utils.general import (LOGGER, box_iou, check_dataset, check_img_size, check_requirements, check_yaml,
+                           coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, print_args,
+                           scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, ap_per_class
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, time_sync
@@ -97,33 +96,33 @@ def process_batch(detections, labels, iouv):
 
 @torch.no_grad()
 def run(
-    data,
-    weights=None,  # model.pt path(s)
-    batch_size=32,  # batch size
-    imgsz=640,  # inference size (pixels)
-    conf_thres=0.001,  # confidence threshold
-    iou_thres=0.6,  # NMS IoU threshold
-    task='val',  # train, val, test, speed or study
-    device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-    workers=8,  # max dataloader workers (per RANK in DDP mode)
-    single_cls=False,  # treat as single-class dataset
-    augment=False,  # augmented inference
-    verbose=False,  # verbose output
-    save_txt=False,  # save results to *.txt
-    save_hybrid=False,  # save label+prediction hybrid results to *.txt
-    save_conf=False,  # save confidences in --save-txt labels
-    save_json=False,  # save a COCO-JSON results file
-    project=ROOT / 'runs/val',  # save to project/name
-    name='exp',  # save to project/name
-    exist_ok=False,  # existing project/name ok, do not increment
-    half=True,  # use FP16 half-precision inference
-    dnn=False,  # use OpenCV DNN for ONNX inference
-    model=None,
-    dataloader=None,
-    save_dir=Path(''),
-    plots=True,
-    callbacks=Callbacks(),
-    compute_loss=None,
+        data,
+        weights=None,  # model.pt path(s)
+        batch_size=32,  # batch size
+        imgsz=640,  # inference size (pixels)
+        conf_thres=0.001,  # confidence threshold
+        iou_thres=0.6,  # NMS IoU threshold
+        task='val',  # train, val, test, speed or study
+        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        workers=8,  # max dataloader workers (per RANK in DDP mode)
+        single_cls=False,  # treat as single-class dataset
+        augment=False,  # augmented inference
+        verbose=False,  # verbose output
+        save_txt=False,  # save results to *.txt
+        save_hybrid=False,  # save label+prediction hybrid results to *.txt
+        save_conf=False,  # save confidences in --save-txt labels
+        save_json=False,  # save a COCO-JSON results file
+        project=ROOT / 'runs/val',  # save to project/name
+        name='exp',  # save to project/name
+        exist_ok=False,  # existing project/name ok, do not increment
+        half=True,  # use FP16 half-precision inference
+        dnn=False,  # use OpenCV DNN for ONNX inference
+        model=None,
+        dataloader=None,
+        save_dir=Path(''),
+        plots=True,
+        callbacks=Callbacks(),
+        compute_loss=None,
 ):
     # Initialize/load model and set device
     training = model is not None
@@ -168,17 +167,15 @@ def run(
         pad = 0.0 if task in ('speed', 'benchmark') else 0.5
         rect = False if task == 'benchmark' else pt  # square inference for benchmarks
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
-        dataloader = create_dataloader(
-            data[task],
-            imgsz,
-            batch_size,
-            stride,
-            single_cls,
-            pad=pad,
-            rect=rect,
-            workers=workers,
-            prefix=colorstr(f'{task}: ')
-        )[0]
+        dataloader = create_dataloader(data[task],
+                                       imgsz,
+                                       batch_size,
+                                       stride,
+                                       single_cls,
+                                       pad=pad,
+                                       rect=rect,
+                                       workers=workers,
+                                       prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)

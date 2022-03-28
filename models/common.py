@@ -22,10 +22,8 @@ from PIL import Image
 from torch.cuda import amp
 
 from utils.datasets import exif_transpose, letterbox
-from utils.general import (
-    LOGGER, check_requirements, check_suffix, check_version, colorstr, increment_path, make_divisible,
-    non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh
-)
+from utils.general import (LOGGER, check_requirements, check_suffix, check_version, colorstr, increment_path,
+                           make_divisible, non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, time_sync
 
@@ -232,8 +230,7 @@ class GhostBottleneck(nn.Module):
         self.conv = nn.Sequential(
             GhostConv(c1, c_, 1, 1),  # pw
             DWConv(c_, c_, k, s, act=False) if s == 2 else nn.Identity(),  # dw
-            GhostConv(c_, c2, 1, 1, act=False)
-        )  # pw-linear
+            GhostConv(c_, c2, 1, 1, act=False))  # pw-linear
         self.shortcut = nn.Sequential(DWConv(c1, c1, k, s, act=False), Conv(c1, c2, 1, 1,
                                                                             act=False)) if s == 2 else nn.Identity()
 
@@ -567,15 +564,13 @@ class AutoShape(nn.Module):
             t.append(time_sync())
 
             # Post-process
-            y = non_max_suppression(
-                y if self.dmb else y[0],
-                self.conf,
-                self.iou,
-                self.classes,
-                self.agnostic,
-                self.multi_label,
-                max_det=self.max_det
-            )  # NMS
+            y = non_max_suppression(y if self.dmb else y[0],
+                                    self.conf,
+                                    self.iou,
+                                    self.classes,
+                                    self.agnostic,
+                                    self.multi_label,
+                                    max_det=self.max_det)  # NMS
             for i in range(n):
                 scale_coords(shape1, y[i][:, :4], shape0[i])
 
@@ -648,9 +643,8 @@ class Detections:
 
     def print(self):
         self.display(pprint=True)  # print results
-        LOGGER.info(
-            f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' % self.t
-        )
+        LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {tuple(self.s)}' %
+                    self.t)
 
     def show(self, labels=True):
         self.display(show=True, labels=labels)  # show results

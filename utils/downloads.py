@@ -78,8 +78,7 @@ def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads i
                 url=f'https://github.com/{repo}/releases/download/{tag}/{name}',
                 # url2=f'https://storage.googleapis.com/{repo}/ckpt/{name}',  # backup url (optional)
                 min_bytes=1E5,
-                error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/'
-            )
+                error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/')
 
     return str(file)
 

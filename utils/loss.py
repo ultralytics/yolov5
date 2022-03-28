@@ -192,8 +192,7 @@ class ComputeLoss:
                 [0, -1],  # j,k,l,m
                 # [1, 1], [1, -1], [-1, 1], [-1, -1],  # jk,jm,lk,lm
             ],
-            device=self.device
-        ).float() * g  # offsets
+            device=self.device).float() * g  # offsets
 
         for i in range(self.nl):
             anchors = self.anchors[i]
