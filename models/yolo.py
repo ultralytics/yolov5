@@ -7,6 +7,8 @@ Usage:
 """
 
 import argparse
+import os
+import platform
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -15,7 +17,8 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
-# ROOT = ROOT.relative_to(Path.cwd())  # relative
+if platform.system() != 'Windows':
+    ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import *
 from models.experimental import *
@@ -71,13 +74,13 @@ class Detect(nn.Module):
 
     def _make_grid(self, nx=20, ny=20, i=0):
         d = self.anchors[i].device
+        shape = 1, self.na, ny, nx, 2  # grid shape
         if check_version(torch.__version__, '1.10.0'):  # torch>=1.10.0 meshgrid workaround for torch>=0.7 compatibility
-            yv, xv = torch.meshgrid([torch.arange(ny, device=d), torch.arange(nx, device=d)], indexing='ij')
+            yv, xv = torch.meshgrid(torch.arange(ny, device=d), torch.arange(nx, device=d), indexing='ij')
         else:
-            yv, xv = torch.meshgrid([torch.arange(ny, device=d), torch.arange(nx, device=d)])
-        grid = torch.stack((xv, yv), 2).expand((1, self.na, ny, nx, 2)).float()
-        anchor_grid = (self.anchors[i].clone() * self.stride[i]) \
-            .view((1, self.na, 1, 1, 2)).expand((1, self.na, ny, nx, 2)).float()
+            yv, xv = torch.meshgrid(torch.arange(ny, device=d), torch.arange(nx, device=d))
+        grid = torch.stack((xv, yv), 2).expand(shape).float()
+        anchor_grid = (self.anchors[i] * self.stride[i]).view((1, self.na, 1, 1, 2)).expand(shape).float()
         return grid, anchor_grid
 
 
@@ -111,8 +114,8 @@ class Model(nn.Module):
             s = 256  # 2x min stride
             m.inplace = self.inplace
             m.stride = torch.tensor([s / x.shape[-2] for x in self.forward(torch.zeros(1, ch, s, s))])  # forward
+            check_anchor_order(m)  # must be in pixel-space (not grid-space)
             m.anchors /= m.stride.view(-1, 1, 1)
-            check_anchor_order(m)
             self.stride = m.stride
             self._initialize_biases()  # only run once
 
@@ -311,10 +314,10 @@ if __name__ == '__main__':
 
     # Create model
     model = Model(opt.cfg).to(device)
-    model.train()
 
     # Profile
     if opt.profile:
+        model.eval().fuse()
         img = torch.rand(8 if torch.cuda.is_available() else 1, 3, 640, 640).to(device)
         y = model(img, profile=True)
 
