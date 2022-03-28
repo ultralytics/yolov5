@@ -261,9 +261,9 @@ class Expand(nn.Module):
     def forward(self, x):
         b, c, h, w = x.size()  # assert C / s ** 2 == 0, 'Indivisible gain'
         s = self.gain
-        x = x.view(b, s, s, c // s**2, h, w)  # x(1,2,2,16,80,80)
+        x = x.view(b, s, s, c // s ** 2, h, w)  # x(1,2,2,16,80,80)
         x = x.permute(0, 3, 4, 1, 5, 2).contiguous()  # x(1,16,80,2,80,2)
-        return x.view(b, c // s**2, h * s, w * s)  # x(1,16,160,160)
+        return x.view(b, c // s ** 2, h * s, w * s)  # x(1,16,160,160)
 
 
 class Concat(nn.Module):
@@ -319,7 +319,7 @@ class DetectMultiBackend(nn.Module):
                 stride, names = int(d['stride']), d['names']
         elif dnn:  # ONNX OpenCV DNN
             LOGGER.info(f'Loading {w} for ONNX OpenCV DNN inference...')
-            check_requirements(('opencv-python>=4.5.4', ))
+            check_requirements(('opencv-python>=4.5.4',))
             net = cv2.dnn.readNetFromONNX(w)
         elif onnx:  # ONNX Runtime
             LOGGER.info(f'Loading {w} for ONNX Runtime inference...')
@@ -330,7 +330,7 @@ class DetectMultiBackend(nn.Module):
             session = onnxruntime.InferenceSession(w, providers=providers)
         elif xml:  # OpenVINO
             LOGGER.info(f'Loading {w} for OpenVINO inference...')
-            check_requirements(('openvino-dev', ))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
+            check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
             import openvino.inference_engine as ie
             core = ie.IECore()
             if not Path(w).is_file():  # if not *.xml
@@ -391,8 +391,7 @@ class DetectMultiBackend(nn.Module):
                     delegate = {
                         'Linux': 'libedgetpu.so.1',
                         'Darwin': 'libedgetpu.1.dylib',
-                        'Windows': 'edgetpu.dll'
-                    }[platform.system()]
+                        'Windows': 'edgetpu.dll'}[platform.system()]
                     interpreter = Interpreter(model_path=w, experimental_delegates=[load_delegate(delegate)])
                 else:  # Lite
                     LOGGER.info(f'Loading {w} for TensorFlow Lite inference...')
@@ -616,8 +615,7 @@ class Detections:
                                 'conf': conf,
                                 'cls': cls,
                                 'label': label,
-                                'im': save_one_box(box, im, file=file, save=save)
-                            })
+                                'im': save_one_box(box, im, file=file, save=save)})
                         else:  # all others
                             annotator.box_label(box, label if labels else '', color=colors(cls))
                     im = annotator.im

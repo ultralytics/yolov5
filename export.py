@@ -108,7 +108,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
 def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:')):
     # YOLOv5 ONNX export
     try:
-        check_requirements(('onnx', ))
+        check_requirements(('onnx',))
         import onnx
 
         LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
@@ -128,12 +128,10 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
                 'images': {
                     0: 'batch',
                     2: 'height',
-                    3: 'width'
-                },  # shape(1,3,640,640)
+                    3: 'width'},  # shape(1,3,640,640)
                 'output': {
                     0: 'batch',
-                    1: 'anchors'
-                }  # shape(1,25200,85)
+                    1: 'anchors'}  # shape(1,25200,85)
             } if dynamic else None)
 
         # Checks
@@ -144,7 +142,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         # Simplify
         if simplify:
             try:
-                check_requirements(('onnx-simplifier', ))
+                check_requirements(('onnx-simplifier',))
                 import onnxsim
 
                 LOGGER.info(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
@@ -164,7 +162,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
 def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
     try:
-        check_requirements(('openvino-dev', ))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
+        check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
         import openvino.inference_engine as ie
 
         LOGGER.info(f'\n{prefix} starting export with openvino {ie.__version__}...')
@@ -182,7 +180,7 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
 def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
     # YOLOv5 CoreML export
     try:
-        check_requirements(('coremltools', ))
+        check_requirements(('coremltools',))
         import coremltools as ct
 
         LOGGER.info(f'\n{prefix} starting export with coremltools {ct.__version__}...')
@@ -202,7 +200,7 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
 def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
     # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
     try:
-        check_requirements(('tensorrt', ))
+        check_requirements(('tensorrt',))
         import tensorrt as trt
 
         if trt.__version__[0] == '7':  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
@@ -370,8 +368,7 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
             for c in [
                     'curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -',
                     'echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list',
-                    'sudo apt-get update', 'sudo apt-get install edgetpu-compiler'
-            ]:
+                    'sudo apt-get update', 'sudo apt-get install edgetpu-compiler']:
                 subprocess.run(c if sudo else c.replace('sudo ', ''), shell=True, check=True)
         ver = subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1]
 
@@ -391,7 +388,7 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
 def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
     # YOLOv5 TensorFlow.js export
     try:
-        check_requirements(('tensorflowjs', ))
+        check_requirements(('tensorflowjs',))
         import re
 
         import tensorflowjs as tfjs
@@ -508,7 +505,7 @@ def run(
     # TensorFlow Exports
     if any((saved_model, pb, tflite, edgetpu, tfjs)):
         if int8 or edgetpu:  # TFLite --int8 bug https://github.com/ultralytics/yolov5/issues/5707
-            check_requirements(('flatbuffers==1.12', ))  # required before `import tensorflow`
+            check_requirements(('flatbuffers==1.12',))  # required before `import tensorflow`
         assert not (tflite and tfjs), 'TFLite and TF.js models must be exported separately, please pass only one type.'
         model, f[5] = export_saved_model(model.cpu(),
                                          im,

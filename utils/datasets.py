@@ -84,8 +84,7 @@ def exif_transpose(image):
             5: Image.TRANSPOSE,
             6: Image.ROTATE_270,
             7: Image.TRANSVERSE,
-            8: Image.ROTATE_90,
-        }.get(orientation)
+            8: Image.ROTATE_90,}.get(orientation)
         if method is not None:
             image = image.transpose(method)
             del exif[0x0112]
@@ -1031,17 +1030,13 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         stats[split] = {
             'instance_stats': {
                 'total': int(x.sum()),
-                'per_class': x.sum(0).tolist()
-            },
+                'per_class': x.sum(0).tolist()},
             'image_stats': {
                 'total': dataset.n,
                 'unlabelled': int(np.all(x == 0, 1).sum()),
-                'per_class': (x > 0).sum(0).tolist()
-            },
+                'per_class': (x > 0).sum(0).tolist()},
             'labels': [{
-                str(Path(k).name): round_labels(v.tolist())
-            } for k, v in zip(dataset.im_files, dataset.labels)]
-        }
+                str(Path(k).name): round_labels(v.tolist())} for k, v in zip(dataset.im_files, dataset.labels)]}
 
         if hub:
             im_dir = hub_dir / 'images'

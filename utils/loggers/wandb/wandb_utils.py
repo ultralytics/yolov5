@@ -313,8 +313,7 @@ class WandbLogger():
                                             'save period': opt.save_period,
                                             'project': opt.project,
                                             'total_epochs': opt.epochs,
-                                            'fitness_score': fitness_score
-                                        })
+                                            'fitness_score': fitness_score})
         model_artifact.add_file(str(path / 'last.pt'), name='last.pt')
         wandb.log_artifact(model_artifact,
                            aliases=['latest', 'last', 'epoch ' + str(self.current_epoch), 'best' if best_model else ''])
@@ -424,11 +423,9 @@ class WandbLogger():
                     "position": {
                         "middle": [xywh[0], xywh[1]],
                         "width": xywh[2],
-                        "height": xywh[3]
-                    },
+                        "height": xywh[3]},
                     "class_id": cls,
-                    "box_caption": "%s" % (class_to_id[cls])
-                })
+                    "box_caption": "%s" % (class_to_id[cls])})
                 img_classes[cls] = class_to_id[cls]
             boxes = {"ground_truth": {"box_data": box_data, "class_labels": class_to_id}}  # inference-space
             table.add_data(si, wandb.Image(paths, classes=class_set, boxes=boxes), list(img_classes.values()),
@@ -457,15 +454,12 @@ class WandbLogger():
                         "minX": xyxy[0],
                         "minY": xyxy[1],
                         "maxX": xyxy[2],
-                        "maxY": xyxy[3]
-                    },
+                        "maxY": xyxy[3]},
                     "class_id": cls,
                     "box_caption": f"{names[cls]} {conf:.3f}",
                     "scores": {
-                        "class_score": conf
-                    },
-                    "domain": "pixel"
-                })
+                        "class_score": conf},
+                    "domain": "pixel"})
                 avg_conf_per_class[cls] += conf
 
                 if cls in pred_class_count:
@@ -501,15 +495,12 @@ class WandbLogger():
                         "minX": xyxy[0],
                         "minY": xyxy[1],
                         "maxX": xyxy[2],
-                        "maxY": xyxy[3]
-                    },
+                        "maxY": xyxy[3]},
                     "class_id": int(cls),
                     "box_caption": f"{names[int(cls)]} {conf:.3f}",
                     "scores": {
-                        "class_score": conf
-                    },
-                    "domain": "pixel"
-                } for *xyxy, conf, cls in pred.tolist()]
+                        "class_score": conf},
+                    "domain": "pixel"} for *xyxy, conf, cls in pred.tolist()]
                 boxes = {"predictions": {"box_data": box_data, "class_labels": names}}  # inference-space
                 self.bbox_media_panel_images.append(wandb.Image(im, boxes=boxes, caption=path.name))
 
@@ -548,9 +539,10 @@ class WandbLogger():
                 self.bbox_media_panel_images = []
             if self.result_artifact:
                 self.result_artifact.add(self.result_table, 'result')
-                wandb.log_artifact(
-                    self.result_artifact,
-                    aliases=['latest', 'last', 'epoch ' + str(self.current_epoch), ('best' if best_result else '')])
+                wandb.log_artifact(self.result_artifact,
+                                   aliases=[
+                                       'latest', 'last', 'epoch ' + str(self.current_epoch),
+                                       ('best' if best_result else '')])
 
                 wandb.log({"evaluation": self.result_table})
                 columns = ["epoch", "id", "ground truth", "prediction"]

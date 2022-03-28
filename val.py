@@ -66,8 +66,7 @@ def save_one_json(predn, jdict, path, class_map):
             'image_id': image_id,
             'category_id': class_map[int(p[5])],
             'bbox': [round(x, 3) for x in b],
-            'score': round(p[4], 5)
-        })
+            'score': round(p[4], 5)})
 
 
 def process_batch(detections, labels, iouv):
