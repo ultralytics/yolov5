@@ -77,6 +77,7 @@ python -m train --img 640 --batch 16 --epoch 600 --data ./config/example.yaml --
 ```bash
 tensorboard --logdir ./training/example
 ```
+While training process is running, open another terminal.
 Execuate the command above and go to http://localhost:6006 to monitor the training.
 
 
