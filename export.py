@@ -61,7 +61,8 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
-ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
+if platform.system() != 'Windows':
+    ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import Conv
 from models.experimental import attempt_load
@@ -275,7 +276,7 @@ def export_saved_model(model, im, file, dynamic,
             m = m.get_concrete_function(spec)
             frozen_func = convert_variables_to_constants_v2(m)
             tfm = tf.Module()
-            tfm.__call__ = tf.function(lambda x: frozen_func(x), [spec])
+            tfm.__call__ = tf.function(lambda x: frozen_func(x)[0], [spec])
             tfm.__call__(im)
             tf.saved_model.save(
                 tfm,
