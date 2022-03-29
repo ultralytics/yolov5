@@ -13,9 +13,10 @@ cd object_detectors/yolov5
 pip install -r requirements.txt
 ```
 ## Activate LMI_AI environment
-The following commands assume that the LMI_AI_Solution repo is cloned in `~/LMI_AI_Solutions`.
+The following commands assume that the LMI_AI_Solution repo is cloned in `~/LMI_AI_Solutions`, and assume that it's the working directory, unless otherwise mentioned.
 
 ```bash
+cd ~/LMI_AI_Solutions
 source ~/LMI_AI_Solutions/lmi_ai.env
 source ~/LMI_AI_Solutions/object_detectors/yolov5/yolo.env
 ```
@@ -25,7 +26,6 @@ Prepare the datasets by the followings:
 - resize images to 640 x 640
 - convert to YOLO annotation format
 
-The followings assume that the working directory is `~/LMI_AI_Solutions`, unless otherwise mentioned.
 Assume that the original annotated files are in `./data/allImages_1024`. After execting the exmaple commands below, it will generate a yolo formatted folder in `./data/resized_640_yolo`.
 
 Below are the example commands:
