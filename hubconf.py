@@ -127,9 +127,10 @@ if __name__ == '__main__':
     # Verify inference
     from pathlib import Path
 
-    import cv2
     import numpy as np
     from PIL import Image
+
+    from utils.general import cv2
 
     imgs = ['data/images/zidane.jpg',  # filename
             Path('data/images/zidane.jpg'),  # Path
