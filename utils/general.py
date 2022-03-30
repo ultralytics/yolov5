@@ -319,6 +319,10 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
 
     n = 0  # number of packages updates
     for r in requirements:
+        if r.startswith("sparseml"):
+            version = r.split("sparseml")[1]
+            if pkg.working_set.find(pkg.Requirement("sparseml-nightly" + version)):
+                continue
         try:
             pkg.require(r)
         except Exception:  # DistributionNotFound or VersionConflict if requirements not met
