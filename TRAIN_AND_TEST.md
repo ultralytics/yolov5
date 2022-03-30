@@ -52,7 +52,7 @@ names: ['peeling', 'scuff', 'white']  # class names must match with the names in
 ```
 Let's save the yaml file as `./config/example.yaml`
 
-## Download the pre-trained yolo model on COCO dataset
+## Download the pre-trained yolo model
 The pre-trained yolo models can be found in: https://github.com/ultralytics/yolov5/releases/tag/v6.0. 
 The following command shows that 
 - download [the pre-trained model (yolov5s.pt)](https://github.com/ultralytics/yolov5/releases/download/v6.0/yolov5s.pt)
@@ -62,7 +62,7 @@ The following command shows that
 wget https://github.com/ultralytics/yolov5/releases/download/v6.0/yolov5s.pt -P ./pretrained-models
 ```
 
-## Train the model with custom datasets
+## Train the model
 The command below trains the datasets in the yaml file with the following arguments:
 - img: image size
 - batch: batch size
