@@ -22,13 +22,17 @@ source object_detectors/yolov5/yolo.env
 ```
 
 ## Prepare the datasets
+The example dataset can be downloaded using GCP:
+```
+engagements/nordson/chattanooga/catheter/feasibility/models/pytorch/defeat/objdet/yolov5/data/allImages_1024
+```
+
 Prepare the datasets by the followings:
 - resize images to 640 x 640
 - convert to YOLO annotation format
 
-Assume that the original annotated files are in `./data/allImages_1024`. After execting the exmaple commands below, it will generate a yolo formatted folder in `./data/resized_640_yolo`.
+Assume that the original annotated files are downloaded in `./data/allImages_1024`. After execting the exmaple commands below, it will generate a yolo formatted folder in `./data/resized_640_yolo`.
 
-Below are the example commands:
 ```bash
 python -m resize_with_csv --path_imgs ./data/allImages_1024 --out_imsz 640,640 --path_out ./data/resized_640
 python -m convert_data_to_yolo --path_imgs ./data/resized_640 --path_out ./data/resized_640_yolo
