@@ -440,14 +440,11 @@ def create_checkpoint(epoch, model, optimizer, ema, sparseml_wrapper, **kwargs):
     if not pickle:
         ckpt_model = ckpt_model.state_dict()
 
-    version = 6 if isinstance([module for module in model.model.modules()][1], Conv) else 5
-
     return {'epoch': epoch,
             'model': ckpt_model,
             'optimizer': optimizer.state_dict(),
             'yaml': yaml,
             'hyp': model.hyp,
-            'version': version,
             **ema.state_dict(pickle),
             **sparseml_wrapper.state_dict(),
             **kwargs}
