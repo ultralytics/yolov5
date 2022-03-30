@@ -17,8 +17,8 @@ The following commands assume that the LMI_AI_Solution repo is cloned in `~/LMI_
 
 ```bash
 cd ~/LMI_AI_Solutions
-source ~/LMI_AI_Solutions/lmi_ai.env
-source ~/LMI_AI_Solutions/object_detectors/yolov5/yolo.env
+source lmi_ai.env
+source object_detectors/yolov5/yolo.env
 ```
 
 ## Prepare the datasets
