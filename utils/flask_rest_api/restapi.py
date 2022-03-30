@@ -32,6 +32,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Flask API exposing YOLOv5 model")
     parser.add_argument("--port", default=5000, type=int, help="port number")
     args = parser.parse_args()
-    torch.hub._validate_not_a_forked_repo=lambda a,b,c: True
+    torch.hub._validate_not_a_forked_repo = lambda a,b,c: True
     model = torch.hub.load("ultralytics/yolov5", "yolov5s", force_reload=True)  # force_reload to recache
     app.run(host="0.0.0.0", port=args.port)  # debug=True causes Restarting with stat
