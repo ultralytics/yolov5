@@ -86,6 +86,7 @@ Execuate the command above and go to http://localhost:6006 to monitor the traini
 
 
 # Testing
+## Save trained model
 After training, the weights are saved in `./training/example/weights/best.pt`. Copy the best.pt to `./trained-inference-models/example`.
 
 ```bash
