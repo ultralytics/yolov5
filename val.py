@@ -94,8 +94,7 @@ def process_batch(detections, labels, iouv):
 
 
 @torch.no_grad()
-def run(
-        data,
+def run(data,
         weights=None,  # model.pt path(s)
         batch_size=32,  # batch size
         imgsz=640,  # inference size (pixels)
@@ -121,8 +120,8 @@ def run(
         save_dir=Path(''),
         plots=True,
         callbacks=Callbacks(),
-        compute_loss=None,
-):
+        compute_loss=None):
+    
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
