@@ -40,7 +40,7 @@ repos:
     rev: v0.31.0
     hooks:
       - id: yapf
-        name: formatting
+        name: YAPF formatting
 
   # TODO
   #- repo: https://github.com/executablebooks/mdformat
