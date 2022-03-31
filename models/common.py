@@ -533,7 +533,7 @@ class AutoShape(nn.Module):
                 return self.model(imgs.to(p.device).type_as(p), augment, profile)  # inference
 
         # Pre-process
-        n, imgs = (len(imgs), imgs) if isinstance(imgs, list) else (1, [imgs])  # number of images, list of images
+        n, imgs = (len(imgs), imgs) if isinstance(imgs, (list, tuple)) else (1, [imgs])  # number of images, image list
         shape0, shape1, files = [], [], []  # image and inference shapes, filenames
         for i, im in enumerate(imgs):
             f = f'image{i}'  # filename
