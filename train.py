@@ -519,6 +519,8 @@ def main(opt, callbacks=Callbacks()):
             if opt.project == str(ROOT / 'runs/train'):  # if default project name, rename to runs/evolve
                 opt.project = str(ROOT / 'runs/evolve')
             opt.exist_ok, opt.resume = opt.resume, False  # pass resume to exist_ok and disable resume
+        if opt.name == 'cfg':
+            opt.name = Path(opt.cfg).stem  # use model.yaml as name
         opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))
 
     # DDP mode
