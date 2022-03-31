@@ -276,7 +276,7 @@ def export_saved_model(model, im, file, dynamic,
             m = m.get_concrete_function(spec)
             frozen_func = convert_variables_to_constants_v2(m)
             tfm = tf.Module()
-            tfm.__call__ = tf.function(lambda x: frozen_func(x)[0], [spec])
+            tfm.__call__ = tf.function(lambda x: frozen_func(x)[:4], [spec])
             tfm.__call__(im)
             tf.saved_model.save(
                 tfm,
