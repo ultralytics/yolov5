@@ -121,8 +121,7 @@ def run(
         save_dir=Path(''),
         plots=True,
         callbacks=Callbacks(),
-        compute_loss=None
-):
+        compute_loss=None):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
