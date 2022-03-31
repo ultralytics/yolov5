@@ -17,10 +17,10 @@ PREFIX = colorstr('AutoAnchor: ')
 
 def check_anchor_order(m):
     # Check anchor order against stride order for YOLOv5 Detect() module m, and correct if necessary
-    a = m.anchors.prod(-1).view(-1)  # anchor area
+    a = m.anchors.prod(-1).mean(-1).view(-1)  # mean anchor area per output layer
     da = a[-1] - a[0]  # delta a
     ds = m.stride[-1] - m.stride[0]  # delta s
-    if da.sign() != ds.sign():  # same order
+    if da and (da.sign() != ds.sign()):  # same order
         LOGGER.info(f'{PREFIX}Reversing anchor order')
         m.anchors[:] = m.anchors.flip(0)
 
@@ -40,7 +40,8 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
         bpr = (best > 1 / thr).float().mean()  # best possible recall
         return bpr, aat
 
-    anchors = m.anchors.clone() * m.stride.to(m.anchors.device).view(-1, 1, 1)  # current anchors
+    stride = m.stride.to(m.anchors.device).view(-1, 1, 1)  # model strides
+    anchors = m.anchors.clone() * stride  # current anchors
     bpr, aat = metric(anchors.cpu().view(-1, 2))
     s = f'\n{PREFIX}{aat:.2f} anchors/target, {bpr:.3f} Best Possible Recall (BPR). '
     if bpr > 0.98:  # threshold to recompute
@@ -55,8 +56,9 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
         new_bpr = metric(anchors)[0]
         if new_bpr > bpr:  # replace anchors
             anchors = torch.tensor(anchors, device=m.anchors.device).type_as(m.anchors)
-            m.anchors[:] = anchors.clone().view_as(m.anchors) / m.stride.to(m.anchors.device).view(-1, 1, 1)  # loss
-            check_anchor_order(m)
+            m.anchors[:] = anchors.clone().view_as(m.anchors)
+            check_anchor_order(m)  # must be in pixel-space (not grid-space)
+            m.anchors /= stride
             s = f'{PREFIX}Done ✅ (optional: update model *.yaml to use these anchors in the future)'
         else:
             s = f'{PREFIX}Done ⚠️ (original anchors better than new anchors, proceeding with original anchors)'

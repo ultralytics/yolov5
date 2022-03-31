@@ -38,9 +38,9 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import Classify, DetectMultiBackend
-from utils.general import NUM_THREADS, download, check_file, increment_path, check_git_status, check_requirements, \
-    colorstr
-from utils.torch_utils import model_info, select_device, de_parallel
+from utils.general import (NUM_THREADS, check_file, check_git_status, check_requirements, colorstr, download,
+                           increment_path)
+from utils.torch_utils import de_parallel, model_info, select_device
 
 # Functions
 normalize = lambda x, mean=0.5, std=0.25: (x - mean) / std
@@ -48,8 +48,8 @@ denormalize = lambda x, mean=0.5, std=0.25: x * std + mean
 
 
 def train():
-    save_dir, data, bs, epochs, nw, imgsz = Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, \
-                                            min(NUM_THREADS, opt.workers), opt.img_size
+    save_dir, data, bs, epochs, nw, imgsz = \
+        Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, min(NUM_THREADS, opt.workers), opt.img_size
 
     # Directories
     wdir = save_dir / 'weights'
@@ -63,13 +63,13 @@ def train():
         download(url, dir=data_dir.parent)
 
     # Transforms
-    trainform = T.Compose([T.RandomGrayscale(p=0.01),
-                           T.RandomHorizontalFlip(p=0.5),
-                           T.RandomAffine(degrees=1, translate=(.2, .2), scale=(1 / 1.5, 1.5),
-                                          shear=(-1, 1, -1, 1), fill=(114, 114, 114)),
-                           # T.Resize([imgsz, imgsz]),  # very slow
-                           T.ToTensor(),
-                           T.Normalize((0.5, 0.5, 0.5), (0.25, 0.25, 0.25))])  # PILImage from [0, 1] to [-1, 1]
+    trainform = T.Compose([
+        T.RandomGrayscale(p=0.01),
+        T.RandomHorizontalFlip(p=0.5),
+        T.RandomAffine(degrees=1, translate=(.2, .2), scale=(1 / 1.5, 1.5), shear=(-1, 1, -1, 1), fill=(114, 114, 114)),
+        # T.Resize([imgsz, imgsz]),  # very slow
+        T.ToTensor(),
+        T.Normalize((0.5, 0.5, 0.5), (0.25, 0.25, 0.25))])  # PILImage from [0, 1] to [-1, 1]
     testform = T.Compose(trainform.transforms[-2:])
 
     # Dataloaders
@@ -93,7 +93,7 @@ def train():
             model = model.model  # unwrap DetectMultiBackend
         model.model = model.model[:10] if opt.model.endswith('6') else model.model[:8]  # backbone
         m = model.model[-1]  # last layer
-        ch = m.conv.in_channels if hasattr(m, 'conv') else sum([x.in_channels for x in m.m])  # ch into module
+        ch = m.conv.in_channels if hasattr(m, 'conv') else sum(x.in_channels for x in m.m)  # ch into module
         c = Classify(ch, nc)  # Classify()
         c.i, c.f, c.type = m.i, m.f, 'models.common.Classify'  # index, from, type
         model.model[-1] = c  # replace
@@ -172,11 +172,12 @@ def train():
         # Save model
         final_epoch = epoch + 1 == epochs
         if (not opt.nosave) or final_epoch:
-            ckpt = {'epoch': epoch,
-                    'best_fitness': best_fitness,
-                    'model': deepcopy(de_parallel(model)).half(),
-                    'optimizer': None,  # optimizer.state_dict()
-                    'date': datetime.now().isoformat()}
+            ckpt = {
+                'epoch': epoch,
+                'best_fitness': best_fitness,
+                'model': deepcopy(de_parallel(model)).half(),
+                'optimizer': None,  # optimizer.state_dict()
+                'date': datetime.now().isoformat()}
 
             # Save last, best and delete
             torch.save(ckpt, last)

@@ -36,12 +36,11 @@ repos:
       - id: isort
         name: Sort imports
 
-  # TODO
-  #- repo: https://github.com/pre-commit/mirrors-yapf
-  #  rev: v0.31.0
-  #  hooks:
-  #    - id: yapf
-  #      name: formatting
+  - repo: https://github.com/pre-commit/mirrors-yapf
+    rev: v0.31.0
+    hooks:
+      - id: yapf
+        name: formatting
 
   # TODO
   #- repo: https://github.com/executablebooks/mdformat
