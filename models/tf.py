@@ -69,7 +69,11 @@ class TFConv(keras.layers.Layer):
         # see https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
 
         conv = keras.layers.Conv2D(
-            c2, k, s, 'SAME' if s == 1 else 'VALID', use_bias=False if hasattr(w, 'bn') else True,
+            c2,
+            k,
+            s,
+            'SAME' if s == 1 else 'VALID',
+            use_bias=False if hasattr(w, 'bn') else True,
             kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()),
             bias_initializer='zeros' if hasattr(w, 'bn') else keras.initializers.Constant(w.conv.bias.numpy()))
         self.conv = conv if s == 1 else keras.Sequential([TFPad(autopad(k, p)), conv])
@@ -98,10 +102,10 @@ class TFFocus(keras.layers.Layer):
 
     def call(self, inputs):  # x(b,w,h,c) -> y(b,w/2,h/2,4c)
         # inputs = inputs / 255  # normalize 0-255 to 0-1
-        return self.conv(tf.concat([inputs[:, ::2, ::2, :],
-                                    inputs[:, 1::2, ::2, :],
-                                    inputs[:, ::2, 1::2, :],
-                                    inputs[:, 1::2, 1::2, :]], 3))
+        return self.conv(
+            tf.concat(
+                [inputs[:, ::2, ::2, :], inputs[:, 1::2, ::2, :], inputs[:, ::2, 1::2, :], inputs[:, 1::2, 1::2, :]],
+                3))
 
 
 class TFBottleneck(keras.layers.Layer):
@@ -123,9 +127,14 @@ class TFConv2d(keras.layers.Layer):
         super().__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
         self.conv = keras.layers.Conv2D(
-            c2, k, s, 'VALID', use_bias=bias,
+            c2,
+            k,
+            s,
+            'VALID',
+            use_bias=bias,
             kernel_initializer=keras.initializers.Constant(w.weight.permute(2, 3, 1, 0).numpy()),
-            bias_initializer=keras.initializers.Constant(w.bias.numpy()) if bias else None, )
+            bias_initializer=keras.initializers.Constant(w.bias.numpy()) if bias else None,
+        )
 
     def call(self, inputs):
         return self.conv(inputs)
@@ -206,8 +215,7 @@ class TFDetect(keras.layers.Layer):
         self.na = len(anchors[0]) // 2  # number of anchors
         self.grid = [tf.zeros(1)] * self.nl  # init grid
         self.anchors = tf.convert_to_tensor(w.anchors.numpy(), dtype=tf.float32)
-        self.anchor_grid = tf.reshape(self.anchors * tf.reshape(self.stride, [self.nl, 1, 1]),
-                                      [self.nl, 1, -1, 1, 2])
+        self.anchor_grid = tf.reshape(self.anchors * tf.reshape(self.stride, [self.nl, 1, 1]), [self.nl, 1, -1, 1, 2])
         self.m = [TFConv2d(x, self.no * self.na, 1, w=w.m[i]) for i, x in enumerate(ch)]
         self.training = False  # set to False after building model
         self.imgsz = imgsz
@@ -339,7 +347,13 @@ class TFModel:
             self.yaml['nc'] = nc  # override yaml value
         self.model, self.savelist = parse_model(deepcopy(self.yaml), ch=[ch], model=model, imgsz=imgsz)
 
-    def predict(self, inputs, tf_nms=False, agnostic_nms=False, topk_per_class=100, topk_all=100, iou_thres=0.45,
+    def predict(self,
+                inputs,
+                tf_nms=False,
+                agnostic_nms=False,
+                topk_per_class=100,
+                topk_all=100,
+                iou_thres=0.45,
                 conf_thres=0.25):
         y = []  # outputs
         x = inputs
@@ -361,8 +375,13 @@ class TFModel:
                 return nms, x[1]
             else:
                 boxes = tf.expand_dims(boxes, 2)
-                nms = tf.image.combined_non_max_suppression(
-                    boxes, scores, topk_per_class, topk_all, iou_thres, conf_thres, clip_boxes=False)
+                nms = tf.image.combined_non_max_suppression(boxes,
+                                                            scores,
+                                                            topk_per_class,
+                                                            topk_all,
+                                                            iou_thres,
+                                                            conf_thres,
+                                                            clip_boxes=False)
                 return nms, x[1]
 
         return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
@@ -383,7 +402,8 @@ class AgnosticNMS(keras.layers.Layer):
     # TF Agnostic NMS
     def call(self, input, topk_all, iou_thres, conf_thres):
         # wrap map_fn to avoid TypeSpec related error https://stackoverflow.com/a/65809989/3036450
-        return tf.map_fn(lambda x: self._nms(x, topk_all, iou_thres, conf_thres), input,
+        return tf.map_fn(lambda x: self._nms(x, topk_all, iou_thres, conf_thres),
+                         input,
                          fn_output_signature=(tf.float32, tf.float32, tf.float32, tf.int32),
                          name='agnostic_nms')
 
@@ -392,20 +412,26 @@ class AgnosticNMS(keras.layers.Layer):
         boxes, classes, scores = x
         class_inds = tf.cast(tf.argmax(classes, axis=-1), tf.float32)
         scores_inp = tf.reduce_max(scores, -1)
-        selected_inds = tf.image.non_max_suppression(
-            boxes, scores_inp, max_output_size=topk_all, iou_threshold=iou_thres, score_threshold=conf_thres)
+        selected_inds = tf.image.non_max_suppression(boxes,
+                                                     scores_inp,
+                                                     max_output_size=topk_all,
+                                                     iou_threshold=iou_thres,
+                                                     score_threshold=conf_thres)
         selected_boxes = tf.gather(boxes, selected_inds)
         padded_boxes = tf.pad(selected_boxes,
                               paddings=[[0, topk_all - tf.shape(selected_boxes)[0]], [0, 0]],
-                              mode="CONSTANT", constant_values=0.0)
+                              mode="CONSTANT",
+                              constant_values=0.0)
         selected_scores = tf.gather(scores_inp, selected_inds)
         padded_scores = tf.pad(selected_scores,
                                paddings=[[0, topk_all - tf.shape(selected_boxes)[0]]],
-                               mode="CONSTANT", constant_values=-1.0)
+                               mode="CONSTANT",
+                               constant_values=-1.0)
         selected_classes = tf.gather(class_inds, selected_inds)
         padded_classes = tf.pad(selected_classes,
                                 paddings=[[0, topk_all - tf.shape(selected_boxes)[0]]],
-                                mode="CONSTANT", constant_values=-1.0)
+                                mode="CONSTANT",
+                                constant_values=-1.0)
         valid_detections = tf.shape(selected_inds)[0]
         return padded_boxes, padded_scores, padded_classes, valid_detections
 
@@ -421,11 +447,12 @@ def representative_dataset_gen(dataset, ncalib=100):
             break
 
 
-def run(weights=ROOT / 'yolov5s.pt',  # weights path
+def run(
+        weights=ROOT / 'yolov5s.pt',  # weights path
         imgsz=(640, 640),  # inference size h,w
         batch_size=1,  # batch size
         dynamic=False,  # dynamic batch size
-        ):
+):
     # PyTorch model
     im = torch.zeros((batch_size, 3, *imgsz))  # BCHW image
     model = attempt_load(weights, map_location=torch.device('cpu'), inplace=True, fuse=False)

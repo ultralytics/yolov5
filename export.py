@@ -76,16 +76,11 @@ from utils.torch_utils import select_device
 
 def export_formats():
     # YOLOv5 export formats
-    x = [['PyTorch', '-', '.pt', True],
-         ['TorchScript', 'torchscript', '.torchscript', True],
-         ['ONNX', 'onnx', '.onnx', True],
-         ['OpenVINO', 'openvino', '_openvino_model', False],
-         ['TensorRT', 'engine', '.engine', True],
-         ['CoreML', 'coreml', '.mlmodel', False],
-         ['TensorFlow SavedModel', 'saved_model', '_saved_model', True],
-         ['TensorFlow GraphDef', 'pb', '.pb', True],
-         ['TensorFlow Lite', 'tflite', '.tflite', False],
-         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False],
+    x = [['PyTorch', '-', '.pt', True], ['TorchScript', 'torchscript', '.torchscript', True],
+         ['ONNX', 'onnx', '.onnx', True], ['OpenVINO', 'openvino', '_openvino_model', False],
+         ['TensorRT', 'engine', '.engine', True], ['CoreML', 'coreml', '.mlmodel', False],
+         ['TensorFlow SavedModel', 'saved_model', '_saved_model', True], ['TensorFlow GraphDef', 'pb', '.pb', True],
+         ['TensorFlow Lite', 'tflite', '.tflite', False], ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False],
          ['TensorFlow.js', 'tfjs', '_web_model', False]]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'GPU'])
 
@@ -119,14 +114,25 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
         f = file.with_suffix('.onnx')
 
-        torch.onnx.export(model, im, f, verbose=False, opset_version=opset,
-                          training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
-                          do_constant_folding=not train,
-                          input_names=['images'],
-                          output_names=['output'],
-                          dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
-                                        'output': {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
-                                        } if dynamic else None)
+        torch.onnx.export(
+            model,
+            im,
+            f,
+            verbose=False,
+            opset_version=opset,
+            training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
+            do_constant_folding=not train,
+            input_names=['images'],
+            output_names=['output'],
+            dynamic_axes={
+                'images': {
+                    0: 'batch',
+                    2: 'height',
+                    3: 'width'},  # shape(1,3,640,640)
+                'output': {
+                    0: 'batch',
+                    1: 'anchors'}  # shape(1,25200,85)
+            } if dynamic else None)
 
         # Checks
         model_onnx = onnx.load(f)  # load onnx model
@@ -140,10 +146,9 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
                 import onnxsim
 
                 LOGGER.info(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
-                model_onnx, check = onnxsim.simplify(
-                    model_onnx,
-                    dynamic_input_shape=dynamic,
-                    input_shapes={'images': list(im.shape)} if dynamic else None)
+                model_onnx, check = onnxsim.simplify(model_onnx,
+                                                     dynamic_input_shape=dynamic,
+                                                     input_shapes={'images': list(im.shape)} if dynamic else None)
                 assert check, 'assert check failed'
                 onnx.save(model_onnx, f)
             except Exception as e:
@@ -246,9 +251,18 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
-def export_saved_model(model, im, file, dynamic,
-                       tf_nms=False, agnostic_nms=False, topk_per_class=100, topk_all=100, iou_thres=0.45,
-                       conf_thres=0.25, keras=False, prefix=colorstr('TensorFlow SavedModel:')):
+def export_saved_model(model,
+                       im,
+                       file,
+                       dynamic,
+                       tf_nms=False,
+                       agnostic_nms=False,
+                       topk_per_class=100,
+                       topk_all=100,
+                       iou_thres=0.45,
+                       conf_thres=0.25,
+                       keras=False,
+                       prefix=colorstr('TensorFlow SavedModel:')):
     # YOLOv5 TensorFlow SavedModel export
     try:
         import tensorflow as tf
@@ -278,11 +292,10 @@ def export_saved_model(model, im, file, dynamic,
             tfm = tf.Module()
             tfm.__call__ = tf.function(lambda x: frozen_func(x)[0], [spec])
             tfm.__call__(im)
-            tf.saved_model.save(
-                tfm,
-                f,
-                options=tf.saved_model.SaveOptions(experimental_custom_gradients=False) if
-                check_version(tf.__version__, '2.6') else tf.saved_model.SaveOptions())
+            tf.saved_model.save(tfm,
+                                f,
+                                options=tf.saved_model.SaveOptions(experimental_custom_gradients=False)
+                                if check_version(tf.__version__, '2.6') else tf.saved_model.SaveOptions())
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
         return keras_model, f
     except Exception as e:
@@ -352,10 +365,10 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
         if subprocess.run(cmd + ' >/dev/null', shell=True).returncode != 0:
             LOGGER.info(f'\n{prefix} export requires Edge TPU compiler. Attempting install from {help_url}')
             sudo = subprocess.run('sudo --version >/dev/null', shell=True).returncode == 0  # sudo installed on system
-            for c in ['curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -',
-                      'echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list',
-                      'sudo apt-get update',
-                      'sudo apt-get install edgetpu-compiler']:
+            for c in (
+                    'curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -',
+                    'echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list',
+                    'sudo apt-get update', 'sudo apt-get install edgetpu-compiler'):
                 subprocess.run(c if sudo else c.replace('sudo ', ''), shell=True, check=True)
         ver = subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1]
 
@@ -395,12 +408,10 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
                 r'{"outputs": {"Identity.?.?": {"name": "Identity.?.?"}, '
                 r'"Identity.?.?": {"name": "Identity.?.?"}, '
                 r'"Identity.?.?": {"name": "Identity.?.?"}, '
-                r'"Identity.?.?": {"name": "Identity.?.?"}}}',
-                r'{"outputs": {"Identity": {"name": "Identity"}, '
+                r'"Identity.?.?": {"name": "Identity.?.?"}}}', r'{"outputs": {"Identity": {"name": "Identity"}, '
                 r'"Identity_1": {"name": "Identity_1"}, '
                 r'"Identity_2": {"name": "Identity_2"}, '
-                r'"Identity_3": {"name": "Identity_3"}}}',
-                json)
+                r'"Identity_3": {"name": "Identity_3"}}}', json)
             j.write(subst)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -410,7 +421,8 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
 
 
 @torch.no_grad()
-def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
+def run(
+        data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         weights=ROOT / 'yolov5s.pt',  # weights path
         imgsz=(640, 640),  # image (height, width)
         batch_size=1,  # batch size
@@ -431,8 +443,8 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         topk_per_class=100,  # TF.js NMS: topk per class to keep
         topk_all=100,  # TF.js NMS: topk for all classes to keep
         iou_thres=0.45,  # TF.js NMS: IoU threshold
-        conf_thres=0.25  # TF.js NMS: confidence threshold
-        ):
+        conf_thres=0.25,  # TF.js NMS: confidence threshold
+):
     t = time.time()
     include = [x.lower() for x in include]  # to lowercase
     formats = tuple(export_formats()['Argument'][1:])  # --include arguments
@@ -495,9 +507,16 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         if int8 or edgetpu:  # TFLite --int8 bug https://github.com/ultralytics/yolov5/issues/5707
             check_requirements(('flatbuffers==1.12',))  # required before `import tensorflow`
         assert not (tflite and tfjs), 'TFLite and TF.js models must be exported separately, please pass only one type.'
-        model, f[5] = export_saved_model(model.cpu(), im, file, dynamic, tf_nms=nms or agnostic_nms or tfjs,
-                                         agnostic_nms=agnostic_nms or tfjs, topk_per_class=topk_per_class,
-                                         topk_all=topk_all, conf_thres=conf_thres, iou_thres=iou_thres)  # keras model
+        model, f[5] = export_saved_model(model.cpu(),
+                                         im,
+                                         file,
+                                         dynamic,
+                                         tf_nms=nms or agnostic_nms or tfjs,
+                                         agnostic_nms=agnostic_nms or tfjs,
+                                         topk_per_class=topk_per_class,
+                                         topk_all=topk_all,
+                                         conf_thres=conf_thres,
+                                         iou_thres=iou_thres)  # keras model
         if pb or tfjs:  # pb prerequisite to tfjs
             f[6] = export_pb(model, im, file)
         if tflite or edgetpu:
@@ -542,7 +561,8 @@ def parse_opt():
     parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='TF.js NMS: IoU threshold')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
-    parser.add_argument('--include', nargs='+',
+    parser.add_argument('--include',
+                        nargs='+',
                         default=['torchscript', 'onnx'],
                         help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
     opt = parser.parse_args()
