@@ -308,7 +308,7 @@ if __name__ == '__main__':
     parser.add_argument('--test', action='store_true', help='test all yolo*.yaml')
     opt = parser.parse_args()
     opt.cfg = check_yaml(opt.cfg)  # check YAML
-    print_args(FILE.stem, opt)
+    print_args(vars(opt))
     device = select_device(opt.device)
 
     # Create model

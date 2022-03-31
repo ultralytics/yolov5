@@ -566,7 +566,7 @@ def parse_opt():
                         default=['torchscript', 'onnx'],
                         help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
     opt = parser.parse_args()
-    print_args(FILE.stem, opt)
+    print_args(vars(opt))
     return opt
 
 
