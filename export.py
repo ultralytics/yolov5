@@ -290,7 +290,7 @@ def export_saved_model(model,
             m = m.get_concrete_function(spec)
             frozen_func = convert_variables_to_constants_v2(m)
             tfm = tf.Module()
-            tfm.__call__ = tf.function(lambda x: frozen_func(x)[0], [spec])
+            tfm.__call__ = tf.function(lambda x: frozen_func(x)[:4], [spec])
             tfm.__call__(im)
             tf.saved_model.save(tfm,
                                 f,
@@ -566,7 +566,7 @@ def parse_opt():
                         default=['torchscript', 'onnx'],
                         help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
     opt = parser.parse_args()
-    print_args(FILE.stem, opt)
+    print_args(vars(opt))
     return opt
 
 
