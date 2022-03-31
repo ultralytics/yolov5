@@ -183,10 +183,16 @@ class ComputeLoss:
         targets = torch.cat((targets.repeat(na, 1, 1), ai[:, :, None]), 2)  # append anchor indices
 
         g = 0.5  # bias
-        off = torch.tensor([[0, 0],
-                            [1, 0], [0, 1], [-1, 0], [0, -1],  # j,k,l,m
-                            # [1, 1], [1, -1], [-1, 1], [-1, -1],  # jk,jm,lk,lm
-                            ], device=self.device).float() * g  # offsets
+        off = torch.tensor(
+            [
+                [0, 0],
+                [1, 0],
+                [0, 1],
+                [-1, 0],
+                [0, -1],  # j,k,l,m
+                # [1, 1], [1, -1], [-1, 1], [-1, -1],  # jk,jm,lk,lm
+            ],
+            device=self.device).float() * g  # offsets
 
         for i in range(self.nl):
             anchors = self.anchors[i]

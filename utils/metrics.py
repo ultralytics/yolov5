@@ -184,7 +184,14 @@ class ConfusionMatrix:
             labels = (0 < nn < 99) and (nn == nc)  # apply names to ticklabels
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')  # suppress empty matrix RuntimeWarning: All-NaN slice encountered
-                sn.heatmap(array, annot=nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True, vmin=0.0,
+                sn.heatmap(array,
+                           annot=nc < 30,
+                           annot_kws={
+                               "size": 8},
+                           cmap='Blues',
+                           fmt='.2f',
+                           square=True,
+                           vmin=0.0,
                            xticklabels=names + ['background FP'] if labels else "auto",
                            yticklabels=names + ['background FN'] if labels else "auto").set_facecolor((1, 1, 1))
             fig.axes[0].set_xlabel('True')
@@ -253,7 +260,6 @@ def box_iou(box1, box2):
         iou (Tensor[N, M]): the NxM matrix containing the pairwise
             IoU values for every element in boxes1 and boxes2
     """
-
     def box_area(box):
         # box = 4xn
         return (box[2] - box[0]) * (box[3] - box[1])
@@ -299,6 +305,7 @@ def wh_iou(wh1, wh2):
 
 
 # Plots ----------------------------------------------------------------------------------------------------------------
+
 
 def plot_pr_curve(px, py, ap, save_dir='pr_curve.png', names=()):
     # Precision-recall curve
