@@ -26,6 +26,7 @@ RUN git clone https://github.com/ultralytics/yolov5 /usr/src/app
 ADD https://ultralytics.com/assets/Arial.ttf /root/.config/Ultralytics/
 
 # Set environment variables
+ENV OMP_NUM_THREADS=8
 # ENV HOME=/usr/src/app
 
 

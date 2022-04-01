@@ -34,6 +34,7 @@ names: ['wheat_head']  # class names
 download: |
   from utils.general import download, Path
 
+
   # Download
   dir = Path(yaml['path'])  # dataset root dir
   urls = ['https://zenodo.org/record/4298502/files/global-wheat-codalab-official.zip',

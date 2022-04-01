@@ -8,13 +8,11 @@ class Callbacks:
     """"
     Handles all registered callbacks for YOLOv5 Hooks
     """
-
     def __init__(self):
         # Define the available callbacks
         self._callbacks = {
             'on_pretrain_routine_start': [],
             'on_pretrain_routine_end': [],
-
             'on_train_start': [],
             'on_train_epoch_start': [],
             'on_train_batch_start': [],
@@ -22,19 +20,16 @@ class Callbacks:
             'on_before_zero_grad': [],
             'on_train_batch_end': [],
             'on_train_epoch_end': [],
-
             'on_val_start': [],
             'on_val_batch_start': [],
             'on_val_image_end': [],
             'on_val_batch_end': [],
             'on_val_end': [],
-
             'on_fit_epoch_end': [],  # fit = train + val
             'on_model_save': [],
             'on_train_end': [],
             'on_params_update': [],
-            'teardown': [],
-        }
+            'teardown': [],}
         self.stop_training = False  # set True to interrupt training
 
     def register_action(self, hook, name='', callback=None):
