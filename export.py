@@ -54,7 +54,6 @@ from pathlib import Path
 
 import pandas as pd
 import torch
-import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
 FILE = Path(__file__).resolve()
@@ -64,10 +63,8 @@ if str(ROOT) not in sys.path:
 if platform.system() != 'Windows':
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.common import Conv
 from models.experimental import attempt_load
 from models.yolo import Detect
-from utils.activations import SiLU
 from utils.datasets import LoadImages
 from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_version, colorstr,
                            file_size, print_args, url2file)
@@ -474,10 +471,10 @@ def run(
         im, model = im.half(), model.half()  # to FP16
     model.train() if train else model.eval()  # training mode = no Detect() layer grid construction
     for k, m in model.named_modules():
-        if isinstance(m, Conv):  # assign export-friendly activations
-            if isinstance(m.act, nn.SiLU):
-                m.act = SiLU()
-        elif isinstance(m, Detect):
+        # if isinstance(m, Conv):  # assign export-friendly activations
+        #     if isinstance(m.act, nn.SiLU):
+        #         m.act = SiLU()
+        if isinstance(m, Detect):
             m.inplace = inplace
             m.onnx_dynamic = dynamic
             if hasattr(m, 'forward_export'):
