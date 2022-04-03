@@ -182,7 +182,7 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
 
 class CoreMLExportModel(torch.nn.Module):
     def __init__(self, base_model, img_size):
-        super(CoreMLExportModel, self).__init__()
+        super().__init__()
         self.base_model = base_model
         self.img_size = img_size
 
@@ -194,8 +194,9 @@ class CoreMLExportModel(torch.nn.Module):
         h = self.img_size[1]
         objectness = x[:, 4:5]
         class_probs = x[:, 5:] * objectness
-        boxes = x[:, :4] * torch.tensor([1./w, 1./h, 1./w, 1./h])
+        boxes = x[:, :4] * torch.tensor([1. / w, 1. / h, 1. / w, 1. / h])
         return class_probs, boxes
+
 
 def export_coreml(model, im, file, num_boxes, num_classes, labels, conf_thres, iou_thres, prefix=colorstr('CoreML:')):
     # YOLOv5 CoreML export
@@ -288,8 +289,8 @@ def export_coreml(model, im, file, num_boxes, num_classes, labels, conf_thres, i
         # Add descriptions to the inputs and outputs
         pipeline.spec.description.input[1].shortDescription = "(optional) IOU Threshold override"
         pipeline.spec.description.input[2].shortDescription = "(optional) Confidence Threshold override"
-        pipeline.spec.description.output[0].shortDescription = u"Boxes Class confidence"
-        pipeline.spec.description.output[1].shortDescription = u"Boxes [x, y, width, height] (normalized to [0...1])"
+        pipeline.spec.description.output[0].shortDescription = "Boxes Class confidence"
+        pipeline.spec.description.output[1].shortDescription = "Boxes [x, y, width, height] (normalized to [0...1])"
 
         # Add metadata to the model
         pipeline.spec.description.metadata.shortDescription = "YOLOv5 object detector"
@@ -299,15 +300,14 @@ def export_coreml(model, im, file, num_boxes, num_classes, labels, conf_thres, i
         user_defined_metadata = {
             "iou_threshold": str(iou_thres),
             "confidence_threshold": str(conf_thres),
-            "classes": ", ".join(labels)
-        }
+            "classes": ", ".join(labels)}
         pipeline.spec.description.metadata.userDefined.update(user_defined_metadata)
 
         # Don't forget this or Core ML might attempt to run the model on an unsupported operating system version!
         pipeline.spec.specificationVersion = 3
 
         ct_model = ct.models.MLModel(pipeline.spec)
-        
+
         f = str(file).replace('.pt', '.mlmodel')
         ct_model.save(f)
 
