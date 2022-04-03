@@ -477,6 +477,7 @@ def run(
         if isinstance(m, Detect):
             m.inplace = inplace
             m.onnx_dynamic = dynamic
+            m.export = True
             if hasattr(m, 'forward_export'):
                 m.forward = m.forward_export  # assign custom forward (optional)
 
