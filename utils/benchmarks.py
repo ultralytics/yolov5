@@ -45,13 +45,14 @@ from utils.general import LOGGER, print_args
 from utils.torch_utils import select_device
 
 
-def run(weights=ROOT / 'yolov5s.pt',  # weights path
+def run(
+        weights=ROOT / 'yolov5s.pt',  # weights path
         imgsz=640,  # inference size (pixels)
         batch_size=1,  # batch size
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         half=False,  # use FP16 half-precision inference
-        ):
+):
     y, t = [], time.time()
     formats = export.export_formats()
     device = select_device(device)
@@ -91,7 +92,7 @@ def parse_opt():
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     opt = parser.parse_args()
-    print_args(FILE.stem, opt)
+    print_args(vars(opt))
     return opt
 
 

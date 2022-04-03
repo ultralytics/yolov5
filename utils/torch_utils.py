@@ -284,7 +284,6 @@ class ModelEMA:
     Keeps a moving average of everything in the model state_dict (parameters and buffers)
     For EMA details see https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage
     """
-
     def __init__(self, model, decay=0.9999, tau=2000, updates=0):
         # Create EMA
         self.ema = deepcopy(de_parallel(model)).eval()  # FP32 EMA
