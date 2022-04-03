@@ -58,6 +58,7 @@ def run(
     device = select_device(device)
     for i, (name, f, suffix, gpu) in formats.iterrows():  # index, (name, file, suffix, gpu-capable)
         try:
+            assert i < 9, 'Edge TPU and TF.js not supported'
             if device.type != 'cpu':
                 assert gpu, f'{name} inference not supported on GPU'
             if f == '-':
