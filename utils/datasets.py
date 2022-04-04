@@ -213,9 +213,7 @@ class LoadImages:
         if self.count == self.nf:
             raise StopIteration
         path = self.files[self.count]
-        
 
-        
         if self.video_flag[self.count]:
             # Read video
             if self.frame == self.frames:
@@ -238,7 +236,7 @@ class LoadImages:
             else:
                 ret_val, img0 = self.cap.read()
             LOGGER.warning('self.frame:' + str(self.frame))
-            
+
             if self.frame + self.skipframe > self.frames:
                 self.frame += 1
             else:
@@ -253,7 +251,7 @@ class LoadImages:
             s = f'image {self.count}/{self.nf} {path}: '
 
         # Padded resize
-        #if self.frame % 10 == 0: 
+        #if self.frame % 10 == 0:
         img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
 
         # Convert
