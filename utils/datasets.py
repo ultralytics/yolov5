@@ -174,7 +174,7 @@ class _RepeatSampler:
 
 class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
-    def __init__(self, path, img_size=640, stride=32, auto=True):
+    def __init__(self, path, img_size=640, stride=32, auto=True, skipframe=0):
         p = str(Path(path).resolve())  # os-agnostic absolute path
         if '*' in p:
             files = sorted(glob.glob(p, recursive=True))  # glob
@@ -190,6 +190,7 @@ class LoadImages:
         ni, nv = len(images), len(videos)
 
         self.img_size = img_size
+        self.skipframe = skipframe
         self.stride = stride
         self.files = images + videos
         self.nf = ni + nv  # number of files
@@ -205,28 +206,42 @@ class LoadImages:
 
     def __iter__(self):
         self.count = 0
+        self.skipcount = 0
         return self
 
     def __next__(self):
         if self.count == self.nf:
             raise StopIteration
         path = self.files[self.count]
-
+        
+        if self.frame == self.frames:
+            raise StopIteration
+        
         if self.video_flag[self.count]:
             # Read video
             self.mode = 'video'
-            ret_val, img0 = self.cap.read()
-            while not ret_val:
-                self.count += 1
-                self.cap.release()
-                if self.count == self.nf:  # last video
-                    raise StopIteration
-                else:
-                    path = self.files[self.count]
-                    self.new_video(path)
+            if self.frame < self.frames - self.skipframe:
+                while self.skipcount <= self.skipframe:
                     ret_val, img0 = self.cap.read()
-
-            self.frame += 1
+                    while not ret_val:
+                        self.count += 1
+                        self.cap.release()
+                        if self.count == self.nf:  # last video
+                            raise StopIteration
+                        else:
+                            path = self.files[self.count]
+                            self.new_video(path)
+                            ret_val, img0 = self.cap.read()
+                    self.skipcount += 1
+                self.skipcount = 0
+            else:
+                ret_val, img0 = self.cap.read()
+            LOGGER.warning('self.frame:' + str(self.frame))
+            
+            if self.frame + self.skipframe > self.frames:
+                self.frame += 1
+            else:
+                self.frame += self.skipframe + 1
             s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: '
 
         else:
@@ -237,6 +252,7 @@ class LoadImages:
             s = f'image {self.count}/{self.nf} {path}: '
 
         # Padded resize
+        #if self.frame % 10 == 0: 
         img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
 
         # Convert
@@ -316,7 +332,7 @@ class LoadStreams:
         for i, s in enumerate(sources):  # index, source
             # Start thread to read frames from video stream
             st = f'{i + 1}/{n}: {s}... '
-            if urlparse(s).hostname in ('www.youtube.com', 'youtube.com', 'youtu.be'):  # if source is YouTube video
+            if urlparse(s).hostname in ('youtube.com', 'youtu.be'):  # if source is YouTube video
                 check_requirements(('pafy', 'youtube_dl==2020.12.2'))
                 import pafy
                 s = pafy.new(s).getbest(preftype="mp4").url  # YouTube URL
@@ -1072,3 +1088,4 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
     if verbose:
         print(json.dumps(stats, indent=2, sort_keys=False))
     return stats
+  
