@@ -88,6 +88,7 @@ class Detect(nn.Module):
 
 
 class Model(nn.Module):
+    # YOLOv5 model
     def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None, anchors=None):  # model, input channels, number of classes
         super().__init__()
         if isinstance(cfg, dict):

@@ -145,6 +145,7 @@ class InfiniteDataLoader(dataloader.DataLoader):
 
     Uses same syntax as vanilla DataLoader
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         object.__setattr__(self, 'batch_sampler', _RepeatSampler(self.batch_sampler))
@@ -164,6 +165,7 @@ class _RepeatSampler:
     Args:
         sampler (Sampler)
     """
+
     def __init__(self, sampler):
         self.sampler = sampler
 
@@ -978,6 +980,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         autodownload:   Attempt to download dataset if not found locally
         verbose:        Print stats dictionary
     """
+
     def round_labels(labels):
         # Update labels to integer class and 6 decimal place floats
         return [[int(c), *(round(x, 4) for x in points)] for c, *points in labels]
