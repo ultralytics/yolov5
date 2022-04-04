@@ -116,6 +116,7 @@ class WandbLogger():
     For more on how this logger is used, see the Weights & Biases documentation:
     https://docs.wandb.com/guides/integrations/yolov5
     """
+
     def __init__(self, opt, run_id=None, job_type='Training'):
         """
         - Initialize WandbLogger instance
