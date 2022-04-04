@@ -50,7 +50,7 @@ class TFBN(keras.layers.Layer):
 
 
 class TFPad(keras.layers.Layer):
-
+    
     def __init__(self, pad):
         super().__init__()
         self.pad = tf.constant([[0, 0], [pad, pad], [pad, pad], [0, 0]])
@@ -207,7 +207,7 @@ class TFSPPF(keras.layers.Layer):
 
 
 class TFDetect(keras.layers.Layer):
-
+    # TF YOLOv5 Detect layer
     def __init__(self, nc=80, anchors=(), ch=(), imgsz=(640, 640), w=None):  # detection layer
         super().__init__()
         self.stride = tf.convert_to_tensor(w.stride.numpy(), dtype=tf.float32)
@@ -257,7 +257,7 @@ class TFDetect(keras.layers.Layer):
 
 
 class TFUpsample(keras.layers.Layer):
-
+    # TF version of torch.nn.Upsample()
     def __init__(self, size, scale_factor, mode, w=None):  # warning: all arguments needed including 'w'
         super().__init__()
         assert scale_factor == 2, "scale_factor must be 2"
@@ -272,7 +272,7 @@ class TFUpsample(keras.layers.Layer):
 
 
 class TFConcat(keras.layers.Layer):
-
+    # TF version of torch.concat()
     def __init__(self, dimension=1, w=None):
         super().__init__()
         assert dimension == 1, "convert only NCHW to NHWC concat"
