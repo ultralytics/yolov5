@@ -327,7 +327,7 @@ def export_pb(keras_model, im, file, prefix=colorstr('TensorFlow GraphDef:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
-def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('TensorFlow Lite:')):
+def export_tflite(keras_model, im, file, int8, data, ncalib, nms, agnostic_nms, prefix=colorstr('TensorFlow Lite:')):
     # YOLOv5 TensorFlow Lite export
     try:
         import tensorflow as tf
@@ -350,6 +350,9 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
             converter.inference_output_type = tf.uint8  # or tf.int8
             converter.experimental_new_quantizer = True
             f = str(file).replace('.pt', '-int8.tflite')
+        
+        if nms or agnostic_nms:
+            converter.target_spec.supported_ops.append(tf.lite.OpsSet.SELECT_TF_OPS)
 
         tflite_model = converter.convert()
         open(f, "wb").write(tflite_model)
@@ -524,7 +527,7 @@ def run(
         if pb or tfjs:  # pb prerequisite to tfjs
             f[6] = export_pb(model, im, file)
         if tflite or edgetpu:
-            f[7] = export_tflite(model, im, file, int8=int8 or edgetpu, data=data, ncalib=100)
+            f[7] = export_tflite(model, im, file, int8=int8 or edgetpu, data=data, ncalib=100, nms=nms, agnostic_nms=agnostic_nms)
         if edgetpu:
             f[8] = export_edgetpu(model, im, file)
         if tfjs:
