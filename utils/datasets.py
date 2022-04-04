@@ -213,10 +213,10 @@ class LoadImages:
         if self.count == self.nf:
             raise StopIteration
         path = self.files[self.count]
-        
+
         if self.frame == self.frames:
             raise StopIteration
-        
+
         if self.video_flag[self.count]:
             # Read video
             self.mode = 'video'
@@ -237,7 +237,7 @@ class LoadImages:
             else:
                 ret_val, img0 = self.cap.read()
             LOGGER.warning('self.frame:' + str(self.frame))
-            
+
             if self.frame + self.skipframe > self.frames:
                 self.frame += 1
             else:
@@ -252,7 +252,7 @@ class LoadImages:
             s = f'image {self.count}/{self.nf} {path}: '
 
         # Padded resize
-        #if self.frame % 10 == 0: 
+        #if self.frame % 10 == 0:
         img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
 
         # Convert
@@ -1088,4 +1088,3 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
     if verbose:
         print(json.dumps(stats, indent=2, sort_keys=False))
     return stats
-  
