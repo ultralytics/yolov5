@@ -9,14 +9,14 @@ import torch.nn.functional as F
 
 
 class SiLU(nn.Module):
-# SiLU activation https://arxiv.org/pdf/1606.08415.pdf
+    # SiLU activation https://arxiv.org/pdf/1606.08415.pdf
     @staticmethod
     def forward(x):
         return x * torch.sigmoid(x)
 
 
-class Hardswish(nn.Module):  
-# Hard-SiLU activation
+class Hardswish(nn.Module):
+    # Hard-SiLU activation
     @staticmethod
     def forward(x):
         # return x * F.hardsigmoid(x)  # for TorchScript and CoreML
@@ -24,14 +24,14 @@ class Hardswish(nn.Module):
 
 
 class Mish(nn.Module):
-# Mish activation https://github.com/digantamisra98/Mish
+    # Mish activation https://github.com/digantamisra98/Mish
     @staticmethod
     def forward(x):
         return x * F.softplus(x).tanh()
 
 
 class MemoryEfficientMish(nn.Module):
-# Mish activation memory-efficient
+    # Mish activation memory-efficient
     class F(torch.autograd.Function):
 
         @staticmethod
@@ -51,7 +51,7 @@ class MemoryEfficientMish(nn.Module):
 
 
 class FReLU(nn.Module):
-# FReLU activation https://arxiv.org/abs/2007.11824
+    # FReLU activation https://arxiv.org/abs/2007.11824
     def __init__(self, c1, k=3):  # ch_in, kernel
         super().__init__()
         self.conv = nn.Conv2d(c1, c1, k, 1, 1, groups=c1, bias=False)
