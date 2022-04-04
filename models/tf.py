@@ -50,7 +50,7 @@ class TFBN(keras.layers.Layer):
 
 
 class TFPad(keras.layers.Layer):
-    
+
     def __init__(self, pad):
         super().__init__()
         self.pad = tf.constant([[0, 0], [pad, pad], [pad, pad], [0, 0]])
