@@ -74,7 +74,7 @@ def run(
         hide_conf=False,  # hide confidences
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
-        skip_frame=0, # skip frame in video
+        skip_frame=0,  # skip frame in video
 ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
