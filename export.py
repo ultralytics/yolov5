@@ -407,7 +407,8 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
               f'--output_node_names="Identity,Identity_1,Identity_2,Identity_3" {f_pb} {f}'
         subprocess.run(cmd, shell=True)
 
-        json = open(f_json).read()
+        with open(f_json) as j:
+            json = j.read()
         with open(f_json, 'w') as j:  # sort JSON Identity_* in ascending order
             subst = re.sub(
                 r'{"outputs": {"Identity.?.?": {"name": "Identity.?.?"}, '

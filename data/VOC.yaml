@@ -72,7 +72,8 @@ download: |
       imgs_path.mkdir(exist_ok=True, parents=True)
       lbs_path.mkdir(exist_ok=True, parents=True)
 
-      image_ids = open(path / f'VOC{year}/ImageSets/Main/{image_set}.txt').read().strip().split()
+      with open(path / f'VOC{year}/ImageSets/Main/{image_set}.txt') as f:
+          image_ids = f.read().strip().split()
       for id in tqdm(image_ids, desc=f'{image_set}{year}'):
           f = path / f'VOC{year}/JPEGImages/{id}.jpg'  # old img path
           lb_path = (lbs_path / f.name).with_suffix('.txt')  # new label path
