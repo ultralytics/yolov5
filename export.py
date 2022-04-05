@@ -350,7 +350,6 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, nms, agnostic_nms, 
             converter.inference_output_type = tf.uint8  # or tf.int8
             converter.experimental_new_quantizer = True
             f = str(file).replace('.pt', '-int8.tflite')
-
         if nms or agnostic_nms:
             converter.target_spec.supported_ops.append(tf.lite.OpsSet.SELECT_TF_OPS)
 
