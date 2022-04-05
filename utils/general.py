@@ -82,14 +82,13 @@ def set_logging(name=None, verbose=VERBOSE):
         for h in logging.root.handlers:
             logging.root.removeHandler(h)  # remove all handlers associated with the root logger object
     rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
-
-    log_level = logging.INFO if (verbose and rank in (-1, 0)) else logging.WARNING
+    level = logging.INFO if (verbose and rank in (-1, 0)) else logging.WARNING
     log = logging.getLogger(name)
-    log.setLevel(log_level)
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(logging.Formatter("%(message)s"))
-    stream_handler.setLevel(log_level)
-    log.addHandler(stream_handler)
+    log.setLevel(level)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    handler.setLevel(level)
+    log.addHandler(handler)
     return log
 
 
