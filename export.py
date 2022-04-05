@@ -480,15 +480,10 @@ def run(
         im, model = im.half(), model.half()  # to FP16
     model.train() if train else model.eval()  # training mode = no Detect() layer grid construction
     for k, m in model.named_modules():
-        # if isinstance(m, Conv):  # assign export-friendly activations
-        #     if isinstance(m.act, nn.SiLU):
-        #         m.act = SiLU()
         if isinstance(m, Detect):
             m.inplace = inplace
             m.onnx_dynamic = dynamic
             m.export = True
-            if hasattr(m, 'forward_export'):
-                m.forward = m.forward_export  # assign custom forward (optional)
 
     for _ in range(2):
         y = model(im)  # dry runs
