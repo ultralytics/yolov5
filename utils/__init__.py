@@ -11,8 +11,8 @@ def notebook_init(verbose=True):
     import os
     import shutil
 
-    from utils.general import check_requirements, emojis, is_colab
-    from utils.torch_utils import select_device  # imports
+    from data.models.yolov5.yolov5_git.utils.general import check_requirements, emojis, is_colab
+    from data.models.yolov5.yolov5_git.utils.torch_utils import select_device  # imports
 
     check_requirements(('psutil', 'IPython'))
     import psutil

@@ -39,23 +39,23 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import val  # for end-of-epoch mAP
-from models.experimental import attempt_load
-from models.yolo import Model
-from utils.autoanchor import check_anchors
-from utils.autobatch import check_train_batch_size
-from utils.callbacks import Callbacks
-from utils.datasets import create_dataloader
-from utils.downloads import attempt_download
-from utils.general import (LOGGER, check_dataset, check_file, check_git_status, check_img_size, check_requirements,
+from data.models.yolov5.yolov5_git.models.experimental import attempt_load
+from data.models.yolov5.yolov5_git.models.yolo import Model
+from data.models.yolov5.yolov5_git.utils.autoanchor import check_anchors
+from data.models.yolov5.yolov5_git.utils.autobatch import check_train_batch_size
+from data.models.yolov5.yolov5_git.utils.callbacks import Callbacks
+from data.models.yolov5.yolov5_git.utils.datasets import create_dataloader
+from data.models.yolov5.yolov5_git.utils.downloads import attempt_download
+from data.models.yolov5.yolov5_git.utils.general import (LOGGER, check_dataset, check_file, check_git_status, check_img_size, check_requirements,
                            check_suffix, check_yaml, colorstr, get_latest_run, increment_path, init_seeds,
                            intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods, one_cycle,
                            print_args, print_mutation, strip_optimizer)
-from utils.loggers import Loggers
-from utils.loggers.wandb.wandb_utils import check_wandb_resume
-from utils.loss import ComputeLoss
-from utils.metrics import fitness
-from utils.plots import plot_evolve, plot_labels
-from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
+from data.models.yolov5.yolov5_git.utils.loggers import Loggers
+from data.models.yolov5.yolov5_git.utils.loggers.wandb.wandb_utils import check_wandb_resume
+from data.models.yolov5.yolov5_git.utils.loss import ComputeLoss
+from data.models.yolov5.yolov5_git.utils.metrics import fitness
+from data.models.yolov5.yolov5_git.utils.plots import plot_evolve, plot_labels
+from data.models.yolov5.yolov5_git.utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))

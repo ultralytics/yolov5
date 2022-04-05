@@ -17,12 +17,12 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 # ROOT = ROOT.relative_to(Path.cwd())  # relative
 
-from models.common import *
-from models.experimental import *
-from utils.autoanchor import check_anchor_order
-from utils.general import LOGGER, check_version, check_yaml, make_divisible, print_args
-from utils.plots import feature_visualization
-from utils.torch_utils import fuse_conv_and_bn, initialize_weights, model_info, scale_img, select_device, time_sync
+from data.models.yolov5.yolov5_git.models.common import *
+from data.models.yolov5.yolov5_git.models.experimental import *
+from data.models.yolov5.yolov5_git.utils.autoanchor import check_anchor_order
+from data.models.yolov5.yolov5_git.utils.general import LOGGER, check_version, check_yaml, make_divisible, print_args
+from data.models.yolov5.yolov5_git.utils.plots import feature_visualization
+from data.models.yolov5.yolov5_git.utils.torch_utils import fuse_conv_and_bn, initialize_weights, model_info, scale_img, select_device, time_sync
 
 try:
     import thop  # for FLOPs computation

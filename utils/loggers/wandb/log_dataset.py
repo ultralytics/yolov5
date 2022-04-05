@@ -2,7 +2,7 @@ import argparse
 
 from wandb_utils import WandbLogger
 
-from utils.general import LOGGER
+from data.models.yolov5.yolov5_git.utils.general import LOGGER
 
 WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 

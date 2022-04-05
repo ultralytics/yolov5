@@ -8,10 +8,10 @@ ROOT = FILE.parents[3]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 
-from train import parse_opt, train
-from utils.callbacks import Callbacks
-from utils.general import increment_path
-from utils.torch_utils import select_device
+from data.models.yolov5.yolov5_git.train import parse_opt, train
+from data.models.yolov5.yolov5_git.utils.callbacks import Callbacks
+from data.models.yolov5.yolov5_git.utils.general import increment_path
+from data.models.yolov5.yolov5_git.utils.torch_utils import select_device
 
 
 def sweep():

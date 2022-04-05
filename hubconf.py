@@ -28,11 +28,11 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     """
     from pathlib import Path
 
-    from models.common import AutoShape, DetectMultiBackend
-    from models.yolo import Model
-    from utils.downloads import attempt_download
-    from utils.general import LOGGER, check_requirements, intersect_dicts, logging
-    from utils.torch_utils import select_device
+    from data.models.yolov5.yolov5_git.models.common import AutoShape, DetectMultiBackend
+    from data.models.yolov5.yolov5_git.models.yolo import Model
+    from data.models.yolov5.yolov5_git.utils.downloads import attempt_download
+    from data.models.yolov5.yolov5_git.utils.general import LOGGER, check_requirements, intersect_dicts, logging
+    from data.models.yolov5.yolov5_git.utils.torch_utils import select_device
 
     if not verbose:
         LOGGER.setLevel(logging.WARNING)

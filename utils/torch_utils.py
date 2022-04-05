@@ -19,7 +19,7 @@ import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils.general import LOGGER
+from data.models.yolov5.yolov5_git.utils.general import LOGGER
 
 try:
     import thop  # for FLOPs computation

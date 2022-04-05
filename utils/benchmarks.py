@@ -37,10 +37,10 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 # ROOT = ROOT.relative_to(Path.cwd())  # relative
 
-import export
-import val
-from utils import notebook_init
-from utils.general import LOGGER, print_args
+import data.models.yolov5.yolov5_git.export as export
+import data.models.yolov5.yolov5_git.val as val
+from data.models.yolov5.yolov5_git.utils import notebook_init
+from data.models.yolov5.yolov5_git.utils.general import LOGGER, print_args
 
 
 def run(weights=ROOT / 'yolov5s.pt',  # weights path
