@@ -78,9 +78,9 @@ def is_writeable(dir, test=False):
 
 def set_logging(name=None, verbose=VERBOSE):
     # Sets level and returns logger
-    # if is_kaggle():
-    #     for h in logging.root.handlers:
-    #         logging.root.removeHandler(h)  # remove all handlers associated with the root logger object
+    if is_kaggle():
+        for h in logging.root.handlers:
+            logging.root.removeHandler(h)  # remove all handlers associated with the root logger object
     rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
     level = logging.INFO if (verbose and rank in (-1, 0)) else logging.WARNING
     log = logging.getLogger(name)
