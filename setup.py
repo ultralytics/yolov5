@@ -6,7 +6,7 @@ def read_requirements():
 
 setuptools.setup(
     name="yolov5",
-    version='6.1.0dev0',
+    version='6.1.0',
     author="",
     license="GPL",
     description="Packaged version of the Yolov5 object detector",
