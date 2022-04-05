@@ -1,3 +1,4 @@
+<!--
 Thank you for submitting a YOLOv5 🚀 Pull Request! We want to make contributing to YOLOv5 as easy and transparent as possible. A few tips to get you started:
 
 - Search existing YOLOv5 [PRs](https://github.com/ultralytics/yolov5/pull) to see if a similar PR already exists.
@@ -5,3 +6,4 @@ Thank you for submitting a YOLOv5 🚀 Pull Request! We want to make contributin
 - Provide before and after profiling/inference/training results to help us quantify the improvement your PR provides (if applicable).
 
 Please see our ✅ [Contributing Guide](https://github.com/ultralytics/yolov5/blob/master/CONTRIBUTING.md) for more details.
+-->
