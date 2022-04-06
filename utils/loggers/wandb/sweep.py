@@ -16,8 +16,7 @@ from utils.torch_utils import select_device
 
 def sweep():
     wandb.init()
-    # Get hyp dict from sweep agent. Copy it because train() will
-    # overwrite some parameters which confuses wandb.
+    # Get hyp dict from sweep agent. Copy because train() modifies parameters which confused wandb.
     hyp_dict = vars(wandb.config).get("_items").copy()
 
     # Workaround: get necessary opt args
