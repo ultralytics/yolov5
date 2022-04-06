@@ -24,7 +24,7 @@ download: |
 
   def visdrone2yolo(dir):
       from PIL import Image
-      from tqdm import tqdm
+      from tqdm.auto import tqdm
 
       def convert_box(size, box):
           # Convert VisDrone box to YOLO xywh box
