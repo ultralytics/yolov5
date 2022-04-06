@@ -497,20 +497,32 @@ def url2file(url):
     return file
 
 
-def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
+def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry=3):
     # Multi-threaded file download and unzip function, used in data.yaml for autodownload
     def download_one(url, dir):
         # Download 1 file
+        success = True
         f = dir / Path(url).name  # filename
         if Path(url).is_file():  # exists in current path
             Path(url).rename(f)  # move to dir
         elif not f.exists():
             LOGGER.info(f'Downloading {url} to {f}...')
-            if curl:
-                os.system(f"curl -L '{url}' -o '{f}' --retry 9 -C -")  # curl download, retry and resume on fail
-            else:
-                torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
-        if unzip and f.suffix in ('.zip', '.gz'):
+            for i in range(retry + 1):
+                if curl:
+                    s = 'sS' if threads > 1 else ''  # silent
+                    r = os.system(f"curl -{s}L '{url}' -o '{f}' --retry 9 -C -")  # curl download
+                    success = r == 0
+                else:
+                    torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
+                    success = f.is_file()
+                if success:
+                    break
+                elif i < retry:
+                    LOGGER.warning(f'Download failure, retrying {i + 1}/{retry} {url}...')
+                else:
+                    LOGGER.warning(f'Failed to download {url}...')
+
+        if unzip and success and f.suffix in ('.zip', '.gz'):
             LOGGER.info(f'Unzipping {f}...')
             if f.suffix == '.zip':
                 ZipFile(f).extractall(path=dir)  # unzip
