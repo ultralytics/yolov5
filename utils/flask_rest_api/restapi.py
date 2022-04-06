@@ -21,10 +21,9 @@ def predict():
         return
 
     if request.files.get("image"):
-        image_file = request.files["image"]
-        image_bytes = image_file.read()
-        with Image.open(io.BytesIO(image_bytes)) as im:
-            results = model(im, size=640)  # reduce size=320 for faster inference
+        with request.files["image"] as f:
+            im = Image.open(io.BytesIO(f.read()))
+        results = model(im, size=640)  # reduce size=320 for faster inference
         return results.pandas().xyxy[0].to_json(orient="records")
 
 
