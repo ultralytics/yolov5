@@ -7,8 +7,8 @@ import argparse
 import io
 
 import torch
-from flask import Flask, request
 from PIL import Image
+from flask import Flask, request
 
 app = Flask(__name__)
 
@@ -23,10 +23,8 @@ def predict():
     if request.files.get("image"):
         image_file = request.files["image"]
         image_bytes = image_file.read()
-
-        img = Image.open(io.BytesIO(image_bytes))
-
-        results = model(img, size=640)  # reduce size=320 for faster inference
+        with Image.open(io.BytesIO(image_bytes)) as im:
+            results = model(im, size=640)  # reduce size=320 for faster inference
         return results.pandas().xyxy[0].to_json(orient="records")
 
 
