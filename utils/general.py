@@ -507,7 +507,7 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
             Path(url).rename(f)  # move to dir
         elif not f.exists():
             LOGGER.info(f'Downloading {url} to {f}...')
-            for _ in range(retry):
+            for i in range(retry):
                 if curl:
                     s = 'sS' if threads > 1 else ''  # silent
                     r = os.system(f"curl -{s}L '{url}' -o '{f}' --retry 9 -C -")  # curl download
@@ -517,8 +517,10 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
                     success = f.is_file()
                 if success:
                     break
+                elif i < (retry - 1):
+                    LOGGER.info(f'Failure, retrying {i + 1}/{retry} {url}...')
                 else:
-                    LOGGER.info(f'Failure, retrying {url} to {f}...')
+                    LOGGER.info(f'Failed to download {url}...')
 
         if unzip and success and f.suffix in ('.zip', '.gz'):
             LOGGER.info(f'Unzipping {f}...')
