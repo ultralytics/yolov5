@@ -509,13 +509,16 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
             LOGGER.info(f'Downloading {url} to {f}...')
             for _ in range(retry):
                 if curl:
-                    r = os.system(f"curl -L '{url}' -o '{f}' --retry 9 -C -")  # curl download, retry and resume on fail
+                    s = 'sS' if threads > 1 else ''  # silent
+                    r = os.system(f"curl -{s}L '{url}' -o '{f}' --retry 9 -C -")  # curl download
                     success = r == 0
                 else:
                     torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
                     success = f.is_file()
                 if success:
                     break
+                else:
+                    LOGGER.info(f'Failure, retrying {url} to {f}...')
 
         if unzip and success and f.suffix in ('.zip', '.gz'):
             LOGGER.info(f'Unzipping {f}...')
