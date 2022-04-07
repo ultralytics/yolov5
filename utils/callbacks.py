@@ -53,10 +53,7 @@ class Callbacks:
         Args:
             hook The name of the hook to check, defaults to all
         """
-        if hook:
-            return self._callbacks[hook]
-        else:
-            return self._callbacks
+        return self._callbacks[hook] if hook else self._callbacks
 
     def run(self, hook, *args, **kwargs):
         """
