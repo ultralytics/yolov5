@@ -152,7 +152,7 @@ class TFBottleneckCSP(keras.layers.Layer):
         self.cv3 = TFConv2d(c_, c_, 1, 1, bias=False, w=w.cv3)
         self.cv4 = TFConv(2 * c_, c2, 1, 1, w=w.cv4)
         self.bn = TFBN(w.bn)
-        self.act = lambda x: keras.activations.relu(x, alpha=0.1)
+        self.act = lambda x: keras.activations.swish(x)
         self.m = keras.Sequential([TFBottleneck(c_, c_, shortcut, g, e=1.0, w=w.m[j]) for j in range(n)])
 
     def call(self, inputs):
