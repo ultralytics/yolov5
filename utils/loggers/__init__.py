@@ -131,7 +131,6 @@ class Loggers():
         x = {k: v for k, v in zip(self.keys, vals)}  # dict
         if self.csv:
             file = self.save_dir / 'results.csv'
-            n = len(x) + 1  # number of cols
             s = [] if file.exists() else list(['epoch'] + self.keys)  # header
             results_data = [epoch] + [val.item() if isinstance(val, torch.Tensor) else val for val in vals]
             results = pd.read_csv(file) if not s else pd.DataFrame(columns=s)
