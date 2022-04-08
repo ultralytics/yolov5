@@ -864,9 +864,10 @@ def print_mutation(results, hyp, save_dir, bucket, prefix=colorstr('evolve: ')):
             os.system(f'gsutil cp {url} {save_dir}')  # download evolve.csv if larger than local
 
     # Log to evolve.csv
-    s = '' if evolve_csv.exists() else (('%20s,' * n % keys).rstrip(',') + '\n')  # add header
-    with open(evolve_csv, 'a') as f:
-        f.write(s + ('%20.5g,' * n % vals).rstrip(',') + '\n')
+    s = [] if evolve_csv.exists() else list(keys)  # header
+    evolve_df = pd.read_csv(evolve_csv) if not s else pd.DataFrame(columns=s)
+    evolve_df.loc[len(evolve_df)] = vals
+    evolve_df.to_csv(evolve_csv, index=False)
 
     # Save yaml
     with open(evolve_yaml, 'w') as f:
