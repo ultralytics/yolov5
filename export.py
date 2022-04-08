@@ -29,7 +29,7 @@ Inference:
                                          yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
                                          yolov5s.xml                # OpenVINO
                                          yolov5s.engine             # TensorRT
-                                         yolov5s.mlmodel            # CoreML (MacOS-only)
+                                         yolov5s.mlmodel            # CoreML (macOS-only)
                                          yolov5s_saved_model        # TensorFlow SavedModel
                                          yolov5s.pb                 # TensorFlow GraphDef
                                          yolov5s.tflite             # TensorFlow Lite
