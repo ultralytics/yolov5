@@ -1,5 +1,7 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+
 # Start FROM Nvidia PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
-FROM nvcr.io/nvidia/pytorch:21.03-py3
+FROM nvcr.io/nvidia/pytorch:21.10-py3
 
 # Install linux packages
 RUN apt update && apt install -y zip htop screen libgl1-mesa-glx
@@ -7,31 +9,36 @@ RUN apt update && apt install -y zip htop screen libgl1-mesa-glx
 # Install python dependencies
 COPY requirements.txt .
 RUN python -m pip install --upgrade pip
-RUN pip uninstall -y nvidia-tensorboard nvidia-tensorboard-plugin-dlprof
-RUN pip install --no-cache -r requirements.txt coremltools onnx gsutil notebook
+RUN pip uninstall -y torch torchvision torchtext
+RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook \
+    torch==1.11.0+cu113 torchvision==0.12.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+# RUN pip install --no-cache -U torch torchvision
 
 # Create working directory
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 # Copy contents
-COPY . /usr/src/app
+RUN git clone https://github.com/ultralytics/yolov5 /usr/src/app
+# COPY . /usr/src/app
+
+# Downloads to user config dir
+ADD https://ultralytics.com/assets/Arial.ttf /root/.config/Ultralytics/
 
 # Set environment variables
-ENV HOME=/usr/src/app
+# ENV HOME=/usr/src/app
 
 
-# ---------------------------------------------------  Extras Below  ---------------------------------------------------
+# Usage Examples -------------------------------------------------------------------------------------------------------
 
 # Build and Push
 # t=ultralytics/yolov5:latest && sudo docker build -t $t . && sudo docker push $t
-# for v in {300..303}; do t=ultralytics/coco:v$v && sudo docker build -t $t . && sudo docker push $t; done
 
 # Pull and Run
 # t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all $t
 
 # Pull and Run with local directory access
-# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all -v "$(pwd)"/coco:/usr/src/coco $t
+# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all -v "$(pwd)"/datasets:/usr/src/datasets $t
 
 # Kill all
 # sudo docker kill $(sudo docker ps -q)
@@ -45,8 +52,14 @@ ENV HOME=/usr/src/app
 # Bash into stopped container
 # id=$(sudo docker ps -qa) && sudo docker start $id && sudo docker exec -it $id bash
 
-# Send weights to GCP
-# python -c "from utils.general import *; strip_optimizer('runs/train/exp0_*/weights/best.pt', 'tmp.pt')" && gsutil cp tmp.pt gs://*.pt
-
 # Clean up
 # docker system prune -a --volumes
+
+# Update Ubuntu drivers
+# https://www.maketecheasier.com/install-nvidia-drivers-ubuntu/
+
+# DDP test
+# python -m torch.distributed.run --nproc_per_node 2 --master_port 1 train.py --epochs 3
+
+# GCP VM from Image
+# docker.io/ultralytics/yolov5:latest

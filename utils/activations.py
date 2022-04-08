@@ -1,9 +1,11 @@
-# Activation functions
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Activation functions
+"""
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 
 def is_activation(mod, act_types=None):
     if not act_types:
@@ -23,7 +25,6 @@ def replace_activations(mod, act, act_types=None):
         else:
             replace_activations(child, act, act_types)
 
-
 # SiLU https://arxiv.org/pdf/1606.08415.pdf ----------------------------------------------------------------------------
 class SiLU(nn.Module):  # export-friendly version of nn.SiLU()
     @staticmethod
@@ -34,8 +35,8 @@ class SiLU(nn.Module):  # export-friendly version of nn.SiLU()
 class Hardswish(nn.Module):  # export-friendly version of nn.Hardswish()
     @staticmethod
     def forward(x):
-        # return x * F.hardsigmoid(x)  # for torchscript and CoreML
-        return x * F.hardtanh(x + 3, 0., 6.) / 6.  # for torchscript, CoreML and ONNX
+        # return x * F.hardsigmoid(x)  # for TorchScript and CoreML
+        return x * F.hardtanh(x + 3, 0.0, 6.0) / 6.0  # for TorchScript, CoreML and ONNX
 
 
 # Mish https://github.com/digantamisra98/Mish --------------------------------------------------------------------------

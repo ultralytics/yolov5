@@ -19,26 +19,23 @@
 *.avi
 *.data
 *.json
-
 *.cfg
+!setup.cfg
 !cfg/yolov3*.cfg
 
 storage.googleapis.com
 runs/*
 data/*
+data/images/*
+!data/*.yaml
+!data/hyps
+!data/scripts
+!data/images
 !data/images/zidane.jpg
 !data/images/bus.jpg
-!data/coco.names
-!data/coco_paper.names
-!data/coco.data
-!data/coco_*.data
-!data/coco_*.txt
-!data/trainvalno5k.shapes
 !data/*.sh
 
-pycocotools/*
-results*.txt
-gcp_test*.sh
+results*.csv
 
 # Datasets -------------------------------------------------------------------------------------------------------------
 coco/
@@ -53,9 +50,16 @@ VOC/
 # Neural Network weights -----------------------------------------------------------------------------------------------
 *.weights
 *.pt
+*.pb
 *.onnx
+*.engine
 *.mlmodel
 *.torchscript
+*.tflite
+*.h5
+*_saved_model/
+*_web_model/
+*_openvino_model/
 darknet53.conv.74
 yolov3-tiny.conv.15
 
@@ -84,7 +88,7 @@ sdist/
 var/
 wheels/
 *.egg-info/
-wandb/
+/wandb/
 .installed.cfg
 *.egg
 
