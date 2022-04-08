@@ -89,10 +89,11 @@ class Annotator:
             if label:
                 w, h = self.font.getsize(label)  # text width, height
                 outside = box[1] - h >= 0  # label fits outside box
-                self.draw.rectangle((box[0],
-                                     box[1] - h if outside else box[1],
-                                     box[0] + w + 1,
-                                     box[1] + 1 if outside else box[1] + h + 1), fill=color)
+                self.draw.rectangle(
+                    (box[0], box[1] - h if outside else box[1], box[0] + w + 1,
+                     box[1] + 1 if outside else box[1] + h + 1),
+                    fill=color,
+                )
                 # self.draw.text((box[0], box[1]), label, fill=txt_color, font=self.font, anchor='ls')  # for PIL>8.0
                 self.draw.text((box[0], box[1] - h if outside else box[1]), label, fill=txt_color, font=self.font)
         else:  # cv2
@@ -104,8 +105,13 @@ class Annotator:
                 outside = p1[1] - h - 3 >= 0  # label fits outside box
                 p2 = p1[0] + w, p1[1] - h - 3 if outside else p1[1] + h + 3
                 cv2.rectangle(self.im, p1, p2, color, -1, cv2.LINE_AA)  # filled
-                cv2.putText(self.im, label, (p1[0], p1[1] - 2 if outside else p1[1] + h + 2), 0, self.lw / 3, txt_color,
-                            thickness=tf, lineType=cv2.LINE_AA)
+                cv2.putText(self.im,
+                            label, (p1[0], p1[1] - 2 if outside else p1[1] + h + 2),
+                            0,
+                            self.lw / 3,
+                            txt_color,
+                            thickness=tf,
+                            lineType=cv2.LINE_AA)
 
     def rectangle(self, xy, fill=None, outline=None, width=1):
         # Add rectangle to image (PIL-only)
@@ -307,11 +313,19 @@ def plot_val_study(file='', dir='', x=None):  # from utils.plots import *; plot_
                 ax[i].set_title(s[i])
 
         j = y[3].argmax() + 1
-        ax2.plot(y[5, 1:j], y[3, 1:j] * 1E2, '.-', linewidth=2, markersize=8,
+        ax2.plot(y[5, 1:j],
+                 y[3, 1:j] * 1E2,
+                 '.-',
+                 linewidth=2,
+                 markersize=8,
                  label=f.stem.replace('study_coco_', '').replace('yolo', 'YOLO'))
 
     ax2.plot(1E3 / np.array([209, 140, 97, 58, 35, 18]), [34.6, 40.5, 43.0, 47.5, 49.7, 51.5],
-             'k.-', linewidth=2, markersize=8, alpha=.25, label='EfficientDet')
+             'k.-',
+             linewidth=2,
+             markersize=8,
+             alpha=.25,
+             label='EfficientDet')
 
     ax2.grid(alpha=0.2)
     ax2.set_yticks(np.arange(20, 60, 5))

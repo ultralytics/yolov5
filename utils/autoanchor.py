@@ -8,7 +8,7 @@ import random
 import numpy as np
 import torch
 import yaml
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from utils.general import LOGGER, colorstr, emojis
 

@@ -162,7 +162,7 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
 * [Model Pruning/Sparsity](https://github.com/ultralytics/yolov5/issues/304)
 * [Hyperparameter Evolution](https://github.com/ultralytics/yolov5/issues/607)
 * [Transfer Learning with Frozen Layers](https://github.com/ultralytics/yolov5/issues/1314)&nbsp; ⭐ NEW
-* [TensorRT Deployment](https://github.com/wang-xinyu/tensorrtx)
+* [Architecture Summary](https://github.com/ultralytics/yolov5/issues/6998)&nbsp; ⭐ NEW
 
 </details>
 

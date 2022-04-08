@@ -127,16 +127,18 @@ if __name__ == '__main__':
     # Verify inference
     from pathlib import Path
 
-    import cv2
     import numpy as np
     from PIL import Image
 
-    imgs = ['data/images/zidane.jpg',  # filename
-            Path('data/images/zidane.jpg'),  # Path
-            'https://ultralytics.com/images/zidane.jpg',  # URI
-            cv2.imread('data/images/bus.jpg')[:, :, ::-1],  # OpenCV
-            Image.open('data/images/bus.jpg'),  # PIL
-            np.zeros((320, 640, 3))]  # numpy
+    from utils.general import cv2
+
+    imgs = [
+        'data/images/zidane.jpg',  # filename
+        Path('data/images/zidane.jpg'),  # Path
+        'https://ultralytics.com/images/zidane.jpg',  # URI
+        cv2.imread('data/images/bus.jpg')[:, :, ::-1],  # OpenCV
+        Image.open('data/images/bus.jpg'),  # PIL
+        np.zeros((320, 640, 3))]  # numpy
 
     results = model(imgs, size=320)  # batched inference
     results.print()
