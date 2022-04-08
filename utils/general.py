@@ -855,7 +855,6 @@ def print_mutation(results, hyp, save_dir, bucket, prefix=colorstr('evolve: ')):
             'val/obj_loss', 'val/cls_loss') + tuple(hyp.keys())  # [results + hyps]
     keys = tuple(x.strip() for x in keys)
     vals = results + tuple(hyp.values())
-    n = len(keys)
 
     # Download (optional)
     if bucket:
