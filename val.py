@@ -122,7 +122,7 @@ def run(
         plots=True,
         callbacks=Callbacks(),
         compute_loss=None,
-        stride = -1,
+        stride=-1,
 ):
     # Initialize/load model and set device
     training = model is not None
