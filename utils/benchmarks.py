@@ -108,7 +108,7 @@ def test(
                 export.run(weights=weights, imgsz=[imgsz], include=[f], device=device, half=half)[-1]  # weights
             assert suffix in str(w), 'export failed'
             y.append([name, True])
-        except Exception as e:
+        except Exception:
             y.append([name, False])  # mAP, t_inference
 
     # Print results
