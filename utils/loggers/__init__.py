@@ -7,6 +7,7 @@ import os
 import warnings
 from threading import Thread
 
+import pandas as pd
 import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -131,9 +132,11 @@ class Loggers():
         if self.csv:
             file = self.save_dir / 'results.csv'
             n = len(x) + 1  # number of cols
-            s = '' if file.exists() else (('%20s,' * n % tuple(['epoch'] + self.keys)).rstrip(',') + '\n')  # add header
-            with open(file, 'a') as f:
-                f.write(s + ('%20.5g,' * n % tuple([epoch] + vals)).rstrip(',') + '\n')
+            s = [] if file.exists() else list(['epoch'] + self.keys)  # header
+            results_data = [epoch] + [val.item() if isinstance(val, torch.Tensor) else val for val in vals]
+            results = pd.read_csv(file) if not s else pd.DataFrame(columns=s)
+            results.loc[len(results)] = results_data
+            results.to_csv(file, index=False)
 
         if self.tb:
             for k, v in x.items():
