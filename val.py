@@ -139,6 +139,8 @@ def run(
         # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
         stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
+        if opt.stride > 0:
+            stride = opt.stride
         imgsz = check_img_size(imgsz, s=stride)  # check image size
         half = model.fp16  # FP16 supported on limited backends with CUDA
         if engine:
@@ -354,6 +356,7 @@ def parse_opt():
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
+    parser.add_argument('--stride', type=int, default=-1, help='set stride for the model,-1 for auto caculate')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')
