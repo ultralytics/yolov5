@@ -260,6 +260,7 @@ def box_iou(box1, box2):
         iou (Tensor[N, M]): the NxM matrix containing the pairwise
             IoU values for every element in boxes1 and boxes2
     """
+
     def box_area(box):
         # box = 4xn
         return (box[2] - box[0]) * (box[3] - box[1])

@@ -4,7 +4,7 @@
 # parent
 # ├── yolov5
 # └── datasets
-#     └── SKU-110K  ← downloads here
+#     └── SKU-110K  ← downloads here (13.6 GB)
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
@@ -21,7 +21,7 @@ names: ['object']  # class names
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
   import shutil
-  from tqdm import tqdm
+  from tqdm.auto import tqdm
   from utils.general import np, pd, Path, download, xyxy2xywh
 
 

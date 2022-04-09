@@ -29,7 +29,7 @@ Inference:
                                          yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
                                          yolov5s.xml                # OpenVINO
                                          yolov5s.engine             # TensorRT
-                                         yolov5s.mlmodel            # CoreML (MacOS-only)
+                                         yolov5s.mlmodel            # CoreML (macOS-only)
                                          yolov5s_saved_model        # TensorFlow SavedModel
                                          yolov5s.pb                 # TensorFlow GraphDef
                                          yolov5s.tflite             # TensorFlow Lite
@@ -140,7 +140,13 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         # Checks
         model_onnx = onnx.load(f)  # load onnx model
         onnx.checker.check_model(model_onnx)  # check onnx model
-        # LOGGER.info(onnx.helper.printable_graph(model_onnx.graph))  # print
+
+        # Metadata
+        d = {'stride': int(max(model.stride)), 'names': model.names}
+        for k, v in d.items():
+            meta = model_onnx.metadata_props.add()
+            meta.key, meta.value = k, str(v)
+        onnx.save(model_onnx, f)
 
         # Simplify
         if simplify:
@@ -445,7 +451,7 @@ def export_pb(keras_model, im, file, prefix=colorstr('TensorFlow GraphDef:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
-def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('TensorFlow Lite:')):
+def export_tflite(keras_model, im, file, int8, data, nms, agnostic_nms, prefix=colorstr('TensorFlow Lite:')):
     # YOLOv5 TensorFlow Lite export
     try:
         import tensorflow as tf
@@ -461,13 +467,15 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
         if int8:
             from models.tf import representative_dataset_gen
             dataset = LoadImages(check_dataset(data)['train'], img_size=imgsz, auto=False)  # representative data
-            converter.representative_dataset = lambda: representative_dataset_gen(dataset, ncalib)
+            converter.representative_dataset = lambda: representative_dataset_gen(dataset, ncalib=100)
             converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
             converter.target_spec.supported_types = []
             converter.inference_input_type = tf.uint8  # or tf.int8
             converter.inference_output_type = tf.uint8  # or tf.int8
             converter.experimental_new_quantizer = True
             f = str(file).replace('.pt', '-int8.tflite')
+        if nms or agnostic_nms:
+            converter.target_spec.supported_ops.append(tf.lite.OpsSet.SELECT_TF_OPS)
 
         tflite_model = converter.convert()
         open(f, "wb").write(tflite_model)
@@ -523,7 +531,8 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
               f'--output_node_names="Identity,Identity_1,Identity_2,Identity_3" {f_pb} {f}'
         subprocess.run(cmd, shell=True)
 
-        json = open(f_json).read()
+        with open(f_json) as j:
+            json = j.read()
         with open(f_json, 'w') as j:  # sort JSON Identity_* in ascending order
             subst = re.sub(
                 r'{"outputs": {"Identity.?.?": {"name": "Identity.?.?"}, '
@@ -595,15 +604,10 @@ def run(
         im, model = im.half(), model.half()  # to FP16
     model.train() if train else model.eval()  # training mode = no Detect() layer grid construction
     for k, m in model.named_modules():
-        # if isinstance(m, Conv):  # assign export-friendly activations
-        #     if isinstance(m.act, nn.SiLU):
-        #         m.act = SiLU()
         if isinstance(m, Detect):
             m.inplace = inplace
             m.onnx_dynamic = dynamic
             m.export = True
-            if hasattr(m, 'forward_export'):
-                m.forward = m.forward_export  # assign custom forward (optional)
 
     for _ in range(2):
         y = model(im)  # dry runs
@@ -643,7 +647,7 @@ def run(
         if pb or tfjs:  # pb prerequisite to tfjs
             f[6] = export_pb(model, im, file)
         if tflite or edgetpu:
-            f[7] = export_tflite(model, im, file, int8=int8 or edgetpu, data=data, ncalib=100)
+            f[7] = export_tflite(model, im, file, int8=int8 or edgetpu, data=data, nms=nms, agnostic_nms=agnostic_nms)
         if edgetpu:
             f[8] = export_edgetpu(model, im, file)
         if tfjs:

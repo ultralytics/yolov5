@@ -24,7 +24,7 @@ import torch.nn.functional as F
 import yaml
 from PIL import ExifTags, Image, ImageOps
 from torch.utils.data import DataLoader, Dataset, dataloader, distributed
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
 from utils.general import (DATASETS_DIR, LOGGER, NUM_THREADS, check_dataset, check_requirements, check_yaml, clean_str,
@@ -36,6 +36,7 @@ HELP_URL = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 IMG_FORMATS = 'bmp', 'dng', 'jpeg', 'jpg', 'mpo', 'png', 'tif', 'tiff', 'webp'  # include image suffixes
 VID_FORMATS = 'asf', 'avi', 'gif', 'm4v', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'ts', 'wmv'  # include video suffixes
 BAR_FORMAT = '{l_bar}{bar:10}{r_bar}{bar:-10b}'  # tqdm bar format
+LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 
 # Get orientation exif tag
 for orientation in ExifTags.TAGS.keys():
@@ -145,6 +146,7 @@ class InfiniteDataLoader(dataloader.DataLoader):
 
     Uses same syntax as vanilla DataLoader
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         object.__setattr__(self, 'batch_sampler', _RepeatSampler(self.batch_sampler))
@@ -164,6 +166,7 @@ class _RepeatSampler:
     Args:
         sampler (Sampler)
     """
+
     def __init__(self, sampler):
         self.sampler = sampler
 
@@ -452,7 +455,7 @@ class LoadImagesAndLabels(Dataset):
 
         # Display cache
         nf, nm, ne, nc, n = cache.pop('results')  # found, missing, empty, corrupt, total
-        if exists:
+        if exists and LOCAL_RANK in (-1, 0):
             d = f"Scanning '{cache_path}' images and labels... {nf} found, {nm} missing, {ne} empty, {nc} corrupt"
             tqdm(None, desc=prefix + d, total=n, initial=n, bar_format=BAR_FORMAT)  # display cache results
             if cache['msgs']:
@@ -978,6 +981,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         autodownload:   Attempt to download dataset if not found locally
         verbose:        Print stats dictionary
     """
+
     def round_labels(labels):
         # Update labels to integer class and 6 decimal place floats
         return [[int(c), *(round(x, 4) for x in points)] for c, *points in labels]

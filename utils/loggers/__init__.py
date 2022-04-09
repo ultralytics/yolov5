@@ -84,6 +84,10 @@ class Loggers():
         else:
             self.wandb = None
 
+    def on_train_start(self):
+        # Callback runs on train start
+        pass
+
     def on_pretrain_routine_end(self):
         # Callback runs on pre-train routine end
         paths = self.save_dir.glob('*labels*.jpg')  # training labels
