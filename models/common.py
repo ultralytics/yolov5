@@ -328,6 +328,9 @@ class DetectMultiBackend(nn.Module):
             import onnxruntime
             providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] if cuda else ['CPUExecutionProvider']
             session = onnxruntime.InferenceSession(w, providers=providers)
+            meta = session.get_modelmeta().custom_metadata_map  # metadata
+            if 'stride' in meta:
+                stride, names = int(meta['stride']), eval(meta['names'])
         elif xml:  # OpenVINO
             LOGGER.info(f'Loading {w} for OpenVINO inference...')
             check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/

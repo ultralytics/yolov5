@@ -140,7 +140,13 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         # Checks
         model_onnx = onnx.load(f)  # load onnx model
         onnx.checker.check_model(model_onnx)  # check onnx model
-        # LOGGER.info(onnx.helper.printable_graph(model_onnx.graph))  # print
+
+        # Metadata
+        d = {'stride': int(max(model.stride)), 'names': model.names}
+        for k, v in d.items():
+            meta = model_onnx.metadata_props.add()
+            meta.key, meta.value = k, str(v)
+        onnx.save(model_onnx, f)
 
         # Simplify
         if simplify:
