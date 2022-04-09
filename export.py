@@ -187,6 +187,7 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
 
 
 class CoreMLExportModel(torch.nn.Module):
+
     def __init__(self, base_model, img_size):
         super().__init__()
         self.base_model = base_model
