@@ -11,7 +11,7 @@ Usage - formats:
                                       yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
                                       yolov5s.xml                # OpenVINO
                                       yolov5s.engine             # TensorRT
-                                      yolov5s.mlmodel            # CoreML (MacOS-only)
+                                      yolov5s.mlmodel            # CoreML (macOS-only)
                                       yolov5s_saved_model        # TensorFlow SavedModel
                                       yolov5s.pb                 # TensorFlow GraphDef
                                       yolov5s.tflite             # TensorFlow Lite
@@ -122,7 +122,6 @@ def run(
         plots=True,
         callbacks=Callbacks(),
         compute_loss=None,
-        stride=-1,
 ):
     # Initialize/load model and set device
     training = model is not None
@@ -139,7 +138,6 @@ def run(
 
         # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
-        model.stride = stride if stride > 0 else model.stride
         stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
         imgsz = check_img_size(imgsz, s=stride)  # check image size
         half = model.fp16  # FP16 supported on limited backends with CUDA
@@ -356,7 +354,6 @@ def parse_opt():
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
-    parser.add_argument('--stride', type=int, default=-1, help='set stride for the model,-1 for auto caculate')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')
