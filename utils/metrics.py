@@ -247,6 +247,11 @@ def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
     return iou  # IoU
 
 
+def box_area(box):
+    # box = xyxy(4,n)
+    return (box[2] - box[0]) * (box[3] - box[1])
+
+
 def box_iou(box1, box2):
     # https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
     """
@@ -260,16 +265,12 @@ def box_iou(box1, box2):
             IoU values for every element in boxes1 and boxes2
     """
 
-    def box_area(box):
-        # box = 4xn
-        return (box[2] - box[0]) * (box[3] - box[1])
-
-    area1 = box_area(box1.T)
-    area2 = box_area(box2.T)
-
     # inter(N,M) = (rb(N,M,2) - lt(N,M,2)).clamp(0).prod(2)
-    inter = (torch.min(box1[:, None, 2:], box2[:, 2:]) - torch.max(box1[:, None, :2], box2[:, :2])).clamp(0).prod(2)
-    return inter / (area1[:, None] + area2 - inter)  # iou = inter / (area1 + area2 - inter)
+    (a1, a2), (b1, b2) = box1[:, None].chunk(2, 2), box2.chunk(2, 1)
+    inter = (torch.min(a2, b2) - torch.max(a1, b1)).clamp(0).prod(2)
+
+    # IoU = inter / (area1 + area2 - inter)
+    return inter / (box_area(box1.T)[:, None] + box_area(box2.T) - inter)
 
 
 def bbox_ioa(box1, box2, eps=1E-7):
