@@ -220,34 +220,40 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         LOGGER.info('Using SyncBatchNorm()')
 
     # Trainloader
-    train_loader, dataset = create_dataloader(train_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
-                                              hyp=hyp, augment=True, cache=None if opt.cache == 'val' else opt.cache,
-                                              rect=opt.rect, rank=LOCAL_RANK, workers=workers,
-                                              image_weights=opt.image_weights, quad=opt.quad,
-                                              prefix=colorstr('train: '), shuffle=True)
-    mlc = int(np.concatenate(dataset.labels, 0)[:, 0].max())  # max label class
-    nb = len(train_loader)  # number of batches
+    train_loader, dataset = create_dataloader(
+        train_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
+        hyp=hyp, augment=True, cache=None if opt.cache == 'val' else opt.cache,
+        rect=opt.rect, rank=LOCAL_RANK, workers=workers,
+        image_weights=opt.image_weights, quad=opt.quad,
+        prefix=colorstr('train: '), shuffle=True, 
+        ignore_cache=opt.ignore_cache)
+    
+    mlc = max(dataset.data.label_stats) # max label class
+    nb  = int(np.ceil(len(dataset) / batch_size)) # nb  = len(train_loader)  # number of batches
     assert mlc < nc, f'Label class {mlc} exceeds nc={nc} in {data}. Possible class labels are 0-{nc - 1}'
 
     # Process 0
-    if RANK in [-1, 0]:
-        val_loader = create_dataloader(val_path, imgsz, batch_size // WORLD_SIZE * 2, gs, single_cls,
-                                       hyp=hyp, cache=None if noval else opt.cache,
-                                       rect=True, rank=-1, workers=workers * 2, pad=0.5,
-                                       prefix=colorstr('val: '))[0]
+    if RANK in [-1, 0]: # -1 by default
+        val_loader, _ = create_dataloader(
+            val_path, imgsz, batch_size // WORLD_SIZE * 2, gs, single_cls,
+            hyp=hyp, cache=None if noval else opt.cache,
+            rect=True, rank=-1, workers=workers * 2, pad=0.5,
+            prefix=colorstr('val: '),
+            ignore_cache=opt.ignore_cache)
 
         if not resume:
-            labels = np.concatenate(dataset.labels, 0)
-            # c = torch.tensor(labels[:, 0])  # classes
-            # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
-            # model._initialize_biases(cf.to(device))
+            # TODO: check this graph
+            labels = dataset.data.labels # np.concatenate(dataset.labels, 0)
             if plots:
                 plot_labels(labels, names, save_dir)
 
             # Anchors
-            if not opt.noautoanchor:
-                check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
-            model.half().float()  # pre-reduce anchor precision
+            # TODO: put this back and debug it !
+            # if not opt.noautoanchor:
+            #     check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
+            # pre-reduce anchor precision
+            model.half().float()
+            # TODO: check for half precision ! slower on GPUs
 
         callbacks.run('on_pretrain_routine_end')
 
@@ -263,7 +269,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     hyp['label_smoothing'] = opt.label_smoothing
     model.nc = nc  # attach number of classes to model
     model.hyp = hyp  # attach hyperparameters to model
-    model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device) * nc  # attach class weights
+    model.class_weights = labels_to_class_weights(dataset.data.label_stats, nc).to(device) * nc  # attach class weights
     model.names = names
 
     # Start training
@@ -281,7 +287,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 f'Using {train_loader.num_workers * WORLD_SIZE} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
                 f'Starting training for {epochs} epochs...')
-    for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
+
+    # epoch ------------------------------------------------------------------
+    for epoch in range(start_epoch, epochs):
         model.train()
 
         # Update image weights (optional, single-GPU only)
@@ -485,7 +493,7 @@ def parse_opt(known=False):
     parser.add_argument('--freeze', nargs='+', type=int, default=[0], help='Freeze layers: backbone=10, first3=0 1 2')
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
-
+    parser.add_argument('--ignore_cache', action='store_true', help='ignore cache file even if one available')
     # Weights & Biases arguments
     parser.add_argument('--entity', default=None, help='W&B: Entity')
     parser.add_argument('--upload_dataset', nargs='?', const=True, default=False, help='W&B: Upload data, "val" option')

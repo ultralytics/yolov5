@@ -558,21 +558,23 @@ def colorstr(*input):
     return ''.join(colors[x] for x in args) + f'{string}' + colors['end']
 
 
-def labels_to_class_weights(labels, nc=80):
-    # Get class weights (inverse frequency) from training labels
-    if labels[0] is None:  # no labels loaded
-        return torch.Tensor()
+def labels_to_class_weights(label_stats, nc=80):
+    weights = np.array([label_stats.get(x, 0) for x in range(nc)], float)
 
-    labels = np.concatenate(labels, 0)  # labels.shape = (866643, 5) for COCO
-    classes = labels[:, 0].astype(np.int)  # labels = [class xywh]
-    weights = np.bincount(classes, minlength=nc)  # occurrences per class
+    # # Get class weights (inverse frequency) from training labels
+    # if labels[0] is None:  # no labels loaded
+    #     return torch.Tensor()
 
-    # Prepend gridpoint count (for uCE training)
-    # gpi = ((320 / 32 * np.array([1, 2, 4])) ** 2 * 3).sum()  # gridpoints per image
-    # weights = np.hstack([gpi * len(labels)  - weights.sum() * 9, weights * 9]) ** 0.5  # prepend gridpoints to start
+    # labels = np.concatenate(labels, 0)  # labels.shape = (866643, 5) for COCO
+    # classes = labels[:, 0].astype(np.int)  # labels = [class xywh]
+    # weights = np.bincount(classes, minlength=nc)  # occurrences per class
 
-    weights[weights == 0] = 1  # replace empty bins with 1
-    weights = 1 / weights  # number of targets per class
+    # # Prepend gridpoint count (for uCE training)
+    # # gpi = ((320 / 32 * np.array([1, 2, 4])) ** 2 * 3).sum()  # gridpoints per image
+    # # weights = np.hstack([gpi * len(labels)  - weights.sum() * 9, weights * 9]) ** 0.5  # prepend gridpoints to start
+
+    # weights[weights == 0] = 1  # replace empty bins with 1
+    # weights = 1 / weights  # number of targets per class
     weights /= weights.sum()  # normalize
     return torch.from_numpy(weights)
 

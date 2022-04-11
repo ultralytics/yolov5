@@ -1,3 +1,4 @@
+from codecs import ignore_errors
 import torch
 import os
 from torch.utils.data import DataLoader, distributed
@@ -13,7 +14,7 @@ from .collate_fns import collate_fn4, collate_fn
 def create_dataloader(path, imgsz, batch_size, stride, 
     single_cls=False, hyp=None, augment=False, cache=False, 
     pad=0.0, rect=False, rank=-1, workers=8, image_weights=False, 
-    quad=False, prefix='', shuffle=False):
+    quad=False, prefix='', shuffle=False, ignore_cache: bool=False):
     """
         rect: use rectangular training
         quad: use quad dataloader
@@ -25,16 +26,21 @@ def create_dataloader(path, imgsz, batch_size, stride,
 
     # init dataset *.cache only once if DDP
     with torch_distributed_zero_first(rank):  
-        dataset = LoadImagesAndLabels(path, imgsz, batch_size,
-                                      augment=augment,  # augmentation
-                                      hyp=hyp,  # hyperparameters
-                                      rect=rect,  # rectangular batches
-                                      cache_images=cache,
-                                      single_cls=single_cls,
-                                      stride=int(stride),
-                                      pad=pad,
-                                      image_weights=image_weights,
-                                      prefix=prefix)
+        dataset = LoadImagesAndLabels(
+            path=path, 
+            img_size=imgsz, 
+            batch_size=batch_size,
+            augment=augment,  # augmentation
+            hyp=hyp,  # hyperparameters
+            rect=rect,  # rectangular batches
+            cache_images=cache,
+            single_cls=single_cls,
+            stride=int(stride),
+            pad=pad,
+            image_weights=image_weights,
+            prefix=prefix,
+            ignore_cache=ignore_cache,
+            )
 
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()  # number of CUDA devices
