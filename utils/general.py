@@ -82,11 +82,17 @@ def set_logging(name=None, verbose=VERBOSE):
         for h in logging.root.handlers:
             logging.root.removeHandler(h)  # remove all handlers associated with the root logger object
     rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
-    logging.basicConfig(format="%(message)s", level=logging.INFO if (verbose and rank in (-1, 0)) else logging.WARNING)
-    return logging.getLogger(name)
+    level = logging.INFO if (verbose and rank in (-1, 0)) else logging.WARNING
+    log = logging.getLogger(name)
+    log.setLevel(level)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    handler.setLevel(level)
+    log.addHandler(handler)
 
 
-LOGGER = set_logging('yolov5')  # define globally (used in train.py, val.py, detect.py, etc.)
+set_logging()  # run before defining LOGGER
+LOGGER = logging.getLogger("yolov5")  # define globally (used in train.py, val.py, detect.py, etc.)
 
 
 def user_config_dir(dir='Ultralytics', env_var='YOLOV5_CONFIG_DIR'):
@@ -295,7 +301,7 @@ def check_git_status():
     LOGGER.info(emojis(s))  # emoji-safe
 
 
-def check_python(minimum='3.6.2'):
+def check_python(minimum='3.7.0'):
     # Check current python version vs. required python version
     check_version(platform.python_version(), minimum, name='Python ', hard=True)
 
@@ -491,20 +497,32 @@ def url2file(url):
     return file
 
 
-def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
+def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry=3):
     # Multi-threaded file download and unzip function, used in data.yaml for autodownload
     def download_one(url, dir):
         # Download 1 file
+        success = True
         f = dir / Path(url).name  # filename
         if Path(url).is_file():  # exists in current path
             Path(url).rename(f)  # move to dir
         elif not f.exists():
             LOGGER.info(f'Downloading {url} to {f}...')
-            if curl:
-                os.system(f"curl -L '{url}' -o '{f}' --retry 9 -C -")  # curl download, retry and resume on fail
-            else:
-                torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
-        if unzip and f.suffix in ('.zip', '.gz'):
+            for i in range(retry + 1):
+                if curl:
+                    s = 'sS' if threads > 1 else ''  # silent
+                    r = os.system(f"curl -{s}L '{url}' -o '{f}' --retry 9 -C -")  # curl download
+                    success = r == 0
+                else:
+                    torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
+                    success = f.is_file()
+                if success:
+                    break
+                elif i < retry:
+                    LOGGER.warning(f'Download failure, retrying {i + 1}/{retry} {url}...')
+                else:
+                    LOGGER.warning(f'Failed to download {url}...')
+
+        if unzip and success and f.suffix in ('.zip', '.gz'):
             LOGGER.info(f'Unzipping {f}...')
             if f.suffix == '.zip':
                 ZipFile(f).extractall(path=dir)  # unzip
@@ -738,7 +756,7 @@ def non_max_suppression(prediction,
     # min_wh = 2  # (pixels) minimum box width and height
     max_wh = 7680  # (pixels) maximum box width and height
     max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
-    time_limit = 0.030 * bs  # seconds to quit after
+    time_limit = 0.1 + 0.03 * bs  # seconds to quit after
     redundant = True  # require redundant detections
     multi_label &= nc > 1  # multiple labels per box (adds 0.5ms/img)
     merge = False  # use merge-NMS
@@ -925,8 +943,8 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
 imshow_ = cv2.imshow  # copy to avoid recursion errors
 
 
-def imread(path):
-    return cv2.imdecode(np.fromfile(path, np.uint8), cv2.IMREAD_COLOR)
+def imread(path, flags=cv2.IMREAD_COLOR):
+    return cv2.imdecode(np.fromfile(path, np.uint8), flags)
 
 
 def imwrite(path, im):
