@@ -117,9 +117,9 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
         f = file.with_suffix('.onnx')
 
-        warnings.filterwarnings(
-            'ignore', 'The shape inference of prim::Constant type is missing, so it may result in wrong shape'
-            ' inference for the exported graph. Please consider adding it in symbolic function.')
+        s = 'WARNING: The shape inference of prim::Constant type is missing, so it may result in wrong shape ' \
+            'inference for the exported graph. Please consider adding it in symbolic function.'
+        warnings.filterwarnings(action='ignore', message=s)
 
         torch.onnx.export(
             model,
