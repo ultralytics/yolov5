@@ -1,6 +1,8 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
 Run a Flask REST API exposing a YOLOv5s model
 """
+
 import argparse
 import io
 

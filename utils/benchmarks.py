@@ -52,20 +52,26 @@ def run(
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         half=False,  # use FP16 half-precision inference
+        test=False,  # test exports only
 ):
     y, t = [], time.time()
     formats = export.export_formats()
     device = select_device(device)
     for i, (name, f, suffix, gpu) in formats.iterrows():  # index, (name, file, suffix, gpu-capable)
         try:
-            assert i < 9, 'Edge TPU and TF.js not supported'
+            assert i != 9, 'Edge TPU not supported'
+            assert i != 10, 'TF.js not supported'
             if device.type != 'cpu':
                 assert gpu, f'{name} inference not supported on GPU'
+
+            # Export
             if f == '-':
                 w = weights  # PyTorch format
             else:
                 w = export.run(weights=weights, imgsz=[imgsz], include=[f], device=device, half=half)[-1]  # all others
             assert suffix in str(w), 'export failed'
+
+            # Validate
             result = val.run(data, w, batch_size, imgsz, plots=False, device=device, task='benchmark', half=half)
             metrics = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
             speeds = result[2]  # times (preprocess, inference, postprocess)
@@ -78,8 +84,39 @@ def run(
     LOGGER.info('\n')
     parse_opt()
     notebook_init()  # print system info
-    py = pd.DataFrame(y, columns=['Format', 'mAP@0.5:0.95', 'Inference time (ms)'])
+    py = pd.DataFrame(y, columns=['Format', 'mAP@0.5:0.95', 'Inference time (ms)'] if map else ['Format', 'Export', ''])
     LOGGER.info(f'\nBenchmarks complete ({time.time() - t:.2f}s)')
+    LOGGER.info(str(py if map else py.iloc[:, :2]))
+    return py
+
+
+def test(
+        weights=ROOT / 'yolov5s.pt',  # weights path
+        imgsz=640,  # inference size (pixels)
+        batch_size=1,  # batch size
+        data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
+        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        half=False,  # use FP16 half-precision inference
+        test=False,  # test exports only
+):
+    y, t = [], time.time()
+    formats = export.export_formats()
+    device = select_device(device)
+    for i, (name, f, suffix, gpu) in formats.iterrows():  # index, (name, file, suffix, gpu-capable)
+        try:
+            w = weights if f == '-' else \
+                export.run(weights=weights, imgsz=[imgsz], include=[f], device=device, half=half)[-1]  # weights
+            assert suffix in str(w), 'export failed'
+            y.append([name, True])
+        except Exception:
+            y.append([name, False])  # mAP, t_inference
+
+    # Print results
+    LOGGER.info('\n')
+    parse_opt()
+    notebook_init()  # print system info
+    py = pd.DataFrame(y, columns=['Format', 'Export'])
+    LOGGER.info(f'\nExports complete ({time.time() - t:.2f}s)')
     LOGGER.info(str(py))
     return py
 
@@ -92,13 +129,14 @@ def parse_opt():
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
+    parser.add_argument('--test', action='store_true', help='test exports only')
     opt = parser.parse_args()
     print_args(vars(opt))
     return opt
 
 
 def main(opt):
-    run(**vars(opt))
+    test(**vars(opt)) if opt.test else run(**vars(opt))
 
 
 if __name__ == "__main__":
