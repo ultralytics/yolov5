@@ -1,7 +1,9 @@
 import setuptools
+import os
 
 def read_requirements():
-    with open("requirements.txt") as f:
+    build_dir = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(build_dir, "yolov5", "requirements.txt")) as f:
         return f.read().splitlines()
 
 setuptools.setup(
@@ -13,10 +15,11 @@ setuptools.setup(
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/ultralytics/yolov5",
-    packages=setuptools.find_packages(),
+    packages=['yolov5', 'yolov5.models', 'yolov5.utils'],
     python_requires=">=3.6",
     install_requires=read_requirements(),
     include_package_data=True,
+    package_data={'': ['yolov5/models/*.yaml', 'yolov5/data/*']},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: GNU General Public License (GPL)",

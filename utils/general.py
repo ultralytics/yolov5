@@ -405,7 +405,11 @@ def check_file(file, suffix=''):
         return file
     else:  # search
         files = []
+        if "models_v5.0/" in file:
+            files.extend(glob.glob(str(ROOT / '**' / file), recursive=True))
         for d in 'data', 'models', 'utils':  # search directories
+            if file.startswith(d + os.path.sep):
+                file = file[len(d)+1:]
             files.extend(glob.glob(str(ROOT / d / '**' / file), recursive=True))  # find file
         assert len(files), f'File not found: {file}'  # assert file was found
         assert len(files) == 1, f"Multiple files match '{file}', specify exact path: {files}"  # assert unique
