@@ -473,7 +473,6 @@ def run(
 
     # Checks
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
-    opset = 12 if ('openvino' in include) else opset  # OpenVINO requires opset <= 12
     assert nc == len(names), f'Model class count {nc} != len(names) {len(names)}'
 
     # Input
