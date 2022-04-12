@@ -84,8 +84,7 @@ class Loggers():
             # temp warn. because nested artifacts not supported after 0.12.10
             if pkg.parse_version(wandb.__version__) >= pkg.parse_version('0.12.11'):
                 self.logger.warning(
-                    "YOLOv5 temporarily requires wandb version 0.12.10 or below. Some features might not work as expected."
-                )
+                    "YOLOv5 temporarily requires wandb version 0.12.10 or below. Some features may not work as expected.")
         else:
             self.wandb = None
 
