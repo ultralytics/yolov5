@@ -387,7 +387,7 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
         f = str(file).replace('.pt', '-int8_edgetpu.tflite')  # Edge TPU model
         f_tfl = str(file).replace('.pt', '-int8.tflite')  # TFLite model
 
-        cmd = f"edgetpu_compiler -s {f_tfl}"
+        cmd = f"edgetpu_compiler -s -o {file.parent} {f_tfl}"
         subprocess.run(cmd, shell=True, check=True)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -473,7 +473,6 @@ def run(
 
     # Checks
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
-    opset = 12 if ('openvino' in include) else opset  # OpenVINO requires opset <= 12
     assert nc == len(names), f'Model class count {nc} != len(names) {len(names)}'
 
     # Input
