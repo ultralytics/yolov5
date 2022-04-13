@@ -1,11 +1,9 @@
 from pathlib import Path
-from re import M
-from cv2 import transform
 from torch.utils.data import Dataset
 import glob, os
 import numpy as np, cv2
 from tqdm import tqdm
-from multiprocessing.pool import Pool, ThreadPool
+from multiprocessing.pool import Pool
 from itertools import repeat, chain
 from collections import Counter
 import torch
@@ -15,11 +13,9 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import schema as S
 import random
-
-from utils.geometry.size import Size
 # #####################################
 from .ItemInfo import starmap_load_item_info, ItemStatus
-from ..geometry import Boxes_xywh_n
+from ..geometry import Boxes_xywh_n, Size
 from .inl_data import InL_Data
 from utils.general import LOGGER, NUM_THREADS
 from .utils import IMG_FORMATS, HELP_URL, BAR_FORMAT, \
@@ -312,7 +308,8 @@ class LoadImagesAndLabels(Dataset):
         src_size: Size, 
         dst_size: Size, 
         allow_scaleup: bool,
-        allow_scaledown: bool):
+        allow_scaledown: bool,
+        fill_color=(114, 114, 144)):
 
         transforms = []
 
@@ -326,11 +323,14 @@ class LoadImagesAndLabels(Dataset):
         Transform   = A.Resize(new_size.h, new_size.w, always_apply=True)
         transforms.append(Transform)
 
+        # compute paddings
+        padding = (dst_size - new_size).clip(0)
+
         # padding if required
         Transform = A.PadIfNeeded(
             dst_size.h, dst_size.w,
             border_mode = cv2.BORDER_CONSTANT, 
-            value       = (114, 114, 114), # gray_114
+            value       = fill_color,
             position    = A.PadIfNeeded.PositionType.CENTER,
             always_apply=True
         )
@@ -340,7 +340,7 @@ class LoadImagesAndLabels(Dataset):
         Transform = A.CenterCrop(dst_size.h, dst_size.w, always_apply=True)
         transforms.append(Transform)
 
-        return transforms
+        return transforms, padding
     # #####################################
 
     @classmethod
@@ -418,19 +418,27 @@ class LoadImagesAndLabels(Dataset):
             labels          = item.labels
             boxes           = item.boxes
 
+        # ensure that boxes are on [0;1]
+        boxes   = boxes.to_xyxy_n().clip(0, 1).to_xywh_n()
+        # keep boxes that are not 
+        valid   = boxes.A > 0
+        boxes   = boxes[valid]
+        labels  = np.array(labels)[valid]
+
         # get original shape
-        ho, wo          = frame.shape[:2]
+        ho, wo = frame.shape[:2]
 
         # build albumentations transform
+        sizing_tranforms, padding = self.build_sizing_transforms(
+            src_size        = Size(wo, ho),
+            dst_size        = img_size, 
+            allow_scaledown = True,
+            allow_scaleup   = self.augment
+        )
         Transform = A.Compose(
             transforms = [
                 * self.augment_transforms,
-                * self.build_sizing_transforms(
-                    src_size        = Size(wo, ho),
-                    dst_size        = img_size, 
-                    allow_scaledown = not mosaic,
-                    allow_scaleup   = self.augment
-                ),
+                * sizing_tranforms,
                 # numpy frame (h, w, c) -> torch tensor (c, h, w)
                 ToTensorV2(always_apply=True)
             ], 
@@ -449,12 +457,8 @@ class LoadImagesAndLabels(Dataset):
         frame   = transformed['image']
 
         # for COCO mAP rescaling
-        if not mosaic:
-            hr, wr  = frame.shape[-2:]
-            dw, dh  = 0, 0 # TODO: re-implement this
-            shapes  = (ho, wo), ((hr/ho, wr/wo), (dw, dh))
-        else:
-            shapes  = None
+        hr, wr  = frame.shape[-2:]
+        shapes  = (ho, wo), ((hr/ho, wr/wo), padding)
 
         # combine labels & boxes [(l, cx, cy, w, h), ...]
         labels      = transformed['labels']
@@ -470,22 +474,58 @@ class LoadImagesAndLabels(Dataset):
     # #####################################
 
 
-    def load_mosaic(self, src_index: int, N: int=2):
-        """ build a NxN mosaic image 
-            src_index is used as center-most tile
+    def load_mosaic(self, src_index: int, fill_color=(114, 144, 144)):
+        """ build a 2x2 mosaic image 
+            src_index is used as top-left tile
             other tiles are picked randomly
             each tile is padded when required to stack.
             padding is made so that tiles are as centered as possible
         """
-        raise NotImplemented
+        population      = set(range(len(self.data))) - {src_index}
+        indices         = random.sample(population, k=3)
+        indices         = [src_index, *indices]
+        items           = [self.data.valid_items[indice] for indice in indices]
+        shapes          = np.array([item.shape for item in items])
+        lw, rw          = shapes[:,0].reshape((2, 2)).max(0)
+        th, bh          = shapes[:,1].reshape((2, 2)).max(1)
+        w, h            = lw + rw, th + bh
+        tl, tr, bl, br  = items
 
-        size        = N**2
-        population  = set(range(len(self.data))) - {src_index}
-        indices     = random.sample(population, k=size-1)
-        indices     = [*indices, src_index]
-        items       = [self.data.valid_items[indice] for indice in indices]
-        items       = sorted(items, key=lambda item: item.shape.h)
-        # rows        = map(build_row, tee(items, N))
+        # Top-Left
+        pad_x           = lw - tl.shape.w
+        pad_y           = th - tl.shape.h
+        tl_frame        = cv2.copyMakeBorder(tl.frame, pad_y, 0, pad_x, 0, cv2.BORDER_CONSTANT, value=fill_color)
+        tl_labels       = tl.labels
+        tl_boxes        = (tl.boxes.to_xywh(*tl.shape) + (pad_x, pad_y, 0, 0)).to_xywh_n(w, h)
+
+        # Top-Right
+        pad_x           = rw - tr.shape.w
+        pad_y           = th - tr.shape.h
+        tr_frame        = cv2.copyMakeBorder(tr.frame, pad_y, 0, 0, pad_x, cv2.BORDER_CONSTANT, value=fill_color)
+        tr_labels       = tr.labels
+        tr_boxes        = (tr.boxes.to_xywh(*tr.shape) + (lw, pad_y, 0, 0)).to_xywh_n(w, h)
+
+        # Bottom-Left
+        pad_x           = lw - bl.shape.w
+        pad_y           = bh - bl.shape.h
+        bl_frame        = cv2.copyMakeBorder(bl.frame, 0, pad_y, pad_x, 0, cv2.BORDER_CONSTANT, value=fill_color)
+        bl_labels       = bl.labels
+        bl_boxes        = (bl.boxes.to_xywh(*bl.shape) + (pad_x, th, 0, 0)).to_xywh_n(w, h)
+
+        # Bottom-Right
+        pad_x           = rw - br.shape.w
+        pad_y           = bh - br.shape.h
+        br_frame        = cv2.copyMakeBorder(br.frame, 0, pad_y, 0, pad_x, cv2.BORDER_CONSTANT, value=fill_color)
+        br_labels       = br.labels
+        br_boxes        = (br.boxes.to_xywh(*br.shape) + (lw, th, 0, 0)).to_xywh_n(w, h)
+
+        # combine
+        frame   = np.vstack([
+            np.hstack([tl_frame, tr_frame]),
+            np.hstack([bl_frame, br_frame]),
+        ])
+        labels  = tl_labels + tr_labels + bl_labels + br_labels
+        boxes   = np.vstack([tl_boxes, tr_boxes, bl_boxes, br_boxes]).view(Boxes_xywh_n)
 
         return frame, labels, boxes
     # #####################################

@@ -41,9 +41,11 @@ class Boxes_xyxy_n(np.ndarray):
     # ############################
 
     @property
-    def W(self):            return self.X1 - self.X0 + 1
+    def A(self):            return self.H * self.W
     @property
-    def H(self):            return self.Y1 - self.Y0 + 1
+    def W(self):            return self.X1 - self.X0
+    @property
+    def H(self):            return self.Y1 - self.Y0
     @property
     def CX(self):           return (self.X0 + self.X1) / 2
     @property

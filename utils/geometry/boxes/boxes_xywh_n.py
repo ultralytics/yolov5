@@ -41,6 +41,8 @@ class Boxes_xywh_n(np.ndarray):
     # ############################
 
     @property
+    def A(self):        return self.H * self.W
+    @property
     def AR(self):       return self.H / self.W
     @property
     def X0(self):       return self.CX - (self.W / 2)

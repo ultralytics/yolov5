@@ -20,9 +20,10 @@ anchor_t:         4.0     # anchor-multiple threshold
 fl_gamma:         0.0     # focal loss gamma (efficientDet default gamma=1.5)
 
 transform:
-  mosaic: 0.0   # per-sample probability of using 2x2 mosaic (only for train)
+  mosaic: 1.0   # per-sample probability of using 2x2 mosaic (only for train)
   rgb:    true  # else bgr
-  transforms:
+  transforms:   # list of Albumentations transforms with their kwargs
+                # MUST NOT change image shape
     # Geometric Transforms
     - name: "VerticalFlip"
       p: 0.0
@@ -32,6 +33,10 @@ transform:
       p: 1.0
       kwargs:
         mode: 0
+        cval: # Gray 114
+          - 114
+          - 114
+          - 114
         scale: 
           - 0.5
           - 2.0
