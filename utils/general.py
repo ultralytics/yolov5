@@ -40,6 +40,7 @@ DATASETS_DIR = ROOT.parent / 'datasets'  # YOLOv5 datasets directory
 NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
 VERBOSE = str(os.getenv('YOLOv5_VERBOSE', True)).lower() == 'true'  # global verbose mode
 FONT = 'Arial.ttf'  # https://ultralytics.com/assets/Arial.ttf
+NM_INTEGRATED=True
 
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
 np.set_printoptions(linewidth=320, formatter={'float_kind': '{:11.5g}'.format})  # format short g, %precision=5
@@ -405,7 +406,11 @@ def check_file(file, suffix=''):
         return file
     else:  # search
         files = []
+        if "models_v5.0/" in file:
+            files.extend(glob.glob(str(ROOT / '**' / file), recursive=True))
         for d in 'data', 'models', 'utils':  # search directories
+            if file.startswith(d + os.path.sep):
+                file = file[len(d)+1:]
             files.extend(glob.glob(str(ROOT / d / '**' / file), recursive=True))  # find file
         assert len(files), f'File not found: {file}'  # assert file was found
         assert len(files) == 1, f"Multiple files match '{file}', specify exact path: {files}"  # assert unique

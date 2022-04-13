@@ -1,0 +1,7 @@
+include *.md
+include LICENSE
+include setup.py
+recursive-include yolov5/data *
+recursive-include yolov5/models *
+recursive-include yolov5/models_v5.0 *
+include yolov5/requirements.txt
