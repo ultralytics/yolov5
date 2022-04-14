@@ -33,57 +33,57 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names
     """
 
     # Sort by objectness
-    i = np.argsort(-conf)
-    tp, conf, pred_cls = tp[i], conf[i], pred_cls[i]
+    sorted_idx = np.argsort(-conf)
+    tp, conf, pred_cls = tp[sorted_idx], conf[sorted_idx], pred_cls[sorted_idx]
 
     # Find unique classes
-    unique_classes, nt = np.unique(target_cls, return_counts=True)
-    nc = unique_classes.shape[0]  # number of classes, number of detections
+    unique_classes, class_count = np.unique(target_cls, return_counts=True)
+    num_classes = unique_classes.shape[0]  # number of classes, number of detections
 
     # Create Precision-Recall curve and compute AP for each class
     px, py = np.linspace(0, 1, 1000), []  # for plotting
-    ap, p, r = np.zeros((nc, tp.shape[1])), np.zeros((nc, 1000)), np.zeros((nc, 1000))
-    for ci, c in enumerate(unique_classes):
-        i = pred_cls == c
-        n_l = nt[ci]  # number of labels
-        n_p = i.sum()  # number of predictions
+    AP, P, R = np.zeros((num_classes, tp.shape[1])), np.zeros((num_classes, 1000)), np.zeros((num_classes, 1000))
+    for class_idx, current_class in enumerate(unique_classes):
+        num_labels = class_count[class_idx]  # number of labels
+        match_idx = (pred_cls == current_class) # number of predictions
+        num_preds = match_idx.sum()  # number of predictions
 
-        if n_p == 0 or n_l == 0:
+        if num_preds == 0 or num_labels == 0:
             continue
         else:
             # Accumulate FPs and TPs
-            fpc = (1 - tp[i]).cumsum(0)
-            tpc = tp[i].cumsum(0)
+            fpc = (1 - tp[match_idx]).cumsum(0)
+            tpc = tp[match_idx].cumsum(0)
 
             # Recall
-            recall = tpc / (n_l + eps)  # recall curve
-            r[ci] = np.interp(-px, -conf[i], recall[:, 0], left=0)  # negative x, xp because xp decreases
+            recall = tpc / (num_labels + eps)  # recall curve
+            R[class_idx] = np.interp(-px, -conf[match_idx], recall[:, 0], left=0)  # negative x, xp because xp decreases
 
             # Precision
             precision = tpc / (tpc + fpc)  # precision curve
-            p[ci] = np.interp(-px, -conf[i], precision[:, 0], left=1)  # p at pr_score
+            P[class_idx] = np.interp(-px, -conf[match_idx], precision[:, 0], left=1)  # p at pr_score
 
             # AP from recall-precision curve
             for j in range(tp.shape[1]):
-                ap[ci, j], mpre, mrec = compute_ap(recall[:, j], precision[:, j])
+                AP[class_idx, j], mpre, mrec = compute_ap(recall[:, j], precision[:, j])
                 if plot and j == 0:
                     py.append(np.interp(px, mrec, mpre))  # precision at mAP@0.5
 
     # Compute F1 (harmonic mean of precision and recall)
-    f1 = 2 * p * r / (p + r + eps)
+    f1 = 2 * P * R / (P + R + eps)
     names = [v for k, v in names.items() if k in unique_classes]  # list: only classes that have data
     names = {i: v for i, v in enumerate(names)}  # to dict
     if plot:
-        plot_pr_curve(px, py, ap, Path(save_dir) / 'PR_curve.png', names)
+        plot_pr_curve(px, py, AP, Path(save_dir) / 'PR_curve.png', names)
         plot_mc_curve(px, f1, Path(save_dir) / 'F1_curve.png', names, ylabel='F1')
-        plot_mc_curve(px, p, Path(save_dir) / 'P_curve.png', names, ylabel='Precision')
-        plot_mc_curve(px, r, Path(save_dir) / 'R_curve.png', names, ylabel='Recall')
+        plot_mc_curve(px, P, Path(save_dir) / 'P_curve.png', names, ylabel='Precision')
+        plot_mc_curve(px, R, Path(save_dir) / 'R_curve.png', names, ylabel='Recall')
 
-    i = f1.mean(0).argmax()  # max F1 index
-    p, r, f1 = p[:, i], r[:, i], f1[:, i]
-    tp = (r * nt).round()  # true positives
-    fp = (tp / (p + eps) - tp).round()  # false positives
-    return tp, fp, p, r, f1, ap, unique_classes.astype('int32')
+    max_f1_idx = f1.mean(0).argmax()  # max F1 index
+    P, R, f1 = P[:, max_f1_idx], R[:, max_f1_idx], f1[:, max_f1_idx]
+    tp = (R * class_count).round()  # true positives
+    fp = (tp / (P + eps) - tp).round()  # false positives
+    return tp, fp, P, R, f1, AP, unique_classes.astype('int32')
 
 
 def compute_ap(recall, precision):
