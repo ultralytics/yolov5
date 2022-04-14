@@ -57,9 +57,6 @@ class SparseMLWrapper(object):
         }
 
     def apply_checkpoint_structure(self):
-        if not self.enabled:
-            return
-
         if self.checkpoint_manager:
             self.checkpoint_manager.apply_structure(self.model, math.inf)
 

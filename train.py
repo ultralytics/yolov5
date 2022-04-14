@@ -87,9 +87,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Save run settings
     if not evolve:
         with open(save_dir / 'hyp.yaml', 'w') as f:
-            yaml.dump(hyp, f, sort_keys=False)
+            yaml.safe_dump(hyp, f, sort_keys=False)
         with open(save_dir / 'opt.yaml', 'w') as f:
-            yaml.dump(vars(opt), f, sort_keys=False)
+            yaml.safe_dump(vars(opt), f, sort_keys=False)
 
     # Loggers
     data_dict = None
@@ -492,7 +492,11 @@ def parse_opt(known=False):
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs, -1 for autobatch')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='train, val image size (pixels)')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
-    parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
+    parser.add_argument('--resume', 
+                        nargs='?', 
+                        const=True, 
+                        default=False, 
+                        help='resume most recent training. When true, ignores --recipe arg and re-uses saved recipe (if exists)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--noval', action='store_true', help='only validate final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable AutoAnchor')
@@ -542,7 +546,7 @@ def main(opt, callbacks=Callbacks()):
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         with open(Path(ckpt).parent.parent / 'opt.yaml', errors='ignore') as f:
-            opt = argparse.Namespace(**yaml.load(f, Loader=yaml.SafeLoader))  # replace
+            opt = argparse.Namespace(**yaml.safe_load(f))   # replace
         opt.cfg, opt.weights, opt.resume = '', ckpt, True  # reinstate
         LOGGER.info(f'Resuming training from {ckpt}')
     else:
@@ -553,7 +557,7 @@ def main(opt, callbacks=Callbacks()):
             if opt.project == str(ROOT / 'runs/train'):  # if default project name, rename to runs/evolve
                 opt.project = str(ROOT / 'runs/evolve')
             opt.exist_ok, opt.resume = opt.resume, False  # pass resume to exist_ok and disable resume       
-        opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok)  # increment run
+        opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok)) # increment run
 
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
