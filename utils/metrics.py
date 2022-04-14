@@ -45,7 +45,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names
     AP, P, R = np.zeros((num_classes, tp.shape[1])), np.zeros((num_classes, 1000)), np.zeros((num_classes, 1000))
     for class_idx, current_class in enumerate(unique_classes):
         num_labels = class_count[class_idx]  # number of labels
-        match_idx = (pred_cls == current_class) # number of predictions
+        match_idx = (pred_cls == current_class)  # number of predictions
         num_preds = match_idx.sum()  # number of predictions
 
         if num_preds == 0 or num_labels == 0:
