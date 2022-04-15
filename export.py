@@ -209,8 +209,7 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
 def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
     # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
     try:
-        check_requirements(('tensorrt',))
-        import tensorrt as trt
+        import tensorrt as trt  # pip install -U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com
 
         if trt.__version__[0] == '7':  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
             grid = model.model[-1].anchor_grid
