@@ -186,7 +186,7 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
-def export_coreml(model, im, file, half,prefix=colorstr('CoreML:')):
+def export_coreml(model, im, file, half, prefix=colorstr('CoreML:')):
     # YOLOv5 CoreML export
     try:
         check_requirements(('coremltools',))
@@ -197,7 +197,7 @@ def export_coreml(model, im, file, half,prefix=colorstr('CoreML:')):
 
         ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
         ct_model = ct.convert(ts, inputs=[ct.ImageType('image', shape=im.shape, scale=1 / 255, bias=[0, 0, 0])])
-        if half : 
+        if half:
             ct_model = quantization_utils.quantize_weights(ct_model, nbits=16)
         ct_model.save(f)
 
@@ -468,7 +468,8 @@ def run(
 
     # Load PyTorch model
     device = select_device(device)
-    assert not ((device.type == 'cpu' and not coreml) and half), '--half only compatible with GPU export, i.e. use --device 0'
+    assert not ((device.type == 'cpu' and not coreml)
+                and half), '--half only compatible with GPU export, i.e. use --device 0'
     model = attempt_load(weights, map_location=device, inplace=True, fuse=True)  # load FP32 model
     nc, names = model.nc, model.names  # number of classes, class names
 
@@ -508,7 +509,7 @@ def run(
     if xml:  # OpenVINO
         f[3] = export_openvino(model, im, file)
     if coreml:
-        _, f[4] = export_coreml(model, im, file,half)
+        _, f[4] = export_coreml(model, im, file, half)
 
     # TensorFlow Exports
     if any((saved_model, pb, tflite, edgetpu, tfjs)):
