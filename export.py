@@ -84,7 +84,7 @@ def export_formats():
         ['TensorFlow GraphDef', 'pb', '.pb', True],
         ['TensorFlow Lite', 'tflite', '.tflite', False],
         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False],
-        ['TensorFlow.js', 'tfjs', '_web_model', False],]
+        ['TensorFlow.js', 'tfjs', '_web_model', False], ]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'GPU'])
 
 
@@ -186,19 +186,24 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
-def export_coreml(model, im, file, half, prefix=colorstr('CoreML:')):
+def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
     # YOLOv5 CoreML export
     try:
         check_requirements(('coremltools',))
         import coremltools as ct
-        from coremltools.models.neural_network import quantization_utils
         LOGGER.info(f'\n{prefix} starting export with coremltools {ct.__version__}...')
         f = file.with_suffix('.mlmodel')
 
         ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
         ct_model = ct.convert(ts, inputs=[ct.ImageType('image', shape=im.shape, scale=1 / 255, bias=[0, 0, 0])])
-        if half:
-            ct_model = quantization_utils.quantize_weights(ct_model, nbits=16)
+        bits, mode = (8, 'kmeans_lut') if int8 else (16, 'linear') if half else (32, None)
+        if bits < 32:
+            if platform.system() == 'Darwin':  # quantization only supported on macOS
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=DeprecationWarning)  # suppress numpy==1.20 float warning
+                    ct_model = ct.models.neural_network.quantization_utils.quantize_weights(ct_model, bits, mode)
+            else:
+                print(f'{prefix} quantization only supported on macOS, skipping...')
         ct_model.save(f)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -422,9 +427,9 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
                 r'"Identity.?.?": {"name": "Identity.?.?"}, '
                 r'"Identity.?.?": {"name": "Identity.?.?"}, '
                 r'"Identity.?.?": {"name": "Identity.?.?"}}}', r'{"outputs": {"Identity": {"name": "Identity"}, '
-                r'"Identity_1": {"name": "Identity_1"}, '
-                r'"Identity_2": {"name": "Identity_2"}, '
-                r'"Identity_3": {"name": "Identity_3"}}}', json)
+                                                               r'"Identity_1": {"name": "Identity_1"}, '
+                                                               r'"Identity_2": {"name": "Identity_2"}, '
+                                                               r'"Identity_3": {"name": "Identity_3"}}}', json)
             j.write(subst)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -509,7 +514,7 @@ def run(
     if xml:  # OpenVINO
         f[3] = export_openvino(model, im, file)
     if coreml:
-        _, f[4] = export_coreml(model, im, file, half)
+        _, f[4] = export_coreml(model, im, file, int8, half)
 
     # TensorFlow Exports
     if any((saved_model, pb, tflite, edgetpu, tfjs)):
