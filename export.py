@@ -19,10 +19,10 @@ TensorFlow.js               | `tfjs`                        | yolov5s_web_model/
 Requirements:
     $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU
     $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime-gpu openvino-dev tensorflow  # GPU
-
+    
 Usage:
     $ python path/to/export.py --weights yolov5s.pt --include torchscript onnx openvino engine coreml tflite ...
-
+    
 Inference:
     $ python path/to/detect.py --weights yolov5s.pt                 # PyTorch
                                          yolov5s.torchscript        # TorchScript
@@ -34,7 +34,7 @@ Inference:
                                          yolov5s.pb                 # TensorFlow GraphDef
                                          yolov5s.tflite             # TensorFlow Lite
                                          yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
-
+                                         
 TensorFlow.js:
     $ cd .. && git clone https://github.com/zldrobit/tfjs-yolov5-example.git && cd tfjs-yolov5-example
     $ npm install
@@ -186,17 +186,19 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
-def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
+def export_coreml(model, im, file, half,prefix=colorstr('CoreML:')):
     # YOLOv5 CoreML export
     try:
         check_requirements(('coremltools',))
         import coremltools as ct
-
+        from coremltools.models.neural_network import quantization_utils
         LOGGER.info(f'\n{prefix} starting export with coremltools {ct.__version__}...')
         f = file.with_suffix('.mlmodel')
 
         ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
         ct_model = ct.convert(ts, inputs=[ct.ImageType('image', shape=im.shape, scale=1 / 255, bias=[0, 0, 0])])
+        if half : 
+            ct_model = quantization_utils.quantize_weights(ct_model, nbits=16)
         ct_model.save(f)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -466,7 +468,8 @@ def run(
 
     # Load PyTorch model
     device = select_device(device)
-    assert not (device.type == 'cpu' and half), '--half only compatible with GPU export, i.e. use --device 0'
+    assert not ((device.type == 'cpu' and not coreml) 
+                and half), '--half only compatible with GPU export, i.e. use --device 0'
     model = attempt_load(weights, map_location=device, inplace=True, fuse=True)  # load FP32 model
     nc, names = model.nc, model.names  # number of classes, class names
 
@@ -480,7 +483,7 @@ def run(
     im = torch.zeros(batch_size, 3, *imgsz).to(device)  # image size(1,3,320,192) BCHW iDetection
 
     # Update model
-    if half:
+    if half and not coreml:
         im, model = im.half(), model.half()  # to FP16
     model.train() if train else model.eval()  # training mode = no Detect() layer grid construction
     for k, m in model.named_modules():
@@ -506,7 +509,7 @@ def run(
     if xml:  # OpenVINO
         f[3] = export_openvino(model, im, file)
     if coreml:
-        _, f[4] = export_coreml(model, im, file)
+        _, f[4] = export_coreml(model, im, file,half)
 
     # TensorFlow Exports
     if any((saved_model, pb, tflite, edgetpu, tfjs)):
