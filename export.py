@@ -191,7 +191,7 @@ def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
     try:
         check_requirements(('coremltools',))
         import coremltools as ct
-        
+
         LOGGER.info(f'\n{prefix} starting export with coremltools {ct.__version__}...')
         f = file.with_suffix('.mlmodel')
 
