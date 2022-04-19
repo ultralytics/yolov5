@@ -9,36 +9,39 @@ source ~/virtual_env/bin/activate
 
 ```bash
 git clone --recursive https://github.com/lmitechnologies/LMI_AI_Solutions.git
-git clone https://github.com/lmitechnologies/yolov5.git
-cd yolov5
+cd object_detectors/yolov5
 pip install -r requirements.txt
 ```
 ## Activate LMI_AI environment
-The following commands assume that the LMI_AI_Solution repo is cloned in `~/LMI_AI_Solutions`.
+The following commands assume that the LMI_AI_Solution repo is cloned in `~/LMI_AI_Solutions`, and assume that it's the working directory, unless otherwise mentioned.
 
 ```bash
-source ~/LMI_AI_Solutions/lmi_ai.env
-#if you are running a different directory other than current yolo folder
-source PATH_TO_YOLO/yolo.env
+cd ~/LMI_AI_Solutions
+source lmi_ai.env
+source object_detectors/yolov5/yolo.env
 ```
 
 ## Prepare the datasets
+The example dataset can be downloaded using GCP:
+```
+engagements/nordson/chattanooga/catheter/feasibility/models/pytorch/defeat/objdet/yolov5/data/allImages_1024
+```
+
 Prepare the datasets by the followings:
 - resize images to 640 x 640
 - convert to YOLO annotation format
 
-Assume that the original annotated files are in `./data/allImages_1024`. After execting the exmaple commands below, it will generate a yolo formatted folder in `./data/2022-01-08_640_yolo`.
+Assume that the original annotated files are downloaded in `./data/allImages_1024`. After execting the exmaple commands below, it will generate a yolo formatted folder in `./data/resized_640_yolo`.
 
-Below are the example commands:
 ```bash
-python -m resize_with_csv -i ./data/allImages_1024 --out_imsz 640,640 -o ./data/2022-01-08_640
-python -m convert_data_to_yolo -i ./data/2022-01-08_640 -o ./data/2022-01-08_640_yolo
+python -m resize_with_csv --path_imgs ./data/allImages_1024 --out_imsz 640,640 --path_out ./data/resized_640
+python -m convert_data_to_yolo --path_imgs ./data/resized_640 --path_out ./data/resized_640_yolo
 ```
 
 ## Create a yaml file indicating the locations of datasets
-Note that the order of class names in the yaml file must match with the order of names in this json file: `./data/2022-01-08_640_yolo/class_map.json`.
+Note that the order of class names in the yaml file must match with the order of names in this json file: `./data/resized_640_yolo/class_map.json`.
 ```yaml
-path: ./data/2022-01-04_640_yolo  # dataset root dir
+path: /home/yijun.jiang/projects/LMI_AI_Solutions/data/resized_640_yolo  # dataset root dir (must use absolute path!)
 train: images  # train images (relative to 'path')
 val: images  # val images (relative to 'path')
 test:  # test images (optional)
@@ -47,45 +50,48 @@ test:  # test images (optional)
 nc: 3  # number of classes
 names: ['peeling', 'scuff', 'white']  # class names must match with the names in class_map.json
 ```
-Let's save the yaml file as `./config/2022-01-08_640.yaml`
+Let's save the yaml file as `./config/example.yaml`
 
-## Download the pre-trained yolo model on COCO dataset
+## Download the pre-trained yolo model
 The pre-trained yolo models can be found in: https://github.com/ultralytics/yolov5/releases/tag/v6.0. 
-The following commands show that 
+The following command shows that 
 - download [the pre-trained model (yolov5s.pt)](https://github.com/ultralytics/yolov5/releases/download/v6.0/yolov5s.pt)
-- move it to `./pretrained-models`.
+- save it to `./pretrained-models`.
 
 ```bash
 wget https://github.com/ultralytics/yolov5/releases/download/v6.0/yolov5s.pt -P ./pretrained-models
 ```
 
-## Train the model with custom datasets
+## Train the model
 The command below trains the datasets in the yaml file with the following arguments:
 - img: image size
 - batch: batch size
 - data: the path to the yaml file
+- rect(optinal): if the images are rectangular
 - weights: the path to the pre-trained weights file
 - project: the output folder
 - name: the subfolder to be created inside the output folder
-- exist-ok: if it's okay to overwrite the existing output subfolder
+- exist-ok(optional): if it's okay to overwrite the existing output subfolder
 
 ```bash
-python -m train --img 640 --batch 16 --epoch 600 --data ./config/2022-01-08_640.yaml --weights ./pretrained-models/yolov5s.pt --project ./training --name 2022-01-08_640 --exist-ok
+python -m train --img 640 --batch 16 --epoch 600 --data ./config/example.yaml --weights ./pretrained-models/yolov5s.pt --project ./training --name example --exist-ok
 ```
 
 ## Monitor the training progress
 ```bash
-tensorboard --logdir ./training/2022-01-08_640
+tensorboard --logdir ./training/example
 ```
+While training process is running, open another terminal.
 Execuate the command above and go to http://localhost:6006 to monitor the training.
 
 
-
 # Testing
-After training, the weights are saved in `./training/2022-01-08_640/weights/best.pt`. Copy the best.pt to `./trained-inference-models/2022-01-08_640`.
+## Save trained model
+After training, the weights are saved in `./training/example/weights/best.pt`. Copy the best.pt to `./trained-inference-models/example`.
 
 ```bash
-cp ./training/2022-01-08_640/weights/best.pt ./trained-inference-models/2022-01-08_640
+mkdir -p ./trained-inference-models/example
+cp ./training/example/weights/best.pt ./trained-inference-models/example
 ```
 
 ## Run inference
@@ -98,6 +104,6 @@ The command below run the inference using the following arguments:
 - save-csv: save the outputs as a csv file
 
 ```bash
-python -m detect --source ./data/2022-01-04_640_yolo/images --weights ./trained-inference-models/2022-01-05_640/best.pt --img 640 --project ./validation --name 2022-01-08_640 --save-csv
+python -m detect --source ./data/resized_640_yolo/images --weights ./trained-inference-models/example/best.pt --img 640 --project ./validation --name example --save-csv
 ```
-The output results are saved in `./validation/2022-01-08_640`.
+The output results are saved in `./validation/example`.
