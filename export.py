@@ -186,7 +186,7 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
-def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
+def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
     # YOLOv5 CoreML export
     try:
         check_requirements(('coremltools',))
@@ -197,6 +197,14 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
 
         ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
         ct_model = ct.convert(ts, inputs=[ct.ImageType('image', shape=im.shape, scale=1 / 255, bias=[0, 0, 0])])
+        bits, mode = (8, 'kmeans_lut') if int8 else (16, 'linear') if half else (32, None)
+        if bits < 32:
+            if platform.system() == 'Darwin':  # quantization only supported on macOS
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=DeprecationWarning)  # suppress numpy==1.20 float warning
+                    ct_model = ct.models.neural_network.quantization_utils.quantize_weights(ct_model, bits, mode)
+            else:
+                print(f'{prefix} quantization only supported on macOS, skipping...')
         ct_model.save(f)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -209,8 +217,7 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
 def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
     # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
     try:
-        check_requirements(('tensorrt',))
-        import tensorrt as trt
+        import tensorrt as trt  # pip install -U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com
 
         if trt.__version__[0] == '7':  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
             grid = model.model[-1].anchor_grid
@@ -387,7 +394,7 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
         f = str(file).replace('.pt', '-int8_edgetpu.tflite')  # Edge TPU model
         f_tfl = str(file).replace('.pt', '-int8.tflite')  # TFLite model
 
-        cmd = f"edgetpu_compiler -s {f_tfl}"
+        cmd = f"edgetpu_compiler -s -o {file.parent} {f_tfl}"
         subprocess.run(cmd, shell=True, check=True)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -467,13 +474,13 @@ def run(
 
     # Load PyTorch model
     device = select_device(device)
-    assert not (device.type == 'cpu' and half), '--half only compatible with GPU export, i.e. use --device 0'
+    if half:
+        assert device.type != 'cpu' or coreml, '--half only compatible with GPU export, i.e. use --device 0'
     model = attempt_load(weights, map_location=device, inplace=True, fuse=True)  # load FP32 model
     nc, names = model.nc, model.names  # number of classes, class names
 
     # Checks
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
-    opset = 12 if ('openvino' in include) else opset  # OpenVINO requires opset <= 12
     assert nc == len(names), f'Model class count {nc} != len(names) {len(names)}'
 
     # Input
@@ -482,7 +489,7 @@ def run(
     im = torch.zeros(batch_size, 3, *imgsz).to(device)  # image size(1,3,320,192) BCHW iDetection
 
     # Update model
-    if half:
+    if half and not coreml:
         im, model = im.half(), model.half()  # to FP16
     model.train() if train else model.eval()  # training mode = no Detect() layer grid construction
     for k, m in model.named_modules():
@@ -508,7 +515,7 @@ def run(
     if xml:  # OpenVINO
         f[3] = export_openvino(model, im, file)
     if coreml:
-        _, f[4] = export_coreml(model, im, file)
+        _, f[4] = export_coreml(model, im, file, int8, half)
 
     # TensorFlow Exports
     if any((saved_model, pb, tflite, edgetpu, tfjs)):

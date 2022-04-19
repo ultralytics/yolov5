@@ -151,7 +151,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     LOGGER.info(f"Scaled weight_decay = {hyp['weight_decay']}")
 
     g = [], [], []  # optimizer parameter groups
-    bn = nn.BatchNorm2d, nn.LazyBatchNorm2d, nn.GroupNorm, nn.InstanceNorm2d, nn.LazyInstanceNorm2d, nn.LayerNorm
+    bn = tuple(v for k, v in nn.__dict__.items() if 'Norm' in k)  # normalization layers, i.e. BatchNorm2d()
     for v in model.modules():
         if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):  # bias
             g[2].append(v.bias)
