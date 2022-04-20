@@ -7,7 +7,7 @@ FROM nvcr.io/nvidia/pytorch:21.10-py3
 RUN apt update && apt install -y zip htop screen libgl1-mesa-glx
 
 # Install python dependencies
-COPY ../../requirements.txt .
+COPY requirements.txt .
 RUN python -m pip install --upgrade pip
 RUN pip uninstall -y torch torchvision torchtext
 RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook \
@@ -19,7 +19,7 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 # Copy contents
-COPY ../.. /usr/src/app
+COPY . /usr/src/app
 RUN git clone https://github.com/ultralytics/yolov5 /usr/src/yolov5
 
 # Downloads to user config dir
@@ -35,7 +35,7 @@ ENV OMP_NUM_THREADS=8
 # t=ultralytics/yolov5:latest && sudo docker build -t $t . && sudo docker push $t
 
 # Pull and Run
-# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all $t
+# t=ultralytics/yolov5:latest-cpu && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all $t
 
 # Pull and Run with local directory access
 # t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all -v "$(pwd)"/datasets:/usr/src/datasets $t
