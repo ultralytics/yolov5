@@ -26,16 +26,17 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     Returns:
         YOLOv5 model
     """
-    from pathlib import Path
 
+    import os
+    from pathlib import Path
+    os.environ['YOLOv5_VERBOSE'] = str(verbose)
+    
     from models.common import AutoShape, DetectMultiBackend
     from models.yolo import Model
     from utils.downloads import attempt_download
     from utils.general import LOGGER, check_requirements, intersect_dicts, logging
     from utils.torch_utils import select_device
 
-    if not verbose:
-        LOGGER.setLevel(logging.WARNING)
     check_requirements(exclude=('tensorboard', 'thop', 'opencv-python'))
     name = Path(name)
     path = name.with_suffix('.pt') if name.suffix == '' else name  # checkpoint path
