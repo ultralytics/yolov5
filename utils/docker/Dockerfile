@@ -23,11 +23,10 @@ COPY . /usr/src/app
 RUN git clone https://github.com/ultralytics/yolov5 /usr/src/yolov5
 
 # Downloads to user config dir
-ADD https://ultralytics.com/assets/Arial.ttf /root/.config/Ultralytics/
+ADD https://ultralytics.com/assets/Arial.ttf https://ultralytics.com/assets/Arial.Unicode.ttf /root/.config/Ultralytics/
 
 # Set environment variables
 ENV OMP_NUM_THREADS=8
-# ENV HOME=/usr/src/app
 
 
 # Usage Examples -------------------------------------------------------------------------------------------------------
