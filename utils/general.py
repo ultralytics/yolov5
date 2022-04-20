@@ -424,13 +424,13 @@ def check_file(file, suffix=''):
         return files[0]  # return file
 
 
-def check_font(font=FONT):
+def check_font(font=FONT, progress=False):
     # Download font to CONFIG_DIR if necessary
     font = Path(font)
     if not font.exists() and not (CONFIG_DIR / font.name).exists():
         url = "https://ultralytics.com/assets/" + font.name
         LOGGER.info(f'Downloading {url} to {CONFIG_DIR / font.name}...')
-        torch.hub.download_url_to_file(url, str(font), progress=False)
+        torch.hub.download_url_to_file(url, str(font), progress=progress)
 
 
 def check_dataset(data, autodownload=True):
