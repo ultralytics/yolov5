@@ -52,14 +52,18 @@ repos:
   #        - mdformat-black
   #        - mdformat_frontmatter
 
-  # TODO
-  #- repo: https://github.com/asottile/yesqa
-  #  rev: v1.2.3
-  #  hooks:
-  #    - id: yesqa
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.3.0
+    hooks:
+      - id: yesqa
 
   - repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:
       - id: flake8
         name: PEP8
+
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    rev: v1.2.4
+    hooks:
+      - id: python-safety-dependencies-check
