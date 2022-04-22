@@ -217,7 +217,15 @@ def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
 def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
     # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
     try:
-        import tensorrt as trt  # pip install -U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com
+        assert im.device.type != 'cpu', 'export running on CPU but must be on GPU, i.e. `python export.py --device 0`'
+        try:
+            import tensorrt as trt
+        except Exception:
+            s = f"\n{prefix} tensorrt not found and is required by YOLOv5"
+            LOGGER.info(f"{s}, attempting auto-update...")
+            r = '-U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com'
+            LOGGER.info(subprocess.check_output(f"pip install {r}", shell=True).decode())
+            import tensorrt as trt
 
         if trt.__version__[0] == '7':  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
             grid = model.model[-1].anchor_grid
@@ -230,7 +238,6 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         onnx = file.with_suffix('.onnx')
 
         LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
-        assert im.device.type != 'cpu', 'export running on CPU but must be on GPU, i.e. `python export.py --device 0`'
         assert onnx.exists(), f'failed to export ONNX file: {onnx}'
         f = file.with_suffix('.engine')  # TensorRT engine file
         logger = trt.Logger(trt.Logger.INFO)
