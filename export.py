@@ -218,14 +218,8 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
     # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
     try:
         assert im.device.type != 'cpu', 'export running on CPU but must be on GPU, i.e. `python export.py --device 0`'
-        try:
-            import tensorrt as trt
-        except Exception:
-            s = f"\n{prefix} tensorrt not found and is required by YOLOv5"
-            LOGGER.info(f"{s}, attempting auto-update...")
-            r = '-U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com'
-            LOGGER.info(subprocess.check_output(f"pip install {r}", shell=True).decode())
-            import tensorrt as trt
+        check_requirements(('nvidia-tensorrt',), cmds=('-U --index-url https://pypi.ngc.nvidia.com',))
+        import tensorrt as trt
 
         if trt.__version__[0] == '7':  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
             grid = model.model[-1].anchor_grid
