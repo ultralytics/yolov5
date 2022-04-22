@@ -41,14 +41,18 @@ repos:
     hooks:
       - id: yapf
         name: YAPF formatting
-
+ 
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.14
     hooks:
-    - id: mdformat
-      additional_dependencies:
-      - mdformat-gfm
-      - mdformat-black
+      - id: mdformat
+        additional_dependencies:
+          - mdformat-gfm
+          - mdformat-black
+        exclude: |
+            (?x)^(
+                README.md
+            )$
 
   - repo: https://github.com/asottile/yesqa
     rev: v1.3.0
