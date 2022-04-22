@@ -100,7 +100,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             callbacks.register_action(k, callback=getattr(loggers, k))
 
     # Config
-    plots = not evolve and not opt.nomedia  # create plots
+    plots = not evolve and not opt.noplots  # create plots
     cuda = device.type != 'cpu'
     init_seeds(1 + RANK)
     with torch_distributed_zero_first(LOCAL_RANK):
@@ -488,6 +488,7 @@ def parse_opt(known=False):
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--noval', action='store_true', help='only validate final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable AutoAnchor')
+    parser.add_argument('--noplots', action='store_true', help='save no plot files')
     parser.add_argument('--evolve', type=int, nargs='?', const=300, help='evolve hyperparameters for x generations')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
@@ -508,7 +509,6 @@ def parse_opt(known=False):
     parser.add_argument('--freeze', nargs='+', type=int, default=[0], help='Freeze layers: backbone=10, first3=0 1 2')
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
-    parser.add_argument('--nomedia', action='store_true', help='Save no media files')
 
     # Weights & Biases arguments
     parser.add_argument('--entity', default=None, help='W&B: Entity')
