@@ -21,9 +21,11 @@ def predict():
         return
 
     if request.files.get("image"):
+        # Method 1
         # with request.files["image"] as f:
         #     im = Image.open(io.BytesIO(f.read()))
 
+        # Method 2
         im_file = request.files["image"]
         im_bytes = im_file.read()
         im = Image.open(io.BytesIO(im_bytes))
