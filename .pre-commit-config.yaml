@@ -13,7 +13,7 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+    rev: v4.2.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -24,7 +24,7 @@ repos:
       - id: check-docstring-first
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.31.1
+    rev: v2.32.0
     hooks:
       - id: pyupgrade
         args: [--py36-plus]
@@ -42,15 +42,17 @@ repos:
       - id: yapf
         name: YAPF formatting
 
-  # TODO
-  #- repo: https://github.com/executablebooks/mdformat
-  #  rev: 0.7.7
-  #  hooks:
-  #    - id: mdformat
-  #      additional_dependencies:
-  #        - mdformat-gfm
-  #        - mdformat-black
-  #        - mdformat_frontmatter
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.14
+    hooks:
+      - id: mdformat
+        additional_dependencies:
+          - mdformat-gfm
+          - mdformat-black
+        exclude: |
+            (?x)^(
+                README.md
+            )$
 
   - repo: https://github.com/asottile/yesqa
     rev: v1.3.0
