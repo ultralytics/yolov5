@@ -38,9 +38,9 @@ class Callbacks:
         Register a new action to a callback hook
 
         Args:
-            hook        The callback hook name to register the action to
-            name        The name of the action for later reference
-            callback    The callback to fire
+            hook: The callback hook name to register the action to
+            name: The name of the action for later reference
+            callback: The callback to fire
         """
         assert hook in self._callbacks, f"hook '{hook}' not found in callbacks {self._callbacks}"
         assert callable(callback), f"callback '{callback}' is not callable"
@@ -51,21 +51,18 @@ class Callbacks:
         Returns all the registered actions by callback hook
 
         Args:
-            hook The name of the hook to check, defaults to all
+            hook: The name of the hook to check, defaults to all
         """
-        if hook:
-            return self._callbacks[hook]
-        else:
-            return self._callbacks
+        return self._callbacks[hook] if hook else self._callbacks
 
     def run(self, hook, *args, **kwargs):
         """
         Loop through the registered actions and fire all callbacks
 
         Args:
-            hook The name of the hook to check, defaults to all
-            args Arguments to receive from YOLOv5
-            kwargs Keyword Arguments to receive from YOLOv5
+            hook: The name of the hook to check, defaults to all
+            args: Arguments to receive from YOLOv5
+            kwargs: Keyword Arguments to receive from YOLOv5
         """
 
         assert hook in self._callbacks, f"hook '{hook}' not found in callbacks {self._callbacks}"
