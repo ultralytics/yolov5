@@ -224,7 +224,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
             s = f"{prefix} tensorrt not found and is required by YOLOv5"
             LOGGER.info(f"{s}, attempting auto-update...")
             r = '-U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com'
-            LOGGER.info(subprocess.check_output(f"pip install '{r}'", shell=True).decode())
+            LOGGER.info(subprocess.check_output(f"pip install {r}", shell=True).decode())
 
         if trt.__version__[0] == '7':  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
             grid = model.model[-1].anchor_grid
