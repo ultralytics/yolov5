@@ -650,8 +650,7 @@ def main(opt, callbacks=Callbacks()):
             print_mutation(results, hyp.copy(), save_dir, opt.bucket)
 
         # Plot results
-        if not opt.nomedia:
-            plot_evolve(evolve_csv)
+        plot_evolve(evolve_csv)
         LOGGER.info(f'Hyperparameter evolution finished {opt.evolve} generations\n'
                     f"Results saved to {colorstr('bold', save_dir)}\n"
                     f'Usage example: $ python train.py --hyp {evolve_yaml}')
