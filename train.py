@@ -508,6 +508,7 @@ def parse_opt(known=False):
     parser.add_argument('--freeze', nargs='+', type=int, default=[0], help='Freeze layers: backbone=10, first3=0 1 2')
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
+    parser.add_argument('--nomedia', action='store_true', help='save no media files')
 
     # Weights & Biases arguments
     parser.add_argument('--entity', default=None, help='W&B: Entity')
@@ -649,7 +650,8 @@ def main(opt, callbacks=Callbacks()):
             print_mutation(results, hyp.copy(), save_dir, opt.bucket)
 
         # Plot results
-        plot_evolve(evolve_csv)
+        if not opt.nomedia:
+            plot_evolve(evolve_csv)
         LOGGER.info(f'Hyperparameter evolution finished {opt.evolve} generations\n'
                     f"Results saved to {colorstr('bold', save_dir)}\n"
                     f'Usage example: $ python train.py --hyp {evolve_yaml}')
