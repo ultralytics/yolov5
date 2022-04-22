@@ -8,7 +8,7 @@ default_language_version:
 ci:
   autofix_prs: true
   autoupdate_commit_msg: '[pre-commit.ci] pre-commit suggestions'
-  autoupdate_schedule: quarterly
+  autoupdate_schedule: monthly
   # submodules: true
 
 repos:
@@ -27,8 +27,8 @@ repos:
     rev: v2.32.0
     hooks:
       - id: pyupgrade
-        args: [--py36-plus]
         name: Upgrade code
+        args: [ --py37-plus ]
 
   - repo: https://github.com/PyCQA/isort
     rev: 5.10.1
@@ -46,13 +46,14 @@ repos:
     rev: 0.7.14
     hooks:
       - id: mdformat
+        name: MD formatting
         additional_dependencies:
           - mdformat-gfm
           - mdformat-black
         exclude: |
-            (?x)^(
-                README.md
-            )$
+          (?x)^(
+              README.md
+          )$
 
   - repo: https://github.com/asottile/yesqa
     rev: v1.3.0
