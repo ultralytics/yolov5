@@ -220,7 +220,7 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         assert im.device.type != 'cpu', 'export running on CPU but must be on GPU, i.e. `python export.py --device 0`'
         try:
             import tensorrt as trt
-        except:
+        except Exception:
             s = f"{prefix} tensorrt not found and is required by YOLOv5"
             LOGGER.info(f"{s}, attempting auto-update...")
             r = '-U nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com'
