@@ -72,12 +72,13 @@ def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads i
                 tag = 'v6.1'  # current release
 
         if name in assets:
+            url3 = 'https://drive.google.com/drive/folders/1EFQTEUeXWSFww0luse2jB9M1QNZQGwNl'  # backup gdrive mirror
             safe_download(
                 file,
                 url=f'https://github.com/{repo}/releases/download/{tag}/{name}',
-                # url2=f'https://storage.googleapis.com/{repo}/ckpt/{name}',  # backup url (optional)
+                url2=f'https://storage.googleapis.com/{repo}/{tag}/{name}',  # backup url (optional)
                 min_bytes=1E5,
-                error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/')
+                error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/{tag} or {url3}')
 
     return str(file)
 
@@ -123,7 +124,6 @@ def get_token(cookie="./cookie"):
             if "download" in line:
                 return line.split()[-1]
     return ""
-
 
 # Google utils: https://cloud.google.com/storage/docs/reference/libraries ----------------------------------------------
 #
