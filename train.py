@@ -461,7 +461,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         save_dir=save_dir,
                         save_json=is_coco,
                         verbose=True,
-                        plots=True,
+                        plots=plots,
                         callbacks=callbacks,
                         compute_loss=compute_loss)  # val best model with plots
                     if is_coco:
