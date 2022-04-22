@@ -115,7 +115,8 @@ def attempt_load(weights, map_location=None, inplace=True, fuse=True):
         return model[-1]  # return model
     else:
         print(f'Ensemble created with {weights}\n')
-        for k in ['names']:
-            setattr(model, k, getattr(model[-1], k))
+        for k in 'names', 'nc', 'yaml':
+            setattr(model, k, getattr(model[0], k))
         model.stride = model[torch.argmax(torch.tensor([m.stride.max() for m in model])).int()].stride  # max stride
+        assert all(model[0].nc == m.nc for m in model), f'Models have different class counts: {[m.nc for m in model]}'
         return model  # return ensemble

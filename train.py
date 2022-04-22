@@ -48,13 +48,13 @@ from utils.datasets import create_dataloader
 from utils.downloads import attempt_download
 from utils.general import (LOGGER, check_dataset, check_file, check_git_status, check_img_size, check_requirements,
                            check_suffix, check_yaml, colorstr, get_latest_run, increment_path, init_seeds,
-                           intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods, one_cycle,
-                           print_args, print_mutation, strip_optimizer)
+                           intersect_dicts, is_ascii, labels_to_class_weights, labels_to_image_weights, methods,
+                           one_cycle, print_args, print_mutation, strip_optimizer)
 from utils.loggers import Loggers
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.loss import ComputeLoss
 from utils.metrics import fitness
-from utils.plots import plot_evolve, plot_labels
+from utils.plots import check_font, plot_evolve, plot_labels
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
@@ -100,11 +100,13 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             callbacks.register_action(k, callback=getattr(loggers, k))
 
     # Config
-    plots = not evolve  # create plots
+    plots = not evolve and not opt.noplots  # create plots
     cuda = device.type != 'cpu'
     init_seeds(1 + RANK)
     with torch_distributed_zero_first(LOCAL_RANK):
         data_dict = data_dict or check_dataset(data)  # check if None
+        if not is_ascii(data_dict['names']):  # non-latin labels, i.e. asian, arabic, cyrillic
+            check_font('Arial.Unicode.ttf', progress=True)
     train_path, val_path = data_dict['train'], data_dict['val']
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
@@ -150,27 +152,28 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     hyp['weight_decay'] *= batch_size * accumulate / nbs  # scale weight_decay
     LOGGER.info(f"Scaled weight_decay = {hyp['weight_decay']}")
 
-    g0, g1, g2 = [], [], []  # optimizer parameter groups
+    g = [], [], []  # optimizer parameter groups
+    bn = tuple(v for k, v in nn.__dict__.items() if 'Norm' in k)  # normalization layers, i.e. BatchNorm2d()
     for v in model.modules():
         if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):  # bias
-            g2.append(v.bias)
-        if isinstance(v, nn.BatchNorm2d):  # weight (no decay)
-            g0.append(v.weight)
+            g[2].append(v.bias)
+        if isinstance(v, bn):  # weight (no decay)
+            g[1].append(v.weight)
         elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):  # weight (with decay)
-            g1.append(v.weight)
+            g[0].append(v.weight)
 
     if opt.optimizer == 'Adam':
-        optimizer = Adam(g0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
+        optimizer = Adam(g[2], lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
     elif opt.optimizer == 'AdamW':
-        optimizer = AdamW(g0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
+        optimizer = AdamW(g[2], lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
     else:
-        optimizer = SGD(g0, lr=hyp['lr0'], momentum=hyp['momentum'], nesterov=True)
+        optimizer = SGD(g[2], lr=hyp['lr0'], momentum=hyp['momentum'], nesterov=True)
 
-    optimizer.add_param_group({'params': g1, 'weight_decay': hyp['weight_decay']})  # add g1 with weight_decay
-    optimizer.add_param_group({'params': g2})  # add g2 (biases)
+    optimizer.add_param_group({'params': g[0], 'weight_decay': hyp['weight_decay']})  # add g0 with weight_decay
+    optimizer.add_param_group({'params': g[1]})  # add g1 (BatchNorm2d weights)
     LOGGER.info(f"{colorstr('optimizer:')} {type(optimizer).__name__} with parameter groups "
-                f"{len(g0)} weight (no decay), {len(g1)} weight, {len(g2)} bias")
-    del g0, g1, g2
+                f"{len(g[1])} weight (no decay), {len(g[0])} weight, {len(g[2])} bias")
+    del g
 
     # Scheduler
     if opt.cos_lr:
@@ -370,7 +373,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
                 pbar.set_description(('%10s' * 2 + '%10.4g' * 5) %
                                      (f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
-                callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, plots, opt.sync_bn)
+                callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, plots)
                 if callbacks.stop_training:
                     return
             # end batch ------------------------------------------------------------------------------------------------
@@ -458,7 +461,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         save_dir=save_dir,
                         save_json=is_coco,
                         verbose=True,
-                        plots=True,
+                        plots=plots,
                         callbacks=callbacks,
                         compute_loss=compute_loss)  # val best model with plots
                     if is_coco:
@@ -485,6 +488,7 @@ def parse_opt(known=False):
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--noval', action='store_true', help='only validate final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable AutoAnchor')
+    parser.add_argument('--noplots', action='store_true', help='save no plot files')
     parser.add_argument('--evolve', type=int, nargs='?', const=300, help='evolve hyperparameters for x generations')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')

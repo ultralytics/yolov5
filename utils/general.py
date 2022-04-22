@@ -40,6 +40,7 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 DATASETS_DIR = ROOT.parent / 'datasets'  # YOLOv5 datasets directory
 NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
+AUTOINSTALL = str(os.getenv('YOLOv5_AUTOINSTALL', True)).lower() == 'true'  # global auto-install mode
 VERBOSE = str(os.getenv('YOLOv5_VERBOSE', True)).lower() == 'true'  # global verbose mode
 FONT = 'Arial.ttf'  # https://ultralytics.com/assets/Arial.ttf
 
@@ -275,6 +276,7 @@ def check_online():
 def git_describe(path=ROOT):  # path must be a directory
     # Return human-readable git description, i.e. v5.0-5-g3e25f1e https://git-scm.com/docs/git-describe
     try:
+        assert (Path(path) / '.git').is_dir()
         return check_output(f'git -C {path} describe --tags --long --always', shell=True).decode()[:-1]
     except Exception:
         return ''
@@ -319,7 +321,7 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
 
 
 @try_except
-def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True):
+def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True, cmds=()):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
     prefix = colorstr('red', 'bold', 'requirements:')
     check_python()  # check python version
@@ -332,16 +334,16 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
         requirements = [x for x in requirements if x not in exclude]
 
     n = 0  # number of packages updates
-    for r in requirements:
+    for i, r in enumerate(requirements):
         try:
             pkg.require(r)
         except Exception:  # DistributionNotFound or VersionConflict if requirements not met
             s = f"{prefix} {r} not found and is required by YOLOv5"
-            if install:
+            if install and AUTOINSTALL:  # check environment variable
                 LOGGER.info(f"{s}, attempting auto-update...")
                 try:
                     assert check_online(), f"'pip install {r}' skipped (offline)"
-                    LOGGER.info(check_output(f"pip install '{r}'", shell=True).decode())
+                    LOGGER.info(check_output(f"pip install '{r}' {cmds[i] if cmds else ''}", shell=True).decode())
                     n += 1
                 except Exception as e:
                     LOGGER.warning(f'{prefix} {e}')
@@ -423,13 +425,14 @@ def check_file(file, suffix=''):
         return files[0]  # return file
 
 
-def check_font(font=FONT):
+def check_font(font=FONT, progress=False):
     # Download font to CONFIG_DIR if necessary
     font = Path(font)
-    if not font.exists() and not (CONFIG_DIR / font.name).exists():
+    file = CONFIG_DIR / font.name
+    if not font.exists() and not file.exists():
         url = "https://ultralytics.com/assets/" + font.name
-        LOGGER.info(f'Downloading {url} to {CONFIG_DIR / font.name}...')
-        torch.hub.download_url_to_file(url, str(font), progress=False)
+        LOGGER.info(f'Downloading {url} to {file}...')
+        torch.hub.download_url_to_file(url, str(file), progress=progress)
 
 
 def check_dataset(data, autodownload=True):
