@@ -87,8 +87,8 @@ should be:
 - ✅ **Unmodified** – Your problem must be reproducible without any modifications to the codebase in this
   repository. [Ultralytics](https://ultralytics.com/) does not provide support for custom code ⚠️.
 
-If you believe your problem meets all of the above criteria, please close this issue and raise a new one using the 🐛 \*\*
-Bug Report\*\* [template](https://github.com/ultralytics/yolov5/issues/new/choose) and providing
+If you believe your problem meets all of the above criteria, please close this issue and raise a new one using the 🐛 
+**Bug Report** [template](https://github.com/ultralytics/yolov5/issues/new/choose) and providing
 a [minimum reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) to help us better
 understand and diagnose your problem.
 
