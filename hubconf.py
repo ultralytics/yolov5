@@ -29,7 +29,6 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
 
     import os
     from pathlib import Path
-    print('verbose value:', verbose)
     os.environ['YOLOv5_VERBOSE'] = str(verbose)
 
     from models.common import AutoShape, DetectMultiBackend
