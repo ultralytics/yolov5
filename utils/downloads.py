@@ -3,12 +3,12 @@
 Download utils
 """
 
+import logging
 import os
 import platform
 import subprocess
 import time
 import urllib
-import logging
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -128,6 +128,7 @@ def get_token(cookie="./cookie"):
             if "download" in line:
                 return line.split()[-1]
     return ""
+
 
 # Google utils: https://cloud.google.com/storage/docs/reference/libraries ----------------------------------------------
 #
