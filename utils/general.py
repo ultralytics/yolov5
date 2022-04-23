@@ -431,7 +431,6 @@ def check_font(font=FONT, progress=False):
     file = CONFIG_DIR / font.name
     if not font.exists() and not file.exists():
         url = "https://ultralytics.com/assets/" + font.name
-        print(LOGGER.level)
         LOGGER.info(f'Downloading {url} to {file}...')
         torch.hub.download_url_to_file(url, str(file), progress=progress)
 
@@ -464,7 +463,7 @@ def check_dataset(data, autodownload=True):
     assert 'nc' in data, "Dataset 'nc' key missing."
     if 'names' not in data:
         data['names'] = [f'class{i}' for i in range(data['nc'])]  # assign class names if missing
-    check_font('Arial.Unicode.ttf' if is_ascii(data['names']) else 'Arial.ttf', progress=True)  # download fonts
+    check_font('Arial.ttf' if is_ascii(data['names']) else 'Arial.Unicode.ttf', progress=True)  # download fonts
     train, val, test, s = (data.get(x) for x in ('train', 'val', 'test', 'download'))
     if val:
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
