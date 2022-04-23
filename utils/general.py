@@ -490,6 +490,7 @@ def check_dataset(data, autodownload=True):
             else:
                 raise Exception(emojis('Dataset not found ❌'))
 
+    check_font('Arial.ttf' if is_ascii(data['names']) else 'Arial.Unicode.ttf', progress=True)  # download fonts
     return data  # dictionary
 
 
