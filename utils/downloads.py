@@ -23,27 +23,30 @@ def gsutil_getsize(url=''):
 
 def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
     # Attempts to download file from url or url2, checks and removes incomplete downloads < min_bytes
+    from utils.general import LOGGER
+
     file = Path(file)
     assert_msg = f"Downloaded file '{file}' does not exist or size is < min_bytes={min_bytes}"
     try:  # url1
-        print(f'Downloading {url} to {file}...')
-        torch.hub.download_url_to_file(url, str(file))
+        LOGGER.info(f'Downloading {url} to {file}...')
+        torch.hub.download_url_to_file(url, str(file), progress=LOGGER.root.level <= 20)  # 20=INFO logger level
         assert file.exists() and file.stat().st_size > min_bytes, assert_msg  # check
     except Exception as e:  # url2
         file.unlink(missing_ok=True)  # remove partial downloads
-        print(f'ERROR: {e}\nRe-attempting {url2 or url} to {file}...')
+        LOGGER.info(f'ERROR: {e}\nRe-attempting {url2 or url} to {file}...')
         os.system(f"curl -L '{url2 or url}' -o '{file}' --retry 3 -C -")  # curl download, retry and resume on fail
     finally:
         if not file.exists() or file.stat().st_size < min_bytes:  # check
             file.unlink(missing_ok=True)  # remove partial downloads
-            print(f"ERROR: {assert_msg}\n{error_msg}")
-        print('')
+            LOGGER.info(f"ERROR: {assert_msg}\n{error_msg}")
+        LOGGER.info('')
 
 
 def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads import *; attempt_download()
     # Attempt file download if does not exist
-    file = Path(str(file).strip().replace("'", ''))
+    from utils.general import LOGGER
 
+    file = Path(str(file).strip().replace("'", ''))
     if not file.exists():
         # URL specified
         name = Path(urllib.parse.unquote(str(file))).name  # decode '%2F' to '/' etc.
@@ -51,7 +54,7 @@ def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads i
             url = str(file).replace(':/', '://')  # Pathlib turns :// -> :/
             file = name.split('?')[0]  # parse authentication https://url.com/file.txt?auth...
             if Path(file).is_file():
-                print(f'Found {url} locally at {file}')  # file already exists
+                LOGGER.info(f'Found {url} locally at {file}')  # file already exists
             else:
                 safe_download(file=file, url=url, min_bytes=1E5)
             return file
@@ -124,7 +127,6 @@ def get_token(cookie="./cookie"):
             if "download" in line:
                 return line.split()[-1]
     return ""
-
 
 # Google utils: https://cloud.google.com/storage/docs/reference/libraries ----------------------------------------------
 #
