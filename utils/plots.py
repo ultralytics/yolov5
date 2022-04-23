@@ -66,9 +66,6 @@ def check_pil_font(font=FONT, size=10):
 
 
 class Annotator:
-    if RANK in (-1, 0):
-        check_pil_font()  # download TTF if necessary
-
     # YOLOv5 Annotator for train/val mosaics and jpgs and detect/hub inference annotations
     def __init__(self, im, line_width=None, font_size=None, font='Arial.ttf', pil=False, example='abc'):
         assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to Annotator() input images.'
