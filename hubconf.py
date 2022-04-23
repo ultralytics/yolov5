@@ -31,7 +31,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     from utils.general import LOGGER, check_requirements, intersect_dicts, logging
     if not verbose:
         LOGGER.setLevel(logging.WARNING)
-    
+
     from models.common import AutoShape, DetectMultiBackend
     from models.yolo import Model
     from utils.downloads import attempt_download
