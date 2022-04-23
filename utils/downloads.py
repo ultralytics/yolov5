@@ -14,8 +14,6 @@ from zipfile import ZipFile
 import requests
 import torch
 
-from utils.general import LOGGER
-
 
 def gsutil_getsize(url=''):
     # gs://bucket/file size https://cloud.google.com/storage/docs/gsutil/commands/du
@@ -25,6 +23,8 @@ def gsutil_getsize(url=''):
 
 def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
     # Attempts to download file from url or url2, checks and removes incomplete downloads < min_bytes
+    from utils.general import LOGGER
+
     file = Path(file)
     assert_msg = f"Downloaded file '{file}' does not exist or size is < min_bytes={min_bytes}"
     try:  # url1
@@ -44,8 +44,9 @@ def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
 
 def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads import *; attempt_download()
     # Attempt file download if does not exist
-    file = Path(str(file).strip().replace("'", ''))
+    from utils.general import LOGGER
 
+    file = Path(str(file).strip().replace("'", ''))
     if not file.exists():
         # URL specified
         name = Path(urllib.parse.unquote(str(file))).name  # decode '%2F' to '/' etc.
@@ -126,7 +127,6 @@ def get_token(cookie="./cookie"):
             if "download" in line:
                 return line.split()[-1]
     return ""
-
 
 # Google utils: https://cloud.google.com/storage/docs/reference/libraries ----------------------------------------------
 #
