@@ -683,7 +683,11 @@ class Detections:
         return x
 
     def __len__(self):
-        return self.n
+        return self.n  # override len(results)
+
+    def __str__(self):
+        self.print()  # override print(results)
+        return ''
 
 
 class Classify(nn.Module):
