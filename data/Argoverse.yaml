@@ -22,7 +22,7 @@ names: ['person',  'bicycle',  'car',  'motorcycle',  'bus',  'truck',  'traffic
 download: |
   import json
 
-  from tqdm.auto import tqdm
+  from tqdm import tqdm
   from utils.general import download, Path
 
 

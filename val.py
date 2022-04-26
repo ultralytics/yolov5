@@ -27,7 +27,7 @@ from threading import Thread
 
 import numpy as np
 import torch
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory

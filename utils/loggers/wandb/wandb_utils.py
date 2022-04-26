@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict
 
 import yaml
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[3]  # YOLOv5 root directory
