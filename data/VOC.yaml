@@ -29,7 +29,7 @@ names: ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', '
 download: |
   import xml.etree.ElementTree as ET
 
-  from tqdm.auto import tqdm
+  from tqdm import tqdm
   from utils.general import download, Path
 
 
