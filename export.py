@@ -177,7 +177,7 @@ def export_openvino(model, im, file, half, prefix=colorstr('OpenVINO:')):
         LOGGER.info(f'\n{prefix} starting export with openvino {ie.__version__}...')
         f = str(file).replace('.pt', '_openvino_model' + os.sep)
 
-        cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f} {'--data_type FP16' if half else ''}"
+        cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f} --data_type {'FP16' if half else 'FP32'}"
         subprocess.check_output(cmd, shell=True)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
