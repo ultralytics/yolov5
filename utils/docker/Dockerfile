@@ -11,7 +11,7 @@ COPY requirements.txt .
 RUN python -m pip install --upgrade pip
 RUN pip uninstall -y torch torchvision torchtext
 RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook \
-    torch torchvision --extra-index-url https://download.pytorch.org/whl/cu113 \
+    torch torchvision --extra-index-url https://download.pytorch.org/whl/cu113
 # RUN pip install --no-cache -U torch torchvision
 
 # Create working directory
