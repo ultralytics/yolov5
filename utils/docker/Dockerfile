@@ -1,7 +1,7 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 
 # Start FROM Nvidia PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
-FROM nvcr.io/nvidia/pytorch:22.04-py3
+FROM nvcr.io/nvidia/pytorch:21.10-py3
 
 # Install linux packages
 RUN apt update && apt install -y zip htop screen libgl1-mesa-glx
@@ -9,9 +9,9 @@ RUN apt update && apt install -y zip htop screen libgl1-mesa-glx
 # Install pip packages
 COPY requirements.txt .
 RUN python -m pip install --upgrade pip
-RUN pip uninstall -y Pillow torchtext
-RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook
-RUN pip install --no-cache -U Pillow
+RUN pip uninstall -y torch torchvision torchtext
+RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook \
+    torch==1.11.0+cu113 torchvision==0.12.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 
 # Create working directory
 RUN mkdir -p /usr/src/app
