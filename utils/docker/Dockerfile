@@ -14,6 +14,7 @@ RUN python -m pip install --upgrade pip
 #RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook
 
 RUN pip uninstall -y torch torchvision torchtext
+RUN rm -rf opt/pytorch  # remove 1.2GB dir
 RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook \
     torch torchvision --extra-index-url https://download.pytorch.org/whl/cu113
 
@@ -38,7 +39,7 @@ ENV OMP_NUM_THREADS=8
 # t=ultralytics/yolov5:latest && sudo docker build -f utils/docker/Dockerfile -t $t . && sudo docker push $t
 
 # Pull and Run
-# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all $t
+# t=ultralytics/yolov5:latest-22.04 && sudo docker pull $t && sudo docker run -it --ipc=host $t
 
 # Pull and Run with local directory access
 # t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all -v "$(pwd)"/datasets:/usr/src/datasets $t
