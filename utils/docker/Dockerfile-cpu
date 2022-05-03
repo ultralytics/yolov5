@@ -4,9 +4,9 @@
 FROM ubuntu:latest
 
 # Install linux packages
-RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y tzdata
-RUN apt-get install -y python3-pip git zip curl htop screen libgl1-mesa-glx libglib2.0-0
+RUN apt update
+RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt install -y tzdata
+RUN apt install -y python3-pip git zip curl htop screen libgl1-mesa-glx libglib2.0-0
 RUN alias python=python3
 
 # Install python dependencies
@@ -31,7 +31,7 @@ ADD https://ultralytics.com/assets/Arial.ttf https://ultralytics.com/assets/Aria
 # Usage Examples -------------------------------------------------------------------------------------------------------
 
 # Build and Push
-# t=ultralytics/yolov5:latest-cpu && sudo docker build -f utils/docker/Dockerfile-cpu -t $t . && sudo docker push $t
+# t=ultralytics/yolov5:latest-cpu-test && sudo docker build -f utils/docker/Dockerfile-cpu -t $t . && sudo docker push $t
 
 # Pull and Run
 # t=ultralytics/yolov5:latest-cpu && sudo docker pull $t && sudo docker run -it --ipc=host -v "$(pwd)"/datasets:/usr/src/datasets $t
