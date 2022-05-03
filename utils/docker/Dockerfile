@@ -6,7 +6,7 @@ FROM nvcr.io/nvidia/pytorch:22.04-py3
 # Install linux packages
 RUN apt update && apt install -y zip htop screen libgl1-mesa-glx
 
-# Install python dependencies
+# Install pip packages
 COPY requirements.txt .
 RUN python -m pip install --upgrade pip
 RUN pip uninstall -y Pillow torchtext
