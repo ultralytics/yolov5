@@ -10,7 +10,7 @@ RUN apt update && apt install -y zip htop screen libgl1-mesa-glx
 COPY requirements.txt .
 RUN python -m pip install --upgrade pip
 RUN pip uninstall -y torchtext
-RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook
+RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook pillow>=9.1
     # torch torchvision --extra-index-url https://download.pytorch.org/whl/cu113
 # RUN pip install --no-cache -U torch torchvision
 
