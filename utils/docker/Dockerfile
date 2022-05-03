@@ -2,6 +2,7 @@
 
 # Start FROM Nvidia PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
 FROM nvcr.io/nvidia/pytorch:22.04-py3
+RUN rm -rf opt/pytorch  # remove 1.2GB dir
 
 # Install linux packages
 RUN apt update && apt install -y zip htop screen libgl1-mesa-glx
@@ -14,7 +15,6 @@ RUN python -m pip install --upgrade pip
 #RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook
 
 RUN pip uninstall -y torch torchvision torchtext
-RUN rm -rf opt/pytorch  # remove 1.2GB dir
 RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook \
     torch torchvision --extra-index-url https://download.pytorch.org/whl/cu113
 
