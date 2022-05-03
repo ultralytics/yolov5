@@ -11,7 +11,6 @@ COPY requirements.txt .
 RUN python -m pip install --upgrade pip
 RUN pip uninstall -y Pillow torchtext
 RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook
-    # torch torchvision --extra-index-url https://download.pytorch.org/whl/cu113
 RUN pip install --no-cache -U Pillow
 
 # Create working directory
@@ -32,10 +31,10 @@ ENV OMP_NUM_THREADS=8
 # Usage Examples -------------------------------------------------------------------------------------------------------
 
 # Build and Push
-# t=ultralytics/yolov5:latest-notorchinstall && sudo docker build -f utils/docker/Dockerfile -t $t . && sudo docker push $t
+# t=ultralytics/yolov5:latest && sudo docker build -f utils/docker/Dockerfile -t $t . && sudo docker push $t
 
 # Pull and Run
-# t=ultralytics/yolov5:latest-nopytorchinstall && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all $t
+# t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all $t
 
 # Pull and Run with local directory access
 # t=ultralytics/yolov5:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all -v "$(pwd)"/datasets:/usr/src/datasets $t
