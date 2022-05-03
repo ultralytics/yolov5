@@ -10,7 +10,7 @@ RUN apt install -y python3-pip git zip curl htop screen libgl1-mesa-glx libglib2
 
 # Install python3.9
 RUN add-apt-repository ppa:deadsnakes/ppa -y
-RUN apt install python3.9 python3.9-distutils -y
+RUN apt install python3.9 python3.9-distutils libpython3.9 -y
 # RUN alias python=python3.9
 
 # Install pip packages
