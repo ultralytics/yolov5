@@ -53,6 +53,7 @@ def run(
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         half=False,  # use FP16 half-precision inference
         test=False,  # test exports only
+        pt_only=False,  # test PyTorch only
 ):
     y, t = [], time.time()
     formats = export.export_formats()
@@ -79,6 +80,8 @@ def run(
         except Exception as e:
             LOGGER.warning(f'WARNING: Benchmark failure for {name}: {e}')
             y.append([name, None, None])  # mAP, t_inference
+        if pt_only and i == 0:
+            break  # break after PyTorch
 
     # Print results
     LOGGER.info('\n')
@@ -98,6 +101,7 @@ def test(
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         half=False,  # use FP16 half-precision inference
         test=False,  # test exports only
+        pt_only=False,  # test PyTorch only
 ):
     y, t = [], time.time()
     formats = export.export_formats()
@@ -130,6 +134,7 @@ def parse_opt():
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--test', action='store_true', help='test exports only')
+    parser.add_argument('--pt-only', action='store_true', help='test PyTorch only')
     opt = parser.parse_args()
     print_args(vars(opt))
     return opt

@@ -27,7 +27,7 @@ from threading import Thread
 
 import numpy as np
 import torch
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -227,7 +227,7 @@ def run(
 
             if npr == 0:
                 if nl:
-                    stats.append((correct, *torch.zeros((3, 0))))
+                    stats.append((correct, *torch.zeros((3, 0), device=device)))
                 continue
 
             # Predictions

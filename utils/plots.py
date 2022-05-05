@@ -66,9 +66,6 @@ def check_pil_font(font=FONT, size=10):
 
 
 class Annotator:
-    if RANK in (-1, 0):
-        check_pil_font()  # download TTF if necessary
-
     # YOLOv5 Annotator for train/val mosaics and jpgs and detect/hub inference annotations
     def __init__(self, im, line_width=None, font_size=None, font='Arial.ttf', pil=False, example='abc'):
         assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to Annotator() input images.'
@@ -429,7 +426,7 @@ def plot_results(file='path/to/results.csv', dir=''):
             s = [x.strip() for x in data.columns]
             x = data.values[:, 0]
             for i, j in enumerate([1, 2, 3, 4, 5, 8, 9, 10, 6, 7]):
-                y = data.values[:, j]
+                y = data.values[:, j].astype('float')
                 # y[y == 0] = np.nan  # don't show zero values
                 ax[i].plot(x, y, marker='.', label=f.stem, linewidth=2, markersize=8)
                 ax[i].set_title(s[j], fontsize=12)

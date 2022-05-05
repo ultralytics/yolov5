@@ -94,6 +94,41 @@ class TFConv(keras.layers.Layer):
         return self.act(self.bn(self.conv(inputs)))
 
 
+class TFConvTranspose2d(keras.layers.Layer):
+    # Standard convolution
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):
+        # ch_in, ch_out, weights, kernel, stride, padding, groups
+        super().__init__()
+        assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
+        assert isinstance(k, int), "Convolution with multiple kernels are not allowed."
+        # TensorFlow convolution padding is inconsistent with PyTorch (e.g. k=3 s=2 'SAME' padding)
+        # see https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
+
+        conv = keras.layers.Conv2D(
+            c2,
+            k,
+            s,
+            'SAME' if s == 1 else 'VALID',
+            use_bias=False if hasattr(w, 'bn') else True,
+            kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()),
+            bias_initializer='zeros' if hasattr(w, 'bn') else keras.initializers.Constant(w.conv.bias.numpy()))
+        self.conv = conv if s == 1 else keras.Sequential([TFPad(autopad(k, p)), conv])
+        self.bn = TFBN(w.bn) if hasattr(w, 'bn') else tf.identity
+
+        # YOLOv5 activations
+        if isinstance(w.act, nn.LeakyReLU):
+            self.act = (lambda x: keras.activations.relu(x, alpha=0.1)) if act else tf.identity
+        elif isinstance(w.act, nn.Hardswish):
+            self.act = (lambda x: x * tf.nn.relu6(x + 3) * 0.166666667) if act else tf.identity
+        elif isinstance(w.act, (nn.SiLU, SiLU)):
+            self.act = (lambda x: keras.activations.swish(x)) if act else tf.identity
+        else:
+            raise Exception(f'no matching TensorFlow activation found for {w.act}')
+
+    def call(self, inputs):
+        return self.act(self.bn(self.conv(inputs)))
+
+
 class TFFocus(keras.layers.Layer):
     # Focus wh information into c-space
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):

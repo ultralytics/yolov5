@@ -321,7 +321,7 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
 
 
 @try_except
-def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True):
+def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True, cmds=()):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
     prefix = colorstr('red', 'bold', 'requirements:')
     check_python()  # check python version
@@ -334,7 +334,7 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
         requirements = [x for x in requirements if x not in exclude]
 
     n = 0  # number of packages updates
-    for r in requirements:
+    for i, r in enumerate(requirements):
         try:
             pkg.require(r)
         except Exception:  # DistributionNotFound or VersionConflict if requirements not met
@@ -343,7 +343,7 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
                 LOGGER.info(f"{s}, attempting auto-update...")
                 try:
                     assert check_online(), f"'pip install {r}' skipped (offline)"
-                    LOGGER.info(check_output(f"pip install '{r}'", shell=True).decode())
+                    LOGGER.info(check_output(f"pip install '{r}' {cmds[i] if cmds else ''}", shell=True).decode())
                     n += 1
                 except Exception as e:
                     LOGGER.warning(f'{prefix} {e}')
@@ -467,7 +467,7 @@ def check_dataset(data, autodownload=True):
     if val:
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
-            LOGGER.info(emojis('\nDataset not found ⚠️, missing paths %s' % [str(x) for x in val if not x.exists()]))
+            LOGGER.info(emojis('\nDataset not found ⚠, missing paths %s' % [str(x) for x in val if not x.exists()]))
             if s and autodownload:  # download script
                 t = time.time()
                 root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
@@ -490,6 +490,7 @@ def check_dataset(data, autodownload=True):
             else:
                 raise Exception(emojis('Dataset not found ❌'))
 
+    check_font('Arial.ttf' if is_ascii(data['names']) else 'Arial.Unicode.ttf', progress=True)  # download fonts
     return data  # dictionary
 
 
@@ -932,13 +933,24 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     path = Path(path)  # os-agnostic
     if path.exists() and not exist_ok:
         path, suffix = (path.with_suffix(''), path.suffix) if path.is_file() else (path, '')
-        dirs = glob.glob(f"{path}{sep}*")  # similar paths
-        matches = [re.search(rf"%s{sep}(\d+)" % path.stem, d) for d in dirs]
-        i = [int(m.groups()[0]) for m in matches if m]  # indices
-        n = max(i) + 1 if i else 2  # increment number
-        path = Path(f"{path}{sep}{n}{suffix}")  # increment path
+
+        # Method 1
+        for n in range(2, 9999):
+            p = f'{path}{sep}{n}{suffix}'  # increment path
+            if not os.path.exists(p):  #
+                break
+        path = Path(p)
+
+        # Method 2 (deprecated)
+        # dirs = glob.glob(f"{path}{sep}*")  # similar paths
+        # matches = [re.search(rf"{path.stem}{sep}(\d+)", d) for d in dirs]
+        # i = [int(m.groups()[0]) for m in matches if m]  # indices
+        # n = max(i) + 1 if i else 2  # increment number
+        # path = Path(f"{path}{sep}{n}{suffix}")  # increment path
+
     if mkdir:
         path.mkdir(parents=True, exist_ok=True)  # make directory
+
     return path
 
 

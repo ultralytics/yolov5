@@ -34,7 +34,7 @@ download: |
 
   import numpy as np
   from PIL import Image
-  from tqdm.auto import tqdm
+  from tqdm import tqdm
 
   from utils.datasets import autosplit
   from utils.general import download, xyxy2xywhn
