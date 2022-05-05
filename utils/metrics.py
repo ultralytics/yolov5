@@ -240,10 +240,10 @@ def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
                 v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
                 with torch.no_grad():
                     alpha = v / (v - iou + (1 + eps))
-                return iou - (rho2 / c2 + v * alpha)  # CIoU
-            return iou - rho2 / c2  # DIoU
+                return iou + (rho2 / c2 + v * alpha)  # CIoU
+            return iou + rho2 / c2  # DIoU
         c_area = cw * ch + eps  # convex area
-        return iou - (c_area - union) / c_area  # GIoU https://arxiv.org/pdf/1902.09630.pdf
+        return iou + (c_area - union) / c_area  # GIoU https://arxiv.org/pdf/1902.09630.pdf
     return iou  # IoU
 
 
