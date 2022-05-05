@@ -15,9 +15,12 @@
   "icon": "https://i.imgur.com/HZCM0QM.png",
   "icon_cover": true,
   "context_menu": {
-    "target": ["images_project"],
+    "target": [
+      "images_project"
+    ],
     "context_root": "Neural Networks",
     "context_category": "YOLO v5"
   },
-  "instance_version": "6.4.15"
+  "instance_version": "6.4.15",
+  "poster": "https://i.imgur.com/YwSq29o.png"
 }
