@@ -96,7 +96,7 @@ def compute_ap(recall, precision):
     """
 
     # Append sentinel values to beginning and end
-    mrec = np.concatenate((recall, [recall[-1]+0.001]))
+    mrec = np.concatenate((recall, [recall[-1] + 0.001]))
     mpre = np.concatenate((precision, [0.0]))
 
     # Compute the precision envelope
