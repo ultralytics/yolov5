@@ -57,11 +57,11 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names
 
             # Recall
             recall = tpc / (n_l + eps)  # recall curve
-            r[ci] = np.interp(-px, -conf[i], recall[:, 0], left=0)  # negative x, xp because xp decreases
+            r[ci] = np.interp(-px, -conf[i], recall[:, 0], left=0, right=0)  # negative x, xp because xp decreases
 
             # Precision
             precision = tpc / (tpc + fpc)  # precision curve
-            p[ci] = np.interp(-px, -conf[i], precision[:, 0], left=1)  # p at pr_score
+            p[ci] = np.interp(-px, -conf[i], precision[:, 0], left=0, right=0)  # p at pr_score
 
             # AP from recall-precision curve
             for j in range(tp.shape[1]):
@@ -96,8 +96,8 @@ def compute_ap(recall, precision):
     """
 
     # Append sentinel values to beginning and end
-    mrec = np.concatenate(([0.0], recall, [1.0]))
-    mpre = np.concatenate(([1.0], precision, [0.0]))
+    mrec = np.concatenate((recall, [recall[-1]+0.001]))
+    mpre = np.concatenate((precision, [0.0]))
 
     # Compute the precision envelope
     mpre = np.flip(np.maximum.accumulate(np.flip(mpre)))
