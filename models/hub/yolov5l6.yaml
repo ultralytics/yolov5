@@ -10,7 +10,7 @@ anchors:
   - [140,301,  303,264,  238,542]  # P5/32
   - [436,615,  739,380,  925,792]  # P6/64
 
-# YOLOv5 v6.0 backbone
+# YOLOv5 v7.0 backbone
 backbone:
   # [from, number, module, args]
   [[-1, 1, Conv, [64, 6, 2, 2]],  # 0-P1/2
@@ -27,7 +27,7 @@ backbone:
    [-1, 1, SPPF, [1024, 5]],  # 11
   ]
 
-# YOLOv5 v6.0 head
+# YOLOv5 v7.0 head
 head:
   [[-1, 1, Conv, [768, 1, 1]],
    [-1, 1, nn.Upsample, [None, 2, 'nearest']],
