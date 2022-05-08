@@ -81,9 +81,11 @@ def process_batch(detections, labels, iouv):
     correct = torch.zeros(detections.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
     iou = box_iou(labels[:, 1:], detections[:, :4])
     for i in range(len(iouv)):
-         x = torch.where((iou >= iouv[i]) & (labels[:, 0:1] == detections[:, 5]))  # IoU above threshold and classes match
-         if x[0].shape[0]:
-            matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None], detections[x[1].long(),4:5]), 1).cpu().numpy()  # [label, detection, iou, score]
+        x = torch.where(
+            (iou >= iouv[i]) & (labels[:, 0:1] == detections[:, 5]))  # IoU above threshold and classes match
+        if x[0].shape[0]:
+            matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None], detections[x[1].long(), 4:5]),
+                                1).cpu().numpy()  # [label, detection, iou, score]
             if x[0].shape[0] > 1:
                 # sort matches by iou to choose the best matched box
                 matches = matches[matches[:, 2].argsort()[::-1]]
@@ -92,7 +94,7 @@ def process_batch(detections, labels, iouv):
                 matches = matches[matches[:, 3].argsort()[::-1]]
                 matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
             matches = torch.Tensor(matches).to(iouv.device)
-            correct[matches[:, 1].long(),i] = True
+            correct[matches[:, 1].long(), i] = True
     return correct
 
 
@@ -217,7 +219,13 @@ def run(
         targets[:, 2:] *= torch.tensor((width, height, width, height), device=device)  # to pixels
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
         t3 = time_sync()
-        out = non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=single_cls, max_det=100)
+        out = non_max_suppression(out,
+                                  conf_thres,
+                                  iou_thres,
+                                  labels=lb,
+                                  multi_label=True,
+                                  agnostic=single_cls,
+                                  max_det=100)
         dt[2] += time_sync() - t3
 
         # Metrics
