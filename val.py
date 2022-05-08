@@ -80,16 +80,19 @@ def process_batch(detections, labels, iouv):
     """
     correct = torch.zeros(detections.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
     iou = box_iou(labels[:, 1:], detections[:, :4])
-    x = torch.where((iou >= iouv[0]) & (labels[:, 0:1] == detections[:, 5]))  # IoU above threshold and classes match
-    if x[0].shape[0]:
-        matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy()  # [label, detection, iou]
-        if x[0].shape[0] > 1:
-            matches = matches[matches[:, 2].argsort()[::-1]]
-            matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
-            # matches = matches[matches[:, 2].argsort()[::-1]]
-            matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
-        matches = torch.from_numpy(matches).to(iouv.device)
-        correct[matches[:, 1].long()] = matches[:, 2:3] >= iouv
+    for i in range(len(iouv)):
+         x = torch.where((iou >= iouv[i]) & (labels[:, 0:1] == detections[:, 5]))  # IoU above threshold and classes match
+         if x[0].shape[0]:
+            matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None], detections[x[1].long(),4:5]), 1).cpu().numpy()  # [label, detection, iou, score]
+            if x[0].shape[0] > 1:
+                # sort matches by iou to choose the best matched box
+                matches = matches[matches[:, 2].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
+                # sort matches by score to choose the best matched class
+                matches = matches[matches[:, 3].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
+            matches = torch.Tensor(matches).to(iouv.device)
+            correct[matches[:, 1].long(),i] = True
     return correct
 
 
