@@ -164,6 +164,7 @@ class Loggers():
             plot_results(file=self.save_dir / 'results.csv')  # save results.png
         files = ['results.png', 'confusion_matrix.png', *(f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R'))]
         files = [(self.save_dir / f) for f in files if (self.save_dir / f).exists()]  # filter
+        self.logger.info(f"Results saved to {colorstr('bold', self.save_dir)}")
 
         if self.tb:
             for f in files:
