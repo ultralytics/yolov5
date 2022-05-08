@@ -227,7 +227,7 @@ def run(
 
             if npr == 0:
                 if nl:
-                    stats.append((correct, *torch.zeros((3, 0), device=device)))
+                    stats.append((correct, *torch.zeros((2, 0), device=device), labels[:, 0]))
                 continue
 
             # Predictions
