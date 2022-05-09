@@ -701,3 +701,20 @@ class Classify(nn.Module):
     def forward(self, x):
         z = torch.cat([self.aap(y) for y in (x if isinstance(x, list) else [x])], 1)  # cat if list
         return self.flat(self.conv(z))  # flatten to x(b,c2)
+
+
+class AdditionNet(nn.Module):
+    # AdditionNet preprocess for registering EfficientNMS into TensorRT engine
+    # Only support static inputs
+    def __init__(self):
+        super().__init__()
+        self.convert_matrix = torch.tensor([[1, 0, 1, 0], [0, 1, 0, 1], [-0.5, 0, 0.5, 0], [0, -0.5, 0, 0.5]],
+                                           dtype=torch.float32)
+
+    def forward(self, x):
+        box = x[:, :, :4]
+        conf = x[:, :, 4:5]
+        score = x[:, :, 5:]
+        score *= conf
+        box @= self.convert_matrix
+        return box, score

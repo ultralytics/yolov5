@@ -214,7 +214,19 @@ def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
         return None, None
 
 
-def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
+def export_engine(model,
+                  im,
+                  file,
+                  train,
+                  half,
+                  simplify,
+                  nms=False,
+                  topk_all=None,
+                  iou_thres=None,
+                  conf_thres=None,
+                  workspace=4,
+                  verbose=False,
+                  prefix=colorstr('TensorRT:')):
     # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
     try:
         assert im.device.type != 'cpu', 'export running on CPU but must be on GPU, i.e. `python export.py --device 0`'
@@ -233,6 +245,11 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         else:  # TensorRT >= 8
             check_version(trt.__version__, '8.0.0', hard=True)  # require tensorrt>=8.0.0
             export_onnx(model, im, file, 13, train, False, simplify)  # opset 13
+            if nms:
+                from utils.general import nmsRegister
+                export_onnx(model, im, file, 12, train, False, simplify)
+                LOGGER.info(f'\n{prefix} EfficientNMS plugin only supprot TensorRT greater than 8.0.0 ...')
+                file = nmsRegister(file, train, topk_all=topk_all, iou_thres=iou_thres, conf_thres=conf_thres)
         onnx = file.with_suffix('.onnx')
 
         LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
@@ -515,7 +532,8 @@ def run(
     if jit:
         f[0] = export_torchscript(model, im, file, optimize)
     if engine:  # TensorRT required before ONNX
-        f[1] = export_engine(model, im, file, train, half, simplify, workspace, verbose)
+        f[1] = export_engine(model, im, file, train, half, simplify, nms, topk_all, iou_thres, conf_thres, workspace,
+                             verbose)
     if onnx or xml:  # OpenVINO requires ONNX
         f[2] = export_onnx(model, im, file, opset, train, dynamic, simplify)
     if xml:  # OpenVINO

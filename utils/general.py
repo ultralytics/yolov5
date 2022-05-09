@@ -14,6 +14,7 @@ import random
 import re
 import shutil
 import signal
+import tempfile
 import time
 import urllib
 from datetime import datetime
@@ -978,3 +979,68 @@ cv2.imread, cv2.imwrite, cv2.imshow = imread, imwrite, imshow  # redefine
 
 # Variables ------------------------------------------------------------------------------------------------------------
 NCOLS = 0 if is_docker() else shutil.get_terminal_size().columns  # terminal window size for tqdm
+
+
+# onnx-graphsurgeon  ---------------------------------------------------------------------------------------------------
+def nmsRegister(file, train, topk_all=100, iou_thres=0.45, conf_thres=0.25):
+    from models.common import AdditionNet
+    try:
+        import onnx_graphsurgeon as gs
+    except Exception:
+        if platform.system() == 'Linux':
+            check_requirements(('onnx-graphsurgeon',), cmds=('-U --index-url https://pypi.ngc.nvidia.com',))
+        import onnx_graphsurgeon as gs
+
+    check_requirements(('onnx',))
+    import onnx
+    gs_graph = gs.import_onnx(onnx.load(file.with_suffix('.onnx')))
+    additionNet = AdditionNet()
+    tmpFile = tempfile.NamedTemporaryFile(suffix=".onnx")
+    torch.onnx.export(additionNet,
+                      torch.randn(gs_graph.outputs[0].shape),
+                      tmpFile.name,
+                      verbose=False,
+                      opset_version=13,
+                      training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
+                      do_constant_folding=not train,
+                      input_names=["tmpInput"],
+                      output_names=["boxes", "scores"],
+                      dynamic_axes=None)
+    tmp_graph = gs.import_onnx(onnx.load(tmpFile.name))
+    for node in tmp_graph.nodes:
+        node.name = "Addition_" + node.name
+        gs_graph.nodes.append(node)
+        try:
+            name = node.inputs[0].name
+        except Exception:
+            pass
+        else:
+            if name == "tmpInput":
+                node.inputs[0] = gs_graph.outputs[0]
+    gs_graph.outputs = tmp_graph.outputs
+    gs_graph.cleanup().toposort()
+    op_inputs = gs_graph.outputs
+    if not (topk_all and conf_thres and iou_thres):
+        topk_all, conf_thres, iou_thres = 100, 0.25, 0.45
+    op = "EfficientNMS_TRT"
+    attrs = {
+        "plugin_version": "1",
+        "background_class": -1,  # no background class
+        "max_output_boxes": topk_all,
+        "score_threshold": conf_thres,
+        "iou_threshold": iou_thres,
+        "score_activation": False,
+        "box_coding": 0,}
+    # NMS Outputs
+    output_num_detections = gs.Variable(name="num_detections", dtype=np.int32,
+                                        shape=[gs_graph.outputs[0].shape[0], 1
+                                               ])  # A scalar indicating the number of valid detections per batch image.
+    output_boxes = gs.Variable(name="detection_boxes", dtype=np.float32, shape=[gs_graph.outputs[0].shape[0], 100, 4])
+    output_scores = gs.Variable(name="detection_scores", dtype=np.float32, shape=[gs_graph.outputs[0].shape[0], 100])
+    output_labels = gs.Variable(name="detection_classes", dtype=np.int32, shape=[gs_graph.outputs[0].shape[0], 100])
+    op_outputs = [output_num_detections, output_boxes, output_scores, output_labels]
+    gs_graph.layer(op=op, name="batched_nms", inputs=op_inputs, outputs=op_outputs, attrs=attrs)
+    gs_graph.outputs = op_outputs
+    gs_graph.cleanup().toposort()
+    onnx.save(gs.export_onnx(gs_graph), str(file.with_suffix('.onnx')))
+    return file
