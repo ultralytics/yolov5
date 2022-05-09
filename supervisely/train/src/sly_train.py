@@ -45,8 +45,22 @@ def train(api: sly.Api, task_id, context, state, app_logger):
         sly.Project.to_detection_task(project_dir, inplace=True)
         train_classes = state["selectedClasses"]
         sly.Project.remove_classes_except(project_dir, classes_to_keep=train_classes, inplace=True)
+        
         if state["unlabeledImages"] == "ignore":
+            imgs_before = g.project_info.items_count
             sly.Project.remove_items_without_objects(project_dir, inplace=True)
+            project = sly.Project(project_dir, sly.OpenMode.READ)
+            imgs_after = project.total_items
+            if imgs_after != imgs_before:
+                val_count = state["randomSplit"]["count"]["val"]
+                val_part = val_count / imgs_before
+                new_val = int(imgs_after * val_part)
+                if new_val < 1:
+                    raise ValueError("Val split length == 0 after ignoring images. Please check your data.")
+                new_train = imgs_after - new_val
+                state["randomSplit"]["count"]["train"] = new_train
+                state["randomSplit"]["count"]["val"] = new_val
+
 
         # split to train / validation sets (paths to images and annotations)
         train_set, val_set = get_train_val_sets(project_dir, state)
