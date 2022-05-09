@@ -278,7 +278,7 @@ def export_engine(model,
         for out in outputs:
             LOGGER.info(f'{prefix}\toutput "{out.name}" with shape {out.shape} and dtype {out.dtype}')
 
-        LOGGER.info(f'{prefix} building FP{16 if builder.platform_has_fast_fp16 else 32} engine in {f}')
+        LOGGER.info(f'{prefix} building FP{16 if half and builder.platform_has_fast_fp16 else 32} engine in {f}')
         if half and builder.platform_has_fast_fp16:
             config.set_flag(trt.BuilderFlag.FP16)
         with builder.build_engine(network, config) as engine, open(f, 'wb') as t:
