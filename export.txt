@@ -1,0 +1,129 @@
+Microsoft Windows [version 10.0.19044.1645]
+(c) Microsoft Corporation. Tous droits réservés.
+
+D:\Master\YoloV5\yolov5>python path/to/export.py --weights yolov5s.pt --include tflite
+python: can't open file 'path/to/export.py': [Errno 2] No such file or directory
+
+D:\Master\YoloV5\yolov5>python export.py --weights yolov5s.pt --include tflite
+export: data=D:\Master\YoloV5\yolov5\data\coco128.yaml, weights=['yolov5s.pt'], imgsz=[640, 640], batch_size=1, device=cpu, half=False, inplace=False, train=False, optimize=False, int8=False, dynamic=False, simplify=False, opset=12, verbose=False, workspace=4, nms=False, agnostic_nms=False, topk_per_class=100, topk_all=100, iou_thres=0.45, conf_thres=0.25, include=['tflite']
+YOLOv5  v6.1-173-g3ef31d32 torch 1.11.0+cpu CPU
+
+Fusing layers...
+YOLOv5s summary: 213 layers, 7225885 parameters, 0 gradients
+
+PyTorch: starting from yolov5s.pt with output shape (1, 25200, 85) (14.1 MB)
+2022-05-10 01:04:29.340015: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'cudart64_110.dll'; dlerror: cudart64_110.dll not found
+2022-05-10 01:04:29.340623: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+
+TensorFlow SavedModel: starting export with tensorflow 2.8.0...
+
+                 from  n    params  module                                  arguments
+2022-05-10 01:04:41.665640: E tensorflow/stream_executor/cuda/cuda_driver.cc:271] failed call to cuInit: CUDA_ERROR_NO_DEVICE: no CUDA-capable device is detected
+2022-05-10 01:04:41.674591: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:169] retrieving CUDA diagnostic information for host: SB_PC
+2022-05-10 01:04:41.674938: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:176] hostname: SB_PC
+2022-05-10 01:04:41.678284: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX AVX2
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+  0                -1  1      3520  models.common.Conv                      [3, 32, 6, 2, 2]
+  1                -1  1     18560  models.common.Conv                      [32, 64, 3, 2]
+  2                -1  1     18816  models.common.C3                        [64, 64, 1]
+  3                -1  1     73984  models.common.Conv                      [64, 128, 3, 2]
+  4                -1  1    115712  models.common.C3                        [128, 128, 2]
+  5                -1  1    295424  models.common.Conv                      [128, 256, 3, 2]
+  6                -1  1    625152  models.common.C3                        [256, 256, 3]
+  7                -1  1   1180672  models.common.Conv                      [256, 512, 3, 2]
+  8                -1  1   1182720  models.common.C3                        [512, 512, 1]
+  9                -1  1    656896  models.common.SPPF                      [512, 512, 5]
+ 10                -1  1    131584  models.common.Conv                      [512, 256, 1, 1]
+ 11                -1  1         0  torch.nn.modules.upsampling.Upsample    [None, 2, 'nearest']
+ 12           [-1, 6]  1         0  models.common.Concat                    [1]
+ 13                -1  1    361984  models.common.C3                        [512, 256, 1, False]
+ 14                -1  1     33024  models.common.Conv                      [256, 128, 1, 1]
+ 15                -1  1         0  torch.nn.modules.upsampling.Upsample    [None, 2, 'nearest']
+ 16           [-1, 4]  1         0  models.common.Concat                    [1]
+ 17                -1  1     90880  models.common.C3                        [256, 128, 1, False]
+ 18                -1  1    147712  models.common.Conv                      [128, 128, 3, 2]
+ 19          [-1, 14]  1         0  models.common.Concat                    [1]
+ 20                -1  1    296448  models.common.C3                        [256, 256, 1, False]
+ 21                -1  1    590336  models.common.Conv                      [256, 256, 3, 2]
+ 22          [-1, 10]  1         0  models.common.Concat                    [1]
+ 23                -1  1   1182720  models.common.C3                        [512, 512, 1, False]
+ 24      [17, 20, 23]  1    229245  models.yolo.Detect                      [80, [[10, 13, 16, 30, 33, 23], [30, 61, 62, 45, 59, 119], [116, 90, 156, 198, 373, 326]], [128, 256, 512], [640, 640]]
+Model: "model"
+__________________________________________________________________________________________________
+ Layer (type)                   Output Shape         Param #     Connected to
+==================================================================================================
+ input_1 (InputLayer)           [(1, 640, 640, 3)]   0           []
+
+ tf_conv (TFConv)               (1, 320, 320, 32)    3488        ['input_1[0][0]']
+
+ tf_conv_1 (TFConv)             (1, 160, 160, 64)    18496       ['tf_conv[0][0]']
+
+ tfc3 (TFC3)                    (1, 160, 160, 64)    18624       ['tf_conv_1[0][0]']
+
+ tf_conv_7 (TFConv)             (1, 80, 80, 128)     73856       ['tfc3[0][0]']
+
+ tfc3_1 (TFC3)                  (1, 80, 80, 128)     115200      ['tf_conv_7[0][0]']
+
+ tf_conv_15 (TFConv)            (1, 40, 40, 256)     295168      ['tfc3_1[0][0]']
+
+ tfc3_2 (TFC3)                  (1, 40, 40, 256)     623872      ['tf_conv_15[0][0]']
+
+ tf_conv_25 (TFConv)            (1, 20, 20, 512)     1180160     ['tfc3_2[0][0]']
+
+ tfc3_3 (TFC3)                  (1, 20, 20, 512)     1181184     ['tf_conv_25[0][0]']
+
+ tfsppf (TFSPPF)                (1, 20, 20, 512)     656128      ['tfc3_3[0][0]']
+
+ tf_conv_33 (TFConv)            (1, 20, 20, 256)     131328      ['tfsppf[0][0]']
+
+ tf_upsample (TFUpsample)       (1, 40, 40, 256)     0           ['tf_conv_33[0][0]']
+
+ tf_concat (TFConcat)           (1, 40, 40, 512)     0           ['tf_upsample[0][0]',
+                                                                  'tfc3_2[0][0]']
+
+ tfc3_4 (TFC3)                  (1, 40, 40, 256)     361216      ['tf_concat[0][0]']
+
+ tf_conv_39 (TFConv)            (1, 40, 40, 128)     32896       ['tfc3_4[0][0]']
+
+ tf_upsample_1 (TFUpsample)     (1, 80, 80, 128)     0           ['tf_conv_39[0][0]']
+
+ tf_concat_1 (TFConcat)         (1, 80, 80, 256)     0           ['tf_upsample_1[0][0]',
+                                                                  'tfc3_1[0][0]']
+
+ tfc3_5 (TFC3)                  (1, 80, 80, 128)     90496       ['tf_concat_1[0][0]']
+
+ tf_conv_45 (TFConv)            (1, 40, 40, 128)     147584      ['tfc3_5[0][0]']
+
+ tf_concat_2 (TFConcat)         (1, 40, 40, 256)     0           ['tf_conv_45[0][0]',
+                                                                  'tf_conv_39[0][0]']
+
+ tfc3_6 (TFC3)                  (1, 40, 40, 256)     295680      ['tf_concat_2[0][0]']
+
+ tf_conv_51 (TFConv)            (1, 20, 20, 256)     590080      ['tfc3_6[0][0]']
+
+ tf_concat_3 (TFConcat)         (1, 20, 20, 512)     0           ['tf_conv_51[0][0]',
+                                                                  'tf_conv_33[0][0]']
+
+ tfc3_7 (TFC3)                  (1, 20, 20, 512)     1181184     ['tf_concat_3[0][0]']
+
+ tf_detect (TFDetect)           ((1, 25200, 85),     229245      ['tfc3_5[0][0]',
+                                 [(1, 6400, 3, 85),               'tfc3_6[0][0]',
+                                 (1, 1600, 3, 85),                'tfc3_7[0][0]']
+                                 (1, 400, 3, 85)])
+
+==================================================================================================
+Total params: 7,225,885
+Trainable params: 0
+Non-trainable params: 7,225,885
+__________________________________________________________________________________________________
+2022-05-10 01:04:48.144946: I tensorflow/core/grappler/devices.cc:66] Number of eligible GPUs (core count >= 8, compute capability >= 0.0): 0
+2022-05-10 01:04:48.145437: I tensorflow/core/grappler/clusters/single_machine.cc:358] Starting new session
+2022-05-10 01:04:48.214306: I tensorflow/core/grappler/optimizers/meta_optimizer.cc:1164] Optimization results for grappler item: graph_to_optimize
+  function_optimizer: function_optimizer did nothing. time = 0.259ms.
+  function_optimizer: function_optimizer did nothing. time = 0.002ms.
+
+2022-05-10 01:04:53.336188: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+Assets written to: yolov5s_saved_model\assets
+TensorFlow SavedModel: export success, saved as yolov5s_saved_model (27.8 MB)
+
+TensorFlow Lite: starting export with tensorflow 2.8.0...
