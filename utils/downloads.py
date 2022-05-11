@@ -43,10 +43,8 @@ def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
         LOGGER.info('')
 
 
-def attempt_download(file,
-                     repo='ultralytics/yolov5',
-                     release='latest'):  # from utils.downloads import *; attempt_download()
-    # Attempt file download if does not exist
+def attempt_download(file, repo='ultralytics/yolov5', release='latest'):
+    # Attempt file download from GitHub release assets if does not exist locally
     from utils.general import LOGGER
 
     file = Path(str(file).strip().replace("'", ''))
@@ -65,7 +63,7 @@ def attempt_download(file,
         # GitHub assets
         file.parent.mkdir(parents=True, exist_ok=True)  # make parent dir (if required)
         if release != 'latest' and not release.startswith('tags/'):
-            release = f'tags/{release}'
+            release = f'tags/{release}'  # prepend i.e. tags/v6.1
         try:
             response = requests.get(f'https://api.github.com/repos/{repo}/releases/{release}').json()  # github api
             assets = [x['name'] for x in response['assets']]  # release assets, i.e. ['yolov5s.pt', 'yolov5m.pt', ...]
