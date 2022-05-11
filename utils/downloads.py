@@ -44,7 +44,7 @@ def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
 
 
 def attempt_download(file, repo='ultralytics/yolov5', release='latest'):
-    # Attempt file download from GitHub release assets if does not exist locally
+    # Attempt file download from GitHub release assets if not found locally
     from utils.general import LOGGER
 
     file = Path(str(file).strip().replace("'", ''))
