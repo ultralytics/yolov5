@@ -56,6 +56,7 @@ from utils.loss import ComputeLoss
 from utils.metrics import fitness
 from utils.plots import plot_evolve, plot_labels
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
+import mlflow
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -73,10 +74,12 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     (w.parent if evolve else w).mkdir(parents=True, exist_ok=True)  # make dir
     last, best = w / 'last.pt', w / 'best.pt'
 
+    mlflow.log_params(opt.__dict__)
     # Hyperparameters
     if isinstance(hyp, str):
         with open(hyp, errors='ignore') as f:
             hyp = yaml.safe_load(f)  # load hyps dict
+            mlflow.log_params({F'hyper_{key}': hyp[key] for key in hyp})
     LOGGER.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
 
     # Save run settings
@@ -404,6 +407,15 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             log_vals = list(mloss) + list(results) + lr
             callbacks.run('on_fit_epoch_end', log_vals, epoch, best_fitness, fi)
 
+            # mlflow
+            mlflow.log_metric("P", results[0])
+            mlflow.log_metric("R", results[1])
+            mlflow.log_metric("mAP.5", results[2])
+            mlflow.log_metric("mAP.5-.95", results[3])
+            mloss_cpu = mloss.cpu().numpy()
+            mlflow.log_metric("box", mloss_cpu[0])
+            mlflow.log_metric("obj", mloss_cpu[1])
+            mlflow.log_metric("cls", mloss_cpu[2])
             # Save model
             if (not nosave) or (final_epoch and not evolve):  # if save
                 ckpt = {
@@ -424,6 +436,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     torch.save(ckpt, w / f'epoch{epoch}.pt')
                 del ckpt
                 callbacks.run('on_model_save', last, epoch, final_epoch, best_fitness, fi)
+                mlflow.log_artifacts(w)
 
             # Stop Single-GPU
             if RANK == -1 and stopper(epoch=epoch, fitness=fi):
@@ -559,7 +572,8 @@ def main(opt, callbacks=Callbacks()):
 
     # Train
     if not opt.evolve:
-        train(opt.hyp, opt, device, callbacks)
+        with mlflow.start_run(run_name=opt.name):
+            train(opt.hyp, opt, device, callbacks)
         if WORLD_SIZE > 1 and RANK == 0:
             LOGGER.info('Destroying process group... ')
             dist.destroy_process_group()

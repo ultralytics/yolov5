@@ -1,0 +1,5 @@
+train_data: five_scrap_types.yaml
+detection_source: data/datasets/five_scrap_types/images/test
+epochs : 300
+batch-size: 64
+config: yolov5l.yaml

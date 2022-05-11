@@ -1,0 +1,8 @@
+path: data/datasets/five_scrap_types  # dataset root dir
+train: images/train  # train images (relative to 'path') 128 images
+val: images/val  # val images (relative to 'path') 128 images
+test:  images/test # test images (optional)
+
+# Classes
+nc: 5  # number of classes
+names: ['turnings', 'mixed_scraps', 'shredded_scraps', 'rails', 'punch_scraps']

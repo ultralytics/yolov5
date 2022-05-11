@@ -1,0 +1,16 @@
+stages:
+  train:
+    cmd: python train.py  --name dvc_exp --data ${train_data} --epochs ${epochs} --batch-size ${batch-size} --cfg ${config} --weights ''
+    deps:
+      - data/datasets
+    outs:
+      - runs/train
+      - mlruns:
+          persist: true
+
+  detect:
+    cmd: python detect.py --weights runs/train/dvc_exp/weights/best.pt --source ${detection_source}
+    outs:
+      - runs/detect
+  mlflow:
+    cmd: mlflow ui

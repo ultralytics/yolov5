@@ -1,0 +1,11 @@
+[core]
+    autostage = true
+    remote = s3remote
+[cache]
+    s3 = s3cache
+['remote "s3remote"']
+    url = s3://s3-sym/dvc-new/
+    profile = 260171390835_AWSPowerUserAccess
+['remote "s3cache"']
+    url = s3://s3-sym/dvc-new/cache
+	profile = 260171390835_AWSPowerUserAccess

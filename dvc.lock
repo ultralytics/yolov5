@@ -1,0 +1,28 @@
+schema: '2.0'
+stages:
+  train:
+    cmd: python train.py  --name dvc_exp --data sym-sample.yaml --epochs 1000 --batch-size
+      10
+    deps:
+    - path: data/datasets
+      md5: 23bf4d025853debbb9bd3a8c9f57f2c5.dir
+      size: 122569542
+      nfiles: 1471
+    outs:
+    - path: mlruns
+      md5: 5821ec5a11c115bf6aadbfeb7703fc7e.dir
+      size: 227124857
+      nfiles: 163
+    - path: runs/train
+      md5: 4985869ceb87c6d46aa5d6457d97e863.dir
+      size: 115194115
+      nfiles: 11
+  detect:
+    cmd: python detect.py --weights runs/train/dvc_exp/weights/best.pt --source data/datasets/sym/images/test
+    outs:
+    - path: runs/detect
+      md5: 1f8f239643adaef13669c74ef7399650.dir
+      size: 5100360
+      nfiles: 17
+  mlflow:
+    cmd: mlflow ui
