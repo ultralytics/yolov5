@@ -40,6 +40,7 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 DATASETS_DIR = ROOT.parent / 'datasets'  # YOLOv5 datasets directory
 NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
+AUTOINSTALL = str(os.getenv('YOLOv5_AUTOINSTALL', True)).lower() == 'true'  # global auto-install mode
 VERBOSE = str(os.getenv('YOLOv5_VERBOSE', True)).lower() == 'true'  # global verbose mode
 FONT = 'Arial.ttf'  # https://ultralytics.com/assets/Arial.ttf
 
@@ -82,11 +83,17 @@ def set_logging(name=None, verbose=VERBOSE):
         for h in logging.root.handlers:
             logging.root.removeHandler(h)  # remove all handlers associated with the root logger object
     rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
-    logging.basicConfig(format="%(message)s", level=logging.INFO if (verbose and rank in (-1, 0)) else logging.WARNING)
-    return logging.getLogger(name)
+    level = logging.INFO if (verbose and rank in (-1, 0)) else logging.WARNING
+    log = logging.getLogger(name)
+    log.setLevel(level)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    handler.setLevel(level)
+    log.addHandler(handler)
 
 
-LOGGER = set_logging('yolov5')  # define globally (used in train.py, val.py, detect.py, etc.)
+set_logging()  # run before defining LOGGER
+LOGGER = logging.getLogger("yolov5")  # define globally (used in train.py, val.py, detect.py, etc.)
 
 
 def user_config_dir(dir='Ultralytics', env_var='YOLOV5_CONFIG_DIR'):
@@ -269,6 +276,7 @@ def check_online():
 def git_describe(path=ROOT):  # path must be a directory
     # Return human-readable git description, i.e. v5.0-5-g3e25f1e https://git-scm.com/docs/git-describe
     try:
+        assert (Path(path) / '.git').is_dir()
         return check_output(f'git -C {path} describe --tags --long --always', shell=True).decode()[:-1]
     except Exception:
         return ''
@@ -313,7 +321,7 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
 
 
 @try_except
-def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True):
+def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True, cmds=()):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
     prefix = colorstr('red', 'bold', 'requirements:')
     check_python()  # check python version
@@ -326,16 +334,16 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
         requirements = [x for x in requirements if x not in exclude]
 
     n = 0  # number of packages updates
-    for r in requirements:
+    for i, r in enumerate(requirements):
         try:
             pkg.require(r)
         except Exception:  # DistributionNotFound or VersionConflict if requirements not met
             s = f"{prefix} {r} not found and is required by YOLOv5"
-            if install:
+            if install and AUTOINSTALL:  # check environment variable
                 LOGGER.info(f"{s}, attempting auto-update...")
                 try:
                     assert check_online(), f"'pip install {r}' skipped (offline)"
-                    LOGGER.info(check_output(f"pip install '{r}'", shell=True).decode())
+                    LOGGER.info(check_output(f"pip install '{r}' {cmds[i] if cmds else ''}", shell=True).decode())
                     n += 1
                 except Exception as e:
                     LOGGER.warning(f'{prefix} {e}')
@@ -417,13 +425,14 @@ def check_file(file, suffix=''):
         return files[0]  # return file
 
 
-def check_font(font=FONT):
+def check_font(font=FONT, progress=False):
     # Download font to CONFIG_DIR if necessary
     font = Path(font)
-    if not font.exists() and not (CONFIG_DIR / font.name).exists():
+    file = CONFIG_DIR / font.name
+    if not font.exists() and not file.exists():
         url = "https://ultralytics.com/assets/" + font.name
-        LOGGER.info(f'Downloading {url} to {CONFIG_DIR / font.name}...')
-        torch.hub.download_url_to_file(url, str(font), progress=False)
+        LOGGER.info(f'Downloading {url} to {file}...')
+        torch.hub.download_url_to_file(url, str(file), progress=progress)
 
 
 def check_dataset(data, autodownload=True):
@@ -458,7 +467,7 @@ def check_dataset(data, autodownload=True):
     if val:
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
-            LOGGER.info(emojis('\nDataset not found ⚠️, missing paths %s' % [str(x) for x in val if not x.exists()]))
+            LOGGER.info(emojis('\nDataset not found ⚠, missing paths %s' % [str(x) for x in val if not x.exists()]))
             if s and autodownload:  # download script
                 t = time.time()
                 root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
@@ -481,6 +490,7 @@ def check_dataset(data, autodownload=True):
             else:
                 raise Exception(emojis('Dataset not found ❌'))
 
+    check_font('Arial.ttf' if is_ascii(data['names']) else 'Arial.Unicode.ttf', progress=True)  # download fonts
     return data  # dictionary
 
 
@@ -491,20 +501,32 @@ def url2file(url):
     return file
 
 
-def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1):
+def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry=3):
     # Multi-threaded file download and unzip function, used in data.yaml for autodownload
     def download_one(url, dir):
         # Download 1 file
+        success = True
         f = dir / Path(url).name  # filename
         if Path(url).is_file():  # exists in current path
             Path(url).rename(f)  # move to dir
         elif not f.exists():
             LOGGER.info(f'Downloading {url} to {f}...')
-            if curl:
-                os.system(f"curl -L '{url}' -o '{f}' --retry 9 -C -")  # curl download, retry and resume on fail
-            else:
-                torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
-        if unzip and f.suffix in ('.zip', '.gz'):
+            for i in range(retry + 1):
+                if curl:
+                    s = 'sS' if threads > 1 else ''  # silent
+                    r = os.system(f"curl -{s}L '{url}' -o '{f}' --retry 9 -C -")  # curl download
+                    success = r == 0
+                else:
+                    torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
+                    success = f.is_file()
+                if success:
+                    break
+                elif i < retry:
+                    LOGGER.warning(f'Download failure, retrying {i + 1}/{retry} {url}...')
+                else:
+                    LOGGER.warning(f'Failed to download {url}...')
+
+        if unzip and success and f.suffix in ('.zip', '.gz'):
             LOGGER.info(f'Unzipping {f}...')
             if f.suffix == '.zip':
                 ZipFile(f).extractall(path=dir)  # unzip
@@ -911,13 +933,24 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     path = Path(path)  # os-agnostic
     if path.exists() and not exist_ok:
         path, suffix = (path.with_suffix(''), path.suffix) if path.is_file() else (path, '')
-        dirs = glob.glob(f"{path}{sep}*")  # similar paths
-        matches = [re.search(rf"%s{sep}(\d+)" % path.stem, d) for d in dirs]
-        i = [int(m.groups()[0]) for m in matches if m]  # indices
-        n = max(i) + 1 if i else 2  # increment number
-        path = Path(f"{path}{sep}{n}{suffix}")  # increment path
+
+        # Method 1
+        for n in range(2, 9999):
+            p = f'{path}{sep}{n}{suffix}'  # increment path
+            if not os.path.exists(p):  #
+                break
+        path = Path(p)
+
+        # Method 2 (deprecated)
+        # dirs = glob.glob(f"{path}{sep}*")  # similar paths
+        # matches = [re.search(rf"{path.stem}{sep}(\d+)", d) for d in dirs]
+        # i = [int(m.groups()[0]) for m in matches if m]  # indices
+        # n = max(i) + 1 if i else 2  # increment number
+        # path = Path(f"{path}{sep}{n}{suffix}")  # increment path
+
     if mkdir:
         path.mkdir(parents=True, exist_ok=True)  # make directory
+
     return path
 
 
@@ -925,8 +958,8 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
 imshow_ = cv2.imshow  # copy to avoid recursion errors
 
 
-def imread(path):
-    return cv2.imdecode(np.fromfile(path, np.uint8), cv2.IMREAD_COLOR)
+def imread(path, flags=cv2.IMREAD_COLOR):
+    return cv2.imdecode(np.fromfile(path, np.uint8), flags)
 
 
 def imwrite(path, im):

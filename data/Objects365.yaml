@@ -4,7 +4,7 @@
 # parent
 # ├── yolov5
 # └── datasets
-#     └── Objects365  ← downloads here
+#     └── Objects365  ← downloads here (712 GB = 367G data + 345G zips)
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
@@ -60,11 +60,12 @@ names: ['Person', 'Sneakers', 'Chair', 'Other Shoes', 'Hat', 'Car', 'Lamp', 'Gla
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
-  from pycocotools.coco import COCO
   from tqdm import tqdm
 
-  from utils.general import Path, download, np, xyxy2xywhn
+  from utils.general import Path, check_requirements, download, np, xyxy2xywhn
 
+  check_requirements(('pycocotools>=2.0',))
+  from pycocotools.coco import COCO
 
   # Make Directories
   dir = Path(yaml['path'])  # dataset root dir
