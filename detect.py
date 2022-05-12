@@ -38,6 +38,9 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+import inspect
+from functools import wraps
+
 from models.common import DetectMultiBackend
 from utils.datasets import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
 from utils.general import (LOGGER, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
@@ -45,9 +48,6 @@ from utils.general import (LOGGER, check_file, check_img_size, check_imshow, che
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, time_sync
 
-
-from functools import wraps
-import inspect
 
 def initializer(func):
     """
@@ -69,10 +69,13 @@ def initializer(func):
 
     return wrapper
 
+
 class yolo:
+
     @torch.no_grad()
-    @initializer #sets the init variables as self
-    def __init__(self,
+    @initializer  #sets the init variables as self
+    def __init__(
+            self,
             weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
             source=ROOT / 'data/images',  # file/dir/URL/glob, 0 for webcam
             data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
@@ -152,7 +155,12 @@ class yolo:
             dt[1] += t3 - t2
 
             # NMS
-            pred = non_max_suppression(pred, self.conf_thres, self.iou_thres, self.classes, self.agnostic_nms, max_det=self.max_det)
+            pred = non_max_suppression(pred,
+                                       self.conf_thres,
+                                       self.iou_thres,
+                                       self.classes,
+                                       self.agnostic_nms,
+                                       max_det=self.max_det)
             dt[2] += time_sync() - t3
 
             # Second-stage classifier (optional)
@@ -169,7 +177,8 @@ class yolo:
 
                 p = Path(p)  # to Path
                 save_path = str(self.save_dir / p.name)  # im.jpg
-                txt_path = str(self.save_dir / 'labels' / p.stem) + ('' if self.dataset.mode == 'image' else f'_{frame}')  # im.txt
+                txt_path = str(self.save_dir / 'labels' / p.stem) + ('' if self.dataset.mode == 'image' else f'_{frame}'
+                                                                     )  # im.txt
                 s += '%gx%g ' % im.shape[2:]  # print string
                 gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
                 imc = im0.copy() if self.save_crop else im0  # for save_crop
@@ -193,10 +202,14 @@ class yolo:
 
                         if self.save_img or self.save_crop or self.view_img:  # Add bbox to image
                             c = int(cls)  # integer class
-                            label = None if self.hide_labels else (self.names[c] if self.hide_conf else f'{self.names[c]} {conf:.2f}')
+                            label = None if self.hide_labels else (
+                                self.names[c] if self.hide_conf else f'{self.names[c]} {conf:.2f}')
                             annotator.box_label(xyxy, label, color=colors(c, True))
                             if self.save_crop:
-                                save_one_box(xyxy, imc, file=save_dir / 'crops' / self.names[c] / f'{p.stem}.jpg', BGR=True)
+                                save_one_box(xyxy,
+                                             imc,
+                                             file=save_dir / 'crops' / self.names[c] / f'{p.stem}.jpg',
+                                             BGR=True)
 
                 # Stream results
                 im0 = annotator.result()
@@ -228,7 +241,8 @@ class yolo:
 
         # Print results
         t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
-        LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *self.imgsz)}' % t)
+        LOGGER.info(
+            f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *self.imgsz)}' % t)
         if self.save_txt or self.save_img:
             s = f"\n{len(list(self.save_dir.glob('labels/*.txt')))} labels saved to {self.save_dir / 'labels'}" if self.save_txt else ''
             LOGGER.info(f"Results saved to {colorstr('bold', self.save_dir)}{s}")
@@ -275,6 +289,7 @@ def main(opt):
     yoloV5 = yolo(**vars(opt))
     yoloV5.set_data()
     yoloV5.detect()
+
 
 if __name__ == "__main__":
     opt = parse_opt()
