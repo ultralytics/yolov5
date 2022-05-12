@@ -73,7 +73,8 @@ def initializer(func):
 class yolo:
 
     @torch.no_grad()
-    @initializer  #sets the init variables as self
+    # Sets the init variables as self
+    @initializer
     def __init__(
             self,
             weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
@@ -114,7 +115,7 @@ class yolo:
 
         # Directories
         self.save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
-        (save_dir / 'labels' if save_txt else self.save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+        (self.save_dir / 'labels' if save_txt else self.save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
         # Load model
         self.device = select_device(device)
@@ -129,12 +130,12 @@ class yolo:
             self.view_img = check_imshow()
             cudnn.benchmark = True  # set True to speed up constant image size inference
             self.dataset = LoadStreams(self.source, img_size=self.imgsz, stride=self.stride, auto=self.pt)
-            bs = len(dataset)  # batch_size
+            bs = len(self.dataset)  # batch_size
             self.model.warmup(imgsz=(bs, 3, *self.imgsz))  # warmup
         else:
             self.dataset = LoadImages(self.source, img_size=self.imgsz, stride=self.stride, auto=self.pt)
             bs = 1  # batch_size
-        vid_path, vid_writer = [None] * bs, [None] * bs
+        self.vid_path, self.vid_writer = [None] * bs, [None] * bs
 
     def detect(self):
         dt, seen = [0.0, 0.0, 0.0], 0
@@ -149,7 +150,7 @@ class yolo:
             dt[0] += t2 - t1
 
             # Inference
-            visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if self.visualize else False
+            visualize = increment_path(self.save_dir / Path(path).stem, mkdir=True) if self.visualize else False
             pred = self.model(im, augment=self.augment, visualize=visualize)
             t3 = time_sync()
             dt[1] += t3 - t2
@@ -208,7 +209,7 @@ class yolo:
                             if self.save_crop:
                                 save_one_box(xyxy,
                                              imc,
-                                             file=save_dir / 'crops' / self.names[c] / f'{p.stem}.jpg',
+                                             file=self.save_dir / 'crops' / self.names[c] / f'{p.stem}.jpg',
                                              BGR=True)
 
                 # Stream results
@@ -222,10 +223,10 @@ class yolo:
                     if self.dataset.mode == 'image':
                         cv2.imwrite(save_path, im0)
                     else:  # 'video' or 'stream'
-                        if vid_path[i] != save_path:  # new video
-                            vid_path[i] = save_path
-                            if isinstance(vid_writer[i], cv2.VideoWriter):
-                                vid_writer[i].release()  # release previous video writer
+                        if self.vid_path[i] != save_path:  # new video
+                            self.vid_path[i] = save_path
+                            if isinstance(self.vid_writer[i], cv2.VideoWriter):
+                                self.vid_writer[i].release()  # release previous video writer
                             if vid_cap:  # video
                                 fps = vid_cap.get(cv2.CAP_PROP_FPS)
                                 w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -233,8 +234,8 @@ class yolo:
                             else:  # stream
                                 fps, w, h = 30, im0.shape[1], im0.shape[0]
                             save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
-                            vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                        vid_writer[i].write(im0)
+                            self.vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                        self.vid_writer[i].write(im0)
 
             # Print time (inference-only)
             LOGGER.info(f'{s}Done. ({t3 - t2:.3f}s)')
@@ -247,7 +248,7 @@ class yolo:
             s = f"\n{len(list(self.save_dir.glob('labels/*.txt')))} labels saved to {self.save_dir / 'labels'}" if self.save_txt else ''
             LOGGER.info(f"Results saved to {colorstr('bold', self.save_dir)}{s}")
         if self.update:
-            strip_optimizer(weights)  # update model (to fix SourceChangeWarning)
+            strip_optimizer(self.weights)  # update model (to fix SourceChangeWarning)
 
 
 def parse_opt():
