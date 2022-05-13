@@ -18,6 +18,14 @@ def fitness(x):
     return (x[:, :4] * w).sum(1)
 
 
+def smooth(y, f=0.05):
+    # Box filter of fraction f
+    nf = round(len(y) * f * 2) // 2 + 1  # number of filter elements (must be odd)
+    p = np.ones(nf // 2)  # ones padding
+    yp = np.concatenate((p * y[0], y, p * y[-1]), 0)  # y padded
+    return np.convolve(yp, np.ones(nf) / nf, mode='valid')  # y-smoothed
+
+
 def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names=(), eps=1e-16):
     """ Compute the average precision, given the recall and precision curves.
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
@@ -79,7 +87,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names
         plot_mc_curve(px, p, Path(save_dir) / 'P_curve.png', names, ylabel='Precision')
         plot_mc_curve(px, r, Path(save_dir) / 'R_curve.png', names, ylabel='Recall')
 
-    i = f1.mean(0).argmax()  # max F1 index
+    i = smooth(f1.mean(0), 0.1).argmax()  # max F1 index
     p, r, f1 = p[:, i], r[:, i], f1[:, i]
     tp = (r * nt).round()  # true positives
     fp = (tp / (p + eps) - tp).round()  # false positives
@@ -337,7 +345,7 @@ def plot_mc_curve(px, py, save_dir='mc_curve.png', names=(), xlabel='Confidence'
     else:
         ax.plot(px, py.T, linewidth=1, color='grey')  # plot(confidence, metric)
 
-    y = py.mean(0)
+    y = smooth(py.mean(0), 0.05)
     ax.plot(px, y, linewidth=3, color='blue', label=f'all classes {y.max():.2f} at {px[y.argmax()]:.3f}')
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
