@@ -50,8 +50,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -qr requirements.txt -f https://download.pytorch.org/whl/cpu/torch_stable.html
-          pip install -q onnx tensorflow-cpu keras==2.6.0  # wandb  # extras
+          pip install -qr requirements.txt -f https://download.pytorch.org/whl/cpu/torch_stable.html \
+            onnx tensorflow-cpu  # wandb
           python --version
           pip --version
           pip list

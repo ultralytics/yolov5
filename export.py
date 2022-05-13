@@ -29,7 +29,7 @@ Inference:
                                          yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
                                          yolov5s.xml                # OpenVINO
                                          yolov5s.engine             # TensorRT
-                                         yolov5s.mlmodel            # CoreML (MacOS-only)
+                                         yolov5s.mlmodel            # CoreML (macOS-only)
                                          yolov5s_saved_model        # TensorFlow SavedModel
                                          yolov5s.pb                 # TensorFlow GraphDef
                                          yolov5s.tflite             # TensorFlow Lite
@@ -54,7 +54,6 @@ from pathlib import Path
 
 import pandas as pd
 import torch
-import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
 FILE = Path(__file__).resolve()
@@ -64,10 +63,8 @@ if str(ROOT) not in sys.path:
 if platform.system() != 'Windows':
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.common import Conv
 from models.experimental import attempt_load
 from models.yolo import Detect
-from utils.activations import SiLU
 from utils.datasets import LoadImages
 from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_version, colorstr,
                            file_size, print_args, url2file)
@@ -76,12 +73,18 @@ from utils.torch_utils import select_device
 
 def export_formats():
     # YOLOv5 export formats
-    x = [['PyTorch', '-', '.pt', True], ['TorchScript', 'torchscript', '.torchscript', True],
-         ['ONNX', 'onnx', '.onnx', True], ['OpenVINO', 'openvino', '_openvino_model', False],
-         ['TensorRT', 'engine', '.engine', True], ['CoreML', 'coreml', '.mlmodel', False],
-         ['TensorFlow SavedModel', 'saved_model', '_saved_model', True], ['TensorFlow GraphDef', 'pb', '.pb', True],
-         ['TensorFlow Lite', 'tflite', '.tflite', False], ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False],
-         ['TensorFlow.js', 'tfjs', '_web_model', False]]
+    x = [
+        ['PyTorch', '-', '.pt', True],
+        ['TorchScript', 'torchscript', '.torchscript', True],
+        ['ONNX', 'onnx', '.onnx', True],
+        ['OpenVINO', 'openvino', '_openvino_model', False],
+        ['TensorRT', 'engine', '.engine', True],
+        ['CoreML', 'coreml', '.mlmodel', False],
+        ['TensorFlow SavedModel', 'saved_model', '_saved_model', True],
+        ['TensorFlow GraphDef', 'pb', '.pb', True],
+        ['TensorFlow Lite', 'tflite', '.tflite', False],
+        ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False],
+        ['TensorFlow.js', 'tfjs', '_web_model', False],]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'GPU'])
 
 
@@ -137,7 +140,13 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         # Checks
         model_onnx = onnx.load(f)  # load onnx model
         onnx.checker.check_model(model_onnx)  # check onnx model
-        # LOGGER.info(onnx.helper.printable_graph(model_onnx.graph))  # print
+
+        # Metadata
+        d = {'stride': int(max(model.stride)), 'names': model.names}
+        for k, v in d.items():
+            meta = model_onnx.metadata_props.add()
+            meta.key, meta.value = k, str(v)
+        onnx.save(model_onnx, f)
 
         # Simplify
         if simplify:
@@ -159,7 +168,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         LOGGER.info(f'{prefix} export failure: {e}')
 
 
-def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
+def export_openvino(model, im, file, half, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
     try:
         check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
@@ -168,7 +177,7 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
         LOGGER.info(f'\n{prefix} starting export with openvino {ie.__version__}...')
         f = str(file).replace('.pt', '_openvino_model' + os.sep)
 
-        cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f}"
+        cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f} --data_type {'FP16' if half else 'FP32'}"
         subprocess.check_output(cmd, shell=True)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -177,7 +186,7 @@ def export_openvino(model, im, file, prefix=colorstr('OpenVINO:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
-def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
+def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
     # YOLOv5 CoreML export
     try:
         check_requirements(('coremltools',))
@@ -188,6 +197,14 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
 
         ts = torch.jit.trace(model, im, strict=False)  # TorchScript model
         ct_model = ct.convert(ts, inputs=[ct.ImageType('image', shape=im.shape, scale=1 / 255, bias=[0, 0, 0])])
+        bits, mode = (8, 'kmeans_lut') if int8 else (16, 'linear') if half else (32, None)
+        if bits < 32:
+            if platform.system() == 'Darwin':  # quantization only supported on macOS
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=DeprecationWarning)  # suppress numpy==1.20 float warning
+                    ct_model = ct.models.neural_network.quantization_utils.quantize_weights(ct_model, bits, mode)
+            else:
+                print(f'{prefix} quantization only supported on macOS, skipping...')
         ct_model.save(f)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -200,8 +217,13 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
 def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
     # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
     try:
-        check_requirements(('tensorrt',))
-        import tensorrt as trt
+        assert im.device.type != 'cpu', 'export running on CPU but must be on GPU, i.e. `python export.py --device 0`'
+        try:
+            import tensorrt as trt
+        except Exception:
+            if platform.system() == 'Linux':
+                check_requirements(('nvidia-tensorrt',), cmds=('-U --index-url https://pypi.ngc.nvidia.com',))
+            import tensorrt as trt
 
         if trt.__version__[0] == '7':  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
             grid = model.model[-1].anchor_grid
@@ -214,7 +236,6 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         onnx = file.with_suffix('.onnx')
 
         LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
-        assert im.device.type != 'cpu', 'export running on CPU but must be on GPU, i.e. `python export.py --device 0`'
         assert onnx.exists(), f'failed to export ONNX file: {onnx}'
         f = file.with_suffix('.engine')  # TensorRT engine file
         logger = trt.Logger(trt.Logger.INFO)
@@ -324,7 +345,7 @@ def export_pb(keras_model, im, file, prefix=colorstr('TensorFlow GraphDef:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
-def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('TensorFlow Lite:')):
+def export_tflite(keras_model, im, file, int8, data, nms, agnostic_nms, prefix=colorstr('TensorFlow Lite:')):
     # YOLOv5 TensorFlow Lite export
     try:
         import tensorflow as tf
@@ -340,13 +361,15 @@ def export_tflite(keras_model, im, file, int8, data, ncalib, prefix=colorstr('Te
         if int8:
             from models.tf import representative_dataset_gen
             dataset = LoadImages(check_dataset(data)['train'], img_size=imgsz, auto=False)  # representative data
-            converter.representative_dataset = lambda: representative_dataset_gen(dataset, ncalib)
+            converter.representative_dataset = lambda: representative_dataset_gen(dataset, ncalib=100)
             converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
             converter.target_spec.supported_types = []
             converter.inference_input_type = tf.uint8  # or tf.int8
             converter.inference_output_type = tf.uint8  # or tf.int8
             converter.experimental_new_quantizer = True
             f = str(file).replace('.pt', '-int8.tflite')
+        if nms or agnostic_nms:
+            converter.target_spec.supported_ops.append(tf.lite.OpsSet.SELECT_TF_OPS)
 
         tflite_model = converter.convert()
         open(f, "wb").write(tflite_model)
@@ -376,7 +399,7 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
         f = str(file).replace('.pt', '-int8_edgetpu.tflite')  # Edge TPU model
         f_tfl = str(file).replace('.pt', '-int8.tflite')  # TFLite model
 
-        cmd = f"edgetpu_compiler -s {f_tfl}"
+        cmd = f"edgetpu_compiler -s -o {file.parent} {f_tfl}"
         subprocess.run(cmd, shell=True, check=True)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -402,7 +425,8 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
               f'--output_node_names="Identity,Identity_1,Identity_2,Identity_3" {f_pb} {f}'
         subprocess.run(cmd, shell=True)
 
-        json = open(f_json).read()
+        with open(f_json) as j:
+            json = j.read()
         with open(f_json, 'w') as j:  # sort JSON Identity_* in ascending order
             subst = re.sub(
                 r'{"outputs": {"Identity.?.?": {"name": "Identity.?.?"}, '
@@ -455,13 +479,14 @@ def run(
 
     # Load PyTorch model
     device = select_device(device)
-    assert not (device.type == 'cpu' and half), '--half only compatible with GPU export, i.e. use --device 0'
+    if half:
+        assert device.type != 'cpu' or coreml or xml, '--half only compatible with GPU export, i.e. use --device 0'
+        assert not dynamic, '--half not compatible with --dynamic, i.e. use either --half or --dynamic but not both'
     model = attempt_load(weights, map_location=device, inplace=True, fuse=True)  # load FP32 model
     nc, names = model.nc, model.names  # number of classes, class names
 
     # Checks
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
-    opset = 12 if ('openvino' in include) else opset  # OpenVINO requires opset <= 12
     assert nc == len(names), f'Model class count {nc} != len(names) {len(names)}'
 
     # Input
@@ -470,18 +495,14 @@ def run(
     im = torch.zeros(batch_size, 3, *imgsz).to(device)  # image size(1,3,320,192) BCHW iDetection
 
     # Update model
-    if half:
+    if half and not (coreml or xml):
         im, model = im.half(), model.half()  # to FP16
     model.train() if train else model.eval()  # training mode = no Detect() layer grid construction
     for k, m in model.named_modules():
-        if isinstance(m, Conv):  # assign export-friendly activations
-            if isinstance(m.act, nn.SiLU):
-                m.act = SiLU()
-        elif isinstance(m, Detect):
+        if isinstance(m, Detect):
             m.inplace = inplace
             m.onnx_dynamic = dynamic
-            if hasattr(m, 'forward_export'):
-                m.forward = m.forward_export  # assign custom forward (optional)
+            m.export = True
 
     for _ in range(2):
         y = model(im)  # dry runs
@@ -498,9 +519,9 @@ def run(
     if onnx or xml:  # OpenVINO requires ONNX
         f[2] = export_onnx(model, im, file, opset, train, dynamic, simplify)
     if xml:  # OpenVINO
-        f[3] = export_openvino(model, im, file)
+        f[3] = export_openvino(model, im, file, half)
     if coreml:
-        _, f[4] = export_coreml(model, im, file)
+        _, f[4] = export_coreml(model, im, file, int8, half)
 
     # TensorFlow Exports
     if any((saved_model, pb, tflite, edgetpu, tfjs)):
@@ -520,7 +541,7 @@ def run(
         if pb or tfjs:  # pb prerequisite to tfjs
             f[6] = export_pb(model, im, file)
         if tflite or edgetpu:
-            f[7] = export_tflite(model, im, file, int8=int8 or edgetpu, data=data, ncalib=100)
+            f[7] = export_tflite(model, im, file, int8=int8 or edgetpu, data=data, nms=nms, agnostic_nms=agnostic_nms)
         if edgetpu:
             f[8] = export_edgetpu(model, im, file)
         if tfjs:
