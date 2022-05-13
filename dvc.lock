@@ -1,28 +1,28 @@
 schema: '2.0'
 stages:
   train:
-    cmd: python train.py  --name dvc_exp --data sym-sample.yaml --epochs 1000 --batch-size
-      10
+    cmd: python train.py  --name dvc_exp --data five_scrap_types.yaml --epochs 300
+      --batch-size 64 --cfg yolov5l.yaml --weights ''
     deps:
     - path: data/datasets
-      md5: 23bf4d025853debbb9bd3a8c9f57f2c5.dir
-      size: 122569542
-      nfiles: 1471
+      md5: 4f6b6e95b4801400b191e6b1b21d1d3d.dir
+      size: 122750022
+      nfiles: 1473
     outs:
     - path: mlruns
-      md5: 5821ec5a11c115bf6aadbfeb7703fc7e.dir
-      size: 227124857
-      nfiles: 163
+      md5: b7b94067ed30d3f8385e5cd4dc9c9ff2.dir
+      size: 1081485362
+      nfiles: 325
     - path: runs/train
-      md5: 4985869ceb87c6d46aa5d6457d97e863.dir
-      size: 115194115
-      nfiles: 11
+      md5: 36f9c745587a4fe3ff996605a9348abb.dir
+      size: 308725092
+      nfiles: 32
   detect:
-    cmd: python detect.py --weights runs/train/dvc_exp/weights/best.pt --source data/datasets/sym/images/test
+    cmd: python detect.py --weights runs/train/dvc_exp/weights/best.pt --source data/datasets/five_scrap_types/images/test
     outs:
     - path: runs/detect
-      md5: 1f8f239643adaef13669c74ef7399650.dir
-      size: 5100360
-      nfiles: 17
+      md5: ded882d810d7caa0359d5de3f0074945.dir
+      size: 86821768
+      nfiles: 184
   mlflow:
     cmd: mlflow ui
