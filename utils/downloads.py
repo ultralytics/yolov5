@@ -16,6 +16,15 @@ import requests
 import torch
 
 
+def is_url(url):
+    # Check if online file exists
+    try:
+        r = urllib.request.urlopen(url)  # response
+        return r.getcode() == 200
+    except urllib.request.HTTPError:
+        return False
+
+
 def gsutil_getsize(url=''):
     # gs://bucket/file size https://cloud.google.com/storage/docs/gsutil/commands/du
     s = subprocess.check_output(f'gsutil du {url}', shell=True).decode('utf-8')
@@ -43,9 +52,16 @@ def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
         LOGGER.info('')
 
 
-def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads import *; attempt_download()
-    # Attempt file download if does not exist
+def attempt_download(file, repo='ultralytics/yolov5', release='v6.1'):
+    # Attempt file download from GitHub release assets if not found locally. release = 'latest', 'v6.1', etc.
     from utils.general import LOGGER
+
+    def github_assets(repository, version='latest'):
+        # Return GitHub repo tag (i.e. 'v6.1') and assets (i.e. ['yolov5s.pt', 'yolov5m.pt', ...])
+        if version != 'latest':
+            version = f'tags/{version}'  # i.e. tags/v6.1
+        response = requests.get(f'https://api.github.com/repos/{repository}/releases/{version}').json()  # github api
+        return response['tag_name'], [x['name'] for x in response['assets']]  # tag, assets
 
     file = Path(str(file).strip().replace("'", ''))
     if not file.exists():
@@ -61,20 +77,21 @@ def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads i
             return file
 
         # GitHub assets
-        file.parent.mkdir(parents=True, exist_ok=True)  # make parent dir (if required)
+        assets = [
+            'yolov5n.pt', 'yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov5n6.pt', 'yolov5s6.pt',
+            'yolov5m6.pt', 'yolov5l6.pt', 'yolov5x6.pt']
         try:
-            response = requests.get(f'https://api.github.com/repos/{repo}/releases/latest').json()  # github api
-            assets = [x['name'] for x in response['assets']]  # release assets, i.e. ['yolov5s.pt', 'yolov5m.pt', ...]
-            tag = response['tag_name']  # i.e. 'v1.0'
-        except Exception:  # fallback plan
-            assets = [
-                'yolov5n.pt', 'yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov5n6.pt', 'yolov5s6.pt',
-                'yolov5m6.pt', 'yolov5l6.pt', 'yolov5x6.pt']
+            tag, assets = github_assets(repo, release)
+        except Exception:
             try:
-                tag = subprocess.check_output('git tag', shell=True, stderr=subprocess.STDOUT).decode().split()[-1]
+                tag, assets = github_assets(repo)  # latest release
             except Exception:
-                tag = 'v6.1'  # current release
+                try:
+                    tag = subprocess.check_output('git tag', shell=True, stderr=subprocess.STDOUT).decode().split()[-1]
+                except Exception:
+                    tag = release
 
+        file.parent.mkdir(parents=True, exist_ok=True)  # make parent dir (if required)
         if name in assets:
             url3 = 'https://drive.google.com/drive/folders/1EFQTEUeXWSFww0luse2jB9M1QNZQGwNl'  # backup gdrive mirror
             safe_download(
