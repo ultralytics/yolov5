@@ -256,7 +256,7 @@ def file_age(path=__file__):
     return dt.days  # + dt.seconds / 86400  # fractional days
 
 
-def file_update_date(path=__file__):
+def file_date(path=__file__):
     # Return human-readable file modification date, i.e. '2021-3-26'
     t = datetime.fromtimestamp(Path(path).stat().st_mtime)
     return f'{t.year}-{t.month}-{t.day}'
