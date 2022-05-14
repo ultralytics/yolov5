@@ -48,8 +48,8 @@ from utils.dataloaders import create_dataloader
 from utils.downloads import attempt_download
 from utils.general import (LOGGER, check_dataset, check_file, check_git_status, check_img_size, check_requirements,
                            check_suffix, check_version, check_yaml, colorstr, get_latest_run, increment_path,
-                           init_seeds, intersect_dicts, is_ascii, labels_to_class_weights, labels_to_image_weights,
-                           methods, one_cycle, print_args, print_mutation, strip_optimizer)
+                           init_seeds, intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods,
+                           one_cycle, print_args, print_mutation, strip_optimizer)
 from utils.loggers import Loggers
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.loss import ComputeLoss
