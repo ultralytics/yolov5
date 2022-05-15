@@ -362,7 +362,7 @@ class TFModel:
                 conf_thres=0.25):
         y = []  # outputs
         x = inputs
-        for i, m in enumerate(self.model.layers):
+        for m in self.model.layers:
             if m.f != -1:  # if not from previous layer
                 x = y[m.f] if isinstance(m.f, int) else [x if j == -1 else y[j] for j in m.f]  # from earlier layers
 
@@ -377,7 +377,6 @@ class TFModel:
             scores = probs * classes
             if agnostic_nms:
                 nms = AgnosticNMS()((boxes, classes, scores), topk_all, iou_thres, conf_thres)
-                return nms, x[1]
             else:
                 boxes = tf.expand_dims(boxes, 2)
                 nms = tf.image.combined_non_max_suppression(boxes,
@@ -387,8 +386,7 @@ class TFModel:
                                                             iou_thres,
                                                             conf_thres,
                                                             clip_boxes=False)
-                return nms, x[1]
-
+            return nms, x[1]
         return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
         # x = x[0][0]  # [x(1,6300,85), ...] to x(6300,85)
         # xywh = x[..., :4]  # x(6300,4) boxes
@@ -444,10 +442,10 @@ class AgnosticNMS(keras.layers.Layer):
 def representative_dataset_gen(dataset, ncalib=100):
     # Representative dataset generator for use with converter.representative_dataset, returns a generator of np arrays
     for n, (path, img, im0s, vid_cap, string) in enumerate(dataset):
-        input = np.transpose(img, [1, 2, 0])
-        input = np.expand_dims(input, axis=0).astype(np.float32)
-        input /= 255
-        yield [input]
+        im = np.transpose(img, [1, 2, 0])
+        im = np.expand_dims(im, axis=0).astype(np.float32)
+        im /= 255
+        yield [im]
         if n >= ncalib:
             break
 
