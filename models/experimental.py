@@ -12,7 +12,6 @@ from models.common import Conv
 from utils.downloads import attempt_download
 
 
-
 class Sum(nn.Module):
     # Weighted sum of 2 or more layers https://arxiv.org/abs/1911.09070
     def __init__(self, n, weight=False):  # n: number of inputs
