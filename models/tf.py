@@ -459,7 +459,7 @@ def activations(act=nn.SiLU):
     elif isinstance(act, (nn.SiLU, SiLU)):
         return lambda x: keras.activations.swish(x)
     else:
-        raise Exception(f'no matching TensorFlow activation found for {w.act}')
+        raise Exception(f'no matching TensorFlow activation found for PyTorch activation {act}')
 
 
 def representative_dataset_gen(dataset, ncalib=100):
