@@ -220,7 +220,7 @@ class LoadImages:
             while not ret_val:
                 self.count += 1
                 self.cap.release()
-                if self.count == self.nf:
+                if self.count == self.nf:  # last video
                     raise StopIteration
                 path = self.files[self.count]
                 self.new_video(path)
@@ -387,7 +387,7 @@ class LoadStreams:
 
 def img2label_paths(img_paths):
     # Define label paths as a function of image paths
-    sa, sb = f'{os.sep}images{os.sep}', f'{os.sep}labels{os.sep}'
+    sa, sb = f'{os.sep}images{os.sep}', f'{os.sep}labels{os.sep}'  # /images/, /labels/ substrings
     return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in img_paths]
 
 
