@@ -65,10 +65,8 @@ class TFConv(keras.layers.Layer):
         # ch_in, ch_out, weights, kernel, stride, padding, groups
         super().__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
-        assert isinstance(k, int), "Convolution with multiple kernels are not allowed."
         # TensorFlow convolution padding is inconsistent with PyTorch (e.g. k=3 s=2 'SAME' padding)
         # see https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
-
         conv = keras.layers.Conv2D(
             filters=c2,
             kernel_size=k,
@@ -90,8 +88,6 @@ class TFDWConv(keras.layers.Layer):
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):
         # ch_in, ch_out, weights, kernel, stride, padding, groups
         super().__init__()
-        assert isinstance(k, int), "Convolution with multiple kernels are not allowed."
-
         conv = keras.layers.DepthwiseConv2D(
             kernel_size=k,
             strides=s,
@@ -128,6 +124,22 @@ class TFBottleneck(keras.layers.Layer):
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
         self.cv2 = TFConv(c_, c2, 3, 1, g=g, w=w.cv2)
         self.add = shortcut and c1 == c2
+
+    def call(self, inputs):
+        return inputs + self.cv2(self.cv1(inputs)) if self.add else self.cv2(self.cv1(inputs))
+
+
+class TFCrossConv(keras.layers.Layer):
+    # Cross Convolution
+    def __init__(self, c1, c2, k=3, s=1, g=1, e=1.0, shortcut=False, w=None):
+        super().__init__()
+        c_ = int(c2 * e)  # hidden channels
+        self.cv1 = TFConv(c1, c_, (1, k), (1, s), w=w.cv1)
+        self.cv2 = TFConv(c_, c2, (k, 1), (s, 1), g=g, w=w.cv2)
+        self.add = shortcut and c1 == c2
+
+        self.cv1 = Conv(c1, c_, (1, k), (1, s))
+        self.cv2 = Conv(c_, c2, (k, 1), (s, 1), g=g)
 
     def call(self, inputs):
         return inputs + self.cv2(self.cv1(inputs)) if self.add else self.cv2(self.cv1(inputs))
