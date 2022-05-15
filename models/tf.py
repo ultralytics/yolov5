@@ -74,7 +74,7 @@ class TFConv(keras.layers.Layer):
             k,
             s,
             'SAME' if s == 1 else 'VALID',
-            use_bias=False if hasattr(w, 'bn') else True,
+            use_bias=not hasattr(w, 'bn'),
             kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()),
             bias_initializer='zeros' if hasattr(w, 'bn') else keras.initializers.Constant(w.conv.bias.numpy()))
         self.conv = conv if s == 1 else keras.Sequential([TFPad(autopad(k, p)), conv])
@@ -92,6 +92,21 @@ class TFConv(keras.layers.Layer):
 
     def call(self, inputs):
         return self.act(self.bn(self.conv(inputs)))
+
+
+class TFDWConv(Conv):
+    # Depth-wise convolution class
+    def __init__(self, c1, c2, k=1, s=1, p=None, act=True, w=None):  # ch_in, ch_out, weights, kernel, stride, padding
+        super().__init__(c1, c2, k, s, act=act)
+        conv = keras.layers.DepthwiseConv2D(
+            c2,
+            k,
+            s,
+            'SAME' if s == 1 else 'VALID',
+            use_bias=not hasattr(w, 'bn'),
+            kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()),
+            bias_initializer='zeros' if hasattr(w, 'bn') else keras.initializers.Constant(w.conv.bias.numpy()))
+        self.conv = conv if s == 1 else keras.Sequential([TFPad(autopad(k, p)), conv])
 
 
 class TFFocus(keras.layers.Layer):
