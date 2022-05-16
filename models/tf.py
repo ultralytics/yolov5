@@ -91,6 +91,7 @@ class TFDWConv(keras.layers.Layer):
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):
         # ch_in, ch_out, weights, kernel, stride, padding, groups
         super().__init__()
+        assert g == c1 == c2, f'TFDWConv() groups={g} must equal input={c1} and output={c2} channels'
         conv = keras.layers.DepthwiseConv2D(
             kernel_size=k,
             strides=s,
