@@ -343,7 +343,7 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
             c2 = make_divisible(c2 * gw, 8) if c2 != no else c2
 
             args = [c1, c2, *args[1:]]
-            if m in [BottleneckCSP, C3]:
+            if m in [BottleneckCSP, C3, C3x]:
                 args.insert(2, n)
                 n = 1
         elif m is nn.BatchNorm2d:
