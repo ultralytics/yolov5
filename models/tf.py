@@ -50,7 +50,7 @@ class TFBN(keras.layers.Layer):
 
 
 class TFPad(keras.layers.Layer):
-
+    # Pad inputs in spatial dimensions 1 and 2
     def __init__(self, pad):
         super().__init__()
         if isinstance(pad, int):
