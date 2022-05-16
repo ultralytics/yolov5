@@ -15,7 +15,7 @@ ROOT = FILE.parents[3]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 
-from utils.datasets import LoadImagesAndLabels, img2label_paths
+from utils.dataloaders import LoadImagesAndLabels, img2label_paths
 from utils.general import LOGGER, check_dataset, check_file
 
 try:
