@@ -23,7 +23,6 @@ import json
 import os
 import sys
 from pathlib import Path
-from threading import Thread
 
 import numpy as np
 import torch
@@ -255,10 +254,8 @@ def run(
 
         # Plot images
         if plots and batch_i < 3:
-            f = save_dir / f'val_batch{batch_i}_labels.jpg'  # labels
-            Thread(target=plot_images, args=(im, targets, paths, f, names), daemon=True).start()
-            f = save_dir / f'val_batch{batch_i}_pred.jpg'  # predictions
-            Thread(target=plot_images, args=(im, output_to_target(out), paths, f, names), daemon=True).start()
+            plot_images(im, targets, paths, save_dir / f'val_batch{batch_i}_labels.jpg', names)  # labels
+            plot_images(im, output_to_target(out), paths, save_dir / f'val_batch{batch_i}_pred.jpg', names)  # pred
 
         callbacks.run('on_val_batch_end')
 

@@ -15,6 +15,7 @@ import re
 import shutil
 import signal
 import tempfile
+import threading
 import time
 import urllib
 from datetime import datetime
@@ -84,7 +85,7 @@ def set_logging(name=None, verbose=VERBOSE):
         for h in logging.root.handlers:
             logging.root.removeHandler(h)  # remove all handlers associated with the root logger object
     rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
-    level = logging.INFO if (verbose and rank in (-1, 0)) else logging.WARNING
+    level = logging.INFO if verbose and rank in {-1, 0} else logging.WARNING
     log = logging.getLogger(name)
     log.setLevel(level)
     handler = logging.StreamHandler()
@@ -168,6 +169,16 @@ def try_except(func):
     return handler
 
 
+def threaded(func):
+    # Multi-threads a target function and returns thread. Usage: @threaded decorator
+    def wrapper(*args, **kwargs):
+        thread = threading.Thread(target=func, args=args, kwargs=kwargs, daemon=True)
+        thread.start()
+        return thread
+
+    return wrapper
+
+
 def methods(instance):
     # Get class/instance methods
     return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith("__")]
@@ -246,7 +257,7 @@ def file_age(path=__file__):
     return dt.days  # + dt.seconds / 86400  # fractional days
 
 
-def file_update_date(path=__file__):
+def file_date(path=__file__):
     # Return human-readable file modification date, i.e. '2021-3-26'
     t = datetime.fromtimestamp(Path(path).stat().st_mtime)
     return f'{t.year}-{t.month}-{t.day}'
