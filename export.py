@@ -171,9 +171,10 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
 def export_openvino(model, im, file, half, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
     try:
-        check_requirements('openvino')
-        import openvino.runtime
-        LOGGER.info(f'\n{prefix} starting export with openvino {openvino.runtime.get_version()}...')
+        check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
+        import openvino.inference_engine as ie
+
+        LOGGER.info(f'\n{prefix} starting export with openvino {ie.__version__}...')
         f = str(file).replace('.pt', f'_openvino_model{os.sep}')
 
         cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f} --data_type {'FP16' if half else 'FP32'}"
