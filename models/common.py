@@ -354,8 +354,8 @@ class DetectMultiBackend(nn.Module):
                 stride, names = int(meta['stride']), eval(meta['names'])
         elif xml:  # OpenVINO
             LOGGER.info(f'Loading {w} for OpenVINO inference...')
-            check_requirements(('openvino'))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
-            from openvino.runtime import Core 
+            check_requirements('openvino')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
+            from openvino.runtime import Core
             ie = Core()
             if not Path(w).is_file():  # if not *.xml
                 w = next(Path(w).glob('*.xml'))  # get *.xml file from *_openvino_model dir
