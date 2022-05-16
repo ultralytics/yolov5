@@ -50,6 +50,7 @@ class TFBN(keras.layers.Layer):
 
 
 class TFPad(keras.layers.Layer):
+
     def __init__(self, pad):
         super().__init__()
         if isinstance(pad, int):
@@ -210,8 +211,8 @@ class TFC3x(keras.layers.Layer):
         self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
         self.cv2 = TFConv(c1, c_, 1, 1, w=w.cv2)
         self.cv3 = TFConv(2 * c_, c2, 1, 1, w=w.cv3)
-        self.m = keras.Sequential(
-            [TFCrossConv(c_, c_, k=3, s=1, g=1, e=1.0, shortcut=False, w=w.m[j]) for j in range(n)])
+        self.m = keras.Sequential([
+            TFCrossConv(c_, c_, k=3, s=1, g=1, e=1.0, shortcut=False, w=w.m[j]) for j in range(n)])
 
     def call(self, inputs):
         return self.cv3(tf.concat((self.m(self.cv1(inputs)), self.cv2(inputs)), axis=3))
