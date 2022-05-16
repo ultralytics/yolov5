@@ -27,7 +27,7 @@ import torch
 import torch.nn as nn
 from tensorflow import keras
 
-from models.common import C3, SPP, SPPF, Bottleneck, BottleneckCSP, Concat, Conv, CrossConv, DWConv, Focus, autopad
+from models.common import C3, C3x, SPP, SPPF, Bottleneck, BottleneckCSP, Concat, Conv, CrossConv, DWConv, Focus, autopad
 from models.experimental import MixConv2d, attempt_load
 from models.yolo import Detect
 from utils.activations import SiLU
@@ -341,7 +341,7 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
                 pass
 
         n = max(round(n * gd), 1) if n > 1 else n  # depth gain
-        if m in [nn.Conv2d, Conv, Bottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP, C3]:
+        if m in [nn.Conv2d, Conv, Bottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP, C3, C3x]:
             c1, c2 = ch[f], args[0]
             c2 = make_divisible(c2 * gw, 8) if c2 != no else c2
 
