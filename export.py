@@ -175,7 +175,7 @@ def export_openvino(model, im, file, half, prefix=colorstr('OpenVINO:')):
         import openvino.inference_engine as ie
 
         LOGGER.info(f'\n{prefix} starting export with openvino {ie.__version__}...')
-        f = str(file).replace('.pt', '_openvino_model' + os.sep)
+        f = str(file).replace('.pt', f'_openvino_model{os.sep}')
 
         cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f} --data_type {'FP16' if half else 'FP32'}"
         subprocess.check_output(cmd, shell=True)
@@ -385,7 +385,7 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
         cmd = 'edgetpu_compiler --version'
         help_url = 'https://coral.ai/docs/edgetpu/compiler/'
         assert platform.system() == 'Linux', f'export only supported on Linux. See {help_url}'
-        if subprocess.run(cmd + ' >/dev/null', shell=True).returncode != 0:
+        if subprocess.run(f'{cmd} >/dev/null', shell=True).returncode != 0:
             LOGGER.info(f'\n{prefix} export requires Edge TPU compiler. Attempting install from {help_url}')
             sudo = subprocess.run('sudo --version >/dev/null', shell=True).returncode == 0  # sudo installed on system
             for c in (
@@ -419,7 +419,7 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
         LOGGER.info(f'\n{prefix} starting export with tensorflowjs {tfjs.__version__}...')
         f = str(file).replace('.pt', '_web_model')  # js dir
         f_pb = file.with_suffix('.pb')  # *.pb path
-        f_json = f + '/model.json'  # *.json path
+        f_json = f'{f}/model.json'  # *.json path
 
         cmd = f'tensorflowjs_converter --input_format=tf_frozen_model ' \
               f'--output_node_names="Identity,Identity_1,Identity_2,Identity_3" {f_pb} {f}'
