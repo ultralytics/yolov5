@@ -23,18 +23,18 @@ pip install -r requirements.txt  # install
 The datasets used in  this project can be retrieved and modified using [**DVC**](https://dvc.org/) as its data versioning tool.
 
 #### Setting up dvc authentication
-To be able to pull from and push to the dvc remote an AWS account with access to 
-SBX-DeepLearning-DEV-20211018 is 
+To be able to pull from and push to the dvc remote an AWS account with access to
+SBX-DeepLearning-DEV-20211018 is
 required. Please ask the Infrastructure team for an account with the following role:
 `SBX-DeepLearning-DEV-20211018 AWSPowerUserAccess`.
 
-The AWS CLI needs to be installed. The installation package and documentation can be found under 
+The AWS CLI needs to be installed. The installation package and documentation can be found under
 the [official AWS CLI documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html).
 
 `AWS sso` is utilized for authentication. To set this up, run in your terminal: `aws configure`
 
-Provide the `AWS Access Key ID` and `AWS Secret Access Key`, which  you can find here: 
-https://d-936713fd01.awsapps.com/start#/. Set the `Default region name` to `eu-central-1` and 
+Provide the `AWS Access Key ID` and `AWS Secret Access Key`, which  you can find here:
+https://d-936713fd01.awsapps.com/start#/. Set the `Default region name` to `eu-central-1` and
 the `Default output format` to `None`.
 
 Next, you need to configure the AWS profile. Open `~/.aws/config` and append the following text:
@@ -47,9 +47,9 @@ sso_role_name = AWSPowerUserAccess
 region = eu-central-1
 ```
 
-Finally, you need to provide the credentials, that you can find in the command line access under 
-the `AWSPowerUserAccess` profile at: https://d-936713fd01.awsapps.com/start#/. Open `~/.aws/credentials` and paste 
-the credentials there. If you have any questions feel free to reach out to your colleagues, they 
+Finally, you need to provide the credentials, that you can find in the command line access under
+the `AWSPowerUserAccess` profile at: https://d-936713fd01.awsapps.com/start#/. Open `~/.aws/credentials` and paste
+the credentials there. If you have any questions feel free to reach out to your colleagues, they
 can help you with the setup.
 
 Before you are able to interact with AWS buckets, you will need to log in using AWS CLI:
