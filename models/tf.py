@@ -141,9 +141,6 @@ class TFCrossConv(keras.layers.Layer):
         self.cv2 = TFConv(c_, c2, (k, 1), (s, 1), g=g, w=w.cv2)
         self.add = shortcut and c1 == c2
 
-        self.cv1 = Conv(c1, c_, (1, k), (1, s))
-        self.cv2 = Conv(c_, c2, (k, 1), (s, 1), g=g)
-
     def call(self, inputs):
         return inputs + self.cv2(self.cv1(inputs)) if self.add else self.cv2(self.cv1(inputs))
 
