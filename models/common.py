@@ -354,13 +354,14 @@ class DetectMultiBackend(nn.Module):
                 stride, names = int(meta['stride']), eval(meta['names'])
         elif xml:  # OpenVINO
             LOGGER.info(f'Loading {w} for OpenVINO inference...')
-            check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
-            import openvino.inference_engine as ie
-            core = ie.IECore()
+            check_requirements(('openvino',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
+            from openvino.runtime import Core
+            ie = Core()
             if not Path(w).is_file():  # if not *.xml
                 w = next(Path(w).glob('*.xml'))  # get *.xml file from *_openvino_model dir
-            network = core.read_network(model=w, weights=Path(w).with_suffix('.bin'))  # *.xml, *.bin paths
-            executable_network = core.load_network(network, device_name='CPU', num_requests=1)
+            network = ie.read_model(model=w, weights=Path(w).with_suffix('.bin'))
+            executable_network = ie.compile_model(model=network, device_name="CPU")
+            self.output_layer = next(iter(executable_network.outputs))
         elif engine:  # TensorRT
             LOGGER.info(f'Loading {w} for TensorRT inference...')
             import tensorrt as trt  # https://developer.nvidia.com/nvidia-tensorrt-download
@@ -444,11 +445,7 @@ class DetectMultiBackend(nn.Module):
             y = self.session.run([self.session.get_outputs()[0].name], {self.session.get_inputs()[0].name: im})[0]
         elif self.xml:  # OpenVINO
             im = im.cpu().numpy()  # FP32
-            desc = self.ie.TensorDesc(precision='FP32', dims=im.shape, layout='NCHW')  # Tensor Description
-            request = self.executable_network.requests[0]  # inference request
-            request.set_blob(blob_name='images', blob=self.ie.Blob(desc, im))  # name=next(iter(request.input_blobs))
-            request.infer()
-            y = request.output_blobs['output'].buffer  # name=next(iter(request.output_blobs))
+            y = self.executable_network([im])[self.output_layer]
         elif self.engine:  # TensorRT
             assert im.shape == self.bindings['images'].shape, (im.shape, self.bindings['images'].shape)
             self.binding_addrs['images'] = int(im.data_ptr())

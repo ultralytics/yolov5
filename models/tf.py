@@ -88,16 +88,16 @@ class TFConv(keras.layers.Layer):
 
 class TFDWConv(keras.layers.Layer):
     # Depthwise convolution
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):
+    def __init__(self, c1, c2, k=1, s=1, p=None, act=True, w=None):
         # ch_in, ch_out, weights, kernel, stride, padding, groups
         super().__init__()
-        assert g == c1 == c2, f'TFDWConv() groups={g} must equal input={c1} and output={c2} channels'
+        assert c1 == c2, f'TFDWConv() input={c1} must equal output={c2} channels'
         conv = keras.layers.DepthwiseConv2D(
             kernel_size=k,
             strides=s,
             padding='SAME' if s == 1 else 'VALID',
             use_bias=not hasattr(w, 'bn'),
-            kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()),
+            depthwise_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()),
             bias_initializer='zeros' if hasattr(w, 'bn') else keras.initializers.Constant(w.conv.bias.numpy()))
         self.conv = conv if s == 1 else keras.Sequential([TFPad(autopad(k, p)), conv])
         self.bn = TFBN(w.bn) if hasattr(w, 'bn') else tf.identity
