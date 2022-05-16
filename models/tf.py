@@ -50,10 +50,12 @@ class TFBN(keras.layers.Layer):
 
 
 class TFPad(keras.layers.Layer):
-
     def __init__(self, pad):
         super().__init__()
-        self.pad = tf.constant([[0, 0], [pad, pad], [pad, pad], [0, 0]])
+        if isinstance(pad, int):
+            self.pad = tf.constant([[0, 0], [pad, pad], [pad, pad], [0, 0]])
+        else:  # tuple/list
+            self.pad = tf.constant([[0, 0], [pad[0], pad[0]], [pad[1], pad[1]], [0, 0]])
 
     def call(self, inputs):
         return tf.pad(inputs, self.pad, mode='constant', constant_values=0)
@@ -194,6 +196,22 @@ class TFC3(keras.layers.Layer):
         self.cv2 = TFConv(c1, c_, 1, 1, w=w.cv2)
         self.cv3 = TFConv(2 * c_, c2, 1, 1, w=w.cv3)
         self.m = keras.Sequential([TFBottleneck(c_, c_, shortcut, g, e=1.0, w=w.m[j]) for j in range(n)])
+
+    def call(self, inputs):
+        return self.cv3(tf.concat((self.m(self.cv1(inputs)), self.cv2(inputs)), axis=3))
+
+
+class TFC3x(keras.layers.Layer):
+    # 3 module with cross-convolutions
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, w=None):
+        # ch_in, ch_out, number, shortcut, groups, expansion
+        super().__init__()
+        c_ = int(c2 * e)  # hidden channels
+        self.cv1 = TFConv(c1, c_, 1, 1, w=w.cv1)
+        self.cv2 = TFConv(c1, c_, 1, 1, w=w.cv2)
+        self.cv3 = TFConv(2 * c_, c2, 1, 1, w=w.cv3)
+        self.m = keras.Sequential(
+            [TFCrossConv(c_, c_, k=3, s=1, g=1, e=1.0, shortcut=False, w=w.m[j]) for j in range(n)])
 
     def call(self, inputs):
         return self.cv3(tf.concat((self.m(self.cv1(inputs)), self.cv2(inputs)), axis=3))
