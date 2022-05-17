@@ -4,9 +4,9 @@ name: Publish Docker Images
 
 on:
   push:
-    branches: master
-  pull_request:
-    branches: master
+    branches: [master]
+  # pull_request:
+  #  branches: [master]
 
 jobs:
   docker:
@@ -28,22 +28,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      #- name: Build and push M1/aarch64 image
-      #  uses: docker/build-push-action@v3
-      #  with:
-      #    context: .
-      #    platforms: linux/arm64
-      #    file: utils/docker/Dockerfile-M1
-      #    push: true
-      #    tags: ultralytics/yolov5:latest-M1-pr
-
       - name: Build and push CPU image
         uses: docker/build-push-action@v3
         with:
           context: .
           file: utils/docker/Dockerfile-cpu
           push: true
-          tags: ultralytics/yolov5:latest-cpu-pr
+          tags: ultralytics/yolov5:latest-cpu
 
       - name: Build and push GPU image
         uses: docker/build-push-action@v3
@@ -51,4 +42,13 @@ jobs:
           context: .
           file: utils/docker/Dockerfile
           push: true
-          tags: ultralytics/yolov5:latest-pr
+          tags: ultralytics/yolov5:latest
+
+      #- name: Build and push arm64 image
+      #  uses: docker/build-push-action@v3
+      #  with:
+      #    context: .
+      #    platforms: linux/arm64
+      #    file: utils/docker/Dockerfile-arm64
+      #    push: true
+      #    tags: ultralytics/yolov5:latest-arm64
