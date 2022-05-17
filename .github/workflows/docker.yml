@@ -22,7 +22,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push Docker-M1 image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          platform: linux/arm64
+          file: utils/docker/Dockerfile-M1
+          push: true
+          tags: ultralytics/yolov5:latest-M1-pr
+
+      - name: Build and push Docker-cpu image
         uses: docker/build-push-action@v2
         with:
           context: .
