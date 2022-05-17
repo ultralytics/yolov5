@@ -6,7 +6,7 @@ on:
   push:
     branches: [master]
   # pull_request:
-  #  branches: [master]
+  #   branches: [master]
 
 jobs:
   docker:
@@ -44,11 +44,11 @@ jobs:
           push: true
           tags: ultralytics/yolov5:latest
 
-      #- name: Build and push arm64 image
-      #  uses: docker/build-push-action@v3
-      #  with:
-      #    context: .
-      #    platforms: linux/arm64
-      #    file: utils/docker/Dockerfile-arm64
-      #    push: true
-      #    tags: ultralytics/yolov5:latest-arm64
+      - name: Build and push arm64 image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: linux/arm64
+          file: utils/docker/Dockerfile-arm64
+          push: true
+          tags: ultralytics/yolov5:latest-arm64
