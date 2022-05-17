@@ -1,6 +1,6 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 
-name: Publish Docker Image
+name: Publish Docker Images
 
 on:
   push:
@@ -28,19 +28,27 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker-M1 image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          platforms: linux/arm64
-          file: utils/docker/Dockerfile-M1
-          push: true
-          tags: ultralytics/yolov5:latest-M1-pr
+      #- name: Build and push M1/aarch64 image
+      #  uses: docker/build-push-action@v3
+      #  with:
+      #    context: .
+      #    platforms: linux/arm64
+      #    file: utils/docker/Dockerfile-M1
+      #    push: true
+      #    tags: ultralytics/yolov5:latest-M1-pr
 
-      - name: Build and push Docker-cpu image
+      - name: Build and push CPU image
         uses: docker/build-push-action@v3
         with:
           context: .
           file: utils/docker/Dockerfile-cpu
           push: true
           tags: ultralytics/yolov5:latest-cpu-pr
+
+      - name: Build and push GPU image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: utils/docker/Dockerfile
+          push: true
+          tags: ultralytics/yolov5:latest-pr
