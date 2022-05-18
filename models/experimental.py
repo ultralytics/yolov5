@@ -12,7 +12,6 @@ from models.common import Conv
 from utils.downloads import attempt_download
 
 
-
 class Sum(nn.Module):
     # Weighted sum of 2 or more layers https://arxiv.org/abs/1911.09070
     def __init__(self, n, weight=False):  # n: number of inputs
@@ -65,9 +64,7 @@ class Ensemble(nn.ModuleList):
         super().__init__()
 
     def forward(self, x, augment=False, profile=False, visualize=False):
-        y = []
-        for module in self:
-            y.append(module(x, augment, profile, visualize)[0])
+        y = [module(x, augment, profile, visualize)[0] for module in self]
         # y = torch.stack(y).max(0)[0]  # max ensemble
         # y = torch.stack(y).mean(0)  # mean ensemble
         y = torch.cat(y, 1)  # nms ensemble
@@ -89,10 +86,9 @@ def attempt_load(weights, map_location=None, inplace=True, fuse=True):
         t = type(m)
         if t in (nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Detect, Model):
             m.inplace = inplace  # torch 1.7.0 compatibility
-            if t is Detect:
-                if not isinstance(m.anchor_grid, list):  # new Detect Layer compatibility
-                    delattr(m, 'anchor_grid')
-                    setattr(m, 'anchor_grid', [torch.zeros(1)] * m.nl)
+            if t is Detect and not isinstance(m.anchor_grid, list):
+                delattr(m, 'anchor_grid')
+                setattr(m, 'anchor_grid', [torch.zeros(1)] * m.nl)
         elif t is Conv:
             m._non_persistent_buffers_set = set()  # torch 1.6.0 compatibility
         elif t is nn.Upsample and not hasattr(m, 'recompute_scale_factor'):
@@ -100,10 +96,9 @@ def attempt_load(weights, map_location=None, inplace=True, fuse=True):
 
     if len(model) == 1:
         return model[-1]  # return model
-    else:
-        print(f'Ensemble created with {weights}\n')
-        for k in 'names', 'nc', 'yaml':
-            setattr(model, k, getattr(model[0], k))
-        model.stride = model[torch.argmax(torch.tensor([m.stride.max() for m in model])).int()].stride  # max stride
-        assert all(model[0].nc == m.nc for m in model), f'Models have different class counts: {[m.nc for m in model]}'
-        return model  # return ensemble
+    print(f'Ensemble created with {weights}\n')
+    for k in 'names', 'nc', 'yaml':
+        setattr(model, k, getattr(model[0], k))
+    model.stride = model[torch.argmax(torch.tensor([m.stride.max() for m in model])).int()].stride  # max stride
+    assert all(model[0].nc == m.nc for m in model), f'Models have different class counts: {[m.nc for m in model]}'
+    return model  # return ensemble
