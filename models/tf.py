@@ -108,6 +108,27 @@ class TFDWConv(keras.layers.Layer):
         return self.act(self.bn(self.conv(inputs)))
 
 
+class TFDWConvTranspose2d(keras.layers.Layer):
+    # Depthwise ConvTranspose2d
+    def __init__(self, c1, c2, k, s, p1, p2, w=None):
+        # ch_in, ch_out, weights, kernel, stride, padding, groups
+        super().__init__()
+        assert c1 == c2, f'TFDWConv() output={c2} must be equal to input={c1} channels'
+        assert k == 4 and p1 == 1, 'TFDWConv() only valid for k=4 and p1=1'
+        self.conv = tf.concat([keras.layers.ConvTranspose2d(
+            filters=1,
+            kernel_size=k,
+            strides=s,
+            padding='VALID',
+            output_padding=p2,
+            use_bias=True,
+            kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()[:, i:i + 1]),
+            bias_initializer=keras.initializers.Constant(w.conv.bias.numpy())) for i in range(c2)], 3)
+
+    def call(self, inputs):
+        return self.conv(inputs)[:, 1:-1, 1:-1]
+
+
 class TFFocus(keras.layers.Layer):
     # Focus wh information into c-space
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):
@@ -153,14 +174,13 @@ class TFConv2d(keras.layers.Layer):
         super().__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
         self.conv = keras.layers.Conv2D(
-            c2,
-            k,
-            s,
-            'VALID',
+            filters=c2,
+            kernel_size=k,
+            strides=s,
+            padding='VALID',
             use_bias=bias,
             kernel_initializer=keras.initializers.Constant(w.weight.permute(2, 3, 1, 0).numpy()),
-            bias_initializer=keras.initializers.Constant(w.bias.numpy()) if bias else None,
-        )
+            bias_initializer=keras.initializers.Constant(w.bias.numpy()) if bias else None)
 
     def call(self, inputs):
         return self.conv(inputs)
