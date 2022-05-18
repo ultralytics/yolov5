@@ -4,7 +4,7 @@ name: Publish Docker Images
 
 on:
   push:
-    branches: [master]
+    branches: [ master ]
   # pull_request:
   #   branches: [master]
 
@@ -28,6 +28,15 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Build and push arm64 image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: linux/arm64
+          file: utils/docker/Dockerfile-arm64
+          push: true
+          tags: ultralytics/yolov5:latest-arm64
+
       - name: Build and push CPU image
         uses: docker/build-push-action@v3
         with:
@@ -43,12 +52,3 @@ jobs:
           file: utils/docker/Dockerfile
           push: true
           tags: ultralytics/yolov5:latest
-
-      - name: Build and push arm64 image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          platforms: linux/arm64
-          file: utils/docker/Dockerfile-arm64
-          push: true
-          tags: ultralytics/yolov5:latest-arm64
