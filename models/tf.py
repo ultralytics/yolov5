@@ -27,7 +27,8 @@ import torch
 import torch.nn as nn
 from tensorflow import keras
 
-from models.common import C3, SPP, SPPF, Bottleneck, BottleneckCSP, C3x, Concat, Conv, CrossConv, DWConv, Focus, autopad
+from models.common import C3, SPP, SPPF, Bottleneck, BottleneckCSP, C3x, Concat, Conv, CrossConv, DWConv, \
+    DWConvTranspose2d, Focus, autopad
 from models.experimental import MixConv2d, attempt_load
 from models.yolo import Detect
 from utils.activations import SiLU
@@ -110,23 +111,23 @@ class TFDWConv(keras.layers.Layer):
 
 class TFDWConvTranspose2d(keras.layers.Layer):
     # Depthwise ConvTranspose2d
-    def __init__(self, c1, c2, k, s, p1, p2, w=None):
+    def __init__(self, c1, c2, k=1, s=1, p1=0, p2=0, w=None):
         # ch_in, ch_out, weights, kernel, stride, padding, groups
         super().__init__()
         assert c1 == c2, f'TFDWConv() output={c2} must be equal to input={c1} channels'
         assert k == 4 and p1 == 1, 'TFDWConv() only valid for k=4 and p1=1'
-        self.conv = tf.concat([keras.layers.ConvTranspose2d(
+        self.conv = [keras.layers.Conv2DTranspose(
             filters=1,
             kernel_size=k,
             strides=s,
             padding='VALID',
             output_padding=p2,
             use_bias=True,
-            kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()[:, i:i + 1]),
-            bias_initializer=keras.initializers.Constant(w.conv.bias.numpy())) for i in range(c2)], 3)
+            kernel_initializer=keras.initializers.Constant(w.weight.permute(2, 3, 1, 0).numpy()[..., i:i + 1]),
+            bias_initializer=keras.initializers.Constant(w.bias.numpy()[i])) for i in range(c2)]
 
     def call(self, inputs):
-        return self.conv(inputs)[:, 1:-1, 1:-1]
+        return tf.concat(self.conv(inputs), 3)[:, 1:-1, 1:-1]
 
 
 class TFFocus(keras.layers.Layer):
@@ -360,7 +361,8 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
                 pass
 
         n = max(round(n * gd), 1) if n > 1 else n  # depth gain
-        if m in [nn.Conv2d, Conv, Bottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP, C3, C3x]:
+        if m in [nn.Conv2d, Conv, DWConv, DWConvTranspose2d, Bottleneck, SPP, SPPF, MixConv2d, Focus, CrossConv,
+                 BottleneckCSP, C3, C3x]:
             c1, c2 = ch[f], args[0]
             c2 = make_divisible(c2 * gw, 8) if c2 != no else c2
 
