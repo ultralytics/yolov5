@@ -115,15 +115,17 @@ class TFDWConvTranspose2d(keras.layers.Layer):
         super().__init__()
         assert c1 == c2, f'TFDWConv() output={c2} must be equal to input={c1} channels'
         assert k == 4 and p1 == 1, 'TFDWConv() only valid for k=4 and p1=1'
-        self.conv = tf.concat([keras.layers.ConvTranspose2d(
-            filters=1,
-            kernel_size=k,
-            strides=s,
-            padding='VALID',
-            output_padding=p2,
-            use_bias=True,
-            kernel_initializer=keras.initializers.Constant(w.conv.weight.permute(2, 3, 1, 0).numpy()[:, i:i + 1]),
-            bias_initializer=keras.initializers.Constant(w.conv.bias.numpy())) for i in range(c2)], 3)
+        self.conv = tf.concat([
+            keras.layers.ConvTranspose2d(filters=1,
+                                         kernel_size=k,
+                                         strides=s,
+                                         padding='VALID',
+                                         output_padding=p2,
+                                         use_bias=True,
+                                         kernel_initializer=keras.initializers.Constant(
+                                             w.conv.weight.permute(2, 3, 1, 0).numpy()[:, i:i + 1]),
+                                         bias_initializer=keras.initializers.Constant(w.conv.bias.numpy()))
+            for i in range(c2)], 3)
 
     def call(self, inputs):
         return self.conv(inputs)[:, 1:-1, 1:-1]
@@ -173,14 +175,14 @@ class TFConv2d(keras.layers.Layer):
     def __init__(self, c1, c2, k, s=1, g=1, bias=True, w=None):
         super().__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
-        self.conv = keras.layers.Conv2D(
-            filters=c2,
-            kernel_size=k,
-            strides=s,
-            padding='VALID',
-            use_bias=bias,
-            kernel_initializer=keras.initializers.Constant(w.weight.permute(2, 3, 1, 0).numpy()),
-            bias_initializer=keras.initializers.Constant(w.bias.numpy()) if bias else None)
+        self.conv = keras.layers.Conv2D(filters=c2,
+                                        kernel_size=k,
+                                        strides=s,
+                                        padding='VALID',
+                                        use_bias=bias,
+                                        kernel_initializer=keras.initializers.Constant(
+                                            w.weight.permute(2, 3, 1, 0).numpy()),
+                                        bias_initializer=keras.initializers.Constant(w.bias.numpy()) if bias else None)
 
     def call(self, inputs):
         return self.conv(inputs)
