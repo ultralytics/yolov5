@@ -84,7 +84,7 @@ def export_formats():
         ['TensorFlow GraphDef', 'pb', '.pb', True],
         ['TensorFlow Lite', 'tflite', '.tflite', False],
         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False],
-        ['TensorFlow.js', 'tfjs', '_web_model', False], ]
+        ['TensorFlow.js', 'tfjs', '_web_model', False],]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'GPU'])
 
 
