@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
+from numpy import savetxt
 
 def fitness(x):
     # Model fitness as a weighted combination of metrics
@@ -80,6 +81,9 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names
     f1 = 2 * p * r / (p + r + eps)
     names = [v for k, v in names.items() if k in unique_classes]  # list: only classes that have data
     names = dict(enumerate(names))  # to dict
+    savetxt(f'{Path(save_dir)}/confidence.csv', px, delimiter=',', fmt='%1.3f')
+    savetxt(f'{Path(save_dir)}/precision_curve.csv', p, delimiter=',', fmt='%1.6f')
+    savetxt(f'{Path(save_dir)}/recall_curve.csv', r, delimiter=',', fmt='%1.6f')
     if plot:
         plot_pr_curve(px, py, ap, Path(save_dir) / 'PR_curve.png', names)
         plot_mc_curve(px, f1, Path(save_dir) / 'F1_curve.png', names, ylabel='F1')
@@ -330,6 +334,7 @@ def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=()):
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+    plt.grid()
     fig.savefig(save_dir, dpi=250)
     plt.close()
 
