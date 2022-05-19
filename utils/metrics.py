@@ -10,8 +10,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-
 from numpy import savetxt
+
 
 def fitness(x):
     # Model fitness as a weighted combination of metrics
