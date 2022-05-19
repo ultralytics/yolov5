@@ -41,9 +41,13 @@ def torch_distributed_zero_first(local_rank: int):
 
 def device_count():
     # Returns number of CUDA devices available. Safe version of torch.cuda.device_count(). Only works on Linux.
-    assert platform.system() == 'Linux', 'device_count() function only works on Linux'
+    system_platform = platform.system()
+    assert system_platform == 'Linux' or 'Windows', 'device_count() function only works on Linux or Windows'
     try:
-        cmd = 'nvidia-smi -L | wc -l'
+        if system_platform == 'Linux':
+            cmd = 'nvidia-smi -L | wc -l'
+        elif system_platform == 'Windows':
+            cmd = 'nvidia-smi -L | find /c /v ""'
         return int(subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1])
     except Exception:
         return 0
