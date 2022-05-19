@@ -89,8 +89,7 @@ def process_batch(detections, labels, iouv):
                 matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
                 # matches = matches[matches[:, 2].argsort()[::-1]]
                 matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
-            matches = torch.from_numpy(matches).to(iouv.device)
-            correct[matches[:, 1].long(), i] = True
+            correct[matches[:, 1].astype(int), i] = True
     return correct
 
 
