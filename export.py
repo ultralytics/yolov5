@@ -423,7 +423,6 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
 
         cmd = f'tensorflowjs_converter --input_format=tf_frozen_model ' \
               f'--output_node_names=Identity,Identity_1,Identity_2,Identity_3 {f_pb} {f}'
-
         subprocess.run(cmd.split())
 
         with open(f_json) as j:
