@@ -221,7 +221,6 @@ def run(
 
         # Metrics
         for si, pred in enumerate(out):
-            pred = pred[:100]
             labels = targets[targets[:, 0] == si, 1:]
             nl, npr = labels.shape[0], pred.shape[0]  # number of labels, predictions
             path, shape = Path(paths[si]), shapes[si][0]
