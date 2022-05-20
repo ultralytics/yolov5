@@ -1,3 +1,4 @@
+import logging
 import math
 
 from sparsezoo import Zoo
@@ -6,7 +7,7 @@ from sparseml.pytorch.utils import SparsificationGroupLogger
 
 from utils.torch_utils import is_parallel
 
-
+_LOGGER = logging.getLogger(__file__)
 def _get_model_framework_file(model, path):
     transfer_request = 'recipe_type=transfer' in path
     checkpoint_available = any([file.checkpoint for file in model.framework_files])
@@ -40,7 +41,7 @@ def check_download_sparsezoo_weights(path):
 
 
 class SparseMLWrapper(object):
-    def __init__(self, model, checkpoint_recipe, train_recipe, steps_per_epoch=-1):
+    def __init__(self, model, checkpoint_recipe, train_recipe, steps_per_epoch=-1, one_shot=False):
         self.enabled = bool(train_recipe)
         self.model = model.module if is_parallel(model) else model
         self.checkpoint_manager = ScheduledModifierManager.from_yaml(checkpoint_recipe) if checkpoint_recipe else None
@@ -48,6 +49,11 @@ class SparseMLWrapper(object):
         self.logger = None
         self.start_epoch = None
         self.steps_per_epoch = steps_per_epoch
+        self.one_shot = one_shot
+        self.train_recipe = train_recipe
+
+        if self.one_shot:
+            self._apply_one_shot()
 
     def state_dict(self):
         manager = (ScheduledModifierManager.compose_staged(self.checkpoint_manager, self.manager) 
@@ -143,3 +149,12 @@ class SparseMLWrapper(object):
             if self.manager.quantization_modifiers else -1
 
         return (pruning_start <= epoch <= pruning_end) or epoch == qat_start
+
+    def _apply_one_shot(self):
+        if self.manager is not None:
+            self.manager.apply(self.model)
+            _LOGGER.info(f"Applied recipe {self.train_recipe} in one-shot manner")
+        else:
+            _LOGGER.info(f"Training recipe for one-shot application not recognized by the manager. Got recipe: "
+                         f"{self.train_recipe}"
+                         )
