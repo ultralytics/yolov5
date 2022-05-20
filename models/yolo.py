@@ -304,13 +304,6 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
 
 
 if __name__ == '__main__':
-    # YOLOv5s summary: 270 layers, 5746589 parameters, 5746589 gradients, 13.2 GFLOPs
-    # YOLOv5s summary: 270 layers, 6334109 parameters, 6334109 gradients, 13.7 GFLOPs
-    # YOLOv5s summary: 270 layers, 7235389 parameters, 7235389 gradients, 16.5 GFLOPs
-
-    # YOLOv5x summary: 567 layers, 60448205 parameters, 60448205 gradients, 143.9 GFLOPs
-    # YOLOv5x summary: 567 layers, 64128845 parameters, 64128845 gradients, 146.9 GFLOPs
-    # YOLOv5x summary: 567 layers, 86749405 parameters, 86749405 gradients, 205.9 GFLOPs
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg', type=str, default='yolov5s.yaml', help='model.yaml')
     parser.add_argument('--batch-size', type=int, default=1, help='total batch size for all GPUs')
