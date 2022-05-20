@@ -34,11 +34,12 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
         LOGGER.info(f'{prefix}CUDA not detected, using default CPU batch-size {batch_size}')
         return batch_size
 
+    gb = 1 << 30  # bytes to GiB (1024 ** 3)
     d = str(device).upper()  # 'CUDA:0'
     properties = torch.cuda.get_device_properties(device)  # device properties
-    t = properties.total_memory / 1024 ** 3  # (GiB)
-    r = torch.cuda.memory_reserved(device) / 1024 ** 3  # (GiB)
-    a = torch.cuda.memory_allocated(device) / 1024 ** 3  # (GiB)
+    t = properties.total_memory / gb  # (GiB)
+    r = torch.cuda.memory_reserved(device) / gb  # (GiB)
+    a = torch.cuda.memory_allocated(device) / gb  # (GiB)
     f = t - (r + a)  # free inside reserved
     LOGGER.info(f'{prefix}{d} ({properties.name}) {t:.2f}G total, {r:.2f}G reserved, {a:.2f}G allocated, {f:.2f}G free')
 
