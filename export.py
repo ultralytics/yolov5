@@ -492,7 +492,6 @@ def load_checkpoint(
         state_dict = ckpt[model_key].float().state_dict() if pickled else ckpt[model_key]
         if val_type:
             model = DetectMultiBackend(model=model, device=device, dnn=dnn, data=data, fp16=half)
-            model.model.eval()
 
     # turn gradients for params back on in case they were removed
     for p in model.parameters():
@@ -524,6 +523,9 @@ def load_checkpoint(
     model.float()
     report = 'Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights)
 
+    if val_type:
+        model.model.eval()
+        
     return model, {
         'ckpt': ckpt,
         'state_dict': state_dict,
