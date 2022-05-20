@@ -117,7 +117,7 @@ class TFDWConvTranspose2d(keras.layers.Layer):
         assert c1 == c2, f'TFDWConv() output={c2} must be equal to input={c1} channels'
         assert k == 4 and p1 == 1, 'TFDWConv() only valid for k=4 and p1=1'
         weight, bias = w.weight.permute(2, 3, 1, 0).numpy(), w.bias.numpy()
-        self.ch = c1
+        self.c1 = c1
         self.conv = [
             keras.layers.Conv2DTranspose(filters=1,
                                          kernel_size=k,
