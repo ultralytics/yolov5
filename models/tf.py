@@ -117,6 +117,7 @@ class TFDWConvTranspose2d(keras.layers.Layer):
         assert c1 == c2, f'TFDWConv() output={c2} must be equal to input={c1} channels'
         assert k == 4 and p1 == 1, 'TFDWConv() only valid for k=4 and p1=1'
         weight, bias = w.weight.permute(2, 3, 1, 0).numpy(), w.bias.numpy()
+        self.ch = c1
         self.conv = [
             keras.layers.Conv2DTranspose(filters=1,
                                          kernel_size=k,
@@ -124,11 +125,11 @@ class TFDWConvTranspose2d(keras.layers.Layer):
                                          padding='VALID',
                                          output_padding=p2,
                                          use_bias=True,
-                                         kernel_initializer=keras.initializers.Constant(weight),
-                                         bias_initializer=keras.initializers.Constant(bias[i])) for i in range(c2)]
+                                         kernel_initializer=keras.initializers.Constant(weight[..., i:i + 1]),
+                                         bias_initializer=keras.initializers.Constant(bias[i])) for i in range(c1)]
 
     def call(self, inputs):
-        return tf.concat([x(inputs) for x in self.conv], 3)[:, 1:-1, 1:-1]
+        return tf.concat([m(x) for m, x in zip(self.conv, tf.split(inputs, self.c1, 3))], 3)[:, 1:-1, 1:-1]
 
 
 class TFFocus(keras.layers.Layer):
