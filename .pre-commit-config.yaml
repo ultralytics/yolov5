@@ -8,12 +8,12 @@ default_language_version:
 ci:
   autofix_prs: true
   autoupdate_commit_msg: '[pre-commit.ci] pre-commit suggestions'
-  autoupdate_schedule: quarterly
+  autoupdate_schedule: monthly
   # submodules: true
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v4.2.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -24,43 +24,44 @@ repos:
       - id: check-docstring-first
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.23.1
+    rev: v2.32.0
     hooks:
       - id: pyupgrade
-        args: [--py36-plus]
         name: Upgrade code
+        args: [ --py37-plus ]
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.9.3
+    rev: 5.10.1
     hooks:
       - id: isort
         name: Sort imports
 
-  # TODO
-  #- repo: https://github.com/pre-commit/mirrors-yapf
-  #  rev: v0.31.0
-  #  hooks:
-  #    - id: yapf
-  #      name: formatting
+  - repo: https://github.com/pre-commit/mirrors-yapf
+    rev: v0.32.0
+    hooks:
+      - id: yapf
+        name: YAPF formatting
 
-  # TODO
-  #- repo: https://github.com/executablebooks/mdformat
-  #  rev: 0.7.7
-  #  hooks:
-  #    - id: mdformat
-  #      additional_dependencies:
-  #        - mdformat-gfm
-  #        - mdformat-black
-  #        - mdformat_frontmatter
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.14
+    hooks:
+      - id: mdformat
+        name: MD formatting
+        additional_dependencies:
+          - mdformat-gfm
+          - mdformat-black
+        exclude: |
+          (?x)^(
+              README.md
+          )$
 
-  # TODO
-  #- repo: https://github.com/asottile/yesqa
-  #  rev: v1.2.3
-  #  hooks:
-  #    - id: yesqa
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.3.0
+    hooks:
+      - id: yesqa
 
   - repo: https://github.com/PyCQA/flake8
-    rev: 3.9.2
+    rev: 4.0.1
     hooks:
       - id: flake8
         name: PEP8

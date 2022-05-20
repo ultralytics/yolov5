@@ -26,7 +26,11 @@
 storage.googleapis.com
 runs/*
 data/*
-!data/hyps/*
+data/images/*
+!data/*.yaml
+!data/hyps
+!data/scripts
+!data/images
 !data/images/zidane.jpg
 !data/images/bus.jpg
 !data/*.sh
@@ -48,12 +52,14 @@ VOC/
 *.pt
 *.pb
 *.onnx
+*.engine
 *.mlmodel
 *.torchscript
 *.tflite
 *.h5
 *_saved_model/
 *_web_model/
+*_openvino_model/
 darknet53.conv.74
 yolov3-tiny.conv.15
 
