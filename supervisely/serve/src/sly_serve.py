@@ -5,6 +5,7 @@ import pathlib
 import sys
 import supervisely as sly
 from pathlib import Path
+from dotenv import load_dotenv
 
 from supervisely.app.v1.app_service import AppService
 
@@ -12,7 +13,11 @@ root_source_path = str(pathlib.Path(sys.argv[0]).parents[3])
 sly.logger.info(f"Root source directory: {root_source_path}")
 sys.path.append(root_source_path)
 
-from nn_utils import construct_model_meta, load_model, inference
+load_dotenv(os.path.join(root_source_path, "supervisely", "serve", "debug.env"))
+load_dotenv(os.path.join(root_source_path, "supervisely", "serve", "secret_debug.env"), override=True)
+
+
+from nn_utils import construct_model_meta, load_model, inference, sliding_window_inference
 
 my_app = AppService()
 
@@ -83,11 +88,15 @@ def inference_image_path(image_path, project_meta, context, state, app_logger):
     conf_thres = settings.get("conf_thres", default_settings["conf_thres"])
     iou_thres = settings.get("iou_thres", default_settings["iou_thres"])
     augment = settings.get("augment", default_settings["augment"])
+    
 
     image = sly.image.read(image_path)  # RGB image
-    ann_json = inference(model, half, device, imgsz, stride, image, meta,
-                         conf_thres=conf_thres, iou_thres=iou_thres, augment=augment,
-                         debug_visualization=debug_visualization)
+    if "use_sliding_window" in settings.keys() and settings.get("use_sliding_window", False):
+        ann_json, slides_for_vis = sliding_window_inference()
+    else:
+        ann_json = inference(model, half, device, imgsz, stride, image, meta,
+                            conf_thres=conf_thres, iou_thres=iou_thres, augment=augment,
+                            debug_visualization=debug_visualization)
     return ann_json
 
 
