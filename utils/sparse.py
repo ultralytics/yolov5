@@ -1,11 +1,15 @@
 import logging
 import math
+import os
+from typing import Optional
 
 from sparsezoo import Zoo
 from sparseml.pytorch.optim import ScheduledModifierManager
 from sparseml.pytorch.utils import SparsificationGroupLogger
 
 from utils.torch_utils import is_parallel
+import torch
+import numpy
 
 _LOGGER = logging.getLogger(__file__)
 def _get_model_framework_file(model, path):
@@ -56,7 +60,7 @@ class SparseMLWrapper(object):
             self._apply_one_shot()
 
     def state_dict(self):
-        manager = (ScheduledModifierManager.compose_staged(self.checkpoint_manager, self.manager) 
+        manager = (ScheduledModifierManager.compose_staged(self.checkpoint_manager, self.manager)
         if self.checkpoint_manager and self.enabled else self.manager)
 
         return {
@@ -158,3 +162,59 @@ class SparseMLWrapper(object):
             _LOGGER.info(f"Training recipe for one-shot application not recognized by the manager. Got recipe: "
                          f"{self.train_recipe}"
                          )
+
+    def save_sample_inputs_outputs(
+        self,
+        dataloader: "Dataloader",  # flake8 : noqa F8421
+        num_export_samples=100,
+        save_dir: Optional[str] = None,
+    ):
+
+        save_dir = save_dir or ""
+        if not dataloader:
+            raise ValueError(
+                f"Expected a data loader for exporting samples. Got {dataloader}"
+            )
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        exported_samples = 0
+
+        sample_in_dir = os.path.join(save_dir, "sample-inputs")
+        sample_out_dir = os.path.join(save_dir, "sample-outputs")
+
+        os.makedirs(sample_in_dir, exist_ok=True)
+        os.makedirs(sample_out_dir, exist_ok=True)
+
+        for _, (images, _, _, _) in enumerate(dataloader):
+            images = (
+                images.float() / 255
+            )  # uint8 to float32, 0-255 to 0.0-1.0
+
+            device_imgs = images.to(device, non_blocking=True)
+            outs = self.model(device_imgs)
+
+            # Move to cpu for exporting
+            ins = images.detach().to("cpu")
+            outs = [elem.detach().to("cpu") for elem in outs]
+            outs_gen = zip(*outs)
+
+            for sample_in, sample_out in zip(ins, outs_gen):
+                sample_out = list(sample_out)
+                file_idx = f"{exported_samples}".zfill(4)
+
+                sample_input_filename = os.path.join(f"{sample_in_dir}", f"inp-{file_idx}.npz")
+                numpy.savez(sample_input_filename, sample_in)
+
+                sample_output_filename = os.path.join(f"{sample_out_dir}", f"out-{file_idx}.npz")
+                numpy.savez(sample_output_filename, *sample_out)
+                exported_samples += 1
+
+                if exported_samples >= num_export_samples:
+                    break
+
+            if exported_samples >= num_export_samples:
+                break
+
+        _LOGGER.info(
+            f"Exported {exported_samples} samples to {save_dir}"
+        )
