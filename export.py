@@ -168,17 +168,17 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         LOGGER.info(f'{prefix} export failure: {e}')
 
 
-def export_openvino(model, im, file, half, prefix=colorstr('OpenVINO:')):
+def export_openvino(file, half, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
     try:
         check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
         import openvino.inference_engine as ie
 
         LOGGER.info(f'\n{prefix} starting export with openvino {ie.__version__}...')
-        f = str(file).replace('.pt', '_openvino_model' + os.sep)
+        f = str(file).replace('.pt', f'_openvino_model{os.sep}')
 
         cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f} --data_type {'FP16' if half else 'FP32'}"
-        subprocess.check_output(cmd, shell=True)
+        subprocess.check_output(cmd.split())
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
         return f
@@ -324,7 +324,7 @@ def export_saved_model(model,
         return None, None
 
 
-def export_pb(keras_model, im, file, prefix=colorstr('TensorFlow GraphDef:')):
+def export_pb(keras_model, file, prefix=colorstr('TensorFlow GraphDef:')):
     # YOLOv5 TensorFlow GraphDef *.pb export https://github.com/leimao/Frozen_Graph_TensorFlow
     try:
         import tensorflow as tf
@@ -379,13 +379,13 @@ def export_tflite(keras_model, im, file, int8, data, nms, agnostic_nms, prefix=c
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
-def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
+def export_edgetpu(file, prefix=colorstr('Edge TPU:')):
     # YOLOv5 Edge TPU export https://coral.ai/docs/edgetpu/models-intro/
     try:
         cmd = 'edgetpu_compiler --version'
         help_url = 'https://coral.ai/docs/edgetpu/compiler/'
         assert platform.system() == 'Linux', f'export only supported on Linux. See {help_url}'
-        if subprocess.run(cmd + ' >/dev/null', shell=True).returncode != 0:
+        if subprocess.run(f'{cmd} >/dev/null', shell=True).returncode != 0:
             LOGGER.info(f'\n{prefix} export requires Edge TPU compiler. Attempting install from {help_url}')
             sudo = subprocess.run('sudo --version >/dev/null', shell=True).returncode == 0  # sudo installed on system
             for c in (
@@ -400,7 +400,7 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
         f_tfl = str(file).replace('.pt', '-int8.tflite')  # TFLite model
 
         cmd = f"edgetpu_compiler -s -o {file.parent} {f_tfl}"
-        subprocess.run(cmd, shell=True, check=True)
+        subprocess.run(cmd.split(), check=True)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
         return f
@@ -408,7 +408,7 @@ def export_edgetpu(keras_model, im, file, prefix=colorstr('Edge TPU:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
-def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
+def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
     # YOLOv5 TensorFlow.js export
     try:
         check_requirements(('tensorflowjs',))
@@ -419,11 +419,11 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
         LOGGER.info(f'\n{prefix} starting export with tensorflowjs {tfjs.__version__}...')
         f = str(file).replace('.pt', '_web_model')  # js dir
         f_pb = file.with_suffix('.pb')  # *.pb path
-        f_json = f + '/model.json'  # *.json path
+        f_json = f'{f}/model.json'  # *.json path
 
         cmd = f'tensorflowjs_converter --input_format=tf_frozen_model ' \
-              f'--output_node_names="Identity,Identity_1,Identity_2,Identity_3" {f_pb} {f}'
-        subprocess.run(cmd, shell=True)
+              f'--output_node_names=Identity,Identity_1,Identity_2,Identity_3 {f_pb} {f}'
+        subprocess.run(cmd.split())
 
         with open(f_json) as j:
             json = j.read()
@@ -519,7 +519,7 @@ def run(
     if onnx or xml:  # OpenVINO requires ONNX
         f[2] = export_onnx(model, im, file, opset, train, dynamic, simplify)
     if xml:  # OpenVINO
-        f[3] = export_openvino(model, im, file, half)
+        f[3] = export_openvino(file, half)
     if coreml:
         _, f[4] = export_coreml(model, im, file, int8, half)
 
@@ -539,13 +539,13 @@ def run(
                                          conf_thres=conf_thres,
                                          iou_thres=iou_thres)  # keras model
         if pb or tfjs:  # pb prerequisite to tfjs
-            f[6] = export_pb(model, im, file)
+            f[6] = export_pb(model, file)
         if tflite or edgetpu:
             f[7] = export_tflite(model, im, file, int8=int8 or edgetpu, data=data, nms=nms, agnostic_nms=agnostic_nms)
         if edgetpu:
-            f[8] = export_edgetpu(model, im, file)
+            f[8] = export_edgetpu(file)
         if tfjs:
-            f[9] = export_tfjs(model, im, file)
+            f[9] = export_tfjs(file)
 
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
