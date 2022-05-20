@@ -56,6 +56,12 @@ class DWConv(Conv):
         super().__init__(c1, c2, k, s, g=math.gcd(c1, c2), act=act)
 
 
+class DWConvTranspose2d(nn.ConvTranspose2d):
+    # Depth-wise transpose convolution class
+    def __init__(self, c1, c2, k=1, s=1, p1=0, p2=0):  # ch_in, ch_out, kernel, stride, padding, padding_out
+        super().__init__(c1, c2, k, s, p1, p2, groups=math.gcd(c1, c2))
+
+
 class TransformerLayer(nn.Module):
     # Transformer layer https://arxiv.org/abs/2010.11929 (LayerNorm layers removed for better performance)
     def __init__(self, c, num_heads):

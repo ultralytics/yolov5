@@ -27,7 +27,8 @@ import torch
 import torch.nn as nn
 from tensorflow import keras
 
-from models.common import C3, SPP, SPPF, Bottleneck, BottleneckCSP, C3x, Concat, Conv, CrossConv, DWConv, Focus, autopad
+from models.common import (C3, SPP, SPPF, Bottleneck, BottleneckCSP, C3x, Concat, Conv, CrossConv, DWConv,
+                           DWConvTranspose2d, Focus, autopad)
 from models.experimental import MixConv2d, attempt_load
 from models.yolo import Detect
 from utils.activations import SiLU
@@ -108,6 +109,29 @@ class TFDWConv(keras.layers.Layer):
         return self.act(self.bn(self.conv(inputs)))
 
 
+class TFDWConvTranspose2d(keras.layers.Layer):
+    # Depthwise ConvTranspose2d
+    def __init__(self, c1, c2, k=1, s=1, p1=0, p2=0, w=None):
+        # ch_in, ch_out, weights, kernel, stride, padding, groups
+        super().__init__()
+        assert c1 == c2, f'TFDWConv() output={c2} must be equal to input={c1} channels'
+        assert k == 4 and p1 == 1, 'TFDWConv() only valid for k=4 and p1=1'
+        weight, bias = w.weight.permute(2, 3, 1, 0).numpy(), w.bias.numpy()
+        self.c1 = c1
+        self.conv = [
+            keras.layers.Conv2DTranspose(filters=1,
+                                         kernel_size=k,
+                                         strides=s,
+                                         padding='VALID',
+                                         output_padding=p2,
+                                         use_bias=True,
+                                         kernel_initializer=keras.initializers.Constant(weight[..., i:i + 1]),
+                                         bias_initializer=keras.initializers.Constant(bias[i])) for i in range(c1)]
+
+    def call(self, inputs):
+        return tf.concat([m(x) for m, x in zip(self.conv, tf.split(inputs, self.c1, 3))], 3)[:, 1:-1, 1:-1]
+
+
 class TFFocus(keras.layers.Layer):
     # Focus wh information into c-space
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True, w=None):
@@ -152,15 +176,14 @@ class TFConv2d(keras.layers.Layer):
     def __init__(self, c1, c2, k, s=1, g=1, bias=True, w=None):
         super().__init__()
         assert g == 1, "TF v2.2 Conv2D does not support 'groups' argument"
-        self.conv = keras.layers.Conv2D(
-            c2,
-            k,
-            s,
-            'VALID',
-            use_bias=bias,
-            kernel_initializer=keras.initializers.Constant(w.weight.permute(2, 3, 1, 0).numpy()),
-            bias_initializer=keras.initializers.Constant(w.bias.numpy()) if bias else None,
-        )
+        self.conv = keras.layers.Conv2D(filters=c2,
+                                        kernel_size=k,
+                                        strides=s,
+                                        padding='VALID',
+                                        use_bias=bias,
+                                        kernel_initializer=keras.initializers.Constant(
+                                            w.weight.permute(2, 3, 1, 0).numpy()),
+                                        bias_initializer=keras.initializers.Constant(w.bias.numpy()) if bias else None)
 
     def call(self, inputs):
         return self.conv(inputs)
@@ -340,7 +363,9 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
                 pass
 
         n = max(round(n * gd), 1) if n > 1 else n  # depth gain
-        if m in [nn.Conv2d, Conv, Bottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv, BottleneckCSP, C3, C3x]:
+        if m in [
+                nn.Conv2d, Conv, DWConv, DWConvTranspose2d, Bottleneck, SPP, SPPF, MixConv2d, Focus, CrossConv,
+                BottleneckCSP, C3, C3x]:
             c1, c2 = ch[f], args[0]
             c2 = make_divisible(c2 * gw, 8) if c2 != no else c2
 
