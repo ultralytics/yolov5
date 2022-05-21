@@ -519,9 +519,10 @@ def check_amp(model):
     with torch.cuda.amp.autocast(enabled=True):
         y_amp = m(im).xyxy[0]
     if (y.shape == y_amp.shape) and torch.allclose(y, y_amp, atol=1.0):  # close to 1 pixel bounding box
+        LOGGER.info(emojis('AMP checks passed ✅'))
         return True
     else:
-        LOGGER.warning(f'WARNING: Automatic Mixed Precision (AMP) issues detected, disabling. See {help_url}')
+        LOGGER.warning(emojis(f'AMP checks failed ❌, disabling Automatic Mixed Precision. See {help_url}'))
         return False
 
 
