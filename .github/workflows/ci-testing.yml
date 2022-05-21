@@ -91,3 +91,15 @@ jobs:
           EOF
 
         shell: bash
+
+      - name: install pytest dependencies
+        run: |
+          pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu
+        shell: bash
+
+      - name: Run pytest
+        run: |
+          # Weights should be available from previous workflow
+          weights=runs/train/exp/weights/best.pt
+          pytest tests --weights $weights
+        shell: bash
