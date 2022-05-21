@@ -72,7 +72,10 @@ def cpu_export_formats() -> t.List:
     formats = export_formats()
     return formats[formats['Format'].isin((
         'ONNX',
-        'OpenVINO',
+        # Numpy version mismatch between
+        # OpenVINO and tfjs where OpenVINO requires numpy 1.20
+        # and tfjs requires > 1.20
+        # 'OpenVINO',
         'CoreML',
         'TensorFlow SavedModel',
         'TensorFlow GraphDef',
@@ -106,14 +109,6 @@ def test_export_cpu(weights, export_format_row: t.List):
 
     # make img small for quick tests
     img_sz = (160, 160)
-
-    # As of now, openvino requires numpy < 1.20.
-    # numpy will be downgraded during openvino run
-    # so we need to re-upgrade numpy
-    if export_format_argument == 'openvino':
-        subprocess.run('pip install numpy==1.19.5', shell=True)
-    elif export_format_argument == 'tfjs':
-        subprocess.run('pip install --upgrade numpy', shell=True)
 
     # create the model
     run(weights=weights, imgsz=img_sz, include=(export_format_argument,), int8=True)
