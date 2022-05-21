@@ -505,6 +505,28 @@ def check_dataset(data, autodownload=True):
     return data  # dictionary
 
 
+def check_amp(model):
+    # Check PyTorch Automatic Mixed Precision (AMP) functionality. Return True on correct operation
+    help_url = 'https://github.com/ultralytics/yolov5/issues/7908'
+    device = next(model.parameters()).device  # get model device
+    if device.type == 'cpu':
+        return False
+
+    from torch.cuda import amp
+    from models.common import AutoShape
+
+    m = AutoShape(model, verbose=False)
+    im = cv2.imread(ROOT / 'data' / 'images' / 'bus.jpg')[..., ::-1]  # OpenCV image (BGR to RGB)
+    y = m(im).xyxy[0]
+    with amp.autocast(enabled=True):
+        y_amp = m(im).xyxy[0]
+    if (y.shape == y_amp.shape) and torch.allclose(y, y_amp, atol=1.0):  # close to 1 pixel bounding box
+        return True
+    else:
+        LOGGER.warning(f'WARNING: disabling Automatic Mixed Precision (AMP) training. See {help_url}')
+        return False
+
+
 def url2file(url):
     # Convert URL to filename, i.e. https://url.com/file.txt?auth -> file.txt
     url = str(Path(url)).replace(':/', '://')  # Pathlib turns :// -> :/
