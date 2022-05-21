@@ -36,9 +36,11 @@ import yaml
 from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
 
-# Settings
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
+RANK = int(os.getenv('RANK', -1))
+
+# Settings
 DATASETS_DIR = ROOT.parent / 'datasets'  # YOLOv5 datasets directory
 NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
 AUTOINSTALL = str(os.getenv('YOLOv5_AUTOINSTALL', True)).lower() == 'true'  # global auto-install mode
@@ -520,10 +522,12 @@ def check_amp(model):
     with torch.cuda.amp.autocast(enabled=True):
         y_amp = m(im).xyxy[0]
     if (y.shape == y_amp.shape) and torch.allclose(y, y_amp, atol=1.0):  # close to 1 pixel bounding box
-        LOGGER.info(emojis(f'{prefix} checks passed ✅'))
+        if RANK in {-1, 0}:
+            LOGGER.info(emojis(f'{prefix} checks passed ✅'))
         return True
     else:
-        LOGGER.warning(emojis(f'{prefix} checks failed ❌, disabling Automatic Mixed Precision. See {help_url}'))
+        if RANK in {-1, 0}:
+            LOGGER.warning(emojis(f'{prefix} checks failed ❌, disabling Automatic Mixed Precision. See {help_url}'))
         return False
 
 
