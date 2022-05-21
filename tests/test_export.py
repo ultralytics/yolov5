@@ -39,9 +39,9 @@ def cleanup(weights):
     for _, export_format_argument, suffix, ___ in cpu_export_formats():
         output_path = weights.replace('.pt', suffix.lower())
         if export_format_argument == 'tflite':
-            output_path = output_path.replace('.tflite', f'-int8.tflite')
+            output_path = output_path.replace('.tflite', '-int8.tflite')
         elif export_format_argument == 'edgetpu':
-            output_path = output_path.replace('.tflite', f'-int8_edgetpu.tflite')
+            output_path = output_path.replace('.tflite', '-int8_edgetpu.tflite')
         if os.path.exists(output_path):
             if os.path.isdir(output_path):
                 shutil.rmtree(output_path, onerror=del_rw)
@@ -53,6 +53,7 @@ def cleanup(weights):
 # Utils
 # ---------------------
 
+
 def del_rw(action, file_path, exc):
     os.chmod(file_path, stat.S_IWRITE)
     os.remove(file_path)
@@ -60,7 +61,7 @@ def del_rw(action, file_path, exc):
 
 def gpu_export_formats():
     formats = export_formats()
-    return formats[formats['GPU'] == True].values.tolist()
+    return formats[formats['GPU']].values.tolist()
 
 
 def cpu_export_formats() -> t.List:
@@ -69,14 +70,21 @@ def cpu_export_formats() -> t.List:
     Note that some of these require special environments to serialize.
     """
     formats = export_formats()
-    return formats[formats['Format'].isin(
-        ('ONNX', 'OpenVINO', 'CoreML', 'TensorFlow SavedModel', 'TensorFlow GraphDef',
-        'TensorFlow Lite', 'TensorFlow Edge TPU', 'TensorFlow.js',)
-    )].values.tolist()
+    return formats[formats['Format'].isin((
+        'ONNX',
+        'OpenVINO',
+        'CoreML',
+        'TensorFlow SavedModel',
+        'TensorFlow GraphDef',
+        'TensorFlow Lite',
+        'TensorFlow Edge TPU',
+        'TensorFlow.js',
+    ))].values.tolist()
 
 
 # Tests
 # ----------------------
+
 
 def test_model_exists(weights: str):
     """
@@ -125,9 +133,9 @@ def test_export_cpu(weights, export_format_row: t.List):
         assert file_count > 0, 'Folder is empty'
     else:
         if export_format_argument == 'tflite':
-            output_path = weights.replace('.tflite', f'-int8.tflite')
+            output_path = weights.replace('.tflite', '-int8.tflite')
         elif export_format_argument == 'edgetpu':
-            output_path = weights.replace('.tflite', f'-int8_edgetpu.tflite')
+            output_path = weights.replace('.tflite', '-int8_edgetpu.tflite')
         assert os.path.exists(output_path), f'Failed to serialize "{output_path}".'
 
     # TODO: we can add new tests to check mAP of the exported model on VOC dataset
