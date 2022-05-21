@@ -94,7 +94,7 @@ jobs:
 
       - name: install pytest dependencies
         run: |
-          pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu
+          pip install coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu tensorflowjs --user
         shell: bash
 
       - name: Run pytest
