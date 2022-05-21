@@ -92,7 +92,7 @@ def exif_transpose(image):
 
 
 def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False, pad=0.0,
-                      rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix='', shuffle=False):
+                      rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix='', shuffle=False, fusion=False):
     if rect and shuffle:
         LOGGER.warning('WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False')
         shuffle = False
@@ -106,7 +106,8 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
                                       stride=int(stride),
                                       pad=pad,
                                       image_weights=image_weights,
-                                      prefix=prefix)
+                                      prefix=prefix,
+                                      fusion=fusion)
 
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()  # number of CUDA devices
@@ -158,7 +159,7 @@ class _RepeatSampler:
 
 class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
-    def __init__(self, path, img_size=640, stride=32, auto=True):
+    def __init__(self, path, img_size=640, stride=32, auto=True, fusion=True):
         p = str(Path(path).resolve())  # os-agnostic absolute path
         if '*' in p:
             files = sorted(glob.glob(p, recursive=True))  # glob
@@ -180,6 +181,7 @@ class LoadImages:
         self.video_flag = [False] * ni + [True] * nv
         self.mode = 'image'
         self.auto = auto
+        self.fusion = fusion
         if any(videos):
             self.new_video(videos[0])  # new video
         else:
@@ -217,12 +219,17 @@ class LoadImages:
             # Read image
             self.count += 1
             img0 = cv2.imread(path)  # BGR
+            if self.fusion:
+                roi_img = img0[180:788, 400:1360, :]
             assert img0 is not None, f'Image Not Found {path}'
             s = f'image {self.count}/{self.nf} {path}: '
 
         # Padded resize
-        img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
-
+        if self.fusion:
+            img = letterbox(img0, (608, 960), stride=self.stride, auto=self.auto)[0]
+            img = np.vstack((img, roi_img))
+        else:
+            img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
         # Convert
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
@@ -380,7 +387,7 @@ class LoadImagesAndLabels(Dataset):
     cache_version = 0.6  # dataset labels *.cache version
 
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
+                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix='', fusion=False):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -391,6 +398,9 @@ class LoadImagesAndLabels(Dataset):
         self.stride = stride
         self.path = path
         self.albumentations = Albumentations() if augment else None
+        self.fusion = fusion
+        if self.fusin:
+            self.mosaic = False
 
         try:
             f = []  # image files
@@ -505,6 +515,21 @@ class LoadImagesAndLabels(Dataset):
                     gb += self.imgs[i].nbytes
                 pbar.desc = f'{prefix}Caching images ({gb / 1E9:.1f}GB {cache_images})'
             pbar.close()
+        self.roi_ims = [None] * n
+        self.roi_npy_files = [Path(f[:-4]+'_roi.npy') for f in self.im_files]
+        if cache_images:
+            gb = 0
+            fcn = self.cache_images_to_disk if cache_images == 'disk' else self.load_roi_image
+            results = ThreadPool(NUM_THREADS).imap(fcn, range(n))
+            pbar = tqdm(enumerate(results), total=n)
+            for i, x in pbar:
+                if cache_images == 'disk':
+                    gb += self.roi_npy_files[i].stat().st_size
+                else:
+                    self.roi_ims[i] = x
+                    gb += self.roi_ims[i].nbytes
+                pbar.desc = f'{prefix}Caching images ({gb / 1E9:.1f}GB {cache_images})' 
+            pbar.close()
 
     def cache_labels(self, path=Path('./labels.cache'), prefix=''):
         # Cache dataset labels, check images and read shapes
@@ -564,7 +589,15 @@ class LoadImagesAndLabels(Dataset):
             # MixUp augmentation
             if random.random() < hyp['mixup']:
                 img, labels = mixup(img, labels, *self.load_mosaic(random.randint(0, self.n - 1)))
-
+        elif self.fusion:
+            img, (h0,w0), (h, w) = self.load_image(index)
+            img, ratio, pad = letterbox(img, (608, 960), auto=False, scaleup=self.augment)
+            labels = self.labels[index].copy()
+            roi_img = self.load_roi_image(index)
+            if labels.size:
+                labels[:, 1:] = xywhn2xyxy(labels[:, 1:], ratio[0]*w, ratio[1]*h, padw=pad[0], padh=pad[1])
+            shapes = None
+            img = np.vstack((img, roi_img))
         else:
             # Load image
             img, (h0, w0), (h, w) = self.load_image(index)
@@ -588,8 +621,10 @@ class LoadImagesAndLabels(Dataset):
 
         nl = len(labels)  # number of labels
         if nl:
-            labels[:, 1:5] = xyxy2xywhn(labels[:, 1:5], w=img.shape[1], h=img.shape[0], clip=True, eps=1E-3)
-
+            if not self.fusion:
+                labels[:, 1:5] = xyxy2xywhn(labels[:, 1:5], w=img.shape[1], h=img.shape[0], clip=True, eps=1E-3)
+            else:
+                labels[:, 1:5] = xyxy2xywhn(labels[:, 1:5], w=img.shape[1], h=int(img.shape[0]/2), clip=True, eps=1E-3)
         if self.augment:
             # Albumentations
             img, labels = self.albumentations(img, labels)
@@ -644,6 +679,19 @@ class LoadImagesAndLabels(Dataset):
             return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
         else:
             return self.imgs[i], self.img_hw0[i], self.img_hw[i]  # im, hw_original, hw_resized
+    
+    def load_roi_image(self, i):
+        roi_im, f, fn = self.roi_ims[i], self.im_files[i], self.roi_npy_files[i]
+        if roi_im is None:
+            if fn.exists():
+                im = np.load(fn)
+            else:
+                im = cv2.imread(f)
+                assert im is not None, f'Image Not Found {f}'
+            roi_im = im[180:788, 400:1360, :]
+            return roi_im
+        else:
+            return self.roi_im[i]
 
     def load_mosaic(self, index):
         # YOLOv5 4-mosaic loader. Loads 1 image + 3 random images into a 4-image mosaic
