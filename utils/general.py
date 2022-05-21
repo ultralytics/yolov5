@@ -513,6 +513,7 @@ def check_amp(model):
         return False
 
     from torch.cuda import amp
+
     from models.common import AutoShape
 
     m = AutoShape(model, verbose=False)
