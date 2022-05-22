@@ -56,6 +56,12 @@ class DWConv(Conv):
         super().__init__(c1, c2, k, s, g=math.gcd(c1, c2), act=act)
 
 
+class DWConvTranspose2d(nn.ConvTranspose2d):
+    # Depth-wise transpose convolution class
+    def __init__(self, c1, c2, k=1, s=1, p1=0, p2=0):  # ch_in, ch_out, kernel, stride, padding, padding_out
+        super().__init__(c1, c2, k, s, p1, p2, groups=math.gcd(c1, c2))
+
+
 class TransformerLayer(nn.Module):
     # Transformer layer https://arxiv.org/abs/2010.11929 (LayerNorm layers removed for better performance)
     def __init__(self, c, num_heads):
@@ -518,9 +524,10 @@ class AutoShape(nn.Module):
     max_det = 1000  # maximum number of detections per image
     amp = False  # Automatic Mixed Precision (AMP) inference
 
-    def __init__(self, model):
+    def __init__(self, model, verbose=True):
         super().__init__()
-        LOGGER.info('Adding AutoShape... ')
+        if verbose:
+            LOGGER.info('Adding AutoShape... ')
         copy_attr(self, model, include=('yaml', 'nc', 'hyp', 'names', 'stride', 'abc'), exclude=())  # copy attributes
         self.dmb = isinstance(model, DetectMultiBackend)  # DetectMultiBackend() instance
         self.pt = not self.dmb or model.pt  # PyTorch model

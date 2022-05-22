@@ -455,6 +455,7 @@ def run(
         half=False,  # FP16 half-precision export
         inplace=False,  # set YOLOv5 Detect() inplace=True
         train=False,  # model.train() mode
+        keras=False,  # use Keras
         optimize=False,  # TorchScript: optimize for mobile
         int8=False,  # CoreML/TF INT8 quantization
         dynamic=False,  # ONNX/TF: dynamic axes
@@ -536,8 +537,9 @@ def run(
                                          agnostic_nms=agnostic_nms or tfjs,
                                          topk_per_class=topk_per_class,
                                          topk_all=topk_all,
+                                         iou_thres=iou_thres,
                                          conf_thres=conf_thres,
-                                         iou_thres=iou_thres)  # keras model
+                                         keras=keras)
         if pb or tfjs:  # pb prerequisite to tfjs
             f[6] = export_pb(model, file)
         if tflite or edgetpu:
@@ -569,6 +571,7 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
     parser.add_argument('--train', action='store_true', help='model.train() mode')
+    parser.add_argument('--keras', action='store_true', help='TF: use Keras')
     parser.add_argument('--optimize', action='store_true', help='TorchScript: optimize for mobile')
     parser.add_argument('--int8', action='store_true', help='CoreML/TF INT8 quantization')
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TF: dynamic axes')
