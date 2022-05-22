@@ -36,9 +36,11 @@ import yaml
 from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
 
-# Settings
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
+RANK = int(os.getenv('RANK', -1))
+
+# Settings
 DATASETS_DIR = ROOT.parent / 'datasets'  # YOLOv5 datasets directory
 NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
 AUTOINSTALL = str(os.getenv('YOLOv5_AUTOINSTALL', True)).lower() == 'true'  # global auto-install mode
@@ -503,6 +505,27 @@ def check_dataset(data, autodownload=True):
 
     check_font('Arial.ttf' if is_ascii(data['names']) else 'Arial.Unicode.ttf', progress=True)  # download fonts
     return data  # dictionary
+
+
+def check_amp(model):
+    # Check PyTorch Automatic Mixed Precision (AMP) functionality. Return True on correct operation
+    from models.common import AutoShape
+
+    if next(model.parameters()).device.type == 'cpu':  # get model device
+        return False
+    prefix = colorstr('AMP: ')
+    im = cv2.imread(ROOT / 'data' / 'images' / 'bus.jpg')[..., ::-1]  # OpenCV image (BGR to RGB)
+    m = AutoShape(model, verbose=False)  # model
+    a = m(im).xyxy[0]  # FP32 inference
+    m.amp = True
+    b = m(im).xyxy[0]  # AMP inference
+    if (a.shape == b.shape) and torch.allclose(a, b, atol=1.0):  # close to 1.0 pixel bounding box
+        LOGGER.info(emojis(f'{prefix}checks passed ✅'))
+        return True
+    else:
+        help_url = 'https://github.com/ultralytics/yolov5/issues/7908'
+        LOGGER.warning(emojis(f'{prefix}checks failed ❌, disabling Automatic Mixed Precision. See {help_url}'))
+        return False
 
 
 def url2file(url):
