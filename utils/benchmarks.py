@@ -46,7 +46,7 @@ from utils.torch_utils import select_device
 
 
 def run(
-        weights=ROOT / 'yolov5s.pt',  # weights path
+        weights=ROOT / 'weights/yolov5s.pt',  # weights path
         imgsz=640,  # inference size (pixels)
         batch_size=1,  # batch size
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
@@ -127,7 +127,7 @@ def test(
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='weights path')
+    parser.add_argument('--weights', type=str, default=ROOT / 'weights/yolov5s.pt', help='weights path')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')

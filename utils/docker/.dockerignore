@@ -25,6 +25,7 @@ data/samples/*
 *_saved_model/
 *_web_model/
 *_openvino_model/
+weights/*
 
 # Below Copied From .gitignore -----------------------------------------------------------------------------------------
 # Below Copied From .gitignore -----------------------------------------------------------------------------------------
