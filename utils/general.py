@@ -511,23 +511,20 @@ def check_amp(model):
     # Check PyTorch Automatic Mixed Precision (AMP) functionality. Return True on correct operation
     from models.common import AutoShape
 
-    help_url = 'https://github.com/ultralytics/yolov5/issues/7908'
-    prefix = colorstr('AMP:')
-    device = next(model.parameters()).device  # get model device
-    if device.type == 'cpu':
+    if next(model.parameters()).device.type == 'cpu':  # get model device
         return False
-    m = AutoShape(model, verbose=False)  # model
+    prefix = colorstr('AMP:')
     im = cv2.imread(ROOT / 'data' / 'images' / 'bus.jpg')[..., ::-1]  # OpenCV image (BGR to RGB)
-    y = m(im).xyxy[0]  # FP32 inference
+    m = AutoShape(model, verbose=False)  # model
+    a = m(im).xyxy[0]  # FP32 inference
     m.amp = True
-    y_amp = m(im).xyxy[0]  # AMP inference
-    if (y.shape == y_amp.shape) and torch.allclose(y, y_amp, atol=1.0):  # close to 1.0 pixel bounding box
-        if RANK in {-1, 0}:
-            LOGGER.info(emojis(f'{prefix} checks passed ✅'))
+    b = m(im).xyxy[0]  # AMP inference
+    if (a.shape == b.shape) and torch.allclose(a, b, atol=1.0):  # close to 1.0 pixel bounding box
+        LOGGER.info(emojis(f'{prefix} checks passed ✅'))
         return True
     else:
-        if RANK in {-1, 0}:
-            LOGGER.warning(emojis(f'{prefix} checks failed ❌, disabling Automatic Mixed Precision. See {help_url}'))
+        help_url = 'https://github.com/ultralytics/yolov5/issues/7908'
+        LOGGER.warning(emojis(f'{prefix} checks failed ❌, disabling Automatic Mixed Precision. See {help_url}'))
         return False
 
 
