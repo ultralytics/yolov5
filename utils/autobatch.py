@@ -7,15 +7,14 @@ from copy import deepcopy
 
 import numpy as np
 import torch
-from torch.cuda import amp
 
 from utils.general import LOGGER, colorstr
 from utils.torch_utils import profile
 
 
-def check_train_batch_size(model, imgsz=640):
+def check_train_batch_size(model, imgsz=640, amp=True):
     # Check YOLOv5 training batch size
-    with amp.autocast():
+    with torch.cuda.amp.autocast(amp):
         return autobatch(deepcopy(model).train(), imgsz)  # compute optimal batch size
 
 
