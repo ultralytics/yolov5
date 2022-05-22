@@ -518,10 +518,10 @@ def check_amp(model):
         return False
     m = AutoShape(model, verbose=False)  # model
     im = cv2.imread(ROOT / 'data' / 'images' / 'bus.jpg')[..., ::-1]  # OpenCV image (BGR to RGB)
-    y = m(im).xyxy[0]
-    with torch.cuda.amp.autocast(enabled=True):
-        y_amp = m(im).xyxy[0]
-    if (y.shape == y_amp.shape) and torch.allclose(y, y_amp, atol=1.0):  # close to 1 pixel bounding box
+    y = m(im).xyxy[0]  # FP32 inference
+    m.amp = True
+    y_amp = m(im).xyxy[0]  # AMP inference
+    if (y.shape == y_amp.shape) and torch.allclose(y, y_amp, atol=1.0):  # close to 1.0 pixel bounding box
         if RANK in {-1, 0}:
             LOGGER.info(emojis(f'{prefix} checks passed ✅'))
         return True
