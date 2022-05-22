@@ -55,11 +55,11 @@ head:
    [[-1, 22], 1, Concat, [1]],  # cat head P5
    [-1, 3, C3x, [768, False]],  # 35 (P5/32-large)
 
-   [-1, 1, DWConv, [768, 3, 2]],
+   [-1, 1, Conv, [768, 3, 2]],
    [[-1, 18], 1, Concat, [1]],  # cat head P6
    [-1, 3, C3x, [1024, False]],  # 38 (P6/64-xlarge)
 
-   [-1, 1, DWConv, [1024, 3, 2]],
+   [-1, 1, DWConv, [1024, 5, 2]],
    [[-1, 14], 1, Concat, [1]],  # cat head P7
    [-1, 3, C3x, [1280, False]],  # 41 (P7/128-xxlarge)
 
