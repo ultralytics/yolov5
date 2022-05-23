@@ -60,7 +60,7 @@ def get_benchmark_threshold_value(data_path: str, model_name: str) -> t.Union[fl
         model_name: The name of the model. E.g. yolov5s, yolov5n, etc
 
     Returns:
-        The target threshold metric value. E.g. 50 (mAP)
+        The target threshold metric value. E.g. 0.5 (mAP)
     """
     with open(data_path) as f:
         dataset_dict = yaml.safe_load(f)
@@ -166,7 +166,13 @@ def run(
     notebook_init()  # print system info
     py = pd.DataFrame(y, columns=['Format', 'mAP@0.5:0.95', 'Inference time (ms)'] if map else ['Format', 'Export', ''])
     LOGGER.info(f'\nBenchmarks complete ({time.time() - t:.2f}s)')
-    LOGGER.info(str(py if map else py.iloc[:, :2]))
+    # pandas dataframe printing fails in CI with the following error
+    # ModuleNotFoundError: No module named 'pandas.io.formats.string'
+    try:
+        LOGGER.info(str(py if map else py.iloc[:, :2]))
+    except Exception:
+        pretty_formatted_list = '\n'.join(['\t'.join([str(cell) for cell in row]) for row in py.values.tolist()])
+        LOGGER.info(pretty_formatted_list)
     return py
 
 
