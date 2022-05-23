@@ -511,7 +511,14 @@ def check_amp(model):
     if next(model.parameters()).device.type == 'cpu':  # get model device
         return False
     prefix = colorstr('AMP: ')
-    im = cv2.imread(ROOT / 'data' / 'images' / 'bus.jpg')[..., ::-1]  # OpenCV image (BGR to RGB)
+    file = ROOT / 'data' / 'images' / 'bus.jpg'  # image to test
+    if file.exists():
+        im = cv2.imread(file)[..., ::-1]  # OpenCV image (BGR to RGB)
+    elif check_online():
+        im = 'https://ultralytics.com/images/bus.jpg'
+    else:
+        LOGGER.warning(emojis(f'{prefix}checks skipped ⚠️, not online.'))
+        return True
     m = AutoShape(model, verbose=False)  # model
     a = m(im).xyxy[0]  # FP32 inference
     m.amp = True
