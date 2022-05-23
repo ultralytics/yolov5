@@ -28,9 +28,11 @@ Usage:
 import argparse
 import sys
 import time
+import typing as t
 from pathlib import Path
 
 import pandas as pd
+import yaml
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -45,6 +47,80 @@ from utils.general import LOGGER, print_args
 from utils.torch_utils import select_device
 
 
+class ThresholdError(Exception):
+    pass
+
+
+def get_benchmark_threshold_value(data_path: str, model_name: str) -> t.Union[float, int, None]:
+    """
+    Given the path to the data configurations and target model name,
+    retrieve the target benchmark value
+    Args:
+        data_path: The location of the data configuration file. e.g. data/coco128.yaml
+        model_name: The name of the model. E.g. yolov5s, yolov5n, etc
+
+    Returns:
+        The target threshold metric value. E.g. 50 (mAP)
+    """
+    with open(data_path) as f:
+        dataset_dict = yaml.safe_load(f)
+        if 'benchmarks' in dataset_dict and 'mAP' in dataset_dict['benchmarks']:
+            LOGGER.info(f'Attempting to find benchmark threshold for: {dataset_dict["download"]}')
+            # yolov5s, yolov5n, etc.
+            map_dict = dataset_dict['benchmarks']['mAP']
+            if model_name not in map_dict:
+                raise ValueError(f'Cannot find benchmark threshold for model: {model_name} in {data_path}')
+
+            map_benchmark_threshold = map_dict[model_name]
+
+            if not 0 <= map_benchmark_threshold <= 1:
+                raise ValueError('Please specify a mAP between 0 and 1.0')
+
+            return map_benchmark_threshold
+
+
+def get_unsupported_formats(unsupported_arguments: t.Tuple = ('edgetpu', 'tfjs', 'engine', 'coreml')) -> t.Tuple:
+    # coreml: Exception: Model prediction is only supported on macOS version 10.13 or later.
+    # engine: Requires gpu and docker container with TensorRT dependencies to run
+    # tfjs: Conflict with openvino numpy version (openvino < 1.20, tfjs >= 1.20)
+    # edgetpu: requires coral board, cloud tpu or some other external tpu
+    export_formats = export.export_formats()
+    unsupported = export_formats[export_formats['Argument'].isin(unsupported_arguments)].iloc[:, 1].values.tolist()
+    return tuple(unsupported)
+
+
+def get_benchmark_values(
+    name,  # export format name
+    f,  # file format
+    suffix,  # suffix of file format. E.g. '.pt', '.tflite', etc.
+    gpu,  # run on GPU (boolean value)
+    weights,  # weights path
+    data,  # data path
+    imgsz,  # image size: Two-tuple
+    half,  # use FP16 half-precision inference
+    batch_size,  # batch size
+    device,
+) -> t.List:
+    assert f not in get_unsupported_formats(), f'{name} not supported'
+    if device.type != 'cpu':
+        assert gpu, f'{name} inference not supported on GPU'
+
+    # Export
+    if f == '-':
+        w = weights  # PyTorch format
+    else:
+        w = export.run(weights=weights, imgsz=[imgsz], include=[f], device=device, half=half)[-1]  # all others
+    assert suffix in str(w), 'export failed'
+
+    # Validate
+    result = val.run(data, w, batch_size, imgsz, plots=False, device=device, task='benchmark', half=half)
+    metrics = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
+    speeds = result[2]  # times (preprocess, inference, postprocess)
+    mAP, t_inference = round(metrics[3], 4), round(speeds[1], 2)
+    # assert mA
+    return [name, mAP, t_inference]
+
+
 def run(
         weights=ROOT / 'yolov5s.pt',  # weights path
         imgsz=640,  # inference size (pixels)
@@ -54,32 +130,33 @@ def run(
         half=False,  # use FP16 half-precision inference
         test=False,  # test exports only
         pt_only=False,  # test PyTorch only
+        hard_fail=False,  # Raise errors if model fails to export or mAP lower than target threshold
 ):
     y, t = [], time.time()
     formats = export.export_formats()
     device = select_device(device)
+    # Grab benchmark threshold value
+    model_name = str(weights).split('/')[-1].split('.')[0]
+    map_benchmark_threshold = get_benchmark_threshold_value(str(data), model_name)
+
     for i, (name, f, suffix, gpu) in formats.iterrows():  # index, (name, file, suffix, gpu-capable)
-        try:
-            assert i != 9, 'Edge TPU not supported'
-            assert i != 10, 'TF.js not supported'
-            if device.type != 'cpu':
-                assert gpu, f'{name} inference not supported on GPU'
+        if hard_fail:
+            if f in get_unsupported_formats():
+                continue
+            # skip unsupported
+            benchmarks = get_benchmark_values(name, f, suffix, gpu, weights, data, imgsz, half, batch_size, device)
+            y.append(benchmarks)
+            name, mAP, t_inference = benchmarks
+            if map_benchmark_threshold and mAP < map_benchmark_threshold:
+                raise ThresholdError(f'mAP value: {mAP} is below threshold value: {map_benchmark_threshold}')
+        else:
+            try:
+                y.append(get_benchmark_values(name, f, suffix, gpu, weights, data, imgsz, half, batch_size, device))
+            except Exception as e:
+                LOGGER.warning(f'WARNING: Benchmark failure for {name}: {e}')
+                benchmarks = [name, None, None]
+                y.append(benchmarks)  # mAP, t_inference
 
-            # Export
-            if f == '-':
-                w = weights  # PyTorch format
-            else:
-                w = export.run(weights=weights, imgsz=[imgsz], include=[f], device=device, half=half)[-1]  # all others
-            assert suffix in str(w), 'export failed'
-
-            # Validate
-            result = val.run(data, w, batch_size, imgsz, plots=False, device=device, task='benchmark', half=half)
-            metrics = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
-            speeds = result[2]  # times (preprocess, inference, postprocess)
-            y.append([name, round(metrics[3], 4), round(speeds[1], 2)])  # mAP, t_inference
-        except Exception as e:
-            LOGGER.warning(f'WARNING: Benchmark failure for {name}: {e}')
-            y.append([name, None, None])  # mAP, t_inference
         if pt_only and i == 0:
             break  # break after PyTorch
 
@@ -102,6 +179,7 @@ def test(
         half=False,  # use FP16 half-precision inference
         test=False,  # test exports only
         pt_only=False,  # test PyTorch only
+        hard_fail=False  # Raise errors if model fails to export or mAP lower than target threshold
 ):
     y, t = [], time.time()
     formats = export.export_formats()
@@ -135,6 +213,11 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--test', action='store_true', help='test exports only')
     parser.add_argument('--pt-only', action='store_true', help='test PyTorch only')
+    parser.add_argument('--hard-fail',
+                        action='store_true',
+                        help='Use to raise errors if conditions are met. '
+                        'Also asserts that exported model mAP lies above '
+                        'user-defined thresholds.')
     opt = parser.parse_args()
     print_args(vars(opt))
     return opt

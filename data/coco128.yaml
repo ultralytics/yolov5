@@ -28,3 +28,21 @@ names: ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 't
 
 # Download script/URL (optional)
 download: https://ultralytics.com/assets/coco128.zip
+
+# Benchmark values
+benchmarks:
+  # metrics E.g. mAP
+  mAP:
+    # Img size 640
+    yolov5n: 0.45
+    yolov5s: 0.45
+    yolov5m: 0.45
+    yolov5l: 0.45
+    yolov5x: 0.45
+
+    # Img size 1280
+    yolov5n6: 50
+    yolov5s6: 50
+    yolov5m6: 60
+    yolov5l6: 60
+    yolov5x6: 60
