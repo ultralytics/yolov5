@@ -50,9 +50,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # tensorflowjs for unit test
-          pip install -qr requirements.txt -f https://download.pytorch.org/whl/cpu/torch_stable.html tensorflowjs \
-            onnx tensorflow-cpu # wandb
+          pip install -qr requirements.txt -f https://download.pytorch.org/whl/cpu/torch_stable.html \
+            onnx tensorflow-cpu  # wandb
           python --version
           pip --version
           pip list
@@ -84,7 +83,7 @@ jobs:
           # Export
           python models/yolo.py --cfg ${{ matrix.model }}.yaml  # build PyTorch model
           python models/tf.py --weights ${{ matrix.model }}.pt  # build TensorFlow model
-          pytest tests --weights $weights
+          python export.py --weights ${{ matrix.model }}.pt --img 64 --include torchscript onnx  # export
           # Python
           python - <<EOF
           import torch
