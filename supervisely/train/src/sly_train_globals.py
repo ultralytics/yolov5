@@ -4,7 +4,22 @@ import sys
 import yaml
 import supervisely as sly
 from supervisely.app.v1.app_service import AppService
+from dotenv import load_dotenv
 
+root_source_dir = str(Path(sys.argv[0]).parents[3])
+sly.logger.info(f"Root source directory: {root_source_dir}")
+sys.path.append(root_source_dir)
+
+source_path = str(Path(sys.argv[0]).parents[0])
+sly.logger.info(f"Source directory: {source_path}")
+sys.path.append(source_path)
+
+ui_sources_dir = os.path.join(source_path, "ui")
+sys.path.append(ui_sources_dir)
+sly.logger.info(f"Added to sys.path: {ui_sources_dir}")
+
+load_dotenv(os.path.join(root_source_dir, "supervisely", "train", "debug.env"))
+load_dotenv(os.path.join(root_source_dir, "supervisely", "train", "secret_debug.env"), override=True)
 
 my_app = AppService()
 my_app._ignore_stop_for_debug = True
@@ -20,19 +35,6 @@ local_artifacts_dir = None
 remote_artifacts_dir = None
 project_info = api.project.get_info_by_id(project_id)
 project_meta = sly.ProjectMeta.from_json(api.project.get_meta(project_id))
-
-
-root_source_dir = str(Path(sys.argv[0]).parents[3])
-sly.logger.info(f"Root source directory: {root_source_dir}")
-sys.path.append(root_source_dir)
-
-source_path = str(Path(sys.argv[0]).parents[0])
-sly.logger.info(f"Source directory: {source_path}")
-sys.path.append(source_path)
-
-ui_sources_dir = os.path.join(source_path, "ui")
-sys.path.append(ui_sources_dir)
-sly.logger.info(f"Added to sys.path: {ui_sources_dir}")
 
 with open(os.path.join(root_source_dir, "data/hyp.scratch.yaml"), 'r') as file:
     scratch_str = file.read()  # yaml.safe_load(

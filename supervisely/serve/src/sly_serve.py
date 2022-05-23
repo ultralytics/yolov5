@@ -88,16 +88,19 @@ def inference_image_path(image_path, project_meta, context, state, app_logger):
     conf_thres = settings.get("conf_thres", default_settings["conf_thres"])
     iou_thres = settings.get("iou_thres", default_settings["iou_thres"])
     augment = settings.get("augment", default_settings["augment"])
+    inference_mode = settings.get("inference_mode", "full")
     
 
     image = sly.image.read(image_path)  # RGB image
-    if "use_sliding_window" in settings.keys() and settings.get("use_sliding_window", False):
-        ann_json, slides_for_vis = sliding_window_inference()
+    if inference_mode == "sliding_window":
+        ann_json, slides_for_vis = sliding_window_inference(model, half, device, imgsz, stride, image, meta,
+                            settings["sliding_window_params"], conf_thres=conf_thres, iou_thres=iou_thres)
+        return {"annotation": ann_json, "data": {"slides": slides_for_vis}}
     else:
         ann_json = inference(model, half, device, imgsz, stride, image, meta,
                             conf_thres=conf_thres, iou_thres=iou_thres, augment=augment,
                             debug_visualization=debug_visualization)
-    return ann_json
+        return ann_json
 
 
 @my_app.callback("inference_image_url")
