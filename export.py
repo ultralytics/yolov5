@@ -168,7 +168,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         LOGGER.info(f'{prefix} export failure: {e}')
 
 
-def export_openvino(file, half, prefix=colorstr('OpenVINO:')):
+def export_openvino(model, file, half, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
     try:
         check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
@@ -179,6 +179,10 @@ def export_openvino(file, half, prefix=colorstr('OpenVINO:')):
 
         cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f} --data_type {'FP16' if half else 'FP32'}"
         subprocess.check_output(cmd.split())
+        
+        import yaml
+        with open(f + str(Path(file).name).replace('.pt', '') + '.yaml', 'w') as g:
+            yaml.dump({'names' : model.names}, g)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
         return f
@@ -520,7 +524,7 @@ def run(
     if onnx or xml:  # OpenVINO requires ONNX
         f[2] = export_onnx(model, im, file, opset, train, dynamic, simplify)
     if xml:  # OpenVINO
-        f[3] = export_openvino(file, half)
+        f[3] = export_openvino(model, file, half)
     if coreml:
         _, f[4] = export_coreml(model, im, file, int8, half)
 
