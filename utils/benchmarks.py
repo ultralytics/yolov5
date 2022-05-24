@@ -87,7 +87,7 @@ def get_unsupported_formats() -> t.Tuple:
     return 'edgetpu', 'tfjs', 'engine', 'coreml'
 
 
-def check_if_formats_exist(unsupported_arguments: t.Tuple):
+def check_if_formats_exist(unsupported_arguments: t.Tuple) -> None:
     """
     Check to see if the formats actually exists under export_formats().
     An error will be thrown if the argument type does not exist
@@ -131,7 +131,6 @@ def get_benchmark_values(
     metrics = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
     speeds = result[2]  # times (preprocess, inference, postprocess)
     mAP, t_inference = round(metrics[3], 4), round(speeds[1], 2)
-    # assert mA
     return [name, mAP, t_inference]
 
 
@@ -155,13 +154,12 @@ def run(
 
     # get unsupported formats and check if they exist under exports.get_exports()
     check_if_formats_exist(get_unsupported_formats())
-    # check
 
     for i, (name, f, suffix, gpu) in formats.iterrows():  # index, (name, file, suffix, gpu-capable)
         if hard_fail:
             if f in get_unsupported_formats():
                 continue
-            # skip unsupported
+            # [name, mAP, t_inference]
             benchmarks = get_benchmark_values(name, f, suffix, gpu, weights, data, imgsz, half, batch_size, device)
             y.append(benchmarks)
             name, mAP, t_inference = benchmarks
@@ -173,7 +171,7 @@ def run(
             except Exception as e:
                 LOGGER.warning(f'WARNING: Benchmark failure for {name}: {e}')
                 benchmarks = [name, None, None]
-                y.append(benchmarks)  # mAP, t_inference
+                y.append(benchmarks)
 
         if pt_only and i == 0:
             break  # break after PyTorch
