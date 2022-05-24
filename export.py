@@ -180,7 +180,7 @@ def export_openvino(model, file, half, prefix=colorstr('OpenVINO:')):
 
         cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f} --data_type {'FP16' if half else 'FP32'}"
         subprocess.check_output(cmd.split())  # export
-        with open(Path(f) / 'meta.yaml', 'w') as g:
+        with open(Path(f) / file.with_suffix('.yaml'), 'w') as g:
             yaml.dump({'stride': int(max(model.stride)), 'names': model.names}, g)  # add metadata.yaml
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
