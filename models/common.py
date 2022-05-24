@@ -368,7 +368,7 @@ class DetectMultiBackend(nn.Module):
             network = ie.read_model(model=w, weights=Path(w).with_suffix('.bin'))
             executable_network = ie.compile_model(model=network, device_name="CPU")
             output_layer = next(iter(executable_network.outputs))
-            meta = w.with_suffix('.yaml')
+            meta = Path(w).with_suffix('.yaml')
             if meta.exists():
                 stride, names = self._load_metadata(meta)  # load metadata
         elif engine:  # TensorRT
