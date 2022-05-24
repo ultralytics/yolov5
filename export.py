@@ -54,6 +54,7 @@ from pathlib import Path
 
 import pandas as pd
 import torch
+import yaml
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
 FILE = Path(__file__).resolve()
@@ -178,11 +179,9 @@ def export_openvino(model, file, half, prefix=colorstr('OpenVINO:')):
         f = str(file).replace('.pt', f'_openvino_model{os.sep}')
 
         cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f} --data_type {'FP16' if half else 'FP32'}"
-        subprocess.check_output(cmd.split())
-
-        import yaml
-        with open(f + str(Path(file).name).replace('.pt', '') + '.yaml', 'w') as g:
-            yaml.dump({'names': model.names}, g)
+        subprocess.check_output(cmd.split())  # export
+        with open(Path(f) / 'metadata.yaml', 'w') as g:
+            yaml.dump({'stride': int(max(model.stride)), 'names': model.names}, g)  # add metadata.yaml
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
         return f
