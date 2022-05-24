@@ -517,7 +517,7 @@ class DetectMultiBackend(nn.Module):
         return pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs
 
     @staticmethod
-    def _load_metadata(self, f='path/to/meta.yaml'):
+    def _load_metadata(f='path/to/meta.yaml'):
         # Load metadata from meta.yaml if it exists
         with open(f, errors='ignore') as f:
             d = yaml.safe_load(f)
