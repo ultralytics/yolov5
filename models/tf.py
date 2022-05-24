@@ -536,7 +536,7 @@ def run(
 ):
     # PyTorch model
     im = torch.zeros((batch_size, 3, *imgsz))  # BCHW image
-    model = attempt_load(weights, map_location=torch.device('cpu'), inplace=True, fuse=False)
+    model = attempt_load(weights, device=torch.device('cpu'), inplace=True, fuse=False)
     _ = model(im)  # inference
     model.info()
 
