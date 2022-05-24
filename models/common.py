@@ -326,9 +326,6 @@ class DetectMultiBackend(nn.Module):
         stride, names = 32, [f'class{i}' for i in range(1000)]  # assign defaults
         w = attempt_download(w)  # download if not local
         fp16 &= (pt or jit or onnx or engine) and device.type != 'cpu'  # FP16
-        if data:  # data.yaml path (optional)
-            with open(data, errors='ignore') as f:
-                names = yaml.safe_load(f)['names']  # class names
 
         if pt:  # PyTorch
             model = attempt_load(weights if isinstance(weights, list) else w, map_location=device)
@@ -434,7 +431,11 @@ class DetectMultiBackend(nn.Module):
                 output_details = interpreter.get_output_details()  # outputs
             elif tfjs:
                 raise Exception('ERROR: YOLOv5 TF.js inference is not supported')
+
         self.__dict__.update(locals())  # assign all variables to self
+        if not hasattr(self, 'names') and data:  # assign class names (optional)
+            with open(data, errors='ignore') as f:
+                names = yaml.safe_load(f)['names']
 
     def forward(self, im, augment=False, visualize=False, val=False):
         # YOLOv5 MultiBackend inference
