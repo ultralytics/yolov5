@@ -326,9 +326,6 @@ class DetectMultiBackend(nn.Module):
         stride, names = 32, [f'class{i}' for i in range(1000)]  # assign defaults
         w = attempt_download(w)  # download if not local
         fp16 &= (pt or jit or onnx or engine) and device.type != 'cpu'  # FP16
-        if data:  # data.yaml path (optional)
-            with open(data, errors='ignore') as f:
-                names = yaml.safe_load(f)['names']  # class names
 
         if pt:  # PyTorch
             model = attempt_load(weights if isinstance(weights, list) else w, map_location=device)
@@ -367,7 +364,8 @@ class DetectMultiBackend(nn.Module):
                 w = next(Path(w).glob('*.xml'))  # get *.xml file from *_openvino_model dir
             network = ie.read_model(model=w, weights=Path(w).with_suffix('.bin'))
             executable_network = ie.compile_model(model=network, device_name="CPU")
-            self.output_layer = next(iter(executable_network.outputs))
+            output_layer = next(iter(executable_network.outputs))
+            self._load_metadata(w.parent / 'meta.yaml')  # load metadata
         elif engine:  # TensorRT
             LOGGER.info(f'Loading {w} for TensorRT inference...')
             import tensorrt as trt  # https://developer.nvidia.com/nvidia-tensorrt-download
@@ -433,7 +431,11 @@ class DetectMultiBackend(nn.Module):
                 output_details = interpreter.get_output_details()  # outputs
             elif tfjs:
                 raise Exception('ERROR: YOLOv5 TF.js inference is not supported')
+
         self.__dict__.update(locals())  # assign all variables to self
+        if not hasattr(self, 'names') and data:  # assign class names (optional)
+            with open(data, errors='ignore') as f:
+                names = yaml.safe_load(f)['names']
 
     def forward(self, im, augment=False, visualize=False, val=False):
         # YOLOv5 MultiBackend inference
@@ -493,13 +495,20 @@ class DetectMultiBackend(nn.Module):
             y = torch.tensor(y, device=self.device)
         return (y, []) if val else y
 
+    def _load_metadata(self, f='path/to/meta.yaml'):
+        # Load metadata from meta.yaml if it exists
+        if Path(f).is_file():
+            with open(f, errors='ignore') as f:
+                for k, v in yaml.safe_load(f).items():
+                    setattr(self, k, v)  # assign stride, names
+
     def warmup(self, imgsz=(1, 3, 640, 640)):
         # Warmup model by running inference once
-        if any((self.pt, self.jit, self.onnx, self.engine, self.saved_model, self.pb)):  # warmup types
-            if self.device.type != 'cpu':  # only warmup GPU models
-                im = torch.zeros(*imgsz, dtype=torch.half if self.fp16 else torch.float, device=self.device)  # input
-                for _ in range(2 if self.jit else 1):  #
-                    self.forward(im)  # warmup
+        warmup_types = self.pt, self.jit, self.onnx, self.engine, self.saved_model, self.pb
+        if any(warmup_types) and self.device.type != 'cpu':
+            im = torch.zeros(*imgsz, dtype=torch.half if self.fp16 else torch.float, device=self.device)  # input
+            for _ in range(2 if self.jit else 1):  #
+                self.forward(im)  # warmup
 
     @staticmethod
     def model_type(p='path/to/model.pt'):
