@@ -1,4 +1,5 @@
-# pip install -r requirements.txt
+# YOLOv5 requirements
+# Usage: pip install -r requirements.txt
 
 # Base ----------------------------------------
 matplotlib>=3.2.2
@@ -31,7 +32,6 @@ seaborn>=0.11.0
 
 # Extras --------------------------------------
 # albumentations>=1.0.3
-# Cython  # for pycocotools https://github.com/cocodataset/cocoapi/issues/172
 # pycocotools>=2.0  # COCO mAP
 # roboflow
 thop  # FLOPs computation
