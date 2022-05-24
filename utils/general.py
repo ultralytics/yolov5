@@ -419,7 +419,7 @@ def check_file(file, suffix=''):
     if Path(file).is_file() or not file:  # exists
         return file
     elif file.startswith(('http:/', 'https:/')):  # download
-        url = str(Path(file)).replace(':/', '://')  # Pathlib turns :// -> :/
+        url = file  # warning: Pathlib turns :// -> :/
         file = Path(urllib.parse.unquote(file).split('?')[0]).name  # '%2F' to '/', split https://url.com/file.txt?auth
         if Path(file).is_file():
             LOGGER.info(f'Found {url} locally at {file}')  # file already exists
@@ -511,12 +511,19 @@ def check_amp(model):
     if next(model.parameters()).device.type == 'cpu':  # get model device
         return False
     prefix = colorstr('AMP: ')
-    im = cv2.imread(ROOT / 'data' / 'images' / 'bus.jpg')[..., ::-1]  # OpenCV image (BGR to RGB)
+    file = ROOT / 'data' / 'images' / 'bus.jpg'  # image to test
+    if file.exists():
+        im = cv2.imread(file)[..., ::-1]  # OpenCV image (BGR to RGB)
+    elif check_online():
+        im = 'https://ultralytics.com/images/bus.jpg'
+    else:
+        LOGGER.warning(emojis(f'{prefix}checks skipped ⚠️, not online.'))
+        return True
     m = AutoShape(model, verbose=False)  # model
-    a = m(im).xyxy[0]  # FP32 inference
+    a = m(im).xywhn[0]  # FP32 inference
     m.amp = True
-    b = m(im).xyxy[0]  # AMP inference
-    if (a.shape == b.shape) and torch.allclose(a, b, atol=1.0):  # close to 1.0 pixel bounding box
+    b = m(im).xywhn[0]  # AMP inference
+    if (a.shape == b.shape) and torch.allclose(a, b, atol=0.05):  # close to 5% absolute tolerance
         LOGGER.info(emojis(f'{prefix}checks passed ✅'))
         return True
     else:
@@ -788,7 +795,7 @@ def non_max_suppression(prediction,
     # min_wh = 2  # (pixels) minimum box width and height
     max_wh = 7680  # (pixels) maximum box width and height
     max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
-    time_limit = 0.1 + 0.03 * bs  # seconds to quit after
+    time_limit = 0.3 + 0.03 * bs  # seconds to quit after
     redundant = True  # require redundant detections
     multi_label &= nc > 1  # multiple labels per box (adds 0.5ms/img)
     merge = False  # use merge-NMS
