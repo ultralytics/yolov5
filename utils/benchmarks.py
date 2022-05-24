@@ -43,7 +43,7 @@ if str(ROOT) not in sys.path:
 import export
 import val
 from utils import notebook_init
-from utils.general import LOGGER, print_args
+from utils.general import LOGGER, check_yaml, print_args
 from utils.torch_utils import select_device
 
 
@@ -241,6 +241,7 @@ def parse_opt():
                         'Also asserts that exported model mAP lies above '
                         'user-defined thresholds.')
     opt = parser.parse_args()
+    opt.data = check_yaml(opt.data)  # check YAML
     print_args(vars(opt))
     return opt
 
