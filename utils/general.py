@@ -519,11 +519,7 @@ def check_amp(model):
     else:
         LOGGER.warning(emojis(f'{prefix}checks skipped ⚠️, not online.'))
         return True
-    m = AutoShape(model, verbose=False)  # model
-    a = m(im).xywhn[0]  # FP32 inference
-    m.amp = True
-    b = m(im).xywhn[0]  # AMP inference
-    if (a.shape == b.shape) and torch.allclose(a, b, atol=0.05):  # close to 5% absolute tolerance
+    if len(AutoShape(model, verbose=False)(im).xywhn[0]):  # check if AMP inference produces detections
         LOGGER.info(emojis(f'{prefix}checks passed ✅'))
         return True
     else:
