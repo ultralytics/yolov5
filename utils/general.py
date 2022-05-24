@@ -506,9 +506,18 @@ def check_dataset(data, autodownload=True):
 
 def check_amp(model):
     # Check PyTorch Automatic Mixed Precision (AMP) functionality. Return True on correct operation
-    from models.common import AutoShape
+    from models.common import AutoShape, DetectMultiBackend
 
-    if next(model.parameters()).device.type == 'cpu':  # get model device
+    def amp_allclose(model, im):
+        # All close FP32 vs AMP results
+        m = AutoShape(model, verbose=False)  # model
+        a = m(im).xywhn[0]  # FP32 inference
+        m.amp = True
+        b = m(im).xywhn[0]  # AMP inference
+        return a.shape == b.shape and torch.allclose(a, b, atol=0.1)  # close to 10% absolute tolerance
+
+    device = next(model.parameters()).device
+    if device.type == 'cpu':  # get model device
         return False
     prefix = colorstr('AMP: ')
     file = ROOT / 'data' / 'images' / 'bus.jpg'  # image to test
@@ -519,7 +528,7 @@ def check_amp(model):
     else:
         LOGGER.warning(emojis(f'{prefix}checks skipped ⚠️, not online.'))
         return True
-    if len(AutoShape(model, verbose=False)(im).xywhn[0]):  # check if AMP inference produces detections
+    if amp_allclose(model, im) or amp_allclose(DetectMultiBackend('yolov5n.pt', device), im):
         LOGGER.info(emojis(f'{prefix}checks passed ✅'))
         return True
     else:
