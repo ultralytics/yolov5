@@ -323,15 +323,15 @@ class DetectMultiBackend(nn.Module):
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
         pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = self.model_type(w)  # get backend
-        stride, names = 32, [f'class{i}' for i in range(1000)]  # assign defaults
         w = attempt_download(w)  # download if not local
         fp16 &= (pt or jit or onnx or engine) and device.type != 'cpu'  # FP16
-        if data:  # data.yaml path (optional)
+        stride, names = 32, [f'class{i}' for i in range(1000)]  # assign defaults
+        if data:  # assign class names (optional)
             with open(data, errors='ignore') as f:
-                names = yaml.safe_load(f)['names']  # class names
+                names = yaml.safe_load(f)['names']
 
         if pt:  # PyTorch
-            model = attempt_load(weights if isinstance(weights, list) else w, map_location=device)
+            model = attempt_load(weights if isinstance(weights, list) else w, device=device)
             stride = max(int(model.stride.max()), 32)  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
             model.half() if fp16 else model.float()
@@ -367,7 +367,10 @@ class DetectMultiBackend(nn.Module):
                 w = next(Path(w).glob('*.xml'))  # get *.xml file from *_openvino_model dir
             network = ie.read_model(model=w, weights=Path(w).with_suffix('.bin'))
             executable_network = ie.compile_model(model=network, device_name="CPU")
-            self.output_layer = next(iter(executable_network.outputs))
+            output_layer = next(iter(executable_network.outputs))
+            meta = Path(w).with_suffix('.yaml')
+            if meta.exists():
+                stride, names = self._load_metadata(meta)  # load metadata
         elif engine:  # TensorRT
             LOGGER.info(f'Loading {w} for TensorRT inference...')
             import tensorrt as trt  # https://developer.nvidia.com/nvidia-tensorrt-download
@@ -495,11 +498,11 @@ class DetectMultiBackend(nn.Module):
 
     def warmup(self, imgsz=(1, 3, 640, 640)):
         # Warmup model by running inference once
-        if any((self.pt, self.jit, self.onnx, self.engine, self.saved_model, self.pb)):  # warmup types
-            if self.device.type != 'cpu':  # only warmup GPU models
-                im = torch.zeros(*imgsz, dtype=torch.half if self.fp16 else torch.float, device=self.device)  # input
-                for _ in range(2 if self.jit else 1):  #
-                    self.forward(im)  # warmup
+        warmup_types = self.pt, self.jit, self.onnx, self.engine, self.saved_model, self.pb
+        if any(warmup_types) and self.device.type != 'cpu':
+            im = torch.zeros(*imgsz, dtype=torch.half if self.fp16 else torch.float, device=self.device)  # input
+            for _ in range(2 if self.jit else 1):  #
+                self.forward(im)  # warmup
 
     @staticmethod
     def model_type(p='path/to/model.pt'):
@@ -513,6 +516,13 @@ class DetectMultiBackend(nn.Module):
         tflite &= not edgetpu  # *.tflite
         return pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs
 
+    @staticmethod
+    def _load_metadata(f='path/to/meta.yaml'):
+        # Load metadata from meta.yaml if it exists
+        with open(f, errors='ignore') as f:
+            d = yaml.safe_load(f)
+        return d['stride'], d['names']  # assign stride, names
+
 
 class AutoShape(nn.Module):
     # YOLOv5 input-robust model wrapper for passing cv2/np/PIL/torch inputs. Includes preprocessing, inference and NMS
@@ -524,9 +534,10 @@ class AutoShape(nn.Module):
     max_det = 1000  # maximum number of detections per image
     amp = False  # Automatic Mixed Precision (AMP) inference
 
-    def __init__(self, model):
+    def __init__(self, model, verbose=True):
         super().__init__()
-        LOGGER.info('Adding AutoShape... ')
+        if verbose:
+            LOGGER.info('Adding AutoShape... ')
         copy_attr(self, model, include=('yaml', 'nc', 'hyp', 'names', 'stride', 'abc'), exclude=())  # copy attributes
         self.dmb = isinstance(model, DetectMultiBackend)  # DetectMultiBackend() instance
         self.pt = not self.dmb or model.pt  # PyTorch model
