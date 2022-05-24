@@ -365,7 +365,7 @@ class DetectMultiBackend(nn.Module):
             network = ie.read_model(model=w, weights=Path(w).with_suffix('.bin'))
             executable_network = ie.compile_model(model=network, device_name="CPU")
             output_layer = next(iter(executable_network.outputs))
-            self._load_metadata(w.parent / 'meta.yaml')  # load metadata
+            self._load_metadata(w.with_suffix('.yaml'))  # load metadata
         elif engine:  # TensorRT
             LOGGER.info(f'Loading {w} for TensorRT inference...')
             import tensorrt as trt  # https://developer.nvidia.com/nvidia-tensorrt-download
