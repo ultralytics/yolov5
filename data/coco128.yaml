@@ -34,7 +34,7 @@ benchmarks:
   # metrics E.g. mAP 0.5 : 0.95
   mAP:
     # Img size 640
-    yolov5n: 0.35
+    yolov5n: 0.32
     yolov5s: 0.45
     yolov5m: 0.45
     yolov5l: 0.45
