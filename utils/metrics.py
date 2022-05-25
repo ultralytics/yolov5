@@ -90,7 +90,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names
     p, r, f1 = p[:, i], r[:, i], f1[:, i]
     tp = (r * nt).round()  # true positives
     fp = (tp / (p + eps) - tp).round()  # false positives
-    return tp, fp, p, r, f1, ap, unique_classes.astype('int32')
+    return tp, fp, p, r, f1, ap, unique_classes.astype(int)
 
 
 def compute_ap(recall, precision):
@@ -156,7 +156,7 @@ class ConfusionMatrix:
             matches = np.zeros((0, 3))
 
         n = matches.shape[0] > 0
-        m0, m1, _ = matches.transpose().astype(np.int16)
+        m0, m1, _ = matches.transpose().astype(int)
         for i, gc in enumerate(gt_classes):
             j = m0 == i
             if n and sum(j) == 1:

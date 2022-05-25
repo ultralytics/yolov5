@@ -40,10 +40,10 @@ def torch_distributed_zero_first(local_rank: int):
 
 
 def device_count():
-    # Returns number of CUDA devices available. Safe version of torch.cuda.device_count(). Only works on Linux.
-    assert platform.system() == 'Linux', 'device_count() function only works on Linux'
+    # Returns number of CUDA devices available. Safe version of torch.cuda.device_count(). Supports Linux and Windows
+    assert platform.system() in ('Linux', 'Windows'), 'device_count() only supported on Linux or Windows'
     try:
-        cmd = 'nvidia-smi -L | wc -l'
+        cmd = 'nvidia-smi -L | wc -l' if platform.system() == 'Linux' else 'nvidia-smi -L | find /c /v ""'  # Windows
         return int(subprocess.run(cmd, shell=True, capture_output=True, check=True).stdout.decode().split()[-1])
     except Exception:
         return 0
@@ -54,7 +54,8 @@ def select_device(device='', batch_size=0, newline=True):
     s = f'YOLOv5 🚀 {git_describe() or file_date()} Python-{platform.python_version()} torch-{torch.__version__} '
     device = str(device).strip().lower().replace('cuda:', '').replace('none', '')  # to string, 'cuda:0' to '0'
     cpu = device == 'cpu'
-    if cpu:
+    mps = device == 'mps'  # Apple Metal Performance Shaders (MPS)
+    if cpu or mps:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force torch.cuda.is_available() = False
     elif device:  # non-cpu device requested
         os.environ['CUDA_VISIBLE_DEVICES'] = device  # set environment variable - must be before assert is_available()
@@ -71,13 +72,15 @@ def select_device(device='', batch_size=0, newline=True):
         for i, d in enumerate(devices):
             p = torch.cuda.get_device_properties(i)
             s += f"{'' if i == 0 else space}CUDA:{d} ({p.name}, {p.total_memory / (1 << 20):.0f}MiB)\n"  # bytes to MB
+    elif mps:
+        s += 'MPS\n'
     else:
         s += 'CPU\n'
 
     if not newline:
         s = s.rstrip()
     LOGGER.info(s.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else s)  # emoji-safe
-    return torch.device('cuda:0' if cuda else 'cpu')
+    return torch.device('cuda:0' if cuda else 'mps' if mps else 'cpu')
 
 
 def time_sync():
