@@ -11,7 +11,7 @@ import itertools
 
 from utils.torch_utils import select_device
 from models.experimental import attempt_load
-from utils.general import check_img_size, non_max_suppression, scale_coords
+from utils.general import check_img_size, non_max_suppression, scale_coords, xywh2xyxy
 from utils.datasets import letterbox
 from supervisely.geometry.sliding_windows_fuzzy import SlidingWindowsFuzzy, SlidingWindowBorderStrategy
 
@@ -169,12 +169,8 @@ def sliding_window_inference(model, half, device, imgsz, stride, img: np.ndarray
             continue
         inf_res = inf_res_base.clone()
         # prepare dets for vis
-        inf_res[:, 2] += inf_res[:, 0] # w -> x2
-        inf_res[:, 3] += inf_res[:, 1] # h -> y2
+        inf_res = xywh2xyxy(inf_res)
 
-        #ratio = (frame_size[0] / cropped_img.shape[-2], frame_size[1] / cropped_img.shape[-1])
-        #inf_res[:, [0, 2]] *= ratio[1]
-        #inf_res[:, [1, 3]] *= ratio[0]
         inf_res[:, :4] = scale_coords(cropped_img.shape[-2:], inf_res[:, :4], frame_size).round()
         
         inf_res[:, [0, 2]] += rect.left # x1, x2 to global coords
