@@ -64,6 +64,7 @@ def get_session_info(api: sly.Api, task_id, context, state, app_logger):
         "session_id": task_id,
         "classes_count": len(meta.obj_classes),
         "tags_count": len(meta.tag_metas),
+        "sliding_window_support": True
     }
     request_id = context["request_id"]
     my_app.send_response(request_id, data=info)
