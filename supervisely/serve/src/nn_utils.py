@@ -131,7 +131,6 @@ def sliding_window_inference(model, half, device, imgsz, stride, img: np.ndarray
     overlapY = sliding_window_params.get("overlapY", 0)
     overlapX = sliding_window_params.get("overlapX", 0)
     borderStrategy = sliding_window_params.get("borderStrategy", "shift_window")
-    naive = sliding_window_params.get("naive", False)
 
     slider = SlidingWindowsFuzzy([windowHeight, windowWidth],
                                  [overlapY, overlapX],
@@ -162,7 +161,7 @@ def sliding_window_inference(model, half, device, imgsz, stride, img: np.ndarray
         if cropped_img.ndimension() == 3:
             cropped_img = cropped_img.unsqueeze(0)
         inf_res_base = model(cropped_img)[0][0] # inference, out coords xywh
-        inf_res_base = inf_res_base[inf_res_base[..., 4] > conf_thres] # remove low box conf for vis (not included class conf)
+        inf_res_base = inf_res_base[inf_res_base[..., 4] > conf_thres] # remove low box conf (not included class conf)
 
         if len(inf_res_base) == 0:
             slides_for_vis.append(None)
@@ -202,6 +201,8 @@ def sliding_window_inference(model, half, device, imgsz, stride, img: np.ndarray
             max_conf = np.max(cls).item()
             obj_class = meta.get_obj_class(names[class_ind])
             conf_val = round(conf.float().item(), 4) * max_conf # box_conf * class_conf
+            if conf_val < conf_thres:
+                continue
             tag = sly.Tag(meta.get_tag_meta(CONFIDENCE), conf_val)
             label = sly.Label(rect, obj_class, sly.TagCollection([tag]))
             labels.append(label.to_json())
