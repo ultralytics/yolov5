@@ -59,8 +59,7 @@ jobs:
 
       - name: Run benchmarking
         run: |
-          weights=runs/train/exp/weights/best.pt
           # benchmarking. Set --hard-fail to catch errors including when mAP not above certain threshold
-          python utils/benchmarks.py --hard-fail
+          python utils/benchmarks.py --weights ${{ matrix.model }}.pt --hard-fail
 
         shell: bash
