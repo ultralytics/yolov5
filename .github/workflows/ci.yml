@@ -37,6 +37,8 @@ jobs:
           python --version
           pip --version
           pip list
+      - name: Check environment
+        run: python -c "import utils; import utils.notebook_init()"
       - name: Run benchmarks
         run: |
           python utils/benchmarks.py --weights ${{ matrix.model }}.pt --img 320
