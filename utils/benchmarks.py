@@ -146,7 +146,6 @@ def run(
         hard_fail=False,  # Raise errors if model fails to export or mAP lower than target threshold
 ):
     y, t = [], time.time()
-    formats = export.export_formats()
     device = select_device(device)
     # Grab benchmark threshold value
     model_name = str(weights).split('/')[-1].split('.')[0]
@@ -155,7 +154,7 @@ def run(
     # get unsupported formats and check if they exist under exports.get_exports()
     check_if_formats_exist(get_unsupported_formats())
 
-    for i, (name, f, suffix, gpu) in formats.iterrows():  # index, (name, file, suffix, gpu-capable)
+    for i, (name, f, suffix, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, gpu-capable)
         if hard_fail:
             if f in get_unsupported_formats():
                 continue
@@ -204,9 +203,8 @@ def test(
         hard_fail=False  # Raise errors if model fails to export or mAP lower than target threshold
 ):
     y, t = [], time.time()
-    formats = export.export_formats()
     device = select_device(device)
-    for i, (name, f, suffix, gpu) in formats.iterrows():  # index, (name, file, suffix, gpu-capable)
+    for i, (name, f, suffix, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, gpu-capable)
         try:
             w = weights if f == '-' else \
                 export.run(weights=weights, imgsz=[imgsz], include=[f], device=device, half=half)[-1]  # weights
