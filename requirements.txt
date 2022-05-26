@@ -31,7 +31,9 @@ seaborn>=0.11.0
 # openvino-dev  # OpenVINO export
 
 # Extras --------------------------------------
+ipython  # interactive notebook
+psutil  # system utilization
+thop  # FLOPs computation
 # albumentations>=1.0.3
 # pycocotools>=2.0  # COCO mAP
 # roboflow
-thop  # FLOPs computation
