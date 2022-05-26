@@ -1,5 +1,5 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
-# YOLOv5 Continuous Integration (CI) tests run as GitHub Actions
+# YOLOv5 Continuous Integration (CI) GitHub Actions tests
 
 name: YOLOv5 CI
 
