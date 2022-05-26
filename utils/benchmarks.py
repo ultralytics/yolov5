@@ -41,7 +41,7 @@ if str(ROOT) not in sys.path:
 import export
 import val
 from utils import notebook_init
-from utils.general import LOGGER, print_args
+from utils.general import LOGGER, check_yaml, print_args
 from utils.torch_utils import select_device
 
 
@@ -136,6 +136,7 @@ def parse_opt():
     parser.add_argument('--test', action='store_true', help='test exports only')
     parser.add_argument('--pt-only', action='store_true', help='test PyTorch only')
     opt = parser.parse_args()
+    opt.data = check_yaml(opt.data)  # check YAML
     print_args(vars(opt))
     return opt
 

@@ -104,7 +104,7 @@ def kmean_anchors(dataset='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen
         s = f'{PREFIX}thr={thr:.2f}: {bpr:.4f} best possible recall, {aat:.2f} anchors past thr\n' \
             f'{PREFIX}n={n}, img_size={img_size}, metric_all={x.mean():.3f}/{best.mean():.3f}-mean/best, ' \
             f'past_thr={x[x > thr].mean():.3f}-mean: '
-        for i, x in enumerate(k):
+        for x in k:
             s += '%i,%i, ' % (round(x[0]), round(x[1]))
         if verbose:
             LOGGER.info(s[:-2])

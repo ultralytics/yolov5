@@ -10,7 +10,8 @@ ADD https://ultralytics.com/assets/Arial.ttf https://ultralytics.com/assets/Aria
 # Install linux packages
 RUN apt update
 RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt install -y tzdata
-RUN apt install -y python3-pip git zip curl htop screen libgl1-mesa-glx libglib2.0-0
+RUN apt install --no-install-recommends -y python3-pip git zip curl htop gcc \
+    libgl1-mesa-glx libglib2.0-0 libpython3.8-dev
 # RUN alias python=python3
 
 # Install pip packages
@@ -34,7 +35,7 @@ RUN git clone https://github.com/ultralytics/yolov5 /usr/src/yolov5
 # Usage Examples -------------------------------------------------------------------------------------------------------
 
 # Build and Push
-# t=ultralytics/yolov5:latest-M1 && sudo docker build --platform linux/arm64 -f utils/docker/Dockerfile-M1 -t $t . && sudo docker push $t
+# t=ultralytics/yolov5:latest-M1 && sudo docker build --platform linux/arm64 -f utils/docker/Dockerfile-arm64 -t $t . && sudo docker push $t
 
 # Pull and Run
 # t=ultralytics/yolov5:latest-M1 && sudo docker pull $t && sudo docker run -it --ipc=host -v "$(pwd)"/datasets:/usr/src/datasets $t
