@@ -83,7 +83,7 @@ jobs:
           pip --version
           pip list
       - name: Check environment
-        run: | 
+        run: |
           python -c "import utils; utils.notebook_init()"
           echo "RUNNER_OS is $RUNNER_OS"
           echo "GITHUB_EVENT_NAME is $GITHUB_EVENT_NAME"
