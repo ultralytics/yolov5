@@ -39,7 +39,7 @@ jobs:
           pip list
       - name: Run benchmarks
         run: |
-          python utils/benchmarks.py --weights ${{ matrix.model }}.pt --img 320
+          python utils/benchmarks.py --weights ${{ matrix.model }}.pt --img 320 --hard-fail
 
   Tests:
     timeout-minutes: 60
