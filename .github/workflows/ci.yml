@@ -1,5 +1,5 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
-# YOLOv5 Continuous Integration (CI) tests run as GitHub Actions
+# YOLOv5 Continuous Integration (CI) GitHub Actions tests
 
 name: YOLOv5 CI
 
@@ -24,16 +24,17 @@ jobs:
       - uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Cache pip
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-Benchmarks-${{ hashFiles('requirements.txt') }}
-          restore-keys: ${{ runner.os }}-Benchmarks-
+      #- name: Cache pip
+      #  uses: actions/cache@v3
+      #  with:
+      #    path: ~/.cache/pip
+      #    key: ${{ runner.os }}-Benchmarks-${{ hashFiles('requirements.txt') }}
+      #    restore-keys: ${{ runner.os }}-Benchmarks-
       - name: Install requirements
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt coremltools onnx onnxruntime openvino-dev tensorflow-cpu --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt coremltools onnx onnxruntime tensorflow-cpu --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install openvino-dev
           python --version
           pip --version
           pip list
@@ -83,7 +84,7 @@ jobs:
           pip --version
           pip list
       - name: Check environment
-        run: | 
+        run: |
           python -c "import utils; utils.notebook_init()"
           echo "RUNNER_OS is $RUNNER_OS"
           echo "GITHUB_EVENT_NAME is $GITHUB_EVENT_NAME"
