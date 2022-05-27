@@ -355,7 +355,7 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
                 LOGGER.info(f"{s}, attempting auto-update...")
                 try:
                     assert check_online(), f"'pip install {r}' skipped (offline)"
-                    LOGGER.info(check_output(f"pip install '{r}' {cmds[i] if cmds else ''}", shell=True).decode())
+                    LOGGER.info(check_output(f"pip install {r} {cmds[i] if cmds else ''}", shell=True).decode())
                     n += 1
                 except Exception as e:
                     LOGGER.warning(f'{prefix} {e}')
@@ -419,7 +419,7 @@ def check_file(file, suffix=''):
     if Path(file).is_file() or not file:  # exists
         return file
     elif file.startswith(('http:/', 'https:/')):  # download
-        url = str(Path(file)).replace(':/', '://')  # Pathlib turns :// -> :/
+        url = file  # warning: Pathlib turns :// -> :/
         file = Path(urllib.parse.unquote(file).split('?')[0]).name  # '%2F' to '/', split https://url.com/file.txt?auth
         if Path(file).is_file():
             LOGGER.info(f'Found {url} locally at {file}')  # file already exists
@@ -507,20 +507,27 @@ def check_dataset(data, autodownload=True):
 
 def check_amp(model):
     # Check PyTorch Automatic Mixed Precision (AMP) functionality. Return True on correct operation
-    from models.common import AutoShape
+    from models.common import AutoShape, DetectMultiBackend
 
-    if next(model.parameters()).device.type == 'cpu':  # get model device
-        return False
+    def amp_allclose(model, im):
+        # All close FP32 vs AMP results
+        m = AutoShape(model, verbose=False)  # model
+        a = m(im).xywhn[0]  # FP32 inference
+        m.amp = True
+        b = m(im).xywhn[0]  # AMP inference
+        return a.shape == b.shape and torch.allclose(a, b, atol=0.1)  # close to 10% absolute tolerance
+
     prefix = colorstr('AMP: ')
-    im = cv2.imread(ROOT / 'data' / 'images' / 'bus.jpg')[..., ::-1]  # OpenCV image (BGR to RGB)
-    m = AutoShape(model, verbose=False)  # model
-    a = m(im).xyxy[0]  # FP32 inference
-    m.amp = True
-    b = m(im).xyxy[0]  # AMP inference
-    if (a.shape == b.shape) and torch.allclose(a, b, atol=1.0):  # close to 1.0 pixel bounding box
+    device = next(model.parameters()).device  # get model device
+    if device.type == 'cpu':
+        return False  # AMP disabled on CPU
+    f = ROOT / 'data' / 'images' / 'bus.jpg'  # image to check
+    im = f if f.exists() else 'https://ultralytics.com/images/bus.jpg' if check_online() else np.ones((640, 640, 3))
+    try:
+        assert amp_allclose(model, im) or amp_allclose(DetectMultiBackend('yolov5n.pt', device), im)
         LOGGER.info(emojis(f'{prefix}checks passed ✅'))
         return True
-    else:
+    except Exception:
         help_url = 'https://github.com/ultralytics/yolov5/issues/7908'
         LOGGER.warning(emojis(f'{prefix}checks failed ❌, disabling Automatic Mixed Precision. See {help_url}'))
         return False
@@ -545,7 +552,7 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
             for i in range(retry + 1):
                 if curl:
                     s = 'sS' if threads > 1 else ''  # silent
-                    r = os.system(f"curl -{s}L '{url}' -o '{f}' --retry 9 -C -")  # curl download
+                    r = os.system(f'curl -{s}L "{url}" -o "{f}" --retry 9 -C -')  # curl download with retry, continue
                     success = r == 0
                 else:
                     torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
@@ -789,7 +796,7 @@ def non_max_suppression(prediction,
     # min_wh = 2  # (pixels) minimum box width and height
     max_wh = 7680  # (pixels) maximum box width and height
     max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
-    time_limit = 0.1 + 0.03 * bs  # seconds to quit after
+    time_limit = 0.3 + 0.03 * bs  # seconds to quit after
     redundant = True  # require redundant detections
     multi_label &= nc > 1  # multiple labels per box (adds 0.5ms/img)
     merge = False  # use merge-NMS
