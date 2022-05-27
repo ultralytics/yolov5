@@ -56,9 +56,8 @@ def run(
         pt_only=False,  # test PyTorch only
 ):
     y, t = [], time.time()
-    formats = export.export_formats()
     device = select_device(device)
-    for i, (name, f, suffix, gpu) in formats.iterrows():  # index, (name, file, suffix, gpu-capable)
+    for i, (name, f, suffix, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, gpu-capable)
         try:
             assert i != 9, 'Edge TPU not supported'
             assert i != 10, 'TF.js not supported'
@@ -104,9 +103,8 @@ def test(
         pt_only=False,  # test PyTorch only
 ):
     y, t = [], time.time()
-    formats = export.export_formats()
     device = select_device(device)
-    for i, (name, f, suffix, gpu) in formats.iterrows():  # index, (name, file, suffix, gpu-capable)
+    for i, (name, f, suffix, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, gpu-capable)
         try:
             w = weights if f == '-' else \
                 export.run(weights=weights, imgsz=[imgsz], include=[f], device=device, half=half)[-1]  # weights
