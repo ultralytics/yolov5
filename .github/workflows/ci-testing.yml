@@ -1,93 +1,117 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv5 Continuous Integration (CI) GitHub Actions tests
 
-name: CI CPU testing
+name: YOLOv5 CI
 
-on: # https://help.github.com/en/actions/reference/events-that-trigger-workflows
+on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ master ]
+    branches: [master]
   schedule:
-    - cron: '0 0 * * *'  # Runs at 00:00 UTC every day
+    - cron: '0 0 * * *'  # runs at 00:00 UTC every day
 
 jobs:
-  cpu-tests:
+  Benchmarks:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.9]
+        model: [yolov5n]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      #- name: Cache pip
+      #  uses: actions/cache@v3
+      #  with:
+      #    path: ~/.cache/pip
+      #    key: ${{ runner.os }}-Benchmarks-${{ hashFiles('requirements.txt') }}
+      #    restore-keys: ${{ runner.os }}-Benchmarks-
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt coremltools onnx onnxruntime openvino-dev tensorflow-cpu --extra-index-url https://download.pytorch.org/whl/cpu
+          python --version
+          pip --version
+          pip list
+      - name: Run benchmarks
+        run: |
+          python utils/benchmarks.py --weights ${{ matrix.model }}.pt --img 320
 
+  Tests:
+    timeout-minutes: 60
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
-        python-version: [ 3.9 ]
-        model: [ 'yolov5n' ]  # models to test
-
-    # Timeout: https://stackoverflow.com/a/59076067/4521646
-    timeout-minutes: 60
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.9]
+        model: [yolov5n]
+        include:
+          - os: ubuntu-latest
+            python-version: '3.7'  # '3.6.8' min
+            model: yolov5n
+          - os: ubuntu-latest
+            python-version: '3.8'
+            model: yolov5n
+          - os: ubuntu-latest
+            python-version: '3.10'
+            model: yolov5n
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+      - uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
-
-      # Note: This uses an internal pip API and may not always work
-      # https://github.com/actions/cache/blob/master/examples.md#multiple-oss-in-a-workflow
-      - name: Get pip cache
+      - name: Get cache dir
+        # https://github.com/actions/cache/blob/master/examples.md#multiple-oss-in-a-workflow
         id: pip-cache
-        run: |
-          python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
-
+        run: echo "::set-output name=dir::$(pip cache dir)"
       - name: Cache pip
         uses: actions/cache@v3
         with:
           path: ${{ steps.pip-cache.outputs.dir }}
           key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.python-version }}-pip-
-
-      # Known Keras 2.7.0 issue: https://github.com/ultralytics/yolov5/pull/5486
-      - name: Install dependencies
+          restore-keys: ${{ runner.os }}-${{ matrix.python-version }}-pip-
+      - name: Install requirements
         run: |
           python -m pip install --upgrade pip
-          pip install -qr requirements.txt -f https://download.pytorch.org/whl/cpu/torch_stable.html \
-            onnx tensorflow-cpu  # wandb
+          pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
           python --version
           pip --version
           pip list
+      - name: Check environment
+        run: |
+          python -c "import utils; utils.notebook_init()"
+          echo "RUNNER_OS is $RUNNER_OS"
+          echo "GITHUB_EVENT_NAME is $GITHUB_EVENT_NAME"
+          echo "GITHUB_WORKFLOW is $GITHUB_WORKFLOW"
+          echo "GITHUB_ACTOR is $GITHUB_ACTOR"
+      - name: Run tests
         shell: bash
-
-      # - name: W&B login
-      #   run: wandb login 345011b3fb26dc8337fd9b20e53857c1d403f2aa
-
-      # - name: Download data
-      #   run: |
-      #     curl -L -o tmp.zip https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128.zip
-      #     unzip -q tmp.zip -d ../datasets
-
-      - name: Tests workflow
         run: |
           # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
           d=cpu  # device
-          weights=runs/train/exp/weights/best.pt
-
+          model=${{ matrix.model }}
+          best=runs/train/exp/weights/best.pt
           # Train
-          python train.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --cfg ${{ matrix.model }}.yaml --epochs 1 --device $d
+          python train.py --img 64 --batch 32 --weights $model.pt --cfg $model.yaml --epochs 1 --device $d
           # Val
-          python val.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --device $d
-          python val.py --img 64 --batch 32 --weights $weights --device $d
+          python val.py --img 64 --batch 32 --weights $model.pt --device $d
+          python val.py --img 64 --batch 32 --weights $best --device $d
           # Detect
-          python detect.py --weights ${{ matrix.model }}.pt --device $d
-          python detect.py --weights $weights --device $d
+          python detect.py --weights $model.pt --device $d
+          python detect.py --weights $best --device $d
           python hubconf.py  # hub
           # Export
-          python models/yolo.py --cfg ${{ matrix.model }}.yaml  # build PyTorch model
-          python models/tf.py --weights ${{ matrix.model }}.pt  # build TensorFlow model
-          python export.py --weights ${{ matrix.model }}.pt --img 64 --include torchscript onnx  # export
+          # python models/tf.py --weights $model.pt  # build TF model
+          python models/yolo.py --cfg $model.yaml  # build PyTorch model
+          python export.py --weights $model.pt --img 64 --include torchscript  # export
           # Python
           python - <<EOF
           import torch
-          # model = torch.hub.load('ultralytics/yolov5', 'custom', path=$weights)
+          model = torch.hub.load('.', 'custom', path='$model', source='local')
+          print(model('data/images/bus.jpg'))
           EOF
-
-        shell: bash
