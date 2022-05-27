@@ -52,6 +52,7 @@ import sys
 import time
 import warnings
 from pathlib import Path
+import math
 
 import pandas as pd
 import torch
@@ -434,7 +435,7 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 def create_checkpoint(epoch, model, optimizer, ema, sparseml_wrapper, **kwargs):
-    pickle = not sparseml_wrapper.qat_active(epoch)  # qat does not support pickled exports
+    pickle = not sparseml_wrapper.qat_active(math.inf if epoch <0 else epoch)  # qat does not support pickled exports
     ckpt_model = deepcopy(model.module if is_parallel(model) else model).float()
     yaml = ckpt_model.yaml
     if not pickle:
@@ -461,13 +462,15 @@ def load_checkpoint(
     half = False, 
     recipe=None, 
     resume=None, 
-    rank=-1
+    rank=-1,
+    one_shot=False,
     ):
     with torch_distributed_zero_first(rank):
         # download if not found locally or from sparsezoo if stub
         weights = attempt_download(weights) or check_download_sparsezoo_weights(weights)
     ckpt = torch.load(weights[0] if isinstance(weights, list) or isinstance(weights, tuple)
                       else weights, map_location="cpu")  # load checkpoint
+    start_epoch = ckpt['epoch'] + 1 if 'epoch' in ckpt else 0
     pickled = isinstance(ckpt['model'], nn.Module)
     train_type = type_ == 'train'
     ensemble_type = type_ == 'ensemble'
@@ -503,8 +506,13 @@ def load_checkpoint(
     elif recipe or ckpt.get('recipe'):
         train_recipe, checkpoint_recipe = recipe, ckpt.get('recipe')
 
-    sparseml_wrapper = SparseMLWrapper(model.model if val_type else model, checkpoint_recipe, train_recipe)
-    exclude_anchors = train_type and (cfg or hyp.get('anchors')) and not resume
+    sparseml_wrapper = SparseMLWrapper(
+        model.model if val_type else model,
+        checkpoint_recipe,
+        train_recipe,
+        one_shot=one_shot,
+    )
+    exclude_anchors = not ensemble_type and (cfg or hyp.get('anchors')) and not resume
     loaded = False
 
     sparseml_wrapper.apply_checkpoint_structure()
@@ -512,11 +520,13 @@ def load_checkpoint(
         # intialize the recipe for training and restore the weights before if no quantized weights
         quantized_state_dict = any([name.endswith('.zero_point') for name in state_dict.keys()])
         if not quantized_state_dict:
-            state_dict = load_state_dict(model, state_dict, train=True, exclude_anchors=exclude_anchors)
+            state_dict = load_state_dict(model, state_dict, run_mode=True, exclude_anchors=exclude_anchors)
             loaded = True
+        if not one_shot:
+            sparseml_wrapper.initialize(start_epoch)
 
     if not loaded:
-        state_dict = load_state_dict(model, state_dict, train=train_type, exclude_anchors=exclude_anchors)
+        state_dict = load_state_dict(model, state_dict, run_mode=not ensemble_type, exclude_anchors=exclude_anchors)
 
     model.float()
     report = 'Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights)
@@ -532,15 +542,15 @@ def load_checkpoint(
     }
 
 
-def load_state_dict(model, state_dict, train, exclude_anchors):
+def load_state_dict(model, state_dict, run_mode, exclude_anchors):
     # fix older state_dict names not porting to the new model setup
     state_dict = {key if not key.startswith("module.") else key[7:]: val for key, val in state_dict.items()}
 
-    if train:
+    if run_mode:
         # load any missing weights from the model
         state_dict = intersect_dicts(state_dict, model.state_dict(), exclude=['anchor'] if exclude_anchors else [])
 
-    model.load_state_dict(state_dict, strict=not train)  # load
+    model.load_state_dict(state_dict, strict=not run_mode)  # load
 
     return state_dict
 
@@ -657,7 +667,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     return f  # return list of exported files/dirs
 
 
-def parse_opt():
+def parse_opt(known = False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
@@ -693,6 +703,12 @@ def main(opt):
     for opt.weights in (opt.weights if isinstance(opt.weights, list) else [opt.weights]):
         run(**vars(opt))
 
+def export_run(**kwargs):
+    opt = parse_opt(True)
+    for k, v in kwargs.items():
+        setattr(opt, k, v)
+    main(opt)
+    return opt
 
 if __name__ == "__main__":
     opt = parse_opt()

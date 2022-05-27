@@ -18,7 +18,6 @@ import os
 import random
 import sys
 import time
-from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
@@ -39,17 +38,15 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import val  # for end-of-epoch mAP
-from models.experimental import attempt_load
 from export import load_checkpoint, create_checkpoint
 from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
 from utils.datasets import create_dataloader
-from utils.downloads import attempt_download
 from utils.general import (LOGGER, check_dataset, check_file, check_git_status, check_img_size, check_requirements,
                            check_suffix, check_yaml, colorstr, get_latest_run, increment_path, init_seeds,
-                           intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods, one_cycle,
+                           labels_to_class_weights, labels_to_image_weights, methods, one_cycle,
                            print_args, print_mutation, strip_optimizer)
 from utils.loggers import Loggers
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
@@ -130,15 +127,22 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             nc=nc, 
             recipe=opt.recipe, 
             resume=opt.resume, 
-            rank=LOCAL_RANK
+            rank=LOCAL_RANK,
+            one_shot=opt.one_shot,
             )
         ckpt, state_dict, sparseml_wrapper = extras['ckpt'], extras['state_dict'], extras['sparseml_wrapper']
         LOGGER.info(extras['report'])
-        start_epoch = ckpt['epoch'] + 1 if 'epoch' in ckpt else 0
     else:
         model = Model(cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
-        sparseml_wrapper = SparseMLWrapper(model, None, opt.recipe)
-        start_epoch = 0
+        sparseml_wrapper = SparseMLWrapper(
+            model,
+            None,
+            opt.recipe,
+            steps_per_epoch=opt.max_train_steps,
+            one_shot=opt.one_shot,
+        )
+        if not opt.one_shot:
+            sparseml_wrapper.initialize(start_epoch=0)
         ckpt = None
 
     # Freeze
@@ -197,7 +201,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     ema = ModelEMA(model, enabled=not opt.disable_ema) if RANK in [-1, 0] else None
 
     # Resume
-    start_epoch = start_epoch or 0
+    start_epoch = sparseml_wrapper.start_epoch or 0
     best_fitness = 0.0
     if pretrained:
         if opt.resume:
@@ -296,15 +300,38 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 f'Starting training for {epochs} epochs...')
     
     # SparseML Integration
-    sparseml_wrapper.initialize(
-        start_epoch= start_epoch,  
-        compute_loss=compute_loss, 
-        train_loader=train_loader, 
-        device=device, 
-        multi_scale=opt.multi_scale, 
-        imgsz=imgsz, 
-        gs=gs
-    )
+    if opt.one_shot:
+        # skip training and save model on one-shot
+        LOGGER.info(f"Skipped training due to one-shot: {opt.one_shot}")
+
+        # create and save checkpoint
+        ckpt_extras = {
+            "nc": nc,
+            "best_fitness": best_fitness,
+            "wandb_id": loggers.wandb.wandb_run.id if loggers.wandb else None,
+            "date": datetime.now().isoformat(),
+        }
+        ckpt = create_checkpoint(
+            -1, model, optimizer, ema, sparseml_wrapper, **ckpt_extras
+        )
+        one_shot_checkpoint_name = w / "checkpoint-one-shot.pt"
+        torch.save(ckpt, one_shot_checkpoint_name)
+        LOGGER.info(f"One shot checkpoint saved to {one_shot_checkpoint_name}")
+
+        if opt.num_export_samples > 0:
+            dataloader = val_loader or train_loader
+            sparseml_wrapper.save_sample_inputs_outputs(
+                dataloader=dataloader,
+                num_export_samples=opt.num_export_samples,
+                save_dir=str(w),
+            )
+
+        del ckpt
+
+        torch.cuda.empty_cache()
+        return results
+
+    # Continue as expected
     if RANK in [-1, 0]:
         sparseml_wrapper.initialize_loggers(loggers.logger, loggers.tb, loggers.wandb)
     scaler = sparseml_wrapper.modify(scaler, optimizer, model, train_loader)
@@ -312,6 +339,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     epochs = sparseml_wrapper.check_epoch_override(epochs, RANK)
 
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
+        train_steps_executed = 0
+        
         if sparseml_wrapper.qat_active(epoch):
             LOGGER.info('Disabling half precision and EMA, QAT scheduled to run')
             half_precision = False
@@ -335,7 +364,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         pbar = enumerate(train_loader)
         LOGGER.info(('\n' + '%10s' * 7) % ('Epoch', 'gpu_mem', 'box', 'obj', 'cls', 'labels', 'img_size'))
         if RANK in [-1, 0]:
-            pbar = tqdm(pbar, total=nb, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
+            steps = opt.max_train_steps if opt.max_train_steps > 0 else nb
+            pbar = tqdm(pbar, total=steps, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
         optimizer.zero_grad()
         for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
             ni = i + nb * epoch  # number integrated batches (since train start)
@@ -372,6 +402,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
             # Backward
             scaler.scale(loss).backward()
+            train_steps_executed += 1
 
             # Optimize
             if ni - last_opt_step >= accumulate:
@@ -396,6 +427,12 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 callbacks.run('on_train_batch_end', ni, model, imgs, targets, paths, plots, opt.sync_bn)
                 if callbacks.stop_training:
                     return
+
+            if 0 < opt.max_train_steps <= train_steps_executed:
+
+                pbar.update(1)
+                pbar.close()
+                break
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
@@ -419,7 +456,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            plots=False,
                                            callbacks=callbacks,
                                            compute_loss=compute_loss,
-                                           half=half_precision)
+                                           half=half_precision,
+                                           max_eval_steps=opt.max_eval_steps)
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
@@ -458,11 +496,13 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         # with torch_distributed_zero_first(RANK):
         # if stop:
         #    break  # must break all DDP ranks
-
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training -----------------------------------------------------------------------------------------------------
     if RANK in [-1, 0]:
-        LOGGER.info(f'\n{epochs - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.')
+        epochs_ = epochs - start_epoch + 1
+        if opt.max_train_steps > 0:
+            epochs_ = opt.max_train_steps / nb
+        LOGGER.info(f'\n{epochs_} epochs completed in {(time.time() - t0) / 3600:.3f} hours.')
         for f in last, best:
             if f.exists():
                 strip_optimizer(f)  # strip optimizers
@@ -488,11 +528,18 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         callbacks.run('on_train_end', last, best, plots, epoch, results)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
 
+    if opt.num_export_samples > 0:
+        sparseml_wrapper.save_sample_inputs_outputs(
+            dataloader=val_loader or train_loader,
+            num_export_samples=opt.num_export_samples,
+            save_dir=str(w),
+        )
+
     torch.cuda.empty_cache()
     return results
 
 
-def parse_opt(known=False):
+def parse_opt(known=False, default_project_dir = None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
@@ -520,7 +567,7 @@ def parse_opt(known=False):
     parser.add_argument('--optimizer', type=str, choices=['SGD', 'Adam', 'AdamW'], default='SGD', help='optimizer')
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
-    parser.add_argument('--project', default=ROOT / 'runs/train', help='save to project/name')
+    parser.add_argument('--project', default=(default_project_dir or ROOT) / 'runs/train', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--quad', action='store_true', help='quad dataloader')
@@ -539,6 +586,13 @@ def parse_opt(known=False):
     parser.add_argument('--recipe', type=str, default=None, help='Path to a sparsification recipe, '
                                                                  'see https://github.com/neuralmagic/sparseml for more information')
     parser.add_argument('--disable-ema', action='store_true', help='Disable EMA model updates (enabled by default)')
+    
+    parser.add_argument("--max-train-steps", type=int, default=-1, help="Set the maximum number of training steps per epoch. if negative,"
+                                                                        "the entire dataset will be used, default=-1")
+    parser.add_argument("--max-eval-steps", type=int, default=-1, help="Set the maximum number of eval steps per epoch. if negative,"
+                                                                        "the entire dataset will be used, default=-1")
+    parser.add_argument("--one-shot", action="store_true", default=False, help="Apply recipe in one shot manner")
+    parser.add_argument("--num-export-samples", type=int, default=0, help="The number of sample inputs/outputs to export, default=0")
 
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
