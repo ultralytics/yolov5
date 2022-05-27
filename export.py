@@ -468,7 +468,6 @@ def load_checkpoint(
         weights = attempt_download(weights) or check_download_sparsezoo_weights(weights)
     ckpt = torch.load(weights[0] if isinstance(weights, list) or isinstance(weights, tuple)
                       else weights, map_location="cpu")  # load checkpoint
-    start_epoch = ckpt['epoch'] + 1 if 'epoch' in ckpt else 0
     pickled = isinstance(ckpt['model'], nn.Module)
     train_type = type_ == 'train'
     ensemble_type = type_ == 'ensemble'
@@ -515,7 +514,6 @@ def load_checkpoint(
         if not quantized_state_dict:
             state_dict = load_state_dict(model, state_dict, train=True, exclude_anchors=exclude_anchors)
             loaded = True
-        sparseml_wrapper.initialize(start_epoch)
 
     if not loaded:
         state_dict = load_state_dict(model, state_dict, train=train_type, exclude_anchors=exclude_anchors)

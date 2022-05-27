@@ -1,17 +1,22 @@
 import logging
 import math
+from copy import deepcopy
+import random
 import os
 from typing import Optional
 
 from sparsezoo import Zoo
 from sparseml.pytorch.optim import ScheduledModifierManager
 from sparseml.pytorch.utils import SparsificationGroupLogger
+from sparseml.pytorch.utils import GradSampler
 
 from utils.torch_utils import is_parallel
+import torch.nn as nn
 import torch
 import numpy
 
 _LOGGER = logging.getLogger(__file__)
+
 def _get_model_framework_file(model, path):
     transfer_request = 'recipe_type=transfer' in path
     checkpoint_available = any([file.checkpoint for file in model.framework_files])
@@ -71,10 +76,23 @@ class SparseMLWrapper(object):
         if self.checkpoint_manager:
             self.checkpoint_manager.apply_structure(self.model, math.inf)
 
-    def initialize(self, start_epoch):
+    def initialize(
+        self, 
+        start_epoch, 
+        compute_loss, 
+        train_loader, 
+        device, 
+        **train_loader_kwargs
+    ):
         if not self.enabled:
             return
-        self.manager.initialize(self.model, start_epoch)
+
+        grad_sampler = GradSampler(
+            self._mfac_data_loader(train_loader, device, **train_loader_kwargs), 
+            lambda pred, target: compute_loss([p for p in pred[1]], target.to(device))[0]
+        )
+
+        self.manager.initialize(self.model, start_epoch, grad_sampler=grad_sampler)
         self.start_epoch = start_epoch
 
     def initialize_loggers(self, logger, tb_writer, wandb_logger):
@@ -154,6 +172,29 @@ class SparseMLWrapper(object):
 
         return (pruning_start <= epoch <= pruning_end) or epoch == qat_start
 
+    def _mfac_data_loader(self, train_loader, device, multi_scale, imgsz, gs):
+        def dataloader():
+            loader_type = type(train_loader)
+            mfac_dataloader = loader_type(
+                dataset=train_loader.dataset,
+                batch_size=train_loader.batch_size // 2,
+                sampler=deepcopy(train_loader.sampler),
+                num_workers=train_loader.num_workers,
+                collate_fn=train_loader.collate_fn,
+                pin_memory=train_loader.pin_memory,
+            )
+
+            for imgs, targets, *_ in mfac_dataloader:
+                imgs = imgs.to(device, non_blocking=True).float() / 255
+                if multi_scale:
+                    sz = random.randrange(imgsz * 0.5, imgsz * 1.5 + gs) // gs * gs  # size
+                    sf = sz / max(imgs.shape[2:])  # scale factor
+                    if sf != 1:
+                        ns = [math.ceil(x * sf / gs) * gs for x in imgs.shape[2:]]  # new shape (stretched to gs-multiple)
+                        imgs = nn.functional.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
+                yield [imgs], {}, targets
+        return dataloader
+      
     def _apply_one_shot(self):
         if self.manager is not None:
             self.manager.apply(self.model)
