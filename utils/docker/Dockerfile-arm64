@@ -1,5 +1,6 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
-# aarch64-compatible YOLOv5 Docker image for use with Apple M1 and other ARM architectures like Jetson Nano and Raspberry Pi
+# Builds ultralytics/yolov5:latest-arm64 image on DockerHub https://hub.docker.com/r/ultralytics/yolov5
+# Image is aarch64-compatible for Apple M1 and other ARM architectures i.e. Jetson Nano and Raspberry Pi
 
 # Start FROM Ubuntu image https://hub.docker.com/_/ubuntu
 FROM arm64v8/ubuntu:20.04
