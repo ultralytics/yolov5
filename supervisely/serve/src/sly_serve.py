@@ -5,6 +5,7 @@ import pathlib
 import sys
 import supervisely as sly
 from pathlib import Path
+from dotenv import load_dotenv
 
 from supervisely.app.v1.app_service import AppService
 
@@ -12,7 +13,11 @@ root_source_path = str(pathlib.Path(sys.argv[0]).parents[3])
 sly.logger.info(f"Root source directory: {root_source_path}")
 sys.path.append(root_source_path)
 
-from nn_utils import construct_model_meta, load_model, inference
+load_dotenv(os.path.join(root_source_path, "supervisely", "serve", "debug.env"))
+load_dotenv(os.path.join(root_source_path, "supervisely", "serve", "secret_debug.env"), override=True)
+
+
+from nn_utils import construct_model_meta, load_model, inference, sliding_window_inference
 
 my_app = AppService()
 
@@ -59,6 +64,7 @@ def get_session_info(api: sly.Api, task_id, context, state, app_logger):
         "session_id": task_id,
         "classes_count": len(meta.obj_classes),
         "tags_count": len(meta.tag_metas),
+        "sliding_window_support": True
     }
     request_id = context["request_id"]
     my_app.send_response(request_id, data=info)
@@ -83,12 +89,19 @@ def inference_image_path(image_path, project_meta, context, state, app_logger):
     conf_thres = settings.get("conf_thres", default_settings["conf_thres"])
     iou_thres = settings.get("iou_thres", default_settings["iou_thres"])
     augment = settings.get("augment", default_settings["augment"])
+    inference_mode = settings.get("inference_mode", "full")
+    
 
     image = sly.image.read(image_path)  # RGB image
-    ann_json = inference(model, half, device, imgsz, stride, image, meta,
-                         conf_thres=conf_thres, iou_thres=iou_thres, augment=augment,
-                         debug_visualization=debug_visualization)
-    return ann_json
+    if inference_mode == "sliding_window":
+        ann_json, slides_for_vis = sliding_window_inference(model, half, device, imgsz, stride, image, meta,
+                            settings["sliding_window_params"], conf_thres=conf_thres, iou_thres=iou_thres)
+        return {"annotation": ann_json, "data": {"slides": slides_for_vis}}
+    else:
+        ann_json = inference(model, half, device, imgsz, stride, image, meta,
+                            conf_thres=conf_thres, iou_thres=iou_thres, augment=augment,
+                            debug_visualization=debug_visualization)
+        return ann_json
 
 
 @my_app.callback("inference_image_url")
