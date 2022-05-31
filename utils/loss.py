@@ -142,7 +142,7 @@ class ComputeLoss:
                 lbox += (1.0 - iou).mean()  # iou loss
 
                 # Objectness
-                iou = iou.detach().clamp(0).type(tobj.dtype).sqrt()
+                iou = iou.detach().clamp(0).type(tobj.dtype)
                 if self.sort_obj_iou:
                     j = iou.argsort()
                     b, a, gj, gi, iou = b[j], a[j], gj[j], gi[j], iou[j]
