@@ -68,16 +68,13 @@ def save_one_json(predn, jdict, path, class_map):
             'score': round(p[4], 5)})
 
 
-def process_batch(detections, labels, iouv):
+def process_batch(correct, detections, labels, iouv):
     """
-    Return correct predictions matrix. Both sets of boxes are in (x1, y1, x2, y2) format.
+    Calculate the correct predictions matrix. Both sets of boxes are in (x1, y1, x2, y2) format.
     Arguments:
         detections (Array[N, 6]), x1, y1, x2, y2, conf, class
         labels (Array[M, 5]), class, x1, y1, x2, y2
-    Returns:
-        correct (Array[N, 10]), for 10 IoU levels
     """
-    correct = torch.zeros(detections.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
     iou = box_iou(labels[:, 1:], detections[:, :4])
     correct_class = labels[:, 0:1] == detections[:, 5]
     for i in range(len(iouv)):
@@ -90,7 +87,6 @@ def process_batch(detections, labels, iouv):
                 # matches = matches[matches[:, 2].argsort()[::-1]]
                 matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
             correct[matches[:, 1].astype(int), i] = True
-    return correct
 
 
 @torch.no_grad()
@@ -241,7 +237,7 @@ def run(
                 tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
                 scale_coords(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
-                correct = process_batch(predn, labelsn, iouv)
+                process_batch(correct, predn, labelsn, iouv)
                 if plots:
                     confusion_matrix.process_batch(predn, labelsn)
             stats.append((correct, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
