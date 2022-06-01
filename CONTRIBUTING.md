@@ -1,98 +1,172 @@
-## Contributing to YOLOv5 🚀
+# Contributing
 
-We love your input! We want to make contributing to YOLOv5 as easy and transparent as possible, whether it's:
+Thanks for considering contributing! Please read this document to learn the various ways you can contribute to this project and how to go about doing it.
 
-- Reporting a bug
-- Discussing the current state of the code
-- Submitting a fix
-- Proposing a new feature
-- Becoming a maintainer
+## Bug reports and feature requests
 
-YOLOv5 works so well due to our combined community effort, and for every small improvement you contribute you will be
-helping push the frontiers of what's possible in AI 😃!
+### Did you find a bug?
 
-## Submitting a Pull Request (PR) 🛠️
+First, do [a quick search](https://github.com/ultralytics/yolov5/issues) to see whether your issue has already been reported.
+If your issue has already been reported, please comment on the existing issue.
 
-Submitting a PR is easy! This example shows how to submit a PR for updating `requirements.txt` in 4 steps:
+Otherwise, open [a new GitHub issue](https://github.com/ultralytics/yolov5/issues).  Be sure to include a clear title
+and description.  The description should include as much relevant information as possible.  The description should
+explain how to reproduce the erroneous behavior as well as the behavior you expect to see.  Ideally you would include a
+code sample or an executable test case demonstrating the expected behavior.
 
-### 1. Select File to Update
+### Do you have a suggestion for an enhancement or new feature?
 
-Select `requirements.txt` to update by clicking on it in GitHub.
+We use GitHub issues to track feature requests. Before you create an feature request:
 
-<p align="center"><img width="800" alt="PR_step1" src="https://user-images.githubusercontent.com/26833433/122260847-08be2600-ced4-11eb-828b-8287ace4136c.png"></p>
+* Make sure you have a clear idea of the enhancement you would like. If you have a vague idea, consider discussing
+it first on a GitHub issue.
+* Check the documentation to make sure your feature does not already exist.
+* Do [a quick search](https://github.com/ultralytics/yolov5/issues) to see whether your feature has already been suggested.
 
-### 2. Click 'Edit this file'
+When creating your request, please:
 
-Button is in top-right corner.
+* Provide a clear title and description.
+* Explain why the enhancement would be useful. It may be helpful to highlight the feature in other libraries.
+* Include code examples to demonstrate how the enhancement would be used.
 
-<p align="center"><img width="800" alt="PR_step2" src="https://user-images.githubusercontent.com/26833433/122260844-06f46280-ced4-11eb-9eec-b8a24be519ca.png"></p>
+## Making a pull request
 
-### 3. Make Changes
+When you're ready to contribute code to address an open issue, please follow these guidelines to help us be able to review your pull request (PR) quickly.
 
-Change `matplotlib` version from `3.2.2` to `3.3`.
+1. **Initial setup** (only do this once)
 
-<p align="center"><img width="800" alt="PR_step3" src="https://user-images.githubusercontent.com/26833433/122260853-0a87e980-ced4-11eb-9fd2-3650fb6e0842.png"></p>
+    <details><summary>Expand details 👇</summary><br/>
 
-### 4. Preview Changes and Submit PR
+    If you haven't already done so, please [fork](https://help.github.com/en/enterprise/2.13/user/articles/fork-a-repo) this repository on GitHub.
 
-Click on the **Preview changes** tab to verify your updates. At the bottom of the screen select 'Create a **new branch**
-for this commit', assign your branch a descriptive name such as `fix/matplotlib_version` and click the green **Propose
-changes** button. All done, your PR is now submitted to YOLOv5 for review and approval 😃!
+    Then clone your fork locally with
 
-<p align="center"><img width="800" alt="PR_step4" src="https://user-images.githubusercontent.com/26833433/122260856-0b208000-ced4-11eb-8e8e-77b6151cbcc3.png"></p>
+        git clone https://github.com/USERNAME/yolov5.git
 
-### PR recommendations
+    or 
 
-To allow your work to be integrated as seamlessly as possible, we advise you to:
+        git clone git@github.com:USERNAME/yolov5.git
 
-- ✅ Verify your PR is **up-to-date with upstream/master.** If your PR is behind upstream/master an
-  automatic [GitHub Actions](https://github.com/ultralytics/yolov5/blob/master/.github/workflows/rebase.yml) merge may
-  be attempted by writing /rebase in a new comment, or by running the following code, replacing 'feature' with the name
-  of your local branch:
+    At this point the local clone of your fork only knows that it came from *your* repo, github.com/USERNAME/yolov5.git, but doesn't know anything the *main* repo, [https://github.com/ultralytics/yolov5.git](https://github.com/ultralytics/yolov5). You can see this by running
 
-```bash
-git remote add upstream https://github.com/ultralytics/yolov5.git
-git fetch upstream
-# git checkout feature  # <--- replace 'feature' with local branch name
-git merge upstream/master
-git push -u origin -f
-```
+        git remote -v
 
-- ✅ Verify all Continuous Integration (CI) **checks are passing**.
-- ✅ Reduce changes to the absolute **minimum** required for your bug fix or feature addition. _"It is not daily increase
-  but daily decrease, hack away the unessential. The closer to the source, the less wastage there is."_  — Bruce Lee
+    which will output something like this:
 
-## Submitting a Bug Report 🐛
+        origin https://github.com/USERNAME/yolov5.git (fetch)
+        origin https://github.com/USERNAME/yolov5.git (push)
 
-If you spot a problem with YOLOv5 please submit a Bug Report!
+    This means that your local clone can only track changes from your fork, but not from the main repo, and so you won't be able to keep your fork up-to-date with the main repo over time. Therefore you'll need to add another "remote" to your clone that points to [https://github.com/ultralytics/yolov5.git](https://github.com/ultralytics/yolov5). To do this, run the following:
 
-For us to start investigating a possible problem we need to be able to reproduce it ourselves first. We've created a few
-short guidelines below to help users provide what we need in order to get started.
+        git remote add upstream https://github.com/ultralytics/yolov5.git
 
-When asking a question, people will be better able to provide help if you provide **code** that they can easily
-understand and use to **reproduce** the problem. This is referred to by community members as creating
-a [minimum reproducible example](https://stackoverflow.com/help/minimal-reproducible-example). Your code that reproduces
-the problem should be:
+    Now if you do `git remote -v` again, you'll see
 
-- ✅ **Minimal** – Use as little code as possible that still produces the same problem
-- ✅ **Complete** – Provide **all** parts someone else needs to reproduce your problem in the question itself
-- ✅ **Reproducible** – Test the code you're about to provide to make sure it reproduces the problem
+        origin https://github.com/USERNAME/yolov5.git (fetch)
+        origin https://github.com/USERNAME/yolov5.git (push)
+        upstream https://github.com/ultralytics/yolov5.git (fetch)
+        upstream https://github.com/ultralytics/yolov5.git (push)
 
-In addition to the above requirements, for [Ultralytics](https://ultralytics.com/) to provide assistance your code
-should be:
+    Finally, you'll need to create a Python 3 virtual environment suitable for working on this project. There a number of tools out there that making working with virtual environments easier.
+    The most direct way is with the [`venv` module](https://docs.python.org/3.7/library/venv.html) in the standard library, but if you're new to Python or you don't already have a recent Python 3 version installed on your machine,
+    we recommend [Miniconda](https://docs.conda.io/en/latest/miniconda.html).
 
-- ✅ **Current** – Verify that your code is up-to-date with current
-  GitHub [master](https://github.com/ultralytics/yolov5/tree/master), and if necessary `git pull` or `git clone` a new
-  copy to ensure your problem has not already been resolved by previous commits.
-- ✅ **Unmodified** – Your problem must be reproducible without any modifications to the codebase in this
-  repository. [Ultralytics](https://ultralytics.com/) does not provide support for custom code ⚠️.
+    On Mac, for example, you can install Miniconda with [Homebrew](https://brew.sh/):
 
-If you believe your problem meets all of the above criteria, please close this issue and raise a new one using the 🐛
-**Bug Report** [template](https://github.com/ultralytics/yolov5/issues/new/choose) and providing
-a [minimum reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) to help us better
-understand and diagnose your problem.
+        brew install miniconda
 
-## License
+    Then you can create and activate a new Python environment by running:
 
-By contributing, you agree that your contributions will be licensed under
-the [GPL-3.0 license](https://choosealicense.com/licenses/gpl-3.0/)
+        conda create -n yolov5 python=3.9
+        conda activate yolov5
+
+    Once your virtual environment is activated, you can install your local clone in "editable mode" with
+
+        pip install -U pip setuptools wheel
+        pip install -e .[dev]
+
+    The "editable mode" comes from the `-e` argument to `pip`, and essential just creates a symbolic link from the site-packages directory of your virtual environment to the source code in your local clone. That way any changes you make will be immediately reflected in your virtual environment.
+
+    </details>
+
+2. **Ensure your fork is up-to-date**
+
+    <details><summary>Expand details 👇</summary><br/>
+
+    Once you've added an "upstream" remote pointing to [https://github.com/allenai/python-package-temlate.git](https://github.com/ultralytics/yolov5), keeping your fork up-to-date is easy:
+
+        git checkout main  # if not already on main
+        git pull --rebase upstream main
+        git push
+
+    </details>
+
+3. **Create a new branch to work on your fix or enhancement**
+
+    <details><summary>Expand details 👇</summary><br/>
+
+    Commiting directly to the main branch of your fork is not recommended. It will be easier to keep your fork clean if you work on a seperate branch for each contribution you intend to make.
+
+    You can create a new branch with
+
+        # replace BRANCH with whatever name you want to give it
+        git checkout -b BRANCH
+        git push -u origin BRANCH
+
+    </details>
+
+4. **Test your changes**
+
+    <details><summary>Expand details 👇</summary><br/>
+
+    Our continuous integration (CI) testing runs [a number of checks](https://github.com/ultralytics/yolov5/actions) for each pull request on [GitHub Actions](https://github.com/features/actions). You can run most of these tests locally, which is something you should do *before* opening a PR to help speed up the review process and make it easier for us.
+
+    First, you should run [`isort`](https://github.com/PyCQA/isort) and [`black`](https://github.com/psf/black) to make sure you code is formatted consistently.
+    Many IDEs support code formatters as plugins, so you may be able to setup isort and black to run automatically everytime you save.
+    For example, [`black.vim`](https://github.com/psf/black/tree/master/plugin) will give you this functionality in Vim. But both `isort` and `black` are also easy to run directly from the command line.
+    Just run this from the root of your clone:
+
+        isort .
+        black .
+
+    Our CI also uses [`flake8`](https://github.com/ultralytics/yolov5/tree/main/tests) to lint the code base and [`mypy`](http://mypy-lang.org/) for type-checking. You should run both of these next with
+
+        flake8 .
+
+    and
+
+        mypy .
+
+    We also strive to maintain high test coverage, so most contributions should include additions to [the unit tests](https://github.com/ultralytics/yolov5/tree/main/tests). These tests are run with [`pytest`](https://docs.pytest.org/en/latest/), which you can use to locally run any test modules that you've added or changed.
+
+    For example, if you've fixed a bug in `yolov5/a/b.py`, you can run the tests specific to that module with
+
+        pytest -v tests/a/b_test.py
+
+    Our CI will automatically check that test coverage stays above a certain threshold (around 90%). To check the coverage locally in this example, you could run
+
+        pytest -v --cov yolov5.a.b tests/a/b_test.py
+
+    If your contribution involves additions to any public part of the API, we require that you write docstrings
+    for each function, method, class, or module that you add.
+    See the [Writing docstrings](#writing-docstrings) section below for details on the syntax.
+    You should test to make sure the API documentation can build without errors by running
+
+        make docs
+
+    If the build fails, it's most likely due to small formatting issues. If the error message isn't clear, feel free to comment on this in your pull request.
+
+    And finally, please update the [CHANGELOG](https://github.com/ultralytics/yolov5/blob/main/CHANGELOG.md) with notes on your contribution in the "Unreleased" section at the top.
+
+    After all of the above checks have passed, you can now open [a new GitHub pull request](https://github.com/ultralytics/yolov5/pulls).
+    Make sure you have a clear description of the problem and the solution, and include a link to relevant issues.
+
+    We look forward to reviewing your PR!
+
+    </details>
+
+### Writing docstrings
+
+We use [Sphinx](https://www.sphinx-doc.org/en/master/index.html) to build our API docs, which automatically parses all docstrings
+of public classes and methods using the [autodoc](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html) extension.
+Please refer to autoc's documentation to learn about the docstring syntax.

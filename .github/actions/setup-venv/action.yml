@@ -1,0 +1,54 @@
+name: Python virtualenv
+description: Set up a Python virtual environment with caching
+inputs:
+  python-version:
+    description: The Python version to use
+    required: true
+  cache-prefix:
+    description: Update this to invalidate the cache
+    required: true
+    default: v0
+runs:
+  using: composite
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - shell: bash
+      run: |
+        # Install prerequisites.
+        pip install --upgrade pip setuptools wheel virtualenv
+
+    - shell: bash
+      run: |
+        # Get the exact Python version to use in the cache key.
+        echo "PYTHON_VERSION=$(python --version)" >> $GITHUB_ENV
+
+    - uses: actions/cache@v2
+      id: virtualenv-cache
+      with:
+        path: .venv
+        key: ${{ inputs.cache-prefix }}-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('requirements.txt', 'dev-requirements.txt') }}
+
+    - if: steps.virtualenv-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        # Set up virtual environment without cache hit.
+        test -d .venv || virtualenv -p $(which python) --copies --reset-app-data .venv
+        . .venv/bin/activate
+        pip install -e .[dev]
+
+    - if: steps.virtualenv-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: |
+        # Set up virtual environment from cache hit.
+        . .venv/bin/activate
+        pip install --no-deps -e .[dev]
+
+    - shell: bash
+      run: |
+        # Show environment info.
+        . .venv/bin/activate
+        echo "✓ Installed $(python --version) virtual environment to $(which python)"
