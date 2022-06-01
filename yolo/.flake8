@@ -1,0 +1,22 @@
+[flake8]
+max-line-length = 115
+
+ignore =
+    # these rules don't play well with black
+    # whitespace before :
+    E203
+    # line break before binary operator
+    W503
+
+exclude =
+    .venv
+    .git
+    __pycache__
+    docs/build
+    dist
+    .mypy_cache
+
+per-file-ignores =
+    # __init__.py files are allowed to have unused imports and lines-too-long
+    */__init__.py:F401
+    */**/**/__init__.py:F401,E501
