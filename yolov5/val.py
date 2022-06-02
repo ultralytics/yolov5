@@ -123,7 +123,6 @@ def run(
         callbacks=Callbacks(),
         compute_loss=None,
 ):  
-    data = check_yaml(data)  # duplicate check for cli/sdk
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
