@@ -30,9 +30,7 @@ Contents
 Team
 ----
 
-**yolov5** is developed and maintained by the AllenNLP team, backed by
-`the Allen Institute for Artificial Intelligence (AI2) <https://allenai.org/>`_.
-AI2 is a non-profit institute with the mission to contribute to humanity through high-impact AI research and engineering.
+**yolov5** is developed and maintained by the Ultralytics team <https://Ultralytics.com/>`_.
 To learn more about who specifically contributed to this codebase, see
 `our contributors <https://github.com/ultralytics/yolov5/graphs/contributors>`_ page.
 

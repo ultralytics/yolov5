@@ -23,8 +23,8 @@ from yolov5.version import VERSION, VERSION_SHORT  # noqa: E402
 # -- Project information -----------------------------------------------------
 
 project = "yolov5"
-copyright = f"{datetime.today().year}, Allen Institute for Artificial Intelligence"
-author = "Allen Institute for Artificial Intelligence"
+copyright = f"{datetime.today().year}, Ultralytics inc."
+author = "Ultralytics"
 version = VERSION_SHORT
 release = VERSION
 

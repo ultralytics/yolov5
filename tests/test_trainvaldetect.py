@@ -8,7 +8,7 @@ def test_train_val_detect():
 
     # train.py run() returns opt
     train_params = train(cfg=dummy_model_cfg, epochs=1)
-    best_weight = Path(train_params) / 'weights' / 'best.pt'
+    best_weight = Path(train_params.save_dir) / 'weights' / 'best.pt'
     assert best_weight.is_file(), "Trained weights not found"
 
     # val.py run() returns metrics
