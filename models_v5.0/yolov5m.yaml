@@ -2,6 +2,7 @@
 nc: 80  # number of classes
 depth_multiple: 0.67  # model depth multiple
 width_multiple: 0.75  # layer channel multiple
+act: Hardswish # Overwrite activations for improved DeepSparse performance
 
 # anchors
 anchors:

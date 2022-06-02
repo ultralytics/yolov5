@@ -8,6 +8,7 @@ anchors:
   - [10,13, 16,30, 33,23]  # P3/8
   - [30,61, 62,45, 59,119]  # P4/16
   - [116,90, 156,198, 373,326]  # P5/32
+act: Hardswish # Overwrite activations for improved DeepSparse performance
 
 # YOLOv5 v6.0 backbone
 backbone:
