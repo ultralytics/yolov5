@@ -95,7 +95,7 @@ def process_batch(detections, labels, iouv):
 
 @torch.no_grad()
 def run(
-        data,
+        data=ROOT / 'data/coco128.yaml',
         weights=None,  # model.pt path(s)
         batch_size=32,  # batch size
         imgsz=640,  # inference size (pixels)
@@ -111,7 +111,7 @@ def run(
         save_hybrid=False,  # save label+prediction hybrid results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
         save_json=False,  # save a COCO-JSON results file
-        project=ROOT / 'runs/val',  # save to project/name
+        project=Path(os.getcwd()) / 'runs/val',  # save to project/name
         name='exp',  # save to project/name
         exist_ok=False,  # existing project/name ok, do not increment
         half=True,  # use FP16 half-precision inference
@@ -122,7 +122,8 @@ def run(
         plots=True,
         callbacks=Callbacks(),
         compute_loss=None,
-):
+):  
+    data = check_yaml(data)  # duplicate check for cli/sdk
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -358,7 +359,7 @@ def parse_opt():
     return opt
 
 
-def main(opt):
+def main(opt=None):
     check_requirements(requirements=ROOT / 'requirements.txt', exclude=('tensorboard', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally

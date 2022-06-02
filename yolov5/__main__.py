@@ -1,5 +1,6 @@
 from .train import run as train
 from .detect import run as detect
+from .val import run as val
 
 import fire
 
@@ -7,7 +8,8 @@ import fire
 def main():
   fire.Fire({
       'train': train,
-      'detect': detect
+      'detect': detect,
+      'val': val
   })
 
 if __name__=="__main__":
