@@ -172,7 +172,7 @@ class SparseMLWrapper(object):
 
         return (pruning_start <= epoch <= pruning_end) or epoch == qat_start
 
-    def _mfac_data_loader(self, train_loader, device, multi_scale, imgsz, gs):
+    def _mfac_data_loader(self, train_loader, device, multi_scale, img_size, grid_size):
         def dataloader():
             loader_type = type(train_loader)
             mfac_dataloader = loader_type(
@@ -187,10 +187,10 @@ class SparseMLWrapper(object):
             for imgs, targets, *_ in mfac_dataloader:
                 imgs = imgs.to(device, non_blocking=True).float() / 255
                 if multi_scale:
-                    sz = random.randrange(imgsz * 0.5, imgsz * 1.5 + gs) // gs * gs  # size
+                    sz = random.randrange(img_size * 0.5, img_size * 1.5 + grid_size) // grid_size * grid_size  # size
                     sf = sz / max(imgs.shape[2:])  # scale factor
                     if sf != 1:
-                        ns = [math.ceil(x * sf / gs) * gs for x in imgs.shape[2:]]  # new shape (stretched to gs-multiple)
+                        ns = [math.ceil(x * sf / grid_size) * grid_size for x in imgs.shape[2:]]  # new shape (stretched to gs-multiple)
                         imgs = nn.functional.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
                 yield [imgs], {}, targets
         return dataloader
