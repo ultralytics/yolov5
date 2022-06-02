@@ -48,3 +48,7 @@ __pycache__
 
 docs/build
 site/
+
+# run files
+datasets/
+runs/
