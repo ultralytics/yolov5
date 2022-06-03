@@ -1,23 +1,9 @@
-<!-- To ensure we can review your pull request promptly please complete this template entirely. -->
+<!--
+Thank you for submitting a YOLOv5 🚀 Pull Request! We want to make contributing to YOLOv5 as easy and transparent as possible. A few tips to get you started:
 
-<!-- Please reference the issue number here. You can replace "Fixes" with "Closes" if it makes more sense. -->
-Fixes #
+- Search existing YOLOv5 [PRs](https://github.com/ultralytics/yolov5/pull) to see if a similar PR already exists.
+- Link this PR to a YOLOv5 [issue](https://github.com/ultralytics/yolov5/issues) to help us understand what bug fix or feature is being implemented.
+- Provide before and after profiling/inference/training results to help us quantify the improvement your PR provides (if applicable).
 
-Changes proposed in this pull request:
-<!-- Please list all changes/additions here. -->
--
-
-## Before submitting
-
-<!-- Please complete this checklist BEFORE submitting your PR to speed along the review process. -->
-- [ ] I've read and followed all steps in the [Making a pull request](https://github.com/ultralytics/yolov5/blob/main/CONTRIBUTING.md#making-a-pull-request)
-    section of the `CONTRIBUTING` docs.
-- [ ] I've updated or added any relevant docstrings following the syntax described in the
-    [Writing docstrings](https://github.com/ultralytics/yolov5/blob/main/CONTRIBUTING.md#writing-docstrings) section of the `CONTRIBUTING` docs.
-- [ ] If this PR fixes a bug, I've added a test that will fail without my fix.
-- [ ] If this PR adds a new feature, I've added tests that sufficiently cover my new functionality.
-
-## After submitting
-
-<!-- Please complete this checklist AFTER submitting your PR to speed along the review process. -->
-- [ ] All GitHub Actions jobs for my pull request have passed.
+Please see our ✅ [Contributing Guide](https://github.com/ultralytics/yolov5/blob/master/CONTRIBUTING.md) for more details.
+-->
