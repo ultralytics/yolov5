@@ -150,7 +150,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         exporter.export_onnx(im, name=save_name, convert_qat=True,
                                 input_names=input_names, output_names=output_names, dynamic_axes=dynamic_axes)
         try:
-            skip_onnx_input_quantize(f, f)
+            skip_onnx_input_quantize(str(f), str(f))
         except:
             pass
 
