@@ -1,15 +1,39 @@
+import functools
 import json
 import os
+import traceback
 
 import supervisely as sly
 
 import supervisely_app.serve.src.nn_utils as nn_utils
+import supervisely_app.serve.src.sly_apply_nn_to_video as nn_to_video
+
 import supervisely_app.serve.src.sly_functions as f
 import supervisely_app.serve.src.sly_globals as g
 
 
+def send_error_data(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        value = None
+        try:
+            value = func(*args, **kwargs)
+        except Exception as e:
+            sly.logger.error(f"Error while processing data: {e}")
+            request_id = kwargs["context"]["request_id"]
+            # raise e
+            try:
+                g.my_app.send_response(request_id, data={"error": repr(e)})
+                print(traceback.format_exc())
+            except Exception as ex:
+                sly.logger.exception(f"Cannot send error response: {ex}")
+        return value
+    return wrapper
+
+
 @g.my_app.callback("get_output_classes_and_tags")
 @sly.timeit
+@send_error_data
 def get_output_classes_and_tags(api: sly.Api, task_id, context, state, app_logger):
     request_id = context["request_id"]
     g.my_app.send_response(request_id, data=g.meta.to_json())
@@ -17,6 +41,7 @@ def get_output_classes_and_tags(api: sly.Api, task_id, context, state, app_logge
 
 @g.my_app.callback("get_session_info")
 @sly.timeit
+@send_error_data
 def get_session_info(api: sly.Api, task_id, context, state, app_logger):
     info = {
         "app": "YOLOv5 serve",
@@ -28,7 +53,7 @@ def get_session_info(api: sly.Api, task_id, context, state, app_logger):
         "classes_count": len(g.meta.obj_classes),
         "tags_count": len(g.meta.tag_metas),
         "sliding_window_support": True,
-        "apply_nn_videos_support": True
+        "videos_support": True
     }
     request_id = context["request_id"]
     g.my_app.send_response(request_id, data=info)
@@ -36,6 +61,7 @@ def get_session_info(api: sly.Api, task_id, context, state, app_logger):
 
 @g.my_app.callback("get_custom_inference_settings")
 @sly.timeit
+@send_error_data
 def get_custom_inference_settings(api: sly.Api, task_id, context, state, app_logger):
     request_id = context["request_id"]
     g.my_app.send_response(request_id, data={"settings": g.default_settings_str})
@@ -43,6 +69,7 @@ def get_custom_inference_settings(api: sly.Api, task_id, context, state, app_log
 
 @g.my_app.callback("inference_image_url")
 @sly.timeit
+@send_error_data
 def inference_image_url(api: sly.Api, task_id, context, state, app_logger):
     app_logger.debug("Input data", extra={"state": state})
 
@@ -63,6 +90,7 @@ def inference_image_url(api: sly.Api, task_id, context, state, app_logger):
 
 @g.my_app.callback("inference_image_id")
 @sly.timeit
+@send_error_data
 def inference_image_id(api: sly.Api, task_id, context, state, app_logger):
     app_logger.debug("Input data", extra={"state": state})
     image_id = state["image_id"]
@@ -78,6 +106,7 @@ def inference_image_id(api: sly.Api, task_id, context, state, app_logger):
 
 @g.my_app.callback("inference_batch_ids")
 @sly.timeit
+@send_error_data
 def inference_batch_ids(api: sly.Api, task_id, context, state, app_logger):
     app_logger.debug("Input data", extra={"state": state})
     ids = state["batch_ids"]
@@ -87,15 +116,36 @@ def inference_batch_ids(api: sly.Api, task_id, context, state, app_logger):
         paths.append(os.path.join(g.my_app.data_dir, sly.rand_str(10) + info.name))
     api.image.download_paths(infos[0].dataset_id, ids, paths)
 
-    results = []
-    for image_path in paths:
-        ann_json = f.inference_image_path(image_path=image_path, project_meta=g.meta,
-                                          context=context, state=state, app_logger=app_logger)
-        results.append(ann_json)
-        sly.fs.silent_remove(image_path)
+    results = f.inference_images_dir(img_paths=paths,
+                                     context=context,
+                                     state=state,
+                                     app_logger=app_logger)
 
     request_id = context["request_id"]
     g.my_app.send_response(request_id, data=results)
+
+
+@g.my_app.callback("inference_video_id")
+@sly.timeit
+@send_error_data
+def inference_video_id(api: sly.Api, task_id, context, state, app_logger):
+    video_info = g.api.video.get_info_by_id(state['videoId'])
+    inf_video_interface = nn_to_video.InferenceVideoInterface(api=g.api,
+                                                              start_frame_index=state.get('startFrameIndex', 0),
+                                                              frames_count=state.get('framesCount', video_info.frames_count - 1),
+                                                              frames_direction=state.get('framesDirection', 'forward'),
+                                                              video_info=video_info,
+                                                              imgs_dir=os.path.join(g.my_app.data_dir, 'videoInference'))
+
+    inf_video_interface.download_frames()
+
+    annotations = f.inference_images_dir(img_paths=inf_video_interface.images_paths,
+                                         context=context,
+                                         state=state,
+                                         app_logger=app_logger)
+
+    g.my_app.send_response(context["request_id"], data={'ann': annotations})
+    g.logger.info(f'inference {video_info.id=} done, {len(annotations)} annotations created')
 
 
 def debug_inference():

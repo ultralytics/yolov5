@@ -63,4 +63,14 @@ def preprocess():
     g.meta = nn_utils.construct_model_meta(g.model)
 
 
-
+def inference_images_dir(img_paths, context, state, app_logger):
+    annotations = []
+    for image_path in img_paths:
+        ann_json = inference_image_path(image_path=image_path,
+                                        project_meta=g.meta,
+                                        context=context,
+                                        state=state,
+                                        app_logger=app_logger)
+        annotations.append(ann_json)
+        sly.fs.silent_remove(image_path)
+    return annotations

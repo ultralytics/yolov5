@@ -240,3 +240,4 @@ def sliding_window_inference(model, half, device, imgsz, stride, img: np.ndarray
 
 
     return ann.to_json(), slides_for_vis
+

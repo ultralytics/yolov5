@@ -39,7 +39,7 @@ imgsz = None
 stride = None
 
 
-settings_path = os.path.join(root_source_path, "supervisely/serve/custom_settings.yaml")
+settings_path = os.path.join(root_source_path, "supervisely_app/serve/custom_settings.yaml")
 sly.logger.info(f"Custom inference settings path: {settings_path}")
 with open(settings_path, 'r') as file:
     default_settings_str = file.read()
