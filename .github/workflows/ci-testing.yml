@@ -1,0 +1,121 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv5 Continuous Integration (CI) GitHub Actions tests
+
+name: YOLOv5 CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    - cron: '0 0 * * *'  # runs at 00:00 UTC every day
+
+jobs:
+  Benchmarks:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.9]
+        model: [yolov5n]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      #- name: Cache pip
+      #  uses: actions/cache@v3
+      #  with:
+      #    path: ~/.cache/pip
+      #    key: ${{ runner.os }}-Benchmarks-${{ hashFiles('requirements.txt') }}
+      #    restore-keys: ${{ runner.os }}-Benchmarks-
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt coremltools openvino-dev tensorflow-cpu --extra-index-url https://download.pytorch.org/whl/cpu
+          python --version
+          pip --version
+          pip list
+      - name: Run benchmarks
+        run: |
+          python utils/benchmarks.py --weights ${{ matrix.model }}.pt --img 320
+
+  Tests:
+    timeout-minutes: 60
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.9]
+        model: [yolov5n]
+        include:
+          - os: ubuntu-latest
+            python-version: '3.7'  # '3.6.8' min
+            model: yolov5n
+          - os: ubuntu-latest
+            python-version: '3.8'
+            model: yolov5n
+          - os: ubuntu-latest
+            python-version: '3.10'
+            model: yolov5n
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Get cache dir
+        # https://github.com/actions/cache/blob/master/examples.md#multiple-oss-in-a-workflow
+        id: pip-cache
+        run: echo "::set-output name=dir::$(pip cache dir)"
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.python-version }}-pip-
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+          python --version
+          pip --version
+          pip list
+      - name: Check environment
+        run: |
+          python -c "import utils; utils.notebook_init()"
+          echo "RUNNER_OS is $RUNNER_OS"
+          echo "GITHUB_EVENT_NAME is $GITHUB_EVENT_NAME"
+          echo "GITHUB_WORKFLOW is $GITHUB_WORKFLOW"
+          echo "GITHUB_ACTOR is $GITHUB_ACTOR"
+          echo "GITHUB_REPOSITORY is $GITHUB_REPOSITORY"
+          echo "GITHUB_REPOSITORY_OWNER is $GITHUB_REPOSITORY_OWNER"
+      - name: Run tests
+        shell: bash
+        run: |
+          # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
+          d=cpu  # device
+          model=${{ matrix.model }}
+          best=runs/train/exp/weights/best.pt
+          # Train
+          python train.py --img 64 --batch 32 --weights $model.pt --cfg $model.yaml --epochs 1 --device $d
+          # Val
+          python val.py --img 64 --batch 32 --weights $model.pt --device $d
+          python val.py --img 64 --batch 32 --weights $best --device $d
+          # Detect
+          python detect.py --weights $model.pt --device $d
+          python detect.py --weights $best --device $d
+          python hubconf.py  # hub
+          # Export
+          # python models/tf.py --weights $model.pt  # build TF model
+          python models/yolo.py --cfg $model.yaml  # build PyTorch model
+          python export.py --weights $model.pt --img 64 --include torchscript  # export
+          # Python
+          python - <<EOF
+          import torch
+          model = torch.hub.load('.', 'custom', path='$model', source='local')
+          print(model('data/images/bus.jpg'))
+          model = torch.hub.load('.', 'custom', path='$best', source='local')
+          print(model('data/images/bus.jpg'))
+          EOF
