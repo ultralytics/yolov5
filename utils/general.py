@@ -467,7 +467,7 @@ def check_dataset(data, autodownload=True):
         assert k in data, emojis(f"data.yaml '{k}:' field missing ❌")
     if 'names' not in data:
         LOGGER.warning(emojis("data.yaml 'names:' field missing ⚠, assigning default names 'class0', 'class1', etc."))
-        data['names'] = [f'class{i}' for i in range(data['nc'])]  # assign class names if missing
+        data['names'] = [f'class{i}' for i in range(data['nc'])]  # default names
 
     # Resolve paths
     path = Path(extract_dir or data.get('path') or '')  # optional 'path' default to '.'
