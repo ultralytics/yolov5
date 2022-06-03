@@ -36,9 +36,8 @@ def construct_model_meta(model):
     obj_classes = [sly.ObjClass(name, sly.Rectangle, color) for name, color in zip(names, colors)]
     tags = [sly.TagMeta(CONFIDENCE, sly.TagValueType.ANY_NUMBER)]
 
-    meta = sly.ProjectMeta(obj_classes=sly.ObjClassCollection(obj_classes),
+    return sly.ProjectMeta(obj_classes=sly.ObjClassCollection(obj_classes),
                            tag_metas=sly.TagMetaCollection(tags))
-    return meta
 
 
 def load_model(weights_path, imgsz=640, device='cpu'):
