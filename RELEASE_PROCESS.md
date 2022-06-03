@@ -4,14 +4,14 @@
 
 1. Update the version in `yolov5/version.py`.
 
-3. Run the release script:
+1. Run the release script:
 
-    ```bash
-    ./scripts/release.sh
-    ```
+   ```bash
+   ./scripts/release.sh
+   ```
 
-    This will commit the changes to the CHANGELOG and `version.py` files and then create a new tag in git
-    which will trigger a workflow on GitHub Actions that handles the rest.
+   This will commit the changes to the CHANGELOG and `version.py` files and then create a new tag in git
+   which will trigger a workflow on GitHub Actions that handles the rest.
 
 ## Fixing a failed release
 

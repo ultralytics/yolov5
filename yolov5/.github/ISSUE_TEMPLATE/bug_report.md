@@ -1,11 +1,12 @@
----
+______________________________________________________________________
+
 name: Bug report
 about: Create a report to help us improve
 title: ''
 labels: 'bug'
 assignees: ''
 
----
+______________________________________________________________________
 
 <!--
 Please fill this template entirely and do not erase any of it.
@@ -27,7 +28,6 @@ We reserve the right to close without a response bug reports which are incomplet
 - [ ] I have included in the "Environment" section below the output of `pip freeze`.
 - [ ] I have included in the "Steps to reproduce" section below a minimally reproducible example.
 
-
 ## Description
 
 <!-- Please provide a clear and concise description of what the bug is here. -->
@@ -37,24 +37,25 @@ We reserve the right to close without a response bug reports which are incomplet
 <p>
 
 <!-- Paste the traceback from any exception (if there was one) in between the next two lines below -->
+
 ```
 ```
 
 </p>
 </details>
 
-
 ## Related issues or possible duplicates
 
 - None
 
-
 ## Environment
 
 <!-- Provide the name of operating system below (e.g. OS X, Linux) -->
+
 OS:
 
 <!-- Provide the Python version you were using (e.g. 3.7.1) -->
+
 Python version:
 
 <details>
@@ -62,21 +63,21 @@ Python version:
 <p>
 
 <!-- Paste the output of `pip freeze` in between the next two lines below -->
+
 ```
 ```
 
 </p>
 </details>
 
-
 ## Steps to reproduce
-
 
 <details>
 <summary><b>Example source:</b></summary>
 <p>
 
 <!-- Add a fully runnable example in between the next two lines below that will reproduce the bug -->
+
 ```
 ```
 
