@@ -1,8 +1,9 @@
-from .train import run as train
-from .detect import run as detect
-from .val import run as val
-from .export import run as export
 import fire
+
+from .detect import run as detect
+from .export import run as export
+from .train import run as train
+from .val import run as val
 
 
 def main():

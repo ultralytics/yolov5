@@ -1,5 +1,4 @@
-Installation
-============
+# Installation
 
 **yolov5** supports Python >= 3.7.
 
