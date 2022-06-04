@@ -2,10 +2,12 @@
   "name": "Export YOLOv5 weights",
   "type": "app",
   "categories": [
-    "yolov5",
     "neural network",
-    "detection",
-    "export"
+    "images",
+    "videos",
+    "object detection",
+    "detection & tracking",
+    "nn tools"
   ],
   "description": "to TorchScript and ONNX formats",
   "docker_image": "supervisely/base-pytorch:6.0.22",
