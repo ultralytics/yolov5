@@ -27,21 +27,8 @@ import torch
 import torch.nn as nn
 from tensorflow import keras
 
-from models.common import (
-    C3,
-    SPP,
-    SPPF,
-    Bottleneck,
-    BottleneckCSP,
-    C3x,
-    Concat,
-    Conv,
-    CrossConv,
-    DWConv,
-    DWConvTranspose2d,
-    Focus,
-    autopad,
-)
+from models.common import (C3, SPP, SPPF, Bottleneck, BottleneckCSP, C3x, Concat, Conv, CrossConv, DWConv,
+                           DWConvTranspose2d, Focus, autopad)
 from models.experimental import MixConv2d, attempt_load
 from models.yolo import Detect
 from utils.activations import SiLU
