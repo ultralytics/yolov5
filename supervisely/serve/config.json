@@ -2,9 +2,12 @@
   "name": "Serve YOLOv5",
   "type": "app",
   "categories": [
-    "yolov5",
     "neural network",
-    "detection"
+    "images",
+    "videos",
+    "object detection",
+    "detection & tracking",
+    "serve"
   ],
   "description": "Deploy model as REST API service",
   "docker_image": "supervisely/base-pytorch:6.0.22",
