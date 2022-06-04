@@ -2,9 +2,12 @@
   "name": "Train YOLOv5",
   "type": "app",
   "categories": [
-    "yolov5",
     "neural network",
-    "detection"
+    "images",
+    "videos",
+    "object detection",
+    "detection & tracking",
+    "train"
   ],
   "description": "Dashboard to configure and monitor training",
   "docker_image": "supervisely/base-pytorch:6.0.22",
