@@ -45,6 +45,7 @@ def get_output_classes_and_tags(api: sly.Api, task_id, context, state, app_logge
 def get_session_info(api: sly.Api, task_id, context, state, app_logger):
     info = {
         "app": "YOLOv5 serve",
+        "type": "Detector",
         "weights": g.final_weights,
         "device": str(g.device),
         "half": str(g.half),

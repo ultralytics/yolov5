@@ -45,7 +45,7 @@ class InferenceVideoInterface:
             self._frames_indexes = []
 
     def download_frames(self):
-        for index, frame_index in tqdm(enumerate(self._frames_indexes), desc='Downloading frames'):
+        for index, frame_index in tqdm(enumerate(self._frames_indexes), desc='Downloading frames', total=len(self._frames_indexes)):
             frame_path = os.path.join(f"{self._frames_path}", f"frame{index:06d}.png")
             self.images_paths.append(frame_path)
 
