@@ -67,17 +67,9 @@ if platform.system() != 'Windows':
 from models.experimental import attempt_load
 from models.yolo import Detect
 from utils.dataloaders import LoadImages
-from utils.general import (
-    LOGGER,
-    check_dataset,
-    check_img_size,
-    check_requirements,
-    check_version,
-    colorstr,
-    file_size,
-    print_args,
-    url2file,
-)
+from utils.general import (LOGGER, check_dataset, check_img_size,
+                           check_requirements, check_version, colorstr,
+                           file_size, print_args, url2file)
 from utils.torch_utils import select_device
 
 
@@ -299,11 +291,9 @@ def export_saved_model(model,
     # YOLOv5 TensorFlow SavedModel export
     try:
         import tensorflow as tf
-        from tensorflow.python.framework.convert_to_constants import (
-            convert_variables_to_constants_v2,
-        )
-
         from models.tf import TFDetect, TFModel
+        from tensorflow.python.framework.convert_to_constants import \
+            convert_variables_to_constants_v2
 
         LOGGER.info(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
         f = str(file).replace('.pt', '_saved_model')
@@ -342,9 +332,8 @@ def export_pb(keras_model, file, prefix=colorstr('TensorFlow GraphDef:')):
     # YOLOv5 TensorFlow GraphDef *.pb export https://github.com/leimao/Frozen_Graph_TensorFlow
     try:
         import tensorflow as tf
-        from tensorflow.python.framework.convert_to_constants import (
-            convert_variables_to_constants_v2,
-        )
+        from tensorflow.python.framework.convert_to_constants import \
+            convert_variables_to_constants_v2
 
         LOGGER.info(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
         f = file.with_suffix('.pb')
@@ -463,7 +452,7 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
 @torch.no_grad()
 def run(
         data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
-        weights=ROOT / 'yolov5s.pt',  # weights path
+        weights=Path(os.getcwd()) / 'yolov5s.pt',  # weights path
         imgsz=(640, 640),  # image (height, width)
         batch_size=1,  # batch size
         device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
@@ -580,7 +569,7 @@ def run(
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default=Path(os.getcwd()) / 'yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640, 640], help='image (h, w)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')

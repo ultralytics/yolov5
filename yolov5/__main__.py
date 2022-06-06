@@ -1,9 +1,10 @@
 import fire
 
-from .detect import run as detect
-from .export import run as export
-from .train import run as train
-from .val import run as val
+from yolov5.detect import run as detect
+from yolov5.export import run as export
+from yolov5.train import run as train
+from yolov5.utils.benchmarks import run as benchmark
+from yolov5.val import run as val
 
 
 def main():
@@ -11,7 +12,8 @@ def main():
       'train': train,
       'detect': detect,
       'val': val,
-      'export': export
+      'export': export,
+      'benchmark': benchmark
   })
 
 if __name__=="__main__":

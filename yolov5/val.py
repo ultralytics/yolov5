@@ -37,22 +37,11 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
-from utils.general import (
-    LOGGER,
-    check_dataset,
-    check_img_size,
-    check_requirements,
-    check_yaml,
-    coco80_to_coco91_class,
-    colorstr,
-    emojis,
-    increment_path,
-    non_max_suppression,
-    print_args,
-    scale_coords,
-    xywh2xyxy,
-    xyxy2xywh,
-)
+from utils.general import (LOGGER, check_dataset, check_img_size,
+                           check_requirements, check_yaml,
+                           coco80_to_coco91_class, colorstr, emojis,
+                           increment_path, non_max_suppression, print_args,
+                           scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, ap_per_class, box_iou
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, time_sync
@@ -343,7 +332,7 @@ def run(
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default=Path(os.getcwd()) / 'yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--batch-size', type=int, default=32, help='batch size')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')

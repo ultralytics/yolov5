@@ -45,42 +45,21 @@ from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
 from utils.downloads import attempt_download
-from utils.general import (
-    LOGGER,
-    check_amp,
-    check_dataset,
-    check_file,
-    check_git_status,
-    check_img_size,
-    check_requirements,
-    check_suffix,
-    check_version,
-    check_yaml,
-    colorstr,
-    get_latest_run,
-    increment_path,
-    init_seeds,
-    intersect_dicts,
-    labels_to_class_weights,
-    labels_to_image_weights,
-    methods,
-    one_cycle,
-    print_args,
-    print_mutation,
-    strip_optimizer,
-)
+from utils.general import (LOGGER, check_amp, check_dataset, check_file,
+                           check_git_status, check_img_size,
+                           check_requirements, check_suffix, check_version,
+                           check_yaml, colorstr, get_latest_run,
+                           increment_path, init_seeds, intersect_dicts,
+                           labels_to_class_weights, labels_to_image_weights,
+                           methods, one_cycle, print_args, print_mutation,
+                           strip_optimizer)
 from utils.loggers import Loggers
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.loss import ComputeLoss
 from utils.metrics import fitness
 from utils.plots import plot_evolve, plot_labels
-from utils.torch_utils import (
-    EarlyStopping,
-    ModelEMA,
-    de_parallel,
-    select_device,
-    torch_distributed_zero_first,
-)
+from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel,
+                               select_device, torch_distributed_zero_first)
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -502,7 +481,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='initial weights path')
+    parser.add_argument('--weights', type=str, default=Path(os.getcwd()) / 'yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.scratch-low.yaml', help='hyperparameters path')
