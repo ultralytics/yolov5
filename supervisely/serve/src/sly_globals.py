@@ -17,6 +17,7 @@ root_source_path = str(pathlib.Path(sys.argv[0]).parents[3])
 sly.logger.info(f"Root source directory: {root_source_path}")
 sys.path.append(root_source_path)
 sys.path.append(str(pathlib.Path(sys.argv[0]).parents[2]))  # supervisely folder
+print(str(pathlib.Path(sys.argv[0]).parents[2]))
 
 # load_dotenv(os.path.join(root_source_path, "supervisely", "serve", "debug.env"))
 # load_dotenv(os.path.join(root_source_path, "supervisely", "serve", "secret_debug.env"), override=True)

@@ -2,9 +2,9 @@ import os
 from pathlib import Path
 
 import supervisely as sly
-import serve.src.nn_utils as nn_utils
+import nn_utils as nn_utils
 
-import serve.src.sly_globals as g
+import sly_globals as g
 
 
 @sly.process_image_roi

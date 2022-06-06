@@ -1,15 +1,18 @@
 import functools
 import json
 import os
+import pathlib
+import sys
 import traceback
 
 import supervisely as sly
 
-import sly_globals as g
-import serve.src.sly_functions as f
 
-import serve.src.nn_utils as nn_utils
-import serve.src.sly_apply_nn_to_video as nn_to_video
+import sly_globals as g
+import sly_functions as f
+
+import nn_utils as nn_utils
+import sly_apply_nn_to_video as nn_to_video
 
 
 def send_error_data(func):
