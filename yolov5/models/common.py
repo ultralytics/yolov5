@@ -20,21 +20,11 @@ import torch.nn as nn
 import yaml
 from PIL import Image
 from torch.cuda import amp
-
 from utils.dataloaders import exif_transpose, letterbox
-from utils.general import (
-    LOGGER,
-    check_requirements,
-    check_suffix,
-    check_version,
-    colorstr,
-    increment_path,
-    make_divisible,
-    non_max_suppression,
-    scale_coords,
-    xywh2xyxy,
-    xyxy2xywh,
-)
+from utils.general import (LOGGER, check_requirements, check_suffix,
+                           check_version, colorstr, increment_path,
+                           make_divisible, non_max_suppression, scale_coords,
+                           xywh2xyxy, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, time_sync
 
@@ -344,9 +334,7 @@ class DetectMultiBackend(nn.Module):
         #   TensorFlow Lite:                *.tflite
         #   TensorFlow Edge TPU:            *_edgetpu.tflite
         from models.experimental import (  # scoped to avoid circular import
-            attempt_download,
-            attempt_load,
-        )
+            attempt_download, attempt_load)
 
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
@@ -445,7 +433,8 @@ class DetectMultiBackend(nn.Module):
                 frozen_func = wrap_frozen_graph(gd, inputs="x:0", outputs="Identity:0")
             elif tflite or edgetpu:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
                 try:  # https://coral.ai/docs/edgetpu/tflite-python/#update-existing-tf-lite-code-for-the-edge-tpu
-                    from tflite_runtime.interpreter import Interpreter, load_delegate
+                    from tflite_runtime.interpreter import (Interpreter,
+                                                            load_delegate)
                 except ImportError:
                     import tensorflow as tf
                     Interpreter, load_delegate = tf.lite.Interpreter, tf.lite.experimental.load_delegate,

@@ -9,7 +9,6 @@ import warnings
 import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
-
 from utils.general import colorstr, cv2, emojis
 from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_results
