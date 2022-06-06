@@ -72,12 +72,13 @@ class Ensemble(nn.ModuleList):
 
 
 def attempt_load(weights, device=None, inplace=True, fuse=True):
+    # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a
     from models.yolo import Detect, Model
 
-    # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a
     model = Ensemble()
     for w in weights if isinstance(weights, list) else [weights]:
-        ckpt = torch.load(attempt_download(w), map_location=device)
+        w = attempt_download(w)  # download if missing
+        ckpt = torch.load(w, 'cpu').to(device) if device == torch.device('mps') else torch.load(w, device)  # load
         ckpt = (ckpt.get('ema') or ckpt['model']).float()  # FP32 model
         model.append(ckpt.fuse().eval() if fuse else ckpt.eval())  # fused or un-fused model in eval mode
 
