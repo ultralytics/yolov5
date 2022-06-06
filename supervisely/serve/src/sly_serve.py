@@ -5,11 +5,11 @@ import traceback
 
 import supervisely as sly
 
-import supervisely_app.serve.src.nn_utils as nn_utils
-import supervisely_app.serve.src.sly_apply_nn_to_video as nn_to_video
+import supervisely.serve.src.nn_utils as nn_utils
+import supervisely.serve.src.sly_apply_nn_to_video as nn_to_video
 
-import supervisely_app.serve.src.sly_functions as f
-import supervisely_app.serve.src.sly_globals as g
+import supervisely.serve.src.sly_functions as f
+import supervisely.serve.src.sly_globals as g
 
 
 def send_error_data(func):
