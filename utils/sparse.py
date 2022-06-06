@@ -9,6 +9,7 @@ from sparsezoo import Zoo
 from sparseml.pytorch.optim import ScheduledModifierManager
 from sparseml.pytorch.utils import SparsificationGroupLogger
 from sparseml.pytorch.utils import GradSampler
+import torchvision.transforms.functional as F
 
 from utils.torch_utils import is_parallel
 import torch.nn as nn
@@ -209,8 +210,8 @@ class SparseMLWrapper(object):
         dataloader: "Dataloader",  # flake8 : noqa F8421
         num_export_samples=100,
         save_dir: Optional[str] = None,
-    ):
-
+        image_size: int=640,
+   ):
         save_dir = save_dir or ""
         if not dataloader:
             raise ValueError(
@@ -225,17 +226,25 @@ class SparseMLWrapper(object):
 
         os.makedirs(sample_in_dir, exist_ok=True)
         os.makedirs(sample_out_dir, exist_ok=True)
+        model_was_in_train_mode = self.model.training
+        self.model.eval()
 
         for _, (images, _, _, _) in enumerate(dataloader):
             images = (
                 images.float() / 255
             )  # uint8 to float32, 0-255 to 0.0-1.0
+            images = F.resize(images, (image_size, image_size))
 
             device_imgs = images.to(device, non_blocking=True)
             outs = self.model(device_imgs)
 
             # Move to cpu for exporting
             ins = images.detach().to("cpu")
+
+            if isinstance(outs, tuple) and len(outs) > 1:
+                # flatten into a single list
+                outs = [outs[0], *outs[1]]
+
             outs = [elem.detach().to("cpu") for elem in outs]
             outs_gen = zip(*outs)
 
@@ -259,3 +268,7 @@ class SparseMLWrapper(object):
         _LOGGER.info(
             f"Exported {exported_samples} samples to {save_dir}"
         )
+
+        # reset model.training if needed
+        if model_was_in_train_mode:
+            self.model.train()

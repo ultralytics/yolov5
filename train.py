@@ -324,6 +324,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 dataloader=dataloader,
                 num_export_samples=opt.num_export_samples,
                 save_dir=str(w),
+                image_size=imgsz,
             )
 
         del ckpt
@@ -544,6 +545,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             dataloader=val_loader or train_loader,
             num_export_samples=opt.num_export_samples,
             save_dir=str(w),
+            image_size=imgsz,
         )
 
     torch.cuda.empty_cache()
