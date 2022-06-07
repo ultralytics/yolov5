@@ -432,8 +432,8 @@ class DetectMultiBackend(nn.Module):
                     LOGGER.info(f'Loading {w} for TensorFlow Lite inference...')
                     interpreter = Interpreter(model_path=w)  # load TFLite model
                 interpreter.allocate_tensors()  # allocate
-                input_details = interpreter.get_input_details()  # inputs
-                output_details = interpreter.get_output_details()  # outputs
+                self.input_details = interpreter.get_input_details()  # inputs
+                self.output_details = interpreter.get_output_details()  # outputs
             elif tfjs:
                 raise Exception('ERROR: YOLOv5 TF.js inference is not supported')
         self.__dict__.update(locals())  # assign all variables to self
