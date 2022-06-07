@@ -34,7 +34,7 @@ setup(
     name="yolov5",
     version=VERSION["VERSION"],
     description="",
-    long_description=open("README.md").read(),
+    #long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     entry_points={
         'console_scripts':[
