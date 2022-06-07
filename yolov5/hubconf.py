@@ -28,12 +28,12 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     """
     from pathlib import Path
 
-    from models.common import AutoShape, DetectMultiBackend
-    from models.yolo import Model
-    from utils.downloads import attempt_download
-    from utils.general import (LOGGER, check_requirements, intersect_dicts,
+    from yolov5.models.common import AutoShape, DetectMultiBackend
+    from yolov5.models.yolo import Model
+    from yolov5.utils.downloads import attempt_download
+    from yolov5.utils.general import (LOGGER, check_requirements, intersect_dicts,
                                logging)
-    from utils.torch_utils import select_device
+    from yolov5.utils.torch_utils import select_device
 
     if not verbose:
         LOGGER.setLevel(logging.WARNING)
@@ -131,14 +131,17 @@ if __name__ == '__main__':
 
     import numpy as np
     from PIL import Image
-    from utils.general import cv2
+    import yolov5
+    from yolov5.utils.general import cv2
+
+    root  = Path(yolov5.__file__).parents[0]
 
     imgs = [
-        'data/images/zidane.jpg',  # filename
-        Path('data/images/zidane.jpg'),  # Path
+        str(root / 'data/images/zidane.jpg'),  # filename
+        root/'data/images/zidane.jpg',  # Path
         'https://ultralytics.com/images/zidane.jpg',  # URI
-        cv2.imread('data/images/bus.jpg')[:, :, ::-1],  # OpenCV
-        Image.open('data/images/bus.jpg'),  # PIL
+        cv2.imread(root/'data/images/bus.jpg')[:, :, ::-1],  # OpenCV
+        Image.open(root/'data/images/bus.jpg'),  # PIL
         np.zeros((320, 640, 3))]  # numpy
 
     results = model(imgs, size=320)  # batched inference
