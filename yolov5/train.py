@@ -32,7 +32,7 @@ from torch.optim import SGD, Adam, AdamW, lr_scheduler
 from tqdm import tqdm
 
 import yolov5
-import yolov5.val as val # for end-of-epoch mAP
+import yolov5.val as val  # for end-of-epoch mAP
 from yolov5.models.experimental import attempt_load
 from yolov5.models.yolo import Model
 from yolov5.utils.autoanchor import check_anchors
@@ -41,20 +41,21 @@ from yolov5.utils.callbacks import Callbacks
 from yolov5.utils.dataloaders import create_dataloader
 from yolov5.utils.downloads import attempt_download
 from yolov5.utils.general import (LOGGER, check_amp, check_dataset, check_file,
-                           check_git_status, check_img_size,
-                           check_requirements, check_suffix, check_version,
-                           check_yaml, colorstr, get_latest_run,
-                           increment_path, init_seeds, intersect_dicts,
-                           labels_to_class_weights, labels_to_image_weights,
-                           methods, one_cycle, print_args, print_mutation,
-                           strip_optimizer)
+                                  check_git_status, check_img_size,
+                                  check_requirements, check_suffix,
+                                  check_version, check_yaml, colorstr,
+                                  get_latest_run, increment_path, init_seeds,
+                                  intersect_dicts, labels_to_class_weights,
+                                  labels_to_image_weights, methods, one_cycle,
+                                  print_args, print_mutation, strip_optimizer)
 from yolov5.utils.loggers import Loggers
 from yolov5.utils.loggers.wandb.wandb_utils import check_wandb_resume
 from yolov5.utils.loss import ComputeLoss
 from yolov5.utils.metrics import fitness
 from yolov5.utils.plots import plot_evolve, plot_labels
 from yolov5.utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel,
-                               select_device, torch_distributed_zero_first)
+                                      select_device,
+                                      torch_distributed_zero_first)
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))

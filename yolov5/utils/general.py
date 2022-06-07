@@ -32,6 +32,7 @@ import pkg_resources as pkg
 import torch
 import torchvision
 import yaml
+
 import yolov5
 from yolov5.utils.downloads import gsutil_getsize
 from yolov5.utils.metrics import box_iou, fitness

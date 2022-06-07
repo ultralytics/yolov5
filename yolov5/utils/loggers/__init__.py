@@ -30,7 +30,7 @@ def attempt_import_wandb():
                 wandb = None
     except (ImportError, AssertionError):
         wandb = None
-        
+
     return wandb
 
 
