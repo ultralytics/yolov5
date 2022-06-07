@@ -14,7 +14,8 @@ from utils.torch_utils import profile
 def check_train_batch_size(model, imgsz=640, amp=True):
     # Check YOLOv5 training batch size
     with torch.cuda.amp.autocast(amp):
-        return autobatch(deepcopy(model).train(), imgsz)  # compute optimal batch size
+        return autobatch(deepcopy(model).train(),
+                         imgsz)  # compute optimal batch size
 
 
 def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
@@ -29,7 +30,9 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
     LOGGER.info(f'{prefix}Computing optimal batch size for --imgsz {imgsz}')
     device = next(model.parameters()).device  # get model device
     if device.type == 'cpu':
-        LOGGER.info(f'{prefix}CUDA not detected, using default CPU batch-size {batch_size}')
+        LOGGER.info(
+            f'{prefix}CUDA not detected, using default CPU batch-size {batch_size}'
+        )
         return batch_size
 
     gb = 1 << 30  # bytes to GiB (1024 ** 3)
@@ -39,7 +42,9 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
     r = torch.cuda.memory_reserved(device) / gb  # (GiB)
     a = torch.cuda.memory_allocated(device) / gb  # (GiB)
     f = t - (r + a)  # free inside reserved
-    LOGGER.info(f'{prefix}{d} ({properties.name}) {t:.2f}G total, {r:.2f}G reserved, {a:.2f}G allocated, {f:.2f}G free')
+    LOGGER.info(
+        f'{prefix}{d} ({properties.name}) {t:.2f}G total, {r:.2f}G reserved, {a:.2f}G allocated, {f:.2f}G free'
+    )
 
     batch_sizes = [1, 2, 4, 8, 16]
     try:
@@ -52,5 +57,7 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
     batch_sizes = batch_sizes[:len(y)]
     p = np.polyfit(batch_sizes, y, deg=1)  # first degree polynomial fit
     b = int((f * fraction - p[1]) / p[0])  # y intercept (optimal batch size)
-    LOGGER.info(f'{prefix}Using batch-size {b} for {d} {t * fraction:.2f}G/{t:.2f}G ({fraction * 100:.0f}%)')
+    LOGGER.info(
+        f'{prefix}Using batch-size {b} for {d} {t * fraction:.2f}G/{t:.2f}G ({fraction * 100:.0f}%)'
+    )
     return b

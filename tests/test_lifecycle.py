@@ -20,14 +20,13 @@ def test_complete_lifecycle():
     # detect.py run() returns None
     detect(weights=best_weight)
 
-    exported_weights = export(best_weight, include=("torchscript",))
+    exported_weights = export(best_weight, include=("torchscript", ))
     exported_weight = Path(exported_weights[0])
     assert exported_weight.is_file(), "Exported weight was not saved"
 
-    result = benchmark(weights=best_weight) # pandas dataframe
+    result = benchmark(weights=best_weight)  # pandas dataframe
     print(result.head())
     # TODO: Set assertion for minimum score threshold
-
 
 
 if __name__ == "__main__":
