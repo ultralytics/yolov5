@@ -33,18 +33,14 @@ from pathlib import Path
 
 import pandas as pd
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[1]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
+import yolov5
+from yolov5 import export, val
+from yolov5.utils import notebook_init
+from yolov5.utils.general import LOGGER, check_yaml, print_args
+from yolov5.utils.torch_utils import select_device
+
+ROOT = Path(yolov5.__file__).parents[0]
 # ROOT = ROOT.relative_to(Path.cwd())  # relative
-
-import export
-import val
-from utils import notebook_init
-from utils.general import LOGGER, check_yaml, print_args
-from utils.torch_utils import select_device
-
 
 def run(
         weights=ROOT / 'yolov5s.pt',  # weights path

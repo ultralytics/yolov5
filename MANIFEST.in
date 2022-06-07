@@ -1,3 +1,4 @@
 recursive-include yolov5 *.py
 recursive-include yolov5 *.yaml
 recursive-include yolov5 *sh
+recursive-include yolov5 *jpg

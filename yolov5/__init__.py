@@ -1,7 +1,7 @@
-from yolov5.detect import run as detect
-from yolov5.export import run as export
-from yolov5.train import run as train
-from yolov5.utils.benchmarks import run as benchmark
-from yolov5.val import run as val
+import yolov5.detect as detect
+import yolov5.export as export
+import yolov5.train as train
+import yolov5.utils.benchmarks as benchmark
+import yolov5.val as val
 
 __all__ = ["train", "detect", "val", "export", "benchmark"]

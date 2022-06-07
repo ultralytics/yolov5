@@ -9,22 +9,22 @@ def test_complete_lifecycle():
     dummy_model_cfg = "yolov5s.yaml"
 
     # train.py run() returns opt
-    train_params = train(cfg=dummy_model_cfg, epochs=1)
+    train_params = train.run(cfg=dummy_model_cfg, epochs=1)
     best_weight = Path(train_params.save_dir) / 'weights' / 'best.pt'
     assert best_weight.is_file(), "Trained weights not saved"
 
     # val.py run() returns metrics
-    val_score = val(weights=best_weight)
+    val_score = val.run(weights=best_weight)
     assert val_score is not None, "Val score is None"
 
     # detect.py run() returns None
-    detect(weights=best_weight)
+    detect.run(weights=best_weight)
 
-    exported_weights = export(best_weight, include=("torchscript",))
+    exported_weights = export.run(best_weight, include=("torchscript",))
     exported_weight = Path(exported_weights[0])
     assert exported_weight.is_file(), "Exported weight was not saved"
 
-    result = benchmark(weights=best_weight) # pandas dataframe
+    result = benchmark.run(weights=best_weight) # pandas dataframe
     print(result.head())
     # TODO: Set assertion for minimum score threshold
 
