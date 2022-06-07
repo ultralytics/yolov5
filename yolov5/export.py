@@ -57,21 +57,18 @@ import torch
 import yaml
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
+import yolov5
+from yolov5.models.experimental import attempt_load
+from yolov5.models.yolo import Detect
+from yolov5.utils.dataloaders import LoadImages
+from yolov5.utils.general import (LOGGER, check_dataset, check_img_size,
+                                  check_requirements, check_version, colorstr,
+                                  file_size, print_args, url2file)
+from yolov5.utils.torch_utils import select_device
+
+ROOT = Path(yolov5.__file__).parents[0]
 if platform.system() != 'Windows':
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-
-from models.experimental import attempt_load
-from models.yolo import Detect
-from utils.dataloaders import LoadImages
-from utils.general import (LOGGER, check_dataset, check_img_size,
-                           check_requirements, check_version, colorstr,
-                           file_size, print_args, url2file)
-from utils.torch_utils import select_device
-
 
 def export_formats():
     # YOLOv5 export formats
