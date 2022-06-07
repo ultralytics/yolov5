@@ -41,7 +41,6 @@ repos:
     hooks:
       - id: yapf
         name: YAPF formatting
-        additional_dependencies: [toml]
 
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.14
