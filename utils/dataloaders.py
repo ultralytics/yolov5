@@ -83,7 +83,7 @@ def exif_transpose(image):
             5: Image.TRANSPOSE,
             6: Image.ROTATE_270,
             7: Image.TRANSVERSE,
-            8: Image.ROTATE_90,}.get(orientation)
+            8: Image.ROTATE_90, }.get(orientation)
         if method is not None:
             image = image.transpose(method)
             del exif[0x0112]
@@ -980,21 +980,32 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         verbose:        Print stats dictionary
     """
 
-    def round_labels(labels):
+    def _round_labels(labels):
         # Update labels to integer class and 6 decimal place floats
         return [[int(c), *(round(x, 4) for x in points)] for c, *points in labels]
 
-    def unzip(path):
-        # Unzip data.zip TODO: CONSTRAINT: path/to/abc.zip MUST unzip to 'path/to/abc/'
+    def _find_yaml(dir):
+        # Return data.yaml file
+        files = list(dir.glob('*.yaml')) or list(dir.rglob('*.yaml'))  # try root level first and then recursive
+        assert files, f'No *.yaml file found in {dir}'
+        if len(files) > 1:
+            files = [f for f in files if f.stem == dir.stem]  # prefer *.yaml files that match dir name
+            assert files, f'Multiple *.yaml files found in {dir}, only 1 *.yaml file allowed'
+        assert len(files) == 1, f'Multiple *.yaml files found: {files}, only 1 *.yaml file allowed in {dir}'
+        return files[0]
+
+    def _unzip(path):
+        # Unzip data.zip
         if str(path).endswith('.zip'):  # path is data.zip
             assert Path(path).is_file(), f'Error unzipping {path}, file not found'
             ZipFile(path).extractall(path=path.parent)  # unzip
             dir = path.with_suffix('')  # dataset directory == zip name
-            return True, str(dir), next(dir.rglob('*.yaml'))  # zipped, data_dir, yaml_path
+            assert dir.is_dir(), f'Error unzipping {path}, {dir} not found. path/to/abc.zip MUST unzip to path/to/abc/'
+            return True, str(dir), _find_yaml(dir)  # zipped, data_dir, yaml_path
         else:  # path is data.yaml
             return False, None, path
 
-    def hub_ops(f, max_dim=1920):
+    def _hub_ops(f, max_dim=1920):
         # HUB ops for 1 image 'f': resize and save at reduced quality in /dataset-hub for web/app viewing
         f_new = im_dir / Path(f).name  # dataset-hub image filename
         try:  # use PIL
@@ -1012,7 +1023,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
                 im = cv2.resize(im, (int(im_width * r), int(im_height * r)), interpolation=cv2.INTER_AREA)
             cv2.imwrite(str(f_new), im)
 
-    zipped, data_dir, yaml_path = unzip(Path(path))
+    zipped, data_dir, yaml_path = _unzip(Path(path))
     with open(check_yaml(yaml_path), errors='ignore') as f:
         data = yaml.safe_load(f)  # data dict
         if zipped:
@@ -1038,12 +1049,12 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
                 'unlabelled': int(np.all(x == 0, 1).sum()),
                 'per_class': (x > 0).sum(0).tolist()},
             'labels': [{
-                str(Path(k).name): round_labels(v.tolist())} for k, v in zip(dataset.im_files, dataset.labels)]}
+                str(Path(k).name): _round_labels(v.tolist())} for k, v in zip(dataset.im_files, dataset.labels)]}
 
         if hub:
             im_dir = hub_dir / 'images'
             im_dir.mkdir(parents=True, exist_ok=True)
-            for _ in tqdm(ThreadPool(NUM_THREADS).imap(hub_ops, dataset.im_files), total=dataset.n, desc='HUB Ops'):
+            for _ in tqdm(ThreadPool(NUM_THREADS).imap(_hub_ops, dataset.im_files), total=dataset.n, desc='HUB Ops'):
                 pass
 
     # Profile
