@@ -8,9 +8,9 @@ import random
 
 import cv2
 import numpy as np
-from utils.general import (LOGGER, check_version, colorstr, resample_segments,
+from yolov5.utils.general import (LOGGER, check_version, colorstr, resample_segments,
                            segment2box)
-from utils.metrics import bbox_ioa
+from yolov5.utils.metrics import bbox_ioa
 
 
 class Albumentations:
