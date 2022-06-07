@@ -79,7 +79,7 @@ jobs:
       - name: Install requirements
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install . --extra-index-url https://download.pytorch.org/whl/cpu
           python --version
           pip --version
           pip list
