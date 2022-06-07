@@ -40,12 +40,14 @@ from yolov5.utils.autobatch import check_train_batch_size
 from yolov5.utils.callbacks import Callbacks
 from yolov5.utils.dataloaders import create_dataloader
 from yolov5.utils.downloads import attempt_download
-from yolov5.utils.general import (
-    LOGGER, check_amp, check_dataset, check_file, check_git_status,
-    check_img_size, check_requirements, check_suffix, check_version,
-    check_yaml, colorstr, get_latest_run, increment_path, init_seeds,
-    intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods,
-    one_cycle, print_args, print_mutation, strip_optimizer)
+from yolov5.utils.general import (LOGGER, check_amp, check_dataset, check_file,
+                                  check_git_status, check_img_size,
+                                  check_requirements, check_suffix,
+                                  check_version, check_yaml, colorstr,
+                                  get_latest_run, increment_path, init_seeds,
+                                  intersect_dicts, labels_to_class_weights,
+                                  labels_to_image_weights, methods, one_cycle,
+                                  print_args, print_mutation, strip_optimizer)
 from yolov5.utils.loggers import Loggers
 from yolov5.utils.loggers.wandb.wandb_utils import check_wandb_resume
 from yolov5.utils.loss import ComputeLoss
