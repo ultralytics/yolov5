@@ -33,13 +33,14 @@ jobs:
       - name: Install requirements
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt coremltools openvino-dev tensorflow-cpu --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install .
+          pip install -r coremltools openvino-dev tensorflow-cpu --extra-index-url https://download.pytorch.org/whl/cpu
           python --version
           pip --version
           pip list
       - name: Run benchmarks
         run: |
-          python utils/benchmarks.py --weights ${{ matrix.model }}.pt --img 320
+          python yolov5/utils/benchmarks.py --weights ${{ matrix.model }}.pt --img 320
 
   Tests:
     timeout-minutes: 60
@@ -84,7 +85,7 @@ jobs:
           pip list
       - name: Check environment
         run: |
-          python -c "import utils; utils.notebook_init()"
+          python -c "import yolov5; yolov5.utils.notebook_init()"
           echo "RUNNER_OS is $RUNNER_OS"
           echo "GITHUB_EVENT_NAME is $GITHUB_EVENT_NAME"
           echo "GITHUB_WORKFLOW is $GITHUB_WORKFLOW"
@@ -99,18 +100,18 @@ jobs:
           model=${{ matrix.model }}
           best=runs/train/exp/weights/best.pt
           # Train
-          python train.py --img 64 --batch 32 --weights $model.pt --cfg $model.yaml --epochs 1 --device $d
+          python yolov5/train.py --img 64 --batch 32 --weights $model.pt --cfg $model.yaml --epochs 1 --device $d
           # Val
-          python val.py --img 64 --batch 32 --weights $model.pt --device $d
-          python val.py --img 64 --batch 32 --weights $best --device $d
+          python yolov5/val.py --img 64 --batch 32 --weights $model.pt --device $d
+          python yolov5/val.py --img 64 --batch 32 --weights $best --device $d
           # Detect
-          python detect.py --weights $model.pt --device $d
-          python detect.py --weights $best --device $d
-          python hubconf.py  # hub
+          python yolov5/detect.py --weights $model.pt --device $d
+          python yolov5/detect.py --weights $best --device $d
+          python yolov5/hubconf.py  # hub
           # Export
-          # python models/tf.py --weights $model.pt  # build TF model
-          python models/yolo.py --cfg $model.yaml  # build PyTorch model
-          python export.py --weights $model.pt --img 64 --include torchscript  # export
+          # python yolov5/models/tf.py --weights $model.pt  # build TF model
+          python yolov5/models/yolo.py --cfg $model.yaml  # build PyTorch model
+          python yolov5/export.py --weights $model.pt --img 64 --include torchscript  # export
           # Python
           python - <<EOF
           import torch
