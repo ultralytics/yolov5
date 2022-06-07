@@ -8,14 +8,13 @@ from yolov5.val import run as val
 
 
 def main():
-    fire.Fire({
-        'train': train,
-        'detect': detect,
-        'val': val,
-        'export': export,
-        'benchmark': benchmark
-    })
+  fire.Fire({
+      'train': train,
+      'detect': detect,
+      'val': val,
+      'export': export,
+      'benchmark': benchmark
+  })
 
-
-if __name__ == "__main__":
+if __name__=="__main__":
     main()
