@@ -115,8 +115,8 @@ jobs:
           # Python
           python - <<EOF
           import torch
-          model = torch.hub.load('.', 'custom', path='$model', source='local')
-          print(model('data/images/bus.jpg'))
-          model = torch.hub.load('.', 'custom', path='$best', source='local')
-          print(model('data/images/bus.jpg'))
+          model = torch.hub.load('yolov5/', 'custom', path='$model', source='local')
+          print(model('yolov5/data/images/bus.jpg'))
+          model = torch.hub.load('yolov5/', 'custom', path='$best', source='local')
+          print(model('yolov5/data/images/bus.jpg'))
           EOF
