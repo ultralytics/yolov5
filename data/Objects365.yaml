@@ -109,6 +109,6 @@ download: |
                           x, y, w, h = a['bbox']  # bounding box in xywh (xy top-left corner)
                           xyxy = np.array([x, y, x + w, y + h])[None]  # pixels(1,4)
                           x, y, w, h = xyxy2xywhn(xyxy, w=width, h=height, clip=True)[0]  # normalized and clipped
-                          file.write(f"{cid} {x:.5f} {y:.5f} {w:.5f} {h:.5f}\n")
+                          file.write(f"{a['category_id']} {x:.5f} {y:.5f} {w:.5f} {h:.5f}\n")
               except Exception as e:
                   print(e)
