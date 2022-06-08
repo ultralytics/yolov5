@@ -34,7 +34,7 @@ setup(
     name="yolov5",
     version=VERSION["VERSION"],
     description="",
-    #long_description=open("README.md").read(),
+    long_description=open("README.md").read().decode('utf-8'),
     long_description_content_type="text/markdown",
     entry_points={
         'console_scripts':[
@@ -42,16 +42,16 @@ setup(
         ]
     },
     classifiers=[
-        "Intended Audience :: Science/Research",
+        "Intended Audience :: Science/Research/Engineeing",
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     keywords="",
-    url="https://github.com/allenai/python-package-template",
-    author="Allen Institute for Artificial Intelligence",
-    author_email="contact@allenai.org",
+    url="https://github.com/ultralytics/yolov5",
+    author="Ultralytics",
+    author_email="hello@ultralytics.com",
     license="Apache",
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests", "env"],

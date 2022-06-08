@@ -20,7 +20,7 @@ names: ['pedestrian', 'people', 'bicycle', 'car', 'van', 'truck', 'tricycle', 'a
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
-  from utils.general import download, os, Path
+  from yolov5.utils.general import download, os, Path
 
   def visdrone2yolo(dir):
       from PIL import Image

@@ -9,10 +9,11 @@ import warnings
 import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
-from utils.general import colorstr, cv2, emojis
-from utils.loggers.wandb.wandb_utils import WandbLogger
-from utils.plots import plot_images, plot_results
-from utils.torch_utils import de_parallel
+
+from yolov5.utils.general import colorstr, cv2, emojis
+from yolov5.utils.loggers.wandb.wandb_utils import WandbLogger
+from yolov5.utils.plots import plot_images, plot_results
+from yolov5.utils.torch_utils import de_parallel
 
 LOGGERS = ('csv', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
 RANK = int(os.getenv('RANK', -1))
