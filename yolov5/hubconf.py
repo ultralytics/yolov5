@@ -31,8 +31,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     from yolov5.models.common import AutoShape, DetectMultiBackend
     from yolov5.models.yolo import Model
     from yolov5.utils.downloads import attempt_download
-    from yolov5.utils.general import (LOGGER, check_requirements,
-                                      intersect_dicts, logging)
+    from yolov5.utils.general import LOGGER, check_requirements, intersect_dicts, logging
     from yolov5.utils.torch_utils import select_device
 
     if not verbose:
