@@ -18,6 +18,7 @@ from yolov5.utils.torch_utils import de_parallel
 LOGGERS = ('csv', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
 RANK = int(os.getenv('RANK', -1))
 
+
 def attempt_import_wandb():
     try:
         import wandb
