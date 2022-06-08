@@ -40,7 +40,7 @@ setup(name="yolov5",
       long_description_content_type="text/markdown",
       entry_points={'console_scripts': ["yolov5 = yolov5.__main__:main"]},
       classifiers=[
-          "Intended Audience :: Science/Research/Engineeing",
+          "Intended Audience :: Science/Research",
           "Development Status :: 3 - Alpha",
           "License :: OSI Approved :: Apache Software License",
           "Programming Language :: Python :: 3",
