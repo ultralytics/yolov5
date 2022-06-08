@@ -33,7 +33,7 @@ VERSION = {}  # type: ignore
 with open("yolov5/version.py") as version_file:
     exec(version_file.read(), VERSION)
 
-setup(name="yolov5",
+setup(name="ultralytics-yolov5",
       version=VERSION["VERSION"],
       description="",
       long_description=README,
