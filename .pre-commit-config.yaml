@@ -24,7 +24,7 @@ repos:
       - id: check-docstring-first
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.32.1
+    rev: v2.32.0
     hooks:
       - id: pyupgrade
         name: Upgrade code
@@ -41,6 +41,8 @@ repos:
     hooks:
       - id: yapf
         name: YAPF formatting
+        additional_dependencies: ['toml']
+
 
   - repo: https://github.com/executablebooks/mdformat
     rev: 0.7.14
