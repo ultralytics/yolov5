@@ -24,10 +24,9 @@ def test_complete_lifecycle():
     exported_weight = Path(exported_weights[0])
     assert exported_weight.is_file(), "Exported weight was not saved"
 
-    result = benchmark.run(weights=best_weight) # pandas dataframe
+    result = benchmark.run(weights=best_weight)  # pandas dataframe
     print(result.head())
     # TODO: Set assertion for minimum score threshold
-
 
 
 if __name__ == "__main__":

@@ -41,6 +41,7 @@ from yolov5.utils.torch_utils import select_device, time_sync
 
 ROOT = Path(yolov5.__file__).parents[0]
 
+
 def save_one_txt(predn, save_conf, shape, file):
     # Save one txt result
     gn = torch.tensor(shape)[[1, 0, 1, 0]]  # normalization gain whwh
@@ -329,7 +330,11 @@ def run(
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', nargs='+', type=str, default=Path(os.getcwd()) / 'yolov5s.pt', help='model.pt path(s)')
+    parser.add_argument('--weights',
+                        nargs='+',
+                        type=str,
+                        default=Path(os.getcwd()) / 'yolov5s.pt',
+                        help='model.pt path(s)')
     parser.add_argument('--batch-size', type=int, default=32, help='batch size')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')

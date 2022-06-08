@@ -134,14 +134,14 @@ if __name__ == '__main__':
     import yolov5
     from yolov5.utils.general import cv2
 
-    root  = Path(yolov5.__file__).parents[0]
+    root = Path(yolov5.__file__).parents[0]
 
     imgs = [
         str(root / 'data/images/zidane.jpg'),  # filename
-        root/'data/images/zidane.jpg',  # Path
+        root / 'data/images/zidane.jpg',  # Path
         'https://ultralytics.com/images/zidane.jpg',  # URI
-        cv2.imread(root/'data/images/bus.jpg')[:, :, ::-1],  # OpenCV
-        Image.open(root/'data/images/bus.jpg'),  # PIL
+        cv2.imread(root / 'data/images/bus.jpg')[:, :, ::-1],  # OpenCV
+        Image.open(root / 'data/images/bus.jpg'),  # PIL
         np.zeros((320, 640, 3))]  # numpy
 
     results = model(imgs, size=320)  # batched inference

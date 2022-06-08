@@ -43,6 +43,7 @@ from yolov5.utils.torch_utils import select_device, time_sync
 
 ROOT = Path(yolov5.__file__).parents[0]
 
+
 @torch.no_grad()
 def run(
         weights=ROOT / 'yolov5s.pt',  # model.pt path(s)

@@ -42,6 +42,7 @@ from yolov5.utils.torch_utils import select_device
 ROOT = Path(yolov5.__file__).parents[0]
 # ROOT = ROOT.relative_to(Path.cwd())  # relative
 
+
 def run(
         weights=ROOT / 'yolov5s.pt',  # weights path
         imgsz=640,  # inference size (pixels)
