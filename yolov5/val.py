@@ -108,7 +108,7 @@ def run(
         save_hybrid=False,  # save label+prediction hybrid results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
         save_json=False,  # save a COCO-JSON results file
-        project=Path(os.getcwd()) / 'runs/val',  # save to project/name
+        project=Path.cwd() / 'runs/val',  # save to project/name
         name='exp',  # save to project/name
         exist_ok=False,  # existing project/name ok, do not increment
         half=True,  # use FP16 half-precision inference

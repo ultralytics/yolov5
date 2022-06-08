@@ -42,6 +42,7 @@ from yolov5.utils.torch_utils import select_device
 ROOT = Path(yolov5.__file__).parents[0]
 # ROOT = ROOT.relative_to(Path.cwd())  # relative
 
+
 def run(
         weights=ROOT / 'yolov5s.pt',  # weights path
         imgsz=640,  # inference size (pixels)
@@ -122,7 +123,7 @@ def test(
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default=Path(os.getcwd()) / 'yolov5s.pt', help='weights path')
+    parser.add_argument('--weights', type=str, default=Path.cwd() / 'yolov5s.pt', help='weights path')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
