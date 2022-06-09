@@ -18,6 +18,7 @@ def inference_image_path(image_path, project_meta, context, state, app_logger):
     debug_visualization = settings.get("debug_visualization", g.default_settings["debug_visualization"])
     conf_thres = settings.get("conf_thres", g.default_settings["conf_thres"])
     iou_thres = settings.get("iou_thres", g.default_settings["iou_thres"])
+
     augment = settings.get("augment", g.default_settings["augment"])
     inference_mode = settings.get("inference_mode", "full")
 

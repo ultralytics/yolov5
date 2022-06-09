@@ -48,7 +48,7 @@ def get_output_classes_and_tags(api: sly.Api, task_id, context, state, app_logge
 def get_session_info(api: sly.Api, task_id, context, state, app_logger):
     info = {
         "app": "YOLOv5 serve",
-        "type": "Detector",
+        "type": "Object Detection",
         "weights": g.final_weights,
         "device": str(g.device),
         "half": str(g.half),
@@ -134,6 +134,8 @@ def inference_batch_ids(api: sly.Api, task_id, context, state, app_logger):
 @send_error_data
 def inference_video_id(api: sly.Api, task_id, context, state, app_logger):
     video_info = g.api.video.get_info_by_id(state['videoId'])
+
+    sly.logger.info(f'start inference {video_info.id=}')
     inf_video_interface = nn_to_video.InferenceVideoInterface(api=g.api,
                                                               start_frame_index=state.get('startFrameIndex', 0),
                                                               frames_count=state.get('framesCount', video_info.frames_count - 1),

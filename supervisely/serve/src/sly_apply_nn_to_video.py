@@ -30,9 +30,11 @@ class InferenceVideoInterface:
         self._frames_path = os.path.join(imgs_dir, f'video_inference_{video_info.id}_{time.time_ns()}', 'frames')
         self._imgs_dir = imgs_dir
 
+        self._local_video_path = None
+
         os.makedirs(self._frames_path, exist_ok=True)
 
-        sly.logger.info(f'{self.__class__.__name__} initialized')
+        # sly.logger.info(f'{self.__class__.__name__} initialized')
 
     def _add_frames_indexes(self):
         total_frames = self.video_info.frames_count
@@ -86,7 +88,6 @@ class InferenceVideoInterface:
             video_name = (video_path.split('/')[-1]).split('.mp4')[0]
             # output_path = os.path.join(, f'converted_{time.time_ns()}_{video_name}')
 
-
             vidcap = cv2.VideoCapture(video_path)
             success, image = vidcap.read()
             count = 0
@@ -112,13 +113,9 @@ class InferenceVideoInterface:
 
             return {'frames_path': self._frames_path, 'fps': fps, 'video_path': video_path}
 
-        video_local_path = os.path.join(self._imgs_dir, f'{time.time_ns()}_{self.video_info.name}')
-
-        if os.path.isfile(video_local_path):
-            os.remove(video_local_path)
-
-        self.api.video.download_path(self.video_info.id, video_local_path)
-        return videos_to_frames(video_local_path, [self.start_frame_index, self.start_frame_index + self.frames_count - 1])
+        self._local_video_path = os.path.join(self._imgs_dir, f'{time.time_ns()}_{self.video_info.name}')
+        self.api.video.download_path(self.video_info.id, self._local_video_path)
+        return videos_to_frames(self._local_video_path, [self.start_frame_index, self.start_frame_index + self.frames_count - 1])
 
     def download_frames(self):
         if self.frames_count > (self.video_info.frames_count * 0.3):
@@ -131,3 +128,6 @@ class InferenceVideoInterface:
     def __del__(self):
         if os.path.isdir(self._frames_path):
             shutil.rmtree(os.path.dirname(self._frames_path), ignore_errors=True)
+
+            if self._local_video_path is not None and os.path.isfile(self._local_video_path):
+                os.remove(self._local_video_path)
