@@ -1,45 +1,5 @@
-# Checks style, syntax, and other useful errors.
-flake8
-
-# Static type checking
-mypy==0.960
-
-# Automatic code formatting
-black==22.3.0
-isort==5.10.1
-
 # Running tests
 pytest
-pytest-sphinx
-
-# Allows generation of coverage reports with pytest.
-pytest-cov
-
-# Needed for packaging and uploading to PyPi
-twine>=1.11.0
-setuptools
-wheel
-
-# Building docs
-Sphinx>=4.3.0,<5.1.0
-
-# Sphinx theme: https://sphinx-themes.org/sample-sites/furo/
-furo==2022.4.7
-
-# Lets Sphinx parse markdown files in addition to rst.
-myst-parser>=0.15.2,<0.18.0
-
-# Adds a copy button to code examples in the docs.
-sphinx-copybutton==0.5.0
-
-# Live rebuilding and reloading of docs for developing locally.
-sphinx-autobuild==2021.3.14
-
-# Automatically adds types to docs
-sphinx-autodoc-typehints
-
-# For parsing and comparing version numbers.
-packaging
 
 # for exporting
 coremltools>=4.1  # CoreML export
