@@ -20,7 +20,7 @@ def test_complete_lifecycle():
     # detect.py run() returns None
     detect.run(weights=best_weight)
 
-    exported_weights = export.run(best_weight, include=("torchscript",))
+    exported_weights = export.run(best_weight, include=("torchscript", ))
     exported_weight = Path(exported_weights[0])
     assert exported_weight.is_file(), "Exported weight was not saved"
 
