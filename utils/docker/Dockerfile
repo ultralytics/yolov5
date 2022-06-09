@@ -15,7 +15,7 @@ RUN apt update && apt install --no-install-recommends -y zip htop screen libgl1-
 # Install pip packages
 COPY requirements.txt .
 RUN python -m pip install --upgrade pip
-RUN pip uninstall -y Pillow  # torch torchvision torchtext
+RUN pip uninstall -y torch torchvision torchtext Pillow
 RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook Pillow>=9.1.0 \
     'opencv-python<4.6.0.66' \
     --extra-index-url https://download.pytorch.org/whl/cu113
