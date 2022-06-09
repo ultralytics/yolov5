@@ -59,7 +59,7 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
     if None in results:  # some sizes failed
         i = results.index(None)  # first fail index
         if b >= batch_sizes[i]:  # y intercept above failure point
-            b = batch_sizes[i - 1]  # select prior safe point
+            b = batch_sizes[max(i - 1, 0)]  # select prior safe point
 
     LOGGER.info(emojis(f'{prefix}Using batch-size {b} for {d} {t * fraction:.2f}G/{t:.2f}G ({fraction * 100:.0f}%) ✅'))
     return b
