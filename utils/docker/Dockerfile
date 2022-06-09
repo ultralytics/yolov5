@@ -17,6 +17,7 @@ COPY requirements.txt .
 RUN python -m pip install --upgrade pip
 RUN pip uninstall -y torch torchvision torchtext Pillow
 RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook Pillow>=9.1.0 \
+    'opencv-python<4.6.0.66' \
     --extra-index-url https://download.pytorch.org/whl/cu113
 
 # Create working directory
