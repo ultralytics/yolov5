@@ -7,26 +7,18 @@ Usage:
 """
 
 import argparse
-import os
-import platform
-import sys
 from copy import deepcopy
 from pathlib import Path
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[1]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-if platform.system() != 'Windows':
-    ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.common import *
-from models.experimental import *
-from utils.autoanchor import check_anchor_order
-from utils.general import (LOGGER, check_version, check_yaml, make_divisible,
+import yolov5
+from yolov5.models.common import *
+from yolov5.models.experimental import *
+from yolov5.utils.autoanchor import check_anchor_order
+from yolov5.utils.general import (LOGGER, check_version, check_yaml, make_divisible,
                            print_args)
-from utils.plots import feature_visualization
-from utils.torch_utils import (fuse_conv_and_bn, initialize_weights,
+from yolov5.utils.plots import feature_visualization
+from yolov5.utils.torch_utils import (fuse_conv_and_bn, initialize_weights,
                                model_info, profile, scale_img, select_device,
                                time_sync)
 
@@ -35,6 +27,7 @@ try:
 except ImportError:
     thop = None
 
+ROOT = Path(yolov5.__file__).parents[0]
 
 class Detect(nn.Module):
     stride = None  # strides computed during build

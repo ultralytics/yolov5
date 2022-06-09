@@ -478,7 +478,7 @@ def parse_opt():
     return opt
 
 
-def main(opt=None):
+def main(opt):
     check_requirements(requirements=ROOT / 'requirements.txt',
                        exclude=('tensorboard', 'thop'))
 
