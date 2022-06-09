@@ -5,15 +5,12 @@ from urllib import request
 
 from setuptools import find_packages, setup
 
-README = request.urlopen(
-    'https://raw.githubusercontent.com/ultralytics/yolov5/master/README.md'
-).read().decode('utf-8')
+README = request.urlopen('https://raw.githubusercontent.com/ultralytics/yolov5/master/README.md').read().decode('utf-8')
 
 
 def get_version():
     file = Path('yolov5/__init__.py')
-    return re.search(r'^__version__ = [\'"]([^\'"]*)[\'"]', file.read_text(),
-                     re.M)[1]
+    return re.search(r'^__version__ = [\'"]([^\'"]*)[\'"]', file.read_text(), re.M)[1]
 
 
 def read_requirements(filename: str):
@@ -22,9 +19,7 @@ def read_requirements(filename: str):
 
         def fix_url_dependencies(req: str) -> str:
             """Pip and setuptools disagree about how URL dependencies should be handled."""
-            m = re.match(
-                r"^(git\+)?(https|ssh)://(git@)?github\.com/([\w-]+)/(?P<name>[\w-]+)\.git",
-                req)
+            m = re.match(r"^(git\+)?(https|ssh)://(git@)?github\.com/([\w-]+)/(?P<name>[\w-]+)\.git", req)
             if m is None:
                 return req
             else:
@@ -50,15 +45,13 @@ setup(name="ultralytics-yolov5",
           "Development Status :: 3 - Alpha",
           "License :: OSI Approved :: Apache Software License",
           "Programming Language :: Python :: 3",
-          "Topic :: Scientific/Engineering :: Artificial Intelligence",
-      ],
+          "Topic :: Scientific/Engineering :: Artificial Intelligence",],
       keywords="",
       url="https://github.com/ultralytics/yolov5",
       author="Ultralytics",
       author_email="hello@ultralytics.com",
       license="Apache",
-      packages=find_packages(
-          exclude=["*.tests", "*.tests.*", "tests.*", "tests", "env"], ),
+      packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests", "env"],),
       package_data={"yolov5": ["py.typed"]},
       install_requires=read_requirements("requirements.txt"),
       extras_require={"dev": read_requirements("dev-requirements.txt")},
