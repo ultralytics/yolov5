@@ -14,10 +14,10 @@ RUN apt update && apt install --no-install-recommends -y zip htop screen libgl1-
 
 # Install pip packages
 COPY requirements.txt .
-RUN python -m pip install --upgrade pip
+#RUN python -m pip install --upgrade pip
 # RUN pip uninstall -y torch torchvision torchtext Pillow
-RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook Pillow>=9.1.0 \
-    --extra-index-url https://download.pytorch.org/whl/cu113
+#RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook Pillow>=9.1.0 \
+#    --extra-index-url https://download.pytorch.org/whl/cu113
 
 # Create working directory
 RUN mkdir -p /usr/src/app
