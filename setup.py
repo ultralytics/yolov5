@@ -1,9 +1,16 @@
+import re
 from gzip import READ
+from pathlib import Path
 from urllib import request
 
 from setuptools import find_packages, setup
 
 README = request.urlopen('https://raw.githubusercontent.com/ultralytics/yolov5/master/README.md').read().decode('utf-8')
+
+
+def get_version():
+    file = Path('yolov5/__init__.py')
+    return re.search(r'^__version__ = [\'"]([^\'"]*)[\'"]', file.read_text(), re.M)[1]
 
 
 def read_requirements(filename: str):
@@ -27,14 +34,8 @@ def read_requirements(filename: str):
     return requirements
 
 
-# version.py defines the VERSION and VERSION_SHORT variables.
-# We use exec here so we don't import cached_path whilst setting up.
-VERSION = {}  # type: ignore
-with open("yolov5/version.py") as version_file:
-    exec(version_file.read(), VERSION)
-
 setup(name="ultralytics-yolov5",
-      version=VERSION["VERSION"],
+      version=get_version(),
       description="",
       long_description=README,
       long_description_content_type="text/markdown",
