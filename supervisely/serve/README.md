@@ -6,7 +6,7 @@
 <p align="center">
   <a href="#Overview">Overview</a> •
     <a href="#Related-Apps">Related Apps</a> •
-  <a href="#How-To-Use">How To Use</a> •
+  <a href="#How-To-Use">How To Run</a> •
   <a href="#For-Developers">For Developers</a>
 </p>
 
