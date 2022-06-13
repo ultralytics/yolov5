@@ -21,6 +21,8 @@ import sys
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
+from cv2 import fitEllipse
+from matplotlib import projections
 
 import torch
 import torch.nn as nn
@@ -30,6 +32,9 @@ import torchvision
 import torchvision.transforms as T
 from torch.cuda import amp
 from tqdm import tqdm
+import numpy as np
+import random
+import wandb
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -46,10 +51,15 @@ from utils.torch_utils import de_parallel, model_info, select_device
 normalize = lambda x, mean=0.5, std=0.25: (x - mean) / std
 denormalize = lambda x, mean=0.5, std=0.25: x * std + mean
 
-
+def random_seed(seed=42, rank=0):
+    torch.manual_seed(seed + rank)
+    np.random.seed(seed + rank)
+    random.seed(seed + rank)
 def train():
+    random_seed()
     save_dir, data, bs, epochs, nw, imgsz = \
         Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, min(NUM_THREADS, opt.workers), opt.img_size
+    wandb.init(project="yolov5-classficiation", name=f"yolo-{opt.model}")
 
     # Directories
     wdir = save_dir / 'weights'
@@ -75,7 +85,7 @@ def train():
     # Dataloaders
     trainset = torchvision.datasets.ImageFolder(root=data_dir / 'train', transform=trainform)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=nw)
-    testset = torchvision.datasets.ImageFolder(root=data_dir / 'test', transform=testform)
+    testset = torchvision.datasets.ImageFolder(root=data_dir / 'valid', transform=testform)
     testloader = torch.utils.data.DataLoader(testset, batch_size=bs, shuffle=True, num_workers=nw)
     names = trainset.classes
     nc = len(names)
@@ -88,7 +98,7 @@ def train():
     # Model
     if opt.model.startswith('yolov5'):
         # YOLOv5 Classifier
-        model = torch.hub.load('ultralytics/yolov5', opt.model, pretrained=True, autoshape=False)
+        model = torch.hub.load('ultralytics/yolov5', opt.model, pretrained=False, autoshape=False)
         if isinstance(model, DetectMultiBackend):
             model = model.model  # unwrap DetectMultiBackend
         model.model = model.model[:10] if opt.model.endswith('6') else model.model[:8]  # backbone
@@ -100,12 +110,12 @@ def train():
         for p in model.parameters():
             p.requires_grad = True  # for training
     elif opt.model in torch.hub.list('rwightman/gen-efficientnet-pytorch'):  # i.e. efficientnet_b0
-        model = torch.hub.load('rwightman/gen-efficientnet-pytorch', opt.model, pretrained=True)
+        model = torch.hub.load('rwightman/gen-efficientnet-pytorch', opt.model, pretrained=False)
         model.classifier = nn.Linear(model.classifier.in_features, nc)
     else:  # try torchvision
-        model = torchvision.models.__dict__[opt.model](pretrained=True)
+        model = torchvision.models.__dict__[opt.model](pretrained=False)
         model.fc = nn.Linear(model.fc.weight.shape[1], nc)
-
+    wandb.log({"params":sum(x.numel() for x in model.parameters())})
     # print(model)  # debug
     model_info(model)
 
@@ -157,11 +167,10 @@ def train():
             mloss += loss.item()
             mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
             pbar.desc = f"{'%s/%s' % (epoch + 1, epochs):10s}{mem:10s}{mloss / (i + 1):<12.3g}"
-
             # Test
             if i == len(pbar) - 1:
                 fitness = test(model, testloader, names, criterion, pbar=pbar)  # test
-
+    
         # Scheduler
         scheduler.step()
 
@@ -169,6 +178,12 @@ def train():
         if fitness > best_fitness:
             best_fitness = fitness
 
+        metric = {
+                "mean_loss": mloss/len(trainloader),
+                "eval_top1" : fitness*100
+                 }       
+
+        wandb.log(metric)
         # Save model
         final_epoch = epoch + 1 == epochs
         if (not opt.nosave) or final_epoch:
