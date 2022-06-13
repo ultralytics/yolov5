@@ -3,15 +3,13 @@ from pathlib import Path
 
 import wandb
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[3]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
+import yolov5
+from yolov5.train import parse_opt, train
+from yolov5.utils.callbacks import Callbacks
+from yolov5.utils.general import increment_path
+from yolov5.utils.torch_utils import select_device
 
-from train import parse_opt, train
-from utils.callbacks import Callbacks
-from utils.general import increment_path
-from utils.torch_utils import select_device
+ROOT = Path(yolov5.__file__).parents[0]
 
 
 def sweep():
