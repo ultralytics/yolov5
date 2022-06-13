@@ -1029,7 +1029,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
             data = yaml.safe_load(f)  # data dict
             if zipped:
                 data['path'] = data_dir  # TODO: should this be dir.resolve()?`
-    except Exception as e:
+    except Exception:
         raise Exception("error/HUB/dataset_stats/yaml_load")
 
     check_dataset(data, autodownload)  # download dataset if missing
