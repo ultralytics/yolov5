@@ -130,6 +130,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             resume=opt.resume, 
             rank=LOCAL_RANK,
             one_shot=opt.one_shot,
+            max_train_steps=opt.max_train_steps,
             )
         ckpt, state_dict, sparseml_wrapper = extras['ckpt'], extras['state_dict'], extras['sparseml_wrapper']
         LOGGER.info(extras['report'])

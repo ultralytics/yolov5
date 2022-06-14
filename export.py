@@ -462,6 +462,7 @@ def load_checkpoint(
     resume=None, 
     rank=-1,
     one_shot=False,
+    max_train_steps=-1,
     ):
     with torch_distributed_zero_first(rank):
         # download if not found locally or from sparsezoo if stub
@@ -508,6 +509,7 @@ def load_checkpoint(
         checkpoint_recipe,
         train_recipe,
         one_shot=one_shot,
+        steps_per_epoch=max_train_steps,
     )
     exclude_anchors = not ensemble_type and (cfg or hyp.get('anchors')) and not resume
     loaded = False
