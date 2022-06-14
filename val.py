@@ -29,22 +29,23 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-
 from export import load_checkpoint
 from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.datasets import create_dataloader
-from utils.general import (LOGGER, box_iou, check_dataset, check_img_size, check_requirements, check_yaml,
+from utils.general import (LOGGER, ROOT, box_iou, check_dataset, check_img_size, check_requirements, check_yaml,
                            coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, print_args,
                            scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, ap_per_class
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, time_sync
+
+
+FILE = Path(__file__).resolve()
+LOCAL_ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(LOCAL_ROOT) not in sys.path:
+    sys.path.append(str(LOCAL_ROOT))  # add ROOT to PATH
+LOCAL_ROOT = Path(os.path.relpath(LOCAL_ROOT, Path.cwd()))  # relative
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -325,7 +326,7 @@ def run(data,
     return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
 
 
-def parse_opt(known= False, default_project_dir = None):
+def parse_opt(known= False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
@@ -343,7 +344,7 @@ def parse_opt(known= False, default_project_dir = None):
     parser.add_argument('--save-hybrid', action='store_true', help='save label+prediction hybrid results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-json', action='store_true', help='save a COCO-JSON results file')
-    parser.add_argument('--project', default=(default_project_dir or ROOT) / 'runs/val', help='save to project/name')
+    parser.add_argument('--project', default=ROOT / 'runs/val', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
@@ -359,7 +360,7 @@ def parse_opt(known= False, default_project_dir = None):
 
 
 def main(opt):
-    check_requirements(requirements=ROOT / 'requirements.txt', exclude=('tensorboard', 'thop'))
+    check_requirements(requirements=LOCAL_ROOT / 'requirements.txt', exclude=('tensorboard', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
         if opt.conf_thres > 0.001:  # https://github.com/ultralytics/yolov5/issues/1466

@@ -62,24 +62,22 @@ from torch.utils.mobile_optimizer import optimize_for_mobile
 from sparseml.pytorch.utils import ModuleExporter
 from sparseml.pytorch.sparsification.quantization import skip_onnx_input_quantize
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-
 from models.common import Conv, DetectMultiBackend
 from models.experimental import attempt_load
 from models.yolo import Detect, Model
 from utils.activations import SiLU
 from utils.datasets import LoadImages
-from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_version, colorstr,
+from utils.general import (LOGGER, ROOT, check_dataset, check_img_size, check_requirements, check_version, colorstr,
                            file_size, print_args, url2file, intersect_dicts)
 from utils.torch_utils import select_device, torch_distributed_zero_first, is_parallel
 from utils.downloads import attempt_download
 from utils.sparse import SparseMLWrapper, check_download_sparsezoo_weights
 
-
+FILE = Path(__file__).resolve()
+LOCAL_ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(LOCAL_ROOT) not in sys.path:
+    sys.path.append(str(LOCAL_ROOT))  # add ROOT to PATH
+LOCAL_ROOT = Path(os.path.relpath(LOCAL_ROOT, Path.cwd()))  # relative
 
 def export_formats():
     # YOLOv5 export formats

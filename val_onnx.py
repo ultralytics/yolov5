@@ -178,7 +178,7 @@ def run(
     save_hybrid=False,  # save label+prediction hybrid results to *.txt
     save_conf=False,  # save confidences in --save-txt labels
     save_json=False,  # save a COCO-JSON results file
-    project=LOCAL_ROOT / "runs/val",  # save to project/name
+    project=ROOT / "runs/val",  # save to project/name
     name="exp",  # save to project/name
     exist_ok=False,  # existing project/name ok, do not increment
     half=True,  # use FP16 half-precision inference
@@ -494,7 +494,7 @@ def parse_opt():
         "--save-json", action="store_true", help="save a COCO-JSON results file"
     )
     parser.add_argument(
-        "--project", default=LOCAL_ROOT / "runs/val", help="save to project/name"
+        "--project", default=ROOT / "runs/val", help="save to project/name"
     )
     parser.add_argument("--name", default="exp", help="save to project/name")
     parser.add_argument(
@@ -535,7 +535,7 @@ def main(opt=None):
     if opt is None:
         opt = parse_opt()
     check_requirements(
-        requirements=ROOT / "requirements.txt", exclude=("tensorboard", "thop")
+        requirements=LOCAL_ROOT / "requirements.txt", exclude=("tensorboard", "thop")
     )
 
     if opt.task in ("train", "val", "test"):  # run normally
