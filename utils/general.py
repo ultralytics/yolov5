@@ -199,11 +199,18 @@ def init_seeds(seed=0):
     # Initialize random number generator (RNG) seeds https://pytorch.org/docs/stable/notes/randomness.html
     # cudnn seed 0 settings are slower and more reproducible, else faster and less reproducible
     import torch.backends.cudnn as cudnn
+    os.environ['PYTHONHASHSEED'] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+    # https://pytorch.org/docs/stable/_modules/torch/cuda/random.html#manual_seed
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed) # for multi GPU. Exception safe
     cudnn.benchmark, cudnn.deterministic = (False, True) if seed == 0 else (True, False)
 
+def dataloader_init_fn(worker_id):
+    rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
+    np.random.seed(rank+1)
 
 def intersect_dicts(da, db, exclude=()):
     # Dictionary intersection of matching keys and shapes, omitting 'exclude' keys, using da values
