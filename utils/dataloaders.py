@@ -107,8 +107,7 @@ def create_dataloader(path,
                       quad=False,
                       prefix='',
                       shuffle=False,
-                      worker_init_fn=None
-                      ):
+                      worker_init_fn=None):
     if rect and shuffle:
         LOGGER.warning('WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False')
         shuffle = False

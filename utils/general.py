@@ -205,12 +205,14 @@ def init_seeds(seed=0):
     torch.manual_seed(seed)
     # https://pytorch.org/docs/stable/_modules/torch/cuda/random.html#manual_seed
     torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed) # for multi GPU. Exception safe
+    torch.cuda.manual_seed_all(seed)  # for multi GPU. Exception safe
     cudnn.benchmark, cudnn.deterministic = (False, True) if seed == 0 else (True, False)
+
 
 def dataloader_init_fn(worker_id):
     rank = int(os.getenv('RANK', -1))  # rank in world for Multi-GPU trainings
-    np.random.seed(rank+1)
+    np.random.seed(rank + 1)
+
 
 def intersect_dicts(da, db, exclude=()):
     # Dictionary intersection of matching keys and shapes, omitting 'exclude' keys, using da values
