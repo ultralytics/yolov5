@@ -72,7 +72,7 @@ def select_device(device='', batch_size=0, newline=True):
             p = torch.cuda.get_device_properties(i)
             s += f"{'' if i == 0 else space}CUDA:{d} ({p.name}, {p.total_memory / (1 << 20):.0f}MiB)\n"  # bytes to MB
         arg = 'cuda:0'
-    elif not cpu and hasattr(torch, 'has_mps') and torch.backends.mps.is_available():  # prefer MPS if available
+    elif not cpu and getattr(torch, 'has_mps', False) and torch.backends.mps.is_available():  # prefer MPS if available
         s += 'MPS\n'
         arg = 'mps'
     else:  # revert to CPU
