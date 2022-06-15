@@ -1,7 +1,7 @@
 import json
 import os
 
-import supervisely_lib as sly
+import supervisely as sly
 
 
 def main():

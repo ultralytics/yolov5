@@ -3,7 +3,7 @@ import sys
 import yaml
 import time
 from pathlib import Path
-import supervisely_lib as sly
+import supervisely as sly
 
 import sly_train_globals as g
 from sly_train_globals import my_app, api, task_id, team_id
@@ -107,7 +107,7 @@ def _upload_data_vis(field, paths, cnt_columns):
         remote_file_path = os.path.join(g.remote_artifacts_dir, file_path.replace(g.local_artifacts_dir, '').lstrip("/"))
         file_info = api.file.upload(team_id, file_path, remote_file_path)
         annotations[file_info.name] = {
-            "url": file_info.full_storage_url,
+            "url": file_info.storage_path,
             "name": file_info.name,
             "figures": []
         }

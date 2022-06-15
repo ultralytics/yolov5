@@ -6,7 +6,7 @@ import argparse
 import numpy as np
 
 import os
-import supervisely_lib as sly
+import supervisely as sly
 import torch
 import torch.nn.functional as F
 

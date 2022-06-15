@@ -8,8 +8,9 @@ import yaml
 # sys.path.append(Path(sys.argv[0]))
 from models.experimental import attempt_load
 from PIL import Image
-from supervisely_lib.io.fs import get_file_name_with_ext
+from supervisely.io.fs import get_file_name_with_ext
 from torchvision import transforms
+from sly_globals import my_app, TEAM_ID
 
 
 def to_numpy(tensor):
@@ -91,3 +92,16 @@ def preprocess(predictions, original_image_size, reshaped_image_size):
         item[..., 2] *= coefficients[0]
         item[..., 3] *= coefficients[1]
     return predictions_copy
+
+
+def download_weights(path2weights):
+    remote_path = path2weights
+    weights_path = os.path.join(my_app.data_dir, get_file_name_with_ext(remote_path))
+    try:
+        my_app.public_api.file.download(team_id=TEAM_ID,
+                                        remote_path=remote_path,
+                                        local_save_path=weights_path)
+        return weights_path
+    except:
+        raise FileNotFoundError('FileNotFoundError')
+    return None

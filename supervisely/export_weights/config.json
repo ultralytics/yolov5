@@ -11,13 +11,13 @@
   ],
   "description": "to TorchScript and ONNX formats",
   "docker_image": "supervisely/base-pytorch:6.0.22",
+  "instance_version": "6.4.57",
   "main_script": "supervisely/export_weights/src/sly_export_weights.py",
   "task_location": "workspace_tasks",
   "icon": "https://i.imgur.com/pNBtA2G.png",
   "icon_cover": true,
   "isolate": true,
   "headless": true,
-  "instance_version": "6.4.20",
   "context_menu": {
     "target": [
       "files_file"

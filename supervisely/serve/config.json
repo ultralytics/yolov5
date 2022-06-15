@@ -11,6 +11,7 @@
   ],
   "description": "Deploy model as REST API service",
   "docker_image": "supervisely/base-pytorch:6.0.22",
+  "instance_version": "6.4.57",
   "main_script": "supervisely/serve/src/sly_serve.py",
   "modal_template": "supervisely/serve/src/modal.html",
   "modal_width": 700,
@@ -166,7 +167,6 @@
   "isolate": true,
   "need_gpu": true,
   "headless": true,
-  "instance_version": "6.4.15",
   "session_tags": [
     "deployed_nn"
   ],

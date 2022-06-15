@@ -18,7 +18,7 @@ from utils.plots import plot_images, output_to_target, plot_study_txt
 from utils.torch_utils import select_device, time_synchronized
 
 from sly_train_utils import upload_pred_vis
-import supervisely_lib as sly
+import supervisely as sly
 
 
 def test(data,

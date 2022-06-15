@@ -1,4 +1,4 @@
-import supervisely_lib as sly
+import supervisely as sly
 import sly_metrics as metrics
 
 

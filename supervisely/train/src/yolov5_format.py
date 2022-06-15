@@ -1,6 +1,6 @@
 import os
 import yaml
-import supervisely_lib as sly
+import supervisely as sly
 
 
 def _transform_label(class_names, img_size, label: sly.Label):

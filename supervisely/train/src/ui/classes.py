@@ -1,4 +1,4 @@
-import supervisely_lib as sly
+import supervisely as sly
 
 
 def init(api: sly.Api, data, state, project_id, project_meta: sly.ProjectMeta):

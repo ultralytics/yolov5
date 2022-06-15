@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-import supervisely_lib as sly
+import supervisely as sly
 from supervisely.io.fs import get_file_name_with_ext
 import os
 from pathlib import Path

@@ -41,8 +41,8 @@ from sly_train_utils import send_epoch_log, upload_label_vis, upload_train_data_
 from sly_metrics import send_metrics
 
 #logger = logging.getLogger(__name__)
-import supervisely_lib as sly
-from supervisely_lib import logger
+import supervisely as sly
+from supervisely import logger
 
 
 def train(hyp, opt, device, tb_writer=None):

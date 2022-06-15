@@ -1,5 +1,5 @@
-import supervisely_lib as sly
-# from supervisely_lib.io.fs import download, file_exists, get_file_name, get_file_name_with_ext
+import supervisely as sly
+# from supervisely.io.fs import download, file_exists, get_file_name, get_file_name_with_ext
 import os
 import pathlib
 import torch
@@ -7,36 +7,27 @@ import torch.nn as nn
 
 from pathlib import Path
 import yaml
+from sly_globals import my_app, TEAM_ID, WORKSPACE_ID, customWeightsPath, device, image_size, batch_size, grid, args, ts
 
 import sys
+
 root_source_path = str(pathlib.Path(sys.argv[0]).parents[3])
 sly.logger.info(f"Root source directory: {root_source_path}")
 sys.path.append(root_source_path)
 
+app_source_path = str(pathlib.Path(sys.argv[0]).parents[0])
+sly.logger.info(f"App root source directory: {app_source_path}")
+sys.path.append(app_source_path)
+
 import models
 from app_utils import download_weights
 from utils.general import check_img_size  # , colorstr, check_requirements, file_size, set_logging
-from utils.torch_utils import select_device
 from models.experimental import attempt_load
 from utils.activations import Hardswish, SiLU
 from models.common import Conv, DWConv
 
-my_app = sly.AppService()
-
-TEAM_ID = int(os.environ['context.teamId'])
-WORKSPACE_ID = int(os.environ['context.workspaceId'])
-TASK_ID = int(os.environ['TASK_ID'])
-customWeightsPath = os.environ['modal.state.slyFile']
-device = select_device(device='cpu')
-image_size = 640
-ts = None
-batch_size = 1
-grid = True
-args = dict(my_app=my_app, TEAM_ID=TEAM_ID)
-
 
 def export_to_torch_script(weights, img, model):
-    global ts
     try:
         f = weights.replace('.pt', '.torchscript.pt')  # filename
         ts = torch.jit.trace(model, img, strict=False)
@@ -81,9 +72,9 @@ def export_to_core_ml(weights, img):
 @my_app.callback("export_weights")
 @sly.timeit
 def export_weights(api: sly.Api, task_id, context, state, app_logger):
-    weights_path = download_weights(customWeightsPath, **args)
+    weights_path = download_weights(customWeightsPath)
     cwp = os.path.join(Path(customWeightsPath).parents[1], 'opt.yaml')
-    configs_path = download_weights(cwp, **args)
+    configs_path = download_weights(cwp)
     model = attempt_load(weights=weights_path, map_location=device)
 
     with open(configs_path, 'r') as stream:
@@ -125,11 +116,16 @@ def export_weights(api: sly.Api, task_id, context, state, app_logger):
     process_folder = str(pathlib.Path(weights_path).parents[0])
     remote_path = customWeightsPath
     remote_path_template = str(pathlib.Path(remote_path).parents[0])
+    file_id = None
     for file in os.listdir(process_folder):
         file_path = os.path.join(process_folder, file)
         remote_file_path = os.path.join(remote_path_template, file)
         if '.onnx' in file_path or '.mlmodel' in file_path or '.torchscript' in file_path:
-            api.file.upload(team_id=TEAM_ID, src=file_path, dst=remote_file_path)
+            file_info = api.file.upload(team_id=TEAM_ID, src=file_path, dst=remote_file_path)
+            if file_id is None:
+                file_id = file_info.id
+    if file_id is not None:
+        api.task.set_output_directory(task_id, file_id, os.path.dirname(customWeightsPath))
     my_app.stop()
 
 
