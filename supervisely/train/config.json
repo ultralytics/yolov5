@@ -25,5 +25,6 @@
     "context_root": "Neural Networks",
     "context_category": "YOLO v5"
   },
-  "poster": "https://i.imgur.com/YwSq29o.png"
+  "poster": "https://i.imgur.com/YwSq29o.png",
+  "community_agent": false
 }
