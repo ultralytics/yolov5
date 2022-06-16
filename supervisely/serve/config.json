@@ -170,5 +170,6 @@
   "session_tags": [
     "deployed_nn"
   ],
-  "poster": "https://i.imgur.com/1qXIdqs.png"
+  "poster": "https://i.imgur.com/1qXIdqs.png",
+  "community_agent": false
 }
