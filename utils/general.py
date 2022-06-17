@@ -198,17 +198,14 @@ def print_args(args: Optional[dict] = None, show_file=True, show_fcn=False):
 def init_seeds(seed=0):
     # Initialize random number generator (RNG) seeds https://pytorch.org/docs/stable/notes/randomness.html
     # cudnn seed 0 settings are slower and more reproducible, else faster and less reproducible
-    import torch.backends.cudnn as cudnn
-    torch.use_deterministic_algorithms(True, warn_only=True)
+    torch.use_deterministic_algorithms(True)
     os.environ['PYTHONHASHSEED'] = str(seed)
     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    # https://pytorch.org/docs/stable/_modules/torch/cuda/random.html#manual_seed
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # for multi GPU. Exception safe
-    cudnn.benchmark, cudnn.deterministic = (False, True) if seed == 0 else (True, False)
 
 
 def dataloader_init_fn(worker_id):

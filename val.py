@@ -89,7 +89,9 @@ def process_batch(detections, labels, iouv):
                 matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
                 # matches = matches[matches[:, 2].argsort()[::-1]]
                 matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
+            torch.use_deterministic_algorithms(False)
             correct[matches[:, 1].astype(int), i] = True
+            torch.use_deterministic_algorithms(True)
     return correct
 
 
@@ -259,7 +261,7 @@ def run(
             plot_images(im, output_to_target(out), paths, save_dir / f'val_batch{batch_i}_pred.jpg', names)  # pred
 
         callbacks.run('on_val_batch_end')
-
+        
     # Compute metrics
     stats = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
