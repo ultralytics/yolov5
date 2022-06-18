@@ -9,13 +9,15 @@ import warnings
 import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
+from zmq import has
 
 from utils.general import colorstr, cv2, emojis
 from utils.loggers.wandb.wandb_utils import WandbLogger
+from utils.loggers.mlflow.mlflow_utils import MlflowLogger
 from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
 
-LOGGERS = ('csv', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
+LOGGERS = ('csv', 'tb', 'wandb', 'mlflow')  # text-file, TensorBoard, Weights & Biases
 RANK = int(os.getenv('RANK', -1))
 
 try:
@@ -31,6 +33,12 @@ try:
             wandb = None
 except (ImportError, AssertionError):
     wandb = None
+
+try:
+    import mlflow
+    assert hasattr(mlflow, '__version__') # verify package import not local dir
+except (ImportError, AssertionError):
+    mlflow = None
 
 
 class Loggers():
@@ -61,11 +69,17 @@ class Loggers():
             setattr(self, k, None)  # init empty logger dictionary
         self.csv = True  # always log to csv
 
-        # Message
+        # Messages
         if not wandb:
             prefix = colorstr('Weights & Biases: ')
             s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs (RECOMMENDED)"
             self.logger.info(emojis(s))
+
+        if not mlflow:
+            # print mlflow message
+            prefix = colorstr("Mlflow: ")
+            s = f"{prefix}mlflow is also supported now"
+            self.logger.info(s)
 
         # TensorBoard
         s = self.save_dir
@@ -87,6 +101,14 @@ class Loggers():
                 )
         else:
             self.wandb = None
+
+        if mlflow and 'mlflow' in self.include:
+            
+            run_id = self.opt.resume if isinstance(self.opt.resume, str) else None
+            self.mlflow = MlflowLogger(self.opt, run_id=run_id) # check if valid run_id
+            # self.logger.info("Yolov5 running with Mlflow")
+        else:
+            self.mlflow = None
 
     def on_train_start(self):
         # Callback runs on train start
@@ -117,6 +139,9 @@ class Loggers():
         # Callback runs on train epoch end
         if self.wandb:
             self.wandb.current_epoch = epoch + 1
+
+        if self.mlflow:
+            self.mlflow.current_epoch = epoch + 1
 
     def on_val_image_end(self, pred, predn, path, names, im):
         # Callback runs on val image end
@@ -151,11 +176,17 @@ class Loggers():
             self.wandb.log(x)
             self.wandb.end_epoch(best_result=best_fitness == fi)
 
+        if self.mlflow:
+            self.mlflow.log_metrics(x, epoch=epoch)
+
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):
         # Callback runs on model save event
         if self.wandb:
             if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
                 self.wandb.log_model(last.parent, self.opt, epoch, fi, best_model=best_fitness == fi)
+        if self.mlflow:
+            if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
+                self.mlflow.log_artifacts(self, last, epoch)
 
     def on_train_end(self, last, best, plots, epoch, results):
         # Callback runs on training end
@@ -179,6 +210,11 @@ class Loggers():
                                    name=f'run_{self.wandb.wandb_run.id}_model',
                                    aliases=['latest', 'best', 'stripped'])
             self.wandb.finish_run()
+
+        if self.mlflow:
+            # log stuff
+            self.mlflow.log_artifact(best)
+            self.mlflow.finish_run()
 
     def on_params_update(self, params):
         # Update hyperparams or configs of the experiment
