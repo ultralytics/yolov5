@@ -12,7 +12,6 @@ ROOT = FILE.parents[3]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
-
 from utils.general import LOGGER
 
 try:
@@ -23,8 +22,8 @@ except (ImportError, AssertionError):
     mlflow = None
 
 
+class MlflowLogger:
 
-class MlflowLogger(object):
     def __init__(self, opt, run_id=None) -> None:
         try:
             LOGGER.info(f"mlflow run_id from init {run_id}")

@@ -12,8 +12,8 @@ from torch.utils.tensorboard import SummaryWriter
 from zmq import has
 
 from utils.general import colorstr, cv2, emojis
-from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.loggers.mlflow.mlflow_utils import MlflowLogger
+from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
 
@@ -36,7 +36,7 @@ except (ImportError, AssertionError):
 
 try:
     import mlflow
-    assert hasattr(mlflow, '__version__') # verify package import not local dir
+    assert hasattr(mlflow, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
     mlflow = None
 
@@ -103,9 +103,9 @@ class Loggers():
             self.wandb = None
 
         if mlflow and 'mlflow' in self.include:
-            
+
             run_id = self.opt.resume if isinstance(self.opt.resume, str) else None
-            self.mlflow = MlflowLogger(self.opt, run_id=run_id) # check if valid run_id
+            self.mlflow = MlflowLogger(self.opt, run_id=run_id)  # check if valid run_id
             # self.logger.info("Yolov5 running with Mlflow")
         else:
             self.mlflow = None
