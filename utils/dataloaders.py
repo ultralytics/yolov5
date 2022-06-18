@@ -359,7 +359,7 @@ class LoadStreams:
                     LOGGER.warning('WARNING: Video stream unresponsive, please check your IP camera connection.')
                     self.imgs[i] = np.zeros_like(self.imgs[i])
                     cap.open(stream)  # re-open stream if signal was lost
-            time.sleep(1 / self.fps[i])  # wait time
+            time.sleep(0.0)  # wait time
 
     def __iter__(self):
         self.count = -1
@@ -1027,10 +1027,14 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
             cv2.imwrite(str(f_new), im)
 
     zipped, data_dir, yaml_path = _unzip(Path(path))
-    with open(check_yaml(yaml_path), errors='ignore') as f:
-        data = yaml.safe_load(f)  # data dict
-        if zipped:
-            data['path'] = data_dir  # TODO: should this be dir.resolve()?
+    try:
+        with open(check_yaml(yaml_path), errors='ignore') as f:
+            data = yaml.safe_load(f)  # data dict
+            if zipped:
+                data['path'] = data_dir  # TODO: should this be dir.resolve()?`
+    except Exception:
+        raise Exception("error/HUB/dataset_stats/yaml_load")
+
     check_dataset(data, autodownload)  # download dataset if missing
     hub_dir = Path(data['path'] + ('-hub' if hub else ''))
     stats = {'nc': data['nc'], 'names': data['names']}  # statistics dictionary
