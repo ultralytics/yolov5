@@ -9,7 +9,6 @@ import warnings
 import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
-from zmq import has
 
 from utils.general import colorstr, cv2, emojis
 from utils.loggers.mlflow.mlflow_utils import MlflowLogger
@@ -186,7 +185,7 @@ class Loggers():
                 self.wandb.log_model(last.parent, self.opt, epoch, fi, best_model=best_fitness == fi)
         if self.mlflow:
             if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
-                self.mlflow.log_artifacts(self, last, epoch)
+                self.mlflow.log_artifacts(last.parent, epoch)
 
     def on_train_end(self, last, best, plots, epoch, results):
         # Callback runs on training end
@@ -213,7 +212,7 @@ class Loggers():
 
         if self.mlflow:
             # log stuff
-            self.mlflow.log_artifact(best)
+            self.mlflow.log_artifacts(best)
             self.mlflow.finish_run()
 
     def on_params_update(self, params):

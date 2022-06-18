@@ -37,8 +37,12 @@ class MlflowLogger:
             self.mlflow_active_run = None
             self.current_epoch = 0
 
-    def log_artifacts(self, last, epoch=None):
-        LOGGER.info(f"from mlflow log_artifacts: {last, epoch}")
+    def log_artifacts(self, artifact, epoch=None):
+        LOGGER.info(f"from mlflow log_artifacts: {artifact, epoch}")
+
+    def log_model(self, model):
+        if self.mlflow is not None:
+            self.mlflow.pytorch.log_model(model, code_paths=[ROOT.resolve()])
 
     def log_params(self, params: dict):
         if self.mlflow is not None:
