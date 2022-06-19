@@ -41,7 +41,7 @@ class MlflowLogger:
     def log_artifacts(self, artifact: Path, epoch: int = None) -> None:
         if not isinstance(artifact, Path):
             artifact = Path(artifact)
-        artifact_name = artifact.stem()
+        artifact_name = artifact.stem
         if artifact.is_dir():
             name = f"{artifact_name}_epoch{str(epoch).zfill(4)}" if epoch is not None else artifact_name
             self.mlflow.log_artifacts(artifact, artifact_path=name)
