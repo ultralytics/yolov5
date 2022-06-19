@@ -139,9 +139,6 @@ class Loggers():
         if self.wandb:
             self.wandb.current_epoch = epoch + 1
 
-        if self.mlflow:
-            self.mlflow.current_epoch = epoch + 1
-
     def on_val_image_end(self, pred, predn, path, names, im):
         # Callback runs on val image end
         if self.wandb:
@@ -220,3 +217,6 @@ class Loggers():
         # params: A dict containing {param: value} pairs
         if self.wandb:
             self.wandb.wandb_run.config.update(params, allow_val_change=True)
+
+        if self.mlflow:
+            self.mlflow.log_metrics(params, is_param=True)

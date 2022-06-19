@@ -3,7 +3,7 @@
 import sys
 from argparse import Namespace
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[3]
@@ -31,6 +31,7 @@ class MlflowLogger:
                 LOGGER.info(f"{prefix}Using run_id({self.run_id})")
                 if self.run_id != run_id:
                     self.log_params(vars(opt))
+                    self.log_metrics(vars(opt), is_param=True)
         except Exception as err:
             LOGGER.error(f"{prefix}Failing init - {str(err)}")
             LOGGER.warning(f"{prefix}Continuining without Mlflow")
@@ -38,6 +39,8 @@ class MlflowLogger:
             self.mlflow_active_run = None
 
     def log_artifacts(self, artifact: Path, epoch: int = None) -> None:
+        if not isinstance(artifact, Path):
+            artifact = Path(artifact)
         artifact_name = artifact.stem()
         if artifact.is_dir():
             name = f"{artifact_name}_epoch{str(epoch).zfill(4)}" if epoch is not None else artifact_name
@@ -52,8 +55,10 @@ class MlflowLogger:
     def log_params(self, params: Dict[str, Any]) -> None:
         self.mlflow.log_params(params=params)
 
-    def log_metrics(self, metrics: Dict[str, float], epoch: int = None) -> None:
-        self.mlflow.log_metrics(metrics=metrics, step=epoch)
+    def log_metrics(self, metrics: Dict[str, float], epoch: int = None, is_param: bool = False) -> None:
+        prefix = "param/" if is_param else ""
+        metrics_dict = {f"{prefix}{k}": float(v) for k, v in metrics.items() if isinstance(v, Union[float, int])}
+        self.mlflow.log_metrics(metrics=metrics_dict, step=epoch)
 
     def finish_run(self) -> None:
         self.mlflow.end_run()
