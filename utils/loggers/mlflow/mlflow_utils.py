@@ -58,10 +58,10 @@ class MlflowLogger:
             artifact = Path(artifact)
         artifact_name = artifact.stem
         if artifact.is_dir():
-            name = f"{artifact_name}_epoch{str(epoch).zfill(4)}" if epoch is not None else artifact_name
+            name = f"{artifact_name}_epoch{str(epoch+1).zfill(5)}" if epoch is not None else artifact_name
             self.mlflow.log_artifacts(str(f"{artifact.resolve()}/"), artifact_path=name)
         else:
-            name = f"{artifact_name}_epoch{str(epoch).zfill(4)}{artifact.suffix}" if epoch is not None else None
+            name = f"{artifact_name}_epoch{str(epoch+1).zfill(5)}{artifact.suffix}" if epoch is not None else None
             self.mlflow.log_artifact(artifact.resolve(), artifact_path=name)
 
     def log_model(self, model) -> None:
