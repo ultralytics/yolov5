@@ -5,7 +5,8 @@ from urllib import request
 
 from setuptools import find_packages, setup
 
-README = request.urlopen('https://raw.githubusercontent.com/ultralytics/yolov5/master/README.md').read().decode('utf-8')
+with open("README.md", encoding='utf-8') as readme_file:
+    README = readme_file.read()
 
 
 def get_version():
