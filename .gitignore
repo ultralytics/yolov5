@@ -254,11 +254,3 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
-
-# Pipfile
-Pipfile
-Pipfile.lock
-
-# Mlflow stuff (remove for your own fork)
-MLproject
-conda.yaml
