@@ -182,6 +182,7 @@ class Loggers():
                 self.wandb.log_model(last.parent, self.opt, epoch, fi, best_model=best_fitness == fi)
         if self.mlflow:
             if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
+                self.mlflow.log_artifacts(last)
                 self.mlflow.log_artifacts(last.parent, epoch)
 
     def on_train_end(self, last, best, plots, epoch, results):
@@ -209,7 +210,10 @@ class Loggers():
 
         if self.mlflow:
             # log stuff
-            self.mlflow.log_artifacts(best if best.exists() else last)
+            self.mlflow.log_artifacts(best.parent if best.exists() else last.parent, epoch=epoch)
+            if best.exists():
+                self.mlflow.log_artifacts(best)
+            self.mlflow.log_artifacts(last)
             self.mlflow.finish_run()
 
     def on_params_update(self, params):
