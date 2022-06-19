@@ -209,7 +209,7 @@ class Loggers():
 
         if self.mlflow:
             # log stuff
-            self.mlflow.log_artifacts(best)
+            self.mlflow.log_artifacts(best if best.exists() else last)
             self.mlflow.finish_run()
 
     def on_params_update(self, params):
