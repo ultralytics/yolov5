@@ -20,8 +20,18 @@ except (ImportError, AssertionError):
 
 
 class MlflowLogger:
+    """Log training run, artifacts, parameters, and metrics to Mlflow.
+
+    This logger expects that Mlflow is setup by the user.
+    """
 
     def __init__(self, opt: Namespace, run_id: str = None) -> None:
+        """Initializes the MlflowLogger
+
+        Args:
+            opt (Namespace): Commandline arguments for this run
+            run_id (str, optional): Mlflow Run ID if resuming. Defaults to None.
+        """
         prefix = colorstr("Mlflow: ")
         try:
             LOGGER.info(f"{prefix}Trying run_id({run_id})")
@@ -39,6 +49,14 @@ class MlflowLogger:
             self.mlflow_active_run = None
 
     def log_artifacts(self, artifact: Path, epoch: int = None) -> None:
+        """Member function to log artifacts (either directory or single item).
+
+        If the artifacts need to be saved as checkpoints, set the epoch.
+
+        Args:
+            artifact (Path): File or folder to be logged
+            epoch (int, optional): Epoch during training. Set value to save input as a checkpoint. Defaults to None.
+        """
         if not isinstance(artifact, Path):
             artifact = Path(artifact)
         artifact_name = artifact.stem
@@ -50,15 +68,37 @@ class MlflowLogger:
             self.mlflow.log_artifact(artifact.resolve(), artifact_path=name)
 
     def log_model(self, model) -> None:
+        """Member function to log model as an Mlflow model.
+
+        Args:
+            model (nn.Module): The pytorch model
+        """
         self.mlflow.pytorch.log_model(model, code_paths=[ROOT.resolve()])
 
     def log_params(self, params: Dict[str, Any]) -> None:
+        """Member funtion to log parameters.
+        Mlflow doesn't have mutable parameters and so this function is used
+        only to log initial training parameters.
+
+        Args:
+            params (Dict[str, Any]): Parameters as dict
+        """
         self.mlflow.log_params(params=params)
 
     def log_metrics(self, metrics: Dict[str, float], epoch: int = None, is_param: bool = False) -> None:
+        """Member function to log metrics.
+        Mlflow requires metrics to be floats.
+
+        Args:
+            metrics (Dict[str, float]): Dictionary with metric names and values
+            epoch (int, optional): Training epoch. Defaults to None.
+            is_param (bool, optional): Set it to True to log keys with a prefix "params/". Defaults to False.
+        """
         prefix = "param/" if is_param else ""
         metrics_dict = {f"{prefix}{k}": float(v) for k, v in metrics.items() if isinstance(v, Union[float, int])}
         self.mlflow.log_metrics(metrics=metrics_dict, step=epoch)
 
     def finish_run(self) -> None:
+        """Member function to end mlflow run.
+        """
         self.mlflow.end_run()
