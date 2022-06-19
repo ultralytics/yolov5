@@ -194,18 +194,21 @@ def print_args(args: Optional[dict] = None, show_file=True, show_fcn=False):
     s = (f'{Path(file).stem}: ' if show_file else '') + (f'{fcn}: ' if show_fcn else '')
     LOGGER.info(colorstr(s) + ', '.join(f'{k}={v}' for k, v in args.items()))
 
-
+    
 def init_seeds(seed=0):
     # Initialize random number generator (RNG) seeds https://pytorch.org/docs/stable/notes/randomness.html
     # cudnn seed 0 settings are slower and more reproducible, else faster and less reproducible
+    import torch.backends.cudnn as cudnn
     torch.use_deterministic_algorithms(True)
-    os.environ['PYTHONHASHSEED'] = str(seed)
     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)  # for multi GPU. Exception safe
+    cudnn.benchmark, cudnn.deterministic = (False, True) if seed == 0 else (True, False)
+    # os.environ['PYTHONHASHSEED'] = str(seed)
+    # torch.cuda.manual_seed(seed)
+    # torch.cuda.manual_seed_all(seed)  # for multi GPU, exception safe
+    
 
 
 def intersect_dicts(da, db, exclude=()):
