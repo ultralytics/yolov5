@@ -25,23 +25,20 @@ class MlflowLogger:
     This logger expects that Mlflow is setup by the user.
     """
 
-    def __init__(self, opt: Namespace, run_id: str = None) -> None:
+    def __init__(self, opt: Namespace) -> None:
         """Initializes the MlflowLogger
 
         Args:
             opt (Namespace): Commandline arguments for this run
-            run_id (str, optional): Mlflow Run ID if resuming. Defaults to None.
         """
         prefix = colorstr("Mlflow: ")
         try:
-            LOGGER.info(f"{prefix}Trying run_id({run_id})")
-            self.mlflow, self.mlflow_active_run = mlflow, None if not mlflow else mlflow.start_run(run_id=run_id)
+            self.mlflow, self.mlflow_active_run = mlflow, None if not mlflow else mlflow.start_run()
             if self.mlflow_active_run is not None:
                 self.run_id = self.mlflow_active_run.info.run_id
                 LOGGER.info(f"{prefix}Using run_id({self.run_id})")
-                if self.run_id != run_id:
-                    self.log_params(vars(opt))
-                    self.log_metrics(vars(opt), is_param=True)
+                self.log_params(vars(opt))
+                self.log_metrics(vars(opt), is_param=True)
         except Exception as err:
             LOGGER.error(f"{prefix}Failing init - {str(err)}")
             LOGGER.warning(f"{prefix}Continuining without Mlflow")

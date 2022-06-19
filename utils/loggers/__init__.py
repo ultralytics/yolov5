@@ -102,10 +102,7 @@ class Loggers():
             self.wandb = None
 
         if mlflow and 'mlflow' in self.include:
-
-            run_id = self.opt.resume if isinstance(self.opt.resume, str) else None
-            self.mlflow = MlflowLogger(self.opt, run_id=run_id)  # check if valid run_id
-            # self.logger.info("Yolov5 running with Mlflow")
+            self.mlflow = MlflowLogger(self.opt)
         else:
             self.mlflow = None
 
