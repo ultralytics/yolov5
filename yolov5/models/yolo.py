@@ -7,6 +7,7 @@ Usage:
 """
 
 import argparse
+import sys
 from copy import deepcopy
 from pathlib import Path
 
@@ -25,6 +26,7 @@ except ImportError:
     thop = None
 
 ROOT = Path(yolov5.__file__).parents[0]
+sys.path.append(str(ROOT))  # needed to load older models
 
 
 class Detect(nn.Module):
