@@ -288,8 +288,9 @@ def export_saved_model(model,
     # YOLOv5 TensorFlow SavedModel export
     try:
         import tensorflow as tf
-        from models.tf import TFDetect, TFModel
         from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
+
+        from yolov5.models.tf import TFDetect, TFModel
 
         LOGGER.info(f'\n{prefix} starting export with tensorflow {tf.__version__}...')
         f = str(file).replace('.pt', '_saved_model')
