@@ -7,7 +7,7 @@ on:
   push:
     branches: [master]
   pull_request:
-    branches: [master, package]
+    branches: [master, pip]
   schedule:
     - cron: '0 0 * * *'  # runs at 00:00 UTC every day
 
