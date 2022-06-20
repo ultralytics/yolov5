@@ -48,9 +48,8 @@ denormalize = lambda x, mean=0.5, std=0.25: x * std + mean
 
 
 def train():
-    save_dir, data, bs, epochs, nw, imgsz = \
-        Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, min(NUM_THREADS, opt.workers), opt.img_size
-
+    save_dir, data, bs, epochs, nw, imgsz, pretrained = \
+        Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, min(NUM_THREADS, opt.workers), opt.img_size, not opt.from_scratch
     # Directories
     wdir = save_dir / 'weights'
     wdir.mkdir(parents=True, exist_ok=True)  # make dir
@@ -88,7 +87,7 @@ def train():
     # Model
     if opt.model.startswith('yolov5'):
         # YOLOv5 Classifier
-        model = torch.hub.load('ultralytics/yolov5', opt.model, pretrained=True, autoshape=False)
+        model = torch.hub.load('ultralytics/yolov5', opt.model, pretrained=pretrained, autoshape=False)
         if isinstance(model, DetectMultiBackend):
             model = model.model  # unwrap DetectMultiBackend
         model.model = model.model[:10] if opt.model.endswith('6') else model.model[:8]  # backbone
@@ -100,10 +99,10 @@ def train():
         for p in model.parameters():
             p.requires_grad = True  # for training
     elif opt.model in torch.hub.list('rwightman/gen-efficientnet-pytorch'):  # i.e. efficientnet_b0
-        model = torch.hub.load('rwightman/gen-efficientnet-pytorch', opt.model, pretrained=True)
+        model = torch.hub.load('rwightman/gen-efficientnet-pytorch', opt.model, pretrained=pretrained )
         model.classifier = nn.Linear(model.classifier.in_features, nc)
     else:  # try torchvision
-        model = torchvision.models.__dict__[opt.model](pretrained=True)
+        model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
         model.fc = nn.Linear(model.fc.weight.shape[1], nc)
 
     # print(model)  # debug
@@ -288,7 +287,7 @@ if __name__ == '__main__':
     parser.add_argument('--hyp', type=str, default='data/hyps/hyp.scratch-low.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=20)
     parser.add_argument('--batch-size', type=int, default=128, help='total batch size for all GPUs')
-    parser.add_argument('--img-size', type=int, default=128, help='train, test image sizes (pixels)')
+    parser.add_argument('--img-size', '--imgsz', '--img', type=int, default=128, help='train, test image sizes (pixels)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--optimizer', type=str, choices=['SGD', 'Adam', 'AdamW'], default='Adam', help='optimizer')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
@@ -298,6 +297,7 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='runs/train', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+    parser.add_argument('--from-scratch', '--scratch', action='store_true', help='train model from scratch')
     opt = parser.parse_args()
 
     # Checks
