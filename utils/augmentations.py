@@ -8,10 +8,13 @@ import random
 
 import cv2
 import numpy as np
+import torchvision.transforms as T
 
 from utils.general import LOGGER, check_version, colorstr, resample_segments, segment2box
 from utils.metrics import bbox_ioa
 
+IMAGENET_DEFAULT_MEAN = (0.485, 0.456, 0.406)
+IMAGENET_DEFAULT_STD = (0.229, 0.224, 0.225)
 
 class Albumentations:
     # YOLOv5 Albumentations class (optional, only used if package is installed)
@@ -282,3 +285,58 @@ def box_candidates(box1, box2, wh_thr=2, ar_thr=100, area_thr=0.1, eps=1e-16):  
     w2, h2 = box2[2] - box2[0], box2[3] - box2[1]
     ar = np.maximum(w2 / (h2 + eps), h2 / (w2 + eps))  # aspect ratio
     return (w2 > wh_thr) & (h2 > wh_thr) & (w2 * h2 / (w1 * h1 + eps) > area_thr) & (ar < ar_thr)  # candidates
+
+
+def album_classifier_augmentations(is_train=True, size=224, scale=(0.08, 1.0), hflip=0.5, vflip=0.0, jitter=0.4, mean=IMAGENET_DEFAULT_MEAN, std=IMAGENET_DEFAULT_STD, no_aug=False, auto_aug=None):
+    try:
+        import albumentations as A
+        from albumentations.pytorch import ToTensorV2
+        check_version(A.__version__, '1.0.3', hard=True)  # version requirement
+        no_aug = no_aug or not is_train # no aug for eval
+        # Resize and crop
+        T = [A.RandomResizedCrop(height=size, width=size, scale=scale)]
+        if no_aug:
+            T = [ 
+                A.SmallestMaxSize(max_size=size),
+                A.CenterCrop(height=size, width=size)
+                 ]
+            
+        # Secondry augmentations
+        if not no_aug:
+            if auto_aug:
+                #TODO: implement AugMix, AutoAug & RandAug in albumentation
+                LOGGER.info(colorstr('augmentations: ') + 'auto augmentations are currently not supported')
+            else:
+                if hflip>0:
+                    T += [A.HorizontalFlip(p=hflip)]
+                if vflip>0:
+                    T += [A.VerticalFlip(p=vflip)]
+                if jitter > 0:
+                    # repeat the same value for brightness, contrast, satuaration, with 0 hue
+                    color_jitter = (float(jitter),) * 3
+                    T += [A.ColorJitter(*color_jitter, 0)]
+        
+        # Normalize and convert to Tensor
+        T += [
+            A.Normalize(mean=mean, std=std),
+            ToTensorV2()
+        ]
+
+        LOGGER.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in T if x.p))
+        return A.Compose(T)
+
+    except ImportError:  # package not installed, skip
+        pass
+    except Exception as e:
+        LOGGER.info(colorstr('albumentations: ') + f'{e}')
+    
+    return None
+
+def default_classifier_augmentations(is_train=True):
+    # To be used when albumentations is not installed.
+    # Converts raw images to trainable, normalized tensors
+    transform = T.Compose([
+        T.ToTensor(),
+        T.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)]) 
+    
+    return transform

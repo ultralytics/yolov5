@@ -21,12 +21,14 @@ from zipfile import ZipFile
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torchvision
+import torchvision.transforms as T
 import yaml
 from PIL import ExifTags, Image, ImageOps
 from torch.utils.data import DataLoader, Dataset, dataloader, distributed
 from tqdm import tqdm
 
-from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
+from utils.augmentations import Albumentations, default_classifier_augmentations, album_classifier_augmentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
 from utils.general import (DATASETS_DIR, LOGGER, NUM_THREADS, check_dataset, check_requirements, check_yaml, clean_str,
                            cv2, segments2boxes, xyn2xy, xywh2xyxy, xywhn2xyxy, xyxy2xywhn)
 from utils.torch_utils import torch_distributed_zero_first
@@ -1085,3 +1087,39 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
     if verbose:
         print(json.dumps(stats, indent=2, sort_keys=False))
     return stats
+
+class ClassificationDataset(torchvision.datasets.ImageFolder):
+    def __init__(self, root, transform, album_transform=None):
+        super().__init__(root = root, transform=transform)
+        self.album_transform = album_transform
+
+    def __getitem__(self, idx):
+        path, target = self.samples[idx]
+        if not self.album_transform: # use default torch transform if albumentation is not installed
+            sample = self.loader(path)
+            sample = self.transform(sample)
+        else:
+            sample = cv2.imread(path)
+            sample = cv2.cvtColor(sample, cv2.COLOR_BGR2RGB)
+            sample = self.album_transform(image=sample)["image"]
+        return sample, target
+
+def create_classification_dataloader(path,
+                                    is_train=True,
+                                    imgsz=224,
+                                    batch_size=16,
+                                    augment=True, 
+                                    auto_augment=False,
+                                    cache=False, # TODO
+                                    rank=-1,
+                                    workers=8,
+                                    shuffle=False):
+    album_transform = album_classifier_augmentations(is_train=is_train, size=imgsz, auto_aug=auto_augment, no_aug=not augment)
+    default_transform = default_classifier_augmentations(is_train)
+    dataset = ClassificationDataset(root=path, transform=default_transform, album_transform=album_transform)
+
+    return torch.utils.data.DataLoader(
+                  dataset,
+                  batch_size=batch_size,
+                  shuffle=shuffle,
+                  num_workers=workers), dataset
