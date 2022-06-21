@@ -60,6 +60,7 @@ def run(
         save_txt=False,  # save results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
         save_crop=False,  # save cropped prediction boxes
+        save_empty=False  # save empty results to *.txt 
         nosave=False,  # do not save images/videos
         classes=None,  # filter by class: --class 0, or --class 0 2 3
         agnostic_nms=False,  # class-agnostic NMS
@@ -169,7 +170,9 @@ def run(
                         annotator.box_label(xyxy, label, color=colors(c, True))
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
-
+            elif save_txt and save_empty:
+                with open(f'{txt_path}.txt', 'a') as f:
+                    pass
             # Stream results
             im0 = annotator.result()
             if view_img:
