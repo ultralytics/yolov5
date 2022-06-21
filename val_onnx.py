@@ -142,21 +142,45 @@ def process_batch(detections, labels, iouv):
     return correct
 
 
-def get_stride(model_path, image_shape=(640, 640)) -> int:
+def get_stride(yolo_pipeline: Pipeline) -> int:
     """
-    Infer strides from model file and image shape
+    Infer max stride from pipeline
 
-    :param model_path: Path to model file
-    :param image_shape: Tuple of ints representing the image shape
+    :param yolo_pipeline: pipeline to infer the max stride of
     """
-    model = onnx.load(model_path)
+    model = onnx.load(yolo_pipeline.onnx_file_path)
+    image_size = get_tensor_dim_shape(model.graph.input[0], 2)
+    if not image_size:
+        image_size = yolo_pipeline.image_size or 640
+        if not isinstance(image_size, int):
+            image_size = image_size[0]
 
     grid_shapes = (
         get_tensor_dim_shape(model.graph.output[index], 2)
         for index in range(1, len(model.graph.output))
     )
 
-    strides = (image_shape[0] // grid_shape for grid_shape in grid_shapes)
+    def _infer_grid_shapes():
+        # build fake input
+        input_shape = [
+            yolo_pipeline.engine.batch_size,
+            get_tensor_dim_shape(model.graph.input[0], 1),
+            image_size,
+            image_size
+        ]
+        fake_input = np.random.randn(*input_shape).astype(
+            np.uint8 if yolo_pipeline.is_quantized else np.float32
+        )
+
+        # run sample forward pass and get grid shapes from output size
+        fake_outputs = yolo_pipeline.engine([fake_input])[1:]  # skip first output
+        return [output.shape[2] for output in fake_outputs]
+
+    if any(not grid_shape for grid_shape in grid_shapes):
+        # unable to get static output shape, infer from forward pass
+        grid_shapes = _infer_grid_shapes()
+
+    strides = (image_size // grid_shape for grid_shape in grid_shapes)
     return max(strides)
 
 
@@ -210,7 +234,7 @@ def run(
         batch_size=batch_size,
     )
 
-    stride = get_stride(model_path=yolo_pipeline.onnx_file_path, image_shape=(640, 640))
+    stride = get_stride(yolo_pipeline)
 
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
