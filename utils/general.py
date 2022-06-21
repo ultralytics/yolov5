@@ -38,7 +38,7 @@ from sparseml.utils import ROOT_PATH as sparseml_root
 
 # Settings
 FILE = Path(__file__).resolve()
-ROOT = sparseml_root / "src" / "sparseml" / "yolov5"  # YOLOv5 root directory
+ROOT = sparseml_root / "yolov5"  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
