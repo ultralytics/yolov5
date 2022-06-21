@@ -1,4 +1,4 @@
-# YOLOv5 requirements
+## YOLOv5 requirements
 # Usage: pip install -r requirements.txt
 
 # Base ----------------------------------------
@@ -38,3 +38,6 @@ thop  # FLOPs computation
 # albumentations>=1.0.3
 # pycocotools>=2.0  # COCO mAP
 # roboflow
+
+# Carbontracking ------------------------------
+codecarbon

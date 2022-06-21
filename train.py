@@ -12,6 +12,8 @@ Usage:
     $ python path/to/train.py --data coco128.yaml --weights '' --cfg yolov5s.yaml --img 640  # from scratch
 """
 
+#from codecarbon import EmissionsTracker
+from codecarbon import track_emissions
 import argparse
 import math
 import os
@@ -60,7 +62,7 @@ LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable
 RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 
-
+@track_emissions(project_name="yolo")
 def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictionary
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
@@ -560,6 +562,8 @@ def main(opt, callbacks=Callbacks()):
         device = torch.device('cuda', LOCAL_RANK)
         dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
 
+    #tracker = EmissionsTracker()
+    #tracker.start()
     # Train
     if not opt.evolve:
         train(opt.hyp, opt, device, callbacks)
@@ -655,6 +659,8 @@ def main(opt, callbacks=Callbacks()):
                     f"Results saved to {colorstr('bold', save_dir)}\n"
                     f'Usage example: $ python train.py --hyp {evolve_yaml}')
 
+    #emissions = tracker.stop()
+    #print(emissions)
 
 def run(**kwargs):
     # Usage: import train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
