@@ -66,7 +66,6 @@ def train():
         url = f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip'
         download(url, dir=data_dir.parent)
 
-
     # Dataloaders
     trainloader, trainset = create_classification_dataloader(path=data_dir / 'train',
                                                              is_train=True,
