@@ -454,8 +454,6 @@ def check_dataset(data, autodownload=True):
 
     # Resolve paths
     path = Path(extract_dir or data.get('path') or '')  # optional 'path' default to '.'
-    if not path.is_absolute():
-        path = (ROOT / path).resolve()
     for k in 'train', 'val', 'test':
         if data.get(k):  # prepend path
             data[k] = str(path / data[k]) if isinstance(data[k], str) else [str(path / x) for x in data[k]]
