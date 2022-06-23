@@ -185,3 +185,30 @@ class Loggers():
         # params: A dict containing {param: value} pairs
         if self.wandb:
             self.wandb.wandb_run.config.update(params, allow_val_change=True)
+
+class GenericLogger:
+    def __init__(self, opt, logger, include = ('tb', 'wandb')):
+        # init default loggers
+        self.save_dir = opt.save_dir
+        self.include = include
+        self.logger = logger
+        if 'tb' in self.include:
+            prefix = colorstr('TensorBoard: ')
+            self.logger.info(f"{prefix}Start with 'tensorboard --logdir {self.save_dir.parent}', view at http://localhost:6006/")
+            self.tb = SummaryWriter(str(self.save_dir))
+            
+        if wandb and 'wandb' in self.include:
+            self.wandb = wandb.init(project="YOLOv5-Classifier" if opt.project=="runs/train" else opt.project,
+                                    name=None if opt.name=="exp" else opt.name,
+                                    config=opt
+                                    )
+        else:
+            self.wandb = None
+    
+    def log_metrics(self, metrics_dict):
+        if self.wandb:
+            self.wandb.log(metrics_dict)
+        if self.tb:
+            for k, v in metrics_dict.items():
+                self.tb.add_scalar(k, v)
+        

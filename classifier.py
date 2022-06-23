@@ -40,8 +40,9 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import Classify, DetectMultiBackend
-from utils.general import (NUM_THREADS, check_file, check_git_status, check_requirements, colorstr, download,
+from utils.general import (NUM_THREADS, LOGGER, check_file, check_git_status, check_requirements, colorstr, download,
                            increment_path)
+from utils.loggers import GenericLogger
 from utils.torch_utils import de_parallel, model_info, select_device
 
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
@@ -59,7 +60,8 @@ def train():
     wdir = save_dir / 'weights'
     wdir.mkdir(parents=True, exist_ok=True)  # make dir
     last, best = wdir / 'last.pt', wdir / 'best.pt'
-
+    logger = GenericLogger(opt, LOGGER)
+    
     # Download Dataset
     data_dir = FILE.parents[1] / 'datasets' / data
     if not data_dir.is_dir():
@@ -173,7 +175,11 @@ def train():
         # Best fitness
         if fitness > best_fitness:
             best_fitness = fitness
-
+        # log
+        logger.log_metrics({
+            "loss": mloss,
+            "accuracy_top1": fitness
+        })
         # Save model
         final_epoch = epoch + 1 == epochs
         if (not opt.nosave) or final_epoch:
@@ -304,6 +310,9 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--from-scratch', '--scratch', action='store_true', help='train model from scratch')
+    # inference args
+    parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob, 0 for webcam')
+
     opt = parser.parse_args()
 
     # Checks
