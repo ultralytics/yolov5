@@ -1118,7 +1118,7 @@ def create_classification_dataloader(
         cache=False,  # TODO
         rank=-1,
         workers=8,
-        shuffle=False):
+        shuffle=True):
     album_transform = album_classifier_augmentations(is_train=is_train,
                                                      size=imgsz,
                                                      auto_aug=auto_augment,
