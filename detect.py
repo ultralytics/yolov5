@@ -57,6 +57,7 @@ def run(
         max_det=1000,  # maximum detections per image
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         view_img=False,  # show results
+        viewsz=[],       # resized results
         save_txt=False,  # save results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
         save_crop=False,  # save cropped prediction boxes
@@ -173,7 +174,12 @@ def run(
             # Stream results
             im0 = annotator.result()
             if view_img:
-                cv2.imshow(str(p), im0)
+                if len(viewsz) == 1:
+                    cv2.imshow(str(p), cv2.resize(im0, (viewsz[0], viewsz[0])))
+                elif len(viewsz) == 2:
+                    cv2.imshow(str(p), cv2.resize(im0, (viewsz[0], viewsz[1])))
+                else:
+                    cv2.imshow(str(p), im0)
                 cv2.waitKey(1)  # 1 millisecond
 
             # Save results (image with detections)
@@ -219,6 +225,7 @@ def parse_opt():
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='show results')
+    parser.add_argument('--viewsz', '--view-size', nargs='+', type=int, default=[], help='result resize shape h,w')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
