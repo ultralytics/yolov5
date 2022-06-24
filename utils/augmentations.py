@@ -208,10 +208,10 @@ def random_perspective(im,
             new = np.concatenate((x.min(1), y.min(1), x.max(1), y.max(1))).reshape(4, n).T
 
         if rm_trimmed:
-            # remove all labels which are not more than 97% inside the images.
+            # remove all labels which are not more than 95% inside the images.
             box = np.array([0, 0, im.shape[1], im.shape[0]], dtype=np.float32)
             ioa = bbox_ioa(box, new)  # intersection over area
-            j = ioa >= 0.97
+            j = ioa >= 0.95  # 95%, because boxes do not surround the object perfectly
             new = new[j]
             targets = targets[j]
 
