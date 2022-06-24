@@ -179,6 +179,7 @@ def random_perspective(im,
     # ax[0].imshow(im[:, :, ::-1])  # base
     # ax[1].imshow(im2[:, :, ::-1])  # warped
 
+
     # Transform label coordinates
     n = len(targets)
     if n:
@@ -193,7 +194,7 @@ def random_perspective(im,
                 xy = xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2]  # perspective rescale or affine
 
                 # clip
-                new[i] = segment2box(xy, width, height)
+                new[i] = segment2box(xy, width, height, rm_trimmed=rm_trimmed)
 
         else:  # warp boxes
             xy = np.ones((n * 4, 3))
@@ -206,17 +207,17 @@ def random_perspective(im,
             y = xy[:, [1, 3, 5, 7]]
             new = np.concatenate((x.min(1), y.min(1), x.max(1), y.max(1))).reshape(4, n).T
 
-            if rm_trimmed:
-                # remove all labeles which are not more than 97% inside the images.
-                box = np.array([0, 0, im.shape[1], im.shape[0]], dtype=np.float32)
-                ioa = bbox_ioa(box, new)  # intersection over area
-                j = ioa >= 0.97
-                new = new[j]
-                targets = targets[j]
+        if rm_trimmed:
+            # remove all labels which are not more than 97% inside the images.
+            box = np.array([0, 0, im.shape[1], im.shape[0]], dtype=np.float32)
+            ioa = bbox_ioa(box, new)  # intersection over area
+            j = ioa >= 0.97
+            new = new[j]
+            targets = targets[j]
 
-            # clip
-            new[:, [0, 2]] = new[:, [0, 2]].clip(0, width)
-            new[:, [1, 3]] = new[:, [1, 3]].clip(0, height)
+        # clip
+        new[:, [0, 2]] = new[:, [0, 2]].clip(0, width)
+        new[:, [1, 3]] = new[:, [1, 3]].clip(0, height)
 
         # filter candidates
         i = box_candidates(box1=targets[:, 1:5].T * s, box2=new.T, area_thr=0.01 if use_segments else 0.10)
