@@ -88,10 +88,10 @@ def set_logging(name=None, verbose=VERBOSE):
     level = logging.INFO if verbose and rank in {-1, 0} else logging.ERROR
     log = logging.getLogger(name)
     log.setLevel(level)
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(message)s"))
-    handler.setLevel(level)
-    log.addHandler(handler)
+    for handler in logging.StreamHandler(), logging.FileHandler('log.txt'):
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        handler.setLevel(level)
+        log.addHandler(handler)
 
 
 set_logging()  # run before defining LOGGER
