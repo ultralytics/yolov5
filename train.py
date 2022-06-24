@@ -251,7 +251,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                        rank=-1,
                                        workers=workers * 2,
                                        pad=0.5,
-                                       prefix=colorstr('val: '))[0]
+                                       prefix=colorstr('val: '),
+                                       rm_trimmed=rm_trimmed)[0]
 
         if not resume:
             labels = np.concatenate(dataset.labels, 0)
