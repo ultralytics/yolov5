@@ -106,7 +106,8 @@ def create_dataloader(path,
                       image_weights=False,
                       quad=False,
                       prefix='',
-                      shuffle=False):
+                      shuffle=False,
+                      rm_trimmed=False):
     if rect and shuffle:
         LOGGER.warning('WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False')
         shuffle = False
@@ -123,7 +124,8 @@ def create_dataloader(path,
             stride=int(stride),
             pad=pad,
             image_weights=image_weights,
-            prefix=prefix)
+            prefix=prefix,
+            rm_trimmed=rm_trimmed)
 
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()  # number of CUDA devices
@@ -411,7 +413,8 @@ class LoadImagesAndLabels(Dataset):
                  single_cls=False,
                  stride=32,
                  pad=0.0,
-                 prefix=''):
+                 prefix='',
+                 rm_trimmed=False):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -422,6 +425,7 @@ class LoadImagesAndLabels(Dataset):
         self.stride = stride
         self.path = path
         self.albumentations = Albumentations() if augment else None
+        self.rm_trimmed = rm_trimmed
 
         try:
             f = []  # image files
@@ -614,7 +618,8 @@ class LoadImagesAndLabels(Dataset):
                                                  translate=hyp['translate'],
                                                  scale=hyp['scale'],
                                                  shear=hyp['shear'],
-                                                 perspective=hyp['perspective'])
+                                                 perspective=hyp['perspective'],
+                                                 rm_trimmed=self.rm_trimmed)
 
         nl = len(labels)  # number of labels
         if nl:
@@ -732,7 +737,8 @@ class LoadImagesAndLabels(Dataset):
                                            scale=self.hyp['scale'],
                                            shear=self.hyp['shear'],
                                            perspective=self.hyp['perspective'],
-                                           border=self.mosaic_border)  # border to remove
+                                           border=self.mosaic_border, # border to remove
+                                           rm_trimmed=self.rm_trimmed)
 
         return img4, labels4
 
@@ -808,7 +814,8 @@ class LoadImagesAndLabels(Dataset):
                                            scale=self.hyp['scale'],
                                            shear=self.hyp['shear'],
                                            perspective=self.hyp['perspective'],
-                                           border=self.mosaic_border)  # border to remove
+                                           border=self.mosaic_border,
+                                           rm_trimmed=self.rm_trimmed)  # border to remove
 
         return img9, labels9
 
