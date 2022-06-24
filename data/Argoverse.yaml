@@ -4,7 +4,7 @@
 # parent
 # ├── yolov5
 # └── datasets
-#     └── Argoverse  ← downloads here
+#     └── Argoverse  ← downloads here (31.3 GB)
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
@@ -32,7 +32,7 @@ download: |
       for annot in tqdm(a['annotations'], desc=f"Converting {set} to YOLOv5 format..."):
           img_id = annot['image_id']
           img_name = a['images'][img_id]['name']
-          img_label_name = img_name[:-3] + "txt"
+          img_label_name = f'{img_name[:-3]}txt'
 
           cls = annot['category_id']  # instance class id
           x_center, y_center, width, height = annot['bbox']

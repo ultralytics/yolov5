@@ -4,7 +4,7 @@
 # parent
 # ├── yolov5
 # └── datasets
-#     └── VOC  ← downloads here
+#     └── VOC  ← downloads here (2.8 GB)
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
@@ -59,20 +59,21 @@ download: |
   # Download
   dir = Path(yaml['path'])  # dataset root dir
   url = 'https://github.com/ultralytics/yolov5/releases/download/v1.0/'
-  urls = [url + 'VOCtrainval_06-Nov-2007.zip',  # 446MB, 5012 images
-          url + 'VOCtest_06-Nov-2007.zip',  # 438MB, 4953 images
-          url + 'VOCtrainval_11-May-2012.zip']  # 1.95GB, 17126 images
-  download(urls, dir=dir / 'images', delete=False, threads=3)
+  urls = [f'{url}VOCtrainval_06-Nov-2007.zip',  # 446MB, 5012 images
+          f'{url}VOCtest_06-Nov-2007.zip',  # 438MB, 4953 images
+          f'{url}VOCtrainval_11-May-2012.zip']  # 1.95GB, 17126 images
+  download(urls, dir=dir / 'images', delete=False, curl=True, threads=3)
 
   # Convert
-  path = dir / f'images/VOCdevkit'
+  path = dir / 'images/VOCdevkit'
   for year, image_set in ('2012', 'train'), ('2012', 'val'), ('2007', 'train'), ('2007', 'val'), ('2007', 'test'):
       imgs_path = dir / 'images' / f'{image_set}{year}'
       lbs_path = dir / 'labels' / f'{image_set}{year}'
       imgs_path.mkdir(exist_ok=True, parents=True)
       lbs_path.mkdir(exist_ok=True, parents=True)
 
-      image_ids = open(path / f'VOC{year}/ImageSets/Main/{image_set}.txt').read().strip().split()
+      with open(path / f'VOC{year}/ImageSets/Main/{image_set}.txt') as f:
+          image_ids = f.read().strip().split()
       for id in tqdm(image_ids, desc=f'{image_set}{year}'):
           f = path / f'VOC{year}/JPEGImages/{id}.jpg'  # old img path
           lb_path = (lbs_path / f.name).with_suffix('.txt')  # new label path
