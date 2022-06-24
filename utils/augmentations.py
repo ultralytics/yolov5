@@ -129,7 +129,8 @@ def random_perspective(im,
                        scale=.1,
                        shear=10,
                        perspective=0.0,
-                       border=(0, 0)):
+                       border=(0, 0),
+                       rm_trimmed=False):
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(0.1, 0.1), scale=(0.9, 1.1), shear=(-10, 10))
     # targets = [cls, xyxy]
 
@@ -204,6 +205,14 @@ def random_perspective(im,
             x = xy[:, [0, 2, 4, 6]]
             y = xy[:, [1, 3, 5, 7]]
             new = np.concatenate((x.min(1), y.min(1), x.max(1), y.max(1))).reshape(4, n).T
+
+            if rm_trimmed:
+                # remove all labeles which are not more than 97% inside the images.
+                box = np.array([0, 0, im.shape[1], im.shape[0]], dtype=np.float32)
+                ioa = bbox_ioa(box, new)  # intersection over area
+                j = ioa >= 0.97
+                new = new[j]
+                targets = targets[j]
 
             # clip
             new[:, [0, 2]] = new[:, [0, 2]].clip(0, width)
