@@ -300,6 +300,7 @@ def classify_albumentations(augment=True,
     # YOLOv5 classification Albumentations (optional, only used if package is installed)
     try:
         import albumentations as A
+        from albumentations.pytorch import ToTensorV2
         check_version(A.__version__, '1.0.3', hard=True)  # version requirement
         if augment:  # Resize and crop
             T = [A.RandomResizedCrop(height=size, width=size, scale=scale)]
@@ -316,7 +317,7 @@ def classify_albumentations(augment=True,
                     T += [A.ColorJitter(*color_jitter, 0)]
         else:  # Use fixed crop for eval set (reproducibility)
             T = [A.SmallestMaxSize(max_size=size), A.CenterCrop(height=size, width=size)]
-        T += [A.Normalize(mean=mean, std=std), A.pytorch.ToTensorV2()]  # Normalize and convert to Tensor
+        T += [A.Normalize(mean=mean, std=std), ToTensorV2()]  # Normalize and convert to Tensor
 
         LOGGER.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in T if x.p))
         return A.Compose(T)
