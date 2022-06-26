@@ -307,7 +307,7 @@ def album_classifier_augmentations(is_train=True,
         if not is_train:  # Use fixed crop for eval set (reproducibility)
             T = [A.SmallestMaxSize(max_size=size), A.CenterCrop(height=size, width=size)]
 
-        # Secondry augmentations
+        # Secondary augmentations
         if auto_aug:
             # TODO: implement AugMix, AutoAug & RandAug in albumentation
             LOGGER.info(colorstr('augmentations: ') + 'auto augmentations are currently not supported')
