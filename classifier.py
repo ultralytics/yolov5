@@ -54,7 +54,8 @@ denormalize = lambda x, mean=0.5, std=0.25: x * std + mean
 
 def train():
     save_dir, data, bs, epochs, nw, imgsz, pretrained = \
-        Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, min(NUM_THREADS, opt.workers), opt.imgsz, not opt.from_scratch
+        Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, min(NUM_THREADS, opt.workers), opt.imgsz, \
+        not opt.from_scratch
     # Directories
     wdir = save_dir / 'weights'
     wdir.mkdir(parents=True, exist_ok=True)  # make dir
@@ -68,14 +69,12 @@ def train():
 
     # Dataloaders
     trainloader, trainset = create_classification_dataloader(path=data_dir / 'train',
-                                                             is_train=True,
                                                              imgsz=imgsz,
                                                              batch_size=bs,
                                                              augment=True,
                                                              rank=LOCAL_RANK,
                                                              workers=nw)
     testloader, testset = create_classification_dataloader(path=data_dir / 'test',
-                                                           is_train=False,
                                                            imgsz=imgsz,
                                                            batch_size=bs,
                                                            augment=False,

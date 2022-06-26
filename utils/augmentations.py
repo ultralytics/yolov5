@@ -288,7 +288,7 @@ def box_candidates(box1, box2, wh_thr=2, ar_thr=100, area_thr=0.1, eps=1e-16):  
     return (w2 > wh_thr) & (h2 > wh_thr) & (w2 * h2 / (w1 * h1 + eps) > area_thr) & (ar < ar_thr)  # candidates
 
 
-def album_classifier_augmentations(is_train=True,
+def album_classifier_augmentations(augment=True,
                                    size=224,
                                    scale=(0.08, 1.0),
                                    hflip=0.5,
@@ -302,7 +302,7 @@ def album_classifier_augmentations(is_train=True,
         import albumentations as A
         from albumentations.pytorch import ToTensorV2
         check_version(A.__version__, '1.0.3', hard=True)  # version requirement
-        if is_train:  # Resize and crop
+        if augment:  # Resize and crop
             T = [A.RandomResizedCrop(height=size, width=size, scale=scale)]
             if auto_aug:
                 # TODO: implement AugMix, AutoAug & RandAug in albumentation

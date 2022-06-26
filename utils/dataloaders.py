@@ -1115,7 +1115,6 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
 
 def create_classification_dataloader(
         path,
-        is_train=True,
         imgsz=224,
         batch_size=16,
         augment=True,
@@ -1125,8 +1124,7 @@ def create_classification_dataloader(
         workers=8,
         shuffle=True):
     # returns Dataloader object to be used with YOLOv5 Classifier.
-    album_transforms = album_classifier_augmentations(is_train=is_train, size=imgsz,
-                                                      auto_aug=auto_augment) if augment else None
+    album_transforms = album_classifier_augmentations(augment, size=imgsz, auto_aug=auto_augment) if augment else None
     dataset = ClassificationDataset(root=path,
                                     torch_transforms=default_classifier_augmentations(),
                                     album_transforms=album_transforms)
