@@ -47,8 +47,8 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))
 
 # Functions
-normalize = lambda x, mean=0.5, std=0.25: (x - mean) / std  # TODO: replace with IMAGENET_MEAN, IMAGENET_STD
-denormalize = lambda x, mean=0.5, std=0.25: x * std + mean
+normalize = lambda x, mean=0.449, std=0.226: (x - mean) / std  # TODO: replace with IMAGENET_MEAN, IMAGENET_STD
+denormalize = lambda x, mean=0.449, std=0.226: x * std + mean
 
 
 def train():
@@ -250,7 +250,6 @@ def classify(model, size=128, file='../datasets/mnist/test/3/30.png', plot=False
 
     # Plot
     if plot:
-        denormalize = lambda x, mean=0.5, std=0.25: x * std + mean
         imshow(denormalize(im), f=Path(file).name)
 
     return p
@@ -268,7 +267,7 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
     ax = ax.ravel() if m > 1 else [ax]
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
     for i in range(n):
-        ax[i].imshow(blocks[i].squeeze().permute((1, 2, 0)).numpy().astype('uint8'))  # cmap='gray'
+        ax[i].imshow(blocks[i].squeeze().permute((1, 2, 0)))  # cmap='gray'
         ax[i].axis('off')
         if labels is not None:
             s = names[labels[i]] + (f'—{names[pred[i]]}' if pred is not None else '')
