@@ -21,12 +21,15 @@ from zipfile import ZipFile
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torchvision
+import torchvision.transforms as T
 import yaml
 from PIL import ExifTags, Image, ImageOps
 from torch.utils.data import DataLoader, Dataset, dataloader, distributed
 from tqdm import tqdm
 
-from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
+from utils.augmentations import (Albumentations, augment_hsv, classify_albumentations, classify_transforms, copy_paste,
+                                 letterbox, mixup, random_perspective)
 from utils.general import (DATASETS_DIR, LOGGER, NUM_THREADS, check_dataset, check_requirements, check_yaml, clean_str,
                            cv2, segments2boxes, xyn2xy, xywh2xyxy, xywhn2xyxy, xyxy2xywhn)
 from utils.torch_utils import torch_distributed_zero_first
@@ -1085,3 +1088,43 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
     if verbose:
         print(json.dumps(stats, indent=2, sort_keys=False))
     return stats
+
+
+# Classification dataloaders -------------------------------------------------------------------------------------------
+class ClassificationDataset(torchvision.datasets.ImageFolder):
+    """
+    YOLOv5 Classification Dataset.
+    Arguments
+        root:  Dataset path
+        transform:  torchvision transforms, used by default
+        album_transform: Albumentations transforms, used if installed
+    """
+
+    def __init__(self, root, torch_transforms, album_transforms=None):
+        super().__init__(root=root)
+        self.torch_transforms = torch_transforms
+        self.album_transforms = album_transforms
+
+    def __getitem__(self, idx):
+        path, target = self.samples[idx]
+        if self.album_transforms:
+            sample = self.album_transforms(image=cv2.imread(path)[..., ::-1])["image"]
+        else:
+            sample = self.torch_transforms(self.loader(path))
+        return sample, target
+
+
+def create_classification_dataloader(
+        path,
+        imgsz=224,
+        batch_size=16,
+        augment=True,
+        cache=False,  # TODO
+        rank=-1,
+        workers=8,
+        shuffle=True):
+    # Returns Dataloader object to be used with YOLOv5 Classifier
+    dataset = ClassificationDataset(root=path,
+                                    torch_transforms=classify_transforms(),
+                                    album_transforms=classify_albumentations(augment, imgsz) if augment else None)
+    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=workers), dataset

@@ -27,9 +27,10 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
-import torchvision.transforms as T
 from torch.cuda import amp
 from tqdm import tqdm
+
+from utils.dataloaders import create_classification_dataloader
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -42,14 +43,18 @@ from utils.general import (NUM_THREADS, check_file, check_git_status, check_requ
                            increment_path)
 from utils.torch_utils import de_parallel, model_info, select_device
 
+WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
+LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))
+
 # Functions
-normalize = lambda x, mean=0.5, std=0.25: (x - mean) / std
-denormalize = lambda x, mean=0.5, std=0.25: x * std + mean
+normalize = lambda x, mean=0.449, std=0.226: (x - mean) / std  # TODO: replace with IMAGENET_MEAN, IMAGENET_STD
+denormalize = lambda x, mean=0.449, std=0.226: x * std + mean
 
 
 def train():
     save_dir, data, bs, epochs, nw, imgsz, pretrained = \
-        Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, min(NUM_THREADS, opt.workers), opt.img_size, not opt.from_scratch
+        Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, min(NUM_THREADS, opt.workers), opt.imgsz, \
+        not opt.from_scratch
     # Directories
     wdir = save_dir / 'weights'
     wdir.mkdir(parents=True, exist_ok=True)  # make dir
@@ -61,21 +66,20 @@ def train():
         url = f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip'
         download(url, dir=data_dir.parent)
 
-    # Transforms
-    trainform = T.Compose([
-        T.RandomGrayscale(p=0.01),
-        T.RandomHorizontalFlip(p=0.5),
-        T.RandomAffine(degrees=1, translate=(.2, .2), scale=(1 / 1.5, 1.5), shear=(-1, 1, -1, 1), fill=(114, 114, 114)),
-        # T.Resize([imgsz, imgsz]),  # very slow
-        T.ToTensor(),
-        T.Normalize((0.5, 0.5, 0.5), (0.25, 0.25, 0.25))])  # PILImage from [0, 1] to [-1, 1]
-    testform = T.Compose(trainform.transforms[-2:])
-
     # Dataloaders
-    trainset = torchvision.datasets.ImageFolder(root=data_dir / 'train', transform=trainform)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=bs, shuffle=True, num_workers=nw)
-    testset = torchvision.datasets.ImageFolder(root=data_dir / 'test', transform=testform)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=bs, shuffle=True, num_workers=nw)
+    trainloader, trainset = create_classification_dataloader(path=data_dir / 'train',
+                                                             imgsz=imgsz,
+                                                             batch_size=bs,
+                                                             augment=True,
+                                                             rank=LOCAL_RANK,
+                                                             workers=nw)
+    testloader, testset = create_classification_dataloader(path=data_dir / 'test',
+                                                           imgsz=imgsz,
+                                                           batch_size=bs,
+                                                           augment=False,
+                                                           rank=LOCAL_RANK,
+                                                           workers=nw)
+
     names = trainset.classes
     nc = len(names)
     print(f'Training {opt.model} on {data} dataset with {nc} classes...')
@@ -155,7 +159,7 @@ def train():
             # Print
             mloss += loss.item()
             mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
-            pbar.desc = f"{'%s/%s' % (epoch + 1, epochs):10s}{mem:10s}{mloss / (i + 1):<12.3g}"
+            pbar.desc = f"{f'{epoch + 1}/{epochs}':10s}{mem:10s}{mloss / (i + 1):<12.3g}"
 
             # Test
             if i == len(pbar) - 1:
@@ -246,7 +250,6 @@ def classify(model, size=128, file='../datasets/mnist/test/3/30.png', plot=False
 
     # Plot
     if plot:
-        denormalize = lambda x, mean=0.5, std=0.25: x * std + mean
         imshow(denormalize(im), f=Path(file).name)
 
     return p
@@ -254,6 +257,7 @@ def classify(model, size=128, file='../datasets/mnist/test/3/30.png', plot=False
 
 def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Path('images.jpg')):
     # Show classification image grid with labels (optional) and predictions (optional)
+    import cv2
     import matplotlib.pyplot as plt
 
     names = names or [f'class{i}' for i in range(1000)]
@@ -264,7 +268,13 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
     ax = ax.ravel() if m > 1 else [ax]
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
     for i in range(n):
-        ax[i].imshow(blocks[i].squeeze().permute((1, 2, 0)))  # cmap='gray'
+        im = blocks[i].squeeze().permute((1, 2, 0)).numpy()
+
+        # TODO: Replace line with permanent normalize(), denormalize() updates based on IMAGENET_MEAN/STD
+        img_n = cv2.normalize(src=im, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+        # TODO: Replace line with permanent normalize(), denormalize() updates based on IMAGENET_MEAN/STD
+
+        ax[i].imshow(img_n)
         ax[i].axis('off')
         if labels is not None:
             s = names[labels[i]] + (f'—{names[pred[i]]}' if pred is not None else '')
@@ -309,7 +319,7 @@ if __name__ == '__main__':
     cuda = device.type != 'cpu'
     opt.hyp = check_file(opt.hyp)  # check files
     opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
-    resize = torch.nn.Upsample(size=(opt.img_size, opt.img_size), mode='bilinear', align_corners=False)  # image resize
+    resize = torch.nn.Upsample(size=(opt.imgsz, opt.imgsz), mode='bilinear', align_corners=False)  # image resize
 
     # Train
     train()
