@@ -40,7 +40,7 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import Classify, DetectMultiBackend
-from utils.general import (NUM_THREADS, LOGGER, check_file, check_git_status, check_requirements, colorstr, download,
+from utils.general import (LOGGER, NUM_THREADS, check_file, check_git_status, check_requirements, colorstr, download,
                            increment_path)
 from utils.loggers import GenericLogger
 from utils.torch_utils import de_parallel, model_info, select_device
@@ -61,7 +61,7 @@ def train():
     wdir.mkdir(parents=True, exist_ok=True)  # make dir
     last, best = wdir / 'last.pt', wdir / 'best.pt'
     logger = GenericLogger(opt, LOGGER)
-    
+
     # Download Dataset
     data_dir = FILE.parents[1] / 'datasets' / data
     if not data_dir.is_dir():
@@ -176,10 +176,7 @@ def train():
         if fitness > best_fitness:
             best_fitness = fitness
         # log
-        logger.log_metrics({
-            "loss": mloss,
-            "accuracy_top1": fitness
-        })
+        logger.log_metrics({"loss": mloss, "accuracy_top1": fitness})
         # Save model
         final_epoch = epoch + 1 == epochs
         if (not opt.nosave) or final_epoch:
