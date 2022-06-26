@@ -22,6 +22,7 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -48,13 +49,14 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))
 
 # Functions
-normalize = lambda x, mean=0.5, std=0.25: (x - mean) / std
+normalize = lambda x, mean=0.5, std=0.25: (x - mean) / std  # TODO: replace with IMAGENET_MEAN, IMAGENET_STD
 denormalize = lambda x, mean=0.5, std=0.25: x * std + mean
 
 
 def train():
     save_dir, data, bs, epochs, nw, imgsz, pretrained = \
-        Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, min(NUM_THREADS, opt.workers), opt.imgsz, not opt.from_scratch
+        Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, min(NUM_THREADS, opt.workers), opt.imgsz, \
+        not opt.from_scratch
     # Directories
     wdir = save_dir / 'weights'
     wdir.mkdir(parents=True, exist_ok=True)  # make dir
@@ -68,14 +70,12 @@ def train():
 
     # Dataloaders
     trainloader, trainset = create_classification_dataloader(path=data_dir / 'train',
-                                                             is_train=True,
                                                              imgsz=imgsz,
                                                              batch_size=bs,
                                                              augment=True,
                                                              rank=LOCAL_RANK,
                                                              workers=nw)
     testloader, testset = create_classification_dataloader(path=data_dir / 'test',
-                                                           is_train=False,
                                                            imgsz=imgsz,
                                                            batch_size=bs,
                                                            augment=False,
@@ -270,7 +270,7 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
     ax = ax.ravel() if m > 1 else [ax]
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
     for i in range(n):
-        ax[i].imshow(blocks[i].squeeze().permute((1, 2, 0)))  # cmap='gray'
+        ax[i].imshow(blocks[i].squeeze().permute((1, 2, 0)).numpy().astype('uint8'))  # cmap='gray'
         ax[i].axis('off')
         if labels is not None:
             s = names[labels[i]] + (f'—{names[pred[i]]}' if pred is not None else '')
