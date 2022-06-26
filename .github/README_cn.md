@@ -5,7 +5,7 @@
 </p>
 <br>
 
-[English](./README.md) | 简体中文
+[English](../README.md) | 简体中文
 
 <div>
    <a href="https://github.com/ultralytics/yolov5/actions/workflows/ci-testing.yml"><img src="https://github.com/ultralytics/yolov5/actions/workflows/ci-testing.yml/badge.svg" alt="CI CPU testing"></a>
