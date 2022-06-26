@@ -302,9 +302,9 @@ def album_classifier_augmentations(is_train=True,
         import albumentations as A
         from albumentations.pytorch import ToTensorV2
         check_version(A.__version__, '1.0.3', hard=True)  # version requirement
-        # Resize and crop
-        T = [A.RandomResizedCrop(height=size, width=size, scale=scale)]
-        if not is_train:  # Use fixed crop for eval set (reproducibility)
+        if is_train:  # Resize and crop
+            T = [A.RandomResizedCrop(height=size, width=size, scale=scale)]
+        else:  # Use fixed crop for eval set (reproducibility)
             T = [A.SmallestMaxSize(max_size=size), A.CenterCrop(height=size, width=size)]
 
         # Secondary augmentations
