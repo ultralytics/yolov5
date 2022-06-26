@@ -1105,13 +1105,10 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
 
     def __getitem__(self, idx):
         path, target = self.samples[idx]
-        if not self.album_transform:  # use default torch transform if albumentation is not installed
-            sample = self.loader(path)
-            sample = self.transform(sample)
+        if self.album_transform:
+            sample = self.album_transform(image=cv2.imread(path)[..., ::-1])["image"]
         else:
-            sample = cv2.imread(path)
-            sample = cv2.cvtColor(sample, cv2.COLOR_BGR2RGB)
-            sample = self.album_transform(image=sample)["image"]
+            sample = self.transform(self.loader(path))
         return sample, target
 
 
