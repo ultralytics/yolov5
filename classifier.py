@@ -269,11 +269,11 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
     for i in range(n):
         im = blocks[i].squeeze().permute((1, 2, 0)).numpy()
-        
+
         # TODO: Replace line with permanent normalize(), denormalize() updates based on IMAGENET_MEAN/STD
         img_n = cv2.normalize(src=im, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
         # TODO: Replace line with permanent normalize(), denormalize() updates based on IMAGENET_MEAN/STD
-        
+
         ax[i].imshow(img_n)
         ax[i].axis('off')
         if labels is not None:
