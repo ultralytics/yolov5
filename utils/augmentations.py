@@ -288,7 +288,7 @@ def box_candidates(box1, box2, wh_thr=2, ar_thr=100, area_thr=0.1, eps=1e-16):  
     return (w2 > wh_thr) & (h2 > wh_thr) & (w2 * h2 / (w1 * h1 + eps) > area_thr) & (ar < ar_thr)  # candidates
 
 
-def album_classifier_augmentations(is_train=True,
+def album_classifier_augmentations(augment=True,
                                    size=224,
                                    scale=(0.08, 1.0),
                                    hflip=0.5,
@@ -302,13 +302,8 @@ def album_classifier_augmentations(is_train=True,
         import albumentations as A
         from albumentations.pytorch import ToTensorV2
         check_version(A.__version__, '1.0.3', hard=True)  # version requirement
-        # Resize and crop
-        T = [A.RandomResizedCrop(height=size, width=size, scale=scale)]
-        if not is_train:  # Use fixed crop for eval set (reproducibility)
-            T = [A.SmallestMaxSize(max_size=size), A.CenterCrop(height=size, width=size)]
-
-        # Secondary augmentations
-        if is_train:
+        if augment:  # Resize and crop
+            T = [A.RandomResizedCrop(height=size, width=size, scale=scale)]
             if auto_aug:
                 # TODO: implement AugMix, AutoAug & RandAug in albumentation
                 LOGGER.info(colorstr('augmentations: ') + 'auto augmentations are currently not supported')
@@ -318,12 +313,11 @@ def album_classifier_augmentations(is_train=True,
                 if vflip > 0:
                     T += [A.VerticalFlip(p=vflip)]
                 if jitter > 0:
-                    # repeat the same value for brightness, contrast, satuaration, with 0 hue
-                    color_jitter = (float(jitter),) * 3
+                    color_jitter = (float(jitter),) * 3  # repeat value for brightness, contrast, satuaration, 0 hue
                     T += [A.ColorJitter(*color_jitter, 0)]
-
-        # Normalize and convert to Tensor
-        T += [A.Normalize(mean=mean, std=std), ToTensorV2()]
+        else:  # Use fixed crop for eval set (reproducibility)
+            T = [A.SmallestMaxSize(max_size=size), A.CenterCrop(height=size, width=size)]
+        T += [A.Normalize(mean=mean, std=std), A.pytorch.ToTensorV2()]  # Normalize and convert to Tensor
 
         LOGGER.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in T if x.p))
         return A.Compose(T)
@@ -332,8 +326,6 @@ def album_classifier_augmentations(is_train=True,
         pass
     except Exception as e:
         LOGGER.info(colorstr('albumentations: ') + f'{e}')
-
-    return None
 
 
 def default_classifier_augmentations():

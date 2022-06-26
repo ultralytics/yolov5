@@ -1106,19 +1106,15 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
 
     def __getitem__(self, idx):
         path, target = self.samples[idx]
-        if not self.album_transforms:  # use default torch transform if albumentation is not installed
-            sample = self.loader(path)
-            sample = self.torch_transforms(sample)
+        if self.album_transforms:
+            sample = self.album_transforms(image=cv2.imread(path)[..., ::-1])["image"]
         else:
-            sample = cv2.imread(path)
-            sample = cv2.cvtColor(sample, cv2.COLOR_BGR2RGB)
-            sample = self.album_transforms(image=sample)["image"]
+            sample = self.torch_transforms(self.loader(path))
         return sample, target
 
 
 def create_classification_dataloader(
         path,
-        is_train=True,
         imgsz=224,
         batch_size=16,
         augment=True,
@@ -1128,9 +1124,8 @@ def create_classification_dataloader(
         workers=8,
         shuffle=True):
     # returns Dataloader object to be used with YOLOv5 Classifier.
-    album_transforms = album_classifier_augmentations(is_train=is_train, size=imgsz,
-                                                      auto_aug=auto_augment) if augment else None
-    default_transforms = default_classifier_augmentations()
-    dataset = ClassificationDataset(root=path, torch_transforms=default_transforms, album_transforms=album_transforms)
-
+    album_transforms = album_classifier_augmentations(augment, size=imgsz, auto_aug=auto_augment) if augment else None
+    dataset = ClassificationDataset(root=path,
+                                    torch_transforms=default_classifier_augmentations(),
+                                    album_transforms=album_transforms)
     return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=workers), dataset
