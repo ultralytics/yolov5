@@ -270,7 +270,7 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
     for i in range(n):
         im = blocks[i].squeeze().permute((1, 2, 0)).numpy()
         img_n = cv2.normalize(src=im, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-        ax[i].imshow(img_n)  # cmap='gray'
+        ax[i].imshow(img_n)
         ax[i].axis('off')
         if labels is not None:
             s = names[labels[i]] + (f'—{names[pred[i]]}' if pred is not None else '')
