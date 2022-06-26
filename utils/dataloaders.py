@@ -1114,14 +1114,15 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         return sample, target
 
 
-def create_classification_dataloader(path,
-                                     imgsz=224,
-                                     batch_size=16,
-                                     augment=True,
-                                     cache=False,  # TODO
-                                     rank=-1,
-                                     workers=8,
-                                     shuffle=True):
+def create_classification_dataloader(
+        path,
+        imgsz=224,
+        batch_size=16,
+        augment=True,
+        cache=False,  # TODO
+        rank=-1,
+        workers=8,
+        shuffle=True):
     # Returns Dataloader object to be used with YOLOv5 Classifier
     dataset = ClassificationDataset(root=path,
                                     torch_transforms=classify_transforms(),
