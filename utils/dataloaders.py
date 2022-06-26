@@ -1101,7 +1101,7 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
 
     def __init__(self, root, torch_transforms, album_transforms=None):
         super().__init__(root=root)
-        self.torch_transform = torch_transforms
+        self.torch_transforms = torch_transforms
         self.album_transforms = album_transforms
 
     def __getitem__(self, idx):
