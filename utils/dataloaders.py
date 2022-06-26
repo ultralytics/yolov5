@@ -1091,6 +1091,13 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
 
 
 class ClassificationDataset(torchvision.datasets.ImageFolder):
+    """
+    YOLOv5 Classification Dataset.
+    Arguments
+        root:  Path of the dataset
+        transform:  torchvision transforms, used as default transforms
+        album_transform: Albumentations transform, used if installed
+    """
 
     def __init__(self, root, transform, album_transform=None):
         super().__init__(root=root, transform=transform)
@@ -1118,12 +1125,11 @@ def create_classification_dataloader(
         cache=False,  # TODO
         rank=-1,
         workers=8,
-        shuffle=False):
-    album_transform = album_classifier_augmentations(is_train=is_train,
-                                                     size=imgsz,
-                                                     auto_aug=auto_augment,
-                                                     no_aug=not augment)
-    default_transform = default_classifier_augmentations(is_train)
+        shuffle=True):
+    # returns Dataloader object to be used with YOLOv5 Classifier.
+    album_transform = album_classifier_augmentations(is_train=is_train, size=imgsz,
+                                                     auto_aug=auto_augment) if augment else None
+    default_transform = default_classifier_augmentations()
     dataset = ClassificationDataset(root=path, transform=default_transform, album_transform=album_transform)
 
     return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=workers), dataset
