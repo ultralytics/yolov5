@@ -259,6 +259,7 @@ def classify(model, size=128, file='../datasets/mnist/test/3/30.png', plot=False
 
 def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Path('images.jpg')):
     # Show classification image grid with labels (optional) and predictions (optional)
+    import cv2
     import matplotlib.pyplot as plt
 
     names = names or [f'class{i}' for i in range(1000)]
@@ -269,7 +270,9 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
     ax = ax.ravel() if m > 1 else [ax]
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
     for i in range(n):
-        ax[i].imshow(blocks[i].squeeze().permute((1, 2, 0)).numpy().astype('uint8'))  # cmap='gray'
+        im = blocks[i].squeeze().permute((1, 2, 0)).numpy()
+        img_n = cv2.normalize(src=im, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+        ax[i].imshow(img_n)  # cmap='gray'
         ax[i].axis('off')
         if labels is not None:
             s = names[labels[i]] + (f'—{names[pred[i]]}' if pred is not None else '')
