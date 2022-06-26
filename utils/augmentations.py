@@ -308,18 +308,19 @@ def album_classifier_augmentations(is_train=True,
             T = [A.SmallestMaxSize(max_size=size), A.CenterCrop(height=size, width=size)]
 
         # Secondary augmentations
-        if auto_aug:
-            # TODO: implement AugMix, AutoAug & RandAug in albumentation
-            LOGGER.info(colorstr('augmentations: ') + 'auto augmentations are currently not supported')
-        else:
-            if hflip > 0:
-                T += [A.HorizontalFlip(p=hflip)]
-            if vflip > 0:
-                T += [A.VerticalFlip(p=vflip)]
-            if jitter > 0:
-                # repeat the same value for brightness, contrast, satuaration, with 0 hue
-                color_jitter = (float(jitter),) * 3
-                T += [A.ColorJitter(*color_jitter, 0)]
+        if is_train:
+            if auto_aug:
+                # TODO: implement AugMix, AutoAug & RandAug in albumentation
+                LOGGER.info(colorstr('augmentations: ') + 'auto augmentations are currently not supported')
+            else:
+                if hflip > 0:
+                    T += [A.HorizontalFlip(p=hflip)]
+                if vflip > 0:
+                    T += [A.VerticalFlip(p=vflip)]
+                if jitter > 0:
+                    # repeat the same value for brightness, contrast, satuaration, with 0 hue
+                    color_jitter = (float(jitter),) * 3
+                    T += [A.ColorJitter(*color_jitter, 0)]
 
         # Normalize and convert to Tensor
         T += [A.Normalize(mean=mean, std=std), ToTensorV2()]
