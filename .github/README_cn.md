@@ -69,9 +69,9 @@ YOLOv5🚀是一个在COCO数据集上预训练的物体检测架构和模型系
 
 在[**Python>=3.7.0**](https://www.python.org/) 的环境中克隆版本仓并安装 [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt)，包括[**PyTorch>=1.7**](https://pytorch.org/get-started/locally/)。
 ```bash
-git clone https://github.com/ultralytics/yolov5  # clone
+git clone https://github.com/ultralytics/yolov5  # 克隆
 cd yolov5
-pip install -r requirements.txt  # install
+pip install -r requirements.txt  # 安装
 ```
 
 </details>
@@ -84,16 +84,16 @@ YOLOv5 [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36) 推断. [�
 ```python
 import torch
 
-# Model
+# 模型
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s')  # or yolov5n - yolov5x6, custom
 
-# Images
+# 图像
 img = 'https://ultralytics.com/images/zidane.jpg'  # or file, Path, PIL, OpenCV, numpy, list
 
-# Inference
+# 推论
 results = model(img)
 
-# Results
+# 结果
 results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 ```
 
@@ -105,13 +105,13 @@ results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 `detect.py` 在各种资源上运行推理, 从最新的YOLOv5 [版本](https://github.com/ultralytics/yolov5/releases) 中自动下载 [模型](https://github.com/ultralytics/yolov5/tree/master/models) 并保存结果来运行/检测。
 
 ```bash
-python detect.py --source 0  # webcam
-                          img.jpg  # image
-                          vid.mp4  # video
-                          path/  # directory
+python detect.py --source 0  # 网络摄像头
+                          img.jpg  # 图像
+                          vid.mp4  # 视频
+                          path/  # 文件夹
                           path/*.jpg  # glob
                           'https://youtu.be/Zgi9g1ksQHc'  # YouTube
-                          'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
+                          'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP 流
 ```
 
 </details>
