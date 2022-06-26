@@ -6,6 +6,7 @@
 <br>
 
 [English](./README.md) | 简体中文
+
 <div>
    <a href="https://github.com/ultralytics/yolov5/actions/workflows/ci-testing.yml"><img src="https://github.com/ultralytics/yolov5/actions/workflows/ci-testing.yml/badge.svg" alt="CI CPU testing"></a>
    <a href="https://zenodo.org/badge/latestdoi/264818686"><img src="https://zenodo.org/badge/264818686.svg" alt="YOLOv5 Citation"></a>
@@ -68,6 +69,7 @@ YOLOv5🚀是一个在COCO数据集上预训练的物体检测架构和模型系
 <summary>安装</summary>
 
 在[**Python>=3.7.0**](https://www.python.org/) 的环境中克隆版本仓并安装 [requirements.txt](https://github.com/ultralytics/yolov5/blob/master/requirements.txt)，包括[**PyTorch>=1.7**](https://pytorch.org/get-started/locally/)。
+
 ```bash
 git clone https://github.com/ultralytics/yolov5  # clone
 cd yolov5
@@ -85,10 +87,10 @@ YOLOv5 [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36) 推断. [�
 import torch
 
 # Model
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s')  # or yolov5n - yolov5x6, custom
+model = torch.hub.load("ultralytics/yolov5", "yolov5s")  # or yolov5n - yolov5x6, custom
 
 # Images
-img = 'https://ultralytics.com/images/zidane.jpg'  # or file, Path, PIL, OpenCV, numpy, list
+img = "https://ultralytics.com/images/zidane.jpg"  # or file, Path, PIL, OpenCV, numpy, list
 
 # Inference
 results = model(img)
@@ -186,9 +188,9 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
     </a>
 </div>
 
-|Weights and Biases|Roboflow ⭐ 新|
-|:-:|:-:|
-|通过 [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme) 自动跟踪和可视化你在云端的所有YOLOv5训练运行状态。|标记并将您的自定义数据集直接导出到YOLOv5，以便用 [Roboflow](https://roboflow.com/?ref=ultralytics) 进行训练。 |
+|                                           Weights and Biases                                            |                                    Roboflow ⭐ 新                                     |
+| :-----------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------: |
+| 通过 [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme) 自动跟踪和可视化你在云端的所有YOLOv5训练运行状态。 | 标记并将您的自定义数据集直接导出到YOLOv5，以便用 [Roboflow](https://roboflow.com/?ref=ultralytics) 进行训练。 |
 
 <!-- ## <div align="center">Compete and Win</div>
 
@@ -219,30 +221,30 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 
 ### 预训练检查点
 
-|Model |size<br><sup>(pixels) |mAP<sup>val<br>0.5:0.95 |mAP<sup>val<br>0.5 |Speed<br><sup>CPU b1<br>(ms) |Speed<br><sup>V100 b1<br>(ms) |Speed<br><sup>V100 b32<br>(ms) |params<br><sup>(M) |FLOPs<br><sup>@640 (B)
-|---                    |---  |---    |---    |---    |---    |---    |---    |---
-|[YOLOv5n][assets]      |640  |28.0   |45.7   |**45** |**6.3**|**0.6**|**1.9**|**4.5**
-|[YOLOv5s][assets]      |640  |37.4   |56.8   |98     |6.4    |0.9    |7.2    |16.5
-|[YOLOv5m][assets]      |640  |45.4   |64.1   |224    |8.2    |1.7    |21.2   |49.0
-|[YOLOv5l][assets]      |640  |49.0   |67.3   |430    |10.1   |2.7    |46.5   |109.1
-|[YOLOv5x][assets]      |640  |50.7   |68.9   |766    |12.1   |4.8    |86.7   |205.7
-|                       |     |       |       |       |       |       |       |
-|[YOLOv5n6][assets]     |1280 |36.0   |54.4   |153    |8.1    |2.1    |3.2    |4.6
-|[YOLOv5s6][assets]     |1280 |44.8   |63.7   |385    |8.2    |3.6    |12.6   |16.8
-|[YOLOv5m6][assets]     |1280 |51.3   |69.3   |887    |11.1   |6.8    |35.7   |50.0
-|[YOLOv5l6][assets]     |1280 |53.7   |71.3   |1784   |15.8   |10.5   |76.8   |111.4
-|[YOLOv5x6][assets]<br>+ [TTA][TTA]|1280<br>1536 |55.0<br>**55.8** |72.7<br>**72.7** |3136<br>- |26.2<br>- |19.4<br>- |140.7<br>- |209.8<br>-
+| Model                         | size<br><sup>(pixels) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Speed<br><sup>CPU b1<br>(ms) | Speed<br><sup>V100 b1<br>(ms) | Speed<br><sup>V100 b32<br>(ms) | params<br><sup>(M) | FLOPs<br><sup>@640 (B) |
+| ----------------------------- | --------------------- | ----------------------- | ------------------ | ---------------------------- | ----------------------------- | ------------------------------ | ------------------ | ---------------------- |
+| [YOLOv5n][assets]             | 640                   | 28.0                    | 45.7               | **45**                       | **6.3**                       | **0.6**                        | **1.9**            | **4.5**                |
+| [YOLOv5s][assets]             | 640                   | 37.4                    | 56.8               | 98                           | 6.4                           | 0.9                            | 7.2                | 16.5                   |
+| [YOLOv5m][assets]             | 640                   | 45.4                    | 64.1               | 224                          | 8.2                           | 1.7                            | 21.2               | 49.0                   |
+| [YOLOv5l][assets]             | 640                   | 49.0                    | 67.3               | 430                          | 10.1                          | 2.7                            | 46.5               | 109.1                  |
+| [YOLOv5x][assets]             | 640                   | 50.7                    | 68.9               | 766                          | 12.1                          | 4.8                            | 86.7               | 205.7                  |
+|                               |                       |                         |                    |                              |                               |                                |                    |                        |
+| [YOLOv5n6][assets]            | 1280                  | 36.0                    | 54.4               | 153                          | 8.1                           | 2.1                            | 3.2                | 4.6                    |
+| [YOLOv5s6][assets]            | 1280                  | 44.8                    | 63.7               | 385                          | 8.2                           | 3.6                            | 12.6               | 16.8                   |
+| [YOLOv5m6][assets]            | 1280                  | 51.3                    | 69.3               | 887                          | 11.1                          | 6.8                            | 35.7               | 50.0                   |
+| [YOLOv5l6][assets]            | 1280                  | 53.7                    | 71.3               | 1784                         | 15.8                          | 10.5                           | 76.8               | 111.4                  |
+| [YOLOv5x6][assets]<br>+ [TTA] | 1280<br>1536          | 55.0<br>**55.8**        | 72.7<br>**72.7**   | 3136<br>-                    | 26.2<br>-                     | 19.4<br>-                      | 140.7<br>-         | 209.8<br>-             |
 
 <details>
   <summary>表格注释 (点击扩展)</summary>
 
 - 所有检查点都以默认设置训练到300个时期. Nano和Small模型用 [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml) hyps, 其他模型使用 [hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml).
 - **mAP<sup>val</sup>** 值是 [COCO val2017](http://cocodataset.org) 数据集上的单模型单尺度的值。
-<br>重制于 `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
+  <br>重制于 `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
 - 使用 [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) 实例对COCO val图像的平均速度。不包括NMS时间（~1 ms/img。
-<br>重制于`python val.py --data coco.yaml --img 640 --task speed --batch 1`
+  <br>重制于`python val.py --data coco.yaml --img 640 --task speed --batch 1`
 - **TTA** [测试时数据增强](https://github.com/ultralytics/yolov5/issues/303) 包括反射和比例增强.
-<br>重制于 `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
+  <br>重制于 `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
 
 </details>
 
