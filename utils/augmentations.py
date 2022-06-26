@@ -13,8 +13,8 @@ import torchvision.transforms as T
 from utils.general import LOGGER, check_version, colorstr, resample_segments, segment2box
 from utils.metrics import bbox_ioa
 
-IMAGENET_DEFAULT_MEAN = (0.485, 0.456, 0.406)
-IMAGENET_DEFAULT_STD = (0.229, 0.224, 0.225)
+IMAGENET_MEAN = 0.485, 0.456, 0.406  # RGB mean
+IMAGENET_STD = 0.229, 0.224, 0.225  # RGB standard deviation
 
 
 class Albumentations:
@@ -294,10 +294,10 @@ def album_classifier_augmentations(is_train=True,
                                    hflip=0.5,
                                    vflip=0.0,
                                    jitter=0.4,
-                                   mean=IMAGENET_DEFAULT_MEAN,
-                                   std=IMAGENET_DEFAULT_STD,
+                                   mean=IMAGENET_MEAN,
+                                   std=IMAGENET_STD,
                                    auto_aug=None):
-    # YOLOv5 classfication Albumentations (optional, only used if package is installed)
+    # YOLOv5 classification Albumentations (optional, only used if package is installed)
     try:
         import albumentations as A
         from albumentations.pytorch import ToTensorV2
@@ -338,4 +338,4 @@ def album_classifier_augmentations(is_train=True,
 
 def default_classifier_augmentations():
     # Transforms to apply if albumentations not installed
-    return T.Compose([T.ToTensor(), T.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
+    return T.Compose([T.ToTensor(), T.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
