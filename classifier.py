@@ -48,7 +48,7 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))
 
 # Functions
-normalize = lambda x, mean=0.5, std=0.25: (x - mean) / std
+normalize = lambda x, mean=0.5, std=0.25: (x - mean) / std  # TODO: replace with IMAGENET_MEAN, IMAGENET_STD
 denormalize = lambda x, mean=0.5, std=0.25: x * std + mean
 
 
