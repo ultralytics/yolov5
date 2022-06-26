@@ -1125,8 +1125,7 @@ def create_classification_dataloader(
         workers=8,
         shuffle=True):
     # returns Dataloader object to be used with YOLOv5 Classifier.
-    album_transforms = album_classifier_augmentations(is_train=is_train,
-                                                      size=imgsz,
+    album_transforms = album_classifier_augmentations(is_train=is_train, size=imgsz,
                                                       auto_aug=auto_augment) if augment else None
     dataset = ClassificationDataset(root=path,
                                     torch_transforms=default_classifier_augmentations(),
