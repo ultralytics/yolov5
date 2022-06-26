@@ -239,7 +239,7 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 - 所有检查点都以默认设置训练到300个时期. Nano和Small模型用 [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml) hyps, 其他模型使用 [hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml).
 - **mAP<sup>val</sup>** 值是 [COCO val2017](http://cocodataset.org) 数据集上的单模型单尺度的值。
 <br>重制于 `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
-- 使用 [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) 实例对COCO val图像的平均速度。不包括NMS时间（~1 ms/img。
+- 使用 [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) 实例对COCO val图像的平均速度。不包括NMS时间（~1 ms/img)
 <br>重制于`python val.py --data coco.yaml --img 640 --task speed --batch 1`
 - **TTA** [测试时数据增强](https://github.com/ultralytics/yolov5/issues/303) 包括反射和比例增强.
 <br>重制于 `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
