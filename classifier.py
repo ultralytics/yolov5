@@ -27,7 +27,6 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
-import torchvision.transforms as T
 from torch.cuda import amp
 from tqdm import tqdm
 
@@ -48,8 +47,8 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))
 
 # Functions
-normalize = lambda x, mean=0.5, std=0.25: (x - mean) / std  # TODO: replace with IMAGENET_MEAN, IMAGENET_STD
-denormalize = lambda x, mean=0.5, std=0.25: x * std + mean
+normalize = lambda x, mean=0.449, std=0.226: (x - mean) / std  # TODO: replace with IMAGENET_MEAN, IMAGENET_STD
+denormalize = lambda x, mean=0.449, std=0.226: x * std + mean
 
 
 def train():
@@ -251,7 +250,6 @@ def classify(model, size=128, file='../datasets/mnist/test/3/30.png', plot=False
 
     # Plot
     if plot:
-        denormalize = lambda x, mean=0.5, std=0.25: x * std + mean
         imshow(denormalize(im), f=Path(file).name)
 
     return p
