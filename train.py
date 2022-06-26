@@ -301,6 +301,11 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 f'Using {train_loader.num_workers * WORLD_SIZE} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
                 f'Starting training for {epochs} epochs...')
+
+    stop = False
+    if RANK != -1:
+        broadcast_list = list()
+
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         callbacks.run('on_train_epoch_start')
         model.train()
@@ -428,11 +433,32 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 del ckpt
                 callbacks.run('on_model_save', last, epoch, final_epoch, best_fitness, fi)
 
-            # Stop Single-GPU
-            if RANK == -1 and stopper(epoch=epoch, fitness=fi):
-                break
+            stop = stopper(epoch=epoch, fitness=fi)
 
-            # Stop DDP TODO: known issues shttps://github.com/ultralytics/yolov5/pull/4576
+            # Stop Single-GPU
+            # if RANK == -1 and stopper(epoch=epoch, fitness=fi):
+            #     break
+
+        if RANK != -1:  # if DDP training
+            if RANK == 0:
+                broadcast_list.append(stop)
+
+            else:
+                broadcast_list.append(None)
+
+            dist.broadcast_object_list(broadcast_list, 0)
+
+            if RANK != 0:
+                stop = broadcast_list[0]
+
+        # Stop Single GPU and Multi GPU training
+        if stop:
+            break
+
+        if RANK != -1:
+            broadcast_list.clear()
+
+            # Stop DDP TODO: known issues https://github.com/ultralytics/yolov5/pull/4576
             # stop = stopper(epoch=epoch, fitness=fi)
             # if RANK == 0:
             #    dist.broadcast_object_list([stop], 0)  # broadcast 'stop' to all ranks
