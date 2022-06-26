@@ -336,8 +336,5 @@ def album_classifier_augmentations(is_train=True,
 
 
 def default_classifier_augmentations():
-    # To be used when albumentations is not installed.
-    # Converts raw images to trainable, normalized tensors
-    transform = T.Compose([T.ToTensor(), T.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
-
-    return transform
+    # Transforms to apply if albumentations not installed
+    return T.Compose([T.ToTensor(), T.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
