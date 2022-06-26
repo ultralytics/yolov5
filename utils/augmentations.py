@@ -288,15 +288,15 @@ def box_candidates(box1, box2, wh_thr=2, ar_thr=100, area_thr=0.1, eps=1e-16):  
     return (w2 > wh_thr) & (h2 > wh_thr) & (w2 * h2 / (w1 * h1 + eps) > area_thr) & (ar < ar_thr)  # candidates
 
 
-def album_classifier_augmentations(augment=True,
-                                   size=224,
-                                   scale=(0.08, 1.0),
-                                   hflip=0.5,
-                                   vflip=0.0,
-                                   jitter=0.4,
-                                   mean=IMAGENET_MEAN,
-                                   std=IMAGENET_STD,
-                                   auto_aug=None):
+def classify_albumentations(augment=True,
+                            size=224,
+                            scale=(0.08, 1.0),
+                            hflip=0.5,
+                            vflip=0.0,
+                            jitter=0.4,
+                            mean=IMAGENET_MEAN,
+                            std=IMAGENET_STD,
+                            auto_aug=False):
     # YOLOv5 classification Albumentations (optional, only used if package is installed)
     try:
         import albumentations as A
@@ -328,6 +328,6 @@ def album_classifier_augmentations(augment=True,
         LOGGER.info(colorstr('albumentations: ') + f'{e}')
 
 
-def default_classifier_augmentations():
+def classify_transforms():
     # Transforms to apply if albumentations not installed
     return T.Compose([T.ToTensor(), T.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
