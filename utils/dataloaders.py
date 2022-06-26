@@ -1099,19 +1099,20 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         album_transform: Albumentations transform, used if installed
     """
 
-    def __init__(self, root, transform, album_transform=None):
-        super().__init__(root=root, transform=transform)
-        self.album_transform = album_transform
+    def __init__(self, root, torch_transforms, album_transforms=None):
+        super().__init__(root=root)
+        self.torch_transform = torch_transforms
+        self.album_transforms = album_transforms
 
     def __getitem__(self, idx):
         path, target = self.samples[idx]
         if not self.album_transform:  # use default torch transform if albumentation is not installed
             sample = self.loader(path)
-            sample = self.transform(sample)
+            sample = self.torch_transforms(sample)
         else:
             sample = cv2.imread(path)
             sample = cv2.cvtColor(sample, cv2.COLOR_BGR2RGB)
-            sample = self.album_transform(image=sample)["image"]
+            sample = self.album_transforms(image=sample)["image"]
         return sample, target
 
 
@@ -1127,9 +1128,9 @@ def create_classification_dataloader(
         workers=8,
         shuffle=True):
     # returns Dataloader object to be used with YOLOv5 Classifier.
-    album_transform = album_classifier_augmentations(is_train=is_train, size=imgsz,
-                                                     auto_aug=auto_augment) if augment else None
-    default_transform = default_classifier_augmentations()
-    dataset = ClassificationDataset(root=path, transform=default_transform, album_transform=album_transform)
+    album_transforms = album_classifier_augmentations(is_train=is_train, size=imgsz,
+                                                      auto_aug=auto_augment) if augment else None
+    default_transforms = default_classifier_augmentations()
+    dataset = ClassificationDataset(root=path, torch_transform=default_transforms, album_transform=album_transforms)
 
     return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=workers), dataset
