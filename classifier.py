@@ -265,11 +265,6 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
     ax = ax.ravel() if m > 1 else [ax]
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
     for i in range(n):
-        # im = blocks[i].squeeze().permute((1, 2, 0)).numpy().clip(0.0, 1.0)
-        # print(im.min(), im.max())
-        # TODO: Replace line with permanent normalize(), denormalize() updates based on IMAGENET_MEAN/STD
-        # img_n = cv2.normalize(src=im, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-        # TODO: Replace line with permanent normalize(), denormalize() updates based on IMAGENET_MEAN/STD
         ax[i].imshow(blocks[i].squeeze().permute((1, 2, 0)).numpy().clip(0.0, 1.0))
         ax[i].axis('off')
         if labels is not None:
@@ -291,7 +286,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='yolov5s', help='initial weights path')
     parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100, mnist or mnist-fashion')
     parser.add_argument('--hyp', type=str, default='data/hyps/hyp.scratch-low.yaml', help='hyperparameters path')
-    parser.add_argument('--epochs', type=int, default=20)
+    parser.add_argument('--epochs', type=int, default=10)
     parser.add_argument('--batch-size', type=int, default=128, help='total batch size for all GPUs')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=128, help='train, val image size (pixels)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
