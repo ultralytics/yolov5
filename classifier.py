@@ -18,6 +18,7 @@ import argparse
 import math
 import os
 import sys
+import time
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -129,6 +130,7 @@ def train():
     #                                    final_div_factor=1 / 25 / lrf)
 
     # Train
+    t0 = time.time()
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()  # loss function
     best_fitness = 0.0
@@ -193,7 +195,8 @@ def train():
 
     # Train complete
     if final_epoch:
-        LOGGER.info(f'Training complete. Results saved to {save_dir}.')
+        LOGGER.info(f'Training complete {(time.time() - t0) / 3600:.3f} hours.\n'
+                    f"Results saved to {colorstr('bold', save_dir)}")
 
         # Show predictions
         images, labels = iter(testloader).next()
