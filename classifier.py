@@ -3,7 +3,7 @@
 Train a YOLOv5 classifier model on a classification dataset
 
 Usage - train:
-    $ python path/to/classifier.py --model yolov5s --data mnist --epochs 5 --img 128
+    $ python classifier.py --model yolov5n --data mnist --epochs 1 --img 128
 
 Usage - inference:
     from classifier import *
@@ -85,7 +85,7 @@ def train():
 
     names = trainset.classes
     nc = len(names)
-    print(f'Training {opt.model} on {data} dataset with {nc} classes...')
+    LOGGER.info(f'Training {opt.model} on {data} dataset with {nc} classes...')
 
     # Show images
     images, labels = iter(trainloader).next()
@@ -136,11 +136,11 @@ def train():
     criterion = nn.CrossEntropyLoss()  # loss function
     best_fitness = 0.0
     # scaler = amp.GradScaler(enabled=cuda)
-    print(f'Image sizes {imgsz} train, {imgsz} test\n'
-          f'Using {nw} dataloader workers\n'
-          f"Logging results to {colorstr('bold', save_dir)}\n"
-          f'Starting training for {epochs} epochs...\n\n'
-          f"{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'accuracy':12s}")
+    LOGGER.info(f'Image sizes {imgsz} train, {imgsz} test\n'
+                f'Using {nw} dataloader workers\n'
+                f"Logging results to {colorstr('bold', save_dir)}\n"
+                f'Starting training for {epochs} epochs...\n\n'
+                f"{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'accuracy':12s}")
     for epoch in range(epochs):  # loop over the dataset multiple times
         mloss = 0.0  # mean loss
         model.train()
@@ -196,7 +196,7 @@ def train():
 
     # Train complete
     if final_epoch:
-        print(f'Training complete. Results saved to {save_dir}.')
+        LOGGER.info(f'Training complete. Results saved to {save_dir}.')
 
         # Show predictions
         images, labels = iter(testloader).next()
@@ -225,11 +225,11 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
 
     accuracy = correct.mean().item()
     if verbose:  # all classes
-        print(f"{'class':10s}{'number':10s}{'accuracy':10s}")
-        print(f"{'all':10s}{correct.shape[0]:10s}{accuracy:10.5g}")
+        LOGGER.info(f"{'class':10s}{'number':10s}{'accuracy':10s}")
+        LOGGER.info(f"{'all':10s}{correct.shape[0]:10s}{accuracy:10.5g}")
         for i, c in enumerate(names):
             t = correct[targets == i]
-            print(f"{c:10s}{t.shape[0]:10s}{t.mean().item():10.5g}")
+            LOGGER.info(f"{c:10s}{t.shape[0]:10s}{t.mean().item():10.5g}")
 
     return accuracy
 
@@ -252,7 +252,7 @@ def classify(model, size=128, file='../datasets/mnist/test/3/30.png', plot=False
     results = model(im)
     p = F.softmax(results, dim=1)  # probabilities
     i = p.argmax()  # max index
-    print(f'{file} prediction: {i} ({p[0, i]:.2f})')
+    LOGGER.info(f'{file} prediction: {i} ({p[0, i]:.2f})')
 
     # Plot
     if plot:
@@ -288,12 +288,12 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
 
     plt.savefig(f, dpi=300, bbox_inches='tight')
     plt.close()
-    print(colorstr('imshow: ') + f"examples saved to {f}")
+    LOGGER.info(colorstr('imshow: ') + f"examples saved to {f}")
 
     if verbose and labels is not None:
-        print('True:     ', ' '.join(f'{names[i]:3s}' for i in labels))
+        LOGGER.info('True:     ', ' '.join(f'{names[i]:3s}' for i in labels))
     if verbose and pred is not None:
-        print('Predicted:', ' '.join(f'{names[i]:3s}' for i in pred))
+        LOGGER.info('Predicted:', ' '.join(f'{names[i]:3s}' for i in pred))
 
 
 if __name__ == '__main__':
