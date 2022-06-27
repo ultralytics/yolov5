@@ -18,6 +18,7 @@ import argparse
 import math
 import os
 import sys
+import time
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -42,6 +43,7 @@ from utils.augmentations import denormalize, normalize
 from utils.dataloaders import create_classification_dataloader
 from utils.general import (LOGGER, NUM_THREADS, check_file, check_git_status, check_requirements, colorstr, download,
                            increment_path)
+from utils.loggers import GenericLogger
 from utils.torch_utils import de_parallel, model_info, select_device
 
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
@@ -57,6 +59,8 @@ def train():
     wdir.mkdir(parents=True, exist_ok=True)  # make dir
     last, best = wdir / 'last.pt', wdir / 'best.pt'
 
+    # Logger
+    logger = GenericLogger(opt=opt, console_logger=LOGGER)
     # Download Dataset
     data_dir = FILE.parents[1] / 'datasets' / data
     if not data_dir.is_dir():
@@ -126,6 +130,7 @@ def train():
     #                                    final_div_factor=1 / 25 / lrf)
 
     # Train
+    t0 = time.time()
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()  # loss function
     best_fitness = 0.0
@@ -169,6 +174,9 @@ def train():
         if fitness > best_fitness:
             best_fitness = fitness
 
+        # Log metrics
+        logger.log_metrics({"Train_loss": mloss, "Accuracy": fitness})
+
         # Save model
         final_epoch = epoch + 1 == epochs
         if (not opt.nosave) or final_epoch:
@@ -187,7 +195,8 @@ def train():
 
     # Train complete
     if final_epoch:
-        LOGGER.info(f'Training complete. Results saved to {save_dir}.')
+        LOGGER.info(f'\nTraining complete {(time.time() - t0) / 3600:.3f} hours.'
+                    f"\nResults saved to {colorstr('bold', save_dir)}")
 
         # Show predictions
         images, labels = iter(testloader).next()
