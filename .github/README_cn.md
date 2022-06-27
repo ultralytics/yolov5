@@ -60,7 +60,7 @@ YOLOv5🚀是一个在COCO数据集上预训练的物体检测架构和模型系
 
 ## <div align="center">文件</div>
 
-请参阅[YOLOv5 Docs](https://docs.ultralytics.com)，了解有关培训、测试和部署的完整文件。
+请参阅[YOLOv5 Docs](https://docs.ultralytics.com)，了解有关训练、测试和部署的完整文件。
 
 ## <div align="center">快速开始案例</div>
 
@@ -77,9 +77,9 @@ pip install -r requirements.txt  # 安装
 </details>
 
 <details open>
-<summary>推断</summary>
+<summary>推理</summary>
 
-YOLOv5 [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36) 推断. [模型](https://github.com/ultralytics/yolov5/tree/master/models) 自动从最新YOLOv5 [版本](https://github.com/ultralytics/yolov5/releases)下载。
+YOLOv5 [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36) 推理. [模型](https://github.com/ultralytics/yolov5/tree/master/models) 自动从最新YOLOv5 [版本](https://github.com/ultralytics/yolov5/releases)下载。
 
 ```python
 import torch
@@ -90,7 +90,7 @@ model = torch.hub.load('ultralytics/yolov5', 'yolov5s')  # or yolov5n - yolov5x6
 # 图像
 img = 'https://ultralytics.com/images/zidane.jpg'  # or file, Path, PIL, OpenCV, numpy, list
 
-# 推论
+# 推理
 results = model(img)
 
 # 结果
@@ -100,9 +100,9 @@ results.print()  # or .show(), .save(), .crop(), .pandas(), etc.
 </details>
 
 <details>
-<summary>用 detect.py 进行推断</summary>
+<summary>用 detect.py 进行推理</summary>
 
-`detect.py` 在各种资源上运行推理, 从最新的YOLOv5 [版本](https://github.com/ultralytics/yolov5/releases) 中自动下载 [模型](https://github.com/ultralytics/yolov5/tree/master/models) 并保存结果来运行/检测。
+`detect.py` 在各种数据源上运行推理, 其会从最新的 YOLOv5 [版本](https://github.com/ultralytics/yolov5/releases) 中自动下载 [模型](https://github.com/ultralytics/yolov5/tree/master/models) 并将检测结果保存到 `runs/detect` 目录。
 
 ```bash
 python detect.py --source 0  # 网络摄像头
@@ -119,8 +119,8 @@ python detect.py --source 0  # 网络摄像头
 <details>
 <summary>训练</summary>
 
-以下指令再现了YOLOv5 [COCO](https://github.com/ultralytics/yolov5/blob/master/data/scripts/get_coco.sh)
-数据集结果. [模型](https://github.com/ultralytics/yolov5/tree/master/models) 和 [数据集](https://github.com/ultralytics/yolov5/tree/master/data) 自动从最新的YOLOv5 [版本](https://github.com/ultralytics/yolov5/releases)中下载。YOLOv5n/s/m/l/x的训练时间在V100 GPU上是1/2/4/6/8天（多GPU倍速）. 尽可能使用最大的 `--batch-size`, 或通过 `--batch-size -1` 来实现 YOLOv5 [自动批处理](https://github.com/ultralytics/yolov5/pull/5092). 批量大小显示为V100-16GB。
+以下指令再现了 YOLOv5 [COCO](https://github.com/ultralytics/yolov5/blob/master/data/scripts/get_coco.sh)
+数据集结果. [模型](https://github.com/ultralytics/yolov5/tree/master/models) 和 [数据集](https://github.com/ultralytics/yolov5/tree/master/data) 自动从最新的YOLOv5 [版本](https://github.com/ultralytics/yolov5/releases) 中下载。YOLOv5n/s/m/l/x的训练时间在V100 GPU上是 1/2/4/6/8天（多GPU倍速）. 尽可能使用最大的 `--batch-size`, 或通过 `--batch-size -1` 来实现 YOLOv5 [自动批处理](https://github.com/ultralytics/yolov5/pull/5092). 批量大小显示为 V100-16GB。
 
 ```bash
 python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 128
@@ -139,13 +139,13 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
 
 - [训练自定义数据](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data)  🚀 推荐
 - [获得最佳训练效果的技巧](https://github.com/ultralytics/yolov5/wiki/Tips-for-Best-Training-Results)  ☘️ 推荐
-- [Weights & Biases 登陆](https://github.com/ultralytics/yolov5/issues/1289)  🌟 新
+- [使用 Weights & Biases 记录实验](https://github.com/ultralytics/yolov5/issues/1289)  🌟 新
 - [Roboflow：数据集、标签和主动学习](https://github.com/ultralytics/yolov5/issues/4975)  🌟 新
 - [多GPU训练](https://github.com/ultralytics/yolov5/issues/475)
 - [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)  ⭐ 新
 - [TFLite, ONNX, CoreML, TensorRT 导出](https://github.com/ultralytics/yolov5/issues/251) 🚀
 - [测试时数据增强 (TTA)](https://github.com/ultralytics/yolov5/issues/303)
-- [模型组合](https://github.com/ultralytics/yolov5/issues/318)
+- [模型集成](https://github.com/ultralytics/yolov5/issues/318)
 - [模型剪枝/稀疏性](https://github.com/ultralytics/yolov5/issues/304)
 - [超参数进化](https://github.com/ultralytics/yolov5/issues/607)
 - [带有冻结层的迁移学习](https://github.com/ultralytics/yolov5/issues/1314) ⭐ 新
@@ -175,7 +175,7 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
     </a>
 </div>
 
-## <div align="center">一体化</div>
+## <div align="center">如何与第三方集成</div>
 
 <div align="center">
     <a href="https://wandb.ai/site?utm_campaign=repo_yolo_readme">
@@ -199,7 +199,7 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
   <img width="850" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/banner-export-competition.png"></a>
 </p> -->
 
-## <div align="center">为什么是 YOLOv5</div>
+## <div align="center">为什么选择 YOLOv5</div>
 
 <p align="left"><img width="800" src="https://user-images.githubusercontent.com/26833433/155040763-93c22a27-347c-4e3c-847a-8094621d3f4e.png"></p>
 <details>
@@ -212,8 +212,8 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 
 - **COCO AP val** 表示 mAP@0.5:0.95 在5000张图像的[COCO val2017](http://cocodataset.org)数据集上，在256到1536的不同推理大小上测量的指标。
 - **GPU Speed** 衡量的是在 [COCO val2017](http://cocodataset.org) 数据集上使用 [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) V100实例在批量大小为32时每张图像的平均推理时间。
-- **EfficientDet** 数据来自 [google/automl](https://github.com/google/automl) ，批量大小为 8。
-- **重制** 于 `python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n6.pt yolov5s6.pt yolov5m6.pt yolov5l6.pt yolov5x6.pt`
+- **EfficientDet** 数据来自 [google/automl](https://github.com/google/automl) ，批量大小设置为 8。
+- 复现 mAP 方法: `python val.py --task study --data coco.yaml --iou 0.7 --weights yolov5n6.pt yolov5s6.pt yolov5m6.pt yolov5l6.pt yolov5x6.pt`
 
 </details>
 
@@ -238,22 +238,22 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 
 - 所有检查点都以默认设置训练到300个时期. Nano和Small模型用 [hyp.scratch-low.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml) hyps, 其他模型使用 [hyp.scratch-high.yaml](https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-high.yaml).
 - **mAP<sup>val</sup>** 值是 [COCO val2017](http://cocodataset.org) 数据集上的单模型单尺度的值。
-<br>重制于 `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
+<br>复现方法: `python val.py --data coco.yaml --img 640 --conf 0.001 --iou 0.65`
 - 使用 [AWS p3.2xlarge](https://aws.amazon.com/ec2/instance-types/p3/) 实例对COCO val图像的平均速度。不包括NMS时间（~1 ms/img)
-<br>重制于`python val.py --data coco.yaml --img 640 --task speed --batch 1`
+<br>复现方法: `python val.py --data coco.yaml --img 640 --task speed --batch 1`
 - **TTA** [测试时数据增强](https://github.com/ultralytics/yolov5/issues/303) 包括反射和比例增强.
-<br>重制于 `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
+<br>复现方法: `python val.py --data coco.yaml --img 1536 --iou 0.7 --augment`
 
 </details>
 
 ## <div align="center">贡献</div>
 
-我们重视您的意见! 我们希望大家对YOLOv5的贡献尽可能的简单和透明。开始之前请先点击并查看我们的 [贡献指南](CONTRIBUTING.md)，填写[YOLOv5调查问卷](https://ultralytics.com/survey?utm_source=github&utm_medium=social&utm_campaign=Survey) 来向我们发送您的经验反馈。真诚感谢我们所有的贡献者!
+我们重视您的意见! 我们希望给大家提供尽可能的简单和透明的方式对 YOLOv5 做出贡献。开始之前请先点击并查看我们的 [贡献指南](CONTRIBUTING.md)，填写[YOLOv5调查问卷](https://ultralytics.com/survey?utm_source=github&utm_medium=social&utm_campaign=Survey) 来向我们发送您的经验反馈。真诚感谢我们所有的贡献者!
 <a href="https://github.com/ultralytics/yolov5/graphs/contributors"><img src="https://opencollective.com/ultralytics/contributors.svg?width=990" /></a>
 
 ## <div align="center">联系</div>
 
-关于YOLOv5的漏洞和功能问题，请访问 [GitHub Issues](https://github.com/ultralytics/yolov5/issues)。业务咨询或技术支持服务请访问[https://ultralytics.com/contact](https://ultralytics.com/contact)。
+关于YOLOv5的漏洞和功能问题，请访问 [GitHub Issues](https://github.com/ultralytics/yolov5/issues)。商业咨询或技术支持服务请访问[https://ultralytics.com/contact](https://ultralytics.com/contact)。
 
 <br>
 
