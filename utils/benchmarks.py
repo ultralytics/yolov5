@@ -41,7 +41,7 @@ if str(ROOT) not in sys.path:
 import export
 import val
 from utils import notebook_init
-from utils.general import LOGGER, check_yaml, print_args, file_size
+from utils.general import LOGGER, check_yaml, file_size, print_args
 from utils.torch_utils import select_device
 
 
