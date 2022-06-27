@@ -195,8 +195,8 @@ def train():
 
     # Train complete
     if final_epoch:
-        LOGGER.info(f'Training complete {(time.time() - t0) / 3600:.3f} hours.\n'
-                    f"Results saved to {colorstr('bold', save_dir)}")
+        LOGGER.info(f'\nTraining complete {(time.time() - t0) / 3600:.3f} hours.'
+                    f"\nResults saved to {colorstr('bold', save_dir)}")
 
         # Show predictions
         images, labels = iter(testloader).next()
