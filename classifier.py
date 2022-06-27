@@ -3,7 +3,7 @@
 Train a YOLOv5 classifier model on a classification dataset
 
 Usage - train:
-    $ python classifier.py --model yolov5n --data mnist --epochs 1 --img 128
+    $ python path/to/classifier.py --model yolov5s --data mnist --epochs 5 --img 128
 
 Usage - inference:
     from classifier import *
@@ -23,14 +23,13 @@ from datetime import datetime
 from pathlib import Path
 
 import torch
+import torch.hub as hub
 import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
 from torch.cuda import amp
 from tqdm import tqdm
-
-from utils.dataloaders import create_classification_dataloader
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -39,16 +38,14 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import Classify, DetectMultiBackend
+from utils.augmentations import denormalize, normalize
+from utils.dataloaders import create_classification_dataloader
 from utils.general import (LOGGER, NUM_THREADS, check_file, check_git_status, check_requirements, colorstr, download,
                            increment_path)
 from utils.torch_utils import de_parallel, model_info, select_device
 
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))
-
-# Functions
-normalize = lambda x, mean=0.449, std=0.226: (x - mean) / std  # TODO: replace with IMAGENET_MEAN, IMAGENET_STD
-denormalize = lambda x, mean=0.449, std=0.226: x * std + mean
 
 
 def train():
@@ -91,7 +88,7 @@ def train():
     # Model
     if opt.model.startswith('yolov5'):
         # YOLOv5 Classifier
-        model = torch.hub.load('ultralytics/yolov5', opt.model, pretrained=pretrained, autoshape=False)
+        model = hub.load('ultralytics/yolov5', opt.model, pretrained=pretrained, autoshape=False, force_reload=True)
         if isinstance(model, DetectMultiBackend):
             model = model.model  # unwrap DetectMultiBackend
         model.model = model.model[:10] if opt.model.endswith('6') else model.model[:8]  # backbone
@@ -102,8 +99,8 @@ def train():
         model.model[-1] = c  # replace
         for p in model.parameters():
             p.requires_grad = True  # for training
-    elif opt.model in torch.hub.list('rwightman/gen-efficientnet-pytorch'):  # i.e. efficientnet_b0
-        model = torch.hub.load('rwightman/gen-efficientnet-pytorch', opt.model, pretrained=pretrained)
+    elif opt.model in hub.list('rwightman/gen-efficientnet-pytorch'):  # i.e. efficientnet_b0
+        model = hub.load('rwightman/gen-efficientnet-pytorch', opt.model, pretrained=pretrained)
         model.classifier = nn.Linear(model.classifier.in_features, nc)
     else:  # try torchvision
         model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
@@ -240,17 +237,17 @@ def classify(model, size=128, file='../datasets/mnist/test/3/30.png', plot=False
     im = cv2.imread(str(file))[..., ::-1]  # HWC, BGR to RGB
     im = np.ascontiguousarray(np.asarray(im).transpose((2, 0, 1)))  # HWC to CHW
     im = torch.tensor(im).float().unsqueeze(0) / 255.0  # to Tensor, to BCWH, rescale
-    im = resize(normalize(im))
+    im = resize(im)
 
     # Inference
-    results = model(im)
+    results = model(normalize(im))
     p = F.softmax(results, dim=1)  # probabilities
     i = p.argmax()  # max index
     LOGGER.info(f'{file} prediction: {i} ({p[0, i]:.2f})')
 
     # Plot
     if plot:
-        imshow(denormalize(im), f=Path(file).name)
+        imshow(im, f=Path(file).name)
 
     return p
 
@@ -268,13 +265,7 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
     ax = ax.ravel() if m > 1 else [ax]
     plt.subplots_adjust(wspace=0.05, hspace=0.05)
     for i in range(n):
-        im = blocks[i].squeeze().permute((1, 2, 0)).numpy()
-
-        # TODO: Replace line with permanent normalize(), denormalize() updates based on IMAGENET_MEAN/STD
-        img_n = cv2.normalize(src=im, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-        # TODO: Replace line with permanent normalize(), denormalize() updates based on IMAGENET_MEAN/STD
-
-        ax[i].imshow(img_n)
+        ax[i].imshow(blocks[i].squeeze().permute((1, 2, 0)).numpy().clip(0.0, 1.0))
         ax[i].axis('off')
         if labels is not None:
             s = names[labels[i]] + (f'—{names[pred[i]]}' if pred is not None else '')
@@ -285,9 +276,9 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
     LOGGER.info(colorstr('imshow: ') + f"examples saved to {f}")
 
     if verbose and labels is not None:
-        LOGGER.info('True:     ', ' '.join(f'{names[i]:3s}' for i in labels))
+        LOGGER.info('True:     ' + ' '.join(f'{names[i]:3s}' for i in labels))
     if verbose and pred is not None:
-        LOGGER.info('Predicted:', ' '.join(f'{names[i]:3s}' for i in pred))
+        LOGGER.info('Predicted:' + ' '.join(f'{names[i]:3s}' for i in pred))
 
 
 if __name__ == '__main__':
@@ -295,7 +286,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='yolov5s', help='initial weights path')
     parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100, mnist or mnist-fashion')
     parser.add_argument('--hyp', type=str, default='data/hyps/hyp.scratch-low.yaml', help='hyperparameters path')
-    parser.add_argument('--epochs', type=int, default=20)
+    parser.add_argument('--epochs', type=int, default=10)
     parser.add_argument('--batch-size', type=int, default=128, help='total batch size for all GPUs')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=128, help='train, val image size (pixels)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
