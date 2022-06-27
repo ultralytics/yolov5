@@ -3,7 +3,7 @@
 Train a YOLOv5 classifier model on a classification dataset
 
 Usage - train:
-    $ python classifier.py --model yolov5n --data mnist --epochs 1 --img 128
+    $ python path/to/classifier.py --model yolov5s --data mnist --epochs 5 --img 128
 
 Usage - inference:
     from classifier import *
