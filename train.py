@@ -440,14 +440,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             #     break
 
         if RANK != -1:  # if DDP training
-            if RANK == 0:
-                broadcast_list.append(stop)
-
-            else:
-                broadcast_list.append(None)
-
+            broadcast_list.append(stop if RANK == 0 else None)
             dist.broadcast_object_list(broadcast_list, 0)
-
             if RANK != 0:
                 stop = broadcast_list[0]
 
