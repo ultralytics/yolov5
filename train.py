@@ -31,7 +31,8 @@ import yaml
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import SGD, Adam, AdamW, lr_scheduler
 from tqdm import tqdm
-from utils.coco_minitrain.sample_download_utils import sample_coco, download_sampled_images, update_labels
+
+from utils.coco_minitrain.sample_download_utils import download_sampled_images, sample_coco, update_labels
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -219,8 +220,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
         LOGGER.info('Using SyncBatchNorm()')
 
-
-
     dataset_root_path = train_path[:train_path.rindex('/')]
 
     if opt.coco_mini:
@@ -229,13 +228,15 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         # Prepare dataset
         coco_root_path = dataset_root_path.replace('coco-minitrain', 'coco')
 
-        cmd = 'rm -r {}/*.cache'.format(coco_root_path)
-        os.system(cmd); print(cmd)
+        cmd = f'rm -r {coco_root_path}/*.cache'
+        os.system(cmd)
+        print(cmd)
 
         print('coco_root_path: ', coco_root_path)
         print('dataset_root_path: ', dataset_root_path)
-        cmd = 'scp -r {}/* {}'.format(coco_root_path, dataset_root_path)
-        os.system(cmd); print(cmd)
+        cmd = f'scp -r {coco_root_path}/* {dataset_root_path}'
+        os.system(cmd)
+        print(cmd)
 
         sample_coco(dataset_root_path, opt.coco_mini_samples)
         download_sampled_images(dataset_root_path)
@@ -540,7 +541,10 @@ def parse_opt(known=False):
     parser.add_argument('--bbox_interval', type=int, default=-1, help='W&B: Set bounding-box image logging interval')
     parser.add_argument('--artifact_alias', type=str, default='latest', help='W&B: Version of dataset artifact to use')
     parser.add_argument('--coco_mini', action='store_true', help='whether to sample a subset of coco for training')
-    parser.add_argument('--coco_mini_samples', type=int, default=25000, help='number of training samples from COCO with the same distribution')
+    parser.add_argument('--coco_mini_samples',
+                        type=int,
+                        default=25000,
+                        help='number of training samples from COCO with the same distribution')
 
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt

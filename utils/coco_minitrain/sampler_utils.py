@@ -2,8 +2,8 @@
 Ref: https://github.com/giddyyupp/coco-minitrain
 '''
 
-def get_coco_object_size_info(dataset_train,
-                              areaRng = [32 ** 2, 96 ** 2, 1e5 ** 2]):
+
+def get_coco_object_size_info(dataset_train, areaRng=[32 ** 2, 96 ** 2, 1e5 ** 2]):
     size_dict = {}
 
     for k, v in dataset_train.coco.anns.items():
