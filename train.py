@@ -431,15 +431,10 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
             stop = stopper(epoch=epoch, fitness=fi)
 
-        # Stop DDP TODO: known issues https://github.com/ultralytics/yolov5/pull/4576
-        # stop = stopper(epoch=epoch, fitness=fi)
-        # if RANK == 0:
-        #    dist.broadcast_object_list([stop], 0)  # broadcast 'stop' to all ranks
-
-        # EarlyStop Single and Multi-GPU training
+        # EarlyStopping
         if RANK != -1:  # if DDP training
             broadcast_list.append(stop if RANK == 0 else None)
-            dist.broadcast_object_list(broadcast_list, 0)
+            dist.broadcast_object_list(broadcast_list, 0)  # broadcast 'stop' to all ranks
             if RANK != 0:
                 stop = broadcast_list[0]
         if stop:
