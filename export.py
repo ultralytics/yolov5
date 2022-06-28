@@ -499,8 +499,6 @@ def run(
     im = torch.zeros(batch_size, 3, *imgsz).to(device)  # image size(1,3,320,192) BCHW iDetection
 
     # Update model
-    if half and not coreml and not xml:
-        im, model = im.half(), model.half()  # to FP16
     model.train() if train else model.eval()  # training mode = no Detect() layer grid construction
     for k, m in model.named_modules():
         if isinstance(m, Detect):
@@ -510,6 +508,8 @@ def run(
 
     for _ in range(2):
         y = model(im)  # dry runs
+    if half and not coreml:
+        im, model = im.half(), model.half()  # to FP16
     shape = tuple(y[0].shape)  # model output shape
     LOGGER.info(f"\n{colorstr('PyTorch:')} starting from {file} with output shape {shape} ({file_size(file):.1f} MB)")
 
