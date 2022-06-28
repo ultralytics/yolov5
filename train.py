@@ -435,32 +435,21 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
             stop = stopper(epoch=epoch, fitness=fi)
 
-            # Stop Single-GPU
-            # if RANK == -1 and stopper(epoch=epoch, fitness=fi):
-            #     break
-
+        # Stop DDP TODO: known issues https://github.com/ultralytics/yolov5/pull/4576
+        # stop = stopper(epoch=epoch, fitness=fi)
+        # if RANK == 0:
+        #    dist.broadcast_object_list([stop], 0)  # broadcast 'stop' to all ranks
+        
+        # EarlyStop Single and Multi-GPU training
         if RANK != -1:  # if DDP training
             broadcast_list.append(stop if RANK == 0 else None)
             dist.broadcast_object_list(broadcast_list, 0)
             if RANK != 0:
                 stop = broadcast_list[0]
-
-        # Stop Single GPU and Multi GPU training
         if stop:
-            break
-
+            break  # must break all DDP ranks
         if RANK != -1:
             broadcast_list.clear()
-
-            # Stop DDP TODO: known issues https://github.com/ultralytics/yolov5/pull/4576
-            # stop = stopper(epoch=epoch, fitness=fi)
-            # if RANK == 0:
-            #    dist.broadcast_object_list([stop], 0)  # broadcast 'stop' to all ranks
-
-        # Stop DPP
-        # with torch_distributed_zero_first(RANK):
-        # if stop:
-        #    break  # must break all DDP ranks
 
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training -----------------------------------------------------------------------------------------------------
