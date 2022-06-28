@@ -119,8 +119,8 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         f = file.with_suffix('.onnx')
 
         torch.onnx.export(
-            model,
-            im,
+            model.cpu() if dynamic else model,  # --dynamic only compatible with cpu
+            im.cpu() if dynamic else im,
             f,
             verbose=False,
             opset_version=opset,
