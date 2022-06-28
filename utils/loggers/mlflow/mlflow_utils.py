@@ -45,24 +45,18 @@ class MlflowLogger:
             self.mlflow = None
             self.mlflow_active_run = None
 
-    def log_artifacts(self, artifact: Path, epoch: int = None) -> None:
+    def log_artifacts(self, artifact: Path) -> None:
         """Member function to log artifacts (either directory or single item).
-
-        If the artifacts need to be saved as checkpoints, set the epoch.
 
         Args:
             artifact (Path): File or folder to be logged
-            epoch (int, optional): Epoch during training. Set value to save input as a checkpoint. Defaults to None.
         """
         if not isinstance(artifact, Path):
             artifact = Path(artifact)
-        artifact_name = artifact.stem
         if artifact.is_dir():
-            name = f"{artifact_name}_epoch{str(epoch+1).zfill(5)}" if epoch is not None else artifact_name
-            self.mlflow.log_artifacts(str(f"{artifact.resolve()}/"), artifact_path=name)
+            self.mlflow.log_artifacts(str(f"{artifact.resolve()}/"))
         else:
-            name = f"{artifact_name}_epoch{str(epoch+1).zfill(5)}{artifact.suffix}" if epoch is not None else None
-            self.mlflow.log_artifact(artifact.resolve(), artifact_path=name)
+            self.mlflow.log_artifact(artifact.resolve())
 
     def log_model(self, model) -> None:
         """Member function to log model as an Mlflow model.
