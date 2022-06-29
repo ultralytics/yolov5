@@ -208,8 +208,11 @@ def train():
 def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     model.eval()
     pred, targets, loss = [], [], 0
+    n = len(dataloader)  # number of batches
     with torch.no_grad():
-        for images, labels in dataloader:
+        desc = f'{pbar.desc}validating'
+        bar = tqdm(dataloader, desc, n, False, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
+        for images, labels in bar:
             images, labels = resize(images.to(device)), labels.to(device)
             y = model(images)
             pred.append(torch.max(y, 1)[1])
@@ -221,7 +224,7 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     correct = (targets == pred).float()
 
     if pbar:
-        pbar.desc += f"{loss / len(dataloader):<12.3g}{correct.mean().item():<12.3g}"
+        pbar.desc += f"{loss / n:<12.3g}{correct.mean().item():<12.3g}"
 
     accuracy = correct.mean().item()
     if verbose:  # all classes
