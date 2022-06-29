@@ -9,6 +9,7 @@ from sparsezoo import Zoo
 from sparseml.pytorch.optim import ScheduledModifierManager
 from sparseml.pytorch.utils import SparsificationGroupLogger
 from sparseml.pytorch.utils import GradSampler
+from sparseml.pytorch.sparsification.quantization import QuantizationModifier
 import torchvision.transforms.functional as F
 
 from utils.torch_utils import is_parallel
@@ -51,7 +52,16 @@ def check_download_sparsezoo_weights(path):
 
 
 class SparseMLWrapper(object):
-    def __init__(self, model, checkpoint_recipe, train_recipe, steps_per_epoch=-1, one_shot=False):
+    def __init__(
+        self, 
+        model, 
+        checkpoint_recipe, 
+        train_recipe,
+        train_mode=False,
+        epoch=-1, 
+        steps_per_epoch=-1, 
+        one_shot=False,
+        ):
         self.enabled = bool(train_recipe)
         self.model = model.module if is_parallel(model) else model
         self.checkpoint_manager = ScheduledModifierManager.from_yaml(checkpoint_recipe) if checkpoint_recipe else None
@@ -62,20 +72,46 @@ class SparseMLWrapper(object):
         self.one_shot = one_shot
         self.train_recipe = train_recipe
 
-        if self.one_shot:
-            self._apply_one_shot()
+        self.apply_checkpoint_structure(train_mode, epoch, one_shot)
 
-    def state_dict(self):
-        manager = (ScheduledModifierManager.compose_staged(self.checkpoint_manager, self.manager)
-        if self.checkpoint_manager and self.enabled else self.manager)
+    def state_dict(self, final_epoch):
+        if self.enabled or self.checkpoint_manager:
+            compose_recipes = self.checkpoint_manager and self.enabled and final_epoch
+            return {
+                'checkpoint_recipe': str(ScheduledModifierManager.compose_staged(self.checkpoint_manager, self.manager)) 
+                                    if compose_recipes else str(self.checkpoint_manager),
+                'train_recipe': str(self.manager) if not final_epoch else None
+            }
+        else:
+            return {
+                'checkpoint_recipe': None,
+                'train_recipe': None
+            }
 
-        return {
-            'recipe': str(manager) if self.enabled else None,
-        }
-
-    def apply_checkpoint_structure(self):
+    def apply_checkpoint_structure(self, train_mode, epoch, one_shot=False):
         if self.checkpoint_manager:
+            # if checkpoint recipe has a QAT modifier and this is a transfer learning 
+            # run then remove the QAT modifier from the manager 
+            if train_mode:
+                qat_idx = next((
+                    idx for idx, mod in enumerate(self.checkpoint_manager.modifiers) 
+                    if isinstance(mod, QuantizationModifier)), -1
+                    )
+                if qat_idx >= 0:
+                    _ = self.checkpoint_manager.modifiers.pop(qat_idx)
+        
             self.checkpoint_manager.apply_structure(self.model, math.inf)
+
+        if train_mode and epoch > 0 and self.enabled:
+            self.manager.apply_structure(self.model, epoch)
+        elif one_shot:
+            if self.enabled:
+                self.manager.apply(self.model)
+                _LOGGER.info(f"Applied recipe {self.train_recipe} in one-shot manner")
+            else:
+                _LOGGER.info(f"Training recipe for one-shot application not recognized by the manager. Got recipe: "
+                            f"{self.train_recipe}"
+                            )
 
     def initialize(
         self, 
@@ -144,9 +180,9 @@ class SparseMLWrapper(object):
     def check_epoch_override(self, epochs, rank):
         # Override num epochs if recipe explicitly modifies epoch range
         if self.enabled and self.manager.epoch_modifiers and self.manager.max_epochs:
+            epochs = self.manager.max_epochs or epochs  # override num_epochs
             if rank in [0,-1]:
                 self.logger.info(f'Overriding number of epochs from SparseML manager to {epochs}')
-            epochs = self.manager.max_epochs + self.start_epoch or epochs  # override num_epochs
 
         return epochs
 
@@ -195,15 +231,6 @@ class SparseMLWrapper(object):
                         imgs = nn.functional.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
                 yield [imgs], {}, targets
         return dataloader
-      
-    def _apply_one_shot(self):
-        if self.manager is not None:
-            self.manager.apply(self.model)
-            _LOGGER.info(f"Applied recipe {self.train_recipe} in one-shot manner")
-        else:
-            _LOGGER.info(f"Training recipe for one-shot application not recognized by the manager. Got recipe: "
-                         f"{self.train_recipe}"
-                         )
 
     def save_sample_inputs_outputs(
         self,

@@ -141,6 +141,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             model,
             None,
             opt.recipe,
+            train_mode=True,
             steps_per_epoch=opt.max_train_steps,
             one_shot=opt.one_shot,
         )
@@ -314,7 +315,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             "date": datetime.now().isoformat(),
         }
         ckpt = create_checkpoint(
-            -1, model, optimizer, ema, sparseml_wrapper, **ckpt_extras
+            -1, True, model, optimizer, ema, sparseml_wrapper, **ckpt_extras
         )
         one_shot_checkpoint_name = w / "checkpoint-one-shot.pt"
         torch.save(ckpt, one_shot_checkpoint_name)
@@ -486,7 +487,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                'best_fitness': best_fitness,
                                'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None,
                                'date': datetime.now().isoformat()}
-                ckpt = create_checkpoint(epoch, model, optimizer, ema, sparseml_wrapper, **ckpt_extras)
+                ckpt = create_checkpoint(epoch, final_epoch, model, optimizer, ema, sparseml_wrapper, **ckpt_extras)
 
                 # Save last, best and delete
                 torch.save(ckpt, last)
