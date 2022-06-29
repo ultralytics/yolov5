@@ -24,14 +24,14 @@ from datetime import datetime
 from pathlib import Path
 
 import torch
+import torch.distributed as dist
 import torch.hub as hub
 import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
-import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
 import torchvision
 from torch.cuda import amp
+from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
@@ -43,8 +43,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import Classify, DetectMultiBackend
 from utils.augmentations import denormalize, normalize
 from utils.dataloaders import create_classification_dataloader
-from utils.general import (LOGGER, NUM_THREADS, check_file, check_git_status, check_requirements, colorstr, download,
-                           increment_path, check_version)
+from utils.general import (LOGGER, NUM_THREADS, check_file, check_git_status, check_requirements, check_version,
+                           colorstr, download, increment_path)
 from utils.loggers import GenericLogger
 from utils.torch_utils import de_parallel, model_info, select_device
 
@@ -351,7 +351,7 @@ if __name__ == '__main__':
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device('cuda', LOCAL_RANK)
         dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
-    
+
     # Train
     train()
     if WORLD_SIZE > 1 and RANK == 0:

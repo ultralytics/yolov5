@@ -1133,11 +1133,11 @@ def create_classification_dataloader(
     # Returns Dataloader object to be used with YOLOv5 Classifier
     with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
         dataset = ClassificationDataset(root=path,
-                                    torch_transforms=classify_transforms(),
-                                    album_transforms=classify_albumentations(augment, imgsz))
+                                        torch_transforms=classify_transforms(),
+                                        album_transforms=classify_albumentations(augment, imgsz))
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()
     nw = min([os.cpu_count() // max(nd, 1), batch_size if batch_size > 1 else 0, workers])
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
-    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=nw, sampler=sampler), dataset
-
+    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=nw,
+                                       sampler=sampler), dataset
