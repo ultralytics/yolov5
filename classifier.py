@@ -210,7 +210,8 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     pred, targets, loss = [], [], 0
     n = len(dataloader)  # number of batches
     with torch.no_grad():
-        bar = tqdm(dataloader, pbar.desc, n, False, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
+        desc = f'{pbar.desc}validating'
+        bar = tqdm(dataloader, desc, n, False, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
         for images, labels in bar:
             images, labels = resize(images.to(device)), labels.to(device)
             y = model(images)
