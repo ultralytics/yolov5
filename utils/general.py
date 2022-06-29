@@ -200,9 +200,10 @@ def init_seeds(seed=0):
     # cudnn seed 0 settings are slower and more reproducible, else faster and less reproducible
     import torch.backends.cudnn as cudnn
 
-    torch.use_deterministic_algorithms(True)
-    os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'  # for torch.use_deterministic_algorithms(True)
-    # os.environ['PYTHONHASHSEED'] = str(seed)
+    if check_version(torch.__version__, '1.12.0'):  # https://github.com/ultralytics/yolov5/pull/8213
+        torch.use_deterministic_algorithms(True)
+        os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+        # os.environ['PYTHONHASHSEED'] = str(seed)
 
     random.seed(seed)
     np.random.seed(seed)
