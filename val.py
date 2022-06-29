@@ -124,7 +124,6 @@ def run(
         compute_loss=None,
 ):
     # Initialize/load model and set device
-    torch.use_deterministic_algorithms(False)
     training = model is not None
     if training:  # called by train.py
         device, pt, jit, engine = next(model.parameters()).device, True, False, False  # get model device, PyTorch model
