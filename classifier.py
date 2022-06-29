@@ -209,7 +209,11 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     model.eval()
     pred, targets, loss = [], [], 0
     with torch.no_grad():
-        bar = tqdm(dataloader, total=len(dataloader), bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', leave=False, position=0)
+        bar = tqdm(dataloader,
+                   total=len(dataloader),
+                   bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}',
+                   leave=False,
+                   position=0)
         for images, labels in bar:
             images, labels = resize(images.to(device)), labels.to(device)
             y = model(images)
