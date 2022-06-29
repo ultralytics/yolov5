@@ -80,7 +80,7 @@ def train():
     if RANK in {-1, 0}:
         testloader, testset = create_classification_dataloader(path=data_dir / 'test',
                                                            imgsz=imgsz,
-                                                           batch_size=bs,
+                                                           batch_size=bs // WORLD_SIZE * 2,
                                                            augment=False,
                                                            rank=LOCAL_RANK,
                                                            workers=nw)
