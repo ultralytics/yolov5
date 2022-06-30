@@ -87,6 +87,8 @@ def train():
                                                                augment=False,
                                                                rank=LOCAL_RANK,
                                                                workers=nw)
+        LOGGER.info(f'DEBUG: Testloader section done')
+
 
     names = trainset.classes
     nc = len(names)
@@ -101,7 +103,7 @@ def train():
     if opt.model.startswith('yolov5'):
         # YOLOv5 Classifier
         LOGGER.info(f'DEBUG: hub load start')
-        model = hub.load('ultralytics/yolov5', opt.model, pretrained=pretrained, autoshape=False, force_reload=True)
+        model = hub.load('ultralytics/yolov5', opt.model, pretrained=pretrained, autoshape=False, force_reload=False)
         LOGGER.info(f'DEBUG: hub load done')
         if isinstance(model, DetectMultiBackend):
             model = model.model  # unwrap DetectMultiBackend
