@@ -63,6 +63,7 @@ def train():
     last, best = wdir / 'last.pt', wdir / 'best.pt'
 
     # Logger
+    LOGGER.info(f'DEBUG: Logger section start')
     logger = GenericLogger(opt=opt, console_logger=LOGGER) if RANK in {-1, 0} else None
     # Download Dataset
     data_dir = FILE.parents[1] / 'datasets' / data
@@ -71,6 +72,7 @@ def train():
         download(url, dir=data_dir.parent)
 
     # Dataloaders
+    LOGGER.info(f'DEBUG: Trainloader section start')
     trainloader, trainset = create_classification_dataloader(path=data_dir / 'train',
                                                              imgsz=imgsz,
                                                              batch_size=bs // WORLD_SIZE,
@@ -78,6 +80,7 @@ def train():
                                                              rank=LOCAL_RANK,
                                                              workers=nw)
     if RANK in {-1, 0}:
+        LOGGER.info(f'DEBUG: Testloader section start')
         testloader, testset = create_classification_dataloader(path=data_dir / 'test',
                                                                imgsz=imgsz,
                                                                batch_size=bs // WORLD_SIZE * 2,
