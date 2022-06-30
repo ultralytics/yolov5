@@ -114,6 +114,7 @@ def train():
         model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
         model.fc = nn.Linear(model.fc.weight.shape[1], nc)
     model = model.to(device)
+    LOGGER.info(f'DEBUG: Model section done')
 
     # print(model)  # debug
     # model_info(model)
@@ -127,21 +128,26 @@ def train():
         optimizer = optim.AdamW(model.parameters(), lr=lr0 / 10)
     else:
         optimizer = optim.SGD(model.parameters(), lr=lr0, momentum=0.9, nesterov=True)
+    LOGGER.info(f'DEBUG: Optimizer section done')
 
     # Scheduler
     lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) + lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # scheduler = lr_scheduler.OneCycleLR(optimizer, max_lr=lr0, total_steps=epochs, pct_start=0.1,
     #                                    final_div_factor=1 / 25 / lrf)
+    LOGGER.info(f'DEBUG: Optimizer section done')
 
     # DDP mode
     if cuda and RANK != -1:
+        LOGGER.info(f'DEBUG: Starting DDP section')
         if check_version(torch.__version__, '1.11.0'):
             model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK, static_graph=True)
         else:
             model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
+        LOGGER.info(f'DEBUG: DDP section done')
 
     # Train
+    LOGGER.info(f'DEBUG: Train section start')
     t0 = time.time()
     criterion = nn.CrossEntropyLoss()  # loss function
     best_fitness = 0.0
