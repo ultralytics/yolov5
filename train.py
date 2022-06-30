@@ -10,7 +10,7 @@ Tutorial: https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data
 Usage:
     $ python path/to/train.py --data coco128.yaml --weights yolov5s.pt --img 640  # from pretrained (RECOMMENDED)
     $ python path/to/train.py --data coco128.yaml --weights '' --cfg yolov5s.yaml --img 640  # from scratch
-    $ python path/to/train.py --data coco-minitrain.yaml --weights yolov5s.pt --img 640 --coco_mini --coco_mini_samples 25000 # sample 25000 images from coco
+    $ python path/to/train.py --data coco_minitrain.yaml --weights yolov5s.pt --img 640 --coco_mini --coco_mini_samples 25000 # sample 25000 images from coco
 """
 
 import argparse
@@ -226,7 +226,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         print('\n\n train.py - train() - opt.coco_mini: ', opt.coco_mini)
 
         # Prepare dataset
-        coco_root_path = dataset_root_path.replace('coco-minitrain', 'coco')
+        coco_root_path = dataset_root_path.replace('coco_minitrain', 'coco')
 
         cmd = f'rm -r {coco_root_path}/*.cache'
         os.system(cmd)
