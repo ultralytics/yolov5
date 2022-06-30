@@ -48,9 +48,9 @@ from utils.general import (LOGGER, NUM_THREADS, check_file, check_git_status, ch
 from utils.loggers import GenericLogger
 from utils.torch_utils import de_parallel, model_info, select_device
 
-WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
+LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
-LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))
+WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 
 
 def train():
