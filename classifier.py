@@ -3,7 +3,8 @@
 Train a YOLOv5 classifier model on a classification dataset
 
 Usage - train:
-    $ python path/to/classifier.py --model yolov5s --data mnist --epochs 5 --img 128
+    $ python classifier.py --model yolov5s --data mnist --epochs 5 --img 128
+    $ python -m torch.distributed.run --nproc_per_node 2 --master_port 1 classifier.py --ARGS --device 0,1
 
 Usage - inference:
     from classifier import *
