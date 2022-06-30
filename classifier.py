@@ -97,8 +97,7 @@ def train():
     # Model
     if opt.model.startswith('yolov5'):
         # YOLOv5 Classifier
-        with torch_distributed_zero_first(LOCAL_RANK):
-            model = hub.load('ultralytics/yolov5', opt.model, pretrained=pretrained, autoshape=False, force_reload=True)
+        model = hub.load('ultralytics/yolov5', opt.model, pretrained=pretrained, autoshape=False, force_reload=False)
         if isinstance(model, DetectMultiBackend):
             model = model.model  # unwrap DetectMultiBackend
         model.model = model.model[:10] if opt.model.endswith('6') else model.model[:8]  # backbone
@@ -116,7 +115,8 @@ def train():
         model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
         model.fc = nn.Linear(model.fc.weight.shape[1], nc)
     model = model.to(device)
-    model_info(model)  # print(model)
+    if RANK in {-1, 0}:
+        model_info(model)  # print(model)
 
     # Optimizer
     lr0 = 0.0001 * bs  # intial lr
