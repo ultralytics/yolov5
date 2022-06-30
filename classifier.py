@@ -116,9 +116,7 @@ def train():
         model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
         model.fc = nn.Linear(model.fc.weight.shape[1], nc)
     model = model.to(device)
-
-    # print(model)  # debug
-    model_info(model)
+    model_info(model)  # print(model)
 
     # Optimizer
     lr0 = 0.0001 * bs  # intial lr
