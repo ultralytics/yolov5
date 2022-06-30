@@ -115,7 +115,7 @@ def train():
         model.fc = nn.Linear(model.fc.weight.shape[1], nc)
 
     # print(model)  # debug
-    model_info(model)
+    # model_info(model)
 
     # DDP mode
     model = model.to(device)
