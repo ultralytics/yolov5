@@ -94,9 +94,12 @@ def train():
     imshow(denormalize(images[:64]), labels[:64], names=names, f=save_dir / 'train_images.jpg')
 
     # Model
+    LOGGER.info(f'DEBUG: Model section start')
     if opt.model.startswith('yolov5'):
         # YOLOv5 Classifier
+        LOGGER.info(f'DEBUG: hub load start')
         model = hub.load('ultralytics/yolov5', opt.model, pretrained=pretrained, autoshape=False, force_reload=True)
+        LOGGER.info(f'DEBUG: hub load done')
         if isinstance(model, DetectMultiBackend):
             model = model.model  # unwrap DetectMultiBackend
         model.model = model.model[:10] if opt.model.endswith('6') else model.model[:8]  # backbone
