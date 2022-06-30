@@ -1139,5 +1139,9 @@ def create_classification_dataloader(
     nd = torch.cuda.device_count()
     nw = min([os.cpu_count() // max(nd, 1), batch_size if batch_size > 1 else 0, workers])
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
-    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=nw,
+    return torch.utils.data.DataLoader(dataset,
+                                       batch_size=batch_size,
+                                       shuffle=shuffle and sampler is None,
+                                       num_workers=nw,
+                                       pin_memory=True,
                                        sampler=sampler), dataset
