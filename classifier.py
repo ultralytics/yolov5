@@ -188,10 +188,11 @@ def train():
             optimizer.step()  # scaler.step(optimizer); scaler.update()
             optimizer.zero_grad()
 
-            # Print
-            mloss += loss.item()
-            mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
-            pbar.desc = f"{f'{epoch + 1}/{epochs}':10s}{mem:10s}{mloss / (i + 1):<12.3g}"
+            # Log
+            if RANK in {-1, 0}:
+                mloss += loss.item()
+                mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
+                pbar.desc = f"{f'{epoch + 1}/{epochs}':10s}{mem:10s}{mloss / (i + 1):<12.3g}"
 
             # Test
             if RANK in {-1, 0} and i == len(pbar) - 1:
