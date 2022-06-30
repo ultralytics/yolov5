@@ -116,7 +116,9 @@ def train():
 
     # print(model)  # debug
     model_info(model)
+
     # DDP mode
+    model = model.to(device)
     if cuda and RANK != -1:
         if check_version(torch.__version__, '1.11.0'):
             model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK, static_graph=True)
@@ -141,7 +143,6 @@ def train():
 
     # Train
     t0 = time.time()
-    model = model.to(device)
     criterion = nn.CrossEntropyLoss()  # loss function
     best_fitness = 0.0
     # scaler = amp.GradScaler(enabled=cuda)
