@@ -227,7 +227,7 @@ def train():
                 del ckpt
 
     # Train complete
-    if final_epoch and RANK in {-1, 0}:
+    if RANK in {-1, 0} and final_epoch:
         LOGGER.info(f'\nTraining complete {(time.time() - t0) / 3600:.3f} hours.'
                     f"\nResults saved to {colorstr('bold', save_dir)}")
 
