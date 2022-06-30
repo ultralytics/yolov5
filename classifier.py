@@ -188,7 +188,7 @@ def train():
             optimizer.step()  # scaler.step(optimizer); scaler.update()
             optimizer.zero_grad()
 
-            # Log
+            # Print
             if RANK in {-1, 0}:
                 mloss += loss.item()
                 mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
@@ -201,12 +201,13 @@ def train():
         # Scheduler
         scheduler.step()
 
-        # Best fitness
-        if fitness > best_fitness:
-            best_fitness = fitness
-
         # Log metrics
         if RANK in {-1, 0}:
+            # Best fitness
+            if fitness > best_fitness:
+                best_fitness = fitness
+
+            # Log
             logger.log_metrics({"Train_loss": mloss, "Accuracy": fitness})
 
             # Save model
