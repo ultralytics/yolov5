@@ -510,7 +510,7 @@ def parse_opt(known=False):
                     This should be -1 when using single-GPU or when using validation and test dataloaders. 
                     Local Rank for each GPU is like the index of GPU. It specifies which GPU we are using.
                     Pytorch Automatically passes this parameter. """)
-    )
+    
 
     # Weights & Biases arguments
     parser.add_argument('--entity', default=None, help='W&B: Entity')
