@@ -118,7 +118,7 @@ def train():
     model = model.to(device)
 
     # print(model)  # debug
-    # model_info(model)
+    model_info(model)
 
     # Optimizer
     lr0 = 0.0001 * bs  # intial lr
