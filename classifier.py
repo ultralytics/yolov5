@@ -63,7 +63,7 @@ def train():
     last, best = wdir / 'last.pt', wdir / 'best.pt'
 
     # Logger
-    LOGGER.info(f'DEBUG: Logger section start')
+    LOGGER.info(f'DEBUG: Logger section start for RANK {RANK}')
     logger = GenericLogger(opt=opt, console_logger=LOGGER) if RANK in {-1, 0} else None
     # Download Dataset
     data_dir = FILE.parents[1] / 'datasets' / data
@@ -72,22 +72,24 @@ def train():
         download(url, dir=data_dir.parent)
 
     # Dataloaders
-    LOGGER.info(f'DEBUG: Trainloader section start')
+    LOGGER.info(f'DEBUG: Trainloader section start for RANK {RANK}')
     trainloader, trainset = create_classification_dataloader(path=data_dir / 'train',
                                                              imgsz=imgsz,
                                                              batch_size=bs // WORLD_SIZE,
                                                              augment=True,
                                                              rank=LOCAL_RANK,
                                                              workers=nw)
+    LOGGER.info(f'DEBUG: Trainloader section done for RANK {RANK}')
+
     if RANK in {-1, 0}:
-        LOGGER.info(f'DEBUG: Testloader section start')
+        LOGGER.info(f'DEBUG: Testloader section start for RANK {RANK}')
         testloader, testset = create_classification_dataloader(path=data_dir / 'test',
                                                                imgsz=imgsz,
                                                                batch_size=bs // WORLD_SIZE * 2,
                                                                augment=False,
                                                                rank=LOCAL_RANK,
                                                                workers=nw)
-        LOGGER.info(f'DEBUG: Testloader section done')
+        LOGGER.info(f'DEBUG: Testloader section done for RANK {RANK}')
 
 
     names = trainset.classes
@@ -99,12 +101,12 @@ def train():
     imshow(denormalize(images[:64]), labels[:64], names=names, f=save_dir / 'train_images.jpg')
 
     # Model
-    LOGGER.info(f'DEBUG: Model section start')
+    LOGGER.info(f'DEBUG: Model section start for RANK {RANK}')
     if opt.model.startswith('yolov5'):
         # YOLOv5 Classifier
-        LOGGER.info(f'DEBUG: hub load start')
+        LOGGER.info(f'DEBUG: hub load start for RANK {RANK}')
         model = hub.load('ultralytics/yolov5', opt.model, pretrained=pretrained, autoshape=False, force_reload=False)
-        LOGGER.info(f'DEBUG: hub load done')
+        LOGGER.info(f'DEBUG: hub load done for RANK {RANK}')
         if isinstance(model, DetectMultiBackend):
             model = model.model  # unwrap DetectMultiBackend
         model.model = model.model[:10] if opt.model.endswith('6') else model.model[:8]  # backbone
@@ -122,7 +124,7 @@ def train():
         model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
         model.fc = nn.Linear(model.fc.weight.shape[1], nc)
     model = model.to(device)
-    LOGGER.info(f'DEBUG: Model section done')
+    LOGGER.info(f'DEBUG: Model section done for RANK {RANK}')
 
     # print(model)  # debug
     # model_info(model)
@@ -136,26 +138,26 @@ def train():
         optimizer = optim.AdamW(model.parameters(), lr=lr0 / 10)
     else:
         optimizer = optim.SGD(model.parameters(), lr=lr0, momentum=0.9, nesterov=True)
-    LOGGER.info(f'DEBUG: Optimizer section done')
+    LOGGER.info(f'DEBUG: Optimizer section done for RANK {RANK}')
 
     # Scheduler
     lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) + lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # scheduler = lr_scheduler.OneCycleLR(optimizer, max_lr=lr0, total_steps=epochs, pct_start=0.1,
     #                                    final_div_factor=1 / 25 / lrf)
-    LOGGER.info(f'DEBUG: Optimizer section done')
+    LOGGER.info(f'DEBUG: Optimizer section done for RANK {RANK}')
 
     # DDP mode
     if cuda and RANK != -1:
-        LOGGER.info(f'DEBUG: Starting DDP section')
+        LOGGER.info(f'DEBUG: Starting DDP section for RANK {RANK}')
         if check_version(torch.__version__, '1.11.0'):
             model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK, static_graph=True)
         else:
             model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
-        LOGGER.info(f'DEBUG: DDP section done')
+        LOGGER.info(f'DEBUG: DDP section done for RANK {RANK}')
 
     # Train
-    LOGGER.info(f'DEBUG: Train section start')
+    LOGGER.info(f'DEBUG: Train section start for RANK {RANK}')
     t0 = time.time()
     criterion = nn.CrossEntropyLoss()  # loss function
     best_fitness = 0.0
