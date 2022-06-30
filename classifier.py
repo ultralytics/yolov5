@@ -113,17 +113,10 @@ def train():
     else:  # try torchvision
         model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
         model.fc = nn.Linear(model.fc.weight.shape[1], nc)
+    model = model.to(device)
 
     # print(model)  # debug
     # model_info(model)
-
-    # DDP mode
-    model = model.to(device)
-    if cuda and RANK != -1:
-        if check_version(torch.__version__, '1.11.0'):
-            model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK, static_graph=True)
-        else:
-            model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
 
     # Optimizer
     lr0 = 0.0001 * bs  # intial lr
@@ -134,6 +127,13 @@ def train():
         optimizer = optim.AdamW(model.parameters(), lr=lr0 / 10)
     else:
         optimizer = optim.SGD(model.parameters(), lr=lr0, momentum=0.9, nesterov=True)
+
+    # DDP mode
+    if cuda and RANK != -1:
+        if check_version(torch.__version__, '1.11.0'):
+            model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK, static_graph=True)
+        else:
+            model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
 
     # Scheduler
     lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) + lrf  # cosine
@@ -179,9 +179,8 @@ def train():
             pbar.desc = f"{f'{epoch + 1}/{epochs}':10s}{mem:10s}{mloss / (i + 1):<12.3g}"
 
             # Test
-            if RANK in {-1, 0}:
-                if i == len(pbar) - 1:
-                    fitness = test(model, testloader, names, criterion, pbar=pbar)  # test
+            if RANK in {-1, 0} and i == len(pbar) - 1:
+                fitness = test(model, testloader, names, criterion, pbar=pbar)  # test
 
         # Scheduler
         scheduler.step()
