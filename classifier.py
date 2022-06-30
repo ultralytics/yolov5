@@ -24,12 +24,14 @@ from datetime import datetime
 from pathlib import Path
 
 import torch
+import torch.distributed as dist
 import torch.hub as hub
 import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
 from torch.cuda import amp
+from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
@@ -41,13 +43,14 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import Classify, DetectMultiBackend
 from utils.augmentations import denormalize, normalize
 from utils.dataloaders import create_classification_dataloader
-from utils.general import (LOGGER, NUM_THREADS, check_file, check_git_status, check_requirements, colorstr, download,
-                           increment_path)
+from utils.general import (LOGGER, NUM_THREADS, check_file, check_git_status, check_requirements, check_version,
+                           colorstr, download, increment_path)
 from utils.loggers import GenericLogger
-from utils.torch_utils import de_parallel, model_info, select_device
+from utils.torch_utils import de_parallel, model_info, select_device, torch_distributed_zero_first
 
+LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
+RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
-LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))
 
 
 def train():
@@ -60,7 +63,7 @@ def train():
     last, best = wdir / 'last.pt', wdir / 'best.pt'
 
     # Logger
-    logger = GenericLogger(opt=opt, console_logger=LOGGER)
+    logger = GenericLogger(opt=opt, console_logger=LOGGER) if RANK in {-1, 0} else None
     # Download Dataset
     data_dir = FILE.parents[1] / 'datasets' / data
     if not data_dir.is_dir():
@@ -70,16 +73,18 @@ def train():
     # Dataloaders
     trainloader, trainset = create_classification_dataloader(path=data_dir / 'train',
                                                              imgsz=imgsz,
-                                                             batch_size=bs,
+                                                             batch_size=bs // WORLD_SIZE,
                                                              augment=True,
                                                              rank=LOCAL_RANK,
                                                              workers=nw)
-    testloader, testset = create_classification_dataloader(path=data_dir / 'test',
-                                                           imgsz=imgsz,
-                                                           batch_size=bs,
-                                                           augment=False,
-                                                           rank=LOCAL_RANK,
-                                                           workers=nw)
+
+    if RANK in {-1, 0}:
+        testloader, testset = create_classification_dataloader(path=data_dir / 'test',
+                                                               imgsz=imgsz,
+                                                               batch_size=bs // WORLD_SIZE * 2,
+                                                               augment=False,
+                                                               rank=-1,
+                                                               workers=nw)
 
     names = trainset.classes
     nc = len(names)
@@ -92,7 +97,7 @@ def train():
     # Model
     if opt.model.startswith('yolov5'):
         # YOLOv5 Classifier
-        model = hub.load('ultralytics/yolov5', opt.model, pretrained=pretrained, autoshape=False, force_reload=True)
+        model = hub.load('ultralytics/yolov5', opt.model, pretrained=pretrained, autoshape=False, force_reload=False)
         if isinstance(model, DetectMultiBackend):
             model = model.model  # unwrap DetectMultiBackend
         model.model = model.model[:10] if opt.model.endswith('6') else model.model[:8]  # backbone
@@ -109,9 +114,9 @@ def train():
     else:  # try torchvision
         model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
         model.fc = nn.Linear(model.fc.weight.shape[1], nc)
-
-    # print(model)  # debug
-    model_info(model)
+    model = model.to(device)
+    if RANK in {-1, 0}:
+        model_info(model)  # print(model)
 
     # Optimizer
     lr0 = 0.0001 * bs  # intial lr
@@ -129,9 +134,15 @@ def train():
     # scheduler = lr_scheduler.OneCycleLR(optimizer, max_lr=lr0, total_steps=epochs, pct_start=0.1,
     #                                    final_div_factor=1 / 25 / lrf)
 
+    # DDP mode
+    if cuda and RANK != -1:
+        if check_version(torch.__version__, '1.11.0'):
+            model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK, static_graph=True)
+        else:
+            model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
+
     # Train
     t0 = time.time()
-    model = model.to(device)
     criterion = nn.CrossEntropyLoss()  # loss function
     best_fitness = 0.0
     # scaler = amp.GradScaler(enabled=cuda)
@@ -143,9 +154,13 @@ def train():
     for epoch in range(epochs):  # loop over the dataset multiple times
         mloss = 0.0  # mean loss
         model.train()
-        pbar = tqdm(enumerate(trainloader), total=len(trainloader), bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
+        if RANK != -1:
+            trainloader.sampler.set_epoch(epoch)
+        pbar = enumerate(trainloader)
+        if RANK in {-1, 0}:
+            pbar = tqdm(enumerate(trainloader), total=len(trainloader), bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
         for i, (images, labels) in pbar:  # progress bar
-            images, labels = resize(images.to(device)), labels.to(device)
+            images, labels = images.to(device), labels.to(device)
 
             # Forward
             with amp.autocast(enabled=False):  # stability issues when enabled
@@ -159,48 +174,51 @@ def train():
             optimizer.zero_grad()
 
             # Print
-            mloss += loss.item()
-            mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
-            pbar.desc = f"{f'{epoch + 1}/{epochs}':10s}{mem:10s}{mloss / (i + 1):<12.3g}"
+            if RANK in {-1, 0}:
+                mloss += loss.item()
+                mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
+                pbar.desc = f"{f'{epoch + 1}/{epochs}':10s}{mem:10s}{mloss / (i + 1):<12.3g}"
 
             # Test
-            if i == len(pbar) - 1:
+            if RANK in {-1, 0} and i == len(pbar) - 1:
                 fitness = test(model, testloader, names, criterion, pbar=pbar)  # test
 
         # Scheduler
         scheduler.step()
 
-        # Best fitness
-        if fitness > best_fitness:
-            best_fitness = fitness
-
         # Log metrics
-        logger.log_metrics({"Train_loss": mloss, "Accuracy": fitness})
+        if RANK in {-1, 0}:
+            # Best fitness
+            if fitness > best_fitness:
+                best_fitness = fitness
 
-        # Save model
-        final_epoch = epoch + 1 == epochs
-        if (not opt.nosave) or final_epoch:
-            ckpt = {
-                'epoch': epoch,
-                'best_fitness': best_fitness,
-                'model': deepcopy(de_parallel(model)).half(),
-                'optimizer': None,  # optimizer.state_dict()
-                'date': datetime.now().isoformat()}
+            # Log
+            logger.log_metrics({"Train_loss": mloss, "Accuracy": fitness})
 
-            # Save last, best and delete
-            torch.save(ckpt, last)
-            if best_fitness == fitness:
-                torch.save(ckpt, best)
-            del ckpt
+            # Save model
+            final_epoch = epoch + 1 == epochs
+            if (not opt.nosave) or final_epoch:
+                ckpt = {
+                    'epoch': epoch,
+                    'best_fitness': best_fitness,
+                    'model': deepcopy(de_parallel(model)).half(),
+                    'optimizer': None,  # optimizer.state_dict()
+                    'date': datetime.now().isoformat()}
+
+                # Save last, best and delete
+                torch.save(ckpt, last)
+                if best_fitness == fitness:
+                    torch.save(ckpt, best)
+                del ckpt
 
     # Train complete
-    if final_epoch:
+    if RANK in {-1, 0} and final_epoch:
         LOGGER.info(f'\nTraining complete {(time.time() - t0) / 3600:.3f} hours.'
                     f"\nResults saved to {colorstr('bold', save_dir)}")
 
         # Show predictions
         images, labels = iter(testloader).next()
-        images = resize(images.to(device))
+        images = images.to(device)
         pred = torch.max(model(images), 1)[1]
         imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
 
@@ -213,7 +231,7 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
         desc = f'{pbar.desc}validating'
         bar = tqdm(dataloader, desc, n, False, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
         for images, labels in bar:
-            images, labels = resize(images.to(device)), labels.to(device)
+            images, labels = images.to(device), labels.to(device)
             y = model(images)
             pred.append(torch.max(y, 1)[1])
             targets.append(labels)
@@ -311,18 +329,34 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--from-scratch', '--scratch', action='store_true', help='train model from scratch')
+    parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     opt = parser.parse_args()
 
     # Checks
-    check_git_status()
-    check_requirements()
+    if RANK in {-1, 0}:
+        check_git_status()
+        check_requirements()
 
     # Parameters
     device = select_device(opt.device, batch_size=opt.batch_size)
     cuda = device.type != 'cpu'
     opt.hyp = check_file(opt.hyp)  # check files
     opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
+    # TODO: Remove resize as redundant with augmentations
     resize = torch.nn.Upsample(size=(opt.imgsz, opt.imgsz), mode='bilinear', align_corners=False)  # image resize
+
+    # DDP
+    if LOCAL_RANK != -1:
+        msg = 'is not compatible with YOLOv5 Multi-GPU DDP training'
+        # TODO assert opt.batch_size != -1, f'AutoBatch with --batch-size -1 {msg}, please pass a valid --batch-size'
+        assert opt.batch_size % WORLD_SIZE == 0, f'--batch-size {opt.batch_size} must be multiple of WORLD_SIZE'
+        assert torch.cuda.device_count() > LOCAL_RANK, 'insufficient CUDA devices for DDP command'
+        torch.cuda.set_device(LOCAL_RANK)
+        device = torch.device('cuda', LOCAL_RANK)
+        dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
 
     # Train
     train()
+    if WORLD_SIZE > 1 and RANK == 0:
+        LOGGER.info('Destroying process group... ')
+        dist.destroy_process_group()
