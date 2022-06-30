@@ -87,7 +87,7 @@ def train():
                                                                imgsz=imgsz,
                                                                batch_size=bs // WORLD_SIZE * 2,
                                                                augment=False,
-                                                               rank=LOCAL_RANK,
+                                                               rank=-1,
                                                                workers=nw)
         LOGGER.info(f'DEBUG: Testloader section done for RANK {RANK}')
 
