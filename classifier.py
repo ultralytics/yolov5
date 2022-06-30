@@ -128,18 +128,18 @@ def train():
     else:
         optimizer = optim.SGD(model.parameters(), lr=lr0, momentum=0.9, nesterov=True)
 
+    # Scheduler
+    lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) + lrf  # cosine
+    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
+    # scheduler = lr_scheduler.OneCycleLR(optimizer, max_lr=lr0, total_steps=epochs, pct_start=0.1,
+    #                                    final_div_factor=1 / 25 / lrf)
+
     # DDP mode
     if cuda and RANK != -1:
         if check_version(torch.__version__, '1.11.0'):
             model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK, static_graph=True)
         else:
             model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
-
-    # Scheduler
-    lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) + lrf  # cosine
-    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
-    # scheduler = lr_scheduler.OneCycleLR(optimizer, max_lr=lr0, total_steps=epochs, pct_start=0.1,
-    #                                    final_div_factor=1 / 25 / lrf)
 
     # Train
     t0 = time.time()
