@@ -91,7 +91,6 @@ def train():
                                                                workers=nw)
         LOGGER.info(f'DEBUG: Testloader section done for RANK {RANK}')
 
-
     names = trainset.classes
     nc = len(names)
     LOGGER.info(f'Training {opt.model} on {data} dataset with {nc} classes...')
