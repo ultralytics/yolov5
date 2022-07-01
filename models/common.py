@@ -366,6 +366,7 @@ class DetectMultiBackend(nn.Module):
             if not Path(w).is_file():  # if not *.xml
                 w = next(Path(w).glob('*.xml'))  # get *.xml file from *_openvino_model dir
             network = ie.read_model(model=w, weights=Path(w).with_suffix('.bin'))
+            batch_size = network.batch_size
             executable_network = ie.compile_model(network, device_name="CPU")  # device_name="MYRIAD" for Intel NCS2
             output_layer = next(iter(executable_network.outputs))
             meta = Path(w).with_suffix('.yaml')
