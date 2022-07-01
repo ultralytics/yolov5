@@ -16,7 +16,7 @@ from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
 
-LOGGERS = ('csv', 'tb', 'wandb', 'mlflow')  # text-file, TensorBoard, Weights & Biases
+LOGGERS = ('csv', 'tb', 'wandb', 'mlflow')  # text-file, TensorBoard, Weights & Biases, Mlflow
 RANK = int(os.getenv('RANK', -1))
 
 try:
@@ -68,17 +68,11 @@ class Loggers():
             setattr(self, k, None)  # init empty logger dictionary
         self.csv = True  # always log to csv
 
-        # Messages
+        # Message
         if not wandb:
             prefix = colorstr('Weights & Biases: ')
             s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs (RECOMMENDED)"
             self.logger.info(emojis(s))
-
-        if not mlflow:
-            # print mlflow message
-            prefix = colorstr("Mlflow: ")
-            s = f"{prefix}mlflow is also supported now"
-            self.logger.info(s)
 
         # TensorBoard
         s = self.save_dir
@@ -101,6 +95,7 @@ class Loggers():
         else:
             self.wandb = None
 
+        # mlflow
         if mlflow and 'mlflow' in self.include:
             self.mlflow = MlflowLogger(self.opt)
         else:
@@ -169,9 +164,6 @@ class Loggers():
             self.wandb.log(x)
             self.wandb.end_epoch(best_result=best_fitness == fi)
 
-        if self.mlflow:
-            self.mlflow.log_metrics(x, epoch=epoch)
-
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):
         # Callback runs on model save event
         if self.wandb:
@@ -207,9 +199,10 @@ class Loggers():
         if self.mlflow:
             # log stuff
             self.mlflow.log_artifacts(last.parent)
+            [self.mlflow.log_artifacts(f) for f in files if f.exists()]
+            self.mlflow.log_artifacts(self.save_dir / "results.csv")
             if best.exists():
-                self.mlflow.log_artifacts(best)
-            self.mlflow.log_artifacts(last)
+                self.mlflow.log_model(best)
             self.mlflow.finish_run()
 
     def on_params_update(self, params):

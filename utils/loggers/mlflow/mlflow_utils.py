@@ -3,7 +3,9 @@
 import sys
 from argparse import Namespace
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict
+
+import torch
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[3]
@@ -37,13 +39,17 @@ class MlflowLogger:
             if self.mlflow_active_run is not None:
                 self.run_id = self.mlflow_active_run.info.run_id
                 LOGGER.info(f"{prefix}Using run_id({self.run_id})")
-                self.log_params(vars(opt))
-                self.log_metrics(vars(opt), is_param=True)
+                self.setup(opt)
         except Exception as err:
-            LOGGER.error(f"{prefix}Failing init - {str(err)}")
+            LOGGER.error(f"{prefix}Failing init - {repr(err)}")
             LOGGER.warning(f"{prefix}Continuining without Mlflow")
             self.mlflow = None
             self.mlflow_active_run = None
+
+    def setup(self, opt: Namespace) -> None:
+        self.model_name = Path(opt.weights).stem
+        self.log_params(vars(opt))
+        self.log_metrics(vars(opt), is_param=True)
 
     def log_artifacts(self, artifact: Path) -> None:
         """Member function to log artifacts (either directory or single item).
@@ -54,17 +60,18 @@ class MlflowLogger:
         if not isinstance(artifact, Path):
             artifact = Path(artifact)
         if artifact.is_dir():
-            self.mlflow.log_artifacts(str(f"{artifact.resolve()}/"))
+            self.mlflow.log_artifacts(f"{artifact.resolve()}/", artifact_path=str(artifact.stem))
         else:
             self.mlflow.log_artifact(artifact.resolve())
 
-    def log_model(self, model) -> None:
+    def log_model(self, model_path) -> None:
         """Member function to log model as an Mlflow model.
 
         Args:
             model (nn.Module): The pytorch model
         """
-        self.mlflow.pytorch.log_model(model, code_paths=[ROOT.resolve()])
+        model = torch.hub.load(repo_or_dir=str(ROOT.resolve()), model="custom", path=str(model_path), source="local")
+        self.mlflow.pytorch.log_model(model, artifact_path=self.model_name, code_paths=[ROOT.resolve()])
 
     def log_params(self, params: Dict[str, Any]) -> None:
         """Member funtion to log parameters.
@@ -86,7 +93,9 @@ class MlflowLogger:
             is_param (bool, optional): Set it to True to log keys with a prefix "params/". Defaults to False.
         """
         prefix = "param/" if is_param else ""
-        metrics_dict = {f"{prefix}{k}": float(v) for k, v in metrics.items() if isinstance(v, Union[float, int])}
+        metrics_dict = {
+            f"{prefix}{k}": float(v)
+            for k, v in metrics.items() if (isinstance(v, float) or isinstance(v, int))}
         self.mlflow.log_metrics(metrics=metrics_dict, step=epoch)
 
     def finish_run(self) -> None:
