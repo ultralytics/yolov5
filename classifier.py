@@ -194,7 +194,7 @@ def train():
                 best_fitness = fitness
 
             # Log
-            logger.log_metrics({"Train_loss": mloss, "Accuracy": fitness})
+            logger.log_metrics({"Train_loss": mloss, "Accuracy": fitness}, epoch)
 
             # Save model
             final_epoch = epoch + 1 == epochs
