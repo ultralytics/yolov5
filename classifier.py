@@ -153,7 +153,7 @@ def train():
                 f'Starting training for {epochs} epochs...\n\n'
                 f"{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'accuracy':12s}")
     for epoch in range(epochs):  # loop over the dataset multiple times
-        mloss = 0.0  # mean loss
+        tloss, vloss, fitness = 0.0, 0.0, 0.0  # train loss, val loss, fitness
         model.train()
         if RANK != -1:
             trainloader.sampler.set_epoch(epoch)
@@ -176,13 +176,13 @@ def train():
 
             # Print
             if RANK in {-1, 0}:
-                mloss = (mloss * i + loss.item()) / (i + 1)  # update mean losses
+                tloss = (tloss * i + loss.item()) / (i + 1)  # update mean losses
                 mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
-                pbar.desc = f"{f'{epoch + 1}/{epochs}':10s}{mem:10s}{mloss:<12.3g}"
+                pbar.desc = f"{f'{epoch + 1}/{epochs}':10s}{mem:10s}{tloss:<12.3g}"
 
             # Test
             if RANK in {-1, 0} and i == len(pbar) - 1:
-                fitness = test(model, testloader, names, criterion, pbar=pbar)  # test
+                fitness, vloss = test(model, testloader, names, criterion, pbar=pbar)  # test accuracy, loss
 
         # Scheduler
         scheduler.step()
@@ -194,7 +194,8 @@ def train():
                 best_fitness = fitness
 
             # Log
-            logger.log_metrics({"Train_loss": mloss, "Accuracy": fitness}, epoch)
+            lr = optimizer.param_groups[0]['lr']  # learning rate
+            logger.log_metrics({"train/loss": tloss, "val/loss": vloss, "metrics/accuracy": fitness, "lr/0": lr}, epoch)
 
             # Save model
             final_epoch = epoch + 1 == epochs
@@ -239,11 +240,12 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
             if criterion:
                 loss += criterion(y, labels)
 
+    loss /= n
     pred, targets = torch.cat(pred), torch.cat(targets)
     correct = (targets == pred).float()
 
     if pbar:
-        pbar.desc += f"{loss / n:<12.3g}{correct.mean().item():<12.3g}"
+        pbar.desc += f"{loss:<12.3g}{correct.mean().item():<12.3g}"
 
     accuracy = correct.mean().item()
     if verbose:  # all classes
@@ -253,7 +255,7 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
             t = correct[targets == i]
             LOGGER.info(f"{c:10s}{t.shape[0]:10s}{t.mean().item():10.5g}")
 
-    return accuracy
+    return accuracy, loss
 
 
 def classify(model, size=128, file='../datasets/mnist/test/3/30.png', plot=False):
