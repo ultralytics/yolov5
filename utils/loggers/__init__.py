@@ -215,13 +215,11 @@ class GenericLogger:
         else:
             self.wandb = None
 
-    def log_metrics(self, metrics_dict):
-        """
-        Log metrics dictionary to initialized loggers
-        """
+    def log_metrics(self, metrics_dict, epoch):
+        # Log metrics dictionary to initialized loggers
         if self.wandb:
             self.wandb.log(metrics_dict)
 
         if self.tb:
             for k, v in metrics_dict.items():
-                self.tb.add_scalar(k, v)
+                self.tb.add_scalar(k, v, epoch)
