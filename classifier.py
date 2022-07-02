@@ -176,9 +176,9 @@ def train():
 
             # Print
             if RANK in {-1, 0}:
-                mloss += loss.item()
+                mloss = (mloss * i + loss.item()) / (i + 1)  # update mean losses
                 mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
-                pbar.desc = f"{f'{epoch + 1}/{epochs}':10s}{mem:10s}{mloss / (i + 1):<12.3g}"
+                pbar.desc = f"{f'{epoch + 1}/{epochs}':10s}{mem:10s}{mloss:<12.3g}"
 
             # Test
             if RANK in {-1, 0} and i == len(pbar) - 1:
