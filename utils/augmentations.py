@@ -44,6 +44,17 @@ class Albumentations:
         return im, labels
 
 
+def augment_brightness(im, low=0.6, high=1.4):
+    value = random.uniform(low, high)
+    dtype = im.dtype  # uint8
+
+    hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
+    hsv = np.array(hsv, dtype = np.float64)
+    hsv[:,:,2] = hsv[:,:,2]*value 
+    hsv[:,:,2][hsv[:,:,2]>255]  = 255
+    hsv = np.array(hsv, dtype = dtype)
+    cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR, dst=im)
+    
 def augment_hsv(im, hgain=0.5, sgain=0.5, vgain=0.5):
     # HSV color-space augmentation
     if hgain or sgain or vgain:

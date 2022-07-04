@@ -3,12 +3,52 @@
 Loss functions
 """
 
+from re import I
 import torch
 import torch.nn as nn
 
 from utils.metrics import bbox_iou
 from utils.torch_utils import de_parallel
+import cv2
 
+def compute_pose_loss(pose_kpts, pose_out, imgs=None):
+    kpts_flattener = torch.nn.Flatten()
+    cross_entropy = torch.nn.CrossEntropyLoss()
+    s = pose_out.shape[2:]
+    # out shape for yolov5 nano is 68x96
+    # and pose_kpts are normalized so de_normalizing them
+    de_normalized_pose_kpts = torch.zeros_like(pose_kpts)
+    de_normalized_pose_kpts[:, :, 0] = pose_kpts[:, :, 0] * s[1]
+    de_normalized_pose_kpts[:, :, 1] = pose_kpts[:, :, 1] * s[0]
+    x_boundary = torch.where(de_normalized_pose_kpts[:, :, 0] >= s[1])
+    y_boundary = torch.where(de_normalized_pose_kpts[:, :, 1] >= s[0])
+    de_normalized_pose_kpts[x_boundary[0], x_boundary[1], 0 ] = s[1] - 1
+    de_normalized_pose_kpts[y_boundary[0], y_boundary[1], 1 ] = s[0] - 1
+    
+    de_normalized_pose_kpts = de_normalized_pose_kpts.to(int)
+    pose_kpts_mask = torch.zeros_like(pose_out)
+    loss = torch.zeros(pose_out.shape[0])
+    for i, kpts in enumerate(de_normalized_pose_kpts):
+        for j, kpt in enumerate(kpts):
+            c, r = kpt[0], kpt[1]
+            pose_kpts_mask[i][j][r][c] = 1
+
+        # For visualizing kpts
+        # img2 = imgs[i].numpy().transpose(1,2,0)
+        # img2 = cv2.resize(img2, (96, 68))
+        # img2[: , : , 1] =  torch.sum(pose_kpts_mask[i], dim=0).numpy() * 255
+        # pose_out_vis = torch.zeros_like(pose_out[i])
+        # for j in range(7):
+        #     pose_out_vis[j] = pose_out[i,j] == torch.amax(pose_out[i], dim=(1,2))[j]
+        # img2[: , : , 0] =  torch.sum(pose_out_vis, dim=0).numpy()
+
+        loss[i] = cross_entropy( kpts_flattener(pose_out[i, :7]), torch.argmax(kpts_flattener(pose_kpts_mask[i, :7]), dim=1) )
+
+    
+    return torch.mean(loss)
+
+def compute_kd_loss(stu_feats, teach_feats):
+    return ((stu_feats - teach_feats) ** 2).mean()
 
 def smooth_BCE(eps=0.1):  # https://github.com/ultralytics/yolov3/issues/238#issuecomment-598028441
     # return positive, negative label smoothing BCE targets
@@ -195,8 +235,8 @@ class ComputeLoss:
             device=self.device).float() * g  # offsets
 
         for i in range(self.nl):
-            anchors, shape = self.anchors[i], p[i].shape
-            gain[2:6] = torch.tensor(shape)[[3, 2, 3, 2]]  # xyxy gain
+            anchors = self.anchors[i]
+            gain[2:6] = torch.tensor(p[i].shape)[[3, 2, 3, 2]]  # xyxy gain
 
             # Match targets to anchors
             t = targets * gain  # shape(3,n,7)
@@ -226,7 +266,7 @@ class ComputeLoss:
             gi, gj = gij.T  # grid indices
 
             # Append
-            indices.append((b, a, gj.clamp_(0, shape[2] - 1), gi.clamp_(0, shape[3] - 1)))  # image, anchor, grid
+            indices.append((b, a, gj.clamp_(0, gain[3] - 1), gi.clamp_(0, gain[2] - 1)))  # image, anchor, grid indices
             tbox.append(torch.cat((gxy - gij, gwh), 1))  # box
             anch.append(anchors[a])  # anchors
             tcls.append(c)  # class

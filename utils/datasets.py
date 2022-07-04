@@ -3,6 +3,9 @@
 Dataloaders and dataset utils
 """
 
+import bz2
+import _pickle as cPickle
+from functools import partial
 import glob
 import hashlib
 import json
@@ -24,12 +27,13 @@ import torch.nn.functional as F
 import yaml
 from PIL import ExifTags, Image, ImageOps
 from torch.utils.data import DataLoader, Dataset, dataloader, distributed
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
-from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
+from utils.augmentations import Albumentations, augment_brightness, augment_hsv, copy_paste, letterbox, mixup, random_perspective
 from utils.general import (DATASETS_DIR, LOGGER, NUM_THREADS, check_dataset, check_requirements, check_yaml, clean_str,
-                           cv2, is_colab, is_kaggle, segments2boxes, xyn2xy, xywh2xyxy, xywhn2xyxy, xyxy2xywhn)
+                           cv2, segments2boxes, xyn2xy, xywh2xyxy, xywhn2xyxy, xyxy2xywhn)
 from utils.torch_utils import torch_distributed_zero_first
+from utils.read_distraction_annotations import read_annotation_json_file
 
 # Parameters
 HELP_URL = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
@@ -57,7 +61,9 @@ def exif_size(img):
     s = img.size  # (width, height)
     try:
         rotation = dict(img._getexif().items())[orientation]
-        if rotation in [6, 8]:  # rotation 270 or 90
+        if rotation == 6:  # rotation 270
+            s = (s[1], s[0])
+        elif rotation == 8:  # rotation 90
             s = (s[1], s[0])
     except Exception:
         pass
@@ -96,7 +102,7 @@ def create_dataloader(path,
                       batch_size,
                       stride,
                       single_cls=False,
-                      hyp=None,
+                      hyp=None,  # I am going to send same yaml file as hyps as sent to Model as cfg that is driver_distraction_yolov5n.yaml
                       augment=False,
                       cache=False,
                       pad=0.0,
@@ -106,7 +112,8 @@ def create_dataloader(path,
                       image_weights=False,
                       quad=False,
                       prefix='',
-                      shuffle=False):
+                      shuffle=False,
+                      kd_feats_path=None):
     if rect and shuffle:
         LOGGER.warning('WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False')
         shuffle = False
@@ -123,7 +130,8 @@ def create_dataloader(path,
             stride=int(stride),
             pad=pad,
             image_weights=image_weights,
-            prefix=prefix)
+            prefix=prefix,
+            kd_feats_path=kd_feats_path)
 
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()  # number of CUDA devices
@@ -154,7 +162,7 @@ class InfiniteDataLoader(dataloader.DataLoader):
         return len(self.batch_sampler.sampler)
 
     def __iter__(self):
-        for _ in range(len(self)):
+        for i in range(len(self)):
             yield next(self.iterator)
 
 
@@ -222,9 +230,10 @@ class LoadImages:
                 self.cap.release()
                 if self.count == self.nf:  # last video
                     raise StopIteration
-                path = self.files[self.count]
-                self.new_video(path)
-                ret_val, img0 = self.cap.read()
+                else:
+                    path = self.files[self.count]
+                    self.new_video(path)
+                    ret_val, img0 = self.cap.read()
 
             self.frame += 1
             s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: '
@@ -321,9 +330,6 @@ class LoadStreams:
                 import pafy
                 s = pafy.new(s).getbest(preftype="mp4").url  # YouTube URL
             s = eval(s) if s.isnumeric() else s  # i.e. s = '0' local webcam
-            if s == 0:
-                assert not is_colab(), '--source 0 webcam unsupported on Colab. Rerun command in a local environment.'
-                assert not is_kaggle(), '--source 0 webcam unsupported on Kaggle. Rerun command in a local environment.'
             cap = cv2.VideoCapture(s)
             assert cap.isOpened(), f'{st}Failed to open {s}'
             w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -359,7 +365,7 @@ class LoadStreams:
                     LOGGER.warning('WARNING: Video stream unresponsive, please check your IP camera connection.')
                     self.imgs[i] = np.zeros_like(self.imgs[i])
                     cap.open(stream)  # re-open stream if signal was lost
-            time.sleep(0.0)  # wait time
+            time.sleep(1 / self.fps[i])  # wait time
 
     def __iter__(self):
         self.count = -1
@@ -390,14 +396,13 @@ class LoadStreams:
 
 def img2label_paths(img_paths):
     # Define label paths as a function of image paths
-    sa, sb = f'{os.sep}images{os.sep}', f'{os.sep}labels{os.sep}'  # /images/, /labels/ substrings
-    return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in img_paths]
+    sa, sb = os.sep + 'images' + os.sep, os.sep + 'annotations' + os.sep  # /images/, /labels/ substrings
+    return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.json' for x in img_paths]
 
 
 class LoadImagesAndLabels(Dataset):
     # YOLOv5 train_loader/val_loader, loads images and labels for training and validation
     cache_version = 0.6  # dataset labels *.cache version
-    rand_interp_methods = [cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4]
 
     def __init__(self,
                  path,
@@ -411,14 +416,18 @@ class LoadImagesAndLabels(Dataset):
                  single_cls=False,
                  stride=32,
                  pad=0.0,
-                 prefix=''):
+                 prefix='',
+                 kd_feats_path=None):
+
+        self.kd_feats_path = kd_feats_path
+        self.is_train = True if prefix.find('train: ') != -1 else False
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
         self.image_weights = image_weights
         self.rect = False if image_weights else rect
-        self.mosaic = self.augment and not self.rect  # load 4 images at a time into a mosaic (only during training)
-        self.mosaic_border = [-img_size // 2, -img_size // 2]
+        # self.mosaic = self.augment and not self.rect  # load 4 images at a time into a mosaic (only during training)
+        # self.mosaic_border = [-img_size // 2, -img_size // 2]
         self.stride = stride
         self.path = path
         self.albumentations = Albumentations() if augment else None
@@ -433,8 +442,8 @@ class LoadImagesAndLabels(Dataset):
                 elif p.is_file():  # file
                     with open(p) as t:
                         t = t.read().strip().splitlines()
-                        parent = str(p.parent) + os.sep
-                        f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
+                        parent = str(p.parent.parent) + os.sep + 'images' + os.sep
+                        f += [x.replace('./', parent) if x.startswith('./') else os.path.join(parent, x) for x in t]  # local to global path
                         # f += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
                 else:
                     raise Exception(f'{prefix}{p} does not exist')
@@ -456,7 +465,7 @@ class LoadImagesAndLabels(Dataset):
 
         # Display cache
         nf, nm, ne, nc, n = cache.pop('results')  # found, missing, empty, corrupt, total
-        if exists and LOCAL_RANK in {-1, 0}:
+        if exists and LOCAL_RANK in (-1, 0):
             d = f"Scanning '{cache_path}' images and labels... {nf} found, {nm} missing, {ne} empty, {nc} corrupt"
             tqdm(None, desc=prefix + d, total=n, initial=n, bar_format=BAR_FORMAT)  # display cache results
             if cache['msgs']:
@@ -465,8 +474,9 @@ class LoadImagesAndLabels(Dataset):
 
         # Read cache
         [cache.pop(k) for k in ('hash', 'version', 'msgs')]  # remove items
-        labels, shapes, self.segments = zip(*cache.values())
-        self.labels = list(labels)
+        labels, shapes = zip(*cache.values())
+        self.labels = [np.array(l['bboxes_cxywh']) for l in labels] #YOLOs original labels format #list(labels)
+        self.annotations = labels # all labels needed for driver distraction
         self.shapes = np.array(shapes, dtype=np.float64)
         self.im_files = list(cache.keys())  # update
         self.label_files = img2label_paths(cache.keys())  # update
@@ -478,18 +488,16 @@ class LoadImagesAndLabels(Dataset):
         self.indices = range(n)
 
         # Update labels
-        include_class = []  # filter labels to include only these classes (optional)
-        include_class_array = np.array(include_class).reshape(1, -1)
-        for i, (label, segment) in enumerate(zip(self.labels, self.segments)):
-            if include_class:
-                j = (label[:, 0:1] == include_class_array).any(1)
-                self.labels[i] = label[j]
-                if segment:
-                    self.segments[i] = segment[j]
-            if single_cls:  # single-class training, merge all classes into 0
-                self.labels[i][:, 0] = 0
-                if segment:
-                    self.segments[i][:, 0] = 0
+        # include_class = []  # filter labels to include only these classes (optional)
+        # include_class_array = np.array(include_class).reshape(1, -1)
+        # for i, (label) in enumerate(zip(self.labels)):
+        #     if include_class:
+        #         j = (label[:, 0:1] == include_class_array).any(1)
+        #         self.labels[i] = label[j]
+                
+        #     if single_cls:  # single-class training, merge all classes into 0
+        #         self.labels[i][:, 0] = 0
+                
 
         # Rectangular Training
         if self.rect:
@@ -500,6 +508,7 @@ class LoadImagesAndLabels(Dataset):
             self.im_files = [self.im_files[i] for i in irect]
             self.label_files = [self.label_files[i] for i in irect]
             self.labels = [self.labels[i] for i in irect]
+            self.annotations = [self.annotations[i] for i in irect]
             self.shapes = s[irect]  # wh
             ar = ar[irect]
 
@@ -539,17 +548,21 @@ class LoadImagesAndLabels(Dataset):
         nm, nf, ne, nc, msgs = 0, 0, 0, 0, []  # number missing, found, empty, corrupt, messages
         desc = f"{prefix}Scanning '{path.parent / path.stem}' images and labels..."
         with Pool(NUM_THREADS) as pool:
-            pbar = tqdm(pool.imap(verify_image_label, zip(self.im_files, self.label_files, repeat(prefix))),
+            verify_image_label([self.im_files[0], self.label_files[0], prefix], ann_config_args=self.hyp)
+            pbar = tqdm(pool.imap( partial(verify_image_label, ann_config_args=self.hyp), zip(self.im_files, self.label_files, repeat(prefix))),
                         desc=desc,
                         total=len(self.im_files),
                         bar_format=BAR_FORMAT)
-            for im_file, lb, shape, segments, nm_f, nf_f, ne_f, nc_f, msg in pbar:
+            skip_count=0
+            for im_file, lb, shape, nm_f, nf_f, ne_f, nc_f, msg in pbar:
                 nm += nm_f
                 nf += nf_f
                 ne += ne_f
                 nc += nc_f
-                if im_file:
-                    x[im_file] = [lb, shape, segments]
+                if im_file and nm_f!=1 and ne_f!=1 and nc_f!=1:
+                    x[im_file] = [lb, shape]
+                else:
+                    skip_count+=1
                 if msg:
                     msgs.append(msg)
                 pbar.desc = f"{desc}{nf} found, {nm} missing, {ne} empty, {nc} corrupt"
@@ -559,6 +572,7 @@ class LoadImagesAndLabels(Dataset):
             LOGGER.info('\n'.join(msgs))
         if nf == 0:
             LOGGER.warning(f'{prefix}WARNING: No labels found in {path}. See {HELP_URL}')
+        LOGGER.warning(f'{prefix}WARNING: {skip_count} labels Skipped!!')
         x['hash'] = get_hash(self.label_files + self.im_files)
         x['results'] = nf, nm, ne, nc, len(self.im_files)
         x['msgs'] = msgs  # warnings
@@ -584,7 +598,7 @@ class LoadImagesAndLabels(Dataset):
         index = self.indices[index]  # linear, shuffled, or image_weights
 
         hyp = self.hyp
-        mosaic = self.mosaic and random.random() < hyp['mosaic']
+        mosaic = False # self.mosaic and random.random() < hyp['mosaic']
         if mosaic:
             # Load mosaic
             img, labels = self.load_mosaic(index)
@@ -597,16 +611,43 @@ class LoadImagesAndLabels(Dataset):
         else:
             # Load image
             img, (h0, w0), (h, w) = self.load_image(index)
+            cropping = np.array([w, h]) - np.array(self.img_size)
+            img = img[cropping[1]:, cropping[0]:, :] # croping
+            
+            
 
             # Letterbox
             shape = self.batch_shapes[self.batch[index]] if self.rect else self.img_size  # final letterboxed shape
-            img, ratio, pad = letterbox(img, shape, auto=False, scaleup=self.augment)
+            #img, ratio, pad = letterbox(img, shape, auto=False, scaleup=self.augment)
+            pad = (0,0)
             shapes = (h0, w0), ((h / h0, w / w0), pad)  # for COCO mAP rescaling
-
+            
             labels = self.labels[index].copy()
-            if labels.size:  # normalized xywh to pixel xyxy format
-                labels[:, 1:] = xywhn2xyxy(labels[:, 1:], ratio[0] * w, ratio[1] * h, padw=pad[0], padh=pad[1])
+            normalized_kpts = self.annotations[index]['normalized_kpts'].copy()
+            de_normalized_kpts = [ [nkpt[0]*w, nkpt[1]*h] for nkpt in normalized_kpts]
+            shift_kpts = [ [kpt[0] - cropping[0] , kpt[1] - cropping[1]] for kpt in de_normalized_kpts]
+            normalized_kpts = [ [kpt[0]/self.img_size[0] , kpt[1]/self.img_size[1]] for kpt in shift_kpts]
+            # checking for empty keypoints and filling them as (0,0)
+            if len(normalized_kpts) == 0:
+                normalized_kpts = [[0.0,0.0]] * 7
+            normalized_kpts = torch.tensor([ [0.0 , 0.0] if len(kpt) == 0 else kpt for kpt in normalized_kpts])
 
+            if labels.size:  # normalized xywh to pixel xyxy format
+                #labels[:, 1:] = xywhn2xyxy(labels[:, 1:], ratio[0] * w, ratio[1] * h, padw=pad[0], padh=pad[1])
+                labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w,  h, padw=pad[0], padh=pad[1])
+                    
+                # shifting bboxes because of image cropping
+                for i in range(len(labels)):
+                    labels[i][1] -= cropping[0] #* ratio[0]   # x offset
+                    labels[i][3] -= cropping[0] #* ratio[0]   # x offset
+                    labels[i][2] -= cropping[1] #* ratio[1]   # y offset
+                    labels[i][4] -= cropping[1] #* ratio[1]   # y offset
+                  
+            backbone_feats = torch.tensor([0])
+            if self.kd_feats_path:
+                with bz2.BZ2File( os.path.join( self.kd_feats_path, os.path.basename(self.im_files[index])) + '.pbz2', 'rb') as f:
+                    backbone_feats = cPickle.load(f)                
+            
             if self.augment:
                 img, labels = random_perspective(img,
                                                  labels,
@@ -619,6 +660,13 @@ class LoadImagesAndLabels(Dataset):
         nl = len(labels)  # number of labels
         if nl:
             labels[:, 1:5] = xyxy2xywhn(labels[:, 1:5], w=img.shape[1], h=img.shape[0], clip=True, eps=1E-3)
+
+        # Brightness augmentation
+        if self.is_train and np.random.random() >= 0.7:
+            #if np.random.random() >= 0.4:
+            augment_brightness(img)
+            #else:
+            #    augment_hsv(img)
 
         if self.augment:
             # Albumentations
@@ -652,7 +700,13 @@ class LoadImagesAndLabels(Dataset):
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
 
-        return torch.from_numpy(img), labels_out, self.im_files[index], shapes
+        return (torch.from_numpy(img), 
+                labels_out, 
+                self.im_files[index], 
+                torch.from_numpy(self.annotations[index]['classification_labels'].copy()), 
+                normalized_kpts,
+                backbone_feats, 
+                shapes)
 
     def load_image(self, i):
         # Loads 1 image from dataset index 'i', returns (im, original hw, resized hw)
@@ -663,11 +717,25 @@ class LoadImagesAndLabels(Dataset):
             else:  # read image
                 im = cv2.imread(f)  # BGR
                 assert im is not None, f'Image Not Found {f}'
+            
             h0, w0 = im.shape[:2]  # orig hw
-            r = self.img_size / max(h0, w0)  # ratio
-            if r != 1:  # if sizes are not equal
-                interp = cv2.INTER_LINEAR if (self.augment or r > 1) else cv2.INTER_AREA
-                im = cv2.resize(im, (int(w0 * r), int(h0 * r)), interpolation=interp)
+            
+            #zoom in zoom out effect
+            scale = np.random.uniform(self.hyp['jitter_min'], self.hyp['jitter_max']) if self.is_train else 1
+            sh,sw = int(self.hyp['resize_img'][1]*scale), int(self.hyp['resize_img'][0]*scale)
+            sh = sh if sh > self.img_size[1] else self.img_size[1]
+            sw = sw if sw > self.img_size[0] else self.img_size[0]
+            
+            im = cv2.resize(im, (sw,sh))
+            #cropping = np.array(self.hyp['resize_img']) - np.array(self.img_size)
+            #im = im[cropping[1]:, cropping[0]:, :] # croping
+            
+
+            
+            # r = self.img_size / max(h0, w0)  # ratio
+            # if r != 1:  # if sizes are not equal
+            #     im = cv2.resize(im, (int(w0 * r), int(h0 * r)),
+            #                     interpolation=cv2.INTER_LINEAR if (self.augment or r > 1) else cv2.INTER_AREA)
             return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
         else:
             return self.ims[i], self.im_hw0[i], self.im_hw[i]  # im, hw_original, hw_resized
@@ -709,12 +777,13 @@ class LoadImagesAndLabels(Dataset):
             padh = y1a - y1b
 
             # Labels
-            labels, segments = self.labels[index].copy(), self.segments[index].copy()
+            # labels, segments = self.labels[index].copy(), self.segments[index].copy()
+            labels = self.labels[index].copy()
             if labels.size:
                 labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padw, padh)  # normalized xywh to pixel xyxy format
-                segments = [xyn2xy(x, w, h, padw, padh) for x in segments]
+                # segments = [xyn2xy(x, w, h, padw, padh) for x in segments]
             labels4.append(labels)
-            segments4.extend(segments)
+            #segments4.extend(segments)
 
         # Concat/clip labels
         labels4 = np.concatenate(labels4, 0)
@@ -814,10 +883,16 @@ class LoadImagesAndLabels(Dataset):
 
     @staticmethod
     def collate_fn(batch):
-        im, label, path, shapes = zip(*batch)  # transposed
+        im, label, path, cls_labels, kpts, backbone_feats, shapes = zip(*batch)  # transposed
         for i, lb in enumerate(label):
             lb[:, 0] = i  # add target image index for build_targets()
-        return torch.stack(im, 0), torch.cat(label, 0), path, shapes
+        return (torch.stack(im, 0), 
+                torch.cat(label, 0), 
+                path, 
+                torch.stack(cls_labels, 0), 
+                torch.stack(kpts, 0), 
+                torch.stack(backbone_feats, 0), 
+                shapes)
 
     @staticmethod
     def collate_fn4(batch):
@@ -862,7 +937,7 @@ def flatten_recursive(path=DATASETS_DIR / 'coco128'):
         shutil.copyfile(file, new_path / Path(file).name)
 
 
-def extract_boxes(path=DATASETS_DIR / 'coco128'):  # from utils.dataloaders import *; extract_boxes()
+def extract_boxes(path=DATASETS_DIR / 'coco128'):  # from utils.datasets import *; extract_boxes()
     # Convert detection dataset into classification dataset, with one directory per class
     path = Path(path)  # images dir
     shutil.rmtree(path / 'classifier') if (path / 'classifier').is_dir() else None  # remove existing
@@ -898,7 +973,7 @@ def extract_boxes(path=DATASETS_DIR / 'coco128'):  # from utils.dataloaders impo
 
 def autosplit(path=DATASETS_DIR / 'coco128/images', weights=(0.9, 0.1, 0.0), annotated_only=False):
     """ Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
-    Usage: from utils.dataloaders import *; autosplit()
+    Usage: from utils.datasets import *; autosplit()
     Arguments
         path:            Path to images directory
         weights:         Train, val, test weights (list, tuple)
@@ -920,10 +995,10 @@ def autosplit(path=DATASETS_DIR / 'coco128/images', weights=(0.9, 0.1, 0.0), ann
                 f.write('./' + img.relative_to(path.parent).as_posix() + '\n')  # add image to txt file
 
 
-def verify_image_label(args):
+def verify_image_label(args, ann_config_args=None):
     # Verify one image-label pair
     im_file, lb_file, prefix = args
-    nm, nf, ne, nc, msg, segments = 0, 0, 0, 0, '', []  # number (missing, found, empty, corrupt), message, segments
+    nm, nf, ne, nc, msg = 0, 0, 0, 0, ''  # number (missing, found, empty, corrupt), message
     try:
         # verify images
         im = Image.open(im_file)
@@ -941,74 +1016,88 @@ def verify_image_label(args):
         # verify labels
         if os.path.isfile(lb_file):
             nf = 1  # label found
-            with open(lb_file) as f:
-                lb = [x.split() for x in f.read().strip().splitlines() if len(x)]
-                if any(len(x) > 6 for x in lb):  # is segment
-                    classes = np.array([x[0] for x in lb], dtype=np.float32)
-                    segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in lb]  # (cls, xy1...)
-                    lb = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
-                lb = np.array(lb, dtype=np.float32)
-            nl = len(lb)
-            if nl:
-                assert lb.shape[1] == 5, f'labels require 5 columns, {lb.shape[1]} columns detected'
-                assert (lb >= 0).all(), f'negative label values {lb[lb < 0]}'
-                assert (lb[:, 1:] <= 1).all(), f'non-normalized or out of bounds coordinates {lb[:, 1:][lb[:, 1:] > 1]}'
-                _, i = np.unique(lb, axis=0, return_index=True)
-                if len(i) < nl:  # duplicate row check
-                    lb = lb[i]  # remove duplicates
-                    if segments:
-                        segments = segments[i]
-                    msg = f'{prefix}WARNING: {im_file}: {nl - len(i)} duplicate labels removed'
-            else:
-                ne = 1  # label empty
-                lb = np.zeros((0, 5), dtype=np.float32)
+            
+            annotations = read_annotation_json_file(
+                ann_path=lb_file, args=ann_config_args
+            )
+            
+            if (
+                annotations["classification_labels"][
+                    ann_config_args['ground_truth_label_map_dict']["not_sure"] - 1
+                ]
+                and (annotations["classification_labels"][
+                    ann_config_args['ground_truth_label_map_dict']["Full Obstruction"] - 1
+                ]
+                != 1)
+            ):
+                msg = f'{prefix}WARNING: {im_file}: is assigned not_sure label. Skipping'
+                ne = 1 #label empty
+
+            annotations["classification_labels"] = annotations["classification_labels"][:-1] # excluding the not sure label
+            if(len(annotations["classification_labels"]) == 0):
+                msg = f'{prefix}WARNING: {im_file}: Classification labels empty. Skipping'
+                ne = 1 #label empty
+
+
+            if(prefix.find('train') != -1):
+                if(len(annotations['bboxes_cxywh']) == 0):
+                    msg = f'{prefix}WARNING: {im_file}: No BBox was found. Skipping it for training'
+                    nc = 1 #corrupt annotation
+
+                with open(lb_file) as f:
+                    annotations_raw = json.load(f)
+
+                if "mobile_usage" in annotations_raw["annotations"]["distraction_tags"]:
+                    if not len(annotations_raw["annotations"]["mobile_bb"]):
+                        msg = f'{prefix}WARNING: {im_file}: Classification label available but bbox not available. Skipping it for training'
+                        nm = 1 #label missing
+                        
+                if len(annotations_raw["annotations"]["mobile_bb"]):
+                    if "mobile_usage" not in annotations_raw["annotations"]["distraction_tags"]:
+                        msg = f'{prefix}WARNING: {im_file}: BBox available but no classification label. Skipping it for training'
+                        ne = 1  # label empty
+                if annotations_raw["annotations"]["body_kpts_tag"] == 'unacceptable' or len(annotations['normalized_kpts']) == 0:
+                        msg = f'{prefix}WARNING: {im_file}: No keypoint was found. Skipping it for training'
+                        ne = 1  # label empty
+
+            #lb = np.array(annotations['bboxes_cxywh'], np.float32)
+            
         else:
             nm = 1  # label missing
-            lb = np.zeros((0, 5), dtype=np.float32)
-        return im_file, lb, shape, segments, nm, nf, ne, nc, msg
+            annotations = None
+        return im_file, annotations, shape, nm, nf, ne, nc, msg
     except Exception as e:
         nc = 1
         msg = f'{prefix}WARNING: {im_file}: ignoring corrupt image/label: {e}'
-        return [None, None, None, None, nm, nf, ne, nc, msg]
+        return [None, None, None, nm, nf, ne, nc, msg]
 
 
 def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profile=False, hub=False):
     """ Return dataset statistics dictionary with images and instances counts per split per class
     To run in parent directory: export PYTHONPATH="$PWD/yolov5"
-    Usage1: from utils.dataloaders import *; dataset_stats('coco128.yaml', autodownload=True)
-    Usage2: from utils.dataloaders import *; dataset_stats('path/to/coco128_with_yaml.zip')
+    Usage1: from utils.datasets import *; dataset_stats('coco128.yaml', autodownload=True)
+    Usage2: from utils.datasets import *; dataset_stats('path/to/coco128_with_yaml.zip')
     Arguments
         path:           Path to data.yaml or data.zip (with data.yaml inside data.zip)
         autodownload:   Attempt to download dataset if not found locally
         verbose:        Print stats dictionary
     """
 
-    def _round_labels(labels):
+    def round_labels(labels):
         # Update labels to integer class and 6 decimal place floats
         return [[int(c), *(round(x, 4) for x in points)] for c, *points in labels]
 
-    def _find_yaml(dir):
-        # Return data.yaml file
-        files = list(dir.glob('*.yaml')) or list(dir.rglob('*.yaml'))  # try root level first and then recursive
-        assert files, f'No *.yaml file found in {dir}'
-        if len(files) > 1:
-            files = [f for f in files if f.stem == dir.stem]  # prefer *.yaml files that match dir name
-            assert files, f'Multiple *.yaml files found in {dir}, only 1 *.yaml file allowed'
-        assert len(files) == 1, f'Multiple *.yaml files found: {files}, only 1 *.yaml file allowed in {dir}'
-        return files[0]
-
-    def _unzip(path):
-        # Unzip data.zip
+    def unzip(path):
+        # Unzip data.zip TODO: CONSTRAINT: path/to/abc.zip MUST unzip to 'path/to/abc/'
         if str(path).endswith('.zip'):  # path is data.zip
             assert Path(path).is_file(), f'Error unzipping {path}, file not found'
             ZipFile(path).extractall(path=path.parent)  # unzip
             dir = path.with_suffix('')  # dataset directory == zip name
-            assert dir.is_dir(), f'Error unzipping {path}, {dir} not found. path/to/abc.zip MUST unzip to path/to/abc/'
-            return True, str(dir), _find_yaml(dir)  # zipped, data_dir, yaml_path
+            return True, str(dir), next(dir.rglob('*.yaml'))  # zipped, data_dir, yaml_path
         else:  # path is data.yaml
             return False, None, path
 
-    def _hub_ops(f, max_dim=1920):
+    def hub_ops(f, max_dim=1920):
         # HUB ops for 1 image 'f': resize and save at reduced quality in /dataset-hub for web/app viewing
         f_new = im_dir / Path(f).name  # dataset-hub image filename
         try:  # use PIL
@@ -1026,15 +1115,11 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
                 im = cv2.resize(im, (int(im_width * r), int(im_height * r)), interpolation=cv2.INTER_AREA)
             cv2.imwrite(str(f_new), im)
 
-    zipped, data_dir, yaml_path = _unzip(Path(path))
-    try:
-        with open(check_yaml(yaml_path), errors='ignore') as f:
-            data = yaml.safe_load(f)  # data dict
-            if zipped:
-                data['path'] = data_dir  # TODO: should this be dir.resolve()?`
-    except Exception:
-        raise Exception("error/HUB/dataset_stats/yaml_load")
-
+    zipped, data_dir, yaml_path = unzip(Path(path))
+    with open(check_yaml(yaml_path), errors='ignore') as f:
+        data = yaml.safe_load(f)  # data dict
+        if zipped:
+            data['path'] = data_dir  # TODO: should this be dir.resolve()?
     check_dataset(data, autodownload)  # download dataset if missing
     hub_dir = Path(data['path'] + ('-hub' if hub else ''))
     stats = {'nc': data['nc'], 'names': data['names']}  # statistics dictionary
@@ -1056,12 +1141,12 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
                 'unlabelled': int(np.all(x == 0, 1).sum()),
                 'per_class': (x > 0).sum(0).tolist()},
             'labels': [{
-                str(Path(k).name): _round_labels(v.tolist())} for k, v in zip(dataset.im_files, dataset.labels)]}
+                str(Path(k).name): round_labels(v.tolist())} for k, v in zip(dataset.im_files, dataset.labels)]}
 
         if hub:
             im_dir = hub_dir / 'images'
             im_dir.mkdir(parents=True, exist_ok=True)
-            for _ in tqdm(ThreadPool(NUM_THREADS).imap(_hub_ops, dataset.im_files), total=dataset.n, desc='HUB Ops'):
+            for _ in tqdm(ThreadPool(NUM_THREADS).imap(hub_ops, dataset.im_files), total=dataset.n, desc='HUB Ops'):
                 pass
 
     # Profile

@@ -8,7 +8,7 @@ import random
 import numpy as np
 import torch
 import yaml
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from utils.general import LOGGER, colorstr, emojis
 
@@ -27,7 +27,7 @@ def check_anchor_order(m):
 
 def check_anchors(dataset, model, thr=4.0, imgsz=640):
     # Check anchor fit to data, recompute if necessary
-    m = model.module.model[-1] if hasattr(model, 'module') else model.model[-1]  # Detect()
+    m = model.detection_head[-1] if hasattr(model, 'detection_head') else model.model[-1]  # Detect()
     shapes = imgsz * dataset.shapes / dataset.shapes.max(1, keepdims=True)
     scale = np.random.uniform(0.9, 1.1, size=(shapes.shape[0], 1))  # augment scale
     wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(shapes * scale, dataset.labels)])).float()  # wh
@@ -104,7 +104,7 @@ def kmean_anchors(dataset='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen
         s = f'{PREFIX}thr={thr:.2f}: {bpr:.4f} best possible recall, {aat:.2f} anchors past thr\n' \
             f'{PREFIX}n={n}, img_size={img_size}, metric_all={x.mean():.3f}/{best.mean():.3f}-mean/best, ' \
             f'past_thr={x[x > thr].mean():.3f}-mean: '
-        for x in k:
+        for i, x in enumerate(k):
             s += '%i,%i, ' % (round(x[0]), round(x[1]))
         if verbose:
             LOGGER.info(s[:-2])
@@ -113,7 +113,7 @@ def kmean_anchors(dataset='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen
     if isinstance(dataset, str):  # *.yaml file
         with open(dataset, errors='ignore') as f:
             data_dict = yaml.safe_load(f)  # model dict
-        from utils.dataloaders import LoadImagesAndLabels
+        from utils.datasets import LoadImagesAndLabels
         dataset = LoadImagesAndLabels(data_dict['train'], augment=True, rect=True)
 
     # Get label wh

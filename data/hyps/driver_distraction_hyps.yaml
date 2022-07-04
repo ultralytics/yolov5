@@ -1,0 +1,96 @@
+#image_size: 768x540 # for hubble - lite0
+num_classes: 9
+num_classification_classes: 11
+image_size: [768, 540] # for cloud - d0
+resize_img: [960, 540]
+num_pose_kps: 7
+pose_mask_shape: [ 68, 96 ]
+moving_average_decay: 0.9998
+box_loss_weight: 50.0
+iou_loss_weight: 1.0
+apply_weighted_cls_loss: false
+img_cls_loss_weights: [1.0, 2.0, 5.0, 1.0, 2.0, 5.0, 3.0, 5.0, 5.0, 4.0, 3.0]
+nms_configs: { "method": "gaussian", "iou_thresh": 0.1 }
+num_epochs: 50
+learning_rate: 0.08
+lr_warmup_epoch: 5
+lr_warmup_init: 0.008
+mixed_precision: true
+clip_gradients_norm: 10.0
+jitter_min: 0.8
+jitter_max: 1.2
+crop: True
+crop_offset_720p: [ 0, 256 ]
+crop_offset_1080p: [0, 384]
+input_rand_hflip: false
+apply_augmentation: False
+
+label_map: { 0: face, 1: mobile, 2: person, 3: hand, 4: smoking, 5: drinking, 6: other_item, 7: food, 8: mounted_cp }
+label_name_map: { face: 0, mobile: 1, person: 2, hand: 3, smoking: 4, drinking: 5, other_item: 6, food: 7, mounted_cp: 8}
+
+ground_truth_label_map_dict: {
+    "Not_distracted": 1,
+    "Looking_left/right": 1,
+    "looking_down": 7,
+    "mobile_usage": 2,
+    "other_distraction": 3,
+    "properly_fastened": 4,
+    "loosely_fastened": 4,
+    "Reflective Jacket": 5,
+    "Full Obstruction": 6,
+    "smoking": 8,
+    "eating": 9,
+    "drinking": 10,
+    "holding_any_object_in_hand": 11,
+    "not_sure": 12,
+}
+
+GT_labels: ["Not_distracted",
+            "mobile_usage",
+            "other_distraction",
+            "seat_belt",
+            "Reflective Jacket",
+            "Full Obstruction",
+            "looking_down",
+            "smoking",
+            "eating",
+            "drinking",
+            "holding_any_object_in_hand"
+        ]
+
+
+
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# Hyperparameters for low-augmentation COCO training from scratch
+# python train.py --batch 64 --cfg yolov5n6.yaml --weights '' --data coco.yaml --img 640 --epochs 300 --linear
+# See tutorials for hyperparameter evolution https://github.com/ultralytics/yolov5#tutorials
+
+lr0: 0.05  # initial learning rate (SGD=1E-2, Adam=1E-3)
+lrf: 0.1  # final OneCycleLR learning rate (lr0 * lrf)
+momentum: 0.937  # SGD momentum/Adam beta1
+weight_decay: 0.0005  # optimizer weight decay 5e-4
+warmup_epochs: 3.0  # warmup epochs (fractions ok)
+warmup_momentum: 0.8  # warmup initial momentum
+warmup_bias_lr: 0.1  # warmup initial bias lr
+box: 0.05  # box loss gain
+cls: 0.5  # cls loss gain
+cls_pw: 1.0  # cls BCELoss positive_weight
+obj: 1.0  # obj loss gain (scale with pixels)
+obj_pw: 1.0  # obj BCELoss positive_weight
+iou_t: 0.20  # IoU training threshold
+anchor_t: 4.0  # anchor-multiple threshold
+# anchors: 3  # anchors per output layer (0 to ignore)
+fl_gamma: 0.0  # focal loss gamma (efficientDet default gamma=1.5)
+hsv_h: 0.015  # image HSV-Hue augmentation (fraction)
+hsv_s: 0.7  # image HSV-Saturation augmentation (fraction)
+hsv_v: 0.4  # image HSV-Value augmentation (fraction)
+degrees: 0.0  # image rotation (+/- deg)
+translate: 0.1  # image translation (+/- fraction)
+scale: 0.5  # image scale (+/- gain)
+shear: 0.0  # image shear (+/- deg)
+perspective: 0.0  # image perspective (+/- fraction), range 0-0.001
+flipud: 0.0  # image flip up-down (probability)
+fliplr: 0.5  # image flip left-right (probability)
+mosaic: 1.0  # image mosaic (probability)
+mixup: 0.0  # image mixup (probability)
+copy_paste: 0.0  # segment copy-paste (probability)

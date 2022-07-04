@@ -1,0 +1,55 @@
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# COCO128 dataset https://www.kaggle.com/ultralytics/coco128 (first 128 images from COCO train2017) by Ultralytics
+# Example usage: python train.py --data coco128.yaml
+# parent
+# ├── yolov5
+# └── datasets
+#     └── driver_distraction
+
+
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+#breadcrumb data here => /media/data2/distraction_data/breadcrumb_data/20k_batch/images
+path: /media/data2/distraction_data  # dataset root dir
+train: image_sets/train_v24.txt  # train images (relative to 'path')
+val: image_sets/val_v24.txt
+test: image_sets/test_v24.txt  # test images (relative to 'path') 
+#test: breadcrumb_data/20k_batch/images/ # test images (optional)
+ 
+
+# Classes
+nc: 9  # number of classes
+names: ['face', 'mobile', 'person', 'hand', 'smoking', 'drinking', 'other_item', 'food', 'mounted_cp']  # class names
+img_class_label_map: {
+    "Not_distracted": 1,
+    "Looking_left/right": 1,
+    "looking_down": 7,
+    "mobile_usage": 2,
+    "other_distraction": 3,
+    "properly_fastened": 4,
+    "loosely_fastened": 4,
+    "Reflective Jacket": 5,
+    "Full Obstruction": 6,
+    "smoking": 8,
+    "eating": 9,
+    "drinking": 10,
+    "holding_any_object_in_hand": 11,
+    "not_sure": 12,
+}
+
+GT_labels: ["Not_distracted",
+            "mobile_usage",
+            "other_distraction",
+            "seat_belt",
+            "Reflective Jacket",
+            "Full Obstruction",
+            "looking_down",
+            "smoking",
+            "eating",
+            "drinking",
+            "holding_any_object_in_hand"
+        ]
+
+
+
+# Download script/URL (optional)
+# download: https://ultralytics.com/assets/coco128.zip
