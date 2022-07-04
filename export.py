@@ -119,8 +119,8 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         f = file.with_suffix('.onnx')
 
         torch.onnx.export(
-            model,
-            im,
+            model.cpu() if dynamic else model,  # --dynamic only compatible with cpu
+            im.cpu() if dynamic else im,
             f,
             verbose=False,
             opset_version=opset,
@@ -264,8 +264,8 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         for out in outputs:
             LOGGER.info(f'{prefix}\toutput "{out.name}" with shape {out.shape} and dtype {out.dtype}')
 
-        LOGGER.info(f'{prefix} building FP{16 if builder.platform_has_fast_fp16 else 32} engine in {f}')
-        if builder.platform_has_fast_fp16:
+        LOGGER.info(f'{prefix} building FP{16 if builder.platform_has_fast_fp16 and half else 32} engine in {f}')
+        if builder.platform_has_fast_fp16 and half:
             config.set_flag(trt.BuilderFlag.FP16)
         with builder.build_engine(network, config) as engine, open(f, 'wb') as t:
             t.write(engine.serialize())
@@ -499,8 +499,6 @@ def run(
     im = torch.zeros(batch_size, 3, *imgsz).to(device)  # image size(1,3,320,192) BCHW iDetection
 
     # Update model
-    if half and not coreml and not xml:
-        im, model = im.half(), model.half()  # to FP16
     model.train() if train else model.eval()  # training mode = no Detect() layer grid construction
     for k, m in model.named_modules():
         if isinstance(m, Detect):
@@ -510,6 +508,8 @@ def run(
 
     for _ in range(2):
         y = model(im)  # dry runs
+    if half and not coreml:
+        im, model = im.half(), model.half()  # to FP16
     shape = tuple(y[0].shape)  # model output shape
     LOGGER.info(f"\n{colorstr('PyTorch:')} starting from {file} with output shape {shape} ({file_size(file):.1f} MB)")
 

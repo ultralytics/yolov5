@@ -21,7 +21,7 @@ jobs:
         model: [yolov5n]
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       #- name: Cache pip
@@ -62,7 +62,7 @@ jobs:
             model: yolov5n
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Get cache dir
@@ -89,6 +89,8 @@ jobs:
           echo "GITHUB_EVENT_NAME is $GITHUB_EVENT_NAME"
           echo "GITHUB_WORKFLOW is $GITHUB_WORKFLOW"
           echo "GITHUB_ACTOR is $GITHUB_ACTOR"
+          echo "GITHUB_REPOSITORY is $GITHUB_REPOSITORY"
+          echo "GITHUB_REPOSITORY_OWNER is $GITHUB_REPOSITORY_OWNER"
       - name: Run tests
         shell: bash
         run: |
@@ -113,5 +115,7 @@ jobs:
           python - <<EOF
           import torch
           model = torch.hub.load('.', 'custom', path='$model', source='local')
+          print(model('data/images/bus.jpg'))
+          model = torch.hub.load('.', 'custom', path='$best', source='local')
           print(model('data/images/bus.jpg'))
           EOF

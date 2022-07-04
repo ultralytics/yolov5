@@ -366,7 +366,8 @@ class DetectMultiBackend(nn.Module):
             if not Path(w).is_file():  # if not *.xml
                 w = next(Path(w).glob('*.xml'))  # get *.xml file from *_openvino_model dir
             network = ie.read_model(model=w, weights=Path(w).with_suffix('.bin'))
-            executable_network = ie.compile_model(model=network, device_name="CPU")
+            batch_size = network.batch_size
+            executable_network = ie.compile_model(network, device_name="CPU")  # device_name="MYRIAD" for Intel NCS2
             output_layer = next(iter(executable_network.outputs))
             meta = Path(w).with_suffix('.yaml')
             if meta.exists():
@@ -441,6 +442,9 @@ class DetectMultiBackend(nn.Module):
     def forward(self, im, augment=False, visualize=False, val=False):
         # YOLOv5 MultiBackend inference
         b, ch, h, w = im.shape  # batch, channel, height, width
+        if self.fp16 and im.dtype != torch.float16:
+            im = im.half()  # to FP16
+
         if self.pt:  # PyTorch
             y = self.model(im, augment=augment, visualize=visualize)[0]
         elif self.jit:  # TorchScript
