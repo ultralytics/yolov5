@@ -101,7 +101,7 @@ def train():
         model = hub.load('ultralytics/yolov5', opt.model, pretrained=pretrained, autoshape=False, force_reload=False)
         if isinstance(model, DetectMultiBackend):
             model = model.model  # unwrap DetectMultiBackend
-        model.model = model.model[:10] if opt.model.endswith('6') else model.model[:8]  # backbone
+        model.model = model.model[:13] if opt.model.endswith('6') else model.model[:11]  # backbone
         m = model.model[-1]  # last layer
         ch = m.conv.in_channels if hasattr(m, 'conv') else sum(x.in_channels for x in m.m)  # ch into module
         c = Classify(ch, nc)  # Classify()
