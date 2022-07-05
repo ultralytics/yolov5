@@ -48,7 +48,15 @@ class MlflowLogger:
 
     def setup(self, opt: Namespace) -> None:
         self.model_name = Path(opt.weights).stem
-        self.log_params(vars(opt))
+        self.weights = Path(opt.weights)
+        try:
+            self.client = mlflow.tracking.MlflowClient()
+            run = self.client.get_run(run_id=self.run_id)
+            logged_params = run.data.params
+            remaining_params = {k: v for k, v in vars(opt).items() if k not in logged_params}
+            self.log_params(remaining_params)
+        except Exception as err:
+            LOGGER.warning(f"Mlflow: not logging params because - {err}")
         self.log_metrics(vars(opt), is_param=True)
 
     def log_artifacts(self, artifact: Path) -> None:
@@ -71,6 +79,8 @@ class MlflowLogger:
             model (nn.Module): The pytorch model
         """
         model = torch.hub.load(repo_or_dir=str(ROOT.resolve()), model="custom", path=str(model_path), source="local")
+        if self.weights.exists() and (self.weights.parent.resolve() == ROOT.resolve()):
+            self.weights.unlink()
         self.mlflow.pytorch.log_model(model, artifact_path=self.model_name, code_paths=[ROOT.resolve()])
 
     def log_params(self, params: Dict[str, Any]) -> None:

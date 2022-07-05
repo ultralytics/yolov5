@@ -164,6 +164,12 @@ class Loggers():
             self.wandb.log(x)
             self.wandb.end_epoch(best_result=best_fitness == fi)
 
+        if self.mlflow:
+            self.mlflow.log_metrics(metrics=x, epoch=epoch)
+            if best_fitness == fi:
+                best_results = dict(zip(self.best_keys[1:], vals[3:7]))
+                self.mlflow.log_metrics(best_results, epoch=epoch)
+
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):
         # Callback runs on model save event
         if self.wandb:
