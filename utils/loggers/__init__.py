@@ -11,11 +11,12 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from utils.general import colorstr, cv2, emojis
+from utils.loggers.clearml.clearml_utils import ClearmlLogger
 from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
 
-LOGGERS = ('csv', 'tb', 'wandb')  # text-file, TensorBoard, Weights & Biases
+LOGGERS = ('csv', 'tb', 'clearml', 'wandb')  # text-file, TensorBoard, Weights & Biases, ClearML
 RANK = int(os.getenv('RANK', -1))
 
 try:
@@ -31,6 +32,12 @@ try:
             wandb = None
 except (ImportError, AssertionError):
     wandb = None
+
+
+try:
+    import clearml
+except (ImportError, AssertionError):
+    clearml = None
 
 
 class Loggers():
@@ -61,11 +68,21 @@ class Loggers():
             setattr(self, k, None)  # init empty logger dictionary
         self.csv = True  # always log to csv
 
-        # Message
+        # Messages for experiment management
         if not wandb:
             prefix = colorstr('Weights & Biases: ')
-            s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs (RECOMMENDED)"
+            s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs in Weights & Biases"
             self.logger.info(emojis(s))
+        if not clearml:
+            prefix = colorstr('ClearML: ')
+            s = f"{prefix}run 'pip install clearml' to automatically track, visualize and remotely train YOLOv5 🚀 runs in ClearML"
+            self.logger.info(emojis(s))
+
+        # ClearML
+        if clearml and 'clearml' in self.include:
+            self.clearml = ClearmlLogger(self.opt, self.hyp)
+        else:
+            self.clearml = None
 
         # TensorBoard
         s = self.save_dir
@@ -97,9 +114,11 @@ class Loggers():
         paths = self.save_dir.glob('*labels*.jpg')  # training labels
         if self.wandb:
             self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
+        # ClearML saves these images automatically using its hooks, yay!
 
     def on_train_batch_end(self, ni, model, imgs, targets, paths, plots):
         # Callback runs on train batch end
+        # ni: number integrated batches (since train start)
         if plots:
             if ni == 0:
                 if not self.opt.sync_bn:  # --sync known issue https://github.com/ultralytics/yolov5/issues/3754
@@ -109,25 +128,37 @@ class Loggers():
             if ni < 3:
                 f = self.save_dir / f'train_batch{ni}.jpg'  # filename
                 plot_images(imgs, targets, paths, f)
-            if self.wandb and ni == 10:
+            if (self.wandb or self.clearml) and ni == 10:
                 files = sorted(self.save_dir.glob('train*.jpg'))
-                self.wandb.log({'Mosaics': [wandb.Image(str(f), caption=f.name) for f in files if f.exists()]})
+                if self.wandb:
+                    self.wandb.log({'Mosaics': [wandb.Image(str(f), caption=f.name) for f in files if f.exists()]})
+                if self.clearml:
+                    self.clearml.log_debug_samples(files, title='Mosaics')
 
     def on_train_epoch_end(self, epoch):
         # Callback runs on train epoch end
         if self.wandb:
             self.wandb.current_epoch = epoch + 1
+        # ClearML automatically detects epochs using hooks for automatic reporting, but for manual reporting
+        # getting the epoch number from the task itself is slow, so we keep track for internal bookkeeping only
+        if self.clearml:
+            self.clearml.current_epoch = epoch + 1
 
     def on_val_image_end(self, pred, predn, path, names, im):
         # Callback runs on val image end
         if self.wandb:
             self.wandb.val_one_image(pred, predn, path, names, im)
+        if self.clearml:
+            self.clearml.log_image_with_boxes(path, pred, names, im)
 
     def on_val_end(self):
         # Callback runs on val end
-        if self.wandb:
+        if self.wandb or self.clearml:
             files = sorted(self.save_dir.glob('val*.jpg'))
-            self.wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in files]})
+            if self.wandb:
+                self.wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in files]})
+            if self.clearml:
+                self.clearml.log_debug_samples(files, title='Validation')
 
     def on_fit_epoch_end(self, vals, epoch, best_fitness, fi):
         # Callback runs at the end of each fit (train+val) epoch
@@ -139,9 +170,19 @@ class Loggers():
             with open(file, 'a') as f:
                 f.write(s + ('%20.5g,' * n % tuple([epoch] + vals)).rstrip(',') + '\n')
 
+        # ClearML automatically captures scalars from tensorboard
         if self.tb:
             for k, v in x.items():
                 self.tb.add_scalar(k, v, epoch)
+        # But if tensorboard is not used: make sure we still get them!
+        elif self.clearml:
+            for k, v in x.items():
+                title, series = k.split('/')
+                self.clearml.task.get_logger().report_scalar(title, series, v, epoch)
+
+        # Reset epoch image limit
+        if self.clearml:
+            self.clearml.current_epoch_logged_images = set()
 
         if self.wandb:
             if best_fitness == fi:
@@ -165,7 +206,7 @@ class Loggers():
         files = [(self.save_dir / f) for f in files if (self.save_dir / f).exists()]  # filter
         self.logger.info(f"Results saved to {colorstr('bold', self.save_dir)}")
 
-        if self.tb:
+        if self.tb and not self.clearml:  # These images are already captured by ClearML by now, we don't want doubles
             for f in files:
                 self.tb.add_image(f.stem, cv2.imread(str(f))[..., ::-1], epoch, dataformats='HWC')
 
@@ -179,6 +220,14 @@ class Loggers():
                                    name=f'run_{self.wandb.wandb_run.id}_model',
                                    aliases=['latest', 'best', 'stripped'])
             self.wandb.finish_run()
+
+        if self.clearml:
+            # Save the best model here
+            if not self.opt.evolve:
+                self.clearml.task.update_output_model(
+                    model_path=str(best if best.exists() else last),
+                    name='Best Model'
+                )
 
     def on_params_update(self, params):
         # Update hyperparams or configs of the experiment
