@@ -1,16 +1,47 @@
 """Main Logger class for ClearML experiment tracking."""
+import glob
+from pathlib import Path
 import re
 
+import yaml
 from torchvision.utils import draw_bounding_boxes
 from torchvision.transforms import ToPILImage
 
 try:
     import clearml
-    from clearml import Task
+    from clearml import Task, Dataset
 
     assert hasattr(clearml, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
     clearml = None
+
+
+def construct_dataset(clearml_info_string):
+    dataset_id = clearml_info_string.replace('clearml:', '')
+    dataset = Dataset.get(dataset_id=dataset_id)
+    dataset_root_path = Path(dataset.get_local_copy())
+
+    # We'll search for the yaml file definition in the dataset
+    yaml_filenames = list(glob.glob(str(dataset_root_path / "*.yaml")) + glob.glob(str(dataset_root_path / "*.yml")))
+    if len(yaml_filenames) > 1:
+        raise ValueError('More than one yaml file was found in the dataset root, cannot determine which one contains '
+                         'the dataset definition this way.')
+    elif len(yaml_filenames) == 0:
+        raise ValueError('No yaml definition found in dataset root path, check that there is a correct yaml file '
+                         'inside the dataset root path.')
+    with open(yaml_filenames[0], 'r') as f:
+        dataset_definition = yaml.safe_load(f)
+
+    assert set(dataset_definition.keys()).issuperset(set(['train', 'test', 'val', 'nc', 'names'])), "The right keys were not found in the yaml file, make sure it at least has the following keys: ('train', 'test', 'val', 'nc', 'names')"
+
+    data_dict = dict()
+    data_dict['train'] = str((dataset_root_path / dataset_definition['train']).resolve()) if dataset_definition['train'] else None
+    data_dict['test'] = str((dataset_root_path / dataset_definition['test']).resolve()) if dataset_definition['test'] else None
+    data_dict['val'] = str((dataset_root_path / dataset_definition['val']).resolve()) if dataset_definition['val'] else None
+    data_dict['nc'] = dataset_definition['nc']
+    data_dict['names'] = dataset_definition['names']
+
+    return data_dict
 
 
 class ClearmlLogger:
@@ -59,6 +90,12 @@ class ClearmlLogger:
             # will have to be added manually!
             self.task.connect(hyp, name='Hyperparameters')
 
+            # Get ClearML Dataset Version if requested
+            if opt.data.startswith('clearml:'):
+                # data_dict should have the following keys:
+                # names, nc (number of classes), test, train, val (all three relative paths to ../datasets)
+                self.data_dict = construct_dataset(opt.data)
+
     def log_debug_samples(self, files, title='Debug Samples'):
         """
         Log files (images) as debug samples in the ClearML task.
@@ -99,7 +136,6 @@ class ClearmlLogger:
                     labels.append(f"{class_name}: {confidence}%")
                 annotated_image = converter(draw_bounding_boxes(image=image.mul(255).clamp(0, 255).byte().cpu(),
                                                                 boxes=boxes[:, :4], labels=labels))
-                print(self.current_epoch, image_path.name)
                 self.task.get_logger().report_image(
                     title='Bounding Boxes',
                     series=image_path.name,

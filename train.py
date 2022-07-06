@@ -94,6 +94,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             data_dict = loggers.wandb.data_dict
             if resume:
                 weights, epochs, hyp, batch_size = opt.weights, opt.epochs, opt.hyp, opt.batch_size
+        if loggers.clearml:
+            # Data_dict is either None is user did not choose for ClearML dataset or is filled in by ClearML
+            data_dict = loggers.clearml.data_dict
 
         # Register actions
         for k in methods(loggers):

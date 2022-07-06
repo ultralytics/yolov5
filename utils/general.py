@@ -436,6 +436,9 @@ def check_file(file, suffix=''):
             torch.hub.download_url_to_file(url, file)
             assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
         return file
+    elif file.startswith('clearml:'):
+        # ClearML Dataset ID
+        return file
     else:  # search
         files = []
         for d in 'data', 'models', 'utils':  # search directories
