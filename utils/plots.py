@@ -148,6 +148,7 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detec
                 ax[i].axis('off')
 
             LOGGER.info(f'Saving {f}... ({n}/{channels})')
+            plt.title('Features')
             plt.savefig(f, dpi=300, bbox_inches='tight')
             plt.close()
             np.save(str(f.with_suffix('.npy')), x[0].cpu().numpy())  # npy save
@@ -349,6 +350,7 @@ def plot_labels(labels, names=(), save_dir=Path('')):
 
     # seaborn correlogram
     sn.pairplot(x, corner=True, diag_kind='auto', kind='hist', diag_kws=dict(bins=50), plot_kws=dict(pmax=0.9))
+    plt.title('Labels Correlogram')
     plt.savefig(save_dir / 'labels_correlogram.jpg', dpi=200)
     plt.close()
 
@@ -382,6 +384,7 @@ def plot_labels(labels, names=(), save_dir=Path('')):
         for s in ['top', 'right', 'left', 'bottom']:
             ax[a].spines[s].set_visible(False)
 
+    plt.title('Labels')
     plt.savefig(save_dir / 'labels.jpg', dpi=200)
     matplotlib.use('Agg')
     plt.close()
