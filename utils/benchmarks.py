@@ -26,6 +26,7 @@ Usage:
 """
 
 import argparse
+import platform
 import sys
 import time
 from pathlib import Path
@@ -58,12 +59,13 @@ def run(
 ):
     y, t = [], time.time()
     device = select_device(device)
-    for i, (name, f, suffix, cpu,
-            gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, gpu-capable)
+    for i, (name, f, suffix, cpu, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, CPU, GPU)
         try:
             assert i != 9, 'Edge TPU not supported'
             assert i != 10, 'TF.js not supported'
-            assert cpu or 'cpu' not in device.type, f'{name} inference not supported on CPU'
+            if cpu:
+                assert 'cpu' in device.type, f'{name} inference not supported on CPU'
+                assert i != 5 or platform.system() == 'Darwin', f'{name} inference only supported on macOS>=10.13'
             assert gpu or 'gpu' not in device.type, f'{name} inference not supported on GPU'
 
             # Export
