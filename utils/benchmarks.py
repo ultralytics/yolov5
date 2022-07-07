@@ -54,16 +54,18 @@ def run(
         half=False,  # use FP16 half-precision inference
         test=False,  # test exports only
         pt_only=False,  # test PyTorch only
-        hard_fail=[],  # throw error for formats: --hard-fail 0, or 0 2 3
+        hard_fail=False,  # throw error on benchmark failure
 ):
     y, t = [], time.time()
     device = select_device(device)
-    for i, (name, f, suffix, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, gpu-capable)
+    for i, (
+            name, f, suffix, cpu,
+            gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, gpu-capable)
         try:
             assert i != 9, 'Edge TPU not supported'
             assert i != 10, 'TF.js not supported'
-            if device.type != 'cpu':
-                assert gpu, f'{name} inference not supported on GPU'
+            assert cpu or 'cpu' not in device.type, f'{name} inference not supported on CPU'
+            assert gpu or 'gpu' not in device.type, f'{name} inference not supported on GPU'
 
             # Export
             if f == '-':
@@ -78,9 +80,9 @@ def run(
             speeds = result[2]  # times (preprocess, inference, postprocess)
             y.append([name, round(file_size(w), 1), round(metrics[3], 4), round(speeds[1], 2)])  # MB, mAP, t_inference
         except Exception as e:
+            if hard_fail:
+                assert type(e) is AssertionError, f'Benchmark --hard-fail for {name}: {e}'
             LOGGER.warning(f'WARNING: Benchmark failure for {name}: {e}')
-            if i in hard_fail:
-                raise Exception(e)
             y.append([name, None, None, None])  # mAP, t_inference
         if pt_only and i == 0:
             break  # break after PyTorch
@@ -105,7 +107,7 @@ def test(
         half=False,  # use FP16 half-precision inference
         test=False,  # test exports only
         pt_only=False,  # test PyTorch only
-        hard_fail=[],  # throw error for formats: --hard-fail 0, or 0 2 3
+        hard_fail=False,  # throw error on benchmark failure
 ):
     y, t = [], time.time()
     device = select_device(device)
@@ -138,7 +140,7 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--test', action='store_true', help='test exports only')
     parser.add_argument('--pt-only', action='store_true', help='test PyTorch only')
-    parser.add_argument('--hard-fail', nargs='+', default=[], help='throw error for formats: --hard-fail 0, or 0 2 3')
+    parser.add_argument('--hard-fail', action='store_true', help='throw error on benchmark failure')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     print_args(vars(opt))
