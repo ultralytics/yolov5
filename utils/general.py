@@ -195,12 +195,12 @@ def print_args(args: Optional[dict] = None, show_file=True, show_fcn=False):
     LOGGER.info(colorstr(s) + ', '.join(f'{k}={v}' for k, v in args.items()))
 
 
-def init_seeds(seed=0):
+def init_seeds(seed=0, deterministic=False):
     # Initialize random number generator (RNG) seeds https://pytorch.org/docs/stable/notes/randomness.html
     # cudnn seed 0 settings are slower and more reproducible, else faster and less reproducible
     import torch.backends.cudnn as cudnn
 
-    if check_version(torch.__version__, '1.12.0'):  # https://github.com/ultralytics/yolov5/pull/8213
+    if deterministic and check_version(torch.__version__, '1.12.0'):  # https://github.com/ultralytics/yolov5/pull/8213
         torch.use_deterministic_algorithms(True)
         os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
         # os.environ['PYTHONHASHSEED'] = str(seed)
