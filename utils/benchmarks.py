@@ -58,8 +58,7 @@ def run(
 ):
     y, t = [], time.time()
     device = select_device(device)
-    for i, (
-            name, f, suffix, cpu,
+    for i, (name, f, suffix, cpu,
             gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, gpu-capable)
         try:
             assert i != 9, 'Edge TPU not supported'
