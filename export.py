@@ -555,11 +555,12 @@ def run(
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
     if any(f):
+        h = '--half' if half else ''  # --half FP16 inference arg
         LOGGER.info(f'\nExport complete ({time.time() - t:.2f}s)'
                     f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
-                    f"\nDetect:          python detect.py --weights {f[-1]}"
+                    f"\nDetect:          python detect.py --weights {f[-1]} {h}"
+                    f"\nValidate:        python val.py --weights {f[-1]} {h}"
                     f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
-                    f"\nValidate:        python val.py --weights {f[-1]}"
                     f"\nVisualize:       https://netron.app")
     return f  # return list of exported files/dirs
 
