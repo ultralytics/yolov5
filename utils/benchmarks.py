@@ -61,12 +61,12 @@ def run(
     device = select_device(device)
     for i, (name, f, suffix, cpu, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, CPU, GPU)
         try:
-            assert i != 9, 'Edge TPU not supported'
-            assert i != 10, 'TF.js not supported'
-            if cpu:
-                assert 'cpu' in device.type, f'{name} inference not supported on CPU'
-                assert i != 5 or platform.system() == 'Darwin', f'{name} inference only supported on macOS>=10.13'
-            assert gpu or 'gpu' not in device.type, f'{name} inference not supported on GPU'
+            assert i not in (9, 10), f'{name} inference not supported'  # Edge TPU and TF.js are unsupported
+            assert i != 5 or platform.system() == 'Darwin', f'{name} inference only supported on macOS>=10.13'
+            if 'cpu' in device.type:
+                assert cpu, f'{name} inference not supported on CPU'
+            if 'cuda' in device.type:
+                assert gpu, f'{name} inference not supported on GPU'
 
             # Export
             if f == '-':
