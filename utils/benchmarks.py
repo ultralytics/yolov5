@@ -54,6 +54,7 @@ def run(
         half=False,  # use FP16 half-precision inference
         test=False,  # test exports only
         pt_only=False,  # test PyTorch only
+        hard_fail=[],  # throw error for formats: --hard-fail 0, or 0 2 3
 ):
     y, t = [], time.time()
     device = select_device(device)
@@ -78,6 +79,8 @@ def run(
             y.append([name, round(file_size(w), 1), round(metrics[3], 4), round(speeds[1], 2)])  # MB, mAP, t_inference
         except Exception as e:
             LOGGER.warning(f'WARNING: Benchmark failure for {name}: {e}')
+            if i in hard_fail:
+                Exception(e)
             y.append([name, None, None, None])  # mAP, t_inference
         if pt_only and i == 0:
             break  # break after PyTorch
@@ -102,6 +105,7 @@ def test(
         half=False,  # use FP16 half-precision inference
         test=False,  # test exports only
         pt_only=False,  # test PyTorch only
+        hard_fail=[],  # throw error for formats: --hard-fail 0, or 0 2 3
 ):
     y, t = [], time.time()
     device = select_device(device)
@@ -134,6 +138,7 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--test', action='store_true', help='test exports only')
     parser.add_argument('--pt-only', action='store_true', help='test PyTorch only')
+    parser.add_argument('--hard-fail', nargs='+', default=[], help='throw error for formats: --hard-fail 0, or 0 2 3')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     print_args(vars(opt))
