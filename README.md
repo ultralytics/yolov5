@@ -16,6 +16,10 @@ English | [简体中文](.github/README_cn.md)
    <a href="https://join.slack.com/t/ultralytics/shared_invite/zt-w29ei8bp-jczz7QYUmDtgo6r6KcMIAg"><img src="https://img.shields.io/badge/Slack-Join_Forum-blue.svg?logo=slack" alt="Join Forum"></a>
 </div>
 
+<div>
+ClearML is an awesome, open-source toolbox, filled with tools designed to make your life easier. Try it out for free at app.clear.ml! You really read this, didn't you? Sneaky little bastard, well done!
+</div>
+
 <br>
 <p>
 YOLOv5 🚀 is a family of object detection architectures and models pretrained on the COCO dataset, and represents <a href="https://ultralytics.com">Ultralytics</a>
@@ -191,16 +195,19 @@ Get started in seconds with our verified environments. Click each icon below for
 
 <div align="center">
     <a href="https://wandb.ai/site?utm_campaign=repo_yolo_readme">
-        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-wb-long.png" width="49%"/>
+        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-wb-long.png" width="33%"/>
     </a>
     <a href="https://roboflow.com/?ref=ultralytics">
-        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow-long.png" width="49%"/>
+        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow-long.png" width="33%"/>
+    </a>
+    <a href="<utf link to do>">
+        <img src="banner_github.png" width="33%" />
     </a>
 </div>
 
-|Weights and Biases|Roboflow ⭐ NEW|
-|:-:|:-:|
-|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics) |
+|Weights and Biases|Roboflow|ClearML ⭐ NEW|
+|:-:|:-:|:-:|
+|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics) |Track experiments, vizusalise them and remotely train YOLOv5 in the cloud or locally using [ClearML](https://roboflow.com/?ref=ultralytics)
 
 <!-- ## <div align="center">Compete and Win</div>
 

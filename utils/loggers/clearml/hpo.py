@@ -15,7 +15,7 @@ task = Task.init(
 # Example use case:
 optimizer = HyperParameterOptimizer(
     # This is the experiment we want to optimize
-    base_task_id='3ca697e3e1884ea29eed4c09d5028538',
+    base_task_id='<your_template_task_id>',
     # here we define the hyper-parameters to optimize
     # Notice: The parameter name should exactly match what you see in the UI: <section_name>/<parameter>
     # For Example, here we see in the base experiment a section Named: "General"
