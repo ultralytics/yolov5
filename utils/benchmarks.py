@@ -80,7 +80,7 @@ def run(
         except Exception as e:
             LOGGER.warning(f'WARNING: Benchmark failure for {name}: {e}')
             if i in hard_fail:
-                Exception(e)
+                raise Exception(e)
             y.append([name, None, None, None])  # mAP, t_inference
         if pt_only and i == 0:
             break  # break after PyTorch
