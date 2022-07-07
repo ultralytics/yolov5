@@ -45,7 +45,7 @@ from models.common import Classify, DetectMultiBackend
 from utils.augmentations import denormalize, normalize
 from utils.dataloaders import create_classification_dataloader
 from utils.general import (LOGGER, NUM_THREADS, check_file, check_git_status, check_requirements, check_version,
-                           colorstr, download, increment_path)
+                           colorstr, download, increment_path, init_seeds)
 from utils.loggers import GenericLogger
 from utils.torch_utils import de_parallel, model_info, select_device, torch_distributed_zero_first
 
@@ -65,6 +65,7 @@ def train():
 
     # Logger
     logger = GenericLogger(opt=opt, console_logger=LOGGER) if RANK in {-1, 0} else None
+
     # Download Dataset
     data_dir = FILE.parents[1] / 'datasets' / data
     if not data_dir.is_dir():
@@ -90,6 +91,7 @@ def train():
     names = trainset.classes
     nc = len(names)
     LOGGER.info(f'Training {opt.model} on {data} dataset with {nc} classes...')
+    init_seeds(1 + RANK)
 
     # Show images
     images, labels = iter(trainloader).next()
