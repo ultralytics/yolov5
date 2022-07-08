@@ -176,12 +176,9 @@ class _RepeatSampler:
 class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
     def __init__(self, path, img_size=640, stride=32, auto=True):
-        if isinstance(path, (list, tuple)):
-            paths = [str(Path(p).resolve()) for p in path]  # list of paths
-        else:
-            paths = [str(Path(path).resolve())]  # os-agnostic absolute path
         files = []
-        for p in sorted(paths):
+        for p in sorted(path) if isinstance(path, (list, tuple)) else [path]:
+            p = str(Path(p).resolve())
             if '*' in p:
                 files.extend(sorted(glob.glob(p, recursive=True)))  # glob
             elif os.path.isdir(p):
