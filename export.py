@@ -217,7 +217,16 @@ def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
         return None, None
 
 
-def export_engine(model, im, file, train, half, dynamic, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
+def export_engine(model,
+                  im,
+                  file,
+                  train,
+                  half,
+                  dynamic,
+                  simplify,
+                  workspace=4,
+                  verbose=False,
+                  prefix=colorstr('TensorRT:')):
     # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
     try:
         assert im.device.type != 'cpu', 'export running on CPU but must be on GPU, i.e. `python export.py --device 0`'
@@ -263,11 +272,11 @@ def export_engine(model, im, file, train, half, dynamic, simplify, workspace=4, 
             LOGGER.info(f'{prefix}\tinput "{inp.name}" with shape {inp.shape} and dtype {inp.dtype}')
         for out in outputs:
             LOGGER.info(f'{prefix}\toutput "{out.name}" with shape {out.shape} and dtype {out.dtype}')
-        
+
         if dynamic:
             profile = builder.create_optimization_profile()
             for inp in inputs:
-                profile.set_shape(inp.name, (1, *im.shape[1:]), (im.shape[0]//2, *im.shape[1:]), im.shape)
+                profile.set_shape(inp.name, (1, *im.shape[1:]), (im.shape[0] // 2, *im.shape[1:]), im.shape)
             config.add_optimization_profile(profile)
 
         LOGGER.info(f'{prefix} building FP{16 if builder.platform_has_fast_fp16 and half else 32} engine in {f}')

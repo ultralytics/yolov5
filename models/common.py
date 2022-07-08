@@ -392,7 +392,7 @@ class DetectMultiBackend(nn.Module):
                 name = model.get_binding_name(index)
                 dtype = trt.nptype(model.get_binding_dtype(index))
                 if model.binding_is_input(index):
-                    if -1 in tuple(model.get_binding_shape(index)): # dynamic
+                    if -1 in tuple(model.get_binding_shape(index)):  # dynamic
                         dynamic_input = True
                         context.set_binding_shape(index, tuple(model.get_profile_shape(0, index)[2]))
                     if dtype == np.float16:
@@ -401,7 +401,7 @@ class DetectMultiBackend(nn.Module):
                 data = torch.from_numpy(np.empty(shape, dtype=np.dtype(dtype))).to(device)
                 bindings[name] = Binding(name, dtype, shape, data, int(data.data_ptr()))
             binding_addrs = OrderedDict((n, d.ptr) for n, d in bindings.items())
-            batch_size = bindings['images'].shape[0] # if dynamic, this is instead max batch size
+            batch_size = bindings['images'].shape[0]  # if dynamic, this is instead max batch size
         elif coreml:  # CoreML
             LOGGER.info(f'Loading {w} for CoreML inference...')
             import coremltools as ct
@@ -470,7 +470,7 @@ class DetectMultiBackend(nn.Module):
             y = self.executable_network([im])[self.output_layer]
         elif self.engine:  # TensorRT
             if im.shape != self.bindings['images'].shape and self.dynamic_input:
-                self.context.set_binding_shape(self.model.get_binding_index('images'), im.shape) # reshape if dynamic
+                self.context.set_binding_shape(self.model.get_binding_index('images'), im.shape)  # reshape if dynamic
                 self.bindings['images'] = self.bindings['images']._replace(shape=im.shape)
             assert im.shape == self.bindings['images'].shape, (im.shape, self.bindings['images'].shape)
             self.binding_addrs['images'] = int(im.data_ptr())
