@@ -484,7 +484,7 @@ def run(
     # Load PyTorch model
     device = select_device(device)
     if half:
-        assert device.type != 'cpu' or coreml or xml, '--half only compatible with GPU export, i.e. use --device 0'
+        assert device.type != 'cpu' or coreml, '--half only compatible with GPU export, i.e. use --device 0'
         assert not dynamic, '--half not compatible with --dynamic, i.e. use either --half or --dynamic but not both'
     model = attempt_load(weights, device=device, inplace=True, fuse=True)  # load FP32 model
     nc, names = model.nc, model.names  # number of classes, class names
