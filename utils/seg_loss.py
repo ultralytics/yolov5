@@ -171,6 +171,7 @@ class ComputeLoss:
                     t = torch.full_like(ps[:, self.nm :], self.cn, device=device)  # targets
                     t[range(n), tcls[i]] = self.cp
                     lcls += self.BCEcls(ps[:, self.nm :], t)  # BCE
+                import pdb;pdb.set_trace()
 
                 # Mask Regression
                 mask_gt = masks[tidxs[i]]
@@ -184,7 +185,6 @@ class ComputeLoss:
                 mxywh = xywh[i]
                 mws, mhs = mxywh[:, 2:].T
                 mws, mhs = mws / pi.shape[3], mhs / pi.shape[2]
-                import pdb;pdb.set_trace()
                 mxywhs = (
                     mxywh
                     / torch.tensor(pi.shape, device=mxywh.device)[[3, 2, 3, 2]]
