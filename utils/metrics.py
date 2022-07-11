@@ -259,7 +259,7 @@ def box_area(box):
     return (box[2] - box[0]) * (box[3] - box[1])
 
 
-def box_iou(box1, box2):
+def box_iou(box1, box2, eps=1e-7):
     # https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
     """
     Return intersection-over-union (Jaccard index) of boxes.
@@ -277,10 +277,10 @@ def box_iou(box1, box2):
     inter = (torch.min(a2, b2) - torch.max(a1, b1)).clamp(0).prod(2)
 
     # IoU = inter / (area1 + area2 - inter)
-    return inter / (box_area(box1.T)[:, None] + box_area(box2.T) - inter)
+    return inter / (box_area(box1.T)[:, None] + box_area(box2.T) - inter + eps)
 
 
-def bbox_ioa(box1, box2, eps=1E-7):
+def bbox_ioa(box1, box2, eps=1e-7):
     """ Returns the intersection over box2 area given box1, box2. Boxes are x1y1x2y2
     box1:       np.array of shape(4)
     box2:       np.array of shape(nx4)
@@ -302,12 +302,12 @@ def bbox_ioa(box1, box2, eps=1E-7):
     return inter_area / box2_area
 
 
-def wh_iou(wh1, wh2):
+def wh_iou(wh1, wh2, eps=1e-7):
     # Returns the nxm IoU matrix. wh1 is nx2, wh2 is mx2
     wh1 = wh1[:, None]  # [N,1,2]
     wh2 = wh2[None]  # [1,M,2]
     inter = torch.min(wh1, wh2).prod(2)  # [N,M]
-    return inter / (wh1.prod(2) + wh2.prod(2) - inter)  # iou = inter / (area1 + area2 - inter)
+    return inter / (wh1.prod(2) + wh2.prod(2) - inter + eps)  # iou = inter / (area1 + area2 - inter)
 
 
 # Plots ----------------------------------------------------------------------------------------------------------------
