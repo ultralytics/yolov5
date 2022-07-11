@@ -184,6 +184,7 @@ class ComputeLoss:
                 mxywh = xywh[i]
                 mws, mhs = mxywh[:, 2:].T
                 mws, mhs = mws / pi.shape[3], mhs / pi.shape[2]
+                import pdb;pdb.set_trace()
                 mxywhs = (
                     mxywh
                     / torch.tensor(pi.shape, device=mxywh.device)[[3, 2, 3, 2]]
