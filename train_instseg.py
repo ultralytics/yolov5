@@ -45,7 +45,7 @@ from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
-from seg_dataloaders import create_dataloader, create_dataloader_ori
+from seg_dataloaders import create_dataloader
 from utils.downloads import attempt_download
 from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_git_status, check_img_size, fitness,
                            check_requirements, check_suffix, check_version, check_yaml, colorstr, get_latest_run,
@@ -239,7 +239,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         LOGGER.info('Using SyncBatchNorm()')
 
     # Trainloader
-    train_loader, dataset = create_dataloader_ori(train_path,
+    train_loader, dataset = create_dataloader(train_path,
                                               imgsz,
                                               batch_size // WORLD_SIZE,
                                               gs,
@@ -263,7 +263,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
     # Process 0
     if RANK in {-1, 0}:
-        val_loader = create_dataloader_ori(val_path,
+        val_loader = create_dataloader(val_path,
                                        imgsz,
                                        batch_size // WORLD_SIZE * 2,
                                        gs,
