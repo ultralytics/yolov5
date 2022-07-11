@@ -48,8 +48,8 @@ from utils.torch_utils import select_device, time_sync
 import collections
 
 #fringeml libs
-from rect import Rect
-from csv_utils import write_to_csv
+from label_utils.rect import Rect
+from label_utils.csv_utils import write_to_csv
 
 
 @torch.no_grad()
