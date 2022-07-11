@@ -171,7 +171,6 @@ class ComputeLoss:
                     t = torch.full_like(ps[:, self.nm :], self.cn, device=device)  # targets
                     t[range(n), tcls[i]] = self.cp
                     lcls += self.BCEcls(ps[:, self.nm :], t)  # BCE
-                import pdb;pdb.set_trace()
 
                 # Mask Regression
                 mask_gt = masks[tidxs[i]]
