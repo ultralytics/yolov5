@@ -139,10 +139,6 @@ class Loggers():
         # Callback runs on train epoch end
         if self.wandb:
             self.wandb.current_epoch = epoch + 1
-        # ClearML automatically detects epochs using hooks for automatic reporting, but for manual reporting
-        # getting the epoch number from the task itself is slow, so we keep track for internal bookkeeping only
-        if self.clearml:
-            self.clearml.current_epoch = epoch + 1
 
     def on_val_image_end(self, pred, predn, path, names, im):
         # Callback runs on val image end
@@ -183,6 +179,9 @@ class Loggers():
         # Reset epoch image limit
         if self.clearml:
             self.clearml.current_epoch_logged_images = set()
+            # ClearML automatically detects epochs using hooks for automatic reporting, but for manual reporting
+            # getting the epoch number from the task itself is slow, so we keep track for internal bookkeeping only
+            self.clearml.current_epoch = epoch + 1
 
         if self.wandb:
             if best_fitness == fi:
