@@ -19,7 +19,7 @@ import torch
 from PIL import Image, ImageDraw, ImageFont
 
 from utils.general import (CONFIG_DIR, FONT, LOGGER, Timeout, check_font, check_requirements, clip_coords,
-                           increment_path, is_ascii, is_chinese, try_except, xywh2xyxy, xyxy2xywh)
+                           increment_path, is_ascii, threaded, try_except, xywh2xyxy, xyxy2xywh)
 from utils.metrics import fitness
 
 # Settings
@@ -32,9 +32,9 @@ class Colors:
     # Ultralytics color palette https://ultralytics.com/
     def __init__(self):
         # hex = matplotlib.colors.TABLEAU_COLORS.values()
-        hex = ('FF3838', 'FF9D97', 'FF701F', 'FFB21D', 'CFD231', '48F90A', '92CC17', '3DDB86', '1A9334', '00D4BB',
-               '2C99A8', '00C2FF', '344593', '6473FF', '0018EC', '8438FF', '520085', 'CB38FF', 'FF95C8', 'FF37C7')
-        self.palette = [self.hex2rgb('#' + c) for c in hex]
+        hexs = ('FF3838', 'FF9D97', 'FF701F', 'FFB21D', 'CFD231', '48F90A', '92CC17', '3DDB86', '1A9334', '00D4BB',
+                '2C99A8', '00C2FF', '344593', '6473FF', '0018EC', '8438FF', '520085', 'CB38FF', 'FF95C8', 'FF37C7')
+        self.palette = [self.hex2rgb(f'#{c}') for c in hexs]
         self.n = len(self.palette)
 
     def __call__(self, i, bgr=False):
@@ -66,17 +66,15 @@ def check_pil_font(font=FONT, size=10):
 
 
 class Annotator:
-    if RANK in (-1, 0):
-        check_pil_font()  # download TTF if necessary
-
     # YOLOv5 Annotator for train/val mosaics and jpgs and detect/hub inference annotations
     def __init__(self, im, line_width=None, font_size=None, font='Arial.ttf', pil=False, example='abc'):
         assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to Annotator() input images.'
-        self.pil = pil or not is_ascii(example) or is_chinese(example)
+        non_ascii = not is_ascii(example)  # non-latin labels, i.e. asian, arabic, cyrillic
+        self.pil = pil or non_ascii
         if self.pil:  # use PIL
             self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
             self.draw = ImageDraw.Draw(self.im)
-            self.font = check_pil_font(font='Arial.Unicode.ttf' if is_chinese(example) else font,
+            self.font = check_pil_font(font='Arial.Unicode.ttf' if non_ascii else font,
                                        size=font_size or max(round(sum(self.im.size) / 2 * 0.035), 12))
         else:  # use cv2
             self.im = im
@@ -102,7 +100,7 @@ class Annotator:
             if label:
                 tf = max(self.lw - 1, 1)  # font thickness
                 w, h = cv2.getTextSize(label, 0, fontScale=self.lw / 3, thickness=tf)[0]  # text width, height
-                outside = p1[1] - h - 3 >= 0  # label fits outside box
+                outside = p1[1] - h >= 3
                 p2 = p1[0] + w, p1[1] - h - 3 if outside else p1[1] + h + 3
                 cv2.rectangle(self.im, p1, p2, color, -1, cv2.LINE_AA)  # filled
                 cv2.putText(self.im,
@@ -186,6 +184,7 @@ def output_to_target(output):
     return np.array(targets)
 
 
+@threaded
 def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max_size=1920, max_subplots=16):
     # Plot image grid with labels
     if isinstance(images, torch.Tensor):
@@ -422,13 +421,13 @@ def plot_results(file='path/to/results.csv', dir=''):
     ax = ax.ravel()
     files = list(save_dir.glob('results*.csv'))
     assert len(files), f'No results.csv files found in {save_dir.resolve()}, nothing to plot.'
-    for fi, f in enumerate(files):
+    for f in files:
         try:
             data = pd.read_csv(f)
             s = [x.strip() for x in data.columns]
             x = data.values[:, 0]
             for i, j in enumerate([1, 2, 3, 4, 5, 8, 9, 10, 6, 7]):
-                y = data.values[:, j]
+                y = data.values[:, j].astype('float')
                 # y[y == 0] = np.nan  # don't show zero values
                 ax[i].plot(x, y, marker='.', label=f.stem, linewidth=2, markersize=8)
                 ax[i].set_title(s[j], fontsize=12)

@@ -60,7 +60,7 @@ names: ['Person', 'Sneakers', 'Chair', 'Other Shoes', 'Hat', 'Car', 'Lamp', 'Gla
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
-  from tqdm.auto import tqdm
+  from tqdm import tqdm
 
   from utils.general import Path, check_requirements, download, np, xyxy2xywhn
 

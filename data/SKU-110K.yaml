@@ -21,7 +21,7 @@ names: ['object']  # class names
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
 download: |
   import shutil
-  from tqdm.auto import tqdm
+  from tqdm import tqdm
   from utils.general import np, pd, Path, download, xyxy2xywh
 
 

@@ -24,11 +24,11 @@ import torch.nn.functional as F
 import yaml
 from PIL import ExifTags, Image, ImageOps
 from torch.utils.data import DataLoader, Dataset, dataloader, distributed
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
 from utils.general import (DATASETS_DIR, LOGGER, NUM_THREADS, check_dataset, check_requirements, check_yaml, clean_str,
-                           cv2, segments2boxes, xyn2xy, xywh2xyxy, xywhn2xyxy, xyxy2xywhn)
+                           cv2, is_colab, is_kaggle, segments2boxes, xyn2xy, xywh2xyxy, xywhn2xyxy, xyxy2xywhn)
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
@@ -57,9 +57,7 @@ def exif_size(img):
     s = img.size  # (width, height)
     try:
         rotation = dict(img._getexif().items())[orientation]
-        if rotation == 6:  # rotation 270
-            s = (s[1], s[0])
-        elif rotation == 8:  # rotation 90
+        if rotation in [6, 8]:  # rotation 270 or 90
             s = (s[1], s[0])
     except Exception:
         pass
@@ -156,7 +154,7 @@ class InfiniteDataLoader(dataloader.DataLoader):
         return len(self.batch_sampler.sampler)
 
     def __iter__(self):
-        for i in range(len(self)):
+        for _ in range(len(self)):
             yield next(self.iterator)
 
 
@@ -178,15 +176,17 @@ class _RepeatSampler:
 class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
     def __init__(self, path, img_size=640, stride=32, auto=True):
-        p = str(Path(path).resolve())  # os-agnostic absolute path
-        if '*' in p:
-            files = sorted(glob.glob(p, recursive=True))  # glob
-        elif os.path.isdir(p):
-            files = sorted(glob.glob(os.path.join(p, '*.*')))  # dir
-        elif os.path.isfile(p):
-            files = [p]  # files
-        else:
-            raise Exception(f'ERROR: {p} does not exist')
+        files = []
+        for p in sorted(path) if isinstance(path, (list, tuple)) else [path]:
+            p = str(Path(p).resolve())
+            if '*' in p:
+                files.extend(sorted(glob.glob(p, recursive=True)))  # glob
+            elif os.path.isdir(p):
+                files.extend(sorted(glob.glob(os.path.join(p, '*.*'))))  # dir
+            elif os.path.isfile(p):
+                files.append(p)  # files
+            else:
+                raise FileNotFoundError(f'{p} does not exist')
 
         images = [x for x in files if x.split('.')[-1].lower() in IMG_FORMATS]
         videos = [x for x in files if x.split('.')[-1].lower() in VID_FORMATS]
@@ -224,10 +224,9 @@ class LoadImages:
                 self.cap.release()
                 if self.count == self.nf:  # last video
                     raise StopIteration
-                else:
-                    path = self.files[self.count]
-                    self.new_video(path)
-                    ret_val, img0 = self.cap.read()
+                path = self.files[self.count]
+                self.new_video(path)
+                ret_val, img0 = self.cap.read()
 
             self.frame += 1
             s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: '
@@ -324,6 +323,9 @@ class LoadStreams:
                 import pafy
                 s = pafy.new(s).getbest(preftype="mp4").url  # YouTube URL
             s = eval(s) if s.isnumeric() else s  # i.e. s = '0' local webcam
+            if s == 0:
+                assert not is_colab(), '--source 0 webcam unsupported on Colab. Rerun command in a local environment.'
+                assert not is_kaggle(), '--source 0 webcam unsupported on Kaggle. Rerun command in a local environment.'
             cap = cv2.VideoCapture(s)
             assert cap.isOpened(), f'{st}Failed to open {s}'
             w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -359,7 +361,7 @@ class LoadStreams:
                     LOGGER.warning('WARNING: Video stream unresponsive, please check your IP camera connection.')
                     self.imgs[i] = np.zeros_like(self.imgs[i])
                     cap.open(stream)  # re-open stream if signal was lost
-            time.sleep(1 / self.fps[i])  # wait time
+            time.sleep(0.0)  # wait time
 
     def __iter__(self):
         self.count = -1
@@ -390,13 +392,14 @@ class LoadStreams:
 
 def img2label_paths(img_paths):
     # Define label paths as a function of image paths
-    sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
+    sa, sb = f'{os.sep}images{os.sep}', f'{os.sep}labels{os.sep}'  # /images/, /labels/ substrings
     return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in img_paths]
 
 
 class LoadImagesAndLabels(Dataset):
     # YOLOv5 train_loader/val_loader, loads images and labels for training and validation
     cache_version = 0.6  # dataset labels *.cache version
+    rand_interp_methods = [cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4]
 
     def __init__(self,
                  path,
@@ -436,7 +439,7 @@ class LoadImagesAndLabels(Dataset):
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
                         # f += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
                 else:
-                    raise Exception(f'{prefix}{p} does not exist')
+                    raise FileNotFoundError(f'{prefix}{p} does not exist')
             self.im_files = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in IMG_FORMATS])  # pathlib
             assert self.im_files, f'{prefix}No images found'
@@ -448,14 +451,14 @@ class LoadImagesAndLabels(Dataset):
         cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')
         try:
             cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
-            assert cache['version'] == self.cache_version  # same version
-            assert cache['hash'] == get_hash(self.label_files + self.im_files)  # same hash
+            assert cache['version'] == self.cache_version  # matches current version
+            assert cache['hash'] == get_hash(self.label_files + self.im_files)  # identical hash
         except Exception:
-            cache, exists = self.cache_labels(cache_path, prefix), False  # cache
+            cache, exists = self.cache_labels(cache_path, prefix), False  # run cache ops
 
         # Display cache
         nf, nm, ne, nc, n = cache.pop('results')  # found, missing, empty, corrupt, total
-        if exists and LOCAL_RANK in (-1, 0):
+        if exists and LOCAL_RANK in {-1, 0}:
             d = f"Scanning '{cache_path}' images and labels... {nf} found, {nm} missing, {ne} empty, {nc} corrupt"
             tqdm(None, desc=prefix + d, total=n, initial=n, bar_format=BAR_FORMAT)  # display cache results
             if cache['msgs']:
@@ -665,8 +668,8 @@ class LoadImagesAndLabels(Dataset):
             h0, w0 = im.shape[:2]  # orig hw
             r = self.img_size / max(h0, w0)  # ratio
             if r != 1:  # if sizes are not equal
-                im = cv2.resize(im, (int(w0 * r), int(h0 * r)),
-                                interpolation=cv2.INTER_LINEAR if (self.augment or r > 1) else cv2.INTER_AREA)
+                interp = cv2.INTER_LINEAR if (self.augment or r > 1) else cv2.INTER_AREA
+                im = cv2.resize(im, (int(w0 * r), int(h0 * r)), interpolation=interp)
             return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
         else:
             return self.ims[i], self.im_hw0[i], self.im_hw[i]  # im, hw_original, hw_resized
@@ -861,7 +864,7 @@ def flatten_recursive(path=DATASETS_DIR / 'coco128'):
         shutil.copyfile(file, new_path / Path(file).name)
 
 
-def extract_boxes(path=DATASETS_DIR / 'coco128'):  # from utils.datasets import *; extract_boxes()
+def extract_boxes(path=DATASETS_DIR / 'coco128'):  # from utils.dataloaders import *; extract_boxes()
     # Convert detection dataset into classification dataset, with one directory per class
     path = Path(path)  # images dir
     shutil.rmtree(path / 'classifier') if (path / 'classifier').is_dir() else None  # remove existing
@@ -897,7 +900,7 @@ def extract_boxes(path=DATASETS_DIR / 'coco128'):  # from utils.datasets import 
 
 def autosplit(path=DATASETS_DIR / 'coco128/images', weights=(0.9, 0.1, 0.0), annotated_only=False):
     """ Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
-    Usage: from utils.datasets import *; autosplit()
+    Usage: from utils.dataloaders import *; autosplit()
     Arguments
         path:            Path to images directory
         weights:         Train, val, test weights (list, tuple)
@@ -974,29 +977,40 @@ def verify_image_label(args):
 def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profile=False, hub=False):
     """ Return dataset statistics dictionary with images and instances counts per split per class
     To run in parent directory: export PYTHONPATH="$PWD/yolov5"
-    Usage1: from utils.datasets import *; dataset_stats('coco128.yaml', autodownload=True)
-    Usage2: from utils.datasets import *; dataset_stats('path/to/coco128_with_yaml.zip')
+    Usage1: from utils.dataloaders import *; dataset_stats('coco128.yaml', autodownload=True)
+    Usage2: from utils.dataloaders import *; dataset_stats('path/to/coco128_with_yaml.zip')
     Arguments
         path:           Path to data.yaml or data.zip (with data.yaml inside data.zip)
         autodownload:   Attempt to download dataset if not found locally
         verbose:        Print stats dictionary
     """
 
-    def round_labels(labels):
+    def _round_labels(labels):
         # Update labels to integer class and 6 decimal place floats
         return [[int(c), *(round(x, 4) for x in points)] for c, *points in labels]
 
-    def unzip(path):
-        # Unzip data.zip TODO: CONSTRAINT: path/to/abc.zip MUST unzip to 'path/to/abc/'
+    def _find_yaml(dir):
+        # Return data.yaml file
+        files = list(dir.glob('*.yaml')) or list(dir.rglob('*.yaml'))  # try root level first and then recursive
+        assert files, f'No *.yaml file found in {dir}'
+        if len(files) > 1:
+            files = [f for f in files if f.stem == dir.stem]  # prefer *.yaml files that match dir name
+            assert files, f'Multiple *.yaml files found in {dir}, only 1 *.yaml file allowed'
+        assert len(files) == 1, f'Multiple *.yaml files found: {files}, only 1 *.yaml file allowed in {dir}'
+        return files[0]
+
+    def _unzip(path):
+        # Unzip data.zip
         if str(path).endswith('.zip'):  # path is data.zip
             assert Path(path).is_file(), f'Error unzipping {path}, file not found'
             ZipFile(path).extractall(path=path.parent)  # unzip
             dir = path.with_suffix('')  # dataset directory == zip name
-            return True, str(dir), next(dir.rglob('*.yaml'))  # zipped, data_dir, yaml_path
+            assert dir.is_dir(), f'Error unzipping {path}, {dir} not found. path/to/abc.zip MUST unzip to path/to/abc/'
+            return True, str(dir), _find_yaml(dir)  # zipped, data_dir, yaml_path
         else:  # path is data.yaml
             return False, None, path
 
-    def hub_ops(f, max_dim=1920):
+    def _hub_ops(f, max_dim=1920):
         # HUB ops for 1 image 'f': resize and save at reduced quality in /dataset-hub for web/app viewing
         f_new = im_dir / Path(f).name  # dataset-hub image filename
         try:  # use PIL
@@ -1014,11 +1028,15 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
                 im = cv2.resize(im, (int(im_width * r), int(im_height * r)), interpolation=cv2.INTER_AREA)
             cv2.imwrite(str(f_new), im)
 
-    zipped, data_dir, yaml_path = unzip(Path(path))
-    with open(check_yaml(yaml_path), errors='ignore') as f:
-        data = yaml.safe_load(f)  # data dict
-        if zipped:
-            data['path'] = data_dir  # TODO: should this be dir.resolve()?
+    zipped, data_dir, yaml_path = _unzip(Path(path))
+    try:
+        with open(check_yaml(yaml_path), errors='ignore') as f:
+            data = yaml.safe_load(f)  # data dict
+            if zipped:
+                data['path'] = data_dir  # TODO: should this be dir.resolve()?`
+    except Exception:
+        raise Exception("error/HUB/dataset_stats/yaml_load")
+
     check_dataset(data, autodownload)  # download dataset if missing
     hub_dir = Path(data['path'] + ('-hub' if hub else ''))
     stats = {'nc': data['nc'], 'names': data['names']}  # statistics dictionary
@@ -1040,12 +1058,12 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
                 'unlabelled': int(np.all(x == 0, 1).sum()),
                 'per_class': (x > 0).sum(0).tolist()},
             'labels': [{
-                str(Path(k).name): round_labels(v.tolist())} for k, v in zip(dataset.im_files, dataset.labels)]}
+                str(Path(k).name): _round_labels(v.tolist())} for k, v in zip(dataset.im_files, dataset.labels)]}
 
         if hub:
             im_dir = hub_dir / 'images'
             im_dir.mkdir(parents=True, exist_ok=True)
-            for _ in tqdm(ThreadPool(NUM_THREADS).imap(hub_ops, dataset.im_files), total=dataset.n, desc='HUB Ops'):
+            for _ in tqdm(ThreadPool(NUM_THREADS).imap(_hub_ops, dataset.im_files), total=dataset.n, desc='HUB Ops'):
                 pass
 
     # Profile

@@ -1,16 +1,18 @@
-# pip install -r requirements.txt
+# YOLOv5 requirements
+# Usage: pip install -r requirements.txt
 
 # Base ----------------------------------------
 matplotlib>=3.2.2
 numpy>=1.18.5
-opencv-python>=4.1.2
+opencv-python>=4.1.1
 Pillow>=7.1.2
 PyYAML>=5.3.1
 requests>=2.23.0
-scipy>=1.4.1
-torch>=1.7.0
-torchvision>=0.8.1
+scipy>=1.4.1  # Google Colab version
+torch>=1.7.0,!=1.12.0  # https://github.com/ultralytics/yolov5/issues/8395
+torchvision>=0.8.1,!=0.13.0 # https://github.com/ultralytics/yolov5/issues/8395
 tqdm>=4.41.0
+protobuf<4.21.3  # https://github.com/ultralytics/yolov5/issues/8012
 
 # Logging -------------------------------------
 tensorboard>=2.4.1
@@ -30,8 +32,9 @@ seaborn>=0.11.0
 # openvino-dev  # OpenVINO export
 
 # Extras --------------------------------------
+ipython  # interactive notebook
+psutil  # system utilization
+thop  # FLOPs computation
 # albumentations>=1.0.3
-# Cython  # for pycocotools https://github.com/cocodataset/cocoapi/issues/172
 # pycocotools>=2.0  # COCO mAP
 # roboflow
-thop  # FLOPs computation
