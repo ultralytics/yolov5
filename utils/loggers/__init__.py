@@ -240,7 +240,7 @@ class NewLoggers:
         try:
             import wandb
             from wandb import __version__
-            wandb.init(project="YOLOv5-Inst-seg", config=opt)
+            wandb.init(project=opt.project, name=opt.name, config=opt)
         except ImportError:
             wandb = None
             pass
