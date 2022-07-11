@@ -16,9 +16,7 @@ pip install -r requirements.txt
 The following commands assume that the LMI_AI_Solution repo is cloned in `~/LMI_AI_Solutions`, and assume that it's the working directory, unless otherwise mentioned.
 
 ```bash
-cd ~/LMI_AI_Solutions
-source lmi_ai.env
-source object_detectors/yolov5/yolo.env
+source ~/LMI_AI_Solutions/lmi_ai.env 
 ```
 
 ## Prepare the datasets
@@ -34,8 +32,8 @@ Prepare the datasets by the followings:
 Assume that the original annotated files are downloaded in `./data/allImages_1024`. After execting the exmaple commands below, it will generate a yolo formatted folder in `./data/resized_640_yolo`.
 
 ```bash
-python -m resize_with_csv --path_imgs ./data/allImages_1024 --out_imsz 640,640 --path_out ./data/resized_640
-python -m convert_data_to_yolo --path_imgs ./data/resized_640 --path_out ./data/resized_640_yolo
+python -m label_utils.resize_with_csv --path_imgs ./data/allImages_1024 --out_imsz 640,640 --path_out ./data/resized_640
+python -m label_utils.convert_data_to_yolo --path_imgs ./data/resized_640 --path_out ./data/resized_640_yolo
 ```
 
 ## Create a yaml file indicating the locations of datasets
