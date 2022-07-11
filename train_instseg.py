@@ -29,6 +29,7 @@ import torch.distributed as dist
 import torch.nn as nn
 import yaml
 from torch.nn.parallel import DistributedDataParallel as DDP
+import torch.nn.functional as F
 from torch.optim import SGD, Adam, AdamW, lr_scheduler
 from tqdm import tqdm
 
@@ -253,7 +254,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                               quad=opt.quad,
                                               prefix=colorstr('train: '),
                                               mask_head=True,
-                                              shuffle=True)
+                                              shuffle=True,
+                                              mask_downsample_ratio=mask_ratio
+                                              )
     mlc = int(np.concatenate(dataset.labels, 0)[:, 0].max())  # max label class
     nb = len(train_loader)  # number of batches
     assert mlc < nc, f'Label class {mlc} exceeds nc={nc} in {data}. Possible class labels are 0-{nc - 1}'
@@ -272,6 +275,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                        workers=workers * 2,
                                        pad=0.5,
                                        mask_head=True,
+                                       mask_downsample_ratio=mask_ratio,
                                        prefix=colorstr('val: '))[0]
 
         if not resume:
@@ -396,6 +400,14 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
                 pbar.set_description(("%10s" * 2 + "%10.4g" * 6)
             % (f"{epoch}/{epochs - 1}", mem, *mloss, targets.shape[0],imgs.shape[-1]))
+            # for plots
+                if mask_ratio != 1:
+                    masks = F.interpolate(
+                        masks[None, :],
+                        (imgsz, imgsz),
+                        mode="bilinear",
+                        align_corners=False,
+                    ).squeeze(0)
                 callbacks.run('on_train_batch_end', ni, model, imgs, targets,masks, paths, plots, opt.sync_bn, None)
 
                 if callbacks.stop_training:
