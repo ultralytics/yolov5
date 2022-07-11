@@ -100,6 +100,7 @@ The command below run the inference using the following arguments:
 - weights: the path to the trained model weights file
 - img: the image size
 - project: the output folder
+- conf-thres(optional): the confidence level, default is 0.25
 - name: the subfolder to be created inside the output folder
 - save-csv: save the outputs as a csv file
 
