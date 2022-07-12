@@ -17,7 +17,7 @@ except (ImportError, AssertionError):
 
 
 def construct_dataset(clearml_info_string):
-    dataset_id = clearml_info_string.replace('clearml:', '')
+    dataset_id = clearml_info_string.replace('clearml://', '')
     dataset = Dataset.get(dataset_id=dataset_id)
     dataset_root_path = Path(dataset.get_local_copy())
 
@@ -82,6 +82,7 @@ class ClearmlLogger:
                 tags=['YOLOv5'],
                 output_uri=True,
                 auto_connect_frameworks={'pytorch': False}
+                # We disconnect pytorch auto-detection, because we added manual model save points in the code
             )
             # ClearML's hooks will already grab all general parameters
             # Only the hyperparameters coming from the yaml config file
@@ -89,7 +90,7 @@ class ClearmlLogger:
             self.task.connect(hyp, name='Hyperparameters')
 
             # Get ClearML Dataset Version if requested
-            if opt.data.startswith('clearml:'):
+            if opt.data.startswith('clearml://'):
                 # data_dict should have the following keys:
                 # names, nc (number of classes), test, train, val (all three relative paths to ../datasets)
                 self.data_dict = construct_dataset(opt.data)
