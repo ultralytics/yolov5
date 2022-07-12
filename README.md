@@ -200,14 +200,14 @@ Get started in seconds with our verified environments. Click each icon below for
     <a href="https://roboflow.com/?ref=ultralytics">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow-long.png" width="33%"/>
     </a>
-    <a href="<utf link to do>">
-        <img src="banner_github.png" width="33%" />
+    <a href="https://clear.ml/<utf link to do>">
+        <img src="https://github.com/thepycoder/clearml_screenshots/raw/main/banner_github.png" width="33%" />
     </a>
 </div>
 
 |Weights and Biases|Roboflow|ClearML ⭐ NEW|
 |:-:|:-:|:-:|
-|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics) |Track experiments, vizusalise them and remotely train YOLOv5 in the cloud or locally using [ClearML](https://roboflow.com/?ref=ultralytics)
+|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics) |Track experiments, vizusalise them and remotely train YOLOv5 in the cloud or locally using [ClearML](https://clear.ml/?ref=ultralytics)
 
 <!-- ## <div align="center">Compete and Win</div>
 

@@ -1,5 +1,6 @@
 # ClearML Integration
 
+![Yolov5 + ClearML Logos](https://github.com/thepycoder/clearml_screenshots/raw/main/logos.png)
 
 ## About ClearML
 ClearML is an [open-source](https://github.com/allegroai/clearml) toolbox designed to save you time. It features (click on the arrow for screenshots):
