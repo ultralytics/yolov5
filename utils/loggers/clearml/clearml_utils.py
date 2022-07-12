@@ -128,7 +128,7 @@ class ClearmlLogger:
         class_names (dict): dict containing mapping of class int to class name
         image (Tensor): A torch tensor containing the actual image data
         """
-        if len(self.current_epoch_logged_images) < self.max_imgs_to_log_per_epoch and self.current_epoch > 0:
+        if len(self.current_epoch_logged_images) < self.max_imgs_to_log_per_epoch and self.current_epoch >= 0:
             # Log every bbox_interval times and deduplicate for any intermittend extra eval runs
             if self.current_epoch % self.bbox_interval == 0 and image_path not in self.current_epoch_logged_images:
                 converter = ToPILImage()
