@@ -332,7 +332,7 @@ if __name__ == '__main__':
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--optimizer', type=str, choices=['SGD', 'Adam', 'AdamW'], default='Adam', help='optimizer')
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
-    parser.add_argument('--cache', action='store_true', help='--cache images to disk for faster training')
+    parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
     parser.add_argument('--project', default='runs/train', help='save to project/name')
