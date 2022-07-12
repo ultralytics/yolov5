@@ -148,26 +148,8 @@ clearml-data close
 Now that you have a ClearML dataset, you can very simply use it to train custom YOLOv5 🚀 models!
 
 ```bash
-python train.py --img 640 --batch 16 --epochs 3 --data clearml:<your_dataset_id> --weights yolov5s.pt --cache
+python train.py --img 640 --batch 16 --epochs 3 --data clearml://<your_dataset_id> --weights yolov5s.pt --cache
 ```
-
-## ✌️ Resume execution
-When training gets unexpectedly interrupted, you can easily resume a training run when you tracked it with ClearML. All the information is saved in there after all!
-
-### Training
-When training, make sure to use the `--save-period n` parameter to save a checkpoint of the model ever n iterations. If you do this, ClearML will upload the checkpoint in the background while the process continues training. So bear in mind that the latest checkpoint might not be completely uploaded yet, if the process crashes shortly after the last checkpoint was saved.
-
-```
-python train.py --img 640 --batch 16 --epochs 15 --data coco128.yaml --weights yolov5s.pt --cache --save-period 5
-```
-
-### Resuming
-If the above command crashed before it completed, you can start from the last checkpoint by running this command:
-```
-python train.py --resume clearml:<clearml_aborted_task_id>
-```
-
-This will get the latest saved model, reset all parameters and restart training from where it left off!
 
 ## 👀 Hyperparameter optimization
 To run hyperparameter optimization locally or on the cloud, we've incluided a pre-made script for you. Just make sure a training task has been run at least once, so it is in the ClearML experiment manager.
