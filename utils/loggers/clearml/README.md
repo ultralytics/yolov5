@@ -1,5 +1,5 @@
-![ClearML scalars dashboard](https://github.com/thepycoder/clearml_screenshots/raw/main/experiment_manager.gif)
 # ClearML Integration
+
 
 ## About ClearML
 ClearML is an [open-source](https://github.com/allegroai/clearml) toolbox designed to save you time. It features (click on the arrow for screenshots):
@@ -24,6 +24,8 @@ ClearML is an [open-source](https://github.com/allegroai/clearml) toolbox design
 </details>
 
 And so much more. It's up to you how many of these tools you want to use, you can stick to the experiment manager, or chain them all together into an impressive pipeline!
+
+![ClearML scalars dashboard](https://github.com/thepycoder/clearml_screenshots/raw/main/experiment_manager.gif)
 
 
 ## 🦾 Setting things up
@@ -67,8 +69,32 @@ So we can actually clone a task by right clicking it and it will be set to draft
 
 PS: if you want to change the `project_name` or `task_name`, head over to our custom logger, where you can change it :) `utils/loggers/clearml/clearml_utils.py`
 
+![Experiment Management Interface](https://github.com/thepycoder/clearml_screenshots/raw/main/scalars.png)
+
+### ClearML Agents for remote execution
+If you want to spin up some queues and agents (ClearML workers) yourself to remotely execute the training process of this repository, head over to our resources on the topic:
+
+- [Youtube video](https://youtu.be/MX3BrXnaULs)
+- [Documentation](https://clear.ml/docs/latest/docs/clearml_agent)
+- [Example code](https://clear.ml/docs/latest/docs/guides/advanced/execute_remotely)
+
+But in short: every experiment tracked by the experiment manager contains enough information to reproduce it on a different machine (installed packages, uncommitted changes etc.). So a ClearML agent does just that: it listens to a queue for incoming tasks and when it finds one, it recreates the environment and runs it while still reporting scalars, plots etc. to the experiment manager.
+
+You can turn any machine (a cloud VM, a local GPU machine, your own laptop ... ) into a ClearML agent by simply running:
+```
+clearml-agent daemon --queue <queues_to_listen_to> [--docker]
+```
+Now you can clone a task like we explained above, or simply mark your current script by adding `task.execute_remotely()` and on execution it will be put into a queue, for the agent to start working on! 
+
+### Autoscaling workers
+ClearML comes with autoscalers too! This tool will automatically spin up new remote machines in the cloud of your choice (AWS, GCP, Azure) and turn them into ClearML agents for you whenever there are experiments detected in the queue. Once the tasks are processed, the autoscaler will automatically shut down the remote machines and you stop paying!
+
+Check out the autoscalers [here](https://youtu.be/j4XVMAaUt3E).
+
 ## 🔗 Data versioning
 Versioning your data separately from your code is generally a good idea. This repository supports supplying a dataset version ID and it will make sure to get the data if it's not there yet. Next to that, this workflow also saves the used dataset ID as part of the task parameters, so you will always know for sure which data was used in which experiment!
+
+![ClearML Dataset Interface](https://github.com/thepycoder/clearml_screenshots/raw/main/dataset_version.png)
 
 ### Prepare Dataset
 This repository supports a number of different datasets by using yaml files containing their information. By default datasets are downloaded to the `../datasets` folder in relation to the repository root folder. So if you downloaded the `coco128` dataset using the link in the yaml or with the scripts provided by yolov5, you get this folder structure:
