@@ -201,7 +201,7 @@ Get started in seconds with our verified environments. Click each icon below for
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow-long.png" width="33%"/>
     </a>
     <a href="https://clear.ml/<utf link to do>">
-        <img src="https://github.com/thepycoder/clearml_screenshots/raw/main/banner_github.png" width="33%" />
+        <img src="https://github.com/thepycoder/clearml_screenshots/raw/main/banner_github.png" width="32%" />
     </a>
 </div>
 

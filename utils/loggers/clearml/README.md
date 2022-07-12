@@ -177,3 +177,5 @@ You'll need to fill in the ID of this `template task` in the script found at `ut
 ```
 python utils/loggers/clearml/hpo.py
 ```
+
+![HPO](https://github.com/thepycoder/clearml_screenshots/raw/main/hpo.png)
