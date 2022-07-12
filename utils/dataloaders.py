@@ -86,7 +86,7 @@ def exif_transpose(image):
             5: Image.TRANSPOSE,
             6: Image.ROTATE_270,
             7: Image.TRANSVERSE,
-            8: Image.ROTATE_90,}.get(orientation)
+            8: Image.ROTATE_90, }.get(orientation)
         if method is not None:
             image = image.transpose(method)
             del exif[0x0112]
@@ -1115,7 +1115,7 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         self.album_transforms = album_transforms
         self.cache_ram = cache is True or cache == 'ram'
         self.cache_disk = cache == 'disk'
-        self.samples = [list(x) + [None, None] for x in self.samples]  # filename, index, filename_npy, image
+        self.samples = [list(x) + [Path(x[0]).with_suffix('.npy'), None] for x in self.samples]  # file, index, npy, im
 
     def __getitem__(self, i):
         f, j, fn, im = self.samples[i]  # filename, index, filename_npy, image
@@ -1123,7 +1123,7 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
             if self.cache_ram and im is None:
                 im = self.samples[i][3] = cv2.imread(f)
             elif self.cache_disk:
-                fn = Path(f).with_suffix('.npy')  # filename numpy
+                # fn = Path(f).with_suffix('.npy')  # filename numpy
                 if not fn.exists():  # load npy
                     np.save(fn.as_posix(), cv2.imread(f))
                 im = np.load(fn)
