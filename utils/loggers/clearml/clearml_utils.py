@@ -59,12 +59,10 @@ class ClearmlLogger:
         """
         - Initialize ClearML Task, this object will capture the experiment
         - Upload dataset version to ClearML Data if opt.upload_dataset is True
-        - Set up the training processes if job_type is 'Training'
 
         arguments:
         opt (namespace) -- Commandline arguments for this run
-        run_id (str) -- Run ID of W&B run to be resumed
-        job_type (str) -- To set the job_type for this run
+        hyp (dict) -- Hyperparameters for this run
 
         """
         self.current_epoch = 0
