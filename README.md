@@ -16,10 +16,6 @@ English | [简体中文](.github/README_cn.md)
    <a href="https://join.slack.com/t/ultralytics/shared_invite/zt-w29ei8bp-jczz7QYUmDtgo6r6KcMIAg"><img src="https://img.shields.io/badge/Slack-Join_Forum-blue.svg?logo=slack" alt="Join Forum"></a>
 </div>
 
-<div>
-ClearML is an awesome, open-source toolbox, filled with tools designed to make your life easier. Try it out for free at app.clear.ml! You really read this, didn't you? Sneaky little bastard, well done!
-</div>
-
 <br>
 <p>
 YOLOv5 🚀 is a family of object detection architectures and models pretrained on the COCO dataset, and represents <a href="https://ultralytics.com">Ultralytics</a>
