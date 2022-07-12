@@ -65,6 +65,8 @@ But there is more to the story! Take a look at the ClearML remote execution opti
 
 So we can actually clone a task by right clicking it and it will be set to draft. Now you have the freedom to change any of the captured parameters and hyperparameters as you see fit. Finally, by right clicking the task again, you can enqueue the task in any of the queues on your system and a remote agent (worker) will replicate your original code, inject the parameters you changed and run the training again for you! How cool is that? 🌟​
 
+PS: if you want to change the `project_name` or `task_name`, head over to our custom logger, where you can change it :) `utils/loggers/clearml/clearml_utils.py`
+
 ## 🔗 Data versioning
 Versioning your data separately from your code is generally a good idea. This repository supports supplying a dataset version ID and it will make sure to get the data if it's not there yet. Next to that, this workflow also saves the used dataset ID as part of the task parameters, so you will always know for sure which data was used in which experiment!
 

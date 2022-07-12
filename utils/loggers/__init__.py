@@ -17,6 +17,7 @@ from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
 
 LOGGERS = ('csv', 'tb', 'clearml', 'wandb')  # text-file, TensorBoard, Weights & Biases, ClearML
+# Note: if ever this is changed, ClearML depends on tensorboard for good operation
 RANK = int(os.getenv('RANK', -1))
 
 try:
@@ -135,6 +136,14 @@ class Loggers():
                 if self.clearml:
                     self.clearml.log_debug_samples(files, title='Mosaics')
 
+    def on_train_epoch_start(self):
+        # Reset epoch image limit
+        if self.clearml:
+            self.clearml.current_epoch_logged_images = set()
+            # ClearML automatically detects epochs using hooks for automatic reporting, but for manual reporting
+            # getting the epoch number from the task itself is slow, so we keep track for internal bookkeeping only
+            self.clearml.current_epoch += 1
+
     def on_train_epoch_end(self, epoch):
         # Callback runs on train epoch end
         if self.wandb:
@@ -176,13 +185,6 @@ class Loggers():
                 title, series = k.split('/')
                 self.clearml.task.get_logger().report_scalar(title, series, v, epoch)
 
-        # Reset epoch image limit
-        if self.clearml:
-            self.clearml.current_epoch_logged_images = set()
-            # ClearML automatically detects epochs using hooks for automatic reporting, but for manual reporting
-            # getting the epoch number from the task itself is slow, so we keep track for internal bookkeeping only
-            self.clearml.current_epoch = epoch + 1
-
         if self.wandb:
             if best_fitness == fi:
                 best_results = [epoch] + vals[3:7]
@@ -204,6 +206,7 @@ class Loggers():
                     model_name='Latest Model',
                     auto_delete_file=False
                 )
+                # TODO: remove this
                 self.clearml.task.flush(wait_for_uploads=True)
 
     def on_train_end(self, last, best, plots, epoch, results):
