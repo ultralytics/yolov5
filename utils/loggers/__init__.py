@@ -205,8 +205,6 @@ class Loggers():
                     model_name='Latest Model',
                     auto_delete_file=False
                 )
-                # TODO: remove this
-                self.clearml.task.flush(wait_for_uploads=True)
 
     def on_train_end(self, last, best, plots, epoch, results):
         # Callback runs on training end
