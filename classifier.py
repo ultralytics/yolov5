@@ -3,8 +3,8 @@
 Train a YOLOv5 classifier model on a classification dataset
 
 Usage - train:
-    $ python classifier.py --model yolov5s --data mnist --epochs 5 --img 128
-    $ python -m torch.distributed.run --nproc_per_node 2 --master_port 1 classifier.py --ARGS --device 0,1
+    $ python classifier.py --model yolov5s --data imagenet --epochs 5 --img 224
+    $ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 classifier.py --model yolov5s --data imagenet --epochs 5 --img 224 --device 4,5,6,7
 
 Usage - inference:
     from classifier import *
@@ -129,7 +129,7 @@ def train():
         model_info(model)  # print(model)
 
     # Optimizer
-    lr0 = 0.0001 * 128  # intial lr
+    lr0 = 0.0001 * (128 if opt.optimizer.starswith('Adam') else bs)  # initial lr
     lrf = 0.01  # final lr (fraction of lr0)
     if opt.optimizer == 'Adam':
         optimizer = optim.Adam(model.parameters(), lr=lr0 / 10)
