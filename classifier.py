@@ -130,7 +130,7 @@ def train():
         model_info(model)  # print(model)
 
     # Optimizer
-    lr0 = 0.01 * (1 if opt.optimizer.starswith('Adam') else 0.01 * bs)  # initial lr
+    lr0 = 0.01 * (1 if opt.optimizer.startswith('Adam') else 0.01 * bs)  # initial lr
     lrf = 0.001  # final lr (fraction of lr0)
     if opt.optimizer == 'Adam':
         optimizer = optim.Adam(model.parameters(), lr=lr0 / 10)
