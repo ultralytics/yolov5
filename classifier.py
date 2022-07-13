@@ -44,8 +44,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import Classify, DetectMultiBackend
 from utils.augmentations import denormalize, normalize
 from utils.dataloaders import create_classification_dataloader
-from utils.general import (LOGGER, NUM_THREADS, check_file, check_git_status, check_requirements, check_version,
-                           colorstr, download, increment_path, init_seeds)
+from utils.general import (LOGGER, check_file, check_git_status, check_requirements, check_version, colorstr, download,
+                           increment_path, init_seeds)
 from utils.loggers import GenericLogger
 from utils.torch_utils import de_parallel, model_info, select_device, torch_distributed_zero_first
 
@@ -234,20 +234,20 @@ def train():
         imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
 
 
+@torch.no_grad()
 def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     model.eval()
     pred, targets, loss = [], [], 0
     n = len(dataloader)  # number of batches
-    with torch.no_grad():
-        desc = f'{pbar.desc}validating'
-        bar = tqdm(dataloader, desc, n, False, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
-        for images, labels in bar:
-            images, labels = images.to(device), labels.to(device)
-            y = model(images)
-            pred.append(torch.max(y, 1)[1])
-            targets.append(labels)
-            if criterion:
-                loss += criterion(y, labels)
+    desc = f'{pbar.desc}validating'
+    bar = tqdm(dataloader, desc, n, False, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
+    for images, labels in bar:
+        images, labels = images.to(device), labels.to(device)
+        y = model(images)
+        pred.append(torch.max(y, 1)[1])
+        targets.append(labels)
+        if criterion:
+            loss += criterion(y, labels)
 
     loss /= n
     pred, targets = torch.cat(pred), torch.cat(targets)
@@ -267,6 +267,7 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     return accuracy, loss
 
 
+@torch.no_grad()
 def classify(model, size=128, file='../datasets/mnist/test/3/30.png', plot=False):
     # YOLOv5 classification model inference
     import cv2
