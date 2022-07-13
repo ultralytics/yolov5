@@ -68,9 +68,10 @@ def train():
 
     # Download Dataset
     data_dir = FILE.parents[1] / 'datasets' / data
-    if not data_dir.is_dir():
-        url = f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip'
-        download(url, dir=data_dir.parent)
+    with torch_distributed_zero_first(LOCAL_RANK):
+        if not data_dir.is_dir():
+            url = f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip'
+            download(url, dir=data_dir.parent)
 
     # Dataloaders
     trainloader, trainset = create_classification_dataloader(path=data_dir / 'train',
