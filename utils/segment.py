@@ -1,23 +1,21 @@
-import numpy as np
 import time
+
 import cv2
-import torch.nn.functional as F
+import numpy as np
 import torch
+import torch.nn.functional as F
 import torchvision
+
 from .general import xyxy2xywh, xywh2xyxy
 from .seg_metrics import box_iou
+
 
 def segment2box(segment, width=640, height=640):
     # Convert 1 segment label to 1 box label, applying inside-image constraint, i.e. (xy1, xy2, ...) to (xyxy)
     x, y = segment.T  # segment xy
     inside = (x >= 0) & (y >= 0) & (x <= width) & (y <= height)
-    x, y, = (
-        x[inside],
-        y[inside],
-    )
-    return (
-        np.array([x.min(), y.min(), x.max(), y.max()]) if any(x) else np.zeros((1, 4))
-    )  # xyxy
+    x, y, = (x[inside], y[inside],)
+    return (np.array([x.min(), y.min(), x.max(), y.max()]) if any(x) else np.zeros((1, 4)))  # xyxy
 
 
 def segments2boxes(segments):
@@ -34,24 +32,12 @@ def resample_segments(segments, n=1000):
     for i, s in enumerate(segments):
         x = np.linspace(0, len(s) - 1, n)
         xp = np.arange(len(s))
-        segments[i] = (
-            np.concatenate([np.interp(x, xp, s[:, i]) for i in range(2)])
-            .reshape(2, -1)
-            .T
-        )  # segment xy
+        segments[i] = (np.concatenate([np.interp(x, xp, s[:, i]) for i in range(2)]).reshape(2, -1).T)  # segment xy
     return segments
 
-def non_max_suppression_masks(
-    prediction,
-    conf_thres=0.25,
-    iou_thres=0.45,
-    classes=None,
-    agnostic=False,
-    multi_label=False,
-    labels=(),
-    max_det=300,
-    mask_dim=32,
-):
+
+def non_max_suppression_masks(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False,
+        multi_label=False, labels=(), max_det=300, mask_dim=32, ):
     """Runs Non-Maximum Suppression (NMS) on inference results
 
     Returns:
@@ -62,12 +48,8 @@ def non_max_suppression_masks(
     xc = prediction[..., 4] > conf_thres  # candidates
 
     # Checks
-    assert (
-        0 <= conf_thres <= 1
-    ), f"Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0"
-    assert (
-        0 <= iou_thres <= 1
-    ), f"Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0"
+    assert (0 <= conf_thres <= 1), f"Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0"
+    assert (0 <= iou_thres <= 1), f"Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0"
 
     # Settings
     min_wh, max_wh = 2, 4096  # (pixels) minimum and maximum box width and height
@@ -79,9 +61,7 @@ def non_max_suppression_masks(
     nm = 5 + mask_dim
 
     t = time.time()
-    output = [
-        torch.zeros((0, 6 + mask_dim), device=prediction.device)
-    ] * prediction.shape[0]
+    output = [torch.zeros((0, 6 + mask_dim), device=prediction.device)] * prediction.shape[0]
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
         # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
@@ -110,14 +90,10 @@ def non_max_suppression_masks(
         # Detections matrix nx6 (xyxy, conf, cls)
         if multi_label:
             i, j = (x[:, nm:] > conf_thres).nonzero(as_tuple=False).T
-            x = torch.cat(
-                (box[i], x[i, j + nm, None], j[:, None].float(), pred_masks[i]), 1
-            )
+            x = torch.cat((box[i], x[i, j + nm, None], j[:, None].float(), pred_masks[i]), 1)
         else:  # best class only
             conf, j = x[:, nm:].max(1, keepdim=True)
-            x = torch.cat((box, conf, j.float(), pred_masks), 1)[
-                conf.view(-1) > conf_thres
-            ]
+            x = torch.cat((box, conf, j.float(), pred_masks), 1)[conf.view(-1) > conf_thres]
 
         # Filter by class
         if classes is not None:
@@ -144,9 +120,7 @@ def non_max_suppression_masks(
             # update boxes as boxes(i,4) = weights(i,n) * boxes(n,4)
             iou = box_iou(boxes[i], boxes) > iou_thres  # iou matrix
             weights = iou * scores[None]  # box weights
-            x[i, :4] = torch.mm(weights, x[:, :4]).float() / weights.sum(
-                1, keepdim=True
-            )  # merged boxes
+            x[i, :4] = torch.mm(weights, x[:, :4]).float() / weights.sum(1, keepdim=True)  # merged boxes
             if redundant:
                 i = i[iou.sum(1) > 1]  # require redundancy
 
@@ -156,6 +130,7 @@ def non_max_suppression_masks(
             break  # time limit exceeded
 
     return output
+
 
 def crop(masks, boxes):
     """
@@ -168,21 +143,10 @@ def crop(masks, boxes):
     """
     h, w, n = masks.size()
     x1, x2 = boxes[:, 0], boxes[:, 2]
-    y1, y2 = (
-        boxes[:, 1],
-        boxes[:, 3],
-    )
+    y1, y2 = (boxes[:, 1], boxes[:, 3],)
 
-    rows = (
-        torch.arange(w, device=masks.device, dtype=x1.dtype)
-        .view(1, -1, 1)
-        .expand(h, w, n)
-    )
-    cols = (
-        torch.arange(h, device=masks.device, dtype=x1.dtype)
-        .view(-1, 1, 1)
-        .expand(h, w, n)
-    )
+    rows = (torch.arange(w, device=masks.device, dtype=x1.dtype).view(1, -1, 1).expand(h, w, n))
+    cols = (torch.arange(h, device=masks.device, dtype=x1.dtype).view(-1, 1, 1).expand(h, w, n))
 
     # (1, w, 1), (1, 1, n) -> (1, w, n)
     masks_left = rows >= x1.view(1, 1, -1)
@@ -196,6 +160,7 @@ def crop(masks, boxes):
 
     return masks * crop_mask.float()
 
+
 def process_mask_upsample(proto_out, out_masks, bboxes, shape):
     """
     Crop after unsample.
@@ -207,8 +172,7 @@ def process_mask_upsample(proto_out, out_masks, bboxes, shape):
     return: h, w, n
     """
     # mask_h, mask_w, n
-    masks = proto_out.float().permute(
-        1, 2, 0).contiguous() @ out_masks.float().tanh().T
+    masks = proto_out.float().permute(1, 2, 0).contiguous() @ out_masks.float().tanh().T
     # print(masks.shape)
     masks = masks.sigmoid()
     # print('after sigmoid:', masks)
@@ -217,7 +181,8 @@ def process_mask_upsample(proto_out, out_masks, bboxes, shape):
     masks = F.interpolate(masks.unsqueeze(0), shape, mode='bilinear', align_corners=False).squeeze(0)
     # [mask_h, mask_w, n]
     masks = crop(masks.permute(1, 2, 0).contiguous(), bboxes)
-    return masks.gt_(0.5) # .gt_(0.2)
+    return masks.gt_(0.5)  # .gt_(0.2)
+
 
 def process_mask(proto_out, out_masks, bboxes, shape, upsample=False):
     """
@@ -233,8 +198,7 @@ def process_mask(proto_out, out_masks, bboxes, shape, upsample=False):
     mh, mw = proto_out.shape[1:]
     ih, iw = shape
     # mask_h, mask_w, n
-    masks = proto_out.float().permute(
-        1, 2, 0).contiguous() @ out_masks.float().tanh().T
+    masks = proto_out.float().permute(1, 2, 0).contiguous() @ out_masks.float().tanh().T
     # print(masks)
     masks = masks.sigmoid()
     # print('after sigmoid:', masks)
@@ -249,6 +213,7 @@ def process_mask(proto_out, out_masks, bboxes, shape, upsample=False):
         masks = F.interpolate(masks.unsqueeze(0), shape, mode='bilinear', align_corners=False).squeeze(0)
     return masks.gt_(0.5).permute(1, 2, 0).contiguous()
 
+
 def scale_masks(img1_shape, masks, img0_shape, ratio_pad=None):
     """
     img1_shape: model input shape, [h, w]
@@ -258,16 +223,14 @@ def scale_masks(img1_shape, masks, img0_shape, ratio_pad=None):
     """
     # Rescale coords (xyxy) from img1_shape to img0_shape
     if ratio_pad is None:  # calculate from img0_shape
-        gain = min(img1_shape[0] / img0_shape[0],
-                   img1_shape[1] / img0_shape[1])  # gain  = old / new
-        pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (
-            img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
+        gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
+        pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
     else:
         gain = ratio_pad[0][0]
         pad = ratio_pad[1]
     tl_pad = int(pad[1]), int(pad[0])  # y, x
     br_pad = int(img1_shape[0] - pad[1]), int(img1_shape[1] - pad[0])
-    
+
     if len(masks.shape) < 2:
         raise ValueError(f'"len of masks shape" should be 2 or 3, but got {len(masks.shape)}')
     # masks_h, masks_w, n
@@ -286,6 +249,7 @@ def scale_masks(img1_shape, masks, img0_shape, ratio_pad=None):
 
     return masks
 
+
 def mask_iou(mask1, mask2):
     """
     mask1: [N, n] m1 means number of predicted objects 
@@ -302,6 +266,7 @@ def mask_iou(mask1, mask2):
     union = (area1.t() + area2) - intersection
 
     return intersection / (union + 1e-7)
+
 
 def masks_iou(mask1, mask2):
     """

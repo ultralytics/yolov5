@@ -5,12 +5,12 @@ Model validation metrics
 
 import math
 import warnings
-from easydict import EasyDict as edict
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from easydict import EasyDict as edict
 
 
 def fitness(x, masks=False):
@@ -22,9 +22,7 @@ def fitness(x, masks=False):
     return (x[:, :4] * w).sum(1)
 
 
-def ap_per_class(
-    tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names=(), prefix=""
-):
+def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=".", names=(), prefix=""):
     """Compute the average precision, given the recall and precision curves.
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
     # Arguments
@@ -64,9 +62,7 @@ def ap_per_class(
 
             # Recall
             recall = tpc / (n_l + 1e-16)  # recall curve
-            r[ci] = np.interp(
-                -px, -conf[i], recall[:, 0], left=0
-            )  # negative x, xp because xp decreases
+            r[ci] = np.interp(-px, -conf[i], recall[:, 0], left=0)  # negative x, xp because xp decreases
 
             # Precision
             precision = tpc / (tpc + fpc)  # precision curve
@@ -80,81 +76,35 @@ def ap_per_class(
 
     # Compute F1 (harmonic mean of precision and recall)
     f1 = 2 * p * r / (p + r + 1e-16)
-    names = [
-        v for k, v in names.items() if k in unique_classes
-    ]  # list: only classes that have data
+    names = [v for k, v in names.items() if k in unique_classes]  # list: only classes that have data
     names = {i: v for i, v in enumerate(names)}  # to dict
     if plot and save_dir is not None:
         plot_pr_curve(px, py, ap, Path(save_dir) / f"{prefix}PR_curve.png", names)
-        plot_mc_curve(
-            px, f1, Path(save_dir) / f"{prefix}F1_curve.png", names, ylabel="F1"
-        )
-        plot_mc_curve(
-            px, p, Path(save_dir) / f"{prefix}P_curve.png", names, ylabel="Precision"
-        )
-        plot_mc_curve(
-            px, r, Path(save_dir) / f"{prefix}R_curve.png", names, ylabel="Recall"
-        )
+        plot_mc_curve(px, f1, Path(save_dir) / f"{prefix}F1_curve.png", names, ylabel="F1")
+        plot_mc_curve(px, p, Path(save_dir) / f"{prefix}P_curve.png", names, ylabel="Precision")
+        plot_mc_curve(px, r, Path(save_dir) / f"{prefix}R_curve.png", names, ylabel="Recall")
 
     i = f1.mean(0).argmax()  # max F1 index
     return p[:, i], r[:, i], ap, f1[:, i], unique_classes.astype("int32")
 
 
-def ap_per_class_box_and_mask(
-    tp_m,
-    tp_b,
-    conf,
-    pred_cls,
-    target_cls,
-    plot=False,
-    save_dir=".",
-    names=(),
-):
+def ap_per_class_box_and_mask(tp_m, tp_b, conf, pred_cls, target_cls, plot=False, save_dir=".", names=(), ):
     """
     Args:
         tp_b: tp of boxes.
         tp_m: tp of masks.
         other arguments see `func: ap_per_class`.
     """
-    results_boxes = ap_per_class(
-        tp_b,
-        conf,
-        pred_cls,
-        target_cls,
-        plot=plot,
-        save_dir=save_dir,
-        names=names,
-        prefix="Box",
-    )
-    results_masks = ap_per_class(
-        tp_m,
-        conf,
-        pred_cls,
-        target_cls,
-        plot=plot,
-        save_dir=save_dir,
-        names=names,
-        prefix="Mask",
-    )
+    results_boxes = ap_per_class(tp_b, conf, pred_cls, target_cls, plot=plot, save_dir=save_dir, names=names,
+        prefix="Box", )
+    results_masks = ap_per_class(tp_m, conf, pred_cls, target_cls, plot=plot, save_dir=save_dir, names=names,
+        prefix="Mask", )
 
-    results = edict(
-        {
-            "boxes": {
-                "p": results_boxes[0],
-                "r": results_boxes[1],
-                "ap": results_boxes[2],
-                "f1": results_boxes[3],
-                "ap_class": results_boxes[4],
-            },
-            "masks": {
-                "p": results_masks[0],
-                "r": results_masks[1],
-                "ap": results_masks[2],
-                "f1": results_masks[3],
-                "ap_class": results_masks[4],
-            },
-        }
-    )
+    results = edict({
+        "boxes": {"p": results_boxes[0], "r": results_boxes[1], "ap": results_boxes[2], "f1": results_boxes[3],
+            "ap_class": results_boxes[4], },
+        "masks": {"p": results_masks[0], "r": results_masks[1], "ap": results_masks[2], "f1": results_masks[3],
+            "ap_class": results_masks[4], }, })
     return results
 
 
@@ -211,11 +161,7 @@ class ConfusionMatrix:
 
         x = torch.where(iou > self.iou_thres)
         if x[0].shape[0]:
-            matches = (
-                torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1)
-                .cpu()
-                .numpy()
-            )
+            matches = (torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy())
             if x[0].shape[0] > 1:
                 matches = matches[matches[:, 2].argsort()[::-1]]
                 matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
@@ -245,30 +191,17 @@ class ConfusionMatrix:
         try:
             import seaborn as sn
 
-            array = self.matrix / (
-                (self.matrix.sum(0).reshape(1, -1) + 1e-6) if normalize else 1
-            )  # normalize columns
+            array = self.matrix / ((self.matrix.sum(0).reshape(1, -1) + 1e-6) if normalize else 1)  # normalize columns
             array[array < 0.005] = np.nan  # don't annotate (would appear as 0.00)
 
             fig = plt.figure(figsize=(12, 9), tight_layout=True)
             sn.set(font_scale=1.0 if self.nc < 50 else 0.8)  # for label size
-            labels = (0 < len(names) < 99) and len(
-                names
-            ) == self.nc  # apply names to ticklabels
+            labels = (0 < len(names) < 99) and len(names) == self.nc  # apply names to ticklabels
             with warnings.catch_warnings():
-                warnings.simplefilter(
-                    "ignore"
-                )  # suppress empty matrix RuntimeWarning: All-NaN slice encountered
-                sn.heatmap(
-                    array,
-                    annot=self.nc < 30,
-                    annot_kws={"size": 8},
-                    cmap="Blues",
-                    fmt=".2f",
-                    square=True,
+                warnings.simplefilter("ignore")  # suppress empty matrix RuntimeWarning: All-NaN slice encountered
+                sn.heatmap(array, annot=self.nc < 30, annot_kws={"size": 8}, cmap="Blues", fmt=".2f", square=True,
                     xticklabels=names + ["background FP"] if labels else "auto",
-                    yticklabels=names + ["background FN"] if labels else "auto",
-                ).set_facecolor((1, 1, 1))
+                    yticklabels=names + ["background FN"] if labels else "auto", ).set_facecolor((1, 1, 1))
             fig.axes[0].set_xlabel("True")
             fig.axes[0].set_ylabel("Predicted")
             fig.savefig(Path(save_dir) / "confusion_matrix.png", dpi=250)
@@ -297,8 +230,7 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
 
     # Intersection area
     inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * (
-        torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)
-    ).clamp(0)
+            torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)).clamp(0)
 
     # Union Area
     w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + eps
@@ -307,24 +239,16 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
 
     iou = inter / union
     if GIoU or DIoU or CIoU:
-        cw = torch.max(b1_x2, b2_x2) - torch.min(
-            b1_x1, b2_x1
-        )  # convex (smallest enclosing box) width
+        cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)  # convex (smallest enclosing box) width
         ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)  # convex height
         if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
             c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
-            rho2 = (
-                (b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2
-                + (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2
-            ) / 4  # center distance squared
+            rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 + (
+                        b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center distance squared
             if DIoU:
                 return iou - rho2 / c2  # DIoU
-            elif (
-                CIoU
-            ):  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
-                v = (4 / math.pi ** 2) * torch.pow(
-                    torch.atan(w2 / h2) - torch.atan(w1 / h1), 2
-                )
+            elif (CIoU):  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
+                v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
                 with torch.no_grad():
                     alpha = v / (v - iou + (1 + eps))
                 return iou - (rho2 / c2 + v * alpha)  # CIoU
@@ -356,17 +280,8 @@ def box_iou(box1, box2):
     area2 = box_area(box2.T)
 
     # inter(N,M) = (rb(N,M,2) - lt(N,M,2)).clamp(0).prod(2)
-    inter = (
-        (
-            torch.min(box1[:, None, 2:], box2[:, 2:])
-            - torch.max(box1[:, None, :2], box2[:, :2])
-        )
-        .clamp(0)
-        .prod(2)
-    )
-    return inter / (
-        area1[:, None] + area2 - inter
-    )  # iou = inter / (area1 + area2 - inter)
+    inter = ((torch.min(box1[:, None, 2:], box2[:, 2:]) - torch.max(box1[:, None, :2], box2[:, :2])).clamp(0).prod(2))
+    return inter / (area1[:, None] + area2 - inter)  # iou = inter / (area1 + area2 - inter)
 
 
 def bbox_ioa(box1, box2, eps=1e-7):
@@ -384,8 +299,7 @@ def bbox_ioa(box1, box2, eps=1e-7):
 
     # Intersection area
     inter_area = (np.minimum(b1_x2, b2_x2) - np.maximum(b1_x1, b2_x1)).clip(0) * (
-        np.minimum(b1_y2, b2_y2) - np.maximum(b1_y1, b2_y1)
-    ).clip(0)
+            np.minimum(b1_y2, b2_y2) - np.maximum(b1_y1, b2_y1)).clip(0)
 
     # box2 area
     box2_area = (b2_x2 - b2_x1) * (b2_y2 - b2_y1) + eps
@@ -399,9 +313,7 @@ def wh_iou(wh1, wh2):
     wh1 = wh1[:, None]  # [N,1,2]
     wh2 = wh2[None]  # [1,M,2]
     inter = torch.min(wh1, wh2).prod(2)  # [N,M]
-    return inter / (
-        wh1.prod(2) + wh2.prod(2) - inter
-    )  # iou = inter / (area1 + area2 - inter)
+    return inter / (wh1.prod(2) + wh2.prod(2) - inter)  # iou = inter / (area1 + area2 - inter)
 
 
 # Plots ----------------------------------------------------------------------------------------------------------------
@@ -414,19 +326,11 @@ def plot_pr_curve(px, py, ap, save_dir="pr_curve.png", names=()):
 
     if 0 < len(names) < 21:  # display per-class legend if < 21 classes
         for i, y in enumerate(py.T):
-            ax.plot(
-                px, y, linewidth=1, label=f"{names[i]} {ap[i, 0]:.3f}"
-            )  # plot(recall, precision)
+            ax.plot(px, y, linewidth=1, label=f"{names[i]} {ap[i, 0]:.3f}")  # plot(recall, precision)
     else:
         ax.plot(px, py, linewidth=1, color="grey")  # plot(recall, precision)
 
-    ax.plot(
-        px,
-        py.mean(1),
-        linewidth=3,
-        color="blue",
-        label="all classes %.3f mAP@0.5" % ap[:, 0].mean(),
-    )
+    ax.plot(px, py.mean(1), linewidth=3, color="blue", label="all classes %.3f mAP@0.5" % ap[:, 0].mean(), )
     ax.set_xlabel("Recall")
     ax.set_ylabel("Precision")
     ax.set_xlim(0, 1)
@@ -436,9 +340,7 @@ def plot_pr_curve(px, py, ap, save_dir="pr_curve.png", names=()):
     plt.close()
 
 
-def plot_mc_curve(
-    px, py, save_dir="mc_curve.png", names=(), xlabel="Confidence", ylabel="Metric"
-):
+def plot_mc_curve(px, py, save_dir="mc_curve.png", names=(), xlabel="Confidence", ylabel="Metric"):
     # Metric-confidence curve
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
 
@@ -449,13 +351,7 @@ def plot_mc_curve(
         ax.plot(px, py.T, linewidth=1, color="grey")  # plot(confidence, metric)
 
     y = py.mean(0)
-    ax.plot(
-        px,
-        y,
-        linewidth=3,
-        color="blue",
-        label=f"all classes {y.max():.2f} at {px[y.argmax()]:.3f}",
-    )
+    ax.plot(px, y, linewidth=3, color="blue", label=f"all classes {y.max():.2f} at {px[y.argmax()]:.3f}", )
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_xlim(0, 1)
