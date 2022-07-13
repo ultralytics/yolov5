@@ -42,7 +42,7 @@ from utils.segment import (
     process_mask_upsample,
     scale_masks,
 )
-from utils.metrics import ap_per_class, ap_per_class_box_and_mask, ConfusionMatrix
+from utils.seg_metrics import ap_per_class, ap_per_class_box_and_mask, ConfusionMatrix
 from utils.plots import output_to_target, plot_images_boxes_and_masks
 from utils.torch_utils import select_device, time_sync
 from PIL import Image
