@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import torch
 import torchvision
 from .general import xyxy2xywh, xywh2xyxy
-from .metrics import box_iou
+from .seg_metrics import box_iou
 
 def segment2box(segment, width=640, height=640):
     # Convert 1 segment label to 1 box label, applying inside-image constraint, i.e. (xy1, xy2, ...) to (xyxy)
