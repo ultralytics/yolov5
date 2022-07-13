@@ -1,3 +1,5 @@
+# TODO: Move to utils, merge with augmentations.py
+
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
 Image augmentation functions
@@ -12,7 +14,7 @@ import numpy as np
 
 from utils.general import colorstr, check_version
 from utils.segment import segment2box, resample_segments
-from utils.metrics import bbox_ioa
+from utils.seg_metrics import bbox_ioa
 
 
 class Albumentations:

@@ -1,3 +1,5 @@
+## TODO: Move to utils, merge with dataloaders.py
+
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
 Dataloaders
@@ -55,6 +57,7 @@ class _RepeatSampler:
     def __iter__(self):
         while True:
             yield from iter(self.sampler)
+
 class YoloBatchSampler(torchBatchSampler):
     """
     This batch sampler will generate mini-batches of (mosaic, index) tuples from another sampler.
@@ -69,71 +72,6 @@ class YoloBatchSampler(torchBatchSampler):
     def __iter__(self):
         for batch in super().__iter__():
             yield [(self.augment, idx) for idx in batch]
-
-def create_dataloader_ori(
-    path,
-    imgsz,
-    batch_size,
-    stride,
-    single_cls=False,
-    hyp=None,
-    augment=False,
-    cache=False,
-    pad=0.0,
-    rect=False,
-    rank=-1,
-    workers=8,
-    image_weights=False,
-    quad=False,
-    prefix="",
-    shuffle=False,
-    neg_dir="",
-    bg_dir="",
-    area_thr=0.2,
-    mask_head=False,
-    mask_downsample_ratio=1,
-):
-    if rect and shuffle:
-        print("WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False")
-        shuffle = False
-    # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
-    data_load = LoadImagesAndLabelsAndMasks if mask_head else LoadImagesAndLabels
-    with torch_distributed_zero_first(rank):
-        dataset = data_load(
-            path,
-            imgsz,
-            batch_size,
-            augment=augment,  # augment images
-            hyp=hyp,  # augmentation hyperparameters
-            rect=rect,  # rectangular training
-            cache_images=cache,
-            single_cls=single_cls,
-            stride=int(stride),
-            pad=pad,
-            image_weights=image_weights,
-            prefix=prefix,
-            neg_dir=neg_dir,
-            bg_dir=bg_dir,
-            area_thr=area_thr,
-        )
-        if mask_head:
-            dataset.downsample_ratio = mask_downsample_ratio
-
-    batch_size = min(batch_size, len(dataset))
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, workers])  # number of workers
-    sampler = distributed.DistributedSampler(dataset, shuffle=shuffle) if rank != -1 else None
-    loader = DataLoader if image_weights else InfiniteDataLoader
-    # Use torch.utils.data.DataLoader() if dataset.properties will update during training else InfiniteDataLoader()
-    dataloader = loader(
-        dataset,
-        batch_size=batch_size,
-        num_workers=nw,
-        shuffle=shuffle and sampler is None,
-        sampler=sampler,
-        pin_memory=True,
-        collate_fn=data_load.collate_fn4 if quad else data_load.collate_fn,
-    )
-    return dataloader, dataset
 
 
 def create_dataloader(
@@ -1196,6 +1134,7 @@ def dataset_stats(path="coco128.yaml", autodownload=False, verbose=False, profil
     return stats
 
 
+# REFACTOR IN NEW FILE
 import os
 import glob
 import shutil
@@ -1554,7 +1493,7 @@ class InfiniteDataLoader(torchDataLoader):
             yield next(self.iterator)
 
 
-# NEW FILE 
+# REFACTOR IN A NEW FILE 
 from PIL import Image, ImageDraw
 import numpy as np
 from PIL import ImageFile

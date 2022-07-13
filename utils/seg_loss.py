@@ -1,6 +1,8 @@
+# TODO: merge with loss.py.. Optimize speed
+
 import torch
 from utils.torch_utils import de_parallel, is_parallel
-from utils.general import xywh2xyxy
+from utils.general import xywh2xyxy, Profile
 from utils.segment import mask_iou, masks_iou, crop
 import torch.nn.functional as F
 import torch.nn as nn
@@ -134,7 +136,6 @@ class ComputeLoss:
         tcls, tbox, indices, anchors, tidxs, xywh = self.build_targets_for_masks(
             p, targets
         )  # targets
-
         # Losses
         for i, pi in enumerate(p):  # layer index, layer predictions
             b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
