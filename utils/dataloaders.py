@@ -1109,10 +1109,10 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         album_transform: Albumentations transforms, used if installed
     """
 
-    def __init__(self, root, torch_transforms, album_transforms=None, cache=False):
+    def __init__(self, root, augment, imgsz, cache=False):
         super().__init__(root=root)
-        self.torch_transforms = torch_transforms
-        self.album_transforms = album_transforms
+        self.torch_transforms = None if augment else classify_transforms()
+        self.album_transforms = classify_albumentations(augment, imgsz) if augment else None
         self.cache_ram = cache is True or cache == 'ram'
         self.cache_disk = cache == 'disk'
         self.samples = [list(x) + [Path(x[0]).with_suffix('.npy'), None] for x in self.samples]  # file, index, npy, im
@@ -1146,10 +1146,7 @@ def create_classification_dataloader(
         shuffle=True):
     # Returns Dataloader object to be used with YOLOv5 Classifier
     with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
-        dataset = ClassificationDataset(root=path,
-                                        torch_transforms=classify_transforms(),
-                                        album_transforms=classify_albumentations(augment, imgsz),
-                                        cache=cache)
+        dataset = ClassificationDataset(root=path, imgsz=imgsz, augment=augment, cache=cache)
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()
     nw = min([os.cpu_count() // max(nd, 1), batch_size if batch_size > 1 else 0, workers])
