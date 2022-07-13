@@ -64,7 +64,7 @@ def save_one_json(predn, jdict, path, class_map, pred_masks=None):
 class Yolov5Evaluator:
     def __init__(self, data, conf_thres=0.001, iou_thres=0.6, device="", single_cls=False, augment=False, verbose=False,
             project="runs/val", name="exp", exist_ok=False, half=True, save_dir=Path(""), nosave=False, plots=True,
-            mask=False, mask_downsample_ratio=1, ) -> None:
+            max_plot_dets=10, mask=False, mask_downsample_ratio=1, ) -> None:
         self.data = check_dataset(data)  # check
         self.conf_thres = conf_thres  # confidence threshold
         self.iou_thres = iou_thres  # NMS IoU threshold
@@ -79,6 +79,7 @@ class Yolov5Evaluator:
         self.save_dir = save_dir
         self.nosave = nosave
         self.plots = plots
+        self.max_plot_dets = max_plot_dets
         self.mask = mask
         self.mask_downsample_ratio = mask_downsample_ratio
 
@@ -146,7 +147,7 @@ class Yolov5Evaluator:
 
                 # for visualization
                 if self.plots and batch_i < 3 and pred_maski is not None:
-                    self.pred_masks.append(pred_maski.cpu())
+                    self.pred_masks.append(pred_maski[:self.max_plot_dets].cpu())
 
                 # NOTE: eval in training image-size space
                 self.compute_stat(pred, pred_maski, labels, gt_masksi)
@@ -200,7 +201,7 @@ class Yolov5Evaluator:
 
                 # for visualization
                 if self.plots and batch_i < 3 and pred_maski is not None:
-                    self.pred_masks.append(pred_maski.cpu())
+                    self.pred_masks.append(pred_maski[:self.max_plot_dets].cpu())
 
                 # NOTE: eval in training image-size space
                 self.compute_stat(pred, pred_maski, labels, gt_masksi)
@@ -468,11 +469,12 @@ class Yolov5Evaluator:
         else:
             pred_masks = None
         Thread(target=plot_images_boxes_and_masks,
-            args=(img, output_to_target(out), pred_masks, paths, f, self.names, max(img.shape[2:]),),
+            args=(img, output_to_target(out, filter_dets=self.max_plot_dets), pred_masks, paths, f, self.names, max(img.shape[2:]),),
             daemon=True, ).start()
         import wandb
         if wandb.run:
-            res = plot_images_boxes_and_masks(img, output_to_target(out), pred_masks, paths, f, self.names,
+            res = plot_images_boxes_and_masks(img, output_to_target(out, filter_dets=self.max_plot_dets), 
+                                              pred_masks, paths, f, self.names,
                                               max(img.shape[2:]))
             res = Image.fromarray(res)
             wandb.log({f"pred_{i}": wandb.Image(res)})
