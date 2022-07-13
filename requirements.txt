@@ -26,6 +26,8 @@ seaborn>=0.11.0
 # coremltools>=4.1  # CoreML export
 # onnx>=1.9.0  # ONNX export
 # onnx-simplifier>=0.3.6  # ONNX simplifier
+# nvidia-pyindex # TensorRT export
+# nvidia-tensorrt # TensorRT export
 # scikit-learn==0.19.2  # CoreML quantization
 # tensorflow>=2.4.1  # TFLite export
 # tensorflowjs>=3.9.0  # TF.js export
@@ -34,7 +36,7 @@ seaborn>=0.11.0
 # Extras --------------------------------------
 ipython  # interactive notebook
 psutil  # system utilization
-thop  # FLOPs computation
+thop>=0.1.0  # FLOPs computation
 # albumentations>=1.0.3
 # pycocotools>=2.0  # COCO mAP
 # roboflow

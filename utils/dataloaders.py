@@ -176,15 +176,17 @@ class _RepeatSampler:
 class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
     def __init__(self, path, img_size=640, stride=32, auto=True):
-        p = str(Path(path).resolve())  # os-agnostic absolute path
-        if '*' in p:
-            files = sorted(glob.glob(p, recursive=True))  # glob
-        elif os.path.isdir(p):
-            files = sorted(glob.glob(os.path.join(p, '*.*')))  # dir
-        elif os.path.isfile(p):
-            files = [p]  # files
-        else:
-            raise Exception(f'ERROR: {p} does not exist')
+        files = []
+        for p in sorted(path) if isinstance(path, (list, tuple)) else [path]:
+            p = str(Path(p).resolve())
+            if '*' in p:
+                files.extend(sorted(glob.glob(p, recursive=True)))  # glob
+            elif os.path.isdir(p):
+                files.extend(sorted(glob.glob(os.path.join(p, '*.*'))))  # dir
+            elif os.path.isfile(p):
+                files.append(p)  # files
+            else:
+                raise FileNotFoundError(f'{p} does not exist')
 
         images = [x for x in files if x.split('.')[-1].lower() in IMG_FORMATS]
         videos = [x for x in files if x.split('.')[-1].lower() in VID_FORMATS]
@@ -437,7 +439,7 @@ class LoadImagesAndLabels(Dataset):
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
                         # f += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
                 else:
-                    raise Exception(f'{prefix}{p} does not exist')
+                    raise FileNotFoundError(f'{prefix}{p} does not exist')
             self.im_files = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in IMG_FORMATS])  # pathlib
             assert self.im_files, f'{prefix}No images found'
