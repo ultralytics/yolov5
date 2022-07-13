@@ -45,7 +45,7 @@ from models.common import Classify, DetectMultiBackend
 from utils.augmentations import denormalize, normalize
 from utils.dataloaders import create_classification_dataloader
 from utils.general import (LOGGER, check_file, check_git_status, check_requirements, check_version, colorstr, download,
-                           increment_path, init_seeds)
+                           increment_path, init_seeds, print_args)
 from utils.loggers import GenericLogger
 from utils.torch_utils import de_parallel, model_info, select_device, torch_distributed_zero_first
 
@@ -347,6 +347,7 @@ if __name__ == '__main__':
 
     # Checks
     if RANK in {-1, 0}:
+        print_args(vars(opt))
         check_git_status()
         check_requirements()
 
