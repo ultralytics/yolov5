@@ -82,7 +82,7 @@ def train():
                                                              workers=nw)
 
     if RANK in {-1, 0}:
-        test_dir = data_dir / ('test' if (data_dir / 'test').exists() else 'val')  # data/test or data/val
+        test_dir = data_dir / 'test' if (data_dir / 'test').exists() else data_dir / 'val'  # data/test or data/val
         testloader, testset = create_classification_dataloader(path=test_dir,
                                                                imgsz=imgsz,
                                                                batch_size=bs // WORLD_SIZE * 2,
