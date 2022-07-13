@@ -1112,7 +1112,7 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
     def __init__(self, root, augment, imgsz, cache=False):
         super().__init__(root=root)
         self.torch_transforms = None if augment else classify_transforms()
-        self.album_transforms = classify_albumentations(augment, imgsz) if check_requirements('albumentations', ) and \
+        self.album_transforms = classify_albumentations(augment, imgsz) if check_requirements(('albumentations',)) and \
                                                                            augment else None
         self.cache_ram = cache is True or cache == 'ram'
         self.cache_disk = cache == 'disk'
