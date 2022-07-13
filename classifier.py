@@ -102,35 +102,36 @@ def train():
     imshow(denormalize(images[:64]), labels[:64], names=names, f=save_dir / 'train_images.jpg')
 
     # Model
-    if opt.model.startswith('yolov5'):
-        # YOLOv5 Classifier
-        try:
-            model = hub.load('ultralytics/yolov5', opt.model, pretrained=pretrained, autoshape=False)
-        except Exception:
-            model = hub.load('ultralytics/yolov5', opt.model, pretrained=pretrained, autoshape=False, force_reload=True)
-        if isinstance(model, DetectMultiBackend):
-            model = model.model  # unwrap DetectMultiBackend
-        model.model = model.model[:10] if opt.model.endswith('6') else model.model[:8]  # backbone
-        m = model.model[-1]  # last layer
-        ch = m.conv.in_channels if hasattr(m, 'conv') else sum(x.in_channels for x in m.m)  # ch into module
-        c = Classify(ch, nc)  # Classify()
-        c.i, c.f, c.type = m.i, m.f, 'models.common.Classify'  # index, from, type
-        model.model[-1] = c  # replace
-        for p in model.parameters():
-            p.requires_grad = True  # for training
-    elif opt.model in hub.list('rwightman/gen-efficientnet-pytorch'):  # i.e. efficientnet_b0
-        model = hub.load('rwightman/gen-efficientnet-pytorch', opt.model, pretrained=pretrained)
-        model.classifier = nn.Linear(model.classifier.in_features, nc)
-    else:  # try torchvision
-        model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
-        model.fc = nn.Linear(model.fc.weight.shape[1], nc)
+    repo1, repo2 = 'ultralytics/yolov5', 'rwightman/gen-efficientnet-pytorch'
+    with torch_distributed_zero_first(LOCAL_RANK):
+        if opt.model.startswith('yolov5'):  # YOLOv5 Classifier
+            try:
+                model = hub.load(repo1, opt.model, pretrained=pretrained, autoshape=False)
+            except Exception:
+                model = hub.load(repo1, opt.model, pretrained=pretrained, autoshape=False, force_reload=True)
+            if isinstance(model, DetectMultiBackend):
+                model = model.model  # unwrap DetectMultiBackend
+            model.model = model.model[:10] if opt.model.endswith('6') else model.model[:8]  # backbone
+            m = model.model[-1]  # last layer
+            ch = m.conv.in_channels if hasattr(m, 'conv') else sum(x.in_channels for x in m.m)  # ch into module
+            c = Classify(ch, nc)  # Classify()
+            c.i, c.f, c.type = m.i, m.f, 'models.common.Classify'  # index, from, type
+            model.model[-1] = c  # replace
+            for p in model.parameters():
+                p.requires_grad = True  # for training
+        elif opt.model in hub.list(repo2):  # i.e. efficientnet_b0
+            model = hub.load(repo2, opt.model, pretrained=pretrained)
+            model.classifier = nn.Linear(model.classifier.in_features, nc)
+        else:  # try torchvision
+            model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
+            model.fc = nn.Linear(model.fc.weight.shape[1], nc)
     model = model.to(device)
     if RANK in {-1, 0}:
         model_info(model)  # print(model)
 
     # Optimizer
-    lr0 = 0.0001 * (128 if opt.optimizer.starswith('Adam') else bs)  # initial lr
-    lrf = 0.01  # final lr (fraction of lr0)
+    lr0 = 0.01 * (1 if opt.optimizer.starswith('Adam') else 0.01 * bs)  # initial lr
+    lrf = 0.001  # final lr (fraction of lr0)
     if opt.optimizer == 'Adam':
         optimizer = optim.Adam(model.parameters(), lr=lr0 / 10)
     elif opt.optimizer == 'AdamW':
@@ -139,7 +140,8 @@ def train():
         optimizer = optim.SGD(model.parameters(), lr=lr0, momentum=0.9, nesterov=True)
 
     # Scheduler
-    lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) + lrf  # cosine
+    # lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) + lrf  # cosine
+    lf = lambda x: (1 - x / epochs) * (1.0 - lrf) + lrf  # linear
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # scheduler = lr_scheduler.OneCycleLR(optimizer, max_lr=lr0, total_steps=epochs, pct_start=0.1,
     #                                    final_div_factor=1 / 25 / lrf)
@@ -297,7 +299,6 @@ def classify(model, size=128, file='../datasets/mnist/test/3/30.png', plot=False
 
 def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Path('images.jpg')):
     # Show classification image grid with labels (optional) and predictions (optional)
-    import cv2
     import matplotlib.pyplot as plt
 
     names = names or [f'class{i}' for i in range(1000)]
