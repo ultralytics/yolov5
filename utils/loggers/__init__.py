@@ -160,7 +160,7 @@ class Loggers():
 
     def on_train_end(self, last, best, plots, epoch, results, masks=False):
         # Callback runs on training end
-        plot_results = plot_results_with_masks if masks else plot_results
+        # plot_results = plot_results_with_masks if masks else plot_results
         if plots:
             plot_results(file=self.save_dir / 'results.csv')  # save results.png
         files = ['results.png', 'confusion_matrix.png', *(f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R'))]
