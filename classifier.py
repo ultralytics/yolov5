@@ -56,7 +56,7 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 
 def train():
     save_dir, data, bs, epochs, nw, imgsz, pretrained = \
-        Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, min(NUM_THREADS, opt.workers), opt.imgsz, \
+        Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, min(os.cpu_count() - 1, opt.workers), opt.imgsz, \
         not opt.from_scratch
     # Directories
     wdir = save_dir / 'weights'
