@@ -169,7 +169,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             mask=True,
             verbose=False,
             mask_downsample_ratio=mask_ratio,
-            plots=True
+            plots=plots
         )
     g = [], [], []  # optimizer parameter groups
     bn = tuple(v for k, v in nn.__dict__.items() if 'Norm' in k)  # normalization layers, i.e. BatchNorm2d()
