@@ -191,8 +191,11 @@ Get started in seconds with our verified environments. Click each icon below for
 ## <div align="center">Integrations</div>
 
 <div align="center">
-    <a href="https://clear.ml/?utm_source=yolov5&utm_medium=referral&utm_campaign=yolov5_repo_readme">
-        <img src="https://github.com/thepycoder/clearml_screenshots/raw/main/banner_github.png#gh-light-mode-only" width="32%" /><img src="https://github.com/thepycoder/clearml_screenshots/raw/main/banner_github_light.png#gh-dark-mode-only" width="32%" />
+    <a href="https://clear.ml/?utm_source=yolov5&utm_medium=referral&utm_campaign=yolov5_repo_readme#gh-light-mode-only">
+        <img src="https://github.com/thepycoder/clearml_screenshots/raw/main/banner_github.png#gh-light-mode-only" width="32%" />
+    </a>
+    <a href="https://clear.ml/?utm_source=yolov5&utm_medium=referral&utm_campaign=yolov5_repo_readme#gh-dark-mode-only">
+        <img src="https://github.com/thepycoder/clearml_screenshots/raw/main/banner_github_light.png#gh-dark-mode-only" width="32%" />
     </a>
     <a href="https://roboflow.com/?ref=ultralytics">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow-long.png" width="33%"/>
