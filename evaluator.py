@@ -460,7 +460,7 @@ class Yolov5Evaluator:
         # plot ground truth
         f = self.save_dir / f"val_batch{i}_labels.jpg"  # labels
         
-        if masks.shape[1:] != img.shape[2:]:
+        if masks is not None and masks.shape[1:] != img.shape[2:]:
             masks = F.interpolate(
                 masks.unsqueeze(0),
                 img.shape[2:],
