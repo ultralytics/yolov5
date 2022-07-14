@@ -110,6 +110,7 @@ class Yolov5Evaluator:
         self.total_loss = torch.zeros((4 if self.mask else 3))
         self.metric = Metrics() if self.mask else Metric()
 
+    @torch.no_grad()
     def run_training(self, model, dataloader, compute_loss=None):
         """This is for evaluation when training."""
         self.seen = 0
@@ -390,7 +391,7 @@ class Yolov5Evaluator:
 
         correct = torch.zeros(predn.shape[0], self.iouv.shape[0], dtype=torch.bool, device=self.iouv.device, )
 
-        if not self.plots:
+        if gt_masksi.shape[1:] != pred_maski.shape[1:]:
             gt_masksi = F.interpolate(gt_masksi.unsqueeze(0), pred_maski.shape[1:], mode="bilinear",
                 align_corners=False, ).squeeze(0)
 
@@ -459,6 +460,14 @@ class Yolov5Evaluator:
             return
         # plot ground truth
         f = self.save_dir / f"val_batch{i}_labels.jpg"  # labels
+        
+        if masks is not None and masks.shape[1:] != img.shape[2:]:
+            masks = F.interpolate(
+                masks.unsqueeze(0),
+                img.shape[2:],
+                mode="bilinear",
+                align_corners=False,
+            ).squeeze(0)
 
         Thread(target=plot_images_boxes_and_masks, args=(img, targets, masks, paths, f, self.names, max(img.shape[2:])),
             daemon=True, ).start()
