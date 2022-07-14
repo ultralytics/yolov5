@@ -1300,7 +1300,8 @@ def plot_images_and_masks(
             mosaic, (int(ns * w * r), int(ns * h * r)), interpolation=cv2.INTER_AREA
         )
         # cv2.imwrite(fname, cv2.cvtColor(mosaic, cv2.COLOR_BGR2RGB))  # cv2 save
-        Image.fromarray(mosaic).save(fname)  # PIL save
+        with Image.fromarray(mosaic) as im:
+            im.save(fname)
     return mosaic
 
 

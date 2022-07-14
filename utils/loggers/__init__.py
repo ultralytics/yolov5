@@ -404,8 +404,7 @@ class NewLoggersMask(NewLoggers):
                 ).start()
             if ni==0:
                 if self.wandb:
-                    res = plot_images_and_masks(imgs, targets, masks, paths)
-                    wandb.log({"train_labels": wandb.Image(res)})
+                    wandb.log({"train_labels": wandb.Image(f)})
                 
 
 

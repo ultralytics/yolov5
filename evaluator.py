@@ -152,7 +152,8 @@ class Yolov5Evaluator:
                 # NOTE: eval in training image-size space
                 self.compute_stat(pred, pred_maski, labels, gt_masksi)
 
-            if batch_i < 3:
+            if self.plots and batch_i < 3:
+                import pdb;pdb.set_trace()
                 self.plot_images(batch_i, img, targets, masks, out, paths)
 
         # compute map and print it.
@@ -473,11 +474,7 @@ class Yolov5Evaluator:
             daemon=True, ).start()
         import wandb
         if wandb.run:
-            res = plot_images_boxes_and_masks(img, output_to_target(out, filter_dets=self.max_plot_dets), 
-                                              pred_masks, paths, f, self.names,
-                                              max(img.shape[2:]))
-            res = Image.fromarray(res)
-            wandb.log({f"pred_{i}": wandb.Image(res)})
+            wandb.log({f"pred_{i}": wandb.Image(f)})
 
     def nms(self, **kwargs):
         return (non_max_suppression_masks(**kwargs) if self.mask else non_max_suppression(**kwargs))
