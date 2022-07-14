@@ -157,7 +157,7 @@ def train():
     t0 = time.time()
     criterion = nn.CrossEntropyLoss()  # loss function
     best_fitness = 0.0
-    # scaler = amp.GradScaler(enabled=cuda)
+    scaler = amp.GradScaler(enabled=cuda)
     LOGGER.info(f'Image sizes {imgsz} train, {imgsz} test\n'
                 f'Using {nw} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
@@ -175,14 +175,15 @@ def train():
             images, labels = images.to(device), labels.to(device)
 
             # Forward
-            with amp.autocast(enabled=False):  # stability issues when enabled
+            with amp.autocast(enabled=cuda):  # stability issues when enabled
                 loss = criterion(model(images), labels)
 
             # Backward
-            loss.backward()  # scaler.scale(loss).backward()
+            scaler.scale(loss).backward()
 
             # Optimize
-            optimizer.step()  # scaler.step(optimizer); scaler.update()
+            scaler.step(optimizer)
+            scaler.update()
             optimizer.zero_grad()
 
             # Print
