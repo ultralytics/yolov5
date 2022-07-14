@@ -669,7 +669,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     return f  # return list of exported files/dirs
 
 
-def parse_opt(known = False):
+def parse_opt(known = False, skip_parse = False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
@@ -696,7 +696,13 @@ def parse_opt(known = False):
     parser.add_argument('--include', nargs='+',
                         default=['torchscript', 'onnx'],
                         help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
-    opt = parser.parse_args()
+    if skip_parse:
+        opt = parser.parse_args([])
+    elif known:
+        opt = parser.parse_known_args()[0] 
+    else: 
+        opt = parser.parse_args()
+    
     print_args(FILE.stem, opt)
     return opt
 
@@ -706,7 +712,7 @@ def main(opt):
         run(**vars(opt))
 
 def export_run(**kwargs):
-    opt = parse_opt(True)
+    opt = parse_opt(known = True) if not kwargs else parse_opt(skip_parse = True)
     for k, v in kwargs.items():
         setattr(opt, k, v)
     main(opt)

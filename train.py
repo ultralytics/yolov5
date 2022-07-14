@@ -555,7 +555,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     return results
 
 
-def parse_opt(known=False):
+def parse_opt(known=False, skip_parse=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
@@ -610,7 +610,13 @@ def parse_opt(known=False):
     parser.add_argument("--one-shot", action="store_true", default=False, help="Apply recipe in one shot manner")
     parser.add_argument("--num-export-samples", type=int, default=0, help="The number of sample inputs/outputs to export, default=0")
 
-    opt = parser.parse_known_args()[0] if known else parser.parse_args()
+    if skip_parse:
+        opt = parser.parse_args([])
+    elif known:
+        opt = parser.parse_known_args()[0] 
+    else: 
+        opt = parser.parse_args()
+    
     return opt
 
 
@@ -749,7 +755,7 @@ def main(opt, callbacks=Callbacks()):
 
 def run(**kwargs):
     # Usage: import train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
-    opt = parse_opt(True)
+    opt = parse_opt(known = True) if not kwargs else parse_opt(skip_parse = True)
     for k, v in kwargs.items():
         setattr(opt, k, v)
     main(opt)
