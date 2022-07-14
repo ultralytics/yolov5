@@ -151,7 +151,8 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
 - [Train Custom Data](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data)  🚀 RECOMMENDED
 - [Tips for Best Training Results](https://github.com/ultralytics/yolov5/wiki/Tips-for-Best-Training-Results)  ☘️
   RECOMMENDED
-- [Weights & Biases Logging](https://github.com/ultralytics/yolov5/issues/1289)  🌟 NEW
+- [ClearML Logging](https://github.com/ultralytics/yolov5/issues/<TODO>) 🌟 NEW
+- [Weights & Biases Logging](https://github.com/ultralytics/yolov5/issues/1289)
 - [Roboflow for Datasets, Labeling, and Active Learning](https://github.com/ultralytics/yolov5/issues/4975)  🌟 NEW
 - [Multi-GPU Training](https://github.com/ultralytics/yolov5/issues/475)
 - [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)  ⭐ NEW
@@ -190,20 +191,20 @@ Get started in seconds with our verified environments. Click each icon below for
 ## <div align="center">Integrations</div>
 
 <div align="center">
-    <a href="https://wandb.ai/site?utm_campaign=repo_yolo_readme">
-        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-wb-long.png" width="33%"/>
+    <a href="https://clear.ml/?utm_source=yolov5&utm_medium=referral&utm_campaign=yolov5_repo_readme">
+        <img src="https://github.com/thepycoder/clearml_screenshots/raw/main/banner_github.png#gh-light-mode-only" width="32%" /><img src="https://github.com/thepycoder/clearml_screenshots/raw/main/banner_github_light.png#gh-dark-mode-only" width="32%" />
     </a>
     <a href="https://roboflow.com/?ref=ultralytics">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow-long.png" width="33%"/>
     </a>
-    <a href="https://clear.ml/<utf link to do>">
-        <img src="https://github.com/thepycoder/clearml_screenshots/raw/main/banner_github.png" width="32%" />
+    <a href="https://wandb.ai/site?utm_campaign=repo_yolo_readme">
+        <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-wb-long.png" width="33%"/>
     </a>
 </div>
 
-|Weights and Biases|Roboflow|ClearML ⭐ NEW|
+|ClearML ⭐ NEW|Roboflow|Weights and Biases
 |:-:|:-:|:-:|
-|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics) |Track experiments, vizusalise them and **remotely train YOLOv5** in the cloud or locally using [ClearML](https://clear.ml/?ref=ultralytics)
+|Automatically track, vizusalize and even remotely train YOLOv5 using [ClearML](https://clear.ml/?utm_source=yolov5&utm_medium=referral&utm_campaign=yolov5_repo_readme) (open-source!)|Label and export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics) |Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme)
 
 <!-- ## <div align="center">Compete and Win</div>
 
