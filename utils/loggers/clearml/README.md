@@ -21,7 +21,7 @@ And so much more. It's up to you how many of these tools you want to use, you ca
 <br />
 <br />
 
-![ClearML scalars dashboard](https://github.com/thepycoder/clearml_screenshots/raw/main/experiment_manager.gif)
+![ClearML scalars dashboard](https://github.com/thepycoder/clearml_screenshots/raw/main/experiment_manager_with_compare.gif)
 
 
 <br />
@@ -31,7 +31,7 @@ And so much more. It's up to you how many of these tools you want to use, you ca
 
 To keep track of your experiments and/or data, ClearML needs to communicate to a server. You have 2 options to get one:
 
-Either sign up for free to the [ClearML Hosted Service](https://app.clear.ml) or you can set up your own server, see [here](https://clear.ml/docs/latest/docs/deploying_clearml/clearml_server). Even the server is open-source, so even if you're dealing with sensitive data, you should be good to go!
+Either sign up for free to the [ClearML Hosted Service](https://clear.ml/?utm_source=yolov5&utm_medium=referral&utm_campaign=yolov5_tutorial_clearml) or you can set up your own server, see [here](https://clear.ml/docs/latest/docs/deploying_clearml/clearml_server). Even the server is open-source, so even if you're dealing with sensitive data, you should be good to go!
 
 1. Install the `clearml` python package:
 
@@ -80,9 +80,6 @@ This will capture:
 That's a lot right? 🤯
 Now, we can visualize all of this information in the ClearML UI to get an overview of our training progress. Add custom columns to the table view (such as e.g. mAP_0.5) so you can easily sort on the best performing model. Or select multiple experiments and directly compare them!
 
-<TODO: Screenshot or Gif>
-
-
 There even more we can do with all of this information, like hyperparameter optimization and remote execution, so keep reading if you want to see how that works!
 
 <br />
@@ -91,7 +88,7 @@ There even more we can do with all of this information, like hyperparameter opti
 
 Versioning your data separately from your code is generally a good idea and makes it easy to aqcuire the latest version too. This repository supports supplying a dataset version ID and it will make sure to get the data if it's not there yet. Next to that, this workflow also saves the used dataset ID as part of the task parameters, so you will always know for sure which data was used in which experiment!
 
-![ClearML Dataset Interface](https://github.com/thepycoder/clearml_screenshots/raw/main/dataset_version.png)
+![ClearML Dataset Interface](https://github.com/thepycoder/clearml_screenshots/raw/main/clearml_data.gif)
 
 ### Prepare Your Dataset
 
@@ -195,7 +192,7 @@ With our agent running, we can give it some work. Remember from the HPO section 
 
 ⏳ Enqueue the task to any of the queues by right clicking it
 
-<TODO: add gif>
+![Enqueue a task from the UI](https://github.com/thepycoder/clearml_screenshots/raw/main/enqueue.gif)
 
 ### Executing A Task Remotely
 
@@ -220,4 +217,6 @@ When running the training script after this change, python will run the script u
 
 ClearML comes with autoscalers too! This tool will automatically spin up new remote machines in the cloud of your choice (AWS, GCP, Azure) and turn them into ClearML agents for you whenever there are experiments detected in the queue. Once the tasks are processed, the autoscaler will automatically shut down the remote machines and you stop paying!
 
-Check out the autoscalers [here](https://youtu.be/j4XVMAaUt3E).
+Check out the autoscalers getting started video below.
+
+[![Watch the video](https://img.youtube.com/vi/j4XVMAaUt3E/0.jpg)](https://youtu.be/j4XVMAaUt3E)
