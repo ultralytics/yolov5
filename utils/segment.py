@@ -109,6 +109,8 @@ def non_max_suppression_masks(prediction, conf_thres=0.25, iou_thres=0.45, class
             continue
         elif n > max_nms:  # excess boxes
             x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence
+        # else:
+        #     x = x[x[:, 4].argsort(descending=True)]  # sort by confidence
 
         # Batched NMS
         c = x[:, 5:6] * (0 if agnostic else max_wh)  # classes
