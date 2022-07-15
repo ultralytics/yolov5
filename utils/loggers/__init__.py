@@ -402,7 +402,6 @@ class NewLoggersMask(NewLoggers):
                     args=(imgs, targets, masks, paths, f),
                     daemon=True,
                 ).start()
-            if ni==0:
                 if self.wandb:
                     wandb.log({"train_labels": wandb.Image(f)})
                 
