@@ -154,7 +154,6 @@ class Yolov5Evaluator:
                 self.compute_stat(pred, pred_maski, labels, gt_masksi)
 
             if self.plots and batch_i < 3:
-                import pdb;pdb.set_trace()
                 self.plot_images(batch_i, img, targets, masks, out, paths)
 
         # compute map and print it.
