@@ -441,6 +441,8 @@ class DetectMultiBackend(nn.Module):
                 output_details = interpreter.get_output_details()  # outputs
             elif tfjs:
                 raise Exception('ERROR: YOLOv5 TF.js inference is not supported')
+            else:
+                raise Exception(f'ERROR: {w} is not a supported format')
         self.__dict__.update(locals())  # assign all variables to self
 
     def forward(self, im, augment=False, visualize=False, val=False):
