@@ -268,7 +268,7 @@ def export_engine(model, im, file, train, half, dynamic, simplify, workspace=4, 
         if dynamic:
             profile = builder.create_optimization_profile()
             for inp in inputs:
-                profile.set_shape(inp.name, (1, *im.shape[1:]), (im.shape[0] // 2, *im.shape[1:]), im.shape)
+                profile.set_shape(inp.name, (1, *im.shape[1:]), (max(1, im.shape[0] // 2), *im.shape[1:]), im.shape)
             config.add_optimization_profile(profile)
 
         LOGGER.info(f'{prefix} building FP{16 if builder.platform_has_fast_fp16 and half else 32} engine in {f}')
