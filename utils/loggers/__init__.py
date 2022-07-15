@@ -403,7 +403,7 @@ class NewLoggersMask(NewLoggers):
                     daemon=True,
                 ).start()
                 if self.wandb:
-                    wandb.log({"train_labels": wandb.Image(f)})
+                    wandb.log({"train_labels": wandb.Image(str(f))})
                 
 
 

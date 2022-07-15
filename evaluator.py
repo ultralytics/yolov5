@@ -482,7 +482,7 @@ class Yolov5Evaluator:
             daemon=True, ).start()
         import wandb
         if wandb.run:
-            wandb.log({f"pred_{i}": wandb.Image(f)})
+            wandb.log({f"pred_{i}": wandb.Image(str(f))})
 
     def nms(self, **kwargs):
         return (non_max_suppression_masks(**kwargs) if self.mask else non_max_suppression(**kwargs))
