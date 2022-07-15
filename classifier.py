@@ -3,7 +3,7 @@
 Train a YOLOv5 classifier model on a classification dataset
 
 Usage - train:
-    $ python classifier.py --model yolov5s --data imagenet --epochs 5 --img 224
+    $ python classifier.py --model yolov5s --data mnist --epochs 5 --img 128
     $ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 classifier.py --model yolov5s --data imagenet --epochs 5 --img 224 --device 4,5,6,7
 
 Usage - inference:
@@ -186,15 +186,15 @@ def train():
             scaler.update()
             optimizer.zero_grad()
 
-            # Print
             if RANK in {-1, 0}:
+                # Print
                 tloss = (tloss * i + loss.item()) / (i + 1)  # update mean losses
                 mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
                 pbar.desc = f"{f'{epoch + 1}/{epochs}':10s}{mem:10s}{tloss:<12.3g}"
 
-            # Test
-            if RANK in {-1, 0} and i == len(pbar) - 1:
-                fitness, vloss = test(model, testloader, names, criterion, pbar=pbar)  # test accuracy, loss
+                # Test
+                if i == len(pbar) - 1:  # last batch
+                    fitness, vloss = test(model, testloader, names, criterion, pbar=pbar)  # test accuracy, loss
 
         # Scheduler
         scheduler.step()
