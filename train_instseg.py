@@ -21,7 +21,6 @@ import time
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from matplotlib.pyplot import plot
 
 import numpy as np
 import torch
@@ -58,10 +57,6 @@ from utils.seg_loss import ComputeLoss
 from utils.plots import plot_evolve, plot_labels
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
 
-LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
-RANK = int(os.getenv('RANK', -1))
-WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
-
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -71,7 +66,6 @@ from utils.autobatch import check_train_batch_size
 from torch.optim import AdamW
 import yaml
 from datetime import datetime
-from distutils import dist
 from evaluator import Yolov5Evaluator
 
 def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictionary
@@ -344,7 +338,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
         mloss = torch.zeros(4, device=device)  # mean losses
         if RANK != -1:
-            train_loader.sampler.set_epoch(epoch)
+            train_loader.batch_sampler.sampler.set_epoch(epoch)
         pbar = enumerate(train_loader)
         LOGGER.info( ("\n" + "%10s" * 8) % ("Epoch", "gpu_mem", "box", "seg", "obj", "cls", "labels", "img_size"))
         if RANK in {-1, 0}:
