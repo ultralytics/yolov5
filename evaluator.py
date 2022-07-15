@@ -153,7 +153,7 @@ class Yolov5Evaluator:
                 # NOTE: eval in training image-size space
                 self.compute_stat(pred, pred_maski, labels, gt_masksi)
 
-            if self.plots and batch_i < 3:
+            if self.plots and batch_i < 2:
                 self.plot_images(batch_i, img, targets, masks, out, paths)
 
         # compute map and print it.
@@ -477,9 +477,10 @@ class Yolov5Evaluator:
             pred_masks = (torch.cat(self.pred_masks, dim=0) if len(self.pred_masks) > 1 else self.pred_masks[0])
         else:
             pred_masks = None
-        Thread(target=plot_images_boxes_and_masks,
-            args=(img, output_to_target(out, filter_dets=self.max_plot_dets), pred_masks, paths, f, self.names, max(img.shape[2:]),),
-            daemon=True, ).start()
+        plot_images_boxes_and_masks(img, output_to_target(out, filter_dets=self.max_plot_dets), pred_masks, paths, f, self.names, max(img.shape[2:]))
+        #Thread(target=plot_images_boxes_and_masks,
+        #    args=(img, output_to_target(out, filter_dets=self.max_plot_dets), pred_masks, paths, f, self.names, max(img.shape[2:]),),
+        #    daemon=True, ).start()
         import wandb
         if wandb.run:
             wandb.log({f"pred_{i}": wandb.Image(str(f))})
