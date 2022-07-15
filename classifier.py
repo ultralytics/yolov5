@@ -231,7 +231,7 @@ def train():
                     f"\nResults saved to {colorstr('bold', save_dir)}")
 
         # Show predictions
-        images, labels = iter(testloader).next()
+        images, labels = (x[:30] for x in iter(testloader).next())  # first 30 images and labels
         images = images.to(device)
         pred = torch.max(model(images), 1)[1]
         imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
