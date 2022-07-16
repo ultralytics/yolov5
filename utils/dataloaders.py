@@ -22,7 +22,6 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision
-import torchvision.transforms as T
 import yaml
 from PIL import ExifTags, Image, ImageOps
 from torch.utils.data import DataLoader, Dataset, dataloader, distributed
@@ -86,7 +85,7 @@ def exif_transpose(image):
             5: Image.TRANSPOSE,
             6: Image.ROTATE_270,
             7: Image.TRANSVERSE,
-            8: Image.ROTATE_90,}.get(orientation)
+            8: Image.ROTATE_90, }.get(orientation)
         if method is not None:
             image = image.transpose(method)
             del exif[0x0112]
@@ -179,15 +178,17 @@ class _RepeatSampler:
 class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
     def __init__(self, path, img_size=640, stride=32, auto=True):
-        p = str(Path(path).resolve())  # os-agnostic absolute path
-        if '*' in p:
-            files = sorted(glob.glob(p, recursive=True))  # glob
-        elif os.path.isdir(p):
-            files = sorted(glob.glob(os.path.join(p, '*.*')))  # dir
-        elif os.path.isfile(p):
-            files = [p]  # files
-        else:
-            raise Exception(f'ERROR: {p} does not exist')
+        files = []
+        for p in sorted(path) if isinstance(path, (list, tuple)) else [path]:
+            p = str(Path(p).resolve())
+            if '*' in p:
+                files.extend(sorted(glob.glob(p, recursive=True)))  # glob
+            elif os.path.isdir(p):
+                files.extend(sorted(glob.glob(os.path.join(p, '*.*'))))  # dir
+            elif os.path.isfile(p):
+                files.append(p)  # files
+            else:
+                raise FileNotFoundError(f'{p} does not exist')
 
         images = [x for x in files if x.split('.')[-1].lower() in IMG_FORMATS]
         videos = [x for x in files if x.split('.')[-1].lower() in VID_FORMATS]
@@ -440,7 +441,7 @@ class LoadImagesAndLabels(Dataset):
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
                         # f += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
                 else:
-                    raise Exception(f'{prefix}{p} does not exist')
+                    raise FileNotFoundError(f'{prefix}{p} does not exist')
             self.im_files = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in IMG_FORMATS])  # pathlib
             assert self.im_files, f'{prefix}No images found'
@@ -1107,18 +1108,30 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         album_transform: Albumentations transforms, used if installed
     """
 
-    def __init__(self, root, torch_transforms, album_transforms=None):
+    def __init__(self, root, augment, imgsz, cache=False):
         super().__init__(root=root)
-        self.torch_transforms = torch_transforms
-        self.album_transforms = album_transforms
+        self.torch_transforms = classify_transforms()
+        self.album_transforms = classify_albumentations(augment, imgsz) if augment else None
+        self.cache_ram = cache is True or cache == 'ram'
+        self.cache_disk = cache == 'disk'
+        self.samples = [list(x) + [Path(x[0]).with_suffix('.npy'), None] for x in self.samples]  # file, index, npy, im
 
-    def __getitem__(self, idx):
-        path, target = self.samples[idx]
+    def __getitem__(self, i):
+        f, j, fn, im = self.samples[i]  # filename, index, filename_npy, image
         if self.album_transforms:
-            sample = self.album_transforms(image=cv2.imread(path)[..., ::-1])["image"]
+            if self.cache_ram and im is None:
+                im = self.samples[i][3] = cv2.imread(f)
+            elif self.cache_disk:
+                # fn = Path(f).with_suffix('.npy')  # filename numpy
+                if not fn.exists():  # load npy
+                    np.save(fn.as_posix(), cv2.imread(f))
+                im = np.load(fn)
+            else:  # read image
+                im = cv2.imread(f)  # BGR
+            sample = self.album_transforms(image=im[..., ::-1])["image"]
         else:
-            sample = self.torch_transforms(self.loader(path))
-        return sample, target
+            sample = self.torch_transforms(self.loader(f))
+        return sample, j
 
 
 def create_classification_dataloader(
@@ -1126,22 +1139,20 @@ def create_classification_dataloader(
         imgsz=224,
         batch_size=16,
         augment=True,
-        cache=False,  # TODO
+        cache=False,
         rank=-1,
         workers=8,
         shuffle=True):
     # Returns Dataloader object to be used with YOLOv5 Classifier
     with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
-        dataset = ClassificationDataset(root=path,
-                                        torch_transforms=classify_transforms(),
-                                        album_transforms=classify_albumentations(augment, imgsz))
+        dataset = ClassificationDataset(root=path, imgsz=imgsz, augment=augment, cache=cache)
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()
     nw = min([os.cpu_count() // max(nd, 1), batch_size if batch_size > 1 else 0, workers])
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
-    return torch.utils.data.DataLoader(dataset,
-                                       batch_size=batch_size,
-                                       shuffle=shuffle and sampler is None,
-                                       num_workers=nw,
-                                       pin_memory=True,
-                                       sampler=sampler), dataset
+    return InfiniteDataLoader(dataset,
+                              batch_size=batch_size,
+                              shuffle=shuffle and sampler is None,
+                              num_workers=nw,
+                              pin_memory=True,
+                              sampler=sampler)

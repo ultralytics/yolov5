@@ -225,8 +225,8 @@ def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
     else:  # x1, y1, x2, y2 = box1
         b1_x1, b1_y1, b1_x2, b1_y2 = box1.chunk(4, 1)
         b2_x1, b2_y1, b2_x2, b2_y2 = box2.chunk(4, 1)
-        w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + eps
-        w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
+        w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1
+        w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1
 
     # Intersection area
     inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * \
@@ -244,7 +244,7 @@ def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
             c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
             rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 + (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center dist ** 2
             if CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
-                v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
+                v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / (h2 + eps)) - torch.atan(w1 / (h1 + eps)), 2)
                 with torch.no_grad():
                     alpha = v / (v - iou + (1 + eps))
                 return iou - (rho2 / c2 + v * alpha)  # CIoU
@@ -259,7 +259,7 @@ def box_area(box):
     return (box[2] - box[0]) * (box[3] - box[1])
 
 
-def box_iou(box1, box2):
+def box_iou(box1, box2, eps=1e-7):
     # https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
     """
     Return intersection-over-union (Jaccard index) of boxes.
@@ -277,10 +277,10 @@ def box_iou(box1, box2):
     inter = (torch.min(a2, b2) - torch.max(a1, b1)).clamp(0).prod(2)
 
     # IoU = inter / (area1 + area2 - inter)
-    return inter / (box_area(box1.T)[:, None] + box_area(box2.T) - inter)
+    return inter / (box_area(box1.T)[:, None] + box_area(box2.T) - inter + eps)
 
 
-def bbox_ioa(box1, box2, eps=1E-7):
+def bbox_ioa(box1, box2, eps=1e-7):
     """ Returns the intersection over box2 area given box1, box2. Boxes are x1y1x2y2
     box1:       np.array of shape(4)
     box2:       np.array of shape(nx4)
@@ -302,12 +302,12 @@ def bbox_ioa(box1, box2, eps=1E-7):
     return inter_area / box2_area
 
 
-def wh_iou(wh1, wh2):
+def wh_iou(wh1, wh2, eps=1e-7):
     # Returns the nxm IoU matrix. wh1 is nx2, wh2 is mx2
     wh1 = wh1[:, None]  # [N,1,2]
     wh2 = wh2[None]  # [1,M,2]
     inter = torch.min(wh1, wh2).prod(2)  # [N,M]
-    return inter / (wh1.prod(2) + wh2.prod(2) - inter)  # iou = inter / (area1 + area2 - inter)
+    return inter / (wh1.prod(2) + wh2.prod(2) - inter + eps)  # iou = inter / (area1 + area2 - inter)
 
 
 # Plots ----------------------------------------------------------------------------------------------------------------

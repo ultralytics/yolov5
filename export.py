@@ -75,18 +75,18 @@ from utils.torch_utils import select_device
 def export_formats():
     # YOLOv5 export formats
     x = [
-        ['PyTorch', '-', '.pt', True],
-        ['TorchScript', 'torchscript', '.torchscript', True],
-        ['ONNX', 'onnx', '.onnx', True],
-        ['OpenVINO', 'openvino', '_openvino_model', False],
-        ['TensorRT', 'engine', '.engine', True],
-        ['CoreML', 'coreml', '.mlmodel', False],
-        ['TensorFlow SavedModel', 'saved_model', '_saved_model', True],
-        ['TensorFlow GraphDef', 'pb', '.pb', True],
-        ['TensorFlow Lite', 'tflite', '.tflite', False],
-        ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False],
-        ['TensorFlow.js', 'tfjs', '_web_model', False],]
-    return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'GPU'])
+        ['PyTorch', '-', '.pt', True, True],
+        ['TorchScript', 'torchscript', '.torchscript', True, True],
+        ['ONNX', 'onnx', '.onnx', True, True],
+        ['OpenVINO', 'openvino', '_openvino_model', True, False],
+        ['TensorRT', 'engine', '.engine', False, True],
+        ['CoreML', 'coreml', '.mlmodel', True, False],
+        ['TensorFlow SavedModel', 'saved_model', '_saved_model', True, True],
+        ['TensorFlow GraphDef', 'pb', '.pb', True, True],
+        ['TensorFlow Lite', 'tflite', '.tflite', True, False],
+        ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
+        ['TensorFlow.js', 'tfjs', '_web_model', False, False],]
+    return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
 def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):
@@ -484,7 +484,7 @@ def run(
     # Load PyTorch model
     device = select_device(device)
     if half:
-        assert device.type != 'cpu' or coreml or xml, '--half only compatible with GPU export, i.e. use --device 0'
+        assert device.type != 'cpu' or coreml, '--half only compatible with GPU export, i.e. use --device 0'
         assert not dynamic, '--half not compatible with --dynamic, i.e. use either --half or --dynamic but not both'
     model = attempt_load(weights, device=device, inplace=True, fuse=True)  # load FP32 model
     nc, names = model.nc, model.names  # number of classes, class names
@@ -492,6 +492,8 @@ def run(
     # Checks
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
     assert nc == len(names), f'Model class count {nc} != len(names) {len(names)}'
+    if optimize:
+        assert device.type != 'cuda', '--optimize not compatible with cuda devices, i.e. use --device cpu'
 
     # Input
     gs = int(max(model.stride))  # grid size (max stride)
@@ -555,11 +557,12 @@ def run(
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
     if any(f):
+        h = '--half' if half else ''  # --half FP16 inference arg
         LOGGER.info(f'\nExport complete ({time.time() - t:.2f}s)'
                     f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
-                    f"\nDetect:          python detect.py --weights {f[-1]}"
+                    f"\nDetect:          python detect.py --weights {f[-1]} {h}"
+                    f"\nValidate:        python val.py --weights {f[-1]} {h}"
                     f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
-                    f"\nValidate:        python val.py --weights {f[-1]}"
                     f"\nVisualize:       https://netron.app")
     return f  # return list of exported files/dirs
 
