@@ -354,7 +354,7 @@ if __name__ == '__main__':
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--optimizer', choices=['SGD', 'Adam', 'AdamW', 'RMSProp'], default='Adam', help='optimizer')
     parser.add_argument('--lr0', type=float, default=0.0012, help='initial learning rate')
-    parser.add_argument('--label-smoothing', type=float, default=0.1, help='Label smoothing epsilon')
+    parser.add_argument('--label-smoothing', type=float, default=0.15, help='Label smoothing epsilon')
     opt = parser.parse_args()
 
     # Checks
