@@ -323,15 +323,14 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
         if labels is not None:
             s = names[labels[i]] + (f'—{names[pred[i]]}' if pred is not None else '')
             ax[i].set_title(s)
-
     plt.savefig(f, dpi=300, bbox_inches='tight')
     plt.close()
     LOGGER.info(colorstr('imshow: ') + f"examples saved to {f}")
-
-    if verbose and labels is not None:
-        LOGGER.info('True:     ' + ' '.join(f'{names[i]:3s}' for i in labels[:32]))
-    if verbose and pred is not None:
-        LOGGER.info('Predicted:' + ' '.join(f'{names[i]:3s}' for i in pred[:32]))
+    if verbose:
+        if labels is not None:
+            LOGGER.info('True:     ' + ' '.join(f'{names[i]:3s}' for i in labels[:32]))
+        if pred is not None:
+            LOGGER.info('Predicted:' + ' '.join(f'{names[i]:3s}' for i in pred[:32]))
 
 
 if __name__ == '__main__':
