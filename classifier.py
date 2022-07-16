@@ -99,8 +99,8 @@ def train():
     init_seeds(1 + RANK)
 
     # Show images
-    images, labels = iter(trainloader).next()
-    imshow(denormalize(images[:64]), labels[:64], names=names, f=save_dir / 'train_images.jpg')
+    # images, labels = iter(trainloader).next()
+    # imshow(denormalize(images[:64]), labels[:64], names=names, f=save_dir / 'train_images.jpg')
 
     # Model
     repo1, repo2 = 'ultralytics/yolov5', 'rwightman/gen-efficientnet-pytorch'
@@ -240,10 +240,10 @@ def train():
                     f"\nResults saved to {colorstr('bold', save_dir)}")
 
         # Show predictions
-        images, labels = (x[:64] for x in iter(testloader).next())  # first 30 images and labels
-        images = images.to(device)
-        pred = torch.max(model(images), 1)[1]
-        imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
+        # images, labels = (x[:64] for x in iter(testloader).next())  # first 30 images and labels
+        # images = images.to(device)
+        # pred = torch.max(model(images), 1)[1]
+        # imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
 
 
 @torch.no_grad()
