@@ -144,7 +144,7 @@ def train():
         optimizer = optim.SGD(model.parameters(), weight_decay=1e-5, lr=opt.lr0 * bs, momentum=0.9, nesterov=True)
 
     # Scheduler
-    lrf = 0.001  # final lr (fraction of lr0)
+    lrf = 0.01  # final lr (fraction of lr0)
     # lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) + lrf  # cosine
     lf = lambda x: (1 - x / epochs) * (1.0 - lrf) + lrf  # linear
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
@@ -160,7 +160,7 @@ def train():
 
     # Train
     t0 = time.time()
-    criterion = nn.CrossEntropyLoss(label_smoothing=0.10)  # loss function
+    criterion = nn.CrossEntropyLoss(label_smoothing=opt.label_smoothing)  # loss function
     best_fitness = 0.0
     scaler = amp.GradScaler(enabled=cuda)
     LOGGER.info(f'Image sizes {imgsz} train, {imgsz} test\n'
@@ -354,6 +354,7 @@ if __name__ == '__main__':
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--optimizer', choices=['SGD', 'Adam', 'AdamW', 'RMSProp'], default='Adam', help='optimizer')
     parser.add_argument('--lr0', type=float, default=0.001, help='initial learning rate')
+    parser.add_argument('--label-smoothing', type=float, default=0.1, help='Label smoothing epsilon')
     opt = parser.parse_args()
 
     # Checks
