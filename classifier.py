@@ -47,7 +47,7 @@ from utils.dataloaders import create_classification_dataloader
 from utils.general import (LOGGER, check_file, check_git_status, check_requirements, check_version, colorstr, download,
                            increment_path, init_seeds, print_args)
 from utils.loggers import GenericLogger
-from utils.torch_utils import de_parallel, model_info, select_device, torch_distributed_zero_first
+from utils.torch_utils import de_parallel, model_info, ModelEMA, select_device, torch_distributed_zero_first
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -129,6 +129,9 @@ def train():
     if RANK in {-1, 0}:
         model_info(model)  # print(model)
 
+    # EMA
+    ema = ModelEMA(model) if RANK in {-1, 0} else None
+
     # Optimizer
     lr0 = 0.01 * (1 if opt.optimizer.startswith('Adam') else 0.01 * bs)  # initial lr
     lrf = 0.001  # final lr (fraction of lr0)
@@ -185,6 +188,8 @@ def train():
             scaler.step(optimizer)
             scaler.update()
             optimizer.zero_grad()
+            if ema:
+                ema.update(model)
 
             if RANK in {-1, 0}:
                 # Print
@@ -194,7 +199,7 @@ def train():
 
                 # Test
                 if i == len(pbar) - 1:  # last batch
-                    fitness, vloss = test(model, testloader, names, criterion, pbar=pbar)  # test accuracy, loss
+                    fitness, vloss = test(ema.ema, testloader, names, criterion, pbar=pbar)  # test accuracy, loss
 
         # Scheduler
         scheduler.step()
@@ -215,8 +220,10 @@ def train():
                 ckpt = {
                     'epoch': epoch,
                     'best_fitness': best_fitness,
-                    'model': deepcopy(de_parallel(model)).half(),
-                    'optimizer': None,  # optimizer.state_dict()
+                    'model': deepcopy(ema.ema).half(),  # deepcopy(de_parallel(model)).half(),
+                    'ema': None,  # deepcopy(ema.ema).half(),
+                    'updates': ema.updates,
+                    'optimizer': None,  # optimizer.state_dict(),
                     'date': datetime.now().isoformat()}
 
                 # Save last, best and delete
