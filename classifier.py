@@ -55,6 +55,7 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 
 
 def train():
+    init_seeds(1 + RANK, deterministic=True)
     save_dir, data, bs, epochs, nw, imgsz, pretrained = \
         Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, min(os.cpu_count() - 1, opt.workers), opt.imgsz, \
         not opt.from_scratch
@@ -96,7 +97,6 @@ def train():
     names = trainloader.dataset.classes  # class names
     nc = len(names)  # number of classes
     LOGGER.info(f'Training {opt.model} on {data} dataset with {nc} classes...')
-    init_seeds(1 + RANK)
 
     # Show images
     images, labels = next(iter(trainloader))
