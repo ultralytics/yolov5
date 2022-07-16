@@ -112,9 +112,9 @@ def train():
                 model = hub.load(repo1, opt.model, pretrained=pretrained, autoshape=False, force_reload=True)
             if isinstance(model, DetectMultiBackend):
                 model = model.model  # unwrap DetectMultiBackend
-            model.model = model.model[:13] if opt.model.endswith('6') else model.model[:11]  # backbone
+            model.model = model.model[:12] if opt.model.endswith('6') else model.model[:10]  # backbone
             m = model.model[-1]  # last layer
-            ch = m.conv.in_channels if hasattr(m, 'conv') else sum(x.in_channels for x in m.m)  # ch into module
+            ch = m.conv.in_channels if hasattr(m, 'conv') else m.cv1.conv.in_channels  # ch into module
             c = Classify(ch, nc)  # Classify()
             c.i, c.f, c.type = m.i, m.f, 'models.common.Classify'  # index, from, type
             model.model[-1] = c  # replace
