@@ -131,19 +131,20 @@ def train():
         model_info(model)  # print(model)
 
     # EMA
-    ema = ModelEMA(model, tau=len(trainloader) * epochs * 0.01) if RANK in {-1, 0} else None
+    ema = ModelEMA(model) if RANK in {-1, 0} else None
 
     # Optimizer
-    lr0 = 0.01 * (1 if opt.optimizer.startswith('Adam') else 0.01 * bs)  # initial lr
-    lrf = 0.001  # final lr (fraction of lr0)
     if opt.optimizer == 'Adam':
-        optimizer = optim.Adam(model.parameters(), lr=lr0 / 10)
+        optimizer = optim.Adam(model.parameters(), weight_decay=1e-5, lr=0.08)
     elif opt.optimizer == 'AdamW':
-        optimizer = optim.AdamW(model.parameters(), lr=lr0 / 10)
+        optimizer = optim.AdamW(model.parameters(), weight_decay=1e-5, lr=0.08)
+    elif opt.optimizer == 'RMSProp':
+        optimizer = optim.RMSprop(model.parameters(), weight_decay=1e-5, lr=0.08)
     else:
-        optimizer = optim.SGD(model.parameters(), lr=lr0, momentum=0.9, nesterov=True)
+        optimizer = optim.SGD(model.parameters(), weight_decay=1e-5, lr=0.08 * bs, momentum=0.9, nesterov=True)
 
     # Scheduler
+    lrf = 0.001  # final lr (fraction of lr0)
     # lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) + lrf  # cosine
     lf = lambda x: (1 - x / epochs) * (1.0 - lrf) + lrf  # linear
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
