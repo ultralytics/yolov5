@@ -135,13 +135,13 @@ def train():
 
     # Optimizer
     if opt.optimizer == 'Adam':
-        optimizer = optim.Adam(model.parameters(), weight_decay=1e-5, lr=0.08)
+        optimizer = optim.Adam(model.parameters(), weight_decay=1e-5, lr=opt.lr0)
     elif opt.optimizer == 'AdamW':
-        optimizer = optim.AdamW(model.parameters(), weight_decay=1e-5, lr=0.08)
+        optimizer = optim.AdamW(model.parameters(), weight_decay=1e-5, lr=opt.lr0)
     elif opt.optimizer == 'RMSProp':
-        optimizer = optim.RMSprop(model.parameters(), weight_decay=1e-5, lr=0.08)
+        optimizer = optim.RMSprop(model.parameters(), weight_decay=1e-5, lr=opt.lr0)
     else:
-        optimizer = optim.SGD(model.parameters(), weight_decay=1e-5, lr=0.08 * bs, momentum=0.9, nesterov=True)
+        optimizer = optim.SGD(model.parameters(), weight_decay=1e-5, lr=opt.lr0 * bs, momentum=0.9, nesterov=True)
 
     # Scheduler
     lrf = 0.001  # final lr (fraction of lr0)
@@ -353,6 +353,7 @@ if __name__ == '__main__':
     parser.add_argument('--from-scratch', '--scratch', action='store_true', help='train model from scratch')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--optimizer', choices=['SGD', 'Adam', 'AdamW', 'RMSProp'], default='Adam', help='optimizer')
+    parser.add_argument('--lr0', type=float, default=0.001, help='initial learning rate')
     opt = parser.parse_args()
 
     # Checks
