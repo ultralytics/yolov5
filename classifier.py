@@ -368,8 +368,6 @@ if __name__ == '__main__':
     cuda = device.type != 'cpu'
     opt.hyp = check_file(opt.hyp)  # check files
     opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
-    # TODO: Remove resize as redundant with augmentations
-    resize = torch.nn.Upsample(size=(opt.imgsz, opt.imgsz), mode='bilinear', align_corners=False)  # image resize
 
     # DDP
     if LOCAL_RANK != -1:
