@@ -85,7 +85,7 @@ def exif_transpose(image):
             5: Image.TRANSPOSE,
             6: Image.ROTATE_270,
             7: Image.TRANSVERSE,
-            8: Image.ROTATE_90, }.get(orientation)
+            8: Image.ROTATE_90,}.get(orientation)
         if method is not None:
             image = image.transpose(method)
             del exif[0x0112]
@@ -1134,15 +1134,14 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         return sample, j
 
 
-def create_classification_dataloader(
-        path,
-        imgsz=224,
-        batch_size=16,
-        augment=True,
-        cache=False,
-        rank=-1,
-        workers=8,
-        shuffle=True):
+def create_classification_dataloader(path,
+                                     imgsz=224,
+                                     batch_size=16,
+                                     augment=True,
+                                     cache=False,
+                                     rank=-1,
+                                     workers=8,
+                                     shuffle=True):
     # Returns Dataloader object to be used with YOLOv5 Classifier
     with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
         dataset = ClassificationDataset(root=path, imgsz=imgsz, augment=augment, cache=cache)
