@@ -1134,15 +1134,14 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         return sample, j
 
 
-def create_classification_dataloader(
-        path,
-        imgsz=224,
-        batch_size=16,
-        augment=True,
-        cache=False,
-        rank=-1,
-        workers=8,
-        shuffle=True):
+def create_classification_dataloader(path,
+                                     imgsz=224,
+                                     batch_size=16,
+                                     augment=True,
+                                     cache=False,
+                                     rank=-1,
+                                     workers=8,
+                                     shuffle=True):
     # Returns Dataloader object to be used with YOLOv5 Classifier
     with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
         dataset = ClassificationDataset(root=path, imgsz=imgsz, augment=augment, cache=cache)
@@ -1154,5 +1153,5 @@ def create_classification_dataloader(
                               batch_size=batch_size,
                               shuffle=shuffle and sampler is None,
                               num_workers=nw,
-                              pin_memory=True,
-                              sampler=sampler)
+                              sampler=sampler,
+                              pin_memory=True)

@@ -47,7 +47,7 @@ from utils.dataloaders import create_classification_dataloader
 from utils.general import (LOGGER, check_file, check_git_status, check_requirements, check_version, colorstr, download,
                            increment_path, init_seeds, print_args)
 from utils.loggers import GenericLogger
-from utils.torch_utils import de_parallel, model_info, ModelEMA, select_device, torch_distributed_zero_first
+from utils.torch_utils import ModelEMA, de_parallel, model_info, select_device, torch_distributed_zero_first
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -114,7 +114,7 @@ def train():
                 model = model.model  # unwrap DetectMultiBackend
             model.model = model.model[:10] if opt.model.endswith('6') else model.model[:8]  # backbone
             m = model.model[-1]  # last layer
-            ch = m.conv.in_channels if hasattr(m, 'conv') else sum(x.in_channels for x in m.m)  # ch into module
+            ch = m.conv.in_channels if hasattr(m, 'conv') else m.cv1.conv.in_channels  # ch into module
             c = Classify(ch, nc)  # Classify()
             c.i, c.f, c.type = m.i, m.f, 'models.common.Classify'  # index, from, type
             model.model[-1] = c  # replace
