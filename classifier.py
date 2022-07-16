@@ -74,26 +74,27 @@ def train():
             download(url, dir=data_dir.parent)
 
     # Dataloaders
-    trainloader, trainset = create_classification_dataloader(path=data_dir / 'train',
-                                                             imgsz=imgsz,
-                                                             batch_size=bs // WORLD_SIZE,
-                                                             augment=True,
-                                                             cache=opt.cache,
-                                                             rank=LOCAL_RANK,
-                                                             workers=nw)
+    trainloader = create_classification_dataloader(path=data_dir / 'train',
+                                                   imgsz=imgsz,
+                                                   batch_size=bs // WORLD_SIZE,
+                                                   augment=True,
+                                                   cache=opt.cache,
+                                                   rank=LOCAL_RANK,
+                                                   workers=nw)
 
     if RANK in {-1, 0}:
         test_dir = data_dir / 'test' if (data_dir / 'test').exists() else data_dir / 'val'  # data/test or data/val
-        testloader, testset = create_classification_dataloader(path=test_dir,
-                                                               imgsz=imgsz,
-                                                               batch_size=bs // WORLD_SIZE * 2,
-                                                               augment=False,
-                                                               cache=opt.cache,
-                                                               rank=-1,
-                                                               workers=nw)
+        testloader = create_classification_dataloader(path=test_dir,
+                                                      imgsz=imgsz,
+                                                      batch_size=bs // WORLD_SIZE * 2,
+                                                      augment=False,
+                                                      cache=opt.cache,
+                                                      rank=-1,
+                                                      workers=nw)
 
-    names = trainset.classes
-    nc = len(names)
+    # Initialize
+    names = trainloader.dataset.classes  # class names
+    nc = len(names)  # number of classes
     LOGGER.info(f'Training {opt.model} on {data} dataset with {nc} classes...')
     init_seeds(1 + RANK)
 
@@ -238,7 +239,7 @@ def train():
                     f"\nResults saved to {colorstr('bold', save_dir)}")
 
         # Show predictions
-        images, labels = (x[:30] for x in iter(testloader).next())  # first 30 images and labels
+        images, labels = (x[:64] for x in iter(testloader).next())  # first 30 images and labels
         images = images.to(device)
         pred = torch.max(model(images), 1)[1]
         imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')

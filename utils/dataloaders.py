@@ -1156,4 +1156,4 @@ def create_classification_dataloader(
                                        shuffle=shuffle and sampler is None,
                                        num_workers=nw,
                                        pin_memory=True,
-                                       sampler=sampler), dataset
+                                       sampler=sampler)
