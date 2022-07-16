@@ -329,9 +329,9 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
     LOGGER.info(colorstr('imshow: ') + f"examples saved to {f}")
 
     if verbose and labels is not None:
-        LOGGER.info('True:     ' + ' '.join(f'{names[i]:3s}' for i in labels))
+        LOGGER.info('True:     ' + ' '.join(f'{names[i]:3s}' for i in labels[:32]))
     if verbose and pred is not None:
-        LOGGER.info('Predicted:' + ' '.join(f'{names[i]:3s}' for i in pred))
+        LOGGER.info('Predicted:' + ' '.join(f'{names[i]:3s}' for i in pred[:32]))
 
 
 if __name__ == '__main__':
