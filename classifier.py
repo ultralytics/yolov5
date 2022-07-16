@@ -131,7 +131,7 @@ def train():
         model_info(model)  # print(model)
 
     # EMA
-    ema = ModelEMA(model) if RANK in {-1, 0} else None
+    ema = ModelEMA(model, decay=0.999, tau=200) if RANK in {-1, 0} else None
 
     # Optimizer
     lr0 = 0.01 * (1 if opt.optimizer.startswith('Adam') else 0.01 * bs)  # initial lr
