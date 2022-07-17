@@ -129,7 +129,7 @@ def train():
     model = model.to(device)
     if RANK in {-1, 0}:
         model_info(model)
-        print(model)
+        # print(model)
 
     # EMA
     ema = ModelEMA(model) if RANK in {-1, 0} else None
