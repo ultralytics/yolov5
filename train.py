@@ -270,7 +270,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         for name, params in model.named_parameters():
             if params is not None:
                 params.register_hook(lambda grad: torch.nan_to_num(grad, nan=0., neginf=0., posinf=0.))
-                params.retain_grad()
     LOGGER.info(f'Use gradient clipping with max_norm={opt.clip_grad}')
 
     # Start training
