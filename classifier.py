@@ -128,7 +128,8 @@ def train():
             model.fc = nn.Linear(model.fc.weight.shape[1], nc)
     model = model.to(device)
     if RANK in {-1, 0}:
-        model_info(model)  # print(model)
+        model_info(model)
+        print(model)
 
     # EMA
     ema = ModelEMA(model) if RANK in {-1, 0} else None
