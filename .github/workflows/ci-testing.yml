@@ -32,7 +32,7 @@ jobs:
       #    restore-keys: ${{ runner.os }}-Benchmarks-
       - name: Install requirements
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip wheel
           pip install -r requirements.txt coremltools openvino-dev tensorflow-cpu --extra-index-url https://download.pytorch.org/whl/cpu
           python --version
           pip --version
@@ -77,7 +77,7 @@ jobs:
           restore-keys: ${{ runner.os }}-${{ matrix.python-version }}-pip-
       - name: Install requirements
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip wheel
           pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
           python --version
           pip --version

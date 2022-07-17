@@ -17,7 +17,7 @@ RUN apt install --no-install-recommends -y python3-pip git zip curl htop gcc \
 
 # Install pip packages
 COPY requirements.txt .
-RUN python3 -m pip install --upgrade pip
+RUN python3 -m pip install --upgrade pip wheel
 RUN pip install --no-cache -r requirements.txt gsutil notebook \
     tensorflow-aarch64
     # tensorflowjs \
