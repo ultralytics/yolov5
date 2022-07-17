@@ -28,7 +28,6 @@ import torch
 import torch.distributed as dist
 import torch.hub as hub
 import torch.nn as nn
-import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
 from torch.cuda import amp
@@ -47,7 +46,8 @@ from utils.dataloaders import create_classification_dataloader
 from utils.general import (LOGGER, check_file, check_git_status, check_requirements, check_version, colorstr, download,
                            increment_path, init_seeds, print_args)
 from utils.loggers import GenericLogger
-from utils.torch_utils import ModelEMA, de_parallel, model_info, select_device, torch_distributed_zero_first
+from utils.torch_utils import ModelEMA, model_info, select_device, smart_optimizer, \
+    torch_distributed_zero_first
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -134,14 +134,8 @@ def train():
     ema = ModelEMA(model) if RANK in {-1, 0} else None
 
     # Optimizer
-    if opt.optimizer == 'Adam':
-        optimizer = optim.Adam(model.parameters(), weight_decay=1e-5, lr=opt.lr0)
-    elif opt.optimizer == 'AdamW':
-        optimizer = optim.AdamW(model.parameters(), weight_decay=1e-5, lr=opt.lr0)
-    elif opt.optimizer == 'RMSProp':
-        optimizer = optim.RMSprop(model.parameters(), weight_decay=1e-5, lr=opt.lr0)
-    else:
-        optimizer = optim.SGD(model.parameters(), weight_decay=1e-5, lr=opt.lr0 * bs, momentum=0.9, nesterov=True)
+    opt.lr0 *= bs if opt.optimizer == 'SGD' else 1  # sale lr with batch size for SGD
+    optimizer = smart_optimizer(model, opt.optimizer, opt.lr0, momentum=0.9, weight_decay=1e-5)
 
     # Scheduler
     lrf = 0.01  # final lr (fraction of lr0)
