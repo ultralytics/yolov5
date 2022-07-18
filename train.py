@@ -93,7 +93,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         if loggers.clearml:
             # Data_dict is either None is user did not choose for ClearML dataset or is filled in by ClearML
             data_dict = loggers.clearml.data_dict
-        
+
         if loggers.wandb:
             data_dict = loggers.wandb.data_dict
             if resume:

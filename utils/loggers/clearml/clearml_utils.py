@@ -1,15 +1,15 @@
 """Main Logger class for ClearML experiment tracking."""
 import glob
-from pathlib import Path
 import re
+from pathlib import Path
 
 import yaml
-from torchvision.utils import draw_bounding_boxes
 from torchvision.transforms import ToPILImage
+from torchvision.utils import draw_bounding_boxes
 
 try:
     import clearml
-    from clearml import Task, Dataset
+    from clearml import Dataset, Task
 
     assert hasattr(clearml, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
@@ -29,15 +29,20 @@ def construct_dataset(clearml_info_string):
     elif len(yaml_filenames) == 0:
         raise ValueError('No yaml definition found in dataset root path, check that there is a correct yaml file '
                          'inside the dataset root path.')
-    with open(yaml_filenames[0], 'r') as f:
+    with open(yaml_filenames[0]) as f:
         dataset_definition = yaml.safe_load(f)
 
-    assert set(dataset_definition.keys()).issuperset(set(['train', 'test', 'val', 'nc', 'names'])), "The right keys were not found in the yaml file, make sure it at least has the following keys: ('train', 'test', 'val', 'nc', 'names')"
+    assert set(dataset_definition.keys()).issuperset(
+        {'train', 'test', 'val', 'nc', 'names'}
+    ), "The right keys were not found in the yaml file, make sure it at least has the following keys: ('train', 'test', 'val', 'nc', 'names')"
 
     data_dict = dict()
-    data_dict['train'] = str((dataset_root_path / dataset_definition['train']).resolve()) if dataset_definition['train'] else None
-    data_dict['test'] = str((dataset_root_path / dataset_definition['test']).resolve()) if dataset_definition['test'] else None
-    data_dict['val'] = str((dataset_root_path / dataset_definition['val']).resolve()) if dataset_definition['val'] else None
+    data_dict['train'] = str(
+        (dataset_root_path / dataset_definition['train']).resolve()) if dataset_definition['train'] else None
+    data_dict['test'] = str(
+        (dataset_root_path / dataset_definition['test']).resolve()) if dataset_definition['test'] else None
+    data_dict['val'] = str(
+        (dataset_root_path / dataset_definition['val']).resolve()) if dataset_definition['val'] else None
     data_dict['nc'] = dataset_definition['nc']
     data_dict['names'] = dataset_definition['names']
 
@@ -110,12 +115,10 @@ class ClearmlLogger:
             if f.exists():
                 it = re.search(r'_batch(\d+)', f.name)
                 iteration = int(it.groups()[0]) if it else 0
-                self.task.get_logger().report_image(
-                    title=title,
-                    series=f.name.replace(it.group(), ''),
-                    local_path=str(f),
-                    iteration=iteration
-                )
+                self.task.get_logger().report_image(title=title,
+                                                    series=f.name.replace(it.group(), ''),
+                                                    local_path=str(f),
+                                                    iteration=iteration)
 
     def log_image_with_boxes(self, image_path, boxes, class_names, image):
         """
@@ -136,12 +139,12 @@ class ClearmlLogger:
                     class_name = class_names[int(class_nr)]
                     confidence = round(float(conf) * 100, 2)
                     labels.append(f"{class_name}: {confidence}%")
-                annotated_image = converter(draw_bounding_boxes(image=image.mul(255).clamp(0, 255).byte().cpu(),
-                                                                boxes=boxes[:, :4], labels=labels))
-                self.task.get_logger().report_image(
-                    title='Bounding Boxes',
-                    series=image_path.name,
-                    iteration=self.current_epoch,
-                    image=annotated_image
-                )
+                annotated_image = converter(
+                    draw_bounding_boxes(image=image.mul(255).clamp(0, 255).byte().cpu(),
+                                        boxes=boxes[:, :4],
+                                        labels=labels))
+                self.task.get_logger().report_image(title='Bounding Boxes',
+                                                    series=image_path.name,
+                                                    iteration=self.current_epoch,
+                                                    image=annotated_image)
                 self.current_epoch_logged_images.add(image_path)
