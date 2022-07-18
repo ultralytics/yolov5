@@ -1,4 +1,5 @@
 # pip install -r requirements.txt
+supervisely==6.36.0
 supervisely[apps]==6.36.0
 
 # base ----------------------------------------
