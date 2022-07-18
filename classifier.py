@@ -158,7 +158,7 @@ def train():
     best_fitness = 0.0
     scaler = amp.GradScaler(enabled=cuda)
     LOGGER.info(f'Image sizes {imgsz} train, {imgsz} test\n'
-                f'Using {nw} dataloader workers\n'
+                f'Using {nw * WORLD_SIZE} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
                 f'Starting training for {epochs} epochs...\n\n'
                 f"{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'accuracy':12s}")
