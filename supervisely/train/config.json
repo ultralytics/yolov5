@@ -10,7 +10,7 @@
     "train"
   ],
   "description": "Dashboard to configure and monitor training",
-  "docker_image": "supervisely/base-pytorch:6.0.22",
+  "docker_image": "supervisely/base-pytorch:6.0.23",
   "instance_version": "6.4.57",
   "main_script": "supervisely/train/src/sly_train.py",
   "gui_template": "supervisely/train/src/gui.html",
