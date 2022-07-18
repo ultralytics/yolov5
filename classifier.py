@@ -3,7 +3,7 @@
 Train a YOLOv5 classifier model on a classification dataset
 
 Usage - train:
-    $ python classifier.py --model yolov5s --data mnist --epochs 5 --img 128
+    $ python classifier.py --model yolov5s --data cifar100 --epochs 5 --img 224 --batch 128
     $ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 classifier.py --model yolov5s --data imagenet --epochs 5 --img 224 --device 4,5,6,7
 
 Usage - inference:
@@ -112,8 +112,8 @@ def train():
                 model = hub.load(repo1, opt.model, pretrained=pretrained, autoshape=False, force_reload=True)
             if isinstance(model, DetectMultiBackend):
                 model = model.model  # unwrap DetectMultiBackend
-            # model.model = model.model[:10] if opt.model.endswith('6') else model.model[:opt.cutoff]  # backbone
-            model.model = model.model[:opt.cutoff]  # backbone
+            ic = opt.cutoff or (11 if opt.model.endswith('6') else 9)  # cutoff index
+            model.model = model.model[:ic]  # backbone
             m = model.model[-1]  # last layer
             ch = m.conv.in_channels if hasattr(m, 'conv') else m.cv1.conv.in_channels  # ch into module
             c = Classify(ch, nc)  # Classify()
@@ -130,7 +130,8 @@ def train():
     model = model.to(device)
     if RANK in {-1, 0}:
         model_info(model)
-        # print(model)
+        if opt.verbose:
+            LOGGER.info(model)
 
     # EMA
     ema = ModelEMA(model) if RANK in {-1, 0} else None
@@ -349,9 +350,10 @@ if __name__ == '__main__':
     parser.add_argument('--from-scratch', '--scratch', action='store_true', help='train model from scratch')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--optimizer', choices=['SGD', 'Adam', 'AdamW', 'RMSProp'], default='Adam', help='optimizer')
-    parser.add_argument('--lr0', type=float, default=0.0012, help='initial learning rate')
+    parser.add_argument('--lr0', type=float, default=0.0015, help='initial learning rate')
     parser.add_argument('--label-smoothing', type=float, default=0.15, help='Label smoothing epsilon')
-    parser.add_argument('--cutoff', type=int, default=8, help='Layer to cutoff YOLOv5 model for Classify() head')
+    parser.add_argument('--cutoff', type=int, default=None, help='Model layer cutoff index for Classify() head')
+    parser.add_argument('--verbose', action='store_false', help='Verbose mode')
     opt = parser.parse_args()
 
     # Checks
