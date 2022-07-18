@@ -741,7 +741,7 @@ class Classify(nn.Module):
         super().__init__()
         c_ = 1280  # efficientnet_b0 size
         self.cv1 = Conv(c1, c_, k, s, autopad(k, p), g)
-        self.cv2 = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g)  # to x(b,c2,1,1)
+        self.cv2 = nn.Conv2d(c_, c2, k, s, autopad(k, p), groups=g)  # to x(b,c2,1,1)
         self.aap = nn.AdaptiveAvgPool2d(1)  # to x(b,c1,1,1)
         self.flat = nn.Flatten()
 
