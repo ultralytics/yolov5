@@ -112,7 +112,8 @@ def train():
                 model = hub.load(repo1, opt.model, pretrained=pretrained, autoshape=False, force_reload=True)
             if isinstance(model, DetectMultiBackend):
                 model = model.model  # unwrap DetectMultiBackend
-            model.model = model.model[:10] if opt.model.endswith('6') else model.model[:8]  # backbone
+            # model.model = model.model[:10] if opt.model.endswith('6') else model.model[:opt.cutoff]  # backbone
+            model.model = model.model[:opt.cutoff]  # backbone
             m = model.model[-1]  # last layer
             ch = m.conv.in_channels if hasattr(m, 'conv') else m.cv1.conv.in_channels  # ch into module
             c = Classify(ch, nc)  # Classify()
@@ -350,6 +351,7 @@ if __name__ == '__main__':
     parser.add_argument('--optimizer', choices=['SGD', 'Adam', 'AdamW', 'RMSProp'], default='Adam', help='optimizer')
     parser.add_argument('--lr0', type=float, default=0.0012, help='initial learning rate')
     parser.add_argument('--label-smoothing', type=float, default=0.15, help='Label smoothing epsilon')
+    parser.add_argument('--cutoff', type=int, default=8, help='Layer to cutoff YOLOv5 model for Classify() head')
     opt = parser.parse_args()
 
     # Checks
