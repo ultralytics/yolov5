@@ -10,7 +10,7 @@
     "serve"
   ],
   "description": "Deploy model as REST API service",
-  "docker_image": "supervisely/base-pytorch:6.0.22",
+  "docker_image": "supervisely/base-pytorch:6.0.23",
   "instance_version": "6.4.57",
   "main_script": "supervisely/serve/src/sly_serve.py",
   "modal_template": "supervisely/serve/src/modal.html",
