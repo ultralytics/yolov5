@@ -54,7 +54,7 @@ from utils.loggers import Loggers, NewLoggersMask
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.seg_loss import ComputeLoss
 #from utils.metrics import fitness
-from utils.plots import plot_evolve, plot_labels
+from utils.seg_plots import plot_evolve, plot_labels
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
 
 
@@ -66,7 +66,7 @@ from utils.autobatch import check_train_batch_size
 from torch.optim import AdamW
 import yaml
 from datetime import datetime
-from evaluator import Yolov5Evaluator
+from eval_seg import Yolov5Evaluator
 
 def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictionary
     print(device)
