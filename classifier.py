@@ -106,10 +106,11 @@ def train():
     repo1, repo2 = 'ultralytics/yolov5', 'rwightman/gen-efficientnet-pytorch'
     with torch_distributed_zero_first(LOCAL_RANK):
         if opt.model.startswith('yolov5'):  # YOLOv5 Classifier
+            kwargs = {'pretrained': pretrained, 'autoshape': False, 'trust_repo': True}
             try:
-                model = hub.load(repo1, opt.model, pretrained=pretrained, autoshape=False)
+                model = hub.load(repo1, opt.model, **kwargs)
             except Exception:
-                model = hub.load(repo1, opt.model, pretrained=pretrained, autoshape=False, force_reload=True)
+                model = hub.load(repo1, opt.model, force_reload=True, **kwargs)
             if isinstance(model, DetectMultiBackend):
                 model = model.model  # unwrap DetectMultiBackend
             ic = opt.cutoff or (11 if opt.model.endswith('6') else 9)  # cutoff index
@@ -122,7 +123,7 @@ def train():
             for p in model.parameters():
                 p.requires_grad = True  # for training
         elif opt.model in hub.list(repo2):  # i.e. efficientnet_b0
-            model = hub.load(repo2, opt.model, pretrained=pretrained)
+            model = hub.load(repo2, opt.model, pretrained=pretrained, trust_repo=True)
             model.classifier = nn.Linear(model.classifier.in_features, nc)
         else:  # try torchvision
             model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
