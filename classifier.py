@@ -109,7 +109,7 @@ def train():
                 model = hub.load(repo1, opt.model, force_reload=True, **kwargs)
             if isinstance(model, DetectMultiBackend):
                 model = model.model  # unwrap DetectMultiBackend
-            ic = opt.cutoff or (10 if opt.model.endswith('6') else 8)  # cutoff index
+            ic = opt.cutoff or (12 if opt.model.endswith('6') else 10)  # cutoff index
             model.model = model.model[:ic]  # backbone
             m = model.model[-1]  # last layer
             ch = m.conv.in_channels if hasattr(m, 'conv') else m.cv1.conv.in_channels  # ch into module
