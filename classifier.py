@@ -171,7 +171,7 @@ def train():
         if RANK in {-1, 0}:
             pbar = tqdm(enumerate(trainloader), total=len(trainloader), bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
         for i, (images, labels) in pbar:  # progress bar
-            images, labels = images.to(device), labels.to(device)
+            images, labels = images.to(device, non_blocking=True), labels.to(device)
 
             # Forward
             with amp.autocast(enabled=cuda):  # stability issues when enabled
@@ -249,7 +249,7 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     bar = tqdm(dataloader, desc, n, False, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
     with amp.autocast(enabled=cuda):  # stability issues when enabled
         for images, labels in bar:
-            images, labels = images.to(device), labels.to(device)
+            images, labels = images.to(device, non_blocking=True), labels.to(device)
             y = model(images)
             pred.append(torch.max(y, 1)[1])
             targets.append(labels)
