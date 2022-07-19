@@ -64,7 +64,7 @@ def save_one_json(predn, jdict, path, class_map, pred_masks=None):
 class Yolov5Evaluator:
     def __init__(self, data, conf_thres=0.001, iou_thres=0.6, device="", single_cls=False, augment=False, verbose=False,
             project="runs/val", name="exp", exist_ok=False, half=True, save_dir=Path(""), nosave=False, plots=True,
-            max_plot_dets=10, mask=False, mask_downsample_ratio=1, ) -> None:
+            max_plot_dets=10, mask=False, mask_downsample_ratio=1, overlap=False) -> None:
         self.data = check_dataset(data)  # check
         self.conf_thres = conf_thres  # confidence threshold
         self.iou_thres = iou_thres  # NMS IoU threshold
@@ -82,6 +82,7 @@ class Yolov5Evaluator:
         self.max_plot_dets = max_plot_dets
         self.mask = mask
         self.mask_downsample_ratio = mask_downsample_ratio
+        self.overlap = overlap
 
         self.nc = 1 if self.single_cls else int(self.data["nc"])  # number of classes
         self.iouv = torch.linspace(0.5, 0.95, 10)  # iou vector for mAP@0.5:0.95
@@ -130,7 +131,7 @@ class Yolov5Evaluator:
             img = img.to(self.device, non_blocking=True)
             targets = targets.to(self.device)
             if masks is not None:
-                masks = masks.to(self.device)
+                masks = masks.to(self.device).float()
             out, train_out = self.inference(model, img, targets, masks, compute_loss)
 
             # Statistics per image
@@ -139,7 +140,8 @@ class Yolov5Evaluator:
 
                 # eval in every image level
                 labels = targets[targets[:, 0] == si, 1:]
-                gt_masksi = masks[targets[:, 0] == si] if masks is not None else None
+                midx = [si] if self.overlap else targets[:, 0] == si
+                gt_masksi = masks[midx] if masks is not None else None
 
                 # get predition masks
                 proto_out = train_out[1][si] if isinstance(train_out, tuple) else None
@@ -181,7 +183,7 @@ class Yolov5Evaluator:
             img = img.to(self.device, non_blocking=True)
             targets = targets.to(self.device)
             if masks is not None:
-                masks = masks.to(self.device)
+                masks = masks.to(self.device).float()
             out, train_out = self.inference(model, img, targets, masks)
 
             # Statistics per image
@@ -193,7 +195,8 @@ class Yolov5Evaluator:
 
                 # eval in every image level
                 labels = targets[targets[:, 0] == si, 1:]
-                gt_masksi = masks[targets[:, 0] == si] if masks is not None else None
+                midx = [si] if self.overlap else targets[:, 0] == si
+                gt_masksi = masks[midx] if masks is not None else None
 
                 # get predition masks
                 proto_out = train_out[1][si] if isinstance(train_out, tuple) else None
@@ -390,6 +393,13 @@ class Yolov5Evaluator:
 
         correct = torch.zeros(predn.shape[0], self.iouv.shape[0], dtype=torch.bool, device=self.iouv.device, )
 
+        # convert masks (1, 640, 640) -> (n, 640, 640)
+        if self.overlap:
+            nl = len(labels)
+            index = torch.arange(nl, device=gt_masksi.device).view(nl, 1, 1) + 1
+            gt_masksi = gt_masksi.repeat(nl, 1, 1)
+            gt_masksi = torch.where(gt_masksi == index, 1.0, 0.0)
+
         if gt_masksi.shape[1:] != pred_maski.shape[1:]:
             gt_masksi = F.interpolate(gt_masksi.unsqueeze(0), pred_maski.shape[1:], mode="bilinear",
                 align_corners=False, ).squeeze(0)
@@ -462,7 +472,7 @@ class Yolov5Evaluator:
         
         if masks is not None and masks.shape[1:] != img.shape[2:]:
             masks = F.interpolate(
-                masks.unsqueeze(0),
+                masks.unsqueeze(0).float(),
                 img.shape[2:],
                 mode="bilinear",
                 align_corners=False,

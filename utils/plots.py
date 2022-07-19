@@ -1235,12 +1235,17 @@ def plot_images_and_masks(
         if len(targets) > 0:
             idx = (targets[:, 0]).astype(int)
             image_targets = targets[idx == i]
-            # print(targets.shape)
-            # print(masks.shape)
-            image_masks = masks[idx == i]
-            # mosaic_masks
-            # mosaic_masks[block_y:block_y + h,
-            #              block_x:block_x + w, :] = image_masks
+
+            if masks.max() > 1.0:  # mean that masks are overlap
+                image_masks = masks[[i]]  # (1, 640, 640)
+                # convert masks (1, 640, 640) -> (n, 640, 640)
+                nl = len(image_targets)
+                index = np.arange(nl).reshape(nl, 1, 1) + 1
+                image_masks = np.repeat(image_masks, nl, axis=0)
+                image_masks = np.where(image_masks == index, 1.0, 0.0)
+            else:
+                image_masks = masks[idx == i]
+
             boxes = xywh2xyxy(image_targets[:, 2:6]).T
             classes = image_targets[:, 1].astype("int")
             labels = image_targets.shape[1] == 6  # labels if no conf column
