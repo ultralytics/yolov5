@@ -152,6 +152,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         # Simplify
         if simplify:
             try:
+                check_requirements(('onnx', 'onnxruntime-gpu' if cuda else 'onnxruntime'))
                 check_requirements(('onnx-simplifier>=0.4.1',))
                 import onnxsim
 
@@ -491,7 +492,7 @@ def run(
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
     assert nc == len(names), f'Model class count {nc} != len(names) {len(names)}'
     if optimize:
-        assert device.type != 'cuda', '--optimize not compatible with cuda devices, i.e. use --device cpu'
+        assert device.type == 'cpu', '--optimize not compatible with cuda devices, i.e. use --device cpu'
 
     # Input
     gs = int(max(model.stride))  # grid size (max stride)
