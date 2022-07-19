@@ -98,10 +98,6 @@ def train():
     nc = len(names)  # number of classes
     LOGGER.info(f'Training {opt.model} on {data} dataset with {nc} classes...')
 
-    # Show images
-    images, labels = next(iter(trainloader))
-    logger.log_images(imshow(denormalize(images[:25]), labels[:25], names=names, f=save_dir / 'train_images.jpg'))
-
     # Model
     repo1, repo2 = 'ultralytics/yolov5', 'rwightman/gen-efficientnet-pytorch'
     with torch_distributed_zero_first(LOCAL_RANK):
@@ -129,10 +125,14 @@ def train():
             model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
             model.fc = nn.Linear(model.fc.weight.shape[1], nc)
     model = model.to(device)
+
+    # Info
     if RANK in {-1, 0}:
         model_info(model)
         if opt.verbose:
             LOGGER.info(model)
+        images, labels = next(iter(trainloader))
+        logger.log_images(imshow(denormalize(images[:25]), labels[:25], names=names, f=save_dir / 'train_images.jpg'))
 
     # EMA
     ema = ModelEMA(model) if RANK in {-1, 0} else None
