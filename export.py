@@ -156,9 +156,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
                 import onnxsim
 
                 LOGGER.info(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
-                model_onnx, check = onnxsim.simplify(model_onnx,
-                                                     dynamic_input_shape=dynamic,
-                                                     input_shapes={'images': list(im.shape)} if dynamic else None)
+                model_onnx, check = onnxsim.simplify(model_onnx)
                 assert check, 'assert check failed'
                 onnx.save(model_onnx, f)
             except Exception as e:
