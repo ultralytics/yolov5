@@ -102,11 +102,8 @@ class Loggers():
     def on_train_batch_end(self, ni, model, imgs, targets, paths, plots):
         # Callback runs on train batch end
         if plots:
-            if ni == 0:
-                if not self.opt.sync_bn:  # --sync known issue https://github.com/ultralytics/yolov5/issues/3754
-                    with warnings.catch_warnings():
-                        warnings.simplefilter('ignore')  # suppress jit trace warning
-                        self.tb.add_graph(torch.jit.trace(de_parallel(model), imgs[0:1], strict=False), [])
+            if ni == 0 and not self.opt.sync_bn and self.tb:
+                log_tensorboard_graph(self.tb, model, imgsz=list(imgs.shape[2:4]))
             if ni < 3:
                 f = self.save_dir / f'train_batch{ni}.jpg'  # filename
                 plot_images(imgs, targets, paths, f)
@@ -217,7 +214,7 @@ class GenericLogger:
             self.wandb = None
 
     def log_metrics(self, metrics_dict, epoch):
-        # Log metrics dictionary to initialized loggers
+        # Log metrics dictionary to all loggers
         if self.tb:
             for k, v in metrics_dict.items():
                 self.tb.add_scalar(k, v, epoch)
@@ -226,7 +223,7 @@ class GenericLogger:
             self.wandb.log(metrics_dict)
 
     def log_images(self, files, epoch=0):
-        # Log images to initialized loggers
+        # Log images to all loggers
         files = [Path(f) for f in (files if isinstance(files, (tuple, list)) else [files])]  # to Path
         files = [f for f in files if f.exists()]  # filter by exists
 
@@ -236,3 +233,20 @@ class GenericLogger:
 
         if self.wandb:
             self.wandb.log({"Images": [wandb.Image(str(f), caption=f.name) for f in files]})
+
+    def log_model(self, model, imgsz=(640, 640)):
+        # Log model graph to all loggers
+        if self.tb:
+            log_tensorboard_graph(self.tb, model, imgsz)
+
+
+def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
+    # Log model graph to TensorBoard
+    try:
+        p = next(model.parameters())  # for device, type
+        im = torch.zeros((1, 3, *imgsz)).to(p.device).type_as(p)  # input image
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')  # suppress jit trace warning
+            tb.add_graph(torch.jit.trace(de_parallel(model), im, strict=False), [])
+    except Exception:
+        print('WARNING: TensorBoard graph visualization failure')
