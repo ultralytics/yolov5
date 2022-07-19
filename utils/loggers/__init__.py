@@ -5,6 +5,7 @@ Logging utils
 
 import os
 import warnings
+from pathlib import Path
 
 import pkg_resources as pkg
 import torch
@@ -217,9 +218,21 @@ class GenericLogger:
 
     def log_metrics(self, metrics_dict, epoch):
         # Log metrics dictionary to initialized loggers
-        if self.wandb:
-            self.wandb.log(metrics_dict)
-
         if self.tb:
             for k, v in metrics_dict.items():
                 self.tb.add_scalar(k, v, epoch)
+
+        if self.wandb:
+            self.wandb.log(metrics_dict)
+
+    def log_images(self, files, epoch=0):
+        # Log images to initialized loggers
+        files = [Path(f) for f in (files if isinstance(files, (tuple, list)) else [files])]  # to Path
+        files = [f for f in files if f.exists()]  # filter by exists
+
+        if self.tb:
+            for f in files:
+                self.tb.add_image(f.stem, cv2.imread(str(f))[..., ::-1], epoch, dataformats='HWC')
+
+        if self.wandb:
+            self.wandb.log({"Images": [wandb.Image(str(f), caption=f.name) for f in files]})

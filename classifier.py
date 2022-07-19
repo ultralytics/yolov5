@@ -100,7 +100,7 @@ def train():
 
     # Show images
     images, labels = next(iter(trainloader))
-    imshow(denormalize(images[:25]), labels[:25], names=names, f=save_dir / 'train_images.jpg')
+    logger.log_images(imshow(denormalize(images[:25]), labels[:25], names=names, f=save_dir / 'train_images.jpg'))
 
     # Model
     repo1, repo2 = 'ultralytics/yolov5', 'rwightman/gen-efficientnet-pytorch'
@@ -238,7 +238,8 @@ def train():
         images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
         images = images.to(device)
         pred = torch.max(model(images), 1)[1]
-        imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
+        file = imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
+        logger.log_images(file, epoch)
 
 
 @torch.no_grad()
@@ -328,6 +329,7 @@ def imshow(img, labels=None, pred=None, names=None, nmax=25, verbose=False, f=Pa
             LOGGER.info('True:     ' + ' '.join(f'{names[i]:3s}' for i in labels[:nmax]))
         if pred is not None:
             LOGGER.info('Predicted:' + ' '.join(f'{names[i]:3s}' for i in pred[:nmax]))
+    return f
 
 
 if __name__ == '__main__':
