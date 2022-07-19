@@ -2,6 +2,9 @@
 supervisely==6.35.0
 supervisely[apps]==6.35.0
 
+opencv-python-headless==4.5.5.62
+opencv-python==4.5.5.62
+
 # base ----------------------------------------
 PyYAML==5.4.1
 tensorboard==2.4.1
