@@ -66,7 +66,7 @@ from utils.autobatch import check_train_batch_size
 from torch.optim import AdamW
 import yaml
 from datetime import datetime
-from eval_seg import Yolov5Evaluator
+from evaluate import Yolov5Evaluator
 
 def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictionary
     print(device)
