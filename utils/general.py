@@ -765,7 +765,7 @@ def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
     coords[:, [0, 2]] -= pad[0]  # x padding
     coords[:, [1, 3]] -= pad[1]  # y padding
     coords[:, :4] /= gain
-    coords=clip_coords(coords, img0_shape)
+    coords = clip_coords(coords, img0_shape)
     return coords
 
 
@@ -780,6 +780,7 @@ def clip_coords(boxes, shape):
         boxes[:, [0, 2]] = boxes[:, [0, 2]].clip(0, shape[1])  # x1, x2
         boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, shape[0])  # y1, y2
     return boxes
+
 
 def non_max_suppression(prediction,
                         conf_thres=0.25,
