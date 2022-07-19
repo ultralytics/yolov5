@@ -12,8 +12,9 @@ from utils.torch_utils import is_parallel
 
 class ComputeLoss:
     # Compute losses
-    def __init__(self, model, autobalance=False):
+    def __init__(self, model, autobalance=False, overlap=False):
         self.sort_obj_iou = False
+        self.overlap = overlap
         device = next(model.parameters()).device  # get model device
         h = model.hyp  # hyperparameters
 
@@ -141,8 +142,7 @@ class ComputeLoss:
                     lcls += self.BCEcls(ps[:, self.nm:], t)  # BCE
 
                 # Mask Regression
-                mask_gt = masks[tidxs[i]]
-                downsampled_masks = F.interpolate(mask_gt[None, :], (mask_h, mask_w), mode="bilinear",
+                downsampled_masks = F.interpolate(masks[None, :], (mask_h, mask_w), mode="bilinear",
                     align_corners=False, ).squeeze(0)
 
                 mxywh = xywh[i]
@@ -155,8 +155,15 @@ class ComputeLoss:
                 batch_lseg = torch.zeros(1, device=device)
                 for bi in b.unique():
                     index = b == bi
-                    mask_gti = downsampled_masks[index]
-                    mask_gti = mask_gti.permute(1, 2, 0).contiguous()
+                    if self.overlap:
+                        mask_index = tidxs[i][index]
+                        # h, w, n
+                        mask_gti = downsampled_masks[bi][:, :, None].repeat(1, 1, index.sum())
+                        # h, w, n
+                        mask_gti = torch.where(mask_gti == mask_index, 1.0, 0.0)
+                    else:
+                        mask_gti = downsampled_masks[tidxs[i]][index]
+                        mask_gti = mask_gti.permute(1, 2, 0).contiguous()
 
                     mw, mh = mws[index], mhs[index]
                     mxyxy = mxyxys[index]
@@ -190,10 +197,6 @@ class ComputeLoss:
         lseg = crop(lseg, xyxy)
         lseg = lseg.mean(dim=(0, 1)) / w / h
         return lseg.mean()
-
-    def mask_loss(self, gt_masks, preds, protos, xyxys, ws, hs):
-        """mask loss of batches."""
-        pass
 
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
@@ -257,8 +260,23 @@ class ComputeLoss:
         gain = torch.ones(8, device=targets.device)  # normalized to gridspace gain
         ai = (
             torch.arange(na, device=targets.device).float().view(na, 1).repeat(1, nt))  # same as .repeat_interleave(nt)
-        ti = (
-            torch.arange(nt, device=targets.device).float().view(1, nt).repeat(na, 1))  # same as .repeat_interleave(nt)
+        if self.overlap:
+            batch = p[0].shape[0]
+            ti = []
+            for i in range(batch):
+                # find number of targets of each image
+                num = (targets[:, 0] == i).sum()
+                # (na, num)
+                ti.append(
+                    torch.arange(num, device=targets.device)
+                    .float()
+                    .view(1, num)
+                    .repeat(na, 1) + 1)
+            # (na, nt)
+            ti = torch.cat(ti, 1)
+        else:
+            ti = (
+                torch.arange(nt, device=targets.device).float().view(1, nt).repeat(na, 1))  # same as .repeat_interleave(nt)
 
         targets = torch.cat((targets.repeat(na, 1, 1), ai[:, :, None], ti[:, :, None]), 2)  # append anchor indices
 

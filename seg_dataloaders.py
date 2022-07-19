@@ -61,7 +61,7 @@ class YoloBatchSampler(torchBatchSampler):
 
 def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False, pad=0.0,
         rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix="", shuffle=False, neg_dir="",
-        bg_dir="", area_thr=0.2, mask_head=False, mask_downsample_ratio=1, ):
+        bg_dir="", area_thr=0.2, mask_head=False, mask_downsample_ratio=1, overlap_mask=False):
     if rect and shuffle:
         print("WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False")
         shuffle = False
@@ -75,6 +75,7 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
             prefix=prefix, neg_dir=neg_dir, bg_dir=bg_dir, area_thr=area_thr, )
         if mask_head:
             dataset.downsample_ratio = mask_downsample_ratio
+            dataset.overlap = overlap_mask
 
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, workers])  # number of workers
@@ -454,11 +455,12 @@ class LoadImagesAndLabels(Dataset):
 class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
             cache_images=False, single_cls=False, stride=32, pad=0, prefix="", neg_dir="", bg_dir="", area_thr=0.2,
-            downsample_ratio=1,  # return dowmsample mask
+            downsample_ratio=1, overlap=False,
     ):
         super().__init__(path, img_size, batch_size, augment, hyp, rect, image_weights, cache_images, single_cls,
             stride, pad, prefix, neg_dir, bg_dir, area_thr, )
         self.downsample_ratio = downsample_ratio
+        self.overlap = overlap
 
     @Dataset.mosaic_getitem
     def __getitem__(self, index):
@@ -506,13 +508,18 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
         nl = len(labels)  # number of labels
         if nl:
             labels[:, 1:5] = xyxy2xywhn(labels[:, 1:5], w=img.shape[1], h=img.shape[0], clip=True, eps=1e-3)
-            for si in range(len(segments)):
-                mask = polygon2mask_downsample(img.shape[:2], [segments[si].reshape(-1)],
-                    downsample_ratio=self.downsample_ratio, )
-                masks.append(torch.from_numpy(mask.astype(np.float32)))
+            if self.overlap:
+                masks, sorted_idx = polygons2masks_overlap(img.shape[:2], segments, 
+                        downsample_ratio=self.downsample_ratio)
+                masks = masks[None]  # (640, 640) -> (1, 640, 640)
+                labels = labels[sorted_idx]
+            else:
+                masks = polygons2masks(img.shape[:2], segments, color=1, downsample_ratio=self.downsample_ratio)
 
-        masks = (torch.stack(masks, axis=0) if len(masks) else torch.zeros(nl, img.shape[0] // self.downsample_ratio,
-                                                                               img.shape[1] // self.downsample_ratio))
+        masks = (torch.from_numpy(masks) if len(masks) else 
+                torch.zeros(1 if self.overlap else nl, 
+                    img.shape[0] // self.downsample_ratio,
+                    img.shape[1] // self.downsample_ratio))
         # TODO: albumentations support
         if self.augment:
             # Albumentations
@@ -930,23 +937,6 @@ def exif_transpose(image):
     return image
 
 
-def polygon2mask(img_size, polygons, color=1, downsample_ratio=1):
-    """
-    Args:
-        img_size (tuple): The image size.
-        polygons (np.ndarray): [N, M], N is the number of polygons,
-            M is the number of points(Be divided by 2).
-    """
-    img_size = (img_size[0] // downsample_ratio, img_size[1] // downsample_ratio)
-    mask = np.zeros(img_size, dtype=np.uint8)
-    polygons = np.asarray(polygons) / downsample_ratio
-    polygons = polygons.astype(np.int32)
-    shape = polygons.shape
-    polygons = polygons.reshape(shape[0], -1, 2)
-    cv2.fillPoly(mask, polygons, color=color)
-    return mask
-
-
 def worker_init_reset_seed(worker_id):
     seed = uuid.uuid4().int % 2 ** 32
     random.seed(seed)
@@ -954,7 +944,7 @@ def worker_init_reset_seed(worker_id):
     np.random.seed(seed)
 
 
-def polygon2mask_downsample(img_size, polygons, color=1, downsample_ratio=1):
+def polygon2mask(img_size, polygons, color=1, downsample_ratio=1):
     """
     Args:
         img_size (tuple): The image size.
@@ -968,8 +958,51 @@ def polygon2mask_downsample(img_size, polygons, color=1, downsample_ratio=1):
     polygons = polygons.reshape(shape[0], -1, 2)
     cv2.fillPoly(mask, polygons, color=color)
     nh, nw = (img_size[0] // downsample_ratio, img_size[1] // downsample_ratio)
+    # NOTE: fillPoly then resize is trying the keep the same way 
+    # of loss calculation when mask-ratio=1.
     mask = cv2.resize(mask, (nw, nh))
     return mask
+
+
+def polygons2masks(img_size, polygons, color, downsample_ratio=1):
+    """
+    Args:
+        img_size (tuple): The image size.
+        polygons (list[np.ndarray]): each polygon is [N, M], 
+            N is the number of polygons,
+            M is the number of points(Be divided by 2).
+    """
+    masks = []
+    for si in range(len(polygons)):
+        mask = polygon2mask(img_size, [polygons[si].reshape(-1)], color,
+                            downsample_ratio)
+        masks.append(mask)
+    return np.array(masks)
+
+
+def polygons2masks_overlap(img_size, segments, downsample_ratio=1):
+    """Return a (640, 640) overlap mask."""
+    masks = np.zeros((img_size[0] // downsample_ratio, img_size[1] // downsample_ratio),
+                    dtype=np.uint8)
+    areas = []
+    ms = []
+    for si in range(len(segments)):
+        mask = polygon2mask(
+            img_size,
+            [segments[si].reshape(-1)],
+            downsample_ratio=downsample_ratio,
+            color=1,
+        )
+        ms.append(mask)
+        areas.append(mask.sum())
+    areas = np.asarray(areas)
+    index = np.argsort(-areas)
+    ms = np.array(ms)[index]
+    for i in range(len(segments)):
+        mask = ms[i] * (i + 1)
+        masks = masks + mask
+        masks = np.clip(masks, a_min=0, a_max=i + 1)
+    return masks, index
 
 
 def img2label_paths(img_paths):

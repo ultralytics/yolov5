@@ -78,7 +78,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     # Directories
     w = save_dir / 'weights'  # weights dir
     (w.parent if evolve else w).mkdir(parents=True, exist_ok=True)  # make dir
-    last, best, last_mosiac = w / 'last.pt', w / 'best.pt', w / "last_mosaic.pt"
+    last, best = w / 'last.pt', w / 'best.pt'
 
     # Hyperparameters
     if isinstance(hyp, str):
@@ -107,6 +107,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
     # Config
     plots = not evolve and not opt.noplots  # create plots
+    overlap = opt.overlap_mask
     cuda = device.type != 'cpu'
     init_seeds(opt.seed + 1 + RANK, True)
     with torch_distributed_zero_first(LOCAL_RANK):
@@ -163,7 +164,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             mask=True,
             verbose=False,
             mask_downsample_ratio=mask_ratio,
-            plots=plots
+            plots=plots,
+            overlap=overlap
         )
     g = [], [], []  # optimizer parameter groups
     bn = tuple(v for k, v in nn.__dict__.items() if 'Norm' in k)  # normalization layers, i.e. BatchNorm2d()
@@ -249,7 +251,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                               prefix=colorstr('train: '),
                                               mask_head=True,
                                               shuffle=True,
-                                              mask_downsample_ratio=mask_ratio
+                                              mask_downsample_ratio=mask_ratio,
+                                              overlap_mask=overlap,
                                               )
     mlc = int(np.concatenate(dataset.labels, 0)[:, 0].max())  # max label class
     print("mlc , nc ", mlc, "  ", nc )
@@ -271,6 +274,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                        pad=0.5,
                                        mask_head=True,
                                        mask_downsample_ratio=mask_ratio,
+                                       overlap_mask=overlap,
                                        prefix=colorstr('val: '))[0]
 
         if not resume:
@@ -312,11 +316,11 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     # nw = min(nw, (epochs - start_epoch) / 2 * nb)  # limit warmup to < 1/2 of training
     last_opt_step = -1
     maps = np.zeros(nc)  # mAP per class
-    results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
+    results = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = torch.cuda.amp.GradScaler(enabled=amp)
     stopper, stop = EarlyStopping(patience=opt.patience), False
-    compute_loss = ComputeLoss(model)  # init loss class
+    compute_loss = ComputeLoss(model, overlap=overlap)  # init loss class
     callbacks.run('on_train_start')
     LOGGER.info(f'Image sizes {imgsz} train, {imgsz} val\n'
                 f'Using {train_loader.num_workers * WORLD_SIZE} dataloader workers\n'
@@ -371,7 +375,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # Forward
             with torch.cuda.amp.autocast(amp):
                 pred = model(imgs)  # forward
-                loss, loss_items = compute_loss(pred, targets.to(device),  masks=masks.to(device))  # loss scaled by batch_size
+                loss, loss_items = compute_loss(pred, targets.to(device),  masks=masks.to(device).float())  # loss scaled by batch_size
                 if RANK != -1:
                     loss *= WORLD_SIZE  # gradient averaged between devices in DDP mode
                 if opt.quad:
@@ -398,12 +402,12 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # for plots
                 if mask_ratio != 1:
                     masks = F.interpolate(
-                        masks[None, :],
+                        masks[None, :].float(),
                         (imgsz, imgsz),
                         mode="bilinear",
                         align_corners=False,
                     ).squeeze(0)
-                callbacks.run('on_train_batch_end', ni, model, imgs, targets,masks, paths, plots, opt.sync_bn, None)
+                callbacks.run('on_train_batch_end', ni, model, imgs, targets, masks, paths, plots, opt.sync_bn)
 
                 if callbacks.stop_training:
                     return
@@ -525,7 +529,8 @@ def parse_opt(known=False):
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--seed', type=int, default=0, help='Global training seed')
     parser.add_argument('--local_rank', type=int, default=-1, help='Automatic DDP Multi-GPU argument, do not modify')
-    parser.add_argument('--mask-ratio', type=int, default=1, help='mask ratio')
+    parser.add_argument('--mask-ratio', type=int, default=1, help='Downsample the gt masks to saving memory')
+    parser.add_argument('--overlap-mask', action='store_true', help='Overlapping masks train faster at the cost of slight accuray decrease')
 
     # Weights & Biases arguments
     parser.add_argument('--entity', default=None, help='W&B: Entity')

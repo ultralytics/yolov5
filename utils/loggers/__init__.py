@@ -377,9 +377,7 @@ class NewLoggersMask(NewLoggers):
         ]
 
         
-    def on_train_batch_end(
-        self, ni, model, imgs, targets, masks, paths, plots, sync_bn, plot_idx
-    ):
+    def on_train_batch_end(self, ni, model, imgs, targets, masks, paths, plots, sync_bn):
         # Callback runs on train batch end
         if plots and self.save_dir.exists():
             if ni == 0:
@@ -394,14 +392,9 @@ class NewLoggersMask(NewLoggers):
                             ),
                             [],
                         )
-            if plot_idx is not None and ni in plot_idx:
-                # if ni < 3:
+            if ni < 3:
                 f = self.save_dir / f"train_batch{ni}.jpg"  # filename
-                Thread(
-                    target=plot_images_and_masks,
-                    args=(imgs, targets, masks, paths, f),
-                    daemon=True,
-                ).start()
+                plot_images_and_masks(imgs, targets, masks, paths, f)
                 if self.wandb:
                     wandb.log({"train_labels": wandb.Image(str(f))})
                 
