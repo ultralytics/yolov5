@@ -247,13 +247,14 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     n = len(dataloader)  # number of batches
     desc = f'{pbar.desc}validating'
     bar = tqdm(dataloader, desc, n, False, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
-    for images, labels in bar:
-        images, labels = images.to(device), labels.to(device)
-        y = model(images)
-        pred.append(torch.max(y, 1)[1])
-        targets.append(labels)
-        if criterion:
-            loss += criterion(y, labels)
+    with amp.autocast(enabled=cuda):  # stability issues when enabled
+        for images, labels in bar:
+            images, labels = images.to(device), labels.to(device)
+            y = model(images)
+            pred.append(torch.max(y, 1)[1])
+            targets.append(labels)
+            if criterion:
+                loss += criterion(y, labels)
 
     loss /= n
     pred, targets = torch.cat(pred), torch.cat(targets)
