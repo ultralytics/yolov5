@@ -112,6 +112,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
 def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:')):
     # YOLOv5 ONNX export
     try:
+        cuda = 'cuda' in next(model.parameters()).device.type
         check_requirements(('onnx',))
         import onnx
 
