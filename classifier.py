@@ -100,7 +100,7 @@ def train():
 
     # Show images
     images, labels = next(iter(trainloader))
-    imshow(denormalize(images[:64]), labels[:64], names=names, f=save_dir / 'train_images.jpg')
+    imshow(denormalize(images[:25]), labels[:25], names=names, f=save_dir / 'train_images.jpg')
 
     # Model
     repo1, repo2 = 'ultralytics/yolov5', 'rwightman/gen-efficientnet-pytorch'
@@ -234,7 +234,7 @@ def train():
                     f"\nResults saved to {colorstr('bold', save_dir)}")
 
         # Show predictions
-        images, labels = (x[:64] for x in next(iter(testloader)))  # first 30 images and labels
+        images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
         images = images.to(device)
         pred = torch.max(model(images), 1)[1]
         imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
@@ -302,7 +302,7 @@ def classify(model, size=128, file='../datasets/mnist/test/3/30.png', plot=False
     return p
 
 
-def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Path('images.jpg')):
+def imshow(img, labels=None, pred=None, names=None, nmax=25, verbose=False, f=Path('images.jpg')):
     # Show classification image grid with labels (optional) and predictions (optional)
     import matplotlib.pyplot as plt
 
@@ -310,23 +310,23 @@ def imshow(img, labels=None, pred=None, names=None, nmax=64, verbose=False, f=Pa
     blocks = torch.chunk(img.cpu(), len(img), dim=0)  # select batch index 0, block by channels
     n = min(len(blocks), nmax)  # number of plots
     m = min(8, round(n ** 0.5))  # 8 x 8 default
-    fig, ax = plt.subplots(math.ceil(n / m), m, tight_layout=True)  # 8 rows x n/8 cols
+    fig, ax = plt.subplots(math.ceil(n / m), m)  # 8 rows x n/8 cols
     ax = ax.ravel() if m > 1 else [ax]
-    plt.subplots_adjust(wspace=0.05, hspace=0.05)
+    # plt.subplots_adjust(wspace=0.05, hspace=0.05)
     for i in range(n):
         ax[i].imshow(blocks[i].squeeze().permute((1, 2, 0)).numpy().clip(0.0, 1.0))
         ax[i].axis('off')
         if labels is not None:
             s = names[labels[i]] + (f'—{names[pred[i]]}' if pred is not None else '')
-            ax[i].set_title(s)
+            ax[i].set_title(s, fontsize=8, verticalalignment='top')
     plt.savefig(f, dpi=300, bbox_inches='tight')
     plt.close()
     LOGGER.info(colorstr('imshow: ') + f"examples saved to {f}")
     if verbose:
         if labels is not None:
-            LOGGER.info('True:     ' + ' '.join(f'{names[i]:3s}' for i in labels[:32]))
+            LOGGER.info('True:     ' + ' '.join(f'{names[i]:3s}' for i in labels[:nmax]))
         if pred is not None:
-            LOGGER.info('Predicted:' + ' '.join(f'{names[i]:3s}' for i in pred[:32]))
+            LOGGER.info('Predicted:' + ' '.join(f'{names[i]:3s}' for i in pred[:nmax]))
 
 
 if __name__ == '__main__':
