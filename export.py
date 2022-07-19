@@ -152,7 +152,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         # Simplify
         if simplify:
             try:
-                check_requirements(('onnx-simplifier',))
+                check_requirements(('onnx-simplifier>=0.4.1',))
                 import onnxsim
 
                 LOGGER.info(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
