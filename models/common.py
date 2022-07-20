@@ -305,7 +305,7 @@ class Concat(nn.Module):
 
 class DetectMultiBackend(nn.Module):
     # YOLOv5 MultiBackend class for python inference on various backends
-    def __init__(self, weights='yolov5s.pt', device=torch.device('cpu'), dnn=False, data=None, fp16=False):
+    def __init__(self, weights='yolov5s.pt', device=torch.device('cpu'), dnn=False, data=None, fp16=False, fuse=True):
         # Usage:
         #   PyTorch:              weights = *.pt
         #   TorchScript:                    *.torchscript
@@ -331,7 +331,7 @@ class DetectMultiBackend(nn.Module):
                 names = yaml.safe_load(f)['names']
 
         if pt:  # PyTorch
-            model = attempt_load(weights if isinstance(weights, list) else w, device=device)
+            model = attempt_load(weights if isinstance(weights, list) else w, device=device, inplace=True, fuse=fuse)
             stride = max(int(model.stride.max()), 32)  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
             model.half() if fp16 else model.float()
@@ -361,11 +361,16 @@ class DetectMultiBackend(nn.Module):
         elif xml:  # OpenVINO
             LOGGER.info(f'Loading {w} for OpenVINO inference...')
             check_requirements(('openvino',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
-            from openvino.runtime import Core
+            from openvino.runtime import Core, Layout, get_batch
             ie = Core()
             if not Path(w).is_file():  # if not *.xml
                 w = next(Path(w).glob('*.xml'))  # get *.xml file from *_openvino_model dir
             network = ie.read_model(model=w, weights=Path(w).with_suffix('.bin'))
+            if network.get_parameters()[0].get_layout().empty:
+                network.get_parameters()[0].set_layout(Layout("NCHW"))
+            batch_dim = get_batch(network)
+            if batch_dim.is_static:
+                batch_size = batch_dim.get_length()
             executable_network = ie.compile_model(network, device_name="CPU")  # device_name="MYRIAD" for Intel NCS2
             output_layer = next(iter(executable_network.outputs))
             meta = Path(w).with_suffix('.yaml')
@@ -436,11 +441,16 @@ class DetectMultiBackend(nn.Module):
                 output_details = interpreter.get_output_details()  # outputs
             elif tfjs:
                 raise Exception('ERROR: YOLOv5 TF.js inference is not supported')
+            else:
+                raise Exception(f'ERROR: {w} is not a supported format')
         self.__dict__.update(locals())  # assign all variables to self
 
     def forward(self, im, augment=False, visualize=False, val=False):
         # YOLOv5 MultiBackend inference
         b, ch, h, w = im.shape  # batch, channel, height, width
+        if self.fp16 and im.dtype != torch.float16:
+            im = im.half()  # to FP16
+
         if self.pt:  # PyTorch
             y = self.model(im, augment=augment, visualize=visualize)[0]
         elif self.jit:  # TorchScript
@@ -729,10 +739,14 @@ class Classify(nn.Module):
     # Classification head, i.e. x(b,c1,20,20) to x(b,c2)
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1):  # ch_in, ch_out, kernel, stride, padding, groups
         super().__init__()
+        c_ = 1280  # efficientnet_b0 size
+        self.cv1 = Conv(c1, c_, k, s, autopad(k, p), g)
+        self.cv2 = nn.Conv2d(c_, c2, k, s, autopad(k, p), groups=g)  # to x(b,c2,1,1)
         self.aap = nn.AdaptiveAvgPool2d(1)  # to x(b,c1,1,1)
-        self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g)  # to x(b,c2,1,1)
         self.flat = nn.Flatten()
 
     def forward(self, x):
-        z = torch.cat([self.aap(y) for y in (x if isinstance(x, list) else [x])], 1)  # cat if list
-        return self.flat(self.conv(z))  # flatten to x(b,c2)
+        # z = torch.cat([self.aap(y) for y in (x if isinstance(x, list) else [x])], 1)  # cat if list
+        # return self.flat(self.cv2(z))  # flatten to x(b,c2)
+        x = torch.cat(x, 1) if isinstance(x, list) else x
+        return self.flat(self.cv2(self.aap(self.cv1(x))))

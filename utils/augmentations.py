@@ -9,6 +9,7 @@ import random
 import cv2
 import numpy as np
 import torchvision.transforms as T
+import torchvision.transforms.functional as TF
 
 from utils.general import LOGGER, check_version, colorstr, resample_segments, segment2box
 from utils.metrics import bbox_ioa
@@ -46,6 +47,18 @@ class Albumentations:
             new = self.transform(image=im, bboxes=labels[:, 1:], class_labels=labels[:, 0])  # transformed
             im, labels = new['image'], np.array([[c, *b] for c, b in zip(new['class_labels'], new['bboxes'])])
         return im, labels
+
+
+def normalize(x, mean=IMAGENET_MEAN, std=IMAGENET_STD):
+    # Denormalize RGB images x per ImageNet stats in BCHW format, i.e. = (x - mean) / std
+    return TF.normalize(x, mean, std, inplace=True)
+
+
+def denormalize(x, mean=IMAGENET_MEAN, std=IMAGENET_STD):
+    # Denormalize RGB images x per ImageNet stats in BCHW format, i.e. = x * std + mean
+    for i in range(3):
+        x[:, i] = x[:, i] * std[i] + mean[i]
+    return x
 
 
 def augment_hsv(im, hgain=0.5, sgain=0.5, vgain=0.5):
@@ -328,6 +341,6 @@ def classify_albumentations(augment=True,
         LOGGER.info(colorstr('albumentations: ') + f'{e}')
 
 
-def classify_transforms():
+def classify_transforms(size=224):
     # Transforms to apply if albumentations not installed
-    return T.Compose([T.ToTensor(), T.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
+    return T.Compose([T.ToTensor(), T.Resize((size, size)), T.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
