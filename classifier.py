@@ -42,11 +42,11 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import Classify, DetectMultiBackend
 from utils.augmentations import denormalize, normalize
 from utils.dataloaders import create_classification_dataloader
-from utils.general import (LOGGER, check_file, check_git_status, check_requirements, colorstr, download,
-                           increment_path, init_seeds, print_args)
+from utils.general import (LOGGER, check_file, check_git_status, check_requirements, colorstr, download, increment_path,
+                           init_seeds, print_args)
 from utils.loggers import GenericLogger
-from utils.torch_utils import ModelEMA, model_info, select_device, smart_DDP, smart_optimizer, \
-    torch_distributed_zero_first
+from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_optimizer,
+                               torch_distributed_zero_first)
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
