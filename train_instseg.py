@@ -54,7 +54,7 @@ from utils.loggers import Loggers, NewLoggersMask
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.seg_loss import ComputeLoss
 #from utils.metrics import fitness
-from utils.seg_plots import plot_evolve, plot_labels
+from utils.plots import plot_evolve, plot_labels
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
 
 
