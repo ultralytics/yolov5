@@ -22,6 +22,7 @@ class Albumentations:
     # YOLOv5 Albumentations class (optional, only used if package is installed)
     def __init__(self):
         self.transform = None
+        prefix = colorstr('albumentations: ')
         try:
             import albumentations as A
             check_version(A.__version__, '1.0.3', hard=True)  # version requirement
@@ -36,11 +37,11 @@ class Albumentations:
                 A.ImageCompression(quality_lower=75, p=0.0)]  # transforms
             self.transform = A.Compose(T, bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
 
-            LOGGER.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms if x.p))
+            LOGGER.info(prefix + ', '.join(f'{x}'.replace('always_apply=False, ', '') for x in T if x.p))
         except ImportError:  # package not installed, skip
             pass
         except Exception as e:
-            LOGGER.info(colorstr('albumentations: ') + f'{e}')
+            LOGGER.info(f'{prefix}{e}')
 
     def __call__(self, im, labels, p=1.0):
         if self.transform and random.random() < p:
