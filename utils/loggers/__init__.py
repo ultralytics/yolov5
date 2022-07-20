@@ -332,6 +332,15 @@ class NewLoggers:
                 self.tb.add_image(
                     f.stem, cv2.imread(str(f))[..., ::-1], epoch, dataformats="HWC"
                 )
+        if self.wandb:
+            best = self.save_dir/ "weights" / "best.pt"
+            last = self.save_dir / "weights" / "last.pt"
+            wandb.log_artifact(str(best if best.exists() else last),
+                                   type='model',
+                                   name=f'run_{self.wandb.run.id}_model',
+                                   aliases=['latest', 'best', 'stripped'])
+            self.wandb.finish_run()
+
 
     def on_params_update(self):
         # Update hyperparams or configs of the experiment
