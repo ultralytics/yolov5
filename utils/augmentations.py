@@ -311,6 +311,7 @@ def classify_albumentations(augment=True,
                             std=IMAGENET_STD,
                             auto_aug=False):
     # YOLOv5 classification Albumentations (optional, only used if package is installed)
+    prefix = colorstr('albumentations: ')
     try:
         import albumentations as A
         from albumentations.pytorch import ToTensorV2
@@ -319,7 +320,7 @@ def classify_albumentations(augment=True,
             T = [A.RandomResizedCrop(height=size, width=size, scale=scale)]
             if auto_aug:
                 # TODO: implement AugMix, AutoAug & RandAug in albumentation
-                LOGGER.info(colorstr('augmentations: ') + 'auto augmentations are currently not supported')
+                LOGGER.info(f'{prefix}auto augmentations are currently not supported')
             else:
                 if hflip > 0:
                     T += [A.HorizontalFlip(p=hflip)]
@@ -331,14 +332,13 @@ def classify_albumentations(augment=True,
         else:  # Use fixed crop for eval set (reproducibility)
             T = [A.SmallestMaxSize(max_size=size), A.CenterCrop(height=size, width=size)]
         T += [A.Normalize(mean=mean, std=std), ToTensorV2()]  # Normalize and convert to Tensor
-
-        LOGGER.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in T if x.p))
+        LOGGER.info(prefix + ', '.join(f'{x}'.replace('always_apply=False, ', '') for x in T if x.p))
         return A.Compose(T)
 
     except ImportError:  # package not installed, skip
         pass
     except Exception as e:
-        LOGGER.info(colorstr('albumentations: ') + f'{e}')
+        LOGGER.info(f'{prefix}{e}')
 
 
 def classify_transforms(size=224):
