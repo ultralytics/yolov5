@@ -133,7 +133,7 @@ def train():
             LOGGER.info(model)
         images, labels = next(iter(trainloader))
         logger.log_images(imshow(denormalize(images[:25]), labels[:25], names=names, f=save_dir / 'train_images.jpg'))
-        logger.log_model(model, imgsz)  # log model
+        logger.log_graph(model, imgsz)  # log model
 
     # EMA
     ema = ModelEMA(model) if RANK in {-1, 0} else None

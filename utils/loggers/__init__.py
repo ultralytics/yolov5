@@ -234,7 +234,7 @@ class GenericLogger:
         if self.wandb:
             self.wandb.log({"Images": [wandb.Image(str(f), caption=f.name) for f in files]})
 
-    def log_model(self, model, imgsz=(640, 640)):
+    def log_graph(self, model, imgsz=(640, 640)):
         # Log model graph to all loggers
         if self.tb:
             log_tensorboard_graph(self.tb, model, imgsz)
