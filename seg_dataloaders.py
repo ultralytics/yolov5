@@ -8,11 +8,14 @@ Dataloaders
 import json
 import logging
 import time
+import numpy as np
 from functools import wraps
 from itertools import repeat
 from multiprocessing.pool import ThreadPool, Pool
 from pathlib import Path
 from zipfile import ZipFile
+from PIL import Image
+from tqdm import tqdm
 
 import torch.nn.functional as F
 import yaml
@@ -20,8 +23,6 @@ from torch.utils.data import Dataset as torchDataset
 from torch.utils.data import distributed
 from torch.utils.data.sampler import BatchSampler as torchBatchSampler
 from torch.utils.data.sampler import RandomSampler
-from torch.utils.data.sampler import Sampler
-from tqdm import tqdm
 
 from seg_augmentations import (Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective, )
 from utils.general import colorstr, check_dataset, check_yaml, xywhn2xyxy, xyxy2xywhn, xyn2xy
@@ -60,8 +61,8 @@ class YoloBatchSampler(torchBatchSampler):
 
 
 def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False, pad=0.0,
-        rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix="", shuffle=False, neg_dir="",
-        bg_dir="", area_thr=0.2, mask_head=False, mask_downsample_ratio=1, overlap_mask=False):
+        rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix="", shuffle=False, 
+        area_thr=0.2, mask_head=False, mask_downsample_ratio=1, overlap_mask=False):
     if rect and shuffle:
         print("WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False")
         shuffle = False
@@ -72,7 +73,7 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
             hyp=hyp,  # augmentation hyperparameters
             rect=rect,  # rectangular training
             cache_images=cache, single_cls=single_cls, stride=int(stride), pad=pad, image_weights=image_weights,
-            prefix=prefix, neg_dir=neg_dir, bg_dir=bg_dir, area_thr=area_thr, )
+            prefix=prefix, area_thr=area_thr, )
         if mask_head:
             dataset.downsample_ratio = mask_downsample_ratio
             dataset.overlap = overlap_mask
@@ -88,10 +89,6 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
         # batch-size and batch-sampler is exclusion
         batch_sampler=batch_sampler, pin_memory=True,
         collate_fn=data_load.collate_fn4 if quad else data_load.collate_fn,
-        # Make sure each process has different random seed, especially for 'fork' method.
-        # Check https://github.com/pytorch/pytorch/issues/63311 for more details.
-        # but this will make init_seed() not work.
-        # worker_init_fn=worker_init_reset_seed,
     )
     return dataloader, dataset
 
@@ -141,7 +138,7 @@ class LoadImagesAndLabels(Dataset):
     cache_version = 0.6  # dataset labels *.cache version
 
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-            cache_images=False, single_cls=False, stride=32, pad=0.0, prefix="", neg_dir="", bg_dir="", area_thr=0.2, ):
+            cache_images=False, single_cls=False, stride=32, pad=0.0, prefix="", area_thr=0.2, ):
         super().__init__(augment=augment)
         self.img_size = img_size
         self.hyp = hyp
@@ -154,7 +151,6 @@ class LoadImagesAndLabels(Dataset):
         self.albumentations = Albumentations() if augment else None
 
         # additional feature
-        self.img_neg_files, self.img_bg_files = self.get_neg_and_bg(neg_dir, bg_dir)
         self.area_thr = area_thr
 
         p = Path(path)  # os-agnostic
@@ -234,20 +230,6 @@ class LoadImagesAndLabels(Dataset):
         except Exception as e:
             raise Exception(f"{prefix}Error loading data from {str(p)}: {e}\nSee {HELP_URL}")
         return img_files
-
-    def get_neg_and_bg(self, neg_dir, bg_dir):
-        """Get negative pictures and background pictures."""
-        img_neg_files, img_bg_files = [], []
-        if os.path.isdir(neg_dir):
-            img_neg_files = [os.path.join(neg_dir, i) for i in os.listdir(neg_dir)]
-            logging.info(colorstr(
-                "Negative dir: ") + f"'{neg_dir}', using {len(img_neg_files)} pictures from the dir as negative samples during training")
-
-        if os.path.isdir(bg_dir):
-            img_bg_files = [os.path.join(bg_dir, i) for i in os.listdir(bg_dir)]
-            logging.info(colorstr(
-                "Background dir: ") + f"{bg_dir}, using {len(img_bg_files)} pictures from the dir as background during training")
-        return img_neg_files, img_bg_files
 
     def load_cache(self, cache_path, prefix):
         """Load labels from *.cache file."""
@@ -454,11 +436,11 @@ class LoadImagesAndLabels(Dataset):
 
 class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-            cache_images=False, single_cls=False, stride=32, pad=0, prefix="", neg_dir="", bg_dir="", area_thr=0.2,
+            cache_images=False, single_cls=False, stride=32, pad=0, prefix="", area_thr=0.2,
             downsample_ratio=1, overlap=False,
     ):
         super().__init__(path, img_size, batch_size, augment, hyp, rect, image_weights, cache_images, single_cls,
-            stride, pad, prefix, neg_dir, bg_dir, area_thr, )
+            stride, pad, prefix, area_thr, )
         self.downsample_ratio = downsample_ratio
         self.overlap = overlap
 
@@ -590,66 +572,23 @@ def load_image(self, i):
         return (self.imgs[i], self.img_hw0[i], self.img_hw[i],)  # im, hw_original, hw_resized
 
 
-def load_neg_image(self, index):
-    path = self.img_neg_files[index]
-    img = cv2.imread(path)  # BGR
-    assert img is not None, "Image Not Found " + path
-    h0, w0 = img.shape[:2]  # orig hw
-    r = self.img_size / max(h0, w0)  # resize image to img_size
-    if r != 1:  # always resize down, only resize up if training with augmentation
-        interp = cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR
-        img = cv2.resize(img, (int(w0 * r), int(h0 * r)), interpolation=interp)
-    return img, (h0, w0), img.shape[:2]  # img, hw_original, hw_resized
-
-
-def load_bg_image(self, index):
-    path = self.img_files[index]
-    bg_path = self.img_bg_files[np.random.randint(0, len(self.img_bg_files))]
-    img, coord, _, (w, h) = paste1(path, bg_path, bg_size=self.img_size, fg_scale=random.uniform(1.5, 5))
-    label = self.labels[index]
-    label[:, 1] = (label[:, 1] * w + coord[0]) / img.shape[1]
-    label[:, 2] = (label[:, 2] * h + coord[1]) / img.shape[0]
-    label[:, 3] = label[:, 3] * w / img.shape[1]
-    label[:, 4] = label[:, 4] * h / img.shape[0]
-
-    assert img is not None, "Image Not Found " + path
-    h0, w0 = img.shape[:2]  # orig hw
-    r = self.img_size / max(h0, w0)  # resize image to img_size
-    if r != 1:  # always resize down, only resize up if training with augmentation
-        interp = cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR
-        img = cv2.resize(img, (int(w0 * r), int(h0 * r)), interpolation=interp)
-    return img, (h0, w0), img.shape[:2], label  # img, hw_original, hw_resized
-
-
 def load_mosaic(self, index, return_seg=False):
     # YOLOv5 4-mosaic loader. Loads 1 image + 3 random images into a 4-image mosaic
     labels4, segments4 = [], []
     s = self.img_size
     yc, xc = [int(random.uniform(-x, 2 * s + x)) for x in self.mosaic_border]  # mosaic center x, y
 
-    num_neg = random.randint(0, 2) if len(self.img_neg_files) else 0
     # 3 additional image indices
-    indices = [index] + random.choices(self.indices, k=(3 - num_neg))
-    indices = indices + random.choices(range(len(self.img_neg_files)), k=num_neg)
-    ri = list(range(4))
-    random.shuffle(ri)
-    for j, (i, index) in enumerate(zip(ri, indices)):
-        temp_label = None
+    indices = [index] + random.choices(self.indices, k=3)  # 3 additional image indices
+    for i, index in enumerate(indices):
         # Load image
-        # TODO
-        if j < (4 - num_neg):
-            if len(self.img_bg_files) and (random.uniform(0, 1) > 0.5):
-                img, _, (h, w), temp_label = load_bg_image(self, index)
-            else:
-                img, _, (h, w) = load_image(self, index)
-        else:
-            img, _, (h, w) = load_neg_image(self, index)
+        img, _, (h, w) = load_image(self, index)
+
         # place img in img4
-        if j == 0:
-            img4 = np.full((s * 2, s * 2, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
         if i == 0:  # top left
-            x1a, y1a, x2a, y2a = (max(xc - w, 0), max(yc - h, 0), xc, yc,)  # xmin, ymin, xmax, ymax (large image)
-            x1b, y1b, x2b, y2b = (w - (x2a - x1a), h - (y2a - y1a), w, h,)  # xmin, ymin, xmax, ymax (small image)
+            img4 = np.full((s * 2, s * 2, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
+            x1a, y1a, x2a, y2a = max(xc - w, 0), max(yc - h, 0), xc, yc  # xmin, ymin, xmax, ymax (large image)
+            x1b, y1b, x2b, y2b = w - (x2a - x1a), h - (y2a - y1a), w, h  # xmin, ymin, xmax, ymax (small image)
         elif i == 1:  # top right
             x1a, y1a, x2a, y2a = xc, max(yc - h, 0), min(xc + w, s * 2), yc
             x1b, y1b, x2b, y2b = 0, h - (y2a - y1a), min(w, x2a - x1a), h
@@ -664,15 +603,7 @@ def load_mosaic(self, index, return_seg=False):
         padw = x1a - x1b
         padh = y1a - y1b
 
-        # Labels
-        if j >= (4 - num_neg):
-            continue
-
-        # TODO: deal with segments
-        if len(self.img_bg_files) and temp_label is not None:
-            labels, segments = temp_label, []
-        else:
-            labels, segments = self.labels[index].copy(), self.segments[index].copy()
+        labels, segments = self.labels[index].copy(), self.segments[index].copy()
 
         if labels.size:
             labels[:, 1:] = xywhn2xyxy(labels[:, 1:], w, h, padw, padh)  # normalized xywh to pixel xyxy format
@@ -873,7 +804,6 @@ import os
 import glob
 import shutil
 import hashlib
-import uuid
 import torch
 import cv2
 import random
@@ -935,14 +865,6 @@ def exif_transpose(image):
             del exif[0x0112]
             image.info["exif"] = exif.tobytes()
     return image
-
-
-def worker_init_reset_seed(worker_id):
-    seed = uuid.uuid4().int % 2 ** 32
-    random.seed(seed)
-    torch.set_rng_state(torch.manual_seed(seed).get_state())
-    np.random.seed(seed)
-
 
 def polygon2mask(img_size, polygons, color=1, downsample_ratio=1):
     """
@@ -1170,90 +1092,3 @@ class InfiniteDataLoader(torchDataLoader):
     def __iter__(self):
         for i in range(len(self)):
             yield next(self.iterator)
-
-
-# REFACTOR IN A NEW FILE 
-from PIL import Image
-import numpy as np
-from PIL import ImageFile
-
-# import numbers
-
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-
-
-def get_raito(new_size, original_size):
-    """Get the ratio bewtten input_size and original_size"""
-    # # mmdet way
-    # iw, ih = new_size
-    # ow, oh = original_size
-    # max_long_edge = max(iw, ih)
-    # max_short_edge = min(iw, ih)
-    # ratio = min(max_long_edge / max(ow, oh), max_short_edge / min(ow, oh))
-    # return ratio
-
-    # # yolov5 way
-    return min(new_size[0] / original_size[0], new_size[1] / original_size[1])
-
-
-def imresize(img, new_size):
-    """Resize the img with new_size by PIL(keep aspect).
-
-    Args:
-        img (PIL): The original image.
-        new_size (tuple): The new size(w, h).
-    """
-    if isinstance(new_size, int):
-        new_size = (new_size, new_size)
-    old_size = img.size
-    ratio = get_raito(new_size, old_size)
-    img = img.resize((int(old_size[0] * ratio), int(old_size[1] * ratio)))
-    return img
-
-
-def get_wh(a, b):
-    return np.random.randint(a, b)
-
-
-def paste2(sample1, sample2, background, scale=1.2):
-    sample1 = Image.open(sample1)
-    d_w1, d_h1 = sample1.size
-
-    sample2 = Image.open(sample2)
-    d_w2, d_h2 = sample2.size
-
-    # print(sample.size)
-    background = Image.open(background)
-    background = background.resize((int((d_w1 + d_w2) * scale), int((d_h1 + d_h2) * scale)))
-    bw, bh = background.size
-
-    x1, y1 = get_wh(0, int(d_w1 * scale) - d_w1), get_wh(0, bh - d_h1)
-    x2, y2 = get_wh(int(d_w1 * scale), bw - d_w2), get_wh(0, bh - d_h2)
-    # x1, y1 = get_wh(0, int(bw / 2) - d_w1), get_wh(0, bh - d_h1)
-    # x2, y2 = get_wh(int(bw / 2), bw - d_w2), get_wh(0, bh - d_h2)
-
-    background.paste(sample1, (x1, y1))
-    background.paste(sample2, (x2, y2))
-    # background = background.resize((416, 416))
-
-    return np.array(background), (x1, y1, x2, y2), background  # print(background.size)  # background.show()
-
-
-def paste1(sample, background, bg_size, fg_scale=1.5):
-    sample = Image.open(sample)
-    background = Image.open(background)
-    background = imresize(background, bg_size)
-    bw, bh = background.size
-    # background = background.resize((int(d_w * scale), int(d_h * scale)))
-    new_w, new_h = int(bw / fg_scale), int(bh / fg_scale)
-    sample = imresize(sample, (new_w, new_h))
-
-    d_w, d_h = sample.size
-    x1, y1 = get_wh(0, bw - d_w), get_wh(0, bh - d_h)
-    background.paste(sample, (x1, y1))
-    # draw = ImageDraw.Draw(background)
-    # draw.rectangle((x1 + 240, y1 + 254, x1 + 240 + 5, y1 + 254 + 5), 'red', 'green')
-    # draw.rectangle((x1 + 80, y1 + 28, x1 + 400, y1 + 480), None, 'green')
-    # background = background.resize((416, 416))
-
-    return np.array(background.convert('RGB'))[:, :, ::-1], (x1, y1), background, (d_w, d_h)
