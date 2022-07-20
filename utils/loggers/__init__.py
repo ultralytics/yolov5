@@ -220,7 +220,7 @@ class GenericLogger:
                 self.tb.add_scalar(k, v, epoch)
 
         if self.wandb:
-            self.wandb.log(metrics_dict)
+            self.wandb.log(metrics_dict, step=epoch)
 
     def log_images(self, files, epoch=0):
         # Log images to all loggers
@@ -232,7 +232,7 @@ class GenericLogger:
                 self.tb.add_image(f.stem, cv2.imread(str(f))[..., ::-1], epoch, dataformats='HWC')
 
         if self.wandb:
-            self.wandb.log({"Images": [wandb.Image(str(f), caption=f.name) for f in files]})
+            self.wandb.log({"Images": [wandb.Image(str(f), caption=f.name) for f in files]}, step=epoch)
 
     def log_graph(self, model, imgsz=(640, 640)):
         # Log model graph to all loggers
