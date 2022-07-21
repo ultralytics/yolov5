@@ -88,6 +88,7 @@ def run(
 
     # Load model
     device = select_device(device)
+    import pdb;pdb.set_trace()
     model = attempt_load(weights if isinstance(weights, list) else w, device=device, inplace=True, fuse=True)
     stride = max(int(model.stride.max()), 32)  # model stride
     names = model.module.names if hasattr(model, 'module') else model.names  # get class names
@@ -107,7 +108,7 @@ def run(
     vid_path, vid_writer = [None] * bs, [None] * bs
 
     # Run inference
-    if device != "cpu":
+    if str(device) != "cpu":
         im = torch.zeros(1, 3, *imgsz).to(device).half()  # input image
         model(im)  # warmup
     seen, windows, dt = 0, [], [0.0, 0.0, 0.0]
