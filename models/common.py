@@ -741,11 +741,11 @@ class Classify(nn.Module):
         super().__init__()
         c_ = 1280  # efficientnet_b0 size
         self.conv = Conv(c1, c_, k, s, autopad(k, p), g)
-        self.aap = nn.AdaptiveAvgPool2d(1)  # to x(b,c_,1,1)
-        self.flat = nn.Flatten()  # flatten to x(b,c2)
-        self.linear = nn.Linear(c_, c2)  # to x(b,c2,1,1)
+        self.pool = nn.AdaptiveAvgPool2d(1)  # to x(b,c_,1,1)
+        self.drop = nn.Dropout(p=0.2, inplace=True)
+        self.linear = nn.Linear(c_, c2)  # to x(b,c2)
 
     def forward(self, x):
         if isinstance(x, list):
             x = torch.cat(x, 1)
-        return self.linear(self.flat(self.aap(self.conv(x))))
+        return self.linear(self.drop(self.pool(self.conv(x)).flatten(1)))
