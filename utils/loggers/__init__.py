@@ -222,7 +222,7 @@ class GenericLogger:
         if self.wandb:
             self.wandb.log(metrics_dict, step=epoch)
 
-    def log_images(self, files, epoch=0):
+    def log_images(self, files, name='Images', epoch=0):
         # Log images to all loggers
         files = [Path(f) for f in (files if isinstance(files, (tuple, list)) else [files])]  # to Path
         files = [f for f in files if f.exists()]  # filter by exists
@@ -232,7 +232,7 @@ class GenericLogger:
                 self.tb.add_image(f.stem, cv2.imread(str(f))[..., ::-1], epoch, dataformats='HWC')
 
         if self.wandb:
-            self.wandb.log({"Images": [wandb.Image(str(f), caption=f.name) for f in files]}, step=epoch)
+            self.wandb.log({name: [wandb.Image(str(f), caption=f.name) for f in files]}, step=epoch)
 
     def log_graph(self, model, imgsz=(640, 640)):
         # Log model graph to all loggers

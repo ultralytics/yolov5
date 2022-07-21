@@ -136,7 +136,8 @@ def train():
         if opt.verbose:
             LOGGER.info(model)
         images, labels = next(iter(trainloader))
-        logger.log_images(imshow(denormalize(images[:25]), labels[:25], names=names, f=save_dir / 'train_images.jpg'))
+        file = imshow(denormalize(images[:25]), labels[:25], names=names, f=save_dir / 'train_images.jpg')
+        logger.log_images(file, name='Training Images', epoch=-1)
         logger.log_graph(model, imgsz)  # log model
 
     # EMA
@@ -244,7 +245,7 @@ def train():
         images = images.to(device)
         pred = torch.max(model(images), 1)[1]
         file = imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
-        logger.log_images(file, epoch)
+        logger.log_images(file, name='Test Predictions', epoch=epoch + 1)
 
 
 @torch.no_grad()
