@@ -88,7 +88,6 @@ def run(
 
     # Load model
     device = select_device(device)
-    import pdb;pdb.set_trace()
     model = attempt_load(weights if isinstance(weights, list) else w, device=device, inplace=True, fuse=True)
     stride = max(int(model.stride.max()), 32)  # model stride
     names = model.module.names if hasattr(model, 'module') else model.names  # get class names
