@@ -364,7 +364,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr0', type=float, default=0.0015, help='initial learning rate')
     parser.add_argument('--label-smoothing', type=float, default=0.15, help='Label smoothing epsilon')
     parser.add_argument('--cutoff', type=int, default=None, help='Model layer cutoff index for Classify() head')
-    parser.add_argument('--dropout', type=int, default=None, help='Dropout (fraction)')
+    parser.add_argument('--dropout', type=float, default=None, help='Dropout (fraction)')
     parser.add_argument('--verbose', action='store_true', help='Verbose mode')
     opt = parser.parse_args()
 
