@@ -102,7 +102,7 @@ def train():
     repo1, repo2 = 'ultralytics/yolov5', 'pytorch/vision'
     with torch_distributed_zero_first(LOCAL_RANK):
         if opt.model == 'list':
-            LOGGER.info('Available --models list:\n' + str([torch.hub.list(x) for x in (repo1, repo2)]))
+            LOGGER.info('Available --models list:\n' + '\n'.join(*torch.hub.list(x) for x in (repo1, repo2)))
             exit()
         elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. 'yolov5s'
             kwargs = {'pretrained': pretrained, 'autoshape': False}
