@@ -102,7 +102,7 @@ def train():
     repo1, repo2 = 'ultralytics/yolov5', 'pytorch/vision'
     with torch_distributed_zero_first(LOCAL_RANK):
         if opt.model == 'list':
-            models = hub.list(repo1) + torch.hub.list(repo2)
+            models = hub.list(repo1) + hub.list(repo2)
             LOGGER.info('\nAvailable models. Usage: python classifier.py --model MODEL\n' + '\n'.join(models))
             return
         elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. yolov5s, yolov5m
