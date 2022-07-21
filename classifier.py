@@ -126,8 +126,12 @@ def train():
         else:  # try torchvision
             model = torchvision.models.__dict__[opt.model](weights='IMAGENET1K_V1' if pretrained else None)
             update_classifier_model(model, nc)  # update class count
-        for p in model.parameters():
-            p.requires_grad = True  # for training
+    for p in model.parameters():
+        p.requires_grad = True  # for training
+    if opt.dropout:
+        for _, m in model.named_modules():
+            if isinstance(m, torch.nn.Dropout):
+                m.p = opt.dropout  # set dropout
     model = model.to(device)
 
     # Info
@@ -360,6 +364,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr0', type=float, default=0.0015, help='initial learning rate')
     parser.add_argument('--label-smoothing', type=float, default=0.15, help='Label smoothing epsilon')
     parser.add_argument('--cutoff', type=int, default=None, help='Model layer cutoff index for Classify() head')
+    parser.add_argument('--dropout', type=int, default=None, help='Dropout (fraction)')
     parser.add_argument('--verbose', action='store_true', help='Verbose mode')
     opt = parser.parse_args()
 
