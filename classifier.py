@@ -105,7 +105,7 @@ def train():
             models = torch.hub.list(repo1) + torch.hub.list(repo2)
             LOGGER.info('\nAvailable models. Usage: python classifier.py --model MODEL\n' + '\n'.join(models))
             return
-        elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. 'yolov5s'
+        elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. yolov5s, yolov5m
             kwargs = {'pretrained': pretrained, 'autoshape': False}
             try:
                 model = hub.load(repo1, opt.model, **kwargs)
@@ -122,7 +122,7 @@ def train():
             model.model[-1] = c  # replace
             for p in model.parameters():
                 p.requires_grad = True  # for training
-        elif opt.model in hub.list(repo2):  # TorchVision models i.e. 'efficientnet_b0'
+        elif opt.model in hub.list(repo2):  # TorchVision models i.e. resnet50, efficientnet_b0, efficientnet_v2_s
             model = hub.load(repo2, opt.model, pretrained=pretrained)
             model.classifier = nn.Linear(model.classifier.in_features, nc)
         else:  # try torchvision
