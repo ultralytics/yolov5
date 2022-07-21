@@ -46,7 +46,7 @@ from utils.general import (LOGGER, check_file, check_git_status, check_requireme
                            init_seeds, print_args)
 from utils.loggers import GenericLogger
 from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_optimizer,
-                               torch_distributed_zero_first)
+                               torch_distributed_zero_first, update_classifier_model)
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -120,14 +120,14 @@ def train():
             c = Classify(ch, nc)  # Classify()
             c.i, c.f, c.type = m.i, m.f, 'models.common.Classify'  # index, from, type
             model.model[-1] = c  # replace
-            for p in model.parameters():
-                p.requires_grad = True  # for training
         elif opt.model in hub.list(repo2):  # TorchVision models i.e. resnet50, efficientnet_b0, efficientnet_v2_s
             model = hub.load(repo2, opt.model, weights='IMAGENET1K_V1' if pretrained else None)
-            model.classifier = nn.Linear(model.classifier.in_features, nc)
+            update_classifier_model(model, nc)  # update class count
         else:  # try torchvision
             model = torchvision.models.__dict__[opt.model](weights='IMAGENET1K_V1' if pretrained else None)
-            model.fc = nn.Linear(model.fc.weight.shape[1], nc)
+            update_classifier_model(model, nc)  # update class count
+        for p in model.parameters():
+            p.requires_grad = True  # for training
     model = model.to(device)
 
     # Info

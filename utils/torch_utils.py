@@ -45,6 +45,21 @@ def smart_DDP(model):
         return DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
 
 
+def update_classifier_model(model, n=1000):
+    # Update a TorchVision classification model to class count 'n'
+    name, m = list(model.named_children())[-1]  # last module
+    if isinstance(m, nn.Linear):
+        setattr(model, name, nn.Linear(m.in_features, n))
+    elif isinstance(m, nn.Sequential):
+        types = [type(x) for x in m]
+        if nn.Linear in types:
+            i = types.index(nn.Linear)  # nn.Linear index
+            m[i] = nn.Linear(m[i].in_features, n)
+        elif nn.Conv2d in types:
+            i = types.index(nn.Conv2d)  # nn.Conv2d index
+            m[i] = nn.Conv2d(m[i].in_channels, n, m[i].kernel_size, m[i].stride, bias=m[i].bias)
+
+
 @contextmanager
 def torch_distributed_zero_first(local_rank: int):
     # Decorator to make all processes in distributed training wait for each local_master to do something
