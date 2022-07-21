@@ -103,7 +103,7 @@ def train():
     with torch_distributed_zero_first(LOCAL_RANK):
         if opt.model == 'list':
             models = torch.hub.list(repo1) + torch.hub.list(repo2)
-            LOGGER.info('\nAvailable models. Usage: python classifier.py --model MODEL\n\n' + '\n'.join(models))
+            LOGGER.info('\nAvailable models. Usage: python classifier.py --model MODEL\n' + '\n'.join(models))
             return
         elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. 'yolov5s'
             kwargs = {'pretrained': pretrained, 'autoshape': False}
