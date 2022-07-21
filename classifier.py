@@ -99,10 +99,13 @@ def train():
     LOGGER.info(f'Training {opt.model} on {data} dataset with {nc} classes...')
 
     # Model
-    repo1, repo2 = 'ultralytics/yolov5', 'rwightman/gen-efficientnet-pytorch'
+    repo1, repo2 = 'ultralytics/yolov5', 'pytorch/vision'
     with torch_distributed_zero_first(LOCAL_RANK):
-        if opt.model.startswith('yolov5'):  # YOLOv5 Classifier
-            kwargs = {'pretrained': pretrained, 'autoshape': False, 'trust_repo': True}
+        if opt.model == 'list':
+            LOGGER.info('Available --models list:\n' + str([torch.hub.list(x) for x in (repo1, repo2)]))
+            exit()
+        elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. 'yolov5s'
+            kwargs = {'pretrained': pretrained, 'autoshape': False}
             try:
                 model = hub.load(repo1, opt.model, **kwargs)
             except Exception:
@@ -118,8 +121,8 @@ def train():
             model.model[-1] = c  # replace
             for p in model.parameters():
                 p.requires_grad = True  # for training
-        elif opt.model in hub.list(repo2):  # i.e. efficientnet_b0
-            model = hub.load(repo2, opt.model, pretrained=pretrained, trust_repo=True)
+        elif opt.model in hub.list(repo2):  # TorchVision models i.e. 'efficientnet_b0'
+            model = hub.load(repo2, opt.model, pretrained=pretrained)
             model.classifier = nn.Linear(model.classifier.in_features, nc)
         else:  # try torchvision
             model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
