@@ -137,7 +137,7 @@ def train():
             LOGGER.info(model)
         images, labels = next(iter(trainloader))
         file = imshow(denormalize(images[:25]), labels[:25], names=names, f=save_dir / 'train_images.jpg')
-        logger.log_images(file, name='Training Images')
+        logger.log_images(file, name='Train Examples')
         logger.log_graph(model, imgsz)  # log model
 
     # EMA
@@ -245,7 +245,7 @@ def train():
         images = images.to(device)
         pred = torch.max(model(images), 1)[1]
         file = imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
-        logger.log_images(file, name='Test Predictions', epoch=epoch)
+        logger.log_images(file, name='Test Examples', epoch=epoch)
 
 
 @torch.no_grad()
