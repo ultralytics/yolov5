@@ -245,7 +245,7 @@ def train():
         images = images.to(device)
         pred = torch.max(model(images), 1)[1]
         file = imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
-        logger.log_images(file, name='Test Examples', epoch=epoch)
+        logger.log_images(file, name='Test Examples (true-predicted)', epoch=epoch)
 
 
 @torch.no_grad()
