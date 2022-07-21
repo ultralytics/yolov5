@@ -123,10 +123,10 @@ def train():
             for p in model.parameters():
                 p.requires_grad = True  # for training
         elif opt.model in hub.list(repo2):  # TorchVision models i.e. resnet50, efficientnet_b0, efficientnet_v2_s
-            model = hub.load(repo2, opt.model, pretrained=pretrained)
+            model = hub.load(repo2, opt.model, weights='IMAGENET1K_V1' if pretrained else None)
             model.classifier = nn.Linear(model.classifier.in_features, nc)
         else:  # try torchvision
-            model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
+            model = torchvision.models.__dict__[opt.model](weights='IMAGENET1K_V1' if pretrained else None)
             model.fc = nn.Linear(model.fc.weight.shape[1], nc)
     model = model.to(device)
 
