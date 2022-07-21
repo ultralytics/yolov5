@@ -106,7 +106,7 @@ def train():
             LOGGER.info('\nAvailable models. Usage: python classifier.py --model MODEL\n' + '\n'.join(models))
             return
         elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. yolov5s, yolov5m
-            kwargs = {'pretrained': pretrained, 'autoshape': False}
+            kwargs = {'pretrained': pretrained, 'autoshape': False, 'trust_repo': True}
             try:
                 model = hub.load(repo1, opt.model, **kwargs)
             except Exception:
