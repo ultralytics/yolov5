@@ -9,7 +9,7 @@
 
 # Download
 d='../datasets/imagenet' # unzip directory
-mkdir $d && cd $d
+mkdir -p $d && cd $d
 wget https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar   # 6.3G, 50000 images
 wget https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_train.tar # 138G, 1281167 images
 
