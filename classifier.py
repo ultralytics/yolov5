@@ -254,8 +254,7 @@ def train():
 
         # Show predictions
         images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
-        images = images.to(device)
-        pred = torch.max(ema.ema(images), 1)[1]
+        pred = torch.max(ema.ema(images.to(device)), 1)[1]
         file = imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
         meta = {"epochs": epochs, "accuracy": best_fitness, "date": datetime.now().isoformat()}
         logger.log_images(file, name='Test Examples (true-predicted)', epoch=epoch)
