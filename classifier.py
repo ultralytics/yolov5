@@ -121,12 +121,12 @@ def train():
             c = Classify(ch, nc)  # Classify()
             c.i, c.f, c.type = m.i, m.f, 'models.common.Classify'  # index, from, type
             model.model[-1] = c  # replace
-        elif opt.model in hub.list(repo2):  # TorchVision models i.e. resnet50, efficientnet_b0, efficientnet_v2_s
-            model = hub.load(repo2, opt.model, weights='IMAGENET1K_V1' if pretrained else None)
-            update_classifier_model(model, nc)  # update class count
-        else:  # try torchvision
+        elif opt.model in torchvision.models.__dict__:  # TorchVision models i.e. resnet50, efficientnet_b0
             model = torchvision.models.__dict__[opt.model](weights='IMAGENET1K_V1' if pretrained else None)
             update_classifier_model(model, nc)  # update class count
+        else:
+            models = hub.list(repo1) + hub.list(repo2)
+            raise ModuleNotFoundError(f'--model {opt.model} not found. Available models are: \n' + '\n'.join(models))
     for p in model.parameters():
         p.requires_grad = True  # for training
     if opt.dropout is not None:
