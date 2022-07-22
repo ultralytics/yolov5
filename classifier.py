@@ -180,7 +180,7 @@ def train():
                 f'Using {nw * WORLD_SIZE} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
                 f'Starting training for {epochs} epochs...\n\n'
-                f"{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'top1_acc':12s}{'top5_acc':12s}")
+                f"{'Epoch':>10}{'GPU_mem':>10}{'Train_loss':>12}{'Val_loss':>12=}{'Top1_Acc':>12}{'Top5_Acc':>12}")
     for epoch in range(epochs):  # loop over the dataset multiple times
         tloss, vloss, fitness = 0.0, 0.0, 0.0  # train loss, val loss, fitness
         model.train()
@@ -210,7 +210,7 @@ def train():
                 # Print
                 tloss = (tloss * i + loss.item()) / (i + 1)  # update mean losses
                 mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
-                pbar.desc = f"{f'{epoch + 1}/{epochs}':10s}{mem:10s}{tloss:<12.3g}"
+                pbar.desc = f"{f'{epoch + 1}/{epochs}':>10}{mem:>10}{tloss:>12.3g}"
 
                 # Test
                 if i == len(pbar) - 1:  # last batch
@@ -290,7 +290,7 @@ def test(model, dataloader, names, criterion=None, verbose=True, pbar=None):
     top1, top5 = acc.mean(0).tolist()
 
     if pbar:
-        pbar.desc += f"{loss:<12.3g}{top1:<12.3g}{top5:<12.3g}"
+        pbar.desc += f"{loss:>12.3g}{top1:>12.3g}{top5:>12.3g}"
     if verbose:  # all classes
         LOGGER.info(f"{'Class':>20}{'Images':>10}{'Top1_Acc':>10}{'Top5_Acc':>10}")
         LOGGER.info(f"{'all':>20}{targets.shape[0]:>10}{top1:>10.5g}{top5:>10.5g}")
