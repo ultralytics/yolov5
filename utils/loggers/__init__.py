@@ -244,9 +244,9 @@ class GenericLogger:
         best_model = self.save_dir / "weights" / "best.pt"
         
         if self.wandb:
-            art = wandb.Artifact(name=f"run_{wandb.run.id}_model", type="model")
+            art = wandb.Artifact(name=f"run_{wandb.run.id}_model", type="model", metadata=metadata)
             art.add_file(best_model)
-            wandb.log_artifact(art, metadata=metadata)
+            wandb.log_artifact(art)
         
 
 def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
