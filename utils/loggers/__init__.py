@@ -238,14 +238,14 @@ class GenericLogger:
         # Log model graph to all loggers
         if self.tb:
             log_tensorboard_graph(self.tb, model, imgsz)
-    
+
     def log_model(self, model_path, epoch, metadata={}):
         # Log model to all loggers
         if self.wandb:
             art = wandb.Artifact(name=f"run_{wandb.run.id}_model", type="model", metadata=metadata)
             art.add_file(str(model_path))
             wandb.log_artifact(art)
-        
+
 
 def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
     # Log model graph to TensorBoard

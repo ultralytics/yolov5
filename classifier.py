@@ -252,11 +252,11 @@ def train():
         logger.log_images(file, name='Test Examples (true-predicted)', epoch=epoch)
         logger.log_model(best,
                          epochs,
-                        metadata={
-                        "epochs": epochs,
-                        "accuracy": best_fitness,
-                        "date": datetime.now().isoformat(),
-                    })
+                         metadata={
+                             "epochs": epochs,
+                             "accuracy": best_fitness,
+                             "date": datetime.now().isoformat(),})
+
 
 @torch.no_grad()
 def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
