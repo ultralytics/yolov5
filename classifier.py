@@ -211,7 +211,7 @@ def train():
                 # Print
                 tloss = (tloss * i + loss.item()) / (i + 1)  # update mean losses
                 mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
-                pbar.desc = f"{f'{epoch + 1}/{epochs}':>10}{mem:>10}{tloss:>12.3g}"
+                pbar.desc = f"{f'{epoch + 1}/{epochs}':>10}{mem:>10}{tloss:>12.3g}" + ' ' * 36
 
                 # Test
                 if i == len(pbar) - 1:  # last batch
@@ -273,7 +273,8 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     model.eval()
     pred, targets, loss = [], [], 0
     n = len(dataloader)  # number of batches
-    desc = f"{pbar.desc}  {'validating' if dataloader.dataset.root.stem == 'val' else 'testing'}"
+    action = 'validating' if dataloader.dataset.root.stem == 'val' else 'testing'
+    desc = f"{pbar.desc[:-36]}{action:>36}"
     bar = tqdm(dataloader, desc, n, False, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
     with amp.autocast(enabled=cuda):  # stability issues when enabled
         for images, labels in bar:
@@ -291,7 +292,7 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     top1, top5 = acc.mean(0).tolist()
 
     if pbar:
-        pbar.desc += f"{loss:>12.3g}{top1:>12.3g}{top5:>12.3g}"
+        pbar.desc = f"{pbar.desc[:-36]}{loss:>12.3g}{top1:>12.3g}{top5:>12.3g}"
     if verbose:  # all classes
         LOGGER.info(f"{'Class':>20}{'Images':>12}{'top1_acc':>12}{'top5_acc':>12}")
         LOGGER.info(f"{'all':>20}{targets.shape[0]:>12}{top1:>12.3g}{top5:>12.3g}")
