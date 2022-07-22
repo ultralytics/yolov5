@@ -46,7 +46,7 @@ from utils.general import (LOGGER, check_file, check_git_status, check_requireme
                            init_seeds, print_args)
 from utils.loggers import GenericLogger
 from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_optimizer,
-                               torch_distributed_zero_first)
+                               torch_distributed_zero_first, update_classifier_model)
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -99,10 +99,14 @@ def train():
     LOGGER.info(f'Training {opt.model} on {data} dataset with {nc} classes...')
 
     # Model
-    repo1, repo2 = 'ultralytics/yolov5', 'rwightman/gen-efficientnet-pytorch'
+    repo1, repo2 = 'ultralytics/yolov5', 'pytorch/vision'
     with torch_distributed_zero_first(LOCAL_RANK):
-        if opt.model.startswith('yolov5'):  # YOLOv5 Classifier
-            kwargs = {'pretrained': pretrained, 'autoshape': False, 'trust_repo': True}
+        if opt.model == 'list':
+            models = hub.list(repo1) + hub.list(repo2)
+            LOGGER.info('\nAvailable models. Usage: python classifier.py --model MODEL\n' + '\n'.join(models))
+            return
+        elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. yolov5s, yolov5m
+            kwargs = {'_verbose': False, 'pretrained': pretrained, 'autoshape': False, 'trust_repo': True}
             try:
                 model = hub.load(repo1, opt.model, **kwargs)
             except Exception:
@@ -116,14 +120,18 @@ def train():
             c = Classify(ch, nc)  # Classify()
             c.i, c.f, c.type = m.i, m.f, 'models.common.Classify'  # index, from, type
             model.model[-1] = c  # replace
-            for p in model.parameters():
-                p.requires_grad = True  # for training
-        elif opt.model in hub.list(repo2):  # i.e. efficientnet_b0
-            model = hub.load(repo2, opt.model, pretrained=pretrained, trust_repo=True)
-            model.classifier = nn.Linear(model.classifier.in_features, nc)
+        elif opt.model in hub.list(repo2):  # TorchVision models i.e. resnet50, efficientnet_b0, efficientnet_v2_s
+            model = hub.load(repo2, opt.model, weights='IMAGENET1K_V1' if pretrained else None)
+            update_classifier_model(model, nc)  # update class count
         else:  # try torchvision
-            model = torchvision.models.__dict__[opt.model](pretrained=pretrained)
-            model.fc = nn.Linear(model.fc.weight.shape[1], nc)
+            model = torchvision.models.__dict__[opt.model](weights='IMAGENET1K_V1' if pretrained else None)
+            update_classifier_model(model, nc)  # update class count
+    for p in model.parameters():
+        p.requires_grad = True  # for training
+    if opt.dropout is not None:
+        for _, m in model.named_modules():
+            if isinstance(m, torch.nn.Dropout):
+                m.p = opt.dropout  # set dropout
     model = model.to(device)
 
     # Info
@@ -132,7 +140,8 @@ def train():
         if opt.verbose:
             LOGGER.info(model)
         images, labels = next(iter(trainloader))
-        logger.log_images(imshow(denormalize(images[:25]), labels[:25], names=names, f=save_dir / 'train_images.jpg'))
+        file = imshow(denormalize(images[:25]), labels[:25], names=names, f=save_dir / 'train_images.jpg')
+        logger.log_images(file, name='Train Examples')
         logger.log_graph(model, imgsz)  # log model
 
     # EMA
@@ -238,9 +247,9 @@ def train():
         # Show predictions
         images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
         images = images.to(device)
-        pred = torch.max(model(images), 1)[1]
+        pred = torch.max(ema.ema(images), 1)[1]
         file = imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
-        logger.log_images(file, epoch)
+        logger.log_images(file, name='Test Examples (true-predicted)', epoch=epoch)
 
 
 @torch.no_grad()
@@ -355,6 +364,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr0', type=float, default=0.0015, help='initial learning rate')
     parser.add_argument('--label-smoothing', type=float, default=0.15, help='Label smoothing epsilon')
     parser.add_argument('--cutoff', type=int, default=None, help='Model layer cutoff index for Classify() head')
+    parser.add_argument('--dropout', type=float, default=None, help='Dropout (fraction)')
     parser.add_argument('--verbose', action='store_true', help='Verbose mode')
     opt = parser.parse_args()
 
