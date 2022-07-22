@@ -180,7 +180,7 @@ def train():
                 f'Using {nw * WORLD_SIZE} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
                 f'Starting training for {epochs} epochs...\n\n'
-                f"{'Epoch':>10}{'GPU_mem':>10}{'Train_loss':>12}{'Val_loss':>12=}{'Top1_Acc':>12}{'Top5_Acc':>12}")
+                f"{'Epoch':>10}{'GPU_mem':>10}{'Train_loss':>12}{'Val_loss':>12}{'Top1_Acc':>12}{'Top5_Acc':>12}")
     for epoch in range(epochs):  # loop over the dataset multiple times
         tloss, vloss, fitness = 0.0, 0.0, 0.0  # train loss, val loss, fitness
         model.train()
