@@ -292,12 +292,12 @@ def test(model, dataloader, names, criterion=None, verbose=True, pbar=None):
     if pbar:
         pbar.desc += f"{loss:<12.3g}{top1:<12.3g}{top5:<12.3g}"
     if verbose:  # all classes
-        LOGGER.info(f"{'class':20s}{'images':10s}{'top1_acc':10s}{'top5_acc':10s}")
-        LOGGER.info(f"{'all':20s}{targets.shape[0]:10}{top1:10.5g}{top5:10.5g}")
+        LOGGER.info(f"{'Class':>20}{'Images':>10}{'Top1_Acc':>10}{'Top5_Acc':>10}")
+        LOGGER.info(f"{'all':>20}{targets.shape[0]:>10}{top1:>10.5g}{top5:>10.5g}")
         for i, c in enumerate(names):
             aci = acc[targets == i]
             top1i, top5i = aci.mean(0).tolist()
-            LOGGER.info(f"{c:20s}{aci.shape[0]:10}{top1i:10.5g}{top5i:10.5g}")
+            LOGGER.info(f"{c:>20s}{aci.shape[0]:>10}{top1i:>10.5g}{top5i:>10.5g}")
 
     return top1, top5, loss
 
