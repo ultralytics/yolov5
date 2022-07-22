@@ -180,7 +180,7 @@ def train():
                 f'Using {nw * WORLD_SIZE} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
                 f'Starting training for {epochs} epochs...\n\n'
-                f"{'Epoch':>10}{'GPU_mem':>10}{'train_loss':>12}{'val_loss':>12}{'Top1_Acc':>12}{'Top5_Acc':>12}")
+                f"{'Epoch':>10}{'GPU_mem':>10}{'train_loss':>12}{'val_loss':>12}{'top1_acc':>12}{'top5_acc':>12}")
     for epoch in range(epochs):  # loop over the dataset multiple times
         tloss, vloss, fitness = 0.0, 0.0, 0.0  # train loss, val loss, fitness
         model.train()
@@ -292,7 +292,7 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     if pbar:
         pbar.desc += f"{loss:>12.3g}{top1:>12.3g}{top5:>12.3g}"
     if verbose:  # all classes
-        LOGGER.info(f"{'Class':>20}{'Images':>12}{'Top1_Acc':>12}{'Top5_Acc':>12}")
+        LOGGER.info(f"{'Class':>20}{'Images':>12}{'top1_acc':>12}{'top5_acc':>12}")
         LOGGER.info(f"{'all':>20}{targets.shape[0]:>12}{top1:>12.3g}{top5:>12.3g}")
         for i, c in enumerate(names):
             aci = acc[targets == i]
