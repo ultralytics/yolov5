@@ -240,7 +240,7 @@ class GenericLogger:
         if self.tb:
             log_tensorboard_graph(self.tb, model, imgsz)
     
-    def log_final_model(self, model, metadata={}):
+    def log_final_model(self, metadata={}):
         best_model = self.save_dir / "weights" / "best.pt"
         
         if self.wandb:
