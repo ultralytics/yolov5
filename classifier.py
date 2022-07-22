@@ -91,8 +91,8 @@ def train():
                                                    rank=LOCAL_RANK,
                                                    workers=nw)
 
+    test_dir = data_dir / 'test' if (data_dir / 'test').exists() else data_dir / 'val'  # data/test or data/val
     if RANK in {-1, 0}:
-        test_dir = data_dir / 'test' if (data_dir / 'test').exists() else data_dir / 'val'  # data/test or data/val
         testloader = create_classification_dataloader(path=test_dir,
                                                       imgsz=imgsz,
                                                       batch_size=bs // WORLD_SIZE * 2,
@@ -176,11 +176,12 @@ def train():
     criterion = nn.CrossEntropyLoss(label_smoothing=opt.label_smoothing)  # loss function
     best_fitness = 0.0
     scaler = amp.GradScaler(enabled=cuda)
+    val = test_dir.stem  # 'val' or 'test'
     LOGGER.info(f'Image sizes {imgsz} train, {imgsz} test\n'
                 f'Using {nw * WORLD_SIZE} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
                 f'Starting training for {epochs} epochs...\n\n'
-                f"{'Epoch':>10}{'GPU_mem':>10}{'train_loss':>12}{'val_loss':>12}{'top1_acc':>12}{'top5_acc':>12}")
+                f"{'Epoch':>10}{'GPU_mem':>10}{'train_loss':>12}{f'{val}_loss':>12}{'top1_acc':>12}{'top5_acc':>12}")
     for epoch in range(epochs):  # loop over the dataset multiple times
         tloss, vloss, fitness = 0.0, 0.0, 0.0  # train loss, val loss, fitness
         model.train()
@@ -229,7 +230,7 @@ def train():
             # Log
             metrics = {
                 "train/loss": tloss,
-                "val/loss": vloss,
+                f"{val}/loss": vloss,
                 "metrics/accuracy_top1": top1,
                 "metrics/accuracy_top5": top5,
                 "lr/0": optimizer.param_groups[0]['lr']}  # learning rate
