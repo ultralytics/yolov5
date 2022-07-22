@@ -20,6 +20,7 @@ import math
 import os
 import sys
 import time
+import subprocess
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -71,8 +72,11 @@ def train():
     data_dir = FILE.parents[1] / 'datasets' / data
     with torch_distributed_zero_first(LOCAL_RANK):
         if not data_dir.is_dir():
-            url = f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip'
-            download(url, dir=data_dir.parent)
+            if data == 'imagenet':
+                subprocess.run(f"bash {ROOT / 'data/scripts/get_imagenet.sh'}", shell=True, check=True)
+            else:
+                url = f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip'
+                download(url, dir=data_dir.parent)
 
     # Dataloaders
     trainloader = create_classification_dataloader(path=data_dir / 'train',
