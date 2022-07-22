@@ -180,7 +180,7 @@ def train():
                 f'Using {nw * WORLD_SIZE} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
                 f'Starting training for {epochs} epochs...\n\n'
-                f"{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'accuracy':12s}")
+                f"{'epoch':10s}{'gpu_mem':10s}{'train_loss':12s}{'val_loss':12s}{'top1_acc':12s}{'top5_acc':12s}")
     for epoch in range(epochs):  # loop over the dataset multiple times
         tloss, vloss, fitness = 0.0, 0.0, 0.0  # train loss, val loss, fitness
         model.train()
@@ -214,7 +214,8 @@ def train():
 
                 # Test
                 if i == len(pbar) - 1:  # last batch
-                    fitness, vloss = test(ema.ema, testloader, names, criterion, pbar=pbar)  # test accuracy, loss
+                    top1, top5, vloss = test(ema.ema, testloader, names, criterion, pbar=pbar)  # test accuracy, loss
+                    fitness = top1  # define fitness as top1 accuracy
 
         # Scheduler
         scheduler.step()
@@ -226,8 +227,13 @@ def train():
                 best_fitness = fitness
 
             # Log
-            lr = optimizer.param_groups[0]['lr']  # learning rate
-            logger.log_metrics({"train/loss": tloss, "val/loss": vloss, "metrics/accuracy": fitness, "lr/0": lr}, epoch)
+            metrics = {
+                "train/loss": tloss,
+                "val/loss": vloss,
+                "metrics/accuracy_top1": top1,
+                "metrics/accuracy_top5": top5,
+                "lr/0": optimizer.param_groups[0]['lr']}  # learning rate
+            logger.log_metrics(metrics, epoch)
 
             # Save model
             final_epoch = epoch + 1 == epochs
@@ -256,13 +262,13 @@ def train():
         images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
         pred = torch.max(ema.ema(images.to(device)), 1)[1]
         file = imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
-        meta = {"epochs": epochs, "accuracy": best_fitness, "date": datetime.now().isoformat()}
+        meta = {"epochs": epochs, "top1_acc": best_fitness, "date": datetime.now().isoformat()}
         logger.log_images(file, name='Test Examples (true-predicted)', epoch=epoch)
         logger.log_model(best, epochs, metadata=meta)
 
 
 @torch.no_grad()
-def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
+def test(model, dataloader, names, criterion=None, verbose=True, pbar=None):
     model.eval()
     pred, targets, loss = [], [], 0
     n = len(dataloader)  # number of batches
@@ -272,27 +278,28 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
         for images, labels in bar:
             images, labels = images.to(device, non_blocking=True), labels.to(device)
             y = model(images)
-            pred.append(torch.max(y, 1)[1])
+            pred.append(y.argsort(1, descending=True)[:, :5])
             targets.append(labels)
             if criterion:
                 loss += criterion(y, labels)
 
     loss /= n
     pred, targets = torch.cat(pred), torch.cat(targets)
-    correct = (targets == pred).float()
+    correct = (targets[:, None] == pred).float()
+    acc = torch.stack((correct[:, 0], correct.max(1).values), dim=1)  # (top1, top5) accuracy
+    top1, top5 = acc.mean(0).tolist()
 
     if pbar:
-        pbar.desc += f"{loss:<12.3g}{correct.mean().item():<12.3g}"
-
-    accuracy = correct.mean().item()
+        pbar.desc += f"{loss:<12.3g}{top1:<12.3g}{top5:<12.3g}"
     if verbose:  # all classes
-        LOGGER.info(f"{'class':10s}{'number':10s}{'accuracy':10s}")
-        LOGGER.info(f"{'all':10s}{correct.shape[0]:10s}{accuracy:10.5g}")
+        LOGGER.info(f"{'class':10s}{'number':10s}{'top1_acc':10s}{'top5_acc':10s}")
+        LOGGER.info(f"{'all':10s}{targets.shape[0]:10}{top1:10.5g}{top5:10.5g}")
         for i, c in enumerate(names):
-            t = correct[targets == i]
-            LOGGER.info(f"{c:10s}{t.shape[0]:10s}{t.mean().item():10.5g}")
+            aci = acc[targets == i]
+            top1i, top5i = aci.mean(0).tolist()
+            LOGGER.info(f"{c:10s}{aci.shape[0]:10}{top1i:10.5g}{top5i:10.5g}")
 
-    return accuracy, loss
+    return top1, top5, loss
 
 
 @torch.no_grad()
