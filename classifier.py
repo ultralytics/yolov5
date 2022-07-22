@@ -16,7 +16,6 @@ Usage - inference:
 """
 
 import argparse
-from curses import meta
 import math
 import os
 import sys

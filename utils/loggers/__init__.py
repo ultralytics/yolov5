@@ -3,7 +3,6 @@
 Logging utils
 """
 
-from curses import meta
 import os
 import warnings
 from pathlib import Path
