@@ -379,7 +379,7 @@ if __name__ == '__main__':
     parser.add_argument('--pretrained', nargs='?', const=True, default=True, help='start from i.e. --pretrained False')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--optimizer', choices=['SGD', 'Adam', 'AdamW', 'RMSProp'], default='Adam', help='optimizer')
-    parser.add_argument('--lr0', type=float, default=0.0015, help='initial learning rate')
+    parser.add_argument('--lr0', type=float, default=0.001, help='initial learning rate')
     parser.add_argument('--label-smoothing', type=float, default=0.15, help='Label smoothing epsilon')
     parser.add_argument('--cutoff', type=int, default=None, help='Model layer cutoff index for Classify() head')
     parser.add_argument('--dropout', type=float, default=None, help='Dropout (fraction)')
