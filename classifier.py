@@ -268,7 +268,7 @@ def train():
 
 
 @torch.no_grad()
-def test(model, dataloader, names, criterion=None, verbose=True, pbar=None):
+def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     model.eval()
     pred, targets, loss = [], [], 0
     n = len(dataloader)  # number of batches
@@ -297,7 +297,7 @@ def test(model, dataloader, names, criterion=None, verbose=True, pbar=None):
         for i, c in enumerate(names):
             aci = acc[targets == i]
             top1i, top5i = aci.mean(0).tolist()
-            LOGGER.info(f"{c:>20s}{aci.shape[0]:>12}{top1i:>12.3g}{top5i:>12.3g}")
+            LOGGER.info(f"{c:>20}{aci.shape[0]:>12}{top1i:>12.3g}{top5i:>12.3g}")
 
     return top1, top5, loss
 
