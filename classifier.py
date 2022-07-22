@@ -273,7 +273,7 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     model.eval()
     pred, targets, loss = [], [], 0
     n = len(dataloader)  # number of batches
-    desc = f'{pbar.desc}  validating'
+    desc = f"{pbar.desc}  accuracy"
     bar = tqdm(dataloader, desc, n, False, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
     with amp.autocast(enabled=cuda):  # stability issues when enabled
         for images, labels in bar:
