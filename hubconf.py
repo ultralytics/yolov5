@@ -34,6 +34,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     from utils.general import LOGGER, check_requirements, intersect_dicts, logging
     from utils.torch_utils import select_device
 
+    level = LOGGER.level
     if not verbose:
         LOGGER.setLevel(logging.WARNING)
     check_requirements(exclude=('tensorboard', 'thop', 'opencv-python'))
@@ -57,6 +58,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                     model.names = ckpt['model'].names  # set class names attribute
         if autoshape:
             model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
+        LOGGER.setLevel(level)
         return model.to(device)
 
     except Exception as e:
