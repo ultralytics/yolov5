@@ -240,12 +240,11 @@ class GenericLogger:
         if self.tb:
             log_tensorboard_graph(self.tb, model, imgsz)
     
-    def log_final_model(self, metadata={}):
-        best_model = self.save_dir / "weights" / "best.pt"
+    def log_model(self, model_path, metadata={}):
         
         if self.wandb:
             art = wandb.Artifact(name=f"run_{wandb.run.id}_model", type="model", metadata=metadata)
-            art.add_file(best_model)
+            art.add_file(str(model_path))
             wandb.log_artifact(art)
         
 
