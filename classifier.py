@@ -72,7 +72,7 @@ def train():
     with torch_distributed_zero_first(LOCAL_RANK):
         data_dir = data if data.is_dir() else (FILE.parents[1] / 'datasets' / data)
         if not data_dir.is_dir():
-            LOGGER.info(emojis(f'Dataset not found ⚠️, missing path {data_dir}, attempting download...'))
+            LOGGER.info(emojis(f'\nDataset not found ⚠️, missing path {data_dir}, attempting download...'))
             t = time.time()
             if data == 'imagenet':
                 subprocess.run(f"bash {ROOT / 'data/scripts/get_imagenet.sh'}", shell=True, check=True)
@@ -80,7 +80,7 @@ def train():
                 url = f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip'
                 download(url, dir=data_dir.parent)
             dt = time.time() - t
-            LOGGER.info(emojis(f"Dataset download success ✅ ({dt:.1f}s), saved to {colorstr('bold', data_dir)}"))
+            LOGGER.info(emojis(f"Dataset download success ✅ ({dt:.1f}s), saved to {colorstr('bold', data_dir)}\n"))
 
     # Dataloaders
     trainloader = create_classification_dataloader(path=data_dir / 'train',
