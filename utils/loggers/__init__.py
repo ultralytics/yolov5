@@ -3,6 +3,7 @@
 Logging utils
 """
 
+from curses import meta
 import os
 import warnings
 from pathlib import Path
@@ -238,7 +239,15 @@ class GenericLogger:
         # Log model graph to all loggers
         if self.tb:
             log_tensorboard_graph(self.tb, model, imgsz)
-
+    
+    def log_final_model(self, model, metadata={}):
+        best_model = self.save_dir / "weights" / "best.pt"
+        
+        if self.wandb:
+            art = wandb.Artifact(name=f"run_{wandb.run.id}_model", type="model")
+            art.add_file(best_model)
+            wandb.log_artifact(art, metadata=metadata)
+        
 
 def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
     # Log model graph to TensorBoard
