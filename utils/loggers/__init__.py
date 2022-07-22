@@ -339,7 +339,7 @@ class NewLoggers:
                                    type='model',
                                    name=f'run_{self.wandb.run.id}_model',
                                    aliases=['latest', 'best', 'stripped'])
-            self.wandb.finish_run()
+            self.wandb.finish()
 
 
     def on_params_update(self):
