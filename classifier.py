@@ -57,8 +57,8 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 def train():
     init_seeds(1 + RANK, deterministic=True)
     save_dir, data, bs, epochs, nw, imgsz, pretrained = \
-        Path(opt.save_dir), opt.data, opt.batch_size, opt.epochs, min(os.cpu_count() - 1, opt.workers), opt.imgsz, \
-        str(opt.pretrained).lower() == 'true'
+        Path(opt.save_dir), Path(opt.data), opt.batch_size, opt.epochs, min(os.cpu_count() - 1, opt.workers), \
+        opt.imgsz, str(opt.pretrained).lower() == 'true'
 
     # Directories
     wdir = save_dir / 'weights'
@@ -69,9 +69,10 @@ def train():
     logger = GenericLogger(opt=opt, console_logger=LOGGER) if RANK in {-1, 0} else None
 
     # Download Dataset
-    data_dir = FILE.parents[1] / 'datasets' / data
     with torch_distributed_zero_first(LOCAL_RANK):
+        data_dir = data if data.is_dir() else (FILE.parents[1] / 'datasets' / data)
         if not data_dir.is_dir():
+            LOGGER.info(emojis(f'Dataset not found ⚠️, missing path {data_dir}, attempting download...'))
             t = time.time()
             if data == 'imagenet':
                 subprocess.run(f"bash {ROOT / 'data/scripts/get_imagenet.sh'}", shell=True, check=True)
