@@ -79,8 +79,8 @@ def train():
             else:
                 url = f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip'
                 download(url, dir=data_dir.parent)
-            dt = time.time() - t
-            LOGGER.info(emojis(f"Dataset download success ✅ ({dt:.1f}s), saved to {colorstr('bold', data_dir)}\n"))
+            s = f"Dataset download success ✅ ({time.time() - t:.1f}s), saved to {colorstr('bold', data_dir)}\n"
+            LOGGER.info(emojis(s))
 
     # Dataloaders
     trainloader = create_classification_dataloader(path=data_dir / 'train',
