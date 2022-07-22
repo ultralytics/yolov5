@@ -128,7 +128,7 @@ def train():
             update_classifier_model(model, nc)  # update class count
     for p in model.parameters():
         p.requires_grad = True  # for training
-    if opt.dropout:
+    if opt.dropout is not None:
         for _, m in model.named_modules():
             if isinstance(m, torch.nn.Dropout):
                 m.p = opt.dropout  # set dropout
