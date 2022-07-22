@@ -35,6 +35,7 @@ data/images/*
 !data/images/bus.jpg
 !data/*.sh
 !data/*.yaml
+!data/*.ipynb
 
 results*.csv
 
