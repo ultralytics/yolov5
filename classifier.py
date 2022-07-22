@@ -249,7 +249,9 @@ def train():
         images = images.to(device)
         pred = torch.max(ema.ema(images), 1)[1]
         file = imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
+        meta = {"epochs": epochs, "accuracy": best_fitness, "date": datetime.now().isoformat()}
         logger.log_images(file, name='Test Examples (true-predicted)', epoch=epoch)
+        logger.log_model(best, epochs, metadata=meta)
 
 
 @torch.no_grad()
