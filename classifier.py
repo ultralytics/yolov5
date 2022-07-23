@@ -18,9 +18,9 @@ Usage - inference:
 import argparse
 import math
 import os
+import subprocess
 import sys
 import time
-import subprocess
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -43,8 +43,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import Classify, DetectMultiBackend
 from utils.augmentations import denormalize, normalize
 from utils.dataloaders import create_classification_dataloader
-from utils.general import (LOGGER, check_file, check_git_status, check_requirements, colorstr, download, emojis,
-                           increment_path, init_seeds, print_args)
+from utils.general import (LOGGER, check_file, check_git_status, check_requirements, check_version,
+                           colorstr, download, emojis, increment_path, init_seeds, print_args)
 from utils.loggers import GenericLogger
 from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_optimizer,
                                torch_distributed_zero_first, update_classifier_model)
@@ -114,7 +114,9 @@ def train():
             LOGGER.info('\nAvailable models. Usage: python classifier.py --model MODEL\n' + '\n'.join(models))
             return
         elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. yolov5s, yolov5m
-            kwargs = {'_verbose': False, 'pretrained': pretrained, 'autoshape': False, 'trust_repo': True}
+            kwargs = {'_verbose': False, 'pretrained': pretrained, 'autoshape': False}
+            if check_version(torch, '0.12.0'):
+                kwargs['trust_repo'] = True  # argument required starting in torch 0.12
             try:
                 model = hub.load(repo1, opt.model, **kwargs)
             except Exception:
