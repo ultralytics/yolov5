@@ -219,7 +219,7 @@ def run(
         dt[2] += time_sync() - t3
 
         if targets.shape[0] > 0:
-            target_cls.append(targets[:, 1])
+            target_cls.append(targets[:, 1].unsqueeze(0))
 
         # Metrics
         for si, pred in enumerate(out):
@@ -266,7 +266,7 @@ def run(
 
     # Compute metrics
     stats = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats)]  # to numpy
-    target_cls = [torch.stack(x, 0).cpu().numpy() for x in zip(*target_cls)]  # to numpy
+    target_cls = [torch.cat(x, 0).cpu().numpy() for x in zip(*target_cls)]  # to numpy
     stats.append(target_cls[0])
 
     if len(stats) and stats[0].any():
