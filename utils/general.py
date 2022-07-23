@@ -209,8 +209,8 @@ def init_seeds(seed=0, deterministic=False):
     np.random.seed(seed)
     torch.manual_seed(seed)
     cudnn.benchmark, cudnn.deterministic = (False, True) if seed == 0 else (True, False)
-    # torch.cuda.manual_seed(seed)
-    # torch.cuda.manual_seed_all(seed)  # for multi GPU, exception safe
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # for Multi-GPU, exception safe
 
 
 def intersect_dicts(da, db, exclude=()):
