@@ -248,7 +248,7 @@ def run(
                 correct = process_batch(predn, labelsn, iouv)
                 if plots:
                     confusion_matrix.process_batch(predn, labelsn)
-            stats.append((correct, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
+            stats.append((correct, pred[:, 4], pred[:, 5]))  # (correct, conf, pcls)
 
             # Save/log
             if save_txt:
