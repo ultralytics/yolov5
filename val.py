@@ -266,7 +266,7 @@ def run(
 
     # Compute metrics
     stats = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats)]  # to numpy
-    target_cls = [torch.cat(x, 0).cpu().numpy() for x in zip(*target_cls)]  # to numpy
+    target_cls = [torch.stack(x, 0).cpu().numpy() for x in zip(*target_cls)]  # to numpy
     stats.append(target_cls[0])
 
     if len(stats) and stats[0].any():
