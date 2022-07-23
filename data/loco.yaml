@@ -1,0 +1,11 @@
+# train: /home/ailab/dataset/helmet_dataset/VOC2021/txt_yolov5/2021_train.txt
+# val: /home/ailab/dataset/helmet_dataset/VOC2021/txt_yolov5/2021_train.txt
+
+train: /home/epi/gary/mydata/loco/images/
+val: /home/epi/gary/mydata/loco/images/
+
+# number of classes
+nc: 5
+
+# class names 0-反光衣
+names: ['small_load_carrier', 'forklift','pallet','stillage','pallet_truck']
