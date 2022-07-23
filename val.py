@@ -219,7 +219,7 @@ def run(
         dt[2] += time_sync() - t3
 
         if targets.shape[0] > 0:
-            target_cls.append(targets[:,0])
+            target_cls.append(targets[:, 0])
 
         # Metrics
         for si, pred in enumerate(out):
