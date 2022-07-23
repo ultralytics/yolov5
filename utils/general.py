@@ -312,10 +312,21 @@ def check_git_status():
     assert not is_docker(), s + 'skipping check (Docker image)' + msg
     assert check_online(), s + 'skipping check (offline)' + msg
 
-    cmd = 'git fetch && git config --get remote.origin.url'
+    result = check_output('git remote -v', shell=True).decode()
+    ultralytics_repo = 'https://github.com/ultralytics/yolov5'
+    remote_name = 'ultralytics'
+    for line in result.split('\n'):
+        if ultralytics_repo in line:
+            remote_name, _ = line.split('\t')
+            break
+    else:
+        check_output(f'git remote add {remote_name} {ultralytics_repo}', shell=True)
+        check_output(f'git fetch {remote_name}', shell=True)
+
+    cmd = f'git fetch && git config --get remote.{remote_name}.url'
     url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
     branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
-    n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
+    n = int(check_output(f'git rev-list {branch}..{remote_name}/master --count', shell=True))  # commits behind
     if n > 0:
         s += f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use `git pull` or `git clone {url}` to update."
     else:
