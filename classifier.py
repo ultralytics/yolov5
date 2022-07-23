@@ -115,7 +115,7 @@ def train():
             return
         elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. yolov5s, yolov5m
             kwargs = {'_verbose': False, 'pretrained': pretrained, 'autoshape': False}
-            if check_version(torch.__version__, '0.12.0'):
+            if check_version(torch.__version__, '1.12.0'):
                 kwargs['trust_repo'] = True  # argument required starting in torch 0.12
             try:
                 model = hub.load(repo1, opt.model, **kwargs)
