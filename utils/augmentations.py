@@ -344,4 +344,4 @@ def classify_albumentations(augment=True,
 
 def classify_transforms(size=224):
     # Transforms to apply if albumentations not installed
-    return T.Compose([T.ToTensor(), T.Resize((size, size)), T.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
+    return T.Compose([T.Resize(size), T.CenterCrop(size), T.ToTensor(), T.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
