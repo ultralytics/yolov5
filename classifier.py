@@ -365,7 +365,7 @@ def imshow(img, labels=None, pred=None, names=None, nmax=25, verbose=False, f=Pa
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='yolov5s', help='initial weights path')
-    parser.add_argument('--data', type=str, default='mnist2560', help='cifar10, cifar100, mnist or mnist-fashion')
+    parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100, mnist or mnist-fashion')
     parser.add_argument('--hyp', type=str, default='data/hyps/hyp.scratch-low.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--batch-size', type=int, default=64, help='total batch size for all GPUs')
