@@ -1,9 +1,8 @@
 import logging
 import math
-from copy import deepcopy
 import random
 import os
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from sparsezoo import Zoo
 from sparseml.pytorch.optim import ScheduledModifierManager
@@ -126,10 +125,14 @@ class SparseMLWrapper(object):
         if not self.enabled:
             return
 
-        grad_sampler = GradSampler(
-            self._mfac_data_loader(train_loader, device, **train_loader_kwargs), 
-            lambda pred, target: compute_loss([p for p in pred[1]], target.to(device))[0]
-        )
+        grad_sampler = {
+            "data_loader_builder": self._get_data_loader_builder(
+                train_loader, device, **train_loader_kwargs
+            ),
+            "loss_function": lambda pred, target: compute_loss(
+                [p for p in pred[1]], target.to(device)
+            )[0],
+        }
 
         self.manager.initialize(self.model, start_epoch, grad_sampler=grad_sampler)
         self.start_epoch = start_epoch
@@ -211,28 +214,50 @@ class SparseMLWrapper(object):
 
         return (pruning_start <= epoch <= pruning_end) or epoch == qat_start
 
-    def _mfac_data_loader(self, train_loader, device, multi_scale, img_size, grid_size):
-        def dataloader():
-            loader_type = type(train_loader)
-            mfac_dataloader = loader_type(
-                dataset=train_loader.dataset,
-                batch_size=train_loader.batch_size // 2,
-                sampler=deepcopy(train_loader.sampler),
-                num_workers=train_loader.num_workers,
-                collate_fn=train_loader.collate_fn,
-                pin_memory=train_loader.pin_memory,
-            )
+    def _get_data_loader_builder(
+        self, train_loader, device, multi_scale, img_size, grid_size
+    ):
+        def _data_loader_builder(kwargs: Optional[Dict[str, Any]] = None):
+            template = dict(train_loader.__dict__)
 
-            for imgs, targets, *_ in mfac_dataloader:
+            # drop attributes that will be auto-initialized
+            to_drop = [k for k in template if k.startswith("_") or k == "batch_sampler"]
+            for item in to_drop:
+                template.pop(item)
+
+            # override defaults if kwargs are given, for example via recipe
+            if kwargs:
+                template.update(kwargs)
+            data_loader = type(train_loader)(**template)
+
+            for imgs, targets, *_ in data_loader:
                 imgs = imgs.to(device, non_blocking=True).float() / 255
                 if multi_scale:
-                    sz = random.randrange(img_size * 0.5, img_size * 1.5 + grid_size) // grid_size * grid_size  # size
+                    sz = (
+                        random.randrange(img_size * 0.5, img_size * 1.5 + grid_size)
+                        // grid_size
+                        * grid_size
+                    )  # size
                     sf = sz / max(imgs.shape[2:])  # scale factor
                     if sf != 1:
-                        ns = [math.ceil(x * sf / grid_size) * grid_size for x in imgs.shape[2:]]  # new shape (stretched to gs-multiple)
-                        imgs = nn.functional.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
+                        ns = [
+                            math.ceil(x * sf / grid_size) * grid_size
+                            for x in imgs.shape[2:]
+                        ]  # new shape (stretched to gs-multiple)
+                        imgs = nn.functional.interpolate(
+                            imgs, size=ns, mode="bilinear", align_corners=False
+                        )
                 yield [imgs], {}, targets
-        return dataloader
+        return _data_loader_builder
+
+    def _apply_one_shot(self):
+        if self.manager is not None:
+            self.manager.apply(self.model)
+            _LOGGER.info(f"Applied recipe {self.train_recipe} in one-shot manner")
+        else:
+            _LOGGER.info(f"Training recipe for one-shot application not recognized by the manager. Got recipe: "
+                         f"{self.train_recipe}"
+                         )
 
     def save_sample_inputs_outputs(
         self,
