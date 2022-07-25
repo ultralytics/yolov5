@@ -3,6 +3,7 @@
 Dataloaders and dataset utils
 """
 
+import contextlib
 import glob
 import hashlib
 import json
@@ -55,13 +56,10 @@ def get_hash(paths):
 def exif_size(img):
     # Returns exif-corrected PIL size
     s = img.size  # (width, height)
-    try:
+    with contextlib.suppress(Exception):
         rotation = dict(img._getexif().items())[orientation]
         if rotation in [6, 8]:  # rotation 270 or 90
             s = (s[1], s[0])
-    except Exception:
-        pass
-
     return s
 
 
@@ -859,18 +857,13 @@ class LoadImagesAndLabels(Dataset):
 
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
-def create_folder(path='./new'):
-    # Create folder
-    if os.path.exists(path):
-        shutil.rmtree(path)  # delete output folder
-    os.makedirs(path)  # make new output folder
-
-
 def flatten_recursive(path=DATASETS_DIR / 'coco128'):
     # Flatten a recursive directory by bringing all files to top level
-    new_path = Path(str(path) + '_flat')
-    create_folder(new_path)
-    for file in tqdm(glob.glob(str(Path(path)) + '/**/*.*', recursive=True)):
+    new_path = Path(f'{str(path)}_flat')
+    if os.path.exists(new_path):
+        shutil.rmtree(new_path)  # delete output folder
+    os.makedirs(new_path)  # make new output folder
+    for file in tqdm(glob.glob(f'{str(Path(path))}/**/*.*', recursive=True)):
         shutil.copyfile(file, new_path / Path(file).name)
 
 
@@ -929,7 +922,7 @@ def autosplit(path=DATASETS_DIR / 'coco128/images', weights=(0.9, 0.1, 0.0), ann
     for i, img in tqdm(zip(indices, files), total=n):
         if not annotated_only or Path(img2label_paths([str(img)])[0]).exists():  # check label
             with open(path.parent / txt[i], 'a') as f:
-                f.write('./' + img.relative_to(path.parent).as_posix() + '\n')  # add image to txt file
+                f.write(f'./{img.relative_to(path.parent).as_posix()}' + '\n')  # add image to txt file
 
 
 def verify_image_label(args):
@@ -1011,14 +1004,13 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
 
     def _unzip(path):
         # Unzip data.zip
-        if str(path).endswith('.zip'):  # path is data.zip
-            assert Path(path).is_file(), f'Error unzipping {path}, file not found'
-            ZipFile(path).extractall(path=path.parent)  # unzip
-            dir = path.with_suffix('')  # dataset directory == zip name
-            assert dir.is_dir(), f'Error unzipping {path}, {dir} not found. path/to/abc.zip MUST unzip to path/to/abc/'
-            return True, str(dir), _find_yaml(dir)  # zipped, data_dir, yaml_path
-        else:  # path is data.yaml
+        if not str(path).endswith('.zip'):  # path is data.yaml
             return False, None, path
+        assert Path(path).is_file(), f'Error unzipping {path}, file not found'
+        ZipFile(path).extractall(path=path.parent)  # unzip
+        dir = path.with_suffix('')  # dataset directory == zip name
+        assert dir.is_dir(), f'Error unzipping {path}, {dir} not found. path/to/abc.zip MUST unzip to path/to/abc/'
+        return True, str(dir), _find_yaml(dir)  # zipped, data_dir, yaml_path
 
     def _hub_ops(f, max_dim=1920):
         # HUB ops for 1 image 'f': resize and save at reduced quality in /dataset-hub for web/app viewing
