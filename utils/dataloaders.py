@@ -1056,10 +1056,8 @@ class HUBDatasetStats():
                 self.stats[split] = None  # i.e. no test set
                 continue
             dataset = LoadImagesAndLabels(self.data[split])  # load dataset
-            x = [
-                np.bincount(label[:, 0].astype(int), minlength=self.data['nc'])
-                for label in tqdm(dataset.labels, total=dataset.n, desc='Statistics')]
-            x = np.array(x)  # shape(128x80)
+            x = np.array([np.bincount(label[:, 0].astype(int), minlength=self.data['nc'])
+                for label in tqdm(dataset.labels, total=dataset.n, desc='Statistics')])  # shape(128x80)
             self.stats[split] = {
                 'instance_stats': {
                     'total': int(x.sum()),
