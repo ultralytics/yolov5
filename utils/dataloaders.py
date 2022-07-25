@@ -1067,7 +1067,9 @@ class HUBDatasetStats():
                     'total': dataset.n,
                     'unlabelled': int(np.all(x == 0, 1).sum()),
                     'per_class': (x > 0).sum(0).tolist()},
-                'labels': [{str(Path(k).name): self._round_labels(v.tolist())} for k, v in zip(dataset.im_files, dataset.labels)]}
+                'labels': [{
+                    str(Path(k).name): self._round_labels(v.tolist())}
+                           for k, v in zip(dataset.im_files, dataset.labels)]}
 
         # Save, print and return
         if save:
