@@ -26,6 +26,7 @@ Usage - formats:
 
 import argparse
 import os
+import platform
 import sys
 from pathlib import Path
 
@@ -173,7 +174,7 @@ def run(
             # Stream results
             im0 = annotator.result()
             if view_img:
-                if p not in windows:
+                if platform.system() == 'Linux' and p not in windows:
                     windows.append(p)
                     cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
                     cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
