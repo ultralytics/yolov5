@@ -1122,18 +1122,17 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
     def __init__(self, root, augment, imgsz, cache=False):
         super().__init__(root=root)
         self.torch_transforms = classify_transforms(imgsz)
-        self.album_transforms = classify_albumentations(augment, imgsz)  # if augment else None
+        self.album_transforms = classify_albumentations(augment, imgsz) if augment else None
         self.cache_ram = cache is True or cache == 'ram'
         self.cache_disk = cache == 'disk'
         self.samples = [list(x) + [Path(x[0]).with_suffix('.npy'), None] for x in self.samples]  # file, index, npy, im
 
     def __getitem__(self, i):
-        f, j, fn, im = self.samples[i]  # filename, index, filename_npy, image
+        f, j, fn, im = self.samples[i]  # filename, index, filename.with_suffix('.npy'), image
         if self.album_transforms:
             if self.cache_ram and im is None:
                 im = self.samples[i][3] = cv2.imread(f)
             elif self.cache_disk:
-                # fn = Path(f).with_suffix('.npy')  # filename numpy
                 if not fn.exists():  # load npy
                     np.save(fn.as_posix(), cv2.imread(f))
                 im = np.load(fn)
