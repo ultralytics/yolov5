@@ -1004,7 +1004,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
 
     def _unzip(path):
         # Unzip data.zip
-        if not str(path).endswith('.zip'):
+        if not str(path).endswith('.zip'):  # path is data.yaml
             return False, None, path
         assert Path(path).is_file(), f'Error unzipping {path}, file not found'
         ZipFile(path).extractall(path=path.parent)  # unzip
