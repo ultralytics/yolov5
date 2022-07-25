@@ -1049,7 +1049,7 @@ class HUBDatasetStats():
         def _round(labels):
             # Update labels to integer class and 6 decimal place floats
             return [[int(c), *(round(x, 4) for x in points)] for c, *points in labels]
-        
+
         for split in 'train', 'val', 'test':
             if self.data.get(split) is None:
                 self.stats[split] = None  # i.e. no test set
@@ -1066,7 +1066,8 @@ class HUBDatasetStats():
                     'total': dataset.n,
                     'unlabelled': int(np.all(x == 0, 1).sum()),
                     'per_class': (x > 0).sum(0).tolist()},
-                'labels': [{str(Path(k).name): _round(v.tolist())} for k, v in zip(dataset.im_files, dataset.labels)]}
+                'labels': [{
+                    str(Path(k).name): _round(v.tolist())} for k, v in zip(dataset.im_files, dataset.labels)]}
 
         # Save, print and return
         if save:
