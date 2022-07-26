@@ -159,7 +159,7 @@ def train():
 
     # Optimizer
     opt.lr0 *= bs if opt.optimizer == 'SGD' else 1  # sale lr with batch size for SGD
-    optimizer = smart_optimizer(model, opt.optimizer, opt.lr0, momentum=0.9, weight_decay=1e-5)
+    optimizer = smart_optimizer(model, opt.optimizer, opt.lr0, momentum=0.9, weight_decay=2e-5)
 
     # Scheduler
     lrf = 0.01  # final lr (fraction of lr0)
@@ -367,7 +367,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='yolov5s', help='initial weights path')
     parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100, mnist or mnist-fashion')
     parser.add_argument('--hyp', type=str, default='data/hyps/hyp.scratch-low.yaml', help='hyperparameters path')
-    parser.add_argument('--epochs', type=int, default=30)
+    parser.add_argument('--epochs', type=int, default=90)
     parser.add_argument('--batch-size', type=int, default=64, help='total batch size for all GPUs')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=224, help='train, val image size (pixels)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
@@ -382,7 +382,7 @@ if __name__ == '__main__':
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--optimizer', choices=['SGD', 'Adam', 'AdamW', 'RMSProp'], default='Adam', help='optimizer')
     parser.add_argument('--lr0', type=float, default=0.001, help='initial learning rate')
-    parser.add_argument('--label-smoothing', type=float, default=0.2, help='Label smoothing epsilon')
+    parser.add_argument('--label-smoothing', type=float, default=0.1, help='Label smoothing epsilon')
     parser.add_argument('--cutoff', type=int, default=None, help='Model layer cutoff index for Classify() head')
     parser.add_argument('--dropout', type=float, default=None, help='Dropout (fraction)')
     parser.add_argument('--verbose', action='store_true', help='Verbose mode')
