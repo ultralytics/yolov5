@@ -633,7 +633,7 @@ class LoadImagesAndLabels(Dataset):
 
         if self.augment:
             # Albumentations
-            img, labels = self.albumentations(img, labels)
+            img, labels = self.albumentations(img[..., ::-1], labels)
             nl = len(labels)  # update after albumentations
 
             # HSV color-space
@@ -660,7 +660,7 @@ class LoadImagesAndLabels(Dataset):
             labels_out[:, 1:] = torch.from_numpy(labels)
 
         # Convert
-        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+        img = img.transpose((2, 0, 1))  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
 
         return torch.from_numpy(img), labels_out, self.im_files[index], shapes
