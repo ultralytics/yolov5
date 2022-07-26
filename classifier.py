@@ -83,6 +83,7 @@ def train():
             LOGGER.info(emojis(s))
 
     # Dataloaders
+    nc = len([x for x in (data_dir / 'train').glob('*') if x.is_dir()])  # number of classes
     trainloader = create_classification_dataloader(path=data_dir / 'train',
                                                    imgsz=imgsz,
                                                    batch_size=bs // WORLD_SIZE,
@@ -103,7 +104,6 @@ def train():
 
     # Initialize
     names = trainloader.dataset.classes  # class names
-    nc = len(names)  # number of classes
     LOGGER.info(f'Training {opt.model} on {data} dataset with {nc} classes...')
 
     # Model
