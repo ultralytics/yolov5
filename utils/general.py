@@ -224,9 +224,15 @@ def get_latest_run(search_dir='.'):
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
-def is_docker():
-    # Is environment a Docker container?
-    return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
+def is_docker() -> bool:
+    """Check if the process runs inside a docker container."""
+    if Path("/.dockerenv").exists():
+        return True
+    try:  # check if docker is in control groups
+        with open("/proc/self/cgroup") as file:
+            return any("docker" in line for line in file)
+    except OSError:
+        return False
 
 
 def is_colab():
