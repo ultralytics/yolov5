@@ -106,3 +106,6 @@ The command below run the inference using the following arguments:
 python -m detect --source ./data/resized_640_yolo/images --weights ./trained-inference-models/example/best.pt --img 640 --project ./validation --name example --save-csv
 ```
 The output results are saved in `./validation/example`.
+
+# Generate TensorRT Engine
+refer to here: https://github.com/lmitechnologies/tensorrtx/blob/master/yolov5/README.md
