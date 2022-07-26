@@ -199,7 +199,7 @@ def train():
                 loss = criterion(model(images), labels)
 
             # Backward
-            scaler.scale(loss * bs if opt.optimizer == 'SGD' else 1).backward()  # sale lr with batch size for SGD
+            scaler.scale(loss).backward()
 
             # Optimize
             scaler.step(optimizer)
