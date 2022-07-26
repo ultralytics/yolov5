@@ -158,7 +158,6 @@ def train():
     ema = ModelEMA(model) if RANK in {-1, 0} else None
 
     # Optimizer
-    opt.lr0 *= bs if opt.optimizer == 'SGD' else 1  # sale lr with batch size for SGD
     optimizer = smart_optimizer(model, opt.optimizer, opt.lr0, momentum=0.9, weight_decay=2e-5)
 
     # Scheduler
@@ -200,7 +199,7 @@ def train():
                 loss = criterion(model(images), labels)
 
             # Backward
-            scaler.scale(loss).backward()
+            scaler.scale(loss * bs if opt.optimizer == 'SGD' else 1).backward()  # sale lr with batch size for SGD
 
             # Optimize
             scaler.step(optimizer)
