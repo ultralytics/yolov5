@@ -155,7 +155,7 @@ def train():
         logger.log_graph(model, imgsz)  # log model
 
     # EMA
-    ema = ModelEMA(model) if RANK in {-1, 0} else None
+    ema = ModelEMA(model, decay=0.0) if RANK in {-1, 0} else None
 
     # Optimizer
     optimizer = smart_optimizer(model, opt.optimizer, opt.lr0, momentum=0.9, weight_decay=2e-5)
