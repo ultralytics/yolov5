@@ -474,7 +474,8 @@ class DetectMultiBackend(nn.Module):
             if im.shape != self.bindings['images'].shape and self.dynamic_input:
                 self.context.set_binding_shape(self.model.get_binding_index('images'), im.shape)  # reshape if dynamic
                 self.bindings['images'] = self.bindings['images']._replace(shape=im.shape)
-            assert im.shape == self.bindings['images'].shape, f"image shape {im.shape} exceeds model max shape {self.bindings['images'].shape}" if self.dynamic_input else f"image shape {im.shape} does not match model shape {self.bindings['images'].shape}"
+            assert im.shape == self.bindings[
+                'images'].shape, f"image shape {im.shape} exceeds model max shape {self.bindings['images'].shape}" if self.dynamic_input else f"image shape {im.shape} does not match model shape {self.bindings['images'].shape}"
             self.binding_addrs['images'] = int(im.data_ptr())
             self.context.execute_v2(list(self.binding_addrs.values()))
             y = self.bindings['output'].data
