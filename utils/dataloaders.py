@@ -660,7 +660,7 @@ class LoadImagesAndLabels(Dataset):
             labels_out[:, 1:] = torch.from_numpy(labels)
 
         # Convert
-        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+        img = img.transpose((2, 0, 1))  # HWC to CHW
         img = np.ascontiguousarray(img)
 
         return torch.from_numpy(img), labels_out, self.im_files[index], shapes
@@ -670,7 +670,7 @@ class LoadImagesAndLabels(Dataset):
         im, f, fn = self.ims[i], self.im_files[i], self.npy_files[i],
         if im is None:  # not cached in RAM
             if fn.exists():  # load npy
-                im = np.load(fn)
+                im = np.load(fn)  # BGR
             else:  # read image
                 im = cv2.imread(f)  # BGR
                 assert im is not None, f'Image Not Found {f}'
@@ -679,8 +679,8 @@ class LoadImagesAndLabels(Dataset):
             if r != 1:  # if sizes are not equal
                 interp = cv2.INTER_LINEAR if (self.augment or r > 1) else cv2.INTER_AREA
                 im = cv2.resize(im, (int(w0 * r), int(h0 * r)), interpolation=interp)
-            return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
-        return self.ims[i], self.im_hw0[i], self.im_hw[i]  # im, hw_original, hw_resized
+            return im[..., ::-1], (h0, w0), im.shape[:2]  # im RGB, hw_original, hw_resized
+        return self.ims[i], self.im_hw0[i], self.im_hw[i]  # im RGB, hw_original, hw_resized
 
     def cache_images_to_disk(self, i):
         # Saves an image as an *.npy file for faster loading
