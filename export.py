@@ -152,13 +152,12 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         # Simplify
         if simplify:
             try:
-                check_requirements(('onnx-simplifier',))
+                cuda = torch.cuda.is_available()
+                check_requirements(('onnxruntime-gpu' if cuda else 'onnxruntime', 'onnx-simplifier>=0.4.1'))
                 import onnxsim
 
                 LOGGER.info(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
-                model_onnx, check = onnxsim.simplify(model_onnx,
-                                                     dynamic_input_shape=dynamic,
-                                                     input_shapes={'images': list(im.shape)} if dynamic else None)
+                model_onnx, check = onnxsim.simplify(model_onnx)
                 assert check, 'assert check failed'
                 onnx.save(model_onnx, f)
             except Exception as e:
@@ -492,6 +491,8 @@ def run(
     # Checks
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
     assert nc == len(names), f'Model class count {nc} != len(names) {len(names)}'
+    if optimize:
+        assert device.type == 'cpu', '--optimize not compatible with cuda devices, i.e. use --device cpu'
 
     # Input
     gs = int(max(model.stride))  # grid size (max stride)

@@ -52,7 +52,7 @@ np.set_printoptions(linewidth=320, formatter={'float_kind': '{:11.5g}'.format}) 
 pd.options.display.max_columns = 10
 cv2.setNumThreads(0)  # prevent OpenCV from multithreading (incompatible with PyTorch DataLoader)
 os.environ['NUMEXPR_MAX_THREADS'] = str(NUM_THREADS)  # NumExpr max threads
-os.environ['OMP_NUM_THREADS'] = str(NUM_THREADS)  # OpenMP max threads (PyTorch and SciPy)
+os.environ['OMP_NUM_THREADS'] = '1' if platform.system() == 'darwin' else str(NUM_THREADS)  # OpenMP (PyTorch and SciPy)
 
 
 def is_kaggle():
@@ -203,14 +203,14 @@ def init_seeds(seed=0, deterministic=False):
     if deterministic and check_version(torch.__version__, '1.12.0'):  # https://github.com/ultralytics/yolov5/pull/8213
         torch.use_deterministic_algorithms(True)
         os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-        # os.environ['PYTHONHASHSEED'] = str(seed)
+        os.environ['PYTHONHASHSEED'] = str(seed)
 
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     cudnn.benchmark, cudnn.deterministic = (False, True) if seed == 0 else (True, False)
-    # torch.cuda.manual_seed(seed)
-    # torch.cuda.manual_seed_all(seed)  # for multi GPU, exception safe
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # for Multi-GPU, exception safe
 
 
 def intersect_dicts(da, db, exclude=()):
@@ -224,9 +224,15 @@ def get_latest_run(search_dir='.'):
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
-def is_docker():
-    # Is environment a Docker container?
-    return Path('/workspace').exists()  # or Path('/.dockerenv').exists()
+def is_docker() -> bool:
+    """Check if the process runs inside a docker container."""
+    if Path("/.dockerenv").exists():
+        return True
+    try:  # check if docker is in control groups
+        with open("/proc/self/cgroup") as file:
+            return any("docker" in line for line in file)
+    except OSError:
+        return False
 
 
 def is_colab():
@@ -474,7 +480,7 @@ def check_dataset(data, autodownload=True):
     for k in 'train', 'val', 'nc':
         assert k in data, emojis(f"data.yaml '{k}:' field missing ❌")
     if 'names' not in data:
-        LOGGER.warning(emojis("data.yaml 'names:' field missing ⚠, assigning default names 'class0', 'class1', etc."))
+        LOGGER.warning(emojis("data.yaml 'names:' field missing ⚠️, assigning default names 'class0', 'class1', etc."))
         data['names'] = [f'class{i}' for i in range(data['nc'])]  # default names
 
     # Resolve paths
@@ -490,7 +496,7 @@ def check_dataset(data, autodownload=True):
     if val:
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
-            LOGGER.info(emojis('\nDataset not found ⚠, missing paths %s' % [str(x) for x in val if not x.exists()]))
+            LOGGER.info(emojis('\nDataset not found ⚠️, missing paths %s' % [str(x) for x in val if not x.exists()]))
             if not s or not autodownload:
                 raise Exception(emojis('Dataset not found ❌'))
             t = time.time()

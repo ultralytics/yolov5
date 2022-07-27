@@ -305,7 +305,7 @@ class Concat(nn.Module):
 
 class DetectMultiBackend(nn.Module):
     # YOLOv5 MultiBackend class for python inference on various backends
-    def __init__(self, weights='yolov5s.pt', device=torch.device('cpu'), dnn=False, data=None, fp16=False):
+    def __init__(self, weights='yolov5s.pt', device=torch.device('cpu'), dnn=False, data=None, fp16=False, fuse=True):
         # Usage:
         #   PyTorch:              weights = *.pt
         #   TorchScript:                    *.torchscript
@@ -331,7 +331,7 @@ class DetectMultiBackend(nn.Module):
                 names = yaml.safe_load(f)['names']
 
         if pt:  # PyTorch
-            model = attempt_load(weights if isinstance(weights, list) else w, device=device)
+            model = attempt_load(weights if isinstance(weights, list) else w, device=device, inplace=True, fuse=fuse)
             stride = max(int(model.stride.max()), 32)  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
             model.half() if fp16 else model.float()
@@ -441,6 +441,8 @@ class DetectMultiBackend(nn.Module):
                 output_details = interpreter.get_output_details()  # outputs
             elif tfjs:
                 raise Exception('ERROR: YOLOv5 TF.js inference is not supported')
+            else:
+                raise Exception(f'ERROR: {w} is not a supported format')
         self.__dict__.update(locals())  # assign all variables to self
 
     def forward(self, im, augment=False, visualize=False, val=False):
