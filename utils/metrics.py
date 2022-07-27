@@ -171,13 +171,13 @@ class ConfusionMatrix:
 
     def process_batch_no_detections(self, labels):
         """
-                Updates confusion matrix when model made zero predictions but the image contains groundtruth objects.
-                Every label passed in is considered a False Negative (a missed detection)
-                Arguments:
-                    labels (Array[M, 1]), [class]
-                Returns:
-                    None, updates confusion matrix accordingly
-                """
+        Updates confusion matrix when model made zero predictions but the image contains groundtruth objects.
+        Every label passed in is considered a False Negative (a missed detection)
+        Arguments:
+            labels (Array[M, 1]), [class]
+        Returns:
+            None, updates confusion matrix accordingly
+        """
         gt_classes = labels.int()
         for i, gc in enumerate(gt_classes):
             self.matrix[self.nc, gc] += 1  # background FN
