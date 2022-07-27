@@ -266,8 +266,7 @@ def export_engine(model, im, file, train, half, dynamic, simplify, workspace=4, 
 
         if dynamic:
             if im.shape[0] <= 1:
-                LOGGER.warning(
-                    "TensorRT requires a maximum batch size (--batch-size) to be provided for a dynamic model.")
+                LOGGER.warning(f"{prefix}WARNING: --dynamic model requires maximum --batch-size argument")
             profile = builder.create_optimization_profile()
             for inp in inputs:
                 profile.set_shape(inp.name, (1, *im.shape[1:]), (max(1, im.shape[0] // 2), *im.shape[1:]), im.shape)
