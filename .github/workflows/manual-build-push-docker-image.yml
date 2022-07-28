@@ -30,4 +30,4 @@ jobs:
         with:
           push: true
           file: Dockerfile
-          tags: supervisely/base-pytorch:${{ github.event.inputs.tag_version }}
+          tags: supervisely/yolov5:${{ github.event.inputs.tag_version }}
