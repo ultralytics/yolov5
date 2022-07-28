@@ -107,7 +107,7 @@ def create_weighted_sampler(dataset):
     normalized_counts = counts / (np.sum(counts) + background_count)
     normalized_background = background_count / (np.sum(counts) + background_count)
 
-    weight_cls = 1 / counts
+    weight_cls = 1 / normalized_counts
     weight_background = 1 / normalized_background
     # currently I assume that weight of background should be equal to each class!
 
