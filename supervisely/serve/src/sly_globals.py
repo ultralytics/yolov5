@@ -4,15 +4,9 @@ import pathlib
 import supervisely as sly
 from supervisely.app.v1.app_service import AppService
 
+# from dotenv import load_dotenv
+
 import yaml
-
-my_app: AppService = AppService()
-api = my_app.public_api
-task_id = my_app.task_id
-
-logger = sly.logger
-
-sly.fs.clean_dir(my_app.data_dir)  # @TODO: for debug
 
 root_source_path = str(pathlib.Path(sys.argv[0]).parents[3])
 sly.logger.info(f"Root source directory: {root_source_path}")
@@ -22,6 +16,14 @@ print(str(pathlib.Path(sys.argv[0]).parents[2]))
 
 # load_dotenv(os.path.join(root_source_path, "supervisely", "serve", "debug.env"))
 # load_dotenv(os.path.join(root_source_path, "supervisely", "serve", "secret_debug.env"), override=True)
+
+my_app: AppService = AppService()
+api = my_app.public_api
+task_id = my_app.task_id
+
+logger = sly.logger
+
+sly.fs.clean_dir(my_app.data_dir)  # @TODO: for debug
 
 TEAM_ID = int(os.environ['context.teamId'])
 WORKSPACE_ID = int(os.environ['context.workspaceId'])
