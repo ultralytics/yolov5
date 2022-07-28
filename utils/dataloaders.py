@@ -113,7 +113,8 @@ def create_dataloader(path,
                       quad=False,
                       prefix='',
                       shuffle=False,
-                      validation=False):
+                      validation=False,
+                      weighted_sampler = False):
     if rect and shuffle:
         LOGGER.warning('WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False')
         shuffle = False
@@ -135,14 +136,20 @@ def create_dataloader(path,
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()  # number of CUDA devices
     nw = min([os.cpu_count() // max(nd, 1), batch_size if batch_size > 1 else 0, workers])  # number of workers
-    # sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
-    filtered=len(list(filter(lambda item: item.shape[0]>0, dataset.labels)))
-    percent = filtered / len(dataset.labels)
-    # percent is 0.01 in my case
-    weights = [percent if item.shape[0]==0 else 1-percent for item in dataset.labels]
-    weights = np.array(weights)
-    
-    sampler = None if validation else WeightedRandomSampler(torch.from_numpy(weights),len(weights))
+
+    sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
+
+    if weighted_sampler:
+        assert rank != -1, "Currently multi-GPU Support is not enabled when using weighted sampler"
+        import ipdb
+        ipdb.set_trace()
+        filtered=len(list(filter(lambda item: item.shape[0]>0, dataset.labels)))
+        percent = filtered / len(dataset.labels)
+        # percent is 0.01 in my case
+        weights = [percent if item.shape[0]==0 else 1-percent for item in dataset.labels]
+        weights = np.array(weights)
+        sampler = WeightedRandomSampler(torch.from_numpy(weights),len(weights))
+
     loader  = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
     generator = torch.Generator()
     generator.manual_seed(0)
