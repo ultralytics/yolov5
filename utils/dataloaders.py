@@ -3,6 +3,7 @@
 Dataloaders and dataset utils
 """
 
+import contextlib
 import glob
 import hashlib
 import json
@@ -55,13 +56,10 @@ def get_hash(paths):
 def exif_size(img):
     # Returns exif-corrected PIL size
     s = img.size  # (width, height)
-    try:
+    with contextlib.suppress(Exception):
         rotation = dict(img._getexif().items())[orientation]
         if rotation in [6, 8]:  # rotation 270 or 90
             s = (s[1], s[0])
-    except Exception:
-        pass
-
     return s
 
 
@@ -89,6 +87,13 @@ def exif_transpose(image):
             del exif[0x0112]
             image.info["exif"] = exif.tobytes()
     return image
+
+
+def seed_worker(worker_id):
+    # Set dataloader worker seed https://pytorch.org/docs/stable/notes/randomness.html#dataloader
+    worker_seed = torch.initial_seed() % 2 ** 32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 
 def create_dataloader(path,
@@ -130,13 +135,17 @@ def create_dataloader(path,
     nw = min([os.cpu_count() // max(nd, 1), batch_size if batch_size > 1 else 0, workers])  # number of workers
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
     loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
+    generator = torch.Generator()
+    generator.manual_seed(0)
     return loader(dataset,
                   batch_size=batch_size,
                   shuffle=shuffle and sampler is None,
                   num_workers=nw,
                   sampler=sampler,
                   pin_memory=True,
-                  collate_fn=LoadImagesAndLabels.collate_fn4 if quad else LoadImagesAndLabels.collate_fn), dataset
+                  collate_fn=LoadImagesAndLabels.collate_fn4 if quad else LoadImagesAndLabels.collate_fn,
+                  worker_init_fn=seed_worker,
+                  generator=generator), dataset
 
 
 class InfiniteDataLoader(dataloader.DataLoader):
@@ -671,8 +680,7 @@ class LoadImagesAndLabels(Dataset):
                 interp = cv2.INTER_LINEAR if (self.augment or r > 1) else cv2.INTER_AREA
                 im = cv2.resize(im, (int(w0 * r), int(h0 * r)), interpolation=interp)
             return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
-        else:
-            return self.ims[i], self.im_hw0[i], self.im_hw[i]  # im, hw_original, hw_resized
+        return self.ims[i], self.im_hw0[i], self.im_hw[i]  # im, hw_original, hw_resized
 
     def cache_images_to_disk(self, i):
         # Saves an image as an *.npy file for faster loading
@@ -849,18 +857,13 @@ class LoadImagesAndLabels(Dataset):
 
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
-def create_folder(path='./new'):
-    # Create folder
-    if os.path.exists(path):
-        shutil.rmtree(path)  # delete output folder
-    os.makedirs(path)  # make new output folder
-
-
 def flatten_recursive(path=DATASETS_DIR / 'coco128'):
     # Flatten a recursive directory by bringing all files to top level
-    new_path = Path(str(path) + '_flat')
-    create_folder(new_path)
-    for file in tqdm(glob.glob(str(Path(path)) + '/**/*.*', recursive=True)):
+    new_path = Path(f'{str(path)}_flat')
+    if os.path.exists(new_path):
+        shutil.rmtree(new_path)  # delete output folder
+    os.makedirs(new_path)  # make new output folder
+    for file in tqdm(glob.glob(f'{str(Path(path))}/**/*.*', recursive=True)):
         shutil.copyfile(file, new_path / Path(file).name)
 
 
@@ -919,7 +922,7 @@ def autosplit(path=DATASETS_DIR / 'coco128/images', weights=(0.9, 0.1, 0.0), ann
     for i, img in tqdm(zip(indices, files), total=n):
         if not annotated_only or Path(img2label_paths([str(img)])[0]).exists():  # check label
             with open(path.parent / txt[i], 'a') as f:
-                f.write('./' + img.relative_to(path.parent).as_posix() + '\n')  # add image to txt file
+                f.write(f'./{img.relative_to(path.parent).as_posix()}' + '\n')  # add image to txt file
 
 
 def verify_image_label(args):
@@ -974,21 +977,35 @@ def verify_image_label(args):
         return [None, None, None, None, nm, nf, ne, nc, msg]
 
 
-def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profile=False, hub=False):
+class HUBDatasetStats():
     """ Return dataset statistics dictionary with images and instances counts per split per class
     To run in parent directory: export PYTHONPATH="$PWD/yolov5"
-    Usage1: from utils.dataloaders import *; dataset_stats('coco128.yaml', autodownload=True)
-    Usage2: from utils.dataloaders import *; dataset_stats('path/to/coco128_with_yaml.zip')
+    Usage1: from utils.dataloaders import *; HUBDatasetStats('coco128.yaml', autodownload=True)
+    Usage2: from utils.dataloaders import *; HUBDatasetStats('path/to/coco128_with_yaml.zip')
     Arguments
         path:           Path to data.yaml or data.zip (with data.yaml inside data.zip)
         autodownload:   Attempt to download dataset if not found locally
-        verbose:        Print stats dictionary
     """
 
-    def _round_labels(labels):
-        # Update labels to integer class and 6 decimal place floats
-        return [[int(c), *(round(x, 4) for x in points)] for c, *points in labels]
+    def __init__(self, path='coco128.yaml', autodownload=False):
+        # Initialize class
+        zipped, data_dir, yaml_path = self._unzip(Path(path))
+        try:
+            with open(check_yaml(yaml_path), errors='ignore') as f:
+                data = yaml.safe_load(f)  # data dict
+                if zipped:
+                    data['path'] = data_dir
+        except Exception as e:
+            raise Exception("error/HUB/dataset_stats/yaml_load") from e
 
+        check_dataset(data, autodownload)  # download dataset if missing
+        self.hub_dir = Path(data['path'] + '-hub')
+        self.im_dir = self.hub_dir / 'images'
+        self.im_dir.mkdir(parents=True, exist_ok=True)  # makes /images
+        self.stats = {'nc': data['nc'], 'names': data['names']}  # statistics dictionary
+        self.data = data
+
+    @staticmethod
     def _find_yaml(dir):
         # Return data.yaml file
         files = list(dir.glob('*.yaml')) or list(dir.rglob('*.yaml'))  # try root level first and then recursive
@@ -999,20 +1016,19 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         assert len(files) == 1, f'Multiple *.yaml files found: {files}, only 1 *.yaml file allowed in {dir}'
         return files[0]
 
-    def _unzip(path):
+    def _unzip(self, path):
         # Unzip data.zip
-        if str(path).endswith('.zip'):  # path is data.zip
-            assert Path(path).is_file(), f'Error unzipping {path}, file not found'
-            ZipFile(path).extractall(path=path.parent)  # unzip
-            dir = path.with_suffix('')  # dataset directory == zip name
-            assert dir.is_dir(), f'Error unzipping {path}, {dir} not found. path/to/abc.zip MUST unzip to path/to/abc/'
-            return True, str(dir), _find_yaml(dir)  # zipped, data_dir, yaml_path
-        else:  # path is data.yaml
+        if not str(path).endswith('.zip'):  # path is data.yaml
             return False, None, path
+        assert Path(path).is_file(), f'Error unzipping {path}, file not found'
+        ZipFile(path).extractall(path=path.parent)  # unzip
+        dir = path.with_suffix('')  # dataset directory == zip name
+        assert dir.is_dir(), f'Error unzipping {path}, {dir} not found. path/to/abc.zip MUST unzip to path/to/abc/'
+        return True, str(dir), self._find_yaml(dir)  # zipped, data_dir, yaml_path
 
-    def _hub_ops(f, max_dim=1920):
+    def _hub_ops(self, f, max_dim=1920):
         # HUB ops for 1 image 'f': resize and save at reduced quality in /dataset-hub for web/app viewing
-        f_new = im_dir / Path(f).name  # dataset-hub image filename
+        f_new = self.im_dir / Path(f).name  # dataset-hub image filename
         try:  # use PIL
             im = Image.open(f)
             r = max_dim / max(im.height, im.width)  # ratio
@@ -1028,69 +1044,49 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
                 im = cv2.resize(im, (int(im_width * r), int(im_height * r)), interpolation=cv2.INTER_AREA)
             cv2.imwrite(str(f_new), im)
 
-    zipped, data_dir, yaml_path = _unzip(Path(path))
-    try:
-        with open(check_yaml(yaml_path), errors='ignore') as f:
-            data = yaml.safe_load(f)  # data dict
-            if zipped:
-                data['path'] = data_dir  # TODO: should this be dir.resolve()?`
-    except Exception:
-        raise Exception("error/HUB/dataset_stats/yaml_load")
+    def get_json(self, save=False, verbose=False):
+        # Return dataset JSON for Ultralytics HUB
+        def _round(labels):
+            # Update labels to integer class and 6 decimal place floats
+            return [[int(c), *(round(x, 4) for x in points)] for c, *points in labels]
 
-    check_dataset(data, autodownload)  # download dataset if missing
-    hub_dir = Path(data['path'] + ('-hub' if hub else ''))
-    stats = {'nc': data['nc'], 'names': data['names']}  # statistics dictionary
-    for split in 'train', 'val', 'test':
-        if data.get(split) is None:
-            stats[split] = None  # i.e. no test set
-            continue
-        x = []
-        dataset = LoadImagesAndLabels(data[split])  # load dataset
-        for label in tqdm(dataset.labels, total=dataset.n, desc='Statistics'):
-            x.append(np.bincount(label[:, 0].astype(int), minlength=data['nc']))
-        x = np.array(x)  # shape(128x80)
-        stats[split] = {
-            'instance_stats': {
-                'total': int(x.sum()),
-                'per_class': x.sum(0).tolist()},
-            'image_stats': {
-                'total': dataset.n,
-                'unlabelled': int(np.all(x == 0, 1).sum()),
-                'per_class': (x > 0).sum(0).tolist()},
-            'labels': [{
-                str(Path(k).name): _round_labels(v.tolist())} for k, v in zip(dataset.im_files, dataset.labels)]}
+        for split in 'train', 'val', 'test':
+            if self.data.get(split) is None:
+                self.stats[split] = None  # i.e. no test set
+                continue
+            dataset = LoadImagesAndLabels(self.data[split])  # load dataset
+            x = np.array([
+                np.bincount(label[:, 0].astype(int), minlength=self.data['nc'])
+                for label in tqdm(dataset.labels, total=dataset.n, desc='Statistics')])  # shape(128x80)
+            self.stats[split] = {
+                'instance_stats': {
+                    'total': int(x.sum()),
+                    'per_class': x.sum(0).tolist()},
+                'image_stats': {
+                    'total': dataset.n,
+                    'unlabelled': int(np.all(x == 0, 1).sum()),
+                    'per_class': (x > 0).sum(0).tolist()},
+                'labels': [{
+                    str(Path(k).name): _round(v.tolist())} for k, v in zip(dataset.im_files, dataset.labels)]}
 
-        if hub:
-            im_dir = hub_dir / 'images'
-            im_dir.mkdir(parents=True, exist_ok=True)
-            for _ in tqdm(ThreadPool(NUM_THREADS).imap(_hub_ops, dataset.im_files), total=dataset.n, desc='HUB Ops'):
+        # Save, print and return
+        if save:
+            stats_path = self.hub_dir / 'stats.json'
+            print(f'Saving {stats_path.resolve()}...')
+            with open(stats_path, 'w') as f:
+                json.dump(self.stats, f)  # save stats.json
+        if verbose:
+            print(json.dumps(self.stats, indent=2, sort_keys=False))
+        return self.stats
+
+    def process_images(self):
+        # Compress images for Ultralytics HUB
+        for split in 'train', 'val', 'test':
+            if self.data.get(split) is None:
+                continue
+            dataset = LoadImagesAndLabels(self.data[split])  # load dataset
+            desc = f'{split} images'
+            for _ in tqdm(ThreadPool(NUM_THREADS).imap(self._hub_ops, dataset.im_files), total=dataset.n, desc=desc):
                 pass
-
-    # Profile
-    stats_path = hub_dir / 'stats.json'
-    if profile:
-        for _ in range(1):
-            file = stats_path.with_suffix('.npy')
-            t1 = time.time()
-            np.save(file, stats)
-            t2 = time.time()
-            x = np.load(file, allow_pickle=True)
-            print(f'stats.npy times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
-
-            file = stats_path.with_suffix('.json')
-            t1 = time.time()
-            with open(file, 'w') as f:
-                json.dump(stats, f)  # save stats *.json
-            t2 = time.time()
-            with open(file) as f:
-                x = json.load(f)  # load hyps dict
-            print(f'stats.json times: {time.time() - t2:.3f}s read, {t2 - t1:.3f}s write')
-
-    # Save, print and return
-    if hub:
-        print(f'Saving {stats_path.resolve()}...')
-        with open(stats_path, 'w') as f:
-            json.dump(stats, f)  # save stats.json
-    if verbose:
-        print(json.dumps(stats, indent=2, sort_keys=False))
-    return stats
+        print(f'Done. All images saved to {self.im_dir}')
+        return self.im_dir
