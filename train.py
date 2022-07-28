@@ -485,7 +485,9 @@ def parse_opt(known=False):
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--seed', type=int, default=0, help='Global training seed')
     parser.add_argument('--local_rank', type=int, default=-1, help='Automatic DDP Multi-GPU argument, do not modify')
-    parser.add_argument('--weighted_sampler', action='store_true', help="Use Weighted Sampler (for highly imbalanced data)")
+    parser.add_argument('--weighted_sampler',
+                        action='store_true',
+                        help="Use Weighted Sampler (for highly imbalanced data)")
 
     # Weights & Biases arguments
     parser.add_argument('--entity', default=None, help='W&B: Entity')

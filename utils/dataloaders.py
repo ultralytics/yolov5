@@ -25,6 +25,7 @@ import torch.nn.functional as F
 import yaml
 from PIL import ExifTags, Image, ImageOps
 from torch.utils.data import DataLoader, Dataset, dataloader, distributed
+from torch.utils.data.sampler import WeightedRandomSampler
 from tqdm import tqdm
 
 from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
@@ -32,7 +33,6 @@ from utils.general import (DATASETS_DIR, LOGGER, NUM_THREADS, check_dataset, che
                            cv2, is_colab, is_kaggle, segments2boxes, xyn2xy, xywh2xyxy, xywhn2xyxy, xyxy2xywhn)
 from utils.torch_utils import torch_distributed_zero_first
 
-from torch.utils.data.sampler import WeightedRandomSampler
 # Parameters
 HELP_URL = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 IMG_FORMATS = 'bmp', 'dng', 'jpeg', 'jpg', 'mpo', 'png', 'tif', 'tiff', 'webp'  # include image suffixes
@@ -96,35 +96,37 @@ def seed_worker(worker_id):
     np.random.seed(worker_seed)
     random.seed(worker_seed)
 
+
 def create_weighted_sampler(dataset):
-    labels_per_class = [label[:,0] for label in dataset.labels if label.shape[0] > 0 ]
+    labels_per_class = [label[:, 0] for label in dataset.labels if label.shape[0] > 0]
     labels_per_class = np.array(labels_per_class)
 
     background_count = len([1 for label in dataset.labels if label.shape[0] == 0])
 
-    unique_classes, counts = np.unique(labels_per_class,return_counts=True)
+    unique_classes, counts = np.unique(labels_per_class, return_counts=True)
     normalized_counts = counts / (np.sum(counts) + background_count)
     normalized_background = background_count / (np.sum(counts) + background_count)
-    
+
     weight_cls = 1 / counts
-    weight_background = 1/ normalized_background
+    weight_background = 1 / normalized_background
     # currently I assume that weight of background should be equal to each class!
 
     final_weights = []
     for label in dataset.labels:
-        if label.shape[0] ==0:
+        if label.shape[0] == 0:
             final_weights.append(weight_background)
         else:
             # use weighted sum of labels for weight in case there are multiple labels for the same image
-            label_classes = np.unique(label[:,0]).tolist()
+            label_classes = np.unique(label[:, 0]).tolist()
             values = []
             for cls_ in label_classes:
                 values.append(weight_cls[int(cls_)])
 
-            final_weights.append(sum(values)/len(values))
+            final_weights.append(sum(values) / len(values))
 
     final_weights = np.array(final_weights)
-    return WeightedRandomSampler(torch.from_numpy(final_weights),len(final_weights))
+    return WeightedRandomSampler(torch.from_numpy(final_weights), len(final_weights))
+
 
 def create_dataloader(path,
                       imgsz,
@@ -143,7 +145,7 @@ def create_dataloader(path,
                       prefix='',
                       shuffle=False,
                       validation=False,
-                      weighted_sampler = False):
+                      weighted_sampler=False):
     if rect and shuffle:
         LOGGER.warning('WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False')
         shuffle = False
@@ -171,8 +173,8 @@ def create_dataloader(path,
     if weighted_sampler:
         assert rank == -1, "Currently multi-GPU Support is not enabled when using weighted sampler"
         sampler = create_weighted_sampler(dataset)
-    
-    loader  = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
+
+    loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
     generator = torch.Generator()
     generator.manual_seed(0)
     return loader(dataset,
