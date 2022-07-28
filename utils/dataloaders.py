@@ -140,7 +140,8 @@ def create_dataloader(path,
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
 
     if weighted_sampler:
-        assert rank > 0, "Currently multi-GPU Support is not enabled when using weighted sampler"
+        print(rank)
+        assert rank == -1, "Currently multi-GPU Support is not enabled when using weighted sampler"
         import ipdb
         ipdb.set_trace()
         filtered=len(list(filter(lambda item: item.shape[0]>0, dataset.labels)))
