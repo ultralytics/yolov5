@@ -10,7 +10,7 @@
     "nn tools"
   ],
   "description": "to TorchScript and ONNX formats",
-  "docker_image": "supervisely/base-pytorch:6.0.22",
+  "docker_image": "supervisely/yolov5:1.0.0",
   "instance_version": "6.4.57",
   "main_script": "supervisely/export_weights/src/sly_export_weights.py",
   "task_location": "workspace_tasks",
