@@ -178,7 +178,8 @@ def run(
                                        pad=pad,
                                        rect=rect,
                                        workers=workers,
-                                       prefix=colorstr(f'{task}: '))[0]
+                                       prefix=colorstr(f'{task}: '),
+                                       validation=True,)[0]
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
