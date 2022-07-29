@@ -139,6 +139,12 @@ class ConfusionMatrix:
         Returns:
             None, updates confusion matrix accordingly
         """
+        if detections is None:
+            gt_classes = labels.int()
+            for i, gc in enumerate(gt_classes):
+                self.matrix[self.nc, gc] += 1  # background FN
+            return
+
         detections = detections[detections[:, 4] > self.conf]
         gt_classes = labels[:, 0].int()
         detection_classes = detections[:, 5].int()
