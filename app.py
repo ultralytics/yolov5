@@ -15,7 +15,7 @@ import random
 
 
 def detect(img, weights):
-    gpu_id="0"
+    gpu_id="cpu"
     device = select_device(device=gpu_id)
     model = attempt_load(weights+'.pt', device=device)
     torch.no_grad()
