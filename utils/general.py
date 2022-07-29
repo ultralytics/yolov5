@@ -670,6 +670,25 @@ def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
     return (class_weights.reshape(1, nc) * class_counts).sum(1)
 
 
+def labels_to_pos_weights(labels, nc=80):
+    # Get class weights for the class loss pos_weight argument
+    # weight = total_num_samples / nc / num_samples_per_class * hyp['pos_weight']
+    # class loss will be computed as if there are (total_num_samples / nc * hyp['pos_weight']) samples per class
+
+    # below code is partially adapted from labels_to_class_weights function
+    if labels[0] is None:  # no labels loaded or imga-weights is enabled
+        return torch.ones((nc,), dtype=torch.float)
+
+    labels = np.concatenate(labels, 0)
+    classes = labels[:, 0].astype(int)
+    num_samples_per_class = np.bincount(classes, minlength=nc).astype(np.float32)  # occurrences per class
+    avg_samples = num_samples_per_class.sum() / nc
+    # classes with no samples will have weight of 1 to avoid possible problems
+    num_samples_per_class[num_samples_per_class == 0.] =  avg_samples
+
+    return torch.from_numpy(avg_samples / num_samples_per_class).float()
+
+
 def coco80_to_coco91_class():  # converts 80-index (val2014) to 91-index (paper)
     # https://tech.amikelive.com/node-718/what-object-categories-labels-are-in-coco-dataset/
     # a = np.loadtxt('data/coco.names', dtype='str', delimiter='\n')
