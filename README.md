@@ -1,3 +1,15 @@
+---
+title: Yolov5
+emoji: 🏃
+colorFrom: gray
+colorTo: green
+sdk: gradio
+sdk_version: 3.1.1
+app_file: app.py
+pinned: false
+---
+
+
 <div align="center">
 <p>
    <a align="left" href="https://ultralytics.com/yolov5" target="_blank">
@@ -14,6 +26,8 @@ English | [简体中文](.github/README_cn.md)
    <a href="https://colab.research.google.com/github/ultralytics/yolov5/blob/master/tutorial.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
    <a href="https://www.kaggle.com/ultralytics/yolov5"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open In Kaggle"></a>
    <a href="https://join.slack.com/t/ultralytics/shared_invite/zt-w29ei8bp-jczz7QYUmDtgo6r6KcMIAg"><img src="https://img.shields.io/badge/Slack-Join_Forum-blue.svg?logo=slack" alt="Join Forum"></a>
+
+   <a href="https://huggingface.co/spaces/xiang-wuu/yolov5"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue" alt="Hugging Face Spaces"></a>
 </div>
 
 <br>
@@ -196,11 +210,15 @@ Get started in seconds with our verified environments. Click each icon below for
     <a href="https://roboflow.com/?ref=ultralytics">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow-long.png" width="49%"/>
     </a>
+    <a href="https://roboflow.com/?ref=ultralytics">
+        <img src="https://raw.githubusercontent.com/gradio-app/gradio/main/readme_files/gradio.svg" width="49%"/>
+    </a>
+
 </div>
 
-|Weights and Biases|Roboflow ⭐ NEW|
-|:-:|:-:|
-|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics) |
+|Weights and Biases|Roboflow ⭐ NEW|Gradio with Hugging Face Spaces
+|:-:|:-:|:-:|
+|Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme)|Label and export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics) | With [Gradio](http://www.gradio.app/) one can quickly create a user-friendly web app to showcase what a NN model can do and it can be hosted with [Hugging Face Spaces](https://huggingface.co/spaces/xiang-wuu/yolov5) 🤗 to make it accessible to the world.
 
 <!-- ## <div align="center">Compete and Win</div>
 
