@@ -109,7 +109,6 @@ def create_weighted_sampler(dataset):
 
     weight_cls = 1 / counts
     weight_background = 1 / background_count
-    # currently I assume that weight of background should be equal to each class!
 
     final_weights = []
     for label in dataset.labels:
