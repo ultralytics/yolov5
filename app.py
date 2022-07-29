@@ -78,17 +78,17 @@ def detect(img, weights):
             # Print results
             for c in det[:, -1].unique():
                 n = (det[:, -1] == c).sum()  # detections per class
-                s += '{:g} {}s, '.format(n, names[int(c)])  # add to string
+                s += f'{n:g} {names[int(c)]}s, '  # add to string
 
             # show results
             for *xyxy, conf, cls in det:
-                label = '{} {:.2f}'.format(names[int(cls)], conf)
+                label = f'{names[int(cls)]} {conf:.2f}'
                 annotator.box_label(xyxy, label, color=colors[int(cls)])
         im0 = annotator.result()
         # Print time (inference + NMS)
         infer_time = t2 - t1
 
-        print('%sDone.  %s' % (s, infer_time))
+        print('{}Done.  {}'.format(s, infer_time))
 
     print('Done. (%.3fs)' % (time.time() - t0))
 
