@@ -684,7 +684,7 @@ def labels_to_pos_weights(labels, nc=80):
     num_samples_per_class = np.bincount(classes, minlength=nc).astype(np.float32)  # occurrences per class
     avg_samples = num_samples_per_class.sum() / nc
     # classes with no samples will have weight of 1 to avoid possible problems
-    num_samples_per_class[num_samples_per_class == 0.] =  avg_samples
+    num_samples_per_class[num_samples_per_class == 0.] = avg_samples
 
     return torch.from_numpy(avg_samples / num_samples_per_class).float()
 
