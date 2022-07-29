@@ -1,4 +1,4 @@
----
+<!---
 title: Yolov5
 emoji: 🏃
 colorFrom: gray
@@ -7,7 +7,7 @@ sdk: gradio
 sdk_version: 3.1.1
 app_file: app.py
 pinned: false
----
+--->
 
 
 <div align="center">
@@ -210,7 +210,7 @@ Get started in seconds with our verified environments. Click each icon below for
     <a href="https://roboflow.com/?ref=ultralytics">
         <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-roboflow-long.png" width="49%"/>
     </a>
-    <a href="https://roboflow.com/?ref=ultralytics">
+    <a href="http://www.gradio.app/">
         <img src="https://raw.githubusercontent.com/gradio-app/gradio/main/readme_files/gradio.svg" width="49%"/>
     </a>
 
