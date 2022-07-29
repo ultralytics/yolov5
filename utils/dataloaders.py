@@ -104,11 +104,11 @@ def create_weighted_sampler(dataset):
     background_count = len([1 for label in dataset.labels if label.shape[0] == 0])
 
     unique_classes, counts = np.unique(labels_per_class, return_counts=True)
-    normalized_counts = counts / (np.sum(counts) + background_count)
-    normalized_background = background_count / (np.sum(counts) + background_count)
+    # = counts / (np.sum(counts) + background_count)
+    # normalized_background = background_count / (np.sum(counts) + background_count)
 
-    weight_cls = 1 / normalized_counts
-    weight_background = 1 / normalized_background
+    weight_cls = 1 / counts
+    weight_background = 1 / background_count
     # currently I assume that weight of background should be equal to each class!
 
     final_weights = []
