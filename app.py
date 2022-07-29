@@ -27,8 +27,7 @@ def detect(img, weights):
 
     # Get names and colors
     names = model.names if hasattr(model, 'names') else model.modules.names
-    colors = [[random.randint(0, 255) for _ in range(3)]
-              for _ in range(len(names))]
+    colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
     if img is None:
         sys.exit(0)
 
@@ -61,8 +60,7 @@ def detect(img, weights):
         pred = pred.float()
 
     # Apply NMS
-    pred = non_max_suppression(
-        pred, 0.1, 0.5, classes=None, agnostic=False)
+    pred = non_max_suppression(pred, 0.1, 0.5, classes=None, agnostic=False)
     t2 = time_sync()
     annotator = Annotator(im0, line_width=3, example=str(names))
     # Process detections
@@ -71,24 +69,22 @@ def detect(img, weights):
         s += '%gx%g ' % img.shape[2:]  # print string
         if det is not None and len(det):
             # Rescale boxes from img_size to im0 size
-            det[:, :4] = scale_coords(
-                img.shape[2:], det[:, :4], im0.shape).round()
+            det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
             # Print results
             for c in det[:, -1].unique():
                 n = (det[:, -1] == c).sum()  # detections per class
-                s += '%g %ss, ' % (n, names[int(c)])  # add to string
+                s += f'{n:g} {names[int(c)]}s, '  # add to string
 
             # show results
             for *xyxy, conf, cls in det:
-                label = '%s %.2f' % (names[int(cls)], conf)
+                label = f'{names[int(cls)]} {conf:.2f}'
                 annotator.box_label(xyxy, label, color=colors[int(cls)])
         im0 = annotator.result()
         # Print time (inference + NMS)
         infer_time = t2 - t1
 
-        print('%sDone.  %s' %
-              (s, infer_time))
+        print('{}Done.  {}'.format(s, infer_time))
 
     print('Done. (%.3fs)' % (time.time() - t0))
 
