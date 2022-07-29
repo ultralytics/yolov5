@@ -1,23 +1,22 @@
+import random
+import numpy as np
+import sys
+from utils.torch_utils import *
+from utils.general import non_max_suppression, scale_coords
+from utils.plots import Annotator
+from utils.augmentations import letterbox
+from models.experimental import attempt_load
 import gradio as gr
 import os
 
 os.system("wget https://github.com/ultralytics/yolov5/releases/download/v6.1/yolov5s.pt")
 os.system("wget https://github.com/ultralytics/yolov5/releases/download/v6.1/yolov5s6.pt")
 
-from models.experimental import attempt_load
-from utils.augmentations import letterbox
-from utils.plots import Annotator
-from utils.general import non_max_suppression, scale_coords
-from utils.torch_utils import *
-import sys
-import numpy as np
-import random
-
 
 def detect(img, weights):
-    gpu_id="cpu"
+    gpu_id = "cpu"
     device = select_device(device=gpu_id)
-    model = attempt_load(weights+'.pt', device=device)
+    model = attempt_load(weights + '.pt', device=device)
     torch.no_grad()
     model.to(device).eval()
     half = False  # half precision only supported on CUDA
@@ -87,16 +86,16 @@ def detect(img, weights):
         im0 = annotator.result()
         # Print time (inference + NMS)
         infer_time = t2 - t1
-        
+
         print('%sDone.  %s' %
-                (s, infer_time))
+              (s, infer_time))
 
     print('Done. (%.3fs)' % (time.time() - t0))
-    
+
     return im0
- 
+
 
 if __name__ == '__main__':
-    gr.Interface(detect,[gr.Image(type="numpy"),gr.Dropdown(choices=["yolov5s","yolov5s6"])], 
-    gr.Image(type="numpy"),title="Yolov5",examples=[["data/images/bus.jpg", "yolov5s"]],
-    description="Gradio based demo for <a href='https://github.com/ultralytics/yolov5' style='text-decoration: underline' target='_blank'>ultralytics/yolov5</a>, new state-of-the-art for real-time object detection").launch()
+    gr.Interface(detect, [gr.Image(type="numpy"), gr.Dropdown(choices=["yolov5s", "yolov5s6"])],
+                 gr.Image(type="numpy"), title="Yolov5", examples=[["data/images/bus.jpg", "yolov5s"]],
+                 description="Gradio based demo for <a href='https://github.com/ultralytics/yolov5' style='text-decoration: underline' target='_blank'>ultralytics/yolov5</a>, new state-of-the-art for real-time object detection").launch()
