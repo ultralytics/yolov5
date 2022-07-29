@@ -170,7 +170,8 @@ def create_dataloader(path,
 
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
 
-    if weighted_sampler:
+    if not validation and weighted_sampler:
+        # weighted sampler should not be called on validation as this will report wrong results
         assert rank == -1, "Currently multi-GPU Support is not enabled when using weighted sampler"
         sampler = create_weighted_sampler(dataset)
 
