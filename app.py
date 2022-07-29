@@ -1,13 +1,15 @@
+import os
 import random
-import numpy as np
 import sys
-from utils.torch_utils import *
+
+import gradio as gr
+import numpy as np
+
+from models.experimental import attempt_load
+from utils.augmentations import letterbox
 from utils.general import non_max_suppression, scale_coords
 from utils.plots import Annotator
-from utils.augmentations import letterbox
-from models.experimental import attempt_load
-import gradio as gr
-import os
+from utils.torch_utils import *
 
 os.system("wget https://github.com/ultralytics/yolov5/releases/download/v6.1/yolov5s.pt")
 os.system("wget https://github.com/ultralytics/yolov5/releases/download/v6.1/yolov5s6.pt")
@@ -84,7 +86,7 @@ def detect(img, weights):
         # Print time (inference + NMS)
         infer_time = t2 - t1
 
-        print('{}Done.  {}'.format(s, infer_time))
+        print(f'{s}Done.  {infer_time}')
 
     print('Done. (%.3fs)' % (time.time() - t0))
 
@@ -92,6 +94,11 @@ def detect(img, weights):
 
 
 if __name__ == '__main__':
-    gr.Interface(detect, [gr.Image(type="numpy"), gr.Dropdown(choices=["yolov5s", "yolov5s6"])],
-                 gr.Image(type="numpy"), title="Yolov5", examples=[["data/images/bus.jpg", "yolov5s"]],
-                 description="Gradio based demo for <a href='https://github.com/ultralytics/yolov5' style='text-decoration: underline' target='_blank'>ultralytics/yolov5</a>, new state-of-the-art for real-time object detection").launch()
+    gr.Interface(
+        detect, [gr.Image(type="numpy"), gr.Dropdown(choices=["yolov5s", "yolov5s6"])],
+        gr.Image(type="numpy"),
+        title="Yolov5",
+        examples=[["data/images/bus.jpg", "yolov5s"]],
+        description=
+        "Gradio based demo for <a href='https://github.com/ultralytics/yolov5' style='text-decoration: underline' target='_blank'>ultralytics/yolov5</a>, new state-of-the-art for real-time object detection"
+    ).launch()
