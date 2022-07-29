@@ -1,23 +1,26 @@
-import gradio as gr
 import os
+
+import gradio as gr
 
 os.system("wget https://github.com/ultralytics/yolov5/releases/download/v6.1/yolov5s.pt")
 os.system("wget https://github.com/ultralytics/yolov5/releases/download/v6.1/yolov5s6.pt")
 
+import random
+import sys
+
+import numpy as np
+
 from models.experimental import attempt_load
 from utils.augmentations import letterbox
-from utils.plots import Annotator
 from utils.general import non_max_suppression, scale_coords
+from utils.plots import Annotator
 from utils.torch_utils import *
-import sys
-import numpy as np
-import random
 
 
 def detect(img, weights):
-    gpu_id="cpu"
+    gpu_id = "cpu"
     device = select_device(device=gpu_id)
-    model = attempt_load(weights+'.pt', device=device)
+    model = attempt_load(weights + '.pt', device=device)
     torch.no_grad()
     model.to(device).eval()
     half = False  # half precision only supported on CUDA
@@ -28,8 +31,7 @@ def detect(img, weights):
 
     # Get names and colors
     names = model.names if hasattr(model, 'names') else model.modules.names
-    colors = [[random.randint(0, 255) for _ in range(3)]
-              for _ in range(len(names))]
+    colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
     if img is None:
         sys.exit(0)
 
@@ -62,8 +64,7 @@ def detect(img, weights):
         pred = pred.float()
 
     # Apply NMS
-    pred = non_max_suppression(
-        pred, 0.1, 0.5, classes=None, agnostic=False)
+    pred = non_max_suppression(pred, 0.1, 0.5, classes=None, agnostic=False)
     t2 = time_sync()
     annotator = Annotator(im0, line_width=3, example=str(names))
     # Process detections
@@ -72,31 +73,34 @@ def detect(img, weights):
         s += '%gx%g ' % img.shape[2:]  # print string
         if det is not None and len(det):
             # Rescale boxes from img_size to im0 size
-            det[:, :4] = scale_coords(
-                img.shape[2:], det[:, :4], im0.shape).round()
+            det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
             # Print results
             for c in det[:, -1].unique():
                 n = (det[:, -1] == c).sum()  # detections per class
-                s += '%g %ss, ' % (n, names[int(c)])  # add to string
+                s += '{:g} {}s, '.format(n, names[int(c)])  # add to string
 
             # show results
             for *xyxy, conf, cls in det:
-                label = '%s %.2f' % (names[int(cls)], conf)
+                label = '{} {:.2f}'.format(names[int(cls)], conf)
                 annotator.box_label(xyxy, label, color=colors[int(cls)])
         im0 = annotator.result()
         # Print time (inference + NMS)
         infer_time = t2 - t1
-        
-        print('%sDone.  %s' %
-                (s, infer_time))
+
+        print('%sDone.  %s' % (s, infer_time))
 
     print('Done. (%.3fs)' % (time.time() - t0))
-    
+
     return im0
- 
+
 
 if __name__ == '__main__':
-    gr.Interface(detect,[gr.Image(type="numpy"),gr.Dropdown(choices=["yolov5s","yolov5s6"])], 
-    gr.Image(type="numpy"),title="Yolov5",examples=[["data/images/bus.jpg", "yolov5s"]],
-    description="Gradio based demo for <a href='https://github.com/ultralytics/yolov5' style='text-decoration: underline' target='_blank'>ultralytics/yolov5</a>, new state-of-the-art for real-time object detection").launch()
+    gr.Interface(
+        detect, [gr.Image(type="numpy"), gr.Dropdown(choices=["yolov5s", "yolov5s6"])],
+        gr.Image(type="numpy"),
+        title="Yolov5",
+        examples=[["data/images/bus.jpg", "yolov5s"]],
+        description=
+        "Gradio based demo for <a href='https://github.com/ultralytics/yolov5' style='text-decoration: underline' target='_blank'>ultralytics/yolov5</a>, new state-of-the-art for real-time object detection"
+    ).launch()
