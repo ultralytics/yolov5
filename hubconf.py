@@ -128,12 +128,13 @@ if __name__ == '__main__':
     import numpy as np
     from PIL import Image
 
-    from utils.general import cv2
+    from utils.general import cv2, print_args
 
     # Argparser
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='yolov5s', help='model name')
     opt = parser.parse_args()
+    print_args(vars(opt))
 
     # Model
     model = _create(name=opt.model, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True)
