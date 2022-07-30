@@ -55,6 +55,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                 if len(ckpt['model'].names) == classes:
                     model.names = ckpt['model'].names  # set class names attribute
         if autoshape:
+            model.model.model[-1].inplace = False  # Detect.inplace=False for safe multithread inference
             model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
         if not verbose:
             LOGGER.setLevel(logging.INFO)  # reset to default
