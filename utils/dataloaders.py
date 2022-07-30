@@ -1123,7 +1123,7 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
                 im = np.load(fn)
             else:  # read image
                 im = cv2.imread(f)  # BGR
-            sample = self.album_transforms(image=im[..., ::-1])["image"]
+            sample = self.album_transforms(image=cv2.cvtColor(im, cv2.COLOR_BGR2RGB))["image"]
         else:
             sample = self.torch_transforms(self.loader(f))
         return sample, j
