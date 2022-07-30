@@ -497,7 +497,7 @@ def main(opt, callbacks=Callbacks()):
     if RANK in {-1, 0}:
         print_args(vars(opt))
         check_git_status()
-        check_requirements(exclude=['thop'])
+        check_requirements()
 
     # Resume
     if opt.resume and not check_wandb_resume(opt) and not opt.evolve:  # resume an interrupted run
