@@ -121,7 +121,7 @@ class Loggers():
         # ni: number integrated batches (since train start)
         if plots:
             if ni == 0:
-                if not self.opt.sync_bn:  # --sync known issue https://github.com/ultralytics/yolov5/issues/3754
+                if self.tb and not self.opt.sync_bn:  # --sync known issue https://github.com/ultralytics/yolov5/issues/3754
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore')  # suppress jit trace warning
                         self.tb.add_graph(torch.jit.trace(de_parallel(model), imgs[0:1], strict=False), [])
