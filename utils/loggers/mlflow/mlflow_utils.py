@@ -104,7 +104,7 @@ class MlflowLogger:
         """
         prefix = "param/" if is_param else ""
         metrics_dict = {
-            f"{prefix}{k}": float(v)
+            f"{prefix}{k.replace(':','-')}": float(v)
             for k, v in metrics.items() if (isinstance(v, float) or isinstance(v, int))}
         self.mlflow.log_metrics(metrics=metrics_dict, step=epoch)
 
