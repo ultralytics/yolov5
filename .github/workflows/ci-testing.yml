@@ -106,7 +106,7 @@ jobs:
           # Detect
           python detect.py --weights $model.pt --device $d
           python detect.py --weights $best --device $d
-          python hubconf.py  # hub
+          python hubconf.py --model $model  # hub
           # Export
           # python models/tf.py --weights $model.pt  # build TF model
           python models/yolo.py --cfg $model.yaml  # build PyTorch model
