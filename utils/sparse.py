@@ -4,7 +4,7 @@ import random
 import os
 from typing import Any, Dict, Optional
 
-from sparsezoo import Zoo
+from sparsezoo import Model
 from sparseml.pytorch.optim import ScheduledModifierManager
 from sparseml.pytorch.utils import SparsificationGroupLogger
 from sparseml.pytorch.utils import GradSampler
@@ -19,17 +19,18 @@ import numpy
 _LOGGER = logging.getLogger(__file__)
 
 def _get_model_framework_file(model, path):
+    available_files = model.training.default.files
     transfer_request = 'recipe_type=transfer' in path
-    checkpoint_available = any([file.checkpoint for file in model.framework_files])
-    final_available = any([not file.checkpoint for file in model.framework_files])
+    checkpoint_available = any([".ckpt" in file.name for file in available_files])
+    final_available = any([not ".ckpt" in file.name for file in available_files])
 
     if transfer_request and checkpoint_available:
         # checkpoints are saved for transfer learning use cases,
         # return checkpoint if avaiable and requested
-        return [file for file in model.framework_files if file.checkpoint][0]
+        return [file for file in available_files if ".ckpt" in file.name][0]
     elif final_available:
         # default to returning final state, if available
-        return [file for file in model.framework_files if not file.checkpoint][0]
+        return [file for file in available_files if ".ckpt" not in file.name][0]
 
     raise ValueError(f"Could not find a valid framework file for {path}")
 
@@ -38,9 +39,9 @@ def check_download_sparsezoo_weights(path):
     if isinstance(path, str):
         if path.startswith("zoo:"):
             # load model from the SparseZoo and override the path with the new download
-            model = Zoo.load_model_from_stub(path)
+            model = Model(path)
             file = _get_model_framework_file(model, path)
-            path = file.downloaded_path()
+            path = file.path
 
         return path
 
