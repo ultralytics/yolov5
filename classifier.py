@@ -54,11 +54,12 @@ RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 
 
-def train():
+def train(opt, device):
     init_seeds(opt.seed + 1 + RANK, deterministic=True)
     save_dir, data, bs, epochs, nw, imgsz, pretrained = \
         Path(opt.save_dir), Path(opt.data), opt.batch_size, opt.epochs, min(os.cpu_count() - 1, opt.workers), \
         opt.imgsz, str(opt.pretrained).lower() == 'true'
+    cuda = device.type != 'cpu'
 
     # Directories
     wdir = save_dir / 'weights'
@@ -272,12 +273,13 @@ def train():
 @torch.no_grad()
 def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     model.eval()
+    device = next(model.parameters()).device
     pred, targets, loss = [], [], 0
     n = len(dataloader)  # number of batches
     action = 'validating' if dataloader.dataset.root.stem == 'val' else 'testing'
     desc = f"{pbar.desc[:-36]}{action:>36}"
     bar = tqdm(dataloader, desc, n, False, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
-    with amp.autocast(enabled=cuda):  # stability issues when enabled
+    with amp.autocast(enabled=device.type != 'cpu'):
         for images, labels in bar:
             images, labels = images.to(device, non_blocking=True), labels.to(device)
             y = model(images)
@@ -406,11 +408,10 @@ def main(opt):
         dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
 
     # Parameters
-    cuda = device.type != 'cpu'
     opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok)  # increment run
 
     # Train
-    train()
+    train(opt, device)
     if WORLD_SIZE > 1 and RANK == 0:
         LOGGER.info('Destroying process group... ')
         dist.destroy_process_group()
