@@ -382,7 +382,7 @@ if __name__ == '__main__':
     parser.add_argument('--cutoff', type=int, default=None, help='Model layer cutoff index for Classify() head')
     parser.add_argument('--dropout', type=float, default=None, help='Dropout (fraction)')
     parser.add_argument('--verbose', action='store_true', help='Verbose mode')
-    parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
+    parser.add_argument('--local_rank', type=int, default=-1, help='Automatic DDP Multi-GPU argument, do not modify')
     opt = parser.parse_args()
 
     # Checks
