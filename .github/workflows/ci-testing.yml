@@ -85,12 +85,12 @@ jobs:
       - name: Check environment
         run: |
           python -c "import utils; utils.notebook_init()"
-          echo "RUNNER_OS is $RUNNER_OS"
-          echo "GITHUB_EVENT_NAME is $GITHUB_EVENT_NAME"
-          echo "GITHUB_WORKFLOW is $GITHUB_WORKFLOW"
-          echo "GITHUB_ACTOR is $GITHUB_ACTOR"
-          echo "GITHUB_REPOSITORY is $GITHUB_REPOSITORY"
-          echo "GITHUB_REPOSITORY_OWNER is $GITHUB_REPOSITORY_OWNER"
+          echo "RUNNER_OS is ${{ runner.os }}"
+          echo "GITHUB_EVENT_NAME is ${{ github.event_name }}"
+          echo "GITHUB_WORKFLOW is ${{ github.workflow }}"
+          echo "GITHUB_ACTOR is ${{ github.actor }}"
+          echo "GITHUB_REPOSITORY is ${{ github.repository }}"
+          echo "GITHUB_REPOSITORY_OWNER is ${{ github.repository_owner }}"
       - name: Run tests
         shell: bash
         run: |
