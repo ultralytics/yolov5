@@ -384,19 +384,24 @@ class DetectMultiBackend(nn.Module):
             logger = trt.Logger(trt.Logger.INFO)
             with open(w, 'rb') as f, trt.Runtime(logger) as runtime:
                 model = runtime.deserialize_cuda_engine(f.read())
+            context = model.create_execution_context()
             bindings = OrderedDict()
             fp16 = False  # default updated below
+            dynamic_input = False
             for index in range(model.num_bindings):
                 name = model.get_binding_name(index)
                 dtype = trt.nptype(model.get_binding_dtype(index))
-                shape = tuple(model.get_binding_shape(index))
+                if model.binding_is_input(index):
+                    if -1 in tuple(model.get_binding_shape(index)):  # dynamic
+                        dynamic_input = True
+                        context.set_binding_shape(index, tuple(model.get_profile_shape(0, index)[2]))
+                    if dtype == np.float16:
+                        fp16 = True
+                shape = tuple(context.get_binding_shape(index))
                 data = torch.from_numpy(np.empty(shape, dtype=np.dtype(dtype))).to(device)
                 bindings[name] = Binding(name, dtype, shape, data, int(data.data_ptr()))
-                if model.binding_is_input(index) and dtype == np.float16:
-                    fp16 = True
             binding_addrs = OrderedDict((n, d.ptr) for n, d in bindings.items())
-            context = model.create_execution_context()
-            batch_size = bindings['images'].shape[0]
+            batch_size = bindings['images'].shape[0]  # if dynamic, this is instead max batch size
         elif coreml:  # CoreML
             LOGGER.info(f'Loading {w} for CoreML inference...')
             import coremltools as ct
@@ -466,7 +471,12 @@ class DetectMultiBackend(nn.Module):
             im = im.cpu().numpy()  # FP32
             y = self.executable_network([im])[self.output_layer]
         elif self.engine:  # TensorRT
-            assert im.shape == self.bindings['images'].shape, (im.shape, self.bindings['images'].shape)
+            if im.shape != self.bindings['images'].shape and self.dynamic_input:
+                self.context.set_binding_shape(self.model.get_binding_index('images'), im.shape)  # reshape if dynamic
+                self.bindings['images'] = self.bindings['images']._replace(shape=im.shape)
+            assert im.shape == self.bindings['images'].shape, (
+                f"image shape {im.shape} exceeds model max shape {self.bindings['images'].shape}" if self.dynamic_input
+                else f"image shape {im.shape} does not match model shape {self.bindings['images'].shape}")
             self.binding_addrs['images'] = int(im.data_ptr())
             self.context.execute_v2(list(self.binding_addrs.values()))
             y = self.bindings['output'].data
