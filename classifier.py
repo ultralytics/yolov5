@@ -154,9 +154,6 @@ def train():
         logger.log_images(file, name='Train Examples')
         logger.log_graph(model, imgsz)  # log model
 
-    # EMA
-    ema = ModelEMA(model) if RANK in {-1, 0} else None
-
     # Optimizer
     optimizer = smart_optimizer(model, opt.optimizer, opt.lr0, momentum=0.9, weight_decay=1e-5)
 
@@ -167,6 +164,9 @@ def train():
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # scheduler = lr_scheduler.OneCycleLR(optimizer, max_lr=lr0, total_steps=epochs, pct_start=0.1,
     #                                    final_div_factor=1 / 25 / lrf)
+
+    # EMA
+    ema = ModelEMA(model) if RANK in {-1, 0} else None
 
     # DDP mode
     if cuda and RANK != -1:
@@ -361,7 +361,7 @@ def imshow(img, labels=None, pred=None, names=None, nmax=25, verbose=False, f=Pa
     return f
 
 
-if __name__ == '__main__':
+def parse_opt(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='yolov5s', help='initial weights path')
     parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100, mnist or mnist-fashion')
@@ -384,8 +384,10 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', action='store_true', help='Verbose mode')
     parser.add_argument('--seed', type=int, default=0, help='Global training seed')
     parser.add_argument('--local_rank', type=int, default=-1, help='Automatic DDP Multi-GPU argument, do not modify')
-    opt = parser.parse_args()
+    return parser.parse_known_args()[0] if known else parser.parse_args()
 
+
+def main(opt):
     # Checks
     if RANK in {-1, 0}:
         print_args(vars(opt))
@@ -412,3 +414,17 @@ if __name__ == '__main__':
     if WORLD_SIZE > 1 and RANK == 0:
         LOGGER.info('Destroying process group... ')
         dist.destroy_process_group()
+
+
+def run(**kwargs):
+    # Usage: import classifier; classifier.run(data=mnist, imgsz=320, model='yolov5m')
+    opt = parse_opt(True)
+    for k, v in kwargs.items():
+        setattr(opt, k, v)
+    main(opt)
+    return opt
+
+
+if __name__ == "__main__":
+    opt = parse_opt()
+    main(opt)
