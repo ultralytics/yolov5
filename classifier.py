@@ -392,20 +392,20 @@ if __name__ == '__main__':
         check_git_status()
         check_requirements()
 
-    # Parameters
+    # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
-    cuda = device.type != 'cpu'
-    opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok)  # increment run
-
-    # DDP
     if LOCAL_RANK != -1:
         msg = 'is not compatible with YOLOv5 Multi-GPU DDP training'
-        # TODO assert opt.batch_size != -1, f'AutoBatch with --batch-size -1 {msg}, please pass a valid --batch-size'
+        assert opt.batch_size != -1, 'AutoBatch is coming soon for classification, please pass a valid --batch-size'
         assert opt.batch_size % WORLD_SIZE == 0, f'--batch-size {opt.batch_size} must be multiple of WORLD_SIZE'
         assert torch.cuda.device_count() > LOCAL_RANK, 'insufficient CUDA devices for DDP command'
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device('cuda', LOCAL_RANK)
         dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
+
+    # Parameters
+    cuda = device.type != 'cpu'
+    opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok)  # increment run
 
     # Train
     train()
