@@ -59,7 +59,7 @@ class MlflowLogger:
             LOGGER.warning(f"Mlflow: not logging params because - {err}")
         self.log_metrics(vars(opt), is_param=True)
 
-    def log_artifacts(self, artifact: Path) -> None:
+    def log_artifacts(self, artifact: Path, relpath: str = None) -> None:
         """Member function to log artifacts (either directory or single item).
 
         Args:
@@ -70,7 +70,7 @@ class MlflowLogger:
         if artifact.is_dir():
             self.mlflow.log_artifacts(f"{artifact.resolve()}/", artifact_path=str(artifact.stem))
         else:
-            self.mlflow.log_artifact(artifact.resolve())
+            self.mlflow.log_artifact(artifact.resolve(), artifact_path=relpath)
 
     def log_model(self, model_path) -> None:
         """Member function to log model as an Mlflow model.

@@ -110,6 +110,8 @@ class Loggers():
         paths = self.save_dir.glob('*labels*.jpg')  # training labels
         if self.wandb:
             self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
+        if self.mlflow:
+            [self.mlflow.log_artifacts(x, "labels") for x in paths]
 
     def on_train_batch_end(self, ni, model, imgs, targets, paths, plots):
         # Callback runs on train batch end
@@ -125,6 +127,9 @@ class Loggers():
             if self.wandb and ni == 10:
                 files = sorted(self.save_dir.glob('train*.jpg'))
                 self.wandb.log({'Mosaics': [wandb.Image(str(f), caption=f.name) for f in files if f.exists()]})
+            if self.mlflow and ni == 10:
+                files = sorted(self.save_dir.glob('train*.jpg'))
+                [self.mlflow.log_artifacts(f, "train") for f in files if f.exists()]
 
     def on_train_epoch_end(self, epoch):
         # Callback runs on train epoch end
@@ -141,6 +146,9 @@ class Loggers():
         if self.wandb:
             files = sorted(self.save_dir.glob('val*.jpg'))
             self.wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in files]})
+        if self.mlflow:
+            files = sorted(self.save_dir.glob('val*.jpg'))
+            [self.mlflow.log_artifacts(f, "validation") for f in files if f.exists()]
 
     def on_fit_epoch_end(self, vals, epoch, best_fitness, fi):
         # Callback runs at the end of each fit (train+val) epoch
@@ -205,8 +213,8 @@ class Loggers():
         if self.mlflow:
             # log stuff
             self.mlflow.log_artifacts(last.parent)
-            [self.mlflow.log_artifacts(f) for f in files if f.exists()]
-            self.mlflow.log_artifacts(self.save_dir / "results.csv")
+            [self.mlflow.log_artifacts(f, "results") for f in files if f.exists()]
+            self.mlflow.log_artifacts(self.save_dir / "results.csv", "results")
             if best.exists():
                 self.mlflow.log_model(best)
             self.mlflow.finish_run()
