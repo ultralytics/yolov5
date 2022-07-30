@@ -89,8 +89,6 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
             if t is Detect and not isinstance(m.anchor_grid, list):
                 delattr(m, 'anchor_grid')
                 setattr(m, 'anchor_grid', [torch.zeros(1)] * m.nl)
-        elif t is Conv:
-            m._non_persistent_buffers_set = set()  # torch 1.6.0 compatibility
         elif t is nn.Upsample and not hasattr(m, 'recompute_scale_factor'):
             m.recompute_scale_factor = None  # torch 1.11.0 compatibility
 
