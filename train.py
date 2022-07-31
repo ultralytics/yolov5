@@ -262,11 +262,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
     # Add tensor hooks for gradient inspection
     if opt.use_tensor_hooks:
-        LOGGER.info('Add tensor hooks...')
-        for name, params in model.named_parameters():
-            if params is not None:
-                params.register_hook(lambda grad: torch.nan_to_num(grad, nan=0., neginf=0., posinf=0.))
-    LOGGER.info(f'Use gradient clipping with max_norm={opt.clip_grad}')
+        LOGGER.info('Registering tensor hooks')
+        for v in model.parameters():
+            v.register_hook(lambda x: torch.nan_to_num(x))
 
     # Start training
     t0 = time.time()
@@ -344,8 +342,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
             # Optimize
             if ni - last_opt_step >= accumulate:
-                scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=opt.clip_grad)
+                # scaler.unscale_(optimizer)  # may help gradient clipping
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=10.0)  # clip gradients
                 scaler.step(optimizer)  # optimizer.step
                 scaler.update()
                 optimizer.zero_grad()
@@ -491,9 +489,8 @@ def parse_opt(known=False):
     parser.add_argument('--freeze', nargs='+', type=int, default=[0], help='Freeze layers: backbone=10, first3=0 1 2')
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--seed', type=int, default=0, help='Global training seed')
+    parser.add_argument('--use_tensor_hooks', action='store_false', help='Use tensor hooks to remove infs and nans')
     parser.add_argument('--local_rank', type=int, default=-1, help='Automatic DDP Multi-GPU argument, do not modify')
-    parser.add_argument('--clip_grad', type=int, default=10, help='Max norm for gradient clipping')
-    parser.add_argument('--use_tensor_hooks', action='store_true', help='Use tensor hooks to remove infs and nans')
 
     # Weights & Biases arguments
     parser.add_argument('--entity', default=None, help='W&B: Entity')
