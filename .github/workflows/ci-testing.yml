@@ -110,8 +110,7 @@ jobs:
           python export.py --weights $m.pt --img 64 --include torchscript  # export
           python - <<EOF
           import torch
-          model = torch.hub.load('.', 'custom', path='$m', source='local')
-          print(model('data/images/bus.jpg'))
-          model = torch.hub.load('.', 'custom', path='$b', source='local')
-          print(model('data/images/bus.jpg'))
+          for path in '$m', '$b':
+              model = torch.hub.load('.', 'custom', path=path, source='local')
+              print(model('data/images/bus.jpg'))
           EOF
