@@ -310,23 +310,22 @@ def git_describe(path=ROOT):  # path must be a directory
 
 @try_except
 @WorkingDirectory(ROOT)
-def check_git_status():
+def check_git_status(repo='https://github.com/ultralytics/yolov5'):
     # Recommend 'git pull' if code is out of date
-    msg = ', for updates see https://github.com/ultralytics/yolov5'
+    msg = f', for updates see {repo}'
     s = colorstr('github: ')  # string
     assert Path('.git').exists(), s + 'skipping check (not a git repository)' + msg
     assert not is_docker(), s + 'skipping check (Docker image)' + msg
     assert check_online(), s + 'skipping check (offline)' + msg
 
     result = check_output('git remote -v', shell=True).decode()
-    ultralytics_repo = 'https://github.com/ultralytics/yolov5'
     remote_name = 'ultralytics'
     for line in result.split('\n'):
-        if ultralytics_repo in line:
+        if repo in line:
             remote_name, _ = line.split('\t')
             break
     else:
-        check_output(f'git remote add {remote_name} {ultralytics_repo}', shell=True)
+        check_output(f'git remote add {remote_name} {repo}', shell=True)
         check_output(f'git fetch {remote_name}', shell=True)
 
     cmd = f'git fetch && git config --get remote.{remote_name}.url'
