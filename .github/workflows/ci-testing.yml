@@ -105,7 +105,7 @@ jobs:
             done
           done
           python hubconf.py --model $m  # hub
-          python models/tf.py --weights $m.pt  # build TF model
+          # python models/tf.py --weights $m.pt  # build TF model
           python models/yolo.py --cfg $m.yaml  # build PyTorch model
           python export.py --weights $m.pt --img 64 --include torchscript  # export
           python - <<EOF
