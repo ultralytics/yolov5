@@ -319,10 +319,10 @@ def check_git_status(repo='ultralytics/yolov5'):
     assert not is_docker(), s + 'skipping check (Docker image)' + msg
     assert check_online(), s + 'skipping check (offline)' + msg
 
-    s = re.split(pattern=r'\s', string=check_output('git remote -v', shell=True).decode())
-    matches = [repo in x for x in s]
+    splits = re.split(pattern=r'\s', string=check_output('git remote -v', shell=True).decode())
+    matches = [repo in s for s in splits]
     if any(matches):
-        remote = s[matches.index(True) - 1]
+        remote = splits[matches.index(True) - 1]
     else:
         remote = 'ultralytics'
         check_output(f'git remote add {remote} {url}', shell=True)
