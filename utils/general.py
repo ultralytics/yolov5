@@ -326,8 +326,7 @@ def check_git_status(repo='ultralytics/yolov5'):
     else:
         remote = 'ultralytics'
         check_output(f'git remote add {remote} {url}', shell=True)
-    cmd = f'git fetch {remote} && git config --get remote.{remote}.url'
-    url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
+    check_output(f'git fetch {remote}', shell=True, timeout=5)  # git fetch
     branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
     n = int(check_output(f'git rev-list {branch}..{remote}/master --count', shell=True))  # commits behind
     if n > 0:
