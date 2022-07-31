@@ -41,7 +41,6 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     path = name.with_suffix('.pt') if name.suffix == '' and not name.is_dir() else name  # checkpoint path
     try:
         device = select_device(device)
-
         if pretrained and channels == 3 and classes == 80:
             model = DetectMultiBackend(path, device=device, fuse=autoshape)  # download/load FP32 model
             # model = models.experimental.attempt_load(path, map_location=device)  # download/load FP32 model
@@ -56,6 +55,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                 if len(ckpt['model'].names) == classes:
                     model.names = ckpt['model'].names  # set class names attribute
         if autoshape:
+            model.model.model[-1].inplace = False  # Detect.inplace=False for safe multithread inference
             model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
         if not verbose:
             LOGGER.setLevel(logging.INFO)  # reset to default
@@ -123,17 +123,25 @@ def yolov5x6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=T
 
 
 if __name__ == '__main__':
-    model = _create(name='yolov5s', pretrained=True, channels=3, classes=80, autoshape=True, verbose=True)
-    # model = custom(path='path/to/model.pt')  # custom
-
-    # Verify inference
+    import argparse
     from pathlib import Path
 
     import numpy as np
     from PIL import Image
 
-    from utils.general import cv2
+    from utils.general import cv2, print_args
 
+    # Argparser
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', type=str, default='yolov5s', help='model name')
+    opt = parser.parse_args()
+    print_args(vars(opt))
+
+    # Model
+    model = _create(name=opt.model, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True)
+    # model = custom(path='path/to/model.pt')  # custom
+
+    # Images
     imgs = [
         'data/images/zidane.jpg',  # filename
         Path('data/images/zidane.jpg'),  # Path
@@ -142,6 +150,9 @@ if __name__ == '__main__':
         Image.open('data/images/bus.jpg'),  # PIL
         np.zeros((320, 640, 3))]  # numpy
 
+    # Inference
     results = model(imgs, size=320)  # batched inference
+
+    # Results
     results.print()
     results.save()
