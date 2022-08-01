@@ -34,7 +34,6 @@ try:
 except (ImportError, AssertionError):
     wandb = None
 
-
 try:
     import clearml
 except (ImportError, AssertionError):
@@ -122,7 +121,7 @@ class Loggers():
         # ni: number integrated batches (since train start)
         if plots:
             if ni == 0:
-                if not self.opt.sync_bn:  # --sync known issue https://github.com/ultralytics/yolov5/issues/3754
+                if self.tb and not self.opt.sync_bn:  # --sync known issue https://github.com/ultralytics/yolov5/issues/3754
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore')  # suppress jit trace warning
                         self.tb.add_graph(torch.jit.trace(de_parallel(model), imgs[0:1], strict=False), [])
@@ -175,7 +174,7 @@ class Loggers():
             for k, v in x.items():
                 title, series = k.split('/')
                 self.clearml.task.get_logger().report_scalar(title, series, v, epoch)
-        
+
         # Reset epoch image limit
         if self.clearml:
             self.clearml.current_epoch_logged_images = set()
@@ -194,14 +193,12 @@ class Loggers():
         if self.wandb:
             if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
                 self.wandb.log_model(last.parent, self.opt, epoch, fi, best_model=best_fitness == fi)
-        
+
         if self.clearml:
             if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
-                self.clearml.task.update_output_model(
-                    model_path=str(last),
-                    model_name='Latest Model',
-                    auto_delete_file=False
-                )
+                self.clearml.task.update_output_model(model_path=str(last),
+                                                      model_name='Latest Model',
+                                                      auto_delete_file=False)
 
     def on_train_end(self, last, best, plots, epoch, results):
         # Callback runs on training end
@@ -229,10 +226,8 @@ class Loggers():
         if self.clearml:
             # Save the best model here
             if not self.opt.evolve:
-                self.clearml.task.update_output_model(
-                    model_path=str(best if best.exists() else last),
-                    name='Best Model'
-                )
+                self.clearml.task.update_output_model(model_path=str(best if best.exists() else last),
+                                                      name='Best Model')
 
     def on_params_update(self, params):
         # Update hyperparams or configs of the experiment

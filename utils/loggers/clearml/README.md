@@ -196,7 +196,7 @@ With our agent running, we can give it some work. Remember from the HPO section 
 
 ### Executing A Task Remotely
 
-Now you can clone a task like we explained above, or simply mark your current script by adding `task.execute_remotely()` and on execution it will be put into a queue, for the agent to start working on! 
+Now you can clone a task like we explained above, or simply mark your current script by adding `task.execute_remotely()` and on execution it will be put into a queue, for the agent to start working on!
 
 To run the YOLOv5 training script remotely, all you have to do is add this line to the training.py script after the clearml logger has been instatiated:
 ```python
