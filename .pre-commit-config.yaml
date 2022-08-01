@@ -15,9 +15,7 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.3.0
     hooks:
-      - id: no-commit-to-branch
-        args: ['--branch', 'master']
-      - id: end-of-file-fixer
+      # - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: check-case-conflict
       - id: check-yaml
