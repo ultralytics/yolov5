@@ -114,7 +114,7 @@ def train(opt, device):
             LOGGER.info('\nAvailable models. Usage: python classifier.py --model MODEL\n' + '\n'.join(models))
             return
         elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. yolov5s, yolov5m
-            from models.yolo import ClassificationModel, ClassificationModel2
+            from models.yolo import ClassificationModel
             model = smart_hub_load(repo1, opt.model, verbose=False, autoshape=False)  # YOLOv5 detection model
             model = ClassificationModel(model=model, nc=nc, cutoff=opt.cutoff or 10)  # YOLOv5 classification model
         elif opt.model in torchvision.models.__dict__:  # TorchVision models i.e. resnet50, efficientnet_b0
