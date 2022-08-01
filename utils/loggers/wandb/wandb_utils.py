@@ -181,8 +181,7 @@ class WandbLogger():
                     self.wandb_artifact_data_dict = self.wandb_artifact_data_dict or self.data_dict
 
                     # write data_dict to config. useful for resuming from artifacts. Do this only when not resuming.
-                    for key in self.wandb_artifact_data_dict.keys():
-                        self.wandb_run.config.update({key: self.wandb_artifact_data_dict[key]}, allow_val_change=True)
+                    self.wandb_run.config.update({'data_dict': self.wandb_artifact_data_dict}, allow_val_change=True)
                 self.setup_training(opt)
 
             if self.job_type == 'Dataset Creation':
