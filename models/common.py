@@ -324,7 +324,12 @@ class DetectMultiBackend(nn.Module):
         w = str(weights[0] if isinstance(weights, list) else weights)
         pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = self.model_type(w)  # get backend
         from utils.loggers.wandb.wandb_utils import check_valid_artifact_address, download_model_from_wandb_artifact
-        w = download_model_from_wandb_artifact(w) if check_valid_artifact_address(w) else  attempt_download(w)  # download if not local
+        if check_valid_artifact_address(w):
+            w = download_model_from_wandb_artifact(w)
+            weights = w
+            pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = self.model_type(w)
+        else:
+            w = attempt_download(w)  # download if not local
         fp16 &= (pt or jit or onnx or engine) and device.type != 'cpu'  # FP16
         stride, names = 32, [f'class{i}' for i in range(1000)]  # assign defaults
         if data:  # assign class names (optional)
