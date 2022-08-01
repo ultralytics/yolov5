@@ -95,27 +95,22 @@ jobs:
         shell: bash
         run: |
           # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
-          d=cpu  # device
-          model=${{ matrix.model }}
-          best=runs/train/exp/weights/best.pt
-          # Train
-          python train.py --img 64 --batch 32 --weights $model.pt --cfg $model.yaml --epochs 1 --device $d
-          # Val
-          python val.py --img 64 --batch 32 --weights $model.pt --device $d
-          python val.py --img 64 --batch 32 --weights $best --device $d
-          # Detect
-          python detect.py --weights $model.pt --device $d
-          python detect.py --weights $best --device $d
-          python hubconf.py --model $model  # hub
-          # Export
-          # python models/tf.py --weights $model.pt  # build TF model
-          python models/yolo.py --cfg $model.yaml  # build PyTorch model
-          python export.py --weights $model.pt --img 64 --include torchscript  # export
-          # Python
+          m=${{ matrix.model }}  # official weights
+          b=runs/train/exp/weights/best  # best.pt checkpoint
+          python train.py --imgsz 64 --batch 32 --weights $m.pt --cfg $m.yaml --epochs 1 --device cpu  # train
+          for d in cpu; do  # devices
+            for w in $m $b; do  # weights
+              python val.py --imgsz 64 --batch 32 --weights $w.pt --device $d  # val
+              python detect.py --imgsz 64 --weights $w.pt --device $d  # detect
+            done
+          done
+          python hubconf.py --model $m  # hub
+          # python models/tf.py --weights $m.pt  # build TF model
+          python models/yolo.py --cfg $m.yaml  # build PyTorch model
+          python export.py --weights $m.pt --img 64 --include torchscript  # export
           python - <<EOF
           import torch
-          model = torch.hub.load('.', 'custom', path='$model', source='local')
-          print(model('data/images/bus.jpg'))
-          model = torch.hub.load('.', 'custom', path='$best', source='local')
-          print(model('data/images/bus.jpg'))
+          for path in '$m', '$b':
+              model = torch.hub.load('.', 'custom', path=path, source='local')
+              print(model('data/images/bus.jpg'))
           EOF
