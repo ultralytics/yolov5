@@ -167,7 +167,6 @@ class Loggers():
             with open(file, 'a') as f:
                 f.write(s + ('%20.5g,' * n % tuple([epoch] + vals)).rstrip(',') + '\n')
 
-        # ClearML automatically captures scalars from tensorboard
         if self.tb:
             for k, v in x.items():
                 self.tb.add_scalar(k, v, epoch)
@@ -180,8 +179,6 @@ class Loggers():
         # Reset epoch image limit
         if self.clearml:
             self.clearml.current_epoch_logged_images = set()
-            # ClearML automatically detects epochs using hooks for automatic reporting, but for manual reporting
-            # getting the epoch number from the task itself is slow, so we keep track for internal bookkeeping only
             self.clearml.current_epoch += 1
 
         if self.wandb:

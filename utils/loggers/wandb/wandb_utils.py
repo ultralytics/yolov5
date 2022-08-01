@@ -45,7 +45,7 @@ def check_wandb_dataset(data_file):
     is_valset_wandb_artifact = False
     if isinstance(data_file, dict):
         # In that case another dataset manager has already processed it and we don't have to
-        return None
+        return data_file
     if check_file(data_file) and data_file.endswith('.yaml'):
         with open(data_file, errors='ignore') as f:
             data_dict = yaml.safe_load(f)

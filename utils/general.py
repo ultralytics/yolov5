@@ -35,6 +35,7 @@ import yaml
 
 from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
+from utils.loggers import clearml
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -437,6 +438,7 @@ def check_file(file, suffix=''):
             assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
         return file
     elif file.startswith('clearml://'):
+        assert clearml, "ClearML is not installed, so cannot use ClearML dataset. Try running 'pip install clearml'."
         # ClearML Dataset ID
         return file
     else:  # search
