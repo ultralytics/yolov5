@@ -1146,11 +1146,24 @@ def create_classification_dataloader(path,
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
     generator = torch.Generator()
     generator.manual_seed(0)
-    return InfiniteDataLoader(dataset,
-                              batch_size=batch_size,
-                              shuffle=shuffle and sampler is None,
-                              num_workers=nw,
-                              sampler=sampler,
-                              pin_memory=True,
-                              worker_init_fn=seed_worker,
-                              generator=generator)
+
+    infinite = True
+    if infinite:
+        return InfiniteDataLoader(dataset,
+                                  batch_size=batch_size,
+                                  shuffle=shuffle and sampler is None,
+                                  num_workers=nw,
+                                  sampler=sampler,
+                                  pin_memory=True,
+                                  worker_init_fn=seed_worker,
+                                  generator=generator)
+    else:
+        return DataLoader(dataset,
+                          batch_size=batch_size,
+                          shuffle=shuffle and sampler is None,
+                          num_workers=nw,
+                          sampler=sampler,
+                          pin_memory=True,
+                          persistent_workers=True,
+                          worker_init_fn=seed_worker,
+                          generator=generator)  # TODO: might be DDP reproducible
