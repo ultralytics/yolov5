@@ -5,10 +5,11 @@ import os
 import sys
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 import yaml
 from tqdm import tqdm
+from glob import glob
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[3]  # YOLOv5 root directory
@@ -101,6 +102,14 @@ def process_wandb_config_ddp_mode(opt):
         with open(ddp_data_path, 'w') as f:
             yaml.safe_dump(data_dict, f)
         opt.data = ddp_data_path
+
+
+def download_model_from_wandb_artifact(artifact_address: str) -> List:
+        artifact = wandb.Api().artifact(artifact_address, type="model") \
+            if wandb.run is None else wandb.use_artifact(self.artifact_id, type="dataset")
+        artifact_dir = artifact.download()
+        model_paths = glob(os.path.join(artifact_dir, "*.pt"))
+        return model_paths
 
 
 class WandbLogger():
