@@ -139,10 +139,10 @@ def train(opt, device):
             raise ModuleNotFoundError(f'--model {opt.model} not found. Available models are: \n' + '\n'.join(models))
     for p in model.parameters():
         p.requires_grad = True  # for training
-    if opt.dropout is not None:
-        for _, m in model.named_modules():
-            if isinstance(m, torch.nn.Dropout):
-                m.p = opt.dropout  # set dropout
+        p.register_hook(lambda x: torch.nan_to_num(x))  # NaN to 0.0
+    for m in model.modules():
+        if isinstance(m, torch.nn.Dropout) and opt.dropout is not None:
+            m.p = opt.dropout  # set dropout
     model = model.to(device)
 
     # Info
