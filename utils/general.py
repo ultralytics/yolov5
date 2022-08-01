@@ -14,6 +14,7 @@ import random
 import re
 import shutil
 import signal
+import sys
 import threading
 import time
 import urllib
@@ -444,7 +445,7 @@ def check_file(file, suffix=''):
             assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
         return file
     elif file.startswith('clearml://'):
-        assert clearml, "ClearML is not installed, so cannot use ClearML dataset. Try running 'pip install clearml'."
+        assert 'clearml' in sys.modules, "ClearML is not installed, so cannot use ClearML dataset. Try running 'pip install clearml'."
         # ClearML Dataset ID
         return file
     else:  # search
