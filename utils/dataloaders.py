@@ -1147,7 +1147,7 @@ def create_classification_dataloader(path,
     generator = torch.Generator()
     generator.manual_seed(0)
 
-    infinite = True
+    infinite = False
     if infinite:
         return InfiniteDataLoader(dataset,
                                   batch_size=batch_size,
