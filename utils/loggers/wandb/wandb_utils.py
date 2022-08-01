@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Dict, List
 
+import re
 import yaml
 from tqdm import tqdm
 from glob import glob
@@ -104,12 +105,17 @@ def process_wandb_config_ddp_mode(opt):
         opt.data = ddp_data_path
 
 
+def check_valid_artifact_address(artifact_address: str) -> bool:
+    artifact_version = artifact_address.split(":")[-1]
+    return artifact_version == "latest" or bool(re.match(r"v[\d]", artifact_version))
+
+
 def download_model_from_wandb_artifact(artifact_address: str) -> List:
-        artifact = wandb.Api().artifact(artifact_address, type="model") \
-            if wandb.run is None else wandb.use_artifact(self.artifact_id, type="dataset")
-        artifact_dir = artifact.download()
-        model_paths = glob(os.path.join(artifact_dir, "*.pt"))
-        return model_paths
+    artifact = wandb.Api().artifact(artifact_address, type="model") \
+        if wandb.run is None else wandb.use_artifact(self.artifact_id, type="dataset")
+    artifact_dir = artifact.download()
+    model_paths = glob(os.path.join(artifact_dir, "*.pt"))[0]
+    return model_paths
 
 
 class WandbLogger():
