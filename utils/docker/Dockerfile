@@ -25,8 +25,8 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 # Copy contents
-COPY . /usr/src/app
-RUN git clone https://github.com/ultralytics/yolov5 /usr/src/yolov5
+# COPY . /usr/src/app  (issues as not a .git directory)
+RUN git clone https://github.com/ultralytics/yolov5 /usr/src/app
 
 # Set environment variables
 ENV OMP_NUM_THREADS=8
