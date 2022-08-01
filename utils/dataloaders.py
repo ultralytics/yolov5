@@ -83,7 +83,7 @@ def exif_transpose(image):
             5: Image.TRANSPOSE,
             6: Image.ROTATE_270,
             7: Image.TRANSVERSE,
-            8: Image.ROTATE_90, }.get(orientation)
+            8: Image.ROTATE_90,}.get(orientation)
         if method is not None:
             image = image.transpose(method)
             del exif[0x0112]
