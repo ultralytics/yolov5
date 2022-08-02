@@ -276,8 +276,8 @@ class SparseMLWrapper(object):
         device = "cuda" if torch.cuda.is_available() else "cpu"
         exported_samples = 0
 
-        sample_in_dir = os.path.join(save_dir, "sample-inputs")
-        sample_out_dir = os.path.join(save_dir, "sample-outputs")
+        sample_in_dir = os.path.join(save_dir, "sample_inputs")
+        sample_out_dir = os.path.join(save_dir, "sample_outputs")
 
         os.makedirs(sample_in_dir, exist_ok=True)
         os.makedirs(sample_out_dir, exist_ok=True)
