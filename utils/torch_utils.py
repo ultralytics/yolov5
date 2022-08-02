@@ -308,7 +308,7 @@ def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9, weight_decay=1e-
 
 def smart_resume(ckpt, optimizer, ema=None, weights='yolov5s.pt', epochs=300, resume=True):
     # Resume training from a partially trained checkpoint
-    best_fitness, start_epoch = 0.0
+    best_fitness = 0.0
     start_epoch = ckpt['epoch'] + 1
     if ckpt['optimizer'] is not None:
         optimizer.load_state_dict(ckpt['optimizer'])  # optimizer
