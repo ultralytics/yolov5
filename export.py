@@ -152,13 +152,12 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         # Simplify
         if simplify:
             try:
-                check_requirements(('onnx-simplifier',))
+                cuda = torch.cuda.is_available()
+                check_requirements(('onnxruntime-gpu' if cuda else 'onnxruntime', 'onnx-simplifier>=0.4.1'))
                 import onnxsim
 
                 LOGGER.info(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
-                model_onnx, check = onnxsim.simplify(model_onnx,
-                                                     dynamic_input_shape=dynamic,
-                                                     input_shapes={'images': list(im.shape)} if dynamic else None)
+                model_onnx, check = onnxsim.simplify(model_onnx)
                 assert check, 'assert check failed'
                 onnx.save(model_onnx, f)
             except Exception as e:
@@ -217,8 +216,9 @@ def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
         return None, None
 
 
-def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
+def export_engine(model, im, file, train, half, dynamic, simplify, workspace=4, verbose=False):
     # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
+    prefix = colorstr('TensorRT:')
     try:
         assert im.device.type != 'cpu', 'export running on CPU but must be on GPU, i.e. `python export.py --device 0`'
         try:
@@ -231,11 +231,11 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         if trt.__version__[0] == '7':  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
             grid = model.model[-1].anchor_grid
             model.model[-1].anchor_grid = [a[..., :1, :1, :] for a in grid]
-            export_onnx(model, im, file, 12, train, False, simplify)  # opset 12
+            export_onnx(model, im, file, 12, train, dynamic, simplify)  # opset 12
             model.model[-1].anchor_grid = grid
         else:  # TensorRT >= 8
             check_version(trt.__version__, '8.0.0', hard=True)  # require tensorrt>=8.0.0
-            export_onnx(model, im, file, 13, train, False, simplify)  # opset 13
+            export_onnx(model, im, file, 13, train, dynamic, simplify)  # opset 13
         onnx = file.with_suffix('.onnx')
 
         LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
@@ -263,6 +263,14 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
             LOGGER.info(f'{prefix}\tinput "{inp.name}" with shape {inp.shape} and dtype {inp.dtype}')
         for out in outputs:
             LOGGER.info(f'{prefix}\toutput "{out.name}" with shape {out.shape} and dtype {out.dtype}')
+
+        if dynamic:
+            if im.shape[0] <= 1:
+                LOGGER.warning(f"{prefix}WARNING: --dynamic model requires maximum --batch-size argument")
+            profile = builder.create_optimization_profile()
+            for inp in inputs:
+                profile.set_shape(inp.name, (1, *im.shape[1:]), (max(1, im.shape[0] // 2), *im.shape[1:]), im.shape)
+            config.add_optimization_profile(profile)
 
         LOGGER.info(f'{prefix} building FP{16 if builder.platform_has_fast_fp16 and half else 32} engine in {f}')
         if builder.platform_has_fast_fp16 and half:
@@ -461,7 +469,7 @@ def run(
         keras=False,  # use Keras
         optimize=False,  # TorchScript: optimize for mobile
         int8=False,  # CoreML/TF INT8 quantization
-        dynamic=False,  # ONNX/TF: dynamic axes
+        dynamic=False,  # ONNX/TF/TensorRT: dynamic axes
         simplify=False,  # ONNX: simplify model
         opset=12,  # ONNX: opset version
         verbose=False,  # TensorRT: verbose log
@@ -492,6 +500,8 @@ def run(
     # Checks
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
     assert nc == len(names), f'Model class count {nc} != len(names) {len(names)}'
+    if optimize:
+        assert device.type == 'cpu', '--optimize not compatible with cuda devices, i.e. use --device cpu'
 
     # Input
     gs = int(max(model.stride))  # grid size (max stride)
@@ -519,7 +529,7 @@ def run(
     if jit:
         f[0] = export_torchscript(model, im, file, optimize)
     if engine:  # TensorRT required before ONNX
-        f[1] = export_engine(model, im, file, train, half, simplify, workspace, verbose)
+        f[1] = export_engine(model, im, file, train, half, dynamic, simplify, workspace, verbose)
     if onnx or xml:  # OpenVINO requires ONNX
         f[2] = export_onnx(model, im, file, opset, train, dynamic, simplify)
     if xml:  # OpenVINO
@@ -578,7 +588,7 @@ def parse_opt():
     parser.add_argument('--keras', action='store_true', help='TF: use Keras')
     parser.add_argument('--optimize', action='store_true', help='TorchScript: optimize for mobile')
     parser.add_argument('--int8', action='store_true', help='CoreML/TF INT8 quantization')
-    parser.add_argument('--dynamic', action='store_true', help='ONNX/TF: dynamic axes')
+    parser.add_argument('--dynamic', action='store_true', help='ONNX/TF/TensorRT: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
     parser.add_argument('--opset', type=int, default=12, help='ONNX: opset version')
     parser.add_argument('--verbose', action='store_true', help='TensorRT: verbose log')
