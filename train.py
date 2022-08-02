@@ -45,9 +45,9 @@ from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
 from utils.downloads import attempt_download
 from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_git_status, check_img_size,
-                           check_requirements, check_suffix, check_yaml, colorstr, get_latest_run, increment_path,
-                           init_seeds, intersect_dicts, labels_to_class_weights, labels_to_image_weights,
-                           labels_to_pos_weights, methods, one_cycle, print_args, print_mutation, strip_optimizer)
+                           check_requirements, check_suffix, check_yaml, colorstr, count_samples, get_latest_run, increment_path,
+                           init_seeds, intersect_dicts, counts_to_class_weights, labels_to_image_weights,
+                           counts_to_pos_weights, methods, one_cycle, print_args, print_mutation, strip_optimizer)
 from utils.loggers import Loggers
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.loss import ComputeLoss
@@ -231,14 +231,17 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
     # Model attributes
     nl = de_parallel(model).model[-1].nl  # number of detection layers (to scale hyps)
+    samples_per_class = count_samples(dataset.labels, nc)
     hyp['box'] *= 3 / nl  # scale to layers
     hyp['cls'] *= nc / 80 * 3 / nl  # scale to classes and layers
     hyp['obj'] *= (imgsz / 640) ** 2 * 3 / nl  # scale to image size and layers
     hyp['label_smoothing'] = opt.label_smoothing
-    hyp['cls_pw'] *= labels_to_pos_weights([None] if opt.image_weights else dataset.labels, nc).to(device)
+    hyp['cls_pw'] *= counts_to_pos_weights(None if opt.image_weights else samples_per_class, nc).to(device)
     model.nc = nc  # attach number of classes to model
     model.hyp = hyp  # attach hyperparameters to model
-    model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device) * nc  # attach class weights
+    model.class_weights = counts_to_class_weights(samples_per_class).to(device) * nc  # attach class weights
+    print(hyp['cls_pw'])
+    print(model.class_weights)
     model.names = names
 
     # Start training

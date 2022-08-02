@@ -310,27 +310,20 @@ def git_describe(path=ROOT):  # path must be a directory
 
 @try_except
 @WorkingDirectory(ROOT)
-def check_git_status(repo='ultralytics/yolov5'):
-    # YOLOv5 status check, recommend 'git pull' if code is out of date
-    url = f'https://github.com/{repo}'
-    msg = f', for updates see {url}'
+def check_git_status():
+    # Recommend 'git pull' if code is out of date
+    msg = ', for updates see https://github.com/ultralytics/yolov5'
     s = colorstr('github: ')  # string
     assert Path('.git').exists(), s + 'skipping check (not a git repository)' + msg
+    assert not is_docker(), s + 'skipping check (Docker image)' + msg
     assert check_online(), s + 'skipping check (offline)' + msg
 
-    splits = re.split(pattern=r'\s', string=check_output('git remote -v', shell=True).decode())
-    matches = [repo in s for s in splits]
-    if any(matches):
-        remote = splits[matches.index(True) - 1]
-    else:
-        remote = 'ultralytics'
-        check_output(f'git remote add {remote} {url}', shell=True)
-    check_output(f'git fetch {remote}', shell=True, timeout=5)  # git fetch
+    cmd = 'git fetch && git config --get remote.origin.url'
+    url = check_output(cmd, shell=True, timeout=5).decode().strip().rstrip('.git')  # git fetch
     branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
-    n = int(check_output(f'git rev-list {branch}..{remote}/master --count', shell=True))  # commits behind
+    n = int(check_output(f'git rev-list {branch}..origin/master --count', shell=True))  # commits behind
     if n > 0:
-        pull = 'git pull' if remote == 'origin' else f'git pull {remote} master'
-        s += f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use `{pull}` or `git clone {url}` to update."
+        s += f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use `git pull` or `git clone {url}` to update."
     else:
         s += f'up to date with {url} ✅'
     LOGGER.info(emojis(s))  # emoji-safe
@@ -651,23 +644,42 @@ def colorstr(*input):
     return ''.join(colors[x] for x in args) + f'{string}' + colors['end']
 
 
-def labels_to_class_weights(labels, nc=80):
-    # Get class weights (inverse frequency) from training labels
+def count_samples(labels, nc=80):
     if labels[0] is None:  # no labels loaded
-        return torch.Tensor()
+        return None
 
     labels = np.concatenate(labels, 0)  # labels.shape = (866643, 5) for COCO
     classes = labels[:, 0].astype(int)  # labels = [class xywh]
-    weights = np.bincount(classes, minlength=nc)  # occurrences per class
+    count = np.bincount(classes, minlength=nc)  # occurrences per class
+
+    count[count == 0] = 1  # replace empty bins with 1
+    return count.astype(np.float32)
+
+
+def counts_to_class_weights(weights):
+    # Get class weights (inverse frequency) from training labels
+    if weights is None:  # no labels loaded
+        return torch.Tensor()
 
     # Prepend gridpoint count (for uCE training)
     # gpi = ((320 / 32 * np.array([1, 2, 4])) ** 2 * 3).sum()  # gridpoints per image
     # weights = np.hstack([gpi * len(labels)  - weights.sum() * 9, weights * 9]) ** 0.5  # prepend gridpoints to start
 
-    weights[weights == 0] = 1  # replace empty bins with 1
     weights = 1 / weights  # number of targets per class
     weights /= weights.sum()  # normalize
     return torch.from_numpy(weights).float()
+
+
+def counts_to_pos_weights(num_samples_per_class, nc=80):
+    # Get class weights for the class loss pos_weight argument
+    # weight = total_num_samples / nc / num_samples_per_class * hyp['pos_weight']
+    # class loss will be computed as if there are (total_num_samples / nc * hyp['pos_weight']) samples per class
+
+    if num_samples_per_class is None:  # no labels loaded or image-weights is enabled
+        return torch.ones((nc,), dtype=torch.float)
+
+    avg_samples = num_samples_per_class.sum() / nc
+    return torch.from_numpy(avg_samples / num_samples_per_class).float()
 
 
 def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
@@ -675,25 +687,6 @@ def labels_to_image_weights(labels, nc=80, class_weights=np.ones(80)):
     # Usage: index = random.choices(range(n), weights=image_weights, k=1)  # weighted image sample
     class_counts = np.array([np.bincount(x[:, 0].astype(int), minlength=nc) for x in labels])
     return (class_weights.reshape(1, nc) * class_counts).sum(1)
-
-
-def labels_to_pos_weights(labels, nc=80):
-    # Get class weights for the class loss pos_weight argument
-    # weight = total_num_samples / nc / num_samples_per_class * hyp['pos_weight']
-    # class loss will be computed as if there are (total_num_samples / nc * hyp['pos_weight']) samples per class
-
-    # below code is partially adapted from labels_to_class_weights function
-    if labels[0] is None:  # no labels loaded or imga-weights is enabled
-        return torch.ones((nc,), dtype=torch.float)
-
-    labels = np.concatenate(labels, 0)
-    classes = labels[:, 0].astype(int)
-    num_samples_per_class = np.bincount(classes, minlength=nc).astype(np.float32)  # occurrences per class
-    avg_samples = num_samples_per_class.sum() / nc
-    # classes with no samples will have weight of 1 to avoid possible problems
-    num_samples_per_class[num_samples_per_class == 0.] = avg_samples
-
-    return torch.from_numpy(avg_samples / num_samples_per_class).float()
 
 
 def coco80_to_coco91_class():  # converts 80-index (val2014) to 91-index (paper)
