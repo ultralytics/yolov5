@@ -92,11 +92,14 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
         elif t is nn.Upsample and not hasattr(m, 'recompute_scale_factor'):
             m.recompute_scale_factor = None  # torch 1.11.0 compatibility
 
+    # Return model
     if len(model) == 1:
-        return model[-1]  # return model
+        return model[-1]
+
+    # Return detection ensemble
     print(f'Ensemble created with {weights}\n')
     for k in 'names', 'nc', 'yaml':
         setattr(model, k, getattr(model[0], k))
     model.stride = model[torch.argmax(torch.tensor([m.stride.max() for m in model])).int()].stride  # max stride
     assert all(model[0].nc == m.nc for m in model), f'Models have different class counts: {[m.nc for m in model]}'
-    return model  # return ensemble
+    return model

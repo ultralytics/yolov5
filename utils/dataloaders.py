@@ -83,7 +83,7 @@ def exif_transpose(image):
             5: Image.TRANSPOSE,
             6: Image.ROTATE_270,
             7: Image.TRANSVERSE,
-            8: Image.ROTATE_90, }.get(orientation)
+            8: Image.ROTATE_90,}.get(orientation)
         if method is not None:
             image = image.transpose(method)
             del exif[0x0112]
@@ -1146,24 +1146,11 @@ def create_classification_dataloader(path,
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
     generator = torch.Generator()
     generator.manual_seed(0)
-
-    infinite = True
-    if infinite:
-        return InfiniteDataLoader(dataset,
-                                  batch_size=batch_size,
-                                  shuffle=shuffle and sampler is None,
-                                  num_workers=nw,
-                                  sampler=sampler,
-                                  pin_memory=True,
-                                  worker_init_fn=seed_worker,
-                                  generator=generator)
-    else:
-        return DataLoader(dataset,
-                          batch_size=batch_size,
-                          shuffle=shuffle and sampler is None,
-                          num_workers=nw,
-                          sampler=sampler,
-                          pin_memory=True,
-                          persistent_workers=True,
-                          worker_init_fn=seed_worker,
-                          generator=generator)  # TODO: might be DDP reproducible
+    return InfiniteDataLoader(dataset,
+                              batch_size=batch_size,
+                              shuffle=shuffle and sampler is None,
+                              num_workers=nw,
+                              sampler=sampler,
+                              pin_memory=True,
+                              worker_init_fn=seed_worker,
+                              generator=generator)  # or DataLoader(persistent_workers=True)

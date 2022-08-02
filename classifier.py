@@ -40,13 +40,12 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.common import Classify, DetectMultiBackend
 from utils.augmentations import denormalize, normalize
 from utils.dataloaders import create_classification_dataloader
-from utils.general import (LOGGER, check_file, check_git_status, check_requirements, check_version,
-                           colorstr, download, emojis, increment_path, init_seeds, print_args)
+from utils.general import (LOGGER, check_git_status, check_requirements, colorstr, download, emojis, increment_path,
+                           init_seeds, print_args)
 from utils.loggers import GenericLogger
-from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_optimizer,
+from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_hub_load, smart_optimizer,
                                torch_distributed_zero_first, update_classifier_model)
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
@@ -115,22 +114,14 @@ def train(opt, device):
             LOGGER.info('\nAvailable models. Usage: python classifier.py --model MODEL\n' + '\n'.join(models))
             return
         elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. yolov5s, yolov5m
-            kwargs = {'_verbose': False, 'pretrained': pretrained, 'autoshape': False}
-            if check_version(torch.__version__, '1.12.0'):
-                kwargs['trust_repo'] = True  # argument required starting in torch 0.12
-            try:
-                model = hub.load(repo1, opt.model, **kwargs)
-            except Exception:
-                model = hub.load(repo1, opt.model, force_reload=True, **kwargs)
-            if isinstance(model, DetectMultiBackend):
-                model = model.model  # unwrap DetectMultiBackend
-            ic = opt.cutoff or (12 if opt.model.endswith('6') else 10)  # cutoff index
-            model.model = model.model[:ic]  # backbone
-            m = model.model[-1]  # last layer
-            ch = m.conv.in_channels if hasattr(m, 'conv') else m.cv1.conv.in_channels  # ch into module
-            c = Classify(ch, nc)  # Classify()
-            c.i, c.f, c.type = m.i, m.f, 'models.common.Classify'  # index, from, type
-            model.model[-1] = c  # replace
+            from models.yolo import ClassificationModel
+            model = smart_hub_load(repo1,
+                                   opt.model,
+                                   pretrained=pretrained,
+                                   _verbose=False,
+                                   autoshape=False,
+                                   device='cpu')  # detection model
+            model = ClassificationModel(model=model, nc=nc, cutoff=opt.cutoff or 10)  # classification model
         elif opt.model in torchvision.models.__dict__:  # TorchVision models i.e. resnet50, efficientnet_b0
             model = torchvision.models.__dict__[opt.model](weights='IMAGENET1K_V1' if pretrained else None)
             update_classifier_model(model, nc)  # update class count
@@ -400,7 +391,6 @@ def main(opt):
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
     if LOCAL_RANK != -1:
-        msg = 'is not compatible with YOLOv5 Multi-GPU DDP training'
         assert opt.batch_size != -1, 'AutoBatch is coming soon for classification, please pass a valid --batch-size'
         assert opt.batch_size % WORLD_SIZE == 0, f'--batch-size {opt.batch_size} must be multiple of WORLD_SIZE'
         assert torch.cuda.device_count() > LOCAL_RANK, 'insufficient CUDA devices for DDP command'

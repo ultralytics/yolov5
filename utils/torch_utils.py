@@ -321,6 +321,16 @@ def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9, weight_decay=1e-
     return optimizer
 
 
+def smart_hub_load(repo='ultralytics/yolov5', model='yolov5s', **kwargs):
+    # YOLOv5 torch.hub.load() wrapper with smart error/issue handling
+    if check_version(torch.__version__, '1.12.0'):
+        kwargs['trust_repo'] = True  # argument required starting in torch 0.12
+    try:
+        return torch.hub.load(repo, model, **kwargs)
+    except Exception:
+        return torch.hub.load(repo, model, force_reload=True, **kwargs)
+
+
 class EarlyStopping:
     # YOLOv5 simple early stopper
     def __init__(self, patience=30):
