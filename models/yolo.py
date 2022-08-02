@@ -146,7 +146,7 @@ class BaseModel(nn.Module):
         return self
 
 
-class Model(BaseModel):
+class DetectionModel(BaseModel):
     # YOLOv5 detection model
     def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None, anchors=None):  # model, input channels, number of classes
         super().__init__()
@@ -244,7 +244,7 @@ class Model(BaseModel):
             mi.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
 
 
-DetectionModel = Model  # retain YOLOv5 'Model' class for backwards compatibility
+Model = DetectionModel  # retain YOLOv5 'Model' class for backwards compatibility
 
 
 class ClassificationModel(BaseModel):
