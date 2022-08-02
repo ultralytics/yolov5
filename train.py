@@ -241,8 +241,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     model.nc = nc  # attach number of classes to model
     model.hyp = hyp  # attach hyperparameters to model
     model.class_weights = counts_to_class_weights(samples_per_class).to(device) * nc  # attach class weights
-    print(hyp['cls_pw'])
-    print(model.class_weights)
     model.names = names
 
     # Start training

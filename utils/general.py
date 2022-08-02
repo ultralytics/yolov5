@@ -645,6 +645,7 @@ def colorstr(*input):
 
 
 def count_samples(labels, nc=80):
+    # count number of samples per class, return None if no labels loaded
     if labels[0] is None:  # no labels loaded
         return None
 
