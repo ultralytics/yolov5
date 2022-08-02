@@ -306,6 +306,31 @@ def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9, weight_decay=1e-
     return optimizer
 
 
+def smart_resume(ckpt, optimizer, ema, weights, epochs, resume):
+    # Resume training from a partially trained checkpoint
+
+    # Optimizer
+    best_fitness = 0.0
+    if ckpt['optimizer'] is not None:
+        optimizer.load_state_dict(ckpt['optimizer'])
+        best_fitness = ckpt['best_fitness']
+
+    # EMA
+    if ema and ckpt.get('ema'):
+        ema.ema.load_state_dict(ckpt['ema'].float().state_dict())
+        ema.updates = ckpt['updates']
+
+    # Epochs
+    start_epoch = ckpt['epoch'] + 1
+    if resume:
+        assert start_epoch > 0, f'{weights} training to {epochs} epochs is finished, nothing to resume.'
+    if epochs < start_epoch:
+        LOGGER.info(f"{weights} has been trained for {ckpt['epoch']} epochs. Fine-tuning for {epochs} more epochs.")
+        epochs += ckpt['epoch']  # finetune additional epochs
+
+    return best_fitness, start_epoch, epochs
+
+
 class EarlyStopping:
     # YOLOv5 simple early stopper
     def __init__(self, patience=30):
