@@ -53,7 +53,7 @@ class MlflowLogger:
             self.client = mlflow.tracking.MlflowClient()
             run = self.client.get_run(run_id=self.run_id)
             logged_params = run.data.params
-            remaining_params = {k: v for k, v in vars(opt).items() if k not in logged_params}
+            remaining_params = {k: v for k, v in vars(opt).items() if k not in logged_params and v is not None and str(v).strip() != ""}
             self.log_params(remaining_params)
         except Exception as err:
             LOGGER.warning(f"Mlflow: not logging params because - {err}")
@@ -91,7 +91,7 @@ class MlflowLogger:
         Args:
             params (Dict[str, Any]): Parameters as dict
         """
-        self.mlflow.log_params(params=params)
+        self.mlflow.log_params(params=dict(params))
 
     def log_metrics(self, metrics: Dict[str, float], epoch: int = None, is_param: bool = False) -> None:
         """Member function to log metrics.
