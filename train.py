@@ -49,7 +49,8 @@ from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_g
                            init_seeds, intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods,
                            one_cycle, print_args, print_mutation, strip_optimizer)
 from utils.loggers import Loggers
-from utils.loggers.wandb.wandb_utils import check_wandb_resume, check_valid_artifact_address, download_model_from_wandb_artifact
+from utils.loggers.wandb.wandb_utils import (check_valid_artifact_address, check_wandb_resume,
+                                             download_model_from_wandb_artifact)
 from utils.loss import ComputeLoss
 from utils.metrics import fitness
 from utils.plots import plot_evolve, plot_labels

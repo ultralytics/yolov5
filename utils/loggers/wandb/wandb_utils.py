@@ -2,15 +2,15 @@
 
 import logging
 import os
+import re
 import sys
 from contextlib import contextmanager
+from glob import glob
 from pathlib import Path
 from typing import Dict, List
 
-import re
 import yaml
 from tqdm import tqdm
-from glob import glob
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[3]  # YOLOv5 root directory
