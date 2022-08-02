@@ -487,8 +487,8 @@ def main(opt, callbacks=Callbacks()):
     # Resume
     if opt.resume and not (check_wandb_resume(opt) or opt.evolve):  # resume an interrupted run
         ckpt = Path(opt.resume if isinstance(opt.resume, str) else get_latest_run())  # specified or most recent path
-        opt_yaml = ckpt.parent.parent / 'opt.yaml'  # train options yaml
         assert ckpt.is_file(), f'ERROR: --resume checkpoint {ckpt} does not exist'
+        opt_yaml = ckpt.parent.parent / 'opt.yaml'  # train options yaml
         if opt_yaml.is_file():
             with open(opt_yaml, errors='ignore') as f:
                 d = yaml.safe_load(f)
