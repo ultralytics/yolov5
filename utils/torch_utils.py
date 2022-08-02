@@ -321,9 +321,8 @@ def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9, weight_decay=1e-
     return optimizer
 
 
-def smart_hub_load(repo='ultralytics/yolov5', model='yolov5s', pretrained=True, verbose=True, autoshape=True):
+def smart_hub_load(repo='ultralytics/yolov5', model='yolov5s', **kwargs):
     # YOLOv5 torch.hub.load() wrapper with smart error/issue handling
-    kwargs = {'_verbose': verbose, 'pretrained': pretrained, 'autoshape': autoshape}
     if check_version(torch.__version__, '1.12.0'):
         kwargs['trust_repo'] = True  # argument required starting in torch 0.12
     try:

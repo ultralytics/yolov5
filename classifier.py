@@ -115,8 +115,13 @@ def train(opt, device):
             return
         elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. yolov5s, yolov5m
             from models.yolo import ClassificationModel
-            model = smart_hub_load(repo1, opt.model, verbose=False, autoshape=False)  # YOLOv5 detection model
-            model = ClassificationModel(model=model, nc=nc, cutoff=opt.cutoff or 10)  # YOLOv5 classification model
+            model = smart_hub_load(repo1,
+                                   opt.model,
+                                   pretrained=pretrained,
+                                   _verbose=False,
+                                   autoshape=False,
+                                   device='cpu')  # detection model
+            model = ClassificationModel(model=model, nc=nc, cutoff=opt.cutoff or 10)  # classification model
         elif opt.model in torchvision.models.__dict__:  # TorchVision models i.e. resnet50, efficientnet_b0
             model = torchvision.models.__dict__[opt.model](weights='IMAGENET1K_V1' if pretrained else None)
             update_classifier_model(model, nc)  # update class count
