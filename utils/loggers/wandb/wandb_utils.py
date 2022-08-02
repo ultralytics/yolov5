@@ -112,7 +112,7 @@ def check_valid_artifact_address(artifact_address: str) -> bool:
 
 def download_model_from_wandb_artifact(artifact_address: str) -> List:
     artifact = wandb.Api().artifact(artifact_address, type="model") \
-        if wandb.run is None else wandb.use_artifact(self.artifact_id, type="dataset")
+        if wandb.run is None else wandb.use_artifact(artifact_address, type="dataset")
     artifact_dir = artifact.download()
     model_paths = glob(os.path.join(artifact_dir, "*.pt"))[0]
     return model_paths
