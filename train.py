@@ -43,7 +43,7 @@ from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
-from utils.downloads import attempt_download
+from utils.downloads import attempt_download, is_url
 from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_git_status, check_img_size,
                            check_requirements, check_suffix, check_yaml, colorstr, get_latest_run, increment_path,
                            init_seeds, intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods,
@@ -77,7 +77,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         with open(hyp, errors='ignore') as f:
             hyp = yaml.safe_load(f)  # load hyps dict
     LOGGER.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
-    hyp_copy = hyp.copy()  # for saving hyps to checkpoints
+    opt.hyp = hyp.copy()  # for saving hyps to checkpoints
 
     # Save run settings
     if not evolve:
@@ -379,7 +379,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     'optimizer': optimizer.state_dict(),
                     'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None,
                     'opt': vars(opt),
-                    'hyp': hyp_copy,
                     'date': datetime.now().isoformat()}
 
                 # Save last, best and delete
@@ -495,11 +494,11 @@ def main(opt, callbacks=Callbacks()):
             with open(opt_yaml, errors='ignore') as f:
                 d = yaml.safe_load(f)
         else:
-            ckpt = torch.load(last, map_location='cpu')
-            d, d['hyp'] = ckpt['opt'], ckpt['hyp']
-            del ckpt
+            d = torch.load(last, map_location='cpu')['opt']
         opt = argparse.Namespace(**d)  # replace
-        opt.cfg, opt.weights, opt.resume, opt.data = '', str(last), True, str(opt_data)  # reinstate
+        opt.cfg, opt.weights, opt.resume = '', str(last), True  # reinstate
+        if is_url(opt.data):
+            opt.data = str(opt_data)  # avoid HUB resume auth timeout
     else:
         opt.data, opt.cfg, opt.hyp, opt.weights, opt.project = \
             check_file(opt.data), check_yaml(opt.cfg), check_yaml(opt.hyp), str(opt.weights), str(opt.project)  # checks
