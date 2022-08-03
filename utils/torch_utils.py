@@ -318,7 +318,7 @@ def smart_resume(ckpt, optimizer, ema=None, weights='yolov5s.pt', epochs=300, re
         ema.updates = ckpt['updates']
     if resume:
         assert start_epoch > 0, f'{weights} training to {epochs} epochs is finished, nothing to resume.'
-        LOGGER.info(f'Resuming training from {weights} for {epochs - start_epoch} more epochs to {epochs} total epochs')
+        LOGGER.info(f'Resuming training from {weights} from epoch {start_epoch} to {epochs} total epochs')
     if epochs < start_epoch:
         LOGGER.info(f"{weights} has been trained for {ckpt['epoch']} epochs. Fine-tuning for {epochs} more epochs.")
         epochs += ckpt['epoch']  # finetune additional epochs
