@@ -94,6 +94,7 @@ class Yolov5Evaluator:
             "Class", "Images", "Labels", "Box:{P", "R", "mAP@.5", "mAP@.5:.95}", "Mask:{P", "R", "mAP@.5",
             "mAP@.5:.95}",) if self.mask else ("%20s" + "%11s" * 6) % (
             "Class", "Images", "Labels", "P", "R", "mAP@.5", "mAP@.5:.95",))
+        self.step = 0
 
         # coco stuff
         self.is_coco = isinstance(self.data.get("val"), str) and self.data["val"].endswith(
@@ -163,6 +164,7 @@ class Yolov5Evaluator:
 
         # Return results
         model.float()  # for training
+        self.step += 1
         return ((*self.metric.mean_results(), *(self.total_loss.cpu() / len(dataloader)).tolist(),),
                 self.metric.get_maps(self.nc), t,)
 
@@ -493,7 +495,7 @@ class Yolov5Evaluator:
         #    daemon=True, ).start()
         import wandb
         if wandb.run:
-            wandb.log({f"pred_{i}": wandb.Image(str(f))})
+            wandb.log({f"pred_{i}": wandb.Image(str(f))}, step=self.step)
 
     def nms(self, **kwargs):
         return (non_max_suppression_masks(**kwargs) if self.mask else non_max_suppression(**kwargs))

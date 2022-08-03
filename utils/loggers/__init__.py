@@ -404,8 +404,6 @@ class NewLoggersMask(NewLoggers):
             if ni < 3:
                 f = self.save_dir / f"train_batch{ni}.jpg"  # filename
                 plot_images_and_masks(imgs, targets, masks, paths, f)
-                if self.wandb:
-                    wandb.log({"train_labels": wandb.Image(str(f))})
                 
 
 
@@ -427,4 +425,4 @@ class NewLoggersMask(NewLoggers):
             for k, v in x.items():
                 self.tb.add_scalar(k, v, epoch)
         if self.wandb:
-            wandb.log(x)
+            wandb.log(x, step=epoch)
