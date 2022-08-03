@@ -490,15 +490,15 @@ def main(opt, callbacks=Callbacks()):
         last = Path(opt.resume if isinstance(opt.resume, str) else get_latest_run())  # specified or most recent last.pt
         assert last.is_file(), f'ERROR: --resume checkpoint {last} does not exist'
         opt_yaml = last.parent.parent / 'opt.yaml'  # train options yaml
+        opt_data = opt.data  # original dataset
         if opt_yaml.is_file():
             with open(opt_yaml, errors='ignore') as f:
                 d = yaml.safe_load(f)
         else:
-            ckpt = torch.load(last, map_location='cpu')
-            d, d.opt = ckpt['opt'], ckpt['hyp']
-            del ckpt
+            with torch.load(last, map_location='cpu') as ckpt:
+                d, d['hyp'] = ckpt['opt'], ckpt['hyp']
         opt = argparse.Namespace(**d)  # replace
-        opt.cfg, opt.weights, opt.resume = '', str(last), True  # reinstate
+        opt.cfg, opt.weights, opt.resume, opt.data = '', str(last), True, opt_data  # reinstate
     else:
         opt.data, opt.cfg, opt.hyp, opt.weights, opt.project = \
             check_file(opt.data), check_yaml(opt.cfg), check_yaml(opt.hyp), str(opt.weights), str(opt.project)  # checks
