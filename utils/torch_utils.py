@@ -17,8 +17,13 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.parallel import DistributedDataParallel as DDP
 
-from utils.general import LOGGER, file_date, git_describe
+from utils.general import LOGGER, check_version, colorstr, file_date, git_describe
+
+LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
+RANK = int(os.getenv('RANK', -1))
+WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 
 try:
     import thop  # for FLOPs computation
@@ -27,6 +32,17 @@ except ImportError:
 
 # Suppress PyTorch warnings
 warnings.filterwarnings('ignore', message='User provided device_type of \'cuda\', but CUDA is not available. Disabling')
+
+
+def smart_DDP(model):
+    # Model DDP creation with checks
+    assert not check_version(torch.__version__, '1.12.0', pinned=True), \
+        'torch==1.12.0 torchvision==0.13.0 DDP training is not supported due to a known issue. ' \
+        'Please upgrade or downgrade torch to use DDP. See https://github.com/ultralytics/yolov5/issues/8395'
+    if check_version(torch.__version__, '1.11.0'):
+        return DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK, static_graph=True)
+    else:
+        return DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
 
 
 @contextmanager
@@ -62,7 +78,7 @@ def select_device(device='', batch_size=0, newline=True):
         assert torch.cuda.is_available() and torch.cuda.device_count() >= len(device.replace(',', '')), \
             f"Invalid CUDA '--device {device}' requested, use '--device cpu' or pass valid CUDA device(s)"
 
-    if not cpu and torch.cuda.is_available():  # prefer GPU if available
+    if not (cpu or mps) and torch.cuda.is_available():  # prefer GPU if available
         devices = device.split(',') if device else '0'  # range(torch.cuda.device_count())  # i.e. 0,1,6,7
         n = len(devices)  # device count
         if n > 1 and batch_size > 0:  # check batch_size is divisible by device_count
@@ -72,7 +88,7 @@ def select_device(device='', batch_size=0, newline=True):
             p = torch.cuda.get_device_properties(i)
             s += f"{'' if i == 0 else space}CUDA:{d} ({p.name}, {p.total_memory / (1 << 20):.0f}MiB)\n"  # bytes to MB
         arg = 'cuda:0'
-    elif not cpu and getattr(torch, 'has_mps', False) and torch.backends.mps.is_available():  # prefer MPS if available
+    elif mps and getattr(torch, 'has_mps', False) and torch.backends.mps.is_available():  # prefer MPS if available
         s += 'MPS\n'
         arg = 'mps'
     else:  # revert to CPU
@@ -258,6 +274,56 @@ def copy_attr(a, b, include=(), exclude=()):
             continue
         else:
             setattr(a, k, v)
+
+
+def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9, weight_decay=1e-5):
+    # YOLOv5 3-param group optimizer: 0) weights with decay, 1) weights no decay, 2) biases no decay
+    g = [], [], []  # optimizer parameter groups
+    bn = tuple(v for k, v in nn.__dict__.items() if 'Norm' in k)  # normalization layers, i.e. BatchNorm2d()
+    for v in model.modules():
+        if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):  # bias (no decay)
+            g[2].append(v.bias)
+        if isinstance(v, bn):  # weight (no decay)
+            g[1].append(v.weight)
+        elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):  # weight (with decay)
+            g[0].append(v.weight)
+
+    if name == 'Adam':
+        optimizer = torch.optim.Adam(g[2], lr=lr, betas=(momentum, 0.999))  # adjust beta1 to momentum
+    elif name == 'AdamW':
+        optimizer = torch.optim.AdamW(g[2], lr=lr, betas=(momentum, 0.999), weight_decay=0.0)
+    elif name == 'RMSProp':
+        optimizer = torch.optim.RMSprop(g[2], lr=lr, momentum=momentum)
+    elif name == 'SGD':
+        optimizer = torch.optim.SGD(g[2], lr=lr, momentum=momentum, nesterov=True)
+    else:
+        raise NotImplementedError(f'Optimizer {name} not implemented.')
+
+    optimizer.add_param_group({'params': g[0], 'weight_decay': weight_decay})  # add g0 with weight_decay
+    optimizer.add_param_group({'params': g[1], 'weight_decay': 0.0})  # add g1 (BatchNorm2d weights)
+    LOGGER.info(f"{colorstr('optimizer:')} {type(optimizer).__name__} with parameter groups "
+                f"{len(g[1])} weight (no decay), {len(g[0])} weight, {len(g[2])} bias")
+    return optimizer
+
+
+def smart_resume(ckpt, optimizer, ema=None, weights='yolov5s.pt', epochs=300, resume=True):
+    # Resume training from a partially trained checkpoint
+    best_fitness = 0.0
+    start_epoch = ckpt['epoch'] + 1
+    if ckpt['optimizer'] is not None:
+        optimizer.load_state_dict(ckpt['optimizer'])  # optimizer
+        best_fitness = ckpt['best_fitness']
+    if ema and ckpt.get('ema'):
+        ema.ema.load_state_dict(ckpt['ema'].float().state_dict())  # EMA
+        ema.updates = ckpt['updates']
+    if resume:
+        assert start_epoch > 0, f'{weights} training to {epochs} epochs is finished, nothing to resume.\n' \
+                                f"Start a new training without --resume, i.e. 'python train.py --weights {weights}'"
+        LOGGER.info(f'Resuming training from {weights} from epoch {start_epoch} to {epochs} total epochs')
+    if epochs < start_epoch:
+        LOGGER.info(f"{weights} has been trained for {ckpt['epoch']} epochs. Fine-tuning for {epochs} more epochs.")
+        epochs += ckpt['epoch']  # finetune additional epochs
+    return best_fitness, start_epoch, epochs
 
 
 class EarlyStopping:
