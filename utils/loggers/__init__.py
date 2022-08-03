@@ -425,4 +425,4 @@ class NewLoggersMask(NewLoggers):
             for k, v in x.items():
                 self.tb.add_scalar(k, v, epoch)
         if self.wandb:
-            wandb.log(x, step=epoch)
+            wandb.log(x, step=epoch, commit=True)
