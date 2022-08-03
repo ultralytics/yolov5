@@ -77,6 +77,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         with open(hyp, errors='ignore') as f:
             hyp = yaml.safe_load(f)  # load hyps dict
     LOGGER.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
+    hyp_copy = hyp.copy()  # for saving hyps to checkpoints
 
     # Save run settings
     if not evolve:
@@ -378,6 +379,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     'optimizer': optimizer.state_dict(),
                     'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None,
                     'opt': vars(opt),
+                    'hyp': hyp_copy,
                     'date': datetime.now().isoformat()}
 
                 # Save last, best and delete
@@ -473,8 +475,7 @@ def parse_opt(known=False):
     parser.add_argument('--bbox_interval', type=int, default=-1, help='W&B: Set bounding-box image logging interval')
     parser.add_argument('--artifact_alias', type=str, default='latest', help='W&B: Version of dataset artifact to use')
 
-    opt = parser.parse_known_args()[0] if known else parser.parse_args()
-    return opt
+    return parser.parse_known_args()[0] if known else parser.parse_args()
 
 
 def main(opt, callbacks=Callbacks()):
@@ -486,16 +487,18 @@ def main(opt, callbacks=Callbacks()):
 
     # Resume
     if opt.resume and not (check_wandb_resume(opt) or opt.evolve):  # resume an interrupted run
-        ckpt = Path(opt.resume if isinstance(opt.resume, str) else get_latest_run())  # specified or most recent path
-        assert ckpt.is_file(), f'ERROR: --resume checkpoint {ckpt} does not exist'
-        opt_yaml = ckpt.parent.parent / 'opt.yaml'  # train options yaml
+        last = Path(opt.resume if isinstance(opt.resume, str) else get_latest_run())  # specified or most recent last.pt
+        assert last.is_file(), f'ERROR: --resume checkpoint {last} does not exist'
+        opt_yaml = last.parent.parent / 'opt.yaml'  # train options yaml
         if opt_yaml.is_file():
             with open(opt_yaml, errors='ignore') as f:
                 d = yaml.safe_load(f)
         else:
-            d = torch.load(ckpt, map_location='cpu')['opt']
+            ckpt = torch.load(last, map_location='cpu')
+            d, d.opt = ckpt['opt'], ckpt['hyp']
+            del ckpt
         opt = argparse.Namespace(**d)  # replace
-        opt.cfg, opt.weights, opt.resume = '', str(ckpt), True  # reinstate
+        opt.cfg, opt.weights, opt.resume = '', str(last), True  # reinstate
     else:
         opt.data, opt.cfg, opt.hyp, opt.weights, opt.project = \
             check_file(opt.data), check_yaml(opt.cfg), check_yaml(opt.hyp), str(opt.weights), str(opt.project)  # checks
