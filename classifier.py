@@ -134,8 +134,6 @@ def train(opt, device):
     for m in model.modules():
         if isinstance(m, torch.nn.Dropout) and opt.dropout is not None:
             m.p = opt.dropout  # set dropout
-        if isinstance(m, Bottleneck) and hasattr(m, 'add'):
-            m.add = False
     model = model.to(device)
 
     # Info
