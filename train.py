@@ -499,7 +499,7 @@ def main(opt, callbacks=Callbacks()):
             d, d['hyp'] = ckpt['opt'], ckpt['hyp']
             del ckpt
         opt = argparse.Namespace(**d)  # replace
-        opt.cfg, opt.weights, opt.resume, opt.data = '', str(last), True, opt_data  # reinstate
+        opt.cfg, opt.weights, opt.resume, opt.data = '', str(last), True, str(opt_data)  # reinstate
     else:
         opt.data, opt.cfg, opt.hyp, opt.weights, opt.project = \
             check_file(opt.data), check_yaml(opt.cfg), check_yaml(opt.hyp), str(opt.weights), str(opt.project)  # checks
