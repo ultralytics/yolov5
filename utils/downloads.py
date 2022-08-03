@@ -16,7 +16,7 @@ import requests
 import torch
 
 
-def is_url(url, check_online):
+def is_url(url, check_online=True):
     # Check if online file exists
     try:
         url = str(url)
