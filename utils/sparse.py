@@ -27,6 +27,7 @@ def _get_model_framework_file(model, path):
     if transfer_request and checkpoint_available:
         # checkpoints are saved for transfer learning use cases,
         # return checkpoint if avaiable and requested
+        print([file for file in available_files if ".ckpt" in file.name][0])
         return [file for file in available_files if ".ckpt" in file.name][0]
     elif final_available:
         # default to returning final state, if available
