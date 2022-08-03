@@ -495,8 +495,9 @@ def main(opt, callbacks=Callbacks()):
             with open(opt_yaml, errors='ignore') as f:
                 d = yaml.safe_load(f)
         else:
-            with torch.load(last, map_location='cpu') as ckpt:
-                d, d['hyp'] = ckpt['opt'], ckpt['hyp']
+            ckpt = torch.load(last, map_location='cpu')
+            d, d['hyp'] = ckpt['opt'], ckpt['hyp']
+            del ckpt
         opt = argparse.Namespace(**d)  # replace
         opt.cfg, opt.weights, opt.resume, opt.data = '', str(last), True, opt_data  # reinstate
     else:
