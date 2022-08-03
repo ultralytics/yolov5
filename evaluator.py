@@ -16,18 +16,18 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from PIL import Image
-# import pycocotools.mask as mask_util
+import pycocotools.mask as mask_util
 from tqdm import tqdm
 
 from models.experimental import attempt_load
 from seg_dataloaders import create_dataloader
 from utils.general import (box_iou, non_max_suppression, scale_coords, xyxy2xywh, xywh2xyxy, )
-from utils.general import (check_dataset, check_img_size, check_suffix, )
+from utils.general import (check_dataset, check_img_size, check_suffix)
 from utils.general import (coco80_to_coco91_class, increment_path, colorstr, )
 from utils.plots import output_to_target, plot_images_boxes_and_masks
 from utils.seg_metrics import ap_per_class, ap_per_class_box_and_mask, ConfusionMatrix
 from utils.segment import (non_max_suppression_masks, mask_iou, process_mask, process_mask_upsample, scale_masks, )
-from utils.torch_utils import select_device, time_sync
+from utils.torch_utils import select_device, time_sync, de_parallel
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -304,7 +304,7 @@ class Yolov5Evaluator:
         targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(self.device)  # to pixels
         t3 = time_sync()
         out = self.nms(prediction=out, conf_thres=self.conf_thres, iou_thres=self.iou_thres, multi_label=True,
-            agnostic=self.single_cls, )
+            agnostic=self.single_cls, mask_dim=de_parallel(model).model[-1].mask_dim)
         self.dt[2] += time_sync() - t3
         return out, train_out
 
