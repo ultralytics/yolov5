@@ -151,7 +151,7 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
 - [Train Custom Data](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data)  🚀 RECOMMENDED
 - [Tips for Best Training Results](https://github.com/ultralytics/yolov5/wiki/Tips-for-Best-Training-Results)  ☘️
   RECOMMENDED
-- [ClearML Logging](https://github.com/ultralytics/yolov5/issues/<TODO>) 🌟 NEW
+- [ClearML Logging](https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml) 🌟 NEW
 - [Weights & Biases Logging](https://github.com/ultralytics/yolov5/issues/1289)
 - [Roboflow for Datasets, Labeling, and Active Learning](https://github.com/ultralytics/yolov5/issues/4975)  🌟 NEW
 - [Multi-GPU Training](https://github.com/ultralytics/yolov5/issues/475)
