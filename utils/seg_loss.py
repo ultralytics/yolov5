@@ -133,7 +133,7 @@ class ComputeLoss:
                 if self.sort_obj_iou:
                     sort_id = torch.argsort(score_iou)
                     b, a, gj, gi, score_iou = (b[sort_id], a[sort_id], gj[sort_id], gi[sort_id], score_iou[sort_id],)
-                tobj[b, a, gj, gi] = (1.0 - self.gr) + self.gr * score_iou  # iou ratio
+                tobj[b, a, gj, gi] = 0.5 * ((1.0 - self.gr) + self.gr * score_iou)  # iou ratio
 
                 # Classification
                 if self.nc > 1:  # cls loss (only if multiple classes)
@@ -170,7 +170,13 @@ class ComputeLoss:
                     psi = ps[index][:, 5: self.nm]
                     proto = proto_out[bi]
 
-                    batch_lseg += self.single_mask_loss(mask_gti, psi, proto, mxyxy, mw, mh)
+                    one_lseg, iou = self.single_mask_loss(mask_gti, psi, proto, mxyxy, mw, mh)
+                    batch_lseg += one_lseg
+
+                    # update tobj
+                    iou = iou.detach().clamp(0).type(tobj.dtype)
+                    tobj[b[index], a[index], gj[index], gi[index]] += 0.5 * iou[0]
+
                 lseg += batch_lseg / len(b.unique())
 
             obji = self.BCEobj(pi[..., 4], tobj)
@@ -193,10 +199,12 @@ class ComputeLoss:
         """mask loss of single pic."""
         # (80, 80, 32) @ (32, n) -> (80, 80, n)
         pred_mask = proto @ pred.tanh().T
+        # lseg_iou = self.mask_loss(pred_mask, gt_mask, xyxy)
+        iou = self.mask_loss(pred_mask, gt_mask, xyxy, return_iou=True)
         lseg = F.binary_cross_entropy_with_logits(pred_mask, gt_mask, reduction="none")
         lseg = crop(lseg, xyxy)
         lseg = lseg.mean(dim=(0, 1)) / w / h
-        return lseg.mean()
+        return lseg.mean(), iou# + lseg_iou.mean()
 
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
@@ -334,7 +342,7 @@ class MaskIOULoss(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-    def forward(self, pred_mask, gt_mask, mxyxy=None):
+    def forward(self, pred_mask, gt_mask, mxyxy=None, return_iou=False):
         """
         Args:
             pred_mask (torch.Tensor): prediction of masks, (80/160, 80/160, n)
@@ -349,7 +357,7 @@ class MaskIOULoss(nn.Module):
         pred_mask = pred_mask.permute(2, 0, 1).view(n, -1)
         gt_mask = gt_mask.permute(2, 0, 1).view(n, -1)
         iou = masks_iou(pred_mask, gt_mask)
-        return 1.0 - iou
+        return iou if return_iou else (1.0 - iou)
 
 
 import math
