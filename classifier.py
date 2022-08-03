@@ -110,8 +110,8 @@ def train(opt, device):
     repo1, repo2 = 'ultralytics/yolov5', 'pytorch/vision'
     with torch_distributed_zero_first(LOCAL_RANK):
         if opt.model == 'list':
-            models = hub.list(repo1) + hub.list(repo2)
-            LOGGER.info('\nAvailable models. Usage: python classifier.py --model MODEL\n' + '\n'.join(models))
+            m = hub.list(repo1) + hub.list(repo2)  # models
+            LOGGER.info('\nAvailable models. Usage: python classifier.py --model MODEL\n' + '\n'.join(m))
             return
         elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. yolov5s, yolov5m
             from models.yolo import ClassificationModel
@@ -126,13 +126,16 @@ def train(opt, device):
             model = torchvision.models.__dict__[opt.model](weights='IMAGENET1K_V1' if pretrained else None)
             update_classifier_model(model, nc)  # update class count
         else:
-            models = hub.list(repo1) + hub.list(repo2)
-            raise ModuleNotFoundError(f'--model {opt.model} not found. Available models are: \n' + '\n'.join(models))
+            m = hub.list(repo1) + hub.list(repo2)  # models
+            raise ModuleNotFoundError(f'--model {opt.model} not found. Available models are: \n' + '\n'.join(m))
     for p in model.parameters():
         p.requires_grad = True  # for training
+    from models.common import Bottleneck
     for m in model.modules():
         if isinstance(m, torch.nn.Dropout) and opt.dropout is not None:
             m.p = opt.dropout  # set dropout
+        if isinstance(m, Bottleneck) and hasattr(m, 'add'):
+            m.add = False
     model = model.to(device)
 
     # Info
