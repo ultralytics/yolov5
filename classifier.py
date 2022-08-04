@@ -130,11 +130,11 @@ def train(opt, device):
             raise ModuleNotFoundError(f'--model {opt.model} not found. Available models are: \n' + '\n'.join(m))
     for p in model.parameters():
         p.requires_grad = True  # for training
-    from models.common import Bottleneck
     for m in model.modules():
         if isinstance(m, torch.nn.Dropout) and opt.dropout is not None:
             m.p = opt.dropout  # set dropout
     model = model.to(device)
+    model.names = names  # attach class names
 
     # Info
     if RANK in {-1, 0}:
