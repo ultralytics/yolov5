@@ -13,32 +13,17 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import schema as S
 import random
+from importlib import import_module
 # #####################################
 from .ItemInfo import starmap_load_item_info, ItemStatus
 from ..geometry import Boxes_xywh_n, Size
 from .inl_data import InL_Data
+from .image_cache import ImageCacheBase, CACHE_MODES
 from utils.general import LOGGER, NUM_THREADS
 from .utils import IMG_FORMATS, HELP_URL, BAR_FORMAT, \
     img2label_paths
 # #####################################
 
-
-"""
-    rect -> shuffle false
-    output size is batch max size
-
-    If mosaic and augment:
-        frame   = mosaic
-        shapes  = None
-
-    else:
-        frame       = load image
-        frame, pad  = letterbox(frame)
-        shapes      = (hw_original, hw_resized/hw_original, (pad_w, pad_h))
-        
-        if augment:
-            frame   = Transforms(frame)
-"""
 
 class LoadImagesAndLabels(Dataset):
     # YOLOv5 train_loader/val_loader, loads images and labels for training and validation
@@ -51,6 +36,7 @@ class LoadImagesAndLabels(Dataset):
         single_cls:     bool=False, 
         stride:         int=32, 
         prefix:         str='', 
+        cache_mode:     str='none',
         ignore_cache:   bool=False,
         augment:        bool=False,
         rect:           bool=False,
@@ -132,8 +118,12 @@ class LoadImagesAndLabels(Dataset):
         else:
             self.augment_transforms = []
 
-        # Cache images into RAM/disk for faster training (WARNING: large datasets may exceed system resources)
-        # self.cache_images(nb_images, cache_images, prefix)
+        # Cache images into RAM/disk for faster training 
+        # (WARNING: large datasets may exceed system resources)
+        CacheClass = CACHE_MODES.get(cache_mode.lower())
+        assert CacheClass is not None, 'Unknown cache_mode: %s' % cache_mode
+        self.cache: ImageCacheBase = CacheClass()
+        self.cache.cache_items([item.img_file for item in self.data], NUM_THREADS)
     # #####################################
 
     @staticmethod
@@ -164,9 +154,9 @@ class LoadImagesAndLabels(Dataset):
         bar_min = np.nanmin(BAR, 1)
         bar_max = np.nanmax(BAR, 1)
 
-        # si bar_max < 1.0 -> [1, bar_max]
-        # si bar_min > 1.0 -> [1 / bar_min, 1]
-        # sinon            -> [1, 1]
+        # if bar_max < 1.0 -> [1, bar_max]
+        # if bar_min > 1.0 -> [1 / bar_min, 1]
+        # else             -> [1, 1]
         shapes = np.array([
             (1.0, ar_max) if (ar_max < 1.0) else \
             (1.0 / ar_min, 1.0) if (ar_min > 1.0) else \
@@ -347,15 +337,17 @@ class LoadImagesAndLabels(Dataset):
     def build_augment_transforms(cls, hyp):
         """ see https://albumentations.ai/docs/api_reference/full_reference/
             for available Albumentations transforms
+            build transform instances from YAML file (hyp.yml)
+            Transforms MUST NOT change crop size !
         """
         # build transforms from hyp config
         schema = S.Schema({
-            S.Optional('rgb', default=False): bool,
             S.Optional('min_area', default=0.0): float,
             S.Optional('min_visibility', default=0.0): float,
             'transforms': [
                 {
                     'name': str, 
+                    S.Optional('module', default='albumentations'): str,
                     S.Optional('p', default=1.0): float, 
                     S.Optional('kwargs', default={}): dict
                 }
@@ -367,25 +359,24 @@ class LoadImagesAndLabels(Dataset):
         # add all transforms declared in the hyp config file
         for trans in transform['transforms']:
             if trans['p'] > 0.0:
-                # try to get the transform class/function
+                # load transform's python module (by default albumentations)
                 try:
-                    Transform = getattr(A, trans['name'])
+                    module = import_module(trans['module'])
                 except:
-                    raise Exception('Unknown Albumentation transform: "%s"' % trans['name'])
+                    raise Exception('Transform Module Not Found: %s' % trans['module'])
+                # load transform from this module
+                try:
+                    Transform = getattr(module, trans['name'])
+                except:
+                    raise Exception('Unknown Transform: "%s" @ %s' % (trans['name'], trans['module']))
                 # try to use provided kwargs
                 try:
                     Transform = Transform(**trans['kwargs'], p=trans['p'])
-                except Exception as what:
-                    raise Exception('Invalid kwargs for Albumentation transform %s' % trans['name'])
+                except Exception:
+                    raise Exception('Invalid kwargs for transform %s @ %s : %r' % (
+                        trans['name'], trans['module'], trans['kwargs']))
                 # add the transform to the list
                 transforms.append(Transform)
-
-        # if required bgr -> rgb
-        if transform.get('rgb', False):
-            Transform = A.Lambda(
-                image=lambda img, **_: cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
-                always_apply=True)
-            transforms.append(Transform)
 
         return transforms
     # #####################################
@@ -396,8 +387,29 @@ class LoadImagesAndLabels(Dataset):
         return np.random.random() < proba
     # #####################################
 
+    def use_mixup(self):
+        """ decide to use mixup for one sample based on hyp """
+        proba = self.hyp.get('transform', {}).get('mixup', 0.0)
+        return np.random.random() < proba
+    # #####################################
+
+    def use_copy_paste(self):
+        """ decide to use copy_paste for one sample based on hyp """
+        proba = self.hyp.get('transform', {}).get('copy_paste', 0.0)
+        return np.random.random() < proba
+    # #####################################
+
     def __len__(self):
         return len(self.data)
+    # #####################################
+
+    def load_item(self, index: int):
+        item            = self.data.valid_items[index]
+        frame           = self.cache[item.img_file]
+        assert frame is not None, 'Img file not found or invalid'
+        labels          = item.labels
+        boxes           = item.boxes
+        return frame, labels, boxes
     # #####################################
 
     def __getitem__(self, index):
@@ -408,19 +420,25 @@ class LoadImagesAndLabels(Dataset):
             img_size = self.batch_shapes[index // self.batch_size]
 
         # get frame, labels & boxes
-        mosaic = self.use_mosaic()
-        if mosaic:
+        if self.augment and self.use_mosaic():
+            # mosaic only applicable when augment allowed
             frame, labels, boxes = self.load_mosaic(index)
         else:
-            item            = self.data.valid_items[index]
-            frame           = cv2.imread(item.img_file)
-            assert frame is not None, 'Img file not found or invalid'
-            labels          = item.labels
-            boxes           = item.boxes
+            frame, labels, boxes = self.load_item(index)
+
+        # apply special transforms not compatible with Albumentations
+        # both image and boxes are modified together
+        if self.augment:
+            # if required, apply copy_paste transform
+            if self.use_copy_paste():
+                raise NotImplemented # TODO
+            # if required, apply mixup transform
+            if self.use_mixup():
+                raise NotImplemented # TODO
 
         # ensure that boxes are on [0;1]
         boxes   = boxes.to_xyxy_n().clip(0, 1).to_xywh_n()
-        # keep boxes that are not 
+        # keep boxes that are not empty
         valid   = boxes.A > 0
         boxes   = boxes[valid]
         labels  = np.array(labels)[valid]
@@ -437,8 +455,8 @@ class LoadImagesAndLabels(Dataset):
         )
         Transform = A.Compose(
             transforms = [
-                * self.augment_transforms,
                 * sizing_tranforms,
+                * self.augment_transforms, # empty list if not self.augment
                 # numpy frame (h, w, c) -> torch tensor (c, h, w)
                 ToTensorV2(always_apply=True)
             ], 
@@ -452,7 +470,11 @@ class LoadImagesAndLabels(Dataset):
         )
 
         # prepare for albumentations
-        transformed     = Transform(image=frame, bboxes=boxes, labels=labels)
+        transformed = Transform(
+            image=frame, 
+            bboxes=boxes, 
+            labels=labels
+        )
         # retrieve frame (is a proper Tensor)
         frame   = transformed['image']
 
@@ -494,28 +516,28 @@ class LoadImagesAndLabels(Dataset):
         # Top-Left
         pad_x           = lw - tl.shape.w
         pad_y           = th - tl.shape.h
-        tl_frame        = cv2.copyMakeBorder(tl.frame, pad_y, 0, pad_x, 0, cv2.BORDER_CONSTANT, value=fill_color)
+        tl_frame        = cv2.copyMakeBorder(self.cache[tl.img_file], pad_y, 0, pad_x, 0, cv2.BORDER_CONSTANT, value=fill_color)
         tl_labels       = tl.labels
         tl_boxes        = (tl.boxes.to_xywh(*tl.shape) + (pad_x, pad_y, 0, 0)).to_xywh_n(w, h)
 
         # Top-Right
         pad_x           = rw - tr.shape.w
         pad_y           = th - tr.shape.h
-        tr_frame        = cv2.copyMakeBorder(tr.frame, pad_y, 0, 0, pad_x, cv2.BORDER_CONSTANT, value=fill_color)
+        tr_frame        = cv2.copyMakeBorder(self.cache[tr.img_file], pad_y, 0, 0, pad_x, cv2.BORDER_CONSTANT, value=fill_color)
         tr_labels       = tr.labels
         tr_boxes        = (tr.boxes.to_xywh(*tr.shape) + (lw, pad_y, 0, 0)).to_xywh_n(w, h)
 
         # Bottom-Left
         pad_x           = lw - bl.shape.w
         pad_y           = bh - bl.shape.h
-        bl_frame        = cv2.copyMakeBorder(bl.frame, 0, pad_y, pad_x, 0, cv2.BORDER_CONSTANT, value=fill_color)
+        bl_frame        = cv2.copyMakeBorder(self.cache[bl.img_file], 0, pad_y, pad_x, 0, cv2.BORDER_CONSTANT, value=fill_color)
         bl_labels       = bl.labels
         bl_boxes        = (bl.boxes.to_xywh(*bl.shape) + (pad_x, th, 0, 0)).to_xywh_n(w, h)
 
         # Bottom-Right
         pad_x           = rw - br.shape.w
         pad_y           = bh - br.shape.h
-        br_frame        = cv2.copyMakeBorder(br.frame, 0, pad_y, 0, pad_x, cv2.BORDER_CONSTANT, value=fill_color)
+        br_frame        = cv2.copyMakeBorder(self.cache[br.img_file], 0, pad_y, 0, pad_x, cv2.BORDER_CONSTANT, value=fill_color)
         br_labels       = br.labels
         br_boxes        = (br.boxes.to_xywh(*br.shape) + (lw, th, 0, 0)).to_xywh_n(w, h)
 

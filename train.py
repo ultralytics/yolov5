@@ -56,6 +56,7 @@ from utils.loss import ComputeLoss
 from utils.metrics import fitness
 from utils.plots import plot_evolve, plot_labels
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
+from utils.datasets.image_cache import CACHE_MODES
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -222,11 +223,10 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Trainloader
     train_loader, dataset = create_dataloader(
         train_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
-        hyp=hyp, augment=True, cache=None if opt.cache == 'val' else opt.cache,
-        rect=opt.rect, rank=LOCAL_RANK, workers=workers,
-        image_weights=opt.image_weights, quad=opt.quad,
-        prefix=colorstr('train: '), shuffle=True, 
-        ignore_cache=opt.ignore_cache)
+        hyp=hyp, augment=True, rect=opt.rect, rank=LOCAL_RANK, 
+        workers=workers, image_weights=opt.image_weights, 
+        quad=opt.quad, prefix=colorstr('train: '), shuffle=True, 
+        ignore_cache=opt.ignore_cache, cache_mode=opt.cache)
     
     mlc = max(dataset.data.label_stats) # max label class
     nb  = int(np.ceil(len(dataset) / batch_size)) # nb  = len(train_loader)  # number of batches
@@ -236,10 +236,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     if RANK in [-1, 0]: # -1 by default
         val_loader, _ = create_dataloader(
             val_path, imgsz, batch_size // WORLD_SIZE * 2, gs, single_cls,
-            hyp=hyp, cache=None if noval else opt.cache,
-            rect=True, rank=-1, workers=workers * 2, pad=0.5,
+            hyp=hyp, rect=True, rank=-1, workers=workers * 2, pad=0.5,
             prefix=colorstr('val: '),
-            ignore_cache=opt.ignore_cache)
+            ignore_cache=opt.ignore_cache, cache_mode=opt.cache)
 
         if not resume:
             # TODO: check this graph
@@ -475,7 +474,7 @@ def parse_opt(known=False):
     parser.add_argument('--noautoanchor', action='store_true', help='disable AutoAnchor')
     parser.add_argument('--evolve', type=int, nargs='?', const=300, help='evolve hyperparameters for x generations')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
-    parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
+    parser.add_argument('--cache', type=str, choices=list(CACHE_MODES), default='none', help='--cache images stragety {none, ram, disk}, default none')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')

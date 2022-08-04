@@ -7,8 +7,9 @@ import numpy as np, cv2
 # #####################################
 from ..geometry import Size, Boxes_xywh_n
 from .segment import Segment
-from .utils import exif_size, IMG_FORMATS
+from .utils import IMG_FORMATS
 # #####################################
+
 
 class ItemStatus(IntEnum):
     found   =  0 # label file found & valid
@@ -31,6 +32,7 @@ class ItemInfo:
 class ValidItem(ItemInfo):
     shape:          Size
     segments:       List[Segment]
+    # #####################################
 
     def __len__(self):              return len(self.segments)
     def __iter__(self):             return iter(self.segments)
@@ -40,9 +42,6 @@ class ValidItem(ItemInfo):
     def labels(self):               return [s.label for s in self]
     @property
     def boxes(self):                return Boxes_xywh_n([s.box for s in self])
-
-    @property
-    def frame(self):                return cv2.imread(self.img_file)
 # #####################################
 
 @dataclass

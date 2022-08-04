@@ -16,3 +16,4 @@ from .utils import *
 from .segment import Segment
 from .ItemInfo import ItemStatus, ItemInfo, ValidItem, InvalidItem, load_item_info
 from .collate_fns import collate_fn4, collate_fn
+from .image_cache import *

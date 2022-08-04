@@ -12,9 +12,10 @@ from .collate_fns import collate_fn4, collate_fn
 
 
 def create_dataloader(path, imgsz, batch_size, stride, 
-    single_cls=False, hyp=None, augment=False, cache=False, 
+    single_cls=False, hyp=None, augment=False, 
     pad=0.0, rect=False, rank=-1, workers=8, image_weights=False, 
-    quad=False, prefix='', shuffle=False, ignore_cache: bool=False):
+    quad=False, prefix='', shuffle=False, ignore_cache: bool=False,
+    cache_mode: str='none'):
     """
         rect: use rectangular training
         quad: use quad dataloader
@@ -33,13 +34,13 @@ def create_dataloader(path, imgsz, batch_size, stride,
             augment=augment,  # augmentation
             hyp=hyp,  # hyperparameters
             rect=rect,  # rectangular batches
-            cache_images=cache,
             single_cls=single_cls,
             stride=int(stride),
             pad=pad,
             image_weights=image_weights,
             prefix=prefix,
             ignore_cache=ignore_cache,
+            cache_mode=cache_mode,
             )
 
     batch_size = min(batch_size, len(dataset))

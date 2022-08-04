@@ -20,11 +20,30 @@ anchor_t:         4.0     # anchor-multiple threshold
 fl_gamma:         0.0     # focal loss gamma (efficientDet default gamma=1.5)
 
 transform:
-  mosaic: 1.0   # per-sample probability of using 2x2 mosaic (only for train)
-  rgb:    true  # else bgr
-  transforms:   # list of Albumentations transforms with their kwargs
-                # MUST NOT change image shape
-    # Geometric Transforms
+  mosaic:     1.0   # per-sample probability of using 2x2 mosaic (only for train)
+  mixup:      1.0   # per-sample probability of using mixup transform (only for train)
+  copy_paste: 1.0   # per-sample probability of using copy_paste transform (only for train)
+  
+  transforms:       # list of Albumentations transforms with their kwargs
+                    # MUST NOT change image shape
+    
+    # Cutout Augmentations https://arxiv.org/abs/1708.04552
+    - name: "Cutout"
+      module: "utils.transforms.cutout"
+      p: 1.0
+      kwargs:
+        num_holes:  8
+        h_size:
+          - 0.1
+          - 0.3
+        w_size:
+          - 0.1
+          - 0.3
+        max_ioa:    0.3
+        fill_value: 
+          - 0
+          - 255
+    # Geometrical Augmentations
     - name: "VerticalFlip"
       p: 0.0
     - name: "HorizontalFlip"
@@ -57,18 +76,6 @@ transform:
         contrast: 0.2
         saturation: 0.2
         hue: 0.2
-    - name: "MotionBlur"
-      p: 0.0
-    - name: "RandomFog"
-      p: 0.0
-    - name: "RandomRain"
-      p: 0.0
-    - name: "RandomShadow"
-      p: 0.0
-    - name: "RandomSnow"
-      p: 0.0
-    - name: "RandomSunFlare"
-      p: 0.0
     - name: "ImageCompression"
       p: 0.1
     - name: "ToGray"
