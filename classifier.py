@@ -147,7 +147,7 @@ def train(opt, device):
         logger.log_graph(model, imgsz)  # log model
 
     # Optimizer
-    optimizer = smart_optimizer(model, opt.optimizer, opt.lr0, momentum=0.9, weight_decay=2e-5)
+    optimizer = smart_optimizer(model, opt.optimizer, opt.lr0, momentum=0.9, weight_decay=1e-4)
 
     # Scheduler
     lrf = 0.01  # final lr (fraction of lr0)
