@@ -67,8 +67,8 @@ if platform.system() != 'Windows':
 from models.experimental import attempt_load
 from models.yolo import Detect
 from utils.dataloaders import LoadImages
-from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_version, colorstr,
-                           file_size, print_args, url2file)
+from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_version, check_yaml,
+                           colorstr, file_size, print_args, url2file)
 from utils.torch_utils import select_device
 
 
@@ -371,7 +371,7 @@ def export_tflite(keras_model, im, file, int8, data, nms, agnostic_nms, prefix=c
         converter.optimizations = [tf.lite.Optimize.DEFAULT]
         if int8:
             from models.tf import representative_dataset_gen
-            dataset = LoadImages(check_dataset(data)['train'], img_size=imgsz, auto=False)  # representative data
+            dataset = LoadImages(check_dataset(check_yaml(data))['train'], img_size=imgsz, auto=False)
             converter.representative_dataset = lambda: representative_dataset_gen(dataset, ncalib=100)
             converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
             converter.target_spec.supported_types = []
