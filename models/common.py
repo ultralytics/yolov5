@@ -387,13 +387,13 @@ class DetectMultiBackend(nn.Module):
             context = model.create_execution_context()
             bindings = OrderedDict()
             fp16 = False  # default updated below
-            dynamic_input = False
+            dynamic = False
             for index in range(model.num_bindings):
                 name = model.get_binding_name(index)
                 dtype = trt.nptype(model.get_binding_dtype(index))
                 if model.binding_is_input(index):
                     if -1 in tuple(model.get_binding_shape(index)):  # dynamic
-                        dynamic_input = True
+                        dynamic = True
                         context.set_binding_shape(index, tuple(model.get_profile_shape(0, index)[2]))
                     if dtype == np.float16:
                         fp16 = True
@@ -480,7 +480,7 @@ class DetectMultiBackend(nn.Module):
             self.binding_addrs['images'] = int(im.data_ptr())
             self.context.execute_v2(list(self.binding_addrs.values()))
             y = self.bindings['output'].data
-            if len(y) > b:
+            if self.dynamic and len(y) > b:
                 y = y[:b]  # trim excess --dynamic outputs
         elif self.coreml:  # CoreML
             im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
