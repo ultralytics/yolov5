@@ -359,7 +359,7 @@ def imshow(img, labels=None, pred=None, names=None, nmax=25, verbose=False, f=Pa
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='yolov5s', help='initial weights path')
-    parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100, mnist or mnist-fashion')
+    parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100, mnist or fashion-mnist')
     parser.add_argument('--epochs', type=int, default=90)
     parser.add_argument('--batch-size', type=int, default=64, help='total batch size for all GPUs')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=224, help='train, val image size (pixels)')
