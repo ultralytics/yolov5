@@ -472,16 +472,16 @@ class DetectMultiBackend(nn.Module):
             y = self.executable_network([im])[self.output_layer]
         elif self.engine:  # TensorRT
             if self.dynamic and im.shape != self.bindings['images'].shape:
-                self.context.set_binding_shape(self.model.get_binding_index('images'), im.shape)  # reshape if dynamic
+                i_in, i_out = (self.model.get_binding_index(x) for x in ('images', 'output'))
+                self.context.set_binding_shape(i_in, im.shape)  # reshape if dynamic
                 self.bindings['images'] = self.bindings['images']._replace(shape=im.shape)
+                self.bindings['output'].data.resize_(tuple(self.context.get_binding_shape(i_out)))
             s = self.bindings['images'].shape
             assert im.shape == s, f"image shape {im.shape} " + \
                                   f"exceeds model max shape {s}" if self.dynamic else f"does not match model shape {s}"
             self.binding_addrs['images'] = int(im.data_ptr())
             self.context.execute_v2(list(self.binding_addrs.values()))
             y = self.bindings['output'].data
-            if self.dynamic and len(y) > b:
-                y = y[:b]  # trim excess --dynamic outputs
         elif self.coreml:  # CoreML
             im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
             im = Image.fromarray((im[0] * 255).astype('uint8'))
