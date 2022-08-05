@@ -85,7 +85,7 @@ class Loggers():
             prefix = colorstr('TensorBoard: ')
             self.logger.info(f"{prefix}Start with 'tensorboard --logdir {s.parent}', view at http://localhost:6006/")
             self.tb = SummaryWriter(str(s))
-            
+
         # ClearML
         if clearml and 'clearml' in self.include:
             self.clearml = ClearmlLogger(self.opt, self.hyp)
