@@ -16,8 +16,7 @@ from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
 
-LOGGERS = ('csv', 'tb', 'clearml', 'wandb')  # text-file, TensorBoard, Weights & Biases, ClearML
-# Note: if ever this is changed, ClearML depends on tensorboard for good operation
+LOGGERS = ('csv', 'tb', 'clearml', 'wandb')  # *.csv, TensorBoard, ClearML, Weights & Biases
 RANK = int(os.getenv('RANK', -1))
 
 try:
