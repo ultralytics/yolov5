@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.9]
+        python-version: ['3.9']  # requires python<=3.9
         model: [yolov5n]
     steps:
       - uses: actions/checkout@v3
@@ -48,7 +48,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.9]
+        python-version: ['3.10']
         model: [yolov5n]
         include:
           - os: ubuntu-latest
@@ -58,7 +58,7 @@ jobs:
             python-version: '3.8'
             model: yolov5n
           - os: ubuntu-latest
-            python-version: '3.10'
+            python-version: '3.9'
             model: yolov5n
     steps:
       - uses: actions/checkout@v3
