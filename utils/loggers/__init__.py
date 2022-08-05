@@ -98,7 +98,7 @@ class Loggers():
                 self.logger.warning(s)
         else:
             self.wandb = None
-            
+
         # ClearML
         if clearml and 'clearml' in self.include:
             self.clearml = ClearmlLogger(self.opt, self.hyp)
@@ -182,7 +182,7 @@ class Loggers():
                     self.wandb.wandb_run.summary[name] = best_results[i]  # log best results in the summary
             self.wandb.log(x)
             self.wandb.end_epoch(best_result=best_fitness == fi)
-            
+
         if self.clearml:
             self.clearml.current_epoch_logged_images = set()  # reset epoch image limit
             self.clearml.current_epoch += 1
