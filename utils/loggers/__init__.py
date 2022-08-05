@@ -16,7 +16,7 @@ from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
 
-LOGGERS = ('csv', 'tb', 'clearml', 'wandb')  # *.csv, TensorBoard, ClearML, Weights & Biases
+LOGGERS = ('csv', 'tb', 'wandb', 'clearml')  # *.csv, TensorBoard, Weights & Biases, ClearML
 RANK = int(os.getenv('RANK', -1))
 
 try:
@@ -69,7 +69,7 @@ class Loggers():
             setattr(self, k, None)  # init empty logger dictionary
         self.csv = True  # always log to csv
 
-        # Messages for experiment management
+        # Messages
         if not wandb:
             prefix = colorstr('Weights & Biases: ')
             s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs in Weights & Biases"
@@ -86,12 +86,6 @@ class Loggers():
             self.logger.info(f"{prefix}Start with 'tensorboard --logdir {s.parent}', view at http://localhost:6006/")
             self.tb = SummaryWriter(str(s))
 
-        # ClearML
-        if clearml and 'clearml' in self.include:
-            self.clearml = ClearmlLogger(self.opt, self.hyp)
-        else:
-            self.clearml = None
-
         # W&B
         if wandb and 'wandb' in self.include:
             wandb_artifact_resume = isinstance(self.opt.resume, str) and self.opt.resume.startswith('wandb-artifact://')
@@ -104,6 +98,12 @@ class Loggers():
                 self.logger.warning(s)
         else:
             self.wandb = None
+            
+        # ClearML
+        if clearml and 'clearml' in self.include:
+            self.clearml = ClearmlLogger(self.opt, self.hyp)
+        else:
+            self.clearml = None
 
     def on_train_start(self):
         # Callback runs on train start
@@ -114,7 +114,8 @@ class Loggers():
         paths = self.save_dir.glob('*labels*.jpg')  # training labels
         if self.wandb:
             self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
-        # ClearML saves these images automatically using its hooks, yay!
+        if self.clearml:
+            pass  # ClearML saves these images automatically using hooks
 
     def on_train_batch_end(self, ni, model, imgs, targets, paths, plots):
         # Callback runs on train batch end
@@ -169,16 +170,10 @@ class Loggers():
         if self.tb:
             for k, v in x.items():
                 self.tb.add_scalar(k, v, epoch)
-        # But if tensorboard is not used: make sure we still get them!
-        elif self.clearml:
+        elif self.clearml:  # log to ClearML if TensorBoard not used
             for k, v in x.items():
                 title, series = k.split('/')
                 self.clearml.task.get_logger().report_scalar(title, series, v, epoch)
-
-        # Reset epoch image limit
-        if self.clearml:
-            self.clearml.current_epoch_logged_images = set()
-            self.clearml.current_epoch += 1
 
         if self.wandb:
             if best_fitness == fi:
@@ -187,6 +182,10 @@ class Loggers():
                     self.wandb.wandb_run.summary[name] = best_results[i]  # log best results in the summary
             self.wandb.log(x)
             self.wandb.end_epoch(best_result=best_fitness == fi)
+            
+        if self.clearml:
+            self.clearml.current_epoch_logged_images = set()  # reset epoch image limit
+            self.clearml.current_epoch += 1
 
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):
         # Callback runs on model save event
