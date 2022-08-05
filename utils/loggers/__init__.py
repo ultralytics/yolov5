@@ -36,7 +36,7 @@ except (ImportError, AssertionError):
 try:
     import clearml
 
-     assert hasattr(clearml, '__version__')  # verify package import not local dir
+    assert hasattr(clearml, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
     clearml = None
 
