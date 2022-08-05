@@ -53,13 +53,13 @@ That's it! You're done 😎
 
 To enable ClearML experiment tracking, simply install the ClearML pip package.
 
-```
+```bash
 pip install clearml
 ```
 
 This will enable integration with the YOLOv5 training script. Every training run from now on, will be captured and stored by the ClearML experiment manager. If you want to change the `project_name` or `task_name`, head over to our custom logger, where you can change it: `utils/loggers/clearml/clearml_utils.py`
 
-```
+```bash
 python train.py --img 640 --batch 16 --epochs 3 --data coco128.yaml --weights yolov5s.pt --cache
 ```
 
@@ -178,7 +178,7 @@ This is where the ClearML Agent comes into play. Check out what the agent can do
 In short: every experiment tracked by the experiment manager contains enough information to reproduce it on a different machine (installed packages, uncommitted changes etc.). So a ClearML agent does just that: it listens to a queue for incoming tasks and when it finds one, it recreates the environment and runs it while still reporting scalars, plots etc. to the experiment manager.
 
 You can turn any machine (a cloud VM, a local GPU machine, your own laptop ... ) into a ClearML agent by simply running:
-```
+```bash
 clearml-agent daemon --queue <queues_to_listen_to> [--docker]
 ```
 
