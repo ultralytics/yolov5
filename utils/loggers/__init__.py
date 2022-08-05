@@ -79,18 +79,18 @@ class Loggers():
             s = f"{prefix}run 'pip install clearml' to automatically track, visualize and remotely train YOLOv5 🚀 runs in ClearML"
             self.logger.info(emojis(s))
 
-        # ClearML
-        if clearml and 'clearml' in self.include:
-            self.clearml = ClearmlLogger(self.opt, self.hyp)
-        else:
-            self.clearml = None
-
         # TensorBoard
         s = self.save_dir
         if 'tb' in self.include and not self.opt.evolve:
             prefix = colorstr('TensorBoard: ')
             self.logger.info(f"{prefix}Start with 'tensorboard --logdir {s.parent}', view at http://localhost:6006/")
             self.tb = SummaryWriter(str(s))
+            
+        # ClearML
+        if clearml and 'clearml' in self.include:
+            self.clearml = ClearmlLogger(self.opt, self.hyp)
+        else:
+            self.clearml = None
 
         # W&B
         if wandb and 'wandb' in self.include:
@@ -100,9 +100,8 @@ class Loggers():
             self.wandb = WandbLogger(self.opt, run_id)
             # temp warn. because nested artifacts not supported after 0.12.10
             if pkg.parse_version(wandb.__version__) >= pkg.parse_version('0.12.11'):
-                self.logger.warning(
-                    "YOLOv5 temporarily requires wandb version 0.12.10 or below. Some features may not work as expected."
-                )
+                s = "YOLOv5 temporarily requires wandb version 0.12.10 or below. Some features may not work as expected."
+                self.logger.warning(s)
         else:
             self.wandb = None
 
