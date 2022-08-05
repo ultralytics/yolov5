@@ -14,6 +14,8 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 
+from torch import NoneType
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -28,6 +30,7 @@ from utils.general import LOGGER, check_version, check_yaml, make_divisible, pri
 from utils.plots import feature_visualization
 from utils.torch_utils import (fuse_conv_and_bn, initialize_weights, model_info, profile, scale_img, select_device,
                                time_sync)
+import torch.nn.functional as F
 
 try:
     import thop  # for FLOPs computation
@@ -108,7 +111,7 @@ class DetectSegment(Detect):
             # nn.Conv2d(self.proto_c, self.proto_c, kernel_size=3, stride=1, padding=1),
             # nn.SiLU(inplace=True), 
             # nn.Upsample(scale_factor=2, mode='nearest'),
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
+            Upsample(scale_factor=2, mode='bilinear', align_corners=False),
             nn.Conv2d(self.proto_c, self.proto_c, kernel_size=3, stride=1, padding=1),
             nn.SiLU(inplace=True),
             nn.Conv2d(self.proto_c, self.mask_dim, kernel_size=1, padding=0),
@@ -376,6 +379,18 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         ch.append(c2)
     return nn.Sequential(*layers), sorted(save)
 
+class Upsample(nn.Module):
+    '''
+    deterministic upsample layer
+    '''
+    def __init__(self, scale_factor, mode="bilinear", align_corners=False) -> None:
+        super().__init__()
+        self.scale_factor = scale_factor
+        self.mode = mode
+        self.align_corners = align_corners
+
+    def forward(self, x):
+        return F.interpolate(x, scale_factor=self.scale_factor, mode=self.mode, align_corners=self.align_corners)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
