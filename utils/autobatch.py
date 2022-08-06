@@ -8,7 +8,7 @@ from copy import deepcopy
 import numpy as np
 import torch
 
-from utils.general import LOGGER, colorstr, emojis
+from utils.general import LOGGER, colorstr
 from utils.torch_utils import profile
 
 
@@ -62,5 +62,5 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
             b = batch_sizes[max(i - 1, 0)]  # select prior safe point
 
     fraction = np.polyval(p, b) / t  # actual fraction predicted
-    LOGGER.info(emojis(f'{prefix}Using batch-size {b} for {d} {t * fraction:.2f}G/{t:.2f}G ({fraction * 100:.0f}%) ✅'))
+    LOGGER.info(f'{prefix}Using batch-size {b} for {d} {t * fraction:.2f}G/{t:.2f}G ({fraction * 100:.0f}%) ✅')
     return b
