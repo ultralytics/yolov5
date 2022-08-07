@@ -3,7 +3,7 @@
 # Image is CUDA-optimized for YOLOv5 single/multi-GPU training and inference
 
 # Start FROM NVIDIA PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
-FROM nvcr.io/nvidia/pytorch:22.06-py3
+FROM nvcr.io/nvidia/pytorch:22.07-py3
 RUN rm -rf /opt/pytorch  # remove 1.2GB dir
 
 # Downloads to user config dir
@@ -25,8 +25,8 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 # Copy contents
-COPY . /usr/src/app
-RUN git clone https://github.com/ultralytics/yolov5 /usr/src/yolov5
+# COPY . /usr/src/app  (issues as not a .git directory)
+RUN git clone https://github.com/ultralytics/yolov5 /usr/src/app
 
 # Set environment variables
 ENV OMP_NUM_THREADS=8

@@ -29,6 +29,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     from pathlib import Path
 
     from models.common import AutoShape, DetectMultiBackend
+    from models.experimental import attempt_load
     from models.yolo import Model
     from utils.downloads import attempt_download
     from utils.general import LOGGER, check_requirements, intersect_dicts, logging
@@ -41,10 +42,13 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
     path = name.with_suffix('.pt') if name.suffix == '' and not name.is_dir() else name  # checkpoint path
     try:
         device = select_device(device)
-
         if pretrained and channels == 3 and classes == 80:
-            model = DetectMultiBackend(path, device=device, fuse=autoshape)  # download/load FP32 model
-            # model = models.experimental.attempt_load(path, map_location=device)  # download/load FP32 model
+            try:
+                model = DetectMultiBackend(path, device=device, fuse=autoshape)  # detection model
+                if autoshape:
+                    model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
+            except Exception:
+                model = attempt_load(path, device=device, fuse=False)  # arbitrary model
         else:
             cfg = list((Path(__file__).parent / 'models').rglob(f'{path.stem}.yaml'))[0]  # model.yaml path
             model = Model(cfg, channels, classes)  # create model
@@ -55,8 +59,6 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                 model.load_state_dict(csd, strict=False)  # load
                 if len(ckpt['model'].names) == classes:
                     model.names = ckpt['model'].names  # set class names attribute
-        if autoshape:
-            model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
         if not verbose:
             LOGGER.setLevel(logging.INFO)  # reset to default
         return model.to(device)
@@ -123,17 +125,25 @@ def yolov5x6(pretrained=True, channels=3, classes=80, autoshape=True, _verbose=T
 
 
 if __name__ == '__main__':
-    model = _create(name='yolov5s', pretrained=True, channels=3, classes=80, autoshape=True, verbose=True)
-    # model = custom(path='path/to/model.pt')  # custom
-
-    # Verify inference
+    import argparse
     from pathlib import Path
 
     import numpy as np
     from PIL import Image
 
-    from utils.general import cv2
+    from utils.general import cv2, print_args
 
+    # Argparser
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', type=str, default='yolov5s', help='model name')
+    opt = parser.parse_args()
+    print_args(vars(opt))
+
+    # Model
+    model = _create(name=opt.model, pretrained=True, channels=3, classes=80, autoshape=True, verbose=True)
+    # model = custom(path='path/to/model.pt')  # custom
+
+    # Images
     imgs = [
         'data/images/zidane.jpg',  # filename
         Path('data/images/zidane.jpg'),  # Path
@@ -142,6 +152,9 @@ if __name__ == '__main__':
         Image.open('data/images/bus.jpg'),  # PIL
         np.zeros((320, 640, 3))]  # numpy
 
+    # Inference
     results = model(imgs, size=320)  # batched inference
+
+    # Results
     results.print()
     results.save()
