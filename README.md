@@ -24,31 +24,31 @@ YOLOv5 🚀 is a family of object detection architectures and models pretrained 
 
 <div align="center">
    <a href="https://github.com/ultralytics">
-   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-github.png" width="2%"/>
+   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-github.png" width="2%" alt=""/>
    </a>
-   <img width="2%" />
+   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-transparent.png" width="2%" alt=""/>
    <a href="https://www.linkedin.com/company/ultralytics">
-   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-linkedin.png" width="2%"/>
+   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-linkedin.png" width="2%" alt=""/>
    </a>
-   <img width="2%" />
+   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-transparent.png" width="2%" alt=""/>
    <a href="https://twitter.com/ultralytics">
-   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-twitter.png" width="2%"/>
+   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-twitter.png" width="2%" alt=""/>
    </a>
-   <img width="2%" />
+   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-transparent.png" width="2%" alt=""/>
    <a href="https://www.producthunt.com/@glenn_jocher">
-   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-producthunt.png" width="2%"/>
+   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-producthunt.png" width="2%" alt=""/>
    </a>
-   <img width="2%" />
+   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-transparent.png" width="2%" alt=""/>
    <a href="https://youtube.com/ultralytics">
-   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-youtube.png" width="2%"/>
+   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-youtube.png" width="2%" alt=""/>
    </a>
-   <img width="2%" />
+   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-transparent.png" width="2%" alt=""/>
    <a href="https://www.facebook.com/ultralytics">
-   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-facebook.png" width="2%"/>
+   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-facebook.png" width="2%" alt=""/>
    </a>
-   <img width="2%" />
+   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-transparent.png" width="2%" alt=""/>
    <a href="https://www.instagram.com/ultralytics/">
-   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-instagram.png" width="2%"/>
+   <img src="https://github.com/ultralytics/yolov5/releases/download/v1.0/logo-social-instagram.png" width="2%" alt=""/>
    </a>
 </div>
 
