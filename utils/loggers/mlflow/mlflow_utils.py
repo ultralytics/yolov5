@@ -20,6 +20,11 @@ try:
 except (ImportError, AssertionError):
     mlflow = None
 
+if sys.version_info.major == 3 and sys.version_info.minor >= 10:
+    from collections.abc import MutableMapping
+else:
+    from collections import MutableMapping
+
 
 class MlflowLogger:
     """Log training run, artifacts, parameters, and metrics to Mlflow.
@@ -49,17 +54,23 @@ class MlflowLogger:
     def setup(self, opt: Namespace) -> None:
         self.model_name = Path(opt.weights).stem
         self.weights = Path(opt.weights)
-        try:
-            self.client = mlflow.tracking.MlflowClient()
-            run = self.client.get_run(run_id=self.run_id)
-            logged_params = run.data.params
-            remaining_params = {
-                k: v
-                for k, v in vars(opt).items() if k not in logged_params and v is not None and str(v).strip() != ""}
-            self.log_params(remaining_params)
-        except Exception as err:
-            LOGGER.warning(f"Mlflow: not logging params because - {err}")
+        self.client = mlflow.tracking.MlflowClient()
+        self.log_params(vars(opt))
         self.log_metrics(vars(opt), is_param=True)
+
+    @staticmethod
+    def _flatten_params(params_dict, parent_key="", sep="/"):
+        """Static method to flatten configs for logging to mlflow"""
+        items = []
+        for key, value in params_dict.items():
+            new_key = parent_key + sep + key if parent_key else key
+            if isinstance(value, MutableMapping):
+                items.extend(
+                    MlflowLogger._flatten_params(value, new_key, sep).items()
+                )
+            else:
+                items.append((new_key, value))
+        return dict(items)
 
     def log_artifacts(self, artifact: Path, relpath: str = None) -> None:
         """Member function to log artifacts (either directory or single item).
@@ -93,7 +104,19 @@ class MlflowLogger:
         Args:
             params (Dict[str, Any]): Parameters as dict
         """
-        self.mlflow.log_params(params=dict(params))
+        try:
+            flattened_params = MlflowLogger._flatten_params(params_dict=params)
+            run = self.client.get_run(run_id=self.run_id)
+            logged_params = run.data.params
+            [
+                self.mlflow.log_param(
+                    key=k, value=v
+                )
+                for k, v in flattened_params.items() 
+                if k not in logged_params and v is not None and str(v).strip() != ""
+            ]
+        except Exception as err:
+            LOGGER.warning(f"Mlflow: failed to log all params because - {err}")
 
     def log_metrics(self, metrics: Dict[str, float], epoch: int = None, is_param: bool = False) -> None:
         """Member function to log metrics.
