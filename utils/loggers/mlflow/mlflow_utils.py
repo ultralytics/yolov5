@@ -23,7 +23,7 @@ except (ImportError, AssertionError):
 if sys.version_info.major == 3 and sys.version_info.minor >= 10:
     from collections.abc import MutableMapping
 else:
-    from collections import MutableMapping
+    from collections.abc import MutableMapping
 
 
 class MlflowLogger:
@@ -65,9 +65,7 @@ class MlflowLogger:
         for key, value in params_dict.items():
             new_key = parent_key + sep + key if parent_key else key
             if isinstance(value, MutableMapping):
-                items.extend(
-                    MlflowLogger._flatten_params(value, new_key, sep).items()
-                )
+                items.extend(MlflowLogger._flatten_params(value, new_key, sep).items())
             else:
                 items.append((new_key, value))
         return dict(items)
@@ -109,12 +107,8 @@ class MlflowLogger:
             run = self.client.get_run(run_id=self.run_id)
             logged_params = run.data.params
             [
-                self.mlflow.log_param(
-                    key=k, value=v
-                )
-                for k, v in flattened_params.items() 
-                if k not in logged_params and v is not None and str(v).strip() != ""
-            ]
+                self.mlflow.log_param(key=k, value=v) for k, v in flattened_params.items()
+                if k not in logged_params and v is not None and str(v).strip() != ""]
         except Exception as err:
             LOGGER.warning(f"Mlflow: failed to log all params because - {err}")
 
