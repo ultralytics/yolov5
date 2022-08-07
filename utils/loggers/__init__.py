@@ -12,12 +12,13 @@ from torch.utils.tensorboard import SummaryWriter
 
 from utils.general import colorstr, cv2
 from utils.loggers.clearml.clearml_utils import ClearmlLogger
-from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.loggers.mlflow.mlflow_utils import MlflowLogger
+from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
 
-LOGGERS = ('csv', 'tb', 'wandb', 'clearml', 'mlflow')  # text-file, TensorBoard, Weights & Biases, Mlflow
+LOGGERS = ('csv', 'tb', 'wandb', 'clearml'
+           'mlflow')  # text-file, TensorBoard, Weights & Biases, Mlflow
 RANK = int(os.getenv('RANK', -1))
 
 try:
@@ -110,7 +111,7 @@ class Loggers():
             self.clearml = ClearmlLogger(self.opt, self.hyp)
         else:
             self.clearml = None
-        
+
         # Mlflow
         if mlflow and 'mlflow' in self.include:
             self.mlflow = MlflowLogger(self.opt)
@@ -206,7 +207,7 @@ class Loggers():
             if best_fitness == fi:
                 best_results = dict(zip(self.best_keys[1:], vals[3:7]))
                 self.mlflow.log_metrics(best_results, epoch=epoch)
-        
+
         if self.clearml:
             self.clearml.current_epoch_logged_images = set()  # reset epoch image limit
             self.clearml.current_epoch += 1
@@ -216,7 +217,7 @@ class Loggers():
         if self.wandb:
             if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
                 self.wandb.log_model(last.parent, self.opt, epoch, fi, best_model=best_fitness == fi)
-                
+
         if self.mlflow:
             if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
                 self.mlflow.log_artifacts(last.parent)
@@ -258,7 +259,7 @@ class Loggers():
             if best.exists():
                 self.mlflow.log_model(best)
             self.mlflow.finish_run()
-    
+
         if self.clearml:
             # Save the best model here
             if not self.opt.evolve:
