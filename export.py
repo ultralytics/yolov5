@@ -410,7 +410,7 @@ def export_edgetpu(file, prefix=colorstr('Edge TPU:')):
         f = str(file).replace('.pt', '-int8_edgetpu.tflite')  # Edge TPU model
         f_tfl = str(file).replace('.pt', '-int8.tflite')  # TFLite model
 
-        cmd = f"edgetpu_compiler -s -o {file.parent} {f_tfl}"
+        cmd = f"edgetpu_compiler -s -d -k 10 --out_dir {file.parent} {f_tfl}"
         subprocess.run(cmd.split(), check=True)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
