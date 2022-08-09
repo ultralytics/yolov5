@@ -64,10 +64,10 @@ jobs:
             python-version: '3.9'
             model: yolov5n
             torch: latest
-          - os: ubuntu-latest
-            python-version: '3.10'
+          - os: ubuntu-latest  # min torch version CI https://pypi.org/project/torchvision/
+            python-version: '3.8'
             model: yolov5n
-            torch: 1.7.0
+            torch: '1.7.0'
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
