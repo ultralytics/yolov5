@@ -1,5 +1,5 @@
 <div align="center" markdown>
-<img src="https://i.imgur.com/1qXIdqs.png"/>
+<img src="https://user-images.githubusercontent.com/106374579/183668719-361e275f-e6f8-47e5-994d-3341c0e6241f.png"/>
 
 # Serve YOLOv5
 
