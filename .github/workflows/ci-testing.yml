@@ -65,7 +65,7 @@ jobs:
             model: yolov5n
             torch: latest
           - os: ubuntu-latest
-            python-version: '3.9'
+            python-version: '3.8'  # torch 1.7.0 requires python >=3.6, <=3.8
             model: yolov5n
             torch: '1.7.0'  # min torch version CI https://pypi.org/project/torchvision/
     steps:
