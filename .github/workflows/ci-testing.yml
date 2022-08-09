@@ -60,6 +60,10 @@ jobs:
           - os: ubuntu-latest
             python-version: '3.9'
             model: yolov5n
+          - os: ubuntu-latest
+            python-version: '3.8'  # torch 1.7.0 requires python >=3.6, <=3.8
+            model: yolov5n
+            torch: '1.7.0'  # min torch version CI https://pypi.org/project/torchvision/
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -78,10 +82,12 @@ jobs:
       - name: Install requirements
         run: |
           python -m pip install --upgrade pip wheel
-          pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
-          python --version
-          pip --version
-          pip list
+          if [ "${{ matrix.torch }}" == "1.7.0" ]; then
+              pip install -r requirements.txt torch==1.7.0 torchvision==0.8.1 --extra-index-url https://download.pytorch.org/whl/cpu
+          else
+              pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+          fi
+        shell: bash  # required for Windows compatibility
       - name: Check environment
         run: |
           python -c "import utils; utils.notebook_init()"
@@ -91,6 +97,9 @@ jobs:
           echo "GITHUB_ACTOR is ${{ github.actor }}"
           echo "GITHUB_REPOSITORY is ${{ github.repository }}"
           echo "GITHUB_REPOSITORY_OWNER is ${{ github.repository_owner }}"
+          python --version
+          pip --version
+          pip list
       - name: Run tests
         shell: bash
         run: |
