@@ -3,8 +3,6 @@
 
 name: YOLOv5 CI
 
-env:
-  TORCH_LATEST: '1.12.1'
 on:
   push:
     branches: [master]
@@ -50,26 +48,23 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        torch: [eval('env.TORCH_LATEST')]
+        torch: [torch-latest]
         python-version: ['3.10']
         model: [yolov5n]
         include:
           - os: ubuntu-latest
-            torch: torch-latest
             python-version: '3.7'  # '3.6.8' min
             model: yolov5n
           - os: ubuntu-latest
-            torch: torch-latest
             python-version: '3.8'
             model: yolov5n
           - os: ubuntu-latest
             python-version: '3.9'
             model: yolov5n
-            torch: latest
           - os: ubuntu-latest
+            torch: '1.7.0'  # min torch version CI https://pypi.org/project/torchvision/
             python-version: '3.8'  # torch 1.7.0 requires python >=3.6, <=3.8
             model: yolov5n
-            torch: '1.7.0'  # min torch version CI https://pypi.org/project/torchvision/
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
