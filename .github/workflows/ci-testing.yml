@@ -50,7 +50,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        torch: [env.TORCH_LATEST]
+        torch: ${{ env.TORCH_LATEST }}
         python-version: ['3.10']
         model: [yolov5n]
         include:
