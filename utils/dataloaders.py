@@ -1,10 +1,32 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
-Dataloaders and dataset utils
+Run inference on images, videos, directories, streams, etc.
+
+Usage - sources:
+    $ python path/to/detect.py --weights yolov5s.pt --source 0              # webcam
+                                                             img.jpg        # image
+                                                             vid.mp4        # video
+                                                             path/          # directory
+                                                             path/*.jpg     # glob
+                                                             'https://youtu.be/Zgi9g1ksQHc'  # YouTube
+                                                             'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
+
+Usage - formats:
+    $ python path/to/detect.py --weights yolov5s.pt                 # PyTorch
+                                         yolov5s.torchscript        # TorchScript
+                                         yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
+                                         yolov5s.xml                # OpenVINO
+                                         yolov5s.engine             # TensorRT
+                                         yolov5s.mlmodel            # CoreML (macOS-only)
+                                         yolov5s_saved_model        # TensorFlow SavedModel
+                                         yolov5s.pb                 # TensorFlow GraphDef
+                                         yolov5s.tflite             # TensorFlow Lite
+                                         yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
 """
 
 import contextlib
 import glob
+import logging
 import hashlib
 import json
 import math
@@ -188,10 +210,15 @@ class LoadImages:
         files = []
         for p in sorted(path) if isinstance(path, (list, tuple)) else [path]:
             p = str(Path(p).resolve())
+            print(f">>>> LoadImages: path= {p} ")
             if '*' in p:
                 files.extend(sorted(glob.glob(p, recursive=True)))  # glob
             elif os.path.isdir(p):
-                files.extend(sorted(glob.glob(os.path.join(p, '*.*'))))  # dir
+                # (upstream) files.extend(sorted(glob.glob(os.path.join(p, '*.*'))))  # dir
+                # ############ BEGIN of modification ############
+                _files = sorted(glob.glob(os.path.join(p, '**/*.*'), recursive=True))
+                files.extend(_files)
+                # ############ END of modification ############
             elif os.path.isfile(p):
                 files.append(p)  # files
             else:

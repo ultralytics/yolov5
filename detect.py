@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
 Run inference on images, videos, directories, streams, etc.
@@ -141,8 +144,42 @@ def run(
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
             p = Path(p)  # to Path
-            save_path = str(save_dir / p.name)  # im.jpg
-            txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+
+            # ########################################################
+            # ########## ---- (BEGIN of modification) ---- ###########
+            # ########################################################
+
+            # -- handle child folders --
+            parent_absolute = str(Path(p.parent).absolute())  # os-agnostic absolute path
+            if not parent_absolute or parent_absolute == '':
+                relative_parent = ''  # '.'
+            else:
+                source_absolute = os.path.abspath(source).rstrip("/")
+                relative_parent = parent_absolute.replace(source_absolute, '')
+                if not relative_parent or relative_parent == '':
+                    relative_parent = ''  # '.'
+                else:
+                    relative_parent = relative_parent.strip('/')
+            # print(f">>>>>>>> ..... relative_parent= {relative_parent}")
+
+            # -- output: images: images (with bounding boxes)
+            # save_path = str(save_dir / p.name)  # im.jpg
+            save_path = str(save_dir / 'images' / relative_parent / p.name)  # img.jpg
+            # logging.debug(f">>>>>>>> ........detect_proc(): save_path: \n {save_path} \n")
+            image_parent_directory = Path(str(save_dir / 'images' / relative_parent))
+            image_parent_directory.mkdir(parents=True, exist_ok=True)
+
+            # -- output: labels: file path name without '.txt' extension yet.
+            # txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+            txt_path = str(save_dir / 'labels' / relative_parent / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
+            # logging.debug(f">>>>>>>> ........detect_proc(): txt_path: \n {txt_path} \n")
+            text_parent_directory = Path(str(save_dir / 'labels' / relative_parent))
+            text_parent_directory.mkdir(parents=True, exist_ok=True)
+
+            # ########################################################
+            # ########## ---- (END of modification)   ---- ###########
+            # ########################################################
+
             s += '%gx%g ' % im.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
@@ -169,7 +206,8 @@ def run(
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
                     if save_crop:
-                        save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
+                        save_one_box(xyxy, imc, file=str(save_dir / 'crops' / relative_parent / names[c] / f'{p.stem}.jpg'), BGR=True)
+                        #save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
             # Stream results
             im0 = annotator.result()
