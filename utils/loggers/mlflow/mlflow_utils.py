@@ -5,8 +5,6 @@ from argparse import Namespace
 from pathlib import Path
 from typing import Any, Dict
 
-import torch
-
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[3]
 if str(ROOT) not in sys.path:
@@ -83,16 +81,18 @@ class MlflowLogger:
         else:
             self.mlflow.log_artifact(artifact.resolve(), artifact_path=relpath)
 
-    def log_model(self, model_path) -> None:
+    def log_model(self, model_path: Path) -> None:
         """Member function to log model as an Mlflow model.
 
         Args:
             model (nn.Module): The pytorch model
         """
-        model = torch.hub.load(repo_or_dir=str(ROOT.resolve()), model="custom", path=str(model_path), source="local")
         if self.weights.exists() and self.weights.is_file() and (self.weights.parent.resolve() == ROOT.resolve()):
             self.weights.unlink()
-        self.mlflow.pytorch.log_model(model, artifact_path=self.model_name, code_paths=[ROOT.resolve()])
+        self.mlflow.pyfunc.log_model(artifact_path=self.model_name,
+                                     code_path=[str(ROOT.resolve())],
+                                     artifacts={"model_path": str(model_path.resolve())},
+                                     python_model=self.mlflow.pyfunc.PythonModel())
 
     def log_params(self, params: Dict[str, Any]) -> None:
         """Member funtion to log parameters.
