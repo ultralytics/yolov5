@@ -1,5 +1,6 @@
 <div align="center" markdown>
-<img src="https://i.imgur.com/YwSq29o.png"/>
+
+<img src="https://user-images.githubusercontent.com/106374579/183667927-7b2161e7-97e3-4219-90ec-6b558992faa2.png"/>
 
 # Train YOLOv5
 
