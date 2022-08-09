@@ -42,7 +42,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from utils.augmentations import denormalize, normalize
 from utils.dataloaders import create_classification_dataloader
-from utils.general import (LOGGER, check_git_status, check_requirements, colorstr, download, emojis, increment_path,
+from utils.general import (LOGGER, check_git_status, check_requirements, colorstr, download, increment_path,
                            init_seeds, print_args)
 from utils.loggers import GenericLogger
 from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_hub_load, smart_optimizer,
@@ -72,7 +72,7 @@ def train(opt, device):
     with torch_distributed_zero_first(LOCAL_RANK):
         data_dir = data if data.is_dir() else (FILE.parents[1] / 'datasets' / data)
         if not data_dir.is_dir():
-            LOGGER.info(emojis(f'\nDataset not found ⚠️, missing path {data_dir}, attempting download...'))
+            LOGGER.info(f'\nDataset not found ⚠️, missing path {data_dir}, attempting download...')
             t = time.time()
             if data == 'imagenet':
                 subprocess.run(f"bash {ROOT / 'data/scripts/get_imagenet.sh'}", shell=True, check=True)
@@ -80,7 +80,7 @@ def train(opt, device):
                 url = f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip'
                 download(url, dir=data_dir.parent)
             s = f"Dataset download success ✅ ({time.time() - t:.1f}s), saved to {colorstr('bold', data_dir)}\n"
-            LOGGER.info(emojis(s))
+            LOGGER.info(s)
 
     # Dataloaders
     nc = len([x for x in (data_dir / 'train').glob('*') if x.is_dir()])  # number of classes
