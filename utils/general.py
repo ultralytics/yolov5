@@ -69,7 +69,7 @@ def is_kaggle():
 def is_writeable(dir, test=False):
     # Return True if directory has write permissions, test opening a file with write permissions if test=True
     if not test:
-        return os.access(dir, os.R_OK)  # possible issues on Windows
+        return os.access(dir, os.W_OK)  # possible issues on Windows
     file = Path(dir) / 'tmp.txt'
     try:
         with open(file, 'w'):  # open file with write permissions
