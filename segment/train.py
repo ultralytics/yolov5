@@ -33,7 +33,7 @@ from torch.optim import SGD, Adam, AdamW, lr_scheduler
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # YOLOv5 root directory
+ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
@@ -44,15 +44,15 @@ from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
-from seg_dataloaders import create_dataloader
+from utils.segment.dataloaders import create_dataloader
 from utils.downloads import attempt_download
 from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_git_status, check_img_size, fitness,
                            check_requirements, check_suffix, check_version, check_yaml, colorstr, get_latest_run,
                            increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
                            labels_to_image_weights, methods, one_cycle, print_args, print_mutation, strip_optimizer)
-from utils.loggers import Loggers, NewLoggersMask
+from utils.loggers import NewLoggersMask
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
-from utils.seg_loss import ComputeLoss
+from utils.segment.loss import ComputeLoss
 #from utils.metrics import fitness
 from utils.plots import plot_evolve, plot_labels
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
@@ -251,7 +251,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                               image_weights=opt.image_weights,
                                               quad=opt.quad,
                                               prefix=colorstr('train: '),
-                                              mask_head=True,
                                               shuffle=True,
                                               mask_downsample_ratio=mask_ratio,
                                               overlap_mask=overlap,
@@ -274,7 +273,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                        rank=-1,
                                        workers=workers * 2,
                                        pad=0.5,
-                                       mask_head=True,
                                        mask_downsample_ratio=mask_ratio,
                                        overlap_mask=overlap,
                                        prefix=colorstr('val: '))[0]
@@ -344,7 +342,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
         mloss = torch.zeros(4, device=device)  # mean losses
         if RANK != -1:
-            train_loader.batch_sampler.sampler.set_epoch(epoch)
+            train_loader.sampler.set_epoch(epoch)
         pbar = enumerate(train_loader)
         LOGGER.info( ("\n" + "%10s" * 8) % ("Epoch", "gpu_mem", "box", "seg", "obj", "cls", "labels", "img_size"))
         if RANK in {-1, 0}:

@@ -169,7 +169,7 @@ def run(
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # plot masks
-                mcolors = [colors(int(cls)) for cls in det[:, 5]]
+                mcolors = [colors(int(cls)) for cls in range(len(det[:, 5]))]
                 # NOTE: this way to draw masks is faster,
                 # but the image might get blurred,
                 # from https://github.com/dbolya/yolact
@@ -180,7 +180,7 @@ def run(
                 annotator.im = img_masks
 
                 # Write results
-                for *xyxy, conf, cls in reversed(det):
+                for i, (*xyxy, conf, cls) in enumerate(det):
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
@@ -190,7 +190,7 @@ def run(
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
-                        annotator.box_label(xyxy, label, color=colors(c, True))
+                        annotator.box_label(xyxy, label, color=colors(i, True))
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 

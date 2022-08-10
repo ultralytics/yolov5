@@ -15,18 +15,17 @@ from threading import Thread
 import numpy as np
 import torch
 import torch.nn.functional as F
-from PIL import Image
 import pycocotools.mask as mask_util
 from tqdm import tqdm
 
 from models.experimental import attempt_load
-from seg_dataloaders import create_dataloader
+from utils.segment.dataloaders import create_dataloader
 from utils.general import (box_iou, non_max_suppression, scale_coords, xyxy2xywh, xywh2xyxy, )
 from utils.general import (check_dataset, check_img_size, check_suffix)
 from utils.general import (coco80_to_coco91_class, increment_path, colorstr, )
 from utils.plots import output_to_target, plot_images_boxes_and_masks
-from utils.seg_metrics import ap_per_class, ap_per_class_box_and_mask, ConfusionMatrix
-from utils.segment import (non_max_suppression_masks, mask_iou, process_mask, process_mask_upsample, scale_masks, )
+from utils.segment.metrics import ap_per_class, ap_per_class_box_and_mask, ConfusionMatrix
+from utils.segment.general import (non_max_suppression_masks, mask_iou, process_mask, process_mask_upsample, scale_masks, )
 from utils.torch_utils import select_device, time_sync, de_parallel
 
 
@@ -493,9 +492,9 @@ class Yolov5Evaluator:
         #Thread(target=plot_images_boxes_and_masks,
         #    args=(img, output_to_target(out, filter_dets=self.max_plot_dets), pred_masks, paths, f, self.names, max(img.shape[2:]),),
         #    daemon=True, ).start()
-        import wandb
-        if wandb.run:
-            wandb.log({f"pred_{i}": wandb.Image(str(f))}, step=self.step)
+        # import wandb
+        # if wandb.run:
+        #     wandb.log({f"pred_{i}": wandb.Image(str(f))}, step=self.step)
 
     def nms(self, **kwargs):
         return (non_max_suppression_masks(**kwargs) if self.mask else non_max_suppression(**kwargs))
