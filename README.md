@@ -144,18 +144,19 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
 - [Train Custom Data](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data)  🚀 RECOMMENDED
 - [Tips for Best Training Results](https://github.com/ultralytics/yolov5/wiki/Tips-for-Best-Training-Results)  ☘️
   RECOMMENDED
-- [ClearML Logging](https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml) 🌟 NEW
-- [Weights & Biases Logging](https://github.com/ultralytics/yolov5/issues/1289)
-- [Roboflow for Datasets, Labeling, and Active Learning](https://github.com/ultralytics/yolov5/issues/4975)  🌟 NEW
 - [Multi-GPU Training](https://github.com/ultralytics/yolov5/issues/475)
-- [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)  ⭐ NEW
+- [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36) 🚀
 - [TFLite, ONNX, CoreML, TensorRT Export](https://github.com/ultralytics/yolov5/issues/251) 🚀
 - [Test-Time Augmentation (TTA)](https://github.com/ultralytics/yolov5/issues/303)
 - [Model Ensembling](https://github.com/ultralytics/yolov5/issues/318)
 - [Model Pruning/Sparsity](https://github.com/ultralytics/yolov5/issues/304)
 - [Hyperparameter Evolution](https://github.com/ultralytics/yolov5/issues/607)
-- [Transfer Learning with Frozen Layers](https://github.com/ultralytics/yolov5/issues/1314)  ⭐ NEW
-- [Architecture Summary](https://github.com/ultralytics/yolov5/issues/6998)  ⭐ NEW
+- [Transfer Learning with Frozen Layers](https://github.com/ultralytics/yolov5/issues/1314)
+- [Architecture Summary](https://github.com/ultralytics/yolov5/issues/6998)
+- [Weights & Biases Logging](https://github.com/ultralytics/yolov5/issues/1289)
+- [Roboflow for Datasets, Labeling, and Active Learning](https://github.com/ultralytics/yolov5/issues/4975)  🌟 NEW
+- [ClearML Logging](https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml) 🌟 NEW
+- [Deci Platform](https://github.com/ultralytics/yolov5/wiki/Deci-Platform) 🌟 NEW
 
 </details>
 
