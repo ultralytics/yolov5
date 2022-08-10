@@ -14,6 +14,7 @@ import random
 import re
 import shutil
 import signal
+import sys
 import threading
 import time
 import urllib
@@ -68,7 +69,7 @@ def is_kaggle():
 def is_writeable(dir, test=False):
     # Return True if directory has write permissions, test opening a file with write permissions if test=True
     if not test:
-        return os.access(dir, os.R_OK)  # possible issues on Windows
+        return os.access(dir, os.W_OK)  # possible issues on Windows
     file = Path(dir) / 'tmp.txt'
     try:
         with open(file, 'w'):  # open file with write permissions
@@ -96,6 +97,8 @@ def set_logging(name=None, verbose=VERBOSE):
 
 set_logging()  # run before defining LOGGER
 LOGGER = logging.getLogger("yolov5")  # define globally (used in train.py, val.py, detect.py, etc.)
+for fn in LOGGER.info, LOGGER.warning:
+    _fn, fn = fn, lambda x: _fn(emojis(x))  # emoji safe logging
 
 
 def user_config_dir(dir='Ultralytics', env_var='YOLOV5_CONFIG_DIR'):
@@ -333,7 +336,7 @@ def check_git_status(repo='ultralytics/yolov5'):
         s += f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use `{pull}` or `git clone {url}` to update."
     else:
         s += f'up to date with {url} ✅'
-    LOGGER.info(emojis(s))  # emoji-safe
+    LOGGER.info(s)
 
 
 def check_python(minimum='3.7.0'):
@@ -387,7 +390,7 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
         source = file.resolve() if 'file' in locals() else requirements
         s = f"{prefix} {n} package{'s' * (n > 1)} updated per {source}\n" \
             f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
-        LOGGER.info(emojis(s))
+        LOGGER.info(s)
 
 
 def check_img_size(imgsz, s=32, floor=0):
@@ -449,6 +452,9 @@ def check_file(file, suffix=''):
             torch.hub.download_url_to_file(url, file)
             assert Path(file).exists() and Path(file).stat().st_size > 0, f'File download failed: {url}'  # check
         return file
+    elif file.startswith('clearml://'):  # ClearML Dataset ID
+        assert 'clearml' in sys.modules, "ClearML is not installed, so cannot use ClearML dataset. Try running 'pip install clearml'."
+        return file
     else:  # search
         files = []
         for d in 'data', 'models', 'utils':  # search directories
@@ -485,9 +491,9 @@ def check_dataset(data, autodownload=True):
 
     # Checks
     for k in 'train', 'val', 'nc':
-        assert k in data, emojis(f"data.yaml '{k}:' field missing ❌")
+        assert k in data, f"data.yaml '{k}:' field missing ❌"
     if 'names' not in data:
-        LOGGER.warning(emojis("data.yaml 'names:' field missing ⚠️, assigning default names 'class0', 'class1', etc."))
+        LOGGER.warning("data.yaml 'names:' field missing ⚠️, assigning default names 'class0', 'class1', etc.")
         data['names'] = [f'class{i}' for i in range(data['nc'])]  # default names
 
     # Resolve paths
@@ -503,9 +509,9 @@ def check_dataset(data, autodownload=True):
     if val:
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
-            LOGGER.info(emojis('\nDataset not found ⚠️, missing paths %s' % [str(x) for x in val if not x.exists()]))
+            LOGGER.info('\nDataset not found ⚠️, missing paths %s' % [str(x) for x in val if not x.exists()])
             if not s or not autodownload:
-                raise Exception(emojis('Dataset not found ❌'))
+                raise Exception('Dataset not found ❌')
             t = time.time()
             root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
             if s.startswith('http') and s.endswith('.zip'):  # URL
@@ -523,7 +529,7 @@ def check_dataset(data, autodownload=True):
                 r = exec(s, {'yaml': data})  # return None
             dt = f'({round(time.time() - t, 1)}s)'
             s = f"success ✅ {dt}, saved to {colorstr('bold', root)}" if r in (0, None) else f"failure {dt} ❌"
-            LOGGER.info(emojis(f"Dataset download {s}"))
+            LOGGER.info(f"Dataset download {s}")
     check_font('Arial.ttf' if is_ascii(data['names']) else 'Arial.Unicode.ttf', progress=True)  # download fonts
     return data  # dictionary
 
@@ -548,11 +554,11 @@ def check_amp(model):
     im = f if f.exists() else 'https://ultralytics.com/images/bus.jpg' if check_online() else np.ones((640, 640, 3))
     try:
         assert amp_allclose(model, im) or amp_allclose(DetectMultiBackend('yolov5n.pt', device), im)
-        LOGGER.info(emojis(f'{prefix}checks passed ✅'))
+        LOGGER.info(f'{prefix}checks passed ✅')
         return True
     except Exception:
         help_url = 'https://github.com/ultralytics/yolov5/issues/7908'
-        LOGGER.warning(emojis(f'{prefix}checks failed ❌, disabling Automatic Mixed Precision. See {help_url}'))
+        LOGGER.warning(f'{prefix}checks failed ❌, disabling Automatic Mixed Precision. See {help_url}')
         return False
 
 
