@@ -1,10 +1,6 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
-"""
-Dataloaders and dataset utils
-"""
-
 import contextlib
 import glob
+import logging
 import hashlib
 import json
 import math
@@ -188,6 +184,7 @@ class LoadImages:
         files = []
         for p in sorted(path) if isinstance(path, (list, tuple)) else [path]:
             p = str(Path(p).resolve())
+            print(f">>>> LoadImages: path= {p} ")
             if '*' in p:
                 files.extend(sorted(glob.glob(p, recursive=True)))  # glob
             elif os.path.isdir(p):
