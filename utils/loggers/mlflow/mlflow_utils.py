@@ -79,7 +79,7 @@ class MlflowLogger:
         if artifact.is_dir():
             self.mlflow.log_artifacts(f"{artifact.resolve()}/", artifact_path=str(artifact.stem))
         else:
-            self.mlflow.log_artifact(artifact.resolve(), artifact_path=relpath)
+            self.mlflow.log_artifact(str(artifact.resolve()), artifact_path=relpath)
 
     def log_model(self, model_path: Path) -> None:
         """Member function to log model as an Mlflow model.
