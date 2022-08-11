@@ -149,9 +149,7 @@ def process_mask_upsample(proto_out, out_masks, bboxes, shape):
     """
     # mask_h, mask_w, n
     masks = proto_out.float().permute(1, 2, 0).contiguous() @ out_masks.float().tanh().T
-    # print(masks.shape)
     masks = masks.sigmoid()
-    # print('after sigmoid:', masks)
     masks = masks.permute(2, 0, 1).contiguous()
     # [n, mask_h, mask_w]
     masks = F.interpolate(masks.unsqueeze(0), shape, mode='bilinear', align_corners=False).squeeze(0)

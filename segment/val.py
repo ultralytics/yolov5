@@ -274,14 +274,6 @@ def run(
         # Metrics
         for si, pred in enumerate(out):
             labels = targets[targets[:, 0] == si, 1:]
-            midx = [si] if overlap else targets[:, 0] == si
-            gt_masks = masks[midx]
-            proto_out = train_out[1][si]
-            pred_masks = process(proto_out, pred[:, 6:], pred[:, :4], 
-                            shape=im[si].shape[1:]).permute(2, 0, 1).contiguous()
-            if plots and batch_i < 3:
-                plot_masks.append(pred_masks[:15].cpu())
-
             nl, npr = labels.shape[0], pred.shape[0]  # number of labels, predictions
             path, shape = Path(paths[si]), shapes[si][0]
             correct_masks = torch.zeros(npr, niou, dtype=torch.bool, device=device)  # init
@@ -292,6 +284,16 @@ def run(
                 if nl:
                     stats.append((correct_masks, correct_bboxes, *torch.zeros((2, 0), device=device), labels[:, 0]))
                 continue
+
+            # deal with masks
+            midx = [si] if overlap else targets[:, 0] == si
+            gt_masks = masks[midx]
+            proto_out = train_out[1][si]
+            pred_masks = process(proto_out, pred[:, 6:], pred[:, :4], 
+                            shape=im[si].shape[1:]).permute(2, 0, 1).contiguous()
+            if plots and batch_i < 3:
+                # filter top 15 to plot
+                plot_masks.append(pred_masks[:15].cpu())
 
             # Predictions
             if single_cls:
@@ -379,7 +381,8 @@ def run(
     # Save JSON
     if save_json and len(jdict):
         w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
-        anno_json = str(Path(data.get('path', '../coco')) / 'annotations/instances_val2017.json')  # annotations json
+        # anno_json = str(Path(data.get('path', '../coco')) / 'annotations/instances_val2017.json')  # annotations json
+        anno_json = "/d/dataset/COCO/annotations/instances_val2017.json"
         pred_json = str(save_dir / f"{w}_predictions.json")  # predictions json
         LOGGER.info(f'\nEvaluating pycocotools mAP... saving {pred_json}...')
         with open(pred_json, 'w') as f:

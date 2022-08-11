@@ -12,11 +12,11 @@ import torch
 from torch.utils.data import DataLoader 
 from torch.utils.data import distributed
 
-from ..augmentations import augment_hsv, copy_paste, letterbox, mixup
+from ..augmentations import augment_hsv, copy_paste, letterbox
 from ..dataloaders import LoadImagesAndLabels, InfiniteDataLoader, seed_worker
 from ..general import xywhn2xyxy, xyxy2xywhn, xyn2xy, LOGGER
 from ..torch_utils import torch_distributed_zero_first
-from .augmentations import random_perspective
+from .augmentations import random_perspective, mixup
 
 
 def create_dataloader(path,
@@ -96,10 +96,10 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
             img, labels, segments = self.load_mosaic(index)
             shapes = None
 
-            # TODO: Mixup not support segment for now
             # MixUp augmentation
             if random.random() < hyp["mixup"]:
-                img, labels = mixup(img, labels, *self.load_mosaic(random.randint(0, self.num_imgs - 1)))
+                img, labels, segments = mixup(img, labels, segments, 
+                        *self.load_mosaic(random.randint(0, self.n - 1)))
 
         else:
             # Load image

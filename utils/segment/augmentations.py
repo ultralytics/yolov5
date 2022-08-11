@@ -12,6 +12,13 @@ import numpy as np
 from ..general import segment2box, resample_segments
 from ..augmentations import box_candidates
 
+def mixup(im, labels, segments, im2, labels2, segments2):
+    # Applies MixUp augmentation https://arxiv.org/pdf/1710.09412.pdf
+    r = np.random.beta(32.0, 32.0)  # mixup ratio, alpha=beta=32.0
+    im = (im * r + im2 * (1 - r)).astype(np.uint8)
+    labels = np.concatenate((labels, labels2), 0)
+    segments = np.concatenate((segments, segments2), 0)
+    return im, labels, segments
 
 def random_perspective(im,
                        targets=(),
