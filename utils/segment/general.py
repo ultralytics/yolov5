@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import torchvision
 
 from ..general import xywh2xyxy
-from .metrics import box_iou
+from ..metrics import box_iou
 
 
 def non_max_suppression_masks(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False,
