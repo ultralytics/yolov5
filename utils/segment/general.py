@@ -6,34 +6,8 @@ import torch
 import torch.nn.functional as F
 import torchvision
 
-from .general import xyxy2xywh, xywh2xyxy
-from .seg_metrics import box_iou
-
-
-def segment2box(segment, width=640, height=640):
-    # Convert 1 segment label to 1 box label, applying inside-image constraint, i.e. (xy1, xy2, ...) to (xyxy)
-    x, y = segment.T  # segment xy
-    inside = (x >= 0) & (y >= 0) & (x <= width) & (y <= height)
-    x, y, = (x[inside], y[inside],)
-    return (np.array([x.min(), y.min(), x.max(), y.max()]) if any(x) else np.zeros((1, 4)))  # xyxy
-
-
-def segments2boxes(segments):
-    # Convert segment labels to box labels, i.e. (cls, xy1, xy2, ...) to (cls, xywh)
-    boxes = []
-    for s in segments:
-        x, y = s.T  # segment xy
-        boxes.append([x.min(), y.min(), x.max(), y.max()])  # cls, xyxy
-    return xyxy2xywh(np.array(boxes))  # cls, xywh
-
-
-def resample_segments(segments, n=1000):
-    # Up-sample an (n,2) segment
-    for i, s in enumerate(segments):
-        x = np.linspace(0, len(s) - 1, n)
-        xp = np.arange(len(s))
-        segments[i] = (np.concatenate([np.interp(x, xp, s[:, i]) for i in range(2)]).reshape(2, -1).T)  # segment xy
-    return segments
+from ..general import xywh2xyxy
+from ..metrics import box_iou
 
 
 def non_max_suppression_masks(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False,
@@ -175,9 +149,7 @@ def process_mask_upsample(proto_out, out_masks, bboxes, shape):
     """
     # mask_h, mask_w, n
     masks = proto_out.float().permute(1, 2, 0).contiguous() @ out_masks.float().tanh().T
-    # print(masks.shape)
     masks = masks.sigmoid()
-    # print('after sigmoid:', masks)
     masks = masks.permute(2, 0, 1).contiguous()
     # [n, mask_h, mask_w]
     masks = F.interpolate(masks.unsqueeze(0), shape, mode='bilinear', align_corners=False).squeeze(0)

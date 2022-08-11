@@ -22,6 +22,7 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
+import val  # for end-of-epoch mAP
 import numpy as np
 import torch
 import torch.distributed as dist
@@ -33,27 +34,26 @@ from torch.optim import SGD, Adam, AdamW, lr_scheduler
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # YOLOv5 root directory
+ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-import val  # for end-of-epoch mAP
 from models.experimental import attempt_load
 from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
-from seg_dataloaders import create_dataloader
+from utils.segment.dataloaders import create_dataloader
 from utils.downloads import attempt_download
-from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_git_status, check_img_size, fitness,
+from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_git_status, check_img_size,
                            check_requirements, check_suffix, check_version, check_yaml, colorstr, get_latest_run,
                            increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
                            labels_to_image_weights, methods, one_cycle, print_args, print_mutation, strip_optimizer)
-from utils.loggers import Loggers, NewLoggersMask
+from utils.loggers import LoggersMask
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
-from utils.seg_loss import ComputeLoss
-#from utils.metrics import fitness
+from utils.segment.loss import ComputeLoss
+from utils.segment.metrics import fitness
 from utils.plots import plot_evolve, plot_labels
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
 
@@ -66,7 +66,6 @@ from utils.autobatch import check_train_batch_size
 from torch.optim import AdamW
 import yaml
 from datetime import datetime
-from evaluator import Yolov5Evaluator
 
 def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictionary
     print(device)
@@ -96,8 +95,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     # Loggers
     data_dict = None
     if RANK in {-1, 0}:
-        newloggers = NewLoggersMask
-        loggers = newloggers(
+        loggers = LoggersMask(
             save_dir=save_dir, opt=opt, logger=LOGGER
         )  # loggers instance
 
@@ -157,16 +155,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     accumulate = max(round(nbs / batch_size), 1)  # accumulate loss before optimizing
     hyp['weight_decay'] *= batch_size * accumulate / nbs  # scale weight_decay
     LOGGER.info(f"Scaled weight_decay = {hyp['weight_decay']}")
-    evaluator = Yolov5Evaluator(
-            data = data,
-            single_cls=single_cls,
-            save_dir=save_dir,
-            mask=True,
-            verbose=False,
-            mask_downsample_ratio=mask_ratio,
-            plots=plots,
-            overlap=overlap
-        )
+
     g = [], [], []  # optimizer parameter groups
     bn = tuple(v for k, v in nn.__dict__.items() if 'Norm' in k)  # normalization layers, i.e. BatchNorm2d()
     for v in model.modules():
@@ -251,7 +240,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                               image_weights=opt.image_weights,
                                               quad=opt.quad,
                                               prefix=colorstr('train: '),
-                                              mask_head=True,
                                               shuffle=True,
                                               mask_downsample_ratio=mask_ratio,
                                               overlap_mask=overlap,
@@ -274,7 +262,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                        rank=-1,
                                        workers=workers * 2,
                                        pad=0.5,
-                                       mask_head=True,
                                        mask_downsample_ratio=mask_ratio,
                                        overlap_mask=overlap,
                                        prefix=colorstr('val: '))[0]
@@ -344,7 +331,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
         mloss = torch.zeros(4, device=device)  # mean losses
         if RANK != -1:
-            train_loader.batch_sampler.sampler.set_epoch(epoch)
+            train_loader.sampler.set_epoch(epoch)
         pbar = enumerate(train_loader)
         LOGGER.info( ("\n" + "%10s" * 8) % ("Epoch", "gpu_mem", "box", "seg", "obj", "cls", "labels", "img_size"))
         if RANK in {-1, 0}:
@@ -409,7 +396,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         mode="bilinear",
                         align_corners=False,
                     ).squeeze(0)
-                callbacks.run('on_train_batch_end', ni, model, imgs, targets, masks, paths, plots, opt.sync_bn)
+                callbacks.run('on_train_batch_end', ni, model, imgs, targets, masks, paths, plots)
 
                 if callbacks.stop_training:
                     return
@@ -425,21 +412,25 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = (epoch + 1 == epochs) or stopper.possible_stop
             if not noval or final_epoch:  # Calculate mAP
-                results, maps, _ = evaluator.run_training(
-                model=ema.ema,
-                dataloader=val_loader,
-                compute_loss=compute_loss,
-                )
+                results, maps, _ = val.run(data_dict,
+                                           batch_size=batch_size // WORLD_SIZE * 2,
+                                           imgsz=imgsz,
+                                           model=ema.ema,
+                                           single_cls=single_cls,
+                                           dataloader=val_loader,
+                                           save_dir=save_dir,
+                                           plots=False,
+                                           callbacks=callbacks,
+                                           compute_loss=compute_loss, 
+                                           mask_downsample_ratio=mask_ratio,
+                                           overlap=overlap)
             # Update best mAP
-            def fitness(x):
-                w = [0.0, 0.0, 0.1, 0.9, 0.0, 0.0, 0.1, 0.9]
-                return (x[:, :8] * w).sum(1)
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             stop = stopper(epoch=epoch, fitness=fi)  # early stop check
             if fi > best_fitness:
                 best_fitness = fi
             log_vals = list(mloss) + list(results) + lr
-            callbacks.run('on_fit_epoch_end', log_vals, epoch)
+            callbacks.run('on_fit_epoch_end', log_vals, epoch, best_fitness, fi)
 
             # Save model
             if (not nosave) or (final_epoch and not evolve):  # if save
@@ -480,15 +471,26 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 strip_optimizer(f)  # strip optimizers
                 if f is best:
                     LOGGER.info(f'\nValidating {f}...')
-                    results, _, _ = evaluator.run_training(
-                model=attempt_load(f, device).half(),
-                dataloader=val_loader,
-                compute_loss=compute_loss,
-            )  # val best model with plots
+                    results, _, _ = val.run(
+                        data_dict,
+                        batch_size=batch_size // WORLD_SIZE * 2,
+                        imgsz=imgsz,
+                        model=attempt_load(f, device).half(),
+                        iou_thres=0.65 if is_coco else 0.60,  # best pycocotools results at 0.65
+                        single_cls=single_cls,
+                        dataloader=val_loader,
+                        save_dir=save_dir,
+                        save_json=is_coco,
+                        verbose=True,
+                        plots=plots,
+                        callbacks=callbacks,
+                        compute_loss=compute_loss,
+                        mask_downsample_ratio=1,
+                        overlap=overlap)  # val best model with plots
                     if is_coco:
-                        callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch)
+                        callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
 
-        callbacks.run('on_train_end', plots, epoch, masks=True)
+        callbacks.run('on_train_end', last, best, plots, epoch, results)
 
     torch.cuda.empty_cache()
     return results

@@ -33,7 +33,7 @@ import torch
 import torch.backends.cudnn as cudnn
 
 FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # YOLOv5 root directory
+ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
@@ -42,9 +42,10 @@ from models.experimental import attempt_load
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
 from utils.general import (LOGGER, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
                            increment_path, print_args, scale_coords, strip_optimizer, xyxy2xywh)
-from utils.plots import Annotator, colors, save_one_box, plot_masks
+from utils.plots import Annotator, colors, save_one_box
+from utils.segment.plots import plot_masks
 from utils.torch_utils import select_device, time_sync
-from utils.segment import non_max_suppression_masks, scale_masks, process_mask_upsample
+from utils.segment.general import non_max_suppression_masks, scale_masks, process_mask_upsample
 
 
 @torch.no_grad()
@@ -169,7 +170,7 @@ def run(
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # plot masks
-                mcolors = [colors(int(cls)) for cls in det[:, 5]]
+                mcolors = [colors(int(cls)) for cls in range(len(det[:, 5]))]
                 # NOTE: this way to draw masks is faster,
                 # but the image might get blurred,
                 # from https://github.com/dbolya/yolact
@@ -180,7 +181,7 @@ def run(
                 annotator.im = img_masks
 
                 # Write results
-                for *xyxy, conf, cls in reversed(det):
+                for i, (*xyxy, conf, cls) in enumerate(det):
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
@@ -190,7 +191,7 @@ def run(
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
-                        annotator.box_label(xyxy, label, color=colors(c, True))
+                        annotator.box_label(xyxy, label, color=colors(i, True))
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
