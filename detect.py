@@ -75,7 +75,7 @@ def run(
         hide_conf=False,  # hide confidences
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
-        abs_path = False, # saves all exports on the path provided by --project, without creating --name folder and labels subfolders
+        abs_path=False,  # saves all exports on the path provided by --project, without creating --name folder and labels subfolders
 ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -151,9 +151,10 @@ def run(
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
             if abs_path:
-                txt_path = str(save_dir / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}') # im.txt
+                txt_path = str(save_dir / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
             else:
-                txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+                txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}'
+                                                                )  # im.txt
             s += '%gx%g ' % im.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
@@ -255,7 +256,11 @@ def parse_opt():
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
-    parser.add_argument('--abs-path', action='store_true', help='saves all exports on the path provided by --project, without creating --name folder and labels/ subfolders')
+    parser.add_argument(
+        '--abs-path',
+        action='store_true',
+        help='saves all exports on the path provided by --project, without creating --name folder and labels/ subfolders'
+    )
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))
