@@ -10,13 +10,12 @@ import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from utils.general import colorstr, cv2, emojis
-from utils.loggers.comet import CometLogger
+from export import run
+from utils.general import LOGGER, colorstr, cv2, emojis
 from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_results
 from utils.torch_utils import de_parallel
 
-LOGGERS = ("csv", "tb", "wandb", "comet")  # text-file, TensorBoard, Weights & Biases
 RANK = int(os.getenv("RANK", -1))
 
 try:
@@ -35,6 +34,26 @@ try:
             wandb = None
 except (ImportError, AssertionError):
     wandb = None
+
+try:
+    assert RANK in {0, -1}
+    import comet_ml
+
+    assert hasattr(comet_ml, "__version__")  # verify package import not local dir
+    comet_ml.init()
+    from utils.loggers.comet import CometLogger
+
+except (ImportError, AssertionError):
+    comet_ml = None
+
+# Make this configurable?
+LOGGERS = (
+    "csv",
+    "tb",
+    "wandb",
+    "clearml",
+    "comet",
+)  # text-file, TensorBoard, Weights & Biases
 
 
 class Loggers:
@@ -115,9 +134,24 @@ class Loggers:
         else:
             self.wandb = None
 
+        if "comet" in self.include:
+            try:
+                if isinstance(self.opt.resume, str) and self.opt.resume.startswith(
+                    "comet://"
+                ):
+                    run_id = self.opt.resume.split("/")[-1]
+                    self.comet_logger = CometLogger(self.opt, run_id=run_id)
+
+                else:
+                    self.comet_logger = CometLogger(self.opt)
+
+            except Exception as e:
+                self.comet_logger = None
+                raise (e)
+
     def on_train_start(self):
-        # Callback runs on train start
-        pass
+        if self.comet_logger:
+            self.comet_logger.log_parameters(self.hyp)
 
     def on_pretrain_routine_end(self):
         # Callback runs on pre-train routine end
@@ -127,7 +161,12 @@ class Loggers:
                 {"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]}
             )
 
-    def on_train_batch_end(self, ni, model, imgs, targets, paths, plots):
+        if self.comet_logger:
+            for x in paths:
+                self.comet_logger.log_asset(str(x))
+
+    def on_train_batch_end(self, ni, model, imgs, targets, paths, plots, vals):
+        log_dict = dict(zip(self.keys[0:3], vals))
         # Callback runs on train batch end
         if plots:
             if ni == 0:
@@ -157,6 +196,12 @@ class Loggers:
                     }
                 )
 
+        if self.comet_logger:
+            if self.comet_logger.log_batch_metrics and (
+                ni % self.comet_logger.batch_logging_interval == 0
+            ):
+                self.comet_logger.log_metrics(log_dict, step=ni)
+
     def on_train_epoch_end(self, epoch):
         # Callback runs on train epoch end
         if self.wandb:
@@ -167,17 +212,10 @@ class Loggers:
         if self.wandb:
             self.wandb.val_one_image(pred, predn, path, names, im)
 
-    def on_val_end(self):
-        # Callback runs on val end
-        if self.wandb:
-            files = sorted(self.save_dir.glob("val*.jpg"))
-            self.wandb.log(
-                {"Validation": [wandb.Image(str(f), caption=f.name) for f in files]}
-            )
-
     def on_fit_epoch_end(self, vals, epoch, best_fitness, fi):
         # Callback runs at the end of each fit (train+val) epoch
         x = dict(zip(self.keys, vals))
+
         if self.csv:
             file = self.save_dir / "results.csv"
             n = len(x) + 1  # number of cols
@@ -203,6 +241,9 @@ class Loggers:
             self.wandb.log(x)
             self.wandb.end_epoch(best_result=best_fitness == fi)
 
+        if self.comet_logger:
+            self.comet_logger.log_metrics(x, epoch=epoch)
+
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):
         # Callback runs on model save event
         if self.wandb:
@@ -210,6 +251,14 @@ class Loggers:
                 (epoch + 1) % self.opt.save_period == 0 and not final_epoch
             ) and self.opt.save_period != -1:
                 self.wandb.log_model(
+                    last.parent, self.opt, epoch, fi, best_model=best_fitness == fi
+                )
+
+        if self.comet_logger:
+            if (
+                (epoch + 1) % self.opt.save_period == 0 and not final_epoch
+            ) and self.opt.save_period != -1:
+                self.comet_logger.log_model(
                     last.parent, self.opt, epoch, fi, best_model=best_fitness == fi
                 )
 
@@ -232,7 +281,6 @@ class Loggers:
                 self.tb.add_image(
                     f.stem, cv2.imread(str(f))[..., ::-1], epoch, dataformats="HWC"
                 )
-
         if self.wandb:
             self.wandb.log(dict(zip(self.keys[3:10], results)))
             self.wandb.log(
@@ -247,6 +295,15 @@ class Loggers:
                     aliases=["latest", "best", "stripped"],
                 )
             self.wandb.finish_run()
+
+        if self.comet_logger:
+            for f in files:
+                self.comet_logger.log_asset(f, metadata={"epoch": epoch})
+            self.comet_logger.log_asset(
+                f"{self.save_dir}/results.csv", metadata={"epoch": epoch}
+            )
+
+            self.comet_logger.finish_run()
 
     def on_params_update(self, params):
         # Update hyperparams or configs of the experiment
