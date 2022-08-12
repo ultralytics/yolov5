@@ -4,6 +4,8 @@ import comet_ml
 
 COMET_MODE = os.getenv("COMET_MODE", "online")
 COMET_SAVE_MODEL = os.getenv("COMET_SAVE_MODEL", "false").lower() == "true"
+COMET_MODEL_NAME = os.getenv("COMET_MODEL_NAME", "yolov5")
+
 COMET_OVERWRITE_CHECKPOINTS = (
     os.getenv("COMET_OVERWRITE_CHECKPOINTS", "true").lower() == "true"
 )
@@ -36,6 +38,8 @@ class CometLogger:
         self.save_model = (
             opt.comet_save_model if opt.comet_save_model else COMET_SAVE_MODEL
         )
+        self.model_name = opt.comet_model_name if opt.comet_model_name else COMET_MODEL_NAME
+
         self.overwrite_checkpoints = (
             opt.comet_overwrite_checkpoints
             if opt.comet_overwrite_checkpoints
@@ -121,7 +125,7 @@ class CometLogger:
             model_path = str(path) + f"/{opt.comet_checkpoint_filename}"
 
         self.experiment.log_model(
-            "yolov5",
+            self.model_name,
             model_path,
             metadata=model_metadata,
             overwrite=self.overwrite_checkpoints,

@@ -40,7 +40,6 @@ try:
     import comet_ml
 
     assert hasattr(comet_ml, "__version__")  # verify package import not local dir
-    comet_ml.init()
     from utils.loggers.comet import CometLogger
 
 except (ImportError, AssertionError):

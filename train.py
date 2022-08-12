@@ -789,11 +789,11 @@ def parse_opt(known=False):
     # Comet Arguments
     parser.add_argument("--comet_mode", type=str)
     parser.add_argument("--comet_save_model", action="store_true")
+    parser.add_argument("--comet_model_name", type=str)
     parser.add_argument("--comet_overwrite_checkpoints", action="store_true")
+    parser.add_argument("--comet_checkpoint_filename", type=str, default="best.pt")
     parser.add_argument("--comet_log_batch_metrics", action="store_false")
     parser.add_argument("--comet_log_batch_interval", type=int, default=1)
-    parser.add_argument("--comet_checkpoint_filename", type=str, default="last.pt")
-    parser.add_argument("--comet_model_name", type=str)
 
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
@@ -805,7 +805,8 @@ def main(opt, callbacks=Callbacks()):
         print_args(vars(opt))
         check_git_status()
         check_requirements(exclude=["thop"])
-        check_comet_weights(opt)
+
+    check_comet_weights(opt)
 
     # Resume
     if opt.resume and not (

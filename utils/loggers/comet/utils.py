@@ -1,6 +1,5 @@
-import os
-
 import comet_ml
+import os
 import yaml
 
 COMET_PREFIX = "comet://"
