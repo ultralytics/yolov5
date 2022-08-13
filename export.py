@@ -69,7 +69,7 @@ from models.yolo import Detect
 from utils.dataloaders import LoadImages
 from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_version, check_yaml,
                            colorstr, file_size, print_args, url2file)
-from utils.torch_utils import select_device
+from utils.torch_utils import select_device, smart_inference_mode
 
 
 def export_formats():
@@ -455,7 +455,7 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
-@torch.no_grad()
+@smart_inference_mode()
 def run(
         data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         weights=ROOT / 'yolov5s.pt',  # weights path
