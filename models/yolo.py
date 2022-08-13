@@ -92,7 +92,7 @@ class Detect(nn.Module):
 
 class BaseModel(nn.Module):
     # YOLOv5 base model
-    def forward(self, x, profile=False, visualize=False):
+    def forward(self, x, profile=False, visualize=False, *args, **kwargs):
         return self._forward_once(x, profile, visualize)  # single-scale inference, train
 
     def _forward_once(self, x, profile=False, visualize=False):
