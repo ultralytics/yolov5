@@ -79,6 +79,8 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
     for w in weights if isinstance(weights, list) else [weights]:
         ckpt = torch.load(attempt_download(w), map_location='cpu')  # load
         ckpt = (ckpt.get('ema') or ckpt['model']).to(device).float()  # FP32 model
+        if not hasattr(ckpt, 'stride'):
+            ckpt.stride = torch.tensor([32.])  # compatibility update for ResNet etc.
         model.append(ckpt.fuse().eval() if fuse and hasattr(ckpt, 'fuse') else ckpt.eval())  # model in eval mode
 
     # Compatibility updates

@@ -498,9 +498,6 @@ def run(
 
     # Checks
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
-    if hasattr(model, 'names'):
-        nc, names = model.nc, model.names  # number of classes, class names
-        assert nc == len(names), f'Model class count {nc} != len(names) {len(names)}'
     if optimize:
         assert device.type == 'cpu', '--optimize not compatible with cuda devices, i.e. use --device cpu'
 
