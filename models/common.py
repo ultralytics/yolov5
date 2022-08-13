@@ -457,7 +457,9 @@ class DetectMultiBackend(nn.Module):
             im = im.half()  # to FP16
 
         if self.pt:  # PyTorch
-            y = self.model(im, augment=augment, visualize=visualize)[0] if augment or visualize else self.model(im)[0]
+            y = self.model(im, augment=augment, visualize=visualize) if augment or visualize else self.model(im)
+            if isinstance(y, tuple):
+                y = y[0]
         elif self.jit:  # TorchScript
             y = self.model(im)[0]
         elif self.dnn:  # ONNX OpenCV DNN
