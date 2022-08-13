@@ -243,8 +243,7 @@ def model_info(model, verbose=False, imgsz=640):
     try:  # FLOPs
         p = next(model.parameters())
         stride = max(int(model.stride.max()), 32) if hasattr(model, 'stride') else 32  # max stride
-        channels = p.shape[1]  # image channels
-        im = torch.zeros((1, channels, stride, stride), device=p.device)  # input
+        im = torch.zeros((1, p.shape[1], stride, stride), device=p.device)  # input
         flops = thop.profile(deepcopy(model), inputs=(im,), verbose=False)[0] / 1E9 * 2  # stride GFLOPs
         imgsz = imgsz if isinstance(imgsz, list) else [imgsz, imgsz]  # expand if int/float
         fs = f', {flops * imgsz[0] / stride * imgsz[1] / stride:.1f} GFLOPs'  # 640x640 GFLOPs
