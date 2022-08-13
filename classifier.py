@@ -404,9 +404,6 @@ def main(opt):
 
     # Train
     train(opt, device)
-    if WORLD_SIZE > 1 and RANK == 0:
-        LOGGER.info('Destroying process group... ')
-        dist.destroy_process_group()
 
 
 def run(**kwargs):
