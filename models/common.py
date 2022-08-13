@@ -350,7 +350,7 @@ class DetectMultiBackend(nn.Module):
             net = cv2.dnn.readNetFromONNX(w)
         elif onnx:  # ONNX Runtime
             LOGGER.info(f'Loading {w} for ONNX Runtime inference...')
-            cuda = torch.cuda.is_available()
+            cuda = torch.cuda.is_available() and device.type != 'cpu'
             check_requirements(('onnx', 'onnxruntime-gpu' if cuda else 'onnxruntime'))
             import onnxruntime
             providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] if cuda else ['CPUExecutionProvider']
