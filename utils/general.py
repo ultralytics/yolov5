@@ -97,8 +97,9 @@ def set_logging(name=None, verbose=VERBOSE):
 
 set_logging()  # run before defining LOGGER
 LOGGER = logging.getLogger("yolov5")  # define globally (used in train.py, val.py, detect.py, etc.)
-for fn in LOGGER.info, LOGGER.warning:
-    _fn, fn = fn, lambda x: _fn(emojis(x))  # emoji safe logging
+if platform.system() == 'Windows':
+    for fn in LOGGER.info, LOGGER.warning:
+        setattr(LOGGER, fn.__name__, lambda x: fn(emojis(x)))  # emoji safe logging
 
 
 def user_config_dir(dir='Ultralytics', env_var='YOLOV5_CONFIG_DIR'):
