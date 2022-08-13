@@ -324,7 +324,8 @@ class DetectMultiBackend(nn.Module):
         w = str(weights[0] if isinstance(weights, list) else weights)
         pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = self.model_type(w)  # get backend
         w = attempt_download(w)  # download if not local
-        fp16 &= (pt or jit or onnx or engine) and device.type != 'cpu'  # FP16
+        cuda = torch.cuda.is_available() and device.type != 'cpu'
+        fp16 &= (pt or jit or onnx or engine) and cuda  # FP16
         stride, names = 32, [f'class{i}' for i in range(1000)]  # assign defaults
         if data:  # assign class names (optional)
             with open(data, errors='ignore') as f:
@@ -350,7 +351,6 @@ class DetectMultiBackend(nn.Module):
             net = cv2.dnn.readNetFromONNX(w)
         elif onnx:  # ONNX Runtime
             LOGGER.info(f'Loading {w} for ONNX Runtime inference...')
-            cuda = torch.cuda.is_available()
             check_requirements(('onnx', 'onnxruntime-gpu' if cuda else 'onnxruntime'))
             import onnxruntime
             providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] if cuda else ['CPUExecutionProvider']
