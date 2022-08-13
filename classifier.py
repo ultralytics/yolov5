@@ -45,8 +45,8 @@ from utils.dataloaders import create_classification_dataloader
 from utils.general import (LOGGER, check_git_status, check_requirements, colorstr, download, increment_path, init_seeds,
                            print_args)
 from utils.loggers import GenericLogger
-from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_hub_load, smart_optimizer,
-                               torch_distributed_zero_first, update_classifier_model)
+from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_hub_load, smart_inference_mode,
+                               smart_optimizer, torch_distributed_zero_first, update_classifier_model)
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -263,7 +263,7 @@ def train(opt, device):
         logger.log_model(best, epochs, metadata=meta)
 
 
-@torch.no_grad()
+@smart_inference_mode()
 def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     model.eval()
     device = next(model.parameters()).device
@@ -300,7 +300,7 @@ def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
     return top1, top5, loss
 
 
-@torch.no_grad()
+@smart_inference_mode()
 def classify(model, size=128, file='../datasets/mnist/test/3/30.png', plot=False):
     # YOLOv5 classification model inference
     import cv2
