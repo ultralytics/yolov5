@@ -34,6 +34,14 @@ except ImportError:
 warnings.filterwarnings('ignore', message='User provided device_type of \'cuda\', but CUDA is not available. Disabling')
 
 
+def smart_inference_mode(torch_1_9=check_version(torch.__version__, '1.9.0')):
+    # Applies torch.inference_mode() decorator if torch>=1.9.0 else torch.no_grad() decorator
+    def decorate(fn):
+        return (torch.inference_mode if torch_1_9 else torch.no_grad)()(fn)
+
+    return decorate
+
+
 def smart_DDP(model):
     # Model DDP creation with checks
     assert not check_version(torch.__version__, '1.12.0', pinned=True), \
@@ -364,17 +372,17 @@ class ModelEMA:
         for p in self.ema.parameters():
             p.requires_grad_(False)
 
+    @smart_inference_mode()
     def update(self, model):
         # Update EMA parameters
-        with torch.no_grad():
-            self.updates += 1
-            d = self.decay(self.updates)
+        self.updates += 1
+        d = self.decay(self.updates)
 
-            msd = de_parallel(model).state_dict()  # model state_dict
-            for k, v in self.ema.state_dict().items():
-                if v.dtype.is_floating_point:
-                    v *= d
-                    v += (1 - d) * msd[k].detach()
+        msd = de_parallel(model).state_dict()  # model state_dict
+        for k, v in self.ema.state_dict().items():
+            if v.dtype.is_floating_point:
+                v *= d
+                v += (1 - d) * msd[k].detach()
 
     def update_attr(self, model, include=(), exclude=('process_group', 'reducer')):
         # Update EMA attributes
