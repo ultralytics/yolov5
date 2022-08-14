@@ -1,6 +1,7 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
 Train a YOLOv5 classifier model on a classification dataset
+Datasets: --data mnist, fashion-mnist, cifar10, cifar100, imagenette, imagewoof, imagenet, or 'path/to/custom/dataset'
 
 Usage:
     $ python classify/train.py --model yolov5s --data cifar100 --epochs 5 --img 224 --batch 128
