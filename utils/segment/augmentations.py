@@ -81,37 +81,20 @@ def random_perspective(im,
     n = len(targets)
     new_segments = []
     if n:
-        use_segments = any(x.any() for x in segments)
         new = np.zeros((n, 4))
-        if use_segments:  # warp segments
-            segments = resample_segments(segments)  # upsample
-            for i, segment in enumerate(segments):
-                xy = np.ones((len(segment), 3))
-                xy[:, :2] = segment
-                xy = xy @ M.T  # transform
-                xy = (xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2])  # perspective rescale or affine
-
-                # clip
-                new[i] = segment2box(xy, width, height)
-                new_segments.append(xy)
-
-        else:  # warp boxes
-            xy = np.ones((n * 4, 3))
-            xy[:, :2] = targets[:, [1, 2, 3, 4, 1, 4, 3, 2]].reshape(n * 4, 2)  # x1y1, x2y2, x1y2, x2y1
+        segments = resample_segments(segments)  # upsample
+        for i, segment in enumerate(segments):
+            xy = np.ones((len(segment), 3))
+            xy[:, :2] = segment
             xy = xy @ M.T  # transform
-            xy = (xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2]).reshape(n, 8)  # perspective rescale or affine
-
-            # create new boxes
-            x = xy[:, [0, 2, 4, 6]]
-            y = xy[:, [1, 3, 5, 7]]
-            new = (np.concatenate((x.min(1), y.min(1), x.max(1), y.max(1))).reshape(4, n).T)
+            xy = (xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2])  # perspective rescale or affine
 
             # clip
-            new[:, [0, 2]] = new[:, [0, 2]].clip(0, width)
-            new[:, [1, 3]] = new[:, [1, 3]].clip(0, height)
+            new[i] = segment2box(xy, width, height)
+            new_segments.append(xy)
 
         # filter candidates
-        i = box_candidates(box1=targets[:, 1:5].T * s, box2=new.T, area_thr=0.01 if use_segments else 0.10)
+        i = box_candidates(box1=targets[:, 1:5].T * s, box2=new.T, area_thr=0.01)
         targets = targets[i]
         targets[:, 1:5] = new[i]
         new_segments = np.array(new_segments)[i]
