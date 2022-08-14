@@ -17,13 +17,12 @@ import pandas as pd
 import requests
 import torch
 import torch.nn as nn
-import yaml
 from PIL import Image
 from torch.cuda import amp
 
 from utils.dataloaders import exif_transpose, letterbox
-from utils.general import (LOGGER, check_requirements, check_suffix, check_version, colorstr, increment_path,
-                           make_divisible, non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh)
+from utils.general import (LOGGER, ROOT, check_requirements, check_suffix, check_version, colorstr, increment_path,
+                           make_divisible, non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh, yaml_load)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, smart_inference_mode, time_sync
 
@@ -322,14 +321,11 @@ class DetectMultiBackend(nn.Module):
 
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
-        pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = self.model_type(w)  # get backend
+        pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = self._model_type(w)  # get backend
         w = attempt_download(w)  # download if not local
         cuda = torch.cuda.is_available() and device.type != 'cpu'
         fp16 &= (pt or jit or onnx or engine) and cuda  # FP16
-        stride, names = 32, [f'class{i}' for i in range(1000)]  # assign defaults
-        if data:  # assign class names (optional)
-            with open(data, errors='ignore') as f:
-                names = yaml.safe_load(f)['names']
+        stride = 32  # default stride
 
         if pt:  # PyTorch
             model = attempt_load(weights if isinstance(weights, list) else w, device=device, inplace=True, fuse=fuse)
@@ -448,6 +444,13 @@ class DetectMultiBackend(nn.Module):
                 raise Exception('ERROR: YOLOv5 TF.js inference is not supported')
             else:
                 raise Exception(f'ERROR: {w} is not a supported format')
+
+        # class names
+        if 'names' not in locals():
+            names = yaml_load(data)['names'] if data else (f'class{i}' for i in range(999))
+        if len(names) == 1000 and names[0] == 'n01440764':  # ImageNet
+            names = yaml_load(ROOT / 'data/ImageNet.yaml')['names']  # human-readable names
+
         self.__dict__.update(locals())  # assign all variables to self
 
     def forward(self, im, augment=False, visualize=False, val=False):
@@ -528,7 +531,7 @@ class DetectMultiBackend(nn.Module):
                 self.forward(im)  # warmup
 
     @staticmethod
-    def model_type(p='path/to/model.pt'):
+    def _model_type(p='path/to/model.pt'):
         # Return model type from model path, i.e. path='path/to/model.onnx' -> type=onnx
         from export import export_formats
         suffixes = list(export_formats().Suffix) + ['.xml']  # export suffixes
@@ -542,8 +545,7 @@ class DetectMultiBackend(nn.Module):
     @staticmethod
     def _load_metadata(f='path/to/meta.yaml'):
         # Load metadata from meta.yaml if it exists
-        with open(f, errors='ignore') as f:
-            d = yaml.safe_load(f)
+        d = yaml_load(f)
         return d['stride'], d['names']  # assign stride, names
 
 

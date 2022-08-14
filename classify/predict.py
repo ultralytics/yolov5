@@ -13,7 +13,6 @@ from pathlib import Path
 
 import cv2
 import torch.nn.functional as F
-import yaml
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -55,9 +54,6 @@ def run(
     # Load model
     model = DetectMultiBackend(weights, device=device, dnn=dnn, fp16=half)
     model.warmup(imgsz=(1, 3, imgsz, imgsz))  # warmup
-    if len(model.names) == 1000:  # ImageNet
-        with open(ROOT / 'data/ImageNet.yaml', errors='ignore') as f:
-            model.names = yaml.safe_load(f)['names']  # human-readable names
 
     # Image
     t1 = time_sync()
