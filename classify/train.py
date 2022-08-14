@@ -249,7 +249,7 @@ def train(opt, device):
     # Train complete
     if RANK in {-1, 0} and final_epoch:
         LOGGER.info(f'\nTraining complete {(time.time() - t0) / 3600:.3f} hours.'
-                    f"\nResults saved to {colorstr('bold', save_dir)}")
+                    f"\nResults saved to {colorstr('bold', save_dir)}\n")
 
         # Plot examples
         images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
