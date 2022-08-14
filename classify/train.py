@@ -69,7 +69,7 @@ def train(opt, device):
         if not data_dir.is_dir():
             LOGGER.info(f'\nDataset not found ⚠️, missing path {data_dir}, attempting download...')
             t = time.time()
-            if data == 'imagenet':
+            if str(data) == 'imagenet':
                 subprocess.run(f"bash {ROOT / 'data/scripts/get_imagenet.sh'}", shell=True, check=True)
             else:
                 url = f'https://github.com/ultralytics/yolov5/releases/download/v1.0/{data}.zip'
@@ -266,10 +266,10 @@ def train(opt, device):
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='yolov5n', help='initial weights path')
-    parser.add_argument('--data', type=str, default='mnist2560', help='cifar10, cifar100, mnist, imagenet, etc.')
+    parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100, mnist, imagenet, etc.')
     parser.add_argument('--epochs', type=int, default=1)
     parser.add_argument('--batch-size', type=int, default=64, help='total batch size for all GPUs')
-    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=64, help='train, val image size (pixels)')
+    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=224, help='train, val image size (pixels)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
