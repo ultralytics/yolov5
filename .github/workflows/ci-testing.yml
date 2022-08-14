@@ -106,6 +106,7 @@ jobs:
           # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
           m=${{ matrix.model }}  # official weights
           b=runs/train/exp/weights/best  # best.pt checkpoint
+          bc=runs/train-cls/exp/weights/best  # best.pt classification checkpoint
           python train.py --imgsz 64 --batch 32 --weights $m.pt --cfg $m.yaml --epochs 1 --device cpu  # train
           for d in cpu; do  # devices
             for w in $m $b; do  # weights
@@ -117,9 +118,14 @@ jobs:
           # python models/tf.py --weights $m.pt  # build TF model
           python models/yolo.py --cfg $m.yaml  # build PyTorch model
           python export.py --weights $m.pt --img 64 --include torchscript  # export
+          python classify/train.py --imgsz 32 --model $m --data mnist2560 --epochs 1  # train cls
+          python classify/val.py --imgsz 32 --weights $bc.pt --data mnist2560  # val cls
+          python classify/predict.py --imgsz 32 --weights $bc.pt --source ../datasets/mnist2560/test/7/60.png
+          python classify/predict.py --imgsz 32 --weights $m-cls.pt --source data/images/bus.jpg  # predict cls
           python - <<EOF
           import torch
           for path in '$m', '$b':
               model = torch.hub.load('.', 'custom', path=path, source='local')
               print(model('data/images/bus.jpg'))
           EOF
+
