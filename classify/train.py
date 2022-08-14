@@ -22,7 +22,6 @@ import torch.hub as hub
 import torch.nn as nn
 import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
-import yaml
 from torch.cuda import amp
 from tqdm import tqdm
 
@@ -35,7 +34,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from classify import val as validate
 from utils.dataloaders import create_classification_dataloader
 from utils.general import (DATASETS_DIR, LOGGER, WorkingDirectory, check_git_status, check_requirements, colorstr,
-                           download, increment_path, init_seeds, print_args)
+                           download, increment_path, init_seeds, print_args, yaml_save)
 from utils.loggers import GenericLogger
 from utils.plots import imshow_cls
 from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_hub_load, smart_optimizer,
@@ -49,7 +48,7 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 def train(opt, device):
     init_seeds(opt.seed + 1 + RANK, deterministic=True)
     save_dir, data, bs, epochs, nw, imgsz, pretrained = \
-        Path(opt.save_dir), Path(opt.data), opt.batch_size, opt.epochs, min(os.cpu_count() - 1, opt.workers), \
+        opt.save_dir, Path(opt.data), opt.batch_size, opt.epochs, min(os.cpu_count() - 1, opt.workers), \
         opt.imgsz, str(opt.pretrained).lower() == 'true'
     cuda = device.type != 'cpu'
 
@@ -59,8 +58,7 @@ def train(opt, device):
     last, best = wdir / 'last.pt', wdir / 'best.pt'
 
     # Save run settings
-    with open(save_dir / 'opt.yaml', 'w') as f:
-        yaml.safe_dump(vars(opt), f, sort_keys=False)
+    yaml_save(save_dir / 'opt.yaml', vars(opt))
 
     # Logger
     logger = GenericLogger(opt=opt, console_logger=LOGGER) if RANK in {-1, 0} else None
