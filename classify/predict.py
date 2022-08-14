@@ -60,7 +60,8 @@ def run(
 
     # Image
     t1 = time_sync()
-    im = transforms(Image.open(file)).unsqueeze(0)
+    im = transforms(Image.open(file)).unsqueeze(0).to(device)
+    im = im.half() if model.fp16 else im.float()
     t2 = time_sync()
     dt[0] += t2 - t1
 
