@@ -53,7 +53,7 @@ def run(
 
     # Load model
     device = select_device(device)
-    model = DetectMultiBackend(weights, device=device, dnn=dnn, data=None, fp16=half)
+    model = DetectMultiBackend(weights, device=device, dnn=dnn, fp16=half)
     model.warmup(imgsz=(1, 3, imgsz, imgsz))  # warmup
     if len(model.names) == 1000:  # ImageNet
         with open(ROOT / 'data/ImageNet.yaml', errors='ignore') as f:
