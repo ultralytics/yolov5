@@ -44,7 +44,8 @@ def run(
         dataloader=None,
         names=None,
         criterion=None,
-        pbar=None):
+        pbar=None,
+):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
