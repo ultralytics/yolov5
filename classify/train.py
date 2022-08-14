@@ -32,7 +32,6 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from classify import val as validate
-from utils.augmentations import denormalize
 from utils.dataloaders import create_classification_dataloader
 from utils.general import (DATASETS_DIR, LOGGER, WorkingDirectory, check_git_status, check_requirements, colorstr,
                            download, increment_path, init_seeds, print_args)
@@ -135,7 +134,7 @@ def train(opt, device):
         if opt.verbose:
             LOGGER.info(model)
         images, labels = next(iter(trainloader))
-        file = imshow_cls(denormalize(images[:25]), labels[:25], names=names, f=save_dir / 'train_images.jpg')
+        file = imshow_cls(images[:25], labels[:25], names=names, f=save_dir / 'train_images.jpg', verbose=True)
         logger.log_images(file, name='Train Examples')
         logger.log_graph(model, imgsz)  # log model
 
@@ -254,7 +253,7 @@ def train(opt, device):
         # Plot examples
         images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
         pred = torch.max(ema.ema((images.half() if cuda else images.float()).to(device)), 1)[1]
-        file = imshow_cls(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
+        file = imshow_cls(images, labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
 
         # Log results
         meta = {"epochs": epochs, "top1_acc": best_fitness, "date": datetime.now().isoformat()}
