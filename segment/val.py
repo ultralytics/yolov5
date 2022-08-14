@@ -300,7 +300,7 @@ def run(
                             shape=im[si].shape[1:]).permute(2, 0, 1).contiguous()
             if plots and batch_i < 3:
                 # filter top 15 to plot
-                plot_masks.append(pred_masks[:15].cpu())
+                plot_masks.append(torch.as_tensor(pred_masks[:15], dtype=torch.uint8).cpu())
 
             # Predictions
             if single_cls:
@@ -388,8 +388,7 @@ def run(
     # Save JSON
     if save_json and len(jdict):
         w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
-        # anno_json = str(Path(data.get('path', '../coco')) / 'annotations/instances_val2017.json')  # annotations json
-        anno_json = "/d/dataset/COCO/annotations/instances_val2017.json"
+        anno_json = str(Path(data.get('path', '../coco')) / 'annotations/instances_val2017.json')  # annotations json
         pred_json = str(save_dir / f"{w}_predictions.json")  # predictions json
         LOGGER.info(f'\nEvaluating pycocotools mAP... saving {pred_json}...')
         with open(pred_json, 'w') as f:
