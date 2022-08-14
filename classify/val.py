@@ -78,7 +78,6 @@ def run(
                                                       imgsz=imgsz,
                                                       batch_size=batch_size,
                                                       augment=False,
-                                                      cache=opt.cache,
                                                       rank=-1,
                                                       workers=workers)
 
