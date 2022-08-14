@@ -72,6 +72,7 @@ def run(
                 LOGGER.info(f'Forcing --batch-size 1 square inference (1,3,{imgsz},{imgsz}) for non-PyTorch models')
 
         # Dataloader
+        data = Path(data)
         test_dir = data / 'test' if (data / 'test').exists() else data / 'val'  # data/test or data/val
         dataloader = create_classification_dataloader(path=test_dir,
                                                       imgsz=imgsz,
