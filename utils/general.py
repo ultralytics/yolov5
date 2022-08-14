@@ -594,10 +594,12 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
                 else:
                     LOGGER.warning(f'Failed to download {url}...')
 
-        if unzip and success and f.suffix in ('.zip', '.gz'):
+        if unzip and success and f.suffix in ('.zip', '.tar', '.gz'):
             LOGGER.info(f'Unzipping {f}...')
             if f.suffix == '.zip':
                 ZipFile(f).extractall(path=dir)  # unzip
+            elif f.suffix == '.tar':
+                os.system(f'tar xf {f} --directory {f.parent}')  # unzip
             elif f.suffix == '.gz':
                 os.system(f'tar xfz {f} --directory {f.parent}')  # unzip
             if delete:
