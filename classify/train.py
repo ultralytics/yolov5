@@ -16,13 +16,13 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
-import yaml
 import torch
 import torch.distributed as dist
 import torch.hub as hub
 import torch.nn as nn
 import torch.optim.lr_scheduler as lr_scheduler
 import torchvision
+import yaml
 from torch.cuda import amp
 from tqdm import tqdm
 
