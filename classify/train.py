@@ -38,7 +38,7 @@ from utils.general import (DATASETS_DIR, LOGGER, WorkingDirectory, check_git_sta
 from utils.loggers import GenericLogger
 from utils.plots import imshow_cls
 from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_hub_load, smart_optimizer,
-                               torch_distributed_zero_first, update_classifier_model)
+                               smartCrossEntropyLoss, torch_distributed_zero_first, update_classifier_model)
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -161,7 +161,7 @@ def train(opt, device):
 
     # Train
     t0 = time.time()
-    criterion = nn.CrossEntropyLoss(label_smoothing=opt.label_smoothing)  # loss function
+    criterion = smartCrossEntropyLoss(label_smoothing=opt.label_smoothing)  # loss function
     best_fitness = 0.0
     scaler = amp.GradScaler(enabled=cuda)
     val = test_dir.stem  # 'val' or 'test'

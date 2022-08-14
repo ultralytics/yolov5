@@ -42,6 +42,16 @@ def smart_inference_mode(torch_1_9=check_version(torch.__version__, '1.9.0')):
     return decorate
 
 
+def smartCrossEntropyLoss(label_smoothing=0.0):
+    # Returns nn.CrossEntropyLoss with label smoothing enabled for torch>=1.10.0
+    if check_version(torch.__version__, '1.10.0'):
+        return nn.CrossEntropyLoss(label_smoothing=label_smoothing)  # loss function
+    else:
+        if label_smoothing > 0:
+            LOGGER.warning(f'WARNING: label smoothing {label_smoothing} requires torch>=1.10.0')
+        return nn.CrossEntropyLoss()  # loss function
+
+
 def smart_DDP(model):
     # Model DDP creation with checks
     assert not check_version(torch.__version__, '1.12.0', pinned=True), \
