@@ -251,10 +251,12 @@ def train(opt, device):
         LOGGER.info(f'\nTraining complete {(time.time() - t0) / 3600:.3f} hours.'
                     f"\nResults saved to {colorstr('bold', save_dir)}")
 
-        # Show predictions
+        # Plot examples
         images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
-        pred = torch.max(ema.ema(images.to(device)), 1)[1]
+        pred = torch.max(ema.ema((images.half() if cuda else images.float()).to(device)), 1)[1]
         file = imshow_cls(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
+
+        # Log results
         meta = {"epochs": epochs, "top1_acc": best_fitness, "date": datetime.now().isoformat()}
         logger.log_images(file, name='Test Examples (true-predicted)', epoch=epoch)
         logger.log_model(best, epochs, metadata=meta)
