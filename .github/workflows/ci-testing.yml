@@ -134,7 +134,7 @@ jobs:
           m=${{ matrix.model }}  # official weights
           b=runs/train-cls/exp/weights/best  # best.pt classification checkpoint
           python classify/train.py --imgsz 32 --model $m --data mnist2560 --epochs 1  # train cls
-          python classify/val.py --imgsz 32 --weights $b.pt --data mnist2560  # val cls
+          python classify/val.py --imgsz 32 --weights $b.pt --data ../datasets/mnist2560  # val cls
           python classify/predict.py --imgsz 32 --weights $b.pt --source ../datasets/mnist2560/test/7/60.png
           python classify/predict.py --imgsz 32 --weights $m-cls.pt --source data/images/bus.jpg  # predict cls
           python export.py --weights $b.pt --img 64 --imgsz 224 --include torchscript  # export
