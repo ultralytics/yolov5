@@ -77,7 +77,7 @@ class Loggers():
             self.logger.info(s)
         if not clearml:
             prefix = colorstr('ClearML: ')
-            s = f"{prefix}run 'pip install clearml' to automatically track, visualize and remotely train YOLOv5 🚀 runs in ClearML"
+            s = f"{prefix}run 'pip install clearml' to automatically track, visualize and remotely train YOLOv5 🚀 in ClearML"
             self.logger.info(s)
 
         # TensorBoard

@@ -2,21 +2,12 @@
 """
 Train a YOLOv5 classifier model on a classification dataset
 
-Usage - train:
-    $ python classifier.py --model yolov5s --data cifar100 --epochs 5 --img 224 --batch 128
-    $ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 classifier.py --model yolov5s --data imagenet --epochs 5 --img 224 --device 4,5,6,7
-
-Usage - inference:
-    from classifier import *
-
-    model = torch.load('path/to/best.pt', map_location=torch.device('cpu'))['model'].float()
-    files = Path('../datasets/mnist/test/7').glob('*.png')  # images from dir
-    for f in list(files)[:10]:  # first 10 images
-        classify(model, size=128, file=f)
+Usage:
+    $ python classify/train.py --model yolov5s --data cifar100 --epochs 5 --img 224 --batch 128
+    $ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 classify/train.py --model yolov5s --data imagenet --epochs 5 --img 224 --device 0,1,2,3
 """
 
 import argparse
-import math
 import os
 import subprocess
 import sys
@@ -35,18 +26,20 @@ from torch.cuda import amp
 from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # YOLOv5 root directory
+ROOT = FILE.parents[1]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from utils.augmentations import denormalize, normalize
+from classify import val as validate
+from utils.augmentations import denormalize
 from utils.dataloaders import create_classification_dataloader
-from utils.general import (LOGGER, check_git_status, check_requirements, colorstr, download, increment_path, init_seeds,
-                           print_args)
+from utils.general import (DATASETS_DIR, LOGGER, WorkingDirectory, check_git_status, check_requirements, colorstr, download,
+                           increment_path, init_seeds, print_args)
 from utils.loggers import GenericLogger
-from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_hub_load, smart_inference_mode,
-                               smart_optimizer, torch_distributed_zero_first, update_classifier_model)
+from utils.plots import imshow_cls
+from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_hub_load, smart_optimizer,
+                               torch_distributed_zero_first, update_classifier_model)
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -70,7 +63,7 @@ def train(opt, device):
 
     # Download Dataset
     with torch_distributed_zero_first(LOCAL_RANK):
-        data_dir = data if data.is_dir() else (FILE.parents[1] / 'datasets' / data)
+        data_dir = data if data.is_dir() else (DATASETS_DIR / data)
         if not data_dir.is_dir():
             LOGGER.info(f'\nDataset not found ⚠️, missing path {data_dir}, attempting download...')
             t = time.time()
@@ -108,10 +101,10 @@ def train(opt, device):
 
     # Model
     repo1, repo2 = 'ultralytics/yolov5', 'pytorch/vision'
-    with torch_distributed_zero_first(LOCAL_RANK):
+    with torch_distributed_zero_first(LOCAL_RANK), WorkingDirectory(ROOT):
         if opt.model == 'list':
             m = hub.list(repo1) + hub.list(repo2)  # models
-            LOGGER.info('\nAvailable models. Usage: python classifier.py --model MODEL\n' + '\n'.join(m))
+            LOGGER.info('\nAvailable models. Usage: python classify/train.py --model MODEL\n' + '\n'.join(m))
             return
         elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. yolov5s, yolov5m
             from models.yolo import ClassificationModel
@@ -142,7 +135,7 @@ def train(opt, device):
         if opt.verbose:
             LOGGER.info(model)
         images, labels = next(iter(trainloader))
-        file = imshow(denormalize(images[:25]), labels[:25], names=names, f=save_dir / 'train_images.jpg')
+        file = imshow_cls(denormalize(images[:25]), labels[:25], names=names, f=save_dir / 'train_images.jpg')
         logger.log_images(file, name='Train Examples')
         logger.log_graph(model, imgsz)  # log model
 
@@ -210,7 +203,11 @@ def train(opt, device):
 
                 # Test
                 if i == len(pbar) - 1:  # last batch
-                    top1, top5, vloss = test(ema.ema, testloader, names, criterion, pbar=pbar)  # test accuracy, loss
+                    top1, top5, vloss = validate.run(model=ema.ema,
+                                                     dataloader=testloader,
+                                                     names=names,
+                                                     criterion=criterion,
+                                                     pbar=pbar)  # test accuracy, loss
                     fitness = top1  # define fitness as top1 accuracy
 
         # Scheduler
@@ -257,117 +254,24 @@ def train(opt, device):
         # Show predictions
         images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
         pred = torch.max(ema.ema(images.to(device)), 1)[1]
-        file = imshow(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
+        file = imshow_cls(denormalize(images), labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
         meta = {"epochs": epochs, "top1_acc": best_fitness, "date": datetime.now().isoformat()}
         logger.log_images(file, name='Test Examples (true-predicted)', epoch=epoch)
         logger.log_model(best, epochs, metadata=meta)
 
 
-@smart_inference_mode()
-def test(model, dataloader, names, criterion=None, verbose=False, pbar=None):
-    model.eval()
-    device = next(model.parameters()).device
-    pred, targets, loss = [], [], 0
-    n = len(dataloader)  # number of batches
-    action = 'validating' if dataloader.dataset.root.stem == 'val' else 'testing'
-    desc = f"{pbar.desc[:-36]}{action:>36}"
-    bar = tqdm(dataloader, desc, n, False, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
-    with amp.autocast(enabled=device.type != 'cpu'):
-        for images, labels in bar:
-            images, labels = images.to(device, non_blocking=True), labels.to(device)
-            y = model(images)
-            pred.append(y.argsort(1, descending=True)[:, :5])
-            targets.append(labels)
-            if criterion:
-                loss += criterion(y, labels)
-
-    loss /= n
-    pred, targets = torch.cat(pred), torch.cat(targets)
-    correct = (targets[:, None] == pred).float()
-    acc = torch.stack((correct[:, 0], correct.max(1).values), dim=1)  # (top1, top5) accuracy
-    top1, top5 = acc.mean(0).tolist()
-
-    if pbar:
-        pbar.desc = f"{pbar.desc[:-36]}{loss:>12.3g}{top1:>12.3g}{top5:>12.3g}"
-    if verbose:  # all classes
-        LOGGER.info(f"{'Class':>20}{'Images':>12}{'top1_acc':>12}{'top5_acc':>12}")
-        LOGGER.info(f"{'all':>20}{targets.shape[0]:>12}{top1:>12.3g}{top5:>12.3g}")
-        for i, c in enumerate(names):
-            aci = acc[targets == i]
-            top1i, top5i = aci.mean(0).tolist()
-            LOGGER.info(f"{c:>20}{aci.shape[0]:>12}{top1i:>12.3g}{top5i:>12.3g}")
-
-    return top1, top5, loss
-
-
-@smart_inference_mode()
-def classify(model, size=128, file='../datasets/mnist/test/3/30.png', plot=False):
-    # YOLOv5 classification model inference
-    import cv2
-    import numpy as np
-    import torch.nn.functional as F
-
-    resize = torch.nn.Upsample(size=(size, size), mode='bilinear', align_corners=False)  # image resize
-
-    # Image
-    im = cv2.imread(str(file))[..., ::-1]  # HWC, BGR to RGB
-    im = np.ascontiguousarray(np.asarray(im).transpose((2, 0, 1)))  # HWC to CHW
-    im = torch.tensor(im).float().unsqueeze(0) / 255.0  # to Tensor, to BCWH, rescale
-    im = resize(im)
-
-    # Inference
-    results = model(normalize(im))
-    p = F.softmax(results, dim=1)  # probabilities
-    i = p.argmax()  # max index
-    LOGGER.info(f'{file} prediction: {i} ({p[0, i]:.2f})')
-
-    # Plot
-    if plot:
-        imshow(im, f=Path(file).name)
-
-    return p
-
-
-def imshow(img, labels=None, pred=None, names=None, nmax=25, verbose=False, f=Path('images.jpg')):
-    # Show classification image grid with labels (optional) and predictions (optional)
-    import matplotlib.pyplot as plt
-
-    names = names or [f'class{i}' for i in range(1000)]
-    blocks = torch.chunk(img.cpu(), len(img), dim=0)  # select batch index 0, block by channels
-    n = min(len(blocks), nmax)  # number of plots
-    m = min(8, round(n ** 0.5))  # 8 x 8 default
-    fig, ax = plt.subplots(math.ceil(n / m), m)  # 8 rows x n/8 cols
-    ax = ax.ravel() if m > 1 else [ax]
-    # plt.subplots_adjust(wspace=0.05, hspace=0.05)
-    for i in range(n):
-        ax[i].imshow(blocks[i].squeeze().permute((1, 2, 0)).numpy().clip(0.0, 1.0))
-        ax[i].axis('off')
-        if labels is not None:
-            s = names[labels[i]] + (f'—{names[pred[i]]}' if pred is not None else '')
-            ax[i].set_title(s, fontsize=8, verticalalignment='top')
-    plt.savefig(f, dpi=300, bbox_inches='tight')
-    plt.close()
-    LOGGER.info(colorstr('imshow: ') + f"examples saved to {f}")
-    if verbose:
-        if labels is not None:
-            LOGGER.info('True:     ' + ' '.join(f'{names[i]:3s}' for i in labels[:nmax]))
-        if pred is not None:
-            LOGGER.info('Predicted:' + ' '.join(f'{names[i]:3s}' for i in pred[:nmax]))
-    return f
-
-
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='yolov5s', help='initial weights path')
-    parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100, mnist or fashion-mnist')
+    parser.add_argument('--data', type=str, default='mnist2560', help='cifar10, cifar100, mnist or fashion-mnist')
     parser.add_argument('--epochs', type=int, default=90)
     parser.add_argument('--batch-size', type=int, default=64, help='total batch size for all GPUs')
-    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=224, help='train, val image size (pixels)')
+    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=128, help='train, val image size (pixels)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
-    parser.add_argument('--project', default='runs/train', help='save to project/name')
+    parser.add_argument('--project', default=ROOT / 'runs/train-cls', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--pretrained', nargs='?', const=True, default=True, help='start from i.e. --pretrained False')
@@ -407,7 +311,7 @@ def main(opt):
 
 
 def run(**kwargs):
-    # Usage: import classifier; classifier.run(data=mnist, imgsz=320, model='yolov5m')
+    # Usage: from yolov5 import classify; classify.train.run(data=mnist, imgsz=320, model='yolov5m')
     opt = parse_opt(True)
     for k, v in kwargs.items():
         setattr(opt, k, v)
