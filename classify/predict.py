@@ -79,7 +79,7 @@ def run(
 
     # Plot
     if show:
-        imshow_cls(denormalize(im), f=save_dir / Path(file).name)
+        imshow_cls(denormalize(im), f=save_dir / Path(file).name, verbose=True)
 
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
