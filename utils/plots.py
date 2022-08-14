@@ -18,11 +18,9 @@ import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.augmentations import normalize
 from utils.general import (CONFIG_DIR, FONT, LOGGER, Timeout, check_font, check_requirements, clip_coords,
                            increment_path, is_ascii, threaded, try_except, xywh2xyxy, xyxy2xywh)
 from utils.metrics import fitness
-from utils.torch_utils import smart_inference_mode
 
 # Settings
 RANK = int(os.getenv('RANK', -1))
@@ -390,14 +388,12 @@ def plot_labels(labels, names=(), save_dir=Path('')):
     plt.close()
 
 
-@smart_inference_mode()
 def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f=Path('images.jpg')):
     # Show classification image grid with labels (optional) and predictions (optional)
-    import matplotlib.pyplot as plt
+    from utils.augmentations import denormalize
 
     names = names or [f'class{i}' for i in range(1000)]
-    im = normalize(im)
-    blocks = torch.chunk(im.cpu(), len(im), dim=0)  # select batch index 0, block by channels
+    blocks = torch.chunk(denormalize(im).cpu(), len(im), dim=0)  # select batch index 0, block by channels
     n = min(len(blocks), nmax)  # number of plots
     m = min(8, round(n ** 0.5))  # 8 x 8 default
     fig, ax = plt.subplots(math.ceil(n / m), m)  # 8 rows x n/8 cols

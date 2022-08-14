@@ -50,9 +50,9 @@ class Albumentations:
         return im, labels
 
 
-def normalize(x, mean=IMAGENET_MEAN, std=IMAGENET_STD):
+def normalize(x, mean=IMAGENET_MEAN, std=IMAGENET_STD, inplace=False):
     # Denormalize RGB images x per ImageNet stats in BCHW format, i.e. = (x - mean) / std
-    return TF.normalize(x, mean, std, inplace=True)
+    return TF.normalize(x, mean, std, inplace=inplace)
 
 
 def denormalize(x, mean=IMAGENET_MEAN, std=IMAGENET_STD):
