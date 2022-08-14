@@ -139,7 +139,7 @@ def train(opt, device):
         if opt.verbose:
             LOGGER.info(model)
         images, labels = next(iter(trainloader))
-        file = imshow_cls(images[:25], labels[:25], names=names, f=save_dir / 'train_images.jpg', verbose=True)
+        file = imshow_cls(images[:25], labels[:25], names=names, f=save_dir / 'train_images.jpg')
         logger.log_images(file, name='Train Examples')
         logger.log_graph(model, imgsz)  # log model
 
