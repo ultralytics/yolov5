@@ -11,9 +11,9 @@ import os
 import sys
 from pathlib import Path
 
+import cv2
 import torch.nn.functional as F
 import yaml
-from PIL import Image
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -41,18 +41,18 @@ def run(
         name='exp',  # save to project/name
         exist_ok=False,  # existing project/name ok, do not increment
 ):
+    file = str(source)
     seen, dt = 1, [0.0, 0.0, 0.0]
+    device = select_device(device)
 
     # Directories
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
-    # YOLOv5 classification model inference
-    file = str(source)
+    # Transforms
     transforms = classify_transforms(imgsz)
 
     # Load model
-    device = select_device(device)
     model = DetectMultiBackend(weights, device=device, dnn=dnn, fp16=half)
     model.warmup(imgsz=(1, 3, imgsz, imgsz))  # warmup
     if len(model.names) == 1000:  # ImageNet
@@ -61,7 +61,8 @@ def run(
 
     # Image
     t1 = time_sync()
-    im = transforms(Image.open(file)).unsqueeze(0).to(device)
+    im = cv2.cvtColor(cv2.imread(file), cv2.COLOR_BGR2RGB)
+    im = transforms(im).unsqueeze(0).to(device)
     im = im.half() if model.fp16 else im.float()
     t2 = time_sync()
     dt[0] += t2 - t1
