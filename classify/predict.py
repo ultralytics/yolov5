@@ -22,10 +22,10 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from classify.train import imshow_cls
-from utils.augmentations import classify_transforms, denormalize
-from utils.general import LOGGER, check_requirements, print_args, increment_path, colorstr
-from utils.torch_utils import select_device, smart_inference_mode, time_sync
 from models.common import DetectMultiBackend
+from utils.augmentations import classify_transforms, denormalize
+from utils.general import LOGGER, check_requirements, colorstr, increment_path, print_args
+from utils.torch_utils import select_device, smart_inference_mode, time_sync
 
 
 @smart_inference_mode()

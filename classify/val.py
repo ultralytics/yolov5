@@ -20,10 +20,10 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from utils.general import LOGGER, check_requirements, print_args, increment_path, check_img_size
-from utils.torch_utils import select_device, smart_inference_mode
 from models.common import DetectMultiBackend
 from utils.dataloaders import create_classification_dataloader
+from utils.general import LOGGER, check_img_size, check_requirements, increment_path, print_args
+from utils.torch_utils import select_device, smart_inference_mode
 
 
 @smart_inference_mode()
@@ -44,8 +44,7 @@ def run(
         dataloader=None,
         names=None,
         criterion=None,
-        pbar=None
-):
+        pbar=None):
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py

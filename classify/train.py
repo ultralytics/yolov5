@@ -34,8 +34,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from classify import val as validate
 from utils.augmentations import denormalize
 from utils.dataloaders import create_classification_dataloader
-from utils.general import (DATASETS_DIR, LOGGER, WorkingDirectory, check_git_status, check_requirements, colorstr, download,
-                           increment_path, init_seeds, print_args)
+from utils.general import (DATASETS_DIR, LOGGER, WorkingDirectory, check_git_status, check_requirements, colorstr,
+                           download, increment_path, init_seeds, print_args)
 from utils.loggers import GenericLogger
 from utils.plots import imshow_cls
 from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_hub_load, smart_optimizer,
