@@ -22,28 +22,28 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import DetectMultiBackend
 from utils.dataloaders import create_classification_dataloader
-from utils.general import LOGGER, check_img_size, check_requirements, increment_path, print_args
-from utils.torch_utils import select_device, smart_inference_mode
+from utils.general import LOGGER, check_img_size, check_requirements, colorstr, increment_path, print_args
+from utils.torch_utils import select_device, smart_inference_mode, time_sync
 
 
 @smart_inference_mode()
 def run(
-    data=ROOT / '../datasets/mnist',  # dataset dir
-    weights=None,  # model.pt path(s)
-    batch_size=128,  # batch size
-    imgsz=224,  # inference size (pixels)
-    device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-    workers=8,  # max dataloader workers (per RANK in DDP mode)
-    verbose=False,  # verbose output
-    project=ROOT / 'runs/val-cls',  # save to project/name
-    name='exp',  # save to project/name
-    exist_ok=False,  # existing project/name ok, do not increment
-    half=True,  # use FP16 half-precision inference
-    dnn=False,  # use OpenCV DNN for ONNX inference
-    model=None,
-    dataloader=None,
-    criterion=None,
-    pbar=None,
+        data=ROOT / '../datasets/mnist',  # dataset dir
+        weights=None,  # model.pt path(s)
+        batch_size=128,  # batch size
+        imgsz=224,  # inference size (pixels)
+        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+        workers=8,  # max dataloader workers (per RANK in DDP mode)
+        verbose=False,  # verbose output
+        project=ROOT / 'runs/val-cls',  # save to project/name
+        name='exp',  # save to project/name
+        exist_ok=False,  # existing project/name ok, do not increment
+        half=True,  # use FP16 half-precision inference
+        dnn=False,  # use OpenCV DNN for ONNX inference
+        model=None,
+        dataloader=None,
+        criterion=None,
+        pbar=None,
 ):
     # Initialize/load model and set device
     training = model is not None
@@ -82,19 +82,27 @@ def run(
                                                       workers=workers)
 
     model.eval()
-    pred, targets, loss = [], [], 0
+    pred, targets, loss, dt = [], [], 0, [0.0, 0.0, 0.0]
     n = len(dataloader)  # number of batches
     action = 'validating' if dataloader.dataset.root.stem == 'val' else 'testing'
     desc = f"{pbar.desc[:-36]}{action:>36}" if pbar else f"{action}"
     bar = tqdm(dataloader, desc, n, not training, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
     with torch.cuda.amp.autocast(enabled=device.type != 'cpu'):
         for images, labels in bar:
+            t1 = time_sync()
             images, labels = images.to(device, non_blocking=True), labels.to(device)
+            t2 = time_sync()
+            dt[0] += t2 - t1
+
             y = model(images)
+            t3 = time_sync()
+            dt[1] += t3 - t2
+
             pred.append(y.argsort(1, descending=True)[:, :5])
             targets.append(labels)
             if criterion:
                 loss += criterion(y, labels)
+            dt[2] += time_sync() - t3
 
     loss /= n
     pred, targets = torch.cat(pred), torch.cat(targets)
@@ -111,6 +119,12 @@ def run(
             aci = acc[targets == i]
             top1i, top5i = aci.mean(0).tolist()
             LOGGER.info(f"{c:>20}{aci.shape[0]:>12}{top1i:>12.3g}{top5i:>12.3g}")
+
+        # Print results
+        t = tuple(x / len(dataloader.dataset.samples) * 1E3 for x in dt)  # speeds per image
+        shape = (1, 3, imgsz, imgsz)
+        LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms post-process per image at shape {shape}' % t)
+        LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
 
     return top1, top5, loss
 
