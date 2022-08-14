@@ -16,6 +16,7 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
+import yaml
 import torch
 import torch.distributed as dist
 import torch.hub as hub
@@ -56,6 +57,10 @@ def train(opt, device):
     wdir = save_dir / 'weights'
     wdir.mkdir(parents=True, exist_ok=True)  # make dir
     last, best = wdir / 'last.pt', wdir / 'best.pt'
+
+    # Save run settings
+    with open(save_dir / 'opt.yaml', 'w') as f:
+        yaml.safe_dump(vars(opt), f, sort_keys=False)
 
     # Logger
     logger = GenericLogger(opt=opt, console_logger=LOGGER) if RANK in {-1, 0} else None
@@ -204,7 +209,6 @@ def train(opt, device):
                 if i == len(pbar) - 1:  # last batch
                     top1, top5, vloss = validate.run(model=ema.ema,
                                                      dataloader=testloader,
-                                                     names=names,
                                                      criterion=criterion,
                                                      pbar=pbar)  # test accuracy, loss
                     fitness = top1  # define fitness as top1 accuracy
@@ -263,11 +267,11 @@ def train(opt, device):
 
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default='yolov5s', help='initial weights path')
-    parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100, mnist, imagenet, etc.')
-    parser.add_argument('--epochs', type=int, default=90)
+    parser.add_argument('--model', type=str, default='yolov5n', help='initial weights path')
+    parser.add_argument('--data', type=str, default='mnist2560', help='cifar10, cifar100, mnist, imagenet, etc.')
+    parser.add_argument('--epochs', type=int, default=1)
     parser.add_argument('--batch-size', type=int, default=64, help='total batch size for all GPUs')
-    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=224, help='train, val image size (pixels)')
+    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=64, help='train, val image size (pixels)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')

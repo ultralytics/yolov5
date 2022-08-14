@@ -42,7 +42,6 @@ def run(
     dnn=False,  # use OpenCV DNN for ONNX inference
     model=None,
     dataloader=None,
-    names=None,
     criterion=None,
     pbar=None,
 ):
@@ -85,8 +84,8 @@ def run(
     pred, targets, loss = [], [], 0
     n = len(dataloader)  # number of batches
     action = 'validating' if dataloader.dataset.root.stem == 'val' else 'testing'
-    desc = f"{pbar.desc[:-36]}{action:>36}"
-    bar = tqdm(dataloader, desc, n, False, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
+    desc = f"{pbar.desc[:-36]}{action:>36}" if pbar else f"{action}"
+    bar = tqdm(dataloader, desc, n, not training, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
     with torch.cuda.amp.autocast(enabled=device.type != 'cpu'):
         for images, labels in bar:
             images, labels = images.to(device, non_blocking=True), labels.to(device)
@@ -107,7 +106,7 @@ def run(
     if verbose:  # all classes
         LOGGER.info(f"{'Class':>20}{'Images':>12}{'top1_acc':>12}{'top5_acc':>12}")
         LOGGER.info(f"{'all':>20}{targets.shape[0]:>12}{top1:>12.3g}{top5:>12.3g}")
-        for i, c in enumerate(names):
+        for i, c in enumerate(model.names):
             aci = acc[targets == i]
             top1i, top5i = aci.mean(0).tolist()
             LOGGER.info(f"{c:>20}{aci.shape[0]:>12}{top1i:>12.3g}{top5i:>12.3g}")
@@ -123,7 +122,7 @@ def parse_opt():
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=224, help='inference size (pixels)')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
-    parser.add_argument('--verbose', action='store_true', help='report mAP by class')
+    parser.add_argument('--verbose', nargs='?', const=True, default=True, help='verbose output')
     parser.add_argument('--project', default=ROOT / 'runs/val-cls', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
