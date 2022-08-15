@@ -33,13 +33,14 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from classify import val as validate
 from models.experimental import attempt_load
+from models.yolo import DetectionModel, ClassificationModel
 from utils.dataloaders import create_classification_dataloader
 from utils.general import (DATASETS_DIR, LOGGER, WorkingDirectory, check_git_status, check_requirements, colorstr,
                            download, increment_path, init_seeds, print_args, yaml_save)
 from utils.loggers import GenericLogger
 from utils.plots import imshow_cls
-from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_hub_load, smart_optimizer,
-                               smartCrossEntropyLoss, torch_distributed_zero_first, update_classifier_model)
+from utils.torch_utils import (ModelEMA, model_info, select_device, smart_DDP, smart_optimizer,
+                               smartCrossEntropyLoss, torch_distributed_zero_first, reshape_classifier_output)
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -103,25 +104,19 @@ def train(opt, device):
     with torch_distributed_zero_first(LOCAL_RANK), WorkingDirectory(ROOT):
         if Path(opt.model).is_file() or opt.model.endswith('.pt'):
             model = attempt_load(opt.model, device='cpu', fuse=False)
-        elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. yolov5s, yolov5m
-            model = smart_hub_load(repo1,
-                                   opt.model,
-                                   pretrained=pretrained,
-                                   _verbose=False,
-                                   autoshape=False,
-                                   device='cpu')  # detection model
-            if '-cls' not in opt.model:  # convert detect to classify model
-                from models.yolo import ClassificationModel
-                model = ClassificationModel(model=model, nc=nc, cutoff=opt.cutoff or 10)  # classification model
         elif opt.model in torchvision.models.__dict__:  # TorchVision models i.e. resnet50, efficientnet_b0
             model = torchvision.models.__dict__[opt.model](weights='IMAGENET1K_V1' if pretrained else None)
         else:
-            m = hub.list(repo1)  # + hub.list(repo2)  # models
+            m = hub.list(repo1, skip_validation=True)  # hub.list(repo2, skip_validation=True)  # models
             raise ModuleNotFoundError(f'--model {opt.model} not found. Available models are: \n' + '\n'.join(m))
-        update_classifier_model(model, nc)  # update class count
+        if isinstance(model, DetectionModel):
+            model = ClassificationModel(model=model, nc=nc, cutoff=opt.cutoff or 10)  # convert to classification model
+        reshape_classifier_output(model, nc)  # update class count
     for p in model.parameters():
         p.requires_grad = True  # for training
     for m in model.modules():
+        if not pretrained and hasattr(m, 'reset_parameters'):
+            m.reset_parameters()
         if isinstance(m, torch.nn.Dropout) and opt.dropout is not None:
             m.p = opt.dropout  # set dropout
     model = model.to(device)
