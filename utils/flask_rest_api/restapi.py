@@ -1,6 +1,6 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
-Run a Flask REST API exposing a YOLOv5s model
+Run a Flask REST API exposing one or more YOLOv5s models
 """
 
 import argparse
@@ -11,10 +11,9 @@ from flask import Flask, request
 from PIL import Image
 
 app = Flask(__name__)
+models = {}
 
 DETECTION_URL = "/v1/object-detection/<model>"
-
-models = {}
 
 
 @app.route(DETECTION_URL, methods=["POST"])
