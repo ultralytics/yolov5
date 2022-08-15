@@ -22,7 +22,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from classify.train import imshow_cls
 from models.common import DetectMultiBackend
-from utils.augmentations import classify_transforms, denormalize
+from utils.augmentations import classify_transforms
 from utils.general import LOGGER, check_requirements, colorstr, increment_path, print_args
 from utils.torch_utils import select_device, smart_inference_mode, time_sync
 
@@ -75,7 +75,7 @@ def run(
 
     # Plot
     if show:
-        imshow_cls(denormalize(im), f=save_dir / Path(file).name, verbose=True)
+        imshow_cls(im, f=save_dir / Path(file).name, verbose=True)
 
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
