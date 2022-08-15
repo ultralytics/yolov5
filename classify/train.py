@@ -248,11 +248,11 @@ def train(opt, device):
     if RANK in {-1, 0} and final_epoch:
         LOGGER.info(f'\nTraining complete ({(time.time() - t0) / 3600:.3f} hours)'
                     f"\nResults saved to {colorstr('bold', save_dir)}"
-                    f"\nPredict:            python classify/predict.py --weights {best} --source im.jpg"
-                    f"\nValidate:           python classify/val.py --weights {best} --data {data_dir}"
-                    f"\nExport:             python export.py --weights {best} --include onnx"
-                    f"\nPyTorch Hub:        model = torch.hub.load('ultralytics/yolov5', 'custom', '{best}')"
-                    f"\nVisualize:          https://netron.app\n")
+                    f"\nPredict:         python classify/predict.py --weights {best} --source im.jpg"
+                    f"\nValidate:        python classify/val.py --weights {best} --data {data_dir}"
+                    f"\nExport:          python export.py --weights {best} --include onnx"
+                    f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{best}')"
+                    f"\nVisualize:       https://netron.app\n")
 
         # Plot examples
         images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
