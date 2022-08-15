@@ -262,7 +262,7 @@ def train(opt, device):
 
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default='yolov5n', help='initial weights path')
+    parser.add_argument('--model', type=str, default='yolov5s-cls.pt', help='initial weights path')
     parser.add_argument('--data', type=str, default='mnist', help='cifar10, cifar100, mnist, imagenet, etc.')
     parser.add_argument('--epochs', type=int, default=1)
     parser.add_argument('--batch-size', type=int, default=64, help='total batch size for all GPUs')

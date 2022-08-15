@@ -29,7 +29,7 @@ from utils.torch_utils import select_device, smart_inference_mode, time_sync
 @smart_inference_mode()
 def run(
     data=ROOT / '../datasets/mnist',  # dataset dir
-    weights=None,  # model.pt path(s)
+    weights=ROOT / 'yolov5s-cls.pt',  # model.pt path(s)
     batch_size=128,  # batch size
     imgsz=224,  # inference size (pixels)
     device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
