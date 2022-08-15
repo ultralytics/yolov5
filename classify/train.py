@@ -255,7 +255,7 @@ def train(opt, device):
         # Plot examples
         images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
         pred = torch.max(ema.ema((images.half() if cuda else images.float()).to(device)), 1)[1]
-        file = imshow_cls(images, labels, pred, names, verbose=True, f=save_dir / 'test_images.jpg')
+        file = imshow_cls(images, labels, pred, names, verbose=False, f=save_dir / 'test_images.jpg')
 
         # Log results
         meta = {"epochs": epochs, "top1_acc": best_fitness, "date": datetime.now().isoformat()}
