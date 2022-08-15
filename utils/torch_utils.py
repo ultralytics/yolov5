@@ -65,7 +65,7 @@ def smart_DDP(model):
 
 def update_classifier_model(model, n=1000):
     # Update a TorchVision classification model to class count 'n'
-    name, m = list(model.named_modules())[-1]  # last module, use model.named_children() here?
+    name, m = list(model.named_children())[-1]  # last module
     if isinstance(m, nn.Linear):
         setattr(model, name, nn.Linear(m.in_features, n))
     elif isinstance(m, nn.Sequential):
