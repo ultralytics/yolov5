@@ -230,6 +230,7 @@ def train(opt, device):
                     'ema': None,  # deepcopy(ema.ema).half(),
                     'updates': ema.updates,
                     'optimizer': None,  # optimizer.state_dict(),
+                    'opt': vars(opt),
                     'date': datetime.now().isoformat()}
 
                 # Save last, best and delete
