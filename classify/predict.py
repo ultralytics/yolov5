@@ -73,14 +73,12 @@ def run(
     dt[2] += time_sync() - t3
     LOGGER.info(f"image 1/1 {file}: {imgsz}x{imgsz} {', '.join(f'{model.names[j]} {p[0, j]:.2f}' for j in i)}")
 
-    # Plot
-    if show:
-        imshow_cls(im, f=save_dir / Path(file).name, verbose=True)
-
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
     shape = (1, 3, imgsz, imgsz)
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms post-process per image at shape {shape}' % t)
+    if show:
+        imshow_cls(im, f=save_dir / Path(file).name, verbose=True)
     LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
     return p
 
