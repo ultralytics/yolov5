@@ -49,6 +49,6 @@ if __name__ == "__main__":
     if not opt.model:
         opt.model = ['yolov5s']
     for model in opt.model:
-        models[model] = torch.hub.load("ultralytics/yolov5", model, force_reload=True)   # force_reload to recache
+        models[model] = torch.hub.load("ultralytics/yolov5", model, force_reload=True)  # force_reload to recache
 
     app.run(host="0.0.0.0", port=opt.port)  # debug=True causes Restarting with stat
