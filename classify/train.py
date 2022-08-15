@@ -101,7 +101,7 @@ def train(opt, device):
     # Model
     repo1, repo2 = 'ultralytics/yolov5', 'pytorch/vision'
     with torch_distributed_zero_first(LOCAL_RANK), WorkingDirectory(ROOT):
-        if Path(opt.model).is_file():
+        if Path(opt.model).is_file() or opt.model.endswith('.pt'):
             model = attempt_load(opt.model, device='cpu', fuse=False)
         elif opt.model.startswith('yolov5'):  # YOLOv5 models, i.e. yolov5s, yolov5m
             model = smart_hub_load(repo1,
@@ -116,7 +116,7 @@ def train(opt, device):
         elif opt.model in torchvision.models.__dict__:  # TorchVision models i.e. resnet50, efficientnet_b0
             model = torchvision.models.__dict__[opt.model](weights='IMAGENET1K_V1' if pretrained else None)
         else:
-            m = hub.list(repo1) + hub.list(repo2)  # models
+            m = hub.list(repo1)  # + hub.list(repo2)  # models
             raise ModuleNotFoundError(f'--model {opt.model} not found. Available models are: \n' + '\n'.join(m))
         update_classifier_model(model, nc)  # update class count
     for p in model.parameters():
