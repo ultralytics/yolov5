@@ -98,10 +98,6 @@ def train(opt, device):
                                                       rank=-1,
                                                       workers=nw)
 
-    # Initialize
-    names = trainloader.dataset.classes  # class names
-    LOGGER.info(f'Training {opt.model} on {data} dataset with {nc} classes...')
-
     # Model
     repo1, repo2 = 'ultralytics/yolov5', 'pytorch/vision'
     with torch_distributed_zero_first(LOCAL_RANK), WorkingDirectory(ROOT):
@@ -129,6 +125,7 @@ def train(opt, device):
         if isinstance(m, torch.nn.Dropout) and opt.dropout is not None:
             m.p = opt.dropout  # set dropout
     model = model.to(device)
+    names = trainloader.dataset.classes  # class names
     model.names = names  # attach class names
 
     # Info
@@ -168,7 +165,7 @@ def train(opt, device):
     LOGGER.info(f'Image sizes {imgsz} train, {imgsz} test\n'
                 f'Using {nw * WORLD_SIZE} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
-                f'Starting training for {epochs} epochs...\n\n'
+                f'Starting {opt.model} training on {data} dataset with {nc} classes for {epochs} epochs...\n\n'
                 f"{'Epoch':>10}{'GPU_mem':>10}{'train_loss':>12}{f'{val}_loss':>12}{'top1_acc':>12}{'top5_acc':>12}")
     for epoch in range(epochs):  # loop over the dataset multiple times
         tloss, vloss, fitness = 0.0, 0.0, 0.0  # train loss, val loss, fitness
