@@ -195,7 +195,8 @@ def print_args(args: Optional[dict] = None, show_file=True, show_fcn=False):
     if args is None:  # get args automatically
         args, _, _, frm = inspect.getargvalues(x)
         args = {k: v for k, v in frm.items() if k in args}
-    s = (f'{Path(file).stem}: ' if show_file else '') + (f'{fcn}: ' if show_fcn else '')
+    file = Path(file).relative_to(ROOT).with_suffix('')
+    s = (f'{file}: ' if show_file else '') + (f'{fcn}: ' if show_fcn else '')
     LOGGER.info(colorstr(s) + ', '.join(f'{k}={v}' for k, v in args.items()))
 
 
