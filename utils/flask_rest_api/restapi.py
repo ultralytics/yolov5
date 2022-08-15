@@ -40,15 +40,10 @@ def predict(model):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Flask API exposing YOLOv5 model")
     parser.add_argument("--port", default=5000, type=int, help="port number")
-    parser.add_argument("--model", default=[], action='append', help="models to run (default yolov5s)")
+    parser.add_argument('--model', nargs='+', default=['yolov5s'], help='model(s) to run, i.e. --model yolov5n yolov5s')
     opt = parser.parse_args()
 
-    # Fix known issue urllib.error.HTTPError 403: rate limit exceeded https://github.com/ultralytics/yolov5/pull/7210
-    torch.hub._validate_not_a_forked_repo = lambda a, b, c: True
-
-    if not opt.model:
-        opt.model = ['yolov5s']
-    for model in opt.model:
-        models[model] = torch.hub.load("ultralytics/yolov5", model, force_reload=True)  # force_reload to recache
+    for m in opt.model:
+        models[m] = torch.hub.load("ultralytics/yolov5", m, force_reload=True, skip_validation=True)
 
     app.run(host="0.0.0.0", port=opt.port)  # debug=True causes Restarting with stat
