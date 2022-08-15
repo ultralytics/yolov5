@@ -397,8 +397,7 @@ def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f
     n = min(len(blocks), nmax)  # number of plots
     m = min(8, round(n ** 0.5))  # 8 x 8 default
     fig, ax = plt.subplots(math.ceil(n / m), m)  # 8 rows x n/8 cols
-    if m > 1:
-        ax = ax.ravel()
+    ax = ax.ravel() if m > 1 else [ax]
     # plt.subplots_adjust(wspace=0.05, hspace=0.05)
     for i in range(n):
         ax[i].imshow(blocks[i].squeeze().permute((1, 2, 0)).numpy().clip(0.0, 1.0))
