@@ -168,6 +168,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     best_fitness, start_epoch = 0.0, 0
     if resume:
         best_fitness, start_epoch, epochs = smart_resume(ckpt, optimizer, ema, weights, epochs, resume)
+    if pretrained:
         del ckpt, csd
 
     # DP mode
