@@ -4,13 +4,12 @@ import re
 from pathlib import Path
 
 import yaml
-from torchvision.transforms import ToPILImage
+import numpy as np
+from utils.plots import Annotator
 
 try:
     import clearml
     from clearml import Dataset, Task
-    from torchvision.utils import draw_bounding_boxes  # WARNING: requires torchvision>=0.9.0
-
     assert hasattr(clearml, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
     clearml = None
@@ -133,16 +132,20 @@ class ClearmlLogger:
         if len(self.current_epoch_logged_images) < self.max_imgs_to_log_per_epoch and self.current_epoch >= 0:
             # Log every bbox_interval times and deduplicate for any intermittend extra eval runs
             if self.current_epoch % self.bbox_interval == 0 and image_path not in self.current_epoch_logged_images:
-                converter = ToPILImage()
                 labels = []
                 for conf, class_nr in zip(boxes[:, 4], boxes[:, 5]):
                     class_name = class_names[int(class_nr)]
                     confidence = round(float(conf) * 100, 2)
                     labels.append(f"{class_name}: {confidence}%")
-                annotated_image = converter(
-                    draw_bounding_boxes(image=image.mul(255).clamp(0, 255).byte().cpu(),
-                                        boxes=boxes[:, :4],
-                                        labels=labels))
+                
+                annotator = Annotator(
+                    im=np.ascontiguousarray(np.moveaxis(image.mul(255).clamp(0, 255).byte().cpu().numpy(), 0, 2)),
+                    pil=True
+                )
+                for box, label in zip(boxes[:, :4], labels):
+                    annotator.rectangle(box.numpy())
+                    annotator.box_label(box.numpy(), label=label)
+                annotated_image = annotator.result()
                 self.task.get_logger().report_image(title='Bounding Boxes',
                                                     series=image_path.name,
                                                     iteration=self.current_epoch,
