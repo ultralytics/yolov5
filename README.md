@@ -256,10 +256,12 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 
 ## <div align="center">Classification ⭐ NEW</div>
 
-YOLOv5 now supports classification training, validation, prediction and export since [release v6.2](https://github.com/ultralytics/yolov5/releases)! We've made training classification as simple as our detection models. Click below to get started.
+YOLOv5 [release v6.2](https://github.com/ultralytics/yolov5/releases) brings support for classification model training, validation, prediction and export! We've made training classifier models super simple. Click below to get started.
 
 <details>
   <summary>Classification Checkpoints (click to expand)</summary>
+
+We trained classification versions of the 5 base YOLOv5 models on ImageNet for 90 epochs, and we trained comparison ResNet and EfficientNet models as well to compare. We exported all models to ONNX in FP32 for CPU speed tests and to TensorRT for GPU speed tests. We ran all tests on Google [Colab Pro](https://colab.research.google.com/signup) for easy reproducibility.
 
 | Model                                                                                              | size<br><sup>(pixels) | accuracy<br><sup>top1 | accuracy<br><sup>top5 | Train time<br><sup>90 epochs<br>4x A100 (hours) | Speed<br><sup>ONNX-CPU<br>(ms) | Speed<br><sup>TensorRT-V100<br>(ms) | params<br><sup>(M) | FLOPs<br><sup>@224 (B) |
 |----------------------------------------------------------------------------------------------------|-----------------------|-----------------------|-----------------------|-------------------------------------------------|--------------------------------|-------------------------------------|--------------------|------------------------|
@@ -284,7 +286,7 @@ YOLOv5 now supports classification training, validation, prediction and export s
 
 - All checkpoints are trained to 90 epochs with SGD optimizer with lr0=0.001 at image size 224 and all default settings.
 - **Accuracy** values are for single-model single-scale on [ImageNet-1k](https://www.image-net.org/index.php) dataset.<br>Reproduce by `python classify/val.py --data ../datasets/imagenet --img 224`
-- **Speed** averaged over 100 inference images using a [Colab Pro](https://colab.research.google.com/signup) V100 High-RAM instance.<br>Reproduce by `python classify/val.py --data ../datasets/imagenet --img 224 --batch 1`
+- **Speed** averaged over 100 inference images using a Google [Colab Pro](https://colab.research.google.com/signup) V100 High-RAM instance.<br>Reproduce by `python classify/val.py --data ../datasets/imagenet --img 224 --batch 1`
 - **Export** to ONNX at FP32 and TensorRT at FP16 done with `export.py`. <br>Reproduce by `python export.py --weights yolov5s-cls.pt --include engine onnx --imgsz 224`
 </details>
 </details>
@@ -324,7 +326,6 @@ python export.py --weights efficientnet_b0.pt --include onnx
 ```
 </details>
 
-</details>
 
 ## <div align="center">Contribute</div>
 
