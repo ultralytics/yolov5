@@ -87,7 +87,7 @@ jobs:
           else
               pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
           fi
-        shell: bash  # required for Windows compatibility
+        shell: bash  # for Windows compatibility
       - name: Check environment
         run: |
           python -c "import utils; utils.notebook_init()"
@@ -101,6 +101,7 @@ jobs:
           pip --version
           pip list
       - name: Test detection
+        shell: bash  # for Windows compatibility
         run: |
           # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
           m=${{ matrix.model }}  # official weights
@@ -123,6 +124,7 @@ jobs:
               print(model('data/images/bus.jpg'))
           EOF
       - name: Test classification
+        shell: bash  # for Windows compatibility
         run: |
           m=${{ matrix.model }}-cls.pt  # official weights
           b=runs/train-cls/exp/weights/best.pt  # best.pt checkpoint
