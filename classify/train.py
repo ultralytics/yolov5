@@ -4,8 +4,8 @@ Train a YOLOv5 classifier model on a classification dataset
 Datasets: --data mnist, fashion-mnist, cifar10, cifar100, imagenette, imagewoof, imagenet, or 'path/to/custom/dataset'
 
 Usage:
-    $ python classify/train.py --model yolov5s --data cifar100 --epochs 5 --img 128
-    $ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 classify/train.py --model yolov5s --data imagenet --epochs 5 --img 224 --device 0,1,2,3
+    $ python classify/train.py --model yolov5s-cls.pt --data cifar100 --epochs 5 --img 128
+    $ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 classify/train.py --model yolov5s-cls.pt --data imagenet --epochs 5 --img 224 --device 0,1,2,3
 """
 
 import argparse
