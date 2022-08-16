@@ -25,7 +25,7 @@ from utils.dataloaders import exif_transpose, letterbox
 from utils.general import (LOGGER, check_requirements, check_suffix, check_version, colorstr, increment_path,
                            make_divisible, non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
-from utils.torch_utils import copy_attr, time_sync
+from utils.torch_utils import copy_attr, smart_inference_mode, time_sync
 
 
 def autopad(k, p=None):  # kernel, padding
@@ -387,13 +387,13 @@ class DetectMultiBackend(nn.Module):
             context = model.create_execution_context()
             bindings = OrderedDict()
             fp16 = False  # default updated below
-            dynamic_input = False
+            dynamic = False
             for index in range(model.num_bindings):
                 name = model.get_binding_name(index)
                 dtype = trt.nptype(model.get_binding_dtype(index))
                 if model.binding_is_input(index):
                     if -1 in tuple(model.get_binding_shape(index)):  # dynamic
-                        dynamic_input = True
+                        dynamic = True
                         context.set_binding_shape(index, tuple(model.get_profile_shape(0, index)[2]))
                     if dtype == np.float16:
                         fp16 = True
@@ -471,12 +471,13 @@ class DetectMultiBackend(nn.Module):
             im = im.cpu().numpy()  # FP32
             y = self.executable_network([im])[self.output_layer]
         elif self.engine:  # TensorRT
-            if im.shape != self.bindings['images'].shape and self.dynamic_input:
-                self.context.set_binding_shape(self.model.get_binding_index('images'), im.shape)  # reshape if dynamic
+            if self.dynamic and im.shape != self.bindings['images'].shape:
+                i_in, i_out = (self.model.get_binding_index(x) for x in ('images', 'output'))
+                self.context.set_binding_shape(i_in, im.shape)  # reshape if dynamic
                 self.bindings['images'] = self.bindings['images']._replace(shape=im.shape)
-            assert im.shape == self.bindings['images'].shape, (
-                f"image shape {im.shape} exceeds model max shape {self.bindings['images'].shape}" if self.dynamic_input
-                else f"image shape {im.shape} does not match model shape {self.bindings['images'].shape}")
+                self.bindings['output'].data.resize_(tuple(self.context.get_binding_shape(i_out)))
+            s = self.bindings['images'].shape
+            assert im.shape == s, f"input size {im.shape} {'>' if self.dynamic else 'not equal to'} max model size {s}"
             self.binding_addrs['images'] = int(im.data_ptr())
             self.context.execute_v2(list(self.binding_addrs.values()))
             y = self.bindings['output'].data
@@ -577,7 +578,7 @@ class AutoShape(nn.Module):
                 m.anchor_grid = list(map(fn, m.anchor_grid))
         return self
 
-    @torch.no_grad()
+    @smart_inference_mode()
     def forward(self, imgs, size=640, augment=False, profile=False):
         # Inference from various sources. For height=640, width=1280, RGB images example inputs are:
         #   file:       imgs = 'data/images/zidane.jpg'  # str or PosixPath
