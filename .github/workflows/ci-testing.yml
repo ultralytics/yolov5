@@ -100,8 +100,7 @@ jobs:
           python --version
           pip --version
           pip list
-      - name: Run tests
-        shell: bash
+      - name: Test detection
         run: |
           # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
           m=${{ matrix.model }}  # official weights
@@ -123,8 +122,7 @@ jobs:
               model = torch.hub.load('.', 'custom', path=path, source='local')
               print(model('data/images/bus.jpg'))
           EOF
-      - name: Run classification tests
-        shell: bash
+      - name: Test classification
         run: |
           m=${{ matrix.model }}-cls.pt  # official weights
           b=runs/train-cls/exp/weights/best.pt  # best.pt checkpoint
