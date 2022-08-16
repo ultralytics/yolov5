@@ -97,8 +97,9 @@ def set_logging(name=None, verbose=VERBOSE):
 
 set_logging()  # run before defining LOGGER
 LOGGER = logging.getLogger("yolov5")  # define globally (used in train.py, val.py, detect.py, etc.)
-for fn in LOGGER.info, LOGGER.warning:
-    _fn, fn = fn, lambda x: _fn(emojis(x))  # emoji safe logging
+if platform.system() == 'Windows':
+    for fn in LOGGER.info, LOGGER.warning:
+        setattr(LOGGER, fn.__name__, lambda x: fn(emojis(x)))  # emoji safe logging
 
 
 def user_config_dir(dir='Ultralytics', env_var='YOLOV5_CONFIG_DIR'):
@@ -480,7 +481,7 @@ def check_dataset(data, autodownload=True):
     # Download (optional)
     extract_dir = ''
     if isinstance(data, (str, Path)) and str(data).endswith('.zip'):  # i.e. gs://bucket/dir/coco128.zip
-        download(data, dir=DATASETS_DIR, unzip=True, delete=False, curl=False, threads=1)
+        download(data, dir=f'{DATASETS_DIR}/{Path(data).stem}', unzip=True, delete=False, curl=False, threads=1)
         data = next((DATASETS_DIR / Path(data).stem).rglob('*.yaml'))
         extract_dir, autodownload = data.parent, False
 
@@ -593,10 +594,12 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
                 else:
                     LOGGER.warning(f'Failed to download {url}...')
 
-        if unzip and success and f.suffix in ('.zip', '.gz'):
+        if unzip and success and f.suffix in ('.zip', '.tar', '.gz'):
             LOGGER.info(f'Unzipping {f}...')
             if f.suffix == '.zip':
                 ZipFile(f).extractall(path=dir)  # unzip
+            elif f.suffix == '.tar':
+                os.system(f'tar xf {f} --directory {f.parent}')  # unzip
             elif f.suffix == '.gz':
                 os.system(f'tar xfz {f} --directory {f.parent}')  # unzip
             if delete:
