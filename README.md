@@ -254,18 +254,77 @@ We are super excited about our first-ever Ultralytics YOLOv5 🚀 EXPORT Competi
 
 </details>
 
-### Classification Checkpoints
+## <div align="center">Classification ⭐ NEW</div>
 
-| Model                                                                                              | size<br><sup>(pixels) | accuracy<br><sup>top1 | accuracy<br><sup>top5 | Train time<br><sup>90 epochs<br>(hours) | Speed<br><sup>CPU<br>(ms) | Speed<br><sup>V100<br>(ms) | params<br><sup>(M) | FLOPs<br><sup>@640 (B) |
-|----------------------------------------------------------------------------------------------------|-----------------------|-----------------------|-----------------------|-----------------------------------------|---------------------------|----------------------------|--------------------|------------------------|
-| [ResNet50](https://github.com/ultralytics/yolov5/releases/download/v6.2/resnet50.pt)               | 224                   | 76.8                  | 93.4                  | 11:10                                   | 61.8                      | 9.2                        | 25.6               | 8.3                    |
-| [EfficientNet_b0](https://github.com/ultralytics/yolov5/releases/download/v6.2/efficientnet_b0.pt) | 224                   | 75.1                  | 92.4                  | 13:03                                   | 31.8                      | 11.2                       | 5.3                | 0.8                    |
-| [YOLOv5n-cls](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5n-cls.pt)         | 224                   | 64.6                  | 85.4                  | 7:59                                    | 8.0                       | 3.9                        | 2.5                | 0.4                    |
-| [YOLOv5s-cls](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5s-cls.pt)         | 224                   | 71.5                  | 90.2                  | 8:09                                    | 14.5                      | 4.6                        | 5.5                | 1.3                    |
-| [YOLOv5m-cls](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5m-cls.pt)         | 224                   | 75.9                  | 92.9                  | 10:06                                   | 30.1                      | 6.3                        | 13.0               | 3.8                    |
-| [YOLOv5l-cls](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5l-cls.pt)         | 224                   | 78.0                  | 94.0                  | 11:56                                   | 55.4                      | 8.3                        | 26.6               | 8.4                    |
-| [YOLOv5x-cls](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5x-cls.pt)         | 224                   | 78.9                  | 94.4                  | 15:04                                   | 96.5                      | 10.1                       | 48.1               | 15.9                   |
+YOLOv5 now supports classification training, validation, prediction and export since [release v6.2](https://github.com/ultralytics/yolov5/releases)! We've made training classification as simple as our detection models. Click below to get started.
 
+<details>
+  <summary>Classification Checkpoints (click to expand)</summary>
+
+| Model                                                                                              | size<br><sup>(pixels) | accuracy<br><sup>top1 | accuracy<br><sup>top5 | Train time<br><sup>90 epochs<br>4x A100 (hours) | Speed<br><sup>ONNX-CPU<br>(ms) | Speed<br><sup>TensorRT-V100<br>(ms) | params<br><sup>(M) | FLOPs<br><sup>@224 (B) |
+|----------------------------------------------------------------------------------------------------|-----------------------|-----------------------|-----------------------|-------------------------------------------------|--------------------------------|-------------------------------------|--------------------|------------------------|
+| [YOLOv5n-cls](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5n-cls.pt)         | 224                   | 64.6                  | 85.4                  | 7:59                                            | **3.3**                        | **0.5**                             | **2.5**            | **0.5**                |
+| [YOLOv5s-cls](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5s-cls.pt)         | 224                   | 71.5                  | 90.2                  | 8:09                                            | 6.6                            | 0.6                                 | 5.4                | 1.4                    |
+| [YOLOv5m-cls](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5m-cls.pt)         | 224                   | 75.9                  | 92.9                  | 10:06                                           | 15.5                           | 0.9                                 | 12.9               | 3.9                    |
+| [YOLOv5l-cls](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5l-cls.pt)         | 224                   | 78.0                  | 94.0                  | 11:56                                           | 26.9                           | 1.4                                 | 26.5               | 8.5                    |
+| [YOLOv5x-cls](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5x-cls.pt)         | 224                   | **79.0**              | **94.4**              | 15:04                                           | 54.3                           | 1.8                                 | 48.1               | 15.9                   |
+|                                                                                                    | 
+| [ResNet18](https://github.com/ultralytics/yolov5/releases/download/v6.2/resnet18.pt)               | 224                   | 70.3                  | 89.5                  | **6:47**                                        | 11.2                           | 0.5                                 | 11.7               | 3.7                    |
+| [ResNet34](https://github.com/ultralytics/yolov5/releases/download/v6.2/resnet34.pt)               | 224                   | 73.9                  | 91.8                  | 8:33                                            | 20.6                           | 0.9                                 | 21.8               | 7.4                    |
+| [ResNet50](https://github.com/ultralytics/yolov5/releases/download/v6.2/resnet50.pt)               | 224                   | 76.8                  | 93.4                  | 11:10                                           | 23.4                           | 1.0                                 | 25.6               | 8.5                    |
+| [ResNet101](https://github.com/ultralytics/yolov5/releases/download/v6.2/resnet101.pt)             | 224                   | 78.5                  | 94.3                  | 17:10                                           | 42.1                           | 1.9                                 | 44.5               | 15.9                   |
+|                                                                                                    |
+| [EfficientNet_b0](https://github.com/ultralytics/yolov5/releases/download/v6.2/efficientnet_b0.pt) | 224                   | 75.1                  | 92.4                  | 13:03                                           | 12.5                           | 1.3                                 | 5.3                | 1.0                    |
+| [EfficientNet_b1](https://github.com/ultralytics/yolov5/releases/download/v6.2/efficientnet_b1.pt) | 224                   | 76.4                  | 93.2                  | 17:04                                           | 14.9                           | 1.6                                 | 7.8                | 1.5                    |
+| [EfficientNet_b2](https://github.com/ultralytics/yolov5/releases/download/v6.2/efficientnet_b2.pt) | 224                   | 76.6                  | 93.4                  | 17:10                                           | 15.9                           | 1.6                                 | 9.1                | 1.7                    |
+| [EfficientNet_b3](https://github.com/ultralytics/yolov5/releases/download/v6.2/efficientnet_b3.pt) | 224                   | 75.1                  | 92.4                  | 13:03                                           | 31.8                           | 11.2                                | 5.3                | 0.8                    |
+
+<details>
+  <summary>Table Notes (click to expand)</summary>
+
+- All checkpoints are trained to 90 epochs with SGD optimizer with lr0=0.001 at image size 224 and all default settings.
+- **Accuracy** values are for single-model single-scale on [ImageNet-1k](https://www.image-net.org/index.php) dataset.<br>Reproduce by `python classify/val.py --data ../datasets/imagenet --img 224`
+- **Speed** averaged over 100 inference images using a [Colab Pro](https://colab.research.google.com/signup) V100 High-RAM instance.<br>Reproduce by `python classify/val.py --data ../datasets/imagenet --img 224 --batch 1`
+- **Export** to ONNX at FP32 and TensorRT at FP16 done with `export.py`. <br>Reproduce by `python export.py --weights yolov5s-cls.pt --include engine onnx --imgsz 224`
+</details>
+</details>
+
+<details>
+  <summary>Classification Usage Examples (click to expand)</summary>
+
+### Train
+YOLOv5 classification training supports auto-download of MNIST, Fashion-MNIST, CIFAR10, CIFAR100, Imagenette, Imagewoof, and ImageNet datasets.
+
+```bash
+# Single-GPU
+python classify/train.py --model yolov5s-cls.pt --data cifar100 --epochs 5 --img 224 --batch 128
+
+# Multi-GPU DDP
+python -m torch.distributed.run --nproc_per_node 4 --master_port 1 classify/train.py --model yolov5s-cls.pt --data imagenet --epochs 5 --img 224 --device 0,1,2,3
+```
+
+### Val
+```bash
+python classify/val.py --weights yolov5s-cls.pt --data ../datasets/imagenet --img 224
+```
+
+### Predict
+```bash
+python classify/predict.py --weights yolov5s-cls.pt --data data/images/bus.jpg
+```
+```python
+model = torch.hub.load('ultralytics/yolov5', 'custom', 'yolov5s-cls.pt')  # load from PyTorch Hub
+```
+
+### Export
+```bash
+python export.py --weights yolov5s-cls.pt --include onnx
+python export.py --weights resnet50.pt --include onnx
+python export.py --weights efficientnet_b0.pt --include onnx
+```
+</details>
+
+</details>
 
 ## <div align="center">Contribute</div>
 
