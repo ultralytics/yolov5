@@ -42,7 +42,7 @@ from utils.general import (LOGGER, check_dataset, check_img_size, check_requirem
                            scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, ap_per_class, box_iou
 from utils.plots import output_to_target, plot_images, plot_val_study
-from utils.torch_utils import select_device, time_sync
+from utils.torch_utils import select_device, smart_inference_mode, time_sync
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -93,7 +93,7 @@ def process_batch(detections, labels, iouv):
     return torch.tensor(correct, dtype=torch.bool, device=iouv.device)
 
 
-@torch.no_grad()
+@smart_inference_mode()
 def run(
         data,
         weights=None,  # model.pt path(s)

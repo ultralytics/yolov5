@@ -25,7 +25,7 @@ from utils.dataloaders import exif_transpose, letterbox
 from utils.general import (LOGGER, check_requirements, check_suffix, check_version, colorstr, increment_path,
                            make_divisible, non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
-from utils.torch_utils import copy_attr, time_sync
+from utils.torch_utils import copy_attr, smart_inference_mode, time_sync
 
 
 def autopad(k, p=None):  # kernel, padding
@@ -578,7 +578,7 @@ class AutoShape(nn.Module):
                 m.anchor_grid = list(map(fn, m.anchor_grid))
         return self
 
-    @torch.no_grad()
+    @smart_inference_mode()
     def forward(self, imgs, size=640, augment=False, profile=False):
         # Inference from various sources. For height=640, width=1280, RGB images example inputs are:
         #   file:       imgs = 'data/images/zidane.jpg'  # str or PosixPath

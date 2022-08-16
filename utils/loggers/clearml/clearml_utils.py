@@ -5,11 +5,11 @@ from pathlib import Path
 
 import yaml
 from torchvision.transforms import ToPILImage
-from torchvision.utils import draw_bounding_boxes
 
 try:
     import clearml
     from clearml import Dataset, Task
+    from torchvision.utils import draw_bounding_boxes  # WARNING: requires torchvision>=0.9.0
 
     assert hasattr(clearml, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
