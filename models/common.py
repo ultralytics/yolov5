@@ -441,9 +441,9 @@ class DetectMultiBackend(nn.Module):
                 input_details = interpreter.get_input_details()  # inputs
                 output_details = interpreter.get_output_details()  # outputs
             elif tfjs:
-                raise Exception('ERROR: YOLOv5 TF.js inference is not supported')
+                raise NotImplementedError('ERROR: YOLOv5 TF.js inference is not supported')
             else:
-                raise Exception(f'ERROR: {w} is not a supported format')
+                raise NotImplementedError(f'ERROR: {w} is not a supported format')
 
         # class names
         if 'names' not in locals():
