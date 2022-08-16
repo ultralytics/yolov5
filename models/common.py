@@ -323,8 +323,7 @@ class DetectMultiBackend(nn.Module):
         w = str(weights[0] if isinstance(weights, list) else weights)
         pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = self._model_type(w)  # get backend
         w = attempt_download(w)  # download if not local
-        cuda = torch.cuda.is_available() and device.type != 'cpu'
-        fp16 &= (pt or jit or onnx or engine) and cuda  # FP16
+        fp16 &= pt or jit or onnx or engine  # FP16
         stride = 32  # default stride
 
         if pt:  # PyTorch
@@ -347,6 +346,7 @@ class DetectMultiBackend(nn.Module):
             net = cv2.dnn.readNetFromONNX(w)
         elif onnx:  # ONNX Runtime
             LOGGER.info(f'Loading {w} for ONNX Runtime inference...')
+            cuda = torch.cuda.is_available() and device.type != 'cpu'
             check_requirements(('onnx', 'onnxruntime-gpu' if cuda else 'onnxruntime'))
             import onnxruntime
             providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] if cuda else ['CPUExecutionProvider']
@@ -376,6 +376,8 @@ class DetectMultiBackend(nn.Module):
             LOGGER.info(f'Loading {w} for TensorRT inference...')
             import tensorrt as trt  # https://developer.nvidia.com/nvidia-tensorrt-download
             check_version(trt.__version__, '7.0.0', hard=True)  # require tensorrt>=7.0.0
+            if device.type == 'cpu':
+                device = torch.device('cuda:0')
             Binding = namedtuple('Binding', ('name', 'dtype', 'shape', 'data', 'ptr'))
             logger = trt.Logger(trt.Logger.INFO)
             with open(w, 'rb') as f, trt.Runtime(logger) as runtime:
