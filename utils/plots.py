@@ -393,7 +393,7 @@ def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f
     from utils.augmentations import denormalize
 
     names = names or [f'class{i}' for i in range(1000)]
-    blocks = torch.chunk(denormalize(im).cpu(), len(im), dim=0)  # select batch index 0, block by channels
+    blocks = torch.chunk(denormalize(im).cpu().float(), len(im), dim=0)  # select batch index 0, block by channels
     n = min(len(blocks), nmax)  # number of plots
     m = min(8, round(n ** 0.5))  # 8 x 8 default
     fig, ax = plt.subplots(math.ceil(n / m), m)  # 8 rows x n/8 cols
