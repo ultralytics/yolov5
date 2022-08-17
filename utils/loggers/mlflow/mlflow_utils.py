@@ -87,8 +87,6 @@ class MlflowLogger:
         Args:
             model (nn.Module): The pytorch model
         """
-        if self.weights.exists() and self.weights.is_file() and (self.weights.parent.resolve() == ROOT.resolve()):
-            self.weights.unlink()
         self.mlflow.pyfunc.log_model(artifact_path=self.model_name,
                                      code_path=[str(ROOT.resolve())],
                                      artifacts={"model_path": str(model_path.resolve())},

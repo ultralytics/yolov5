@@ -5,6 +5,7 @@ Logging utils
 
 import os
 import warnings
+from pathlib import Path
 
 import pkg_resources as pkg
 import torch
@@ -82,7 +83,7 @@ class Loggers():
             self.logger.info(s)
         if not clearml:
             prefix = colorstr('ClearML: ')
-            s = f"{prefix}run 'pip install clearml' to automatically track, visualize and remotely train YOLOv5 🚀 runs in ClearML"
+            s = f"{prefix}run 'pip install clearml' to automatically track, visualize and remotely train YOLOv5 🚀 in ClearML"
             self.logger.info(s)
 
         # TensorBoard
@@ -135,11 +136,8 @@ class Loggers():
         # Callback runs on train batch end
         # ni: number integrated batches (since train start)
         if plots:
-            if ni == 0:
-                if self.tb and not self.opt.sync_bn:  # --sync known issue https://github.com/ultralytics/yolov5/issues/3754
-                    with warnings.catch_warnings():
-                        warnings.simplefilter('ignore')  # suppress jit trace warning
-                        self.tb.add_graph(torch.jit.trace(de_parallel(model), imgs[0:1], strict=False), [])
+            if ni == 0 and not self.opt.sync_bn and self.tb:
+                log_tensorboard_graph(self.tb, model, imgsz=list(imgs.shape[2:4]))
             if ni < 3:
                 f = self.save_dir / f'train_batch{ni}.jpg'  # filename
                 plot_images(imgs, targets, paths, f)
@@ -273,3 +271,90 @@ class Loggers():
 
         if self.mlflow:
             self.mlflow.log_metrics(params, is_param=True)
+
+
+class GenericLogger:
+    """
+    YOLOv5 General purpose logger for non-task specific logging
+    Usage: from utils.loggers import GenericLogger; logger = GenericLogger(...)
+    Arguments
+        opt:             Run arguments
+        console_logger:  Console logger
+        include:         loggers to include
+    """
+
+    def __init__(self, opt, console_logger, include=('tb', 'wandb', 'mlflow')):
+        # init default loggers
+        self.save_dir = opt.save_dir
+        self.include = include
+        self.console_logger = console_logger
+        if 'tb' in self.include:
+            prefix = colorstr('TensorBoard: ')
+            self.console_logger.info(
+                f"{prefix}Start with 'tensorboard --logdir {self.save_dir.parent}', view at http://localhost:6006/")
+            self.tb = SummaryWriter(str(self.save_dir))
+
+        if wandb and 'wandb' in self.include:
+            self.wandb = wandb.init(project="YOLOv5-Classifier" if opt.project == "runs/train" else opt.project,
+                                    name=None if opt.name == "exp" else opt.name,
+                                    config=opt)
+        else:
+            self.wandb = None
+
+        if mlflow and "mlflow" in self.include:
+            self.mlflow = MlflowLogger(opt=opt)
+
+    def log_metrics(self, metrics_dict, epoch):
+        # Log metrics dictionary to all loggers
+        if self.tb:
+            for k, v in metrics_dict.items():
+                self.tb.add_scalar(k, v, epoch)
+
+        if self.wandb:
+            self.wandb.log(metrics_dict, step=epoch)
+
+        if self.mlflow:
+            self.mlflow.log_metrics(metrics_dict, epoch=epoch)
+
+    def log_images(self, files, name='Images', epoch=0):
+        # Log images to all loggers
+        files = [Path(f) for f in (files if isinstance(files, (tuple, list)) else [files])]  # to Path
+        files = [f for f in files if f.exists()]  # filter by exists
+
+        if self.tb:
+            for f in files:
+                self.tb.add_image(f.stem, cv2.imread(str(f))[..., ::-1], epoch, dataformats='HWC')
+
+        if self.wandb:
+            self.wandb.log({name: [wandb.Image(str(f), caption=f.name) for f in files]}, step=epoch)
+
+        if self.mlflow:
+            [self.mlflow.log_artifacts(artifact=f, relpath=f"images/epoch_{str(epoch)}") for f in files]
+
+    def log_graph(self, model, imgsz=(640, 640)):
+        # Log model graph to all loggers
+        if self.tb:
+            log_tensorboard_graph(self.tb, model, imgsz)
+
+    def log_model(self, model_path, epoch=0, metadata={}):
+        # Log model to all loggers
+        if self.wandb:
+            art = wandb.Artifact(name=f"run_{wandb.run.id}_model", type="model", metadata=metadata)
+            art.add_file(str(model_path))
+            wandb.log_artifact(art)
+
+        if self.mlflow:
+            self.mlflow.log_model(model_path=model_path)
+
+
+def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
+    # Log model graph to TensorBoard
+    try:
+        p = next(model.parameters())  # for device, type
+        imgsz = (imgsz, imgsz) if isinstance(imgsz, int) else imgsz  # expand
+        im = torch.zeros((1, 3, *imgsz)).to(p.device).type_as(p)  # input image
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')  # suppress jit trace warning
+            tb.add_graph(torch.jit.trace(de_parallel(model), im, strict=False), [])
+    except Exception:
+        print('WARNING: TensorBoard graph visualization failure')

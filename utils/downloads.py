@@ -54,14 +54,14 @@ def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
         LOGGER.info('')
 
 
-def attempt_download(file, repo='ultralytics/yolov5', release='v6.1'):
-    # Attempt file download from GitHub release assets if not found locally. release = 'latest', 'v6.1', etc.
+def attempt_download(file, repo='ultralytics/yolov5', release='v6.2'):
+    # Attempt file download from GitHub release assets if not found locally. release = 'latest', 'v6.2', etc.
     from utils.general import LOGGER
 
     def github_assets(repository, version='latest'):
-        # Return GitHub repo tag (i.e. 'v6.1') and assets (i.e. ['yolov5s.pt', 'yolov5m.pt', ...])
+        # Return GitHub repo tag (i.e. 'v6.2') and assets (i.e. ['yolov5s.pt', 'yolov5m.pt', ...])
         if version != 'latest':
-            version = f'tags/{version}'  # i.e. tags/v6.1
+            version = f'tags/{version}'  # i.e. tags/v6.2
         response = requests.get(f'https://api.github.com/repos/{repository}/releases/{version}').json()  # github api
         return response['tag_name'], [x['name'] for x in response['assets']]  # tag, assets
 
