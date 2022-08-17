@@ -3,7 +3,7 @@
 Run classification inference on images
 
 Usage:
-    $ python classify/predict.py --weights yolov5s-cls.pt --source im.jpg
+    $ python classify/predict.py --weights yolov5s-cls.pt --source data/images/bus.jpg
 """
 
 import argparse

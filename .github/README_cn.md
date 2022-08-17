@@ -269,7 +269,7 @@ We trained YOLOv5-cls classification models on ImageNet for 90 epochs using a 4x
 <details>
   <summary>Table Notes (click to expand)</summary>
 
-- All checkpoints are trained to 90 epochs with SGD optimizer with lr0=0.001 at image size 224 and all default settings. Runs logged to https://wandb.ai/glenn-jocher/YOLOv5-Classifier-v6-2.
+- All checkpoints are trained to 90 epochs with SGD optimizer with `lr0=0.001` and `weight_decay=5e-5` at image size 224 and all default settings.<br>Runs logged to https://wandb.ai/glenn-jocher/YOLOv5-Classifier-v6-2
 - **Accuracy** values are for single-model single-scale on [ImageNet-1k](https://www.image-net.org/index.php) dataset.<br>Reproduce by `python classify/val.py --data ../datasets/imagenet --img 224`
 - **Speed** averaged over 100 inference images using a Google [Colab Pro](https://colab.research.google.com/signup) V100 High-RAM instance.<br>Reproduce by `python classify/val.py --data ../datasets/imagenet --img 224 --batch 1`
 - **Export** to ONNX at FP32 and TensorRT at FP16 done with `export.py`. <br>Reproduce by `python export.py --weights yolov5s-cls.pt --include engine onnx --imgsz 224`
@@ -291,14 +291,14 @@ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 classify/trai
 ```
 
 ### Val
-Validate accuracy on a pretrained model. To validate YOLOv5s-cls accuracy on ImageNet.
+Validate YOLOv5m-cls accuracy on ImageNet-1k dataset:
 ```bash
 bash data/scripts/get_imagenet.sh --val  # download ImageNet val split (6.3G, 50000 images)
-python classify/val.py --weights yolov5s-cls.pt --data ../datasets/imagenet --img 224
+python classify/val.py --weights yolov5m-cls.pt --data ../datasets/imagenet --img 224  # validate
 ```
 
 ### Predict
-Run a classification prediction on an image.
+Use pretrained YOLOv5s-cls.pt to predict bus.jpg:
 ```bash
 python classify/predict.py --weights yolov5s-cls.pt --data data/images/bus.jpg
 ```
@@ -307,7 +307,7 @@ model = torch.hub.load('ultralytics/yolov5', 'custom', 'yolov5s-cls.pt')  # load
 ```
 
 ### Export
-Export a group of trained YOLOv5-cls, ResNet and EfficientNet models to ONNX and TensorRT.
+Export a group of trained YOLOv5s-cls, ResNet and EfficientNet models to ONNX and TensorRT:
 ```bash
 python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --include onnx engine --img 224
 ```

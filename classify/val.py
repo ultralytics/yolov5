@@ -3,7 +3,8 @@
 Validate a classification model on a dataset
 
 Usage:
-    $ python classify/val.py --weights yolov5s-cls.pt --data ../datasets/imagenet
+    $ bash data/scripts/get_imagenet.sh --val  # download ImageNet val split (6.3G, 50000 images)
+    $ python classify/val.py --weights yolov5m-cls.pt --data ../datasets/imagenet --img 224  # validate
 """
 
 import argparse
