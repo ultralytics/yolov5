@@ -136,7 +136,8 @@ class ClearmlLogger:
             # Log every bbox_interval times and deduplicate for any intermittend extra eval runs
             if self.current_epoch % self.bbox_interval == 0 and image_path not in self.current_epoch_logged_images:
                 annotator = Annotator(im=np.ascontiguousarray(
-                    np.moveaxis(image.mul(255).clamp(0, 255).byte().cpu().numpy(), 0, 2)), pil=True)
+                    np.moveaxis(image.mul(255).clamp(0, 255).byte().cpu().numpy(), 0, 2)),
+                                      pil=True)
                 for i, (conf, class_nr, box) in enumerate(zip(boxes[:, 4], boxes[:, 5], boxes[:, :4])):
                     color = colors(i)
 
