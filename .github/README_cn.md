@@ -246,7 +246,7 @@ YOLOv5 [release v6.2](https://github.com/ultralytics/yolov5/releases) brings sup
 
 <br>
 
-We trained classification versions of the 5 base YOLOv5 models on ImageNet for 90 epochs, and we trained comparison ResNet and EfficientNet models to compare. We exported all models to ONNX FP32 for CPU speed tests and to TensorRT FP16 for GPU speed tests. We ran all tests on Google [Colab Pro](https://colab.research.google.com/signup) for easy reproducibility.
+We trained YOLOv5-cls classification models on ImageNet for 90 epochs using a 4xA100 instnace, and we trained ResNet and EfficientNet models alongside with the same default training settings to compare. We exported all models to ONNX FP32 for CPU speed tests and to TensorRT FP16 for GPU speed tests. We ran all speed tests on Google [Colab Pro](https://colab.research.google.com/signup) for easy reproducibility.
 
 | Model                                                                                              | size<br><sup>(pixels) | acc<br><sup>top1 | acc<br><sup>top5 | Training<br><sup>90 epochs<br>4xA100 (hours) | Speed<br><sup>ONNX CPU<br>(ms) | Speed<br><sup>TensorRT V100<br>(ms) | params<br><sup>(M) | FLOPs<br><sup>@224 (B) |
 |----------------------------------------------------------------------------------------------------|-----------------------|------------------|------------------|----------------------------------------------|--------------------------------|-------------------------------------|--------------------|------------------------|
