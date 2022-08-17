@@ -51,13 +51,10 @@ def run(
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
-    # Transforms
-    transforms = classify_transforms(imgsz)
-
     # Load model
     model = DetectMultiBackend(weights, device=device, dnn=dnn, fp16=half)
     model.warmup(imgsz=(1, 3, imgsz, imgsz))  # warmup
-    dataset = LoadImages(source, img_size=imgsz, transforms=transforms)
+    dataset = LoadImages(source, img_size=imgsz, transforms=classify_transforms(imgsz))
     for path, im, im0s, vid_cap, s in dataset:
         # Image
         t1 = time_sync()
