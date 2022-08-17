@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 import numpy as np
-from utils.plots import Annotator
+from utils.plots import Annotator, colors
 
 try:
     import clearml
@@ -119,7 +119,7 @@ class ClearmlLogger:
                                                     local_path=str(f),
                                                     iteration=iteration)
 
-    def log_image_with_boxes(self, image_path, boxes, class_names, image):
+    def log_image_with_boxes(self, image_path, boxes, class_names, image, conf_threshold=0.35):
         """
         Draw the bounding boxes on a single image and report the result as a ClearML debug sample
 
@@ -132,19 +132,21 @@ class ClearmlLogger:
         if len(self.current_epoch_logged_images) < self.max_imgs_to_log_per_epoch and self.current_epoch >= 0:
             # Log every bbox_interval times and deduplicate for any intermittend extra eval runs
             if self.current_epoch % self.bbox_interval == 0 and image_path not in self.current_epoch_logged_images:
-                labels = []
-                for conf, class_nr in zip(boxes[:, 4], boxes[:, 5]):
-                    class_name = class_names[int(class_nr)]
-                    confidence = round(float(conf) * 100, 2)
-                    labels.append(f"{class_name}: {confidence}%")
-                
                 annotator = Annotator(
                     im=np.ascontiguousarray(np.moveaxis(image.mul(255).clamp(0, 255).byte().cpu().numpy(), 0, 2)),
                     pil=True
                 )
-                for box, label in zip(boxes[:, :4], labels):
-                    annotator.rectangle(box.numpy())
-                    annotator.box_label(box.numpy(), label=label)
+                for i, (conf, class_nr, box) in enumerate(zip(boxes[:, 4], boxes[:, 5], boxes[:, :4])):
+                    color = colors(i)
+
+                    class_name = class_names[int(class_nr)]
+                    confidence = round(float(conf) * 100, 2)
+                    label = f"{class_name}: {confidence}%"
+
+                    if confidence > conf_threshold:
+                        annotator.rectangle(box.cpu().numpy(), outline=color)
+                        annotator.box_label(box.cpu().numpy(), label=label, color=color)                    
+                    
                 annotated_image = annotator.result()
                 self.task.get_logger().report_image(title='Bounding Boxes',
                                                     series=image_path.name,
