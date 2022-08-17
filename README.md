@@ -4,3 +4,4 @@ The dataset contains RGB data from heterogeneous sources and sensors (e.g., DSLR
 
 The total number of RGB images in the dataset is 540 with various resolutions ranging from 114×170 to 2,100×1,400. It is underlined that the total number of traffic cones in the entire dataset is 947. Representative samples of the dataset are demonstrated in the figure below. From the images of the whole dataset, 92.5% were used for training the deep model, and 7.5% for testing its effectiveness. Among the training data, 80% of them were used for training and the remaining 20% for validation.
 
+<img src="docs/TraCon_data_samples.png"/>
