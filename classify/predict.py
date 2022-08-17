@@ -23,9 +23,10 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from classify.train import imshow_cls
 from models.common import DetectMultiBackend
 from utils.augmentations import classify_transforms
+from utils.dataloaders import LoadImages
 from utils.general import LOGGER, check_requirements, colorstr, increment_path, print_args
 from utils.torch_utils import select_device, smart_inference_mode, time_sync
-from utils.dataloaders import LoadImages
+
 
 @smart_inference_mode()
 def run(
@@ -74,7 +75,8 @@ def run(
         i = p.argsort(1, descending=True)[:, :5].squeeze()  # top 5 indices
         dt[2] += time_sync() - t3
         seen += 1
-        LOGGER.info(f"image 1/1 {file}: {imgsz}x{imgsz} {', '.join(f'{model.names[j]} {p[0, j]:.2f}' for j in i.tolist())}")
+        LOGGER.info(
+            f"image 1/1 {file}: {imgsz}x{imgsz} {', '.join(f'{model.names[j]} {p[0, j]:.2f}' for j in i.tolist())}")
 
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
@@ -89,7 +91,8 @@ def run(
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s-cls.pt', help='model path(s)')
-    parser.add_argument('--source', type=str, default=ROOT / 'data/images/bus.jpg', help='Image file/ dir') # TODO: Video
+    parser.add_argument('--source', type=str, default=ROOT / 'data/images/bus.jpg',
+                        help='Image file/ dir')  # TODO: Video
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=224, help='train, val image size (pixels)')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
