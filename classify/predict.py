@@ -1,6 +1,6 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
-Run classification inference on images
+Run classification inference on file/dir/URL/glob
 
 Usage:
     $ python classify/predict.py --weights yolov5s-cls.pt --source data/images/bus.jpg
@@ -21,26 +21,29 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import DetectMultiBackend
 from utils.augmentations import classify_transforms
-from utils.dataloaders import LoadImages
-from utils.general import LOGGER, check_requirements, colorstr, increment_path, print_args
-from utils.plots import imshow_cls
+from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages
+from utils.general import LOGGER, check_file, check_requirements, colorstr, increment_path, print_args
 from utils.torch_utils import select_device, smart_inference_mode, time_sync
 
 
 @smart_inference_mode()
 def run(
         weights=ROOT / 'yolov5s-cls.pt',  # model.pt path(s)
-        source=ROOT / 'data/images',  # file or dir
+        source=ROOT / 'data/images',  # file/dir/URL/glob
         imgsz=224,  # inference size
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
-        show=True,
         project=ROOT / 'runs/predict-cls',  # save to project/name
         name='exp',  # save to project/name
         exist_ok=False,  # existing project/name ok, do not increment
 ):
-    file = str(source)
+    source = str(source)
+    is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
+    is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))
+    if is_url and is_file:
+        source = check_file(source)  # download
+
     seen, dt = 1, [0.0, 0.0, 0.0]
     device = select_device(device)
 
@@ -68,9 +71,12 @@ def run(
         t3 = time_sync()
         dt[1] += t3 - t2
 
+        # Post-process
         p = F.softmax(results, dim=1)  # probabilities
         i = p.argsort(1, descending=True)[:, :5].squeeze().tolist()  # top 5 indices
         dt[2] += time_sync() - t3
+        # if save:
+        #    imshow_cls(im, f=save_dir / Path(path).name, verbose=True)
         seen += 1
         LOGGER.info(f"{s}{imgsz}x{imgsz} {', '.join(f'{model.names[j]} {p[0, j]:.2f}' for j in i)}")
 
@@ -78,8 +84,6 @@ def run(
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
     shape = (1, 3, imgsz, imgsz)
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms post-process per image at shape {shape}' % t)
-    if show:
-        imshow_cls(im, f=save_dir / Path(file).name, verbose=True)
     LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
     return p
 
@@ -87,7 +91,7 @@ def run(
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s-cls.pt', help='model path(s)')
-    parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file or dir')  # TODO: Video
+    parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=224, help='train, val image size (pixels)')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
