@@ -20,11 +20,11 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from utils.plots import imshow_cls
 from models.common import DetectMultiBackend
 from utils.augmentations import classify_transforms
 from utils.dataloaders import LoadImages
 from utils.general import LOGGER, check_requirements, colorstr, increment_path, print_args
+from utils.plots import imshow_cls
 from utils.torch_utils import select_device, smart_inference_mode, time_sync
 
 
