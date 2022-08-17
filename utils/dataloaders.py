@@ -186,7 +186,7 @@ class _RepeatSampler:
 
 class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
-    def __init__(self, path, img_size=640, stride=32, auto=True):
+    def __init__(self, path, img_size=640, stride=32, auto=True, transforms=None):
         files = []
         for p in sorted(path) if isinstance(path, (list, tuple)) else [path]:
             p = str(Path(p).resolve())
@@ -210,6 +210,7 @@ class LoadImages:
         self.video_flag = [False] * ni + [True] * nv
         self.mode = 'image'
         self.auto = auto
+        self.transforms = transforms  # optional
         if any(videos):
             self.new_video(videos[0])  # new video
         else:
@@ -229,7 +230,7 @@ class LoadImages:
         if self.video_flag[self.count]:
             # Read video
             self.mode = 'video'
-            ret_val, img0 = self.cap.read()
+            ret_val, im0 = self.cap.read()
             while not ret_val:
                 self.count += 1
                 self.cap.release()
@@ -237,7 +238,7 @@ class LoadImages:
                     raise StopIteration
                 path = self.files[self.count]
                 self.new_video(path)
-                ret_val, img0 = self.cap.read()
+                ret_val, im0 = self.cap.read()
 
             self.frame += 1
             s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: '
@@ -245,18 +246,18 @@ class LoadImages:
         else:
             # Read image
             self.count += 1
-            img0 = cv2.imread(path)  # BGR
-            assert img0 is not None, f'Image Not Found {path}'
+            im0 = cv2.imread(path)  # BGR
+            assert im0 is not None, f'Image Not Found {path}'
             s = f'image {self.count}/{self.nf} {path}: '
 
-        # Padded resize
-        img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
+        if self.transforms:
+            im = self.transforms(cv2.cvtColor(im0, cv2.COLOR_BGR2RGB))  # classify transforms
+        else:
+            im = letterbox(im0, self.img_size, stride=self.stride, auto=self.auto)[0]  # padded resize
+            im = im.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+            im = np.ascontiguousarray(im)  # contiguous
 
-        # Convert
-        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
-        img = np.ascontiguousarray(img)
-
-        return path, img, img0, self.cap, s
+        return path, im, im0, self.cap, s
 
     def new_video(self, path):
         self.frame = 0
