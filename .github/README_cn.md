@@ -130,19 +130,22 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
 <details open>
 <summary>教程</summary>
 
-- [训练自定义数据](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data)  🚀 推荐
-- [获得最佳训练效果的技巧](https://github.com/ultralytics/yolov5/wiki/Tips-for-Best-Training-Results)  ☘️ 推荐
-- [使用 Weights & Biases 记录实验](https://github.com/ultralytics/yolov5/issues/1289)  🌟 新
-- [Roboflow：数据集、标签和主动学习](https://github.com/ultralytics/yolov5/issues/4975)  🌟 新
+- [训练自定义数据集](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data) 🚀 推荐
+- [获得最佳训练效果的技巧](https://github.com/ultralytics/yolov5/wiki/Tips-for-Best-Training-Results)  ☘️
+  推荐
 - [多GPU训练](https://github.com/ultralytics/yolov5/issues/475)
-- [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36)  ⭐ 新
-- [TFLite, ONNX, CoreML, TensorRT 导出](https://github.com/ultralytics/yolov5/issues/251) 🚀
+- [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36) 🌟 新
+- [TFLite, ONNX, CoreML, TensorRT 输出](https://github.com/ultralytics/yolov5/issues/251) 🚀
 - [测试时数据增强 (TTA)](https://github.com/ultralytics/yolov5/issues/303)
 - [模型集成](https://github.com/ultralytics/yolov5/issues/318)
 - [模型剪枝/稀疏性](https://github.com/ultralytics/yolov5/issues/304)
 - [超参数进化](https://github.com/ultralytics/yolov5/issues/607)
-- [带有冻结层的迁移学习](https://github.com/ultralytics/yolov5/issues/1314) ⭐ 新
-- [架构概要](https://github.com/ultralytics/yolov5/issues/6998) ⭐ 新
+- [带有冻结层的迁移学习](https://github.com/ultralytics/yolov5/issues/1314)
+- [架构概要](https://github.com/ultralytics/yolov5/issues/6998) 🌟 新
+- [使用Weights & Biases 记录实验](https://github.com/ultralytics/yolov5/issues/1289)
+- [Roboflow：数据集，标签和主动学习](https://github.com/ultralytics/yolov5/issues/4975) 🌟 新
+- [使用ClearML 记录实验](https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml) 🌟 新
+- [Deci 平台](https://github.com/ultralytics/yolov5/wiki/Deci-Platform) 🌟 新
 
 </details>
 
@@ -186,7 +189,7 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
 
 |Deci ⭐ NEW|ClearML ⭐ NEW|Roboflow|Weights & Biases
 |:-:|:-:|:-:|:-:|
-|Automatically compile and quantize YOLOv5 for better inference performance in one click at [Deci](https://bit.ly/yolov5-deci-platform)|Automatically track, visualize and even remotely train YOLOv5 using [ClearML](https://cutt.ly/yolov5-readme-clearml) (open-source!)|Label and export your custom datasets directly to YOLOv5 for training with [Roboflow](https://roboflow.com/?ref=ultralytics) |Automatically track and visualize all your YOLOv5 training runs in the cloud with [Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme)
+|在[Deci](https://bit.ly/yolov5-deci-platform)一键自动编译和量化YOLOv5以提高推理性能|使用[ClearML](https://cutt.ly/yolov5-readme-clearml) (开源!)自动追踪，可视化，以及远程训练YOLOv5|标记并将您的自定义数据直接导出到YOLOv5后，用[Roboflow](https://roboflow.com/?ref=ultralytics)进行训练 |通过[Weights & Biases](https://wandb.ai/site?utm_campaign=repo_yolo_readme)自动跟踪以及可视化你在云端所有的YOLOv5训练运行情况
 
 
 ## <div align="center">为什么选择 YOLOv5</div>
@@ -209,7 +212,7 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
 
 ### 预训练检查点
 
-| Model                                                                                                | size<br><sup>(pixels) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Speed<br><sup>CPU b1<br>(ms) | Speed<br><sup>V100 b1<br>(ms) | Speed<br><sup>V100 b32<br>(ms) | params<br><sup>(M) | FLOPs<br><sup>@640 (B) |
+| 模型                                                                                                | 规模<br><sup>(像素) | mAP<sup>验证<br>0.5:0.95 | mAP<sup>验证<br>0.5 | 速度<br><sup>CPU b1<br>(ms) | 速度<br><sup>V100 b1<br>(ms) | 速度<br><sup>V100 b32<br>(ms) | 参数<br><sup>(M) | 浮点运算<br><sup>@640 (B) |
 |------------------------------------------------------------------------------------------------------|-----------------------|-------------------------|--------------------|------------------------------|-------------------------------|--------------------------------|--------------------|------------------------|
 | [YOLOv5n](https://github.com/ultralytics/yolov5/releases/download/v6.1/yolov5n.pt)                   | 640                   | 28.0                    | 45.7               | **45**                       | **6.3**                       | **0.6**                        | **1.9**            | **4.5**                |
 | [YOLOv5s](https://github.com/ultralytics/yolov5/releases/download/v6.1/yolov5s.pt)                   | 640                   | 37.4                    | 56.8               | 98                           | 6.4                           | 0.9                            | 7.2                | 16.5                   |
@@ -237,18 +240,18 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
 </details>
 
 
-## <div align="center">Classification ⭐ NEW</div>
+## <div align="center">分类 ⭐ 新</div>
 
-YOLOv5 [release v6.2](https://github.com/ultralytics/yolov5/releases) brings support for classification model training, validation, prediction and export! We've made training classifier models super simple. Click below to get started.
+YOLOv5发布的[v6.2版本](https://github.com/ultralytics/yolov5/releases) 支持训练，验证，预测和输出分类模型！这使得训练分类器模型非常简单。点击下面开始尝试！
 
 <details>
-  <summary>Classification Checkpoints (click to expand)</summary>
+  <summary>分类检查点 (点击展开)</summary>
 
 <br>
 
-We trained YOLOv5-cls classification models on ImageNet for 90 epochs using a 4xA100 instance, and we trained ResNet and EfficientNet models alongside with the same default training settings to compare. We exported all models to ONNX FP32 for CPU speed tests and to TensorRT FP16 for GPU speed tests. We ran all speed tests on Google [Colab Pro](https://colab.research.google.com/signup) for easy reproducibility.
+我们在ImageNet上使用了4xA100的实例训练YOLOv5-cls分类模型90个epochs，并以相同的默认设置同时训练了ResNet和EfficientNet模型来进行比较。我们将所有的模型导出到ONNX FP32进行CPU速度测试，又导出到TensorRT FP16进行GPU速度测试。最后，为了方便重现，我们在[Google Colab Pro](https://colab.research.google.com/signup)上进行了所有的速度测试。
 
-| Model                                                                                              | size<br><sup>(pixels) | acc<br><sup>top1 | acc<br><sup>top5 | Training<br><sup>90 epochs<br>4xA100 (hours) | Speed<br><sup>ONNX CPU<br>(ms) | Speed<br><sup>TensorRT V100<br>(ms) | params<br><sup>(M) | FLOPs<br><sup>@224 (B) |
+| 模型                                                                                              | 规模<br><sup>(像素) | 准确度<br><sup>第一 | 准确度<br><sup>前五 | 训练<br><sup>90 epochs<br>4xA100 (小时) | 速度<br><sup>ONNX CPU<br>(ms) | 速度<br><sup>TensorRT V100<br>(ms) | 参数<br><sup>(M) | 浮点运算<br><sup>@224 (B) |
 |----------------------------------------------------------------------------------------------------|-----------------------|------------------|------------------|----------------------------------------------|--------------------------------|-------------------------------------|--------------------|------------------------|
 | [YOLOv5n-cls](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5n-cls.pt)         | 224                   | 64.6             | 85.4             | 7:59                                         | **3.3**                        | **0.5**                             | **2.5**            | **0.5**                |
 | [YOLOv5s-cls](https://github.com/ultralytics/yolov5/releases/download/v6.2/yolov5s-cls.pt)         | 224                   | 71.5             | 90.2             | 8:09                                         | 6.6                            | 0.6                                 | 5.4                | 1.4                    |
@@ -267,38 +270,38 @@ We trained YOLOv5-cls classification models on ImageNet for 90 epochs using a 4x
 | [EfficientNet_b3](https://github.com/ultralytics/yolov5/releases/download/v6.2/efficientnet_b3.pt) | 224                   | 77.7             | 94.0             | 19:19                                        | 18.9                           | 1.9                                 | 12.2               | 2.4                    |
 
 <details>
-  <summary>Table Notes (click to expand)</summary>
+  <summary>表格注释 (点击扩展)</summary>
 
-- All checkpoints are trained to 90 epochs with SGD optimizer with `lr0=0.001` and `weight_decay=5e-5` at image size 224 and all default settings.<br>Runs logged to https://wandb.ai/glenn-jocher/YOLOv5-Classifier-v6-2
-- **Accuracy** values are for single-model single-scale on [ImageNet-1k](https://www.image-net.org/index.php) dataset.<br>Reproduce by `python classify/val.py --data ../datasets/imagenet --img 224`
-- **Speed** averaged over 100 inference images using a Google [Colab Pro](https://colab.research.google.com/signup) V100 High-RAM instance.<br>Reproduce by `python classify/val.py --data ../datasets/imagenet --img 224 --batch 1`
-- **Export** to ONNX at FP32 and TensorRT at FP16 done with `export.py`. <br>Reproduce by `python export.py --weights yolov5s-cls.pt --include engine onnx --imgsz 224`
+- 所有检查点都被SGD优化器训练到90 epochs, `lr0=0.001` 和 `weight_decay=5e-5`， 图像大小为224，全为默认设置。<br>运行数据记录于 https://wandb.ai/glenn-jocher/YOLOv5-Classifier-v6-2。
+- **准确度** 值为[ImageNet-1k](https://www.image-net.org/index.php)数据集上的单模型单尺度。<br>通过`python classify/val.py --data ../datasets/imagenet --img 224`进行复制。
+- 使用Google [Colab Pro](https://colab.research.google.com/signup) V100 High-RAM实例得出的100张推理图像的平均**速度**。<br>通过 `python classify/val.py --data ../datasets/imagenet --img 224 --batch 1`进行复制。
+- 用`export.py`**导出**到FP32的ONNX和FP16的TensorRT。<br>通过 `python export.py --weights yolov5s-cls.pt --include engine onnx --imgsz 224`进行复制。
 </details>
 </details>
 
 <details>
-  <summary>Classification Usage Examples (click to expand)</summary>
+  <summary>分类使用实例 (点击展开)</summary>
 
-### Train
-YOLOv5 classification training supports auto-download of MNIST, Fashion-MNIST, CIFAR10, CIFAR100, Imagenette, Imagewoof, and ImageNet datasets with the `--data` argument. To start training on MNIST for example use `--data mnist`.
+### 训练
+YOLOv5分类训练支持自动下载MNIST, Fashion-MNIST, CIFAR10, CIFAR100, Imagenette, Imagewoof和ImageNet数据集，并使用`--data` 参数. 打个比方，在MNIST上使用`--data mnist`开始训练。
 
 ```bash
-# Single-GPU
+# 单GPU
 python classify/train.py --model yolov5s-cls.pt --data cifar100 --epochs 5 --img 224 --batch 128
 
-# Multi-GPU DDP
+# 多-GPU DDP
 python -m torch.distributed.run --nproc_per_node 4 --master_port 1 classify/train.py --model yolov5s-cls.pt --data imagenet --epochs 5 --img 224 --device 0,1,2,3
 ```
 
-### Val
-Validate YOLOv5m-cls accuracy on ImageNet-1k dataset:
+### 验证
+在ImageNet-1k数据集上验证YOLOv5m-cl的准确性:
 ```bash
 bash data/scripts/get_imagenet.sh --val  # download ImageNet val split (6.3G, 50000 images)
 python classify/val.py --weights yolov5m-cls.pt --data ../datasets/imagenet --img 224  # validate
 ```
 
-### Predict
-Use pretrained YOLOv5s-cls.pt to predict bus.jpg:
+### 预测
+用提前训练好的YOLOv5s-cls.pt去预测bus.jpg:
 ```bash
 python classify/predict.py --weights yolov5s-cls.pt --data data/images/bus.jpg
 ```
@@ -306,8 +309,8 @@ python classify/predict.py --weights yolov5s-cls.pt --data data/images/bus.jpg
 model = torch.hub.load('ultralytics/yolov5', 'custom', 'yolov5s-cls.pt')  # load from PyTorch Hub
 ```
 
-### Export
-Export a group of trained YOLOv5s-cls, ResNet and EfficientNet models to ONNX and TensorRT:
+### 导出
+导出一组训练好的YOLOv5s-cls, ResNet和EfficientNet模型到ONNX和TensorRT:
 ```bash
 python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --include onnx engine --img 224
 ```
