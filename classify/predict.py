@@ -71,7 +71,7 @@ def run(
     p = F.softmax(results, dim=1)  # probabilities
     i = p.argsort(1, descending=True)[:, :5].squeeze()  # top 5 indices
     dt[2] += time_sync() - t3
-    LOGGER.info(f"image 1/1 {file}: {imgsz}x{imgsz} {', '.join(f'{model.names[j]} {p[0, j]:.2f}' for j in i)}")
+    LOGGER.info(f"image 1/1 {file}: {imgsz}x{imgsz} {', '.join(f'{model.names[j]} {p[0, j]:.2f}' for j in i.tolist())}")
 
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
