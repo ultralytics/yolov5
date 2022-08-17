@@ -42,6 +42,16 @@ def smart_inference_mode(torch_1_9=check_version(torch.__version__, '1.9.0')):
     return decorate
 
 
+def smartCrossEntropyLoss(label_smoothing=0.0):
+    # Returns nn.CrossEntropyLoss with label smoothing enabled for torch>=1.10.0
+    if check_version(torch.__version__, '1.10.0'):
+        return nn.CrossEntropyLoss(label_smoothing=label_smoothing)  # loss function
+    else:
+        if label_smoothing > 0:
+            LOGGER.warning(f'WARNING: label smoothing {label_smoothing} requires torch>=1.10.0')
+        return nn.CrossEntropyLoss()  # loss function
+
+
 def smart_DDP(model):
     # Model DDP creation with checks
     assert not check_version(torch.__version__, '1.12.0', pinned=True), \
@@ -51,6 +61,28 @@ def smart_DDP(model):
         return DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK, static_graph=True)
     else:
         return DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
+
+
+def reshape_classifier_output(model, n=1000):
+    # Update a TorchVision classification model to class count 'n' if required
+    from models.common import Classify
+    name, m = list((model.model if hasattr(model, 'model') else model).named_children())[-1]  # last module
+    if isinstance(m, Classify):  # YOLOv5 Classify() head
+        if m.linear.out_features != n:
+            m.linear = nn.Linear(m.linear.in_features, n)
+    elif isinstance(m, nn.Linear):  # ResNet, EfficientNet
+        if m.out_features != n:
+            setattr(model, name, nn.Linear(m.in_features, n))
+    elif isinstance(m, nn.Sequential):
+        types = [type(x) for x in m]
+        if nn.Linear in types:
+            i = types.index(nn.Linear)  # nn.Linear index
+            if m[i].out_features != n:
+                m[i] = nn.Linear(m[i].in_features, n)
+        elif nn.Conv2d in types:
+            i = types.index(nn.Conv2d)  # nn.Conv2d index
+            if m[i].out_channels != n:
+                m[i] = nn.Conv2d(m[i].in_channels, n, m[i].kernel_size, m[i].stride, bias=m[i].bias)
 
 
 @contextmanager
@@ -117,14 +149,13 @@ def time_sync():
 
 
 def profile(input, ops, n=10, device=None):
-    # YOLOv5 speed/memory/FLOPs profiler
-    #
-    # Usage:
-    #     input = torch.randn(16, 3, 640, 640)
-    #     m1 = lambda x: x * torch.sigmoid(x)
-    #     m2 = nn.SiLU()
-    #     profile(input, [m1, m2], n=100)  # profile over 100 iterations
-
+    """ YOLOv5 speed/memory/FLOPs profiler
+    Usage:
+        input = torch.randn(16, 3, 640, 640)
+        m1 = lambda x: x * torch.sigmoid(x)
+        m2 = nn.SiLU()
+        profile(input, [m1, m2], n=100)  # profile over 100 iterations
+    """
     results = []
     if not isinstance(device, torch.device):
         device = select_device(device)
@@ -311,6 +342,18 @@ def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9, decay=1e-5):
     LOGGER.info(f"{colorstr('optimizer:')} {type(optimizer).__name__}(lr={lr}) with parameter groups "
                 f"{len(g[1])} weight(decay=0.0), {len(g[0])} weight(decay={decay}), {len(g[2])} bias")
     return optimizer
+
+
+def smart_hub_load(repo='ultralytics/yolov5', model='yolov5s', **kwargs):
+    # YOLOv5 torch.hub.load() wrapper with smart error/issue handling
+    if check_version(torch.__version__, '1.9.1'):
+        kwargs['skip_validation'] = True  # validation causes GitHub API rate limit errors
+    if check_version(torch.__version__, '1.12.0'):
+        kwargs['trust_repo'] = True  # argument required starting in torch 0.12
+    try:
+        return torch.hub.load(repo, model, **kwargs)
+    except Exception:
+        return torch.hub.load(repo, model, force_reload=True, **kwargs)
 
 
 def smart_resume(ckpt, optimizer, ema=None, weights='yolov5s.pt', epochs=300, resume=True):
