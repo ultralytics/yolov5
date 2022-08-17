@@ -303,6 +303,8 @@ class GenericLogger:
 
         if mlflow and "mlflow" in self.include:
             self.mlflow = MlflowLogger(opt=opt)
+        else:
+            self.mlflow = None
 
     def log_metrics(self, metrics_dict, epoch):
         # Log metrics dictionary to all loggers
