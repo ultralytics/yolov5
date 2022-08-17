@@ -309,7 +309,7 @@ model = torch.hub.load('ultralytics/yolov5', 'custom', 'yolov5s-cls.pt')  # load
 ### Export
 Export a group of trained YOLOv5-cls, ResNet and EfficientNet models to ONNX and TensorRT.
 ```bash
-python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --include onnx engine
+python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --include onnx engine --img 224
 ```
 </details>
 
