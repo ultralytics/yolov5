@@ -16,6 +16,8 @@ except (ImportError, AssertionError):
 
 
 def construct_dataset(clearml_info_string):
+    """Load in a clearml dataset and fill the internal data_dict with its contents.
+    """
     dataset_id = clearml_info_string.replace('clearml://', '')
     dataset = Dataset.get(dataset_id=dataset_id)
     dataset_root_path = Path(dataset.get_local_copy())
@@ -121,7 +123,7 @@ class ClearmlLogger:
 
     def log_image_with_boxes(self, image_path, boxes, class_names, image, conf_threshold=0.35):
         """
-        Draw the bounding boxes on a single image and report the result as a ClearML debug sample
+        Draw the bounding boxes on a single image and report the result as a ClearML debug sample.
 
         arguments:
         image_path (PosixPath) the path the original image file
@@ -145,8 +147,8 @@ class ClearmlLogger:
 
                     if confidence > conf_threshold:
                         annotator.rectangle(box.cpu().numpy(), outline=color)
-                        annotator.box_label(box.cpu().numpy(), label=label, color=color)                    
-                    
+                        annotator.box_label(box.cpu().numpy(), label=label, color=color)
+
                 annotated_image = annotator.result()
                 self.task.get_logger().report_image(title='Bounding Boxes',
                                                     series=image_path.name,
