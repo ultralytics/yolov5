@@ -20,7 +20,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from classify.train import imshow_cls
+from utils.plots import imshow_cls
 from models.common import DetectMultiBackend
 from utils.augmentations import classify_transforms
 from utils.dataloaders import LoadImages
@@ -31,7 +31,7 @@ from utils.torch_utils import select_device, smart_inference_mode, time_sync
 @smart_inference_mode()
 def run(
         weights=ROOT / 'yolov5s-cls.pt',  # model.pt path(s)
-        source=ROOT / 'data/images/bus.jpg',  # file/dir/URL/glob, 0 for webcam
+        source=ROOT / 'data/images',  # file or dir
         imgsz=224,  # inference size
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         half=False,  # use FP16 half-precision inference
@@ -56,10 +56,9 @@ def run(
     model = DetectMultiBackend(weights, device=device, dnn=dnn, fp16=half)
     model.warmup(imgsz=(1, 3, imgsz, imgsz))  # warmup
     dataset = LoadImages(source, img_size=imgsz)
-    for data in dataset:
+    for path, im, im0s, vid_cap, s in dataset:
         # Image
         t1 = time_sync()
-        path = data[0]
         im = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)
         im = transforms(im).unsqueeze(0).to(device)
         im = im.half() if model.fp16 else im.float()
@@ -72,11 +71,10 @@ def run(
         dt[1] += t3 - t2
 
         p = F.softmax(results, dim=1)  # probabilities
-        i = p.argsort(1, descending=True)[:, :5].squeeze()  # top 5 indices
+        i = p.argsort(1, descending=True)[:, :5].squeeze().tolist()  # top 5 indices
         dt[2] += time_sync() - t3
         seen += 1
-        LOGGER.info(
-            f"image 1/1 {file}: {imgsz}x{imgsz} {', '.join(f'{model.names[j]} {p[0, j]:.2f}' for j in i.tolist())}")
+        LOGGER.info(f"{s}{imgsz}x{imgsz} {', '.join(f'{model.names[j]} {p[0, j]:.2f}' for j in i)}")
 
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
@@ -91,8 +89,7 @@ def run(
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s-cls.pt', help='model path(s)')
-    parser.add_argument('--source', type=str, default=ROOT / 'data/images/bus.jpg',
-                        help='Image file/ dir')  # TODO: Video
+    parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file or dir')  # TODO: Video
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=224, help='train, val image size (pixels)')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
