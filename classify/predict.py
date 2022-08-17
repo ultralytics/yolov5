@@ -11,7 +11,6 @@ import os
 import sys
 from pathlib import Path
 
-import cv2
 import torch.nn.functional as F
 
 FILE = Path(__file__).resolve()
@@ -20,11 +19,11 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+from utils.plots import imshow_cls
 from models.common import DetectMultiBackend
 from utils.augmentations import classify_transforms
 from utils.dataloaders import LoadImages
 from utils.general import LOGGER, check_requirements, colorstr, increment_path, print_args
-from utils.plots import imshow_cls
 from utils.torch_utils import select_device, smart_inference_mode, time_sync
 
 
@@ -55,12 +54,11 @@ def run(
     # Load model
     model = DetectMultiBackend(weights, device=device, dnn=dnn, fp16=half)
     model.warmup(imgsz=(1, 3, imgsz, imgsz))  # warmup
-    dataset = LoadImages(source, img_size=imgsz)
+    dataset = LoadImages(source, img_size=imgsz, transforms=transforms)
     for path, im, im0s, vid_cap, s in dataset:
         # Image
         t1 = time_sync()
-        im = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)
-        im = transforms(im).unsqueeze(0).to(device)
+        im = im.unsqueeze(0).to(device)
         im = im.half() if model.fp16 else im.float()
         t2 = time_sync()
         dt[0] += t2 - t1
