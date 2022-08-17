@@ -136,7 +136,7 @@ def train(opt, device):
         logger.log_graph(model, imgsz)  # log model
 
     # Optimizer
-    optimizer = smart_optimizer(model, opt.optimizer, opt.lr0, momentum=0.9, decay=5e-5)
+    optimizer = smart_optimizer(model, opt.optimizer, opt.lr0, momentum=0.9, decay=opt.decay)
 
     # Scheduler
     lrf = 0.01  # final lr (fraction of lr0)
@@ -280,6 +280,7 @@ def parse_opt(known=False):
     parser.add_argument('--pretrained', nargs='?', const=True, default=True, help='start from i.e. --pretrained False')
     parser.add_argument('--optimizer', choices=['SGD', 'Adam', 'AdamW', 'RMSProp'], default='Adam', help='optimizer')
     parser.add_argument('--lr0', type=float, default=0.001, help='initial learning rate')
+    parser.add_argument('--decay', type=float, default=5e-5, help='weight decay')
     parser.add_argument('--label-smoothing', type=float, default=0.1, help='Label smoothing epsilon')
     parser.add_argument('--cutoff', type=int, default=None, help='Model layer cutoff index for Classify() head')
     parser.add_argument('--dropout', type=float, default=None, help='Dropout (fraction)')
