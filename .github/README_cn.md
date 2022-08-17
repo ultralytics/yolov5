@@ -280,7 +280,7 @@ We trained classification versions of the 5 base YOLOv5 models on ImageNet for 9
   <summary>Classification Usage Examples (click to expand)</summary>
 
 ### Train
-YOLOv5 classification training supports auto-download of MNIST, Fashion-MNIST, CIFAR10, CIFAR100, Imagenette, Imagewoof, and ImageNet datasets.
+YOLOv5 classification training supports auto-download of MNIST, Fashion-MNIST, CIFAR10, CIFAR100, Imagenette, Imagewoof, and ImageNet datasets with the `--data` argument. To start training on MNIST for example use `--data mnist`.
 
 ```bash
 # Single-GPU
@@ -291,11 +291,14 @@ python -m torch.distributed.run --nproc_per_node 4 --master_port 1 classify/trai
 ```
 
 ### Val
+Validate accuracy on a pretrained model. To validate YOLOv5s-cls accuracy on ImageNet.
 ```bash
+bash data/scripts/get_imagenet.sh --val  # download ImageNet val split (6.3G, 50000 images)
 python classify/val.py --weights yolov5s-cls.pt --data ../datasets/imagenet --img 224
 ```
 
 ### Predict
+Run a classification prediction on an image.
 ```bash
 python classify/predict.py --weights yolov5s-cls.pt --data data/images/bus.jpg
 ```
@@ -304,10 +307,9 @@ model = torch.hub.load('ultralytics/yolov5', 'custom', 'yolov5s-cls.pt')  # load
 ```
 
 ### Export
+Export a group of trained YOLOv5-cls, ResNet and EfficientNet models to ONNX and TensorRT.
 ```bash
-python export.py --weights yolov5s-cls.pt --include onnx
-python export.py --weights resnet50.pt --include onnx
-python export.py --weights efficientnet_b0.pt --include onnx
+python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --include onnx engine
 ```
 </details>
 
