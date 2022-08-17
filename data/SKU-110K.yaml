@@ -14,8 +14,8 @@ val: val.txt  # val images (relative to 'path')  588 images
 test: test.txt  # test images (optional)  2936 images
 
 # Classes
-nc: 1  # number of classes
-names: ['object']  # class names
+names:
+  0: object
 
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------

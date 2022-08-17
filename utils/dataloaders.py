@@ -1004,7 +1004,7 @@ class HUBDatasetStats():
         self.hub_dir = Path(data['path'] + '-hub')
         self.im_dir = self.hub_dir / 'images'
         self.im_dir.mkdir(parents=True, exist_ok=True)  # makes /images
-        self.stats = {'nc': data['nc'], 'names': data['names']}  # statistics dictionary
+        self.stats = {'nc': data['nc'], 'names': list(data['names'].values())}  # statistics dictionary
         self.data = data
 
     @staticmethod

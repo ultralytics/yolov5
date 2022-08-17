@@ -481,11 +481,11 @@ def check_dataset(data, autodownload=True):
             data = yaml.safe_load(f)  # dictionary
 
     # Checks
-    for k in 'train', 'val', 'nc':
+    for k in 'train', 'val', 'names':
         assert k in data, f"data.yaml '{k}:' field missing ❌"
-    if 'names' not in data:
-        LOGGER.warning("data.yaml 'names:' field missing ⚠️, assigning default names 'class0', 'class1', etc.")
-        data['names'] = [f'class{i}' for i in range(data['nc'])]  # default names
+    if isinstance(data['names'], (list, tuple)):  # old array format
+        data['names'] = dict(enumerate(data['names']))  # convert to dict
+    data['nc'] = len(data['names'])
 
     # Resolve paths
     path = Path(extract_dir or data.get('path') or '')  # optional 'path' default to '.'
