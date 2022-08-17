@@ -483,6 +483,9 @@ def check_dataset(data, autodownload=True):
     # Checks
     for k in 'train', 'val', 'names':
         assert k in data, f"data.yaml '{k}:' field missing ❌"
+    if isinstance(data['names'], (list, tuple)):  # old array format
+        data['names'] = dict(enumerate(data['names']))  # convert to dict
+    data['nc'] = len(data['names'])
 
     # Resolve paths
     path = Path(extract_dir or data.get('path') or '')  # optional 'path' default to '.'
