@@ -98,16 +98,26 @@ def seed_worker(worker_id):
 
 
 def create_weighted_sampler(dataset):
-    labels_per_class = [label[:, 0] for label in dataset.labels if label.shape[0] > 0]
+    labels_per_class = [label[:, 0].tolist() for label in dataset.labels if label.shape[0] > 0]
+    # flatten 2d array into 1d: https://stackoverflow.com/questions/29244286/how-to-flatten-a-2d-list-to-1d-without-using-numpy
+    labels_per_class=[j for sub in labels_per_class for j in sub] 
+
     labels_per_class = np.array(labels_per_class)
 
     background_count = len([1 for label in dataset.labels if label.shape[0] == 0])
 
     unique_classes, counts = np.unique(labels_per_class, return_counts=True)
+
     # = counts / (np.sum(counts) + background_count)
     # normalized_background = background_count / (np.sum(counts) + background_count)
 
     weight_cls = 1 / counts
+
+    # create a dictionary for the weight of each class
+    weight_dict = {}
+    for _cls, weight in zip(unique_classes, weight_cls):
+        weight_dict[_cls] = weight
+
     weight_background = 1 / background_count
 
     final_weights = []
@@ -119,7 +129,7 @@ def create_weighted_sampler(dataset):
             label_classes = np.unique(label[:, 0]).tolist()
             values = []
             for cls_ in label_classes:
-                values.append(weight_cls[int(cls_)])
+                values.append(weight_dict[_cls])
 
             final_weights.append(sum(values) / len(values))
 
