@@ -133,3 +133,8 @@ jobs:
           python classify/predict.py --imgsz 32 --weights $b --source ../datasets/mnist2560/test/7/60.png  # predict
           python classify/predict.py --imgsz 32 --weights $m --source data/images/bus.jpg  # predict
           python export.py --weights $b --img 64 --imgsz 224 --include torchscript  # export
+          python - <<EOF
+          import torch
+          for path in '$m', '$b':
+              model = torch.hub.load('.', 'custom', path=path, source='local')
+          EOF
