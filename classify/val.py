@@ -23,8 +23,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import DetectMultiBackend
 from utils.dataloaders import create_classification_dataloader
-from utils.general import LOGGER, check_img_size, check_requirements, colorstr, increment_path, print_args
-from utils.torch_utils import select_device, smart_inference_mode, time_sync
+from utils.general import LOGGER, Profile, check_img_size, check_requirements, colorstr, increment_path, print_args
+from utils.torch_utils import select_device, smart_inference_mode
 
 
 @smart_inference_mode()
@@ -83,27 +83,24 @@ def run(
                                                       workers=workers)
 
     model.eval()
-    pred, targets, loss, dt = [], [], 0, [0.0, 0.0, 0.0]
+    pred, targets, loss, dt = [], [], 0, (Profile(), Profile(), Profile())
     n = len(dataloader)  # number of batches
     action = 'validating' if dataloader.dataset.root.stem == 'val' else 'testing'
     desc = f"{pbar.desc[:-36]}{action:>36}" if pbar else f"{action}"
     bar = tqdm(dataloader, desc, n, not training, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0)
     with torch.cuda.amp.autocast(enabled=device.type != 'cpu'):
         for images, labels in bar:
-            t1 = time_sync()
-            images, labels = images.to(device, non_blocking=True), labels.to(device)
-            t2 = time_sync()
-            dt[0] += t2 - t1
+            with dt[0]:
+                images, labels = images.to(device, non_blocking=True), labels.to(device)
 
-            y = model(images)
-            t3 = time_sync()
-            dt[1] += t3 - t2
+            with dt[1]:
+                y = model(images)
 
-            pred.append(y.argsort(1, descending=True)[:, :5])
-            targets.append(labels)
-            if criterion:
-                loss += criterion(y, labels)
-            dt[2] += time_sync() - t3
+            with dt[2]:
+                pred.append(y.argsort(1, descending=True)[:, :5])
+                targets.append(labels)
+                if criterion:
+                    loss += criterion(y, labels)
 
     loss /= n
     pred, targets = torch.cat(pred), torch.cat(targets)
@@ -122,7 +119,7 @@ def run(
             LOGGER.info(f"{c:>24}{aci.shape[0]:>12}{top1i:>12.3g}{top5i:>12.3g}")
 
         # Print results
-        t = tuple(x / len(dataloader.dataset.samples) * 1E3 for x in dt)  # speeds per image
+        t = tuple(x.t / len(dataloader.dataset.samples) * 1E3 for x in dt)  # speeds per image
         shape = (1, 3, imgsz, imgsz)
         LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms post-process per image at shape {shape}' % t)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
