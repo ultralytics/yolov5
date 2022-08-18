@@ -184,7 +184,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     if pretrained:
         with torch_distributed_zero_first(LOCAL_RANK):
             weights = attempt_download(weights)  # download if not found locally
-        ckpt = torch.load(
+            ckpt = torch.load(
             weights, map_location="cpu"
         )  # load checkpoint to CPU to avoid CUDA memory leak
         model = Model(
@@ -794,6 +794,8 @@ def parse_opt(known=False):
     parser.add_argument("--comet_checkpoint_filename", type=str, default="best.pt")
     parser.add_argument("--comet_log_batch_metrics", action="store_false")
     parser.add_argument("--comet_log_batch_interval", type=int, default=1)
+    parser.add_argument("--comet_log_confusion_matrix", action="store_false")
+    parser.add_argument("--comet_max_images", type=int, default=100)
 
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt

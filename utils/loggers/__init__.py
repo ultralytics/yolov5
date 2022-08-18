@@ -8,9 +8,8 @@ import warnings
 
 import pkg_resources as pkg
 import torch
-from torch.utils.tensorboard import SummaryWriter
-
 from export import run
+from torch.utils.tensorboard import SummaryWriter
 from utils.general import LOGGER, colorstr, cv2, emojis
 from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_results
@@ -133,16 +132,16 @@ class Loggers:
         else:
             self.wandb = None
 
-        if "comet" in self.include:
+        if comet_ml and "comet" in self.include:
             try:
                 if isinstance(self.opt.resume, str) and self.opt.resume.startswith(
                     "comet://"
                 ):
                     run_id = self.opt.resume.split("/")[-1]
-                    self.comet_logger = CometLogger(self.opt, run_id=run_id)
+                    self.comet_logger = CometLogger(self.opt, self.hyp, run_id=run_id)
 
                 else:
-                    self.comet_logger = CometLogger(self.opt)
+                    self.comet_logger = CometLogger(self.opt, self.hyp)
 
             except Exception as e:
                 self.comet_logger = None
@@ -150,7 +149,7 @@ class Loggers:
 
     def on_train_start(self):
         if self.comet_logger:
-            self.comet_logger.log_parameters(self.hyp)
+            self.comet_logger.on_train_start()
 
     def on_pretrain_routine_end(self):
         # Callback runs on pre-train routine end
@@ -161,8 +160,7 @@ class Loggers:
             )
 
         if self.comet_logger:
-            for x in paths:
-                self.comet_logger.log_asset(str(x))
+            self.comet_logger.on_pretrain_routine_end(paths)
 
     def on_train_batch_end(self, ni, model, imgs, targets, paths, plots, vals):
         log_dict = dict(zip(self.keys[0:3], vals))
@@ -196,20 +194,28 @@ class Loggers:
                 )
 
         if self.comet_logger:
-            if self.comet_logger.log_batch_metrics and (
-                ni % self.comet_logger.batch_logging_interval == 0
-            ):
-                self.comet_logger.log_metrics(log_dict, step=ni)
+            self.comet_logger.on_train_batch_end(log_dict, step=ni)
 
     def on_train_epoch_end(self, epoch):
         # Callback runs on train epoch end
         if self.wandb:
             self.wandb.current_epoch = epoch + 1
 
+        if self.comet_logger:
+            self.comet_logger.on_train_epoch_end(epoch)
+
+    def on_val_start(self):
+        if self.comet_logger:
+            self.comet_logger.on_val_start()
+
     def on_val_image_end(self, pred, predn, path, names, im):
         # Callback runs on val image end
         if self.wandb:
             self.wandb.val_one_image(pred, predn, path, names, im)
+
+    def on_val_batch_end(self, im, targets, paths, shapes, out):
+        if self.comet_logger:
+            self.comet_logger.on_val_batch_end(im, targets, paths, shapes, out)
 
     def on_fit_epoch_end(self, vals, epoch, best_fitness, fi):
         # Callback runs at the end of each fit (train+val) epoch
@@ -241,7 +247,7 @@ class Loggers:
             self.wandb.end_epoch(best_result=best_fitness == fi)
 
         if self.comet_logger:
-            self.comet_logger.log_metrics(x, epoch=epoch)
+            self.comet_logger.on_fit_epoch_end(x, epoch=epoch)
 
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):
         # Callback runs on model save event
@@ -254,12 +260,7 @@ class Loggers:
                 )
 
         if self.comet_logger:
-            if (
-                (epoch + 1) % self.opt.save_period == 0 and not final_epoch
-            ) and self.opt.save_period != -1:
-                self.comet_logger.log_model(
-                    last.parent, self.opt, epoch, fi, best_model=best_fitness == fi
-                )
+            self.comet_logger.on_model_save(last, epoch, final_epoch, best_fitness, fi)
 
     def on_train_end(self, last, best, plots, epoch, results):
         # Callback runs on training end
@@ -296,13 +297,7 @@ class Loggers:
             self.wandb.finish_run()
 
         if self.comet_logger:
-            for f in files:
-                self.comet_logger.log_asset(f, metadata={"epoch": epoch})
-            self.comet_logger.log_asset(
-                f"{self.save_dir}/results.csv", metadata={"epoch": epoch}
-            )
-
-            self.comet_logger.finish_run()
+            self.comet_logger.on_train_end(files, self.save_dir, epoch)
 
     def on_params_update(self, params):
         # Update hyperparams or configs of the experiment
