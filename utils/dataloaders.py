@@ -102,7 +102,7 @@ def seed_worker(worker_id):
 def create_weighted_sampler(dataset):
     labels_per_class = [label[:, 0].tolist() for label in dataset.labels if label.shape[0] > 0]
     # flatten 2d array into 1d: https://stackoverflow.com/questions/29244286/how-to-flatten-a-2d-list-to-1d-without-using-numpy
-    labels_per_class=[j for sub in labels_per_class for j in sub] 
+    labels_per_class = [j for sub in labels_per_class for j in sub]
 
     labels_per_class = np.array(labels_per_class)
 
