@@ -49,11 +49,8 @@ ENV OMP_NUM_THREADS=8
 # Kill all image-based
 # sudo docker kill $(sudo docker ps -qa --filter ancestor=ultralytics/yolov5:latest)
 
-# Bash into running container
-# sudo docker exec -it 5a9b5863d93d bash
-
-# Bash into stopped container
-# id=$(sudo docker ps -qa) && sudo docker start $id && sudo docker exec -it $id bash
+# DockerHub tag update
+# t=ultralytics/yolov5:latest tnew=ultralytics/yolov5:v6.2 && sudo docker pull $t && sudo docker tag $t $tnew && sudo docker push $tnew
 
 # Clean up
 # docker system prune -a --volumes

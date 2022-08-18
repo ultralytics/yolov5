@@ -14,16 +14,67 @@ train: images/autosplit_train.txt  # train images (relative to 'path') 90% of 84
 val: images/autosplit_val.txt  # train images (relative to 'path') 10% of 847 train images
 
 # Classes
-nc: 60  # number of classes
-names: ['Fixed-wing Aircraft', 'Small Aircraft', 'Cargo Plane', 'Helicopter', 'Passenger Vehicle', 'Small Car', 'Bus',
-        'Pickup Truck', 'Utility Truck', 'Truck', 'Cargo Truck', 'Truck w/Box', 'Truck Tractor', 'Trailer',
-        'Truck w/Flatbed', 'Truck w/Liquid', 'Crane Truck', 'Railway Vehicle', 'Passenger Car', 'Cargo Car',
-        'Flat Car', 'Tank car', 'Locomotive', 'Maritime Vessel', 'Motorboat', 'Sailboat', 'Tugboat', 'Barge',
-        'Fishing Vessel', 'Ferry', 'Yacht', 'Container Ship', 'Oil Tanker', 'Engineering Vehicle', 'Tower crane',
-        'Container Crane', 'Reach Stacker', 'Straddle Carrier', 'Mobile Crane', 'Dump Truck', 'Haul Truck',
-        'Scraper/Tractor', 'Front loader/Bulldozer', 'Excavator', 'Cement Mixer', 'Ground Grader', 'Hut/Tent', 'Shed',
-        'Building', 'Aircraft Hangar', 'Damaged Building', 'Facility', 'Construction Site', 'Vehicle Lot', 'Helipad',
-        'Storage Tank', 'Shipping container lot', 'Shipping Container', 'Pylon', 'Tower']  # class names
+names:
+  0: Fixed-wing Aircraft
+  1: Small Aircraft
+  2: Cargo Plane
+  3: Helicopter
+  4: Passenger Vehicle
+  5: Small Car
+  6: Bus
+  7: Pickup Truck
+  8: Utility Truck
+  9: Truck
+  10: Cargo Truck
+  11: Truck w/Box
+  12: Truck Tractor
+  13: Trailer
+  14: Truck w/Flatbed
+  15: Truck w/Liquid
+  16: Crane Truck
+  17: Railway Vehicle
+  18: Passenger Car
+  19: Cargo Car
+  20: Flat Car
+  21: Tank car
+  22: Locomotive
+  23: Maritime Vessel
+  24: Motorboat
+  25: Sailboat
+  26: Tugboat
+  27: Barge
+  28: Fishing Vessel
+  29: Ferry
+  30: Yacht
+  31: Container Ship
+  32: Oil Tanker
+  33: Engineering Vehicle
+  34: Tower crane
+  35: Container Crane
+  36: Reach Stacker
+  37: Straddle Carrier
+  38: Mobile Crane
+  39: Dump Truck
+  40: Haul Truck
+  41: Scraper/Tractor
+  42: Front loader/Bulldozer
+  43: Excavator
+  44: Cement Mixer
+  45: Ground Grader
+  46: Hut/Tent
+  47: Shed
+  48: Building
+  49: Aircraft Hangar
+  50: Damaged Building
+  51: Facility
+  52: Construction Site
+  53: Vehicle Lot
+  54: Helipad
+  55: Storage Tank
+  56: Shipping container lot
+  57: Shipping Container
+  58: Pylon
+  59: Tower
 
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------

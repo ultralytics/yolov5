@@ -42,7 +42,7 @@ from utils.general import (LOGGER, check_dataset, check_img_size, check_requirem
                            scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, ap_per_class, box_iou
 from utils.plots import output_to_target, plot_images, plot_val_study
-from utils.torch_utils import select_device, time_sync
+from utils.torch_utils import select_device, smart_inference_mode, time_sync
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -93,7 +93,7 @@ def process_batch(detections, labels, iouv):
     return torch.tensor(correct, dtype=torch.bool, device=iouv.device)
 
 
-@torch.no_grad()
+@smart_inference_mode()
 def run(
         data,
         weights=None,  # model.pt path(s)
@@ -182,7 +182,9 @@ def run(
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
-    names = dict(enumerate(model.names if hasattr(model, 'names') else model.module.names))
+    names = model.names if hasattr(model, 'names') else model.module.names  # get class names
+    if isinstance(names, (list, tuple)):  # old format
+        names = dict(enumerate(names))
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
     s = ('%20s' + '%11s' * 6) % ('Class', 'Images', 'Labels', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
     dt, p, r, f1, mp, mr, map50, map = [0.0, 0.0, 0.0], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
