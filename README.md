@@ -46,10 +46,18 @@ series = {PETRA '22}
 }
 ```
 
-## Learn more about the HERON project
+## Follow us!
+
+Learn more about the HERON project:
+
 **[Website](http://www.heron-h2020.eu/)**
+
 **[Facebook](https://www.facebook.com/HeronEUProject)**
+
 **[LinkedIn](https://www.linkedin.com/company/heroneuproject/)**
+
 **[ResearchGate](https://www.researchgate.net/project/HeronEUProject)**
+
 **[Twitter](https://twitter.com/HERON_H2020)**
+
 **[YouTube](https://www.youtube.com/channel/UCc3hqqt-DVuVQ2Ib7fH-SOw)**
