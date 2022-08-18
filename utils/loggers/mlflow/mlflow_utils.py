@@ -87,12 +87,10 @@ class MlflowLogger:
         Args:
             model (nn.Module): The pytorch model
         """
-        self.mlflow.pyfunc.log_model(
-            artifact_path=self.model_name if model_name is None else model_name,
-            code_path=[str(ROOT.resolve())],
-            artifacts={"model_path": str(model_path.resolve())},
-            python_model=self.mlflow.pyfunc.PythonModel()
-        )
+        self.mlflow.pyfunc.log_model(artifact_path=self.model_name if model_name is None else model_name,
+                                     code_path=[str(ROOT.resolve())],
+                                     artifacts={"model_path": str(model_path.resolve())},
+                                     python_model=self.mlflow.pyfunc.PythonModel())
 
     def log_params(self, params: Dict[str, Any]) -> None:
         """Member funtion to log parameters.

@@ -346,10 +346,7 @@ class GenericLogger:
             wandb.log_artifact(art)
 
         if self.mlflow:
-            self.mlflow.log_model(
-                model_path=model_path,
-                model_name=f"{self.mlflow.model_name}/{epoch}"
-            )
+            self.mlflow.log_model(model_path=model_path, model_name=f"{self.mlflow.model_name}/{epoch}")
 
 
 def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
