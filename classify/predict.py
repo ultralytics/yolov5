@@ -75,7 +75,7 @@ def run(
                 f"{s}{imgsz}x{imgsz} {', '.join(f'{model.names[j]} {p[0, j]:.2f}' for j in i)}, {dt[1].dt * 1E3:.1f}ms")
 
     # Print results
-    t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
+    t = tuple(x.t / (seen + 1) * 1E3 for x in dt)  # speeds per image
     shape = (1, 3, imgsz, imgsz)
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms post-process per image at shape {shape}' % t)
     LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
