@@ -8,7 +8,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from models.common import Conv
 from utils.downloads import attempt_download
 
 
@@ -79,11 +78,16 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
     for w in weights if isinstance(weights, list) else [weights]:
         ckpt = torch.load(attempt_download(w), map_location='cpu')  # load
         ckpt = (ckpt.get('ema') or ckpt['model']).to(device).float()  # FP32 model
+
+        # Model compatibility updates
         if not hasattr(ckpt, 'stride'):
-            ckpt.stride = torch.tensor([32.])  # compatibility update for ResNet etc.
+            ckpt.stride = torch.tensor([32.])
+        if hasattr(ckpt, 'names') and isinstance(ckpt.names, (list, tuple)):
+            ckpt.names = dict(enumerate(ckpt.names))  # convert to dict
+
         model.append(ckpt.fuse().eval() if fuse and hasattr(ckpt, 'fuse') else ckpt.eval())  # model in eval mode
 
-    # Compatibility updates
+    # Module compatibility updates
     for m in model.modules():
         t = type(m)
         if t in (nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Detect, Model):
