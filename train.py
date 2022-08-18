@@ -321,15 +321,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         torch.save(ckpt, one_shot_checkpoint_name)
         LOGGER.info(f"One shot checkpoint saved to {one_shot_checkpoint_name}")
 
-        if opt.num_export_samples > 0:
-            dataloader = val_loader or train_loader
-            sparseml_wrapper.save_sample_inputs_outputs(
-                dataloader=dataloader,
-                num_export_samples=opt.num_export_samples,
-                save_dir=str(w),
-                image_size=imgsz,
-            )
-
         del ckpt
 
         torch.cuda.empty_cache()
@@ -543,13 +534,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         callbacks.run('on_train_end', last, best, plots, epoch, results)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
 
-    if opt.num_export_samples > 0:
-        sparseml_wrapper.save_sample_inputs_outputs(
-            dataloader=val_loader or train_loader,
-            num_export_samples=opt.num_export_samples,
-            save_dir=str(w),
-            image_size=imgsz,
-        )
 
     torch.cuda.empty_cache()
     return results
@@ -608,7 +592,6 @@ def parse_opt(known=False, skip_parse=False):
     parser.add_argument("--max-eval-steps", type=int, default=-1, help="Set the maximum number of eval steps per epoch. if negative,"
                                                                         "the entire dataset will be used, default=-1")
     parser.add_argument("--one-shot", action="store_true", default=False, help="Apply recipe in one shot manner")
-    parser.add_argument("--num-export-samples", type=int, default=0, help="The number of sample inputs/outputs to export, default=0")
 
     if skip_parse:
         opt = parser.parse_args([])

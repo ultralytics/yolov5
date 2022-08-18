@@ -72,6 +72,7 @@ from utils.general import (LOGGER, ROOT, check_dataset, check_img_size, check_re
 from utils.torch_utils import select_device, torch_distributed_zero_first, is_parallel
 from utils.downloads import attempt_download
 from utils.sparse import SparseMLWrapper, check_download_sparsezoo_weights
+from utils.datasets import create_dataloader
 
 FILE = Path(__file__).resolve()
 LOCAL_ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -465,6 +466,7 @@ def load_checkpoint(
     max_train_steps=-1,
     ):
     with torch_distributed_zero_first(rank):
+
         # download if not found locally or from sparsezoo if stub
         weights = attempt_download(weights) or check_download_sparsezoo_weights(weights)
     ckpt = torch.load(weights[0] if isinstance(weights, list) or isinstance(weights, tuple)
@@ -580,6 +582,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         iou_thres=0.45,  # TF.js NMS: IoU threshold
         conf_thres=0.25,  # TF.js NMS: confidence threshold
         remove_grid=False,
+        num_export_samples = 0 # number of data samples to generate
         ):
     t = time.time()
     include = [x.lower() for x in include]  # to lowercase
@@ -640,6 +643,23 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     if coreml:
         _, f[4] = export_coreml(model, im, file)
 
+    # Sample data Exports
+    if num_export_samples > 0:
+        LOGGER.info(f"\n{colorstr('Exporting data samples:')} {num_export_samples} in total.")
+        # Image size
+        gs = max(int(model.stride.max()), 32)  # grid size (max stride)
+        imgsz = check_img_size(opt.imgsz, gs, floor=gs * 2) # verify imgsz is gs-multiple
+        if isinstance(imgsz, list):
+            imgsz = imgsz[0]
+
+        val_loader = create_dataloader(path=check_dataset(data)['val'], imgsz=imgsz, batch_size=batch_size, stride=gs)[0]
+        sparseml_wrapper.save_sample_inputs_outputs(
+            dataloader=val_loader,
+            num_export_samples=num_export_samples,
+            save_dir= os.path.dirname(file),
+            image_size=imgsz,
+        )
+
     # TensorFlow Exports
     if any((saved_model, pb, tflite, edgetpu, tfjs)):
         if int8 or edgetpu:  # TFLite --int8 bug https://github.com/ultralytics/yolov5/issues/5707
@@ -673,6 +693,7 @@ def parse_opt(known = False, skip_parse = False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
+    parser.add_argument('--num-export-samples', type=int, default=0, help='number of sample inputs/outputs to export')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640, 640], help='image (h, w)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
