@@ -8,3 +8,8 @@ The total number of RGB images in the dataset is 540 with various resolutions ra
 
 <img src="docs/TraCon_data_samples.png"/>
 
+## Citations
+
+If you use or find the TraCon dataset useful, please cite the following:
+
+1. **[TraCon Summary Paper](https://arxiv.org/abs/2205.11830):** Katsamenis, I., Karolou, E. E., Davradou, A., Protopapadakis, E., Doulamis, A., Doulamis, N., & Kalogeras, D. (2022). TraCon: A novel dataset for real-time traffic cones detection using deep learning. arXiv preprint arXiv:2205.11830.
