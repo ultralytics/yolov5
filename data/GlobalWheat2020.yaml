@@ -26,8 +26,8 @@ test: # test images (optional) 1276 images
   - images/uq_1
 
 # Classes
-nc: 1  # number of classes
-names: ['wheat_head']  # class names
+names:
+  0: wheat_head
 
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------

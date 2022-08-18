@@ -7,7 +7,7 @@ Usage - sources:
                                                              img.jpg        # image
                                                              vid.mp4        # video
                                                              path/          # directory
-                                                             path/*.jpg     # glob
+                                                             'path/*.jpg'   # glob
                                                              'https://youtu.be/Zgi9g1ksQHc'  # YouTube
                                                              'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 
