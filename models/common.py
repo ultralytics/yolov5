@@ -337,8 +337,10 @@ class DetectMultiBackend(nn.Module):
             extra_files = {'config.txt': ''}  # model metadata
             model = torch.jit.load(w, _extra_files=extra_files)
             model.half() if fp16 else model.float()
-            if extra_files['config.txt']:
-                d = json.loads(extra_files['config.txt'])  # extra_files dict
+            if extra_files['config.txt']:  # load metadata dict
+                d = json.loads(extra_files['config.txt'],
+                               object_hook=lambda d: {int(k) if k.isdigit() else k: v
+                                                      for k, v in d.items()})
                 stride, names = int(d['stride']), d['names']
         elif dnn:  # ONNX OpenCV DNN
             LOGGER.info(f'Loading {w} for ONNX OpenCV DNN inference...')
