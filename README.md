@@ -17,6 +17,7 @@ This work has received funding from the European Union’s Horizon 2020 Research
 If you use or find the TraCon dataset useful, please cite the following:
 
 1. **[TraCon Summary Paper](https://arxiv.org/abs/2205.11830):** Katsamenis, I., Karolou, E. E., Davradou, A., Protopapadakis, E., Doulamis, A., Doulamis, N., & Kalogeras, D. (2022). TraCon: A novel dataset for real-time traffic cones detection using deep learning. arXiv preprint arXiv:2205.11830.
+2. **[HERON Summary Paper](https://dl.acm.org/doi/abs/10.1145/3529190.3534746?casa_token=MQ7wMDMZHfoAAAAA:Dr880-nr5X04aeDJiR9hK3GzHXmK_KaYV5gqvLopzeClO9yx7q6tgjKaqXbMo09OjrcsHeyyQuRTsA):** Katsamenis, I., Bimpas, M., Protopapadakis, E., Zafeiropoulos, C., Kalogeras, D., Doulamis, A., Doulamis, N., Martín-Portugués Montoliu, C., Handanos, Y., Schmidt, F., Ott, L., Cantero, M., & Lopez, R. (2022, June). Robotic maintenance of road infrastructures: The HERON project. In Proceedings of the 15th International Conference on PErvasive Technologies Related to Assistive Environments (pp. 628-635)., doi: 10.1145/3529190.3534746.
 
 ```csv
 @article{katsamenis2022tracon,
@@ -25,11 +26,7 @@ If you use or find the TraCon dataset useful, please cite the following:
   journal={arXiv preprint arXiv:2205.11830},
   year={2022}
 }
-```
 
-2. **[HERON Summary Paper](https://dl.acm.org/doi/abs/10.1145/3529190.3534746?casa_token=MQ7wMDMZHfoAAAAA:Dr880-nr5X04aeDJiR9hK3GzHXmK_KaYV5gqvLopzeClO9yx7q6tgjKaqXbMo09OjrcsHeyyQuRTsA):** Katsamenis, I., Bimpas, M., Protopapadakis, E., Zafeiropoulos, C., Kalogeras, D., Doulamis, A., Doulamis, N., Martín-Portugués Montoliu, C., Handanos, Y., Schmidt, F., Ott, L., Cantero, M., & Lopez, R. (2022, June). Robotic maintenance of road infrastructures: The HERON project. In Proceedings of the 15th International Conference on PErvasive Technologies Related to Assistive Environments (pp. 628-635)., doi: 10.1145/3529190.3534746.
-
-```csv
 @inproceedings{katsamenis2022robotic,
   title={Robotic maintenance of road infrastructures: The heron project},
   author={Katsamenis, Iason and Bimpas, Matthaios and Protopapadakis, Eftychios and Zafeiropoulos, Charalampos and Kalogeras, Dimitris and Doulamis, Anastasios and Doulamis, Nikolaos and Mart{\'\i}n-Portugu{\'e}s Montoliu, Carlos and Handanos, Yannis and Schmidt, Franziska and others},
