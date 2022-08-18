@@ -599,7 +599,7 @@ def parse_opt():
     parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
     parser.add_argument('--include',
                         nargs='+',
-                        default=['torchscript', 'onnx'],
+                        default=['torchscript'],
                         help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
     opt = parser.parse_args()
     print_args(vars(opt))
