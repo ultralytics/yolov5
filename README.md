@@ -27,11 +27,21 @@ If you use or find the TraCon dataset useful, please cite the following:
   year={2022}
 }
 
-@inproceedings{katsamenis2022robotic,
-  title={Robotic maintenance of road infrastructures: The heron project},
-  author={Katsamenis, Iason and Bimpas, Matthaios and Protopapadakis, Eftychios and Zafeiropoulos, Charalampos and Kalogeras, Dimitris and Doulamis, Anastasios and Doulamis, Nikolaos and Mart{\'\i}n-Portugu{\'e}s Montoliu, Carlos and Handanos, Yannis and Schmidt, Franziska and others},
-  booktitle={Proceedings of the 15th International Conference on PErvasive Technologies Related to Assistive Environments},
-  pages={628--635},
-  year={2022}
+@inproceedings{10.1145/3529190.3534746,
+author = {Katsamenis, Iason and Bimpas, Matthaios and Protopapadakis, Eftychios and Zafeiropoulos, Charalampos and Kalogeras, Dimitris and Doulamis, Anastasios and Doulamis, Nikolaos and Mart\'{\i}n-Portugu\'{e}s Montoliu, Carlos and Handanos, Yannis and Schmidt, Franziska and Ott, Lionel and Cantero, Miquel and Lopez, Rafael},
+title = {Robotic Maintenance of Road Infrastructures: The HERON Project},
+year = {2022},
+isbn = {9781450396318},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3529190.3534746},
+doi = {10.1145/3529190.3534746},
+abstract = {Of all public assets, road infrastructure tops the list. Roads are crucial for economic development and growth, providing access to education, health, and employment. The maintenance, repair, and upgrade of roads are therefore vital to road users’ health and safety as well as to a well-functioning and prosperous modern economy. The EU-funded HERON project will develop an integrated automated system to adequately maintain road infrastructure. In turn, this will reduce accidents, lower maintenance costs, and increase road network capacity and efficiency. To coordinate maintenance works, the project will design an autonomous ground robotic vehicle that will be supported by autonomous drones. Sensors and scanners for 3D mapping will be used in addition to artificial intelligence toolkits to help coordinate road maintenance and upgrade workflows.},
+booktitle = {Proceedings of the 15th International Conference on PErvasive Technologies Related to Assistive Environments},
+pages = {628–635},
+numpages = {8},
+keywords = {Autonomous vehicles, Sensors, Robotic platform, Road maintenance, Data exchange},
+location = {Corfu, Greece},
+series = {PETRA '22}
 }
 ```
