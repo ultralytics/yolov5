@@ -29,22 +29,22 @@ from utils.torch_utils import select_device, smart_inference_mode
 
 @smart_inference_mode()
 def run(
-        data=ROOT / '../datasets/mnist',  # dataset dir
-        weights=ROOT / 'yolov5s-cls.pt',  # model.pt path(s)
-        batch_size=128,  # batch size
-        imgsz=224,  # inference size (pixels)
-        device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        workers=8,  # max dataloader workers (per RANK in DDP mode)
-        verbose=False,  # verbose output
-        project=ROOT / 'runs/val-cls',  # save to project/name
-        name='exp',  # save to project/name
-        exist_ok=False,  # existing project/name ok, do not increment
-        half=True,  # use FP16 half-precision inference
-        dnn=False,  # use OpenCV DNN for ONNX inference
-        model=None,
-        dataloader=None,
-        criterion=None,
-        pbar=None,
+    data=ROOT / '../datasets/mnist',  # dataset dir
+    weights=ROOT / 'yolov5s-cls.pt',  # model.pt path(s)
+    batch_size=128,  # batch size
+    imgsz=224,  # inference size (pixels)
+    device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
+    workers=8,  # max dataloader workers (per RANK in DDP mode)
+    verbose=False,  # verbose output
+    project=ROOT / 'runs/val-cls',  # save to project/name
+    name='exp',  # save to project/name
+    exist_ok=False,  # existing project/name ok, do not increment
+    half=True,  # use FP16 half-precision inference
+    dnn=False,  # use OpenCV DNN for ONNX inference
+    model=None,
+    dataloader=None,
+    criterion=None,
+    pbar=None,
 ):
     # Initialize/load model and set device
     training = model is not None
