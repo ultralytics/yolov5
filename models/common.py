@@ -530,7 +530,7 @@ class DetectMultiBackend(nn.Module):
         # Warmup model by running inference once
         warmup_types = self.pt, self.jit, self.onnx, self.engine, self.saved_model, self.pb
         if any(warmup_types) and self.device.type != 'cpu':
-            im = torch.zeros(*imgsz, dtype=torch.half if self.fp16 else torch.float, device=self.device)  # input
+            im = torch.empty(*imgsz, dtype=torch.half if self.fp16 else torch.float, device=self.device)  # input
             for _ in range(2 if self.jit else 1):  #
                 self.forward(im)  # warmup
 
@@ -597,12 +597,13 @@ class AutoShape(nn.Module):
         #   torch:           = torch.zeros(16,3,320,640)  # BCHW (scaled to size=640, 0-1 values)
         #   multiple:        = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
 
-        t = [time_sync()]
-        p = next(self.model.parameters()) if self.pt else torch.zeros(1, device=self.model.device)  # for device, type
-        autocast = self.amp and (p.device.type != 'cpu')  # Automatic Mixed Precision (AMP) inference
-        if isinstance(imgs, torch.Tensor):  # torch
-            with amp.autocast(autocast):
-                return self.model(imgs.to(p.device).type_as(p), augment, profile)  # inference
+        dt = (Profile(), Profile(), Profile())
+        with dt[0]:
+            p = next(self.model.parameters()) if self.pt else torch.empty(1, device=self.model.device)  # param
+            autocast = self.amp and (p.device.type != 'cpu')  # Automatic Mixed Precision (AMP) inference
+            if isinstance(ims, torch.Tensor):  # torch
+                with amp.autocast(autocast):
+                    return self.model(ims.to(p.device).type_as(p), augment, profile)  # inference
 
         # Pre-process
         n, imgs = (len(imgs), list(imgs)) if isinstance(imgs, (list, tuple)) else (1, [imgs])  # number, list of images
