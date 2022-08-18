@@ -116,7 +116,7 @@ def run(
     if verbose:  # all classes
         LOGGER.info(f"{'Class':>24}{'Images':>12}{'top1_acc':>12}{'top5_acc':>12}")
         LOGGER.info(f"{'all':>24}{targets.shape[0]:>12}{top1:>12.3g}{top5:>12.3g}")
-        for i, c in enumerate(model.names):
+        for i, c in model.names.items():
             aci = acc[targets == i]
             top1i, top5i = aci.mean(0).tolist()
             LOGGER.info(f"{c:>24}{aci.shape[0]:>12}{top1i:>12.3g}{top5i:>12.3g}")
