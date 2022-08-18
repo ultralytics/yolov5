@@ -21,10 +21,11 @@ from PIL import Image
 from torch.cuda import amp
 
 from utils.dataloaders import exif_transpose, letterbox
-from utils.general import (LOGGER, ROOT, check_requirements, check_suffix, check_version, colorstr, increment_path,
-                           make_divisible, non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh, yaml_load)
+from utils.general import (LOGGER, ROOT, Profile, check_requirements, check_suffix, check_version, colorstr,
+                           increment_path, make_divisible, non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh,
+                           yaml_load)
 from utils.plots import Annotator, colors, save_one_box
-from utils.torch_utils import copy_attr, smart_inference_mode, time_sync
+from utils.torch_utils import copy_attr, smart_inference_mode
 
 
 def autopad(k, p=None):  # kernel, padding
@@ -587,9 +588,9 @@ class AutoShape(nn.Module):
         return self
 
     @smart_inference_mode()
-    def forward(self, imgs, size=640, augment=False, profile=False):
+    def forward(self, ims, size=640, augment=False, profile=False):
         # Inference from various sources. For height=640, width=1280, RGB images example inputs are:
-        #   file:       imgs = 'data/images/zidane.jpg'  # str or PosixPath
+        #   file:        ims = 'data/images/zidane.jpg'  # str or PosixPath
         #   URI:             = 'https://ultralytics.com/images/zidane.jpg'
         #   OpenCV:          = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(640,1280,3)
         #   PIL:             = Image.open('image.jpg') or ImageGrab.grab()  # HWC x(640,1280,3)
@@ -597,65 +598,65 @@ class AutoShape(nn.Module):
         #   torch:           = torch.zeros(16,3,320,640)  # BCHW (scaled to size=640, 0-1 values)
         #   multiple:        = [Image.open('image1.jpg'), Image.open('image2.jpg'), ...]  # list of images
 
-        t = [time_sync()]
-        p = next(self.model.parameters()) if self.pt else torch.zeros(1, device=self.model.device)  # for device, type
-        autocast = self.amp and (p.device.type != 'cpu')  # Automatic Mixed Precision (AMP) inference
-        if isinstance(imgs, torch.Tensor):  # torch
-            with amp.autocast(autocast):
-                return self.model(imgs.to(p.device).type_as(p), augment, profile)  # inference
+        dt = (Profile(), Profile(), Profile())
+        with dt[0]:
+            p = next(self.model.parameters()) if self.pt else torch.zeros(1, device=self.model.device)  # param
+            autocast = self.amp and (p.device.type != 'cpu')  # Automatic Mixed Precision (AMP) inference
+            if isinstance(ims, torch.Tensor):  # torch
+                with amp.autocast(autocast):
+                    return self.model(ims.to(p.device).type_as(p), augment, profile)  # inference
 
-        # Pre-process
-        n, imgs = (len(imgs), list(imgs)) if isinstance(imgs, (list, tuple)) else (1, [imgs])  # number, list of images
-        shape0, shape1, files = [], [], []  # image and inference shapes, filenames
-        for i, im in enumerate(imgs):
-            f = f'image{i}'  # filename
-            if isinstance(im, (str, Path)):  # filename or uri
-                im, f = Image.open(requests.get(im, stream=True).raw if str(im).startswith('http') else im), im
-                im = np.asarray(exif_transpose(im))
-            elif isinstance(im, Image.Image):  # PIL Image
-                im, f = np.asarray(exif_transpose(im)), getattr(im, 'filename', f) or f
-            files.append(Path(f).with_suffix('.jpg').name)
-            if im.shape[0] < 5:  # image in CHW
-                im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
-            im = im[..., :3] if im.ndim == 3 else cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)  # enforce 3ch input
-            s = im.shape[:2]  # HWC
-            shape0.append(s)  # image shape
-            g = (size / max(s))  # gain
-            shape1.append([y * g for y in s])
-            imgs[i] = im if im.data.contiguous else np.ascontiguousarray(im)  # update
-        shape1 = [make_divisible(x, self.stride) if self.pt else size for x in np.array(shape1).max(0)]  # inf shape
-        x = [letterbox(im, shape1, auto=False)[0] for im in imgs]  # pad
-        x = np.ascontiguousarray(np.array(x).transpose((0, 3, 1, 2)))  # stack and BHWC to BCHW
-        x = torch.from_numpy(x).to(p.device).type_as(p) / 255  # uint8 to fp16/32
-        t.append(time_sync())
+            # Pre-process
+            n, ims = (len(ims), list(ims)) if isinstance(ims, (list, tuple)) else (1, [ims])  # number, list of images
+            shape0, shape1, files = [], [], []  # image and inference shapes, filenames
+            for i, im in enumerate(ims):
+                f = f'image{i}'  # filename
+                if isinstance(im, (str, Path)):  # filename or uri
+                    im, f = Image.open(requests.get(im, stream=True).raw if str(im).startswith('http') else im), im
+                    im = np.asarray(exif_transpose(im))
+                elif isinstance(im, Image.Image):  # PIL Image
+                    im, f = np.asarray(exif_transpose(im)), getattr(im, 'filename', f) or f
+                files.append(Path(f).with_suffix('.jpg').name)
+                if im.shape[0] < 5:  # image in CHW
+                    im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
+                im = im[..., :3] if im.ndim == 3 else cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)  # enforce 3ch input
+                s = im.shape[:2]  # HWC
+                shape0.append(s)  # image shape
+                g = (size / max(s))  # gain
+                shape1.append([y * g for y in s])
+                ims[i] = im if im.data.contiguous else np.ascontiguousarray(im)  # update
+            shape1 = [make_divisible(x, self.stride) if self.pt else size for x in np.array(shape1).max(0)]  # inf shape
+            x = [letterbox(im, shape1, auto=False)[0] for im in ims]  # pad
+            x = np.ascontiguousarray(np.array(x).transpose((0, 3, 1, 2)))  # stack and BHWC to BCHW
+            x = torch.from_numpy(x).to(p.device).type_as(p) / 255  # uint8 to fp16/32
 
         with amp.autocast(autocast):
             # Inference
-            y = self.model(x, augment, profile)  # forward
-            t.append(time_sync())
+            with dt[1]:
+                y = self.model(x, augment, profile)  # forward
 
             # Post-process
-            y = non_max_suppression(y if self.dmb else y[0],
-                                    self.conf,
-                                    self.iou,
-                                    self.classes,
-                                    self.agnostic,
-                                    self.multi_label,
-                                    max_det=self.max_det)  # NMS
-            for i in range(n):
-                scale_coords(shape1, y[i][:, :4], shape0[i])
+            with dt[2]:
+                y = non_max_suppression(y if self.dmb else y[0],
+                                        self.conf,
+                                        self.iou,
+                                        self.classes,
+                                        self.agnostic,
+                                        self.multi_label,
+                                        max_det=self.max_det)  # NMS
+                for i in range(n):
+                    scale_coords(shape1, y[i][:, :4], shape0[i])
 
-            t.append(time_sync())
-            return Detections(imgs, y, files, t, self.names, x.shape)
+            return Detections(ims, y, files, dt, self.names, x.shape)
 
 
 class Detections:
     # YOLOv5 detections class for inference results
-    def __init__(self, imgs, pred, files, times=(0, 0, 0, 0), names=None, shape=None):
+    def __init__(self, ims, pred, files, times=(0, 0, 0), names=None, shape=None):
         super().__init__()
         d = pred[0].device  # device
-        gn = [torch.tensor([*(im.shape[i] for i in [1, 0, 1, 0]), 1, 1], device=d) for im in imgs]  # normalizations
-        self.imgs = imgs  # list of images as numpy arrays
+        gn = [torch.tensor([*(im.shape[i] for i in [1, 0, 1, 0]), 1, 1], device=d) for im in ims]  # normalizations
+        self.ims = ims  # list of images as numpy arrays
         self.pred = pred  # list of tensors pred[0] = (xyxy, conf, cls)
         self.names = names  # class names
         self.files = files  # image filenames
@@ -665,12 +666,12 @@ class Detections:
         self.xyxyn = [x / g for x, g in zip(self.xyxy, gn)]  # xyxy normalized
         self.xywhn = [x / g for x, g in zip(self.xywh, gn)]  # xywh normalized
         self.n = len(self.pred)  # number of images (batch size)
-        self.t = tuple((times[i + 1] - times[i]) * 1000 / self.n for i in range(3))  # timestamps (ms)
+        self.t = tuple(x.t / self.n * 1E3 for x in times)  # timestamps (ms)
         self.s = shape  # inference BCHW shape
 
     def display(self, pprint=False, show=False, save=False, crop=False, render=False, labels=True, save_dir=Path('')):
         crops = []
-        for i, (im, pred) in enumerate(zip(self.imgs, self.pred)):
+        for i, (im, pred) in enumerate(zip(self.ims, self.pred)):
             s = f'image {i + 1}/{len(self.pred)}: {im.shape[0]}x{im.shape[1]} '  # string
             if pred.shape[0]:
                 for c in pred[:, -1].unique():
@@ -705,7 +706,7 @@ class Detections:
                 if i == self.n - 1:
                     LOGGER.info(f"Saved {self.n} image{'s' * (self.n > 1)} to {colorstr('bold', save_dir)}")
             if render:
-                self.imgs[i] = np.asarray(im)
+                self.ims[i] = np.asarray(im)
         if crop:
             if save:
                 LOGGER.info(f'Saved results to {save_dir}\n')
@@ -728,7 +729,7 @@ class Detections:
 
     def render(self, labels=True):
         self.display(render=True, labels=labels)  # render results
-        return self.imgs
+        return self.ims
 
     def pandas(self):
         # return detections as pandas DataFrames, i.e. print(results.pandas().xyxy[0])
@@ -743,9 +744,9 @@ class Detections:
     def tolist(self):
         # return a list of Detections objects, i.e. 'for result in results.tolist():'
         r = range(self.n)  # iterable
-        x = [Detections([self.imgs[i]], [self.pred[i]], [self.files[i]], self.times, self.names, self.s) for i in r]
+        x = [Detections([self.ims[i]], [self.pred[i]], [self.files[i]], self.times, self.names, self.s) for i in r]
         # for d in x:
-        #    for k in ['imgs', 'pred', 'xyxy', 'xyxyn', 'xywh', 'xywhn']:
+        #    for k in ['ims', 'pred', 'xyxy', 'xyxyn', 'xywh', 'xywhn']:
         #        setattr(d, k, getattr(d, k)[0])  # pop out of list
         return x
 
