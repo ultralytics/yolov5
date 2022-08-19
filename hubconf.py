@@ -30,7 +30,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
 
     from models.common import AutoShape, DetectMultiBackend
     from models.experimental import attempt_load
-    from models.yolo import Model
+    from models.yolo import DetectionModel
     from utils.downloads import attempt_download
     from utils.general import LOGGER, check_requirements, intersect_dicts, logging
     from utils.torch_utils import select_device
@@ -45,13 +45,13 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
         if pretrained and channels == 3 and classes == 80:
             try:
                 model = DetectMultiBackend(path, device=device, fuse=autoshape)  # detection model
-                if autoshape:
+                if autoshape and isinstance(model.model, DetectionModel):
                     model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
             except Exception:
                 model = attempt_load(path, device=device, fuse=False)  # arbitrary model
         else:
             cfg = list((Path(__file__).parent / 'models').rglob(f'{path.stem}.yaml'))[0]  # model.yaml path
-            model = Model(cfg, channels, classes)  # create model
+            model = DetectionModel(cfg, channels, classes)  # create model
             if pretrained:
                 ckpt = torch.load(attempt_download(path), map_location=device)  # load
                 csd = ckpt['model'].float().state_dict()  # checkpoint state_dict as FP32

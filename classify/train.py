@@ -122,16 +122,16 @@ def train(opt, device):
     for p in model.parameters():
         p.requires_grad = True  # for training
     model = model.to(device)
-    names = trainloader.dataset.classes  # class names
-    model.names = names  # attach class names
 
     # Info
     if RANK in {-1, 0}:
+        model.names = trainloader.dataset.classes  # attach class names
+        model.transforms = testloader.dataset.torch_transforms  # attach inference transforms
         model_info(model)
         if opt.verbose:
             LOGGER.info(model)
         images, labels = next(iter(trainloader))
-        file = imshow_cls(images[:25], labels[:25], names=names, f=save_dir / 'train_images.jpg')
+        file = imshow_cls(images[:25], labels[:25], names=model.names, f=save_dir / 'train_images.jpg')
         logger.log_images(file, name='Train Examples')
         logger.log_graph(model, imgsz)  # log model
 
@@ -254,8 +254,8 @@ def train(opt, device):
 
         # Plot examples
         images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
-        pred = torch.max(ema.ema((images.half() if cuda else images.float()).to(device)), 1)[1]
-        file = imshow_cls(images, labels, pred, names, verbose=False, f=save_dir / 'test_images.jpg')
+        pred = torch.max(ema.ema(images.to(device)), 1)[1]
+        file = imshow_cls(images, labels, pred, model.names, verbose=False, f=save_dir / 'test_images.jpg')
 
         # Log results
         meta = {"epochs": epochs, "top1_acc": best_fitness, "date": datetime.now().isoformat()}
