@@ -1,3 +1,4 @@
+import glob
 import os
 
 import comet_ml
@@ -5,12 +6,17 @@ import torch
 import torchvision.transforms as T
 import yaml
 from torchvision.utils import draw_bounding_boxes, save_image
+from utils.dataloaders import img2label_paths
 from utils.general import scale_coords, xywh2xyxy, xyxy2xywh
 from utils.metrics import ConfusionMatrix, box_iou
+
+COMET_PREFIX = "comet://"
 
 COMET_MODE = os.getenv("COMET_MODE", "online")
 COMET_SAVE_MODEL = os.getenv("COMET_SAVE_MODEL", "false").lower() == "true"
 COMET_MODEL_NAME = os.getenv("COMET_MODEL_NAME", "yolov5")
+
+COMET_UPLOAD_DATASET = os.getenv("COMET_UPLOAD_DATASET", "false").lower() == "true"
 
 COMET_LOG_CONFUSION_MATRIX = (
     os.getenv("COMET_LOG_CONFUSION_MATRIX", "true").lower() == "true"
@@ -69,6 +75,13 @@ class CometLogger:
             else COMET_BATCH_LOGGING_INTERVAL
         )
 
+        self.upload_dataset = (
+            self.opt.comet_upload_dataset
+            if self.opt.comet_upload_dataset
+            else COMET_UPLOAD_DATASET
+        )
+        self.resume = self.opt.resume
+
         # Default parameters to pass to Experiment objects
         self.default_experiment_kwargs = {
             "log_code": False,
@@ -78,8 +91,13 @@ class CometLogger:
         self.default_experiment_kwargs.update(experiment_kwargs)
         self.experiment = self._get_experiment(self.comet_mode, run_id)
 
-        with open(self.opt.data, errors="ignore") as f:
-            self.data_dict = yaml.safe_load(f)
+        if self.opt.comet_artifact:
+            self.data_dict = self.download_dataset_artifact(self.opt.comet_artifact)
+
+        else:
+            with open(self.opt.data, errors="ignore") as f:
+                self.data_dict = yaml.safe_load(f)
+
         self.class_names = self.data_dict["names"]
         self.num_classes = self.data_dict["nc"]
 
@@ -91,9 +109,12 @@ class CometLogger:
         if self.experiment is not None:
             if run_id is None:
                 self.log_parameters(vars(opt))
-                self.log_asset(opt.hyp, metadata={"type": "hyp-config-file"})
+                self.log_asset(self.opt.hyp, metadata={"type": "hyp-config-file"})
+                if not self.opt.comet_artifact:
+                    self.log_asset(self.opt.data, metadata={"type": "data-config-file"})
                 self.log_asset(
-                    f"{opt.save_dir}/opt.yaml", metadata={"type": "opt-config-file"}
+                    f"{self.opt.save_dir}/opt.yaml",
+                    metadata={"type": "opt-config-file"},
                 )
                 self.experiment.log_other("Created from", "YOLOv5")
                 self.experiment.log_other(
@@ -162,7 +183,7 @@ class CometLogger:
             "total_epochs": opt.epochs,
         }
 
-        if opt.comet_checkpoint_filename is "all":
+        if opt.comet_checkpoint_filename == "all":
             model_path = str(path)
         else:
             model_path = str(path) + f"/{opt.comet_checkpoint_filename}"
@@ -239,12 +260,67 @@ class CometLogger:
 
         return predn, labelsn
 
-    def on_pretrain_routine_start(self):
+    def add_assets_to_artifact(self, artifact, logical_path, data_path, split):
+        path = os.path.join(data_path, logical_path)
+        img_paths = sorted(glob.glob(f"{path}/*"))
+        label_paths = img2label_paths(img_paths)
+
+        for image_file, label_file in zip(img_paths, label_paths):
+            image_logical_path, label_logical_path = map(
+                lambda x: x.replace(f"{data_path}/", ""), [image_file, label_file]
+            )
+            artifact.add(
+                image_file, logical_path=image_logical_path, metadata={"split": split}
+            )
+            artifact.add(
+                label_file, logical_path=label_logical_path, metadata={"split": split}
+            )
+
+    def upload_dataset_artifact(self):
+        dataset_name = self.data_dict.get("dataset_name", "yolov5-dataset")
+        data_path = self.data_dict["path"]
+
+        artifact = comet_ml.Artifact(
+            name=dataset_name, artifact_type="dataset", metadata=self.data_dict
+        )
+        for key in self.data_dict.keys():
+            if key in ["train", "val", "test"]:
+                if isinstance(self.upload_dataset, str) and (
+                    key != self.upload_dataset
+                ):
+                    continue
+                logical_path = self.data_dict[key]
+                self.add_assets_to_artifact(artifact, logical_path, data_path, key)
+
+        self.experiment.log_artifact(artifact)
+
         return
+
+    def download_dataset_artifact(self, artifact_path):
+        logged_artifact = self.experiment.get_artifact(artifact_path)
+        logged_artifact.download(self.opt.save_dir)
+
+        metadata = logged_artifact.metadata
+        data_dict = metadata.copy()
+
+        train_path, val_path, test_path = map(
+            lambda x: f"{self.opt.save_dir}/{x}",
+            [metadata["train"], metadata["val"], metadata["test"]],
+        )
+
+        data_dict["train"] = train_path
+        data_dict["val"] = val_path
+        data_dict["test"] = test_path
+
+        return data_dict
 
     def on_pretrain_routine_end(self, paths):
         for path in paths:
             self.log_asset(str(path))
+
+        if self.upload_dataset:
+            if not self.resume:
+                self.upload_dataset_artifact()
 
         return
 
@@ -320,10 +396,12 @@ class CometLogger:
         self.log_metrics(result, epoch=epoch)
 
         if self.comet_log_confusion_matrix:
+            class_names = self.class_names
+            class_names.append('background-FN')
             self.experiment.log_confusion_matrix(
-                matrix=self.confmat.matrix[: self.num_classes, : self.num_classes],
-                max_categories=self.num_classes,
-                labels=self.class_names,
+                matrix=self.confmat.matrix,
+                max_categories=self.num_classes + 1,
+                labels=class_names,
                 epoch=epoch,
             )
 

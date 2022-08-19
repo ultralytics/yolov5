@@ -156,6 +156,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     opt.batch_size,
                 )
 
+        if loggers.comet_logger:
+            data_dict = loggers.comet_logger.data_dict
+
         # Register actions
         for k in methods(loggers):
             callbacks.register_action(k, callback=getattr(loggers, k))
@@ -796,6 +799,8 @@ def parse_opt(known=False):
     parser.add_argument("--comet_log_batch_interval", type=int, default=1)
     parser.add_argument("--comet_log_confusion_matrix", action="store_false")
     parser.add_argument("--comet_max_images", type=int, default=100)
+    parser.add_argument("--comet_upload_dataset", nargs="?", const=True, default=False)
+    parser.add_argument("--comet_artifact", type=str)
 
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
