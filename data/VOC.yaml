@@ -65,12 +65,13 @@ download: |
       w = int(size.find('width').text)
       h = int(size.find('height').text)
 
+      names = list(yaml['names'].values())  # names list
       for obj in root.iter('object'):
           cls = obj.find('name').text
-          if cls in yaml['names'] and not int(obj.find('difficult').text) == 1:
+          if cls in names and int(obj.find('difficult').text) != 1:
               xmlbox = obj.find('bndbox')
               bb = convert_box((w, h), [float(xmlbox.find(x).text) for x in ('xmin', 'xmax', 'ymin', 'ymax')])
-              cls_id = yaml['names'].index(cls)  # class id
+              cls_id = names.index(cls)  # class id
               out_file.write(" ".join([str(a) for a in (cls_id, *bb)]) + '\n')
 
 
