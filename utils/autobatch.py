@@ -60,7 +60,7 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
         i = results.index(None)  # first fail index
         if b >= batch_sizes[i]:  # y intercept above failure point
             b = batch_sizes[max(i - 1, 0)]  # select prior safe point
-    if b < 1:  # zero or negative batch size 
+    if b < 1:  # zero or negative batch size
         b = 16
         LOGGER.warning(f'{prefix}WARNING: ⚠️ CUDA anomaly detected, recommend restart environment and retry command.')
 
