@@ -141,7 +141,7 @@ class ConfusionMatrix:
         """
         if detections is None:
             gt_classes = labels.int()
-            for i, gc in enumerate(gt_classes):
+            for gc in gt_classes:
                 self.matrix[self.nc, gc] += 1  # background FN
             return
 
