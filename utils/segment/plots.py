@@ -160,7 +160,7 @@ def plot_images_and_masks(
                 else:
                     mask = image_masks[j].astype(np.bool)
                 if labels or conf[j] > 0.25:  # 0.25 conf thresh
-                    label = "%s" % cls if labels else "{} {:.1f}".format(cls, conf[j])
+                    label = "%s" % cls if labels else f"{cls} {conf[j]:.1f}"
                     plot_one_box(box, mosaic, label=label, color=color, line_thickness=tl)
                     mosaic[block_y:block_y + h, block_x:block_x +
                            w, :][mask] = mosaic[block_y:block_y + h, block_x:block_x + w, :][mask] * 0.35 + (
