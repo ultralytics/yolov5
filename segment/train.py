@@ -19,7 +19,6 @@ import random
 import sys
 import time
 from copy import deepcopy
-from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -27,9 +26,8 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
-import yaml
 from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.optim import SGD, Adam, AdamW, lr_scheduler
+from torch.optim import SGD, Adam, lr_scheduler
 from tqdm import tqdm
 
 import val  # for end-of-epoch mAP
@@ -43,10 +41,9 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.experimental import attempt_load
 from models.yolo import Model
 from utils.autoanchor import check_anchors
-from utils.autobatch import check_train_batch_size
 from utils.downloads import attempt_download
-from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_git_status, check_img_size,
-                           check_requirements, check_suffix, check_version, check_yaml, colorstr, get_latest_run,
+from utils.general import (check_dataset, check_file, check_git_status, check_img_size,
+                           check_requirements, check_suffix, check_yaml, colorstr, get_latest_run,
                            increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
                            labels_to_image_weights, one_cycle, print_args, print_mutation, strip_optimizer)
 from utils.loggers import GenericLogger
@@ -66,12 +63,12 @@ from torch.optim import AdamW
 
 from utils.autobatch import check_train_batch_size
 from utils.general import LOGGER, check_amp, check_version
-from utils.segment.metrics import BEST_KEYS, KEYS
+from utils.segment.metrics import KEYS
 from utils.segment.plots import plot_images_and_masks, plot_results_with_masks
 
 
 def train(hyp, opt, device):  # hyp is path/to/hyp.yaml or hyp dictionary
-    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, mask_ratio= \
+    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, mask_ratio = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
         opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze, opt.mask_ratio
 
@@ -437,7 +434,7 @@ def train(hyp, opt, device):  # hyp is path/to/hyp.yaml or hyp dictionary
                     'ema': deepcopy(ema.ema).half(),
                     'updates': ema.updates,
                     'optimizer': optimizer.state_dict(),
-                    #'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None,
+                    # 'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None,
                     'date': datetime.now().isoformat()}
 
                 # Save last, best and delete
