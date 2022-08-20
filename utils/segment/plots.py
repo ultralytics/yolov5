@@ -9,7 +9,7 @@ import torch
 from PIL import Image
 
 from ..general import xywh2xyxy
-from ..plots import Annotator, colors
+from ..plots import colors
 
 
 def plot_masks(img, masks, colors, alpha=0.5):
@@ -162,9 +162,8 @@ def plot_images_and_masks(
                 if labels or conf[j] > 0.25:  # 0.25 conf thresh
                     label = "%s" % cls if labels else f"{cls} {conf[j]:.1f}"
                     plot_one_box(box, mosaic, label=label, color=color, line_thickness=tl)
-                    mosaic[block_y:block_y + h, block_x:block_x +
-                           w, :][mask] = mosaic[block_y:block_y + h, block_x:block_x + w, :][mask] * 0.35 + (
-                               np.array(color) * 0.65)
+                    mosaic[block_y:block_y + h, block_x:block_x + w, :][mask] = \
+                    mosaic[block_y:block_y + h, block_x:block_x + w, :][mask] * 0.35 + (np.array(color) * 0.65)
 
         # Draw image filename labels
         if paths:
