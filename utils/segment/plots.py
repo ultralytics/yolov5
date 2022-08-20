@@ -76,14 +76,14 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None):
 
 
 def plot_images_and_masks(
-        images,
-        targets,
-        masks,
-        paths=None,
-        fname="images.jpg",
-        names=None,
-        max_size=640,
-        max_subplots=16,
+    images,
+    targets,
+    masks,
+    paths=None,
+    fname="images.jpg",
+    names=None,
+    max_size=640,
+    max_subplots=16,
 ):
     if isinstance(images, torch.Tensor):
         images = images.cpu().float().numpy()
@@ -210,7 +210,7 @@ def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
             data = pd.read_csv(f)
             index = np.argmax(
                 0.9 * data.values[:, 8] + 0.1 * data.values[:, 7] + 0.9 * data.values[:, 12] +
-                0.1 * data.values[:, 11], )
+                0.1 * data.values[:, 11],)
             s = [x.strip() for x in data.columns]
             x = data.values[:, 0]
             for i, j in enumerate([1, 2, 3, 4, 5, 6, 9, 10, 13, 14, 15, 16, 7, 8, 11, 12]):
