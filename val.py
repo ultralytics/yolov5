@@ -366,7 +366,7 @@ def main(opt):
         if opt.conf_thres > 0.001:  # https://github.com/ultralytics/yolov5/issues/1466
             LOGGER.info(f'WARNING: confidence threshold {opt.conf_thres} > 0.001 produces invalid results ⚠️')
         if opt.save_hybrid:
-            LOGGER.info(f'WARNING: --save-hybrid will return mAP from hybrid labels, not from predictions alone ⚠️')
+            LOGGER.info('WARNING: --save-hybrid will return high mAP from hybrid labels, not from predictions alone ⚠️')
         run(**vars(opt))
 
     else:
