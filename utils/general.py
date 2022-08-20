@@ -242,7 +242,7 @@ def init_seeds(seed=0, deterministic=False):
     import torch.backends.cudnn as cudnn
 
     if deterministic and check_version(torch.__version__, '1.12.0'):  # https://github.com/ultralytics/yolov5/pull/8213
-        #torch.use_deterministic_algorithms(True)
+        # torch.use_deterministic_algorithms(True)
         os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
         os.environ['PYTHONHASHSEED'] = str(seed)
 
@@ -466,7 +466,6 @@ def check_file(file, suffix=''):
         return files[0]  # return file
 
 
-'''
 def check_font(font=FONT, progress=False):
     # Download font to CONFIG_DIR if necessary
     font = Path(font)
@@ -475,20 +474,6 @@ def check_font(font=FONT, progress=False):
         url = "https://ultralytics.com/assets/" + font.name
         LOGGER.info(f'Downloading {url} to {file}...')
         torch.hub.download_url_to_file(url, str(file), progress=progress)
-'''
-
-
-def check_font(font="Arial.ttf", size=10, progress=False):
-    # Return a PIL TrueType Font, downloading to CONFIG_DIR if necessary
-    font = Path(font)
-    font = font if font.exists() else (CONFIG_DIR / font.name)
-    try:
-        return ImageFont.truetype(str(font) if font.exists() else font.name, size)
-    except Exception as e:  # download if missing
-        url = "https://ultralytics.com/assets/" + font.name
-        print(f"Downloading {url} to {font}...")
-        torch.hub.download_url_to_file(url, str(font), progress=progress)
-        return ImageFont.truetype(str(font), size)
 
 
 def check_dataset(data, autodownload=True):
