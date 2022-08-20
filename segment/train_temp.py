@@ -497,12 +497,14 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         #callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
         # on train end callback using genericLogger
         logger.log_metrics(dict(zip(KEYS[4:16], results)), epochs+1)
+        if not opt.evolve:
+            logger.log_model(best, epoch+1)
         if plots:
             plot_results_with_masks(file=save_dir / 'results.csv')  # save results.png
             files = ['results.png', 'confusion_matrix.png', *(f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R'))]
             files = [(save_dir / f) for f in files if (save_dir / f).exists()]  # filter
             LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
-            logger.log_images(files)
+            logger.log_images(files, "Results")
         # callbacks.run('on_train_end', last, best, plots, epoch, results)
 
     torch.cuda.empty_cache()
