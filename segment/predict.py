@@ -3,7 +3,7 @@
 Run inference on images, videos, directories, streams, etc.
 
 Usage - sources:
-    $ python path/to/detect.py --weights yolov5s.pt --source 0              # webcam
+    $ python path/to/predict.py --weights yolov5s-seg.pt --source 0         # webcam
                                                              img.jpg        # image
                                                              vid.mp4        # video
                                                              path/          # directory
@@ -12,7 +12,7 @@ Usage - sources:
                                                              'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 
 Usage - formats:
-    $ python path/to/detect.py --weights yolov5s.pt                 # PyTorch
+    $ python path/to/predict.py --weights yolov5s.pt                 # PyTorch
                                          yolov5s.torchscript        # TorchScript
                                          yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
                                          yolov5s.xml                # OpenVINO
@@ -256,7 +256,7 @@ def parse_opt():
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--visualize', action='store_true', help='visualize features')
     parser.add_argument('--update', action='store_true', help='update all models')
-    parser.add_argument('--project', default=ROOT / 'runs/detect', help='save results to project/name')
+    parser.add_argument('--project', default=ROOT / 'runs/predict_segment', help='save results to project/name')
     parser.add_argument('--name', default='exp', help='save results to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--line-thickness', default=3, type=int, help='bounding box thickness (pixels)')
