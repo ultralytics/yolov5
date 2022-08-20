@@ -44,7 +44,6 @@ from models.experimental import attempt_load
 from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
-from utils.segment.dataloaders import create_dataloader
 from utils.downloads import attempt_download
 from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_git_status, check_img_size,
                            check_requirements, check_suffix, check_version, check_yaml, colorstr, get_latest_run,
@@ -52,6 +51,7 @@ from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_g
                            labels_to_image_weights, one_cycle, print_args, print_mutation, strip_optimizer)
 from utils.loggers import GenericLogger
 from utils.plots import plot_evolve, plot_labels
+from utils.segment.dataloaders import create_dataloader
 from utils.segment.loss import ComputeLoss
 from utils.segment.metrics import fitness
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
@@ -96,9 +96,7 @@ def train(hyp, opt, device):  # hyp is path/to/hyp.yaml or hyp dictionary
     # Loggers
     data_dict = None
     if RANK in {-1, 0}:
-        logger = GenericLogger(
-            opt=opt, console_logger=LOGGER
-        )
+        logger = GenericLogger(opt=opt, console_logger=LOGGER)
 
     # Config
     plots = not evolve and not opt.noplots  # create plots
@@ -382,7 +380,11 @@ def train(hyp, opt, device):  # hyp is path/to/hyp.yaml or hyp dictionary
                                      (f"{epoch}/{epochs - 1}", mem, *mloss, targets.shape[0], imgs.shape[-1]))
                 # for plots
                 if mask_ratio != 1:
-                    masks = F.interpolate(masks[None, :].float(), (imgsz, imgsz), mode="bilinear", align_corners=False,
+                    masks = F.interpolate(
+                        masks[None, :].float(),
+                        (imgsz, imgsz),
+                        mode="bilinear",
+                        align_corners=False,
                     ).squeeze(0)
                 if plots:
                     if ni < 3:
@@ -411,7 +413,7 @@ def train(hyp, opt, device):  # hyp is path/to/hyp.yaml or hyp dictionary
                                            dataloader=val_loader,
                                            save_dir=save_dir,
                                            plots=plots,
-                                           compute_loss=compute_loss, 
+                                           compute_loss=compute_loss,
                                            mask_downsample_ratio=mask_ratio,
                                            overlap=overlap)
             # Update best mAP
