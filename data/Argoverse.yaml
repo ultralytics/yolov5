@@ -14,8 +14,15 @@ val: Argoverse-1.1/images/val/  # val images (relative to 'path') 15062 images
 test: Argoverse-1.1/images/test/  # test images (optional) https://eval.ai/web/challenges/challenge-page/800/overview
 
 # Classes
-nc: 8  # number of classes
-names: ['person',  'bicycle',  'car',  'motorcycle',  'bus',  'truck',  'traffic_light',  'stop_sign']  # class names
+names:
+  0: person
+  1: bicycle
+  2: car
+  3: motorcycle
+  4: bus
+  5: truck
+  6: traffic_light
+  7: stop_sign
 
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
