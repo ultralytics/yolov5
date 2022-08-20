@@ -15,7 +15,7 @@ from utils.general import colorstr, cv2
 from utils.loggers.clearml.clearml_utils import ClearmlLogger
 from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_results
-from utils.segment.plots import plot_results_with_masks, plot_images_and_masks
+from utils.segment.plots import plot_images_and_masks, plot_results_with_masks
 from utils.torch_utils import de_parallel
 
 LOGGERS = ('csv', 'tb', 'wandb', 'clearml')  # *.csv, TensorBoard, Weights & Biases, ClearML
@@ -295,11 +295,12 @@ class GenericLogger:
             art = wandb.Artifact(name=f"run_{wandb.run.id}_model", type="model", metadata=metadata)
             art.add_file(str(model_path))
             wandb.log_artifact(art)
-    
+
     def update_params(self, params):
         # Update the paramters logged
         if self.wandb:
             wandb.run.config.update(params, allow_val_change=True)
+
 
 def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
     # Log model graph to TensorBoard

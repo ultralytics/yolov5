@@ -1,14 +1,15 @@
-import cv2
-import torch
 import math
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
 from pathlib import Path
+
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import torch
 from PIL import Image
 
-from ..plots import colors, Annotator
 from ..general import xywh2xyxy
+from ..plots import Annotator, colors
 
 
 def plot_masks(img, masks, colors, alpha=0.5):
@@ -37,7 +38,7 @@ def plot_masks(img, masks, colors, alpha=0.5):
     inv_alph_masks = masks * (-alpha) + 1
     masks_color_summand = masks_color[0]
     if num_masks > 1:
-        inv_alph_cumul = inv_alph_masks[: (num_masks - 1)].cumprod(dim=0)
+        inv_alph_cumul = inv_alph_masks[:(num_masks - 1)].cumprod(dim=0)
         masks_color_cumul = masks_color[1:] * inv_alph_cumul
         masks_color_summand += masks_color_cumul.sum(dim=0)
 
@@ -48,13 +49,12 @@ def plot_masks(img, masks, colors, alpha=0.5):
     img_gpu = img_gpu * inv_alph_masks.prod(dim=0) + masks_color_summand
     return (img_gpu * 255).byte().cpu().numpy()
 
+
 def plot_one_box(x, img, color=None, label=None, line_thickness=None):
     import random
 
     # Plots one bounding box on image img
-    tl = (
-        line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1
-    )  # line/font thickness
+    tl = (line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1)  # line/font thickness
     color = color or [random.randint(0, 255) for _ in range(3)]
     c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
     cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
@@ -73,6 +73,7 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None):
             thickness=tf,
             lineType=cv2.LINE_AA,
         )
+
 
 def plot_images_and_masks(
     images,
@@ -120,7 +121,7 @@ def plot_images_and_masks(
         if scale_factor < 1:
             img = cv2.resize(img, (w, h))
 
-        mosaic[block_y : block_y + h, block_x : block_x + w, :] = img
+        mosaic[block_y:block_y + h, block_x:block_x + w, :] = img
         if len(targets) > 0:
             idx = (targets[:, 0]).astype(int)
             image_targets = targets[idx == i]
@@ -138,9 +139,7 @@ def plot_images_and_masks(
             boxes = xywh2xyxy(image_targets[:, 2:6]).T
             classes = image_targets[:, 1].astype("int")
             labels = image_targets.shape[1] == 6  # labels if no conf column
-            conf = (
-                None if labels else image_targets[:, 6]
-            )  # check for confidence presence (label vs pred)
+            conf = (None if labels else image_targets[:, 6])  # check for confidence presence (label vs pred)
 
             if boxes.shape[1]:
                 if boxes.max() <= 1.01:  # if normalized with tolerance 0.01
@@ -161,11 +160,11 @@ def plot_images_and_masks(
                 else:
                     mask = image_masks[j].astype(np.bool)
                 if labels or conf[j] > 0.25:  # 0.25 conf thresh
-                    label = "%s" % cls if labels else "%s %.1f" % (cls, conf[j])
+                    label = "%s" % cls if labels else f"{cls} {conf[j]:.1f}"
                     plot_one_box(box, mosaic, label=label, color=color, line_thickness=tl)
-                    mosaic[block_y : block_y + h, block_x : block_x + w, :][mask] = mosaic[
-                        block_y : block_y + h, block_x : block_x + w, :
-                    ][mask] * 0.35 + (np.array(color) * 0.65)
+                    mosaic[block_y:block_y + h, block_x:block_x +
+                           w, :][mask] = mosaic[block_y:block_y + h, block_x:block_x + w, :][mask] * 0.35 + (
+                               np.array(color) * 0.65)
 
         # Draw image filename labels
         if paths:
@@ -193,9 +192,7 @@ def plot_images_and_masks(
 
     if fname:
         r = min(1280.0 / max(h, w) / ns, 1.0)  # ratio to limit image size
-        mosaic = cv2.resize(
-            mosaic, (int(ns * w * r), int(ns * h * r)), interpolation=cv2.INTER_AREA
-        )
+        mosaic = cv2.resize(mosaic, (int(ns * w * r), int(ns * h * r)), interpolation=cv2.INTER_AREA)
         # cv2.imwrite(fname, cv2.cvtColor(mosaic, cv2.COLOR_BGR2RGB))  # cv2 save
         with Image.fromarray(mosaic) as im:
             im.save(fname)
@@ -213,11 +210,8 @@ def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
         try:
             data = pd.read_csv(f)
             index = np.argmax(
-                0.9 * data.values[:, 8]
-                + 0.1 * data.values[:, 7]
-                + 0.9 * data.values[:, 12]
-                + 0.1 * data.values[:, 11],
-            )
+                0.9 * data.values[:, 8] + 0.1 * data.values[:, 7] + 0.9 * data.values[:, 12] +
+                0.1 * data.values[:, 11],)
             s = [x.strip() for x in data.columns]
             x = data.values[:, 0]
             for i, j in enumerate([1, 2, 3, 4, 5, 6, 9, 10, 13, 14, 15, 16, 7, 8, 11, 12]):
@@ -246,4 +240,3 @@ def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
     ax[1].legend()
     fig.savefig(save_dir / "results.png", dpi=200)
     plt.close()
-

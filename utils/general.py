@@ -25,7 +25,6 @@ from pathlib import Path
 from subprocess import check_output
 from typing import Optional
 from zipfile import ZipFile
-from PIL import ImageFont
 
 import cv2
 import numpy as np
@@ -34,6 +33,7 @@ import pkg_resources as pkg
 import torch
 import torchvision
 import yaml
+from PIL import ImageFont
 
 from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
@@ -465,6 +465,7 @@ def check_file(file, suffix=''):
         assert len(files) == 1, f"Multiple files match '{file}', specify exact path: {files}"  # assert unique
         return files[0]  # return file
 
+
 '''
 def check_font(font=FONT, progress=False):
     # Download font to CONFIG_DIR if necessary
@@ -475,6 +476,8 @@ def check_font(font=FONT, progress=False):
         LOGGER.info(f'Downloading {url} to {file}...')
         torch.hub.download_url_to_file(url, str(file), progress=progress)
 '''
+
+
 def check_font(font="Arial.ttf", size=10, progress=False):
     # Return a PIL TrueType Font, downloading to CONFIG_DIR if necessary
     font = Path(font)
@@ -486,6 +489,7 @@ def check_font(font="Arial.ttf", size=10, progress=False):
         print(f"Downloading {url} to {font}...")
         torch.hub.download_url_to_file(url, str(font), progress=progress)
         return ImageFont.truetype(str(font), size)
+
 
 def check_dataset(data, autodownload=True):
     # Download, check and/or unzip dataset if not found locally

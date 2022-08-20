@@ -5,6 +5,7 @@ Model validation metrics
 
 import numpy as np
 from easydict import EasyDict as edict
+
 from ..metrics import ap_per_class
 
 
@@ -14,26 +15,57 @@ def fitness(x):
     return (x[:, :8] * w).sum(1)
 
 
-def ap_per_class_box_and_mask(tp_m, tp_b, conf, pred_cls, target_cls, plot=False, save_dir=".", names=(), ):
+def ap_per_class_box_and_mask(
+        tp_m,
+        tp_b,
+        conf,
+        pred_cls,
+        target_cls,
+        plot=False,
+        save_dir=".",
+        names=(),
+):
     """
     Args:
         tp_b: tp of boxes.
         tp_m: tp of masks.
         other arguments see `func: ap_per_class`.
     """
-    results_boxes = ap_per_class(tp_b, conf, pred_cls, target_cls, plot=plot, save_dir=save_dir, names=names,
-            prefix="Box")[2:]
-    results_masks = ap_per_class(tp_m, conf, pred_cls, target_cls, plot=plot, save_dir=save_dir, names=names,
-            prefix="Mask")[2:]
+    results_boxes = ap_per_class(tp_b,
+                                 conf,
+                                 pred_cls,
+                                 target_cls,
+                                 plot=plot,
+                                 save_dir=save_dir,
+                                 names=names,
+                                 prefix="Box")[2:]
+    results_masks = ap_per_class(tp_m,
+                                 conf,
+                                 pred_cls,
+                                 target_cls,
+                                 plot=plot,
+                                 save_dir=save_dir,
+                                 names=names,
+                                 prefix="Mask")[2:]
 
     results = edict({
-        "boxes": {"p": results_boxes[0], "r": results_boxes[1], "ap": results_boxes[3], "f1": results_boxes[2],
+        "boxes": {
+            "p": results_boxes[0],
+            "r": results_boxes[1],
+            "ap": results_boxes[3],
+            "f1": results_boxes[2],
             "ap_class": results_boxes[4]},
-        "masks": {"p": results_masks[0], "r": results_masks[1], "ap": results_masks[3], "f1": results_masks[2],
+        "masks": {
+            "p": results_masks[0],
+            "r": results_masks[1],
+            "ap": results_masks[3],
+            "f1": results_masks[2],
             "ap_class": results_masks[4]}})
     return results
 
+
 class Metric:
+
     def __init__(self) -> None:
         self.p = []  # (nc, )
         self.r = []  # (nc, )
@@ -145,36 +177,35 @@ class Metrics:
         # boxes and masks have the same ap_class_index
         return self.metric_box.ap_class_index
 
-KEYS =  [
-            "train/box_loss",
-            "train/seg_loss",  # train loss
-            "train/obj_loss",
-            "train/cls_loss",
-            "metrics/precision(B)",
-            "metrics/recall(B)",
-            "metrics/mAP_0.5(B)",
-            "metrics/mAP_0.5:0.95(B)",  # metrics
-            "metrics/precision(M)",
-            "metrics/recall(M)",
-            "metrics/mAP_0.5(M)",
-            "metrics/mAP_0.5:0.95(M)",  # metrics
-            "val/box_loss",
-            "val/seg_loss",  # val loss
-            "val/obj_loss",
-            "val/cls_loss",
-            "x/lr0",
-            "x/lr1",
-            "x/lr2",
-        ]
 
-BEST_KEYS =  [
-            "best/epoch",
-            "best/precision(B)",
-            "best/recall(B)",
-            "best/mAP_0.5(B)",
-            "best/mAP_0.5:0.95(B)",
-            "best/precision(M)",
-            "best/recall(M)",
-            "best/mAP_0.5(M)",
-            "best/mAP_0.5:0.95(M)",
-        ]
+KEYS = [
+    "train/box_loss",
+    "train/seg_loss",  # train loss
+    "train/obj_loss",
+    "train/cls_loss",
+    "metrics/precision(B)",
+    "metrics/recall(B)",
+    "metrics/mAP_0.5(B)",
+    "metrics/mAP_0.5:0.95(B)",  # metrics
+    "metrics/precision(M)",
+    "metrics/recall(M)",
+    "metrics/mAP_0.5(M)",
+    "metrics/mAP_0.5:0.95(M)",  # metrics
+    "val/box_loss",
+    "val/seg_loss",  # val loss
+    "val/obj_loss",
+    "val/cls_loss",
+    "x/lr0",
+    "x/lr1",
+    "x/lr2",]
+
+BEST_KEYS = [
+    "best/epoch",
+    "best/precision(B)",
+    "best/recall(B)",
+    "best/mAP_0.5(B)",
+    "best/mAP_0.5:0.95(B)",
+    "best/precision(M)",
+    "best/recall(M)",
+    "best/mAP_0.5(M)",
+    "best/mAP_0.5:0.95(M)",]

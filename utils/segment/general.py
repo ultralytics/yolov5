@@ -10,8 +10,17 @@ from ..general import xywh2xyxy
 from ..metrics import box_iou
 
 
-def non_max_suppression_masks(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False,
-        multi_label=False, labels=(), max_det=300, mask_dim=32, ):
+def non_max_suppression_masks(
+        prediction,
+        conf_thres=0.25,
+        iou_thres=0.45,
+        classes=None,
+        agnostic=False,
+        multi_label=False,
+        labels=(),
+        max_det=300,
+        mask_dim=32,
+):
     """Runs Non-Maximum Suppression (NMS) on inference results
 
     Returns:
@@ -119,7 +128,10 @@ def crop(masks, boxes):
     """
     h, w, n = masks.size()
     x1, x2 = boxes[:, 0], boxes[:, 2]
-    y1, y2 = (boxes[:, 1], boxes[:, 3],)
+    y1, y2 = (
+        boxes[:, 1],
+        boxes[:, 3],
+    )
 
     rows = (torch.arange(w, device=masks.device, dtype=x1.dtype).view(1, -1, 1).expand(h, w, n))
     cols = (torch.arange(h, device=masks.device, dtype=x1.dtype).view(-1, 1, 1).expand(h, w, n))
@@ -226,7 +238,7 @@ def scale_masks(img1_shape, masks, img0_shape, ratio_pad=None):
 
 def mask_iou(mask1, mask2):
     """
-    mask1: [N, n] m1 means number of predicted objects 
+    mask1: [N, n] m1 means number of predicted objects
     mask2: [M, n] m2 means number of gt objects
     Note: n means image_w x image_h
 
@@ -244,7 +256,7 @@ def mask_iou(mask1, mask2):
 
 def masks_iou(mask1, mask2):
     """
-    mask1: [N, n] m1 means number of predicted objects 
+    mask1: [N, n] m1 means number of predicted objects
     mask2: [N, n] m2 means number of gt objects
     Note: n means image_w x image_h
 
