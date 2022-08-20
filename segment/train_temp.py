@@ -324,7 +324,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         # Update mosaic border (optional)
         # b = int(random.uniform(0.25 * imgsz, 0.75 * imgsz + gs) // gs * gs)
         # dataset.mosaic_border = [b - imgsz, -b]  # height, width borders
-
         mloss = torch.zeros(4, device=device)  # mean losses
         if RANK != -1:
             train_loader.sampler.set_epoch(epoch)
@@ -430,10 +429,12 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             if fi > best_fitness:
                 best_fitness = fi
             log_vals = list(mloss) + list(results) + lr
+            # Log val metrics and media
             metrics_dict = dict(zip(KEYS, log_vals))
             logger.log_metrics(metrics_dict, epoch)
-            #callbacks.run('on_fit_epoch_end', log_vals, epoch, best_fitness, fi)
-
+            if plots:
+                files = sorted(save_dir.glob('val*.jpg'))
+                logger.log_images(files, "Validation")
             # Save model
             if (not nosave) or (final_epoch and not evolve):  # if save
                 ckpt = {

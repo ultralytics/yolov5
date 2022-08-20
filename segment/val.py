@@ -372,7 +372,7 @@ def run(
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        callbacks.run('on_val_end')
+        #callbacks.run('on_val_end')   
 
     # in case the cocoeval will update map
     (
