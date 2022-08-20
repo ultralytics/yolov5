@@ -9,8 +9,9 @@ import random
 import cv2
 import numpy as np
 
-from ..general import segment2box, resample_segments
 from ..augmentations import box_candidates
+from ..general import resample_segments, segment2box
+
 
 def mixup(im, labels, segments, im2, labels2, segments2):
     # Applies MixUp augmentation https://arxiv.org/pdf/1710.09412.pdf
@@ -19,6 +20,7 @@ def mixup(im, labels, segments, im2, labels2, segments2):
     labels = np.concatenate((labels, labels2), 0)
     segments = np.concatenate((segments, segments2), 0)
     return im, labels, segments
+
 
 def random_perspective(im,
                        targets=(),
@@ -100,5 +102,3 @@ def random_perspective(im,
         new_segments = np.array(new_segments)[i]
 
     return im, targets, new_segments
-
-

@@ -89,15 +89,16 @@ class Detect(nn.Module):
         anchor_grid = (self.anchors[i] * self.stride[i]).view((1, self.na, 1, 1, 2)).expand(shape)
         return grid, anchor_grid
 
+
 class DetectSegment(Detect):
+
     def __init__(self, nc=80, anchors=(), mask_dim=32, proto_channel=256, ch=(), inplace=True):
         super().__init__(nc, anchors, ch, inplace)
         self.mask_dim = mask_dim
         self.no = nc + 5 + self.mask_dim  # number of outputs per anchor
         self.nm = 5 + self.mask_dim
         self.proto_c = proto_channel
-        self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1)
-                               for x in ch)  # output conv
+        self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
 
         # p3作为输入
         self.proto_net = nn.Sequential(
@@ -106,7 +107,7 @@ class DetectSegment(Detect):
             # nn.Conv2d(self.proto_c, self.proto_c, kernel_size=3, stride=1, padding=1),
             # nn.SiLU(inplace=True),
             # nn.Conv2d(self.proto_c, self.proto_c, kernel_size=3, stride=1, padding=1),
-            # nn.SiLU(inplace=True), 
+            # nn.SiLU(inplace=True),
             nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
             nn.Conv2d(self.proto_c, self.proto_c, kernel_size=3, stride=1, padding=1),
             nn.SiLU(inplace=True),
@@ -306,13 +307,15 @@ class DetectionModel(BaseModel):
             b = mi.bias.view(m.na, -1)  # conv.bias(255) to (3,85)
             b.data[:, 4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
             if hasattr(m, "mask_dim"):
-                b.data[:, 5+m.mask_dim:] += math.log(0.6 / (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
+                b.data[:, 5 + m.mask_dim:] += math.log(0.6 /
+                                                       (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
             else:
                 b.data[:, 5:] += math.log(0.6 / (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
             mi.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
 
 
 Model = DetectionModel  # retain YOLOv5 'Model' class for backwards compatibility
+
 
 class ClassificationModel(BaseModel):
     # YOLOv5 classification model

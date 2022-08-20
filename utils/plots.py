@@ -527,6 +527,7 @@ Plotting utils
 import math
 import os
 from copy import copy
+from itertools import repeat
 from pathlib import Path
 
 import cv2
@@ -537,7 +538,6 @@ import pandas as pd
 import seaborn as sn
 import torch
 from PIL import Image, ImageDraw
-from itertools import repeat
 
 from .metrics import fitness
 
@@ -582,7 +582,7 @@ class Colors:
 
     @staticmethod
     def hex2rgb(h):  # rgb order (PIL)
-        return tuple(int(h[1 + i : 1 + i + 2], 16) for i in (0, 2, 4))
+        return tuple(int(h[1 + i:1 + i + 2], 16) for i in (0, 2, 4))
 
 
 colors = Colors()  # create instance for 'from utils.plots import colors'
@@ -602,16 +602,12 @@ class Annotator:
         pil=False,
         example="abc",
     ):
-        assert (
-            im.data.contiguous
-        ), "Image not contiguous. Apply np.ascontiguousarray(im) to Annotator() input images."
+        assert (im.data.contiguous), "Image not contiguous. Apply np.ascontiguousarray(im) to Annotator() input images."
         self.pil = pil or not is_ascii(example)
         if self.pil:  # use PIL
             self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
             self.draw = ImageDraw.Draw(self.im)
-            self.font = check_font(
-                font="Arial.Unicode.ttf",
-            )
+            self.font = check_font(font="Arial.Unicode.ttf",)
         else:  # use cv2
             self.im = im
         self.lw = line_width or max(round(sum(im.shape) / 2 * 0.003), 2)  # line width
@@ -628,8 +624,7 @@ class Annotator:
                         box[0],
                         box[1] - h if outside else box[1],
                         box[0] + w + 1,
-                        box[1] + 1 if outside else box[1] + h + 1,
-                    ],
+                        box[1] + 1 if outside else box[1] + h + 1,],
                     fill=color,
                 )
                 # self.draw.text((box[0], box[1]), label, fill=txt_color, font=self.font, anchor='ls')  # for PIL>8.0
@@ -644,9 +639,7 @@ class Annotator:
             cv2.rectangle(self.im, p1, p2, color, thickness=self.lw, lineType=cv2.LINE_AA)
             if label:
                 tf = max(self.lw - 1, 1)  # font thickness
-                w, h = cv2.getTextSize(label, 0, fontScale=self.lw / 3, thickness=tf)[
-                    0
-                ]  # text width, height
+                w, h = cv2.getTextSize(label, 0, fontScale=self.lw / 3, thickness=tf)[0]  # text width, height
                 outside = p1[1] - h - 3 >= 0  # label fits outside box
                 p2 = p1[0] + w, p1[1] - h - 3 if outside else p1[1] + h + 3
                 cv2.rectangle(self.im, p1, p2, color, -1, cv2.LINE_AA)  # filled
@@ -734,7 +727,7 @@ def plot_images(
             break
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
         im = im.transpose(1, 2, 0)
-        mosaic[y : y + h, x : x + w, :] = im
+        mosaic[y:y + h, x:x + w, :] = im
 
     # Resize (optional)
     scale = max_size / ns / max(h, w)
@@ -822,7 +815,7 @@ def plot_targets_txt():  # from utils.plots import *; plot_targets_txt()
     fig, ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)
     ax = ax.ravel()
     for i in range(4):
-        ax[i].hist(x[i], bins=100, label="%.3g +/- %.3g" % (x[i].mean(), x[i].std()))
+        ax[i].hist(x[i], bins=100, label="{:.3g} +/- {:.3g}".format(x[i].mean(), x[i].std()))
         ax[i].legend()
         ax[i].set_title(s[i])
     plt.savefig("targets.jpg", dpi=200)
@@ -848,8 +841,7 @@ def plot_val_study(file="", dir="", x=None):  # from utils.plots import *; plot_
                 "mAP@.5:.95",
                 "t_preprocess (ms/img)",
                 "t_inference (ms/img)",
-                "t_NMS (ms/img)",
-            ]
+                "t_NMS (ms/img)",]
             for i in range(7):
                 ax[i].plot(x, y[i], ".-", linewidth=2, markersize=8)
                 ax[i].set_title(s[i])
@@ -947,8 +939,7 @@ def profile_idetection(start=0, stop=0, labels=(), save_dir=""):
         "Battery",
         "dt_raw (ms)",
         "dt_smooth (ms)",
-        "real-world FPS",
-    ]
+        "real-world FPS",]
     files = list(Path(save_dir).glob("frames*.txt"))
     for fi, f in enumerate(files):
         try:
@@ -978,14 +969,12 @@ def profile_idetection(start=0, stop=0, labels=(), save_dir=""):
                 else:
                     a.remove()
         except Exception as e:
-            print("Warning: Plotting error for %s; %s" % (f, e))
+            print("Warning: Plotting error for {}; {}".format(f, e))
     ax[1].legend()
     plt.savefig(Path(save_dir) / "idetection_profile.png", dpi=200)
 
 
-def plot_evolve(
-    evolve_csv="path/to/evolve.csv",
-):  # from utils.plots import *; plot_evolve()
+def plot_evolve(evolve_csv="path/to/evolve.csv",):  # from utils.plots import *; plot_evolve()
     # Plot evolve.csv hyp evolution results
     evolve_csv = Path(evolve_csv)
     data = pd.read_csv(evolve_csv)
@@ -1001,7 +990,7 @@ def plot_evolve(
         plt.subplot(6, 5, i + 1)
         plt.scatter(v, f, c=hist2d(v, f, 20), cmap="viridis", alpha=0.8, edgecolors="none")
         plt.plot(mu, f.max(), "k+", markersize=15)
-        plt.title("%s = %.3g" % (k, mu), fontdict={"size": 9})  # limit to 40 characters
+        plt.title("{} = {:.3g}".format(k, mu), fontdict={"size": 9})  # limit to 40 characters
         if i % 5 != 0:
             plt.yticks([])
         print("%15s: %.3g" % (k, mu))
@@ -1056,9 +1045,7 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=None):
     import random
 
     # Plots one bounding box on image img
-    tl = (
-        line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1
-    )  # line/font thickness
+    tl = (line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1)  # line/font thickness
     color = color or [random.randint(0, 255) for _ in range(3)]
     c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
     cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
@@ -1092,9 +1079,7 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path("runs/detec
         if height > 1 and width > 1:
             f = f"stage{stage}_{module_type.split('.')[-1]}_features.png"  # filename
 
-            blocks = torch.chunk(
-                x[0].cpu(), channels, dim=0
-            )  # select batch index 0, block by channels
+            blocks = torch.chunk(x[0].cpu(), channels, dim=0)  # select batch index 0, block by channels
             n = min(n, channels)  # number of plots
             fig, ax = plt.subplots(math.ceil(n / 8), 8, tight_layout=True)  # 8 rows x n/8 cols
             ax = ax.ravel()

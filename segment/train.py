@@ -22,16 +22,17 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
-import val  # for end-of-epoch mAP
 import numpy as np
 import torch
 import torch.distributed as dist
 import torch.nn as nn
+import torch.nn.functional as F
 import yaml
 from torch.nn.parallel import DistributedDataParallel as DDP
-import torch.nn.functional as F
 from torch.optim import SGD, Adam, AdamW, lr_scheduler
 from tqdm import tqdm
+
+import val  # for end-of-epoch mAP
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  # YOLOv5 root directory
@@ -44,7 +45,6 @@ from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
 from utils.callbacks import Callbacks
-from utils.segment.dataloaders import create_dataloader
 from utils.downloads import attempt_download
 from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_git_status, check_img_size,
                            check_requirements, check_suffix, check_version, check_yaml, colorstr, get_latest_run,
@@ -52,22 +52,25 @@ from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_g
                            labels_to_image_weights, methods, one_cycle, print_args, print_mutation, strip_optimizer)
 from utils.loggers import GenericLogger
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
+from utils.plots import plot_evolve, plot_labels
+from utils.segment.dataloaders import create_dataloader
 from utils.segment.loss import ComputeLoss
 from utils.segment.metrics import fitness
-from utils.plots import plot_evolve, plot_labels
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, select_device, torch_distributed_zero_first
-
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
-from utils.general import LOGGER, check_amp, check_version
-from utils.autobatch import check_train_batch_size
-from utils.segment.plots import plot_images_and_masks, plot_results_with_masks
-from utils.segment.metrics import KEYS, BEST_KEYS
-from torch.optim import AdamW
-import yaml
 from datetime import datetime
+
+import yaml
+from torch.optim import AdamW
+
+from utils.autobatch import check_train_batch_size
+from utils.general import LOGGER, check_amp, check_version
+from utils.segment.metrics import BEST_KEYS, KEYS
+from utils.segment.plots import plot_images_and_masks, plot_results_with_masks
+
 
 def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictionary
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, mask_ratio= \
@@ -95,9 +98,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     # Loggers
     data_dict = None
     if RANK in {-1, 0}:
-        logger = GenericLogger(
-            opt=opt, console_logger=LOGGER
-        )  # loggers instance
+        logger = GenericLogger(opt=opt, console_logger=LOGGER)  # loggers instance
 
         # Register actions
         # for k in methods(loggers):
@@ -226,26 +227,27 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         LOGGER.info('Using SyncBatchNorm()')
 
     # Trainloader
-    train_loader, dataset = create_dataloader(train_path,
-                                              imgsz,
-                                              batch_size // WORLD_SIZE,
-                                              gs,
-                                              single_cls,
-                                              hyp=hyp,
-                                              augment=True,
-                                              cache=None if opt.cache == 'val' else opt.cache,
-                                              rect=opt.rect,
-                                              rank=LOCAL_RANK,
-                                              workers=workers,
-                                              image_weights=opt.image_weights,
-                                              quad=opt.quad,
-                                              prefix=colorstr('train: '),
-                                              shuffle=True,
-                                              mask_downsample_ratio=mask_ratio,
-                                              overlap_mask=overlap,
-                                              )
+    train_loader, dataset = create_dataloader(
+        train_path,
+        imgsz,
+        batch_size // WORLD_SIZE,
+        gs,
+        single_cls,
+        hyp=hyp,
+        augment=True,
+        cache=None if opt.cache == 'val' else opt.cache,
+        rect=opt.rect,
+        rank=LOCAL_RANK,
+        workers=workers,
+        image_weights=opt.image_weights,
+        quad=opt.quad,
+        prefix=colorstr('train: '),
+        shuffle=True,
+        mask_downsample_ratio=mask_ratio,
+        overlap_mask=overlap,
+    )
     mlc = int(np.concatenate(dataset.labels, 0)[:, 0].max())  # max label class
-    print("mlc , nc ", mlc, "  ", nc )
+    print("mlc , nc ", mlc, "  ", nc)
     nb = len(train_loader)  # number of batches
     assert mlc < nc, f'Label class {mlc} exceeds nc={nc} in {data}. Possible class labels are 0-{nc - 1}'
 
@@ -328,11 +330,12 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         if RANK != -1:
             train_loader.sampler.set_epoch(epoch)
         pbar = enumerate(train_loader)
-        LOGGER.info( ("\n" + "%10s" * 8) % ("Epoch", "gpu_mem", "box", "seg", "obj", "cls", "labels", "img_size"))
+        LOGGER.info(("\n" + "%10s" * 8) % ("Epoch", "gpu_mem", "box", "seg", "obj", "cls", "labels", "img_size"))
         if RANK in {-1, 0}:
             pbar = tqdm(pbar, total=nb, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
         optimizer.zero_grad()
-        for i, (imgs, targets, paths, _, masks) in pbar:  # batch -------------------------------------------------------------
+        for i, (imgs, targets, paths, _,
+                masks) in pbar:  # batch -------------------------------------------------------------
             ni = i + nb * epoch  # number integrated batches (since train start)
             imgs = imgs.to(device, non_blocking=True).float() / 255  # uint8 to float32, 0-255 to 0.0-1.0
 
@@ -358,7 +361,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # Forward
             with torch.cuda.amp.autocast(amp):
                 pred = model(imgs)  # forward
-                loss, loss_items = compute_loss(pred, targets.to(device),  masks=masks.to(device).float())  # loss scaled by batch_size
+                loss, loss_items = compute_loss(pred, targets.to(device),
+                                                masks=masks.to(device).float())  # loss scaled by batch_size
                 if RANK != -1:
                     loss *= WORLD_SIZE  # gradient averaged between devices in DDP mode
                 if opt.quad:
@@ -380,9 +384,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             if RANK in {-1, 0}:
                 mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
                 mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
-                pbar.set_description(("%10s" * 2 + "%10.4g" * 6)
-            % (f"{epoch}/{epochs - 1}", mem, *mloss, targets.shape[0],imgs.shape[-1]))
-            # for plots
+                pbar.set_description(("%10s" * 2 + "%10.4g" * 6) %
+                                     (f"{epoch}/{epochs - 1}", mem, *mloss, targets.shape[0], imgs.shape[-1]))
+                # for plots
                 if mask_ratio != 1:
                     masks = F.interpolate(
                         masks[None, :].float(),
@@ -395,7 +399,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     if ni < 3:
                         f = save_dir / f"train_batch{ni}.jpg"  # filename
                         plot_images_and_masks(imgs, targets, masks, paths, f)
-                    
+
                     if ni == 10:
                         files = sorted(save_dir.glob('train*.jpg'))
                         logger.log_images(files, "Mosaics")
@@ -411,18 +415,19 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = (epoch + 1 == epochs) or stopper.possible_stop
             if not noval or final_epoch:  # Calculate mAP
-                results, maps, _ = val.run(data_dict,
-                                           batch_size=batch_size // WORLD_SIZE * 2,
-                                           imgsz=imgsz,
-                                           model=ema.ema,
-                                           single_cls=single_cls,
-                                           dataloader=val_loader,
-                                           save_dir=save_dir,
-                                           plots=plots,
-                                           #callbacks=callbacks,
-                                           compute_loss=compute_loss, 
-                                           mask_downsample_ratio=mask_ratio,
-                                           overlap=overlap)
+                results, maps, _ = val.run(
+                    data_dict,
+                    batch_size=batch_size // WORLD_SIZE * 2,
+                    imgsz=imgsz,
+                    model=ema.ema,
+                    single_cls=single_cls,
+                    dataloader=val_loader,
+                    save_dir=save_dir,
+                    plots=plots,
+                    #callbacks=callbacks,
+                    compute_loss=compute_loss,
+                    mask_downsample_ratio=mask_ratio,
+                    overlap=overlap)
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             stop = stopper(epoch=epoch, fitness=fi)  # early stop check
@@ -455,7 +460,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     torch.save(ckpt, w / f'epoch{epoch}.pt')
                     logger.log_model(w / f'epoch{epoch}.pt')
                 del ckpt
-                
 
         # EarlyStopping
         if RANK != -1:  # if DDP training
@@ -496,9 +500,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         logger.log_metrics(metrics_dict, epoch)
                         #callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
         # on train end callback using genericLogger
-        logger.log_metrics(dict(zip(KEYS[4:16], results)), epochs+1)
+        logger.log_metrics(dict(zip(KEYS[4:16], results)), epochs + 1)
         if not opt.evolve:
-            logger.log_model(best, epoch+1)
+            logger.log_model(best, epoch + 1)
         if plots:
             plot_results_with_masks(file=save_dir / 'results.csv')  # save results.png
             files = ['results.png', 'confusion_matrix.png', *(f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R'))]
@@ -509,7 +513,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
     torch.cuda.empty_cache()
     return results
-
 
 
 def parse_opt(known=False):
@@ -548,10 +551,12 @@ def parse_opt(known=False):
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--seed', type=int, default=0, help='Global training seed')
     parser.add_argument('--local_rank', type=int, default=-1, help='Automatic DDP Multi-GPU argument, do not modify')
- 
+
     # Instance Segmentation Args
     parser.add_argument('--mask-ratio', type=int, default=4, help='Downsample the gt masks to saving memory')
-    parser.add_argument('--overlap-mask', action='store_true', help='Overlapping masks train faster at the cost of slight accuray decrease')
+    parser.add_argument('--overlap-mask',
+                        action='store_true',
+                        help='Overlapping masks train faster at the cost of slight accuray decrease')
 
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
