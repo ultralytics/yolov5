@@ -42,10 +42,10 @@ from models.experimental import attempt_load
 from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.downloads import attempt_download
-from utils.general import (check_dataset, check_file, check_git_status, check_img_size,
-                           check_requirements, check_suffix, check_yaml, colorstr, get_latest_run,
-                           increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
-                           labels_to_image_weights, one_cycle, print_args, print_mutation, strip_optimizer)
+from utils.general import (check_dataset, check_file, check_git_status, check_img_size, check_requirements,
+                           check_suffix, check_yaml, colorstr, get_latest_run, increment_path, init_seeds,
+                           intersect_dicts, labels_to_class_weights, labels_to_image_weights, one_cycle, print_args,
+                           print_mutation, strip_optimizer)
 from utils.loggers import GenericLogger
 from utils.plots import plot_evolve, plot_labels
 from utils.segment.dataloaders import create_dataloader
