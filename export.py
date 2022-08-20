@@ -436,8 +436,7 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
               f'--output_node_names=Identity,Identity_1,Identity_2,Identity_3 {f_pb} {f}'
         subprocess.run(cmd.split())
 
-        with open(f_json) as j:
-            json = j.read()
+        json = Path(f_json).read_text()
         with open(f_json, 'w') as j:  # sort JSON Identity_* in ascending order
             subst = re.sub(
                 r'{"outputs": {"Identity.?.?": {"name": "Identity.?.?"}, '
