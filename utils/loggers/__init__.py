@@ -5,6 +5,7 @@ Logging utils
 
 import os
 import warnings
+from pathlib import Path
 
 import pkg_resources as pkg
 import torch
@@ -285,3 +286,81 @@ class LoggersMask(Loggers):
                                    name=f'run_{self.wandb.wandb_run.id}_model',
                                    aliases=['latest', 'best', 'stripped'])
             self.wandb.finish_run()
+    
+class GenericLogger:
+    """
+    YOLOv5 General purpose logger for non-task specific logging
+    Usage: from utils.loggers import GenericLogger; logger = GenericLogger(...)
+    Arguments
+        opt:             Run arguments
+        console_logger:  Console logger
+        include:         loggers to include
+    """
+
+    def __init__(self, opt, console_logger, include=('tb', 'wandb')):
+        # init default loggers
+        self.save_dir = Path(opt.save_dir)
+        self.include = include
+        self.console_logger = console_logger
+        if 'tb' in self.include:
+            prefix = colorstr('TensorBoard: ')
+            self.console_logger.info(
+                f"{prefix}Start with 'tensorboard --logdir {self.save_dir.parent}', view at http://localhost:6006/")
+            self.tb = SummaryWriter(str(self.save_dir))
+
+        if wandb and 'wandb' in self.include:
+            self.wandb = wandb.init(project="YOLOv5" if opt.project == "runs/train_segment" else opt.project,
+                                    name=None if opt.name == "exp" else opt.name,
+                                    config=opt)
+        else:
+            self.wandb = None
+
+    def log_metrics(self, metrics_dict, epoch):
+        # Log metrics dictionary to all loggers
+        if self.tb:
+            for k, v in metrics_dict.items():
+                self.tb.add_scalar(k, v, epoch)
+
+        if self.wandb:
+            self.wandb.log(metrics_dict, step=epoch)
+
+    def log_images(self, files, name='Images', epoch=0):
+        # Log images to all loggers
+        files = [Path(f) for f in (files if isinstance(files, (tuple, list)) else [files])]  # to Path
+        files = [f for f in files if f.exists()]  # filter by exists
+
+        if self.tb:
+            for f in files:
+                self.tb.add_image(f.stem, cv2.imread(str(f))[..., ::-1], epoch, dataformats='HWC')
+
+        if self.wandb:
+            self.wandb.log({name: [wandb.Image(str(f), caption=f.name) for f in files]}, step=epoch)
+
+    def log_graph(self, model, imgsz=(640, 640)):
+        # Log model graph to all loggers
+        if self.tb:
+            log_tensorboard_graph(self.tb, model, imgsz)
+
+    def log_model(self, model_path, epoch=0, metadata={}):
+        # Log model to all loggers
+        if self.wandb:
+            art = wandb.Artifact(name=f"run_{wandb.run.id}_model", type="model", metadata=metadata)
+            art.add_file(str(model_path))
+            wandb.log_artifact(art)
+    
+    def update_params(self, params):
+        # Update the paramters logged
+        if self.wandb:
+            wandb.run.config.update(params, allow_val_change=True)
+
+def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
+    # Log model graph to TensorBoard
+    try:
+        p = next(model.parameters())  # for device, type
+        imgsz = (imgsz, imgsz) if isinstance(imgsz, int) else imgsz  # expand
+        im = torch.empty((1, 3, *imgsz)).to(p.device).type_as(p)  # input image
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')  # suppress jit trace warning
+            tb.add_graph(torch.jit.trace(de_parallel(model), im, strict=False), [])
+    except Exception:
+        print('WARNING: TensorBoard graph visualization failure')
