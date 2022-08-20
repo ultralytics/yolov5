@@ -43,15 +43,13 @@ from models.experimental import attempt_load
 from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.autobatch import check_train_batch_size
-from utils.callbacks import Callbacks
 from utils.segment.dataloaders import create_dataloader
 from utils.downloads import attempt_download
 from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_git_status, check_img_size,
                            check_requirements, check_suffix, check_version, check_yaml, colorstr, get_latest_run,
                            increment_path, init_seeds, intersect_dicts, labels_to_class_weights,
-                           labels_to_image_weights, methods, one_cycle, print_args, print_mutation, strip_optimizer)
+                           labels_to_image_weights, one_cycle, print_args, print_mutation, strip_optimizer)
 from utils.loggers import GenericLogger
-from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.segment.loss import ComputeLoss
 from utils.segment.metrics import fitness
 from utils.plots import plot_evolve, plot_labels
@@ -69,7 +67,7 @@ from torch.optim import AdamW
 import yaml
 from datetime import datetime
 
-def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictionary
+def train(hyp, opt, device):  # hyp is path/to/hyp.yaml or hyp dictionary
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, mask_ratio= \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
         opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze, opt.mask_ratio
@@ -97,11 +95,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     if RANK in {-1, 0}:
         logger = GenericLogger(
             opt=opt, console_logger=LOGGER
-        )  # loggers instance
-
-        # Register actions
-        # for k in methods(loggers):
-        #    callbacks.register_action(k, callback=getattr(loggers, k))
+        )
 
     # Config
     plots = not evolve and not opt.noplots  # create plots
@@ -166,8 +160,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):  # weight (with decay)
             g[0].append(v.weight)
 
-    # hyp['lr0'] = hyp['lr0'] / batch_size * 128
-    # hyp['warmup_bias_lr'] = 0.01
     if opt.optimizer == 'Adam':
         optimizer = Adam(g[2], lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))  # adjust beta1 to momentum
     elif opt.optimizer == 'AdamW':
@@ -384,13 +376,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             % (f"{epoch}/{epochs - 1}", mem, *mloss, targets.shape[0],imgs.shape[-1]))
             # for plots
                 if mask_ratio != 1:
-                    masks = F.interpolate(
-                        masks[None, :].float(),
-                        (imgsz, imgsz),
-                        mode="bilinear",
-                        align_corners=False,
+                    masks = F.interpolate(masks[None, :].float(), (imgsz, imgsz), mode="bilinear", align_corners=False,
                     ).squeeze(0)
-                #callbacks.run('on_train_batch_end', ni, model, imgs, targets, masks, paths, plots)
                 if plots:
                     if ni < 3:
                         f = save_dir / f"train_batch{ni}.jpg"  # filename
@@ -407,7 +394,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
         if RANK in {-1, 0}:
             # mAP
-            # callbacks.run('on_train_epoch_end', epoch=epoch)
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = (epoch + 1 == epochs) or stopper.possible_stop
             if not noval or final_epoch:  # Calculate mAP
@@ -419,7 +405,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                            dataloader=val_loader,
                                            save_dir=save_dir,
                                            plots=plots,
-                                           #callbacks=callbacks,
                                            compute_loss=compute_loss, 
                                            mask_downsample_ratio=mask_ratio,
                                            overlap=overlap)
@@ -487,14 +472,12 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         save_json=is_coco,
                         verbose=True,
                         plots=plots,
-                        #callbacks=callbacks,
                         compute_loss=compute_loss,
                         mask_downsample_ratio=mask_ratio,
                         overlap=overlap)  # val best model with plots
                     if is_coco:
                         metrics_dict = dict(zip(KEYS, list(mloss) + list(results) + lr))
                         logger.log_metrics(metrics_dict, epoch)
-                        #callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
         # on train end callback using genericLogger
         logger.log_metrics(dict(zip(KEYS[4:16], results)), epochs+1)
         if not opt.evolve:
@@ -505,7 +488,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             files = [(save_dir / f) for f in files if (save_dir / f).exists()]  # filter
             LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
             logger.log_images(files, "Results")
-        # callbacks.run('on_train_end', last, best, plots, epoch, results)
 
     torch.cuda.empty_cache()
     return results
@@ -557,7 +539,7 @@ def parse_opt(known=False):
     return opt
 
 
-def main(opt, callbacks=Callbacks()):
+def main(opt):
     # Checks
     if RANK in {-1, 0}:
         print_args(vars(opt))
@@ -565,7 +547,7 @@ def main(opt, callbacks=Callbacks()):
         check_requirements(exclude=['thop'])
 
     # Resume
-    if opt.resume and not check_wandb_resume(opt) and not opt.evolve:  # resume an interrupted run
+    if opt.resume and not opt.evolve:  # resume an interrupted run
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         with open(Path(ckpt).parent.parent / 'opt.yaml', errors='ignore') as f:
@@ -599,7 +581,7 @@ def main(opt, callbacks=Callbacks()):
 
     # Train
     if not opt.evolve:
-        train(opt.hyp, opt, device, callbacks)
+        train(opt.hyp, opt, device)
         if WORLD_SIZE > 1 and RANK == 0:
             LOGGER.info('Destroying process group... ')
             dist.destroy_process_group()
@@ -681,8 +663,7 @@ def main(opt, callbacks=Callbacks()):
                 hyp[k] = round(hyp[k], 5)  # significant digits
 
             # Train mutation
-            results = train(hyp.copy(), opt, device, callbacks)
-            callbacks = Callbacks()
+            results = train(hyp.copy(), opt, device)
             # Write mutation results
             print_mutation(results, hyp.copy(), save_dir, opt.bucket)
 

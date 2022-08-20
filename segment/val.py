@@ -38,7 +38,6 @@ import torch.nn.functional as F
 import pycocotools.mask as mask_util
 from models.common import DetectMultiBackend
 from models.experimental import attempt_load  # scoped to avoid circular import
-from utils.callbacks import Callbacks
 from utils.segment.dataloaders import create_dataloader
 from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_yaml,
                            coco80_to_coco91_class, colorstr, emojis, increment_path, print_args,
@@ -166,7 +165,6 @@ def run(
         plots=True,
         overlap=False,
         mask_downsample_ratio=1,
-        callbacks=Callbacks(),
         compute_loss=None,
 ):
     process = process_mask_upsample if plots else process_mask
@@ -245,10 +243,8 @@ def run(
     metrics = Metrics()
     loss = torch.zeros(4, device=device)
     jdict, stats = [], []
-    callbacks.run('on_val_start')
     pbar = tqdm(dataloader, desc=s, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
     for batch_i, (im, targets, paths, shapes, masks) in enumerate(pbar):
-        callbacks.run('on_val_batch_start')
         t1 = time_sync()
         if cuda:
             im = im.to(device, non_blocking=True)
@@ -326,7 +322,6 @@ def run(
                 pred_masks = scale_masks(im[si].shape[1:], pred_masks.permute(1, 2, 0).contiguous().cpu().numpy(),
                     shape, shapes[si][1])
                 save_one_json(predn, jdict, path, class_map, pred_masks)  # append to COCO-JSON dictionary
-            callbacks.run('on_val_image_end', pred[:, :6], predn[:, :6], path, names, im[si])
 
         # Plot images
         if plots and batch_i < 3:
@@ -342,8 +337,6 @@ def run(
             plot_masks = torch.cat(plot_masks, dim=0)
             plot_images_and_masks(im, output_to_target(out, filter_dets=15), plot_masks, paths, 
                     save_dir / f'val_batch{batch_i}_pred.jpg', names)  # pred
-
-        callbacks.run('on_val_batch_end')
 
     # Compute metrics
     stats = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats)]  # to numpy
@@ -372,7 +365,6 @@ def run(
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        #callbacks.run('on_val_end')   
 
     # in case the cocoeval will update map
     (
