@@ -390,7 +390,7 @@ def train(hyp, opt, device):  # hyp is path/to/hyp.yaml or hyp dictionary
 
                     if ni == 10:
                         files = sorted(save_dir.glob('train*.jpg'))
-                        logger.log_images(files, "Mosaics")
+                        logger.log_images(files, "Mosaics", epoch)
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
@@ -424,7 +424,7 @@ def train(hyp, opt, device):  # hyp is path/to/hyp.yaml or hyp dictionary
             logger.log_metrics(metrics_dict, epoch)
             if plots:
                 files = sorted(save_dir.glob('val*.jpg'))
-                logger.log_images(files, "Validation")
+                logger.log_images(files, "Validation", epoch)
             # Save model
             if (not nosave) or (final_epoch and not evolve):  # if save
                 ckpt = {
@@ -491,7 +491,7 @@ def train(hyp, opt, device):  # hyp is path/to/hyp.yaml or hyp dictionary
             files = ['results.png', 'confusion_matrix.png', *(f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R'))]
             files = [(save_dir / f) for f in files if (save_dir / f).exists()]  # filter
             LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
-            logger.log_images(files, "Results")
+            logger.log_images(files, "Results", epoch+1)
 
     torch.cuda.empty_cache()
     return results
