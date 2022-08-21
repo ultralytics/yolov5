@@ -7,7 +7,7 @@ Usage:
     $ python models/tf.py --weights yolov5s.pt
 
 Export:
-    $ python path/to/export.py --weights yolov5s.pt --include saved_model pb tflite tfjs
+    $ python export.py --weights yolov5s.pt --include saved_model pb tflite tfjs
 """
 
 import argparse
