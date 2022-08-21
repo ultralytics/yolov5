@@ -47,7 +47,7 @@ from utils.downloads import attempt_download, is_url
 from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_git_status, check_img_size,
                            check_requirements, check_suffix, check_yaml, colorstr, count_samples,
                            counts_to_class_weights, counts_to_pos_weights, get_latest_run, increment_path, init_seeds,
-                           intersect_dicts, labels_to_image_weights, methods, one_cycle, print_args, print_mutation, 
+                           intersect_dicts, labels_to_image_weights, methods, one_cycle, print_args, print_mutation,
                            strip_optimizer, yaml_save)
 from utils.loggers import Loggers
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
