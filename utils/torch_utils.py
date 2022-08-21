@@ -412,7 +412,6 @@ class ModelEMA:
         for p in self.ema.parameters():
             p.requires_grad_(False)
 
-    @smart_inference_mode()
     def update(self, model):
         # Update EMA parameters
         self.updates += 1
@@ -422,8 +421,8 @@ class ModelEMA:
         for k, v in self.ema.state_dict().items():
             if v.dtype.is_floating_point:  # true for FP16 and FP32
                 v *= d
-                v += (1 - d) * msd[k]
-        assert v.dtype == msd[k].dtype == torch.float32, f'EMA {v.dtype} and model {msd[k]} must be updated in FP32'
+                v += (1 - d) * msd[k].detach()
+        assert v.dtype == msd[k].detach().dtype == torch.float32, f'EMA {v.dtype} and model {msd[k]} must both be FP32'
 
     def update_attr(self, model, include=(), exclude=('process_group', 'reducer')):
         # Update EMA attributes
