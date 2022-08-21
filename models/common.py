@@ -589,7 +589,7 @@ class AutoShape(nn.Module):
 
     @smart_inference_mode()
     def forward(self, ims, size=640, augment=False, profile=False):
-        # Inference from various sources. For height=640, width=1280, RGB images example inputs are:
+        # Inference from various sources. For size(height=640, width=1280), RGB images example inputs are:
         #   file:        ims = 'data/images/zidane.jpg'  # str or PosixPath
         #   URI:             = 'https://ultralytics.com/images/zidane.jpg'
         #   OpenCV:          = cv2.imread('image.jpg')[:,:,::-1]  # HWC BGR to RGB x(640,1280,3)
@@ -600,6 +600,8 @@ class AutoShape(nn.Module):
 
         dt = (Profile(), Profile(), Profile())
         with dt[0]:
+            if isinstance(size, int):  # expand
+                size = (size, size)
             p = next(self.model.parameters()) if self.pt else torch.empty(1, device=self.model.device)  # param
             autocast = self.amp and (p.device.type != 'cpu')  # Automatic Mixed Precision (AMP) inference
             if isinstance(ims, torch.Tensor):  # torch
@@ -622,10 +624,10 @@ class AutoShape(nn.Module):
                 im = im[..., :3] if im.ndim == 3 else cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)  # enforce 3ch input
                 s = im.shape[:2]  # HWC
                 shape0.append(s)  # image shape
-                g = (size / max(s))  # gain
+                g = max(size) / max(s)  # gain
                 shape1.append([y * g for y in s])
                 ims[i] = im if im.data.contiguous else np.ascontiguousarray(im)  # update
-            shape1 = [make_divisible(x, self.stride) if self.pt else size for x in np.array(shape1).max(0)]  # inf shape
+            shape1 = [make_divisible(x, self.stride) for x in np.array(shape1).max(0)] if self.pt else size  # inf shape
             x = [letterbox(im, shape1, auto=False)[0] for im in ims]  # pad
             x = np.ascontiguousarray(np.array(x).transpose((0, 3, 1, 2)))  # stack and BHWC to BCHW
             x = torch.from_numpy(x).to(p.device).type_as(p) / 255  # uint8 to fp16/32

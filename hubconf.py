@@ -30,7 +30,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
 
     from models.common import AutoShape, DetectMultiBackend
     from models.experimental import attempt_load
-    from models.yolo import DetectionModel
+    from models.yolo import ClassificationModel, DetectionModel
     from utils.downloads import attempt_download
     from utils.general import LOGGER, check_requirements, intersect_dicts, logging
     from utils.torch_utils import select_device
@@ -45,8 +45,12 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
         if pretrained and channels == 3 and classes == 80:
             try:
                 model = DetectMultiBackend(path, device=device, fuse=autoshape)  # detection model
-                if autoshape and isinstance(model.model, DetectionModel):
-                    model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
+                if autoshape:
+                    if model.pt and isinstance(model.model, ClassificationModel):
+                        LOGGER.warning('WARNING: YOLOv5 v6.2 ClassificationModel is not yet AutoShape compatible. '
+                                       'You must pass torch tensors in BCHW to this model, i.e. shape(1,3,224,224).')
+                    else:
+                        model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
             except Exception:
                 model = attempt_load(path, device=device, fuse=False)  # arbitrary model
         else:
