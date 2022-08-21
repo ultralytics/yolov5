@@ -17,6 +17,7 @@ protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
 # Logging -------------------------------------
 tensorboard>=2.4.1
 # wandb
+# clearml
 
 # Plotting ------------------------------------
 pandas>=1.1.4

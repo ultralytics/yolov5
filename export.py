@@ -69,7 +69,7 @@ from models.yolo import Detect
 from utils.dataloaders import LoadImages
 from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_version, check_yaml,
                            colorstr, file_size, print_args, url2file)
-from utils.torch_utils import select_device
+from utils.torch_utils import select_device, smart_inference_mode
 
 
 def export_formats():
@@ -410,7 +410,7 @@ def export_edgetpu(file, prefix=colorstr('Edge TPU:')):
         f = str(file).replace('.pt', '-int8_edgetpu.tflite')  # Edge TPU model
         f_tfl = str(file).replace('.pt', '-int8.tflite')  # TFLite model
 
-        cmd = f"edgetpu_compiler -s -o {file.parent} {f_tfl}"
+        cmd = f"edgetpu_compiler -s -d -k 10 --out_dir {file.parent} {f_tfl}"
         subprocess.run(cmd.split(), check=True)
 
         LOGGER.info(f'{prefix} export success, saved as {f} ({file_size(f):.1f} MB)')
@@ -436,8 +436,7 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
               f'--output_node_names=Identity,Identity_1,Identity_2,Identity_3 {f_pb} {f}'
         subprocess.run(cmd.split())
 
-        with open(f_json) as j:
-            json = j.read()
+        json = Path(f_json).read_text()
         with open(f_json, 'w') as j:  # sort JSON Identity_* in ascending order
             subst = re.sub(
                 r'{"outputs": {"Identity.?.?": {"name": "Identity.?.?"}, '
@@ -455,7 +454,7 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
 
-@torch.no_grad()
+@smart_inference_mode()
 def run(
         data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         weights=ROOT / 'yolov5s.pt',  # weights path
@@ -495,11 +494,9 @@ def run(
         assert device.type != 'cpu' or coreml, '--half only compatible with GPU export, i.e. use --device 0'
         assert not dynamic, '--half not compatible with --dynamic, i.e. use either --half or --dynamic but not both'
     model = attempt_load(weights, device=device, inplace=True, fuse=True)  # load FP32 model
-    nc, names = model.nc, model.names  # number of classes, class names
 
     # Checks
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
-    assert nc == len(names), f'Model class count {nc} != len(names) {len(names)}'
     if optimize:
         assert device.type == 'cpu', '--optimize not compatible with cuda devices, i.e. use --device cpu'
 
@@ -520,7 +517,7 @@ def run(
         y = model(im)  # dry runs
     if half and not coreml:
         im, model = im.half(), model.half()  # to FP16
-    shape = tuple(y[0].shape)  # model output shape
+    shape = tuple((y[0] if isinstance(y, tuple) else y).shape)  # model output shape
     LOGGER.info(f"\n{colorstr('PyTorch:')} starting from {file} with output shape {shape} ({file_size(file):.1f} MB)")
 
     # Exports
@@ -601,7 +598,7 @@ def parse_opt():
     parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
     parser.add_argument('--include',
                         nargs='+',
-                        default=['torchscript', 'onnx'],
+                        default=['torchscript'],
                         help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
     opt = parser.parse_args()
     print_args(vars(opt))

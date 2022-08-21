@@ -22,18 +22,20 @@ from zipfile import ZipFile
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torchvision
 import yaml
 from PIL import ExifTags, Image, ImageOps
 from torch.utils.data import DataLoader, Dataset, dataloader, distributed
 from tqdm import tqdm
 
-from utils.augmentations import Albumentations, augment_hsv, copy_paste, letterbox, mixup, random_perspective
+from utils.augmentations import (Albumentations, augment_hsv, classify_albumentations, classify_transforms, copy_paste,
+                                 letterbox, mixup, random_perspective)
 from utils.general import (DATASETS_DIR, LOGGER, NUM_THREADS, check_dataset, check_requirements, check_yaml, clean_str,
                            cv2, is_colab, is_kaggle, segments2boxes, xyn2xy, xywh2xyxy, xywhn2xyxy, xyxy2xywhn)
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
-HELP_URL = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
+HELP_URL = 'See https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 IMG_FORMATS = 'bmp', 'dng', 'jpeg', 'jpg', 'mpo', 'png', 'tif', 'tiff', 'webp'  # include image suffixes
 VID_FORMATS = 'asf', 'avi', 'gif', 'm4v', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'ts', 'wmv'  # include video suffixes
 BAR_FORMAT = '{l_bar}{bar:10}{r_bar}{bar:-10b}'  # tqdm bar format
@@ -184,7 +186,7 @@ class _RepeatSampler:
 
 class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
-    def __init__(self, path, img_size=640, stride=32, auto=True):
+    def __init__(self, path, img_size=640, stride=32, auto=True, transforms=None):
         files = []
         for p in sorted(path) if isinstance(path, (list, tuple)) else [path]:
             p = str(Path(p).resolve())
@@ -208,6 +210,7 @@ class LoadImages:
         self.video_flag = [False] * ni + [True] * nv
         self.mode = 'image'
         self.auto = auto
+        self.transforms = transforms  # optional
         if any(videos):
             self.new_video(videos[0])  # new video
         else:
@@ -227,7 +230,7 @@ class LoadImages:
         if self.video_flag[self.count]:
             # Read video
             self.mode = 'video'
-            ret_val, img0 = self.cap.read()
+            ret_val, im0 = self.cap.read()
             while not ret_val:
                 self.count += 1
                 self.cap.release()
@@ -235,7 +238,7 @@ class LoadImages:
                     raise StopIteration
                 path = self.files[self.count]
                 self.new_video(path)
-                ret_val, img0 = self.cap.read()
+                ret_val, im0 = self.cap.read()
 
             self.frame += 1
             s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: '
@@ -243,18 +246,18 @@ class LoadImages:
         else:
             # Read image
             self.count += 1
-            img0 = cv2.imread(path)  # BGR
-            assert img0 is not None, f'Image Not Found {path}'
+            im0 = cv2.imread(path)  # BGR
+            assert im0 is not None, f'Image Not Found {path}'
             s = f'image {self.count}/{self.nf} {path}: '
 
-        # Padded resize
-        img = letterbox(img0, self.img_size, stride=self.stride, auto=self.auto)[0]
+        if self.transforms:
+            im = self.transforms(cv2.cvtColor(im0, cv2.COLOR_BGR2RGB))  # classify transforms
+        else:
+            im = letterbox(im0, self.img_size, stride=self.stride, auto=self.auto)[0]  # padded resize
+            im = im.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+            im = np.ascontiguousarray(im)  # contiguous
 
-        # Convert
-        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
-        img = np.ascontiguousarray(img)
-
-        return path, img, img0, self.cap, s
+        return path, im, im0, self.cap, s
 
     def new_video(self, path):
         self.frame = 0
@@ -453,7 +456,7 @@ class LoadImagesAndLabels(Dataset):
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in IMG_FORMATS])  # pathlib
             assert self.im_files, f'{prefix}No images found'
         except Exception as e:
-            raise Exception(f'{prefix}Error loading data from {path}: {e}\nSee {HELP_URL}')
+            raise Exception(f'{prefix}Error loading data from {path}: {e}\n{HELP_URL}')
 
         # Check cache
         self.label_files = img2label_paths(self.im_files)  # labels
@@ -472,11 +475,13 @@ class LoadImagesAndLabels(Dataset):
             tqdm(None, desc=prefix + d, total=n, initial=n, bar_format=BAR_FORMAT)  # display cache results
             if cache['msgs']:
                 LOGGER.info('\n'.join(cache['msgs']))  # display warnings
-        assert nf > 0 or not augment, f'{prefix}No labels in {cache_path}. Can not train without labels. See {HELP_URL}'
+        assert nf > 0 or not augment, f'{prefix}No labels found in {cache_path}, can not start training. {HELP_URL}'
 
         # Read cache
         [cache.pop(k) for k in ('hash', 'version', 'msgs')]  # remove items
         labels, shapes, self.segments = zip(*cache.values())
+        nl = len(np.concatenate(labels, 0))  # number of labels
+        assert nl > 0 or not augment, f'{prefix}All labels empty in {cache_path}, can not start training. {HELP_URL}'
         self.labels = list(labels)
         self.shapes = np.array(shapes)
         self.im_files = list(cache.keys())  # update
@@ -569,7 +574,7 @@ class LoadImagesAndLabels(Dataset):
         if msgs:
             LOGGER.info('\n'.join(msgs))
         if nf == 0:
-            LOGGER.warning(f'{prefix}WARNING: No labels found in {path}. See {HELP_URL}')
+            LOGGER.warning(f'{prefix}WARNING: No labels found in {path}. {HELP_URL}')
         x['hash'] = get_hash(self.label_files + self.im_files)
         x['results'] = nf, nm, ne, nc, len(self.im_files)
         x['msgs'] = msgs  # warnings
@@ -870,7 +875,7 @@ def flatten_recursive(path=DATASETS_DIR / 'coco128'):
 def extract_boxes(path=DATASETS_DIR / 'coco128'):  # from utils.dataloaders import *; extract_boxes()
     # Convert detection dataset into classification dataset, with one directory per class
     path = Path(path)  # images dir
-    shutil.rmtree(path / 'classifier') if (path / 'classifier').is_dir() else None  # remove existing
+    shutil.rmtree(path / 'classification') if (path / 'classification').is_dir() else None  # remove existing
     files = list(path.rglob('*.*'))
     n = len(files)  # number of files
     for im_file in tqdm(files, total=n):
@@ -1002,7 +1007,7 @@ class HUBDatasetStats():
         self.hub_dir = Path(data['path'] + '-hub')
         self.im_dir = self.hub_dir / 'images'
         self.im_dir.mkdir(parents=True, exist_ok=True)  # makes /images
-        self.stats = {'nc': data['nc'], 'names': data['names']}  # statistics dictionary
+        self.stats = {'nc': data['nc'], 'names': list(data['names'].values())}  # statistics dictionary
         self.data = data
 
     @staticmethod
@@ -1034,7 +1039,7 @@ class HUBDatasetStats():
             r = max_dim / max(im.height, im.width)  # ratio
             if r < 1.0:  # image too large
                 im = im.resize((int(im.width * r), int(im.height * r)))
-            im.save(f_new, 'JPEG', quality=75, optimize=True)  # save
+            im.save(f_new, 'JPEG', quality=50, optimize=True)  # save
         except Exception as e:  # use OpenCV
             print(f'WARNING: HUB ops PIL failure {f}: {e}')
             im = cv2.imread(f)
@@ -1090,3 +1095,65 @@ class HUBDatasetStats():
                 pass
         print(f'Done. All images saved to {self.im_dir}')
         return self.im_dir
+
+
+# Classification dataloaders -------------------------------------------------------------------------------------------
+class ClassificationDataset(torchvision.datasets.ImageFolder):
+    """
+    YOLOv5 Classification Dataset.
+    Arguments
+        root:  Dataset path
+        transform:  torchvision transforms, used by default
+        album_transform: Albumentations transforms, used if installed
+    """
+
+    def __init__(self, root, augment, imgsz, cache=False):
+        super().__init__(root=root)
+        self.torch_transforms = classify_transforms(imgsz)
+        self.album_transforms = classify_albumentations(augment, imgsz) if augment else None
+        self.cache_ram = cache is True or cache == 'ram'
+        self.cache_disk = cache == 'disk'
+        self.samples = [list(x) + [Path(x[0]).with_suffix('.npy'), None] for x in self.samples]  # file, index, npy, im
+
+    def __getitem__(self, i):
+        f, j, fn, im = self.samples[i]  # filename, index, filename.with_suffix('.npy'), image
+        if self.album_transforms:
+            if self.cache_ram and im is None:
+                im = self.samples[i][3] = cv2.imread(f)
+            elif self.cache_disk:
+                if not fn.exists():  # load npy
+                    np.save(fn.as_posix(), cv2.imread(f))
+                im = np.load(fn)
+            else:  # read image
+                im = cv2.imread(f)  # BGR
+            sample = self.album_transforms(image=cv2.cvtColor(im, cv2.COLOR_BGR2RGB))["image"]
+        else:
+            sample = self.torch_transforms(self.loader(f))
+        return sample, j
+
+
+def create_classification_dataloader(path,
+                                     imgsz=224,
+                                     batch_size=16,
+                                     augment=True,
+                                     cache=False,
+                                     rank=-1,
+                                     workers=8,
+                                     shuffle=True):
+    # Returns Dataloader object to be used with YOLOv5 Classifier
+    with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
+        dataset = ClassificationDataset(root=path, imgsz=imgsz, augment=augment, cache=cache)
+    batch_size = min(batch_size, len(dataset))
+    nd = torch.cuda.device_count()
+    nw = min([os.cpu_count() // max(nd, 1), batch_size if batch_size > 1 else 0, workers])
+    sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
+    generator = torch.Generator()
+    generator.manual_seed(0)
+    return InfiniteDataLoader(dataset,
+                              batch_size=batch_size,
+                              shuffle=shuffle and sampler is None,
+                              num_workers=nw,
+                              sampler=sampler,
+                              pin_memory=True,
+                              worker_init_fn=seed_worker,
+                              generator=generator)  # or DataLoader(persistent_workers=True)

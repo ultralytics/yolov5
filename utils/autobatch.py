@@ -8,7 +8,7 @@ from copy import deepcopy
 import numpy as np
 import torch
 
-from utils.general import LOGGER, colorstr, emojis
+from utils.general import LOGGER, colorstr
 from utils.torch_utils import profile
 
 
@@ -47,7 +47,7 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
     # Profile batch sizes
     batch_sizes = [1, 2, 4, 8, 16]
     try:
-        img = [torch.zeros(b, 3, imgsz, imgsz) for b in batch_sizes]
+        img = [torch.empty(b, 3, imgsz, imgsz) for b in batch_sizes]
         results = profile(img, model, n=3, device=device)
     except Exception as e:
         LOGGER.warning(f'{prefix}{e}')
@@ -60,7 +60,10 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
         i = results.index(None)  # first fail index
         if b >= batch_sizes[i]:  # y intercept above failure point
             b = batch_sizes[max(i - 1, 0)]  # select prior safe point
+    if b < 1:  # zero or negative batch size
+        b = 16
+        LOGGER.warning(f'{prefix}WARNING: ⚠️ CUDA anomaly detected, recommend restart environment and retry command.')
 
     fraction = np.polyval(p, b) / t  # actual fraction predicted
-    LOGGER.info(emojis(f'{prefix}Using batch-size {b} for {d} {t * fraction:.2f}G/{t:.2f}G ({fraction * 100:.0f}%) ✅'))
+    LOGGER.info(f'{prefix}Using batch-size {b} for {d} {t * fraction:.2f}G/{t:.2f}G ({fraction * 100:.0f}%) ✅')
     return b
