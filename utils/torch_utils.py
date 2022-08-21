@@ -412,7 +412,6 @@ class ModelEMA:
         for p in self.ema.parameters():
             p.requires_grad_(False)
 
-    @smart_inference_mode()
     def update(self, model):
         # Update EMA parameters
         self.updates += 1
