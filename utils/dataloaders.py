@@ -137,7 +137,7 @@ def create_weighted_sampler(dataset):
 
     final_weights = np.array(final_weights)
     # you can see num_samples argument to anything. It basically changes your iteration count in every epoch
-    return WeightedRandomSampler(torch.from_numpy(final_weights), num_samples = len(final_weights))
+    return WeightedRandomSampler(torch.from_numpy(final_weights), num_samples=len(final_weights))
 
 
 def create_dataloader(path,
