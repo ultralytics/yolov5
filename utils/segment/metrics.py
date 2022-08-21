@@ -4,7 +4,6 @@ Model validation metrics
 """
 
 import numpy as np
-from easydict import EasyDict as edict
 
 from ..metrics import ap_per_class
 
@@ -48,7 +47,7 @@ def ap_per_class_box_and_mask(
                                  names=names,
                                  prefix="Mask")[2:]
 
-    results = edict({
+    results = {
         "boxes": {
             "p": results_boxes[0],
             "r": results_boxes[1],
@@ -60,7 +59,7 @@ def ap_per_class_box_and_mask(
             "r": results_masks[1],
             "ap": results_masks[3],
             "f1": results_masks[2],
-            "ap_class": results_masks[4]}})
+            "ap_class": results_masks[4]}}
     return results
 
 
