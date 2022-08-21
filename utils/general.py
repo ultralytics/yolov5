@@ -816,16 +816,17 @@ def clip_coords(boxes, shape):
         boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, shape[0])  # y1, y2
 
 
-def non_max_suppression(prediction,
-                        conf_thres=0.25,
-                        iou_thres=0.45,
-                        classes=None,
-                        agnostic=False,
-                        multi_label=False,
-                        labels=(),
-                        max_det=300,
-                        masks=0,
-                        ):
+def non_max_suppression(
+        prediction,
+        conf_thres=0.25,
+        iou_thres=0.45,
+        classes=None,
+        agnostic=False,
+        multi_label=False,
+        labels=(),
+        max_det=300,
+        masks=0,
+):
     """Non-Maximum Suppression (NMS) on inference results to reject overlapping detections
 
     Returns:
