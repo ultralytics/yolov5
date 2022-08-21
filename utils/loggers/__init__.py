@@ -11,7 +11,7 @@ import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from utils.general import colorstr, cv2, threaded
+from utils.general import colorstr, cv2
 from utils.loggers.clearml.clearml_utils import ClearmlLogger
 from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_labels, plot_results
@@ -292,7 +292,6 @@ class GenericLogger:
             wandb.log_artifact(art)
 
 
-@threaded
 def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
     # Log model graph to TensorBoard
     try:
