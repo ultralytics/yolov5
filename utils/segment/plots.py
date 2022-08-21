@@ -8,7 +8,7 @@ import pandas as pd
 import torch
 from PIL import Image
 
-from ..general import xywh2xyxy
+from ..general import xywh2xyxy, xyxy2xywh
 from ..plots import colors
 
 
