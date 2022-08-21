@@ -292,7 +292,6 @@ class GenericLogger:
             wandb.log_artifact(art)
 
 
-@threaded
 def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
     # Log model graph to TensorBoard
     try:
