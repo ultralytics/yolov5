@@ -33,7 +33,6 @@ import pkg_resources as pkg
 import torch
 import torchvision
 import yaml
-from PIL import ImageFont
 
 from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
