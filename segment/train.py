@@ -491,7 +491,7 @@ def train(hyp, opt, device):  # hyp is path/to/hyp.yaml or hyp dictionary
             files = ['results.png', 'confusion_matrix.png', *(f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R'))]
             files = [(save_dir / f) for f in files if (save_dir / f).exists()]  # filter
             LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
-            logger.log_images(files, "Results", epoch+1)
+            logger.log_images(files, "Results", epoch + 1)
 
     torch.cuda.empty_cache()
     return results
