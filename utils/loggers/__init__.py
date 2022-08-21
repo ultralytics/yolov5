@@ -11,7 +11,7 @@ import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from utils.general import colorstr, cv2
+from utils.general import colorstr, cv2, threaded
 from utils.loggers.clearml.clearml_utils import ClearmlLogger
 from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_labels, plot_results
@@ -111,26 +111,26 @@ class Loggers():
         # Callback runs on train start
         pass
 
-    def on_pretrain_routine_end(self, model, labels, names):
+    def on_pretrain_routine_end(self, labels, names):
         # Callback runs on pre-train routine end
         if self.plots:
             plot_labels(labels, names, self.save_dir)
-            if self.tb and not self.opt.sync_bn:
-                log_tensorboard_graph(self.tb, model, imgsz=(640, 640))
             paths = self.save_dir.glob('*labels*.jpg')  # training labels
             if self.wandb:
                 self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
             # if self.clearml:
             #    pass  # ClearML saves these images automatically using hooks
 
-    def on_train_batch_end(self, ni, imgs, targets, paths):
+    def on_train_batch_end(self, model, ni, imgs, targets, paths):
         # Callback runs on train batch end
         # ni: number integrated batches (since train start)
         if self.plots:
             if ni < 3:
                 f = self.save_dir / f'train_batch{ni}.jpg'  # filename
                 plot_images(imgs, targets, paths, f)
-            if (self.wandb or self.clearml) and ni == 10:
+                if ni == 0 and self.tb and not self.opt.sync_bn:
+                    log_tensorboard_graph(self.tb, model, imgsz=(self.opt.imgsz, self.opt.imgsz))
+            if ni == 10 and (self.wandb or self.clearml):
                 files = sorted(self.save_dir.glob('train*.jpg'))
                 if self.wandb:
                     self.wandb.log({'Mosaics': [wandb.Image(str(f), caption=f.name) for f in files if f.exists()]})
@@ -292,6 +292,7 @@ class GenericLogger:
             wandb.log_artifact(art)
 
 
+@threaded
 def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
     # Log model graph to TensorBoard
     try:
