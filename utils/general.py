@@ -622,7 +622,7 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
     dir.mkdir(parents=True, exist_ok=True)  # make directory
     if threads > 1:
         pool = ThreadPool(threads)
-        pool.imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # multi-threaded
+        pool.imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # multithreaded
         pool.close()
         pool.join()
     else:
