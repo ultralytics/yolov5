@@ -37,7 +37,6 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 import pycocotools.mask as mask_util
 import torch.nn.functional as F
 
-from models.common import DetectMultiBackend
 from models.experimental import attempt_load  # scoped to avoid circular import
 from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_yaml,
                            coco80_to_coco91_class, colorstr, emojis, increment_path, print_args, scale_coords,
@@ -262,7 +261,7 @@ def run(
         dt[0] += t2 - t1
 
         # Inference
-        out, train_out = model(im)  #if training else model(im, augment=augment, val=True)  # inference, loss outputs
+        out, train_out = model(im)  # if training else model(im, augment=augment, val=True)  # inference, loss outputs
         dt[1] += time_sync() - t2
 
         # Loss

@@ -1,12 +1,11 @@
 import time
 
 import cv2
-import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision
 
-from ..general import xywh2xyxy
+from ..general import LOGGER, xywh2xyxy
 from ..metrics import box_iou
 
 
@@ -21,30 +20,32 @@ def non_max_suppression_masks(
         max_det=300,
         mask_dim=32,
 ):
-    """Runs Non-Maximum Suppression (NMS) on inference results
+    """Non-Maximum Suppression (NMS) on inference results to reject overlapping detections
 
     Returns:
          list of detections, on (n,6) tensor per image [xyxy, conf, cls]
     """
 
+    bs = prediction.shape[0]  # batch size
     nc = prediction.shape[2] - 5  # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
 
     # Checks
-    assert (0 <= conf_thres <= 1), f"Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0"
-    assert (0 <= iou_thres <= 1), f"Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0"
+    assert 0 <= conf_thres <= 1, f'Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0'
+    assert 0 <= iou_thres <= 1, f'Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0'
 
     # Settings
-    min_wh, max_wh = 2, 4096  # (pixels) minimum and maximum box width and height
+    # min_wh = 2  # (pixels) minimum box width and height
+    max_wh = 7680  # (pixels) maximum box width and height
     max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
-    time_limit = 10.0  # seconds to quit after
+    time_limit = 0.6 + 0.06 * bs  # seconds to quit after
     redundant = True  # require redundant detections
     multi_label &= nc > 1  # multiple labels per box (adds 0.5ms/img)
     merge = False  # use merge-NMS
     nm = 5 + mask_dim
 
     t = time.time()
-    output = [torch.zeros((0, 6 + mask_dim), device=prediction.device)] * prediction.shape[0]
+    output = [torch.zeros((0, 6 + mask_dim), device=prediction.device)] * bs
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
         # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
@@ -53,11 +54,11 @@ def non_max_suppression_masks(
 
         # Cat apriori labels if autolabelling
         if labels and len(labels[xi]):
-            l = labels[xi]
-            v = torch.zeros((len(l), nc + 5), device=x.device)
-            v[:, :4] = l[:, 1:5]  # box
+            lb = labels[xi]
+            v = torch.zeros((len(lb), nc + 5), device=x.device)
+            v[:, :4] = lb[:, 1:5]  # box
             v[:, 4] = 1.0  # conf
-            v[range(len(l)), l[:, 0].long() + 5] = 1.0  # cls
+            v[range(len(lb)), lb[:, 0].long() + 5] = 1.0  # cls
             x = torch.cat((x, v), 0)
 
         # If none remain process next image
@@ -92,8 +93,6 @@ def non_max_suppression_masks(
             continue
         elif n > max_nms:  # excess boxes
             x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence
-        else:
-            x = x[x[:, 4].argsort(descending=True)]  # sort by confidence
 
         # Batched NMS
         c = x[:, 5:6] * (0 if agnostic else max_wh)  # classes
@@ -101,7 +100,7 @@ def non_max_suppression_masks(
         i = torchvision.ops.nms(boxes, scores, iou_thres)  # NMS
         if i.shape[0] > max_det:  # limit detections
             i = i[:max_det]
-        if merge and (1 < n < 3e3):  # Merge NMS (boxes merged using weighted mean)
+        if merge and (1 < n < 3E3):  # Merge NMS (boxes merged using weighted mean)
             # update boxes as boxes(i,4) = weights(i,n) * boxes(n,4)
             iou = box_iou(boxes[i], boxes) > iou_thres  # iou matrix
             weights = iou * scores[None]  # box weights
@@ -111,7 +110,7 @@ def non_max_suppression_masks(
 
         output[xi] = x[i]
         if (time.time() - t) > time_limit:
-            print(f"WARNING: NMS time limit {time_limit}s exceeded")
+            LOGGER.warning(f'WARNING: NMS time limit {time_limit:.3f}s exceeded')
             break  # time limit exceeded
 
     return output

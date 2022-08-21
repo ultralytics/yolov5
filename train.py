@@ -52,7 +52,7 @@ from utils.loggers import Loggers
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.loss import ComputeLoss
 from utils.metrics import fitness
-from utils.plots import plot_evolve, plot_labels
+from utils.plots import plot_evolve
 from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, smart_DDP, smart_optimizer,
                                smart_resume, torch_distributed_zero_first)
 
@@ -215,15 +215,11 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                        prefix=colorstr('val: '))[0]
 
         if not resume:
-            if plots:
-                plot_labels(labels, names, save_dir)
-
-            # Anchors
             if not opt.noautoanchor:
-                check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
+                check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)  # run AutoAnchor
             model.half().float()  # pre-reduce anchor precision
 
-        callbacks.run('on_pretrain_routine_end')
+        callbacks.run('on_pretrain_routine_end', labels, names, plots)
 
     # DDP mode
     if cuda and RANK != -1:
