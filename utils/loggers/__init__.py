@@ -11,10 +11,10 @@ import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from utils.general import colorstr, cv2
+from utils.general import colorstr, cv2, threaded
 from utils.loggers.clearml.clearml_utils import ClearmlLogger
 from utils.loggers.wandb.wandb_utils import WandbLogger
-from utils.plots import plot_images, plot_results
+from utils.plots import plot_images, plot_labels, plot_results
 from utils.torch_utils import de_parallel
 
 LOGGERS = ('csv', 'tb', 'wandb', 'clearml')  # *.csv, TensorBoard, Weights & Biases, ClearML
@@ -110,13 +110,15 @@ class Loggers():
         # Callback runs on train start
         pass
 
-    def on_pretrain_routine_end(self):
+    def on_pretrain_routine_end(self, labels, names, plots):
         # Callback runs on pre-train routine end
+        if plots:
+            plot_labels(labels, names, self.save_dir)
         paths = self.save_dir.glob('*labels*.jpg')  # training labels
         if self.wandb:
             self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
-        if self.clearml:
-            pass  # ClearML saves these images automatically using hooks
+        # if self.clearml:
+        #    pass  # ClearML saves these images automatically using hooks
 
     def on_train_batch_end(self, ni, model, imgs, targets, paths, plots):
         # Callback runs on train batch end
