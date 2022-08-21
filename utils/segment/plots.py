@@ -240,6 +240,7 @@ def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
     fig.savefig(save_dir / "results.png", dpi=200)
     plt.close()
 
+
 def output_to_target(output, filter_dets=10):
     # Convert model output to target format [batch_id, class_id, x, y, w, h, conf]
     targets = []
