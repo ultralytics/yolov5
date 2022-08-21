@@ -333,6 +333,7 @@ class DetectMultiBackend(nn.Module):
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
             model.half() if fp16 else model.float()
             self.model = model  # explicitly assign for to(), cpu(), cuda(), half()
+            segmentation_model = type(model.model[-1]).__name__ == 'DetectSegment'
         elif jit:  # TorchScript
             LOGGER.info(f'Loading {w} for TorchScript inference...')
             extra_files = {'config.txt': ''}  # model metadata
@@ -466,7 +467,7 @@ class DetectMultiBackend(nn.Module):
 
         if self.pt:  # PyTorch
             y = self.model(im, augment=augment, visualize=visualize) if augment or visualize else self.model(im)
-            if isinstance(y, tuple):
+            if isinstance(y, tuple) and not self.segmentation_model:
                 y = y[0]
         elif self.jit:  # TorchScript
             y = self.model(im)[0]
