@@ -11,7 +11,7 @@ import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from utils.general import colorstr, cv2, threaded
+from utils.general import colorstr, cv2
 from utils.loggers.clearml.clearml_utils import ClearmlLogger
 from utils.loggers.mlflow.mlflow_utils import MlflowLogger
 from utils.loggers.wandb.wandb_utils import WandbLogger
@@ -55,6 +55,7 @@ class Loggers():
         self.weights = weights
         self.opt = opt
         self.hyp = hyp
+        self.plots = not opt.noplots  # plot results
         self.logger = logger  # for printing results to console
         self.include = include
         self.keys = [
@@ -122,28 +123,28 @@ class Loggers():
         # Callback runs on train start
         pass
 
-    def on_pretrain_routine_end(self, labels, names, plots):
+    def on_pretrain_routine_end(self, labels, names):
         # Callback runs on pre-train routine end
-        if plots:
+        if self.plots:
             plot_labels(labels, names, self.save_dir)
-        paths = self.save_dir.glob('*labels*.jpg')  # training labels
-        if self.wandb:
-            self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
-        # if self.clearml:
-        #    pass  # ClearML saves these images automatically using hooks
-        if self.mlflow:
-            [self.mlflow.log_artifacts(x, "labels") for x in paths]
+            paths = self.save_dir.glob('*labels*.jpg')  # training labels
+            if self.wandb:
+                self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
+            # if self.clearml:
+            #    pass  # ClearML saves these images automatically using hooks
+            if self.mlflow:
+                [self.mlflow.log_artifacts(x, "labels") for x in paths]
 
-    def on_train_batch_end(self, ni, model, imgs, targets, paths, plots):
+    def on_train_batch_end(self, model, ni, imgs, targets, paths):
         # Callback runs on train batch end
         # ni: number integrated batches (since train start)
-        if plots:
-            if ni == 0 and not self.opt.sync_bn and self.tb:
-                log_tensorboard_graph(self.tb, model, imgsz=list(imgs.shape[2:4]))
+        if self.plots:
             if ni < 3:
                 f = self.save_dir / f'train_batch{ni}.jpg'  # filename
                 plot_images(imgs, targets, paths, f)
-            if (self.wandb or self.clearml or self.mlflow) and ni == 10:
+                if ni == 0 and self.tb and not self.opt.sync_bn:
+                    log_tensorboard_graph(self.tb, model, imgsz=(self.opt.imgsz, self.opt.imgsz))
+            if ni == 10 and (self.wandb or self.clearml or self.mlflow):
                 files = sorted(self.save_dir.glob('train*.jpg'))
                 if self.wandb:
                     self.wandb.log({'Mosaics': [wandb.Image(str(f), caption=f.name) for f in files if f.exists()]})
@@ -225,9 +226,9 @@ class Loggers():
             if self.mlflow:
                 self.mlflow.log_model(model_path=last, model_name=f"{self.mlflow.model_name}/last/{epoch}")
 
-    def on_train_end(self, last, best, plots, epoch, results):
+    def on_train_end(self, last, best, epoch, results):
         # Callback runs on training end, i.e. saving best model
-        if plots:
+        if self.plots:
             plot_results(file=self.save_dir / 'results.csv')  # save results.png
         files = ['results.png', 'confusion_matrix.png', *(f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R'))]
         files = [(self.save_dir / f) for f in files if (self.save_dir / f).exists()]  # filter
@@ -354,5 +355,5 @@ def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')  # suppress jit trace warning
             tb.add_graph(torch.jit.trace(de_parallel(model), im, strict=False), [])
-    except Exception:
-        print('WARNING: TensorBoard graph visualization failure')
+    except Exception as e:
+        print(f'WARNING: TensorBoard graph visualization failure {e}')
