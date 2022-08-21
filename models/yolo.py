@@ -46,8 +46,8 @@ class Detect(nn.Module):
         self.no = nc + 5  # number of outputs per anchor
         self.nl = len(anchors)  # number of detection layers
         self.na = len(anchors[0]) // 2  # number of anchors
-        self.grid = [torch.zeros(1)] * self.nl  # init grid
-        self.anchor_grid = [torch.zeros(1)] * self.nl  # init anchor grid
+        self.grid = [torch.empty(1)] * self.nl  # init grid
+        self.anchor_grid = [torch.empty(1)] * self.nl  # init anchor grid
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
@@ -175,7 +175,7 @@ class DetectionModel(BaseModel):
         if isinstance(m, Detect):
             s = 256  # 2x min stride
             m.inplace = self.inplace
-            m.stride = torch.tensor([s / x.shape[-2] for x in self.forward(torch.zeros(1, ch, s, s))])  # forward
+            m.stride = torch.tensor([s / x.shape[-2] for x in self.forward(torch.empty(1, ch, s, s))])  # forward
             check_anchor_order(m)  # must be in pixel-space (not grid-space)
             m.anchors /= m.stride.view(-1, 1, 1)
             self.stride = m.stride

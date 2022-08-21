@@ -141,16 +141,26 @@ CONFIG_DIR = user_config_dir()  # Ultralytics settings dir
 
 
 class Profile(contextlib.ContextDecorator):
-    # Usage: @Profile() decorator or 'with Profile():' context manager
+    # YOLOv5 Profile class. Usage: @Profile() decorator or 'with Profile():' context manager
+    def __init__(self, t=0.0):
+        self.t = t
+        self.cuda = torch.cuda.is_available()
+
     def __enter__(self):
-        self.start = time.time()
+        self.start = self.time()
 
     def __exit__(self, type, value, traceback):
-        print(f'Profile results: {time.time() - self.start:.5f}s')
+        self.dt = self.time() - self.start  # delta-time
+        self.t += self.dt  # accumulate dt
+
+    def time(self):
+        if self.cuda:
+            torch.cuda.synchronize()
+        return time.time()
 
 
 class Timeout(contextlib.ContextDecorator):
-    # Usage: @Timeout(seconds) decorator or 'with Timeout(seconds):' context manager
+    # YOLOv5 Timeout class. Usage: @Timeout(seconds) decorator or 'with Timeout(seconds):' context manager
     def __init__(self, seconds, *, timeout_msg='', suppress_timeout_errors=True):
         self.seconds = int(seconds)
         self.timeout_message = timeout_msg
@@ -572,7 +582,7 @@ def url2file(url):
 
 
 def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry=3):
-    # Multi-threaded file download and unzip function, used in data.yaml for autodownload
+    # Multithreaded file download and unzip function, used in data.yaml for autodownload
     def download_one(url, dir):
         # Download 1 file
         success = True
@@ -584,7 +594,8 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
             for i in range(retry + 1):
                 if curl:
                     s = 'sS' if threads > 1 else ''  # silent
-                    r = os.system(f'curl -{s}L "{url}" -o "{f}" --retry 9 -C -')  # curl download with retry, continue
+                    r = os.system(
+                        f'curl -# -{s}L "{url}" -o "{f}" --retry 9 -C -')  # curl download with retry, continue
                     success = r == 0
                 else:
                     torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
@@ -611,7 +622,7 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
     dir.mkdir(parents=True, exist_ok=True)  # make directory
     if threads > 1:
         pool = ThreadPool(threads)
-        pool.imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # multi-threaded
+        pool.imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # multithreaded
         pool.close()
         pool.join()
     else:

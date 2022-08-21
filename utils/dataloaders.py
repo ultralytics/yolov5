@@ -36,7 +36,7 @@ from utils.general import (DATASETS_DIR, LOGGER, NUM_THREADS, check_dataset, che
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
-HELP_URL = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
+HELP_URL = 'See https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 IMG_FORMATS = 'bmp', 'dng', 'jpeg', 'jpg', 'mpo', 'png', 'tif', 'tiff', 'webp'  # include image suffixes
 VID_FORMATS = 'asf', 'avi', 'gif', 'm4v', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'ts', 'wmv'  # include video suffixes
 BAR_FORMAT = '{l_bar}{bar:10}{r_bar}{bar:-10b}'  # tqdm bar format
@@ -102,7 +102,7 @@ def seed_worker(worker_id):
 def create_weighted_sampler(dataset):
     labels_per_class = [label[:, 0].tolist() for label in dataset.labels if label.shape[0] > 0]
     # flatten 2d array into 1d: https://stackoverflow.com/questions/29244286/how-to-flatten-a-2d-list-to-1d-without-using-numpy
-    labels_per_class=[j for sub in labels_per_class for j in sub] 
+    labels_per_class = [j for sub in labels_per_class for j in sub]
 
     labels_per_class = np.array(labels_per_class)
 
@@ -507,7 +507,7 @@ class LoadImagesAndLabels(Dataset):
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in IMG_FORMATS])  # pathlib
             assert self.im_files, f'{prefix}No images found'
         except Exception as e:
-            raise Exception(f'{prefix}Error loading data from {path}: {e}\nSee {HELP_URL}')
+            raise Exception(f'{prefix}Error loading data from {path}: {e}\n{HELP_URL}')
 
         # Check cache
         self.label_files = img2label_paths(self.im_files)  # labels
@@ -526,11 +526,13 @@ class LoadImagesAndLabels(Dataset):
             tqdm(None, desc=prefix + d, total=n, initial=n, bar_format=BAR_FORMAT)  # display cache results
             if cache['msgs']:
                 LOGGER.info('\n'.join(cache['msgs']))  # display warnings
-        assert nf > 0 or not augment, f'{prefix}No labels in {cache_path}. Can not train without labels. See {HELP_URL}'
+        assert nf > 0 or not augment, f'{prefix}No labels found in {cache_path}, can not start training. {HELP_URL}'
 
         # Read cache
         [cache.pop(k) for k in ('hash', 'version', 'msgs')]  # remove items
         labels, shapes, self.segments = zip(*cache.values())
+        nl = len(np.concatenate(labels, 0))  # number of labels
+        assert nl > 0 or not augment, f'{prefix}All labels empty in {cache_path}, can not start training. {HELP_URL}'
         self.labels = list(labels)
         self.shapes = np.array(shapes)
         self.im_files = list(cache.keys())  # update
@@ -623,7 +625,7 @@ class LoadImagesAndLabels(Dataset):
         if msgs:
             LOGGER.info('\n'.join(msgs))
         if nf == 0:
-            LOGGER.warning(f'{prefix}WARNING: No labels found in {path}. See {HELP_URL}')
+            LOGGER.warning(f'{prefix}WARNING: No labels found in {path}. {HELP_URL}')
         x['hash'] = get_hash(self.label_files + self.im_files)
         x['results'] = nf, nm, ne, nc, len(self.im_files)
         x['msgs'] = msgs  # warnings

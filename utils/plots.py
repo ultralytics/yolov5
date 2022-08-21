@@ -3,6 +3,7 @@
 Plotting utils
 """
 
+import contextlib
 import math
 import os
 from copy import copy
@@ -180,8 +181,7 @@ def output_to_target(output):
     # Convert model output to target format [batch_id, class_id, x, y, w, h, conf]
     targets = []
     for i, o in enumerate(output):
-        for *box, conf, cls in o.cpu().numpy():
-            targets.append([i, cls, *list(*xyxy2xywh(np.array(box)[None])), conf])
+        targets.extend([i, cls, *list(*xyxy2xywh(np.array(box)[None])), conf] for *box, conf, cls in o.cpu().numpy())
     return np.array(targets)
 
 
@@ -340,7 +340,6 @@ def plot_val_study(file='', dir='', x=None):  # from utils.plots import *; plot_
 
 
 @try_except  # known issue https://github.com/ultralytics/yolov5/issues/5395
-@Timeout(30)  # known issue https://github.com/ultralytics/yolov5/issues/5611
 def plot_labels(labels, names=(), save_dir=Path('')):
     # plot dataset labels
     LOGGER.info(f"Plotting labels to {save_dir / 'labels.jpg'}... ")
@@ -357,10 +356,8 @@ def plot_labels(labels, names=(), save_dir=Path('')):
     matplotlib.use('svg')  # faster
     ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)[1].ravel()
     y = ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
-    try:  # color histogram bars by class
+    with contextlib.suppress(Exception):  # color histogram bars by class
         [y[2].patches[i].set_color([x / 255 for x in colors(i)]) for i in range(nc)]  # known issue #3195
-    except Exception:
-        pass
     ax[0].set_ylabel('instances')
     if 0 < len(names) < 30:
         ax[0].set_xticks(range(len(names)))
