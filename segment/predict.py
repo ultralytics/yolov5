@@ -41,9 +41,9 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.experimental import attempt_load
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
 from utils.general import (LOGGER, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
-                           increment_path, print_args, scale_coords, strip_optimizer, xyxy2xywh)
+                           increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
-from utils.segment.general import non_max_suppression_masks, process_mask_upsample, scale_masks
+from utils.segment.general import process_mask_upsample, scale_masks
 from utils.segment.plots import plot_masks
 from utils.torch_utils import select_device, time_sync
 
@@ -130,7 +130,7 @@ def run(
         dt[1] += t3 - t2
 
         # NMS
-        pred = non_max_suppression_masks(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
+        pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det, masks=32)
         dt[2] += time_sync() - t3
 
         # Second-stage classifier (optional)
