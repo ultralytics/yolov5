@@ -70,6 +70,7 @@ class MlflowLogger:
 
         Args:
             artifact (Path): File or folder to be logged
+            relpath (str): Name (or path) relative to experiment for logging artifact in mlflow
         """
         if not isinstance(artifact, Path):
             artifact = Path(artifact)
@@ -82,7 +83,8 @@ class MlflowLogger:
         """Member function to log model as an Mlflow model.
 
         Args:
-            model (nn.Module): The pytorch model
+            model_path: Path to the model .pt being logged
+            model_name: Name (or path) relative to experiment for logging model in mlflow
         """
         self.mlflow.pyfunc.log_model(artifact_path=self.model_name if model_name is None else model_name,
                                      code_path=[str(ROOT.resolve())],
