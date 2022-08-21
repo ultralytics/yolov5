@@ -1,6 +1,6 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
-Run inference on images, videos, directories, and globs.
+Run YOLOv5 classification inference on images, videos, directories, and globs.
 
 Usage - sources:
     $ python classify/predict.py --weights yolov5s.pt --source img.jpg        # image
