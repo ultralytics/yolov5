@@ -177,12 +177,14 @@ def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
     return filtfilt(b, a, data)  # forward-backward filter
 
 
-def output_to_target(output):
-    # Convert model output to target format [batch_id, class_id, x, y, w, h, conf]
+def output_to_target(output, max_det=300):
+    # Convert model output to target format [batch_id, class_id, x, y, w, h, conf] for plotting
     targets = []
     for i, o in enumerate(output):
-        targets.extend([i, cls, *list(*xyxy2xywh(np.array(box)[None])), conf] for *box, conf, cls in o.cpu().numpy())
-    return np.array(targets)
+        box, conf, cls = o[:max_det].cpu().split((4, 1, 1), 1)
+        j = torch.full((conf.shape[0], 1), i)
+        targets.append(torch.cat((j, cls, xyxy2xywh(box), conf), 1))
+    return torch.cat(targets, 0).numpy()
 
 
 @threaded

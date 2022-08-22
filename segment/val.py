@@ -42,11 +42,11 @@ from utils.general import (LOGGER, check_dataset, check_img_size, check_requirem
                            coco80_to_coco91_class, colorstr, emojis, increment_path, non_max_suppression, print_args,
                            scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, box_iou
-from utils.plots import plot_val_study
+from utils.plots import output_to_target, plot_val_study
 from utils.segment.dataloaders import create_dataloader
 from utils.segment.general import mask_iou, process_mask, process_mask_upsample, scale_masks
 from utils.segment.metrics import Metrics, ap_per_class_box_and_mask
-from utils.segment.plots import output_to_target, plot_images_and_masks
+from utils.segment.plots import plot_images_and_masks
 from utils.torch_utils import de_parallel, select_device, time_sync
 
 
@@ -345,7 +345,7 @@ def run(
             plot_images_and_masks(im, targets, masks, paths, save_dir / f'val_batch{batch_i}_labels.jpg',
                                   names)  # labels
             plot_masks = torch.cat(plot_masks, dim=0)
-            plot_images_and_masks(im, output_to_target(out, filter_dets=15), plot_masks, paths,
+            plot_images_and_masks(im, output_to_target(out, max_det=15), plot_masks, paths,
                                   save_dir / f'val_batch{batch_i}_pred.jpg', names)  # pred
 
     # Compute metrics

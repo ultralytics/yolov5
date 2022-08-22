@@ -239,13 +239,3 @@ def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
     ax[1].legend()
     fig.savefig(save_dir / "results.png", dpi=200)
     plt.close()
-
-
-def output_to_target(output, filter_dets=10):
-    # Convert model output to target format [batch_id, class_id, x, y, w, h, conf]
-    targets = []
-    for i, o in enumerate(output):
-        o = o[:filter_dets]
-        for *box, conf, cls in o.cpu().numpy()[:, :6]:
-            targets.append([i, cls, *list(*xyxy2xywh(np.array(box)[None])), conf])
-    return np.array(targets)
