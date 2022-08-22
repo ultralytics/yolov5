@@ -1,15 +1,17 @@
 import glob
+import logging
 import os
 
 import comet_ml
 import torch
 import torchvision.transforms as T
 import yaml
-from torchvision.utils import draw_bounding_boxes, save_image
 
 from utils.dataloaders import img2label_paths
-from utils.general import scale_coords, xywh2xyxy, xyxy2xywh
+from utils.general import scale_coords, xywh2xyxy
 from utils.metrics import ConfusionMatrix, box_iou
+
+LOGGER = logging.getLogger(__name__)
 
 COMET_PREFIX = "comet://"
 
@@ -100,7 +102,7 @@ class CometLogger:
                 self.data_dict = yaml.safe_load(f)
 
         self.class_names = self.data_dict["names"]
-        self.num_classes = self.data_dict["nc"]
+        self.num_classes = len(self.data_dict["names"])
 
         self.logged_images_count = 0
         self.max_images = (
@@ -108,22 +110,26 @@ class CometLogger:
             if self.opt.comet_max_image_uploads
             else COMET_MAX_IMAGE_UPLOADS
         )
-
         if self.experiment is not None:
             if run_id is None:
-                self.log_parameters(vars(opt))
-                self.log_asset(self.opt.hyp, metadata={"type": "hyp-config-file"})
-                if not self.opt.comet_artifact:
-                    self.log_asset(self.opt.data, metadata={"type": "data-config-file"})
-                self.log_asset(
-                    f"{self.opt.save_dir}/opt.yaml",
-                    metadata={"type": "opt-config-file"},
-                )
                 self.experiment.log_other("Created from", "YOLOv5")
                 self.experiment.log_other(
                     "Run ID",
                     f"{self.experiment.workspace}/{self.experiment.project_name}/{self.experiment.id}",
                 )
+                self.log_parameters(vars(opt))
+                self.log_parameters(self.opt.hyp)
+                self.log_asset_data(
+                    self.opt.hyp,
+                    name="hyperparameters.json",
+                    metadata={"type": "hyp-config-file"},
+                )
+                self.log_asset(
+                    f"{self.opt.save_dir}/opt.yaml",
+                    metadata={"type": "opt-config-file"},
+                )
+                if not self.opt.comet_artifact:
+                    self.log_asset(self.opt.data, metadata={"type": "data-config-file"})
 
         self.comet_log_confusion_matrix = (
             self.opt.comet_log_confusion_matrix
@@ -131,8 +137,14 @@ class CometLogger:
             else COMET_LOG_CONFUSION_MATRIX
         )
         if self.comet_log_confusion_matrix:
-            self.conf_thres = CONF_THRES
-            self.iou_thres = IOU_THRES
+            try:
+                self.conf_thres = self.opt.conf_thres
+            except Exception as e:
+                self.conf_thres = CONF_THRES
+            try:
+                self.iou_thres = self.opt.iou_thres
+            except Exception as e:
+                self.iou_thres = IOU_THRES
 
         self.comet_log_predictions = True
         if self.comet_log_predictions:
@@ -151,15 +163,24 @@ class CometLogger:
             )
 
         else:
-            if experiment_id is not None:
-                return comet_ml.ExistingExperiment(
-                    previous_experiment=experiment_id,
+            try:
+                if experiment_id is not None:
+                    return comet_ml.ExistingExperiment(
+                        previous_experiment=experiment_id,
+                        **self.default_experiment_kwargs,
+                    )
+
+                return comet_ml.Experiment(
                     **self.default_experiment_kwargs,
                 )
 
-            return comet_ml.Experiment(
-                **self.default_experiment_kwargs,
-            )
+            except ValueError as e:
+                LOGGER.warning(
+                    "Comet credentials have not been set. "
+                    "Comet will default to offline logging. "
+                    "Please set your credentials to enable online logging."
+                )
+                return self._get_experiment("offline", experiment_id)
 
         return
 
@@ -171,6 +192,9 @@ class CometLogger:
 
     def log_asset(self, asset_path, **kwargs):
         self.experiment.log_asset(asset_path, **kwargs)
+
+    def log_asset_data(self, asset, **kwargs):
+        self.experiment.log_asset_data(asset, **kwargs)
 
     def log_image(self, img, **kwargs):
         self.experiment.log_image(img, **kwargs)
@@ -399,11 +423,14 @@ class CometLogger:
         self.log_metrics(result, epoch=epoch)
 
         if self.comet_log_confusion_matrix:
-            class_names = self.class_names
+            class_names = list(self.class_names.values())
             class_names.append("background-FN")
+
+            num_classes = len(class_names)
+
             self.experiment.log_confusion_matrix(
                 matrix=self.confmat.matrix,
-                max_categories=self.num_classes + 1,
+                max_categories=num_classes,
                 labels=class_names,
                 epoch=epoch,
             )
