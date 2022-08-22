@@ -164,7 +164,7 @@ def run(
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Mask plotting ----------------------------------------------------------------------------------------
-                mcolors = [colors(int(cls)) for cls in range(len(det[:, 5]))]
+                mcolors = [colors(int(cls), True) for cls in det[:, 5]]
                 # NOTE: this plot method is faster, but the image might get blurred https://github.com/dbolya/yolact
                 img_masks = plot_masks(im[i], masks, mcolors)  # image with masks shape(imh,imw,3)
                 img_masks = scale_masks(im.shape[2:], img_masks, im0.shape)  # scale to original h, w

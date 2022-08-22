@@ -900,6 +900,8 @@ def non_max_suppression(
             continue
         elif n > max_nms:  # excess boxes
             x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence
+        else:
+            x = x[x[:, 4].argsort(descending=True)]  # sort by confidence
 
         # Batched NMS
         c = x[:, 5:6] * (0 if agnostic else max_wh)  # classes
