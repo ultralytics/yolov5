@@ -6,6 +6,7 @@ import torch
 import torchvision.transforms as T
 import yaml
 from torchvision.utils import draw_bounding_boxes, save_image
+
 from utils.dataloaders import img2label_paths
 from utils.general import scale_coords, xywh2xyxy, xyxy2xywh
 from utils.metrics import ConfusionMatrix, box_iou
@@ -21,7 +22,7 @@ COMET_UPLOAD_DATASET = os.getenv("COMET_UPLOAD_DATASET", "false").lower() == "tr
 COMET_LOG_CONFUSION_MATRIX = (
     os.getenv("COMET_LOG_CONFUSION_MATRIX", "true").lower() == "true"
 )
-COMET_MAX_IMAGES = os.getenv("COMET_MAX_VAL_IMAGES", 100)
+COMET_MAX_IMAGE_UPLOADS = os.getenv("COMET_MAX_IMAGE_UPLOADS", 100)
 
 COMET_OVERWRITE_CHECKPOINTS = (
     os.getenv("COMET_OVERWRITE_CHECKPOINTS", "true").lower() == "true"
@@ -103,7 +104,9 @@ class CometLogger:
 
         self.logged_images_count = 0
         self.max_images = (
-            self.opt.comet_max_images if self.opt.comet_max_images else COMET_MAX_IMAGES
+            self.opt.comet_max_image_uploads
+            if self.opt.comet_max_image_uploads
+            else COMET_MAX_IMAGE_UPLOADS
         )
 
         if self.experiment is not None:
@@ -397,7 +400,7 @@ class CometLogger:
 
         if self.comet_log_confusion_matrix:
             class_names = self.class_names
-            class_names.append('background-FN')
+            class_names.append("background-FN")
             self.experiment.log_confusion_matrix(
                 matrix=self.confmat.matrix,
                 max_categories=self.num_classes + 1,
