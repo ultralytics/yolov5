@@ -1,5 +1,6 @@
-import comet_ml
 import os
+
+import comet_ml
 import yaml
 
 COMET_PREFIX = "comet://"
@@ -63,9 +64,9 @@ def check_comet_weights(opt):
         bool: _description_
     """
 
-    api = comet_ml.API()
     if isinstance(opt.weights, str):
         if opt.weights.startswith(COMET_PREFIX):
+            api = comet_ml.API()
             experiment_path = opt.weights.replace(COMET_PREFIX, "")
             experiment = api.get(experiment_path)
             download_model_checkpoint(opt, experiment)
@@ -75,10 +76,9 @@ def check_comet_weights(opt):
 
 
 def check_comet_resume(opt):
-    api = comet_ml.API()
-
     if isinstance(opt.resume, str):
         if opt.resume.startswith(COMET_PREFIX):
+            api = comet_ml.API()
             experiment_path = opt.resume.replace(COMET_PREFIX, "")
             experiment = api.get(experiment_path)
             set_opt_parameters(opt, experiment)
