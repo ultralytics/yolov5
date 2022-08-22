@@ -11,7 +11,8 @@ import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from utils.general import colorstr, cv2
+from export import run
+from utils.general import colorstr, cv2, emojis
 from utils.loggers.clearml.clearml_utils import ClearmlLogger
 from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_results
@@ -152,9 +153,29 @@ class Loggers:
         else:
             self.clearml = None
 
+        # Comet
+        if comet_ml and "comet" in self.include:
+            try:
+                if isinstance(self.opt.resume, str) and self.opt.resume.startswith(
+                    "comet://"
+                ):
+                    run_id = self.opt.resume.split("/")[-1]
+                    self.comet_logger = CometLogger(self.opt, self.hyp, run_id=run_id)
+
+                else:
+                    self.comet_logger = CometLogger(self.opt, self.hyp)
+
+            except Exception as e:
+                self.comet_logger = None
+                raise (e)
+
     def on_train_start(self):
-        # Callback runs on train start
-        pass
+        if self.comet_logger:
+            self.comet_logger.on_train_start()
+
+    def on_pretrain_routine_start(self):
+        if self.comet_logger:
+            self.comet_logger.on_pretrain_routine_start()
 
     def on_pretrain_routine_end(self):
         # Callback runs on pre-train routine end
@@ -166,7 +187,11 @@ class Loggers:
         if self.clearml:
             pass  # ClearML saves these images automatically using hooks
 
-    def on_train_batch_end(self, ni, model, imgs, targets, paths, plots):
+        if self.comet_logger:
+            self.comet_logger.on_pretrain_routine_end(paths)
+
+    def on_train_batch_end(self, ni, model, imgs, targets, paths, plots, vals):
+        log_dict = dict(zip(self.keys[0:3], vals))
         # Callback runs on train batch end
         # ni: number integrated batches (since train start)
         if plots:
@@ -189,11 +214,47 @@ class Loggers:
                     )
                 if self.clearml:
                     self.clearml.log_debug_samples(files, title="Mosaics")
+            if ni == 0:
+                if (
+                    self.tb and not self.opt.sync_bn
+                ):  # --sync known issue https://github.com/ultralytics/yolov5/issues/3754
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")  # suppress jit trace warning
+                        self.tb.add_graph(
+                            torch.jit.trace(
+                                de_parallel(model), imgs[0:1], strict=False
+                            ),
+                            [],
+                        )
+            if ni < 3:
+                f = self.save_dir / f"train_batch{ni}.jpg"  # filename
+                plot_images(imgs, targets, paths, f)
+            if self.wandb and ni == 10:
+                files = sorted(self.save_dir.glob("train*.jpg"))
+                self.wandb.log(
+                    {
+                        "Mosaics": [
+                            wandb.Image(str(f), caption=f.name)
+                            for f in files
+                            if f.exists()
+                        ]
+                    }
+                )
+
+        if self.comet_logger:
+            self.comet_logger.on_train_batch_end(log_dict, step=ni)
 
     def on_train_epoch_end(self, epoch):
         # Callback runs on train epoch end
         if self.wandb:
             self.wandb.current_epoch = epoch + 1
+
+        if self.comet_logger:
+            self.comet_logger.on_train_epoch_end(epoch)
+
+    def on_val_start(self):
+        if self.comet_logger:
+            self.comet_logger.on_val_start()
 
     def on_val_image_end(self, pred, predn, path, names, im):
         # Callback runs on val image end
@@ -213,9 +274,14 @@ class Loggers:
             if self.clearml:
                 self.clearml.log_debug_samples(files, title="Validation")
 
+    def on_val_batch_end(self, im, targets, paths, shapes, out):
+        if self.comet_logger:
+            self.comet_logger.on_val_batch_end(im, targets, paths, shapes, out)
+
     def on_fit_epoch_end(self, vals, epoch, best_fitness, fi):
         # Callback runs at the end of each fit (train+val) epoch
         x = dict(zip(self.keys, vals))
+
         if self.csv:
             file = self.save_dir / "results.csv"
             n = len(x) + 1  # number of cols
@@ -249,6 +315,9 @@ class Loggers:
             self.clearml.current_epoch_logged_images = set()  # reset epoch image limit
             self.clearml.current_epoch += 1
 
+        if self.comet_logger:
+            self.comet_logger.on_fit_epoch_end(x, epoch=epoch)
+
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):
         # Callback runs on model save event
         if self.wandb:
@@ -268,6 +337,8 @@ class Loggers:
                     model_name="Latest Model",
                     auto_delete_file=False,
                 )
+        if self.comet_logger:
+            self.comet_logger.on_model_save(last, epoch, final_epoch, best_fitness, fi)
 
     def on_train_end(self, last, best, plots, epoch, results):
         # Callback runs on training end
@@ -312,6 +383,8 @@ class Loggers:
                 self.clearml.task.update_output_model(
                     model_path=str(best if best.exists() else last), name="Best Model"
                 )
+        if self.comet_logger:
+            self.comet_logger.on_train_end(files, self.save_dir, epoch)
 
     def on_params_update(self, params):
         # Update hyperparams or configs of the experiment
