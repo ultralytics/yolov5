@@ -1,21 +1,21 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
-Validate a trained YOLOv5 model accuracy on a custom dataset
+Validate a trained YOLOv5 detection model on a detection dataset
 
 Usage:
-    $ python path/to/val.py --weights yolov5s.pt --data coco128.yaml --img 640
+    $ python val.py --weights yolov5s.pt --data coco128.yaml --img 640
 
 Usage - formats:
-    $ python path/to/val.py --weights yolov5s.pt                 # PyTorch
-                                      yolov5s.torchscript        # TorchScript
-                                      yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-                                      yolov5s.xml                # OpenVINO
-                                      yolov5s.engine             # TensorRT
-                                      yolov5s.mlmodel            # CoreML (macOS-only)
-                                      yolov5s_saved_model        # TensorFlow SavedModel
-                                      yolov5s.pb                 # TensorFlow GraphDef
-                                      yolov5s.tflite             # TensorFlow Lite
-                                      yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
+    $ python val.py --weights yolov5s.pt                 # PyTorch
+                              yolov5s.torchscript        # TorchScript
+                              yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
+                              yolov5s.xml                # OpenVINO
+                              yolov5s.engine             # TensorRT
+                              yolov5s.mlmodel            # CoreML (macOS-only)
+                              yolov5s_saved_model        # TensorFlow SavedModel
+                              yolov5s.pb                 # TensorFlow GraphDef
+                              yolov5s.tflite             # TensorFlow Lite
+                              yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
 """
 
 import argparse
@@ -186,7 +186,7 @@ def run(
     if isinstance(names, (list, tuple)):  # old format
         names = dict(enumerate(names))
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
-    s = ('%20s' + '%11s' * 6) % ('Class', 'Images', 'Labels', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
+    s = ('%22s' + '%11s' * 6) % ('Class', 'Images', 'Instances', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
     dt, p, r, f1, mp, mr, map50, map = (Profile(), Profile(), Profile()), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
@@ -270,7 +270,7 @@ def run(
     nt = np.bincount(stats[3].astype(int), minlength=nc)  # number of targets per class
 
     # Print results
-    pf = '%20s' + '%11i' * 2 + '%11.3g' * 4  # print format
+    pf = '%22s' + '%11i' * 2 + '%11.3g' * 4  # print format
     LOGGER.info(pf % ('all', seen, nt.sum(), mp, mr, map50, map))
     if nt.sum() == 0:
         LOGGER.warning(f'WARNING: no labels found in {task} set, can not compute metrics without labels ⚠️')
