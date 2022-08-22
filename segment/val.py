@@ -39,12 +39,12 @@ import torch.nn.functional as F
 
 from models.experimental import attempt_load  # scoped to avoid circular import
 from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_yaml,
-                           coco80_to_coco91_class, colorstr, emojis, increment_path, print_args, scale_coords,
-                           xywh2xyxy, xyxy2xywh)
+                           coco80_to_coco91_class, colorstr, emojis, increment_path, non_max_suppression, print_args,
+                           scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, box_iou
 from utils.plots import plot_val_study
 from utils.segment.dataloaders import create_dataloader
-from utils.segment.general import mask_iou, non_max_suppression_masks, process_mask, process_mask_upsample, scale_masks
+from utils.segment.general import mask_iou, process_mask, process_mask_upsample, scale_masks
 from utils.segment.metrics import Metrics, ap_per_class_box_and_mask
 from utils.segment.plots import output_to_target, plot_images_and_masks
 from utils.torch_utils import de_parallel, select_device, time_sync
@@ -272,13 +272,13 @@ def run(
         targets[:, 2:] *= torch.tensor((width, height, width, height), device=device)  # to pixels
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
         t3 = time_sync()
-        out = non_max_suppression_masks(out,
-                                        conf_thres,
-                                        iou_thres,
-                                        labels=lb,
-                                        multi_label=True,
-                                        agnostic=single_cls,
-                                        mask_dim=de_parallel(model).model[-1].mask_dim)
+        out = non_max_suppression(out,
+                                  conf_thres,
+                                  iou_thres,
+                                  labels=lb,
+                                  multi_label=True,
+                                  agnostic=single_cls,
+                                  masks=de_parallel(model).model[-1].mask_dim)
         dt[2] += time_sync() - t3
 
         # keep pred masks for plotting

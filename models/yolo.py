@@ -3,7 +3,7 @@
 YOLO-specific modules
 
 Usage:
-    $ python path/to/models/yolo.py --cfg yolov5s.yaml
+    $ python models/yolo.py --cfg yolov5s.yaml
 """
 
 import argparse
@@ -135,7 +135,7 @@ class DetectSegment(Detect):
                     y[..., 0:2] = (y[..., 0:2] * 2 + self.grid[i]) * self.stride[i]  # xy
                     y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
                 else:  # for YOLOv5 on AWS Inferentia https://github.com/ultralytics/yolov5/pull/2953
-                    xy = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
+                    xy = (y[..., 0:2] * 2. + self.grid[i]) * self.stride[i]  # xy
                     wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
                     y = torch.cat((xy.type_as(y), wh.type_as(y), y[..., 4:]), -1)
                 z.append(y.view(-1, self.na * ny * nx, self.no))
