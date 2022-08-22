@@ -155,7 +155,7 @@ def get_stride(yolo_pipeline: Pipeline) -> int:
         if not isinstance(image_size, int):
             image_size = image_size[0]
 
-    grid_shapes = (
+    grid_shapes = list(
         get_tensor_dim_shape(model.graph.output[index], 2)
         for index in range(1, len(model.graph.output))
     )
