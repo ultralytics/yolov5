@@ -137,8 +137,8 @@ def create_dataloader(path,
     nw = min([os.cpu_count() // max(nd, 1), batch_size if batch_size > 1 else 0, workers])  # number of workers
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
     loader = DataLoader if image_weights else InfiniteDataLoader  # only DataLoader allows for attribute updates
-    generator = torch.Generator()
-    generator.manual_seed(0)
+    # generator = torch.Generator()
+    # generator.manual_seed(0)
     return loader(dataset,
                   batch_size=batch_size,
                   shuffle=shuffle and sampler is None,
@@ -146,9 +146,8 @@ def create_dataloader(path,
                   sampler=sampler,
                   pin_memory=True,
                   collate_fn=LoadImagesAndLabels.collate_fn4 if quad else LoadImagesAndLabels.collate_fn,
-                  worker_init_fn=seed_worker,
-                  generator=generator), dataset
-
+                  # generator=generator,
+                  worker_init_fn=seed_worker), dataset
 
 class InfiniteDataLoader(dataloader.DataLoader):
     """ Dataloader that reuses workers
