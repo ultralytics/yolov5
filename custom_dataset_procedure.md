@@ -32,7 +32,8 @@ data/load_loco.ipynb
 
 ### start to train
 ```
-# loco 5 classes train
+# loco 5 classes 
+# train.sh
 python train.py --img 640 --batch 8 --epochs 100 --data ./data/loco.yaml --cfg ./models/yolov5s_loco.yaml --weights './yolov5s.pt' --device 0
 
 ```

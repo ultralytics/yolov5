@@ -7,4 +7,13 @@
 # python train.py --img 640 --batch 8 --epochs 100 --data ./data/Reflective_vests.yaml --cfg ./models/yolov5s_fs.yaml --weights './yolov5s.pt' --device 0
 
 # loco 5 classes train
-python train.py --img 640 --batch 8 --epochs 100 --data ./data/loco.yaml --cfg ./models/yolov5s_loco.yaml --weights './yolov5s.pt' --device 0
+# python train.py --img 640 --batch 8 --epochs 100 --data ./data/loco.yaml --cfg ./models/yolov5s_loco.yaml --weights './yolov5s.pt' --device 0
+
+# img size 416 gpu_usage:1.63 G
+# python train.py --img 416 --batch 32 --epochs 100 --data ./data/loco.yaml --cfg ./models/yolov5s_loco.yaml --weights './yolov5s.pt' --device 0
+
+# img size 208 gpu_usage:0.522 G
+# python train.py --img 208 --batch 16 --epochs 100 --data ./data/loco.yaml --cfg ./models/yolov5s_loco.yaml --weights './yolov5s.pt' --device 0
+
+# roboflow 416 gpu_usage: ?? G
+python train.py --img 416 --batch 16 --epochs 150 --data /home/epi/gary/mydata/roboflow_forklift_raw/data.yaml --cfg ./models/yolov5s_roboflow.yaml --weights './yolov5s.pt' --device 0
