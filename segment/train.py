@@ -97,7 +97,7 @@ def train(hyp, opt, device):  # hyp is path/to/hyp.yaml or hyp dictionary
 
     # Config
     plots = not evolve and not opt.noplots  # create plots
-    overlap = opt.overlap_mask
+    overlap = not opt.no_overlap
     cuda = device.type != 'cpu'
     init_seeds(opt.seed + 1 + RANK, deterministic=False)
     with torch_distributed_zero_first(LOCAL_RANK):
@@ -536,7 +536,7 @@ def parse_opt(known=False):
 
     # Instance Segmentation Args
     parser.add_argument('--mask-ratio', type=int, default=4, help='Downsample the gt masks to saving memory')
-    parser.add_argument('--overlap-mask',
+    parser.add_argument('--no-overlap',
                         action='store_true',
                         help='Overlapping masks train faster at the cost of slight accuray decrease')
 
