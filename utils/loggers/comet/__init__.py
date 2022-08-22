@@ -99,10 +99,10 @@ class CometLogger:
 
         else:
             with open(self.opt.data, errors="ignore") as f:
-                self.data_dict = yaml.safe_load(f)
+                self.data_dict = self.process_data_dict(yaml.safe_load(f))
 
         self.class_names = self.data_dict["names"]
-        self.num_classes = len(self.data_dict["names"])
+        self.num_classes = self.data_dict["nc"]
 
         self.logged_images_count = 0
         self.max_images = (
@@ -288,8 +288,7 @@ class CometLogger:
         return predn, labelsn
 
     def add_assets_to_artifact(self, artifact, logical_path, data_path, split):
-        path = os.path.join(data_path, logical_path)
-        img_paths = sorted(glob.glob(f"{path}/*"))
+        img_paths = sorted(glob.glob(f"{data_path}/*"))
         label_paths = img2label_paths(img_paths)
 
         for image_file, label_file in zip(img_paths, label_paths):
@@ -302,6 +301,7 @@ class CometLogger:
             artifact.add(
                 label_file, logical_path=label_logical_path, metadata={"split": split}
             )
+        return artifact
 
     def upload_dataset_artifact(self):
         dataset_name = self.data_dict.get("dataset_name", "yolov5-dataset")
@@ -316,8 +316,13 @@ class CometLogger:
                     key != self.upload_dataset
                 ):
                     continue
-                logical_path = self.data_dict[key]
-                self.add_assets_to_artifact(artifact, logical_path, data_path, key)
+
+                asset_path = self.data_dict.get(key)
+                if asset_path is not None:
+                    logical_path = asset_path.replace(data_path, "")
+                    artifact = self.add_assets_to_artifact(
+                        artifact, logical_path, asset_path, key
+                    )
 
         self.experiment.log_artifact(artifact)
 
@@ -329,16 +334,29 @@ class CometLogger:
 
         metadata = logged_artifact.metadata
         data_dict = metadata.copy()
+        data_dict["path"] = self.opt.save_dir
 
-        train_path, val_path, test_path = map(
-            lambda x: f"{self.opt.save_dir}/{x}",
-            [metadata["train"], metadata["val"], metadata["test"]],
-        )
+        data_dict = self.update_data_paths(data_dict)
 
-        data_dict["train"] = train_path
-        data_dict["val"] = val_path
-        data_dict["test"] = test_path
+        return data_dict
 
+    def update_data_paths(self, data_dict):
+        path = data_dict.get("path", "")
+
+        for split in ["train", "val", "test"]:
+            if data_dict.get(split):
+                split_path = data_dict.get(split)
+                data_dict[split] = (
+                    f"{path}/{split_path}"
+                    if isinstance(split, str)
+                    else [f"{path}/{x}" for x in split_path]
+                )
+
+        return data_dict
+
+    def process_data_dict(self, data_dict):
+        data_dict["nc"] = len(data_dict["names"])
+        data_dict = self.update_data_paths(data_dict)
         return data_dict
 
     def on_pretrain_routine_end(self, paths):
