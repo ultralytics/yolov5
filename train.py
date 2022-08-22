@@ -188,8 +188,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         with torch_distributed_zero_first(LOCAL_RANK):
             weights = attempt_download(weights)  # download if not found locally
             ckpt = torch.load(
-            weights, map_location="cpu"
-        )  # load checkpoint to CPU to avoid CUDA memory leak
+                weights, map_location="cpu"
+            )  # load checkpoint to CPU to avoid CUDA memory leak
         model = Model(
             cfg or ckpt["model"].yaml, ch=3, nc=nc, anchors=hyp.get("anchors")
         ).to(
@@ -790,17 +790,64 @@ def parse_opt(known=False):
     )
 
     # Comet Arguments
-    parser.add_argument("--comet_mode", type=str)
-    parser.add_argument("--comet_save_model", action="store_true")
-    parser.add_argument("--comet_model_name", type=str)
-    parser.add_argument("--comet_overwrite_checkpoints", action="store_true")
-    parser.add_argument("--comet_checkpoint_filename", type=str, default="best.pt")
-    parser.add_argument("--comet_log_batch_metrics", action="store_false")
-    parser.add_argument("--comet_log_batch_interval", type=int, default=1)
-    parser.add_argument("--comet_log_confusion_matrix", action="store_false")
-    parser.add_argument("--comet_max_images", type=int, default=100)
-    parser.add_argument("--comet_upload_dataset", nargs="?", const=True, default=False)
-    parser.add_argument("--comet_artifact", type=str)
+    parser.add_argument(
+        "--comet_mode",
+        type=str,
+        help="Set whether to run Comet in online or offline mode.",
+    )
+    parser.add_argument(
+        "--comet_save_model",
+        action="store_true",
+        help="Set whether to save model checkpoints to Comet",
+    )
+    parser.add_argument(
+        "--comet_model_name", type=str, help="Set the name for the saved model"
+    )
+    parser.add_argument(
+        "--comet_overwrite_checkpoints",
+        action="store_true",
+        help="Overwrite exsiting model checkpoints.",
+    )
+    parser.add_argument(
+        "--comet_checkpoint_filename",
+        type=str,
+        default="best.pt",
+        help="Name of the checkpoint file to save to Comet. Set to 'all' to log all checkpoints.",
+    )
+    parser.add_argument(
+        "--comet_log_batch_metrics",
+        action="store_false",
+        help="Set to log batch level training metrics to Comet.",
+    )
+    parser.add_argument(
+        "--comet_log_batch_interval",
+        type=int,
+        default=1,
+        help="How often batch level metrics are logged to Comet. This is applied to both training and validation.",
+    )
+    parser.add_argument(
+        "--comet_log_confusion_matrix",
+        action="store_false",
+        help="Log a Comet Confusion Matrix of the model predictions on the validation dataset.",
+    )
+    parser.add_argument(
+        "--comet_max_image_uploads",
+        type=int,
+        default=100,
+        help="Maximum number of images to log to Comet.",
+    )
+    parser.add_argument(
+        "--comet_upload_dataset",
+        nargs="?",
+        const=True,
+        default=False,
+        help="Upload Dataset to Comet as an Artifact. Set to 'train', 'val' or 'test' to upload a single dataset.",
+    )
+    parser.add_argument(
+        "--comet_artifact",
+        type=str,
+        help="Name of the Comet dataset Artifact to download.",
+    )
 
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
