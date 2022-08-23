@@ -130,36 +130,15 @@ jobs:
           b=runs/train-seg/exp/weights/best  # best.pt checkpoint
 
           d='../datasets' # unzip directory
-          f='coco128.zip' # or 'coco128-segments.zip', 68 MB
+          f='coco128-segments.zip'
           rm -rf $d
           curl -L https://github.com/ultralytics/yolov5/releases/download/v1.0/$f -o $f -# && unzip -q $f -d $d && rm $f
 
-          # Temporary tests untill yolov5n-seg.pt and COCO128-seg is ready ---------------------------------------------
           m=yolov5s-seg  # official weights
           python segment/predict.py --imgsz 64 --weights $m.pt --device cpu  # detect
           python export.py --weights $m.pt --img 64 --include torchscript  # export
           python segment/train.py --imgsz 64 --batch 32 --weights '' --cfg yolov5n_seg.yaml --epochs 1 --device cpu  # train
 
-          # Temporary tests untill yolov5n-seg.pt and COCO128-seg is ready ---------------------------------------------
-
-      #          python segment/train.py --imgsz 64 --batch 32 --weights '' --cfg $m.yaml --epochs 1 --device cpu  # train
-      #          python segment/train.py --imgsz 64 --batch 32 --weights $m.pt --cfg $m.yaml --epochs 1 --device cpu  # train
-      #          for d in cpu; do  # devices
-      #            for w in $m $b; do  # weights
-      #              python segment/val.py --imgsz 64 --batch 32 --weights $w.pt --device $d  # val
-      #              python segment/predict.py --imgsz 64 --weights $w.pt --device $d  # detect
-      #            done
-      #          done
-      #          # python hubconf.py --model $m  # hub
-      #          # python models/tf.py --weights $m.pt  # build TF model
-      #          python models/yolo.py --cfg $m.yaml  # build PyTorch model
-      #          python export.py --weights $m.pt --img 64 --include torchscript  # export
-      #          python - <<EOF
-      #          import torch
-      #          for path in '$m', '$b':
-      #              model = torch.hub.load('.', 'custom', path=path, source='local')
-      #              print(model('data/images/bus.jpg'))
-      #          EOF
       - name: Test classification
         shell: bash  # for Windows compatibility
         run: |
