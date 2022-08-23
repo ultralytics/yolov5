@@ -6,6 +6,7 @@ import comet_ml
 import torch
 import torchvision.transforms as T
 import yaml
+from importlib_metadata import metadata
 
 from utils.dataloaders import img2label_paths
 from utils.general import scale_coords, xywh2xyxy
@@ -15,30 +16,39 @@ LOGGER = logging.getLogger(__name__)
 
 COMET_PREFIX = "comet://"
 
+# Project Configuration
 COMET_PROJECT_NAME = os.getenv("COMET_PROJECT_NAME", "yolov5")
 COMET_MODE = os.getenv("COMET_MODE", "online")
+
+# Model Saving Settings
 COMET_SAVE_MODEL = os.getenv("COMET_SAVE_MODEL", "false").lower() == "true"
 COMET_MODEL_NAME = os.getenv("COMET_MODEL_NAME", "yolov5")
+COMET_OVERWRITE_CHECKPOINTS = (
+    os.getenv("COMET_OVERWRITE_CHECKPOINTS", "false").lower() == "true"
+)
 
+# Dataset Artifact Settings
 COMET_UPLOAD_DATASET = os.getenv("COMET_UPLOAD_DATASET", "false").lower() == "true"
 
+# Evaluation Settings
 COMET_LOG_CONFUSION_MATRIX = (
     os.getenv("COMET_LOG_CONFUSION_MATRIX", "true").lower() == "true"
 )
 COMET_LOG_PREDICTIONS = os.getenv("COMET_LOG_PREDICTIONS", "false").lower() == "true"
 COMET_MAX_IMAGE_UPLOADS = os.getenv("COMET_MAX_IMAGE_UPLOADS", 100)
 
-COMET_OVERWRITE_CHECKPOINTS = (
-    os.getenv("COMET_OVERWRITE_CHECKPOINTS", "true").lower() == "true"
-)
+# Confusion Matrix Settings
+CONF_THRES = os.getenv("CONF_THRES", 0.001)
+IOU_THRES = os.getenv("IOU_THRES", 0.6)
+
+# Batch Logging Settings
 COMET_LOG_BATCH_METRICS = (
     os.getenv("COMET_LOG_BATCH_METRICS", "false").lower() == "true"
 )
 COMET_BATCH_LOGGING_INTERVAL = os.getenv("COMET_BATCH_LOGGING_INTERVAL", 1)
-RANK = int(os.getenv("RANK", -1))
+COMET_PREDICTION_LOGGING_INTERVAL = os.getenv("COMET_PREDICTION_LOGGING_INTERVAL", 1)
 
-CONF_THRES = os.getenv("CONF_THRES", 0.001)
-IOU_THRES = os.getenv("IOU_THRES", 0.6)
+RANK = int(os.getenv("RANK", -1))
 
 to_pil = T.ToPILImage()
 
@@ -57,18 +67,20 @@ class CometLogger:
 
         # Comet Flags
         self.comet_mode = self.opt.comet_mode if self.opt.comet_mode else COMET_MODE
+
         self.save_model = (
             opt.comet_save_model if opt.comet_save_model else COMET_SAVE_MODEL
         )
         self.model_name = (
             opt.comet_model_name if opt.comet_model_name else COMET_MODEL_NAME
         )
-
         self.overwrite_checkpoints = (
             opt.comet_overwrite_checkpoints
             if opt.comet_overwrite_checkpoints
             else COMET_OVERWRITE_CHECKPOINTS
         )
+
+        # Batch Logging Settings
         self.log_batch_metrics = (
             opt.comet_log_batch_metrics
             if opt.comet_log_batch_metrics
@@ -80,6 +92,7 @@ class CometLogger:
             else COMET_BATCH_LOGGING_INTERVAL
         )
 
+        # Dataset Artifact Settings
         self.upload_dataset = (
             self.opt.comet_upload_dataset
             if self.opt.comet_upload_dataset
@@ -158,6 +171,11 @@ class CometLogger:
             self.opt.comet_log_predictions
             if self.opt.comet_log_predictions
             else COMET_LOG_PREDICTIONS
+        )
+        self.comet_log_prediction_interval = (
+            opt.comet_log_prediction_interval
+            if opt.comet_log_prediction_interval
+            else COMET_PREDICTION_LOGGING_INTERVAL
         )
         if self.comet_log_predictions:
             self.metadata_dict = {}
@@ -319,8 +337,14 @@ class CometLogger:
         dataset_name = self.data_dict.get("dataset_name", "yolov5-dataset")
         data_path = self.data_dict["path"]
 
+        metadata = self.data_dict.copy()
+        for key in ["train", "val", "test"]:
+            split_path = metadata.get(key)
+            if split_path is not None:
+                metadata[key] = split_path.replace(data_path, "")
+
         artifact = comet_ml.Artifact(
-            name=dataset_name, artifact_type="dataset", metadata=self.data_dict
+            name=dataset_name, artifact_type="dataset", metadata=metadata
         )
         for key in self.data_dict.keys():
             if key in ["train", "val", "test"]:
@@ -424,7 +448,7 @@ class CometLogger:
     def on_val_batch_start(self):
         return
 
-    def on_val_batch_end(self, images, targets, paths, shapes, outputs):
+    def on_val_batch_end(self, batch_i, images, targets, paths, shapes, outputs):
         for si, pred in enumerate(outputs):
             if len(pred) == 0:
                 continue
@@ -436,15 +460,13 @@ class CometLogger:
             path = paths[si]
 
             predn, labelsn = self.preprocess_prediction(image, labels, shape, pred)
-
-            if self.comet_log_predictions and (
-                self.experiment.curr_step % self.comet_log_batch_interval == 0
-            ):
-                if labelsn is not None:
+            if labelsn is not None:
+                if self.comet_log_predictions and (
+                    (batch_i + 1) % self.comet_log_prediction_interval == 0
+                ):
                     self.log_predictions(image, labelsn, path, shape, predn)
 
-            if self.comet_log_confusion_matrix:
-                if labelsn is not None:
+                if self.comet_log_confusion_matrix:
                     self.confmat.process_batch(predn, labelsn)
 
         return
@@ -463,6 +485,7 @@ class CometLogger:
                 max_categories=num_classes,
                 labels=class_names,
                 epoch=epoch,
+                file_name=f"confusion-matrix-epoch-{epoch}.json",
             )
 
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):

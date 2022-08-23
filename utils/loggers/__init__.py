@@ -182,9 +182,11 @@ class Loggers:
         # Callback runs on pre-train routine end
         if self.plots:
             plot_labels(labels, names, self.save_dir)
-            paths = self.save_dir.glob('*labels*.jpg')  # training labels
+            paths = self.save_dir.glob("*labels*.jpg")  # training labels
             if self.wandb:
-                self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
+                self.wandb.log(
+                    {"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]}
+                )
             # if self.clearml:
             #    pass  # ClearML saves these images automatically using hooks
             if self.comet_logger:
@@ -199,9 +201,11 @@ class Loggers:
                 f = self.save_dir / f"train_batch{ni}.jpg"  # filename
                 plot_images(imgs, targets, paths, f)
                 if ni == 0 and self.tb and not self.opt.sync_bn:
-                    log_tensorboard_graph(self.tb, model, imgsz=(self.opt.imgsz, self.opt.imgsz))
+                    log_tensorboard_graph(
+                        self.tb, model, imgsz=(self.opt.imgsz, self.opt.imgsz)
+                    )
             if ni == 10 and (self.wandb or self.clearml):
-                files = sorted(self.save_dir.glob('train*.jpg'))
+                files = sorted(self.save_dir.glob("train*.jpg"))
                 if self.wandb:
                     self.wandb.log(
                         {
@@ -248,9 +252,9 @@ class Loggers:
             if self.clearml:
                 self.clearml.log_debug_samples(files, title="Validation")
 
-    def on_val_batch_end(self, im, targets, paths, shapes, out):
+    def on_val_batch_end(self, batch_i, im, targets, paths, shapes, out):
         if self.comet_logger:
-            self.comet_logger.on_val_batch_end(im, targets, paths, shapes, out)
+            self.comet_logger.on_val_batch_end(batch_i, im, targets, paths, shapes, out)
 
     def on_fit_epoch_end(self, vals, epoch, best_fitness, fi):
         # Callback runs at the end of each fit (train+val) epoch
@@ -294,22 +298,6 @@ class Loggers:
 
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):
         # Callback runs on model save event
-<<<<<<< HEAD
-        if (epoch + 1) % self.opt.save_period == 0 and not final_epoch and self.opt.save_period != -1:
-            if self.wandb:
-                self.wandb.log_model(last.parent, self.opt, epoch, fi, best_model=best_fitness == fi)
-            if self.clearml:
-                self.clearml.task.update_output_model(model_path=str(last),
-                                                      model_name='Latest Model',
-                                                      auto_delete_file=False)
-
-    def on_train_end(self, last, best, epoch, results):
-        # Callback runs on training end, i.e. saving best model
-        if self.plots:
-            plot_results(file=self.save_dir / 'results.csv')  # save results.png
-        files = ['results.png', 'confusion_matrix.png', *(f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R'))]
-        files = [(self.save_dir / f) for f in files if (self.save_dir / f).exists()]  # filter
-=======
         if self.wandb:
             if (
                 (epoch + 1) % self.opt.save_period == 0 and not final_epoch
@@ -342,7 +330,6 @@ class Loggers:
         files = [
             (self.save_dir / f) for f in files if (self.save_dir / f).exists()
         ]  # filter
->>>>>>> comet-integration-test
         self.logger.info(f"Results saved to {colorstr('bold', self.save_dir)}")
 
         if (
@@ -368,10 +355,6 @@ class Loggers:
                 )
             self.wandb.finish_run()
 
-<<<<<<< HEAD
-        if self.clearml and not self.opt.evolve:
-            self.clearml.task.update_output_model(model_path=str(best if best.exists() else last), name='Best Model')
-=======
         if self.clearml:
             # Save the best model here
             if not self.opt.evolve:
@@ -380,7 +363,6 @@ class Loggers:
                 )
         if self.comet_logger:
             self.comet_logger.on_train_end(files, self.save_dir, epoch)
->>>>>>> comet-integration-test
 
     def on_params_update(self, params: dict):
         # Update hyperparams or configs of the experiment
@@ -468,14 +450,11 @@ def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
     try:
         p = next(model.parameters())  # for device, type
         imgsz = (imgsz, imgsz) if isinstance(imgsz, int) else imgsz  # expand
-        im = torch.zeros((1, 3, *imgsz)).to(p.device).type_as(p)  # input image (WARNING: must be zeros, not empty)
+        im = (
+            torch.zeros((1, 3, *imgsz)).to(p.device).type_as(p)
+        )  # input image (WARNING: must be zeros, not empty)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")  # suppress jit trace warning
             tb.add_graph(torch.jit.trace(de_parallel(model), im, strict=False), [])
-<<<<<<< HEAD
     except Exception as e:
-        print(f'WARNING: TensorBoard graph visualization failure {e}')
-=======
-    except Exception:
-        print("WARNING: TensorBoard graph visualization failure")
->>>>>>> comet-integration-test
+        print(f"WARNING: TensorBoard graph visualization failure {e}")

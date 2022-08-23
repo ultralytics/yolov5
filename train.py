@@ -76,16 +76,7 @@ from utils.loggers.comet.utils import check_comet_resume, check_comet_weights
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.loss import ComputeLoss
 from utils.metrics import fitness
-<<<<<<< HEAD
 from utils.plots import plot_evolve
-from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, smart_DDP, smart_optimizer,
-                               smart_resume, torch_distributed_zero_first)
-
-LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
-RANK = int(os.getenv('RANK', -1))
-WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
-=======
-from utils.plots import plot_evolve, plot_labels
 from utils.torch_utils import (
     EarlyStopping,
     ModelEMA,
@@ -102,7 +93,6 @@ LOCAL_RANK = int(
 )  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv("RANK", -1))
 WORLD_SIZE = int(os.getenv("WORLD_SIZE", 1))
->>>>>>> comet-integration-test
 
 
 def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictionary
@@ -331,17 +321,12 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
         if not resume:
             if not opt.noautoanchor:
-<<<<<<< HEAD
-                check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)  # run AutoAnchor
+                check_anchors(
+                    dataset, model=model, thr=hyp["anchor_t"], imgsz=imgsz
+                )  # run AutoAnchor
             model.half().float()  # pre-reduce anchor precision
 
-        callbacks.run('on_pretrain_routine_end', labels, names)
-=======
-                check_anchors(dataset, model=model, thr=hyp["anchor_t"], imgsz=imgsz)
-            model.half().float()  # pre-reduce anchor precision
-
-        callbacks.run("on_pretrain_routine_end")
->>>>>>> comet-integration-test
+        callbacks.run("on_pretrain_routine_end", labels, names)
 
     # DDP mode
     if cuda and RANK != -1:
@@ -407,14 +392,18 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         if RANK != -1:
             train_loader.sampler.set_epoch(epoch)
         pbar = enumerate(train_loader)
-<<<<<<< HEAD
-        LOGGER.info(('\n' + '%11s' * 7) % ('Epoch', 'GPU_mem', 'box_loss', 'obj_loss', 'cls_loss', 'Instances', 'Size'))
-=======
         LOGGER.info(
-            ("\n" + "%10s" * 7)
-            % ("Epoch", "gpu_mem", "box", "obj", "cls", "labels", "img_size")
+            ("\n" + "%11s" * 7)
+            % (
+                "Epoch",
+                "GPU_mem",
+                "box_loss",
+                "obj_loss",
+                "cls_loss",
+                "Instances",
+                "Size",
+            )
         )
->>>>>>> comet-integration-test
         if RANK in {-1, 0}:
             pbar = tqdm(
                 pbar, total=nb, bar_format="{l_bar}{bar:10}{r_bar}{bar:-10b}"
@@ -496,12 +485,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # Log
             if RANK in {-1, 0}:
                 mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
-<<<<<<< HEAD
-                mem = f'{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G'  # (GB)
-                pbar.set_description(('%11s' * 2 + '%11.4g' * 5) %
-                                     (f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
-                callbacks.run('on_train_batch_end', model, ni, imgs, targets, paths)
-=======
                 mem = f"{torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0:.3g}G"  # (GB)
                 pbar.set_description(
                     ("%10s" * 2 + "%10.4g" * 5)
@@ -521,10 +504,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     imgs,
                     targets,
                     paths,
-                    plots,
                     list(mloss),
                 )
->>>>>>> comet-integration-test
                 if callbacks.stop_training:
                     return
             # end batch ------------------------------------------------------------------------------------------------
@@ -638,11 +619,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                             fi,
                         )
 
-<<<<<<< HEAD
-        callbacks.run('on_train_end', last, best, epoch, results)
-=======
         callbacks.run("on_train_end", last, best, plots, epoch, results)
->>>>>>> comet-integration-test
 
     torch.cuda.empty_cache()
     return results
@@ -835,7 +812,7 @@ def parse_opt(known=False):
     )
     parser.add_argument(
         "--comet_log_batch_metrics",
-        action="store_false",
+        action="store_true",
         help="Set to log batch level training metrics to Comet.",
     )
     parser.add_argument(
@@ -845,8 +822,14 @@ def parse_opt(known=False):
         help="How often batch level metrics are logged to Comet. This is applied to both training and validation.",
     )
     parser.add_argument(
+        "--comet_log_prediction_interval",
+        type=int,
+        default=1,
+        help="How often batch level metrics are logged to Comet. This is applied to both training and validation.",
+    )
+    parser.add_argument(
         "--comet_log_confusion_matrix",
-        action="store_false",
+        action="store_true",
         help="Log a Comet Confusion Matrix of the model predictions on the validation dataset.",
     )
     parser.add_argument(
