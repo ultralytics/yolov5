@@ -28,9 +28,9 @@ import argparse
 import os
 import platform
 import sys
-import torch
 from pathlib import Path
 
+import torch
 import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
 
