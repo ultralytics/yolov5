@@ -68,7 +68,7 @@ from models.experimental import attempt_load
 from models.yolo import Detect
 from utils.dataloaders import LoadImages
 from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_version,
-                           check_yaml, colorstr, file_size, print_args, url2file)
+                           check_yaml, colorstr, file_size, get_default_args, print_args, url2file)
 from utils.torch_utils import select_device, smart_inference_mode
 
 
@@ -85,30 +85,26 @@ def export_formats():
         ['TensorFlow GraphDef', 'pb', '.pb', True, True],
         ['TensorFlow Lite', 'tflite', '.tflite', True, False],
         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
-        ['TensorFlow.js', 'tfjs', '_web_model', False, False],]
+        ['TensorFlow.js', 'tfjs', '_web_model', False, False], ]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
-def export_decorator(fcn):
+def export_decorator(inner_func):
     # YOLOv5 export decorator context manager
-    def get_default_args(fcn):
-        # Get fcn() default arguments
-        import inspect
-        signature = inspect.signature(fcn)
-        return {k: v.default for k, v in signature.parameters.items() if v.default is not inspect.Parameter.empty}
+    inner_args = get_default_args(inner_func)
 
-    def outer_fcn(*args, **kwargs):
-        prefix = get_default_args(fcn)['prefix']
+    def outer_func(*args, **kwargs):
+        prefix = inner_args['prefix']
         try:
             with Profile() as dt:
-                f, model = fcn(*args, **kwargs)
+                f, model = inner_func(*args, **kwargs)
             LOGGER.info(f'{prefix} export success ✅ {dt.t:.1f}s, saved as {f} ({file_size(f):.1f} MB)')
             return f, model
         except Exception as e:
             LOGGER.info(f'{prefix} export failure ❌ {dt.t:.1f}s: {e}')
             return None, None
 
-    return outer_fcn
+    return outer_func
 
 
 @export_decorator
