@@ -149,30 +149,26 @@ def run(
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
             if len(det):
                 # Mask additions ---------------------------------------------------------------------------------------
-                masks_conf = det[:, 6:]
-                masks = process_mask_upsample(proto[i], masks_conf, det[:, :4], im.shape[2:])  # binary_mask(imh,imw,n)
-                masks = masks.permute(2, 0, 1).contiguous()  # shape(n,imh,imw)
-                det = det[:, :6]  # remove masks
+                masks = process_mask_upsample(proto[i], det[:, 6:], det[:, :4], im.shape[2:])  # HWC
+                masks = masks.permute(2, 0, 1).contiguous()  # CHW
                 # Mask additions ---------------------------------------------------------------------------------------
 
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
 
                 # Print results
-                for c in det[:, -1].unique():
-                    n = (det[:, -1] == c).sum()  # detections per class
+                for c in det[:, 5].unique():
+                    n = (det[:, 5] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Mask plotting ----------------------------------------------------------------------------------------
                 mcolors = [colors(int(cls), True) for cls in det[:, 5]]
-                # NOTE: this plot method is faster, but the image might get blurred https://github.com/dbolya/yolact
-                img_masks = plot_masks(im[i], masks, mcolors)  # image with masks shape(imh,imw,3)
-                img_masks = scale_masks(im.shape[2:], img_masks, im0.shape)  # scale to original h, w
-                annotator.im = img_masks
+                im_masks = plot_masks(im[i], masks, mcolors)  # image with masks shape(imh,imw,3)
+                annotator.im = scale_masks(im.shape[2:], im_masks, im0.shape)  # scale to original h, w
                 # Mask plotting ----------------------------------------------------------------------------------------
 
                 # Write results
-                for *xyxy, conf, cls in reversed(det):
+                for *xyxy, conf, cls in reversed(det[:, :6]):
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
