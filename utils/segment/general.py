@@ -42,15 +42,12 @@ def process_mask_upsample(proto_out, out_masks, bboxes, shape):
 
     return: h, w, n
     """
-    # mask_h, mask_w, n
-    masks = proto_out.float().permute(1, 2, 0).contiguous() @ out_masks.float().tanh().T
-    masks = masks.sigmoid()
-    masks = masks.permute(2, 0, 1).contiguous()
-    # [n, mask_h, mask_w]
-    masks = F.interpolate(masks.unsqueeze(0), shape, mode='bilinear', align_corners=False).squeeze(0)
-    # [mask_h, mask_w, n]
-    masks = crop(masks.permute(1, 2, 0).contiguous(), bboxes)
-    return masks.gt_(0.5)  # .gt_(0.2)
+
+    c, mh, mw = proto_out.shape  # CHW
+    masks = (out_masks.tanh() @ proto_out.view(c, -1)).sigmoid().view(-1, mh, mw)
+    masks = F.interpolate(masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
+    masks = crop(masks.permute(1, 2, 0).contiguous(), bboxes)  # HWC
+    return masks.gt_(0.5)
 
 
 def process_mask(proto_out, out_masks, bboxes, shape, upsample=False):
@@ -63,23 +60,21 @@ def process_mask(proto_out, out_masks, bboxes, shape, upsample=False):
 
     return: h, w, n
     """
-    downsampled_bboxes = bboxes.clone()
-    mh, mw = proto_out.shape[1:]
+
+    c, mh, mw = proto_out.shape  # CHW
     ih, iw = shape
-    # mask_h, mask_w, n
-    masks = proto_out.float().permute(1, 2, 0).contiguous() @ out_masks.float().tanh().T
-    # print(masks)
-    masks = masks.sigmoid()
-    # print('after sigmoid:', masks)
-    downsampled_bboxes[:, 0] = downsampled_bboxes[:, 0] / iw * mw
-    downsampled_bboxes[:, 2] = downsampled_bboxes[:, 2] / iw * mw
-    downsampled_bboxes[:, 1] = downsampled_bboxes[:, 1] / ih * mh
-    downsampled_bboxes[:, 3] = downsampled_bboxes[:, 3] / ih * mh
-    masks = crop(masks, downsampled_bboxes)
+    masks = (out_masks.tanh() @ proto_out.view(c, -1)).sigmoid().view(-1, mh, mw)  # CHW
+
+    downsampled_bboxes = bboxes.clone()
+    downsampled_bboxes[:, 0] *= mw / iw
+    downsampled_bboxes[:, 2] *= mw / iw
+    downsampled_bboxes[:, 3] *= mh / ih
+    downsampled_bboxes[:, 1] *= mh / ih
+    masks = crop(masks.permute(1, 2, 0).contiguous(), downsampled_bboxes)  # HWC
+
     masks = masks.permute(2, 0, 1).contiguous()
-    # [n, mask_h, mask_w]
     if upsample:
-        masks = F.interpolate(masks.unsqueeze(0), shape, mode='bilinear', align_corners=False).squeeze(0)
+        masks = F.interpolate(masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
     return masks.gt_(0.5).permute(1, 2, 0).contiguous()
 
 
