@@ -221,10 +221,10 @@ def methods(instance):
     return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith("__")]
 
 
-def print_args(args: Optional[dict] = None, show_file=True, show_fcn=False):
+def print_args(args: Optional[dict] = None, show_file=True, show_func=False):
     # Print function arguments (optional args dict)
     x = inspect.currentframe().f_back  # previous frame
-    file, _, fcn, _, _ = inspect.getframeinfo(x)
+    file, _, func, _, _ = inspect.getframeinfo(x)
     if args is None:  # get args automatically
         args, _, _, frm = inspect.getargvalues(x)
         args = {k: v for k, v in frm.items() if k in args}
@@ -232,7 +232,7 @@ def print_args(args: Optional[dict] = None, show_file=True, show_fcn=False):
         file = Path(file).resolve().relative_to(ROOT).with_suffix('')
     except ValueError:
         file = Path(file).stem
-    s = (f'{file}: ' if show_file else '') + (f'{fcn}: ' if show_fcn else '')
+    s = (f'{file}: ' if show_file else '') + (f'{func}: ' if show_func else '')
     LOGGER.info(colorstr(s) + ', '.join(f'{k}={v}' for k, v in args.items()))
 
 
