@@ -118,10 +118,10 @@ def run(
         for i, prob in enumerate(pred):  # per image
             seen += 1
             if webcam:  # batch_size >= 1
-                p, im0, frame = path[i], im0s[i].copy(), dataset.count
+                p, im0 = path[i], im0s[i].copy()
                 s += f'{i}: '
             else:
-                p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
+                p, im0 = path, im0s.copy()
 
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
