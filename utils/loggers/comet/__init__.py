@@ -370,9 +370,9 @@ class CometLogger:
         metadata = logged_artifact.metadata
         data_dict = metadata.copy()
         data_dict["path"] = self.opt.save_dir
+        data_dict["names"] = {int(k): v for k, v in metadata.get("names").items()}
 
         data_dict = self.update_data_paths(data_dict)
-
         return data_dict
 
     def update_data_paths(self, data_dict):
