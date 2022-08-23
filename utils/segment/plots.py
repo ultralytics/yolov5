@@ -127,9 +127,9 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg'
                     annotator.box_label(box, label, color=color)
 
             # Plot masks
-            im = np.asarray(annotator.im)
+            im = np.asarray(annotator.im).copy()
             for j, box in enumerate(boxes.T.tolist()):
-                if conf[j] > 0.25:  # 0.25 conf thresh
+                if labels or conf[j] > 0.25:  # 0.25 conf thresh
                     color = colors(classes[j])
                     if scale < 1:
                         mask = image_masks[j].astype(np.uint8)
