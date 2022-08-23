@@ -251,7 +251,7 @@ class LoadImages:
             s = f'image {self.count}/{self.nf} {path}: '
 
         if self.transforms:
-            im = self.transforms(cv2.cvtColor(im0, cv2.COLOR_BGR2RGB))  # transforms supplied
+            im = self.transforms(cv2.cvtColor(im0, cv2.COLOR_BGR2RGB))  # transforms
         else:
             im = letterbox(im0, self.img_size, stride=self.stride, auto=self.auto)[0]  # padded resize
             im = im.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
@@ -386,7 +386,7 @@ class LoadStreams:
 
         im0 = self.imgs.copy()
         if self.transforms:
-            im = self.transforms(cv2.cvtColor(im0, cv2.COLOR_BGR2RGB))  # transforms supplied
+            im = np.stack([self.transforms(cv2.cvtColor(x, cv2.COLOR_BGR2RGB)) for x in im0])  # transforms
         else:
             im = np.stack([letterbox(x, self.img_size, stride=self.stride, auto=self.auto)[0] for x in im0])  # resize
             im = im[..., ::-1].transpose((0, 3, 1, 2))  # BGR to RGB, BHWC to BCHW
