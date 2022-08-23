@@ -126,16 +126,16 @@ def run(
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
             s += '%gx%g ' % im.shape[2:]  # print string
-            annotator = Annotator(im0, example=str(names))
+            annotator = Annotator(im0, example=str(names), pil=True)
 
             # Print results
             top5i = prob.argsort(0, descending=True)[:5].tolist()  # top 5 indices
-            s += f"{', '.join(f'{model.names[j]} {prob[j]:.2f}' for j in top5i)}, "
+            s += f"{', '.join(f'{names[j]} {prob[j]:.2f}' for j in top5i)}, "
 
             # Write results
             if save_img or view_img:  # Add bbox to image
-                pass
-                # annotator.cls_label(pred, pred_i, color=colors(c, True))
+                text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
+                annotator.text((64, 64), text, txt_color=(255, 255, 255))
 
             # Stream results
             im0 = annotator.result()
