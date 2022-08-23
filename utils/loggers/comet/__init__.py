@@ -317,13 +317,13 @@ class CometLogger:
 
         return predn, labelsn
 
-    def add_assets_to_artifact(self, artifact, logical_path, data_path, split):
-        img_paths = sorted(glob.glob(f"{data_path}/*"))
+    def add_assets_to_artifact(self, artifact, path, asset_path, split):
+        img_paths = sorted(glob.glob(f"{asset_path}/*"))
         label_paths = img2label_paths(img_paths)
 
         for image_file, label_file in zip(img_paths, label_paths):
             image_logical_path, label_logical_path = map(
-                lambda x: x.replace(f"{data_path}/", ""), [image_file, label_file]
+                lambda x: x.replace(f"{path}/", ""), [image_file, label_file]
             )
             artifact.add(
                 image_file, logical_path=image_logical_path, metadata={"split": split}
@@ -335,18 +335,18 @@ class CometLogger:
 
     def upload_dataset_artifact(self):
         dataset_name = self.data_dict.get("dataset_name", "yolov5-dataset")
-        data_path = self.data_dict["path"]
+        path = self.data_dict["path"]
 
         metadata = self.data_dict.copy()
         for key in ["train", "val", "test"]:
             split_path = metadata.get(key)
             if split_path is not None:
-                metadata[key] = split_path.replace(data_path, "")
+                metadata[key] = split_path.replace(path, "")
 
         artifact = comet_ml.Artifact(
             name=dataset_name, artifact_type="dataset", metadata=metadata
         )
-        for key in self.data_dict.keys():
+        for key in metadata.keys():
             if key in ["train", "val", "test"]:
                 if isinstance(self.upload_dataset, str) and (
                     key != self.upload_dataset
@@ -355,9 +355,8 @@ class CometLogger:
 
                 asset_path = self.data_dict.get(key)
                 if asset_path is not None:
-                    logical_path = asset_path.replace(data_path, "")
                     artifact = self.add_assets_to_artifact(
-                        artifact, logical_path, asset_path, key
+                        artifact, path, asset_path, key
                     )
 
         self.experiment.log_artifact(artifact)
