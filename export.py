@@ -198,6 +198,7 @@ def export_openvino(model, file, half, prefix=colorstr('OpenVINO:')):
         yaml.dump({'stride': int(max(model.stride)), 'names': model.names}, g)  # add metadata.yaml
     return f, None
 
+
 @export_decorator
 def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
     # YOLOv5 CoreML export
@@ -282,6 +283,7 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
     with builder.build_engine(network, config) as engine, open(f, 'wb') as t:
         t.write(engine.serialize())
     return f, None
+
 
 @export_decorator
 def export_saved_model(model,
