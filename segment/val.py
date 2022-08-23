@@ -299,10 +299,9 @@ def run(
 
             # deal with masks
             midx = [si] if overlap else targets[:, 0] == si
-            gt_masks = masks[midx]
+            gt_masks = masks[midx].float()
             proto_out = train_out[1][si]
-            pred_masks = process(proto_out, pred[:, 6:], pred[:, :4], shape=im[si].shape[1:]).permute(2, 0,
-                                                                                                      1).contiguous()
+            pred_masks = process(proto_out, pred[:, 6:], pred[:, :4], shape=im[si].shape[1:]).permute(2, 0, 1).contiguous().float()
             if plots and batch_i < 3:
                 # filter top 15 to plot
                 plot_masks.append(torch.as_tensor(pred_masks[:15], dtype=torch.uint8).cpu())
@@ -447,9 +446,9 @@ def run(
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
-    parser.add_argument('--batch-size', type=int, default=32, help='batch size')
-    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
+    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s-seg.pt', help='model.pt path(s)')
+    parser.add_argument('--batch-size', type=int, default=8, help='batch size')
+    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=320, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.6, help='NMS IoU threshold')
     parser.add_argument('--task', default='val', help='train, val, test, speed or study')
