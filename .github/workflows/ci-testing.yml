@@ -128,7 +128,14 @@ jobs:
         run: |
           m=${{ matrix.model }}-seg  # official weights
           b=runs/train-seg/exp/weights/best  # best.pt checkpoint
-          python segment/train.py --imgsz 64 --batch 32 --weights '' --cfg $m.yaml --epochs 1 --device cpu  # train
+          
+          # Temporary tests untill yolov5n-seg.pt and COCO128-seg is ready ---------------------------------------------
+          m=yolov5s-seg  # official weights
+          python segment/predict.py --imgsz 64 --weights $m.pt --device cpu  # detect
+          python export.py --weights $m.pt --img 64 --include torchscript  # export
+          # Temporary tests untill yolov5n-seg.pt and COCO128-seg is ready ---------------------------------------------
+          
+#          python segment/train.py --imgsz 64 --batch 32 --weights '' --cfg $m.yaml --epochs 1 --device cpu  # train
 #          python segment/train.py --imgsz 64 --batch 32 --weights $m.pt --cfg $m.yaml --epochs 1 --device cpu  # train
 #          for d in cpu; do  # devices
 #            for w in $m $b; do  # weights
