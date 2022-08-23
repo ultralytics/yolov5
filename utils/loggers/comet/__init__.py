@@ -15,6 +15,7 @@ LOGGER = logging.getLogger(__name__)
 
 COMET_PREFIX = "comet://"
 
+COMET_PROJECT_NAME = os.getenv("COMET_PROJECT_NAME", "yolov5")
 COMET_MODE = os.getenv("COMET_MODE", "online")
 COMET_SAVE_MODEL = os.getenv("COMET_SAVE_MODEL", "false").lower() == "true"
 COMET_MODEL_NAME = os.getenv("COMET_MODEL_NAME", "yolov5")
@@ -24,6 +25,7 @@ COMET_UPLOAD_DATASET = os.getenv("COMET_UPLOAD_DATASET", "false").lower() == "tr
 COMET_LOG_CONFUSION_MATRIX = (
     os.getenv("COMET_LOG_CONFUSION_MATRIX", "true").lower() == "true"
 )
+COMET_LOG_PREDICTIONS = os.getenv("COMET_LOG_PREDICTIONS", "false").lower() == "true"
 COMET_MAX_IMAGE_UPLOADS = os.getenv("COMET_MAX_IMAGE_UPLOADS", 100)
 
 COMET_OVERWRITE_CHECKPOINTS = (
@@ -90,6 +92,7 @@ class CometLogger:
             "log_code": False,
             "log_env_gpu": True,
             "log_env_cpu": True,
+            "project_name": COMET_PROJECT_NAME,
         }
         self.default_experiment_kwargs.update(experiment_kwargs)
         self.experiment = self._get_experiment(self.comet_mode, run_id)
@@ -113,10 +116,15 @@ class CometLogger:
         if self.experiment is not None:
             if run_id is None:
                 self.experiment.log_other("Created from", "YOLOv5")
-                self.experiment.log_other(
-                    "Run ID",
-                    f"{self.experiment.workspace}/{self.experiment.project_name}/{self.experiment.id}",
-                )
+
+                if not isinstance(self.experiment, comet_ml.OfflineExperiment):
+                    workspace, project_name, experiment_id = self.experiment.url.split(
+                        "/"
+                    )[-3:]
+                    self.experiment.log_other(
+                        "Run Path",
+                        f"{workspace}/{project_name}/{experiment_id}",
+                    )
                 self.log_parameters(vars(opt))
                 self.log_parameters(self.opt.hyp)
                 self.log_asset_data(
@@ -146,7 +154,11 @@ class CometLogger:
             except Exception as e:
                 self.iou_thres = IOU_THRES
 
-        self.comet_log_predictions = True
+        self.comet_log_predictions = (
+            self.opt.comet_log_predictions
+            if self.opt.comet_log_predictions
+            else COMET_LOG_PREDICTIONS
+        )
         if self.comet_log_predictions:
             self.metadata_dict = {}
 
@@ -457,7 +469,7 @@ class CometLogger:
         if (
             (epoch + 1) % self.opt.save_period == 0 and not final_epoch
         ) and self.opt.save_period != -1:
-            self.comet_logger.log_model(
+            self.log_model(
                 last.parent, self.opt, epoch, fi, best_model=best_fitness == fi
             )
 

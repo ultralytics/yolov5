@@ -819,6 +819,11 @@ def parse_opt(known=False):
         help="Log a Comet Confusion Matrix of the model predictions on the validation dataset.",
     )
     parser.add_argument(
+        "--comet_log_predictions",
+        action="store_true",
+        help="Log Predictions on Images from the Validation Set",
+    )
+    parser.add_argument(
         "--comet_max_image_uploads",
         type=int,
         default=100,
