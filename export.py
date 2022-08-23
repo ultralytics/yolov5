@@ -89,8 +89,8 @@ def export_formats():
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
-def export_decorator(inner_func):
-    # YOLOv5 export decorator context manager
+def try_export(inner_func):
+    # YOLOv5 export decorator, i..e @try_export
     inner_args = get_default_args(inner_func)
 
     def outer_func(*args, **kwargs):
@@ -107,7 +107,7 @@ def export_decorator(inner_func):
     return outer_func
 
 
-@export_decorator
+@try_export
 def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:')):
     # YOLOv5 TorchScript model export
     LOGGER.info(f'\n{prefix} starting export with torch {torch.__version__}...')
@@ -123,7 +123,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
     return f, None
 
 
-@export_decorator
+@try_export
 def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:')):
     # YOLOv5 ONNX export
     check_requirements(('onnx',))
@@ -179,7 +179,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
     return f, model_onnx
 
 
-@export_decorator
+@try_export
 def export_openvino(model, file, half, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
     check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
@@ -195,7 +195,7 @@ def export_openvino(model, file, half, prefix=colorstr('OpenVINO:')):
     return f, None
 
 
-@export_decorator
+@try_export
 def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
     # YOLOv5 CoreML export
     check_requirements(('coremltools',))
@@ -218,7 +218,7 @@ def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
     return f, ct_model
 
 
-@export_decorator
+@try_export
 def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
     # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
     assert im.device.type != 'cpu', 'export running on CPU but must be on GPU, i.e. `python export.py --device 0`'
@@ -281,7 +281,7 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
     return f, None
 
 
-@export_decorator
+@try_export
 def export_saved_model(model,
                        im,
                        file,
@@ -329,7 +329,7 @@ def export_saved_model(model,
     return f, keras_model
 
 
-@export_decorator
+@try_export
 def export_pb(keras_model, file, prefix=colorstr('TensorFlow GraphDef:')):
     # YOLOv5 TensorFlow GraphDef *.pb export https://github.com/leimao/Frozen_Graph_TensorFlow
     import tensorflow as tf
@@ -346,7 +346,7 @@ def export_pb(keras_model, file, prefix=colorstr('TensorFlow GraphDef:')):
     return f, None
 
 
-@export_decorator
+@try_export
 def export_tflite(keras_model, im, file, int8, data, nms, agnostic_nms, prefix=colorstr('TensorFlow Lite:')):
     # YOLOv5 TensorFlow Lite export
     import tensorflow as tf
@@ -377,7 +377,7 @@ def export_tflite(keras_model, im, file, int8, data, nms, agnostic_nms, prefix=c
     return f, None
 
 
-@export_decorator
+@try_export
 def export_edgetpu(file, prefix=colorstr('Edge TPU:')):
     # YOLOv5 Edge TPU export https://coral.ai/docs/edgetpu/models-intro/
     cmd = 'edgetpu_compiler --version'
@@ -402,7 +402,7 @@ def export_edgetpu(file, prefix=colorstr('Edge TPU:')):
     return f, None
 
 
-@export_decorator
+@try_export
 def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
     # YOLOv5 TensorFlow.js export
     check_requirements(('tensorflowjs',))
