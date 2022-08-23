@@ -50,6 +50,7 @@ import platform
 import subprocess
 import sys
 import time
+import shutil
 import warnings
 from pathlib import Path
 import math
@@ -433,6 +434,28 @@ def export_tfjs(keras_model, im, file, prefix=colorstr('TensorFlow.js:')):
     except Exception as e:
         LOGGER.info(f'\n{prefix} export failure: {e}')
 
+
+def create_deployment_folder(file):
+    model_root_dir = file.parent.parent.absolute()
+    expected_onnx_model_file = file.with_suffix('.onnx')
+    if not os.path.exists(expected_onnx_model_file):
+        LOGGER.warning("Attempting to copy onnx model "
+                       f"file from {expected_onnx_model_file},"
+                       "but the file does not exits.")
+        return
+    else:
+        deployment_folder_dir = os.path.join(model_root_dir, "deployment")
+        if os.path.isdir(deployment_folder_dir):
+            shutil.rmtree(deployment_folder_dir)
+        os.makedirs(deployment_folder_dir)
+        LOGGER.info(f"Created deployment folder at {deployment_folder_dir}")
+
+        # copy over model onnx
+        deployment_onnx_model_file = os.path.join(deployment_folder_dir, os.path.basename(expected_onnx_model_file))
+        shutil.copyfile(expected_onnx_model_file, deployment_onnx_model_file)
+        LOGGER.info(f"Saved model.onnx in the deployment folder at {deployment_onnx_model_file}")
+
+
 def create_checkpoint(epoch, final_epoch, model, optimizer, ema, sparseml_wrapper, **kwargs):
     pickle = not sparseml_wrapper.qat_active(math.inf if epoch <0 else epoch)  # qat does not support pickled exports
     ckpt_model = deepcopy(model.module if is_parallel(model) else model).float()
@@ -676,6 +699,10 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
             f[8] = export_edgetpu(model, im, file)
         if tfjs:
             f[9] = export_tfjs(model, im, file)
+
+    # Setup deployment folder
+    if 'onnx' in include:
+        create_deployment_folder(file)
 
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
