@@ -350,7 +350,7 @@ class LoadStreams:
         LOGGER.info('')  # newline
 
         # check for common shapes
-        s = np.stack([letterbox(x, self.img_size, stride=self.stride, auto=self.auto)[0].shape for x in self.imgs])
+        s = np.stack([letterbox(x, img_size, stride=stride, auto=auto)[0].shape for x in self.imgs])
         self.rect = np.unique(s, axis=0).shape[0] == 1  # rect inference if all shapes equal
         self.auto = auto and self.rect
         self.transforms = transforms  # optional
