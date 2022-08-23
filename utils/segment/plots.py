@@ -1,3 +1,4 @@
+import contextlib
 import math
 from pathlib import Path
 
@@ -137,7 +138,8 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg'
                         mask = mask.astype(np.bool)
                     else:
                         mask = image_masks[j].astype(np.bool)
-                    im[y:y + h, x:x + w, :][mask] = im[y:y + h, x:x + w, :][mask] * 0.4 + np.array(color) * 0.6
+                    with contextlib.suppress(Exception):
+                        im[y:y + h, x:x + w, :][mask] = im[y:y + h, x:x + w, :][mask] * 0.4 + np.array(color) * 0.6
             annotator.fromarray(im)
     annotator.im.save(fname)  # save
 
@@ -149,12 +151,12 @@ def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
     ax = ax.ravel()
     files = list(save_dir.glob("results*.csv"))
     assert len(files), f"No results.csv files found in {save_dir.resolve()}, nothing to plot."
-    for _, f in enumerate(files):
+    for f in files:
         try:
             data = pd.read_csv(f)
             index = np.argmax(
                 0.9 * data.values[:, 8] + 0.1 * data.values[:, 7] + 0.9 * data.values[:, 12] +
-                0.1 * data.values[:, 11],)
+                0.1 * data.values[:, 11], )
             s = [x.strip() for x in data.columns]
             x = data.values[:, 0]
             for i, j in enumerate([1, 2, 3, 4, 5, 6, 9, 10, 13, 14, 15, 16, 7, 8, 11, 12]):
@@ -163,14 +165,7 @@ def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
                 ax[i].plot(x, y, marker=".", label=f.stem, linewidth=2, markersize=2)
                 if best:
                     # best
-                    ax[i].scatter(
-                        index,
-                        y[index],
-                        color="r",
-                        label=f"best:{index}",
-                        marker="*",
-                        linewidth=3,
-                    )
+                    ax[i].scatter(index, y[index], color="r", label=f"best:{index}", marker="*", linewidth=3)
                     ax[i].set_title(s[j] + f"\n{round(y[index], 5)}")
                 else:
                     # last
