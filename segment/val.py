@@ -253,7 +253,8 @@ def run(
         if cuda:
             im = im.to(device, non_blocking=True)
             targets = targets.to(device)
-            masks = masks.to(device).float()
+            masks = masks.to(device)
+        masks = masks.float()
         im = im.half() if half else im.float()  # uint8 to fp16/32
         im /= 255  # 0 - 255 to 0.0 - 1.0
         nb, _, height, width = im.shape  # batch size, channels, height, width
@@ -299,7 +300,7 @@ def run(
 
             # deal with masks
             midx = [si] if overlap else targets[:, 0] == si
-            gt_masks = masks[midx].float()
+            gt_masks = masks[midx]
             proto_out = train_out[1][si]
             pred_masks = process(proto_out, pred[:, 6:], pred[:, :4],
                                  shape=im[si].shape[1:]).permute(2, 0, 1).contiguous().float()
