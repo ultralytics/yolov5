@@ -121,6 +121,11 @@ class Annotator:
         w, h = self.font.getsize(text)  # text width, height
         self.draw.text((xy[0], xy[1] - h + 1), text, fill=txt_color, font=self.font)
 
+    def fromarray(self, im):
+        # Update self.im from a numpy array
+        self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
+        self.draw = ImageDraw.Draw(self.im)
+
     def result(self):
         # Return annotated image as array
         return np.asarray(self.im)

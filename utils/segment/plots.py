@@ -6,10 +6,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
-from PIL import Image
 
-from ..general import xywh2xyxy, xyxy2xywh
-from ..plots import colors
+from ..general import threaded, xywh2xyxy
+from ..plots import Annotator, colors
 
 
 def plot_masks(img, masks, colors, alpha=0.5):
@@ -50,152 +49,97 @@ def plot_masks(img, masks, colors, alpha=0.5):
     return (img_gpu * 255).byte().cpu().numpy()
 
 
-def plot_one_box(x, img, color=None, label=None, line_thickness=None):
-    import random
-
-    # Plots one bounding box on image img
-    tl = (line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1)  # line/font thickness
-    color = color or [random.randint(0, 255) for _ in range(3)]
-    c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
-    cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
-    if label:
-        tf = max(tl - 1, 1)  # font thickness
-        t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
-        c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
-        cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)  # filled
-        cv2.putText(
-            img,
-            label,
-            (c1[0], c1[1] - 2),
-            0,
-            tl / 3,
-            [225, 255, 255],
-            thickness=tf,
-            lineType=cv2.LINE_AA,
-        )
-
-
-def plot_images_and_masks(
-    images,
-    targets,
-    masks,
-    paths=None,
-    fname="images.jpg",
-    names=None,
-    max_size=640,
-    max_subplots=16,
-):
+@threaded
+def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg', names=None):
+    # Plot image grid with labels
     if isinstance(images, torch.Tensor):
         images = images.cpu().float().numpy()
     if isinstance(targets, torch.Tensor):
         targets = targets.cpu().numpy()
     if isinstance(masks, torch.Tensor):
-        masks = masks.cpu().numpy()
-        masks = masks.astype(int)
+        masks = masks.cpu().numpy().astype(int)
 
-    # un-normalise
-    if np.max(images[0]) <= 1:
-        images *= 255
-
-    tl = 3  # line thickness
-    tf = max(tl - 1, 1)  # font thickness
+    max_size = 1920  # max image size
+    max_subplots = 16  # max image subplots, i.e. 4x4
     bs, _, h, w = images.shape  # batch size, _, height, width
     bs = min(bs, max_subplots)  # limit plot images
     ns = np.ceil(bs ** 0.5)  # number of subplots (square)
+    if np.max(images[0]) <= 1:
+        images *= 255  # de-normalise (optional)
 
-    # Check if we should resize
-    scale_factor = max_size / max(h, w)
-    if scale_factor < 1:
-        h = math.ceil(scale_factor * h)
-        w = math.ceil(scale_factor * w)
-
+    # Build Image
     mosaic = np.full((int(ns * h), int(ns * w), 3), 255, dtype=np.uint8)  # init
-    for i, img in enumerate(images):
+    for i, im in enumerate(images):
         if i == max_subplots:  # if last batch has fewer images than we expect
             break
+        x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
+        im = im.transpose(1, 2, 0)
+        mosaic[y:y + h, x:x + w, :] = im
 
-        block_x = int(w * (i // ns))
-        block_y = int(h * (i % ns))
+    # Resize (optional)
+    scale = max_size / ns / max(h, w)
+    if scale < 1:
+        h = math.ceil(scale * h)
+        w = math.ceil(scale * w)
+        mosaic = cv2.resize(mosaic, tuple(int(x * ns) for x in (w, h)))
 
-        img = img.transpose(1, 2, 0)
-        if scale_factor < 1:
-            img = cv2.resize(img, (w, h))
-
-        mosaic[block_y:block_y + h, block_x:block_x + w, :] = img
+    # Annotate
+    fs = int((h + w) * ns * 0.01)  # font size
+    annotator = Annotator(mosaic, line_width=round(fs / 10), font_size=fs, pil=True, example=names)
+    for i in range(i + 1):
+        x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
+        annotator.rectangle([x, y, x + w, y + h], None, (255, 255, 255), width=2)  # borders
+        if paths:
+            annotator.text((x + 5, y + 5 + h), text=Path(paths[i]).name[:40], txt_color=(220, 220, 220))  # filenames
         if len(targets) > 0:
-            idx = (targets[:, 0]).astype(int)
-            image_targets = targets[idx == i]
+            j = targets[:, 0] == i
+            ti = targets[j]  # image targets
 
             if masks.max() > 1.0:  # mean that masks are overlap
                 image_masks = masks[[i]]  # (1, 640, 640)
                 # convert masks (1, 640, 640) -> (n, 640, 640)
-                nl = len(image_targets)
+                nl = len(ti)
                 index = np.arange(nl).reshape(nl, 1, 1) + 1
                 image_masks = np.repeat(image_masks, nl, axis=0)
                 image_masks = np.where(image_masks == index, 1.0, 0.0)
             else:
-                image_masks = masks[idx == i]
+                image_masks = masks[j]
 
-            boxes = xywh2xyxy(image_targets[:, 2:6]).T
-            classes = image_targets[:, 1].astype("int")
-            labels = image_targets.shape[1] == 6  # labels if no conf column
-            conf = (None if labels else image_targets[:, 6])  # check for confidence presence (label vs pred)
+            boxes = xywh2xyxy(ti[:, 2:6]).T
+            classes = ti[:, 1].astype('int')
+            labels = ti.shape[1] == 6  # labels if no conf column
+            conf = None if labels else ti[:, 6]  # check for confidence presence (label vs pred)
 
             if boxes.shape[1]:
                 if boxes.max() <= 1.01:  # if normalized with tolerance 0.01
                     boxes[[0, 2]] *= w  # scale to pixels
                     boxes[[1, 3]] *= h
-                elif scale_factor < 1:  # absolute coords need scale if image scales
-                    boxes *= scale_factor
-            boxes[[0, 2]] += block_x
-            boxes[[1, 3]] += block_y
-            for j, box in enumerate(boxes.T):
-                cls = int(classes[j])
+                elif scale < 1:  # absolute coords need scale if image scales
+                    boxes *= scale
+            boxes[[0, 2]] += x
+            boxes[[1, 3]] += y
+            for j, box in enumerate(boxes.T.tolist()):
+                cls = classes[j]
                 color = colors(cls)
                 cls = names[cls] if names else cls
-                if scale_factor < 1:
-                    mask = image_masks[j].astype(np.uint8)
-                    mask = cv2.resize(mask, (w, h))
-                    mask = mask.astype(np.bool)
-                else:
-                    mask = image_masks[j].astype(np.bool)
                 if labels or conf[j] > 0.25:  # 0.25 conf thresh
-                    label = "%s" % cls if labels else f"{cls} {conf[j]:.1f}"
-                    plot_one_box(box, mosaic, label=label, color=color, line_thickness=tl)
-                    mosaic[block_y:block_y + h, block_x:block_x + w, :][mask] = \
-                        mosaic[block_y:block_y + h, block_x:block_x + w, :][mask] * 0.35 + (np.array(color) * 0.65)
+                    label = f'{cls}' if labels else f'{cls} {conf[j]:.1f}'
+                    annotator.box_label(box, label, color=color)
 
-        # Draw image filename labels
-        if paths:
-            label = Path(paths[i]).name[:40]  # trim to 40 char
-            t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
-            cv2.putText(
-                mosaic,
-                label,
-                (block_x + 5, block_y + t_size[1] + 5),
-                0,
-                tl / 3,
-                [220, 220, 220],
-                thickness=tf,
-                lineType=cv2.LINE_AA,
-            )
-
-        # Image border
-        cv2.rectangle(
-            mosaic,
-            (block_x, block_y),
-            (block_x + w, block_y + h),
-            (255, 255, 255),
-            thickness=3,
-        )
-
-    if fname:
-        r = min(1280.0 / max(h, w) / ns, 1.0)  # ratio to limit image size
-        mosaic = cv2.resize(mosaic, (int(ns * w * r), int(ns * h * r)), interpolation=cv2.INTER_AREA)
-        # cv2.imwrite(fname, cv2.cvtColor(mosaic, cv2.COLOR_BGR2RGB))  # cv2 save
-        with Image.fromarray(mosaic) as im:
-            im.save(fname)
-    return mosaic
+            # Plot masks
+            im = np.asarray(annotator.im)
+            for j, box in enumerate(boxes.T.tolist()):
+                if conf[j] > 0.25:  # 0.25 conf thresh
+                    color = colors(classes[j])
+                    if scale < 1:
+                        mask = image_masks[j].astype(np.uint8)
+                        mask = cv2.resize(mask, (w, h))
+                        mask = mask.astype(np.bool)
+                    else:
+                        mask = image_masks[j].astype(np.bool)
+                    im[y:y + h, x:x + w, :][mask] = im[y:y + h, x:x + w, :][mask] * 0.4 + np.array(color) * 0.6
+            annotator.fromarray(im)
+    annotator.im.save(fname)  # save
 
 
 def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
@@ -210,7 +154,7 @@ def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
             data = pd.read_csv(f)
             index = np.argmax(
                 0.9 * data.values[:, 8] + 0.1 * data.values[:, 7] + 0.9 * data.values[:, 12] +
-                0.1 * data.values[:, 11],)
+                0.1 * data.values[:, 11], )
             s = [x.strip() for x in data.columns]
             x = data.values[:, 0]
             for i, j in enumerate([1, 2, 3, 4, 5, 6, 9, 10, 13, 14, 15, 16, 7, 8, 11, 12]):
