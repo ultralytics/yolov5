@@ -14,7 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 from utils.general import colorstr, cv2
 from utils.loggers.clearml.clearml_utils import ClearmlLogger
 from utils.loggers.wandb.wandb_utils import WandbLogger
-from utils.plots import plot_images, plot_results
+from utils.plots import plot_images, plot_labels, plot_results
 from utils.torch_utils import de_parallel
 
 LOGGERS = ('csv', 'tb', 'wandb', 'clearml')  # *.csv, TensorBoard, Weights & Biases, ClearML
@@ -49,6 +49,7 @@ class Loggers():
         self.weights = weights
         self.opt = opt
         self.hyp = hyp
+        self.plots = not opt.noplots  # plot results
         self.logger = logger  # for printing results to console
         self.include = include
         self.keys = [
@@ -110,24 +111,26 @@ class Loggers():
         # Callback runs on train start
         pass
 
-    def on_pretrain_routine_end(self):
+    def on_pretrain_routine_end(self, labels, names):
         # Callback runs on pre-train routine end
-        paths = self.save_dir.glob('*labels*.jpg')  # training labels
-        if self.wandb:
-            self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
-        if self.clearml:
-            pass  # ClearML saves these images automatically using hooks
+        if self.plots:
+            plot_labels(labels, names, self.save_dir)
+            paths = self.save_dir.glob('*labels*.jpg')  # training labels
+            if self.wandb:
+                self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
+            # if self.clearml:
+            #    pass  # ClearML saves these images automatically using hooks
 
-    def on_train_batch_end(self, ni, model, imgs, targets, paths, plots):
+    def on_train_batch_end(self, model, ni, imgs, targets, paths):
         # Callback runs on train batch end
         # ni: number integrated batches (since train start)
-        if plots:
-            if ni == 0 and not self.opt.sync_bn and self.tb:
-                log_tensorboard_graph(self.tb, model, imgsz=list(imgs.shape[2:4]))
+        if self.plots:
             if ni < 3:
                 f = self.save_dir / f'train_batch{ni}.jpg'  # filename
                 plot_images(imgs, targets, paths, f)
-            if (self.wandb or self.clearml) and ni == 10:
+                if ni == 0 and self.tb and not self.opt.sync_bn:
+                    log_tensorboard_graph(self.tb, model, imgsz=(self.opt.imgsz, self.opt.imgsz))
+            if ni == 10 and (self.wandb or self.clearml):
                 files = sorted(self.save_dir.glob('train*.jpg'))
                 if self.wandb:
                     self.wandb.log({'Mosaics': [wandb.Image(str(f), caption=f.name) for f in files if f.exists()]})
@@ -187,19 +190,17 @@ class Loggers():
 
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):
         # Callback runs on model save event
-        if self.wandb:
-            if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
+        if (epoch + 1) % self.opt.save_period == 0 and not final_epoch and self.opt.save_period != -1:
+            if self.wandb:
                 self.wandb.log_model(last.parent, self.opt, epoch, fi, best_model=best_fitness == fi)
-
-        if self.clearml:
-            if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
+            if self.clearml:
                 self.clearml.task.update_output_model(model_path=str(last),
                                                       model_name='Latest Model',
                                                       auto_delete_file=False)
 
-    def on_train_end(self, last, best, plots, epoch, results):
-        # Callback runs on training end
-        if plots:
+    def on_train_end(self, last, best, epoch, results):
+        # Callback runs on training end, i.e. saving best model
+        if self.plots:
             plot_results(file=self.save_dir / 'results.csv')  # save results.png
         files = ['results.png', 'confusion_matrix.png', *(f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R'))]
         files = [(self.save_dir / f) for f in files if (self.save_dir / f).exists()]  # filter
@@ -220,15 +221,11 @@ class Loggers():
                                    aliases=['latest', 'best', 'stripped'])
             self.wandb.finish_run()
 
-        if self.clearml:
-            # Save the best model here
-            if not self.opt.evolve:
-                self.clearml.task.update_output_model(model_path=str(best if best.exists() else last),
-                                                      name='Best Model')
+        if self.clearml and not self.opt.evolve:
+            self.clearml.task.update_output_model(model_path=str(best if best.exists() else last), name='Best Model')
 
-    def on_params_update(self, params):
+    def on_params_update(self, params: dict):
         # Update hyperparams or configs of the experiment
-        # params: A dict containing {param: value} pairs
         if self.wandb:
             self.wandb.wandb_run.config.update(params, allow_val_change=True)
 
@@ -300,7 +297,7 @@ def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
     try:
         p = next(model.parameters())  # for device, type
         imgsz = (imgsz, imgsz) if isinstance(imgsz, int) else imgsz  # expand
-        im = torch.empty((1, 3, *imgsz)).to(p.device).type_as(p)  # input image
+        im = torch.zeros((1, 3, *imgsz)).to(p.device).type_as(p)  # input image (WARNING: must be zeros, not empty)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')  # suppress jit trace warning
             tb.add_graph(torch.jit.trace(de_parallel(model), im, strict=False), [])
