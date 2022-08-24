@@ -17,17 +17,32 @@ def download_model_checkpoint(opt, experiment):
         key=lambda x: x["step"],
         reverse=True,
     )
-    latest_model = model_asset_list[0]
+    checkpoint_step = (
+        opt.comet_checkpoint_step
+        if opt.comet_checkpoint_step
+        else model_asset_list[0]["step"]
+    )
+    checkpoint_filename = opt.comet_checkpoint_filename
+    for asset in model_asset_list:
+        if (int(checkpoint_step) == asset["step"]) and (
+            checkpoint_filename == asset["fileName"]
+        ):
+            asset_id = asset["assetId"]
+            asset_filename = asset["fileName"]
+            break
 
-    asset_id = latest_model["assetId"]
-    model_filename = latest_model["fileName"]
+    try:
+        model_binary = experiment.get_asset(
+            asset_id, return_type="binary", stream=False
+        )
+        model_download_path = f"{model_dir}/{asset_filename}"
+        with open(model_download_path, "wb") as f:
+            f.write(model_binary)
 
-    model_binary = experiment.get_asset(asset_id, return_type="binary", stream=False)
-    model_download_path = f"{model_dir}/{model_filename}"
-    with open(model_download_path, "wb") as f:
-        f.write(model_binary)
+        opt.weights = model_download_path
 
-    opt.weights = model_download_path
+    except Exception as e:
+        raise (e)
 
 
 def set_opt_parameters(opt, experiment):
@@ -35,8 +50,8 @@ def set_opt_parameters(opt, experiment):
     from Comet's ExistingExperiment when resuming a run
 
     Args:
-        opt (argparse.Namespace): _description_
-        experiment (comet_ml.APIExperiment): _description_
+        opt (argparse.Namespace): Namespace of command line options
+        experiment (comet_ml.APIExperiment): Comet API Experiment object
     """
     asset_list = experiment.get_asset_list()
     resume_string = opt.resume
@@ -51,6 +66,16 @@ def set_opt_parameters(opt, experiment):
                 setattr(opt, key, value)
             opt.resume = resume_string
 
+    # Save hyperparamers to YAML file
+    # Necessary to pass checks in training script
+    save_dir = f"{opt.project}/{experiment.name}"
+    os.makedirs(save_dir, exist_ok=True)
+
+    hyp_yaml_path = f"{save_dir}/hyp.yaml"
+    with open(hyp_yaml_path, "w") as f:
+        yaml.dump(opt.hyp, f)
+    opt.hyp = hyp_yaml_path
+
 
 def check_comet_weights(opt):
     """Downloads model weights from Comet and updates the
@@ -61,7 +86,8 @@ def check_comet_weights(opt):
             to YOLOv5 training script
 
     Returns:
-        bool: _description_
+        None/bool: Return True if weights are successfully downloaded
+            else return None
     """
 
     if isinstance(opt.weights, str):
@@ -76,6 +102,18 @@ def check_comet_weights(opt):
 
 
 def check_comet_resume(opt):
+    """Restores run parameters to its original state based on the model checkpoint
+    and logged Experiment parameters.
+
+    Args:
+        opt (argparse.Namespace): Command Line arguments passed
+            to YOLOv5 training script
+
+    Returns:
+        None/bool: Return True if the run is restored successfully
+            else return None
+    """
+
     if isinstance(opt.resume, str):
         if opt.resume.startswith(COMET_PREFIX):
             api = comet_ml.API()

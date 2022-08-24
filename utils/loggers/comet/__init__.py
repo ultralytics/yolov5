@@ -395,6 +395,9 @@ class CometLogger:
         return data_dict
 
     def on_pretrain_routine_end(self, paths):
+        if self.opt.resume:
+            return
+
         for path in paths:
             self.log_asset(str(path))
 
