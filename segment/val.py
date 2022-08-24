@@ -344,7 +344,7 @@ def run(
                     align_corners=False,
                 ).squeeze(0)
             plot_images_and_masks(im, targets, masks, paths, save_dir / f'val_batch{batch_i}_labels.jpg', names)
-            if any(plot_masks):
+            if len(plot_masks):
                 plot_masks = torch.cat(plot_masks, dim=0)
             plot_images_and_masks(im, output_to_target(out, max_det=15), plot_masks, paths,
                                   save_dir / f'val_batch{batch_i}_pred.jpg', names)  # pred
