@@ -10,7 +10,6 @@ except (ModuleNotFoundError, ImportError) as e:
 import torch
 import torchvision.transforms as T
 import yaml
-from importlib_metadata import metadata
 
 from utils.dataloaders import img2label_paths
 from utils.general import scale_coords, xywh2xyxy
