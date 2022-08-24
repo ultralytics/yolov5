@@ -127,7 +127,7 @@ jobs:
         shell: bash  # for Windows compatibility
         run: |
           pip install pycocotools
-          
+
           d='../datasets' # unzip directory
           f='coco128-segments.zip'
           rm -rf $d
