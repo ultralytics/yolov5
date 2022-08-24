@@ -2,11 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from .general import crop, masks_iou
 from ..general import xywh2xyxy
 from ..loss import FocalLoss, smooth_BCE
 from ..metrics import bbox_iou
 from ..torch_utils import is_parallel
-from .general import crop, masks_iou
 
 
 class MaskIOULoss(nn.Module):
@@ -122,9 +122,9 @@ class ComputeLoss:
                 # Mask Regression
                 # TODO:
                 # [bs * num_objs, img_h, img_w] -> [bs * num_objs, mask_h, mask_w]
-                downsampled_masks = F.interpolate(masks[None, :], (mask_h, mask_w),
+                downsampled_masks = F.interpolate(masks[None], (mask_h, mask_w),
                                                   mode="bilinear",
-                                                  align_corners=False).squeeze(0)
+                                                  align_corners=False)[0]
 
                 mxywh = xywh[i]
                 mws, mhs = mxywh[:, 2:].T
@@ -138,10 +138,8 @@ class ComputeLoss:
                     index = b == bi
                     if self.overlap:
                         mask_index = tidxs[i][index]
-                        # h, w, n
-                        mask_gti = downsampled_masks[bi][:, :, None].repeat(1, 1, index.sum())
-                        # h, w, n
-                        mask_gti = torch.where(mask_gti == mask_index, 1.0, 0.0)
+                        mask_gti = downsampled_masks[bi][:, :, None].repeat(1, 1, index.sum())  # shape(h,w,n)
+                        mask_gti = torch.where(mask_gti == mask_index)  # shape(h,w,n)
                     else:
                         mask_gti = downsampled_masks[tidxs[i]][index]
                         mask_gti = mask_gti.permute(1, 2, 0).contiguous()
@@ -151,8 +149,7 @@ class ComputeLoss:
                     psi = ps[index][:, 5:self.nm]
                     proto = proto_out[bi]
 
-                    one_lseg = self.single_mask_loss(mask_gti, psi, proto, mxyxy, mw, mh)
-                    batch_lseg += one_lseg
+                    batch_lseg += self.single_mask_loss(mask_gti, psi, proto, mxyxy, mw, mh)
 
                     # # update tobj
                     # iou = iou.detach().clamp(0).type(tobj.dtype)
