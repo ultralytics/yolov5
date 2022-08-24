@@ -96,17 +96,6 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg'
             j = targets[:, 0] == i
             ti = targets[j]  # image targets
 
-            if any(masks):
-                if masks.max() > 1.0:  # mean that masks are overlap
-                    image_masks = masks[[i]]  # (1, 640, 640)
-                    # convert masks (1, 640, 640) -> (n, 640, 640)
-                    nl = len(ti)
-                    index = np.arange(nl).reshape(nl, 1, 1) + 1
-                    image_masks = np.repeat(image_masks, nl, axis=0)
-                    image_masks = np.where(image_masks == index, 1.0, 0.0)
-                else:
-                    image_masks = masks[j]
-
             boxes = xywh2xyxy(ti[:, 2:6]).T
             classes = ti[:, 1].astype('int')
             labels = ti.shape[1] == 6  # labels if no conf column
@@ -129,7 +118,16 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg'
                     annotator.box_label(box, label, color=color)
 
             # Plot masks
-            if any(masks):
+            if len(masks):
+                if masks.max() > 1.0:  # mean that masks are overlap
+                    image_masks = masks[[i]]  # (1, 640, 640)
+                    nl = len(ti)
+                    index = np.arange(nl).reshape(nl, 1, 1) + 1
+                    image_masks = np.repeat(image_masks, nl, axis=0)
+                    image_masks = np.where(image_masks == index, 1.0, 0.0)
+                else:
+                    image_masks = masks[j]
+
                 im = np.asarray(annotator.im).copy()
                 for j, box in enumerate(boxes.T.tolist()):
                     if labels or conf[j] > 0.25:  # 0.25 conf thresh

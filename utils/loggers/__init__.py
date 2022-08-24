@@ -245,6 +245,7 @@ class GenericLogger:
         self.save_dir = Path(opt.save_dir)
         self.include = include
         self.console_logger = console_logger
+        self.csv = self.save_dir / 'results.csv'  # CSV logger
         if 'tb' in self.include:
             prefix = colorstr('TensorBoard: ')
             self.console_logger.info(
@@ -258,14 +259,21 @@ class GenericLogger:
         else:
             self.wandb = None
 
-    def log_metrics(self, metrics_dict, epoch):
+    def log_metrics(self, metrics, epoch):
         # Log metrics dictionary to all loggers
+        if self.csv:
+            keys, vals = list(metrics.keys()), list(metrics.values())
+            n = len(metrics) + 1  # number of cols
+            s = '' if self.csv.exists() else (('%23s,' * n % tuple(['epoch'] + keys)).rstrip(',') + '\n')  # header
+            with open(self.csv, 'a') as f:
+                f.write(s + ('%23.5g,' * n % tuple([epoch] + vals)).rstrip(',') + '\n')
+
         if self.tb:
-            for k, v in metrics_dict.items():
+            for k, v in metrics.items():
                 self.tb.add_scalar(k, v, epoch)
 
         if self.wandb:
-            self.wandb.log(metrics_dict, step=epoch)
+            self.wandb.log(metrics, step=epoch)
 
     def log_images(self, files, name='Images', epoch=0):
         # Log images to all loggers
