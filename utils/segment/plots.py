@@ -96,15 +96,16 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg'
             j = targets[:, 0] == i
             ti = targets[j]  # image targets
 
-            if masks.max() > 1.0:  # mean that masks are overlap
-                image_masks = masks[[i]]  # (1, 640, 640)
-                # convert masks (1, 640, 640) -> (n, 640, 640)
-                nl = len(ti)
-                index = np.arange(nl).reshape(nl, 1, 1) + 1
-                image_masks = np.repeat(image_masks, nl, axis=0)
-                image_masks = np.where(image_masks == index, 1.0, 0.0)
-            else:
-                image_masks = masks[j]
+            if any(masks):
+                if masks.max() > 1.0:  # mean that masks are overlap
+                    image_masks = masks[[i]]  # (1, 640, 640)
+                    # convert masks (1, 640, 640) -> (n, 640, 640)
+                    nl = len(ti)
+                    index = np.arange(nl).reshape(nl, 1, 1) + 1
+                    image_masks = np.repeat(image_masks, nl, axis=0)
+                    image_masks = np.where(image_masks == index, 1.0, 0.0)
+                else:
+                    image_masks = masks[j]
 
             boxes = xywh2xyxy(ti[:, 2:6]).T
             classes = ti[:, 1].astype('int')
@@ -128,19 +129,20 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg'
                     annotator.box_label(box, label, color=color)
 
             # Plot masks
-            im = np.asarray(annotator.im).copy()
-            for j, box in enumerate(boxes.T.tolist()):
-                if labels or conf[j] > 0.25:  # 0.25 conf thresh
-                    color = colors(classes[j])
-                    if scale < 1:
-                        mask = image_masks[j].astype(np.uint8)
-                        mask = cv2.resize(mask, (w, h))
-                        mask = mask.astype(np.bool)
-                    else:
-                        mask = image_masks[j].astype(np.bool)
-                    with contextlib.suppress(Exception):
-                        im[y:y + h, x:x + w, :][mask] = im[y:y + h, x:x + w, :][mask] * 0.4 + np.array(color) * 0.6
-            annotator.fromarray(im)
+            if any(masks):
+                im = np.asarray(annotator.im).copy()
+                for j, box in enumerate(boxes.T.tolist()):
+                    if labels or conf[j] > 0.25:  # 0.25 conf thresh
+                        color = colors(classes[j])
+                        if scale < 1:
+                            mask = image_masks[j].astype(np.uint8)
+                            mask = cv2.resize(mask, (w, h))
+                            mask = mask.astype(np.bool)
+                        else:
+                            mask = image_masks[j].astype(np.bool)
+                        with contextlib.suppress(Exception):
+                            im[y:y + h, x:x + w, :][mask] = im[y:y + h, x:x + w, :][mask] * 0.4 + np.array(color) * 0.6
+                annotator.fromarray(im)
     annotator.im.save(fname)  # save
 
 
@@ -156,7 +158,7 @@ def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
             data = pd.read_csv(f)
             index = np.argmax(
                 0.9 * data.values[:, 8] + 0.1 * data.values[:, 7] + 0.9 * data.values[:, 12] +
-                0.1 * data.values[:, 11],)
+                0.1 * data.values[:, 11], )
             s = [x.strip() for x in data.columns]
             x = data.values[:, 0]
             for i, j in enumerate([1, 2, 3, 4, 5, 6, 9, 10, 13, 14, 15, 16, 7, 8, 11, 12]):
