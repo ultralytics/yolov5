@@ -35,24 +35,23 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.common import DetectMultiBackend
-from models.yolo import DetectionModel
-from utils.callbacks import Callbacks
 import pycocotools.mask as mask_util
 import torch.nn.functional as F
 
+from models.common import DetectMultiBackend
+from models.yolo import DetectionModel
+from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
 from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_yaml,
                            coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, print_args,
                            scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, box_iou
 from utils.plots import output_to_target, plot_val_study
-from utils.torch_utils import smart_inference_mode
 from utils.segment.dataloaders import create_dataloader
 from utils.segment.general import mask_iou, process_mask, process_mask_upsample, scale_masks
 from utils.segment.metrics import Metrics, ap_per_class_box_and_mask
 from utils.segment.plots import plot_images_and_masks
-from utils.torch_utils import de_parallel, select_device
+from utils.torch_utils import de_parallel, select_device, smart_inference_mode
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -266,7 +265,12 @@ def run(
         targets[:, 2:] *= torch.tensor((width, height, width, height), device=device)  # to pixels
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
         with dt[2]:
-            out = non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=single_cls,
+            out = non_max_suppression(out,
+                                      conf_thres,
+                                      iou_thres,
+                                      labels=lb,
+                                      multi_label=True,
+                                      agnostic=single_cls,
                                       masks=nm)
 
         # Metrics
@@ -290,8 +294,8 @@ def run(
             midx = [si] if overlap else targets[:, 0] == si
             gt_masks = masks[midx]
             proto_out = train_out[1][si]
-            pred_masks = process(proto_out, pred[:, 6:], pred[:, :4], shape=im[si].shape[1:]).permute(2, 0,
-                                                                                                      1).contiguous().float()
+            pred_masks = process(proto_out, pred[:, 6:], pred[:, :4],
+                                 shape=im[si].shape[1:]).permute(2, 0, 1).contiguous().float()
 
             # Predictions
             if single_cls:
