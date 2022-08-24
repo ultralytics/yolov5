@@ -38,7 +38,6 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 from models.common import DetectMultiBackend
 from models.yolo import DetectionModel
 from utils.callbacks import Callbacks
-import pycocotools.mask as mask_util
 import torch.nn.functional as F
 
 from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_yaml,
@@ -65,11 +64,12 @@ def save_one_txt(predn, save_conf, shape, file):
 
 def save_one_json(predn, jdict, path, class_map, pred_masks):
     # Save one JSON result {"image_id": 42, "category_id": 18, "bbox": [258.15, 41.29, 348.26, 243.78], "score": 0.236}
+    from pycocotools.mask import encode
     image_id = int(path.stem) if path.stem.isnumeric() else path.stem
     box = xyxy2xywh(predn[:, :4])  # xywh
     box[:, :2] -= box[:, 2:] / 2  # xy center to top-left corner
     pred_masks = np.transpose(pred_masks, (2, 0, 1))
-    rles = [mask_util.encode(np.asarray(mask[:, :, None], order="F", dtype="uint8"))[0] for mask in pred_masks]
+    rles = [encode(np.asarray(x[:, :, None], order="F", dtype="uint8"))[0] for x in pred_masks]
     for rle in rles:
         rle["counts"] = rle["counts"].decode("utf-8")
     for i, (p, b) in enumerate(zip(predn.tolist(), box.tolist())):
@@ -164,7 +164,12 @@ def run(
         compute_loss=None,
         callbacks=Callbacks(),
 ):
-    process = process_mask_upsample if save_json else process_mask
+    if save_json:
+        check_requirements(['pycocotools'])
+        process = process_mask_upsample  # more accurate
+    else:
+        process = process_mask  # faster
+
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -377,7 +382,6 @@ def run(
             json.dump(jdict, f)
 
         try:  # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb
-            check_requirements(['pycocotools'])
             from pycocotools.coco import COCO
             from pycocotools.cocoeval import COCOeval
 
