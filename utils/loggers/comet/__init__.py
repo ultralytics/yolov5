@@ -234,7 +234,7 @@ class CometLogger:
             return
 
         model_metadata = {
-            "fitness_score": fitness_score,
+            "fitness_score": fitness_score[-1],
             "epochs_trained": epoch + 1,
             "save_period": opt.save_period,
             "total_epochs": opt.epochs,
