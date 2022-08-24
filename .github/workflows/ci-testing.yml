@@ -126,7 +126,6 @@ jobs:
       - name: Test segmentation
         shell: bash  # for Windows compatibility
         run: |
-          pip install -q pycocotools
           m=${{ matrix.model }}-seg  # official weights
           b=runs/train-seg/exp/weights/best  # best.pt checkpoint
           python segment/train.py --imgsz 64 --batch 32 --weights $m.pt --cfg $m.yaml --epochs 1 --device cpu  # train
