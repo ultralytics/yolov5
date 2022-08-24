@@ -2,11 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from .general import crop, masks_iou
 from ..general import xywh2xyxy
 from ..loss import FocalLoss, smooth_BCE
 from ..metrics import bbox_iou
 from ..torch_utils import is_parallel
-from .general import crop, masks_iou
 
 
 class MaskIOULoss(nn.Module):
@@ -39,6 +39,7 @@ class ComputeLoss:
         self.overlap = overlap
         device = next(model.parameters()).device  # get model device
         h = model.hyp  # hyperparameters
+        self.device = device
 
         # Define criteria
         BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h["cls_pw"]], device=device))
@@ -190,58 +191,49 @@ class ComputeLoss:
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
         na, nt = self.na, targets.shape[0]  # number of anchors, targets
         tcls, tbox, indices, anch, tidxs, xywh = [], [], [], [], [], []
-        gain = torch.ones(8, device=targets.device)  # normalized to gridspace gain
-        ai = (torch.arange(na, device=targets.device).float().view(na, 1).repeat(1,
-                                                                                 nt))  # same as .repeat_interleave(nt)
+        gain = torch.ones(8, device=self.device)  # normalized to gridspace gain
+        ai = torch.arange(na, device=self.device).float().view(na, 1).repeat(1, nt)  # same as .repeat_interleave(nt)
         if self.overlap:
             batch = p[0].shape[0]
             ti = []
             for i in range(batch):
-                # find number of targets of each image
-                num = (targets[:, 0] == i).sum()
-                # (na, num)
-                ti.append(torch.arange(num, device=targets.device).float().view(1, num).repeat(na, 1) + 1)
-            # (na, nt)
-            ti = torch.cat(ti, 1)
+                num = (targets[:, 0] == i).sum()  # find number of targets of each image
+                ti.append(torch.arange(num, device=targets.device).float().view(1, num).repeat(na, 1) + 1)  # (na, num)
+            ti = torch.cat(ti, 1)  # (na, nt)
         else:
-            ti = (torch.arange(nt, device=targets.device).float().view(1,
-                                                                       nt).repeat(na,
-                                                                                  1))  # same as .repeat_interleave(nt)
-
-        targets = torch.cat((targets.repeat(na, 1, 1), ai[:, :, None], ti[:, :, None]), 2)  # append anchor indices
+            ti = torch.arange(nt, device=targets.device).float().view(1, nt).repeat(na, 1)
+        targets = torch.cat((targets.repeat(na, 1, 1), ai[..., None], ti[..., None]), 2)  # append anchor indices
 
         g = 0.5  # bias
-        off = (
-            torch.tensor(
-                [
-                    [0, 0],
-                    [1, 0],
-                    [0, 1],
-                    [-1, 0],
-                    [0, -1],  # j,k,l,m
-                    # [1, 1], [1, -1], [-1, 1], [-1, -1],  # jk,jm,lk,lm
-                ],
-                device=targets.device,
-            ).float() * g)  # offsets
+        off = torch.tensor(
+            [
+                [0, 0],
+                [1, 0],
+                [0, 1],
+                [-1, 0],
+                [0, -1],  # j,k,l,m
+                # [1, 1], [1, -1], [-1, 1], [-1, -1],  # jk,jm,lk,lm
+            ],
+            device=self.device).float() * g  # offsets
 
         for i in range(self.nl):
             anchors, shape = self.anchors[i], p[i].shape
             gain[2:6] = torch.tensor(shape)[[3, 2, 3, 2]]  # xyxy gain
 
             # Match targets to anchors
-            t = targets * gain
+            t = targets * gain  # shape(3,n,7)
             if nt:
                 # Matches
-                r = t[:, :, 4:6] / anchors[:, None]  # wh ratio
-                j = torch.max(r, 1.0 / r).max(2)[0] < self.hyp["anchor_t"]  # compare
+                r = t[..., 4:6] / anchors[:, None]  # wh ratio
+                j = torch.max(r, 1 / r).max(2)[0] < self.hyp['anchor_t']  # compare
                 # j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
                 t = t[j]  # filter
 
                 # Offsets
                 gxy = t[:, 2:4]  # grid xy
                 gxi = gain[[2, 3]] - gxy  # inverse
-                j, k = ((gxy % 1.0 < g) & (gxy > 1.0)).T
-                l, m = ((gxi % 1.0 < g) & (gxi > 1.0)).T
+                j, k = ((gxy % 1 < g) & (gxy > 1)).T
+                l, m = ((gxi % 1 < g) & (gxi > 1)).T
                 j = torch.stack((torch.ones_like(j), j, k, l, m))
                 t = t.repeat((5, 1, 1))[j]
                 offsets = (torch.zeros_like(gxy)[None] + off[:, None])[j]
@@ -250,15 +242,12 @@ class ComputeLoss:
                 offsets = 0
 
             # Define
-            b, c = t[:, :2].long().T  # image, class
-            gxy = t[:, 2:4]  # grid xy
-            gwh = t[:, 4:6]  # grid wh
+            bc, gxy, gwh, at = t.chunk(4, 1)  # (image, class), grid xy, grid wh, anchors
+            (a, tidx), (b, c) = at.long().T, bc.long().T  # anchors, image, class
             gij = (gxy - offsets).long()
-            gi, gj = gij.T  # grid xy indices
+            gi, gj = gij.T  # grid indices
 
             # Append
-            a = t[:, 6].long()  # anchor indices
-            tidx = t[:, 7].long()
             indices.append((b, a, gj.clamp_(0, shape[2] - 1), gi.clamp_(0, shape[3] - 1)))  # image, anchor, grid
             tbox.append(torch.cat((gxy - gij, gwh), 1))  # box
             anch.append(anchors[a])  # anchors
