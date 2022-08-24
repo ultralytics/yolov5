@@ -45,8 +45,6 @@ class ComputeLoss:
         BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h["cls_pw"]], device=device))
         BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h["obj_pw"]], device=device))
 
-        self.mask_loss = MaskIOULoss()
-
         # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
         self.cp, self.cn = smooth_BCE(eps=h.get("label_smoothing", 0.0))  # positive, negative BCE targets
 
@@ -58,13 +56,8 @@ class ComputeLoss:
         det = model.module.model[-1] if is_parallel(model) else model.model[-1]  # Detect() module
         self.balance = {3: [4.0, 1.0, 0.4]}.get(det.nl, [4.0, 1.0, 0.25, 0.06, 0.02])  # P3-P7
         self.ssi = list(det.stride).index(16) if autobalance else 0  # stride 16 index
-        self.BCEcls, self.BCEobj, self.gr, self.hyp, self.autobalance = (
-            BCEcls,
-            BCEobj,
-            1.0,
-            h,
-            autobalance,
-        )
+        self.BCEcls, self.BCEobj, self.gr, self.hyp, self.autobalance = BCEcls, BCEobj, 1.0, h, autobalance,
+        self.mask_loss = MaskIOULoss()
         for k in "na", "nc", "nl", "anchors", "nm":
             if hasattr(det, k):
                 setattr(self, k, getattr(det, k))
@@ -76,13 +69,12 @@ class ComputeLoss:
         mask_h, mask_w = proto_out.shape[2:]
         proto_out = proto_out.permute(0, 2, 3, 1)
 
-        device = targets.device
-        lcls, lbox, lobj, lseg = (
-            torch.zeros(1, device=device),
-            torch.zeros(1, device=device),
-            torch.zeros(1, device=device),
-            torch.zeros(1, device=device),
-        )
+        device = self.device
+        lcls = torch.zeros(1, device=device)
+        lbox = torch.zeros(1, device=device)
+        lobj = torch.zeros(1, device=device)
+        lseg = torch.zeros(1, device=device)
+
         tcls, tbox, indices, anchors, tidxs, xywh = self.build_targets(p, targets)  # targets
         # Losses
         for i, pi in enumerate(p):  # layer index, layer predictions
@@ -101,17 +93,13 @@ class ComputeLoss:
                 lbox += (1.0 - iou).mean()  # iou loss
 
                 # Objectness
-                score_iou = iou.detach().clamp(0).type(tobj.dtype)
+                iou = iou.detach().clamp(0).type(tobj.dtype)
                 if self.sort_obj_iou:
-                    sort_id = torch.argsort(score_iou)
-                    b, a, gj, gi, score_iou = (
-                        b[sort_id],
-                        a[sort_id],
-                        gj[sort_id],
-                        gi[sort_id],
-                        score_iou[sort_id],
-                    )
-                tobj[b, a, gj, gi] = 1.0 * ((1.0 - self.gr) + self.gr * score_iou)  # iou ratio
+                    j = iou.argsort()
+                    b, a, gj, gi, iou = b[j], a[j], gj[j], gi[j], iou[j]
+                if self.gr < 1:
+                    iou = (1.0 - self.gr) + self.gr * iou
+                tobj[b, a, gj, gi] = iou  # iou ratio
 
                 # Classification
                 if self.nc > 1:  # cls loss (only if multiple classes)
