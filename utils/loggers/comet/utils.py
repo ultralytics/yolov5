@@ -2,7 +2,7 @@ import os
 
 try:
     import comet_ml
-except ImportError as e:
+except (ModuleNotFoundError, ImportError) as e:
     comet_ml = None
 
 import yaml

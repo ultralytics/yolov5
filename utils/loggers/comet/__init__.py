@@ -2,7 +2,11 @@ import glob
 import logging
 import os
 
-import comet_ml
+try:
+    import comet_ml
+except (ModuleNotFoundError, ImportError) as e:
+    comet_ml = None
+
 import torch
 import torchvision.transforms as T
 import yaml

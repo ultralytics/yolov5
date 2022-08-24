@@ -57,10 +57,10 @@ try:
     else:
         import comet_ml
 
-    assert hasattr(comet_ml, "__version__")  # verify package import not local dir
-    from utils.loggers.comet import CometLogger
+        assert hasattr(comet_ml, "__version__")  # verify package import not local dir
+        from utils.loggers.comet import CometLogger
 
-except (ImportError, AssertionError):
+except (ModuleNotFoundError, ImportError, AssertionError):
     comet_ml = None
 
 
@@ -119,7 +119,7 @@ class Loggers:
             self.logger.info(s)
         if not comet_ml:
             prefix = colorstr("Comet: ")
-            s = f"{prefix}run 'pip install comet_ml' to automatically track, visualize YOLOv5 🚀 runs in Comet"
+            s = f"{prefix}run 'pip install comet_ml' to automatically track and visualize YOLOv5 🚀 runs in Comet"
             self.logger.info(s)
 
         # TensorBoard
@@ -170,7 +170,8 @@ class Loggers:
 
             except Exception as e:
                 self.comet_logger = None
-                raise (e)
+        else:
+            self.comet_logger = None
 
     def on_train_start(self):
         if self.comet_logger:
