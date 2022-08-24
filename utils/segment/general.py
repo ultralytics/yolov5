@@ -12,24 +12,20 @@ def crop(masks, boxes):
         - masks should be a size [h, w, n] tensor of masks
         - boxes should be a size [n, 4] tensor of bbox coords in relative point form
     """
-    h, w, n = masks.size()
-    x1, x2 = boxes[:, 0], boxes[:, 2]
-    y1, y2 = boxes[:, 1], boxes[:, 3]
+    h, w, n = masks.shape
+    x1, y1, x2, y2 = torch.chunk(boxes.T[None], 4, 1)  # x1 shape(1,1,n)
 
-    rows = (torch.arange(w, device=masks.device, dtype=x1.dtype).view(1, -1, 1).expand(h, w, n))
-    cols = (torch.arange(h, device=masks.device, dtype=x1.dtype).view(-1, 1, 1).expand(h, w, n))
+    rows = torch.arange(w, device=masks.device, dtype=x1.dtype).view(1, -1, 1).expand(h, w, n)  # shape(h,w,n)
+    cols = torch.arange(h, device=masks.device, dtype=x1.dtype).view(-1, 1, 1).expand(h, w, n)  # shape(h,w,n)
 
     # (1, w, 1), (1, 1, n) -> (1, w, n)
-    masks_left = rows >= x1.view(1, 1, -1)
-    masks_right = rows < x2.view(1, 1, -1)
+    masks_left = rows >= x1  # shape(h,w,n)
+    masks_right = rows < x2  # shape(h,w,n)
     # (h, 1, 1), (1, 1, n) -> (h, 1, n)
-    masks_up = cols >= y1.view(1, 1, -1)
-    masks_down = cols < y2.view(1, 1, -1)
+    masks_up = cols >= y1  # shape(h,w,n)
+    masks_down = cols < y2  # shape(h,w,n)
 
-    # (h, w, n)
-    crop_mask = masks_left * masks_right * masks_up * masks_down
-
-    return masks * crop_mask.float()
+    return masks * (masks_left * masks_right * masks_up * masks_down).float()
 
 
 def process_mask_upsample(proto_out, out_masks, bboxes, shape):
