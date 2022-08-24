@@ -305,7 +305,14 @@ class Concat(nn.Module):
 
 class DetectMultiBackend(nn.Module):
     # YOLOv5 MultiBackend class for python inference on various backends
-    def __init__(self, weights='yolov5s.pt', device=torch.device('cpu'), dnn=False, data=None, fp16=False, fuse=True):
+    def __init__(self,
+                 weights='yolov5s.pt',
+                 device=torch.device('cpu'),
+                 dnn=False,
+                 data=None,
+                 fp16=False,
+                 fuse=True,
+                 triton_url=None):
         # Usage:
         #   PyTorch:              weights = *.pt
         #   TorchScript:                    *.torchscript
@@ -323,11 +330,22 @@ class DetectMultiBackend(nn.Module):
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
         pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = self._model_type(w)  # get backend
-        w = attempt_download(w)  # download if not local
+        if triton_url:
+            # set pt to False when using a Triton server regardless of the weights specified
+            # it is used to determine whether images are resized for the forward method
+            pt = False
+        else:
+            w = attempt_download(w)  # download if not local and not using Triton for inference
         fp16 &= pt or jit or onnx or engine  # FP16
         stride = 32  # default stride
 
-        if pt:  # PyTorch
+        if triton_url:  # Triton
+            from os import path
+
+            from utils.triton import TritonRemoteModel
+            model_name = path.splitext(path.basename(w))[0]
+            model = TritonRemoteModel(url=triton_url, model_name=model_name)
+        elif pt:  # PyTorch
             model = attempt_load(weights if isinstance(weights, list) else w, device=device, inplace=True, fuse=fuse)
             stride = max(int(model.stride.max()), 32)  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
@@ -336,7 +354,7 @@ class DetectMultiBackend(nn.Module):
         elif jit:  # TorchScript
             LOGGER.info(f'Loading {w} for TorchScript inference...')
             extra_files = {'config.txt': ''}  # model metadata
-            model = torch.jit.load(w, _extra_files=extra_files)
+            model = torch.jit.load(w, _extra_files=extra_files, map_location=device)
             model.half() if fp16 else model.float()
             if extra_files['config.txt']:  # load metadata dict
                 d = json.loads(extra_files['config.txt'],
@@ -464,7 +482,9 @@ class DetectMultiBackend(nn.Module):
         if self.fp16 and im.dtype != torch.float16:
             im = im.half()  # to FP16
 
-        if self.pt:  # PyTorch
+        if self.triton_url:  # Triton
+            y = self.model(im)
+        elif self.pt:  # PyTorch
             y = self.model(im, augment=augment, visualize=visualize) if augment or visualize else self.model(im)
             if isinstance(y, tuple):
                 y = y[0]
