@@ -2,11 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .general import crop, masks_iou
 from ..general import xywh2xyxy
 from ..loss import FocalLoss, smooth_BCE
 from ..metrics import bbox_iou
 from ..torch_utils import is_parallel
+from .general import crop, masks_iou
 
 
 class MaskIOULoss(nn.Module):
@@ -122,8 +122,7 @@ class ComputeLoss:
                 # Mask Regression
                 # TODO:
                 # [bs * num_objs, img_h, img_w] -> [bs * num_objs, mask_h, mask_w]
-                downsampled_masks = F.interpolate(masks[None], (mask_h, mask_w),
-                                                  mode="bilinear",
+                downsampled_masks = F.interpolate(masks[None], (mask_h, mask_w), mode="bilinear",
                                                   align_corners=False)[0]
 
                 mxywh = xywh[i]
