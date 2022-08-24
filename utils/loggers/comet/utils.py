@@ -1,6 +1,10 @@
 import os
 
-import comet_ml
+try:
+    import comet_ml
+except ImportError as e:
+    comet_ml = None
+
 import yaml
 
 COMET_PREFIX = "comet://"
@@ -89,6 +93,8 @@ def check_comet_weights(opt):
         None/bool: Return True if weights are successfully downloaded
             else return None
     """
+    if comet_ml is None:
+        return
 
     if isinstance(opt.weights, str):
         if opt.weights.startswith(COMET_PREFIX):
@@ -113,6 +119,8 @@ def check_comet_resume(opt):
         None/bool: Return True if the run is restored successfully
             else return None
     """
+    if comet_ml is None:
+        return
 
     if isinstance(opt.resume, str):
         if opt.resume.startswith(COMET_PREFIX):

@@ -52,8 +52,10 @@ except (ImportError, AssertionError):
     clearml = None
 
 try:
-    assert RANK in {0, -1}
-    import comet_ml
+    if RANK not in [0, -1]:
+        comet_ml = None
+    else:
+        import comet_ml
 
     assert hasattr(comet_ml, "__version__")  # verify package import not local dir
     from utils.loggers.comet import CometLogger
