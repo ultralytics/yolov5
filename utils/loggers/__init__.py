@@ -252,7 +252,7 @@ class GenericLogger:
             self.tb = SummaryWriter(str(self.save_dir))
 
         if wandb and 'wandb' in self.include:
-            self.wandb = wandb.init(project=get_project_name(str(opt.project)),
+            self.wandb = wandb.init(project=web_project_name(str(opt.project)),
                                     name=None if opt.name == "exp" else opt.name,
                                     config=opt)
         else:
@@ -301,16 +301,13 @@ def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')  # suppress jit trace warning
             tb.add_graph(torch.jit.trace(de_parallel(model), im, strict=False), [])
-    except Exception:
-        print('WARNING: TensorBoard graph visualization failure')
+    except Exception as e:
+        print(f'WARNING: TensorBoard graph visualization failure {e}')
 
 
-def get_project_name(name):
-    if not name.startswith("runs/"):
-        return name
-    if name.endswith("cls"):
-        return "YOLOv5-Classify"
-    elif name.endswith("segment"):
-        return "YOLOv5-Segment"
-    else:
-        return "YOLOv5"
+def web_project_name(project):
+    # Convert local project name to web project name
+    if not project.startswith('runs/train'):
+        return project
+    suffix = '-Classify' if project.endswith('-cls') else '-Segment' if project.endswith('-seg') else ''
+    return f'YOLOv5{suffix}'
