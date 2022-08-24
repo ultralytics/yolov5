@@ -122,6 +122,7 @@ def process_batch_masks(predn, pred_masks, gt_masks, labels, iouv, overlap):
             mode="bilinear",
             align_corners=False,
         ).squeeze(0)
+        gt_masks = gt_masks.gt_(0.5)
 
     iou = mask_iou(
         gt_masks.view(gt_masks.shape[0], -1),
@@ -171,7 +172,7 @@ def run(
         mask_downsample_ratio=1,
         compute_loss=None,
 ):
-    process = process_mask_upsample if plots else process_mask
+    process = process_mask_upsample if save_json else process_mask
     # Initialize/load model and set device
     training = model is not None
     if training:  # called by train.py
@@ -304,9 +305,6 @@ def run(
             proto_out = train_out[1][si]
             pred_masks = process(proto_out, pred[:, 6:], pred[:, :4],
                                  shape=im[si].shape[1:]).permute(2, 0, 1).contiguous().float()
-            if plots and batch_i < 3:
-                # filter top 15 to plot
-                plot_masks.append(torch.as_tensor(pred_masks[:15], dtype=torch.uint8).cpu())
 
             # Predictions
             if single_cls:
@@ -326,6 +324,12 @@ def run(
             stats.append(
                 (correct_masks, correct_bboxes, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
 
+            # convert pred_masks to uint8
+            pred_masks = torch.as_tensor(pred_masks, dtype=torch.uint8)
+            if plots and batch_i < 3:
+                # filter top 15 to plot
+                plot_masks.append(pred_masks[:15].cpu())
+
             # Save/log
             if save_txt:
                 save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / (path.stem + '.txt'))
@@ -336,13 +340,6 @@ def run(
 
         # Plot images
         if plots and batch_i < 3:
-            if masks.shape[1:] != im.shape[2:]:
-                masks = F.interpolate(
-                    masks.unsqueeze(0).float(),
-                    im.shape[2:],
-                    mode="bilinear",
-                    align_corners=False,
-                ).squeeze(0)
             plot_images_and_masks(im, targets, masks, paths, save_dir / f'val_batch{batch_i}_labels.jpg', names)
             if len(plot_masks):
                 plot_masks = torch.cat(plot_masks, dim=0)

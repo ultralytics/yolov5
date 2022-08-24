@@ -132,7 +132,8 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg'
                 for j, box in enumerate(boxes.T.tolist()):
                     if labels or conf[j] > 0.25:  # 0.25 conf thresh
                         color = colors(classes[j])
-                        if scale < 1:
+                        mh, mw = image_masks[j].shape[:2]
+                        if mh != h or mw != w:
                             mask = image_masks[j].astype(np.uint8)
                             mask = cv2.resize(mask, (w, h))
                             mask = mask.astype(np.bool)
