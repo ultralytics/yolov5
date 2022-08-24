@@ -124,7 +124,7 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg'
                     nl = len(ti)
                     index = np.arange(nl).reshape(nl, 1, 1) + 1
                     image_masks = np.repeat(image_masks, nl, axis=0)
-                    image_masks = np.where(image_masks == index)
+                    image_masks = np.where(image_masks == index, 1.0, 0.0)
                 else:
                     image_masks = masks[idx]
 

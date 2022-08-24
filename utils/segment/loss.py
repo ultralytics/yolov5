@@ -138,7 +138,7 @@ class ComputeLoss:
                     if self.overlap:
                         mask_index = tidxs[i][index]
                         mask_gti = downsampled_masks[bi][:, :, None].repeat(1, 1, index.sum())  # shape(h,w,n)
-                        mask_gti = torch.where(mask_gti == mask_index)  # shape(h,w,n)
+                        mask_gti = torch.where(mask_gti == mask_index, 1.0, 0.0)  # shape(h,w,n)
                     else:
                         mask_gti = downsampled_masks[tidxs[i]][index]
                         mask_gti = mask_gti.permute(1, 2, 0).contiguous()

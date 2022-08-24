@@ -113,7 +113,7 @@ def process_batch_masks(predn, pred_masks, gt_masks, labels, iouv, overlap):
         nl = len(labels)
         index = torch.arange(nl, device=gt_masks.device).view(nl, 1, 1) + 1
         gt_masks = gt_masks.repeat(nl, 1, 1)
-        gt_masks = torch.where(gt_masks == index)
+        gt_masks = torch.where(gt_masks == index, 1.0, 0.0)
 
     if gt_masks.shape[1:] != pred_masks.shape[1:]:
         gt_masks = F.interpolate(
