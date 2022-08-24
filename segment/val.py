@@ -35,9 +35,6 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-import pycocotools.mask as mask_util
-import torch.nn.functional as F
-
 from models.common import DetectMultiBackend
 from models.yolo import DetectionModel
 from utils.callbacks import Callbacks
