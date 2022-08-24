@@ -41,7 +41,6 @@ from utils.callbacks import Callbacks
 import pycocotools.mask as mask_util
 import torch.nn.functional as F
 
-from utils.dataloaders import create_dataloader
 from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_yaml,
                            coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, print_args,
                            scale_coords, xywh2xyxy, xyxy2xywh)
