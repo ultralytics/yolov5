@@ -35,20 +35,24 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+from models.common import DetectMultiBackend
+from models.yolo import DetectionModel
+from utils.callbacks import Callbacks
 import pycocotools.mask as mask_util
 import torch.nn.functional as F
 
-from models.experimental import attempt_load  # scoped to avoid circular import
-from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_yaml,
-                           coco80_to_coco91_class, colorstr, emojis, increment_path, non_max_suppression, print_args,
+from utils.dataloaders import create_dataloader
+from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_yaml,
+                           coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, print_args,
                            scale_coords, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, box_iou
 from utils.plots import output_to_target, plot_val_study
+from utils.torch_utils import smart_inference_mode
 from utils.segment.dataloaders import create_dataloader
 from utils.segment.general import mask_iou, process_mask, process_mask_upsample, scale_masks
 from utils.segment.metrics import Metrics, ap_per_class_box_and_mask
 from utils.segment.plots import plot_images_and_masks
-from utils.torch_utils import de_parallel, select_device, time_sync
+from utils.torch_utils import de_parallel, select_device
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -66,20 +70,17 @@ def save_one_json(predn, jdict, path, class_map, pred_masks):
     image_id = int(path.stem) if path.stem.isnumeric() else path.stem
     box = xyxy2xywh(predn[:, :4])  # xywh
     box[:, :2] -= box[:, 2:] / 2  # xy center to top-left corner
-
     pred_masks = np.transpose(pred_masks, (2, 0, 1))
     rles = [mask_util.encode(np.asarray(mask[:, :, None], order="F", dtype="uint8"))[0] for mask in pred_masks]
     for rle in rles:
         rle["counts"] = rle["counts"].decode("utf-8")
-
     for i, (p, b) in enumerate(zip(predn.tolist(), box.tolist())):
-        pred_dict = {
+        jdict.append({
             'image_id': image_id,
             'category_id': class_map[int(p[5])],
             'bbox': [round(x, 3) for x in b],
-            'score': round(p[4], 5)}
-        pred_dict["segmentation"] = rles[i]
-        jdict.append(pred_dict)
+            'score': round(p[4], 5),
+            'segmentation': rles[i]})
 
 
 def process_batch(detections, labels, iouv):
@@ -117,18 +118,9 @@ def process_batch_masks(predn, pred_masks, gt_masks, labels, iouv, overlap):
         gt_masks = torch.where(gt_masks == index, 1.0, 0.0)
 
     if gt_masks.shape[1:] != pred_masks.shape[1:]:
-        gt_masks = F.interpolate(
-            gt_masks.unsqueeze(0),
-            pred_masks.shape[1:],
-            mode="bilinear",
-            align_corners=False,
-        ).squeeze(0)
-        gt_masks = gt_masks.gt_(0.5)
+        gt_masks = F.interpolate(gt_masks[None], pred_masks.shape[1:], mode="bilinear", align_corners=False)[0].gt_(0.5)
 
-    iou = mask_iou(
-        gt_masks.view(gt_masks.shape[0], -1),
-        pred_masks.view(pred_masks.shape[0], -1),
-    )
+    iou = mask_iou(gt_masks.view(gt_masks.shape[0], -1), pred_masks.view(pred_masks.shape[0], -1))
     x = torch.where((iou >= iouv[0]) & (labels[:, 0:1] == predn[:, 5]))  # IoU above threshold and classes match
     if x[0].shape[0]:
         matches = (torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy())  # [label, detection, iou]
@@ -142,7 +134,7 @@ def process_batch_masks(predn, pred_masks, gt_masks, labels, iouv, overlap):
     return correct
 
 
-@torch.no_grad()
+@smart_inference_mode()
 def run(
         data,
         weights=None,  # model.pt path(s)
@@ -172,6 +164,7 @@ def run(
         overlap=False,
         mask_downsample_ratio=1,
         compute_loss=None,
+        callbacks=Callbacks(),
 ):
     process = process_mask_upsample if save_json else process_mask
     # Initialize/load model and set device
@@ -180,6 +173,7 @@ def run(
         device, pt, jit, engine = next(model.parameters()).device, True, False, False  # get model device, PyTorch model
         half &= device.type != 'cpu'  # half precision only supported on CUDA
         model.half() if half else model.float()
+        nm = de_parallel(model).model[-1].mask_dim  # number of masks
     else:  # called directly
         device = select_device(device, batch_size=batch_size)
 
@@ -188,20 +182,15 @@ def run(
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
         # Load model
-        # model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
-        model = attempt_load(weights, device=device)  # load FP32 model
-        stride = 32
-        pt, jit, engine = True, False, False
-        # stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
+        model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+        stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
         imgsz = check_img_size(imgsz, s=stride)  # check image size
-        # half = model.fp16  # FP16 supported on limited backends with CUDA
-        half = device.type != 'cpu'
-        if half:
-            model.half()
+        half = model.fp16  # FP16 supported on limited backends with CUDA
+        nm = de_parallel(model).model.model[-1].mask_dim if isinstance(model, DetectionModel) else 32  # number of masks
         if engine:
             batch_size = model.batch_size
         else:
-            # device = model.device
+            device = model.device
             if not (pt or jit):
                 batch_size = 1  # export.py models default to batch-size 1
                 LOGGER.info(f'Forcing --batch-size 1 square inference (1,3,{imgsz},{imgsz}) for non-PyTorch models')
@@ -220,10 +209,10 @@ def run(
     # Dataloader
     if not training:
         if pt and not single_cls:  # check --weights are trained on --data
-            ncm = model.nc
+            ncm = model.model.nc
             assert ncm == nc, f'{weights} ({ncm} classes) trained on different --data than what you passed ({nc} ' \
                               f'classes). Pass correct combination of --weights and --data that are trained together.'
-        # model.warmup(imgsz=(1 if pt else batch_size, 3, imgsz, imgsz))  # warmup
+        model.warmup(imgsz=(1 if pt else batch_size, 3, imgsz, imgsz))  # warmup
         pad = 0.0 if task in ('speed', 'benchmark') else 0.5
         rect = False if task == 'benchmark' else pt  # square inference for benchmarks
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
@@ -241,31 +230,33 @@ def run(
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
-    names = {k: v for k, v in enumerate(model.names if hasattr(model, 'names') else model.module.names)}
+    names = model.names if hasattr(model, 'names') else model.module.names  # get class names
+    if isinstance(names, (list, tuple)):  # old format
+        names = dict(enumerate(names))
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
-    s = ("%20s" + "%11s" * 10) % ("Class", "Images", "Labels", "Box:{P", "R", "mAP@.5", "mAP@.5:.95}", "Mask:{P", "R",
-                                  "mAP@.5", "mAP@.5:.95}")
-    dt = [0.0, 0.0, 0.0]
+    s = ('%22s' + '%11s' * 10) % ('Class', 'Images', 'Instances', 'Box(P', "R", "mAP50", "mAP50-95)", "Mask(P", "R",
+                                  "mAP50", "mAP50-95)")
+    dt = Profile(), Profile(), Profile()
     metrics = Metrics()
     loss = torch.zeros(4, device=device)
     jdict, stats = [], []
+    # callbacks.run('on_val_start')
     pbar = tqdm(dataloader, desc=s, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
     for batch_i, (im, targets, paths, shapes, masks) in enumerate(pbar):
-        t1 = time_sync()
-        if cuda:
-            im = im.to(device, non_blocking=True)
-            targets = targets.to(device)
-            masks = masks.to(device)
-        masks = masks.float()
-        im = im.half() if half else im.float()  # uint8 to fp16/32
-        im /= 255  # 0 - 255 to 0.0 - 1.0
-        nb, _, height, width = im.shape  # batch size, channels, height, width
-        t2 = time_sync()
-        dt[0] += t2 - t1
+        # callbacks.run('on_val_batch_start')
+        with dt[0]:
+            if cuda:
+                im = im.to(device, non_blocking=True)
+                targets = targets.to(device)
+                masks = masks.to(device)
+            masks = masks.float()
+            im = im.half() if half else im.float()  # uint8 to fp16/32
+            im /= 255  # 0 - 255 to 0.0 - 1.0
+            nb, _, height, width = im.shape  # batch size, channels, height, width
 
         # Inference
-        out, train_out = model(im)  # if training else model(im, augment=augment, val=True)  # inference, loss outputs
-        dt[1] += time_sync() - t2
+        with dt[1]:
+            out, train_out = model(im)  # if training else model(im, augment=augment, val=True)  # inference, loss
 
         # Loss
         if compute_loss:
@@ -274,19 +265,12 @@ def run(
         # NMS
         targets[:, 2:] *= torch.tensor((width, height, width, height), device=device)  # to pixels
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
-        t3 = time_sync()
-        out = non_max_suppression(out,
-                                  conf_thres,
-                                  iou_thres,
-                                  labels=lb,
-                                  multi_label=True,
-                                  agnostic=single_cls,
-                                  masks=de_parallel(model).model[-1].mask_dim)
-        dt[2] += time_sync() - t3
+        with dt[2]:
+            out = non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=single_cls,
+                                      masks=nm)
 
-        # keep pred masks for plotting
-        plot_masks = []
         # Metrics
+        plot_masks = []  # masks for plotting
         for si, pred in enumerate(out):
             labels = targets[targets[:, 0] == si, 1:]
             nl, npr = labels.shape[0], pred.shape[0]  # number of labels, predictions
@@ -298,14 +282,16 @@ def run(
             if npr == 0:
                 if nl:
                     stats.append((correct_masks, correct_bboxes, *torch.zeros((2, 0), device=device), labels[:, 0]))
+                    if plots:
+                        confusion_matrix.process_batch(detections=None, labels=labels[:, 0])
                 continue
 
-            # deal with masks
+            # Masks
             midx = [si] if overlap else targets[:, 0] == si
             gt_masks = masks[midx]
             proto_out = train_out[1][si]
-            pred_masks = process(proto_out, pred[:, 6:], pred[:, :4],
-                                 shape=im[si].shape[1:]).permute(2, 0, 1).contiguous().float()
+            pred_masks = process(proto_out, pred[:, 6:], pred[:, :4], shape=im[si].shape[1:]).permute(2, 0,
+                                                                                                      1).contiguous().float()
 
             # Predictions
             if single_cls:
@@ -322,43 +308,43 @@ def run(
                 correct_masks = process_batch_masks(predn, pred_masks, gt_masks, labelsn, iouv, overlap=overlap)
                 if plots:
                     confusion_matrix.process_batch(predn, labelsn)
-            stats.append(
-                (correct_masks, correct_bboxes, pred[:, 4], pred[:, 5], labels[:, 0]))  # (correct, conf, pcls, tcls)
+            stats.append((correct_masks, correct_bboxes, pred[:, 4], pred[:, 5], labels[:, 0]))  # (conf, pcls, tcls)
 
-            # convert pred_masks to uint8
             pred_masks = torch.as_tensor(pred_masks, dtype=torch.uint8)
             if plots and batch_i < 3:
-                # filter top 15 to plot
-                plot_masks.append(pred_masks[:15].cpu())
+                plot_masks.append(pred_masks[:15].cpu())  # filter top 15 to plot
 
             # Save/log
             if save_txt:
-                save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / (path.stem + '.txt'))
+                save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / f'{path.stem}.txt')
             if save_json:
                 pred_masks = scale_masks(im[si].shape[1:],
                                          pred_masks.permute(1, 2, 0).contiguous().cpu().numpy(), shape, shapes[si][1])
                 save_one_json(predn, jdict, path, class_map, pred_masks)  # append to COCO-JSON dictionary
+            # callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
         # Plot images
         if plots and batch_i < 3:
-            plot_images_and_masks(im, targets, masks, paths, save_dir / f'val_batch{batch_i}_labels.jpg', names)
             if len(plot_masks):
                 plot_masks = torch.cat(plot_masks, dim=0)
+            plot_images_and_masks(im, targets, masks, paths, save_dir / f'val_batch{batch_i}_labels.jpg', names)
             plot_images_and_masks(im, output_to_target(out, max_det=15), plot_masks, paths,
                                   save_dir / f'val_batch{batch_i}_pred.jpg', names)  # pred
+
+        # callbacks.run('on_val_batch_end')
 
     # Compute metrics
     stats = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
         results = ap_per_class_box_and_mask(*stats, plot=plots, save_dir=save_dir, names=names)
         metrics.update(results)
-        nt = np.bincount(stats[4].astype(int), minlength=nc)  # number of targets per class
-    else:
-        nt = torch.zeros(1)
+    nt = np.bincount(stats[4].astype(int), minlength=nc)  # number of targets per class
 
     # Print results
-    pf = '%20s' + '%11i' * 2 + '%11.3g' * 8  # print format
+    pf = '%22s' + '%11i' * 2 + '%11.3g' * 8  # print format
     LOGGER.info(pf % ("all", seen, nt.sum(), *metrics.mean_results()))
+    if nt.sum() == 0:
+        LOGGER.warning(f'WARNING: no labels found in {task} set, can not compute metrics without labels ⚠️')
 
     # Print results per class
     if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
@@ -366,7 +352,7 @@ def run(
             LOGGER.info(pf % (names[c], seen, nt[c], *metrics.class_result(i)))
 
     # Print speeds
-    t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
+    t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
     if not training:
         shape = (batch_size, 3, imgsz, imgsz)
         LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {shape}' % t)
@@ -374,18 +360,10 @@ def run(
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
+    # callbacks.run('on_val_end')
 
-    # in case the cocoeval will update map
-    (
-        mp_bbox,
-        mr_bbox,
-        map50_bbox,
-        map_bbox,
-        mp_mask,
-        mr_mask,
-        map50_mask,
-        map_mask,
-    ) = metrics.mean_results()
+    mp_bbox, mr_bbox, map50_bbox, map_bbox, mp_mask, mr_mask, map50_mask, map_mask = metrics.mean_results()
+
     # Save JSON
     if save_json and len(jdict):
         w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
@@ -402,22 +380,15 @@ def run(
 
             anno = COCO(anno_json)  # init annotations api
             pred = anno.loadRes(pred_json)  # init predictions api
-            eval_bbox = COCOeval(anno, pred, 'bbox')
-            eval_mask = COCOeval(anno, pred, 'segm')
-            if is_coco:
-                eval_bbox.params.imgIds = [int(Path(x).stem)
-                                           for x in dataloader.dataset.im_files]  # image IDs to evaluate
-                eval_mask.params.imgIds = [int(Path(x).stem)
-                                           for x in dataloader.dataset.im_files]  # image IDs to evaluate
-            eval_bbox.evaluate()
-            eval_bbox.accumulate()
-            eval_bbox.summarize()
-            map_bbox, map50_bbox = eval_bbox.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
-
-            eval_mask.evaluate()
-            eval_mask.accumulate()
-            eval_mask.summarize()
-            map_mask, map50_mask = eval_mask.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
+            results = []
+            for eval in COCOeval(anno, pred, 'bbox'), COCOeval(anno, pred, 'segm'):
+                if is_coco:
+                    eval.params.imgIds = [int(Path(x).stem) for x in dataloader.dataset.im_files]  # img ID to evaluate
+                eval.evaluate()
+                eval.accumulate()
+                eval.summarize()
+                results.extend(eval.stats[:2])  # update results (mAP@0.5:0.95, mAP@0.5)
+            map_bbox, map50_bbox, map_mask, map50_mask = results
         except Exception as e:
             LOGGER.info(f'pycocotools unable to run: {e}')
 
@@ -426,21 +397,8 @@ def run(
     if not training:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
-    final_metric = (
-        mp_bbox,
-        mr_bbox,
-        map50_bbox,
-        map_bbox,
-        mp_mask,
-        mr_mask,
-        map50_mask,
-        map_mask,
-    )
-    return (
-        (*final_metric, *(loss.cpu() / len(dataloader)).tolist()),
-        metrics.get_maps(nc),
-        t,
-    )
+    final_metric = mp_bbox, mr_bbox, map50_bbox, map_bbox, mp_mask, mr_mask, map50_mask, map_mask
+    return (*final_metric, *(loss.cpu() / len(dataloader)).tolist()), metrics.get_maps(nc), t
 
 
 def parse_opt():
