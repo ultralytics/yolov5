@@ -66,9 +66,9 @@ class ComputeLoss:
         self.device = device
 
     def __call__(self, preds, targets, masks):  # predictions, targets, model
-        p, proto_out = preds  # proto_out shape(bs, masks, mask_h, mask_w)
-        mask_h, mask_w = proto_out.shape[2:]
-        proto_out = proto_out.permute(0, 2, 3, 1)
+        p, proto = preds
+        bs, nm, mask_h, mask_w = proto.shape  # proto shape(bs, mask_h, mask_w, num_masks)
+        proto = proto.permute(0, 2, 3, 1)
 
         lcls = torch.zeros(1, device=self.device)
         lbox = torch.zeros(1, device=self.device)
@@ -83,7 +83,7 @@ class ComputeLoss:
 
             n = b.shape[0]  # number of targets
             if n:
-                pxy, pwh, _, pmask, pcls, = pi[b, a, gj, gi].split((2, 2, 1, 32, self.nc), 1)  # subset of predictions
+                pxy, pwh, _, pmask, pcls, = pi[b, a, gj, gi].split((2, 2, 1, nm, self.nc), 1)  # subset of predictions
 
                 # Regression
                 pxy = pxy.sigmoid() * 2 - 0.5
@@ -121,21 +121,16 @@ class ComputeLoss:
 
                 batch_lseg = torch.zeros(1, device=self.device)
                 for bi in b.unique():
-                    index = b == bi
+                    j = b == bi  # matching index
                     if self.overlap:
-                        mask_index = tidxs[i][index]
-                        mask_gti = masks[bi][:, :, None].repeat(1, 1, index.sum())  # shape(h,w,n)
+                        mask_index = tidxs[i][j]
+                        mask_gti = masks[bi][:, :, None].repeat(1, 1, j.sum())  # shape(h,w,n)
                         mask_gti = torch.where(mask_gti == mask_index, 1.0, 0.0)  # shape(h,w,n)
                     else:
-                        mask_gti = masks[tidxs[i]][index]
+                        mask_gti = masks[tidxs[i]][j]
                         mask_gti = mask_gti.permute(1, 2, 0).contiguous()
 
-                    mw, mh = mws[index], mhs[index]
-                    mxyxy = mxyxys[index]
-                    psi = pmask[index]
-                    proto = proto_out[bi]
-
-                    batch_lseg += self.single_mask_loss(mask_gti, psi, proto, mxyxy, mw, mh)
+                    batch_lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j])
 
                     # # update tobj
                     # iou = iou.detach().clamp(0).type(tobj.dtype)
