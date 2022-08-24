@@ -1,21 +1,22 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
-Validate a trained YOLOv5 model accuracy on a custom dataset
+Validate a trained YOLOv5 segment model on a segment dataset
 
 Usage:
-    $ python path/to/val.py --weights yolov5s.pt --data coco128.yaml --img 640
+    $ bash data/scripts/get_coco.sh --val --segments  # download COCO-segments val split (1G, 5000 images)
+    $ python segment/val.py --weights yolov5s-seg.pt --data coco.yaml --img 640-  # validate COCO-segments
 
 Usage - formats:
-    $ python path/to/val.py --weights yolov5s.pt                 # PyTorch
-                                      yolov5s.torchscript        # TorchScript
-                                      yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-                                      yolov5s.xml                # OpenVINO
-                                      yolov5s.engine             # TensorRT
-                                      yolov5s.mlmodel            # CoreML (macOS-only)
-                                      yolov5s_saved_model        # TensorFlow SavedModel
-                                      yolov5s.pb                 # TensorFlow GraphDef
-                                      yolov5s.tflite             # TensorFlow Lite
-                                      yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
+    $ python segment/val.py --weights yolov5s-seg.pt                 # PyTorch
+                                      yolov5s-seg.torchscript        # TorchScript
+                                      yolov5s-seg.onnx               # ONNX Runtime or OpenCV DNN with --dnn
+                                      yolov5s-seg.xml                # OpenVINO
+                                      yolov5s-seg.engine             # TensorRT
+                                      yolov5s-seg.mlmodel            # CoreML (macOS-only)
+                                      yolov5s-seg_saved_model        # TensorFlow SavedModel
+                                      yolov5s-seg.pb                 # TensorFlow GraphDef
+                                      yolov5s-seg.tflite             # TensorFlow Lite
+                                      yolov5s-seg_edgetpu.tflite     # TensorFlow Edge TPU
 """
 
 import argparse
@@ -478,7 +479,9 @@ def main(opt):
 
     if opt.task in ('train', 'val', 'test'):  # run normally
         if opt.conf_thres > 0.001:  # https://github.com/ultralytics/yolov5/issues/1466
-            LOGGER.info(emojis(f'WARNING: confidence threshold {opt.conf_thres} > 0.001 produces invalid results ⚠️'))
+            LOGGER.info(f'WARNING: confidence threshold {opt.conf_thres} > 0.001 produces invalid results ⚠️')
+        if opt.save_hybrid:
+            LOGGER.info('WARNING: --save-hybrid will return high mAP from hybrid labels, not from predictions alone ⚠️')
         run(**vars(opt))
 
     else:
