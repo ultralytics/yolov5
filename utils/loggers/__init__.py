@@ -304,6 +304,7 @@ def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
     except Exception:
         print('WARNING: TensorBoard graph visualization failure')
 
+
 def get_project_name(name):
     if not name.startswith("runs/"):
         return name
