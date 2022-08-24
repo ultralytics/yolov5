@@ -499,7 +499,7 @@ def train(hyp, opt, device):  # hyp is path/to/hyp.yaml or hyp dictionary
 
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='initial weights path')
+    parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s-seg.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
     parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.scratch-low.yaml', help='hyperparameters path')
@@ -522,7 +522,7 @@ def parse_opt(known=False):
     parser.add_argument('--optimizer', type=str, choices=['SGD', 'Adam', 'AdamW'], default='SGD', help='optimizer')
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
-    parser.add_argument('--project', default=ROOT / 'runs/train_segment', help='save to project/name')
+    parser.add_argument('--project', default=ROOT / 'runs/train-seg', help='save results to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--quad', action='store_true', help='quad dataloader')

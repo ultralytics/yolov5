@@ -445,7 +445,7 @@ def run(
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s-seg.pt', help='model.pt path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s-seg.pt', help='model path(s)')
     parser.add_argument('--batch-size', type=int, default=8, help='batch size')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=320, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
@@ -460,7 +460,7 @@ def parse_opt():
     parser.add_argument('--save-hybrid', action='store_true', help='save label+prediction hybrid results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-json', action='store_true', help='save a COCO-JSON results file')
-    parser.add_argument('--project', default=ROOT / 'runs/val', help='save to project/name')
+    parser.add_argument('--project', default=ROOT / 'runs/val-seg', help='save results to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
