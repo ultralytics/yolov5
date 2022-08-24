@@ -159,7 +159,7 @@ def run(
         save_hybrid=False,  # save label+prediction hybrid results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
         save_json=False,  # save a COCO-JSON results file
-        project=ROOT / 'runs/val',  # save to project/name
+        project=ROOT / 'runs/val-seg',  # save to project/name
         name='exp',  # save to project/name
         exist_ok=False,  # existing project/name ok, do not increment
         half=True,  # use FP16 half-precision inference
@@ -444,10 +444,10 @@ def run(
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
+    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128-seg.yaml', help='dataset.yaml path')
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s-seg.pt', help='model path(s)')
-    parser.add_argument('--batch-size', type=int, default=8, help='batch size')
-    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=320, help='inference size (pixels)')
+    parser.add_argument('--batch-size', type=int, default=32, help='batch size')
+    parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.6, help='NMS IoU threshold')
     parser.add_argument('--task', default='val', help='train, val, test, speed or study')
