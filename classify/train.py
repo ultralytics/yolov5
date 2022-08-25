@@ -58,6 +58,14 @@ def train(opt, device):
         opt.save_dir, Path(opt.data), opt.batch_size, opt.epochs, min(os.cpu_count() - 1, opt.workers), \
         opt.imgsz, str(opt.pretrained).lower() == 'true'
     cuda = device.type != 'cpu'
+    
+    ### check device half start ###
+    is_bf16_supported = False
+    half = False
+    if torch.cuda.is_available():
+        is_bf16_supported = torch.cuda.get_device_properties(torch.cuda.current_device()).major >= 8
+    half &= device.type != 'cpu' and is_bf16_supported  # half precision only supported on CUDA
+    ### check device half end ###
 
     # Directories
     wdir = save_dir / 'weights'
@@ -257,7 +265,9 @@ def train(opt, device):
 
         # Plot examples
         images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
-        pred = torch.max(ema.ema(images.to(device)), 1)[1]
+        # pred = torch.max(ema.ema(images.to(device)), 1)[1]
+        ### device half check
+        pred = torch.max(ema.ema((images.half() if half else images.float()).to(device)), 1)[1]
         file = imshow_cls(images, labels, pred, model.names, verbose=False, f=save_dir / 'test_images.jpg')
 
         # Log results
