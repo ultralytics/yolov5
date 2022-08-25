@@ -18,10 +18,11 @@ from utils.metrics import ConfusionMatrix, box_iou
 
 logger = logging.getLogger(__name__)
 
-COMET_PREFIX = "comet://"
-
 # Project Configuration
-COMET_PROJECT_NAME = os.getenv("COMET_PROJECT_NAME", "yolov5")
+config = comet_ml.config.get_config()
+COMET_PROJECT_NAME = config.get_string(
+    os.getenv("COMET_PROJECT_NAME"), "comet.project_name", default="yolov5"
+)
 COMET_MODE = os.getenv("COMET_MODE", "online")
 
 # Model Saving Settings
