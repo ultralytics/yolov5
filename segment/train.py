@@ -40,6 +40,7 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import torch.nn.functional as F
+
 import segment.val as validate  # for end-of-epoch mAP
 from models.experimental import attempt_load
 from models.yolo import Model
@@ -52,11 +53,11 @@ from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_g
                            init_seeds, intersect_dicts, labels_to_class_weights, labels_to_image_weights, one_cycle,
                            print_args, print_mutation, strip_optimizer, yaml_save)
 from utils.loggers import GenericLogger
+from utils.plots import plot_evolve, plot_labels
 from utils.segment.dataloaders import create_dataloader
 from utils.segment.loss import ComputeLoss
-from utils.segment.metrics import fitness, KEYS
+from utils.segment.metrics import KEYS, fitness
 from utils.segment.plots import plot_images_and_masks, plot_results_with_masks
-from utils.plots import plot_evolve, plot_labels
 from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, smart_DDP, smart_optimizer,
                                smart_resume, torch_distributed_zero_first)
 
