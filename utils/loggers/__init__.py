@@ -251,9 +251,10 @@ class Loggers():
 
         if self.mlflow:
             # log stuff
-            self.mlflow.log_artifacts(last.parent)
             [self.mlflow.log_artifacts(f, "results") for f in files if f.exists()]
             self.mlflow.log_artifacts(self.save_dir / "results.csv", "results")
+            if last.exists():
+                self.mlflow.log_model(model_path=last, model_name=f"{self.mlflow.model_name}/last/{epoch}")
             if best.exists():
                 self.mlflow.log_model(model_path=best, model_name=f"{self.mlflow.model_name}/best")
             self.mlflow.finish_run()
