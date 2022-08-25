@@ -81,17 +81,29 @@ def save_one_json(predn, jdict, path, class_map, pred_masks):
             'segmentation': rles[i]})
 
 
-def process_batch(detections, labels, iouv):
+def process_batch(detections, labels, iouv, pred_masks=None, gt_masks=None, overlap=False, masks=False):
     """
-    Return correct predictions matrix. Both sets of boxes are in (x1, y1, x2, y2) format.
+    Return correct prediction matrix
     Arguments:
-        detections (Array[N, 6]), x1, y1, x2, y2, conf, class
-        labels (Array[M, 5]), class, x1, y1, x2, y2
+        detections (array[N, 6]), x1, y1, x2, y2, conf, class
+        labels (array[M, 5]), class, x1, y1, x2, y2
     Returns:
-        correct (Array[N, 10]), for 10 IoU levels
+        correct (array[N, 10]), for 10 IoU levels
     """
-    correct = np.zeros((detections.shape[0], iouv.shape[0])).astype(bool)
-    iou = box_iou(labels[:, 1:], detections[:, :4])
+    if masks:
+        if overlap:
+            nl = len(labels)
+            index = torch.arange(nl, device=gt_masks.device).view(nl, 1, 1) + 1
+            gt_masks = gt_masks.repeat(nl, 1, 1)  # shape(1,640,640) -> (n,640,640)
+            gt_masks = torch.where(gt_masks == index, 1.0, 0.0)
+        if gt_masks.shape[1:] != pred_masks.shape[1:]:
+            gt_masks = F.interpolate(gt_masks[None], pred_masks.shape[1:], mode="bilinear", align_corners=False)[0]
+            gt_masks = gt_masks.gt_(0.5)
+        iou = mask_iou(gt_masks.view(gt_masks.shape[0], -1), pred_masks.view(pred_masks.shape[0], -1))
+    else:  # boxes
+        iou = box_iou(labels[:, 1:], detections[:, :4])
+
+    correct = torch.zeros(detections.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
     correct_class = labels[:, 0:1] == detections[:, 5]
     for i in range(len(iouv)):
         x = torch.where((iou >= iouv[i]) & correct_class)  # IoU > threshold and classes match
@@ -103,32 +115,6 @@ def process_batch(detections, labels, iouv):
                 # matches = matches[matches[:, 2].argsort()[::-1]]
                 matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
             correct[matches[:, 1].astype(int), i] = True
-    return torch.tensor(correct, dtype=torch.bool, device=iouv.device)
-
-
-def process_batch_masks(predn, pred_masks, gt_masks, labels, iouv, overlap):
-    correct = torch.zeros(predn.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
-    # convert masks (1, 640, 640) -> (n, 640, 640)
-    if overlap:
-        nl = len(labels)
-        index = torch.arange(nl, device=gt_masks.device).view(nl, 1, 1) + 1
-        gt_masks = gt_masks.repeat(nl, 1, 1)
-        gt_masks = torch.where(gt_masks == index, 1.0, 0.0)
-
-    if gt_masks.shape[1:] != pred_masks.shape[1:]:
-        gt_masks = F.interpolate(gt_masks[None], pred_masks.shape[1:], mode="bilinear", align_corners=False)[0].gt_(0.5)
-
-    iou = mask_iou(gt_masks.view(gt_masks.shape[0], -1), pred_masks.view(pred_masks.shape[0], -1))
-    x = torch.where((iou >= iouv[0]) & (labels[:, 0:1] == predn[:, 5]))  # IoU above threshold and classes match
-    if x[0].shape[0]:
-        matches = (torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy())  # [label, detection, iou]
-        if x[0].shape[0] > 1:
-            matches = matches[matches[:, 2].argsort()[::-1]]
-            matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
-            # matches = matches[matches[:, 2].argsort()[::-1]]
-            matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
-        matches = torch.Tensor(matches).to(iouv.device)
-        correct[matches[:, 1].long()] = matches[:, 2:3] >= iouv
     return correct
 
 
@@ -313,7 +299,7 @@ def run(
                 scale_coords(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
                 correct_bboxes = process_batch(predn, labelsn, iouv)
-                correct_masks = process_batch_masks(predn, pred_masks, gt_masks, labelsn, iouv, overlap=overlap)
+                correct_masks = process_batch(predn, labelsn, iouv, pred_masks, gt_masks, overlap=overlap, masks=True)
                 if plots:
                     confusion_matrix.process_batch(predn, labelsn)
             stats.append((correct_masks, correct_bboxes, pred[:, 4], pred[:, 5], labels[:, 0]))  # (conf, pcls, tcls)
