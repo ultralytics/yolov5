@@ -136,7 +136,7 @@ def run(
             # Write results
             if save_img or view_img:  # Add bbox to image
                 text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
-                annotator.text((64, 64), text, txt_color=(255, 255, 255))
+                annotator.text((32, 32), text, txt_color=(255, 255, 255))
 
             # Stream results
             im0 = annotator.result()
