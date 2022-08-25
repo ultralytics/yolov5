@@ -344,4 +344,5 @@ def classify_albumentations(augment=True,
 
 def classify_transforms(size=224):
     # Transforms to apply if albumentations not installed
+    assert isinstance(size, int), f'ERROR: classify_transforms size {size} must be integer, not (list, tuple)'
     return T.Compose([T.ToTensor(), T.Resize(size), T.CenterCrop(size), T.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
