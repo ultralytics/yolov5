@@ -102,7 +102,7 @@ def scale_masks(img1_shape, masks, img0_shape, ratio_pad=None):
     return masks
 
 
-def mask_iou(mask1, mask2):
+def mask_iou(mask1, mask2, eps=1e-7):
     """
     mask1: [N, n] m1 means number of predicted objects
     mask2: [M, n] m2 means number of gt objects
@@ -110,17 +110,12 @@ def mask_iou(mask1, mask2):
 
     return: masks iou, [N, M]
     """
-    # print(mask1.shape)
-    # print(mask2.shape)
     intersection = torch.matmul(mask1, mask2.t()).clamp(0)
-    area1 = torch.sum(mask1, dim=1).view(1, -1)
-    area2 = torch.sum(mask2, dim=1).view(1, -1)
-    union = (area1.t() + area2) - intersection
-
-    return intersection / (union + 1e-7)
+    union = (mask1.sum(1)[:, None] + mask2.sum(1)[None]) - intersection  # (area1 + area2) - intersection
+    return intersection / (union + eps)
 
 
-def masks_iou(mask1, mask2):
+def masks_iou(mask1, mask2, eps=1e-7):
     """
     mask1: [N, n] m1 means number of predicted objects
     mask2: [N, n] m2 means number of gt objects
@@ -129,7 +124,5 @@ def masks_iou(mask1, mask2):
     return: masks iou, (N, )
     """
     intersection = (mask1 * mask2).sum(1).clamp(0)  # (N, )
-    area1 = torch.sum(mask1, dim=1).view(1, -1)
-    area2 = torch.sum(mask2, dim=1).view(1, -1)
-    union = (area1 + area2) - intersection
-    return intersection / (union + 1e-7)
+    union = (mask1.sum(1) + mask2.sum(1))[None] - intersection  # (area1 + area2) - intersection
+    return intersection / (union + eps)
