@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 import torch
 
-from ..general import threaded, xywh2xyxy
+from .. import threaded
+from ..general import xywh2xyxy
 from ..plots import Annotator, colors
 
 
