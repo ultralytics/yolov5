@@ -14,6 +14,7 @@ torchvision>=0.8.1
 tqdm>=4.64.0
 protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
 albumentations>=1.0.3
+schema
 
 # Logging -------------------------------------
 tensorboard>=2.4.1
