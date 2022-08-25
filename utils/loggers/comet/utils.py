@@ -1,5 +1,6 @@
 import logging
 import os
+from urllib.parse import urlparse
 
 try:
     import comet_ml
@@ -114,7 +115,8 @@ def check_comet_weights(opt):
     if isinstance(opt.weights, str):
         if opt.weights.startswith(COMET_PREFIX):
             api = comet_ml.API()
-            experiment_path = opt.weights.replace(COMET_PREFIX, "")
+            resource = urlparse(opt.weights)
+            experiment_path = f"{resource.netloc}{resource.path}"
             experiment = api.get(experiment_path)
             download_model_checkpoint(opt, experiment)
             return True
@@ -140,7 +142,8 @@ def check_comet_resume(opt):
     if isinstance(opt.resume, str):
         if opt.resume.startswith(COMET_PREFIX):
             api = comet_ml.API()
-            experiment_path = opt.resume.replace(COMET_PREFIX, "")
+            resource = urlparse(opt.resume)
+            experiment_path = f"{resource.netloc}{resource.path}"
             experiment = api.get(experiment_path)
             set_opt_parameters(opt, experiment)
             download_model_checkpoint(opt, experiment)
