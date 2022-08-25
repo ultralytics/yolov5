@@ -58,7 +58,7 @@ def train(opt, device):
         opt.save_dir, Path(opt.data), opt.batch_size, opt.epochs, min(os.cpu_count() - 1, opt.workers), \
         opt.imgsz, str(opt.pretrained).lower() == 'true'
     cuda = device.type != 'cpu'
-    
+
     ### check device half start ###
     is_bf16_supported = False
     half = False
