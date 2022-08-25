@@ -151,8 +151,8 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path('runs/detec
 
             LOGGER.info(f'Saving {f}... ({n}/{channels})')
             plt.title('Features')
-            plt.savefig(f, dpi=300, bbox_inches='tight')
-            plt.close()
+            fig.savefig(f, dpi=300, bbox_inches='tight')
+            fig.close()
             np.save(str(f.with_suffix('.npy')), x[0].cpu().numpy())  # npy save
 
 
@@ -274,12 +274,12 @@ def plot_val_txt():  # from utils.plots import *; plot_val()
     fig, ax = plt.subplots(1, 1, figsize=(6, 6), tight_layout=True)
     ax.hist2d(cx, cy, bins=600, cmax=10, cmin=0)
     ax.set_aspect('equal')
-    plt.savefig('hist2d.png', dpi=300)
+    fig.savefig('hist2d.png', dpi=300)
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 6), tight_layout=True)
     ax[0].hist(cx, bins=600)
     ax[1].hist(cy, bins=600)
-    plt.savefig('hist1d.png', dpi=200)
+    fig.savefig('hist1d.png', dpi=200)
 
 
 def plot_targets_txt():  # from utils.plots import *; plot_targets_txt()
@@ -292,7 +292,7 @@ def plot_targets_txt():  # from utils.plots import *; plot_targets_txt()
         ax[i].hist(x[i], bins=100, label=f'{x[i].mean():.3g} +/- {x[i].std():.3g}')
         ax[i].legend()
         ax[i].set_title(s[i])
-    plt.savefig('targets.jpg', dpi=200)
+    fig.savefig('targets.jpg', dpi=200)
 
 
 def plot_val_study(file='', dir='', x=None):  # from utils.plots import *; plot_val_study()
@@ -404,8 +404,8 @@ def imshow_cls(im, labels=None, pred=None, names=None, nmax=25, verbose=False, f
         if labels is not None:
             s = names[labels[i]] + (f'—{names[pred[i]]}' if pred is not None else '')
             ax[i].set_title(s, fontsize=8, verticalalignment='top')
-    plt.savefig(f, dpi=300, bbox_inches='tight')
-    plt.close()
+    fig.savefig(f, dpi=300, bbox_inches='tight')
+    fig.close()
     if verbose:
         LOGGER.info(f"Saving {f}")
         if labels is not None:
@@ -465,7 +465,7 @@ def plot_results(file='path/to/results.csv', dir=''):
             LOGGER.info(f'Warning: Plotting error for {f}: {e}')
     ax[1].legend()
     fig.savefig(save_dir / 'results.png', dpi=200)
-    plt.close()
+    fig.close()
 
 
 def profile_idetection(start=0, stop=0, labels=(), save_dir=''):
