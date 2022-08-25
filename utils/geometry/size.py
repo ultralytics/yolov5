@@ -16,7 +16,7 @@ class Size(np.ndarray):
     # ############################
 
     def __repr__(self):
-        return "<{} w:{!r} h:{!r}>".format(self.__class__.__name__, self.w, self.h)
+        return f"<{self.__class__.__name__} w:{self.w!r} h:{self.h!r}>"
 
     # ############################
 
@@ -27,6 +27,7 @@ class Size(np.ndarray):
     @property
     def h(self):
         return self[1]
+
     # ############################
 
     @w.setter
@@ -36,6 +37,7 @@ class Size(np.ndarray):
     @h.setter
     def h(self, value):
         self[1] = value
+
     # ############################
 
     @property
