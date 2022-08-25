@@ -1,5 +1,5 @@
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 from itertools import chain
 # #####################################
@@ -11,8 +11,8 @@ from .ItemInfo import ValidItem, InvalidItem
 class InL_Data:
     stats:          Counter
     label_stats:    Counter
-    valid_items:    List[ValidItem]
-    invalid_items:  List[InvalidItem]
+    valid_items:    List[ValidItem] = field(repr=False)
+    invalid_items:  List[InvalidItem] = field(repr=False)
     # #####################################
 
     @property
@@ -33,6 +33,11 @@ class InL_Data:
     @property
     def labels(self):
         return list(chain([i.boxes for i in self.valid_items]))
+    # #####################################
+
+    @property
+    def shapes(self):
+        return list([i.shape for i in self.valid_items])
     # #####################################
 
     def __len__(self) -> int:           

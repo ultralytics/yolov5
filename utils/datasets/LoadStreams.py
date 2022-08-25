@@ -6,7 +6,7 @@ from threading import Thread
 import time
 # #####################################
 from utils.general import clean_str, check_requirements, NUM_THREADS, LOGGER
-from utils.augmentations import letterbox
+from .utils import letterbox
 # #####################################
 
 class LoadStreams:

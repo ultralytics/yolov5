@@ -1,6 +1,6 @@
 import numpy as np, cv2
 # #####################################
-from utils.augmentations import letterbox
+from .utils import letterbox
 # #####################################
 
 
