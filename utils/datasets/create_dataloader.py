@@ -1,21 +1,37 @@
-from codecs import ignore_errors
-import torch
 import os
+from codecs import ignore_errors
+
+import torch
 from torch.utils.data import DataLoader, distributed
+
 # #####################################
 from utils.general import LOGGER
 from utils.torch_utils import torch_distributed_zero_first
-from .LoadImagesAndLabels import LoadImagesAndLabels
+
+from .collate_fns import collate_fn, collate_fn4
 from .InfiniteDataLoader import InfiniteDataLoader
-from .collate_fns import collate_fn4, collate_fn
+from .LoadImagesAndLabels import LoadImagesAndLabels
+
 # #####################################
 
 
-def create_dataloader(path, imgsz, batch_size, stride, 
-    single_cls=False, hyp=None, augment=False, 
-    pad=0.0, rect=False, rank=-1, workers=8, image_weights=False, 
-    quad=False, prefix='', shuffle=False, ignore_cache: bool=False,
-    cache_mode: str='none'):
+def create_dataloader(path,
+                      imgsz,
+                      batch_size,
+                      stride,
+                      single_cls=False,
+                      hyp=None,
+                      augment=False,
+                      pad=0.0,
+                      rect=False,
+                      rank=-1,
+                      workers=8,
+                      image_weights=False,
+                      quad=False,
+                      prefix='',
+                      shuffle=False,
+                      ignore_cache: bool = False,
+                      cache_mode: str = 'none'):
     """
         rect: use rectangular training
         quad: use quad dataloader
@@ -26,10 +42,10 @@ def create_dataloader(path, imgsz, batch_size, stride,
         shuffle = False
 
     # init dataset *.cache only once if DDP
-    with torch_distributed_zero_first(rank):  
+    with torch_distributed_zero_first(rank):
         dataset = LoadImagesAndLabels(
-            path=path, 
-            img_size=imgsz, 
+            path=path,
+            img_size=imgsz,
             batch_size=batch_size,
             augment=augment,  # augmentation
             hyp=hyp,  # hyperparameters
@@ -41,7 +57,7 @@ def create_dataloader(path, imgsz, batch_size, stride,
             prefix=prefix,
             ignore_cache=ignore_cache,
             cache_mode=cache_mode,
-            )
+        )
 
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()  # number of CUDA devices

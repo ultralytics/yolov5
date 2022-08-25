@@ -1,10 +1,13 @@
-from pathlib import Path
 import os
 from glob import glob
-import numpy as np, cv2
+from pathlib import Path
+
+import cv2
+import numpy as np
+
 # #####################################
-from .utils import IMG_FORMATS, VID_FORMATS
-from .utils import letterbox
+from .utils import IMG_FORMATS, VID_FORMATS, letterbox
+
 # #####################################
 
 

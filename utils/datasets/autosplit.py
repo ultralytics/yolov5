@@ -1,10 +1,15 @@
-from pathlib import Path
 import random
+from pathlib import Path
+
 from tqdm import tqdm
+
 # #####################################
 from utils.general import DATASETS_DIR
-from .utils import img2label_paths, IMG_FORMATS
+
+from .utils import IMG_FORMATS, img2label_paths
+
 # #####################################
+
 
 def autosplit(path=DATASETS_DIR / 'coco128/images', weights=(0.9, 0.1, 0.0), annotated_only=False):
     """ Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
@@ -28,4 +33,3 @@ def autosplit(path=DATASETS_DIR / 'coco128/images', weights=(0.9, 0.1, 0.0), ann
         if not annotated_only or Path(img2label_paths([str(img)])[0]).exists():  # check label
             with open(path.parent / txt[i], 'a') as f:
                 f.write('./' + img.relative_to(path.parent).as_posix() + '\n')  # add image to txt file
-

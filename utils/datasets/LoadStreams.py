@@ -1,13 +1,19 @@
-import os
-from urllib.parse import urlparse
-import numpy as np, cv2
 import math
-from threading import Thread
+import os
 import time
+from threading import Thread
+from urllib.parse import urlparse
+
+import cv2
+import numpy as np
+
 # #####################################
-from utils.general import clean_str, check_requirements, NUM_THREADS, LOGGER
+from utils.general import LOGGER, NUM_THREADS, check_requirements, clean_str
+
 from .utils import letterbox
+
 # #####################################
+
 
 class LoadStreams:
     # YOLOv5 streamloader, i.e. `python detect.py --source 'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP streams`
@@ -54,7 +60,6 @@ class LoadStreams:
         if not self.rect:
             LOGGER.warning('WARNING: Stream shapes differ. For optimal performance supply similarly-shaped streams.')
 
-
     def update(self, i, cap, stream):
         # Read stream `i` frames in daemon thread
         n, f, read = 0, self.frames[i], 1  # frame number, frame array, inference every 'read' frame
@@ -97,4 +102,3 @@ class LoadStreams:
 
     def __len__(self):
         return len(self.sources)  # 1E12 frames = 32 streams at 30 FPS for 30 years
-

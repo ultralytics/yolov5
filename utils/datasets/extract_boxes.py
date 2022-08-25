@@ -1,10 +1,15 @@
-from pathlib import Path
 import shutil
+from pathlib import Path
+
+import cv2
+import numpy as np
 from tqdm import tqdm
-import numpy as np, cv2
+
 # #####################################
 from utils.general import DATASETS_DIR, xywh2xyxy
-from .utils import img2label_paths, IMG_FORMATS
+
+from .utils import IMG_FORMATS, img2label_paths
+
 # #####################################
 
 

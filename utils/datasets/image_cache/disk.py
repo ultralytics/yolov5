@@ -1,8 +1,13 @@
-import numpy as np, cv2
 from pathlib import Path
+
+import cv2
+import numpy as np
+
 # #####################################
 from .base import ImageCacheBase
+
 # #####################################
+
 
 class ImageCacheDisk(ImageCacheBase):
     """ Cache images on disk as pickle files.
@@ -14,12 +19,14 @@ class ImageCacheDisk(ImageCacheBase):
     def __init__(self):
         ImageCacheBase.__init__(self)
         self.cache_ = {}
-    # #####################################        
+
+    # #####################################
 
     def clear(self):
         ImageCacheBase.clear(self)
         self.cache_ = {}
-    # #####################################        
+
+    # #####################################
 
     def cache_item(self, img_path: str):
         cache_path = Path(img_path).with_suffix(self.SUFFIX)
@@ -30,11 +37,12 @@ class ImageCacheDisk(ImageCacheBase):
             np.save(cache_path.as_posix(), frame)
 
         self.size.disk += cache_path.stat().st_size
+
     # #####################################
 
     def __getitem__(self, img_path: str) -> np.ndarray:
         cache_path = self.cache_[img_path]
         frame = np.load(cache_path.as_posix())
         return frame
-    # #####################################
 
+    # #####################################

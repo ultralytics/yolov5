@@ -1,12 +1,7 @@
-from .cache_size import CacheSize
 from .base import ImageCacheBase
+from .cache_size import CacheSize
 from .disk import ImageCacheDisk
-from .ram import ImageCacheRAM
 from .none import ImageCacheNone
+from .ram import ImageCacheRAM
 
-
-CACHE_MODES = {
-    'none':     ImageCacheNone,
-    'disk':     ImageCacheDisk,
-    'ram':      ImageCacheRAM
-}
+CACHE_MODES = {'none': ImageCacheNone, 'disk': ImageCacheDisk, 'ram': ImageCacheRAM}

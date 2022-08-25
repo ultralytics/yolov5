@@ -1,16 +1,22 @@
+import json
+import time
+from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from zipfile import ZipFile
-from PIL import Image
-import numpy as np, cv2
+
+import cv2
+import numpy as np
 import yaml
+from PIL import Image
 from tqdm import tqdm
-from multiprocessing.pool import ThreadPool
-import time
-import json
+
 # #####################################
-from utils.general import check_yaml, check_dataset, NUM_THREADS
+from utils.general import NUM_THREADS, check_dataset, check_yaml
+
 from .LoadImagesAndLabels import LoadImagesAndLabels
+
 # #####################################
+
 
 def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profile=False, hub=False):
     """ Return dataset statistics dictionary with images and instances counts per split per class
@@ -72,11 +78,16 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
         for label in tqdm(dataset.labels, total=dataset.n, desc='Statistics'):
             x.append(np.bincount(label[:, 0].astype(int), minlength=data['nc']))
         x = np.array(x)  # shape(128x80)
-        stats[split] = {'instance_stats': {'total': int(x.sum()), 'per_class': x.sum(0).tolist()},
-                        'image_stats': {'total': dataset.n, 'unlabelled': int(np.all(x == 0, 1).sum()),
-                                        'per_class': (x > 0).sum(0).tolist()},
-                        'labels': [{str(Path(k).name): round_labels(v.tolist())} for k, v in
-                                   zip(dataset.im_files, dataset.labels)]}
+        stats[split] = {
+            'instance_stats': {
+                'total': int(x.sum()),
+                'per_class': x.sum(0).tolist()},
+            'image_stats': {
+                'total': dataset.n,
+                'unlabelled': int(np.all(x == 0, 1).sum()),
+                'per_class': (x > 0).sum(0).tolist()},
+            'labels': [{
+                str(Path(k).name): round_labels(v.tolist())} for k, v in zip(dataset.im_files, dataset.labels)]}
 
         if hub:
             im_dir = hub_dir / 'images'

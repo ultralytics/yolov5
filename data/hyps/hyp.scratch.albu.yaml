@@ -23,10 +23,10 @@ transform:
   mosaic:     0.5   # per-sample probability of using 2x2 mosaic (only for train)
   mixup:      0.0   # per-sample probability of using mixup transform (only for train)
   copy_paste: 0.0   # per-sample probability of using copy_paste transform (only for train)
-  
+
   transforms:       # list of transforms with their kwargs
                     # MUST NOT change image shape
-    
+
     # Cutout Augmentation https://arxiv.org/abs/1708.04552
     - name: "Cutout"
       module: "utils.transforms.cutout"
@@ -40,7 +40,7 @@ transform:
           - 0.01
           - 0.10
         max_ioa:    0.3
-        fill_value: 
+        fill_value:
           - 0
           - 255
     # Geometrical Augmentations
@@ -56,7 +56,7 @@ transform:
           - 114
           - 114
           - 114
-        scale: 
+        scale:
           - 0.5
           - 2.0
         translate_percent:

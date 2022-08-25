@@ -1,14 +1,20 @@
-import torch.nn.functional as F
-import torch
 import random
+
+import torch
+import torch.nn.functional as F
+
 # #####################################
+
 
 def collate_fn(batch):
     im, label, path, shapes = zip(*batch)  # transposed
     for i, lb in enumerate(label):
         lb[:, 0] = i  # add target image index for build_targets()
     return torch.stack(im, 0), torch.cat(label, 0), path, shapes
+
+
 # #####################################
+
 
 def collate_fn4(batch):
     img, label, path, shapes = zip(*batch)  # transposed
@@ -21,8 +27,8 @@ def collate_fn4(batch):
     for i in range(n):  # zidane torch.zeros(16,3,720,1280)  # BCHW
         i *= 4
         if random.random() < 0.5:
-            im = F.interpolate(img[i].unsqueeze(0).float(), scale_factor=2.0, mode='bilinear', align_corners=False)[
-                0].type(img[i].type())
+            im = F.interpolate(img[i].unsqueeze(0).float(), scale_factor=2.0, mode='bilinear',
+                               align_corners=False)[0].type(img[i].type())
             lb = label[i]
         else:
             im = torch.cat((torch.cat((img[i], img[i + 1]), 1), torch.cat((img[i + 2], img[i + 3]), 1)), 2)
@@ -34,4 +40,6 @@ def collate_fn4(batch):
         lb[:, 0] = i  # add target image index for build_targets()
 
     return torch.stack(im4, 0), torch.cat(label4, 0), path4, shapes4
+
+
 # #####################################
