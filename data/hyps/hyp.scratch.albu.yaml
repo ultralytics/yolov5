@@ -20,24 +20,24 @@ anchor_t:         4.0     # anchor-multiple threshold
 fl_gamma:         0.0     # focal loss gamma (efficientDet default gamma=1.5)
 
 transform:
-  mosaic:     1.0   # per-sample probability of using 2x2 mosaic (only for train)
-  mixup:      1.0   # per-sample probability of using mixup transform (only for train)
-  copy_paste: 1.0   # per-sample probability of using copy_paste transform (only for train)
+  mosaic:     0.5   # per-sample probability of using 2x2 mosaic (only for train)
+  mixup:      0.0   # per-sample probability of using mixup transform (only for train)
+  copy_paste: 0.0   # per-sample probability of using copy_paste transform (only for train)
   
-  transforms:       # list of Albumentations transforms with their kwargs
+  transforms:       # list of transforms with their kwargs
                     # MUST NOT change image shape
     
-    # Cutout Augmentations https://arxiv.org/abs/1708.04552
+    # Cutout Augmentation https://arxiv.org/abs/1708.04552
     - name: "Cutout"
       module: "utils.transforms.cutout"
-      p: 1.0
+      p: 0.3
       kwargs:
-        num_holes:  8
+        num_holes:  4
         h_size:
-          - 0.0
+          - 0.01
           - 0.10
         w_size:
-          - 0.0
+          - 0.01
           - 0.10
         max_ioa:    0.3
         fill_value: 
@@ -45,7 +45,7 @@ transform:
           - 255
     # Geometrical Augmentations
     - name: "VerticalFlip"
-      p: 0.0
+      p: 0.2
     - name: "HorizontalFlip"
       p: 0.5
     - name: "Affine"
@@ -63,8 +63,8 @@ transform:
           - -0.1
           - 0.1
         rotate: # degrees
-          - -20
-          - 20
+          - -45
+          - 45
         shear: # degrees
           - -20
           - 20
@@ -79,4 +79,4 @@ transform:
     - name: "ImageCompression"
       p: 0.1
     - name: "ToGray"
-      p: 0.5
+      p: 0.3

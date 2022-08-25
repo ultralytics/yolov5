@@ -112,6 +112,10 @@ class LoadImagesAndLabels(Dataset):
             self.batch_shapes = None
         # store internaly
         self.data: InL_Data = data
+        # get labels
+        self.labels = self.data.labels
+        # get shapes
+        self.shapes = np.vstack(self.data.shapes)
         # build augment transforms from hyp config
         if self.augment:
             self.augment_transforms = self.build_augment_transforms(hyp)

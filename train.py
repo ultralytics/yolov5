@@ -225,7 +225,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                               single_cls,
                                               hyp=hyp,
                                               augment=True,
-                                              cache=None if opt.cache == 'val' else opt.cache,
+                                              cache_mode=opt.cache,
                                               rect=opt.rect,
                                               rank=LOCAL_RANK,
                                               workers=workers,
@@ -233,7 +233,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                               quad=opt.quad,
                                               prefix=colorstr('train: '),
                                               shuffle=True)
-    mlc = int(np.concatenate(dataset.labels, 0)[:, 0].max())  # max label class
+
+    mlc = max(dataset.data.label_stats.keys())
     nb = len(train_loader)  # number of batches
     assert mlc < nc, f'Label class {mlc} exceeds nc={nc} in {data}. Possible class labels are 0-{nc - 1}'
 
@@ -245,7 +246,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                        gs,
                                        single_cls,
                                        hyp=hyp,
-                                       cache=None if noval else opt.cache,
+                                       cache_mode=opt.cache,
                                        rect=True,
                                        rank=-1,
                                        workers=workers * 2,
@@ -488,7 +489,7 @@ def parse_opt(known=False):
     parser.add_argument('--noautoanchor', action='store_true', help='disable AutoAnchor')
     parser.add_argument('--evolve', type=int, nargs='?', const=300, help='evolve hyperparameters for x generations')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
-    parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
+    parser.add_argument('--cache', type=str, choices={'none', 'ram', 'disk'}, default='none', help='--cache images in "none" (default), "ram" or "disk"')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%%')
