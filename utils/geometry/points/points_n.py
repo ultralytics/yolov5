@@ -27,6 +27,7 @@ class Points_n(np.ndarray):
     @property
     def Y(self):
         return self[1]
+
     # ############################
 
     @X.setter

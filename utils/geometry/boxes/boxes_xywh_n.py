@@ -40,6 +40,7 @@ class Boxes_xywh_n(np.ndarray):
     @property
     def H(self):
         return self[:, 3]
+
     # ############################
 
     @CX.setter
@@ -57,6 +58,7 @@ class Boxes_xywh_n(np.ndarray):
     @H.setter
     def H(self, value):
         self[:, 3] = value
+
     # ############################
 
     @property

@@ -16,7 +16,7 @@ class CacheSize:
     # #####################################
 
     def __str__(self) -> str:
-        return ', '.join(['{}: {}'.format(n, humanized(v)) for n, v in asdict(self).items()])
+        return ', '.join([f'{n}: {humanized(v)}' for n, v in asdict(self).items()])
 
     # #####################################
 
@@ -24,10 +24,10 @@ class CacheSize:
 def humanized(v: int, base: int = 1024, suffix='o') -> str:
     units = ['', 'k', 'M', 'G', 'T']
     for unit in units:
-        if v < base: 
+        if v < base:
             break
         v /= base
-    return '{:.1f}{}{}'.format(v, unit, suffix)
+    return f'{v:.1f}{unit}{suffix}'
 
 
 # #####################################

@@ -16,7 +16,7 @@ class Box_xywh_n(np.ndarray):
     # ############################
 
     def __repr__(self):
-        return "<{} cx:{!r} cy:{!r} w:{!r} h:{!r}>".format(self.__class__.__name__, self.cx, self.cy, self.w, self.h)
+        return f"<{self.__class__.__name__} cx:{self.cx!r} cy:{self.cy!r} w:{self.w!r} h:{self.h!r}>"
 
     # ############################
 
@@ -27,6 +27,7 @@ class Box_xywh_n(np.ndarray):
     @cx.setter
     def cx(self, value):
         self[0] = value
+
     # ############################
 
     @property
@@ -36,6 +37,7 @@ class Box_xywh_n(np.ndarray):
     @cy.setter
     def cy(self, value):
         self[1] = value
+
     # ############################
 
     @property
@@ -45,6 +47,7 @@ class Box_xywh_n(np.ndarray):
     @w.setter
     def w(self, value):
         self[2] = value
+
     # ############################
 
     @property
@@ -54,11 +57,13 @@ class Box_xywh_n(np.ndarray):
     @h.setter
     def h(self, value):
         self[3] = value
+
     # ############################
 
     @property
     def ar(self):
         return self.h / self.w
+
     # ############################
 
     @property

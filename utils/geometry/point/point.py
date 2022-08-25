@@ -16,7 +16,7 @@ class Point(np.ndarray):
     # ############################
 
     def __repr__(self):
-        return "<{} x:{!r} y:{!r}>".format(self.__class__.__name__, self.x, self.y)
+        return f"<{self.__class__.__name__} x:{self.x!r} y:{self.y!r}>"
 
     # ############################
 
@@ -27,6 +27,7 @@ class Point(np.ndarray):
     @x.setter
     def x(self, value):
         self[0] = int(value)
+
     # ############################
 
     @property

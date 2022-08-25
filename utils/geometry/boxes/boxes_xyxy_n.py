@@ -41,6 +41,7 @@ class Boxes_xyxy_n(np.ndarray):
     @property
     def Y1(self):
         return self[:, 3]
+
     # ############################
 
     @X0.setter
@@ -58,6 +59,7 @@ class Boxes_xyxy_n(np.ndarray):
     @Y1.setter
     def Y1(self, value):
         self[:, 3] = value
+
     # ############################
 
     @property

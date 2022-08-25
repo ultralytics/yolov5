@@ -104,10 +104,8 @@ class LoadImagesAndLabels(Dataset):
         # print loaded data information
         LOGGER.info(f'{prefix} Loaded %d files: %s' % (data.n_files, self.stats_to_str(data.stats)))
         LOGGER.info(f'{prefix} Found %d images' % data.n_images)
-        LOGGER.info(f'{prefix} Found %d labels: %s' % (
-            data.n_labels, 
-            ', '.join('%d:%d' % (lbl, n) for lbl, n in data.label_stats.items())
-        ))
+        LOGGER.info(f'{prefix} Found %d labels: %s' %
+                    (data.n_labels, ', '.join('%d:%d' % (lbl, n) for lbl, n in data.label_stats.items())))
         if len(data.invalid_items):
             LOGGER.info('\n'.join(map(lambda item: item.err_message, data.invalid_items)))
         # ensure any data available
@@ -171,13 +169,8 @@ class LoadImagesAndLabels(Dataset):
         # if bar_max < 1.0 -> [1, bar_max]
         # if bar_min > 1.0 -> [1 / bar_min, 1]
         # else             -> [1, 1]
-        shapes = np.array([
-            (1.0, ar_max) if (ar_max < 1.0) else 
-            (1.0 / ar_min, 1.0) if (ar_min > 1.0) else 
-            (1.0, 1.0)
-            for ar_min, ar_max
-            in zip(bar_min, bar_max)
-        ])
+        shapes = np.array([(1.0, ar_max) if (ar_max < 1.0) else (1.0 / ar_min, 1.0) if (ar_min > 1.0) else (1.0, 1.0)
+                           for ar_min, ar_max in zip(bar_min, bar_max)])
         shapes = cls.match_stride(shapes * img_size, stride)
 
         return shapes
