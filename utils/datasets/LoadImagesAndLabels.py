@@ -104,8 +104,10 @@ class LoadImagesAndLabels(Dataset):
         # print loaded data information
         LOGGER.info(f'{prefix} Loaded %d files: %s' % (data.n_files, self.stats_to_str(data.stats)))
         LOGGER.info(f'{prefix} Found %d images' % data.n_images)
-        LOGGER.info(f'{prefix} Found %d labels: %s' % (data.n_labels, ', '.join('%d:%d' % (l, n)
-                                                                                for l, n in data.label_stats.items())))
+        LOGGER.info(f'{prefix} Found %d labels: %s' % (
+            data.n_labels, 
+            ', '.join('%d:%d' % (lbl, n) for lbl, n in data.label_stats.items())
+        ))
         if len(data.invalid_items):
             LOGGER.info('\n'.join(map(lambda item: item.err_message, data.invalid_items)))
         # ensure any data available
@@ -170,8 +172,8 @@ class LoadImagesAndLabels(Dataset):
         # if bar_min > 1.0 -> [1 / bar_min, 1]
         # else             -> [1, 1]
         shapes = np.array([
-            (1.0, ar_max) if (ar_max < 1.0) else \
-            (1.0 / ar_min, 1.0) if (ar_min > 1.0) else \
+            (1.0, ar_max) if (ar_max < 1.0) else 
+            (1.0 / ar_min, 1.0) if (ar_min > 1.0) else 
             (1.0, 1.0)
             for ar_min, ar_max
             in zip(bar_min, bar_max)
@@ -369,12 +371,12 @@ class LoadImagesAndLabels(Dataset):
                 # load transform's python module (by default albumentations)
                 try:
                     module = import_module(trans['module'])
-                except:
+                except Exception:
                     raise Exception('Transform Module Not Found: %s' % trans['module'])
                 # load transform from this module
                 try:
                     Transform = getattr(module, trans['name'])
-                except:
+                except Exception:
                     raise Exception('Unknown Transform: "{}" @ {}'.format(trans['name'], trans['module']))
                 # try to use provided kwargs
                 try:
@@ -444,10 +446,10 @@ class LoadImagesAndLabels(Dataset):
         if self.augment:
             # if required, apply copy_paste transform
             if self.use_copy_paste():
-                raise NotImplemented  # TODO
+                raise NotImplementedError  # TODO
             # if required, apply mixup transform
             if self.use_mixup():
-                raise NotImplemented  # TODO
+                raise NotImplementedError  # TODO
 
         # ensure that boxes are on [0;1]
         boxes = boxes.to_xyxy_n().clip(0, 1).to_xywh_n()

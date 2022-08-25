@@ -35,12 +35,12 @@ class ImageCacheBase(ABC):
 
     @abstractmethod
     def cache_item(self, img_path: str):
-        raise NotImplemented
+        raise NotImplementedError
 
     # #####################################
 
     @abstractmethod
     def __getitem__(self, img_path: str) -> np.ndarray:
-        raise NotImplemented
+        raise NotImplementedError
 
     # #####################################

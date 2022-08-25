@@ -24,7 +24,8 @@ class CacheSize:
 def humanized(v: int, base: int = 1024, suffix='o') -> str:
     units = ['', 'k', 'M', 'G', 'T']
     for unit in units:
-        if v < base: break
+        if v < base: 
+            break
         v /= base
     return '{:.1f}{}{}'.format(v, unit, suffix)
 
