@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict
 
 import yaml
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[3]  # YOLOv5 root directory
@@ -43,6 +43,9 @@ def check_wandb_config_file(data_config_file):
 def check_wandb_dataset(data_file):
     is_trainset_wandb_artifact = False
     is_valset_wandb_artifact = False
+    if isinstance(data_file, dict):
+        # In that case another dataset manager has already processed it and we don't have to
+        return data_file
     if check_file(data_file) and data_file.endswith('.yaml'):
         with open(data_file, errors='ignore') as f:
             data_dict = yaml.safe_load(f)
@@ -121,7 +124,7 @@ class WandbLogger():
         """
         - Initialize WandbLogger instance
         - Upload dataset if opt.upload_dataset is True
-        - Setup trainig processes if job_type is 'Training'
+        - Setup training processes if job_type is 'Training'
 
         arguments:
         opt (namespace) -- Commandline arguments for this run
@@ -170,7 +173,11 @@ class WandbLogger():
                     if not opt.resume:
                         self.wandb_artifact_data_dict = self.check_and_upload_dataset(opt)
 
-                if opt.resume:
+                if isinstance(opt.data, dict):
+                    # This means another dataset manager has already processed the dataset info (e.g. ClearML)
+                    # and they will have stored the already processed dict in opt.data
+                    self.data_dict = opt.data
+                elif opt.resume:
                     # resume from artifact
                     if isinstance(opt.resume, str) and opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
                         self.data_dict = dict(self.wandb_run.config.data_dict)
@@ -250,8 +257,8 @@ class WandbLogger():
                 self.map_val_table_path()
         if opt.bbox_interval == -1:
             self.bbox_interval = opt.bbox_interval = (opt.epochs // 10) if opt.epochs > 10 else 1
-            if opt.evolve:
-                self.bbox_interval = opt.bbox_interval = opt.epochs + 1
+            if opt.evolve or opt.noplots:
+                self.bbox_interval = opt.bbox_interval = opt.epochs + 1  # disable bbox_interval
         train_from_artifact = self.train_artifact_path is not None and self.val_artifact_path is not None
         # Update the the data_dict to point to local artifacts dir
         if train_from_artifact:
