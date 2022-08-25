@@ -1,6 +1,7 @@
 import glob
 import logging
 import os
+from pathlib import Path
 
 try:
     import comet_ml
@@ -15,7 +16,7 @@ from utils.dataloaders import img2label_paths
 from utils.general import scale_coords, xywh2xyxy
 from utils.metrics import ConfusionMatrix, box_iou
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 COMET_PREFIX = "comet://"
 
@@ -208,7 +209,8 @@ class CometLogger:
                 )
 
             except ValueError as e:
-                LOGGER.warning(
+                logger.warning(
+                    "COMET WARNING: "
                     "Comet credentials have not been set. "
                     "Comet will default to offline logging. "
                     "Please set your credentials to enable online logging."
@@ -245,15 +247,24 @@ class CometLogger:
 
         if opt.comet_checkpoint_filename == "all":
             model_path = str(path)
-        else:
-            model_path = str(path) + f"/{opt.comet_checkpoint_filename}"
+            model_files = glob.glob(f"{path}/*.pt")
 
-        self.experiment.log_model(
-            self.model_name,
-            model_path,
-            metadata=model_metadata,
-            overwrite=self.overwrite_checkpoints,
-        )
+        else:
+            model_files = [str(path) + f"/{opt.comet_checkpoint_filename}"]
+
+        for model_path in model_files:
+            if not self.overwrite_checkpoints:
+                name = f"{Path(model_path).stem}_epoch_{epoch}.pt"
+            else:
+                name = Path(model_path).name
+
+            self.experiment.log_model(
+                self.model_name,
+                file_or_folder=model_path,
+                file_name=name,
+                metadata=model_metadata,
+                overwrite=self.overwrite_checkpoints,
+            )
 
     def log_predictions(self, image, labelsn, path, shape, predn):
         if self.logged_images_count >= self.max_images:
@@ -431,7 +442,7 @@ class CometLogger:
 
         return
 
-    def on_train_end(self, files, save_dir, epoch):
+    def on_train_end(self, files, save_dir, last, best, plots, epoch, results):
         if self.comet_log_predictions:
             curr_epoch = self.experiment.curr_epoch
             self.experiment.log_asset_data(
@@ -441,6 +452,21 @@ class CometLogger:
         for f in files:
             self.log_asset(f, metadata={"epoch": epoch})
         self.log_asset(f"{save_dir}/results.csv", metadata={"epoch": epoch})
+
+        if not self.opt.evolve:
+            model_path = str(best if best.exists() else last)
+            if not self.overwrite_checkpoints:
+                name = name = f"{Path(model_path).stem}_epoch_{epoch}.pt"
+            else:
+                name = Path(model_path).name
+
+            self.experiment.log_model(
+                self.model_name,
+                file_or_folder=model_path,
+                file_name=name,
+                overwrite=self.overwrite_checkpoints,
+            )
+
         self.finish_run()
 
     def on_val_start(self):

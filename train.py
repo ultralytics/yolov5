@@ -668,7 +668,7 @@ def parse_opt(known=False):
     parser.add_argument(
         "--comet_overwrite_checkpoints",
         action="store_true",
-        help="Comet: Overwrite exsiting model checkpoints.",
+        help="Comet: Overwrite existing model checkpoints.",
     )
     parser.add_argument(
         "--comet_checkpoint_filename",
@@ -678,7 +678,6 @@ def parse_opt(known=False):
         help=("Comet: Name of the checkpoint file to save to Comet."
               "Set to 'all' to log all checkpoints."),
     )
-    parser.add_argument("--comet_checkpoint_step", type=int)
     parser.add_argument(
         "--comet_log_batch_metrics",
         action="store_true",

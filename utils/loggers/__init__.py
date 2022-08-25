@@ -365,7 +365,9 @@ class Loggers:
                     model_path=str(best if best.exists() else last), name="Best Model"
                 )
         if self.comet_logger:
-            self.comet_logger.on_train_end(files, self.save_dir, epoch)
+            self.comet_logger.on_train_end(
+                files, self.save_dir, last, best, plots, epoch, results
+            )
 
     def on_params_update(self, params: dict):
         # Update hyperparams or configs of the experiment

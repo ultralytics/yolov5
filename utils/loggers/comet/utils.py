@@ -1,3 +1,4 @@
+import logging
 import os
 
 try:
@@ -6,6 +7,8 @@ except (ModuleNotFoundError, ImportError) as e:
     comet_ml = None
 
 import yaml
+
+logger = logging.getLogger(__name__)
 
 COMET_PREFIX = "comet://"
 COMET_MODEL_NAME = os.getenv("COMET_MODEL_NAME", "yolov5")
@@ -16,26 +19,37 @@ def download_model_checkpoint(opt, experiment):
     os.makedirs(model_dir, exist_ok=True)
 
     model_name = opt.comet_model_name if opt.comet_model_name else COMET_MODEL_NAME
+    model_asset_list = experiment.get_model_asset_list(model_name)
+
+    if len(model_asset_list) == 0:
+        logger.error(f"COMET ERROR: No checkpoints found for model name : {model_name}")
+        return
+
     model_asset_list = sorted(
-        experiment.get_model_asset_list(model_name),
+        model_asset_list,
         key=lambda x: x["step"],
         reverse=True,
     )
-    checkpoint_step = (
-        opt.comet_checkpoint_step
-        if opt.comet_checkpoint_step
-        else model_asset_list[0]["step"]
-    )
+
     checkpoint_filename = opt.comet_checkpoint_filename
-    for asset in model_asset_list:
-        if (int(checkpoint_step) == asset["step"]) and (
-            checkpoint_filename == asset["fileName"]
-        ):
-            asset_id = asset["assetId"]
-            asset_filename = asset["fileName"]
-            break
+    logged_checkpoint_map = {
+        asset["fileName"]: asset["assetId"] for asset in model_asset_list
+    }
+    asset_id = logged_checkpoint_map.get(checkpoint_filename)
 
     try:
+        if asset_id is None:
+            # Fetch latest checkpoint
+            asset_id = model_asset_list[0]["assetId"]
+            asset_filename = model_asset_list[0]["fileName"]
+            logger.info(
+                f"COMET INFO: Checkpoint {checkpoint_filename} not found."
+                f"Defaulting to latest checkpoint {asset_filename}"
+            )
+
+        else:
+            asset_filename = checkpoint_filename
+
         model_binary = experiment.get_asset(
             asset_id, return_type="binary", stream=False
         )
@@ -46,7 +60,8 @@ def download_model_checkpoint(opt, experiment):
         opt.weights = model_download_path
 
     except Exception as e:
-        raise (e)
+        logger.warning("COMET WARNING: Unable to download checkpoint from Comet")
+        logger.exception(e)
 
 
 def set_opt_parameters(opt, experiment):
