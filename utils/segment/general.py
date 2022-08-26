@@ -11,7 +11,7 @@ def crop(masks, boxes, hwc=True):
     Args:
         - masks should be a size [h, w, n] tensor of masks
         - boxes should be a size [n, 4] tensor of bbox coords in relative point form
-        - nwc: are masks in height-width-channel HWC order
+        - hwc: True if masks in height-width-channel HWC order, pass False for CHW
     """
 
     if hwc:  # hwc used for loss
