@@ -489,7 +489,7 @@ def run(
     for k, m in model.named_modules():
         if isinstance(m, Detect):
             m.inplace = inplace
-            m.onnx_dynamic = dynamic
+            m.dynamic = dynamic
             m.export = True
 
     for _ in range(2):
