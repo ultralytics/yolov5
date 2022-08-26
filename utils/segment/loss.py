@@ -67,7 +67,7 @@ class ComputeLoss:
 
     def __call__(self, preds, targets, masks):  # predictions, targets, model
         p, proto = preds
-        bs, nm, mask_h, mask_w = proto.shape  # proto shape(bs, mask_h, mask_w, num_masks)
+        bs, nm, mask_h, mask_w = proto.shape  # batch size, number of masks, mask height, mask width
         proto = proto.permute(0, 2, 3, 1)
 
         lcls = torch.zeros(1, device=self.device)
@@ -119,19 +119,16 @@ class ComputeLoss:
                           torch.tensor([mask_w, mask_h, mask_w, mask_h], device=mxywh.device))
                 mxyxys = xywh2xyxy(mxywhs)
 
-                batch_lseg = torch.zeros(1, device=self.device)
                 for bi in b.unique():
                     j = b == bi  # matching index
                     if self.overlap:
                         mask_gti = torch.where(masks[bi].unsqueeze(2) == tidxs[i][j], 1.0, 0.0)  # shape(h,w,n)
                     else:
                         mask_gti = masks[tidxs[i]][j].permute(1, 2, 0).contiguous()
-                    batch_lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j])
+                    lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j])
                     # Update tobj
                     # iou = iou.detach().clamp(0).type(tobj.dtype)
                     # tobj[b[index], a[index], gj[index], gi[index]] += 0.5 * iou[0]
-
-                lseg += batch_lseg / len(b.unique())
 
             obji = self.BCEobj(pi[..., 4], tobj)
             lobj += obji * self.balance[i]  # obj loss
@@ -143,8 +140,7 @@ class ComputeLoss:
         lbox *= self.hyp["box"]
         lobj *= self.hyp["obj"]
         lcls *= self.hyp["cls"]
-        lseg *= self.hyp["box"]
-        bs = tobj.shape[0]  # batch size
+        lseg *= self.hyp["box"] / bs
 
         loss = lbox + lobj + lcls + lseg
         return loss * bs, torch.cat((lbox, lseg, lobj, lcls)).detach()
