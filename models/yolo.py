@@ -70,7 +70,7 @@ class Detect(nn.Module):
                 # y = x[i].sigmoid()
                 y = x[i].clone()
                 y[..., :5] = y[..., :5].sigmoid()
-                y[..., self.nm + 5:] = y[..., self.nm + 5:].sigmoid()
+                y[..., (self.nm + 5):] = y[..., (self.nm + 5):].sigmoid()
 
                 if self.inplace:
                     y[..., 0:2] = (y[..., 0:2] * 2 + self.grid[i]) * self.stride[i]  # xy
