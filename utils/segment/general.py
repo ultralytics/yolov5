@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 
 
-def crop(masks, boxes):
+def crop(masks, boxes, hwc=True):
     """
     "Crop" predicted masks by zeroing out everything not in the predicted bbox.
     Vectorized by Chong (thanks Chong).
@@ -11,13 +11,21 @@ def crop(masks, boxes):
     Args:
         - masks should be a size [h, w, n] tensor of masks
         - boxes should be a size [n, 4] tensor of bbox coords in relative point form
+        - nwc: are masks in height-width-channel HWC order
     """
 
-    h, w, n = masks.shape
-    x1, y1, x2, y2 = torch.chunk(boxes.T[None], 4, 1)  # x1 shape(1,1,n)
-    r = torch.arange(w, device=masks.device, dtype=x1.dtype)[None, :, None]  # rows shape(1,w,1)
-    c = torch.arange(h, device=masks.device, dtype=x1.dtype)[:, None, None]  # cols shape(h,1,1)
-    return masks * ((r >= x1) * (r < x2) * (c >= y1) * (c < y2)).float()
+    if hwc:  # hwc used for loss
+        h, w, n = masks.shape
+        x1, y1, x2, y2 = torch.chunk(boxes.T[None], 4, 1)  # x1 shape(1,1,n)
+        r = torch.arange(w, device=masks.device, dtype=x1.dtype)[None, :, None]  # rows shape(1,w,1)
+        c = torch.arange(h, device=masks.device, dtype=x1.dtype)[:, None, None]  # cols shape(h,1,1)
+    else:  # chw format used for inference
+        n, h, w = masks.shape
+        x1, y1, x2, y2 = torch.chunk(boxes[:, :, None], 4, 1)  # x1 shape(1,1,n)
+        r = torch.arange(w, device=masks.device, dtype=x1.dtype)[None, None, :]  # rows shape(1,w,1)
+        c = torch.arange(h, device=masks.device, dtype=x1.dtype)[None, :, None]  # cols shape(h,1,1)
+
+    return masks * ((r >= x1) * (r < x2) * (c >= y1) * (c < y2))
 
 
 def process_mask_upsample(proto_out, out_masks, bboxes, shape):
@@ -34,10 +42,7 @@ def process_mask_upsample(proto_out, out_masks, bboxes, shape):
     c, mh, mw = proto_out.shape  # CHW
     masks = (out_masks.tanh() @ proto_out.float().view(c, -1)).sigmoid().view(-1, mh, mw)
     masks = F.interpolate(masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
-
-    masks = crop(masks.permute(1, 2, 0).contiguous(), bboxes)  # HWC
-    masks = masks.permute(2, 0, 1).contiguous()
-
+    masks = crop(masks, bboxes, hwc=False)  # CHW
     return masks.gt_(0.5)
 
 
@@ -62,12 +67,9 @@ def process_mask(proto_out, out_masks, bboxes, shape, upsample=False):
     downsampled_bboxes[:, 3] *= mh / ih
     downsampled_bboxes[:, 1] *= mh / ih
 
-    masks = crop(masks.permute(1, 2, 0).contiguous(), downsampled_bboxes)  # HWC
-    masks = masks.permute(2, 0, 1).contiguous()
-
+    masks = crop(masks, downsampled_bboxes, hwc=False)  # CHW
     if upsample:
         masks = F.interpolate(masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
-
     return masks.gt_(0.5)
 
 

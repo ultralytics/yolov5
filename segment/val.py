@@ -292,8 +292,7 @@ def run(
             midx = [si] if overlap else targets[:, 0] == si
             gt_masks = masks[midx]
             proto_out = train_out[1][si]
-            pred_masks = process(proto_out, pred[:, 6:], pred[:, :4],
-                                 shape=im[si].shape[1:]).permute(2, 0, 1).contiguous().float()
+            pred_masks = process(proto_out, pred[:, 6:], pred[:, :4], shape=im[si].shape[1:]).float()
 
             # Predictions
             if single_cls:
