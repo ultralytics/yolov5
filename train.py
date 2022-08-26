@@ -52,7 +52,7 @@ from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_g
                            init_seeds, intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods,
                            one_cycle, print_args, print_mutation, strip_optimizer, yaml_save)
 from utils.loggers import Loggers
-from utils.loggers.comet.utils import check_comet_resume, check_comet_weights
+from utils.loggers.comet.comet_utils import check_comet_resume, check_comet_weights
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.loss import ComputeLoss
 from utils.metrics import fitness
@@ -739,8 +739,8 @@ def main(opt, callbacks=Callbacks()):
     check_comet_weights(opt)
 
     # Resume
-    if opt.resume and not (check_wandb_resume(opt) or check_comet_resume(opt)
-                           or opt.evolve):  # resume from specified or most recent last.pt
+    if opt.resume and not check_wandb_resume(opt) or check_comet_resume(
+            opt) or opt.evolve:  # resume from specified or most recent last.pt
         last = Path(check_file(opt.resume) if isinstance(opt.resume, str) else get_latest_run())
         opt_yaml = last.parent.parent / "opt.yaml"  # train options yaml
         opt_data = opt.data  # original dataset
