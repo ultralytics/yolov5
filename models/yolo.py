@@ -44,7 +44,7 @@ class Detect(nn.Module):
         super().__init__()
         self.nc = nc  # number of classes
         self.nm = nm  # number of masks
-        self.np = np  # number of mask protos
+        self.npr = np  # number of mask protos
         self.no = nc + nm + 5  # number of outputs (per anchor)
         self.nl = len(anchors)  # number of detection layers
         self.na = len(anchors[0]) // 2  # number of anchors
@@ -52,7 +52,7 @@ class Detect(nn.Module):
         self.anchor_grid = [torch.empty(1)] * self.nl  # init anchor grid
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
-        self.proto = Proto(ch[0], self.np, self.nm) if self.nm else None  # mask protos
+        self.proto = Proto(ch[0], self.npr, self.nm) if self.nm else None  # mask protos
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
 
     def forward(self, x):
@@ -95,7 +95,6 @@ class Detect(nn.Module):
         grid = torch.stack((xv, yv), 2).expand(shape) - 0.5  # add grid offset, i.e. y = 2.0 * x - 0.5
         anchor_grid = (self.anchors[i] * self.stride[i]).view((1, self.na, 1, 1, 2)).expand(shape)
         return grid, anchor_grid
-
 
 
 class DetectSegmentOLD(Detect):
