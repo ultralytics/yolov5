@@ -122,7 +122,7 @@ class ClearmlLogger:
                                                     local_path=str(f),
                                                     iteration=iteration)
 
-    def log_image_with_boxes(self, image_path, boxes, class_names, image, conf_threshold=0.25):
+    def log_image_with_boxes(self, image_path, boxes, class_names, image, conf_threshold=25):
         """
         Draw the bounding boxes on a single image and report the result as a ClearML debug sample.
 
