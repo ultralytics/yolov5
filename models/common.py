@@ -765,14 +765,23 @@ class Proto(nn.Module):
     # Mask proto module
     def __init__(self, c1, c_, c2):  # ch_in, number of protos, number of masks
         super().__init__()
-        self.cv1 = Conv(c1, c_, k=3, p=1)
-        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
-        self.cv2 = Conv(c_, c_, k=3, p=1)
-        self.cv3 = nn.Conv2d(c_, c2, kernel_size=1)
-        self.act = nn.SiLU()
+        # self.cv1 = Conv(c1, c_, k=3, p=1)
+        # self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
+        # self.cv2 = Conv(c_, c_, k=3, p=1)
+        # self.cv3 = nn.Conv2d(c_, c2, kernel_size=1)
+        # self.act = nn.SiLU()
+
+        self.proto_net = nn.Sequential(
+            nn.Conv2d(c1, c_, kernel_size=3, stride=1, padding=1),
+            nn.SiLU(inplace=True),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
+            nn.Conv2d(c_, c_, kernel_size=3, stride=1, padding=1),
+            nn.SiLU(inplace=True),
+            nn.Conv2d(c_, c2, kernel_size=1, padding=0),
+            nn.SiLU(inplace=True))
 
     def forward(self, x):
-        return self.act(self.cv3(self.cv2(self.upsample(self.cv1(x)))))
+        return self.proto_net(x)
 
 
 class Classify(nn.Module):
