@@ -11,7 +11,9 @@ try:
 
     # Project Configuration
     config = comet_ml.config.get_config()
-    COMET_PROJECT_NAME = config.get_string(os.getenv("COMET_PROJECT_NAME"), "comet.project_name", default="yolov5")
+    COMET_PROJECT_NAME = config.get_string(
+        os.getenv("COMET_PROJECT_NAME"), "comet.project_name", default="yolov5"
+    )
 except (ModuleNotFoundError, ImportError):
     comet_ml = None
     COMET_PROJECT_NAME = None
@@ -29,13 +31,17 @@ COMET_MODE = os.getenv("COMET_MODE", "online")
 # Model Saving Settings
 COMET_SAVE_MODEL = os.getenv("COMET_SAVE_MODEL", "false").lower() == "true"
 COMET_MODEL_NAME = os.getenv("COMET_MODEL_NAME", "yolov5")
-COMET_OVERWRITE_CHECKPOINTS = (os.getenv("COMET_OVERWRITE_CHECKPOINTS", "false").lower() == "true")
+COMET_OVERWRITE_CHECKPOINTS = (
+    os.getenv("COMET_OVERWRITE_CHECKPOINTS", "false").lower() == "true"
+)
 
 # Dataset Artifact Settings
 COMET_UPLOAD_DATASET = os.getenv("COMET_UPLOAD_DATASET", "false").lower() == "true"
 
 # Evaluation Settings
-COMET_LOG_CONFUSION_MATRIX = (os.getenv("COMET_LOG_CONFUSION_MATRIX", "true").lower() == "true")
+COMET_LOG_CONFUSION_MATRIX = (
+    os.getenv("COMET_LOG_CONFUSION_MATRIX", "true").lower() == "true"
+)
 COMET_LOG_PREDICTIONS = os.getenv("COMET_LOG_PREDICTIONS", "false").lower() == "true"
 COMET_MAX_IMAGE_UPLOADS = os.getenv("COMET_MAX_IMAGE_UPLOADS", 100)
 
@@ -44,7 +50,9 @@ CONF_THRES = os.getenv("CONF_THRES", 0.001)
 IOU_THRES = os.getenv("IOU_THRES", 0.6)
 
 # Batch Logging Settings
-COMET_LOG_BATCH_METRICS = (os.getenv("COMET_LOG_BATCH_METRICS", "false").lower() == "true")
+COMET_LOG_BATCH_METRICS = (
+    os.getenv("COMET_LOG_BATCH_METRICS", "false").lower() == "true"
+)
 COMET_BATCH_LOGGING_INTERVAL = os.getenv("COMET_BATCH_LOGGING_INTERVAL", 1)
 COMET_PREDICTION_LOGGING_INTERVAL = os.getenv("COMET_PREDICTION_LOGGING_INTERVAL", 1)
 
@@ -58,7 +66,9 @@ class CometLogger:
     with Comet
     """
 
-    def __init__(self, opt, hyp, run_id=None, job_type="Training", **experiment_kwargs) -> None:
+    def __init__(
+        self, opt, hyp, run_id=None, job_type="Training", **experiment_kwargs
+    ) -> None:
         self.job_type = job_type
         self.opt = opt
         self.hyp = hyp
@@ -66,19 +76,36 @@ class CometLogger:
         # Comet Flags
         self.comet_mode = self.opt.comet_mode if self.opt.comet_mode else COMET_MODE
 
-        self.save_model = (opt.comet_save_model if opt.comet_save_model else COMET_SAVE_MODEL)
-        self.model_name = (opt.comet_model_name if opt.comet_model_name else COMET_MODEL_NAME)
-        self.overwrite_checkpoints = (opt.comet_overwrite_checkpoints
-                                      if opt.comet_overwrite_checkpoints else COMET_OVERWRITE_CHECKPOINTS)
+        self.save_model = (
+            opt.comet_save_model if opt.comet_save_model else COMET_SAVE_MODEL
+        )
+        self.model_name = (
+            opt.comet_model_name if opt.comet_model_name else COMET_MODEL_NAME
+        )
+        self.overwrite_checkpoints = (
+            opt.comet_overwrite_checkpoints
+            if opt.comet_overwrite_checkpoints
+            else COMET_OVERWRITE_CHECKPOINTS
+        )
 
         # Batch Logging Settings
-        self.log_batch_metrics = (opt.comet_log_batch_metrics
-                                  if opt.comet_log_batch_metrics else COMET_LOG_BATCH_METRICS)
-        self.comet_log_batch_interval = (opt.comet_log_batch_interval
-                                         if opt.comet_log_batch_interval else COMET_BATCH_LOGGING_INTERVAL)
+        self.log_batch_metrics = (
+            opt.comet_log_batch_metrics
+            if opt.comet_log_batch_metrics
+            else COMET_LOG_BATCH_METRICS
+        )
+        self.comet_log_batch_interval = (
+            opt.comet_log_batch_interval
+            if opt.comet_log_batch_interval
+            else COMET_BATCH_LOGGING_INTERVAL
+        )
 
         # Dataset Artifact Settings
-        self.upload_dataset = (self.opt.comet_upload_dataset if self.opt.comet_upload_dataset else COMET_UPLOAD_DATASET)
+        self.upload_dataset = (
+            self.opt.comet_upload_dataset
+            if self.opt.comet_upload_dataset
+            else COMET_UPLOAD_DATASET
+        )
         self.resume = self.opt.resume
 
         # Default parameters to pass to Experiment objects
@@ -86,7 +113,8 @@ class CometLogger:
             "log_code": False,
             "log_env_gpu": True,
             "log_env_cpu": True,
-            "project_name": COMET_PROJECT_NAME,}
+            "project_name": COMET_PROJECT_NAME,
+        }
         self.default_experiment_kwargs.update(experiment_kwargs)
         self.experiment = self._get_experiment(self.comet_mode, run_id)
 
@@ -101,14 +129,19 @@ class CometLogger:
         self.num_classes = self.data_dict["nc"]
 
         self.logged_images_count = 0
-        self.max_images = (self.opt.comet_max_image_uploads
-                           if self.opt.comet_max_image_uploads else COMET_MAX_IMAGE_UPLOADS)
+        self.max_images = (
+            self.opt.comet_max_image_uploads
+            if self.opt.comet_max_image_uploads
+            else COMET_MAX_IMAGE_UPLOADS
+        )
         if self.experiment is not None:
             if run_id is None:
                 self.experiment.log_other("Created from", "YOLOv5")
 
                 if not isinstance(self.experiment, comet_ml.OfflineExperiment):
-                    workspace, project_name, experiment_id = self.experiment.url.split("/")[-3:]
+                    workspace, project_name, experiment_id = self.experiment.url.split(
+                        "/"
+                    )[-3:]
                     self.experiment.log_other(
                         "Run Path",
                         f"{workspace}/{project_name}/{experiment_id}",
@@ -127,8 +160,11 @@ class CometLogger:
                 if not self.opt.comet_artifact:
                     self.log_asset(self.opt.data, metadata={"type": "data-config-file"})
 
-        self.comet_log_confusion_matrix = (self.opt.comet_log_confusion_matrix
-                                           if self.opt.comet_log_confusion_matrix else COMET_LOG_CONFUSION_MATRIX)
+        self.comet_log_confusion_matrix = (
+            self.opt.comet_log_confusion_matrix
+            if self.opt.comet_log_confusion_matrix
+            else COMET_LOG_CONFUSION_MATRIX
+        )
         if self.comet_log_confusion_matrix:
             if hasattr(self.opt, "conf_thres"):
                 self.conf_thres = self.opt.conf_thres
@@ -139,18 +175,28 @@ class CometLogger:
             else:
                 self.iou_thres = IOU_THRES
 
-        self.comet_log_predictions = (self.opt.comet_log_predictions
-                                      if self.opt.comet_log_predictions else COMET_LOG_PREDICTIONS)
-        self.comet_log_prediction_interval = (opt.comet_log_prediction_interval if opt.comet_log_prediction_interval
-                                              else COMET_PREDICTION_LOGGING_INTERVAL)
+        self.comet_log_predictions = (
+            self.opt.comet_log_predictions
+            if self.opt.comet_log_predictions
+            else COMET_LOG_PREDICTIONS
+        )
+        self.comet_log_prediction_interval = (
+            opt.comet_log_prediction_interval
+            if opt.comet_log_prediction_interval
+            else COMET_PREDICTION_LOGGING_INTERVAL
+        )
         if self.comet_log_predictions:
             self.metadata_dict = {}
 
         # Check if running the Experiment with the Comet Optimizer
         if hasattr(self.opt, "comet_optimizer_id"):
             self.experiment.log_other("optimizer_id", self.opt.comet_optimizer_id)
-            self.experiment.log_other("optimizer_objective", self.opt.comet_optimizer_objective)
-            self.experiment.log_other("optimizer_metric", self.opt.comet_optimizer_metric)
+            self.experiment.log_other(
+                "optimizer_objective", self.opt.comet_optimizer_objective
+            )
+            self.experiment.log_other(
+                "optimizer_metric", self.opt.comet_optimizer_metric
+            )
             self.experiment.log_other("optimizer_parameters", json.dumps(self.hyp))
 
     def _get_experiment(self, mode, experiment_id=None):
@@ -161,7 +207,9 @@ class CometLogger:
                     **self.default_experiment_kwargs,
                 )
 
-            return comet_ml.OfflineExperiment(**self.default_experiment_kwargs,)
+            return comet_ml.OfflineExperiment(
+                **self.default_experiment_kwargs,
+            )
 
         else:
             try:
@@ -171,13 +219,17 @@ class CometLogger:
                         **self.default_experiment_kwargs,
                     )
 
-                return comet_ml.Experiment(**self.default_experiment_kwargs,)
+                return comet_ml.Experiment(
+                    **self.default_experiment_kwargs,
+                )
 
             except ValueError as e:
-                logger.warning("COMET WARNING: "
-                               "Comet credentials have not been set. "
-                               "Comet will default to offline logging. "
-                               "Please set your credentials to enable online logging.")
+                logger.warning(
+                    "COMET WARNING: "
+                    "Comet credentials have not been set. "
+                    "Comet will default to offline logging. "
+                    "Please set your credentials to enable online logging."
+                )
                 logger.exceptiom(e)
                 return self._get_experiment("offline", experiment_id)
 
@@ -206,7 +258,8 @@ class CometLogger:
             "fitness_score": fitness_score[-1],
             "epochs_trained": epoch + 1,
             "save_period": opt.save_period,
-            "total_epochs": opt.epochs,}
+            "total_epochs": opt.epochs,
+        }
 
         if opt.comet_checkpoint_filename == "all":
             model_path = str(path)
@@ -250,23 +303,21 @@ class CometLogger:
 
         metadata = []
         for cls, *xyxy in filtered_labels.tolist():
-            metadata.append({
-                "label": f"{self.class_names[int(cls)]}-gt",
-                "score": 100,
-                "box": {
-                    "x": xyxy[0],
-                    "y": xyxy[1],
-                    "x2": xyxy[2],
-                    "y2": xyxy[3]},})
+            metadata.append(
+                {
+                    "label": f"{self.class_names[int(cls)]}-gt",
+                    "score": 100,
+                    "box": {"x": xyxy[0], "y": xyxy[1], "x2": xyxy[2], "y2": xyxy[3]},
+                }
+            )
         for *xyxy, conf, cls in filtered_detections.tolist():
-            metadata.append({
-                "label": f"{self.class_names[int(cls)]}",
-                "score": conf * 100,
-                "box": {
-                    "x": xyxy[0],
-                    "y": xyxy[1],
-                    "x2": xyxy[2],
-                    "y2": xyxy[3]},})
+            metadata.append(
+                {
+                    "label": f"{self.class_names[int(cls)]}",
+                    "score": conf * 100,
+                    "box": {"x": xyxy[0], "y": xyxy[1], "x2": xyxy[2], "y2": xyxy[3]},
+                }
+            )
 
         self.metadata_dict[image_name] = metadata
         self.logged_images_count += 1
@@ -286,9 +337,13 @@ class CometLogger:
         labelsn = None
         if nl:
             tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
-            scale_coords(image.shape[1:], tbox, shape[0], shape[1])  # native-space labels
+            scale_coords(
+                image.shape[1:], tbox, shape[0], shape[1]
+            )  # native-space labels
             labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
-            scale_coords(image.shape[1:], predn[:, :4], shape[0], shape[1])  # native-space pred
+            scale_coords(
+                image.shape[1:], predn[:, :4], shape[0], shape[1]
+            )  # native-space pred
 
         return predn, labelsn
 
@@ -297,9 +352,15 @@ class CometLogger:
         label_paths = img2label_paths(img_paths)
 
         for image_file, label_file in zip(img_paths, label_paths):
-            image_logical_path, label_logical_path = map(lambda x: x.replace(f"{path}/", ""), [image_file, label_file])
-            artifact.add(image_file, logical_path=image_logical_path, metadata={"split": split})
-            artifact.add(label_file, logical_path=label_logical_path, metadata={"split": split})
+            image_logical_path, label_logical_path = map(
+                lambda x: x.replace(f"{path}/", ""), [image_file, label_file]
+            )
+            artifact.add(
+                image_file, logical_path=image_logical_path, metadata={"split": split}
+            )
+            artifact.add(
+                label_file, logical_path=label_logical_path, metadata={"split": split}
+            )
         return artifact
 
     def upload_dataset_artifact(self):
@@ -312,15 +373,21 @@ class CometLogger:
             if split_path is not None:
                 metadata[key] = split_path.replace(path, "")
 
-        artifact = comet_ml.Artifact(name=dataset_name, artifact_type="dataset", metadata=metadata)
+        artifact = comet_ml.Artifact(
+            name=dataset_name, artifact_type="dataset", metadata=metadata
+        )
         for key in metadata.keys():
             if key in ["train", "val", "test"]:
-                if isinstance(self.upload_dataset, str) and (key != self.upload_dataset):
+                if isinstance(self.upload_dataset, str) and (
+                    key != self.upload_dataset
+                ):
                     continue
 
                 asset_path = self.data_dict.get(key)
                 if asset_path is not None:
-                    artifact = self.add_assets_to_artifact(artifact, path, asset_path, key)
+                    artifact = self.add_assets_to_artifact(
+                        artifact, path, asset_path, key
+                    )
 
         self.experiment.log_artifact(artifact)
 
@@ -344,8 +411,11 @@ class CometLogger:
         for split in ["train", "val", "test"]:
             if data_dict.get(split):
                 split_path = data_dict.get(split)
-                data_dict[split] = (f"{path}/{split_path}" if isinstance(split, str) else [
-                    f"{path}/{x}" for x in split_path])
+                data_dict[split] = (
+                    f"{path}/{split_path}"
+                    if isinstance(split, str)
+                    else [f"{path}/{x}" for x in split_path]
+                )
 
         return data_dict
 
@@ -391,7 +461,9 @@ class CometLogger:
     def on_train_end(self, files, save_dir, last, best, plots, epoch, results):
         if self.comet_log_predictions:
             curr_epoch = self.experiment.curr_epoch
-            self.experiment.log_asset_data(self.metadata_dict, "image-metadata.json", epoch=curr_epoch)
+            self.experiment.log_asset_data(
+                self.metadata_dict, "image-metadata.json", epoch=curr_epoch
+            )
 
         for f in files:
             self.log_asset(f, metadata={"epoch": epoch})
@@ -403,13 +475,13 @@ class CometLogger:
                 name = name = f"{Path(model_path).stem}_epoch_{epoch}.pt"
             else:
                 name = Path(model_path).name
-
-            self.experiment.log_model(
-                self.model_name,
-                file_or_folder=model_path,
-                file_name=name,
-                overwrite=self.overwrite_checkpoints,
-            )
+            if self.save_model:
+                self.experiment.log_model(
+                    self.model_name,
+                    file_or_folder=model_path,
+                    file_name=name,
+                    overwrite=self.overwrite_checkpoints,
+                )
 
         # Check if running Experiment with Comet Optimizer
         if hasattr(self.opt, "comet_optimizer_id"):
@@ -419,7 +491,9 @@ class CometLogger:
         self.finish_run()
 
     def on_val_start(self):
-        self.confmat = ConfusionMatrix(nc=self.num_classes, conf=self.conf_thres, iou_thres=self.iou_thres)
+        self.confmat = ConfusionMatrix(
+            nc=self.num_classes, conf=self.conf_thres, iou_thres=self.iou_thres
+        )
 
         return
 
@@ -438,7 +512,9 @@ class CometLogger:
 
             predn, labelsn = self.preprocess_prediction(image, labels, shape, pred)
             if labelsn is not None:
-                if self.comet_log_predictions and ((batch_i + 1) % self.comet_log_prediction_interval == 0):
+                if self.comet_log_predictions and (
+                    (batch_i + 1) % self.comet_log_prediction_interval == 0
+                ):
                     self.log_predictions(image, labelsn, path, shape, predn)
 
                 if self.comet_log_confusion_matrix:
@@ -464,8 +540,12 @@ class CometLogger:
             )
 
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):
-        if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
-            self.log_model(last.parent, self.opt, epoch, fi, best_model=best_fitness == fi)
+        if (
+            (epoch + 1) % self.opt.save_period == 0 and not final_epoch
+        ) and self.opt.save_period != -1:
+            self.log_model(
+                last.parent, self.opt, epoch, fi, best_model=best_fitness == fi
+            )
 
     def finish_run(self):
         if self.experiment is not None:
