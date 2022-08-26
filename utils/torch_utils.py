@@ -422,7 +422,7 @@ class ModelEMA:
             if v.dtype.is_floating_point:  # true for FP16 and FP32
                 v *= d
                 v += (1 - d) * msd[k].detach()
-        assert v.dtype == msd[k].detach().dtype == torch.float32, f'EMA {v.dtype} and model {msd[k]} must both be FP32'
+        # assert v.dtype == msd[k].dtype == torch.float32, f'{k}: EMA {v.dtype} and model {msd[k].dtype} must be FP32'
 
     def update_attr(self, model, include=(), exclude=('process_group', 'reducer')):
         # Update EMA attributes
