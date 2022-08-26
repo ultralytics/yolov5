@@ -762,7 +762,7 @@ class Detections:
 
 
 class Proto(nn.Module):
-    # Mask proto module
+    # YOLOv5 mask proto module
     def __init__(self, c1, c_, c2):  # ch_in, number of protos, number of masks
         super().__init__()
         # self.cv1 = Conv(c1, c_, k=3, p=1)
@@ -785,7 +785,7 @@ class Proto(nn.Module):
 
 
 class Classify(nn.Module):
-    # Classification head, i.e. x(b,c1,20,20) to x(b,c2)
+    # YOLOv5 classification head, i.e. x(b,c1,20,20) to x(b,c2)
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1):  # ch_in, ch_out, kernel, stride, padding, groups
         super().__init__()
         c_ = 1280  # efficientnet_b0 size

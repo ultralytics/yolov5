@@ -40,24 +40,20 @@ class Detect(nn.Module):
     dynamic = False  # force grid reconstruction
     export = False  # export mode
 
-    def __init__(self, nc=80, anchors=(), nm=0, np=0, ch=(), inplace=True):  # detection layer
+    def __init__(self, nc=80, anchors=(), ch=(), inplace=True):  # detection layer
         super().__init__()
         self.nc = nc  # number of classes
-        self.nm = nm  # number of masks
-        self.npr = np  # number of mask protos
-        self.no = nc + nm + 5  # number of outputs (per anchor)
+        self.no = nc + 5  # number of outputs per anchor
         self.nl = len(anchors)  # number of detection layers
         self.na = len(anchors[0]) // 2  # number of anchors
         self.grid = [torch.empty(1)] * self.nl  # init grid
         self.anchor_grid = [torch.empty(1)] * self.nl  # init anchor grid
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
-        self.proto = Proto(ch[0], self.npr, self.nm) if self.nm else None  # mask protos
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
 
     def forward(self, x):
         z = []  # inference output
-        p = self.proto(x[0]) if self.nm else None
         for i in range(self.nl):
             x[i] = self.m[i](x[i])  # conv
             bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
@@ -67,23 +63,17 @@ class Detect(nn.Module):
                 if self.dynamic or self.grid[i].shape[2:4] != x[i].shape[2:4]:
                     self.grid[i], self.anchor_grid[i] = self._make_grid(nx, ny, i)
 
-                # y = x[i].sigmoid()
-                y = x[i].clone()
-                y[..., :5] = y[..., :5].sigmoid()
-                y[..., (self.nm + 5):] = y[..., (self.nm + 5):].sigmoid()
-
+                y = x[i].sigmoid()
                 if self.inplace:
                     y[..., 0:2] = (y[..., 0:2] * 2 + self.grid[i]) * self.stride[i]  # xy
                     y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
                 else:  # for YOLOv5 on AWS Inferentia https://github.com/ultralytics/yolov5/pull/2953
-                    xy, wh, etc = y.split((2, 2, self.nc + self.nm + 1), 4)  # tensor_split((2, 4, 5), 4) torch 1.8.0
+                    xy, wh, conf = y.split((2, 2, self.nc + 1), 4)  # y.tensor_split((2, 4, 5), 4)  # torch 1.8.0
                     xy = (xy * 2 + self.grid[i]) * self.stride[i]  # xy
                     wh = (wh * 2) ** 2 * self.anchor_grid[i]  # wh
-                    y = torch.cat((xy, wh, etc), 4)
+                    y = torch.cat((xy, wh, conf), 4)
                 z.append(y.view(bs, -1, self.no))
 
-        if self.nm:  # masks
-            x = (x, p)
         return x if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
 
     def _make_grid(self, nx=20, ny=20, i=0, torch_1_10=check_version(torch.__version__, '1.10.0')):
@@ -97,7 +87,7 @@ class Detect(nn.Module):
         return grid, anchor_grid
 
 
-class DetectSegmentOLD(Detect):
+class DetectSegment(Detect):
 
     def __init__(self, nc=80, anchors=(), mask_dim=32, proto_channel=256, ch=(), inplace=True):
         super().__init__(nc, anchors, ch, inplace)
@@ -211,22 +201,6 @@ class BaseModel(nn.Module):
         return self
 
 
-class Segment(Detect):
-    def __init__(self, nc=80, anchors=(), nm=32, np=256, ch=(), inplace=True):
-        # number of channels, anchors, number of masks, number of mask protos, number of channels, inplace boolean
-        super().__init__(nc, anchors, ch, inplace)
-        self.nm = nm  # number of masks
-        self.np = np  # number of protos
-        self.no = 5 + nc + self.nm  # number of outputs (per anchor)
-        self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
-        self.proto = Proto(ch[0], self.np, self.nm)  # mask protos
-        self.forward_det = self.forward
-
-    def forward(self, x):
-        y = self.proto(x[0])
-        return x if self.training else torch.cat(z, 1) if self.export else (torch.cat(z, 1), x)
-
-
 class DetectionModel(BaseModel):
     # YOLOv5 detection model
     def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None, anchors=None):  # model, input channels, number of classes
@@ -253,11 +227,18 @@ class DetectionModel(BaseModel):
 
         # Build strides, anchors
         m = self.model[-1]  # Detect()
-        if isinstance(m, Detect):
+        if isinstance(m, DetectSegment):
             s = 256  # 2x min stride
             m.inplace = self.inplace
-            forward = lambda x: self.forward(x)[0] if m.nm else self.forward(x)  # tuple output if masks
-            m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.empty(1, ch, s, s))])  # forward
+            m.stride = torch.tensor([s / x.shape[-2] for x in self.forward(torch.zeros(1, ch, s, s))[0]])  # forward
+            check_anchor_order(m)
+            m.anchors /= m.stride.view(-1, 1, 1)
+            self.stride = m.stride
+            self._initialize_biases()  # only run once
+        elif isinstance(m, Detect):
+            s = 256  # 2x min stride
+            m.inplace = self.inplace
+            m.stride = torch.tensor([s / x.shape[-2] for x in self.forward(torch.empty(1, ch, s, s))])  # forward
             check_anchor_order(m)  # must be in pixel-space (not grid-space)
             m.anchors /= m.stride.view(-1, 1, 1)
             self.stride = m.stride
@@ -322,15 +303,15 @@ class DetectionModel(BaseModel):
         for mi, s in zip(m.m, m.stride):  # from
             b = mi.bias.view(m.na, -1)  # conv.bias(255) to (3,85)
             b.data[:, 4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
-            if m.nm:  # masks
-                b.data[:, 5 + m.nm:] += math.log(0.6 / (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
+            if hasattr(m, "mask_dim"):
+                b.data[:, 5 + m.mask_dim:] += math.log(0.6 /
+                                                       (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
             else:
                 b.data[:, 5:] += math.log(0.6 / (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
             mi.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
 
 
 Model = DetectionModel  # retain YOLOv5 'Model' class for backwards compatibility
-SegmentationModel = DetectionModel  # identical interiors
 
 
 class ClassificationModel(BaseModel):
@@ -387,11 +368,12 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             args = [ch[f]]
         elif m is Concat:
             c2 = sum(ch[x] for x in f)
-        elif m is Detect:
+        # TODO: channel, gw, gd
+        elif m in [Detect, DetectSegment]:
             args.append([ch[x] for x in f])
             if isinstance(args[1], int):  # number of anchors
                 args[1] = [list(range(args[1] * 2))] * len(f)
-            if len(args) > 3:  # mask protos
+            if m is DetectSegment:
                 args[3] = make_divisible(args[3] * gw, 8)
         elif m is Contract:
             c2 = ch[f] * args[0] ** 2
