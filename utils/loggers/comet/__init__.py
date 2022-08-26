@@ -5,8 +5,15 @@ from pathlib import Path
 
 try:
     import comet_ml
+
+    # Project Configuration
+    config = comet_ml.config.get_config()
+    COMET_PROJECT_NAME = config.get_string(
+        os.getenv("COMET_PROJECT_NAME"), "comet.project_name", default="yolov5"
+    )
 except (ModuleNotFoundError, ImportError) as e:
     comet_ml = None
+    COMET_PROJECT_NAME = None
 
 import torch
 import torchvision.transforms as T
@@ -18,11 +25,6 @@ from utils.metrics import ConfusionMatrix, box_iou
 
 logger = logging.getLogger(__name__)
 
-# Project Configuration
-config = comet_ml.config.get_config()
-COMET_PROJECT_NAME = config.get_string(
-    os.getenv("COMET_PROJECT_NAME"), "comet.project_name", default="yolov5"
-)
 COMET_MODE = os.getenv("COMET_MODE", "online")
 
 # Model Saving Settings
