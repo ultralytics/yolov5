@@ -242,9 +242,10 @@ class GenericLogger:
 
     def __init__(self, opt, console_logger, include=('tb', 'wandb')):
         # init default loggers
-        self.save_dir = opt.save_dir
+        self.save_dir = Path(opt.save_dir)
         self.include = include
         self.console_logger = console_logger
+        self.csv = self.save_dir / 'results.csv'  # CSV logger
         if 'tb' in self.include:
             prefix = colorstr('TensorBoard: ')
             self.console_logger.info(
@@ -252,20 +253,27 @@ class GenericLogger:
             self.tb = SummaryWriter(str(self.save_dir))
 
         if wandb and 'wandb' in self.include:
-            self.wandb = wandb.init(project="YOLOv5-Classifier" if opt.project == "runs/train" else opt.project,
+            self.wandb = wandb.init(project=web_project_name(str(opt.project)),
                                     name=None if opt.name == "exp" else opt.name,
                                     config=opt)
         else:
             self.wandb = None
 
-    def log_metrics(self, metrics_dict, epoch):
+    def log_metrics(self, metrics, epoch):
         # Log metrics dictionary to all loggers
+        if self.csv:
+            keys, vals = list(metrics.keys()), list(metrics.values())
+            n = len(metrics) + 1  # number of cols
+            s = '' if self.csv.exists() else (('%23s,' * n % tuple(['epoch'] + keys)).rstrip(',') + '\n')  # header
+            with open(self.csv, 'a') as f:
+                f.write(s + ('%23.5g,' * n % tuple([epoch] + vals)).rstrip(',') + '\n')
+
         if self.tb:
-            for k, v in metrics_dict.items():
+            for k, v in metrics.items():
                 self.tb.add_scalar(k, v, epoch)
 
         if self.wandb:
-            self.wandb.log(metrics_dict, step=epoch)
+            self.wandb.log(metrics, step=epoch)
 
     def log_images(self, files, name='Images', epoch=0):
         # Log images to all loggers
@@ -291,6 +299,11 @@ class GenericLogger:
             art.add_file(str(model_path))
             wandb.log_artifact(art)
 
+    def update_params(self, params):
+        # Update the paramters logged
+        if self.wandb:
+            wandb.run.config.update(params, allow_val_change=True)
+
 
 def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
     # Log model graph to TensorBoard
@@ -303,3 +316,11 @@ def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
             tb.add_graph(torch.jit.trace(de_parallel(model), im, strict=False), [])
     except Exception as e:
         print(f'WARNING: TensorBoard graph visualization failure {e}')
+
+
+def web_project_name(project):
+    # Convert local project name to web project name
+    if not project.startswith('runs/train'):
+        return project
+    suffix = '-Classify' if project.endswith('-cls') else '-Segment' if project.endswith('-seg') else ''
+    return f'YOLOv5{suffix}'
