@@ -337,6 +337,7 @@ class DetectMultiBackend(nn.Module):
         else:
             w = attempt_download(w)  # download if not local and not using Triton for inference
         fp16 &= pt or jit or onnx or engine  # FP16
+        nhwc = coreml or saved_model or pb or tflite or edgetpu
         stride = 32  # default stride
 
         if triton_url:  # Triton
@@ -345,6 +346,7 @@ class DetectMultiBackend(nn.Module):
             from utils.triton import TritonRemoteModel
             model_name = path.splitext(path.basename(w))[0]
             model = TritonRemoteModel(url=triton_url, model_name=model_name)
+            nhwc = model.runtime.startswith("tensorflow")
         elif pt:  # PyTorch
             model = attempt_load(weights if isinstance(weights, list) else w, device=device, inplace=True, fuse=fuse)
             stride = max(int(model.stride.max()), 32)  # model stride
@@ -481,6 +483,8 @@ class DetectMultiBackend(nn.Module):
         b, ch, h, w = im.shape  # batch, channel, height, width
         if self.fp16 and im.dtype != torch.float16:
             im = im.half()  # to FP16
+        if self.nhwc:
+            im = im.permute(0, 2, 3, 1)
 
         if self.triton_url:  # Triton
             y = self.model(im)
@@ -512,7 +516,7 @@ class DetectMultiBackend(nn.Module):
             self.context.execute_v2(list(self.binding_addrs.values()))
             y = self.bindings['output'].data
         elif self.coreml:  # CoreML
-            im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
+            im = im.cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
             im = Image.fromarray((im[0] * 255).astype('uint8'))
             # im = im.resize((192, 320), Image.ANTIALIAS)
             y = self.model.predict({'image': im})  # coordinates are xywh normalized
@@ -524,7 +528,7 @@ class DetectMultiBackend(nn.Module):
                 k = 'var_' + str(sorted(int(k.replace('var_', '')) for k in y)[-1])  # output key
                 y = y[k]  # output
         else:  # TensorFlow (SavedModel, GraphDef, Lite, Edge TPU)
-            im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
+            im = im.cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
             if self.saved_model:  # SavedModel
                 y = (self.model(im, training=False) if self.keras else self.model(im)).numpy()
             elif self.pb:  # GraphDef
@@ -550,7 +554,7 @@ class DetectMultiBackend(nn.Module):
     def warmup(self, imgsz=(1, 3, 640, 640)):
         # Warmup model by running inference once
         warmup_types = self.pt, self.jit, self.onnx, self.engine, self.saved_model, self.pb
-        if any(warmup_types) and self.device.type != 'cpu':
+        if (any(warmup_types) and self.device.type != 'cpu') or self.triton_url:
             im = torch.empty(*imgsz, dtype=torch.half if self.fp16 else torch.float, device=self.device)  # input
             for _ in range(2 if self.jit else 1):  #
                 self.forward(im)  # warmup

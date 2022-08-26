@@ -50,6 +50,11 @@ class TritonRemoteModel:
 
             self._create_input_placeholders_fn = create_input_placeholders
 
+    @property
+    def runtime(self):
+        """Returns the model runtime"""
+        return self.metadata.get("backend", self.metadata.get("platform"))
+
     def __call__(self, *args, **kwargs) -> typing.Union[torch.Tensor, typing.Tuple[torch.Tensor, ...]]:
         """ Invokes the model. Parameters can be provided via args or kwargs.
         args, if provided, are assumed to match the order of inputs of the model.
