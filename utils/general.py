@@ -15,7 +15,6 @@ import re
 import shutil
 import signal
 import sys
-import threading
 import time
 import urllib
 from datetime import datetime
@@ -34,6 +33,7 @@ import torch
 import torchvision
 import yaml
 
+from utils import TryExcept
 from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
 
@@ -148,6 +148,7 @@ class Profile(contextlib.ContextDecorator):
 
     def __enter__(self):
         self.start = self.time()
+        return self
 
     def __exit__(self, type, value, traceback):
         self.dt = self.time() - self.start  # delta-time
@@ -194,36 +195,15 @@ class WorkingDirectory(contextlib.ContextDecorator):
         os.chdir(self.cwd)
 
 
-def try_except(func):
-    # try-except function. Usage: @try_except decorator
-    def handler(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except Exception as e:
-            print(e)
-
-    return handler
-
-
-def threaded(func):
-    # Multi-threads a target function and returns thread. Usage: @threaded decorator
-    def wrapper(*args, **kwargs):
-        thread = threading.Thread(target=func, args=args, kwargs=kwargs, daemon=True)
-        thread.start()
-        return thread
-
-    return wrapper
-
-
 def methods(instance):
     # Get class/instance methods
     return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith("__")]
 
 
-def print_args(args: Optional[dict] = None, show_file=True, show_fcn=False):
+def print_args(args: Optional[dict] = None, show_file=True, show_func=False):
     # Print function arguments (optional args dict)
     x = inspect.currentframe().f_back  # previous frame
-    file, _, fcn, _, _ = inspect.getframeinfo(x)
+    file, _, func, _, _ = inspect.getframeinfo(x)
     if args is None:  # get args automatically
         args, _, _, frm = inspect.getargvalues(x)
         args = {k: v for k, v in frm.items() if k in args}
@@ -231,7 +211,7 @@ def print_args(args: Optional[dict] = None, show_file=True, show_fcn=False):
         file = Path(file).resolve().relative_to(ROOT).with_suffix('')
     except ValueError:
         file = Path(file).stem
-    s = (f'{file}: ' if show_file else '') + (f'{fcn}: ' if show_fcn else '')
+    s = (f'{file}: ' if show_file else '') + (f'{func}: ' if show_func else '')
     LOGGER.info(colorstr(s) + ', '.join(f'{k}={v}' for k, v in args.items()))
 
 
@@ -255,7 +235,13 @@ def init_seeds(seed=0, deterministic=False):
 
 def intersect_dicts(da, db, exclude=()):
     # Dictionary intersection of matching keys and shapes, omitting 'exclude' keys, using da values
-    return {k: v for k, v in da.items() if k in db and not any(x in k for x in exclude) and v.shape == db[k].shape}
+    return {k: v for k, v in da.items() if k in db and all(x not in k for x in exclude) and v.shape == db[k].shape}
+
+
+def get_default_args(func):
+    # Get func() default arguments
+    signature = inspect.signature(func)
+    return {k: v.default for k, v in signature.parameters.items() if v.default is not inspect.Parameter.empty}
 
 
 def get_latest_run(search_dir='.'):
@@ -312,7 +298,7 @@ def git_describe(path=ROOT):  # path must be a directory
         return ''
 
 
-@try_except
+@TryExcept()
 @WorkingDirectory(ROOT)
 def check_git_status(repo='ultralytics/yolov5'):
     # YOLOv5 status check, recommend 'git pull' if code is out of date
@@ -357,7 +343,7 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
     return result
 
 
-@try_except
+@TryExcept()
 def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True, cmds=()):
     # Check installed dependencies meet YOLOv5 requirements (pass *.txt file or list of packages)
     prefix = colorstr('red', 'bold', 'requirements:')
