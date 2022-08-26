@@ -90,7 +90,7 @@ class Detect(nn.Module):
         return grid, anchor_grid
 
 
-class DetectSegment(nn.Module):
+class DetectSegmentNEW(nn.Module):
     stride = None  # strides computed during build
     dynamic = False  # force grid reconstruction
     export = False  # export mode
@@ -150,15 +150,15 @@ class DetectSegment(nn.Module):
         return grid, anchor_grid
 
 
-class DetectSegmentOLD(Detect):
+class DetectSegment(Detect):
 
     def __init__(self, nc=80, anchors=(), nm=32, npr=256, ch=(), inplace=True):
         super().__init__(nc, anchors, ch, inplace)
-        self.nm = nm
+        self.nm = nm  # number of masks
+        self.npr = npr  # number of protos
         self.no = nc + 5 + self.nm  # number of outputs per anchor
-        self.npr = npr
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
-        self.proto = Proto(ch[0], self.npr, self.nm)
+        self.proto = Proto(ch[0], self.npr, self.nm)  # protos
 
     def forward(self, x):
         z = []  # inference output
@@ -185,7 +185,9 @@ class DetectSegmentOLD(Detect):
                     y = torch.cat((xy, wh, etc), 4)
                 z.append(y.view(bs, -1, self.no))
 
-        return (x, p) if self.training else (torch.cat(z, 1), (x, p))
+        if self.nm:
+            x = (x, p)
+        return x if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
 
 
 class BaseModel(nn.Module):
