@@ -771,14 +771,12 @@ class Proto(nn.Module):
         # self.cv3 = nn.Conv2d(c_, c2, kernel_size=1)
         # self.act = nn.SiLU()
 
-        self.proto_net = nn.Sequential(
-            nn.Conv2d(c1, c_, kernel_size=3, stride=1, padding=1),
-            nn.SiLU(inplace=True),
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
-            nn.Conv2d(c_, c_, kernel_size=3, stride=1, padding=1),
-            nn.SiLU(inplace=True),
-            nn.Conv2d(c_, c2, kernel_size=1, padding=0),
-            nn.SiLU(inplace=True))
+        self.proto_net = nn.Sequential(Conv(c1, c_, k=3, p=1),
+                                       # nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
+                                       nn.Upsample(scale_factor=2, mode='nearest'),
+                                       Conv(c_, c_, k=3, p=1),
+                                       nn.Conv2d(c_, c2, kernel_size=1, padding=0),
+                                       nn.SiLU(inplace=True))
 
     def forward(self, x):
         return self.proto_net(x)
