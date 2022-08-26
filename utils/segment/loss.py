@@ -148,7 +148,7 @@ class ComputeLoss:
         lbox *= self.hyp["box"]
         lobj *= self.hyp["obj"]
         lcls *= self.hyp["cls"]
-        lseg *= self.hyp["box"] * 2
+        lseg *= self.hyp["box"] / 2
         bs = tobj.shape[0]  # batch size
 
         loss = lbox + lobj + lcls + lseg
