@@ -157,7 +157,7 @@ class ComputeLoss:
         # lseg_iou = self.mask_loss(pred_mask, gt_mask, xyxy)
         # iou = self.mask_loss(pred_mask, gt_mask, xyxy, return_iou=True)
         lseg = F.binary_cross_entropy_with_logits(pred_mask, gt_mask, reduction="none")
-        # lseg = crop(lseg, xyxy)
+        lseg = crop(lseg, xyxy)
         lseg = lseg.mean(dim=(0, 1)) / w / h
         return lseg.mean()  # , iou# + lseg_iou.mean()
 
