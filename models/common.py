@@ -763,7 +763,7 @@ class Detections:
 
 class Proto(nn.Module):
     # YOLOv5 mask proto module
-    def __init__(self, c1, c_, c2):  # ch_in, number of protos, number of masks
+    def __init__(self, c1, c_=256, c2=32):  # ch_in, number of protos, number of masks
         super().__init__()
         self.cv1 = Conv(c1, c_, k=3, p=1)
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
