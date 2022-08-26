@@ -775,9 +775,9 @@ class Proto(nn.Module):
                                        nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
                                        # nn.Upsample(scale_factor=2, mode='nearest'),
                                        Conv(c_, c_, k=3, p=1),
-                                       nn.Conv2d(c_, c2, kernel_size=1, padding=0),
+                                       # nn.Conv2d(c_, c2, kernel_size=1, padding=0),
                                        # nn.SiLU(inplace=True)
-                                       # Conv(c_, c_, k=1, p=0),
+                                       Conv(c_, c2, k=1, p=0),
                                        )
 
     def forward(self, x):
