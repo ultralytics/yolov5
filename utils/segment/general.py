@@ -60,10 +60,11 @@ def process_mask(proto_out, out_masks, bboxes, shape, upsample=False):
     downsampled_bboxes[:, 1] *= mh / ih
     masks = crop(masks.permute(1, 2, 0).contiguous(), downsampled_bboxes)  # HWC
 
-    masks = masks.permute(2, 0, 1).contiguous()
     if upsample:
+        masks = masks.permute(2, 0, 1).contiguous()
         masks = F.interpolate(masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
-    return masks.gt_(0.5).permute(1, 2, 0).contiguous()
+        masks = masks.permute(1, 2, 0).contiguous()
+    return masks.gt_(0.5)
 
 
 def scale_masks(img1_shape, masks, img0_shape, ratio_pad=None):
