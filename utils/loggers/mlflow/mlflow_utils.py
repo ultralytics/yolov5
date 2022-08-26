@@ -47,7 +47,11 @@ class MlflowLogger:
             self.mlflow_active_run = None
 
     def setup(self, opt: Namespace) -> None:
-        self.model_name = Path(opt.weights).stem
+        if opt.weights is not None and str(opt.weights).strip() != "":
+            model_name = Path(opt.weights).stem
+        else:
+            model_name = "yolov5"
+        self.model_name = model_name
         self.weights = Path(opt.weights)
         self.client = mlflow.tracking.MlflowClient()
         self.log_params(vars(opt))
