@@ -39,6 +39,7 @@ import torch.nn.functional as F
 
 from models.common import DetectMultiBackend
 from models.yolo import DetectionModel
+from utils import threaded
 from utils.callbacks import Callbacks
 from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_yaml,
                            coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, print_args,
@@ -62,6 +63,7 @@ def save_one_txt(predn, save_conf, shape, file):
             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
 
+@threaded
 def save_one_json(predn, jdict, path, class_map, pred_masks):
     # Save one JSON result {"image_id": 42, "category_id": 18, "bbox": [258.15, 41.29, 348.26, 243.78], "score": 0.236}
     from pycocotools.mask import encode
