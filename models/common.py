@@ -333,6 +333,7 @@ class DetectMultiBackend(nn.Module):
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
             model.half() if fp16 else model.float()
             self.model = model  # explicitly assign for to(), cpu(), cuda(), half()
+            segmentation_model = type(model.model[-1]).__name__ == 'DetectSegment'
         elif jit:  # TorchScript
             LOGGER.info(f'Loading {w} for TorchScript inference...')
             extra_files = {'config.txt': ''}  # model metadata
@@ -466,7 +467,7 @@ class DetectMultiBackend(nn.Module):
 
         if self.pt:  # PyTorch
             y = self.model(im, augment=augment, visualize=visualize) if augment or visualize else self.model(im)
-            if isinstance(y, tuple):
+            if isinstance(y, tuple) and not self.segmentation_model:
                 y = y[0]
         elif self.jit:  # TorchScript
             y = self.model(im)[0]
@@ -758,6 +759,19 @@ class Detections:
     def __str__(self):
         self.print()  # override print(results)
         return ''
+
+
+class Proto(nn.Module):
+    # Mask proto module
+    def __init__(self, c1, c_, c2):  # ch_in, number of protos, number of masks
+        super().__init__()
+        self.cv1 = Conv(c1, c_, k=3, p=1)
+        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
+        self.cv2 = Conv(c_, c_, k=3, p=1)
+        self.cv3 = Conv(c_, c2, k=1, p=0)
+
+    def forward(self, x):
+        return self.cv3(self.cv2(self.upsample(self.cv1(x))))
 
 
 class Classify(nn.Module):
