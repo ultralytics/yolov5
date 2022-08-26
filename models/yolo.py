@@ -90,7 +90,7 @@ class Detect(nn.Module):
         return grid, anchor_grid
 
 
-class DetectSegmentNEW(nn.Module):
+class DetectSegment(nn.Module):
     stride = None  # strides computed during build
     dynamic = False  # force grid reconstruction
     export = False  # export mode
@@ -122,7 +122,9 @@ class DetectSegmentNEW(nn.Module):
                 if self.dynamic or self.grid[i].shape[2:4] != x[i].shape[2:4]:
                     self.grid[i], self.anchor_grid[i] = self._make_grid(nx, ny, i)
 
-                y = x[i].sigmoid()
+                y = x[i].clone()
+                y[..., :5] = y[..., :5].sigmoid()
+                y[..., self.nm + 5:] = y[..., self.nm + 5:].sigmoid()
                 if self.inplace:
                     y[..., 0:2] = (y[..., 0:2] * 2 + self.grid[i]) * self.stride[i]  # xy
                     y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
@@ -148,7 +150,7 @@ class DetectSegmentNEW(nn.Module):
         return grid, anchor_grid
 
 
-class DetectSegment(Detect):
+class DetectSegmentOLD(Detect):
 
     def __init__(self, nc=80, anchors=(), nm=32, npr=256, ch=(), inplace=True):
         super().__init__(nc, anchors, ch, inplace)
