@@ -91,12 +91,11 @@ class DetectSegment(Detect):
 
     def __init__(self, nc=80, anchors=(), mask_dim=32, proto_channel=256, ch=(), inplace=True):
         super().__init__(nc, anchors, ch, inplace)
-        self.mask_dim = mask_dim
-        self.no = nc + 5 + self.mask_dim  # number of outputs per anchor
-        self.nm = 5 + self.mask_dim
+        self.nm = mask_dim
+        self.no = nc + 5 + self.nm  # number of outputs per anchor
         self.proto_c = proto_channel
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
-        self.proto_net = Proto(ch[0], self.proto_c, self.mask_dim)
+        self.proto_net = Proto(ch[0], self.proto_c, self.nm)
 
     def forward(self, x):
         z = []  # inference output
@@ -114,7 +113,7 @@ class DetectSegment(Detect):
 
                 y = x[i].clone()
                 y[..., 0:5] = y[..., 0:5].sigmoid()
-                y[..., self.nm:] = y[..., self.nm:].sigmoid()
+                y[..., (self.nm + 5):] = y[..., (self.nm + 5):].sigmoid()
                 if self.inplace:
                     y[..., 0:2] = (y[..., 0:2] * 2 + self.grid[i]) * self.stride[i]  # xy
                     y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
@@ -290,8 +289,8 @@ class DetectionModel(BaseModel):
         for mi, s in zip(m.m, m.stride):  # from
             b = mi.bias.view(m.na, -1)  # conv.bias(255) to (3,85)
             b.data[:, 4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
-            if hasattr(m, "mask_dim"):
-                b.data[:, 5 + m.mask_dim:] += math.log(0.6 /
+            if hasattr(m, "nm"):
+                b.data[:, 5 + m.nm:] += math.log(0.6 /
                                                        (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
             else:
                 b.data[:, 5:] += math.log(0.6 / (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls

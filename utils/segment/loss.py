@@ -67,7 +67,7 @@ class ComputeLoss:
 
     def __call__(self, preds, targets, masks):  # predictions, targets, model
         p, proto = preds
-        bs, nm, mask_h, mask_w = proto.shape  # proto shape(bs, mask_h, mask_w, num_masks)
+        bs, nm, mask_h, mask_w = proto.shape
         proto = proto.permute(0, 2, 3, 1)
 
         lcls = torch.zeros(1, device=self.device)
