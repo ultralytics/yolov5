@@ -90,7 +90,7 @@ class Detect(nn.Module):
         return grid, anchor_grid
 
 
-class DetectSegment(nn.Module):
+class DetectSegmentNEW(nn.Module):
     stride = None  # strides computed during build
     dynamic = False  # force grid reconstruction
     export = False  # export mode
@@ -148,7 +148,7 @@ class DetectSegment(nn.Module):
         return grid, anchor_grid
 
 
-class DetectSegmentOLD(Detect):
+class DetectSegment(Detect):
 
     def __init__(self, nc=80, anchors=(), nm=32, npr=256, ch=(), inplace=True):
         super().__init__(nc, anchors, ch, inplace)
