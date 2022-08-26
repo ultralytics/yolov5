@@ -768,10 +768,11 @@ class Proto(nn.Module):
         self.cv1 = Conv(c1, c_, k=3, p=1)
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         self.cv2 = Conv(c_, c_, k=3, p=1)
-        self.cv3 = Conv(c_, c2, k=1, p=0)
+        self.cv3 = nn.Conv2d(c_, c2, kernel_size=1)
+        self.act = nn.SiLU()
 
     def forward(self, x):
-        return self.cv3(self.cv2(self.upsample(self.cv1(x))))
+        return self.act(self.cv3(self.cv2(self.upsample(self.cv1(x)))))
 
 
 class Classify(nn.Module):
