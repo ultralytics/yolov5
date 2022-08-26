@@ -89,20 +89,18 @@ class Detect(nn.Module):
 
 class DetectSegment(Detect):
 
-    def __init__(self, nc=80, anchors=(), mask_dim=32, proto_channel=256, ch=(), inplace=True):
+    def __init__(self, nc=80, anchors=(), nm=32, npr=256, ch=(), inplace=True):
         super().__init__(nc, anchors, ch, inplace)
-        self.nm = mask_dim
+        self.nm = nm
         self.no = nc + 5 + self.nm  # number of outputs per anchor
-        self.proto_c = proto_channel
+        self.npr = npr
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
-        self.proto_net = Proto(ch[0], self.proto_c, self.nm)
+        self.proto = Proto(ch[0], self.npr, self.nm)
 
     def forward(self, x):
         z = []  # inference output
+        p = self.proto(x[0]) if self.nm else None
         for i in range(self.nl):
-            if i == 0:
-                proto_out = self.proto_net(x[i])
-
             x[i] = self.m[i](x[i])  # conv
             bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
             x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
@@ -123,12 +121,7 @@ class DetectSegment(Detect):
                     y = torch.cat((xy.type_as(y), wh.type_as(y), y[..., 4:]), -1)
                 z.append(y.view(-1, self.na * ny * nx, self.no))
 
-        # TODO: export
-        if torch.onnx.is_in_onnx_export():
-            output = torch.cat(z, 1)
-            return output  # keep the same type with x
-        else:
-            return (x, proto_out) if self.training else (torch.cat(z, 1), (x, proto_out))
+        return (x, p) if self.training else (torch.cat(z, 1), (x, p))
 
 
 class BaseModel(nn.Module):
@@ -290,8 +283,7 @@ class DetectionModel(BaseModel):
             b = mi.bias.view(m.na, -1)  # conv.bias(255) to (3,85)
             b.data[:, 4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
             if hasattr(m, "nm"):
-                b.data[:, 5 + m.nm:] += math.log(0.6 /
-                                                       (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
+                b.data[:, 5 + m.nm:] += math.log(0.6 / (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
             else:
                 b.data[:, 5:] += math.log(0.6 / (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
             mi.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
