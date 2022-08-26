@@ -96,20 +96,7 @@ class DetectSegment(Detect):
         self.nm = 5 + self.mask_dim
         self.proto_c = proto_channel
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
-
-        # p3作为输入
-        self.proto_net = nn.Sequential(
-            nn.Conv2d(ch[0], self.proto_c, kernel_size=3, stride=1, padding=1),
-            nn.SiLU(inplace=True),
-            # nn.Conv2d(self.proto_c, self.proto_c, kernel_size=3, stride=1, padding=1),
-            # nn.SiLU(inplace=True),
-            # nn.Conv2d(self.proto_c, self.proto_c, kernel_size=3, stride=1, padding=1),
-            # nn.SiLU(inplace=True),
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
-            nn.Conv2d(self.proto_c, self.proto_c, kernel_size=3, stride=1, padding=1),
-            nn.SiLU(inplace=True),
-            nn.Conv2d(self.proto_c, self.mask_dim, kernel_size=1, padding=0),
-            nn.SiLU(inplace=True))
+        self.proto_net = Proto(ch[0], self.proto_c, self.mask_dim)
 
     def forward(self, x):
         z = []  # inference output
