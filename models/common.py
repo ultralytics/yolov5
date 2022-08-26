@@ -766,7 +766,8 @@ class Proto(nn.Module):
     def __init__(self, c1, c_=256, c2=32):  # ch_in, number of protos, number of masks
         super().__init__()
         self.cv1 = Conv(c1, c_, k=3, p=1)
-        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
+        # self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.cv2 = Conv(c_, c_, k=3, p=1)
         self.cv3 = nn.Conv2d(c_, c2, kernel_size=1)
         self.act = nn.SiLU()
