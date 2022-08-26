@@ -157,6 +157,7 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
 - [Roboflow for Datasets, Labeling, and Active Learning](https://github.com/ultralytics/yolov5/issues/4975)  🌟 NEW
 - [ClearML Logging](https://github.com/ultralytics/yolov5/tree/master/utils/loggers/clearml) 🌟 NEW
 - [Deci Platform](https://github.com/ultralytics/yolov5/wiki/Deci-Platform) 🌟 NEW
+- [Comet Logging](https://github.com/ultralytics/yolov5/tree/master/utils/loggers/comet) 🌟 NEW
 
 </details>
 
