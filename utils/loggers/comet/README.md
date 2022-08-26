@@ -143,7 +143,7 @@ python train.py \
 --epochs 5 \
 --data coco128.yaml \
 --weights yolov5s.pt \
---save-period 1
+--save-period 1 \
 --comet_save_model
 ```
 
@@ -159,8 +159,8 @@ python train.py \
 --epochs 5 \
 --data coco128.yaml \
 --weights yolov5s.pt \
---save-period 1
---comet_save_model
+--save-period 1 \
+--comet_save_model \
 --comet_checkpoint_filename "last.pt" # this defaults to "best.pt"
 ```
 
@@ -173,8 +173,8 @@ python train.py \
 --epochs 5 \
 --data coco128.yaml \
 --weights yolov5s.pt \
---save-period 1
---comet_save_model
+--save-period 1 \
+--comet_save_model \
 --comet_checkpoint_filename "all"
 ```
 
@@ -187,9 +187,9 @@ python train.py \
 --epochs 5 \
 --data coco128.yaml \
 --weights yolov5s.pt \
---save-period 1
---comet_save_model
---comet_checkpoint_filename "best.pt"
+--save-period 1 \
+--comet_save_model \
+--comet_checkpoint_filename "best.pt" \
 --comet_overwrite_checkpoint
 ```
 
