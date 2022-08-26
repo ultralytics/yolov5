@@ -34,7 +34,10 @@ def process_mask_upsample(proto_out, out_masks, bboxes, shape):
     c, mh, mw = proto_out.shape  # CHW
     masks = (out_masks.tanh() @ proto_out.float().view(c, -1)).sigmoid().view(-1, mh, mw)
     masks = F.interpolate(masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
+
     masks = crop(masks.permute(1, 2, 0).contiguous(), bboxes)  # HWC
+    masks = masks.permute(2, 0, 1).contiguous()
+
     return masks.gt_(0.5)
 
 
@@ -58,12 +61,13 @@ def process_mask(proto_out, out_masks, bboxes, shape, upsample=False):
     downsampled_bboxes[:, 2] *= mw / iw
     downsampled_bboxes[:, 3] *= mh / ih
     downsampled_bboxes[:, 1] *= mh / ih
+
     masks = crop(masks.permute(1, 2, 0).contiguous(), downsampled_bboxes)  # HWC
+    masks = masks.permute(2, 0, 1).contiguous()
 
     if upsample:
-        masks = masks.permute(2, 0, 1).contiguous()
         masks = F.interpolate(masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
-        masks = masks.permute(1, 2, 0).contiguous()
+
     return masks.gt_(0.5)
 
 

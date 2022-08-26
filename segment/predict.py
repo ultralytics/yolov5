@@ -148,10 +148,7 @@ def run(
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
             if len(det):
-                # Mask additions ---------------------------------------------------------------------------------------
                 masks = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
-                masks = masks.permute(2, 0, 1).contiguous()  # CHW
-                # Mask additions ---------------------------------------------------------------------------------------
 
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
