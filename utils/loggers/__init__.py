@@ -256,7 +256,7 @@ class Loggers():
             if last.exists():
                 self.mlflow.log_model(model_path=last, model_name=f"{self.mlflow.model_name}/last/{epoch}")
             if best.exists():
-                self.mlflow.log_model(model_path=best, model_name=f"{self.mlflow.model_name}/best")
+                self.mlflow.log_model(model_path=best, model_name=f"{self.mlflow.model_name}/best/{epoch}")
             self.mlflow.finish_run()
 
         if self.clearml and not self.opt.evolve:
