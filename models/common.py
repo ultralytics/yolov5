@@ -765,23 +765,14 @@ class Proto(nn.Module):
     # YOLOv5 mask proto module
     def __init__(self, c1, c_, c2):  # ch_in, number of protos, number of masks
         super().__init__()
-        # self.cv1 = Conv(c1, c_, k=3, p=1)
-        # self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
-        # self.cv2 = Conv(c_, c_, k=3, p=1)
-        # self.cv3 = nn.Conv2d(c_, c2, kernel_size=1)
-        # self.act = nn.SiLU()
-
-        self.proto_net = nn.Sequential(Conv(c1, c_, k=3, p=1),
-                                       nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
-                                       # nn.Upsample(scale_factor=2, mode='nearest'),
-                                       Conv(c_, c_, k=3, p=1),
-                                       # nn.Conv2d(c_, c2, kernel_size=1, padding=0),
-                                       # nn.SiLU(inplace=True)
-                                       Conv(c_, c2, k=1, p=0),
-                                       )
+        self.cv1 = Conv(c1, c_, k=3, p=1)
+        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
+        self.cv2 = Conv(c_, c_, k=3, p=1)
+        self.cv3 = nn.Conv2d(c_, c2, kernel_size=1)
+        self.act = nn.SiLU()
 
     def forward(self, x):
-        return self.proto_net(x)
+        return self.act(self.cv3(self.cv2(self.upsample(self.cv1(x)))))
 
 
 class Classify(nn.Module):
