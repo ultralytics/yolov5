@@ -772,8 +772,8 @@ class Proto(nn.Module):
         # self.act = nn.SiLU()
 
         self.proto_net = nn.Sequential(Conv(c1, c_, k=3, p=1),
-                                       # nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
-                                       nn.Upsample(scale_factor=2, mode='nearest'),
+                                       nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
+                                       # nn.Upsample(scale_factor=2, mode='nearest'),
                                        Conv(c_, c_, k=3, p=1),
                                        nn.Conv2d(c_, c2, kernel_size=1, padding=0),
                                        nn.SiLU(inplace=True))
