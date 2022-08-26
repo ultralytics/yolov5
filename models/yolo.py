@@ -211,7 +211,7 @@ class DetectionModel(BaseModel):
         if isinstance(m, (Detect, DetectSegment)):
             s = 256  # 2x min stride
             m.inplace = self.inplace
-            forward = lambda x: self.forward(x)[0] if self.nm else self.forward(x)
+            forward = lambda x: self.forward(x)[0] if m.nm else self.forward(x)
             m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])  # forward
             check_anchor_order(m)
             m.anchors /= m.stride.view(-1, 1, 1)
