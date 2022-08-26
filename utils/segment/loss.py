@@ -157,7 +157,7 @@ class ComputeLoss:
     def single_mask_loss(self, gt_mask, pred, proto, xyxy, w, h):
         """mask loss of one single pic."""
         # (80, 80, 32) @ (32, n) -> (80, 80, n)
-        pred_mask = proto @ pred.tanh().T
+        pred_mask = proto @ pred.T
         # pred_mask = proto @ pred.tanh().T
         # lseg_iou = self.mask_loss(pred_mask, gt_mask, xyxy)
         # iou = self.mask_loss(pred_mask, gt_mask, xyxy, return_iou=True)
