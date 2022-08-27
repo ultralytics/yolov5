@@ -120,9 +120,9 @@ class ComputeLoss:
                 mxyxys = xywh2xyxy(mxywhs)
 
                 for bi in b.unique():
-                    j = torch.nonzero(b == bi).squeeze()  # matching index
+                    j = b == bi  # matching index
                     if self.overlap:
-                        mask_gti = torch.where(masks[bi].unsqueeze(2) == tidxs[i][j][None, None], 1.0, 0.0)
+                        mask_gti = torch.where(masks[bi].unsqueeze(2) == tidxs[i][j], 1.0, 0.0)
                     else:
                         mask_gti = masks[tidxs[i]][j].permute(1, 2, 0).contiguous()
                     lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j])
