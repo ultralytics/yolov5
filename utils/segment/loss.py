@@ -119,24 +119,21 @@ class ComputeLoss:
                           torch.tensor([mask_w, mask_h, mask_w, mask_h], device=mxywh.device))
                 mxyxys = xywh2xyxy(mxywhs)
 
-                for bi in b.unique():
-                    j = b == bi  # matching index
-                    if self.overlap:
-                        mask_gti = torch.where(masks[bi].unsqueeze(2) == tidxs[i][j], 1.0, 0.0)
-                    else:
-                        mask_gti = masks[tidxs[i]][j].permute(1, 2, 0).contiguous()
-                    # lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j])
-                    lseg += self.single_mask_loss_v2(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j], fast=True)
+                # for bi in b.unique():
+                #     j = b == bi  # matching index
+                #     if self.overlap:
+                #         mask_gti = torch.where(masks[bi].unsqueeze(2) == tidxs[i][j], 1.0, 0.0)
+                #     else:
+                #         mask_gti = masks[tidxs[i]][j].permute(1, 2, 0).contiguous()
+                #     lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j])
+                #     lseg += self.single_mask_loss_v2(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j], fast=True)
 
-                # lseg = torch.zeros(1, device=self.device)
-                # with Profile() as dt:
-                #     mxyxys = mxyxys.long()
-                #     for j, bi in enumerate(b):
-                #         x = mxyxys[j]
-                #         pred_mask = (proto[bi, x[1]:x[3], x[0]:x[2]] * pmask[j]).sum(2)
-                #         mask_gti = (masks[bi, x[1]:x[3], x[0]:x[2]] == tidxs[i][j]).float()
-                #         lseg += F.binary_cross_entropy_with_logits(pred_mask, mask_gti)
-                # print('new', dt.t, lseg / j)
+                mxyxys = mxyxys.long()
+                for j, bi in enumerate(b):
+                    x = mxyxys[j]
+                    pred_mask = (proto[bi, x[1]:x[3], x[0]:x[2]] * pmask[j]).sum(2)
+                    mask_gti = (masks[bi, x[1]:x[3], x[0]:x[2]] == tidxs[i][j]).float()
+                    lseg += F.binary_cross_entropy_with_logits(pred_mask, mask_gti)
 
             obji = self.BCEobj(pi[..., 4], tobj)
             lobj += obji * self.balance[i]  # obj loss
