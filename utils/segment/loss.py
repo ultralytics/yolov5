@@ -125,8 +125,8 @@ class ComputeLoss:
                         mask_gti = torch.where(masks[bi].unsqueeze(2) == tidxs[i][j], 1.0, 0.0)
                     else:
                         mask_gti = masks[tidxs[i]][j].permute(1, 2, 0).contiguous()
-                    lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j])
-                    # lseg += self.single_mask_loss_v2(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j])
+                    # lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j])
+                    lseg += self.single_mask_loss_v2(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j])
 
                 # lseg = torch.zeros(1, device=self.device)
                 # with Profile() as dt:
