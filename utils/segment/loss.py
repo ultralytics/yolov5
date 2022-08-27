@@ -31,6 +31,7 @@ class MaskIOULoss(nn.Module):
         iou = masks_iou(pred_mask, gt_mask)
         return iou if return_iou else (1.0 - iou)
 
+from line_profiler_pycharm import profile
 
 class ComputeLoss:
     # Compute losses
@@ -65,6 +66,7 @@ class ComputeLoss:
         self.anchors = m.anchors
         self.device = device
 
+    @profile
     def __call__(self, preds, targets, masks):  # predictions, targets, model
         p, proto = preds
         bs, nm, mask_h, mask_w = proto.shape  # batch size, number of masks, mask height, mask width
@@ -120,9 +122,9 @@ class ComputeLoss:
                 mxyxys = xywh2xyxy(mxywhs)
 
                 for bi in b.unique():
-                    j = torch.nonzero(b == bi).squeeze()  # matching index
+                    j = b == bi  # matching index
                     if self.overlap:
-                        mask_gti = torch.where(masks[bi].unsqueeze(2) == tidxs[i][j][None, None], 1.0, 0.0)
+                        mask_gti = torch.where(masks[bi].unsqueeze(2) == tidxs[i][j], 1.0, 0.0)
                     else:
                         mask_gti = masks[tidxs[i]][j].permute(1, 2, 0).contiguous()
                     lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j])
@@ -145,6 +147,7 @@ class ComputeLoss:
         loss = lbox + lobj + lcls + lseg
         return loss * bs, torch.cat((lbox, lseg, lobj, lcls)).detach()
 
+    @profile
     def single_mask_loss(self, gt_mask, pred, proto, xyxy, w, h):
         """mask loss of one single pic."""
         # (80, 80, 32) @ (32, n) -> (80, 80, n)
