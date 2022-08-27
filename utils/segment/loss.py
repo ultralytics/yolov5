@@ -126,9 +126,17 @@ class ComputeLoss:
                     else:
                         mask_gti = masks[tidxs[i]][j].permute(1, 2, 0).contiguous()
                     lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j])
-                    # Update tobj
-                    # iou = iou.detach().clamp(0).type(tobj.dtype)
-                    # tobj[b[index], a[index], gj[index], gi[index]] += 0.5 * iou[0]
+                    # lseg += self.single_mask_loss_v2(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j])
+
+                # lseg = torch.zeros(1, device=self.device)
+                # with Profile() as dt:
+                #     mxyxys = mxyxys.long()
+                #     for j, bi in enumerate(b):
+                #         x = mxyxys[j]
+                #         pred_mask = (proto[bi, x[1]:x[3], x[0]:x[2]] * pmask[j]).sum(2)
+                #         mask_gti = (masks[bi, x[1]:x[3], x[0]:x[2]] == tidxs[i][j]).float()
+                #         lseg += F.binary_cross_entropy_with_logits(pred_mask, mask_gti)
+                # print('new', dt.t, lseg / j)
 
             obji = self.BCEobj(pi[..., 4], tobj)
             lobj += obji * self.balance[i]  # obj loss
@@ -156,6 +164,23 @@ class ComputeLoss:
         lseg = crop(lseg, xyxy)
         lseg = lseg.mean(dim=(0, 1)) / w / h
         return lseg.mean()  # , iou# + lseg_iou.mean()
+
+    def single_mask_loss_v2(self, gt_mask, pred, proto, xyxy, width, height, fast=False):
+        pred_mask = proto @ pred.T
+
+        # Crop
+        h, w, n = pred_mask.shape
+        x1, y1, x2, y2 = torch.chunk(xyxy.T[None], 4, 1)  # x1 shape(1,1,n)
+        r = torch.arange(w, device=pred_mask.device, dtype=x1.dtype)[None, :, None]  # rows shape(1,w,1)
+        c = torch.arange(h, device=pred_mask.device, dtype=x1.dtype)[:, None, None]
+        i = (r >= x1) * (r < x2) * (c >= y1) * (c < y2)
+
+        if fast:
+            return F.binary_cross_entropy_with_logits(pred_mask[i], gt_mask[i])
+
+        loss = F.binary_cross_entropy_with_logits(pred_mask[i], gt_mask[i], reduction="none")
+        area = i * (width * height)
+        return (loss / area[i]).mean() * (width * height).mean()
 
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
