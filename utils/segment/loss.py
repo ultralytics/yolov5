@@ -110,7 +110,7 @@ class ComputeLoss:
                 # Mask regression
                 if tuple(masks.shape[-2:]) != (mask_h, mask_w):  # downsample
                     masks = F.interpolate(masks[None], (mask_h, mask_w), mode="bilinear", align_corners=False)[0]
-                mwn, mhn = xywhn[i][:, 2:].T  # mask width, height normalized
+                marea = xywhn[i][:, 2:].prod(1)  # mask width, height normalized
                 mxyxy = xywh2xyxy(xywhn[i] * torch.tensor([mask_w, mask_h, mask_w, mask_h], device=self.device))
                 for bi in b.unique():
                     j = b == bi  # matching index
@@ -118,7 +118,7 @@ class ComputeLoss:
                         mask_gti = torch.where(masks[bi].unsqueeze(2) == tidxs[i][j], 1.0, 0.0)
                     else:
                         mask_gti = masks[tidxs[i]][j].permute(1, 2, 0).contiguous()
-                    lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxy[j], mwn[j], mwn[j])
+                    lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxy[j], marea[j])
 
             obji = self.BCEobj(pi[..., 4], tobj)
             lobj += obji * self.balance[i]  # obj loss
@@ -135,15 +135,32 @@ class ComputeLoss:
         loss = lbox + lobj + lcls + lseg
         return loss * bs, torch.cat((lbox, lseg, lobj, lcls)).detach()
 
-    def single_mask_loss(self, gt_mask, pred, proto, xyxy, w, h):
+    def single_mask_loss(self, gt_mask, pred, proto, xyxy, area):
         # Mask loss for one image
-        pred_mask = proto @ pred.tanh().T  # shape(80,80,32) @ (32,n) -> (80,80,n)
+        pred_mask = proto @ pred.T  # shape(80,80,32) @ (32,n) -> (80,80,n)
         # lseg_iou = self.mask_loss(pred_mask, gt_mask, xyxy)
         # iou = self.mask_loss(pred_mask, gt_mask, xyxy, return_iou=True)
         lseg = F.binary_cross_entropy_with_logits(pred_mask, gt_mask, reduction="none")
         lseg = crop(lseg, xyxy)
-        lseg = lseg.mean(dim=(0, 1)) / w / h
+        lseg = lseg.mean(dim=(0, 1)) / area
         return lseg.mean()  # , iou# + lseg_iou.mean()
+
+    def single_mask_loss_v2(self, gt_mask, pred, proto, xyxy, area, fast=False):
+        pred_mask = proto @ pred.T
+
+        # Crop
+        h, w, n = pred_mask.shape
+        x1, y1, x2, y2 = torch.chunk(xyxy.T[None], 4, 1)  # x1 shape(1,1,n)
+        r = torch.arange(w, device=pred_mask.device, dtype=x1.dtype)[None, :, None]  # rows shape(1,w,1)
+        c = torch.arange(h, device=pred_mask.device, dtype=x1.dtype)[:, None, None]
+        i = (r >= x1) * (r < x2) * (c >= y1) * (c < y2)
+
+        if fast:
+            return F.binary_cross_entropy_with_logits(pred_mask[i], gt_mask[i])
+
+        loss = F.binary_cross_entropy_with_logits(pred_mask[i], gt_mask[i], reduction="none")
+        mask_area = i * area
+        return (loss / mask_area[i]).mean() * area.mean()
 
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
