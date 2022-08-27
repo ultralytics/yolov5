@@ -74,7 +74,7 @@ class ComputeLoss:
         lbox = torch.zeros(1, device=self.device)
         lobj = torch.zeros(1, device=self.device)
         lseg = torch.zeros(1, device=self.device)
-        tcls, tbox, indices, anchors, tidxs, xywh = self.build_targets(p, targets)  # targets
+        tcls, tbox, indices, anchors, tidxs, xywhn = self.build_targets(p, targets)  # targets
 
         # Losses
         for i, pi in enumerate(p):  # layer index, layer predictions
@@ -85,7 +85,7 @@ class ComputeLoss:
             if n:
                 pxy, pwh, _, pmask, pcls, = pi[b, a, gj, gi].split((2, 2, 1, nm, self.nc), 1)  # subset of predictions
 
-                # Regression
+                # Box regression
                 pxy = pxy.sigmoid() * 2 - 0.5
                 pwh = (pwh.sigmoid() * 2) ** 2 * anchors[i]
                 pbox = torch.cat((pxy, pwh), 1)  # predicted box
@@ -107,28 +107,18 @@ class ComputeLoss:
                     t[range(n), tcls[i]] = self.cp
                     lcls += self.BCEcls(pcls, t)  # BCE
 
-                # Mask Regression
-                if tuple(masks.shape[-2:]) != (mask_h, mask_w):
-                    # downsample shape(bs * num_objs,img_h,img_w) -> (bs * num_objs,mask_h,mask_w)
+                # Mask regression
+                if tuple(masks.shape[-2:]) != (mask_h, mask_w):  # downsample
                     masks = F.interpolate(masks[None], (mask_h, mask_w), mode="bilinear", align_corners=False)[0]
-
-                mxywh = xywh[i]
-                mws, mhs = mxywh[:, 2:].T
-                mws, mhs = mws / pi.shape[3], mhs / pi.shape[2]
-                mxywhs = (mxywh / torch.tensor(pi.shape, device=mxywh.device)[[3, 2, 3, 2]] *
-                          torch.tensor([mask_w, mask_h, mask_w, mask_h], device=mxywh.device))
-                mxyxys = xywh2xyxy(mxywhs)
-
+                marea = xywhn[i][:, 2:].prod(1)  # mask width, height normalized
+                mxyxy = xywh2xyxy(xywhn[i] * torch.tensor([mask_w, mask_h, mask_w, mask_h], device=self.device))
                 for bi in b.unique():
                     j = b == bi  # matching index
                     if self.overlap:
                         mask_gti = torch.where(masks[bi].unsqueeze(2) == tidxs[i][j], 1.0, 0.0)
                     else:
                         mask_gti = masks[tidxs[i]][j].permute(1, 2, 0).contiguous()
-                    lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxys[j], mws[j], mhs[j])
-                    # Update tobj
-                    # iou = iou.detach().clamp(0).type(tobj.dtype)
-                    # tobj[b[index], a[index], gj[index], gi[index]] += 0.5 * iou[0]
+                    lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxy[j], marea[j])
 
             obji = self.BCEobj(pi[..., 4], tobj)
             lobj += obji * self.balance[i]  # obj loss
@@ -145,21 +135,37 @@ class ComputeLoss:
         loss = lbox + lobj + lcls + lseg
         return loss * bs, torch.cat((lbox, lseg, lobj, lcls)).detach()
 
-    def single_mask_loss(self, gt_mask, pred, proto, xyxy, w, h):
-        """mask loss of one single pic."""
-        # (80, 80, 32) @ (32, n) -> (80, 80, n)
-        pred_mask = proto @ pred.tanh().T
+    def single_mask_loss(self, gt_mask, pred, proto, xyxy, area):
+        # Mask loss for one image
+        pred_mask = proto @ pred.T  # shape(80,80,32) @ (32,n) -> (80,80,n)
         # lseg_iou = self.mask_loss(pred_mask, gt_mask, xyxy)
         # iou = self.mask_loss(pred_mask, gt_mask, xyxy, return_iou=True)
         lseg = F.binary_cross_entropy_with_logits(pred_mask, gt_mask, reduction="none")
         lseg = crop(lseg, xyxy)
-        lseg = lseg.mean(dim=(0, 1)) / w / h
+        lseg = lseg.mean(dim=(0, 1)) / area
         return lseg.mean()  # , iou# + lseg_iou.mean()
+
+    def single_mask_loss_v2(self, gt_mask, pred, proto, xyxy, area, fast=False):
+        pred_mask = proto @ pred.T
+
+        # Crop
+        h, w, n = pred_mask.shape
+        x1, y1, x2, y2 = torch.chunk(xyxy.T[None], 4, 1)  # x1 shape(1,1,n)
+        r = torch.arange(w, device=pred_mask.device, dtype=x1.dtype)[None, :, None]  # rows shape(1,w,1)
+        c = torch.arange(h, device=pred_mask.device, dtype=x1.dtype)[:, None, None]
+        i = (r >= x1) * (r < x2) * (c >= y1) * (c < y2)
+
+        if fast:
+            return F.binary_cross_entropy_with_logits(pred_mask[i], gt_mask[i])
+
+        loss = F.binary_cross_entropy_with_logits(pred_mask[i], gt_mask[i], reduction="none")
+        mask_area = i * area
+        return (loss / mask_area[i]).mean() * area.mean()
 
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
         na, nt = self.na, targets.shape[0]  # number of anchors, targets
-        tcls, tbox, indices, anch, tidxs, xywh = [], [], [], [], [], []
+        tcls, tbox, indices, anch, tidxs, xywhn = [], [], [], [], [], []
         gain = torch.ones(8, device=self.device)  # normalized to gridspace gain
         ai = torch.arange(na, device=self.device).float().view(na, 1).repeat(1, nt)  # same as .repeat_interleave(nt)
         if self.overlap:
@@ -222,6 +228,6 @@ class ComputeLoss:
             anch.append(anchors[a])  # anchors
             tcls.append(c)  # class
             tidxs.append(tidx)
-            xywh.append(torch.cat((gxy, gwh), 1))
+            xywhn.append(torch.cat((gxy, gwh), 1) / gain[2:6])  # xywh normalized
 
-        return tcls, tbox, indices, anch, tidxs, xywh
+        return tcls, tbox, indices, anch, tidxs, xywhn
