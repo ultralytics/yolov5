@@ -775,6 +775,16 @@ class Proto(nn.Module):
         return self.act(self.cv3(self.cv2(self.upsample(self.cv1(x)))))
 
 
+class ProtoP2(nn.Module):
+    # YOLOv5 mask proto module
+    def __init__(self, c1, c_=256, c2=32):  # ch_in, number of protos, number of masks
+        super().__init__()
+        self.cv1 = Conv(c1, c2, k=1, p=0)
+
+    def forward(self, x):
+        return self.cv1(x)
+
+
 class Classify(nn.Module):
     # YOLOv5 classification head, i.e. x(b,c1,20,20) to x(b,c2)
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1):  # ch_in, ch_out, kernel, stride, padding, groups

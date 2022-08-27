@@ -107,7 +107,7 @@ class DetectSegment(nn.Module):
         self.anchor_grid = [torch.empty(1)] * self.nl  # init anchor grid
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
-        self.proto = Proto(ch[0], self.npr, self.nm)
+        self.proto = ProtoP2(ch[0], self.npr, self.nm)
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
 
     def forward(self, x):
