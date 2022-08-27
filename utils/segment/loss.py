@@ -120,7 +120,7 @@ class ComputeLoss:
                 mxyxys = xywh2xyxy(mxywhs)
 
                 for bi in b.unique():
-                    j = torch.nonzero(b == bi)  # matching index
+                    j = torch.nonzero(b == bi).squeeze()  # matching index
                     if self.overlap:
                         mask_gti = torch.where(masks[bi].unsqueeze(2) == tidxs[i][j], 1.0, 0.0)  # shape(h,w,n)
                     else:
