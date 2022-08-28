@@ -18,7 +18,8 @@ RUN apt install --no-install-recommends -y python3-pip git zip curl htop libgl1-
 COPY requirements.txt .
 RUN python3 -m pip install --upgrade pip wheel
 RUN pip install --no-cache -r requirements.txt albumentations gsutil notebook \
-    coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu tensorflowjs \
+    coremltools onnx onnx-simplifier onnxruntime tensorflow-cpu tensorflowjs \
+    # openvino-dev \
     --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Create working directory
