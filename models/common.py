@@ -333,7 +333,7 @@ class DetectMultiBackend(nn.Module):
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
             model.half() if fp16 else model.float()
             self.model = model  # explicitly assign for to(), cpu(), cuda(), half()
-            segmentation_model = type(model.model[-1]).__name__ == 'DetectSegment'
+            segmentation_model = type(model.model[-1]).__name__ == 'Segment'
         elif jit:  # TorchScript
             LOGGER.info(f'Loading {w} for TorchScript inference...')
             extra_files = {'config.txt': ''}  # model metadata
@@ -762,14 +762,13 @@ class Detections:
 
 
 class Proto(nn.Module):
-    # YOLOv5 mask proto module
-    def __init__(self, c1, c_, c2):  # ch_in, number of protos, number of masks
+    # YOLOv5 mask Proto module for segmentation models
+    def __init__(self, c1, c_=256, c2=32):  # ch_in, number of protos, number of masks
         super().__init__()
-        self.cv1 = Conv(c1, c_, k=3, p=1)
-        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
-        # self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
-        self.cv2 = Conv(c_, c_, k=3, p=1)
-        self.cv3 = Conv(c_, c2, k=1, p=0)
+        self.cv1 = Conv(c1, c_, k=3)
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        self.cv2 = Conv(c_, c_, k=3)
+        self.cv3 = Conv(c_, c2)
 
     def forward(self, x):
         return self.cv3(self.cv2(self.upsample(self.cv1(x))))

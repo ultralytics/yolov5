@@ -39,7 +39,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 import torch.nn.functional as F
 
 from models.common import DetectMultiBackend
-from models.yolo import DetectionModel
+from models.yolo import SegmentationModel
 from utils.callbacks import Callbacks
 from utils.general import (LOGGER, NUM_THREADS, Profile, check_dataset, check_img_size, check_requirements, check_yaml,
                            coco80_to_coco91_class, colorstr, increment_path, non_max_suppression, print_args,
@@ -169,7 +169,7 @@ def run(
         device, pt, jit, engine = next(model.parameters()).device, True, False, False  # get model device, PyTorch model
         half &= device.type != 'cpu'  # half precision only supported on CUDA
         model.half() if half else model.float()
-        nm = de_parallel(model).model[-1].mask_dim  # number of masks
+        nm = de_parallel(model).model[-1].nm  # number of masks
     else:  # called directly
         device = select_device(device, batch_size=batch_size)
 
@@ -182,7 +182,7 @@ def run(
         stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
         imgsz = check_img_size(imgsz, s=stride)  # check image size
         half = model.fp16  # FP16 supported on limited backends with CUDA
-        nm = de_parallel(model).model.model[-1].mask_dim if isinstance(model, DetectionModel) else 32  # number of masks
+        nm = de_parallel(model).model.model[-1].nm if isinstance(model, SegmentationModel) else 32  # number of masks
         if engine:
             batch_size = model.batch_size
         else:
@@ -269,7 +269,7 @@ def run(
                                       multi_label=True,
                                       agnostic=single_cls,
                                       max_det=max_det,
-                                      masks=nm)
+                                      nm=nm)
 
         # Metrics
         plot_masks = []  # masks for plotting

@@ -57,7 +57,7 @@ class ComputeLoss:
 
             n = b.shape[0]  # number of targets
             if n:
-                pxy, pwh, _, pmask, pcls, = pi[b, a, gj, gi].split((2, 2, 1, nm, self.nc), 1)  # subset of predictions
+                pxy, pwh, _, pcls, pmask = pi[b, a, gj, gi].split((2, 2, 1, self.nc, nm), 1)  # subset of predictions
 
                 # Box regression
                 pxy = pxy.sigmoid() * 2 - 0.5
@@ -111,7 +111,7 @@ class ComputeLoss:
 
     def single_mask_loss(self, gt_mask, pred, proto, xyxy, area):
         # Mask loss for one image
-        pred_mask = (pred.tanh() @ proto.view(32, -1)).view(-1, *proto.shape[1:])  # (n,32) @ (32,80,80) -> (n,80,80)
+        pred_mask = (pred @ proto.view(self.nm, -1)).view(-1, *proto.shape[1:])  # (n,32) @ (32,80,80) -> (n,80,80)
         loss = F.binary_cross_entropy_with_logits(pred_mask, gt_mask, reduction="none")
         return (crop(loss, xyxy).mean(dim=(1, 2)) / area).mean()
 
@@ -126,10 +126,10 @@ class ComputeLoss:
             ti = []
             for i in range(batch):
                 num = (targets[:, 0] == i).sum()  # find number of targets of each image
-                ti.append(torch.arange(num, device=targets.device).float().view(1, num).repeat(na, 1) + 1)  # (na, num)
+                ti.append(torch.arange(num, device=self.device).float().view(1, num).repeat(na, 1) + 1)  # (na, num)
             ti = torch.cat(ti, 1)  # (na, nt)
         else:
-            ti = torch.arange(nt, device=targets.device).float().view(1, nt).repeat(na, 1)
+            ti = torch.arange(nt, device=self.device).float().view(1, nt).repeat(na, 1)
         targets = torch.cat((targets.repeat(na, 1, 1), ai[..., None], ti[..., None]), 2)  # append anchor indices
 
         g = 0.5  # bias

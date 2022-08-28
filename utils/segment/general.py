@@ -21,7 +21,7 @@ def crop(masks, boxes):
     return masks * ((r >= x1) * (r < x2) * (c >= y1) * (c < y2))
 
 
-def process_mask_upsample(proto_out, out_masks, bboxes, shape):
+def process_mask_upsample(protos, masks_in, bboxes, shape):
     """
     Crop after upsample.
     proto_out: [mask_dim, mask_h, mask_w]
@@ -32,14 +32,14 @@ def process_mask_upsample(proto_out, out_masks, bboxes, shape):
     return: h, w, n
     """
 
-    c, mh, mw = proto_out.shape  # CHW
-    masks = (out_masks.tanh() @ proto_out.float().view(c, -1)).sigmoid().view(-1, mh, mw)
+    c, mh, mw = protos.shape  # CHW
+    masks = (masks_in @ protos.float().view(c, -1)).sigmoid().view(-1, mh, mw)
     masks = F.interpolate(masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
     masks = crop(masks, bboxes)  # CHW
     return masks.gt_(0.5)
 
 
-def process_mask(proto_out, out_masks, bboxes, shape, upsample=False):
+def process_mask(protos, masks_in, bboxes, shape, upsample=False):
     """
     Crop before upsample.
     proto_out: [mask_dim, mask_h, mask_w]
@@ -50,9 +50,9 @@ def process_mask(proto_out, out_masks, bboxes, shape, upsample=False):
     return: h, w, n
     """
 
-    c, mh, mw = proto_out.shape  # CHW
+    c, mh, mw = protos.shape  # CHW
     ih, iw = shape
-    masks = (out_masks.tanh() @ proto_out.float().view(c, -1)).sigmoid().view(-1, mh, mw)  # CHW
+    masks = (masks_in @ protos.float().view(c, -1)).sigmoid().view(-1, mh, mw)  # CHW
 
     downsampled_bboxes = bboxes.clone()
     downsampled_bboxes[:, 0] *= mw / iw
