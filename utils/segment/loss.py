@@ -6,30 +6,7 @@ from ..general import xywh2xyxy
 from ..loss import FocalLoss, smooth_BCE
 from ..metrics import bbox_iou
 from ..torch_utils import de_parallel
-from .general import crop, masks_iou
-
-
-class MaskIOULoss(nn.Module):
-
-    def __init__(self) -> None:
-        super().__init__()
-
-    def forward(self, pred_mask, gt_mask, mxyxy=None, return_iou=False):
-        """
-        Args:
-            pred_mask (torch.Tensor): prediction of masks, (80/160, 80/160, n)
-            gt_mask (torch.Tensor): ground truth of masks, (80/160, 80/160, n)
-            mxyxy (torch.Tensor): ground truth of boxes, (n, 4)
-        """
-        _, _, n = pred_mask.shape  # same as gt_mask
-        pred_mask = pred_mask.sigmoid()
-        if mxyxy is not None:
-            pred_mask = crop(pred_mask, mxyxy)
-            gt_mask = crop(gt_mask, mxyxy)
-        pred_mask = pred_mask.permute(2, 0, 1).view(n, -1)
-        gt_mask = gt_mask.permute(2, 0, 1).view(n, -1)
-        iou = masks_iou(pred_mask, gt_mask)
-        return iou if return_iou else (1.0 - iou)
+from .general import crop
 
 
 class ComputeLoss:
@@ -57,7 +34,6 @@ class ComputeLoss:
         self.balance = {3: [4.0, 1.0, 0.4]}.get(m.nl, [4.0, 1.0, 0.25, 0.06, 0.02])  # P3-P7
         self.ssi = list(m.stride).index(16) if autobalance else 0  # stride 16 index
         self.BCEcls, self.BCEobj, self.gr, self.hyp, self.autobalance = BCEcls, BCEobj, 1.0, h, autobalance
-        self.mask_loss = MaskIOULoss()
         self.na = m.na  # number of anchors
         self.nc = m.nc  # number of classes
         self.nl = m.nl  # number of layers
@@ -137,7 +113,7 @@ class ComputeLoss:
         # Mask loss for one image
         pred_mask = (pred.tanh() @ proto.view(32, -1)).view(-1, *proto.shape[1:])  # (n,32) @ (32,80,80) -> (n,80,80)
         loss = F.binary_cross_entropy_with_logits(pred_mask, gt_mask, reduction="none")
-        return (crop(loss, xyxy, hwc=False).mean(dim=(1, 2)) / area).mean()
+        return (crop(loss, xyxy).mean(dim=(1, 2)) / area).mean()
 
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
