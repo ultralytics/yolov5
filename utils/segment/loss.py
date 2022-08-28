@@ -68,8 +68,6 @@ class ComputeLoss:
     def __call__(self, preds, targets, masks):  # predictions, targets, model
         p, proto = preds
         bs, nm, mask_h, mask_w = proto.shape  # batch size, number of masks, mask height, mask width
-        proto = proto.permute(0, 2, 3, 1)
-
         lcls = torch.zeros(1, device=self.device)
         lbox = torch.zeros(1, device=self.device)
         lobj = torch.zeros(1, device=self.device)
@@ -115,9 +113,9 @@ class ComputeLoss:
                 for bi in b.unique():
                     j = b == bi  # matching index
                     if self.overlap:
-                        mask_gti = torch.where(masks[bi].unsqueeze(2) == tidxs[i][j], 1.0, 0.0)
+                        mask_gti = torch.where(masks[bi][None] == tidxs[i][j].view(-1, 1, 1), 1.0, 0.0)
                     else:
-                        mask_gti = masks[tidxs[i]][j].permute(1, 2, 0).contiguous()
+                        mask_gti = masks[tidxs[i]][j]
                     lseg += self.single_mask_loss(mask_gti, pmask[j], proto[bi], mxyxy[j], marea[j])
 
             obji = self.BCEobj(pi[..., 4], tobj)
@@ -137,30 +135,9 @@ class ComputeLoss:
 
     def single_mask_loss(self, gt_mask, pred, proto, xyxy, area):
         # Mask loss for one image
-        pred_mask = proto @ pred.tanh().T  # shape(80,80,32) @ (32,n) -> (80,80,n)
-        # lseg_iou = self.mask_loss(pred_mask, gt_mask, xyxy)
-        # iou = self.mask_loss(pred_mask, gt_mask, xyxy, return_iou=True)
-        lseg = F.binary_cross_entropy_with_logits(pred_mask, gt_mask, reduction="none")
-        lseg = crop(lseg, xyxy)
-        lseg = lseg.mean(dim=(0, 1)) / area
-        return lseg.mean()  # , iou# + lseg_iou.mean()
-
-    def single_mask_loss_v2(self, gt_mask, pred, proto, xyxy, area, fast=False):
-        pred_mask = proto @ pred.T
-
-        # Crop
-        h, w, n = pred_mask.shape
-        x1, y1, x2, y2 = torch.chunk(xyxy.T[None], 4, 1)  # x1 shape(1,1,n)
-        r = torch.arange(w, device=pred_mask.device, dtype=x1.dtype)[None, :, None]  # rows shape(1,w,1)
-        c = torch.arange(h, device=pred_mask.device, dtype=x1.dtype)[:, None, None]
-        i = (r >= x1) * (r < x2) * (c >= y1) * (c < y2)
-
-        if fast:
-            return F.binary_cross_entropy_with_logits(pred_mask[i], gt_mask[i])
-
-        loss = F.binary_cross_entropy_with_logits(pred_mask[i], gt_mask[i], reduction="none")
-        mask_area = i * area
-        return (loss / mask_area[i]).mean() * area.mean()
+        pred_mask = (pred.tanh() @ proto.view(32, -1)).view(-1, *proto.shape[1:])  # (n,32) @ (32,80,80) -> (n,80,80)
+        loss = F.binary_cross_entropy_with_logits(pred_mask, gt_mask, reduction="none")
+        return (crop(loss, xyxy, hwc=False).mean(dim=(1, 2)) / area).mean()
 
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
