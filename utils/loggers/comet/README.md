@@ -8,7 +8,7 @@ This guide will cover how to use YOLOv5 with [Comet](https://www.comet.com/site/
 
 Comet builds tools that help data scientists, engineers, and team leaders accelerate and optimize machine learning and deep learning models.
 
-Track and visualize model metrics in real time, save your hyperparameters, datasets, and model checkpoints, and visualize your model predictions with [Comet Custom Panels](https://www.comet.com/examples/comet-example-yolov5/view/1c4Dqcu8mZ767NBipjwlx3gz6/panels?ref=yolov5)!
+Track and visualize model metrics in real time, save your hyperparameters, datasets, and model checkpoints, and visualize your model predictions with [Comet Custom Panels](https://www.comet.com/examples/comet-example-yolov5?shareable=YcwMiJaZSXfcEXpGOHDD12vA1?ref=yolov5)!
 
 Comet makes sure you never lose track of your work and makes it easy to share results and collaborate across teams of all sizes!
 
@@ -225,7 +225,7 @@ python train.py \
 
 You can log model predictions and the associated images using `comet_log_predictions`. Predictions can be visualized using Comet's Object Detection Custom Panel
 
-Here is an [example project using the Panel](https://www.comet.com/examples/comet-example-yolov5/view/1c4Dqcu8mZ767NBipjwlx3gz6/panels?ref=yolov5)
+Here is an [example project using the Panel](https://www.comet.com/examples/comet-example-yolov5?shareable=YcwMiJaZSXfcEXpGOHDD12vA1?ref=yolov5)
 
 ```shell
 python train.py \
