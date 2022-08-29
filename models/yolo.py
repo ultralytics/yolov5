@@ -37,7 +37,7 @@ except ImportError:
 
 class Detect(nn.Module):
     stride = None  # strides computed during build
-    onnx_dynamic = False  # ONNX export parameter
+    dynamic = False  # force grid reconstruction
     export = False  # export mode
 
     def __init__(self, nc=80, anchors=(), ch=(), inplace=True):  # detection layer
@@ -60,7 +60,7 @@ class Detect(nn.Module):
             x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
             if not self.training:  # inference
-                if self.onnx_dynamic or self.grid[i].shape[2:4] != x[i].shape[2:4]:
+                if self.dynamic or self.grid[i].shape[2:4] != x[i].shape[2:4]:
                     self.grid[i], self.anchor_grid[i] = self._make_grid(nx, ny, i)
 
                 y = x[i].sigmoid()
@@ -81,10 +81,7 @@ class Detect(nn.Module):
         t = self.anchors[i].dtype
         shape = 1, self.na, ny, nx, 2  # grid shape
         y, x = torch.arange(ny, device=d, dtype=t), torch.arange(nx, device=d, dtype=t)
-        if torch_1_10:  # torch>=1.10.0 meshgrid workaround for torch>=0.7 compatibility
-            yv, xv = torch.meshgrid(y, x, indexing='ij')
-        else:
-            yv, xv = torch.meshgrid(y, x)
+        yv, xv = torch.meshgrid(y, x, indexing='ij') if torch_1_10 else torch.meshgrid(y, x)  # torch>=0.7 compatibility
         grid = torch.stack((xv, yv), 2).expand(shape) - 0.5  # add grid offset, i.e. y = 2.0 * x - 0.5
         anchor_grid = (self.anchors[i] * self.stride[i]).view((1, self.na, 1, 1, 2)).expand(shape)
         return grid, anchor_grid
