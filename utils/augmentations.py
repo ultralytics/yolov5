@@ -346,3 +346,26 @@ def classify_transforms(size=224):
     # Transforms to apply if albumentations not installed
     assert isinstance(size, int), f'ERROR: classify_transforms size {size} must be integer, not (list, tuple)'
     return T.Compose([T.ToTensor(), T.Resize(size), T.CenterCrop(size), T.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
+
+
+class LetterBox:
+    # YOLOv5 LetterBox class for image preprocessing, i.e. T.Compose([T.ToTensor(), LetterBox(size)])
+
+    def __init__(self, size=(640, 640), auto=False, stride=32):
+        super().__init__()
+        self.h, self.w = (size, size) if isinstance(size, int) else size
+        self.auto = auto  # pass max size integer, automatically solve for short side using stride
+        self.stride = stride  # used with auto
+
+    def __call__(self, im):
+        imh, imw = im.shape[1:]
+
+        r = min(self.h / imh, self.w / imw)  # ratio of new/old
+        h, w = round(imh * r), round(imw * r)  # resized image
+        hs, ws = (math.ceil(x / self.stride) * self.stride for x in (h, w)) if self.auto else self.h, self.w
+        top = round((hs - h) / 2 - 0.1)
+        left = round((ws - w) / 2 - 0.1)
+
+        im_out = im.new_full((3, self.h, self.w), 0.44706)
+        im_out[:, top:top + h, left:left + w] = TF.resize(im, [h, w])
+        return im_out
