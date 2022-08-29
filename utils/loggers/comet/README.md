@@ -249,12 +249,14 @@ python train.py \
 --data coco128.yaml \
 --weights yolov5s.pt \
 --comet_log_predictions \
---comet_max_images 200
+--comet_max_image_uploads 200
 ```
 
 ### Controlling the frequency of Prediction Images logged to Comet
 
-By default, every batch from the validation set is logged to Comet when logging predictions. This can be configured via the `comet_log_prediction_interval` flag. For example, setting this parameter to `5` will log every 5th batch of data from the validation set.
+By default, every batch from the validation set is logged to Comet when logging predictions. This can be configured via the `comet_log_prediction_interval` flag. For example, setting this parameter to `2` will log every 2nd batch of data from the validation set.
+
+**Note:** The YOLOv5 validation dataloader will default to a batch size of 32, so you will have to set the logging frequency accordingly.
 
 ```shell
 python train.py \
@@ -264,7 +266,7 @@ python train.py \
 --data coco128.yaml \
 --weights yolov5s.pt \
 --comet_log_predictions \
---comet_log_prediction_interval 5
+--comet_log_prediction_interval 2
 ```
 
 ## Uploading a Dataset to Comet Artifacts
