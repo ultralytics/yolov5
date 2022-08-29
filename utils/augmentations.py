@@ -359,12 +359,10 @@ class LetterBox:
 
     def __call__(self, im):
         imh, imw = im.shape[1:]
-
         r = min(self.h / imh, self.w / imw)  # ratio of new/old
         h, w = round(imh * r), round(imw * r)  # resized image
         hs, ws = (math.ceil(x / self.stride) * self.stride for x in (h, w)) if self.auto else self.h, self.w
-        top = round((hs - h) / 2 - 0.1)
-        left = round((ws - w) / 2 - 0.1)
+        top, left = round((hs - h) / 2 - 0.1), round((ws - w) / 2 - 0.1)
 
         im_out = im.new_full((3, self.h, self.w), 0.44706)
         im_out[:, top:top + h, left:left + w] = TF.resize(im, [h, w])
