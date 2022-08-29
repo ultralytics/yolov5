@@ -21,20 +21,14 @@ from utils.torch_utils import select_device
 
 # Project Configuration
 config = comet_ml.config.get_config()
-COMET_PROJECT_NAME = config.get_string(
-    os.getenv("COMET_PROJECT_NAME"), "comet.project_name", default="yolov5"
-)
+COMET_PROJECT_NAME = config.get_string(os.getenv("COMET_PROJECT_NAME"), "comet.project_name", default="yolov5")
 
 
 def get_args(known=False):
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--weights", type=str, default=ROOT / "yolov5s.pt", help="initial weights path"
-    )
+    parser.add_argument("--weights", type=str, default=ROOT / "yolov5s.pt", help="initial weights path")
     parser.add_argument("--cfg", type=str, default="", help="model.yaml path")
-    parser.add_argument(
-        "--data", type=str, default=ROOT / "data/coco128.yaml", help="dataset.yaml path"
-    )
+    parser.add_argument("--data", type=str, default=ROOT / "data/coco128.yaml", help="dataset.yaml path")
     parser.add_argument("--epochs", type=int, default=300, help="total training epochs")
     parser.add_argument(
         "--imgsz",
@@ -52,15 +46,9 @@ def get_args(known=False):
         default=False,
         help="resume most recent training",
     )
-    parser.add_argument(
-        "--nosave", action="store_true", help="only save final checkpoint"
-    )
-    parser.add_argument(
-        "--noval", action="store_true", help="only validate final epoch"
-    )
-    parser.add_argument(
-        "--noautoanchor", action="store_true", help="disable AutoAnchor"
-    )
+    parser.add_argument("--nosave", action="store_true", help="only save final checkpoint")
+    parser.add_argument("--noval", action="store_true", help="only validate final epoch")
+    parser.add_argument("--noautoanchor", action="store_true", help="disable AutoAnchor")
     parser.add_argument("--noplots", action="store_true", help="save no plot files")
     parser.add_argument(
         "--evolve",
@@ -82,12 +70,8 @@ def get_args(known=False):
         action="store_true",
         help="use weighted image selection for training",
     )
-    parser.add_argument(
-        "--device", default="", help="cuda device, i.e. 0 or 0,1,2,3 or cpu"
-    )
-    parser.add_argument(
-        "--multi-scale", action="store_true", help="vary img-size +/- 50%%"
-    )
+    parser.add_argument("--device", default="", help="cuda device, i.e. 0 or 0,1,2,3 or cpu")
+    parser.add_argument("--multi-scale", action="store_true", help="vary img-size +/- 50%%")
     parser.add_argument(
         "--single-cls",
         action="store_true",
@@ -104,9 +88,7 @@ def get_args(known=False):
         default=8,
         help="max dataloader workers (per RANK in DDP mode)",
     )
-    parser.add_argument(
-        "--project", default=ROOT / "runs/train", help="save to project/name"
-    )
+    parser.add_argument("--project", default=ROOT / "runs/train", help="save to project/name")
     parser.add_argument("--name", default="exp", help="save to project/name")
     parser.add_argument(
         "--exist-ok",
@@ -122,9 +104,7 @@ def get_args(known=False):
     )
     parser.add_argument("--quad", action="store_true", help="quad dataloader")
     parser.add_argument("--cos-lr", action="store_true", help="cosine LR scheduler")
-    parser.add_argument(
-        "--label-smoothing", type=float, default=0.0, help="Label smoothing epsilon"
-    )
+    parser.add_argument("--label-smoothing", type=float, default=0.0, help="Label smoothing epsilon")
     parser.add_argument(
         "--patience",
         type=int,
@@ -162,9 +142,7 @@ def get_args(known=False):
         action="store_true",
         help="Comet: Set to save model checkpoints.",
     )
-    parser.add_argument(
-        "--comet_model_name", type=str, help="Comet: Set the name for the saved model."
-    )
+    parser.add_argument("--comet_model_name", type=str, help="Comet: Set the name for the saved model.")
     parser.add_argument(
         "--comet_overwrite_checkpoints",
         action="store_true",
@@ -175,10 +153,8 @@ def get_args(known=False):
         nargs="?",
         type=str,
         default="best.pt",
-        help=(
-            "Comet: Name of the checkpoint file to save to Comet."
-            "Set to 'all' to log all checkpoints."
-        ),
+        help=("Comet: Name of the checkpoint file to save to Comet."
+              "Set to 'all' to log all checkpoints."),
     )
     parser.add_argument(
         "--comet_log_batch_metrics",
@@ -195,7 +171,8 @@ def get_args(known=False):
         "--comet_log_prediction_interval",
         type=int,
         default=1,
-        help=("Comet: How often to log predictions." "Applied at batch level."),
+        help=("Comet: How often to log predictions."
+              "Applied at batch level."),
     )
     parser.add_argument(
         "--comet_log_confusion_matrix",
@@ -218,10 +195,8 @@ def get_args(known=False):
         nargs="?",
         const=True,
         default=False,
-        help=(
-            "Comet: Upload Dataset to Comet as an Artifact."
-            "Set to 'train', 'val' or 'test' to upload a single dataset."
-        ),
+        help=("Comet: Upload Dataset to Comet as an Artifact."
+              "Set to 'train', 'val' or 'test' to upload a single dataset."),
     )
     parser.add_argument(
         "--comet_artifact",
@@ -259,15 +234,9 @@ def get_args(known=False):
 
 
 def run(parameters, opt):
-    hyp_dict = {
-        k: v for k, v in parameters.items() if k not in ["epochs", "batch_size"]
-    }
+    hyp_dict = {k: v for k, v in parameters.items() if k not in ["epochs", "batch_size"]}
 
-    opt.save_dir = str(
-        increment_path(
-            Path(opt.project) / opt.name, exist_ok=opt.exist_ok or opt.evolve
-        )
-    )
+    opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok or opt.evolve))
     opt.batch_size = parameters.get("batch_size")
     opt.epochs = parameters.get("epochs")
 
@@ -285,7 +254,7 @@ if __name__ == "__main__":
 
     optimizer_id = os.getenv("COMET_OPTIMIZER_ID")
     if optimizer_id is None:
-        with open(opt.comet_optimizer_config, "r") as f:
+        with open(opt.comet_optimizer_config) as f:
             optimizer_config = json.load(f)
         optimizer = comet_ml.Optimizer(optimizer_config)
     else:

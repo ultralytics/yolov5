@@ -33,9 +33,7 @@ def download_model_checkpoint(opt, experiment):
     )
 
     checkpoint_filename = opt.comet_checkpoint_filename
-    logged_checkpoint_map = {
-        asset["fileName"]: asset["assetId"] for asset in model_asset_list
-    }
+    logged_checkpoint_map = {asset["fileName"]: asset["assetId"] for asset in model_asset_list}
     asset_id = logged_checkpoint_map.get(checkpoint_filename)
 
     try:
@@ -43,17 +41,13 @@ def download_model_checkpoint(opt, experiment):
             # Fetch latest checkpoint
             asset_id = model_asset_list[0]["assetId"]
             asset_filename = model_asset_list[0]["fileName"]
-            logger.info(
-                f"COMET INFO: Checkpoint {checkpoint_filename} not found."
-                f"Defaulting to latest checkpoint {asset_filename}"
-            )
+            logger.info(f"COMET INFO: Checkpoint {checkpoint_filename} not found."
+                        f"Defaulting to latest checkpoint {asset_filename}")
 
         else:
             asset_filename = checkpoint_filename
 
-        model_binary = experiment.get_asset(
-            asset_id, return_type="binary", stream=False
-        )
+        model_binary = experiment.get_asset(asset_id, return_type="binary", stream=False)
         model_download_path = f"{model_dir}/{asset_filename}"
         with open(model_download_path, "wb") as f:
             f.write(model_binary)
@@ -78,9 +72,7 @@ def set_opt_parameters(opt, experiment):
     for asset in asset_list:
         if asset["fileName"] == "opt.yaml":
             asset_id = asset["assetId"]
-            asset_binary = experiment.get_asset(
-                asset_id, return_type="binary", stream=False
-            )
+            asset_binary = experiment.get_asset(asset_id, return_type="binary", stream=False)
             opt_dict = yaml.safe_load(asset_binary)
             for key, value in opt_dict.items():
                 setattr(opt, key, value)
