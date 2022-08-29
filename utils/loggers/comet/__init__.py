@@ -23,7 +23,7 @@ import torchvision.transforms as T
 import yaml
 
 from utils.dataloaders import img2label_paths
-from utils.general import scale_coords, xywh2xyxy
+from utils.general import check_dataset, scale_coords, xywh2xyxy
 from utils.metrics import ConfusionMatrix, box_iou
 
 COMET_MODE = os.getenv("COMET_MODE", "online")
@@ -122,8 +122,7 @@ class CometLogger:
             self.data_dict = self.download_dataset_artifact(self.opt.comet_artifact)
 
         else:
-            with open(self.opt.data, errors="ignore") as f:
-                self.data_dict = self.process_data_dict(yaml.safe_load(f))
+            self.data_dict = check_dataset(self.opt.data)
 
         self.class_names = self.data_dict["names"]
         self.num_classes = self.data_dict["nc"]
@@ -417,11 +416,6 @@ class CometLogger:
                     else [f"{path}/{x}" for x in split_path]
                 )
 
-        return data_dict
-
-    def process_data_dict(self, data_dict):
-        data_dict["nc"] = len(data_dict["names"])
-        data_dict = self.update_data_paths(data_dict)
         return data_dict
 
     def on_pretrain_routine_end(self, paths):
