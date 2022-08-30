@@ -401,8 +401,6 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
         elif m is Concat:
             c2 = sum(ch[-1 if x == -1 else x + 1] for x in f)
         elif m in [Detect, Segment]:
-            import pdb;
-            pdb.set_trace()
             args.append([ch[x + 1] for x in f])
             if isinstance(args[1], int):  # number of anchors
                 args[1] = [list(range(args[1] * 2))] * len(f)
