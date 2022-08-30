@@ -461,6 +461,9 @@ class CometLogger:
         if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
             self.log_model(last.parent, self.opt, epoch, fi, best_model=best_fitness == fi)
 
+    def on_params_update(self, params):
+        self.log_parameters(params)
+
     def finish_run(self):
         if self.experiment is not None:
             self.experiment.end()
