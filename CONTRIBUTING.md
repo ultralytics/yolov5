@@ -45,7 +45,8 @@ changes** button. All done, your PR is now submitted to YOLOv5 for review and ap
 
 To allow your work to be integrated as seamlessly as possible, we advise you to:
 
-- ✅ VVerify your PR is **up-to-date** with `ultralytics/yolov5` `master` branch. If your PR is behind you can update your code by clicking the 'Update branch' button or by running `git pull` and `git merge master` locally.
+- ✅ Verify your PR is **up-to-date** with `ultralytics/yolov5` `master` branch. If your PR is behind you can update
+  your code by clicking the 'Update branch' button or by running `git pull` and `git merge master` locally.
 
 <p align="center"><img width="751" alt="Screenshot 2022-08-29 at 22 47 15" src="https://user-images.githubusercontent.com/26833433/187295893-50ed9f44-b2c9-4138-a614-de69bd1753d7.png"></p>
 
