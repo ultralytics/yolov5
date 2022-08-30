@@ -378,7 +378,7 @@ class CenterCrop:
     def __call__(self, im):  # im = np.array HWC
         imh, imw = im.shape[:2]
         m = min(imh, imw)  # min dimension
-        top, left = round((imh - m) / 2), round((imw - m) / 2 - 0.1)
+        top, left = (imh - m) // 2, (imw - m) // 2
         return cv2.resize(im[top:top + m, left:left + m], (self.w, self.h), interpolation=cv2.INTER_LINEAR)
 
 
