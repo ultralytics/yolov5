@@ -533,7 +533,7 @@ def main(opt, callbacks=Callbacks()):
     check_comet_weights(opt)
 
     # Resume
-    if opt.resume and not check_wandb_resume(opt) or check_comet_resume(
+    if opt.resume and not check_wandb_resume(opt) and not check_comet_resume(
             opt) or opt.evolve:  # resume from specified or most recent last.pt
         last = Path(check_file(opt.resume) if isinstance(opt.resume, str) else get_latest_run())
         opt_yaml = last.parent.parent / 'opt.yaml'  # train options yaml

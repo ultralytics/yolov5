@@ -41,10 +41,11 @@ def download_model_checkpoint(opt, experiment):
             # Fetch latest checkpoint
             asset_id = model_asset_list[0]["assetId"]
             asset_filename = model_asset_list[0]["fileName"]
-            logger.info(f"COMET INFO: Checkpoint {checkpoint_filename} not found."
+            logger.info(f"COMET INFO: Checkpoint {checkpoint_filename} not found. "
                         f"Defaulting to latest checkpoint {asset_filename}")
 
         else:
+            logger.info(f"COMET INFO: Downloading checkpoint {checkpoint_filename}")
             asset_filename = checkpoint_filename
 
         model_binary = experiment.get_asset(asset_id, return_type="binary", stream=False)
@@ -69,6 +70,8 @@ def set_opt_parameters(opt, experiment):
     """
     asset_list = experiment.get_asset_list()
     resume_string = opt.resume
+    override_checkpoint_filename = opt.comet_checkpoint_filename
+
     for asset in asset_list:
         if asset["fileName"] == "opt.yaml":
             asset_id = asset["assetId"]
@@ -87,6 +90,9 @@ def set_opt_parameters(opt, experiment):
     with open(hyp_yaml_path, "w") as f:
         yaml.dump(opt.hyp, f)
     opt.hyp = hyp_yaml_path
+
+    if override_checkpoint_filename != opt.comet_checkpoint_filename:
+        opt.comet_checkpoint_filename = override_checkpoint_filename
 
 
 def check_comet_weights(opt):
