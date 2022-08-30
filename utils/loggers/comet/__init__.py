@@ -298,8 +298,14 @@ class CometLogger:
 
         for image_file, label_file in zip(img_paths, label_paths):
             image_logical_path, label_logical_path = map(lambda x: x.replace(f"{path}/", ""), [image_file, label_file])
-            artifact.add(image_file, logical_path=image_logical_path, metadata={"split": split})
-            artifact.add(label_file, logical_path=label_logical_path, metadata={"split": split})
+            try:
+                artifact.add(image_file, logical_path=image_logical_path, metadata={"split": split})
+                artifact.add(label_file, logical_path=label_logical_path, metadata={"split": split})
+            except ValueError as e:
+                logger.error('COMET ERROR: Error adding file to Artifact. Skipping file.')
+                logger.error(f"COMET ERROR: {e}")
+                continue
+
         return artifact
 
     def upload_dataset_artifact(self):
