@@ -330,7 +330,7 @@ class TFSegment(TFDetect):
         self.proto = TFProto(ch[0], self.npr, self.nm, w=w.proto)  # protos
         self.detect = TFDetect.call
 
-    def forward(self, x):
+    def call(self, x):
         p = self.proto(x[0])
         x = self.detect(self, x)
         return (x, p) if self.training else (x[0], p) if self.export else (x[0], (x[1], p))
