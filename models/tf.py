@@ -344,7 +344,7 @@ class TFProto(keras.layers.Layer):
         self.cv3 = TFConv(c_, c2, w=w.cv3)
     
     def call(self, inputs):
-        return self.cv2(self.cv2(self.upsample(self.cv1(inputs))))
+        return self.cv3(self.cv2(self.upsample(self.cv1(inputs))))
 
 class TFUpsample(keras.layers.Layer):
     # TF version of torch.nn.Upsample()
