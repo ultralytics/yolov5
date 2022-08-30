@@ -90,44 +90,34 @@ Here is the full list of command line options for Comet
 
 ```shell
   --comet_mode COMET_MODE
-                        Comet: Set whether to run Comet in online
-                        or offline mode.
+                        Comet: Set whether to run Comet in online or offline mode.
   --comet_save_model    Comet: Set to save model checkpoints.
   --comet_model_name COMET_MODEL_NAME
                         Comet: Set the name for the saved model.
   --comet_overwrite_checkpoints
-                        Comet: Overwrite exsiting model
-                        checkpoints.
+                        Comet: Overwrite existing model checkpoints.
   --comet_checkpoint_filename [COMET_CHECKPOINT_FILENAME]
-                        Comet: Name of the checkpoint file to save
-                        to Comet.Set to 'all' to log all
-                        checkpoints.
-  --comet_checkpoint_step COMET_CHECKPOINT_STEP
+                        Comet: Name of the checkpoint file to save to Comet.Set to 'all' to
+                        log all checkpoints.
   --comet_log_batch_metrics
-                        Comet: Set to log batch level training
-                        metrics.
+                        Comet: Set to log batch level training metrics.
   --comet_log_batch_interval COMET_LOG_BATCH_INTERVAL
-                        Comet: Logging frequency for batch level
-                        training metrics.
+                        Comet: Logging frequency for batch level training metrics.
   --comet_log_prediction_interval COMET_LOG_PREDICTION_INTERVAL
-                        Comet: How often to log predictions.Applied
-                        at batch level.
+                        Comet: How often to log predictions.Applied at batch level.
   --comet_log_confusion_matrix
-                        Comet: Log a Confusion Matrix for the
-                        validation dataset.
+                        Comet: Log a Confusion Matrix for the validation dataset.
   --comet_log_predictions
-                        Comet: Log Predictions on Images from the
-                        Validation Set
+                        Comet: Log Predictions on Images from the Validation Set
+  --comet_log_per_class_metrics
+                        Comet: Log evaluation metrics for each class in the Validation Set
   --comet_max_image_uploads COMET_MAX_IMAGE_UPLOADS
-                        Comet: Maximum number of images to log to
-                        Comet.
+                        Comet: Maximum number of images to log to Comet.
   --comet_upload_dataset [COMET_UPLOAD_DATASET]
-                        Comet: Upload Dataset to Comet as an
-                        Artifact.Set to 'train', 'val' or 'test' to
-                        upload a single dataset.
+                        Comet: Upload Dataset to Comet as an Artifact.Set to 'train', 'val'
+                        or 'test' to upload a single dataset.
   --comet_artifact COMET_ARTIFACT
-                        Comet: Name of the Comet dataset Artifact
-                        to download.
+                        Comet: Name of the Comet dataset Artifact to download.
 ```
 
 Let's take a look at these options.
@@ -267,6 +257,20 @@ python train.py \
 --weights yolov5s.pt \
 --comet_log_predictions \
 --comet_log_prediction_interval 2
+```
+
+### Logging Class Level Metrics
+
+Use the `comet_log_per_metrics` to log mAP, precision, recall, f1 for each class.
+
+```shell
+python train.py \
+--img 640 \
+--batch 16 \
+--epochs 5 \
+--data coco128.yaml \
+--weights yolov5s.pt \
+--comet_log_per_class_metrics
 ```
 
 ## Uploading a Dataset to Comet Artifacts

@@ -29,13 +29,13 @@ COMET_MODE = os.getenv("COMET_MODE", "online")
 # Model Saving Settings
 COMET_SAVE_MODEL = os.getenv("COMET_SAVE_MODEL", "false").lower() == "true"
 COMET_MODEL_NAME = os.getenv("COMET_MODEL_NAME", "yolov5")
-COMET_OVERWRITE_CHECKPOINTS = (os.getenv("COMET_OVERWRITE_CHECKPOINTS", "false").lower() == "true")
+COMET_OVERWRITE_CHECKPOINTS = os.getenv("COMET_OVERWRITE_CHECKPOINTS", "false").lower() == "true"
 
 # Dataset Artifact Settings
 COMET_UPLOAD_DATASET = os.getenv("COMET_UPLOAD_DATASET", "false").lower() == "true"
 
 # Evaluation Settings
-COMET_LOG_CONFUSION_MATRIX = (os.getenv("COMET_LOG_CONFUSION_MATRIX", "true").lower() == "true")
+COMET_LOG_CONFUSION_MATRIX = os.getenv("COMET_LOG_CONFUSION_MATRIX", "true").lower() == "true"
 COMET_LOG_PREDICTIONS = os.getenv("COMET_LOG_PREDICTIONS", "false").lower() == "true"
 COMET_MAX_IMAGE_UPLOADS = os.getenv("COMET_MAX_IMAGE_UPLOADS", 100)
 
@@ -44,9 +44,10 @@ CONF_THRES = os.getenv("CONF_THRES", 0.001)
 IOU_THRES = os.getenv("IOU_THRES", 0.6)
 
 # Batch Logging Settings
-COMET_LOG_BATCH_METRICS = (os.getenv("COMET_LOG_BATCH_METRICS", "false").lower() == "true")
+COMET_LOG_BATCH_METRICS = os.getenv("COMET_LOG_BATCH_METRICS", "false").lower() == "true"
 COMET_BATCH_LOGGING_INTERVAL = os.getenv("COMET_BATCH_LOGGING_INTERVAL", 1)
 COMET_PREDICTION_LOGGING_INTERVAL = os.getenv("COMET_PREDICTION_LOGGING_INTERVAL", 1)
+COMET_LOG_PER_CLASS_METRICS = os.getenv("COMET_LOG_PER_CLASS_METRICS", "false").lower() == "true"
 
 RANK = int(os.getenv("RANK", -1))
 
@@ -128,15 +129,15 @@ class CometLogger:
 
         self.comet_log_confusion_matrix = (self.opt.comet_log_confusion_matrix
                                            if self.opt.comet_log_confusion_matrix else COMET_LOG_CONFUSION_MATRIX)
-        if self.comet_log_confusion_matrix:
-            if hasattr(self.opt, "conf_thres"):
-                self.conf_thres = self.opt.conf_thres
-            else:
-                self.conf_thres = CONF_THRES
-            if hasattr(self.opt, "iou_thres"):
-                self.iou_thres = self.opt.iou_thres
-            else:
-                self.iou_thres = IOU_THRES
+
+        if hasattr(self.opt, "conf_thres"):
+            self.conf_thres = self.opt.conf_thres
+        else:
+            self.conf_thres = CONF_THRES
+        if hasattr(self.opt, "iou_thres"):
+            self.iou_thres = self.opt.iou_thres
+        else:
+            self.iou_thres = IOU_THRES
 
         self.comet_log_predictions = (self.opt.comet_log_predictions
                                       if self.opt.comet_log_predictions else COMET_LOG_PREDICTIONS)
@@ -144,6 +145,8 @@ class CometLogger:
                                               else COMET_PREDICTION_LOGGING_INTERVAL)
         if self.comet_log_predictions:
             self.metadata_dict = {}
+
+        self.comet_log_per_class_metrics = self.opt.comet_log_per_class_metrics if self.opt.comet_log_per_class_metrics else COMET_LOG_PER_CLASS_METRICS
 
         # Check if running the Experiment with the Comet Optimizer
         if hasattr(self.opt, "comet_optimizer_id"):
@@ -230,7 +233,6 @@ class CometLogger:
     def log_predictions(self, image, labelsn, path, shape, predn):
         if self.logged_images_count >= self.max_images:
             return
-
         detections = predn[predn[:, 4] > self.conf_thres]
         iou = box_iou(labelsn[:, 1:], detections[:, :4])
         mask, _ = torch.where(iou > self.iou_thres)
@@ -412,14 +414,15 @@ class CometLogger:
         self.finish_run()
 
     def on_val_start(self):
-        self.confmat = ConfusionMatrix(nc=self.num_classes, conf=self.conf_thres, iou_thres=self.iou_thres)
-
         return
 
     def on_val_batch_start(self):
         return
 
     def on_val_batch_end(self, batch_i, images, targets, paths, shapes, outputs):
+        if not self.comet_log_predictions and ((batch_i + 1) % self.comet_log_prediction_interval == 0):
+            return
+
         for si, pred in enumerate(outputs):
             if len(pred) == 0:
                 continue
@@ -428,33 +431,47 @@ class CometLogger:
             labels = targets[targets[:, 0] == si, 1:]
             shape = shapes[si]
             path = paths[si]
-
             predn, labelsn = self.preprocess_prediction(image, labels, shape, pred)
             if labelsn is not None:
-                if self.comet_log_predictions and ((batch_i + 1) % self.comet_log_prediction_interval == 0):
-                    self.log_predictions(image, labelsn, path, shape, predn)
-
-                if self.comet_log_confusion_matrix:
-                    self.confmat.process_batch(predn, labelsn)
+                self.log_predictions(image, labelsn, path, shape, predn)
 
         return
 
-    def on_fit_epoch_end(self, result, epoch):
-        self.log_metrics(result, epoch=epoch)
+    def on_val_end(self, nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix):
+        if self.comet_log_per_class_metrics:
+            if self.num_classes > 1:
+                for i, c in enumerate(ap_class):
+                    class_name = self.class_names[c]
+                    self.experiment.log_metrics(
+                        {
+                            'mAP@.5': ap50[i],
+                            'mAP@.5:.95': ap[i],
+                            'precision': p[i],
+                            'recall': r[i],
+                            'f1': f1[i],
+                            'true_positives': tp[i],
+                            'false_positives': fp[i],
+                            'support': nt[c]},
+                        prefix=class_name)
 
         if self.comet_log_confusion_matrix:
+            epoch = self.experiment.curr_epoch
             class_names = list(self.class_names.values())
-            class_names.append("background-FN")
-
+            class_names.append("background")
             num_classes = len(class_names)
 
             self.experiment.log_confusion_matrix(
-                matrix=self.confmat.matrix,
+                matrix=confusion_matrix.matrix,
                 max_categories=num_classes,
                 labels=class_names,
                 epoch=epoch,
+                column_label='Actual Category',
+                row_label='Predicted Category',
                 file_name=f"confusion-matrix-epoch-{epoch}.json",
             )
+
+    def on_fit_epoch_end(self, result, epoch):
+        self.log_metrics(result, epoch=epoch)
 
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):
         if ((epoch + 1) % self.opt.save_period == 0 and not final_epoch) and self.opt.save_period != -1:
