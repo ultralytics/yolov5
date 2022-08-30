@@ -54,7 +54,7 @@ That's it! Comet will automatically log your hyperparameters, command line argum
 <img width="800" alt="yolo-ui" src="https://user-images.githubusercontent.com/7529846/186725929-bc18019f-cec9-45b9-978e-496f4a628ab7.png">
 
 # Try out an Example!
-Check out an example of a [completed run here](https://www.comet.com/examples/comet-example-yolov5/353f9734261348b59b883660bcd62256?experiment-tab=chart&showOutliers=true&smoothing=0&transformY=smoothing&xAxis=step&ref=yolov5&utm_source=yolov5&utm_medium=affilliate&utm_campaign=yolov5_comet_integration)
+Check out an example of a [completed run here](https://www.comet.com/examples/comet-example-yolov5/ca87319ab1684f659a0ea6c625ef33f5?experiment-tab=chart&showOutliers=true&smoothing=0&transformY=smoothing&xAxis=step&ref=yolov5&utm_source=yolov5&utm_medium=affilliate&utm_campaign=yolov5_comet_integration)
 
 Or better yet, try it out yourself in this Colab Notebook
 
@@ -332,7 +332,7 @@ YOLOv5 is also integrated with Comet's Optimizer, making is simple to visualie h
 
 ### Configuring an Optimizer Sweep
 
-To configure the Comet Optimizer, you will have to create a JSON file with the information about the sweep. An example file has been provided [here](optimizer_config.json)
+To configure the Comet Optimizer, you will have to create a JSON file with the information about the sweep. An example file has been provided in `utils/loggers/comet/optimizer_config.json`
 
 ```shell
 python utils/loggers/comet/hpo.py \
