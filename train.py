@@ -52,6 +52,7 @@ from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_g
                            init_seeds, intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods,
                            one_cycle, print_args, print_mutation, strip_optimizer, yaml_save)
 from utils.loggers import Loggers
+from utils.loggers.comet.comet_utils import check_comet_resume, check_comet_weights
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.loss import ComputeLoss
 from utils.metrics import fitness
@@ -97,7 +98,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             data_dict = loggers.wandb.data_dict
             if resume:
                 weights, epochs, hyp, batch_size = opt.weights, opt.epochs, opt.hyp, opt.batch_size
-
+        if loggers.comet_logger:
+            data_dict = loggers.comet_logger.data_dict
         # Register actions
         for k in methods(loggers):
             callbacks.register_action(k, callback=getattr(loggers, k))
@@ -472,6 +474,49 @@ def parse_opt(known=False):
     parser.add_argument('--bbox_interval', type=int, default=-1, help='W&B: Set bounding-box image logging interval')
     parser.add_argument('--artifact_alias', type=str, default='latest', help='W&B: Version of dataset artifact to use')
 
+    # Comet Arguments
+    parser.add_argument("--comet_mode", type=str, help="Comet: Set whether to run Comet in online or offline mode.")
+    parser.add_argument("--comet_save_model", action="store_true", help="Comet: Set to save model checkpoints.")
+    parser.add_argument("--comet_model_name", type=str, help="Comet: Set the name for the saved model.")
+    parser.add_argument("--comet_overwrite_checkpoints",
+                        action="store_true",
+                        help="Comet: Overwrite existing model checkpoints.")
+    parser.add_argument("--comet_checkpoint_filename",
+                        nargs="?",
+                        type=str,
+                        default="best.pt",
+                        help=("Comet: Name of the checkpoint file to save to Comet."
+                              "Set to 'all' to log all checkpoints."))
+    parser.add_argument("--comet_log_batch_metrics",
+                        action="store_true",
+                        help="Comet: Set to log batch level training metrics.")
+    parser.add_argument("--comet_log_batch_interval",
+                        type=int,
+                        default=1,
+                        help="Comet: Logging frequency for batch level training metrics.")
+    parser.add_argument("--comet_log_prediction_interval",
+                        type=int,
+                        default=1,
+                        help=("Comet: How often to log predictions."
+                              "Applied at batch level."))
+    parser.add_argument("--comet_log_confusion_matrix",
+                        action="store_true",
+                        help="Comet: Log a Confusion Matrix for the validation dataset.")
+    parser.add_argument("--comet_log_predictions",
+                        action="store_true",
+                        help="Comet: Log Predictions on Images from the Validation Set")
+    parser.add_argument("--comet_max_image_uploads",
+                        type=int,
+                        default=100,
+                        help="Comet: Maximum number of images to log to Comet.")
+    parser.add_argument("--comet_upload_dataset",
+                        nargs="?",
+                        const=True,
+                        default=False,
+                        help=("Comet: Upload Dataset to Comet as an Artifact."
+                              "Set to 'train', 'val' or 'test' to upload a single dataset."))
+    parser.add_argument("--comet_artifact", type=str, help="Comet: Name of the Comet dataset Artifact to download.")
+
     return parser.parse_known_args()[0] if known else parser.parse_args()
 
 
@@ -482,8 +527,11 @@ def main(opt, callbacks=Callbacks()):
         check_git_status()
         check_requirements()
 
+    check_comet_weights(opt)
+
     # Resume
-    if opt.resume and not (check_wandb_resume(opt) or opt.evolve):  # resume from specified or most recent last.pt
+    if opt.resume and not check_wandb_resume(opt) or check_comet_resume(
+            opt) or opt.evolve:  # resume from specified or most recent last.pt
         last = Path(check_file(opt.resume) if isinstance(opt.resume, str) else get_latest_run())
         opt_yaml = last.parent.parent / 'opt.yaml'  # train options yaml
         opt_data = opt.data  # original dataset

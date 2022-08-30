@@ -170,14 +170,13 @@ class CometLogger:
                         **self.default_experiment_kwargs,
                     )
 
-                return comet_ml.Experiment(**self.default_experiment_kwargs,)
+                return comet_ml.Experiment(**self.default_experiment_kwargs)
 
-            except ValueError as e:
+            except ValueError:
                 logger.warning("COMET WARNING: "
                                "Comet credentials have not been set. "
                                "Comet will default to offline logging. "
                                "Please set your credentials to enable online logging.")
-                logger.exceptiom(e)
                 return self._get_experiment("offline", experiment_id)
 
         return
