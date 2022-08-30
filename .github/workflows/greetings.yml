@@ -17,16 +17,10 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           pr-message: |
             👋 Hello @${{ github.actor }}, thank you for submitting a YOLOv5 🚀 PR! To allow your work to be integrated as seamlessly as possible, we advise you to:
-            - ✅ Verify your PR is **up-to-date with upstream/master.** If your PR is behind upstream/master an automatic [GitHub Actions](https://github.com/ultralytics/yolov5/blob/master/.github/workflows/rebase.yml) merge may be attempted by writing /rebase in a new comment, or by running the following code, replacing 'feature' with the name of your local branch:
-            ```bash
-            git remote add upstream https://github.com/ultralytics/yolov5.git
-            git fetch upstream
-            # git checkout feature  # <--- replace 'feature' with local branch name
-            git merge upstream/master
-            git push -u origin -f
-            ```
-            - ✅ Verify all Continuous Integration (CI) **checks are passing**.
-            - ✅ Reduce changes to the absolute **minimum** required for your bug fix or feature addition. _"It is not daily increase but daily decrease, hack away the unessential. The closer to the source, the less wastage there is."_  -Bruce Lee
+
+            - ✅ Verify your PR is **up-to-date** with `ultralytics/yolov5` `master` branch. If your PR is behind you can update your code by clicking the 'Update branch' button or by running `git pull` and `git merge master` locally.
+            - ✅ Verify all YOLOv5 Continuous Integration (CI) **checks are passing**.
+            - ✅ Reduce changes to the absolute **minimum** required for your bug fix or feature addition. _"It is not daily increase but daily decrease, hack away the unessential. The closer to the source, the less wastage there is."_  — Bruce Lee
 
           issue-message: |
             👋 Hello @${{ github.actor }}, thank you for your interest in YOLOv5 🚀! Please visit our ⭐️ [Tutorials](https://github.com/ultralytics/yolov5/wiki#tutorials) to get started, where you can find quickstart guides for simple tasks like [Custom Data Training](https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data) all the way to advanced concepts like [Hyperparameter Evolution](https://github.com/ultralytics/yolov5/issues/607).
