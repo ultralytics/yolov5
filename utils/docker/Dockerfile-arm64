@@ -11,8 +11,7 @@ ADD https://ultralytics.com/assets/Arial.ttf https://ultralytics.com/assets/Aria
 # Install linux packages
 RUN apt update
 RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt install -y tzdata
-RUN apt install --no-install-recommends -y python3-pip git zip curl htop gcc \
-    libgl1-mesa-glx libglib2.0-0 libpython3.8-dev
+RUN apt install --no-install-recommends -y python3-pip git zip curl htop gcc libgl1-mesa-glx libglib2.0-0 libpython3-dev
 # RUN alias python=python3
 
 # Install pip packages

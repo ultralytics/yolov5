@@ -141,10 +141,10 @@ class ClearmlLogger:
                     color = colors(i)
 
                     class_name = class_names[int(class_nr)]
-                    confidence = round(float(conf) * 100, 2)
-                    label = f"{class_name}: {confidence}%"
+                    confidence_percentage = round(float(conf) * 100, 2)
+                    label = f"{class_name}: {confidence_percentage}%"
 
-                    if confidence > conf_threshold:
+                    if conf > conf_threshold:
                         annotator.rectangle(box.cpu().numpy(), outline=color)
                         annotator.box_label(box.cpu().numpy(), label=label, color=color)
 
