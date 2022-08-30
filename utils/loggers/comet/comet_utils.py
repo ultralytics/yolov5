@@ -78,7 +78,7 @@ def set_opt_parameters(opt, experiment):
                 setattr(opt, key, value)
             opt.resume = resume_string
 
-    # Save hyperparamers to YAML file
+    # Save hyperparameters to YAML file
     # Necessary to pass checks in training script
     save_dir = f"{opt.project}/{experiment.name}"
     os.makedirs(save_dir, exist_ok=True)
