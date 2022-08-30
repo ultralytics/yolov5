@@ -194,7 +194,7 @@ python train.py \
 --batch 16 \
 --epochs 5 \
 --data coco128.yaml \
---weights "comet://examples/comet-example-yolov5/353f9734261348b59b883660bcd62256" \
+--weights "comet://<your run path>" \
 ```
 
 By default, Comet will download the most recent checkpoint, this can be configured by specifying the checkpoint filename. You can specify a checkpoint for a particular epoch
@@ -206,7 +206,7 @@ python train.py \
 --batch 16 \
 --epochs 5 \
 --data coco128.yaml \
---weights "comet://examples/comet-example-yolov5/353f9734261348b59b883660bcd62256" \
+--weights "comet://<your run path>" \
 --comet_checkpoint_filename "last_epoch_2.pt"
 ```
 
@@ -323,7 +323,7 @@ This will restore the run to its state before the interruption, which includes r
 
 ```shell
 python train.py \
---resume "comet://examples/comet-example-yolov5/353f9734261348b59b883660bcd62256"
+--resume "comet://<your run path>"
 ```
 
 ## Hyperparameter Search with the Comet Optimizer
