@@ -260,7 +260,7 @@ python train.py \
 
 ### Logging Class Level Metrics
 
-Use the `comet_log_per_metrics` to log mAP, precision, recall, f1 for each class.
+Use the `comet_log_per_class_metrics` to log mAP, precision, recall, f1 for each class.
 
 ```shell
 python train.py \
