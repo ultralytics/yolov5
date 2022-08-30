@@ -505,6 +505,9 @@ def parse_opt(known=False):
     parser.add_argument("--comet_log_predictions",
                         action="store_true",
                         help="Comet: Log Predictions on Images from the Validation Set")
+    parser.add_argument("--comet_log_per_class_metrics",
+                        action="store_true",
+                        help="Comet: Log evaluation metrics for each class in the Validation Set")
     parser.add_argument("--comet_max_image_uploads",
                         type=int,
                         default=100,
