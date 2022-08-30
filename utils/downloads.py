@@ -44,12 +44,14 @@ def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
         torch.hub.download_url_to_file(url, str(file), progress=LOGGER.level <= logging.INFO)
         assert file.exists() and file.stat().st_size > min_bytes, assert_msg  # check
     except Exception as e:  # url2
-        file.unlink(missing_ok=True)  # remove partial downloads
+        if file.exists():
+            file.unlink()  # remove partial downloads
         LOGGER.info(f'ERROR: {e}\nRe-attempting {url2 or url} to {file}...')
         os.system(f"curl -# -L '{url2 or url}' -o '{file}' --retry 3 -C -")  # curl download, retry and resume on fail
     finally:
         if not file.exists() or file.stat().st_size < min_bytes:  # check
-            file.unlink(missing_ok=True)  # remove partial downloads
+            if file.exists():
+                file.unlink()  # remove partial downloads
             LOGGER.info(f"ERROR: {assert_msg}\n{error_msg}")
         LOGGER.info('')
 
@@ -112,8 +114,10 @@ def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', file='tmp.zip'):
     file = Path(file)
     cookie = Path('cookie')  # gdrive cookie
     print(f'Downloading https://drive.google.com/uc?export=download&id={id} as {file}... ', end='')
-    file.unlink(missing_ok=True)  # remove existing file
-    cookie.unlink(missing_ok=True)  # remove existing cookie
+    if file.exists():
+        file.unlink()  # remove existing file
+    if cookie.exists():
+        cookie.unlink()  # remove existing cookie
 
     # Attempt file download
     out = "NUL" if platform.system() == "Windows" else "/dev/null"
@@ -123,11 +127,13 @@ def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', file='tmp.zip'):
     else:  # small file
         s = f'curl -s -L -o {file} "drive.google.com/uc?export=download&id={id}"'
     r = os.system(s)  # execute, capture return
-    cookie.unlink(missing_ok=True)  # remove existing cookie
+    if cookie.exists():
+        cookie.unlink()  # remove existing cookie
 
     # Error check
     if r != 0:
-        file.unlink(missing_ok=True)  # remove partial
+        if file.exists():
+            file.unlink()  # remove partial
         print('Download error ')  # raise Exception('Download error')
         return r
 
