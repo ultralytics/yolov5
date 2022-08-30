@@ -98,6 +98,9 @@ def get_args(known=False):
     parser.add_argument("--comet_log_predictions",
                         action="store_true",
                         help="Comet: Log Predictions on Images from the Validation Set")
+    parser.add_argument("--comet_log_per_class_metrics",
+                        action="store_true",
+                        help="Comet: Log evaluation metrics for each class in the Validation Set")
     parser.add_argument("--comet_max_image_uploads",
                         type=int,
                         default=100,
@@ -109,6 +112,14 @@ def get_args(known=False):
                         help=("Comet: Upload Dataset to Comet as an Artifact."
                               "Set to 'train', 'val' or 'test' to upload a single dataset."))
     parser.add_argument("--comet_artifact", type=str, help="Comet: Name of the Comet dataset Artifact to download.")
+    parser.add_argument("--comet_optimizer_config", type=str, help="Comet: Path to a Comet Optimizer Config File.")
+    parser.add_argument("--comet_optimizer_id", type=str, help="Comet: ID of the Comet Optimizer sweep.")
+    parser.add_argument("--comet_optimizer_objective", type=str, help="Comet: Set to 'minimize' or 'maximize'.")
+    parser.add_argument("--comet_optimizer_metric", type=str, help="Comet: Metric to Optimize.")
+    parser.add_argument("--comet_optimizer_workers",
+                        type=int,
+                        default=1,
+                        help="Comet: Number of Parallel Workers to use with the Comet Optimizer.")
 
     return parser.parse_known_args()[0] if known else parser.parse_args()
 
