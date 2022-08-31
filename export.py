@@ -65,7 +65,7 @@ if platform.system() != 'Windows':
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.experimental import attempt_load
-from models.yolo import Detect
+from models.yolo import ClassificationModel, Detect
 from utils.dataloaders import LoadImages
 from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_version,
                            check_yaml, colorstr, file_size, get_default_args, print_args, url2file)
@@ -518,6 +518,7 @@ def run(
         if int8 or edgetpu:  # TFLite --int8 bug https://github.com/ultralytics/yolov5/issues/5707
             check_requirements(('flatbuffers==1.12',))  # required before `import tensorflow`
         assert not tflite or not tfjs, 'TFLite and TF.js models must be exported separately, please pass only one type.'
+        assert not isinstance(model, ClassificationModel), 'ClassificationModel export to TF formats not yet supported.'
         f[5], model = export_saved_model(model.cpu(),
                                          im,
                                          file,
