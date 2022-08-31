@@ -95,6 +95,13 @@ def attempt_load(weights, map_location=None, inplace=True, fuse=True):
     for w in weights if isinstance(weights, list) else [weights]:
         ckpt = torch.load(attempt_download(w), map_location=map_location)  # load
         ckpt = (ckpt.get('ema') or ckpt['model']).float()  # FP32 model
+
+        # backwards compatability for sparsezoo models that maintain anchor grid in state dict
+        anchor_grid_key = [key for key in ckpt.state_dict().keys() if "anchor_grid" in key]
+        if len(anchor_grid_key) == 1:
+            del ckpt.model[-1].anchor_grid
+            ckpt.model[-1].anchor_grid = [torch.zeros(1)] * ckpt.model[-1].nl # reset to init value
+
         model.append(ckpt.fuse().eval() if fuse else ckpt.eval())  # fused or un-fused model in eval mode
 
     # Compatibility updates

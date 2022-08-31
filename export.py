@@ -519,6 +519,12 @@ def load_checkpoint(
                       anchors=hyp.get('anchors') if hyp else None).to(device)
         model_key = 'ema' if (not train_type and 'ema' in ckpt and ckpt['ema']) else 'model'
         state_dict = ckpt[model_key].float().state_dict() if pickled else ckpt[model_key]
+
+        # backwards compatability for sparsezoo models that maintain anchor grid in state dict
+        anchor_grid_key = [key for key in state_dict.keys() if "anchor_grid" in key]
+        if len(anchor_grid_key) == 1:
+            _ = [state_dict.pop(key) for key in anchor_grid_key]
+
         if val_type:
             model = DetectMultiBackend(model=model, device=device, dnn=dnn, data=data, fp16=half)
 
