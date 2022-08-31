@@ -27,12 +27,34 @@ from utils.general import (LOGGER, check_requirements, check_suffix, check_versi
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, time_sync
 
+try:
+    from torch.nn.quantized import FloatFunctional
+except Exception:
+    FloatFunctional = None
 
 def autopad(k, p=None):  # kernel, padding
     # Pad to 'same'
     if p is None:
         p = k // 2 if isinstance(k, int) else [x // 2 for x in k]  # auto-pad
     return p
+
+class _Add(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        if FloatFunctional:
+            self.functional = FloatFunctional()
+            self.wrap_qat = True
+            self.qat_wrapper_kwargs = {
+                "num_inputs": 2,
+                "num_outputs": 0,
+            }
+
+    def forward(self, a: torch.Tensor, b: torch.Tensor):
+        if FloatFunctional:
+            return self.functional.add(a, b)
+        else:
+            return torch.add(a, b)
 
 
 class Conv(nn.Module):
@@ -100,9 +122,14 @@ class Bottleneck(nn.Module):
         self.cv1 = Conv(c1, c_, 1, 1)
         self.cv2 = Conv(c_, c2, 3, 1, g=g)
         self.add = shortcut and c1 == c2
+        self.add_node = _Add()
 
     def forward(self, x):
-        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
+        # Checks if add_node exists (doesn't exist in model definitions from original repo)
+        if hasattr(self, "add_node"):
+            return self.add_node(x, self.cv2(self.cv1(x))) if self.add else self.cv2(self.cv1(x))
+        else:
+            return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
 
 class BottleneckCSP(nn.Module):
@@ -232,10 +259,14 @@ class GhostBottleneck(nn.Module):
                                   GhostConv(c_, c2, 1, 1, act=False))  # pw-linear
         self.shortcut = nn.Sequential(DWConv(c1, c1, k, s, act=False),
                                       Conv(c1, c2, 1, 1, act=False)) if s == 2 else nn.Identity()
+        self.add_node = _Add()
 
     def forward(self, x):
-        return self.conv(x) + self.shortcut(x)
-
+        # Checks if add_node exists (doesn't exist in model definitions from original repo)
+        if hasattr(self, "add_node"):
+            return self.add_node(self.conv(x), self.shortcut(x))
+        else:
+            return self.conv(x) + self.shortcut(x)
 
 class Contract(nn.Module):
     # Contract width-height into channels, i.e. x(1,64,80,80) to x(1,256,40,40)
