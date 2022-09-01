@@ -10,7 +10,6 @@ import subprocess
 import time
 import urllib
 from pathlib import Path
-from urllib.request import urlopen
 from zipfile import ZipFile
 
 import requests
@@ -23,7 +22,7 @@ def is_url(url, check_online=True):
         url = str(url)
         result = urllib.parse.urlparse(url)
         assert all([result.scheme, result.netloc, result.path])  # check if is url
-        return (urlopen(url).getcode() == 200) if check_online else True  # check if exists online
+        return (urllib.request.urlopen(url).getcode() == 200) if check_online else True  # check if exists online
     except (AssertionError, urllib.request.HTTPError):
         return False
 
