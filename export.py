@@ -117,7 +117,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
         LOGGER.info(f'{prefix} export failure: {e}')
 
 
-def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:')):
+def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:'), convert_qat=True):
     # YOLOv5 ONNX export
     try:
         check_requirements(('onnx',))
@@ -147,7 +147,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         output_names = [f'out_{i}' for i in range(num_outputs)]
         dynamic_axes = {k: {0: 'batch'} for k in (input_names + output_names)} if dynamic else None
         exporter = ModuleExporter(model, save_dir)
-        exporter.export_onnx(im, name=save_name, convert_qat=True,
+        exporter.export_onnx(im, name=save_name, convert_qat=convert_qat,
                                 input_names=input_names, output_names=output_names, dynamic_axes=dynamic_axes)
         try:
             skip_onnx_input_quantize(str(f), str(f))
@@ -611,7 +611,8 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         iou_thres=0.45,  # TF.js NMS: IoU threshold
         conf_thres=0.25,  # TF.js NMS: confidence threshold
         remove_grid=False,
-        num_export_samples = 0 # number of data samples to generate
+        num_export_samples = 0, # number of data samples to generate
+        no_convert_qat=False,
         ):
     t = time.time()
     include = [x.lower() for x in include]  # to lowercase
@@ -666,7 +667,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     if engine:  # TensorRT required before ONNX
         f[1] = export_engine(model, im, file, train, half, simplify, workspace, verbose)
     if onnx or xml:  # OpenVINO requires ONNX
-        f[2] = export_onnx(model, im, file, opset, train, dynamic, simplify)
+        f[2] = export_onnx(model, im, file, opset, train, dynamic, simplify, convert_qat = (not no_convert_qat))
     if xml:  # OpenVINO
         f[3] = export_openvino(model, im, file)
     if coreml:
@@ -750,6 +751,13 @@ def parse_opt(known = False, skip_parse = False):
     parser.add_argument('--include', nargs='+',
                         default=['torchscript', 'onnx'],
                         help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
+    parser.add_argument("--no_convert_qat",
+                        action="store_true",
+                        help = (
+                            "if specified, exports of torch QAT graphs will skip conversion "
+                            "to a fully quantized representation. Default is False "
+                            )
+                        )
     if skip_parse:
         opt = parser.parse_args([])
     elif known:
