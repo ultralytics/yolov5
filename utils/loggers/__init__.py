@@ -106,7 +106,7 @@ class Loggers():
             self.clearml = ClearmlLogger(self.opt, self.hyp)
         else:
             self.clearml = None
-            
+
     @property
     def remote_dataset(self):
         # Get data_dict if custom dataset artifact link is provided
