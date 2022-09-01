@@ -75,20 +75,13 @@ from utils.torch_utils import select_device, smart_inference_mode
 
 def export_formats():
     # YOLOv5 export formats
-    x = [
-        ['PyTorch', '-', '.pt', True, True],
-        ['TorchScript', 'torchscript', '.torchscript', True, True],
-        ['ONNX', 'onnx', '.onnx', True, True],
-        ['OpenVINO', 'openvino', '_openvino_model', True, False],
-        ['TensorRT', 'engine', '.engine', False, True],
-        ['CoreML', 'coreml', '.mlmodel', True, False],
-        ['TensorFlow SavedModel', 'saved_model', '_saved_model', True, True],
-        ['TensorFlow GraphDef', 'pb', '.pb', True, True],
-        ['TensorFlow Lite', 'tflite', '.tflite', True, False],
-        ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
-        ['TensorFlow.js', 'tfjs', '_web_model', False, False],
-        ['Paddle', 'pd', '_pd_model', True, True]
-    ]
+    x = [['PyTorch', '-', '.pt', True, True], ['TorchScript', 'torchscript', '.torchscript', True, True],
+         ['ONNX', 'onnx', '.onnx', True, True], ['OpenVINO', 'openvino', '_openvino_model', True, False],
+         ['TensorRT', 'engine', '.engine', False, True], ['CoreML', 'coreml', '.mlmodel', True, False],
+         ['TensorFlow SavedModel', 'saved_model', '_saved_model', True, True],
+         ['TensorFlow GraphDef', 'pb', '.pb', True, True], ['TensorFlow Lite', 'tflite', '.tflite', True, False],
+         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
+         ['TensorFlow.js', 'tfjs', '_web_model', False, False], ['Paddle', 'pd', '_pd_model', True, True]]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
@@ -192,7 +185,11 @@ def export_paddle(model, file, prefix=colorstr('Paddle:')):
 
     LOGGER.info(f'\n{prefix} starting export with X2Paddle {x2paddle.__version__}...')
     f = str(file).replace('.pt', f'_pd_model{os.sep}')
-    x2paddle.convert.onnx2paddle(file.with_suffix('.onnx'), f, convert_to_lite=False, lite_valid_places="arm", lite_model_type="naive_buffer")
+    x2paddle.convert.onnx2paddle(file.with_suffix('.onnx'),
+                                 f,
+                                 convert_to_lite=False,
+                                 lite_valid_places="arm",
+                                 lite_model_type="naive_buffer")
     with open(Path(f) / file.with_suffix('.yaml').name, 'w') as g:
         yaml.dump({'stride': int(max(model.stride)), 'names': model.names}, g)  # add metadata.yaml
     return f, None
@@ -208,7 +205,7 @@ def export_openvino(model, file, half, prefix=colorstr('OpenVINO:')):
     f = str(file).replace('.pt', f'_openvino_model{os.sep}')
 
     cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f} --data_type {'FP16' if half else 'FP32'}"
-    subprocess.run(cmd.split(),check=True,env=os.environ)  # export
+    subprocess.run(cmd.split(), check=True, env=os.environ)  # export
     with open(Path(f) / file.with_suffix('.yaml').name, 'w') as g:
         yaml.dump({'stride': int(max(model.stride)), 'names': model.names}, g)  # add metadata.yaml
     return f, None
@@ -483,7 +480,7 @@ def run(
     fmts = tuple(export_formats()['Argument'][1:])  # --include arguments
     flags = [x in include for x in fmts]
     assert sum(flags) == len(include), f'ERROR: Invalid --include {include}, valid --include arguments are {fmts}'
-    jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs,paddle = flags  # export booleans
+    jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle = flags  # export booleans
     file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)  # PyTorch weights
 
     # Load PyTorch model
@@ -532,7 +529,7 @@ def run(
     if coreml:
         f[4], _ = export_coreml(model, im, file, int8, half)
     if paddle:
-        f[5],_ =export_paddle(model, file)
+        f[5], _ = export_paddle(model, file)
 
     # TensorFlow Exports
     if any((saved_model, pb, tflite, edgetpu, tfjs)):
