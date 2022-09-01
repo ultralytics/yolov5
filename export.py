@@ -15,6 +15,7 @@ TensorFlow GraphDef         | `pb`                          | yolov5s.pb
 TensorFlow Lite             | `tflite`                      | yolov5s.tflite
 TensorFlow Edge TPU         | `edgetpu`                     | yolov5s_edgetpu.tflite
 TensorFlow.js               | `tfjs`                        | yolov5s_web_model/
+Paddle                      | `pd`                          | yolov5s_pd_model/
 
 Requirements:
     $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU
@@ -85,7 +86,9 @@ def export_formats():
         ['TensorFlow GraphDef', 'pb', '.pb', True, True],
         ['TensorFlow Lite', 'tflite', '.tflite', True, False],
         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
-        ['TensorFlow.js', 'tfjs', '_web_model', False, False],]
+        ['TensorFlow.js', 'tfjs', '_web_model', False, False],
+        ['Paddle', 'pd', '_pd_model', True, True]
+    ]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
@@ -180,6 +183,22 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
 
 
 @try_export
+def export_paddle(model, file, prefix=colorstr('Paddle:')):
+    # YOLOv5 Paddle export
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+    check_requirements(('x2paddle',))
+    import x2paddle
+    from x2paddle.convert import onnx2paddle
+
+    LOGGER.info(f'\n{prefix} starting export with X2Paddle {x2paddle.__version__}...')
+    f = str(file).replace('.pt', f'_pd_model{os.sep}')
+    x2paddle.convert.onnx2paddle(file.with_suffix('.onnx'), f, convert_to_lite=False, lite_valid_places="arm", lite_model_type="naive_buffer")
+    with open(Path(f) / file.with_suffix('.yaml').name, 'w') as g:
+        yaml.dump({'stride': int(max(model.stride)), 'names': model.names}, g)  # add metadata.yaml
+    return f, None
+
+
+@try_export
 def export_openvino(model, file, half, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
     check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
@@ -189,7 +208,7 @@ def export_openvino(model, file, half, prefix=colorstr('OpenVINO:')):
     f = str(file).replace('.pt', f'_openvino_model{os.sep}')
 
     cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f} --data_type {'FP16' if half else 'FP32'}"
-    subprocess.check_output(cmd.split())  # export
+    subprocess.run(cmd.split(),check=True,env=os.environ)  # export
     with open(Path(f) / file.with_suffix('.yaml').name, 'w') as g:
         yaml.dump({'stride': int(max(model.stride)), 'names': model.names}, g)  # add metadata.yaml
     return f, None
@@ -464,7 +483,7 @@ def run(
     fmts = tuple(export_formats()['Argument'][1:])  # --include arguments
     flags = [x in include for x in fmts]
     assert sum(flags) == len(include), f'ERROR: Invalid --include {include}, valid --include arguments are {fmts}'
-    jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = flags  # export booleans
+    jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs,paddle = flags  # export booleans
     file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)  # PyTorch weights
 
     # Load PyTorch model
@@ -506,12 +525,14 @@ def run(
         f[0], _ = export_torchscript(model, im, file, optimize)
     if engine:  # TensorRT required before ONNX
         f[1], _ = export_engine(model, im, file, half, dynamic, simplify, workspace, verbose)
-    if onnx or xml:  # OpenVINO requires ONNX
+    if onnx or xml or paddle:  # OpenVINO requires ONNX
         f[2], _ = export_onnx(model, im, file, opset, train, dynamic, simplify)
     if xml:  # OpenVINO
         f[3], _ = export_openvino(model, file, half)
     if coreml:
         f[4], _ = export_coreml(model, im, file, int8, half)
+    if paddle:
+        f[5],_ =export_paddle(model, file)
 
     # TensorFlow Exports
     if any((saved_model, pb, tflite, edgetpu, tfjs)):
