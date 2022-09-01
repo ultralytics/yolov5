@@ -10,6 +10,7 @@ import subprocess
 import time
 import urllib
 from pathlib import Path
+from urllib.request import urlopen
 from zipfile import ZipFile
 
 import requests
@@ -22,7 +23,7 @@ def is_url(url, check_online=True):
         url = str(url)
         result = urllib.parse.urlparse(url)
         assert all([result.scheme, result.netloc, result.path])  # check if is url
-        return (urllib.request.urlopen(url).getcode() == 200) if check_online else True  # check if exists online
+        return (urlopen(url).getcode() == 200) if check_online else True  # check if exists online
     except (AssertionError, urllib.request.HTTPError):
         return False
 
@@ -31,6 +32,12 @@ def gsutil_getsize(url=''):
     # gs://bucket/file size https://cloud.google.com/storage/docs/gsutil/commands/du
     s = subprocess.check_output(f'gsutil du {url}', shell=True).decode('utf-8')
     return eval(s.split(' ')[0]) if len(s) else 0  # bytes
+
+
+def url_getsize(url='https://ultralytics.com/images/bus.jpg'):
+    # Return downloadable file size in bytes
+    response = requests.head(url, allow_redirects=True)
+    return int(response.headers.get('content-length', -1))
 
 
 def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
@@ -153,7 +160,6 @@ def get_token(cookie="./cookie"):
             if "download" in line:
                 return line.split()[-1]
     return ""
-
 
 # Google utils: https://cloud.google.com/storage/docs/reference/libraries ----------------------------------------------
 #
