@@ -33,6 +33,12 @@ def gsutil_getsize(url=''):
     return eval(s.split(' ')[0]) if len(s) else 0  # bytes
 
 
+def url_getsize(url='https://ultralytics.com/images/bus.jpg'):
+    # Return downloadable file size in bytes
+    response = requests.head(url, allow_redirects=True)
+    return int(response.headers.get('content-length', -1))
+
+
 def safe_download(file, url, url2=None, min_bytes=1E0, error_msg=''):
     # Attempts to download file from url or url2, checks and removes incomplete downloads < min_bytes
     from utils.general import LOGGER
