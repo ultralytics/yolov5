@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 
 
-def crop(masks, boxes):
+def crop_mask(masks, boxes):
     """
     "Crop" predicted masks by zeroing out everything not in the predicted bbox.
     Vectorized by Chong (thanks Chong).
@@ -35,7 +35,7 @@ def process_mask_upsample(protos, masks_in, bboxes, shape):
     c, mh, mw = protos.shape  # CHW
     masks = (masks_in @ protos.float().view(c, -1)).sigmoid().view(-1, mh, mw)
     masks = F.interpolate(masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
-    masks = crop(masks, bboxes)  # CHW
+    masks = crop_mask(masks, bboxes)  # CHW
     return masks.gt_(0.5)
 
 
@@ -60,7 +60,7 @@ def process_mask(protos, masks_in, bboxes, shape, upsample=False):
     downsampled_bboxes[:, 3] *= mh / ih
     downsampled_bboxes[:, 1] *= mh / ih
 
-    masks = crop(masks, downsampled_bboxes)  # CHW
+    masks = crop_mask(masks, downsampled_bboxes)  # CHW
     if upsample:
         masks = F.interpolate(masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
     return masks.gt_(0.5)
