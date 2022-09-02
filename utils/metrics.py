@@ -125,11 +125,17 @@ def compute_ap(recall, precision):
 
 class ConfusionMatrix:
     # Updated version of https://github.com/kaanakan/object_detection_confusion_matrix
-    def __init__(self, nc, conf=0.25, iou_thres=0.45):
+    def __init__(self, nc, conf=0.25, iou_thres=0.45, run_first=False, bg_info=None):
         self.matrix = np.zeros((nc + 1, nc + 1))
         self.nc = nc  # number of classes
         self.conf = conf
         self.iou_thres = iou_thres
+        self.run_first = run_first
+        self.bg_info = None if run_first else bg_info
+        self.matrix_one_image = np.zeros((self.nc + 1, self.nc + 1))
+
+    def cleanup(self):
+        self.matrix_one_image = np.zeros((self.nc + 1, self.nc + 1))
 
     def process_batch(self, detections, labels):
         """
@@ -141,10 +147,12 @@ class ConfusionMatrix:
         Returns:
             None, updates confusion matrix accordingly
         """
+        self.cleanup()
         if detections is None:
             gt_classes = labels.int()
             for gc in gt_classes:
                 self.matrix[self.nc, gc] += 1  # background FN
+                self.matrix_one_image[self.nc, gc] += 1
             return
 
         detections = detections[detections[:, 4] > self.conf]
@@ -171,11 +179,13 @@ class ConfusionMatrix:
                 self.matrix[detection_classes[m1[j]], gc] += 1  # correct
             else:
                 self.matrix[self.nc, gc] += 1  # background FP
+                self.matrix_one_image[self.nc, gc] += 1
 
         if n:
             for i, dc in enumerate(detection_classes):
                 if not any(m1 == i):
                     self.matrix[dc, self.nc] += 1  # background FN
+                    self.matrix_one_image[self.nc, gc] += 1
 
     def matrix(self):
         return self.matrix

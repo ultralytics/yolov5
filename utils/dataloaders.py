@@ -114,7 +114,8 @@ def create_dataloader(path,
                       image_weights=False,
                       quad=False,
                       prefix='',
-                      shuffle=False):
+                      shuffle=False,
+                      size_range=(0,32**2)):
     if rect and shuffle:
         LOGGER.warning('WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False')
         shuffle = False
@@ -131,7 +132,8 @@ def create_dataloader(path,
             stride=int(stride),
             pad=pad,
             image_weights=image_weights,
-            prefix=prefix)
+            prefix=prefix,
+            size_range=size_range)
 
     batch_size = min(batch_size, len(dataset))
     nd = torch.cuda.device_count()  # number of CUDA devices
@@ -436,7 +438,8 @@ class LoadImagesAndLabels(Dataset):
                  single_cls=False,
                  stride=32,
                  pad=0.0,
-                 prefix=''):
+                 prefix='',
+                 size_range=(0,32**2)):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -473,11 +476,12 @@ class LoadImagesAndLabels(Dataset):
         self.label_files = img2label_paths(self.im_files)  # labels
         cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')
         try:
+            cache_path.unlink()
             cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
             assert cache['version'] == self.cache_version  # matches current version
             assert cache['hash'] == get_hash(self.label_files + self.im_files)  # identical hash
         except Exception:
-            cache, exists = self.cache_labels(cache_path, prefix), False  # run cache ops
+            cache, exists = self.cache_labels(cache_path, prefix, size_range), False  # run cache ops
 
         # Display cache
         nf, nm, ne, nc, n = cache.pop('results')  # found, missing, empty, corrupt, total
@@ -560,13 +564,13 @@ class LoadImagesAndLabels(Dataset):
                 pbar.desc = f'{prefix}Caching images ({gb / 1E9:.1f}GB {cache_images})'
             pbar.close()
 
-    def cache_labels(self, path=Path('./labels.cache'), prefix=''):
+    def cache_labels(self, path=Path('./labels.cache'), prefix='', size_range=(0,32**2)):
         # Cache dataset labels, check images and read shapes
         x = {}  # dict
         nm, nf, ne, nc, msgs = 0, 0, 0, 0, []  # number missing, found, empty, corrupt, messages
         desc = f"{prefix}Scanning '{path.parent / path.stem}' images and labels..."
         with Pool(NUM_THREADS) as pool:
-            pbar = tqdm(pool.imap(verify_image_label, zip(self.im_files, self.label_files, repeat(prefix))),
+            pbar = tqdm(pool.imap(verify_image_label, zip(self.im_files, self.label_files, repeat(prefix), repeat(size_range))),
                         desc=desc,
                         total=len(self.im_files),
                         bar_format=BAR_FORMAT)
@@ -945,7 +949,7 @@ def autosplit(path=DATASETS_DIR / 'coco128/images', weights=(0.9, 0.1, 0.0), ann
 
 def verify_image_label(args):
     # Verify one image-label pair
-    im_file, lb_file, prefix = args
+    im_file, lb_file, prefix, size_range = args
     nm, nf, ne, nc, msg, segments = 0, 0, 0, 0, '', []  # number (missing, found, empty, corrupt), message, segments
     try:
         # verify images
@@ -971,6 +975,12 @@ def verify_image_label(args):
                     segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in lb]  # (cls, xy1...)
                     lb = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
                 lb = np.array(lb, dtype=np.float32)
+                areas = (lb[:,3:]*np.array(shape,dtype=np.float32)).prod(1)
+                idx = (areas <= size_range[1]) & ( areas > size_range[0])
+                if idx.any():
+                    lb = lb[idx.T]
+                else:
+                    lb = np.zeros((0, 5), dtype=np.float32)
             nl = len(lb)
             if nl:
                 assert lb.shape[1] == 5, f'labels require 5 columns, {lb.shape[1]} columns detected'
