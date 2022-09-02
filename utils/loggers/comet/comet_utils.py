@@ -32,7 +32,7 @@ def download_model_checkpoint(opt, experiment):
         reverse=True,
     )
 
-    checkpoint_filename = opt.comet_checkpoint_filename
+    checkpoint_filename = urlparse(opt.weights)
     logged_checkpoint_map = {asset["fileName"]: asset["assetId"] for asset in model_asset_list}
     asset_id = logged_checkpoint_map.get(checkpoint_filename)
 

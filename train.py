@@ -100,6 +100,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 weights, epochs, hyp, batch_size = opt.weights, opt.epochs, opt.hyp, opt.batch_size
         if loggers.comet_logger:
             data_dict = loggers.comet_logger.data_dict
+            weights, epochs, hyp, batch_size = opt.weights, opt.epochs, opt.hyp, opt.batch_size
         # Register actions
         for k in methods(loggers):
             callbacks.register_action(k, callback=getattr(loggers, k))
@@ -529,8 +530,6 @@ def main(opt, callbacks=Callbacks()):
         print_args(vars(opt))
         check_git_status()
         check_requirements()
-
-    check_comet_weights(opt)
 
     # Resume
     if opt.resume and not check_wandb_resume(opt) and not check_comet_resume(
