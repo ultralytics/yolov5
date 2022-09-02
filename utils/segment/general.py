@@ -66,39 +66,31 @@ def process_mask(protos, masks_in, bboxes, shape, upsample=False):
     return masks.gt_(0.5)
 
 
-def scale_masks(img1_shape, masks, img0_shape, ratio_pad=None):
+def scale_masks(im1_shape, masks, im0_shape, ratio_pad=None):
     """
     img1_shape: model input shape, [h, w]
     img0_shape: origin pic shape, [h, w, 3]
     masks: [h, w, num]
-    resize for the most time
     """
-    # Rescale coords (xyxy) from img1_shape to img0_shape
-    if ratio_pad is None:  # calculate from img0_shape
-        gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
-        pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
+    # Rescale coordinates (xyxy) from im1_shape to im0_shape
+    if ratio_pad is None:  # calculate from im0_shape
+        gain = min(im1_shape[0] / im0_shape[0], im1_shape[1] / im0_shape[1])  # gain  = old / new
+        pad = (im1_shape[1] - im0_shape[1] * gain) / 2, (im1_shape[0] - im0_shape[0] * gain) / 2  # wh padding
     else:
-        gain = ratio_pad[0][0]
         pad = ratio_pad[1]
-    tl_pad = int(pad[1]), int(pad[0])  # y, x
-    br_pad = int(img1_shape[0] - pad[1]), int(img1_shape[1] - pad[0])
+    top, left = int(pad[1]), int(pad[0])  # y, x
+    bottom, right = int(im1_shape[0] - pad[1]), int(im1_shape[1] - pad[0])
 
     if len(masks.shape) < 2:
         raise ValueError(f'"len of masks shape" should be 2 or 3, but got {len(masks.shape)}')
-    # masks_h, masks_w, n
-    masks = masks[tl_pad[0]:br_pad[0], tl_pad[1]:br_pad[1]]
-    # 1, n, masks_h, masks_w
-    # masks = masks.permute(2, 0, 1).contiguous()[None, :]
-    # # shape = [1, n, masks_h, masks_w] after F.interpolate, so take first element
-    # masks = F.interpolate(masks, img0_shape[:2], mode='bilinear', align_corners=False)[0]
+    masks = masks[top:bottom, left:right]
+    # masks = masks.permute(2, 0, 1).contiguous()
+    # masks = F.interpolate(masks[None], im0_shape[:2], mode='bilinear', align_corners=False)[0]
     # masks = masks.permute(1, 2, 0).contiguous()
-    # masks_h, masks_w, n
-    masks = cv2.resize(masks, (img0_shape[1], img0_shape[0]))
+    masks = cv2.resize(masks, (im0_shape[1], im0_shape[0]))
 
-    # keepdim
     if len(masks.shape) == 2:
         masks = masks[:, :, None]
-
     return masks
 
 
