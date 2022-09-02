@@ -13,42 +13,31 @@ from ..general import xywh2xyxy
 from ..plots import Annotator, colors
 
 
-def plot_masks(img, masks, colors, alpha=0.5):
+def plot_masks(im, masks, colors, alpha=0.5):
     """
     Args:
-        img (tensor): img is in cuda, shape: [3, h, w], range: [0, 1]
+        im (tensor): img is in cuda, shape: [3, h, w], range: [0, 1]
         masks (tensor): predicted masks on cuda, shape: [n, h, w]
         colors (List[List[Int]]): colors for predicted masks, [[r, g, b] * n]
     Return:
         ndarray: img after draw masks, shape: [h, w, 3]
 
-    transform colors and send img_gpu to cpu for the most time.
     """
-    img_gpu = img.clone()
-    num_masks = len(masks)
-    if num_masks == 0:
-        return img.permute(1, 2, 0).contiguous().cpu().numpy() * 255
+    if len(masks) == 0:
+        return im.permute(1, 2, 0).contiguous().cpu().numpy() * 255
 
-    # [n, 1, 1, 3]
-    # faster this way to transform colors
-    colors = torch.tensor(colors, device=img.device).float() / 255.0
-    colors = colors[:, None, None, :]
-    # [n, h, w, 1]
-    masks = masks[:, :, :, None]
-    masks_color = masks.repeat(1, 1, 1, 3) * colors * alpha
-    inv_alph_masks = masks * (-alpha) + 1
-    masks_color_summand = masks_color[0]
-    if num_masks > 1:
-        inv_alph_cumul = inv_alph_masks[:(num_masks - 1)].cumprod(dim=0)
-        masks_color_cumul = masks_color[1:] * inv_alph_cumul
-        masks_color_summand += masks_color_cumul.sum(dim=0)
+    colors = torch.tensor(colors, device=im.device).float() / 255.0
+    colors = colors[:, None, None]  # shape(n,1,1,3)
+    masks = masks.unsqueeze(3)  # shape(n,h,w,1)
+    masks_color = masks * (colors * alpha)  # shape(n,h,w,3)
 
-    # print(inv_alph_masks.prod(dim=0).shape) # [h, w, 1]
-    img_gpu = img_gpu.flip(dims=[0])  # filp channel for opencv
-    img_gpu = img_gpu.permute(1, 2, 0).contiguous()
-    # [h, w, 3]
-    img_gpu = img_gpu * inv_alph_masks.prod(dim=0) + masks_color_summand
-    return (img_gpu * 255).byte().cpu().numpy()
+    inv_alph_masks = (1 - masks * alpha).cumprod(0)  # shape(n,h,w,1)
+    mcs = (masks_color * inv_alph_masks).sum(0) * 2  # mask color summand shape(n,h,w,3)
+
+    im = im.flip(dims=[0])  # flip channel
+    im = im.permute(1, 2, 0).contiguous()  # shape(h,w,3)
+    im = im * inv_alph_masks[-1] + mcs
+    return (im * 255).byte().cpu().numpy()
 
 
 @threaded
@@ -158,7 +147,7 @@ def plot_results_with_masks(file="path/to/results.csv", dir="", best=True):
             data = pd.read_csv(f)
             index = np.argmax(
                 0.9 * data.values[:, 8] + 0.1 * data.values[:, 7] + 0.9 * data.values[:, 12] +
-                0.1 * data.values[:, 11],)
+                0.1 * data.values[:, 11])
             s = [x.strip() for x in data.columns]
             x = data.values[:, 0]
             for i, j in enumerate([1, 2, 3, 4, 5, 6, 9, 10, 13, 14, 15, 16, 7, 8, 11, 12]):
