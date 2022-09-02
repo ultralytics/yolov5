@@ -333,8 +333,7 @@ class LoadStreams:
         n, f, read = 0, self.frames[i], 1  # frame number, frame array, inference every 'read' frame
         while cap.isOpened() and n < f:
             n += 1
-            # _, self.imgs[index] = cap.read()
-            cap.grab()
+            cap.grab()  # .read() = .grab() followed by .retrieve()
             if n % read == 0:
                 success, im = cap.retrieve()
                 if success:
