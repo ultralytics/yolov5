@@ -156,11 +156,9 @@ def run(
                     n = (det[:, 5] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
-                # Mask plotting ----------------------------------------------------------------------------------------
-                mcolors = [colors(int(cls), True) for cls in det[:, 5]]
-                im_masks = plot_masks(im[i], masks, mcolors)  # image with masks shape(imh,imw,3)
+                # Mask plotting
+                im_masks = plot_masks(im[i], masks, colors=[colors(x, True) for x in det[:, 5]])  # shape(imh,imw,3)
                 annotator.im = scale_masks(im.shape[2:], im_masks, im0.shape)  # scale to original h, w
-                # Mask plotting ----------------------------------------------------------------------------------------
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det[:, :6]):
