@@ -114,14 +114,17 @@ class Annotator:
                             lineType=cv2.LINE_AA)
 
     def masks(self, masks, colors, alpha=0.5):
-        # Add multiple masks of shape(n,h,w) with colors list([r,g,b], [r,g,b], ...)
-        if len(masks):
-            masks = np.ascontiguousarray(masks).astype(np.float32)[..., None] / 255.0  # shape(n,h,w,1)
-            colors = np.array(colors, dtype=np.float32)[:, None, None]  # shape(n,1,1,3)
-            masks_color = masks * (colors * alpha)  # shape(n,h,w,3)
-            inv_alph_masks = (1 - masks * alpha).cumprod(0)
-            mcs = (masks_color * inv_alph_masks).sum(0) * 2  # mask color summand shape(h,w,3)
-            self.im[:] = self.im * inv_alph_masks[-1] + mcs
+        # Add multiple masks of shape(h,w,n) with colors list([r,g,b], [r,g,b], ...)
+        n = masks.shape[2]  # number of masks
+        if n:
+            im = self.im.astype(np.float32)
+            masks = np.array([alpha], dtype=np.float32) * masks[..., None] / 255.0  # shape(n,h,w,1)
+            colors = np.array(colors, dtype=np.uint8).reshape((n, 1, 1, 3))  # shape(n,1,1,3)
+            for i in range(n):
+                m = masks[:, :, i]
+                im *= 1.0 - m
+                im += colors[i] * m
+            self.im = im.astype(np.uint8)
 
     def rectangle(self, xy, fill=None, outline=None, width=1):
         # Add rectangle to image (PIL-only)
