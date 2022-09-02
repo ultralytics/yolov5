@@ -47,7 +47,7 @@ from utils.general import (LOGGER, NUM_THREADS, Profile, check_dataset, check_im
 from utils.metrics import ConfusionMatrix, box_iou
 from utils.plots import output_to_target, plot_val_study
 from utils.segment.dataloaders import create_dataloader
-from utils.segment.general import mask_iou, process_mask, process_mask_upsample, scale_masks
+from utils.segment.general import mask_iou, process_mask, process_mask_upsample, scale_image
 from utils.segment.metrics import Metrics, ap_per_class_box_and_mask
 from utils.segment.plots import plot_images_and_masks
 from utils.torch_utils import de_parallel, select_device, smart_inference_mode
@@ -319,7 +319,7 @@ def run(
             if save_txt:
                 save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / f'{path.stem}.txt')
             if save_json:
-                pred_masks = scale_masks(im[si].shape[1:],
+                pred_masks = scale_image(im[si].shape[1:],
                                          pred_masks.permute(1, 2, 0).contiguous().cpu().numpy(), shape, shapes[si][1])
                 save_one_json(predn, jdict, path, class_map, pred_masks)  # append to COCO-JSON dictionary
             # callbacks.run('on_val_image_end', pred, predn, path, names, im[si])

@@ -43,7 +43,7 @@ from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
 from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
                            increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
-from utils.segment.general import process_mask, scale_masks
+from utils.segment.general import process_mask, scale_image
 from utils.segment.plots import plot_masks
 from utils.torch_utils import select_device, smart_inference_mode
 
@@ -158,7 +158,7 @@ def run(
 
                 # Mask plotting
                 im_masks = plot_masks(im[i], masks, colors=[colors(x, True) for x in det[:, 5]])  # shape(imh,imw,3)
-                annotator.im = scale_masks(im.shape[2:], im_masks, im0.shape)  # scale to original h, w
+                annotator.im = scale_image(im.shape[2:], im_masks, im0.shape)  # scale to original h, w
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det[:, :6]):

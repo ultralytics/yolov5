@@ -66,7 +66,7 @@ def process_mask(protos, masks_in, bboxes, shape, upsample=False):
     return masks.gt_(0.5)
 
 
-def scale_masks(im1_shape, masks, im0_shape, ratio_pad=None):
+def scale_image(im1_shape, masks, im0_shape, ratio_pad=None):
     """
     img1_shape: model input shape, [h, w]
     img0_shape: origin pic shape, [h, w, 3]
