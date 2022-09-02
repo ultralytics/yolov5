@@ -39,7 +39,7 @@ def process_mask_upsample(protos, masks_in, bboxes, shape):
     return masks.gt_(0.5)
 
 
-def process_mask(protos, masks_in, bboxes, shape, crop=True, upsample=False):
+def process_mask(protos, masks_in, bboxes, shape, upsample=False):
     """
     Crop before upsample.
     proto_out: [mask_dim, mask_h, mask_w]
@@ -60,8 +60,7 @@ def process_mask(protos, masks_in, bboxes, shape, crop=True, upsample=False):
     downsampled_bboxes[:, 3] *= mh / ih
     downsampled_bboxes[:, 1] *= mh / ih
 
-    if crop:
-        masks = crop_mask(masks, downsampled_bboxes)  # CHW
+    masks = crop_mask(masks, downsampled_bboxes)  # CHW
     if upsample:
         masks = F.interpolate(masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
     return masks.gt_(0.5)
