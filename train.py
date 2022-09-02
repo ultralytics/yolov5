@@ -166,8 +166,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         loggers.on_params_update({"batch_size": batch_size})
 
     # Optimizer
-    nbs = 64  # nominal batch size
-    accumulate = max(round(nbs / batch_size), 1)  # accumulate loss before optimizing
+    nbs = batch_size*opt.gradient_accum_steps   # nominal batch size
+    accumulate = opt.gradient_accum_steps  # accumulate loss before optimizing
     hyp['weight_decay'] *= batch_size * accumulate / nbs  # scale weight_decay
     LOGGER.info(f"Scaled weight_decay = {hyp['weight_decay']}")
 
@@ -547,6 +547,7 @@ def parse_opt(known=False, skip_parse=False):
     parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.scratch-low.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs, -1 for autobatch')
+    parser.add_argument('--gradient-accum-steps', type=int, default=1, help="Number of gradient accumulation steps")
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='train, val image size (pixels)')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', 
