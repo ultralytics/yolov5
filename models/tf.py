@@ -333,7 +333,7 @@ class TFSegment(TFDetect):
     def call(self, x):
         p = self.proto(x[0])
         x = self.detect(self, x)
-        return (x, p) if self.training else (x[0], p) if self.export else (x[0], (x[1], p))
+        return (x, p) if self.training else ((x[0], p),)
 
 class TFProto(keras.layers.Layer):
     def __init__(self, c1, c_=256, c2=32, w=None):
@@ -407,6 +407,8 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
             args.append([ch[x + 1] for x in f])
             if isinstance(args[1], int):  # number of anchors
                 args[1] = [list(range(args[1] * 2))] * len(f)
+            if m is Segment:
+                args[3] = make_divisible(args[3] * gw, 8)
             args.append(imgsz)
         else:
             c2 = ch[f]
