@@ -183,17 +183,18 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
 @try_export
 def export_paddle(file, metadata, prefix=colorstr('PaddlePaddle:')):
     # YOLOv5 Paddle export
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
-    check_requirements(('paddlepaddle', x2paddle'))
+    check_requirements(('paddlepaddle', 'x2paddle'))
     import x2paddle
+    from x2paddle.convert import onnx2paddle
 
     LOGGER.info(f'\n{prefix} starting export with X2Paddle {x2paddle.__version__}...')
     f = str(file).replace('.pt', f'_paddle_model{os.sep}')
-    x2paddle.convert.onnx2paddle(file.with_suffix('.onnx'),
-                                 f,
-                                 convert_to_lite=False,
-                                 lite_valid_places="arm",
-                                 lite_model_type="naive_buffer")  # export
+    onnx2paddle(file.with_suffix('.onnx'),
+                f,
+                convert_to_lite=False,
+                lite_valid_places="arm",
+                lite_model_type="naive_buffer")  # export
+
     yaml_save(Path(f) / file.with_suffix('.yaml').name, metadata)  # add metadata.yaml
     return f, None
 
