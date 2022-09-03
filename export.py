@@ -15,7 +15,7 @@ TensorFlow GraphDef         | `pb`                          | yolov5s.pb
 TensorFlow Lite             | `tflite`                      | yolov5s.tflite
 TensorFlow Edge TPU         | `edgetpu`                     | yolov5s_edgetpu.tflite
 TensorFlow.js               | `tfjs`                        | yolov5s_web_model/
-Paddle                      | `pd`                          | yolov5s_pd_model/
+PaddlePaddle                | `paddle`                      | yolov5s_paddle_model/
 
 Requirements:
     $ pip install -r requirements.txt coremltools onnx onnx-simplifier onnxruntime openvino-dev tensorflow-cpu  # CPU
@@ -55,7 +55,6 @@ from pathlib import Path
 
 import pandas as pd
 import torch
-import yaml
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
 FILE = Path(__file__).resolve()
@@ -69,19 +68,25 @@ from models.experimental import attempt_load
 from models.yolo import ClassificationModel, Detect
 from utils.dataloaders import LoadImages
 from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_version,
-                           check_yaml, colorstr, file_size, get_default_args, print_args, url2file)
+                           check_yaml, colorstr, file_size, get_default_args, print_args, url2file, yaml_save)
 from utils.torch_utils import select_device, smart_inference_mode
 
 
 def export_formats():
     # YOLOv5 export formats
-    x = [['PyTorch', '-', '.pt', True, True], ['TorchScript', 'torchscript', '.torchscript', True, True],
-         ['ONNX', 'onnx', '.onnx', True, True], ['OpenVINO', 'openvino', '_openvino_model', True, False],
-         ['TensorRT', 'engine', '.engine', False, True], ['CoreML', 'coreml', '.mlmodel', True, False],
-         ['TensorFlow SavedModel', 'saved_model', '_saved_model', True, True],
-         ['TensorFlow GraphDef', 'pb', '.pb', True, True], ['TensorFlow Lite', 'tflite', '.tflite', True, False],
-         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
-         ['TensorFlow.js', 'tfjs', '_web_model', False, False], ['Paddle', 'pd', '_pd_model', True, True]]
+    x = [
+        ['PyTorch', '-', '.pt', True, True],
+        ['TorchScript', 'torchscript', '.torchscript', True, True],
+        ['ONNX', 'onnx', '.onnx', True, True],
+        ['OpenVINO', 'openvino', '_openvino_model', True, False],
+        ['TensorRT', 'engine', '.engine', False, True],
+        ['CoreML', 'coreml', '.mlmodel', True, False],
+        ['TensorFlow SavedModel', 'saved_model', '_saved_model', True, True],
+        ['TensorFlow GraphDef', 'pb', '.pb', True, True],
+        ['TensorFlow Lite', 'tflite', '.tflite', True, False],
+        ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
+        ['TensorFlow.js', 'tfjs', '_web_model', False, False],
+        ['PaddlePaddle', 'paddle', '_paddle_model', True, True]]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
@@ -176,27 +181,25 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
 
 
 @try_export
-def export_paddle(model, file, prefix=colorstr('Paddle:')):
+def export_paddle(file, metadata, prefix=colorstr('PaddlePaddle:')):
     # YOLOv5 Paddle export
     os.environ["CUDA_VISIBLE_DEVICES"] = '0'
     check_requirements(('x2paddle',))
     import x2paddle
-    from x2paddle.convert import onnx2paddle
 
     LOGGER.info(f'\n{prefix} starting export with X2Paddle {x2paddle.__version__}...')
-    f = str(file).replace('.pt', f'_pd_model{os.sep}')
+    f = str(file).replace('.pt', f'_paddle_model{os.sep}')
     x2paddle.convert.onnx2paddle(file.with_suffix('.onnx'),
                                  f,
                                  convert_to_lite=False,
                                  lite_valid_places="arm",
-                                 lite_model_type="naive_buffer")
-    with open(Path(f) / file.with_suffix('.yaml').name, 'w') as g:
-        yaml.dump({'stride': int(max(model.stride)), 'names': model.names}, g)  # add metadata.yaml
+                                 lite_model_type="naive_buffer")  # export
+    yaml_save(Path(f) / file.with_suffix('.yaml').name, metadata)  # add metadata.yaml
     return f, None
 
 
 @try_export
-def export_openvino(model, file, half, prefix=colorstr('OpenVINO:')):
+def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
     check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
     import openvino.inference_engine as ie
@@ -206,8 +209,7 @@ def export_openvino(model, file, half, prefix=colorstr('OpenVINO:')):
 
     cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f} --data_type {'FP16' if half else 'FP32'}"
     subprocess.run(cmd.split(), check=True, env=os.environ)  # export
-    with open(Path(f) / file.with_suffix('.yaml').name, 'w') as g:
-        yaml.dump({'stride': int(max(model.stride)), 'names': model.names}, g)  # add metadata.yaml
+    yaml_save(Path(f) / file.with_suffix('.yaml').name, metadata)  # add metadata.yaml
     return f, None
 
 
@@ -442,9 +444,9 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}}}', r'{"outputs": {"Identity": {"name": "Identity"}, '
-            r'"Identity_1": {"name": "Identity_1"}, '
-            r'"Identity_2": {"name": "Identity_2"}, '
-            r'"Identity_3": {"name": "Identity_3"}}}', json)
+                                                           r'"Identity_1": {"name": "Identity_1"}, '
+                                                           r'"Identity_2": {"name": "Identity_2"}, '
+                                                           r'"Identity_3": {"name": "Identity_3"}}}', json)
         j.write(subst)
     return f, None
 
@@ -513,26 +515,23 @@ def run(
     if half and not coreml:
         im, model = im.half(), model.half()  # to FP16
     shape = tuple((y[0] if isinstance(y, tuple) else y).shape)  # model output shape
+    metadata = {'stride': int(max(model.stride)), 'names': model.names}  # model metadata
     LOGGER.info(f"\n{colorstr('PyTorch:')} starting from {file} with output shape {shape} ({file_size(file):.1f} MB)")
 
     # Exports
     f = [''] * 10  # exported filenames
     warnings.filterwarnings(action='ignore', category=torch.jit.TracerWarning)  # suppress TracerWarning
-    if jit:
+    if jit:  # TorchScript
         f[0], _ = export_torchscript(model, im, file, optimize)
     if engine:  # TensorRT required before ONNX
         f[1], _ = export_engine(model, im, file, half, dynamic, simplify, workspace, verbose)
-    if onnx or xml or paddle:  # OpenVINO requires ONNX
+    if onnx or xml or paddle:  # OpenVINO and Paddle require ONNX
         f[2], _ = export_onnx(model, im, file, opset, train, dynamic, simplify)
     if xml:  # OpenVINO
-        f[3], _ = export_openvino(model, file, half)
-    if coreml:
+        f[3], _ = export_openvino(file, metadata, half)
+    if coreml:  # CoreML
         f[4], _ = export_coreml(model, im, file, int8, half)
-    if paddle:
-        f[5], _ = export_paddle(model, file)
-
-    # TensorFlow Exports
-    if any((saved_model, pb, tflite, edgetpu, tfjs)):
+    if any((saved_model, pb, tflite, edgetpu, tfjs)):  # TensorFlow formats
         if int8 or edgetpu:  # TFLite --int8 bug https://github.com/ultralytics/yolov5/issues/5707
             check_requirements(('flatbuffers==1.12',))  # required before `import tensorflow`
         assert not tflite or not tfjs, 'TFLite and TF.js models must be exported separately, please pass only one type.'
@@ -556,6 +555,8 @@ def run(
             f[8], _ = export_edgetpu(file)
         if tfjs:
             f[9], _ = export_tfjs(file)
+    if paddle:  # PaddlePaddle
+        f[10], _ = export_paddle(file, metadata)
 
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
