@@ -524,7 +524,7 @@ class DetectMultiBackend(nn.Module):
             y = y[0]
         if isinstance(y, np.ndarray):
             y = torch.from_numpy(y).to(self.device)
-        return (y, []) if val else y
+        return y
 
     def warmup(self, imgsz=(1, 3, 640, 640)):
         # Warmup model by running inference once
