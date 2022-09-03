@@ -184,7 +184,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
 def export_paddle(file, metadata, prefix=colorstr('PaddlePaddle:')):
     # YOLOv5 Paddle export
     os.environ["CUDA_VISIBLE_DEVICES"] = '0'
-    check_requirements(('x2paddle',))
+    check_requirements(('paddlepaddle', x2paddle'))
     import x2paddle
 
     LOGGER.info(f'\n{prefix} starting export with X2Paddle {x2paddle.__version__}...')
