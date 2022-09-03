@@ -61,7 +61,7 @@ def run(
     device = select_device(device)
     for i, (name, f, suffix, cpu, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, CPU, GPU)
         try:
-            assert i not in (9, 10), 'inference not supported'  # Edge TPU and TF.js are unsupported
+            assert i not in (9, 10, 11), 'inference not supported'  # Edge TPU, TF.js and Paddle are unsupported
             assert i != 5 or platform.system() == 'Darwin', 'inference only supported on macOS>=10.13'  # CoreML
             if 'cpu' in device.type:
                 assert cpu, 'inference not supported on CPU'
