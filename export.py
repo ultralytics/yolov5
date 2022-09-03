@@ -181,22 +181,6 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
 
 
 @try_export
-def export_paddle(model, im, file, metadata, prefix=colorstr('PaddlePaddle:')):
-    # YOLOv5 Paddle export
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
-    check_requirements(('paddlepaddle', 'x2paddle'))
-    import x2paddle
-    from x2paddle.convert import pytorch2paddle
-
-    LOGGER.info(f'\n{prefix} starting export with X2Paddle {x2paddle.__version__}...')
-    f = str(file).replace('.pt', f'_paddle_model{os.sep}')
-    pytorch2paddle(module=model, save_dir=f, jit_type='trace', input_examples=[im])  # export
-
-    yaml_save(Path(f) / file.with_suffix('.yaml').name, metadata)  # add metadata.yaml
-    return f, None
-
-
-@try_export
 def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
     check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
@@ -207,6 +191,21 @@ def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
 
     cmd = f"mo --input_model {file.with_suffix('.onnx')} --output_dir {f} --data_type {'FP16' if half else 'FP32'}"
     subprocess.run(cmd.split(), check=True, env=os.environ)  # export
+    yaml_save(Path(f) / file.with_suffix('.yaml').name, metadata)  # add metadata.yaml
+    return f, None
+
+
+@try_export
+def export_paddle(model, im, file, metadata, prefix=colorstr('PaddlePaddle:')):
+    # YOLOv5 Paddle export
+    check_requirements(('paddlepaddle', 'x2paddle'))
+    import x2paddle
+    from x2paddle.convert import pytorch2paddle
+
+    LOGGER.info(f'\n{prefix} starting export with X2Paddle {x2paddle.__version__}...')
+    f = str(file).replace('.pt', f'_paddle_model{os.sep}')
+    
+    pytorch2paddle(module=model, save_dir=f, jit_type='trace', input_examples=[im])  # export
     yaml_save(Path(f) / file.with_suffix('.yaml').name, metadata)  # add metadata.yaml
     return f, None
 
