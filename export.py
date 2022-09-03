@@ -86,7 +86,7 @@ def export_formats():
         ['TensorFlow Lite', 'tflite', '.tflite', True, False],
         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
         ['TensorFlow.js', 'tfjs', '_web_model', False, False],
-        ['PaddlePaddle', 'paddle', '_paddle_model', True, True],]
+        ['PaddlePaddle', 'paddle', '_paddle_model', True, True], ]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
@@ -181,19 +181,19 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
 
 
 @try_export
-def export_paddle(file, metadata, prefix=colorstr('PaddlePaddle:')):
+def export_paddle(model, im, file, metadata, prefix=colorstr('PaddlePaddle:')):
     # YOLOv5 Paddle export
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
     check_requirements(('paddlepaddle', 'x2paddle'))
     import x2paddle
-    from x2paddle.convert import onnx2paddle
+    from x2paddle.convert import pytorch2paddle
 
     LOGGER.info(f'\n{prefix} starting export with X2Paddle {x2paddle.__version__}...')
     f = str(file).replace('.pt', f'_paddle_model{os.sep}')
-    onnx2paddle(file.with_suffix('.onnx'),
-                f,
-                convert_to_lite=False,
-                lite_valid_places="arm",
-                lite_model_type="naive_buffer")  # export
+    pytorch2paddle(module=model,
+                   save_dir=f,
+                   jit_type="trace",
+                   input_examples=[im])  # export
 
     yaml_save(Path(f) / file.with_suffix('.yaml').name, metadata)  # add metadata.yaml
     return f, None
@@ -445,9 +445,9 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}}}', r'{"outputs": {"Identity": {"name": "Identity"}, '
-            r'"Identity_1": {"name": "Identity_1"}, '
-            r'"Identity_2": {"name": "Identity_2"}, '
-            r'"Identity_3": {"name": "Identity_3"}}}', json)
+                                                           r'"Identity_1": {"name": "Identity_1"}, '
+                                                           r'"Identity_2": {"name": "Identity_2"}, '
+                                                           r'"Identity_3": {"name": "Identity_3"}}}', json)
         j.write(subst)
     return f, None
 
@@ -537,27 +537,27 @@ def run(
             check_requirements(('flatbuffers==1.12',))  # required before `import tensorflow`
         assert not tflite or not tfjs, 'TFLite and TF.js models must be exported separately, please pass only one type.'
         assert not isinstance(model, ClassificationModel), 'ClassificationModel export to TF formats not yet supported.'
-        f[5], model = export_saved_model(model.cpu(),
-                                         im,
-                                         file,
-                                         dynamic,
-                                         tf_nms=nms or agnostic_nms or tfjs,
-                                         agnostic_nms=agnostic_nms or tfjs,
-                                         topk_per_class=topk_per_class,
-                                         topk_all=topk_all,
-                                         iou_thres=iou_thres,
-                                         conf_thres=conf_thres,
-                                         keras=keras)
+        f[5], s_model = export_saved_model(model.cpu(),
+                                           im,
+                                           file,
+                                           dynamic,
+                                           tf_nms=nms or agnostic_nms or tfjs,
+                                           agnostic_nms=agnostic_nms or tfjs,
+                                           topk_per_class=topk_per_class,
+                                           topk_all=topk_all,
+                                           iou_thres=iou_thres,
+                                           conf_thres=conf_thres,
+                                           keras=keras)
         if pb or tfjs:  # pb prerequisite to tfjs
-            f[6], _ = export_pb(model, file)
+            f[6], _ = export_pb(s_model, file)
         if tflite or edgetpu:
-            f[7], _ = export_tflite(model, im, file, int8 or edgetpu, data=data, nms=nms, agnostic_nms=agnostic_nms)
+            f[7], _ = export_tflite(s_model, im, file, int8 or edgetpu, data=data, nms=nms, agnostic_nms=agnostic_nms)
         if edgetpu:
             f[8], _ = export_edgetpu(file)
         if tfjs:
             f[9], _ = export_tfjs(file)
     if paddle:  # PaddlePaddle
-        f[10], _ = export_paddle(file, metadata)
+        f[10], _ = export_paddle(model, im, file, metadata)
 
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
