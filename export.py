@@ -74,13 +74,19 @@ from utils.torch_utils import select_device, smart_inference_mode
 
 def export_formats():
     # YOLOv5 export formats
-    x = [['PyTorch', '-', '.pt', True, True], ['TorchScript', 'torchscript', '.torchscript', True, True],
-         ['ONNX', 'onnx', '.onnx', True, True], ['OpenVINO', 'openvino', '_openvino_model', True, False],
-         ['TensorRT', 'engine', '.engine', False, True], ['CoreML', 'coreml', '.mlmodel', True, False],
-         ['TensorFlow SavedModel', 'saved_model', '_saved_model', True, True],
-         ['TensorFlow GraphDef', 'pb', '.pb', True, True], ['TensorFlow Lite', 'tflite', '.tflite', True, False],
-         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
-         ['TensorFlow.js', 'tfjs', '_web_model', False, False], ['PaddlePaddle', 'paddle', '_paddle_model', True, True]]
+    x = [
+        ['PyTorch', '-', '.pt', True, True],
+        ['TorchScript', 'torchscript', '.torchscript', True, True],
+        ['ONNX', 'onnx', '.onnx', True, True],
+        ['OpenVINO', 'openvino', '_openvino_model', True, False],
+        ['TensorRT', 'engine', '.engine', False, True],
+        ['CoreML', 'coreml', '.mlmodel', True, False],
+        ['TensorFlow SavedModel', 'saved_model', '_saved_model', True, True],
+        ['TensorFlow GraphDef', 'pb', '.pb', True, True],
+        ['TensorFlow Lite', 'tflite', '.tflite', True, False],
+        ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
+        ['TensorFlow.js', 'tfjs', '_web_model', False, False],
+        ['PaddlePaddle', 'paddle', '_paddle_model', True, True],]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
@@ -438,9 +444,9 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}}}', r'{"outputs": {"Identity": {"name": "Identity"}, '
-            r'"Identity_1": {"name": "Identity_1"}, '
-            r'"Identity_2": {"name": "Identity_2"}, '
-            r'"Identity_3": {"name": "Identity_3"}}}', json)
+                                                           r'"Identity_1": {"name": "Identity_1"}, '
+                                                           r'"Identity_2": {"name": "Identity_2"}, '
+                                                           r'"Identity_3": {"name": "Identity_3"}}}', json)
         j.write(subst)
     return f, None
 
@@ -513,7 +519,7 @@ def run(
     LOGGER.info(f"\n{colorstr('PyTorch:')} starting from {file} with output shape {shape} ({file_size(file):.1f} MB)")
 
     # Exports
-    f = [''] * 10  # exported filenames
+    f = [''] * (len(fmts) - 1)  # exported filenames
     warnings.filterwarnings(action='ignore', category=torch.jit.TracerWarning)  # suppress TracerWarning
     if jit:  # TorchScript
         f[0], _ = export_torchscript(model, im, file, optimize)
