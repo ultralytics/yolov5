@@ -204,11 +204,11 @@ def run(
 
         # Inference
         with dt[1]:
-            out, train_out = model(im) if training else model(im, augment=augment, val=True)  # inference, loss outputs
+            out, train_out = model(im) if compute_loss else (model(im, augment=augment), None)
 
         # Loss
         if compute_loss:
-            loss += compute_loss([x.float() for x in train_out], targets)[1]  # box, obj, cls
+            loss += compute_loss(train_out, targets)[1]  # box, obj, cls
 
         # NMS
         targets[:, 2:] *= torch.tensor((width, height, width, height), device=device)  # to pixels
