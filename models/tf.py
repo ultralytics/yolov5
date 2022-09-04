@@ -319,6 +319,7 @@ class TFDetect(keras.layers.Layer):
         xv, yv = tf.meshgrid(tf.range(nx), tf.range(ny))
         return tf.cast(tf.reshape(tf.stack([xv, yv], 2), [1, 1, ny * nx, 2]), dtype=tf.float32)
 
+
 class TFSegment(TFDetect):
     # YOLOv5 Segment head for segmentation models
     def __init__(self, nc=80, anchors=(), nm=32, npr=256, ch=(), imgsz=(640, 640), w=None):
@@ -335,16 +336,19 @@ class TFSegment(TFDetect):
         x = self.detect(self, x)
         return (x, p) if self.training else ((x[0], p),)
 
+
 class TFProto(keras.layers.Layer):
+
     def __init__(self, c1, c_=256, c2=32, w=None):
         super().__init__()
         self.cv1 = TFConv(c1, c_, k=3, w=w.cv1)
         self.upsample = TFUpsample(None, scale_factor=2, mode='nearest')
         self.cv2 = TFConv(c_, c_, k=3, w=w.cv2)
         self.cv3 = TFConv(c_, c2, w=w.cv3)
-    
+
     def call(self, inputs):
         return self.cv3(self.cv2(self.upsample(self.cv1(inputs))))
+
 
 class TFUpsample(keras.layers.Layer):
     # TF version of torch.nn.Upsample()
