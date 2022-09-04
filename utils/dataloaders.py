@@ -187,7 +187,7 @@ class _RepeatSampler:
 
 class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
-    def __init__(self, path, img_size=640, stride=32, auto=True, transforms=None, skip_frame=1):
+    def __init__(self, path, img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
         files = []
         for p in sorted(path) if isinstance(path, (list, tuple)) else [path]:
             p = str(Path(p).resolve())
@@ -212,7 +212,7 @@ class LoadImages:
         self.mode = 'image'
         self.auto = auto
         self.transforms = transforms  # optional
-        self.skip_frame = skip_frame  # number of video frames to skip
+        self.vid_stride = vid_stride  # video frame-rate stride
         if any(videos):
             self._new_video(videos[0])  # new video
         else:
@@ -234,7 +234,7 @@ class LoadImages:
             self.mode = 'video'
             ret_val, im0 = self.cap.read()
             self.cap.set(cv2.CAP_PROP_POS_FRAMES,
-                         self.skip_frame * (self.frame + 1))  # load every self.skip_frame frames
+                         self.vid_stride * (self.frame + 1))  # load every self.vid_stride frames
             while not ret_val:
                 self.count += 1
                 self.cap.release()
@@ -268,7 +268,7 @@ class LoadImages:
         # Create a new video capture object
         self.frame = 0
         self.cap = cv2.VideoCapture(path)
-        self.frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT) / self.skip_frame)
+        self.frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT) / self.vid_stride)
         self.orientation = int(self.cap.get(cv2.CAP_PROP_ORIENTATION_META))  # rotation degrees
         # self.cap.set(cv2.CAP_PROP_ORIENTATION_AUTO, 0)  # disable https://github.com/ultralytics/yolov5/issues/8493
 
@@ -288,12 +288,12 @@ class LoadImages:
 
 class LoadStreams:
     # YOLOv5 streamloader, i.e. `python detect.py --source 'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP streams`
-    def __init__(self, sources='streams.txt', img_size=640, stride=32, auto=True, transforms=None, skip_frame=1):
+    def __init__(self, sources='streams.txt', img_size=640, stride=32, auto=True, transforms=None, vid_stride=1):
         torch.backends.cudnn.benchmark = True  # faster for fixed-size inference
         self.mode = 'stream'
         self.img_size = img_size
         self.stride = stride
-        self.skip_frame = skip_frame  # number of video frames to skip
+        self.vid_stride = vid_stride  # video frame-rate stride
         sources = Path(sources).read_text().rsplit() if Path(sources).is_file() else [sources]
         n = len(sources)
         self.sources = [clean_str(x) for x in sources]  # clean source names for later
@@ -333,11 +333,11 @@ class LoadStreams:
 
     def update(self, i, cap, stream):
         # Read stream `i` frames in daemon thread
-        n, f, read = 0, self.frames[i], self.skip_frame  # frame number, frame array, inference every 'read' frame
+        n, f = 0, self.frames[i]  # frame number, frame array
         while cap.isOpened() and n < f:
             n += 1
             cap.grab()  # .read() = .grab() followed by .retrieve()
-            if n % read == 0:
+            if n % self.vid_stride == 0:
                 success, im = cap.retrieve()
                 if success:
                     self.imgs[i] = im
