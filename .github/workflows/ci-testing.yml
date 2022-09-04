@@ -15,6 +15,7 @@ jobs:
   Benchmarks:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
         python-version: [ '3.9' ]  # requires python<=3.9
@@ -39,7 +40,7 @@ jobs:
           pip list
       - name: Run benchmarks
         run: |
-          python utils/benchmarks.py --weights ${{ matrix.model }}.pt --img 320 --hard-fail 0.10
+          python benchmarks.py --weights ${{ matrix.model }}.pt --img 320 --hard-fail 0.10
 
   Tests:
     timeout-minutes: 60
