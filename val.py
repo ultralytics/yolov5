@@ -124,7 +124,7 @@ def run(
         compute_loss=None,
 ):
     # Initialize/load model and set device
-    training = model is not None
+    training = compute_loss is not None
     if training:  # called by train.py
         device, pt, jit, engine = next(model.parameters()).device, True, False, False  # get model device, PyTorch model
         half &= device.type != 'cpu'  # half precision only supported on CUDA
@@ -204,7 +204,7 @@ def run(
 
         # Inference
         with dt[1]:
-            out, train_out = model(im) if training else model(im, augment=augment, val=True), None  # inference, loss outputs
+            out, train_out = model(im) if training else model(im, augment=augment), None
 
         # Loss
         if compute_loss:
