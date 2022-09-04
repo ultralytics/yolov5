@@ -520,11 +520,13 @@ class DetectMultiBackend(nn.Module):
                     y = (y.astype(np.float32) - zero_point) * scale  # re-scale
             y[..., :4] *= [w, h, w, h]  # xywh normalized to pixels
 
-        if isinstance(y, (list, tuple)) and len(y) == 1:
-            y = y[0]
-        if isinstance(y, np.ndarray):
-            y = torch.from_numpy(y).to(self.device)
-        return (y, []) if val else y
+        if isinstance(y, (list, tuple)):
+            return self.from_numpy(y[0]) if len(y) == 1 else [self.from_numpy(x) for x in y]
+        else:
+            return self.from_numpy(y)
+
+    def from_numpy(self, x):
+        return torch.from_numpy(x).to(self.device) if isinstance(x, np.ndarray) else x
 
     def warmup(self, imgsz=(1, 3, 640, 640)):
         # Warmup model by running inference once
