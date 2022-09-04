@@ -233,8 +233,7 @@ class LoadImages:
             # Read video
             self.mode = 'video'
             ret_val, im0 = self.cap.read()
-            self.cap.set(cv2.CAP_PROP_POS_FRAMES,
-                         self.vid_stride * (self.frame + 1))  # load every self.vid_stride frames
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.vid_stride * (self.frame + 1))  # read at vid_stride
             while not ret_val:
                 self.count += 1
                 self.cap.release()
