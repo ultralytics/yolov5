@@ -212,7 +212,7 @@ class LoadImages:
         self.mode = 'image'
         self.auto = auto
         self.transforms = transforms  # optional
-        self.skip_frame = skip_frame
+        self.skip_frame = skip_frame  # number of video frames to skip
         if any(videos):
             self._new_video(videos[0])  # new video
         else:
@@ -293,7 +293,7 @@ class LoadStreams:
         self.mode = 'stream'
         self.img_size = img_size
         self.stride = stride
-        self.skip_frame = skip_frame
+        self.skip_frame = skip_frame  # number of video frames to skip
         sources = Path(sources).read_text().rsplit() if Path(sources).is_file() else [sources]
         n = len(sources)
         self.sources = [clean_str(x) for x in sources]  # clean source names for later
