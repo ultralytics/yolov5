@@ -103,7 +103,7 @@ class Segment(Detect):
     def forward(self, x):
         p = self.proto(x[0])
         x = self.detect(self, x)
-        return (x, p) if self.training else (x[0], p) if self.export else (x[0], (x[1], p))
+        return (x, p) if self.training else (x[0], p) if self.export else (x[0], p, x[1])
 
 
 class BaseModel(nn.Module):

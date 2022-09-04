@@ -252,7 +252,7 @@ def run(
 
         # Inference
         with dt[1]:
-            out, train_out = model(im) if compute_loss else (model(im, augment=augment), None)
+            preds, protos, train_out = model(im) if compute_loss else (*model(im, augment=augment)[:2], None)
 
         # Loss
         if compute_loss:
@@ -262,18 +262,18 @@ def run(
         targets[:, 2:] *= torch.tensor((width, height, width, height), device=device)  # to pixels
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
         with dt[2]:
-            out = non_max_suppression(out,
-                                      conf_thres,
-                                      iou_thres,
-                                      labels=lb,
-                                      multi_label=True,
-                                      agnostic=single_cls,
-                                      max_det=max_det,
-                                      nm=nm)
+            preds = non_max_suppression(preds,
+                                        conf_thres,
+                                        iou_thres,
+                                        labels=lb,
+                                        multi_label=True,
+                                        agnostic=single_cls,
+                                        max_det=max_det,
+                                        nm=nm)
 
         # Metrics
         plot_masks = []  # masks for plotting
-        for si, pred in enumerate(out):
+        for si, (pred, proto) in enumerate(zip(preds, protos)):
             labels = targets[targets[:, 0] == si, 1:]
             nl, npr = labels.shape[0], pred.shape[0]  # number of labels, predictions
             path, shape = Path(paths[si]), shapes[si][0]
@@ -291,8 +291,7 @@ def run(
             # Masks
             midx = [si] if overlap else targets[:, 0] == si
             gt_masks = masks[midx]
-            proto_out = train_out[1][si]
-            pred_masks = process(proto_out, pred[:, 6:], pred[:, :4], shape=im[si].shape[1:])
+            pred_masks = process(proto, pred[:, 6:], pred[:, :4], shape=im[si].shape[1:])
 
             # Predictions
             if single_cls:
@@ -329,7 +328,7 @@ def run(
             if len(plot_masks):
                 plot_masks = torch.cat(plot_masks, dim=0)
             plot_images_and_masks(im, targets, masks, paths, save_dir / f'val_batch{batch_i}_labels.jpg', names)
-            plot_images_and_masks(im, output_to_target(out, max_det=15), plot_masks, paths,
+            plot_images_and_masks(im, output_to_target(preds, max_det=15), plot_masks, paths,
                                   save_dir / f'val_batch{batch_i}_pred.jpg', names)  # pred
 
         # callbacks.run('on_val_batch_end')
