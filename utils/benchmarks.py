@@ -145,7 +145,7 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--test', action='store_true', help='test exports only')
     parser.add_argument('--pt-only', action='store_true', help='test PyTorch only')
-    parser.add_argument('--hard-fail', nargs='?', const=True, default=False, help='Exception of failure or min metric')
+    parser.add_argument('--hard-fail', nargs='?', const=True, default=False, help='Exception on error or < min metric')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     print_args(vars(opt))
