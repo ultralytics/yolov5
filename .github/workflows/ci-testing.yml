@@ -19,7 +19,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest ]
         python-version: [ '3.9' ]  # requires python<=3.9
-        model: [ yolov5n, yolov5n-seg ]
+        model: [ yolov5n ]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -38,9 +38,12 @@ jobs:
           python --version
           pip --version
           pip list
-      - name: Run benchmarks
+      - name: Benchmark DetectionModel
         run: |
-          python benchmarks.py --weights ${{ matrix.model }}.pt --img 320 --hard-fail 0.10
+          python benchmarks.py --weights ${{ matrix.model }}.pt --img 320 --hard-fail 0.29
+      - name: Benchmark SegmentationModel
+        run: |
+          python benchmarks.py --weights ${{ matrix.model }}-seg.pt --img 320
 
   Tests:
     timeout-minutes: 60
