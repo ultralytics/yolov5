@@ -97,9 +97,9 @@ def run(
     LOGGER.info(f'\nBenchmarks complete ({time.time() - t:.2f}s)')
     LOGGER.info(str(py if map else py.iloc[:, :2]))
     if hard_fail and isinstance(hard_fail, str):
-        metrics = py['mAP50-95'].values  # values to compare to floor
+        metrics = py['mAP50-95'].array  # values to compare to floor
         floor = eval(hard_fail)  # minimum metric floor to pass, i.e. = 0.29 mAP for YOLOv5n
-        assert all(x > floor for x in metrics if x is not None), f'Metrics {metrics} < floor {floor} detected'
+        assert all(x > floor for x in metrics if pd.notna(x)), f'Metrics {metrics} < floor {floor} detected'
     return py
 
 
