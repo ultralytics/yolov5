@@ -233,7 +233,9 @@ class Loggers():
             self.wandb.finish_run()
 
         if self.clearml and not self.opt.evolve:
-            self.clearml.task.update_output_model(model_path=str(best if best.exists() else last), name='Best Model')
+            self.clearml.task.update_output_model(model_path=str(best if best.exists() else last),
+                                                  name='Best Model',
+                                                  auto_delete_file=False)
 
     def on_params_update(self, params: dict):
         # Update hyperparams or configs of the experiment
