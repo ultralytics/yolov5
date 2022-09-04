@@ -457,7 +457,7 @@ class DetectMultiBackend(nn.Module):
 
         self.__dict__.update(locals())  # assign all variables to self
 
-    def forward(self, im, augment=False, visualize=False, val=False):
+    def forward(self, im, augment=False, visualize=False):
         # YOLOv5 MultiBackend inference
         b, ch, h, w = im.shape  # batch, channel, height, width
         if self.fp16 and im.dtype != torch.float16:
@@ -521,10 +521,12 @@ class DetectMultiBackend(nn.Module):
             y[..., :4] *= [w, h, w, h]  # xywh normalized to pixels
 
         if isinstance(y, (list, tuple)):
-            y = y[0]
-        if isinstance(y, np.ndarray):
-            y = torch.from_numpy(y).to(self.device)
-        return (y, []) if val else y
+            return self.from_numpy(y[0]) if len(y) == 1 else [self.from_numpy(x) for x in y]
+        else:
+            return self.from_numpy(y)
+
+    def from_numpy(self, x):
+        return torch.from_numpy(x).to(self.device) if isinstance(x, np.ndarray) else x
 
     def warmup(self, imgsz=(1, 3, 640, 640)):
         # Warmup model by running inference once
