@@ -290,7 +290,9 @@ class Loggers():
             self.wandb.finish_run()
 
         if self.clearml and not self.opt.evolve:
-            self.clearml.task.update_output_model(model_path=str(best if best.exists() else last), name='Best Model')
+            self.clearml.task.update_output_model(model_path=str(best if best.exists() else last),
+                                                  name='Best Model',
+                                                  auto_delete_file=False)
 
         if self.comet_logger:
             final_results = dict(zip(self.keys[3:10], results))
