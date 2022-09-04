@@ -186,6 +186,74 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
 
 
 @try_export
+def export_onnx_with_nms(model, im, file, opset, nms_cfg, dynamic, simplify, prefix=colorstr('ONNX:')):
+    # YOLOv5 ONNX export
+    check_requirements('onnx>=1.12.0')
+    import onnx
+
+    LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
+    f = file.with_suffix('.onnx')
+
+    from models.common import End2End
+    model = End2End(model, *nms_cfg, device=im.device)
+    b, topk, backend = 'batch', nms_cfg[0], nms_cfg[-1]
+    output_names = ['num_dets', 'boxes', 'scores', 'labels']
+    output_shapes = {n: {0: b} for n in output_names}
+    if dynamic == 'batch':
+        dynamic_cfg = {'images': {0: b}, **output_shapes}
+    elif dynamic == 'all':
+        dynamic_cfg = {'images': {0: b, 2: 'height', 3: 'width'}, **output_shapes}
+    else:
+        dynamic_cfg, b = {}, im.shape[0]
+
+    torch.onnx.export(
+        model.cpu() if dynamic else model,  # --dynamic only compatible with cpu
+        im.cpu() if dynamic else im,
+        f,
+        verbose=False,
+        opset_version=opset,
+        do_constant_folding=True,  # WARNING: DNN inference with torch>=1.12 may require do_constant_folding=False
+        input_names=['images'],
+        output_names=output_names,
+        dynamic_axes=dynamic_cfg)
+
+    # Checks
+    model_onnx = onnx.load(f)  # load onnx model
+    onnx.checker.check_model(model_onnx)  # check onnx model
+
+    # Metadata
+    d = {'stride': int(max(model.stride)), 'names': model.names}
+    for k, v in d.items():
+        meta = model_onnx.metadata_props.add()
+        meta.key, meta.value = k, str(v)
+
+    # Fix shape info for onnx using by TensorRT
+    if backend == 'trt':
+        shapes = [b, 1, b, topk, 4, b, topk, b, topk]
+    else:
+        shapes = [b, 1, b, 'topk', 4, b, 'topk', b, 'topk']
+    for i in model_onnx.graph.output:
+        for j in i.type.tensor_type.shape.dim:
+            j.dim_param = str(shapes.pop(0))
+    onnx.save(model_onnx, f)
+
+    # Simplify
+    if simplify:
+        try:
+            cuda = torch.cuda.is_available()
+            check_requirements(('onnxruntime-gpu' if cuda else 'onnxruntime', 'onnx-simplifier>=0.4.1'))
+            import onnxsim
+
+            LOGGER.info(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
+            model_onnx, check = onnxsim.simplify(model_onnx)
+            assert check, 'assert check failed'
+            onnx.save(model_onnx, f)
+        except Exception as e:
+            LOGGER.info(f'{prefix} simplifier failure: {e}')
+    return f, model_onnx
+
+
+@try_export
 def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
     check_requirements('openvino-dev')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
@@ -505,7 +573,7 @@ def run(
         opset=12,  # ONNX: opset version
         verbose=False,  # TensorRT: verbose log
         workspace=4,  # TensorRT: workspace size (GB)
-        nms=False,  # TF: add NMS to model
+        nms=False,  # ONNX/TF/TensorRT: NMS config for model
         agnostic_nms=False,  # TF: add agnostic NMS to model
         topk_per_class=100,  # TF.js NMS: topk per class to keep
         topk_all=100,  # TF.js NMS: topk for all classes to keep
@@ -560,9 +628,9 @@ def run(
         f[0], _ = export_torchscript(model, im, file, optimize)
     if engine:  # TensorRT required before ONNX
         f[1], _ = export_engine(model, im, file, half, dynamic, simplify, workspace, verbose)
-    if onnx or xml:  # OpenVINO requires ONNX
+    if not nms and onnx or xml:  # OpenVINO requires ONNX
         f[2], _ = export_onnx(model, im, file, opset, dynamic, simplify)
-    if xml:  # OpenVINO
+    if not nms and xml:  # OpenVINO
         f[3], _ = export_openvino(file, metadata, half)
     if coreml:  # CoreML
         f[4], _ = export_coreml(model, im, file, int8, half)
@@ -592,6 +660,11 @@ def run(
     if paddle:  # PaddlePaddle
         f[10], _ = export_paddle(model, im, file, metadata)
 
+    if nms and (onnx or xml):
+        nms_cfg = [topk_all, iou_thres, conf_thres, nms]
+        f.append(export_onnx_with_nms(model, im, file, opset, nms_cfg, dynamic, simplify)[0])
+        if xml:
+            f.append(export_openvino(file.with_suffix('.pt'), metadata, half)[0])
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
     if any(f):
@@ -622,12 +695,12 @@ def parse_opt():
     parser.add_argument('--keras', action='store_true', help='TF: use Keras')
     parser.add_argument('--optimize', action='store_true', help='TorchScript: optimize for mobile')
     parser.add_argument('--int8', action='store_true', help='CoreML/TF INT8 quantization')
-    parser.add_argument('--dynamic', action='store_true', help='ONNX/TF/TensorRT: dynamic axes')
+    parser.add_argument('--dynamic', nargs='?', const='all', default=False, help='ONNX/TF/TensorRT: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
     parser.add_argument('--opset', type=int, default=17, help='ONNX: opset version')
     parser.add_argument('--verbose', action='store_true', help='TensorRT: verbose log')
     parser.add_argument('--workspace', type=int, default=4, help='TensorRT: workspace size (GB)')
-    parser.add_argument('--nms', action='store_true', help='TF: add NMS to model')
+    parser.add_argument('--nms', nargs='?', const=True, default=False, help='ONNX/TF/TensorRT: NMS config for model')
     parser.add_argument('--agnostic-nms', action='store_true', help='TF: add agnostic NMS to model')
     parser.add_argument('--topk-per-class', type=int, default=100, help='TF.js NMS: topk per class to keep')
     parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
