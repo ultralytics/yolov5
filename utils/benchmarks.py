@@ -99,7 +99,7 @@ def run(
     if hard_fail and isinstance(hard_fail, str):
         metrics = py['mAP50-95'].array  # values to compare to floor
         floor = eval(hard_fail)  # minimum metric floor to pass, i.e. = 0.29 mAP for YOLOv5n
-        assert all(x > floor for x in metrics if pd.notna(x)), f'Metrics {metrics} < floor {floor} detected'
+        assert all(x > floor for x in metrics if pd.notna(x)), f'HARD FAIL: mAP50-95 < floor {floor}'
     return py
 
 
