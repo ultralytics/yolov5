@@ -520,7 +520,7 @@ class DetectMultiBackend(nn.Module):
                     y = (y.astype(np.float32) - zero_point) * scale  # re-scale
             y[..., :4] *= [w, h, w, h]  # xywh normalized to pixels
 
-        if isinstance(y, (list, tuple)):
+        if isinstance(y, (list, tuple)) and len(y) == 1:
             y = y[0]
         if isinstance(y, np.ndarray):
             y = torch.from_numpy(y).to(self.device)
