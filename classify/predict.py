@@ -31,7 +31,6 @@ import sys
 from pathlib import Path
 
 import torch
-import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
 
 FILE = Path(__file__).resolve()
@@ -89,7 +88,6 @@ def run(
     # Dataloader
     if webcam:
         view_img = check_imshow()
-        cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadStreams(source, img_size=imgsz, transforms=classify_transforms(imgsz[0]))
         bs = len(dataset)  # batch_size
     else:

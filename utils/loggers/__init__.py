@@ -107,6 +107,17 @@ class Loggers():
         else:
             self.clearml = None
 
+    @property
+    def remote_dataset(self):
+        # Get data_dict if custom dataset artifact link is provided
+        data_dict = None
+        if self.clearml:
+            data_dict = self.clearml.data_dict
+        if self.wandb:
+            data_dict = self.wandb.data_dict
+
+        return data_dict
+
     def on_train_start(self):
         # Callback runs on train start
         pass
@@ -222,7 +233,9 @@ class Loggers():
             self.wandb.finish_run()
 
         if self.clearml and not self.opt.evolve:
-            self.clearml.task.update_output_model(model_path=str(best if best.exists() else last), name='Best Model')
+            self.clearml.task.update_output_model(model_path=str(best if best.exists() else last),
+                                                  name='Best Model',
+                                                  auto_delete_file=False)
 
     def on_params_update(self, params: dict):
         # Update hyperparams or configs of the experiment
