@@ -77,6 +77,7 @@ def run(
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride
+        retina_masks=False,
 ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -144,7 +145,7 @@ def run(
             s += '%gx%g ' % im.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
-            annotator = Annotator(im0, line_width=line_thickness, example=str(names))
+            annotator = Annotator(im0, line_width=line_thickness, example=str(names), pil=True)
             if len(det):
                 masks = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
 
@@ -157,8 +158,13 @@ def run(
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Mask plotting
-                im_masks = plot_masks(im[i], masks, colors=[colors(x, True) for x in det[:, 5]])  # shape(imh,imw,3)
-                annotator.im = scale_image(im.shape[2:], im_masks, im0.shape)  # scale to original h, w
+                import time
+                tms = time.time()
+                annotator.masks(masks, colors=[colors(x, True) for x in det[:, 5]], img_gpu=im[i], retina_masks=retina_masks)
+                tme = time.time()
+                print("plot mask:", tme - tms)
+                # im_masks = plot_masks(im[i], masks, colors=[colors(x, True) for x in det[:, 5]])  # shape(imh,imw,3)
+                # annotator.im = scale_image(im.shape[2:], im_masks, im0.shape)  # scale to original h, w
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det[:, :6]):
@@ -183,7 +189,8 @@ def run(
                     cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
                     cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
                 cv2.imshow(str(p), im0)
-                cv2.waitKey(1)  # 1 millisecond
+                if cv2.waitKey(1) == ord('q'): # 1 millisecond
+                    exit()
 
             # Save results (image with detections)
             if save_img:
@@ -205,7 +212,7 @@ def run(
                     vid_writer[i].write(im0)
 
         # Print time (inference-only)
-        LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
+        # LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
 
     # Print results
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
@@ -219,8 +226,8 @@ def run(
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s-seg.pt', help='model path(s)')
-    parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob, 0 for webcam')
+    parser.add_argument('--weights', nargs='+', type=str, default='../weights/yolov5n-seg.pt', help='model path(s)')
+    parser.add_argument('--source', type=str, default='/home/laughing/Downloads/MOT17-03-FRCNN-raw.mp4', help='file/dir/URL/glob, 0 for webcam')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
@@ -246,6 +253,7 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
+    parser.add_argument('--retina-masks', default=True, action='store_true', help='whether to plot masks in native resolution')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))

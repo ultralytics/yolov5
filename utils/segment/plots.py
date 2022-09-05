@@ -13,33 +13,6 @@ from ..general import xywh2xyxy
 from ..plots import Annotator, colors
 
 
-def plot_masks(im, masks, colors, alpha=0.5):
-    """
-    Args:
-        im (tensor): img is in cuda, shape: [3, h, w], range: [0, 1]
-        masks (tensor): predicted masks on cuda, shape: [n, h, w]
-        colors (List[List[Int]]): colors for predicted masks, [[r, g, b] * n]
-    Return:
-        ndarray: img after draw masks, shape: [h, w, 3]
-
-    """
-    if len(masks) == 0:
-        return im.permute(1, 2, 0).contiguous().cpu().numpy() * 255
-
-    colors = torch.tensor(colors, device=im.device).float() / 255.0
-    colors = colors[:, None, None]  # shape(n,1,1,3)
-    masks = masks.unsqueeze(3)  # shape(n,h,w,1)
-    masks_color = masks * (colors * alpha)  # shape(n,h,w,3)
-
-    inv_alph_masks = (1 - masks * alpha).cumprod(0)  # shape(n,h,w,1)
-    mcs = (masks_color * inv_alph_masks).sum(0) * 2  # mask color summand shape(n,h,w,3)
-
-    im = im.flip(dims=[0])  # flip channel
-    im = im.permute(1, 2, 0).contiguous()  # shape(h,w,3)
-    im = im * inv_alph_masks[-1] + mcs
-    return (im * 255).byte().cpu().numpy()
-
-
 @threaded
 def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg', names=None):
     # Plot image grid with labels
@@ -119,7 +92,9 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg'
                     image_masks = masks[idx]
 
                 im = np.asarray(annotator.im).copy()
-                for j, box in enumerate(boxes.T.tolist()):
+                resized_masks = []
+                masks_colors = []
+                for j in range(len(boxes)):
                     if labels or conf[j] > 0.25:  # 0.25 conf thresh
                         color = colors(classes[j])
                         mh, mw = image_masks[j].shape
@@ -129,9 +104,23 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg'
                             mask = mask.astype(np.bool)
                         else:
                             mask = image_masks[j].astype(np.bool)
-                        with contextlib.suppress(Exception):
-                            im[y:y + h, x:x + w, :][mask] = im[y:y + h, x:x + w, :][mask] * 0.4 + np.array(color) * 0.6
-                annotator.fromarray(im)
+                        resized_masks.append(mask)
+                        masks_colors.append(color)
+                annotator.masks(resized_masks, colors, images[0], retina_masks=True)
+                #
+                # for j, box in enumerate(boxes.T.tolist()):
+                #     if labels or conf[j] > 0.25:  # 0.25 conf thresh
+                #         color = colors(classes[j])
+                #         mh, mw = image_masks[j].shape
+                #         if mh != h or mw != w:
+                #             mask = image_masks[j].astype(np.uint8)
+                #             mask = cv2.resize(mask, (w, h))
+                #             mask = mask.astype(np.bool)
+                #         else:
+                #             mask = image_masks[j].astype(np.bool)
+                #         with contextlib.suppress(Exception):
+                #             im[y:y + h, x:x + w, :][mask] = im[y:y + h, x:x + w, :][mask] * 0.4 + np.array(color) * 0.6
+                # annotator.fromarray(im)
     annotator.im.save(fname)  # save
 
 
