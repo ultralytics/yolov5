@@ -92,34 +92,19 @@ def plot_images_and_masks(images, targets, masks, paths=None, fname='images.jpg'
                     image_masks = masks[idx]
 
                 im = np.asarray(annotator.im).copy()
-                resized_masks = []
-                masks_colors = []
-                for j in range(len(boxes.T)):
+                for j, box in enumerate(boxes.T.tolist()):
                     if labels or conf[j] > 0.25:  # 0.25 conf thresh
-                        color = np.array(colors(classes[j]))
+                        color = colors(classes[j])
                         mh, mw = image_masks[j].shape
-                        mask = image_masks[j].astype(np.uint8)
                         if mh != h or mw != w:
+                            mask = image_masks[j].astype(np.uint8)
                             mask = cv2.resize(mask, (w, h))
-                        resized_masks.append(mask)
-                        masks_colors.append(color)
-                if len(resized_masks):
-                    resized_masks = np.stack(resized_masks, axis=0)
-                    annotator.masks(resized_masks, masks_colors)
-
-                # for j, box in enumerate(boxes.T.tolist()):
-                #     if labels or conf[j] > 0.25:  # 0.25 conf thresh
-                #         color = colors(classes[j])
-                #         mh, mw = image_masks[j].shape
-                #         if mh != h or mw != w:
-                #             mask = image_masks[j].astype(np.uint8)
-                #             mask = cv2.resize(mask, (w, h))
-                #             mask = mask.astype(np.bool)
-                #         else:
-                #             mask = image_masks[j].astype(np.bool)
-                #         with contextlib.suppress(Exception):
-                #             im[y:y + h, x:x + w, :][mask] = im[y:y + h, x:x + w, :][mask] * 0.4 + np.array(color) * 0.6
-                # annotator.fromarray(im)
+                            mask = mask.astype(np.bool)
+                        else:
+                            mask = image_masks[j].astype(np.bool)
+                        with contextlib.suppress(Exception):
+                            im[y:y + h, x:x + w, :][mask] = im[y:y + h, x:x + w, :][mask] * 0.4 + np.array(color) * 0.6
+                annotator.fromarray(im)
     annotator.im.save(fname)  # save
 
 
