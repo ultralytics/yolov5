@@ -187,7 +187,7 @@ If you would like to use a dataset from Comet Artifacts, set the `path` variable
 
 ```
 # contents of artifact.yaml file
-path="comet://<workspace name>/<artifact name>:<artifact version or alias>"
+path: "comet://<workspace name>/<artifact name>:<artifact version or alias>"
 ```
 Then pass this file to your training script in the following way
 
