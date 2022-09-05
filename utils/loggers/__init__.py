@@ -134,6 +134,17 @@ class Loggers():
         else:
             self.comet_logger = None
 
+    @property
+    def remote_dataset(self):
+        # Get data_dict if custom dataset artifact link is provided
+        data_dict = None
+        if self.clearml:
+            data_dict = self.clearml.data_dict
+        if self.wandb:
+            data_dict = self.wandb.data_dict
+
+        return data_dict
+
     def on_train_start(self):
         if self.comet_logger:
             self.comet_logger.on_train_start()
@@ -279,7 +290,9 @@ class Loggers():
             self.wandb.finish_run()
 
         if self.clearml and not self.opt.evolve:
-            self.clearml.task.update_output_model(model_path=str(best if best.exists() else last), name='Best Model')
+            self.clearml.task.update_output_model(model_path=str(best if best.exists() else last),
+                                                  name='Best Model',
+                                                  auto_delete_file=False)
 
         if self.comet_logger:
             final_results = dict(zip(self.keys[3:10], results))
