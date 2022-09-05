@@ -2,9 +2,15 @@ import glob
 import json
 import logging
 import os
+import sys
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[3]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
 
 try:
     import comet_ml
@@ -22,7 +28,7 @@ import yaml
 
 from utils.dataloaders import img2label_paths
 from utils.general import check_dataset, scale_coords, xywh2xyxy
-from utils.metrics import ConfusionMatrix, box_iou
+from utils.metrics import box_iou
 
 from .comet_utils import COMET_PREFIX, check_comet_resume, check_comet_weights
 
@@ -90,12 +96,7 @@ class CometLogger:
         self.default_experiment_kwargs.update(experiment_kwargs)
         self.experiment = self._get_experiment(self.comet_mode, run_id)
 
-        if self.opt.comet_artifact:
-            self.data_dict = self.download_dataset_artifact(self.opt.comet_artifact)
-
-        else:
-            self.data_dict = check_dataset(self.opt.data)
-
+        self.data_dict = self.check_dataset(self.opt.data)
         self.class_names = self.data_dict["names"]
         self.num_classes = self.data_dict["nc"]
 
@@ -303,7 +304,8 @@ class CometLogger:
         label_paths = img2label_paths(img_paths)
 
         for image_file, label_file in zip(img_paths, label_paths):
-            image_logical_path, label_logical_path = map(lambda x: x.replace(f"{path}/", ""), [image_file, label_file])
+            image_logical_path, label_logical_path = map(lambda x: os.path.relpath(x, path), [image_file, label_file])
+
             try:
                 artifact.add(image_file, logical_path=image_logical_path, metadata={"split": split})
                 artifact.add(label_file, logical_path=label_logical_path, metadata={"split": split})
@@ -316,7 +318,7 @@ class CometLogger:
 
     def upload_dataset_artifact(self):
         dataset_name = self.data_dict.get("dataset_name", "yolov5-dataset")
-        path = self.data_dict["path"]
+        path = str((ROOT / Path(self.data_dict["path"])).resolve())
 
         metadata = self.data_dict.copy()
         for key in ["train", "val", "test"]:
@@ -340,11 +342,12 @@ class CometLogger:
 
     def download_dataset_artifact(self, artifact_path):
         logged_artifact = self.experiment.get_artifact(artifact_path)
-        logged_artifact.download(self.opt.save_dir)
+        artifact_save_dir = str(Path(self.opt.save_dir) / logged_artifact.name)
+        logged_artifact.download(artifact_save_dir)
 
         metadata = logged_artifact.metadata
         data_dict = metadata.copy()
-        data_dict["path"] = self.opt.save_dir
+        data_dict["path"] = artifact_save_dir
         data_dict["names"] = {int(k): v for k, v in metadata.get("names").items()}
 
         data_dict = self.update_data_paths(data_dict)
