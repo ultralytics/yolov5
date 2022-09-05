@@ -160,7 +160,7 @@ def run(
                 # Mask plotting
                 import time
                 tms = time.time()
-                annotator.masks(masks, colors=[colors(x, True) for x in det[:, 5]], img_gpu=im[i], retina_masks=retina_masks)
+                annotator.masks(masks, colors=[colors(x, True) for x in det[:, 5]], img_gpu=im[i] if retina_masks else None)
                 tme = time.time()
                 print("plot mask:", tme - tms)
                 # im_masks = plot_masks(im[i], masks, colors=[colors(x, True) for x in det[:, 5]])  # shape(imh,imw,3)

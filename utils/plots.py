@@ -114,7 +114,7 @@ class Annotator:
                             thickness=tf,
                             lineType=cv2.LINE_AA)
 
-    def masks(self, masks, colors, img_gpu, retina_masks=False, alpha=0.5):
+    def masks(self, masks, colors, img_gpu=None, alpha=0.5):
         """Plot masks at once.
         Args:
             masks (tensor): predicted masks on cuda, shape: [n, h, w]
@@ -125,14 +125,15 @@ class Annotator:
         if self.pil:
             # convert to numpy first
             self.im = np.asarray(self.im).copy()
-        if retina_masks:
+        if img_gpu is None:
             # Add multiple masks of shape(h,w,n) with colors list([r,g,b], [r,g,b], ...)
             if len(masks) == 0:
                 return
-            masks = torch.as_tensor(masks, dtype=torch.uint8)
-            masks = masks.permute(1, 2, 0).contiguous()
-            masks = masks.cpu().numpy()
-            masks = scale_image(img_gpu.shape[1:], masks, self.im.shape)
+            if isinstance(masks, torch.Tensor):
+                masks = torch.as_tensor(masks, dtype=torch.uint8)
+                masks = masks.cpu().numpy()
+            masks = np.ascontiguousarray(masks.transpose(1, 2, 0))
+            masks = scale_image(masks.shape[1:], masks, self.im.shape)
             masks = np.asarray(masks, dtype=np.float32)
             colors = np.asarray(colors, dtype=np.float32)  # shape(n,3)
             s = masks.sum(2, keepdims=True).clip(0, 1)   # add all masks together
