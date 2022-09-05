@@ -91,8 +91,9 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names
     i = smooth(f1.mean(0), 0.1).argmax()  # max F1 index
     p, r, f1 = p[:, i], r[:, i], f1[:, i]
     tp = (r * nt).round()  # true positives
+    fn = nt-tp
     fp = (tp / (p + eps) - tp).round()  # false positives
-    return tp, fp, p, r, f1, ap, unique_classes.astype(int)
+    return tp, fp, fn, p, r, f1, ap, unique_classes.astype(int)
 
 
 def compute_ap(recall, precision):
@@ -125,17 +126,11 @@ def compute_ap(recall, precision):
 
 class ConfusionMatrix:
     # Updated version of https://github.com/kaanakan/object_detection_confusion_matrix
-    def __init__(self, nc, conf=0.25, iou_thres=0.45, run_first=False, bg_info=None):
+    def __init__(self, nc, conf=0.25, iou_thres=0.45):
         self.matrix = np.zeros((nc + 1, nc + 1))
         self.nc = nc  # number of classes
         self.conf = conf
         self.iou_thres = iou_thres
-        self.run_first = run_first
-        self.bg_info = None if run_first else bg_info
-        self.matrix_one_image = np.zeros((self.nc + 1, self.nc + 1))
-
-    def cleanup(self):
-        self.matrix_one_image = np.zeros((self.nc + 1, self.nc + 1))
 
     def process_batch(self, detections, labels):
         """
@@ -147,12 +142,10 @@ class ConfusionMatrix:
         Returns:
             None, updates confusion matrix accordingly
         """
-        self.cleanup()
         if detections is None:
             gt_classes = labels.int()
             for gc in gt_classes:
                 self.matrix[self.nc, gc] += 1  # background FN
-                self.matrix_one_image[self.nc, gc] += 1
             return
 
         detections = detections[detections[:, 4] > self.conf]
@@ -179,22 +172,20 @@ class ConfusionMatrix:
                 self.matrix[detection_classes[m1[j]], gc] += 1  # correct
             else:
                 self.matrix[self.nc, gc] += 1  # background FP
-                self.matrix_one_image[self.nc, gc] += 1
 
         if n:
             for i, dc in enumerate(detection_classes):
                 if not any(m1 == i):
                     self.matrix[dc, self.nc] += 1  # background FN
-                    self.matrix_one_image[self.nc, gc] += 1
 
-    def matrix(self):
+    def get_matrix(self):
         return self.matrix
 
     def tp_fp(self):
         tp = self.matrix.diagonal()  # true positives
         fp = self.matrix.sum(1) - tp  # false positives
-        # fn = self.matrix.sum(0) - tp  # false negatives (missed detections)
-        return tp[:-1], fp[:-1]  # remove background class
+        fn = self.matrix.sum(0) - tp  # false negatives (missed detections)
+        return tp[:-1], fp[:-1], fn[:-1]  # remove background class
 
     @TryExcept('WARNING: ConfusionMatrix plot failure: ')
     def plot(self, normalize=True, save_dir='', names=()):
