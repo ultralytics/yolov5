@@ -35,9 +35,7 @@ from .comet_utils import COMET_PREFIX, check_comet_resume, check_comet_weights
 COMET_MODE = os.getenv("COMET_MODE", "online")
 
 # Model Saving Settings
-COMET_SAVE_MODEL = os.getenv("COMET_SAVE_MODEL", "false").lower() == "true"
 COMET_MODEL_NAME = os.getenv("COMET_MODEL_NAME", "yolov5")
-COMET_OVERWRITE_CHECKPOINTS = os.getenv("COMET_OVERWRITE_CHECKPOINTS", "false").lower() == "true"
 
 # Dataset Artifact Settings
 COMET_UPLOAD_DATASET = os.getenv("COMET_UPLOAD_DATASET", "false").lower() == "true"
@@ -79,7 +77,6 @@ class CometLogger:
 
         self.save_model = opt.save_period > -1
         self.model_name = COMET_MODEL_NAME
-        self.overwrite_checkpoints = COMET_OVERWRITE_CHECKPOINTS
 
         # Batch Logging Settings
         self.log_batch_metrics = COMET_LOG_BATCH_METRICS
@@ -124,8 +121,6 @@ class CometLogger:
                 f"{self.opt.save_dir}/opt.yaml",
                 metadata={"type": "opt-config-file"},
             )
-            if not self.opt.comet_artifact:
-                self.log_asset(self.opt.data, metadata={"type": "data-config-file"})
 
         self.comet_log_confusion_matrix = COMET_LOG_CONFUSION_MATRIX
 
@@ -144,6 +139,14 @@ class CometLogger:
             self.metadata_dict = {}
 
         self.comet_log_per_class_metrics = COMET_LOG_PER_CLASS_METRICS
+
+        self.experiment.log_others({
+            "comet_mode": COMET_MODE,
+            "comet_max_image_uploads": COMET_MAX_IMAGE_UPLOADS,
+            "comet_log_per_class_metrics": COMET_LOG_PER_CLASS_METRICS,
+            "comet_log_batch_metrics": COMET_LOG_BATCH_METRICS,
+            "comet_log_confusion_matrix": COMET_LOG_CONFUSION_MATRIX,
+            "comet_model_name": COMET_MODEL_NAME,})
 
         # Check if running the Experiment with the Comet Optimizer
         if hasattr(self.opt, "comet_optimizer_id"):
@@ -206,25 +209,16 @@ class CometLogger:
             "save_period": opt.save_period,
             "total_epochs": opt.epochs,}
 
-        if opt.comet_checkpoint_filename == "all":
-            model_path = str(path)
-            model_files = glob.glob(f"{path}/*.pt")
-
-        else:
-            model_files = [str(path) + f"/{opt.comet_checkpoint_filename}"]
-
+        model_files = glob.glob(f"{path}/*.pt")
         for model_path in model_files:
-            if not self.overwrite_checkpoints:
-                name = f"{Path(model_path).stem}_epoch_{epoch}.pt"
-            else:
-                name = Path(model_path).name
+            name = Path(model_path).name
 
             self.experiment.log_model(
                 self.model_name,
                 file_or_folder=model_path,
                 file_name=name,
                 metadata=model_metadata,
-                overwrite=self.overwrite_checkpoints,
+                overwrite=True,
             )
 
     def check_dataset(self, data_file):
@@ -236,6 +230,8 @@ class CometLogger:
             data_dict = self.download_dataset_artifact(path)
 
             return data_dict
+
+        self.log_asset(self.opt.data, metadata={"type": "data-config-file"})
 
         return check_dataset(data_file)
 
@@ -411,16 +407,13 @@ class CometLogger:
 
         if not self.opt.evolve:
             model_path = str(best if best.exists() else last)
-            if not self.overwrite_checkpoints:
-                name = name = f"{Path(model_path).stem}_epoch_{epoch}.pt"
-            else:
-                name = Path(model_path).name
+            name = Path(model_path).name
             if self.save_model:
                 self.experiment.log_model(
                     self.model_name,
                     file_or_folder=model_path,
                     file_name=name,
-                    overwrite=self.overwrite_checkpoints,
+                    overwrite=True,
                 )
 
         # Check if running Experiment with Comet Optimizer
