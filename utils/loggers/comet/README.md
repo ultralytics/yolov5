@@ -54,7 +54,7 @@ That's it! Comet will automatically log your hyperparameters, command line argum
 <img width="1920" alt="yolo-ui" src="https://user-images.githubusercontent.com/7529846/187608607-ff89c3d5-1b8b-4743-a974-9275301b0524.png">
 
 # Try out an Example!
-Check out an example of a [completed run here](https://www.comet.com/examples/comet-example-yolov5/ca87319ab1684f659a0ea6c625ef33f5?experiment-tab=chart&showOutliers=true&smoothing=0&transformY=smoothing&xAxis=step&ref=yolov5&utm_source=yolov5&utm_medium=affilliate&utm_campaign=yolov5_comet_integration)
+Check out an example of a [completed run here](https://www.comet.com/examples/comet-example-yolov5/a0e29e0e9b984e4a822db2a62d0cb357?experiment-tab=chart&showOutliers=true&smoothing=0&transformY=smoothing&xAxis=step&ref=yolov5&utm_source=yolov5&utm_medium=affilliate&utm_campaign=yolov5_comet_integration)
 
 Or better yet, try it out yourself in this Colab Notebook
 
@@ -85,45 +85,20 @@ By default, Comet will log the following items
 Comet can be configured to log additional data either through command line flags passed to the training script
 or through environment variables.
 
-Here is the full list of command line options for Comet
-
 ```shell
-  --comet_mode COMET_MODE
-                        Comet: Set whether to run Comet in online or offline mode.
-  --comet_save_model    Comet: Set to save model checkpoints.
-  --comet_model_name COMET_MODEL_NAME
-                        Comet: Set the name for the saved model.
-  --comet_overwrite_checkpoints
-                        Comet: Overwrite existing model checkpoints.
-  --comet_checkpoint_filename [COMET_CHECKPOINT_FILENAME]
-                        Comet: Name of the checkpoint file to save to Comet.Set to 'all' to
-                        log all checkpoints.
-  --comet_log_batch_metrics
-                        Comet: Set to log batch level training metrics.
-  --comet_log_batch_interval COMET_LOG_BATCH_INTERVAL
-                        Comet: Logging frequency for batch level training metrics.
-  --comet_log_prediction_interval COMET_LOG_PREDICTION_INTERVAL
-                        Comet: How often to log predictions.Applied at batch level.
-  --comet_log_confusion_matrix
-                        Comet: Log a Confusion Matrix for the validation dataset.
-  --comet_log_predictions
-                        Comet: Log Predictions on Images from the Validation Set
-  --comet_log_per_class_metrics
-                        Comet: Log evaluation metrics for each class in the Validation Set
-  --comet_max_image_uploads COMET_MAX_IMAGE_UPLOADS
-                        Comet: Maximum number of images to log to Comet.
-  --comet_upload_dataset [COMET_UPLOAD_DATASET]
-                        Comet: Upload Dataset to Comet as an Artifact.Set to 'train', 'val'
-                        or 'test' to upload a single dataset.
-  --comet_artifact COMET_ARTIFACT
-                        Comet: Name of the Comet dataset Artifact to download.
+export COMET_MODE=online # Set whether to run Comet in 'online' or 'offline' mode. Defaults to online
+export COMET_MODEL_NAME=<your model name> #Set the name for the saved model. Defaults to yolov5
+export COMET_LOG_CONFUSION_MATRIX=false # Set to disable logging a Comet Confusion Matrix. Defaults to true
+export COMET_MAX_IMAGE_UPLOADS=<number of allowed images to upload to Comet> # Controls how many total image predictions to log to Comet. Defaults to 100.
+export COMET_LOG_PER_CLASS_METRICS=true # Set to log evaluation metrics for each detected class at the end of training. Defaults to false
+export COMET_DEFAULT_CHECKPOINT_FILENAME=<your checkpoint filename> # Set this if you would like to resume training from a different checkpoint. Defaults to 'last.pt'
+export COMET_LOG_BATCH_LEVEL_METRICS=true # Set this if you would like to log training metrics at the batch level. Defaults to false.
 ```
-
-Let's take a look at these options.
 
 ## Logging Checkpoints with Comet
 
-Logging Models to Comet is disabled by default. To enable it, pass the `comet_save_model` flag to the training script.
+Logging Models to Comet is disabled by default. To enable it, pass the `save-period` argument to the training script. This will save the
+logged checkpoints to Comet based on the interval value provided by `save-period`
 
 ```shell
 python train.py \
@@ -132,89 +107,17 @@ python train.py \
 --epochs 5 \
 --data coco128.yaml \
 --weights yolov5s.pt \
---save-period 1 \
---comet_save_model
-```
-
-You have a few options when it comes to saving model checkpoints to Comet. Here's how you can change the checkpointing behavior.
-
-### Change which checkpoint file is logged
-By default, Comet will save the `best.pt` checkpoint. To change which file gets saved, use the `comet_checkpoint_filename` argument.
-
-```shell
-python train.py \
---img 640 \
---batch 16 \
---epochs 5 \
---data coco128.yaml \
---weights yolov5s.pt \
---save-period 1 \
---comet_save_model \
---comet_checkpoint_filename "last.pt" # this defaults to "best.pt"
-```
-
-### Log all checkpoints files
-
-```shell
-python train.py \
---img 640 \
---batch 16 \
---epochs 5 \
---data coco128.yaml \
---weights yolov5s.pt \
---save-period 1 \
---comet_save_model \
---comet_checkpoint_filename "all"
-```
-
-### Overwrite checkpoint files
-
-```shell
-python train.py \
---img 640 \
---batch 16 \
---epochs 5 \
---data coco128.yaml \
---weights yolov5s.pt \
---save-period 1 \
---comet_save_model \
---comet_checkpoint_filename "best.pt" \
---comet_overwrite_checkpoint
-```
-
-## Using a saved Checkpoint
-
-Comet will log a Run Path for every run that you can use to download model weights and resume runs. A run path is a string with the following format `comet://<your workspace name>/<your project name>/<experiment id>`
-
-You can find the run path in the `Others` tab in your Comet Experiment.
-
-```shell
-python train.py \
---img 640 \
---batch 16 \
---epochs 5 \
---data coco128.yaml \
---weights "comet://<your run path>" \
-```
-
-By default, Comet will download the most recent checkpoint, this can be configured by specifying the checkpoint filename. You can specify a checkpoint for a particular epoch
-by using the `comet_checkpoint_filename` flag.
-
-```shell
-python train.py \
---img 640 \
---batch 16 \
---epochs 5 \
---data coco128.yaml \
---weights "comet://<your run path>" \
---comet_checkpoint_filename "last_epoch_2.pt"
+--save-period 1
 ```
 
 ## Logging Model Predictions
 
-You can log model predictions and the associated images using `comet_log_predictions`. Predictions can be visualized using Comet's Object Detection Custom Panel
+You can log model predictions and the associated images by passing the `bbox_interval` command line argument. Predictions can be visualized using Comet's Object Detection Custom Panel
+
+**Note:** The YOLOv5 validation dataloader will default to a batch size of 32, so you will have to set the logging frequency accordingly.
 
 Here is an [example project using the Panel](https://www.comet.com/examples/comet-example-yolov5?shareable=YcwMiJaZSXfcEXpGOHDD12vA1&ref=yolov5&utm_source=yolov5&utm_medium=affilliate&utm_campaign=yolov5_comet_integration)
+
 
 ```shell
 python train.py \
@@ -223,58 +126,39 @@ python train.py \
 --epochs 5 \
 --data coco128.yaml \
 --weights yolov5s.pt \
---comet_log_predictions
+--bbox_interval 1
 ```
 
 ### Controlling the number of Prediction Images logged to Comet
 
-When logging predictions from YOLOv5, Comet will log the images associated with each set of predictions. By default a maximum of 100 validation images are logged. You can increase or decrease this number using the `comet_max_images` flag.
+When logging predictions from YOLOv5, Comet will log the images associated with each set of predictions. By default a maximum of 100 validation images are logged. You can increase or decrease this number using the `COMET_MAX_IMAGE_UPLOADS` environment variable.
 
 ```shell
-python train.py \
+env COMET_MAX_IMAGE_UPLOADS=200 python train.py \
 --img 640 \
 --batch 16 \
 --epochs 5 \
 --data coco128.yaml \
 --weights yolov5s.pt \
---comet_log_predictions \
---comet_max_image_uploads 200
-```
-
-### Controlling the frequency of Prediction Images logged to Comet
-
-By default, every batch from the validation set is logged to Comet when logging predictions. This can be configured via the `comet_log_prediction_interval` flag. For example, setting this parameter to `2` will log every 2nd batch of data from the validation set.
-
-**Note:** The YOLOv5 validation dataloader will default to a batch size of 32, so you will have to set the logging frequency accordingly.
-
-```shell
-python train.py \
---img 640 \
---batch 16 \
---epochs 5 \
---data coco128.yaml \
---weights yolov5s.pt \
---comet_log_predictions \
---comet_log_prediction_interval 2
+--bbox_interval 1
 ```
 
 ### Logging Class Level Metrics
 
-Use the `comet_log_per_class_metrics` to log mAP, precision, recall, f1 for each class.
+Use the `COMET_LOG_PER_CLASS_METRICS` environment variable to log mAP, precision, recall, f1 for each class.
 
 ```shell
-python train.py \
+env COMET_LOG_PER_CLASS_METRICS=true python train.py \
 --img 640 \
 --batch 16 \
 --epochs 5 \
 --data coco128.yaml \
---weights yolov5s.pt \
---comet_log_per_class_metrics
+--weights yolov5s.pt
 ```
 
 ## Uploading a Dataset to Comet Artifacts
 
-If you would like to store your data using [Comet Artifacts](https://www.comet.com/docs/v2/guides/data-management/using-artifacts/#learn-more?ref=yolov5&utm_source=yolov5&utm_medium=affilliate&utm_campaign=yolov5_comet_integration), you can do so using the `comet_upload_dataset` flag.
+If you would like to store your data using [Comet Artifacts](https://www.comet.com/docs/v2/guides/data-management/using-artifacts/#learn-more?ref=yolov5&utm_source=yolov5&utm_medium=affilliate&utm_campaign=yolov5_comet_integration), you can do so using the `upload_dataset` flag.
 
 The dataset be organized in the way described in the [YOLOv5 documentation](https://docs.ultralytics.com/tutorials/train-custom-datasets/#3-organize-directories). The dataset config `yaml` file must follow the same format as that of the `coco128.yaml` file.
 
@@ -285,8 +169,9 @@ python train.py \
 --epochs 5 \
 --data coco128.yaml \
 --weights yolov5s.pt \
---comet_upload_dataset
+--upload_dataset
 ```
+
 You can find the uploaded dataset in the Artifacts tab in your Comet Workspace
 <img width="1073" alt="artifact-1" src="https://user-images.githubusercontent.com/7529846/186929193-162718bf-ec7b-4eb9-8c3b-86b3763ef8ea.png">
 
@@ -298,16 +183,21 @@ Artifacts are versioned and also support adding metadata about the dataset. Come
 
 ### Using a saved Artifact
 
-If you would like to use a dataset from Comet Artifacts, simply pass the `comet_artifact` flag to the training script, along with the artifact path. The artifact path is a string with the following format `<workspace name>/<artifact name>:<artifact version or alias>`
+If you would like to use a dataset from Comet Artifacts, set the `path` variable in your dataset `yaml` file to point to the following Artifact resource URL.
+
+```
+# contents of artifact.yaml file
+path="comet://<workspace name>/<artifact name>:<artifact version or alias>"
+```
+Then pass this file to your training script in the following way
 
 ```shell
 python train.py \
 --img 640 \
 --batch 16 \
 --epochs 5 \
---data coco128.yaml \
---weights yolov5s.pt \
---comet_artifact "examples/yolov5-dataset:latest"
+--data artifact.yaml \
+--weights yolov5s.pt
 ```
 
 Artifacts also allow you to track the lineage of data as it flows through your Experimentation workflow. Here you can see a graph that shows you all the experiments that have used your uploaded dataset.
@@ -339,13 +229,14 @@ python utils/loggers/comet/hpo.py \
   --comet_optimizer_config "utils/loggers/comet/optimizer_config.json"
 ```
 
-The `hpo.py` script accepts the same arguments as `train.py`. If you wish to pass additional Comet related arguments to your sweep simply add them after
+The `hpo.py` script accepts the same arguments as `train.py`. If you wish to pass additional arguments to your sweep simply add them after
+the script.
 
 ```shell
 python utils/loggers/comet/hpo.py \
   --comet_optimizer_config "utils/loggers/comet/optimizer_config.json" \
-  --comet_save_model \
-  --comet_overwrite_checkpoints
+  --save-period 1 \
+  --bbox_interval 1
 ```
 
 ### Running a Sweep in Parallel
@@ -353,15 +244,6 @@ python utils/loggers/comet/hpo.py \
 ```shell
 comet optimizer -j <set number of workers> utils/loggers/comet/hpo.py \
   utils/loggers/comet/optimizer_config.json"
-```
-
-The `hpo.py` script accepts the same arguments as `train.py`. If you wish to pass additional Comet related arguments to your sweep simply add them after
-
-```shell
-comet optimizer -j <set number of workers> utils/loggers/comet/hpo.py \
-  utils/loggers/comet/optimizer_config.json" \
-  --comet_save_model \
-  --comet_overwrite_checkpoints
 ```
 
 ### Visualizing Results
