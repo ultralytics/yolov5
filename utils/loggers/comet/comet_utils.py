@@ -13,13 +13,14 @@ logger = logging.getLogger(__name__)
 
 COMET_PREFIX = "comet://"
 COMET_MODEL_NAME = os.getenv("COMET_MODEL_NAME", "yolov5")
+COMET_DEFAULT_CHECKPOINT_FILENAME = os.getenv("COMET_DEFAULT_CHECKPOINT_FILENAME", "last.pt")
 
 
 def download_model_checkpoint(opt, experiment):
     model_dir = f"{opt.project}/{experiment.name}"
     os.makedirs(model_dir, exist_ok=True)
 
-    model_name = opt.comet_model_name if opt.comet_model_name else COMET_MODEL_NAME
+    model_name = COMET_MODEL_NAME
     model_asset_list = experiment.get_model_asset_list(model_name)
 
     if len(model_asset_list) == 0:
@@ -31,22 +32,24 @@ def download_model_checkpoint(opt, experiment):
         key=lambda x: x["step"],
         reverse=True,
     )
-
-    checkpoint_filename = urlparse(opt.weights)
     logged_checkpoint_map = {asset["fileName"]: asset["assetId"] for asset in model_asset_list}
-    asset_id = logged_checkpoint_map.get(checkpoint_filename)
+
+    resource_url = urlparse(opt.weights)
+    checkpoint_filename = resource_url.query
+
+    if checkpoint_filename:
+        asset_id = logged_checkpoint_map.get(checkpoint_filename)
+    else:
+        asset_id = logged_checkpoint_map.get(COMET_DEFAULT_CHECKPOINT_FILENAME)
+        checkpoint_filename = COMET_DEFAULT_CHECKPOINT_FILENAME
+
+    if asset_id is None:
+        logger.error(f"COMET ERROR: Checkpoint {checkpoint_filename} not found in the given Experiment")
+        return
 
     try:
-        if asset_id is None:
-            # Fetch latest checkpoint
-            asset_id = model_asset_list[0]["assetId"]
-            asset_filename = model_asset_list[0]["fileName"]
-            logger.info(f"COMET INFO: Checkpoint {checkpoint_filename} not found. "
-                        f"Defaulting to latest checkpoint {asset_filename}")
-
-        else:
-            logger.info(f"COMET INFO: Downloading checkpoint {checkpoint_filename}")
-            asset_filename = checkpoint_filename
+        logger.info(f"COMET INFO: Downloading checkpoint {checkpoint_filename}")
+        asset_filename = checkpoint_filename
 
         model_binary = experiment.get_asset(asset_id, return_type="binary", stream=False)
         model_download_path = f"{model_dir}/{asset_filename}"
@@ -70,7 +73,6 @@ def set_opt_parameters(opt, experiment):
     """
     asset_list = experiment.get_asset_list()
     resume_string = opt.resume
-    override_checkpoint_filename = opt.comet_checkpoint_filename
 
     for asset in asset_list:
         if asset["fileName"] == "opt.yaml":
@@ -90,9 +92,6 @@ def set_opt_parameters(opt, experiment):
     with open(hyp_yaml_path, "w") as f:
         yaml.dump(opt.hyp, f)
     opt.hyp = hyp_yaml_path
-
-    if override_checkpoint_filename != opt.comet_checkpoint_filename:
-        opt.comet_checkpoint_filename = override_checkpoint_filename
 
 
 def check_comet_weights(opt):

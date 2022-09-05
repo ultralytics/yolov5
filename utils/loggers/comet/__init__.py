@@ -30,7 +30,7 @@ from utils.dataloaders import img2label_paths
 from utils.general import check_dataset, scale_coords, xywh2xyxy
 from utils.metrics import box_iou
 
-from .comet_utils import COMET_PREFIX, check_comet_resume, check_comet_weights
+COMET_PREFIX = "comet://"
 
 COMET_MODE = os.getenv("COMET_MODE", "online")
 
@@ -69,8 +69,6 @@ class CometLogger:
         self.job_type = job_type
         self.opt = opt
         self.hyp = hyp
-
-        check_comet_weights(self.opt)
 
         # Comet Flags
         self.comet_mode = COMET_MODE
