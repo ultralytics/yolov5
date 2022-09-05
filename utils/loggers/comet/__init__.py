@@ -72,6 +72,8 @@ class CometLogger:
         self.opt = opt
         self.hyp = hyp
 
+        check_comet_weights(self.opt)
+
         # Comet Flags
         self.comet_mode = COMET_MODE
 
