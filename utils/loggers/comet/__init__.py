@@ -90,11 +90,7 @@ class CometLogger:
         self.default_experiment_kwargs.update(experiment_kwargs)
         self.experiment = self._get_experiment(self.comet_mode, run_id)
 
-        if self.opt.comet_artifact:
-            self.data_dict = self.download_dataset_artifact(self.opt.comet_artifact)
-
-        else:
-            self.data_dict = check_dataset(self.opt.data)
+        self.data_dict = check_dataset(self.opt.data)
 
         self.class_names = self.data_dict["names"]
         self.num_classes = self.data_dict["nc"]
@@ -121,7 +117,7 @@ class CometLogger:
                 f"{self.opt.save_dir}/opt.yaml",
                 metadata={"type": "opt-config-file"},
             )
-            if not self.opt.comet_artifact:
+            if not self.opt.upload_dataset:
                 self.log_asset(self.opt.data, metadata={"type": "data-config-file"})
 
         self.comet_log_confusion_matrix = COMET_LOG_CONFUSION_MATRIX
