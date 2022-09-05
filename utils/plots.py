@@ -131,9 +131,10 @@ class Annotator:
                 return
             if isinstance(masks, torch.Tensor):
                 masks = torch.as_tensor(masks, dtype=torch.uint8)
+                masks = masks.permute(1, 2, 0).contiguous()
                 masks = masks.cpu().numpy()
-            masks = np.ascontiguousarray(masks.transpose(1, 2, 0))
-            masks = scale_image(masks.shape[1:], masks, self.im.shape)
+            # masks = np.ascontiguousarray(masks.transpose(1, 2, 0))
+            masks = scale_image(masks.shape[:2], masks, self.im.shape)
             masks = np.asarray(masks, dtype=np.float32)
             colors = np.asarray(colors, dtype=np.float32)  # shape(n,3)
             s = masks.sum(2, keepdims=True).clip(0, 1)   # add all masks together

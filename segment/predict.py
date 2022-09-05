@@ -43,8 +43,7 @@ from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
 from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
                            increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
-from utils.segment.general import process_mask, scale_image
-from utils.segment.plots import plot_masks
+from utils.segment.general import process_mask
 from utils.torch_utils import select_device, smart_inference_mode
 
 
@@ -158,13 +157,7 @@ def run(
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Mask plotting
-                import time
-                tms = time.time()
-                annotator.masks(masks, colors=[colors(x, True) for x in det[:, 5]], img_gpu=im[i] if retina_masks else None)
-                tme = time.time()
-                print("plot mask:", tme - tms)
-                # im_masks = plot_masks(im[i], masks, colors=[colors(x, True) for x in det[:, 5]])  # shape(imh,imw,3)
-                # annotator.im = scale_image(im.shape[2:], im_masks, im0.shape)  # scale to original h, w
+                annotator.masks(masks, colors=[colors(x, True) for x in det[:, 5]], img_gpu=None if retina_masks else im[i])
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det[:, :6]):
@@ -226,8 +219,8 @@ def run(
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default='../weights/yolov5n-seg.pt', help='model path(s)')
-    parser.add_argument('--source', type=str, default='/home/laughing/Downloads/MOT17-03-FRCNN-raw.mp4', help='file/dir/URL/glob, 0 for webcam')
+    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s-seg.pt', help='model path(s)')
+    parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob, 0 for webcam')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
@@ -253,7 +246,7 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
-    parser.add_argument('--retina-masks', default=True, action='store_true', help='whether to plot masks in native resolution')
+    parser.add_argument('--retina-masks', action='store_true', help='whether to plot masks in native resolution')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))
