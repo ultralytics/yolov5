@@ -22,8 +22,8 @@ from PIL import Image, ImageDraw, ImageFont
 from utils import TryExcept, threaded
 from utils.general import (CONFIG_DIR, FONT, LOGGER, check_font, check_requirements, clip_coords, increment_path,
                            is_ascii, xywh2xyxy, xyxy2xywh)
-from utils.segment.general import scale_image
 from utils.metrics import fitness
+from utils.segment.general import scale_image
 
 # Settings
 RANK = int(os.getenv('RANK', -1))
@@ -137,8 +137,8 @@ class Annotator:
             masks = scale_image(masks.shape[:2], masks, self.im.shape)
             masks = np.asarray(masks, dtype=np.float32)
             colors = np.asarray(colors, dtype=np.float32)  # shape(n,3)
-            s = masks.sum(2, keepdims=True).clip(0, 1)   # add all masks together
-            masks = (masks @ colors).clip(0, 255)   # (h,w,n) @ (n,3) = (h,w,3)
+            s = masks.sum(2, keepdims=True).clip(0, 1)  # add all masks together
+            masks = (masks @ colors).clip(0, 255)  # (h,w,n) @ (n,3) = (h,w,3)
             self.im[:] = masks * alpha + self.im * (1 - s * alpha)
         else:
             if len(masks) == 0:
