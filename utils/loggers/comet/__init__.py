@@ -42,7 +42,7 @@ COMET_UPLOAD_DATASET = os.getenv("COMET_UPLOAD_DATASET", "false").lower() == "tr
 
 # Evaluation Settings
 COMET_LOG_CONFUSION_MATRIX = os.getenv("COMET_LOG_CONFUSION_MATRIX", "true").lower() == "true"
-COMET_LOG_PREDICTIONS = os.getenv("COMET_LOG_PREDICTIONS", "false").lower() == "true"
+COMET_LOG_PREDICTIONS = os.getenv("COMET_LOG_PREDICTIONS", "true").lower() == "true"
 COMET_MAX_IMAGE_UPLOADS = int(os.getenv("COMET_MAX_IMAGE_UPLOADS", 100))
 
 # Confusion Matrix Settings
@@ -131,8 +131,12 @@ class CometLogger:
         else:
             self.iou_thres = IOU_THRES
 
-        self.comet_log_predictions = self.opt.bbox_interval > -1
-        self.comet_log_prediction_interval = self.opt.bbox_interval
+        self.comet_log_predictions = COMET_LOG_PREDICTIONS
+        if self.opt.bbox_interval == -1:
+            self.comet_log_prediction_interval = self.opt.epochs // 10 if self.opt.epochs < 10 else 1
+        else:
+            self.comet_log_prediction_interval = self.opt.bbox_interval
+
         if self.comet_log_predictions:
             self.metadata_dict = {}
 
@@ -428,7 +432,7 @@ class CometLogger:
         return
 
     def on_val_batch_end(self, batch_i, images, targets, paths, shapes, outputs):
-        if not self.comet_log_predictions and ((batch_i + 1) % self.comet_log_prediction_interval == 0):
+        if not (self.comet_log_predictions and ((batch_i + 1) % self.comet_log_prediction_interval == 0)):
             return
 
         for si, pred in enumerate(outputs):

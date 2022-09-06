@@ -93,6 +93,7 @@ export COMET_MAX_IMAGE_UPLOADS=<number of allowed images to upload to Comet> # C
 export COMET_LOG_PER_CLASS_METRICS=true # Set to log evaluation metrics for each detected class at the end of training. Defaults to false
 export COMET_DEFAULT_CHECKPOINT_FILENAME=<your checkpoint filename> # Set this if you would like to resume training from a different checkpoint. Defaults to 'last.pt'
 export COMET_LOG_BATCH_LEVEL_METRICS=true # Set this if you would like to log training metrics at the batch level. Defaults to false.
+export COMET_LOG_PREDICTIONS=true # Set this to false to disable logging model predictions
 ```
 
 ## Logging Checkpoints with Comet
@@ -112,7 +113,9 @@ python train.py \
 
 ## Logging Model Predictions
 
-You can log model predictions and the associated images by passing the `bbox_interval` command line argument. Predictions can be visualized using Comet's Object Detection Custom Panel
+By default, model predictions (images, ground truth labels and bounding boxes) will be logged to Comet.
+
+You can control the frequency of logged predictions and the associated images by passing the `bbox_interval` command line argument. Predictions can be visualized using Comet's Object Detection Custom Panel. This frequency corresponds to every Nth batch of data per epoch. In the example below, we are logging every 2nd batch of data for each epoch.
 
 **Note:** The YOLOv5 validation dataloader will default to a batch size of 32, so you will have to set the logging frequency accordingly.
 
@@ -126,7 +129,7 @@ python train.py \
 --epochs 5 \
 --data coco128.yaml \
 --weights yolov5s.pt \
---bbox_interval 1
+--bbox_interval 2
 ```
 
 ### Controlling the number of Prediction Images logged to Comet
