@@ -678,7 +678,6 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         LOGGER.info(f"\n{colorstr('Exporting data samples:')} {num_export_samples} in total.")
         # Image size
         gs = max(int(model.stride.max()), 32)  # grid size (max stride)
-        imgsz = check_img_size(opt.imgsz, gs, floor=gs * 2) # verify imgsz is gs-multiple
         if isinstance(imgsz, list):
             imgsz = imgsz[0]
 
