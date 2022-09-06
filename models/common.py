@@ -447,7 +447,7 @@ class DetectMultiBackend(nn.Module):
         elif tfjs:  # TF.js
             raise NotImplementedError('ERROR: YOLOv5 TF.js inference is not supported')
         elif paddle:  # PaddlePaddle
-            LOGGER.info(f'Loading {w} for OpenVINO inference...')
+            LOGGER.info(f'Loading {w} for PaddlePaddle inference...')
             check_requirements("paddlepaddle")
             import paddle.inference as pdi
             w = Path(w) / "inference_model"
