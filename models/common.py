@@ -450,11 +450,11 @@ class DetectMultiBackend(nn.Module):
             LOGGER.info(f'Loading {w} for OpenVINO inference...')
             check_requirements("paddlepaddle")
             import paddle.inference as pdi
-            w=Path(w)/"inference_model"
+            w = Path(w) / "inference_model"
             if not Path(w).is_file():  # if not *.xml
                 w = next(Path(w).glob('*.pdmodel'))  # get *.xml file from *_openvino_model dir
-            model=w
-            weights=Path(w).with_suffix('.pdiparams')
+            model = w
+            weights = Path(w).with_suffix('.pdiparams')
             cuda = torch.cuda.is_available() and device.type != 'cpu'
             config = pdi.Config(str(model), str(weights))
             if cuda:
