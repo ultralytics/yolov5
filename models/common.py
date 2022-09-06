@@ -448,15 +448,13 @@ class DetectMultiBackend(nn.Module):
             raise NotImplementedError('ERROR: YOLOv5 TF.js inference is not supported')
         elif paddle:  # PaddlePaddle
             LOGGER.info(f'Loading {w} for PaddlePaddle inference...')
-            check_requirements("paddlepaddle")
+            check_requirements(('paddlepaddle',))
             import paddle.inference as pdi
-            w = Path(w) / "inference_model"
-            if not Path(w).is_file():  # if not *.xml
-                w = next(Path(w).glob('*.pdmodel'))  # get *.xml file from *_openvino_model dir
-            model = w
+            if not Path(w).is_file():  # if not *.pdmodel
+                w = next(Path(w).rglob('*.pdmodel'))  # get *.xml file from *_openvino_model dir
             weights = Path(w).with_suffix('.pdiparams')
             cuda = torch.cuda.is_available() and device.type != 'cpu'
-            config = pdi.Config(str(model), str(weights))
+            config = pdi.Config(str(w), str(weights))
             if cuda:
                 config.enable_use_gpu(memory_pool_init_size_mb=2048, device_id=0)
             predictor = pdi.create_predictor(config)
