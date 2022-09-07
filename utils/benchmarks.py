@@ -92,10 +92,14 @@ def run(
     LOGGER.info('\n')
     parse_opt()
     notebook_init()  # print system info
-    c = ['Format', 'Size (MB)', 'mAP@0.5:0.95', 'Inference time (ms)'] if map else ['Format', 'Export', '', '']
+    c = ['Format', 'Size (MB)', 'mAP50-95', 'Inference time (ms)'] if map else ['Format', 'Export', '', '']
     py = pd.DataFrame(y, columns=c)
     LOGGER.info(f'\nBenchmarks complete ({time.time() - t:.2f}s)')
     LOGGER.info(str(py if map else py.iloc[:, :2]))
+    if hard_fail and isinstance(hard_fail, str):
+        metrics = py['mAP50-95'].array  # values to compare to floor
+        floor = eval(hard_fail)  # minimum metric floor to pass, i.e. = 0.29 mAP for YOLOv5n
+        assert all(x > floor for x in metrics if pd.notna(x)), f'HARD FAIL: mAP50-95 < floor {floor}'
     return py
 
 
@@ -141,7 +145,7 @@ def parse_opt():
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--test', action='store_true', help='test exports only')
     parser.add_argument('--pt-only', action='store_true', help='test PyTorch only')
-    parser.add_argument('--hard-fail', action='store_true', help='throw error on benchmark failure')
+    parser.add_argument('--hard-fail', nargs='?', const=True, default=False, help='Exception on error or < min metric')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
     print_args(vars(opt))

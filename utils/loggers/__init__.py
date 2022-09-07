@@ -17,7 +17,7 @@ from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_labels, plot_results
 from utils.torch_utils import de_parallel
 
-LOGGERS = ('csv', 'tb', 'wandb', 'clearml')  # *.csv, TensorBoard, Weights & Biases, ClearML
+LOGGERS = ('csv', 'tb', 'wandb', 'clearml', 'comet')  # *.csv, TensorBoard, Weights & Biases, ClearML
 RANK = int(os.getenv('RANK', -1))
 
 try:
@@ -40,6 +40,18 @@ try:
     assert hasattr(clearml, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
     clearml = None
+
+try:
+    if RANK not in [0, -1]:
+        comet_ml = None
+    else:
+        import comet_ml
+
+        assert hasattr(comet_ml, '__version__')  # verify package import not local dir
+        from utils.loggers.comet import CometLogger
+
+except (ModuleNotFoundError, ImportError, AssertionError):
+    comet_ml = None
 
 
 class Loggers():
@@ -80,7 +92,10 @@ class Loggers():
             prefix = colorstr('ClearML: ')
             s = f"{prefix}run 'pip install clearml' to automatically track, visualize and remotely train YOLOv5 🚀 in ClearML"
             self.logger.info(s)
-
+        if not comet_ml:
+            prefix = colorstr('Comet: ')
+            s = f"{prefix}run 'pip install comet_ml' to automatically track and visualize YOLOv5 🚀 runs in Comet"
+            self.logger.info(s)
         # TensorBoard
         s = self.save_dir
         if 'tb' in self.include and not self.opt.evolve:
@@ -107,9 +122,38 @@ class Loggers():
         else:
             self.clearml = None
 
+        # Comet
+        if comet_ml and 'comet' in self.include:
+            if isinstance(self.opt.resume, str) and self.opt.resume.startswith("comet://"):
+                run_id = self.opt.resume.split("/")[-1]
+                self.comet_logger = CometLogger(self.opt, self.hyp, run_id=run_id)
+
+            else:
+                self.comet_logger = CometLogger(self.opt, self.hyp)
+
+        else:
+            self.comet_logger = None
+
+    @property
+    def remote_dataset(self):
+        # Get data_dict if custom dataset artifact link is provided
+        data_dict = None
+        if self.clearml:
+            data_dict = self.clearml.data_dict
+        if self.wandb:
+            data_dict = self.wandb.data_dict
+        if self.comet_logger:
+            data_dict = self.comet_logger.data_dict
+
+        return data_dict
+
     def on_train_start(self):
-        # Callback runs on train start
-        pass
+        if self.comet_logger:
+            self.comet_logger.on_train_start()
+
+    def on_pretrain_routine_start(self):
+        if self.comet_logger:
+            self.comet_logger.on_pretrain_routine_start()
 
     def on_pretrain_routine_end(self, labels, names):
         # Callback runs on pre-train routine end
@@ -120,8 +164,11 @@ class Loggers():
                 self.wandb.log({"Labels": [wandb.Image(str(x), caption=x.name) for x in paths]})
             # if self.clearml:
             #    pass  # ClearML saves these images automatically using hooks
+            if self.comet_logger:
+                self.comet_logger.on_pretrain_routine_end(paths)
 
-    def on_train_batch_end(self, model, ni, imgs, targets, paths):
+    def on_train_batch_end(self, model, ni, imgs, targets, paths, vals):
+        log_dict = dict(zip(self.keys[0:3], vals))
         # Callback runs on train batch end
         # ni: number integrated batches (since train start)
         if self.plots:
@@ -137,10 +184,20 @@ class Loggers():
                 if self.clearml:
                     self.clearml.log_debug_samples(files, title='Mosaics')
 
+        if self.comet_logger:
+            self.comet_logger.on_train_batch_end(log_dict, step=ni)
+
     def on_train_epoch_end(self, epoch):
         # Callback runs on train epoch end
         if self.wandb:
             self.wandb.current_epoch = epoch + 1
+
+        if self.comet_logger:
+            self.comet_logger.on_train_epoch_end(epoch)
+
+    def on_val_start(self):
+        if self.comet_logger:
+            self.comet_logger.on_val_start()
 
     def on_val_image_end(self, pred, predn, path, names, im):
         # Callback runs on val image end
@@ -149,7 +206,11 @@ class Loggers():
         if self.clearml:
             self.clearml.log_image_with_boxes(path, pred, names, im)
 
-    def on_val_end(self):
+    def on_val_batch_end(self, batch_i, im, targets, paths, shapes, out):
+        if self.comet_logger:
+            self.comet_logger.on_val_batch_end(batch_i, im, targets, paths, shapes, out)
+
+    def on_val_end(self, nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix):
         # Callback runs on val end
         if self.wandb or self.clearml:
             files = sorted(self.save_dir.glob('val*.jpg'))
@@ -157,6 +218,9 @@ class Loggers():
                 self.wandb.log({"Validation": [wandb.Image(str(f), caption=f.name) for f in files]})
             if self.clearml:
                 self.clearml.log_debug_samples(files, title='Validation')
+
+        if self.comet_logger:
+            self.comet_logger.on_val_end(nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
 
     def on_fit_epoch_end(self, vals, epoch, best_fitness, fi):
         # Callback runs at the end of each fit (train+val) epoch
@@ -188,6 +252,9 @@ class Loggers():
             self.clearml.current_epoch_logged_images = set()  # reset epoch image limit
             self.clearml.current_epoch += 1
 
+        if self.comet_logger:
+            self.comet_logger.on_fit_epoch_end(x, epoch=epoch)
+
     def on_model_save(self, last, epoch, final_epoch, best_fitness, fi):
         # Callback runs on model save event
         if (epoch + 1) % self.opt.save_period == 0 and not final_epoch and self.opt.save_period != -1:
@@ -197,6 +264,9 @@ class Loggers():
                 self.clearml.task.update_output_model(model_path=str(last),
                                                       model_name='Latest Model',
                                                       auto_delete_file=False)
+
+        if self.comet_logger:
+            self.comet_logger.on_model_save(last, epoch, final_epoch, best_fitness, fi)
 
     def on_train_end(self, last, best, epoch, results):
         # Callback runs on training end, i.e. saving best model
@@ -222,12 +292,20 @@ class Loggers():
             self.wandb.finish_run()
 
         if self.clearml and not self.opt.evolve:
-            self.clearml.task.update_output_model(model_path=str(best if best.exists() else last), name='Best Model')
+            self.clearml.task.update_output_model(model_path=str(best if best.exists() else last),
+                                                  name='Best Model',
+                                                  auto_delete_file=False)
+
+        if self.comet_logger:
+            final_results = dict(zip(self.keys[3:10], results))
+            self.comet_logger.on_train_end(files, self.save_dir, last, best, epoch, final_results)
 
     def on_params_update(self, params: dict):
         # Update hyperparams or configs of the experiment
         if self.wandb:
             self.wandb.wandb_run.config.update(params, allow_val_change=True)
+        if self.comet_logger:
+            self.comet_logger.on_params_update(params)
 
 
 class GenericLogger:
@@ -242,9 +320,10 @@ class GenericLogger:
 
     def __init__(self, opt, console_logger, include=('tb', 'wandb')):
         # init default loggers
-        self.save_dir = opt.save_dir
+        self.save_dir = Path(opt.save_dir)
         self.include = include
         self.console_logger = console_logger
+        self.csv = self.save_dir / 'results.csv'  # CSV logger
         if 'tb' in self.include:
             prefix = colorstr('TensorBoard: ')
             self.console_logger.info(
@@ -252,20 +331,27 @@ class GenericLogger:
             self.tb = SummaryWriter(str(self.save_dir))
 
         if wandb and 'wandb' in self.include:
-            self.wandb = wandb.init(project="YOLOv5-Classifier" if opt.project == "runs/train" else opt.project,
+            self.wandb = wandb.init(project=web_project_name(str(opt.project)),
                                     name=None if opt.name == "exp" else opt.name,
                                     config=opt)
         else:
             self.wandb = None
 
-    def log_metrics(self, metrics_dict, epoch):
+    def log_metrics(self, metrics, epoch):
         # Log metrics dictionary to all loggers
+        if self.csv:
+            keys, vals = list(metrics.keys()), list(metrics.values())
+            n = len(metrics) + 1  # number of cols
+            s = '' if self.csv.exists() else (('%23s,' * n % tuple(['epoch'] + keys)).rstrip(',') + '\n')  # header
+            with open(self.csv, 'a') as f:
+                f.write(s + ('%23.5g,' * n % tuple([epoch] + vals)).rstrip(',') + '\n')
+
         if self.tb:
-            for k, v in metrics_dict.items():
+            for k, v in metrics.items():
                 self.tb.add_scalar(k, v, epoch)
 
         if self.wandb:
-            self.wandb.log(metrics_dict, step=epoch)
+            self.wandb.log(metrics, step=epoch)
 
     def log_images(self, files, name='Images', epoch=0):
         # Log images to all loggers
@@ -291,6 +377,11 @@ class GenericLogger:
             art.add_file(str(model_path))
             wandb.log_artifact(art)
 
+    def update_params(self, params):
+        # Update the paramters logged
+        if self.wandb:
+            wandb.run.config.update(params, allow_val_change=True)
+
 
 def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
     # Log model graph to TensorBoard
@@ -303,3 +394,11 @@ def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
             tb.add_graph(torch.jit.trace(de_parallel(model), im, strict=False), [])
     except Exception as e:
         print(f'WARNING: TensorBoard graph visualization failure {e}')
+
+
+def web_project_name(project):
+    # Convert local project name to web project name
+    if not project.startswith('runs/train'):
+        return project
+    suffix = '-Classify' if project.endswith('-cls') else '-Segment' if project.endswith('-seg') else ''
+    return f'YOLOv5{suffix}'
