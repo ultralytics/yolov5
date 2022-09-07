@@ -448,7 +448,7 @@ class DetectMultiBackend(nn.Module):
             raise NotImplementedError('ERROR: YOLOv5 TF.js inference is not supported')
         elif paddle:  # PaddlePaddle
             LOGGER.info(f'Loading {w} for PaddlePaddle inference...')
-            check_requirements('paddlepaddle-gpu' if cuda else 'paddlepaddle',)
+            check_requirements(('paddlepaddle-gpu' if cuda else 'paddlepaddle'),)
             import paddle.inference as pdi
             if not Path(w).is_file():  # if not *.pdmodel
                 w = next(Path(w).rglob('*.pdmodel'))  # get *.xml file from *_openvino_model dir
