@@ -307,7 +307,7 @@ python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --inclu
 ```
 </details>
 
-  
+
 ## <div align="center">Environments</div>
 
 Get started in seconds with our verified environments. Click each icon below for details.
