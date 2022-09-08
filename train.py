@@ -436,8 +436,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
             if 0 < opt.max_train_steps <= train_steps_executed:
 
-                pbar.update(1)
-                pbar.close()
+                if RANK in [-1, 0]:
+                    pbar.update(1)
+                    pbar.close()
                 break
             # end batch ------------------------------------------------------------------------------------------------
 
