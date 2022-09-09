@@ -483,7 +483,7 @@ def main(opt, callbacks=Callbacks()):
         check_requirements()
 
     # Resume (from specified or most recent last.pt)
-    if opt.resume and not check_wandb_resume(opt) and not check_comet_resume(opt) or opt.evolve:
+    if opt.resume and not check_wandb_resume(opt) and not check_comet_resume(opt) and not opt.evolve:
         last = Path(check_file(opt.resume) if isinstance(opt.resume, str) else get_latest_run())
         opt_yaml = last.parent.parent / 'opt.yaml'  # train options yaml
         opt_data = opt.data  # original dataset
