@@ -342,39 +342,37 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
 
 @TryExcept()
 def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True, cmds=()):
-    # Check installed dependencies meet YOLOv5 requirements (pass *.txt file or list of packages)
+    # Check installed dependencies meet YOLOv5 requirements (pass *.txt file or list of packages or single package str)
     prefix = colorstr('red', 'bold', 'requirements:')
     check_python()  # check python version
-    if isinstance(requirements, (str, Path)):  # requirements.txt file
-        file = Path(requirements)
+    if isinstance(requirements, Path):  # requirements.txt file
+        file = requirements
         assert file.exists(), f"{prefix} {file.resolve()} not found, check failed."
         with file.open() as f:
             requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(f) if x.name not in exclude]
-    else:  # list or tuple of packages
-        requirements = [x for x in requirements if x not in exclude]
+    elif isinstance(requirements, str):
+        requirements = [requirements]
 
-    n = 0  # number of packages updates
-    for i, r in enumerate(requirements):
+    s = ''
+    n = 0
+    for r in requirements:
         try:
             pkg.require(r)
-        except Exception:  # DistributionNotFound or VersionConflict if requirements not met
-            s = f"{prefix} {r} not found and is required by YOLOv5"
-            if install and AUTOINSTALL:  # check environment variable
-                LOGGER.info(f"{s}, attempting auto-update...")
-                try:
-                    assert check_online(), f"'pip install {r}' skipped (offline)"
-                    LOGGER.info(check_output(f'pip install "{r}" {cmds[i] if cmds else ""}', shell=True).decode())
-                    n += 1
-                except Exception as e:
-                    LOGGER.warning(f'{prefix} {e}')
-            else:
-                LOGGER.info(f'{s}. Please install and rerun your command.')
+        except (pkg.VersionConflict, pkg.DistributionNotFound):  # exception if requirements not met
+            s += f'"{r}" '
+            n += 1
 
-    if n:  # if packages updated
-        source = file.resolve() if 'file' in locals() else requirements
-        s = f"{prefix} {n} package{'s' * (n > 1)} updated per {source}\n" \
-            f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
-        LOGGER.info(s)
+    if s and install and AUTOINSTALL:  # check environment variable
+        LOGGER.info(f"{prefix} YOLOv5 requirements {s}not found, attempting AutoUpdate...")
+        try:
+            assert check_online(), "AutoUpdate skipped (offline)"
+            LOGGER.info(check_output(f'pip install {s} {" ".join(cmds) if cmds else ""}', shell=True).decode())
+            source = file.resolve() if 'file' in locals() else requirements
+            s = f"{prefix} {n} package{'s' * (n > 1)} updated per {source}\n" \
+                f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
+            LOGGER.info(s)
+        except Exception as e:
+            LOGGER.warning(f'{prefix} {e}')
 
 
 def check_img_size(imgsz, s=32, floor=0):
