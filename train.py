@@ -67,8 +67,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           device,
           callbacks
           ):
-    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze = \
-        Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
+    save_dir, epochs, batch_size, weights, single_cls, evolve, data, data_path, cfg, resume, noval, nosave, workers, freeze = \
+        Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.data_path, opt.cfg, \
         opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze
 
     # Directories
@@ -108,7 +108,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     half_precision = cuda
     init_seeds(1 + RANK)
     with torch_distributed_zero_first(LOCAL_RANK):
-        data_dict = data_dict or check_dataset(data)  # check if None
+        data_dict = data_dict or check_dataset(data, data_path)  # check if None
     train_path, val_path = data_dict['train'], data_dict['val']
     nc = 1 if single_cls else int(data_dict['nc'])  # number of classes
     names = ['item'] if single_cls and len(data_dict['names']) != 1 else data_dict['names']  # class names
@@ -545,6 +545,7 @@ def parse_opt(known=False, skip_parse=False):
     parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
+    parser.add_argument('--data-path', type=str, default= '', help='path to dataset to overwrite the path in dataset.yaml')
     parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.scratch-low.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs, -1 for autobatch')

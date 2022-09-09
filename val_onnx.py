@@ -187,6 +187,7 @@ def get_stride(yolo_pipeline: Pipeline) -> int:
 @torch.no_grad()
 def run(
     data,
+    data_path='', # optional data path to overwrite one written in .yaml data file
     model_path=None,  # model.onnx path/ SparseZoo stub
     batch_size=32,  # batch size
     imgsz=640,  # inference size (pixels)
@@ -239,7 +240,7 @@ def run(
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
     # Data
-    data = check_dataset(data)  # check
+    data = check_dataset(data, data_path)  # check
 
     # Configure
     # Note: Only coco validation data is supported for now

@@ -96,6 +96,7 @@ def process_batch(detections, labels, iouv):
 
 @torch.no_grad()
 def run(data,
+        data_path='', # optional data path to overwrite one written in .yaml data file
         weights=None,  # model.pt path(s)
         batch_size=32,  # batch size
         imgsz=640,  # inference size (pixels)
@@ -151,7 +152,7 @@ def run(data,
                 LOGGER.info(f'Forcing --batch-size 1 square inference (1,3,{imgsz},{imgsz}) for non-PyTorch models')
 
         # Data
-        data = check_dataset(data)  # check
+        data = check_dataset(data, data_path)  # check
 
     # Configure
     model.eval()

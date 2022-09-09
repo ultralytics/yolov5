@@ -589,6 +589,7 @@ def load_state_dict(model, state_dict, run_mode, exclude_anchors):
 
 @torch.no_grad()
 def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
+        data_path='', # optional data path to overwrite one written in .yaml data file
         weights=ROOT / 'yolov5s.pt',  # weights path
         imgsz=(640, 640),  # image (height, width)
         batch_size=1,  # batch size
@@ -681,7 +682,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         if isinstance(imgsz, list):
             imgsz = imgsz[0]
 
-        val_loader = create_dataloader(path=check_dataset(data)['val'], imgsz=imgsz, batch_size=batch_size, stride=gs)[0]
+        val_loader = create_dataloader(path=check_dataset(data, data_path)['val'], imgsz=imgsz, batch_size=batch_size, stride=gs)[0]
         sparseml_wrapper.save_sample_inputs_outputs(
             dataloader=val_loader,
             num_export_samples=num_export_samples,
@@ -725,6 +726,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
 def parse_opt(known = False, skip_parse = False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
+    parser.add_argument('--data-path', type=str, default= '', help='path to dataset to overwrite the path in dataset.yaml')
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--num-export-samples', type=int, default=0, help='number of sample inputs/outputs to export')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640, 640], help='image (h, w)')

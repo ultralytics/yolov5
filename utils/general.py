@@ -436,7 +436,7 @@ def check_font(font=FONT):
         torch.hub.download_url_to_file(url, str(font), progress=False)
 
 
-def check_dataset(data, autodownload=True):
+def check_dataset(data, data_path = '', autodownload=True):
     # Download and/or unzip dataset if not found locally
     # Usage: https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128_with_yaml.zip
 
@@ -451,6 +451,8 @@ def check_dataset(data, autodownload=True):
     if isinstance(data, (str, Path)):
         with open(data, errors='ignore') as f:
             data = yaml.safe_load(f)  # dictionary
+            if data_path and 'path' in data:
+                data['path'] = data_path
 
     # Resolve paths
     path = Path(extract_dir or data.get('path') or '')  # optional 'path' default to '.'
