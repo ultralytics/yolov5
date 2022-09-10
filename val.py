@@ -16,6 +16,7 @@ Usage - formats:
                               yolov5s.pb                 # TensorFlow GraphDef
                               yolov5s.tflite             # TensorFlow Lite
                               yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
+                              yolov5s_paddle_model       # PaddlePaddle
 """
 
 import argparse
@@ -259,7 +260,7 @@ def run(
             plot_images(im, targets, paths, save_dir / f'val_batch{batch_i}_labels.jpg', names)  # labels
             plot_images(im, output_to_target(out), paths, save_dir / f'val_batch{batch_i}_pred.jpg', names)  # pred
 
-        callbacks.run('on_val_batch_end')
+        callbacks.run('on_val_batch_end', batch_i, im, targets, paths, shapes, out)
 
     # Compute metrics
     stats = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats)]  # to numpy
@@ -289,7 +290,7 @@ def run(
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        callbacks.run('on_val_end')
+        callbacks.run('on_val_end', nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
 
     # Save JSON
     if save_json and len(jdict):
@@ -301,7 +302,7 @@ def run(
             json.dump(jdict, f)
 
         try:  # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb
-            check_requirements(['pycocotools'])
+            check_requirements('pycocotools')
             from pycocotools.coco import COCO
             from pycocotools.cocoeval import COCOeval
 
@@ -360,7 +361,7 @@ def parse_opt():
 
 
 def main(opt):
-    check_requirements(requirements=ROOT / 'requirements.txt', exclude=('tensorboard', 'thop'))
+    check_requirements(exclude=('tensorboard', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
         if opt.conf_thres > 0.001:  # https://github.com/ultralytics/yolov5/issues/1466
