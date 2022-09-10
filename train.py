@@ -53,7 +53,8 @@ from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_g
                            one_cycle, print_args, print_mutation, strip_optimizer, yaml_save)
 from utils.loggers import Loggers
 from utils.loggers.comet.comet_utils import check_comet_resume
-from utils.loggers.wandb.wandb_utils import check_wandb_resume
+from utils.loggers.wandb.wandb_utils import (check_valid_artifact_address, check_wandb_resume,
+                                             download_model_from_wandb_artifact)
 from utils.loss import ComputeLoss
 from utils.metrics import fitness
 from utils.plots import plot_evolve
@@ -70,6 +71,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
         opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze
     callbacks.run('on_pretrain_routine_start')
+    
+    weights = download_model_from_wandb_artifact(weights) if check_valid_artifact_address(weights) else weights
 
     # Directories
     w = save_dir / 'weights'  # weights dir
