@@ -22,6 +22,7 @@ Usage - formats:
                                           yolov5s-seg.pb                 # TensorFlow GraphDef
                                           yolov5s-seg.tflite             # TensorFlow Lite
                                           yolov5s-seg_edgetpu.tflite     # TensorFlow Edge TPU
+                                          yolov5s-seg_paddle_model       # PaddlePaddle
 """
 
 import argparse
