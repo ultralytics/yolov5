@@ -1,11 +1,11 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
-PyTorch Hub models https://pytorch.org/hub/ultralytics_yolov5/
+PyTorch Hub models https://pytorch.org/hub/ultralytics_yolov5
 
 Usage:
     import torch
     model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
-    model = torch.hub.load('ultralytics/yolov5:master', 'custom', 'path/to/yolov5s.onnx')  # file from branch
+    model = torch.hub.load('ultralytics/yolov5:master', 'custom', 'path/to/yolov5s.onnx')  # custom model from branch
 """
 
 import torch
@@ -30,7 +30,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
 
     from models.common import AutoShape, DetectMultiBackend
     from models.experimental import attempt_load
-    from models.yolo import Model
+    from models.yolo import ClassificationModel, DetectionModel
     from utils.downloads import attempt_download
     from utils.general import LOGGER, check_requirements, intersect_dicts, logging
     from utils.torch_utils import select_device
@@ -46,12 +46,16 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
             try:
                 model = DetectMultiBackend(path, device=device, fuse=autoshape)  # detection model
                 if autoshape:
-                    model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
+                    if model.pt and isinstance(model.model, ClassificationModel):
+                        LOGGER.warning('WARNING: ⚠️ YOLOv5 v6.2 ClassificationModel is not yet AutoShape compatible. '
+                                       'You must pass torch tensors in BCHW to this model, i.e. shape(1,3,224,224).')
+                    else:
+                        model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
             except Exception:
                 model = attempt_load(path, device=device, fuse=False)  # arbitrary model
         else:
             cfg = list((Path(__file__).parent / 'models').rglob(f'{path.stem}.yaml'))[0]  # model.yaml path
-            model = Model(cfg, channels, classes)  # create model
+            model = DetectionModel(cfg, channels, classes)  # create model
             if pretrained:
                 ckpt = torch.load(attempt_download(path), map_location=device)  # load
                 csd = ckpt['model'].float().state_dict()  # checkpoint state_dict as FP32

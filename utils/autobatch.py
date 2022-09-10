@@ -18,7 +18,7 @@ def check_train_batch_size(model, imgsz=640, amp=True):
         return autobatch(deepcopy(model).train(), imgsz)  # compute optimal batch size
 
 
-def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
+def autobatch(model, imgsz=640, fraction=0.8, batch_size=16):
     # Automatically estimate best batch size to use `fraction` of available CUDA memory
     # Usage:
     #     import torch
@@ -47,7 +47,7 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
     # Profile batch sizes
     batch_sizes = [1, 2, 4, 8, 16]
     try:
-        img = [torch.zeros(b, 3, imgsz, imgsz) for b in batch_sizes]
+        img = [torch.empty(b, 3, imgsz, imgsz) for b in batch_sizes]
         results = profile(img, model, n=3, device=device)
     except Exception as e:
         LOGGER.warning(f'{prefix}{e}')
@@ -60,6 +60,9 @@ def autobatch(model, imgsz=640, fraction=0.9, batch_size=16):
         i = results.index(None)  # first fail index
         if b >= batch_sizes[i]:  # y intercept above failure point
             b = batch_sizes[max(i - 1, 0)]  # select prior safe point
+    if b < 1 or b > 1024:  # b outside of safe range
+        b = batch_size
+        LOGGER.warning(f'{prefix}WARNING: ⚠️ CUDA anomaly detected, recommend restart environment and retry command.')
 
     fraction = np.polyval(p, b) / t  # actual fraction predicted
     LOGGER.info(f'{prefix}Using batch-size {b} for {d} {t * fraction:.2f}G/{t:.2f}G ({fraction * 100:.0f}%) ✅')

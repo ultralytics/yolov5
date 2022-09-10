@@ -3,6 +3,7 @@
 Plotting utils
 """
 
+import contextlib
 import math
 import os
 from copy import copy
@@ -18,8 +19,9 @@ import seaborn as sn
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-from utils.general import (CONFIG_DIR, FONT, LOGGER, Timeout, check_font, check_requirements, clip_coords,
-                           increment_path, is_ascii, threaded, try_except, xywh2xyxy, xyxy2xywh)
+from utils import TryExcept, threaded
+from utils.general import (CONFIG_DIR, FONT, LOGGER, check_font, check_requirements, clip_coords, increment_path,
+                           is_ascii, xywh2xyxy, xyxy2xywh)
 from utils.metrics import fitness
 
 # Settings
@@ -115,10 +117,12 @@ class Annotator:
         # Add rectangle to image (PIL-only)
         self.draw.rectangle(xy, fill, outline, width)
 
-    def text(self, xy, text, txt_color=(255, 255, 255)):
+    def text(self, xy, text, txt_color=(255, 255, 255), anchor='top'):
         # Add text to image (PIL-only)
-        w, h = self.font.getsize(text)  # text width, height
-        self.draw.text((xy[0], xy[1] - h + 1), text, fill=txt_color, font=self.font)
+        if anchor == 'bottom':  # start y from font bottom
+            w, h = self.font.getsize(text)  # text width, height
+            xy[1] += 1 - h
+        self.draw.text(xy, text, fill=txt_color, font=self.font)
 
     def result(self):
         # Return annotated image as array
@@ -180,8 +184,7 @@ def output_to_target(output):
     # Convert model output to target format [batch_id, class_id, x, y, w, h, conf]
     targets = []
     for i, o in enumerate(output):
-        for *box, conf, cls in o.cpu().numpy():
-            targets.append([i, cls, *list(*xyxy2xywh(np.array(box)[None])), conf])
+        targets.extend([i, cls, *list(*xyxy2xywh(np.array(box)[None])), conf] for *box, conf, cls in o.cpu().numpy())
     return np.array(targets)
 
 
@@ -221,7 +224,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
         annotator.rectangle([x, y, x + w, y + h], None, (255, 255, 255), width=2)  # borders
         if paths:
-            annotator.text((x + 5, y + 5 + h), text=Path(paths[i]).name[:40], txt_color=(220, 220, 220))  # filenames
+            annotator.text((x + 5, y + 5), text=Path(paths[i]).name[:40], txt_color=(220, 220, 220))  # filenames
         if len(targets) > 0:
             ti = targets[targets[:, 0] == i]  # image targets
             boxes = xywh2xyxy(ti[:, 2:6]).T
@@ -339,8 +342,7 @@ def plot_val_study(file='', dir='', x=None):  # from utils.plots import *; plot_
     plt.savefig(f, dpi=300)
 
 
-@try_except  # known issue https://github.com/ultralytics/yolov5/issues/5395
-@Timeout(30)  # known issue https://github.com/ultralytics/yolov5/issues/5611
+@TryExcept()  # known issue https://github.com/ultralytics/yolov5/issues/5395
 def plot_labels(labels, names=(), save_dir=Path('')):
     # plot dataset labels
     LOGGER.info(f"Plotting labels to {save_dir / 'labels.jpg'}... ")
@@ -357,10 +359,8 @@ def plot_labels(labels, names=(), save_dir=Path('')):
     matplotlib.use('svg')  # faster
     ax = plt.subplots(2, 2, figsize=(8, 8), tight_layout=True)[1].ravel()
     y = ax[0].hist(c, bins=np.linspace(0, nc, nc + 1) - 0.5, rwidth=0.8)
-    try:  # color histogram bars by class
+    with contextlib.suppress(Exception):  # color histogram bars by class
         [y[2].patches[i].set_color([x / 255 for x in colors(i)]) for i in range(nc)]  # known issue #3195
-    except Exception:
-        pass
     ax[0].set_ylabel('instances')
     if 0 < len(names) < 30:
         ax[0].set_xticks(range(len(names)))
