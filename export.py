@@ -126,7 +126,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
 @try_export
 def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:')):
     # YOLOv5 ONNX export
-    check_requirements(('onnx',))
+    check_requirements('onnx')
     import onnx
 
     LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
@@ -182,7 +182,7 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
 @try_export
 def export_openvino(model, file, half, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
-    check_requirements(('openvino-dev',))  # requires openvino-dev: https://pypi.org/project/openvino-dev/
+    check_requirements('openvino-dev')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
     import openvino.inference_engine as ie
 
     LOGGER.info(f'\n{prefix} starting export with openvino {ie.__version__}...')
@@ -198,7 +198,7 @@ def export_openvino(model, file, half, prefix=colorstr('OpenVINO:')):
 @try_export
 def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
     # YOLOv5 CoreML export
-    check_requirements(('coremltools',))
+    check_requirements('coremltools')
     import coremltools as ct
 
     LOGGER.info(f'\n{prefix} starting export with coremltools {ct.__version__}...')
@@ -226,7 +226,7 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
         import tensorrt as trt
     except Exception:
         if platform.system() == 'Linux':
-            check_requirements(('nvidia-tensorrt',), cmds=('-U --index-url https://pypi.ngc.nvidia.com',))
+            check_requirements('nvidia-tensorrt', cmds=['-U --index-url https://pypi.ngc.nvidia.com'])
         import tensorrt as trt
 
     if trt.__version__[0] == '7':  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
@@ -405,7 +405,7 @@ def export_edgetpu(file, prefix=colorstr('Edge TPU:')):
 @try_export
 def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
     # YOLOv5 TensorFlow.js export
-    check_requirements(('tensorflowjs',))
+    check_requirements('tensorflowjs')
     import re
 
     import tensorflowjs as tfjs
@@ -516,7 +516,7 @@ def run(
     # TensorFlow Exports
     if any((saved_model, pb, tflite, edgetpu, tfjs)):
         if int8 or edgetpu:  # TFLite --int8 bug https://github.com/ultralytics/yolov5/issues/5707
-            check_requirements(('flatbuffers==1.12',))  # required before `import tensorflow`
+            check_requirements('flatbuffers==1.12')  # required before `import tensorflow`
         assert not tflite or not tfjs, 'TFLite and TF.js models must be exported separately, please pass only one type.'
         assert not isinstance(model, ClassificationModel), 'ClassificationModel export to TF formats not yet supported.'
         f[5], model = export_saved_model(model.cpu(),
