@@ -320,14 +320,16 @@ class DetectMultiBackend(nn.Module):
         #   TensorFlow GraphDef:            *.pb
         #   TensorFlow Lite:                *.tflite
         #   TensorFlow Edge TPU:            *_edgetpu.tflite
+        #   PaddlePaddle:                   *_paddle_model
         from models.experimental import attempt_download, attempt_load  # scoped to avoid circular import
 
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
-        pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs = self._model_type(w)  # get backend
+        pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle = self._model_type(w)  # type
         w = attempt_download(w)  # download if not local
         fp16 &= pt or jit or onnx or engine  # FP16
         stride = 32  # default stride
+        cuda = torch.cuda.is_available() and device.type != 'cpu'  # use CUDA
 
         if pt:  # PyTorch
             model = attempt_load(weights if isinstance(weights, list) else w, device=device, inplace=True, fuse=fuse)
@@ -351,7 +353,6 @@ class DetectMultiBackend(nn.Module):
             net = cv2.dnn.readNetFromONNX(w)
         elif onnx:  # ONNX Runtime
             LOGGER.info(f'Loading {w} for ONNX Runtime inference...')
-            cuda = torch.cuda.is_available() and device.type != 'cpu'
             check_requirements(('onnx', 'onnxruntime-gpu' if cuda else 'onnxruntime'))
             import onnxruntime
             providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] if cuda else ['CPUExecutionProvider']
@@ -408,48 +409,60 @@ class DetectMultiBackend(nn.Module):
             LOGGER.info(f'Loading {w} for CoreML inference...')
             import coremltools as ct
             model = ct.models.MLModel(w)
-        else:  # TensorFlow (SavedModel, GraphDef, Lite, Edge TPU)
-            if saved_model:  # SavedModel
-                LOGGER.info(f'Loading {w} for TensorFlow SavedModel inference...')
-                import tensorflow as tf
-                keras = False  # assume TF1 saved_model
-                model = tf.keras.models.load_model(w) if keras else tf.saved_model.load(w)
-            elif pb:  # GraphDef https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
-                LOGGER.info(f'Loading {w} for TensorFlow GraphDef inference...')
-                import tensorflow as tf
+        elif saved_model:  # TF SavedModel
+            LOGGER.info(f'Loading {w} for TensorFlow SavedModel inference...')
+            import tensorflow as tf
+            keras = False  # assume TF1 saved_model
+            model = tf.keras.models.load_model(w) if keras else tf.saved_model.load(w)
+        elif pb:  # GraphDef https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
+            LOGGER.info(f'Loading {w} for TensorFlow GraphDef inference...')
+            import tensorflow as tf
 
-                def wrap_frozen_graph(gd, inputs, outputs):
-                    x = tf.compat.v1.wrap_function(lambda: tf.compat.v1.import_graph_def(gd, name=""), [])  # wrapped
-                    ge = x.graph.as_graph_element
-                    return x.prune(tf.nest.map_structure(ge, inputs), tf.nest.map_structure(ge, outputs))
+            def wrap_frozen_graph(gd, inputs, outputs):
+                x = tf.compat.v1.wrap_function(lambda: tf.compat.v1.import_graph_def(gd, name=""), [])  # wrapped
+                ge = x.graph.as_graph_element
+                return x.prune(tf.nest.map_structure(ge, inputs), tf.nest.map_structure(ge, outputs))
 
-                gd = tf.Graph().as_graph_def()  # graph_def
-                with open(w, 'rb') as f:
-                    gd.ParseFromString(f.read())
-                frozen_func = wrap_frozen_graph(gd, inputs="x:0", outputs="Identity:0")
-            elif tflite or edgetpu:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
-                try:  # https://coral.ai/docs/edgetpu/tflite-python/#update-existing-tf-lite-code-for-the-edge-tpu
-                    from tflite_runtime.interpreter import Interpreter, load_delegate
-                except ImportError:
-                    import tensorflow as tf
-                    Interpreter, load_delegate = tf.lite.Interpreter, tf.lite.experimental.load_delegate,
-                if edgetpu:  # Edge TPU https://coral.ai/software/#edgetpu-runtime
-                    LOGGER.info(f'Loading {w} for TensorFlow Lite Edge TPU inference...')
-                    delegate = {
-                        'Linux': 'libedgetpu.so.1',
-                        'Darwin': 'libedgetpu.1.dylib',
-                        'Windows': 'edgetpu.dll'}[platform.system()]
-                    interpreter = Interpreter(model_path=w, experimental_delegates=[load_delegate(delegate)])
-                else:  # Lite
-                    LOGGER.info(f'Loading {w} for TensorFlow Lite inference...')
-                    interpreter = Interpreter(model_path=w)  # load TFLite model
-                interpreter.allocate_tensors()  # allocate
-                input_details = interpreter.get_input_details()  # inputs
-                output_details = interpreter.get_output_details()  # outputs
-            elif tfjs:
-                raise NotImplementedError('ERROR: YOLOv5 TF.js inference is not supported')
-            else:
-                raise NotImplementedError(f'ERROR: {w} is not a supported format')
+            gd = tf.Graph().as_graph_def()  # TF GraphDef
+            with open(w, 'rb') as f:
+                gd.ParseFromString(f.read())
+            frozen_func = wrap_frozen_graph(gd, inputs="x:0", outputs="Identity:0")
+        elif tflite or edgetpu:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
+            try:  # https://coral.ai/docs/edgetpu/tflite-python/#update-existing-tf-lite-code-for-the-edge-tpu
+                from tflite_runtime.interpreter import Interpreter, load_delegate
+            except ImportError:
+                import tensorflow as tf
+                Interpreter, load_delegate = tf.lite.Interpreter, tf.lite.experimental.load_delegate,
+            if edgetpu:  # TF Edge TPU https://coral.ai/software/#edgetpu-runtime
+                LOGGER.info(f'Loading {w} for TensorFlow Lite Edge TPU inference...')
+                delegate = {
+                    'Linux': 'libedgetpu.so.1',
+                    'Darwin': 'libedgetpu.1.dylib',
+                    'Windows': 'edgetpu.dll'}[platform.system()]
+                interpreter = Interpreter(model_path=w, experimental_delegates=[load_delegate(delegate)])
+            else:  # TFLite
+                LOGGER.info(f'Loading {w} for TensorFlow Lite inference...')
+                interpreter = Interpreter(model_path=w)  # load TFLite model
+            interpreter.allocate_tensors()  # allocate
+            input_details = interpreter.get_input_details()  # inputs
+            output_details = interpreter.get_output_details()  # outputs
+        elif tfjs:  # TF.js
+            raise NotImplementedError('ERROR: YOLOv5 TF.js inference is not supported')
+        elif paddle:  # PaddlePaddle
+            LOGGER.info(f'Loading {w} for PaddlePaddle inference...')
+            check_requirements('paddlepaddle-gpu' if cuda else 'paddlepaddle')
+            import paddle.inference as pdi
+            if not Path(w).is_file():  # if not *.pdmodel
+                w = next(Path(w).rglob('*.pdmodel'))  # get *.xml file from *_openvino_model dir
+            weights = Path(w).with_suffix('.pdiparams')
+            config = pdi.Config(str(w), str(weights))
+            if cuda:
+                config.enable_use_gpu(memory_pool_init_size_mb=2048, device_id=0)
+            predictor = pdi.create_predictor(config)
+            input_names = predictor.get_input_names()
+            input_handle = predictor.get_input_handle(input_names[0])
+        else:
+            raise NotImplementedError(f'ERROR: {w} is not a supported format')
 
         # class names
         if 'names' not in locals():
@@ -502,6 +515,13 @@ class DetectMultiBackend(nn.Module):
             else:
                 k = 'var_' + str(sorted(int(k.replace('var_', '')) for k in y)[-1])  # output key
                 y = y[k]  # output
+        elif self.paddle:  # PaddlePaddle
+            im = im.cpu().numpy().astype("float32")
+            self.input_handle.copy_from_cpu(im)
+            self.predictor.run()
+            output_names = self.predictor.get_output_names()
+            output_handle = self.predictor.get_output_handle(output_names[0])
+            y = output_handle.copy_to_cpu()
         else:  # TensorFlow (SavedModel, GraphDef, Lite, Edge TPU)
             im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
             if self.saved_model:  # SavedModel
@@ -542,13 +562,13 @@ class DetectMultiBackend(nn.Module):
     def _model_type(p='path/to/model.pt'):
         # Return model type from model path, i.e. path='path/to/model.onnx' -> type=onnx
         from export import export_formats
-        suffixes = list(export_formats().Suffix) + ['.xml']  # export suffixes
-        check_suffix(p, suffixes)  # checks
+        sf = list(export_formats().Suffix) + ['.xml']  # export suffixes
+        check_suffix(p, sf)  # checks
         p = Path(p).name  # eliminate trailing separators
-        pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, xml2 = (s in p for s in suffixes)
+        pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle, xml2 = (s in p for s in sf)
         xml |= xml2  # *_openvino_model or *.xml
         tflite &= not edgetpu  # *.tflite
-        return pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs
+        return pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle
 
     @staticmethod
     def _load_metadata(f=Path('path/to/meta.yaml')):
