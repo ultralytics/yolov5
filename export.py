@@ -226,7 +226,7 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
         import tensorrt as trt
     except Exception:
         if platform.system() == 'Linux':
-            check_requirements('nvidia-tensorrt', cmds=['-U --index-url https://pypi.ngc.nvidia.com'])
+            check_requirements('nvidia-tensorrt', cmds='-U --index-url https://pypi.ngc.nvidia.com')
         import tensorrt as trt
 
     if trt.__version__[0] == '7':  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
