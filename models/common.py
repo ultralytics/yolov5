@@ -312,7 +312,7 @@ class DetectMultiBackend(nn.Module):
         #   PyTorch:              weights = *.pt
         #   TorchScript:                    *.torchscript
         #   ONNX Runtime:                   *.onnx
-        #   ONNX OpenCV DNN:                *.onnx with --dnn
+        #   ONNX OpenCV DNN:                *.onnx --dnn
         #   OpenVINO:                       *.xml
         #   CoreML:                         *.mlmodel
         #   TensorRT:                       *.engine
