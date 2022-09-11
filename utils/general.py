@@ -17,6 +17,7 @@ import signal
 import sys
 import time
 import urllib
+from copy import deepcopy
 from datetime import datetime
 from itertools import repeat
 from multiprocessing.pool import ThreadPool
@@ -535,7 +536,7 @@ def check_amp(model):
     f = ROOT / 'data' / 'images' / 'bus.jpg'  # image to check
     im = f if f.exists() else 'https://ultralytics.com/images/bus.jpg' if check_online() else np.ones((640, 640, 3))
     try:
-        assert amp_allclose(model, im) or amp_allclose(DetectMultiBackend('yolov5n.pt', device), im)
+        assert amp_allclose(deepcopy(model), im) or amp_allclose(DetectMultiBackend('yolov5n.pt', device), im)
         LOGGER.info(f'{prefix}checks passed ✅')
         return True
     except Exception:
