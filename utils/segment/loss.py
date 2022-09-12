@@ -83,7 +83,7 @@ class ComputeLoss:
 
                 # Mask regression
                 if tuple(masks.shape[-2:]) != (mask_h, mask_w):  # downsample
-                    masks = F.interpolate(masks[None], (mask_h, mask_w), mode="bilinear", align_corners=False)[0]
+                    masks = F.interpolate(masks[None], (mask_h, mask_w), mode="nearest")[0]
                 marea = xywhn[i][:, 2:].prod(1)  # mask width, height normalized
                 mxyxy = xywh2xyxy(xywhn[i] * torch.tensor([mask_w, mask_h, mask_w, mask_h], device=self.device))
                 for bi in b.unique():
