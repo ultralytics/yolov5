@@ -1,0 +1,11 @@
+
+path: ./datasets/flower17
+train: images  # train images (relative to 'path') 128 images
+val: images  # val images (relative to 'path') 128 images
+test:  # test images (optional)
+
+# Classes
+nc: 17  # number of classes
+names: ['Daffodil', 'snowdrop', 'LilyValley', 'Snowdrop', 'Bluebell', 'Crocus', 'Tigerlily', 'Tulip', 'Fritillary', 'Sunflower',
+        'Daisy', 'ColtslFoot', 'Dandelion', 'Cowslip', 'Buttercup', 'Windflower', 'Pansy']  # class names
+
