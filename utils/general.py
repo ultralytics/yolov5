@@ -17,6 +17,7 @@ import signal
 import sys
 import time
 import urllib
+from copy import deepcopy
 from datetime import datetime
 from itertools import repeat
 from multiprocessing.pool import ThreadPool
@@ -341,40 +342,38 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
 
 
 @TryExcept()
-def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True, cmds=()):
-    # Check installed dependencies meet YOLOv5 requirements (pass *.txt file or list of packages)
+def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True, cmds=''):
+    # Check installed dependencies meet YOLOv5 requirements (pass *.txt file or list of packages or single package str)
     prefix = colorstr('red', 'bold', 'requirements:')
     check_python()  # check python version
-    if isinstance(requirements, (str, Path)):  # requirements.txt file
-        file = Path(requirements)
-        assert file.exists(), f"{prefix} {file.resolve()} not found, check failed."
+    if isinstance(requirements, Path):  # requirements.txt file
+        file = requirements.resolve()
+        assert file.exists(), f"{prefix} {file} not found, check failed."
         with file.open() as f:
             requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(f) if x.name not in exclude]
-    else:  # list or tuple of packages
-        requirements = [x for x in requirements if x not in exclude]
+    elif isinstance(requirements, str):
+        requirements = [requirements]
 
-    n = 0  # number of packages updates
-    for i, r in enumerate(requirements):
+    s = ''
+    n = 0
+    for r in requirements:
         try:
             pkg.require(r)
-        except Exception:  # DistributionNotFound or VersionConflict if requirements not met
-            s = f"{prefix} {r} not found and is required by YOLOv5"
-            if install and AUTOINSTALL:  # check environment variable
-                LOGGER.info(f"{s}, attempting auto-update...")
-                try:
-                    assert check_online(), f"'pip install {r}' skipped (offline)"
-                    LOGGER.info(check_output(f'pip install "{r}" {cmds[i] if cmds else ""}', shell=True).decode())
-                    n += 1
-                except Exception as e:
-                    LOGGER.warning(f'{prefix} {e}')
-            else:
-                LOGGER.info(f'{s}. Please install and rerun your command.')
+        except (pkg.VersionConflict, pkg.DistributionNotFound):  # exception if requirements not met
+            s += f'"{r}" '
+            n += 1
 
-    if n:  # if packages updated
-        source = file.resolve() if 'file' in locals() else requirements
-        s = f"{prefix} {n} package{'s' * (n > 1)} updated per {source}\n" \
-            f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
-        LOGGER.info(s)
+    if s and install and AUTOINSTALL:  # check environment variable
+        LOGGER.info(f"{prefix} YOLOv5 requirement{'s' * (n > 1)} {s}not found, attempting AutoUpdate...")
+        try:
+            assert check_online(), "AutoUpdate skipped (offline)"
+            LOGGER.info(check_output(f'pip install {s} {cmds}', shell=True).decode())
+            source = file if 'file' in locals() else requirements
+            s = f"{prefix} {n} package{'s' * (n > 1)} updated per {source}\n" \
+                f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
+            LOGGER.info(s)
+        except Exception as e:
+            LOGGER.warning(f'{prefix} {e}')
 
 
 def check_img_size(imgsz, s=32, floor=0):
@@ -537,7 +536,7 @@ def check_amp(model):
     f = ROOT / 'data' / 'images' / 'bus.jpg'  # image to check
     im = f if f.exists() else 'https://ultralytics.com/images/bus.jpg' if check_online() else np.ones((640, 640, 3))
     try:
-        assert amp_allclose(model, im) or amp_allclose(DetectMultiBackend('yolov5n.pt', device), im)
+        assert amp_allclose(deepcopy(model), im) or amp_allclose(DetectMultiBackend('yolov5n.pt', device), im)
         LOGGER.info(f'{prefix}checks passed ✅')
         return True
     except Exception:
