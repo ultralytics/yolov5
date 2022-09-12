@@ -11,13 +11,15 @@ TENSOR_TYPE = torch.half
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-w', '--weights', required=True, help='Input weights (.pt) file path (required)')
+    parser.add_argument('--imsz', required=True, help='the comma separated image size: width,height')
     args = parser.parse_args()
     if not os.path.isfile(args.weights):
         raise SystemExit('Invalid input file')
-    return args.weights
+    return args.weights, args.imsz
 
 
-pt_file = parse_args()
+pt_file,imsz = parse_args()
+w,h = int(imsz[0]),int(imsz[1])
 
 if torch.cuda.is_available():
     print('using GPU')
@@ -27,13 +29,13 @@ else:
     device = torch.device('cpu')
 
 # Load model
-model = attempt_load(pt_file, map_location=device).to(TENSOR_TYPE)
+model = attempt_load(pt_file, device).to(TENSOR_TYPE)
 model.eval()
 
 proc_time = []
 with torch.no_grad():
-    dummy_input = torch.zeros(1,3,640,640).to(TENSOR_TYPE).to(device)
-    for i in range(20):
+    dummy_input = torch.zeros(1,3,h,w).to(TENSOR_TYPE).to(device)
+    for i in range(10):
         t1 = time.time()
         for _ in range(NUM_IMAGES):
             pred = model(dummy_input)
