@@ -119,9 +119,12 @@ jobs:
           python export.py --weights $m.pt --img 64 --include torchscript  # export
           python - <<EOF
           import torch
+          im = torch.zeros([1, 3, 64, 64])
           for path in '$m', '$b':
               model = torch.hub.load('.', 'custom', path=path, source='local')
               print(model('data/images/bus.jpg'))
+              model(im)  # warmup, build grids for trace
+              torch.jit.trace(model, [im])
           EOF
       - name: Test classification
         shell: bash  # for Windows compatibility
