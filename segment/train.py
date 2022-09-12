@@ -392,9 +392,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             # Log val metrics and media
             metrics_dict = dict(zip(KEYS, log_vals))
             logger.log_metrics(metrics_dict, epoch)
-            if plots:
-                files = sorted(save_dir.glob('val*.jpg'))
-                logger.log_images(files, "Validation", epoch)
 
             # Save model
             if (not nosave) or (final_epoch and not evolve):  # if save
@@ -460,16 +457,16 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
         # callbacks.run('on_train_end', last, best, epoch, results)
         # on train end callback using genericLogger
-        logger.log_metrics(dict(zip(KEYS[4:16], results)), epochs + 1)
+        logger.log_metrics(dict(zip(KEYS[4:16], results)), epochs)
         if not opt.evolve:
-            logger.log_model(best, epoch + 1)
+            logger.log_model(best, epoch)
         if plots:
             plot_results_with_masks(file=save_dir / 'results.csv')  # save results.png
             files = ['results.png', 'confusion_matrix.png', *(f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R'))]
             files = [(save_dir / f) for f in files if (save_dir / f).exists()]  # filter
             LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
             logger.log_images(files, "Results", epoch + 1)
-
+            logger.log_images(sorted(save_dir.glob('val*.jpg')), "Validation", epoch + 1)
     torch.cuda.empty_cache()
     return results
 
