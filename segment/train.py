@@ -350,8 +350,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 #    return
 
                 # Mosaic plots
-                if mask_ratio != 1:
-                    masks = F.interpolate(masks[None].float(), (imgsz, imgsz), mode="bilinear", align_corners=False)[0]
                 if plots:
                     if ni < 3:
                         plot_images_and_masks(imgs, targets, masks, paths, save_dir / f"train_batch{ni}.jpg")
