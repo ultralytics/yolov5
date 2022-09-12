@@ -20,9 +20,27 @@ test: # test images (optional)
   - images/test2007
 
 # Classes
-nc: 20  # number of classes
-names: ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog',
-        'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']  # class names
+names:
+  0: aeroplane
+  1: bicycle
+  2: bird
+  3: boat
+  4: bottle
+  5: bus
+  6: car
+  7: cat
+  8: chair
+  9: cow
+  10: diningtable
+  11: dog
+  12: horse
+  13: motorbike
+  14: person
+  15: pottedplant
+  16: sheep
+  17: sofa
+  18: train
+  19: tvmonitor
 
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
@@ -47,12 +65,13 @@ download: |
       w = int(size.find('width').text)
       h = int(size.find('height').text)
 
+      names = list(yaml['names'].values())  # names list
       for obj in root.iter('object'):
           cls = obj.find('name').text
-          if cls in yaml['names'] and not int(obj.find('difficult').text) == 1:
+          if cls in names and int(obj.find('difficult').text) != 1:
               xmlbox = obj.find('bndbox')
               bb = convert_box((w, h), [float(xmlbox.find(x).text) for x in ('xmin', 'xmax', 'ymin', 'ymax')])
-              cls_id = yaml['names'].index(cls)  # class id
+              cls_id = names.index(cls)  # class id
               out_file.write(" ".join([str(a) for a in (cls_id, *bb)]) + '\n')
 
 

@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
+from utils import TryExcept, threaded
+
 
 def fitness(x):
     # Model fitness as a weighted combination of metrics
@@ -141,7 +143,7 @@ class ConfusionMatrix:
         """
         if detections is None:
             gt_classes = labels.int()
-            for i, gc in enumerate(gt_classes):
+            for gc in gt_classes:
                 self.matrix[self.nc, gc] += 1  # background FN
             return
 
@@ -184,36 +186,35 @@ class ConfusionMatrix:
         # fn = self.matrix.sum(0) - tp  # false negatives (missed detections)
         return tp[:-1], fp[:-1]  # remove background class
 
+    @TryExcept('WARNING: ConfusionMatrix plot failure: ')
     def plot(self, normalize=True, save_dir='', names=()):
-        try:
-            import seaborn as sn
+        import seaborn as sn
 
-            array = self.matrix / ((self.matrix.sum(0).reshape(1, -1) + 1E-9) if normalize else 1)  # normalize columns
-            array[array < 0.005] = np.nan  # don't annotate (would appear as 0.00)
+        array = self.matrix / ((self.matrix.sum(0).reshape(1, -1) + 1E-9) if normalize else 1)  # normalize columns
+        array[array < 0.005] = np.nan  # don't annotate (would appear as 0.00)
 
-            fig = plt.figure(figsize=(12, 9), tight_layout=True)
-            nc, nn = self.nc, len(names)  # number of classes, names
-            sn.set(font_scale=1.0 if nc < 50 else 0.8)  # for label size
-            labels = (0 < nn < 99) and (nn == nc)  # apply names to ticklabels
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore')  # suppress empty matrix RuntimeWarning: All-NaN slice encountered
-                sn.heatmap(array,
-                           annot=nc < 30,
-                           annot_kws={
-                               "size": 8},
-                           cmap='Blues',
-                           fmt='.2f',
-                           square=True,
-                           vmin=0.0,
-                           xticklabels=names + ['background FP'] if labels else "auto",
-                           yticklabels=names + ['background FN'] if labels else "auto").set_facecolor((1, 1, 1))
-            fig.axes[0].set_xlabel('True')
-            fig.axes[0].set_ylabel('Predicted')
-            plt.title('Confusion Matrix')
-            fig.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
-            plt.close()
-        except Exception as e:
-            print(f'WARNING: ConfusionMatrix plot failure: {e}')
+        fig, ax = plt.subplots(1, 1, figsize=(12, 9), tight_layout=True)
+        nc, nn = self.nc, len(names)  # number of classes, names
+        sn.set(font_scale=1.0 if nc < 50 else 0.8)  # for label size
+        labels = (0 < nn < 99) and (nn == nc)  # apply names to ticklabels
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')  # suppress empty matrix RuntimeWarning: All-NaN slice encountered
+            sn.heatmap(array,
+                       ax=ax,
+                       annot=nc < 30,
+                       annot_kws={
+                           "size": 8},
+                       cmap='Blues',
+                       fmt='.2f',
+                       square=True,
+                       vmin=0.0,
+                       xticklabels=names + ['background FP'] if labels else "auto",
+                       yticklabels=names + ['background FN'] if labels else "auto").set_facecolor((1, 1, 1))
+        ax.set_ylabel('True')
+        ax.set_ylabel('Predicted')
+        ax.set_title('Confusion Matrix')
+        fig.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
+        plt.close(fig)
 
     def print(self):
         for i in range(self.nc + 1):
@@ -320,6 +321,7 @@ def wh_iou(wh1, wh2, eps=1e-7):
 # Plots ----------------------------------------------------------------------------------------------------------------
 
 
+@threaded
 def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=()):
     # Precision-recall curve
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
@@ -336,12 +338,13 @@ def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=()):
     ax.set_ylabel('Precision')
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
-    plt.title('Precision-Recall Curve')
+    ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+    ax.set_title('Precision-Recall Curve')
     fig.savefig(save_dir, dpi=250)
-    plt.close()
+    plt.close(fig)
 
 
+@threaded
 def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confidence', ylabel='Metric'):
     # Metric-confidence curve
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
@@ -358,7 +361,7 @@ def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confi
     ax.set_ylabel(ylabel)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
-    plt.title(f'{ylabel}-Confidence Curve')
+    ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+    ax.set_title(f'{ylabel}-Confidence Curve')
     fig.savefig(save_dir, dpi=250)
-    plt.close()
+    plt.close(fig)

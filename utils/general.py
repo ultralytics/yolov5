@@ -15,9 +15,9 @@ import re
 import shutil
 import signal
 import sys
-import threading
 import time
 import urllib
+from copy import deepcopy
 from datetime import datetime
 from itertools import repeat
 from multiprocessing.pool import ThreadPool
@@ -34,6 +34,7 @@ import torch
 import torchvision
 import yaml
 
+from utils import TryExcept
 from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
 
@@ -141,16 +142,27 @@ CONFIG_DIR = user_config_dir()  # Ultralytics settings dir
 
 
 class Profile(contextlib.ContextDecorator):
-    # Usage: @Profile() decorator or 'with Profile():' context manager
+    # YOLOv5 Profile class. Usage: @Profile() decorator or 'with Profile():' context manager
+    def __init__(self, t=0.0):
+        self.t = t
+        self.cuda = torch.cuda.is_available()
+
     def __enter__(self):
-        self.start = time.time()
+        self.start = self.time()
+        return self
 
     def __exit__(self, type, value, traceback):
-        print(f'Profile results: {time.time() - self.start:.5f}s')
+        self.dt = self.time() - self.start  # delta-time
+        self.t += self.dt  # accumulate dt
+
+    def time(self):
+        if self.cuda:
+            torch.cuda.synchronize()
+        return time.time()
 
 
 class Timeout(contextlib.ContextDecorator):
-    # Usage: @Timeout(seconds) decorator or 'with Timeout(seconds):' context manager
+    # YOLOv5 Timeout class. Usage: @Timeout(seconds) decorator or 'with Timeout(seconds):' context manager
     def __init__(self, seconds, *, timeout_msg='', suppress_timeout_errors=True):
         self.seconds = int(seconds)
         self.timeout_message = timeout_msg
@@ -184,64 +196,50 @@ class WorkingDirectory(contextlib.ContextDecorator):
         os.chdir(self.cwd)
 
 
-def try_except(func):
-    # try-except function. Usage: @try_except decorator
-    def handler(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except Exception as e:
-            print(e)
-
-    return handler
-
-
-def threaded(func):
-    # Multi-threads a target function and returns thread. Usage: @threaded decorator
-    def wrapper(*args, **kwargs):
-        thread = threading.Thread(target=func, args=args, kwargs=kwargs, daemon=True)
-        thread.start()
-        return thread
-
-    return wrapper
-
-
 def methods(instance):
     # Get class/instance methods
     return [f for f in dir(instance) if callable(getattr(instance, f)) and not f.startswith("__")]
 
 
-def print_args(args: Optional[dict] = None, show_file=True, show_fcn=False):
+def print_args(args: Optional[dict] = None, show_file=True, show_func=False):
     # Print function arguments (optional args dict)
     x = inspect.currentframe().f_back  # previous frame
-    file, _, fcn, _, _ = inspect.getframeinfo(x)
+    file, _, func, _, _ = inspect.getframeinfo(x)
     if args is None:  # get args automatically
         args, _, _, frm = inspect.getargvalues(x)
         args = {k: v for k, v in frm.items() if k in args}
-    s = (f'{Path(file).stem}: ' if show_file else '') + (f'{fcn}: ' if show_fcn else '')
+    try:
+        file = Path(file).resolve().relative_to(ROOT).with_suffix('')
+    except ValueError:
+        file = Path(file).stem
+    s = (f'{file}: ' if show_file else '') + (f'{func}: ' if show_func else '')
     LOGGER.info(colorstr(s) + ', '.join(f'{k}={v}' for k, v in args.items()))
 
 
 def init_seeds(seed=0, deterministic=False):
     # Initialize random number generator (RNG) seeds https://pytorch.org/docs/stable/notes/randomness.html
-    # cudnn seed 0 settings are slower and more reproducible, else faster and less reproducible
-    import torch.backends.cudnn as cudnn
-
-    if deterministic and check_version(torch.__version__, '1.12.0'):  # https://github.com/ultralytics/yolov5/pull/8213
-        torch.use_deterministic_algorithms(True)
-        os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-        os.environ['PYTHONHASHSEED'] = str(seed)
-
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    cudnn.benchmark, cudnn.deterministic = (False, True) if seed == 0 else (True, False)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # for Multi-GPU, exception safe
+    torch.backends.cudnn.benchmark = True  # for faster training
+    if deterministic and check_version(torch.__version__, '1.12.0'):  # https://github.com/ultralytics/yolov5/pull/8213
+        torch.use_deterministic_algorithms(True)
+        torch.backends.cudnn.deterministic = True
+        os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+        os.environ['PYTHONHASHSEED'] = str(seed)
 
 
 def intersect_dicts(da, db, exclude=()):
     # Dictionary intersection of matching keys and shapes, omitting 'exclude' keys, using da values
-    return {k: v for k, v in da.items() if k in db and not any(x in k for x in exclude) and v.shape == db[k].shape}
+    return {k: v for k, v in da.items() if k in db and all(x not in k for x in exclude) and v.shape == db[k].shape}
+
+
+def get_default_args(func):
+    # Get func() default arguments
+    signature = inspect.signature(func)
+    return {k: v.default for k, v in signature.parameters.items() if v.default is not inspect.Parameter.empty}
 
 
 def get_latest_run(search_dir='.'):
@@ -298,9 +296,9 @@ def git_describe(path=ROOT):  # path must be a directory
         return ''
 
 
-@try_except
+@TryExcept()
 @WorkingDirectory(ROOT)
-def check_git_status(repo='ultralytics/yolov5'):
+def check_git_status(repo='ultralytics/yolov5', branch='master'):
     # YOLOv5 status check, recommend 'git pull' if code is out of date
     url = f'https://github.com/{repo}'
     msg = f', for updates see {url}'
@@ -316,10 +314,10 @@ def check_git_status(repo='ultralytics/yolov5'):
         remote = 'ultralytics'
         check_output(f'git remote add {remote} {url}', shell=True)
     check_output(f'git fetch {remote}', shell=True, timeout=5)  # git fetch
-    branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
-    n = int(check_output(f'git rev-list {branch}..{remote}/master --count', shell=True))  # commits behind
+    local_branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).decode().strip()  # checked out
+    n = int(check_output(f'git rev-list {local_branch}..{remote}/{branch} --count', shell=True))  # commits behind
     if n > 0:
-        pull = 'git pull' if remote == 'origin' else f'git pull {remote} master'
+        pull = 'git pull' if remote == 'origin' else f'git pull {remote} {branch}'
         s += f"⚠️ YOLOv5 is out of date by {n} commit{'s' * (n > 1)}. Use `{pull}` or `git clone {url}` to update."
     else:
         s += f'up to date with {url} ✅'
@@ -335,49 +333,47 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
     # Check version vs. required version
     current, minimum = (pkg.parse_version(x) for x in (current, minimum))
     result = (current == minimum) if pinned else (current >= minimum)  # bool
-    s = f'{name}{minimum} required by YOLOv5, but {name}{current} is currently installed'  # string
+    s = f'WARNING: ⚠️ {name}{minimum} is required by YOLOv5, but {name}{current} is currently installed'  # string
     if hard:
-        assert result, s  # assert min requirements met
+        assert result, emojis(s)  # assert min requirements met
     if verbose and not result:
         LOGGER.warning(s)
     return result
 
 
-@try_except
-def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True, cmds=()):
-    # Check installed dependencies meet requirements (pass *.txt file or list of packages)
+@TryExcept()
+def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), install=True, cmds=''):
+    # Check installed dependencies meet YOLOv5 requirements (pass *.txt file or list of packages or single package str)
     prefix = colorstr('red', 'bold', 'requirements:')
     check_python()  # check python version
-    if isinstance(requirements, (str, Path)):  # requirements.txt file
-        file = Path(requirements)
-        assert file.exists(), f"{prefix} {file.resolve()} not found, check failed."
+    if isinstance(requirements, Path):  # requirements.txt file
+        file = requirements.resolve()
+        assert file.exists(), f"{prefix} {file} not found, check failed."
         with file.open() as f:
             requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(f) if x.name not in exclude]
-    else:  # list or tuple of packages
-        requirements = [x for x in requirements if x not in exclude]
+    elif isinstance(requirements, str):
+        requirements = [requirements]
 
-    n = 0  # number of packages updates
-    for i, r in enumerate(requirements):
+    s = ''
+    n = 0
+    for r in requirements:
         try:
             pkg.require(r)
-        except Exception:  # DistributionNotFound or VersionConflict if requirements not met
-            s = f"{prefix} {r} not found and is required by YOLOv5"
-            if install and AUTOINSTALL:  # check environment variable
-                LOGGER.info(f"{s}, attempting auto-update...")
-                try:
-                    assert check_online(), f"'pip install {r}' skipped (offline)"
-                    LOGGER.info(check_output(f'pip install "{r}" {cmds[i] if cmds else ""}', shell=True).decode())
-                    n += 1
-                except Exception as e:
-                    LOGGER.warning(f'{prefix} {e}')
-            else:
-                LOGGER.info(f'{s}. Please install and rerun your command.')
+        except (pkg.VersionConflict, pkg.DistributionNotFound):  # exception if requirements not met
+            s += f'"{r}" '
+            n += 1
 
-    if n:  # if packages updated
-        source = file.resolve() if 'file' in locals() else requirements
-        s = f"{prefix} {n} package{'s' * (n > 1)} updated per {source}\n" \
-            f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
-        LOGGER.info(s)
+    if s and install and AUTOINSTALL:  # check environment variable
+        LOGGER.info(f"{prefix} YOLOv5 requirement{'s' * (n > 1)} {s}not found, attempting AutoUpdate...")
+        try:
+            assert check_online(), "AutoUpdate skipped (offline)"
+            LOGGER.info(check_output(f'pip install {s} {cmds}', shell=True).decode())
+            source = file if 'file' in locals() else requirements
+            s = f"{prefix} {n} package{'s' * (n > 1)} updated per {source}\n" \
+                f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
+            LOGGER.info(s)
+        except Exception as e:
+            LOGGER.warning(f'{prefix} {e}')
 
 
 def check_img_size(imgsz, s=32, floor=0):
@@ -456,7 +452,7 @@ def check_font(font=FONT, progress=False):
     font = Path(font)
     file = CONFIG_DIR / font.name
     if not font.exists() and not file.exists():
-        url = "https://ultralytics.com/assets/" + font.name
+        url = f'https://ultralytics.com/assets/{font.name}'
         LOGGER.info(f'Downloading {url} to {file}...')
         torch.hub.download_url_to_file(url, str(file), progress=progress)
 
@@ -477,11 +473,11 @@ def check_dataset(data, autodownload=True):
             data = yaml.safe_load(f)  # dictionary
 
     # Checks
-    for k in 'train', 'val', 'nc':
+    for k in 'train', 'val', 'names':
         assert k in data, f"data.yaml '{k}:' field missing ❌"
-    if 'names' not in data:
-        LOGGER.warning("data.yaml 'names:' field missing ⚠️, assigning default names 'class0', 'class1', etc.")
-        data['names'] = [f'class{i}' for i in range(data['nc'])]  # default names
+    if isinstance(data['names'], (list, tuple)):  # old array format
+        data['names'] = dict(enumerate(data['names']))  # convert to dict
+    data['nc'] = len(data['names'])
 
     # Resolve paths
     path = Path(extract_dir or data.get('path') or '')  # optional 'path' default to '.'
@@ -535,18 +531,30 @@ def check_amp(model):
 
     prefix = colorstr('AMP: ')
     device = next(model.parameters()).device  # get model device
-    if device.type == 'cpu':
-        return False  # AMP disabled on CPU
+    if device.type in ('cpu', 'mps'):
+        return False  # AMP only used on CUDA devices
     f = ROOT / 'data' / 'images' / 'bus.jpg'  # image to check
     im = f if f.exists() else 'https://ultralytics.com/images/bus.jpg' if check_online() else np.ones((640, 640, 3))
     try:
-        assert amp_allclose(model, im) or amp_allclose(DetectMultiBackend('yolov5n.pt', device), im)
+        assert amp_allclose(deepcopy(model), im) or amp_allclose(DetectMultiBackend('yolov5n.pt', device), im)
         LOGGER.info(f'{prefix}checks passed ✅')
         return True
     except Exception:
         help_url = 'https://github.com/ultralytics/yolov5/issues/7908'
         LOGGER.warning(f'{prefix}checks failed ❌, disabling Automatic Mixed Precision. See {help_url}')
         return False
+
+
+def yaml_load(file='data.yaml'):
+    # Single-line safe yaml loading
+    with open(file, errors='ignore') as f:
+        return yaml.safe_load(f)
+
+
+def yaml_save(file='data.yaml', data={}):
+    # Single-line safe yaml saving
+    with open(file, 'w') as f:
+        yaml.safe_dump({k: str(v) if isinstance(v, Path) else v for k, v in data.items()}, f, sort_keys=False)
 
 
 def url2file(url):
@@ -556,7 +564,7 @@ def url2file(url):
 
 
 def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry=3):
-    # Multi-threaded file download and unzip function, used in data.yaml for autodownload
+    # Multithreaded file download and unzip function, used in data.yaml for autodownload
     def download_one(url, dir):
         # Download 1 file
         success = True
@@ -568,7 +576,8 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
             for i in range(retry + 1):
                 if curl:
                     s = 'sS' if threads > 1 else ''  # silent
-                    r = os.system(f'curl -{s}L "{url}" -o "{f}" --retry 9 -C -')  # curl download with retry, continue
+                    r = os.system(
+                        f'curl -# -{s}L "{url}" -o "{f}" --retry 9 -C -')  # curl download with retry, continue
                     success = r == 0
                 else:
                     torch.hub.download_url_to_file(url, f, progress=threads == 1)  # torch download
@@ -595,7 +604,7 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
     dir.mkdir(parents=True, exist_ok=True)  # make directory
     if threads > 1:
         pool = ThreadPool(threads)
-        pool.imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # multi-threaded
+        pool.imap(lambda x: download_one(*x), zip(url, repeat(dir)))  # multithreaded
         pool.close()
         pool.join()
     else:
@@ -802,6 +811,9 @@ def non_max_suppression(prediction,
     Returns:
          list of detections, on (n,6) tensor per image [xyxy, conf, cls]
     """
+
+    if isinstance(prediction, (list, tuple)):  # YOLOv5 model in validation model, output = (inference_out, loss_out)
+        prediction = prediction[0]  # select only inference output
 
     bs = prediction.shape[0]  # batch size
     nc = prediction.shape[2] - 5  # number of classes

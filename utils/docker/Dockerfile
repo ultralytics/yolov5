@@ -15,7 +15,7 @@ RUN apt update && apt install --no-install-recommends -y zip htop screen libgl1-
 # Install pip packages
 COPY requirements.txt .
 RUN python -m pip install --upgrade pip wheel
-RUN pip uninstall -y Pillow torchtext  # torch torchvision
+RUN pip uninstall -y Pillow torchtext torch torchvision
 RUN pip install --no-cache -r requirements.txt albumentations wandb gsutil notebook Pillow>=9.1.0 \
     'opencv-python<4.6.0.66' \
     --extra-index-url https://download.pytorch.org/whl/cu113
@@ -49,11 +49,8 @@ ENV OMP_NUM_THREADS=8
 # Kill all image-based
 # sudo docker kill $(sudo docker ps -qa --filter ancestor=ultralytics/yolov5:latest)
 
-# Bash into running container
-# sudo docker exec -it 5a9b5863d93d bash
-
-# Bash into stopped container
-# id=$(sudo docker ps -qa) && sudo docker start $id && sudo docker exec -it $id bash
+# DockerHub tag update
+# t=ultralytics/yolov5:latest tnew=ultralytics/yolov5:v6.2 && sudo docker pull $t && sudo docker tag $t $tnew && sudo docker push $tnew
 
 # Clean up
 # docker system prune -a --volumes

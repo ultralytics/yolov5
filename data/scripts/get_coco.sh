@@ -33,7 +33,7 @@ else
   f='coco2017labels.zip' # 168 MB
 fi
 echo 'Downloading' $url$f ' ...'
-curl -L $url$f -o $f && unzip -q $f -d $d && rm $f &
+curl -L $url$f -o $f -# && unzip -q $f -d $d && rm $f &
 
 # Download/unzip images
 d='../datasets/coco/images' # unzip directory
@@ -41,16 +41,16 @@ url=http://images.cocodataset.org/zips/
 if [ "$train" == "true" ]; then
   f='train2017.zip' # 19G, 118k images
   echo 'Downloading' $url$f '...'
-  curl -L $url$f -o $f && unzip -q $f -d $d && rm $f &
+  curl -L $url$f -o $f -# && unzip -q $f -d $d && rm $f &
 fi
 if [ "$val" == "true" ]; then
   f='val2017.zip' # 1G, 5k images
   echo 'Downloading' $url$f '...'
-  curl -L $url$f -o $f && unzip -q $f -d $d && rm $f &
+  curl -L $url$f -o $f -# && unzip -q $f -d $d && rm $f &
 fi
 if [ "$test" == "true" ]; then
   f='test2017.zip' # 7G, 41k images (optional)
   echo 'Downloading' $url$f '...'
-  curl -L $url$f -o $f && unzip -q $f -d $d && rm $f &
+  curl -L $url$f -o $f -# && unzip -q $f -d $d && rm $f &
 fi
 wait # finish background tasks

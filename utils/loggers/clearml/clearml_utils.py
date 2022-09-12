@@ -3,20 +3,22 @@ import glob
 import re
 from pathlib import Path
 
+import numpy as np
 import yaml
-from torchvision.transforms import ToPILImage
+
+from utils.plots import Annotator, colors
 
 try:
     import clearml
     from clearml import Dataset, Task
-    from torchvision.utils import draw_bounding_boxes  # WARNING: requires torchvision>=0.9.0
-
     assert hasattr(clearml, '__version__')  # verify package import not local dir
 except (ImportError, AssertionError):
     clearml = None
 
 
 def construct_dataset(clearml_info_string):
+    """Load in a clearml dataset and fill the internal data_dict with its contents.
+    """
     dataset_id = clearml_info_string.replace('clearml://', '')
     dataset = Dataset.get(dataset_id=dataset_id)
     dataset_root_path = Path(dataset.get_local_copy())
@@ -120,9 +122,9 @@ class ClearmlLogger:
                                                     local_path=str(f),
                                                     iteration=iteration)
 
-    def log_image_with_boxes(self, image_path, boxes, class_names, image):
+    def log_image_with_boxes(self, image_path, boxes, class_names, image, conf_threshold=0.25):
         """
-        Draw the bounding boxes on a single image and report the result as a ClearML debug sample
+        Draw the bounding boxes on a single image and report the result as a ClearML debug sample.
 
         arguments:
         image_path (PosixPath) the path the original image file
@@ -133,16 +135,20 @@ class ClearmlLogger:
         if len(self.current_epoch_logged_images) < self.max_imgs_to_log_per_epoch and self.current_epoch >= 0:
             # Log every bbox_interval times and deduplicate for any intermittend extra eval runs
             if self.current_epoch % self.bbox_interval == 0 and image_path not in self.current_epoch_logged_images:
-                converter = ToPILImage()
-                labels = []
-                for conf, class_nr in zip(boxes[:, 4], boxes[:, 5]):
+                im = np.ascontiguousarray(np.moveaxis(image.mul(255).clamp(0, 255).byte().cpu().numpy(), 0, 2))
+                annotator = Annotator(im=im, pil=True)
+                for i, (conf, class_nr, box) in enumerate(zip(boxes[:, 4], boxes[:, 5], boxes[:, :4])):
+                    color = colors(i)
+
                     class_name = class_names[int(class_nr)]
-                    confidence = round(float(conf) * 100, 2)
-                    labels.append(f"{class_name}: {confidence}%")
-                annotated_image = converter(
-                    draw_bounding_boxes(image=image.mul(255).clamp(0, 255).byte().cpu(),
-                                        boxes=boxes[:, :4],
-                                        labels=labels))
+                    confidence_percentage = round(float(conf) * 100, 2)
+                    label = f"{class_name}: {confidence_percentage}%"
+
+                    if conf > conf_threshold:
+                        annotator.rectangle(box.cpu().numpy(), outline=color)
+                        annotator.box_label(box.cpu().numpy(), label=label, color=color)
+
+                annotated_image = annotator.result()
                 self.task.get_logger().report_image(title='Bounding Boxes',
                                                     series=image_path.name,
                                                     iteration=self.current_epoch,
