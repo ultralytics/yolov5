@@ -322,7 +322,14 @@ def run(
 
         # Metrics
         for si, pred in enumerate(out):
-            pred = torch.Tensor(pred.predictions)
+            pred = torch.cat(
+                (
+                    torch.tensor(pred.boxes),
+                    torch.tensor(pred.scores),
+                    torch.tensor(pred.labels),
+                ),
+                -1,
+            )
             labels = targets[targets[:, 0] == si, 1:]
             nl = len(labels)
             tcls = labels[:, 0].tolist() if nl else []  # target class
