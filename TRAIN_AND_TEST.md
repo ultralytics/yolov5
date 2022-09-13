@@ -72,7 +72,7 @@ The command below trains the datasets in the yaml file with the following argume
 - exist-ok(optional): if it's okay to overwrite the existing output subfolder
 
 ```bash
-python -m train --img 640 --batch 16 --epoch 600 --data ./config/example.yaml --weights ./pretrained-models/yolov5s.pt --project ./training --name example --exist-ok
+python -m yolov5.train --img 640 --batch 16 --epoch 600 --data ./config/example.yaml --weights ./pretrained-models/yolov5s.pt --project ./training --name example --exist-ok
 ```
 
 ## Monitor the training progress
@@ -103,7 +103,7 @@ The command below run the inference using the following arguments:
 - save-csv: save the outputs as a csv file
 
 ```bash
-python -m detect --source ./data/resized_640_yolo/images --weights ./trained-inference-models/example/best.pt --img 640 --project ./validation --name example --save-csv
+python -m yolov5.detect --source ./data/resized_640_yolo/images --weights ./trained-inference-models/example/best.pt --img 640 --project ./validation --name example --save-csv
 ```
 The output results are saved in `./validation/example`.
 
