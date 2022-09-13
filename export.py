@@ -182,13 +182,14 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
 
 
 @try_export
-def export_onnx_for_backend(model, im, file, opset, nms_cfg, dynamic, simplify, prefix=colorstr('ONNX:')):
-    # YOLOv5 ONNX export
+def export_end2end(model, im, file, opset, nms_cfg, dynamic, simplify, prefix=colorstr('ONNX:')):
+    # YOLOv5 end2end ONNX export
     check_requirements('onnx')
     import onnx
 
-    LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
+    LOGGER.info(f'\n{prefix} starting export end2end with onnx {onnx.__version__}...')
     f = file.with_suffix('.onnx')
+    dynamic_cfg = {}
 
     from models.common import End2End
     model = End2End(model, *nms_cfg, device=im.device)
@@ -196,11 +197,13 @@ def export_onnx_for_backend(model, im, file, opset, nms_cfg, dynamic, simplify, 
         output_names = ['outputs']
     elif nms_cfg[-1] == 'trt':
         output_names = ['num_dets', 'det_boxes', 'det_scores', 'det_classes']
+    else:
+        raise NotImplementedError
 
-    if dynamic and nms_cfg[-1] == 'ort':
+    if dynamic:
+        LOGGER.warning(f'\n{prefix} dynamic axes for end2end model only support dynamic batch ...')
         dynamic_cfg = {n: {0: 'batch'} for n in output_names}
-    elif dynamic and nms_cfg[-1] == 'trt':
-        dynamic_cfg = {n: {0: 'batch'} for n in output_names}
+        dynamic_cfg['images'] = {0: 'batch'}
 
     torch.onnx.export(
         model.cpu() if dynamic else model,  # --dynamic only compatible with cpu
@@ -212,7 +215,7 @@ def export_onnx_for_backend(model, im, file, opset, nms_cfg, dynamic, simplify, 
         do_constant_folding=True,
         input_names=['images'],
         output_names=output_names,
-        dynamic_axes=dynamic_cfg if dynamic else None)
+        dynamic_axes=dynamic_cfg)
 
     # Checks
     model_onnx = onnx.load(f)  # load onnx model
@@ -579,7 +582,7 @@ def run(
     LOGGER.info(f"\n{colorstr('PyTorch:')} starting from {file} with output shape {shape} ({file_size(file):.1f} MB)")
 
     # Exports
-    f = [''] * (len(fmts)+1)  # exported filenames
+    f = [''] * (len(fmts) + 1)  # exported filenames
     warnings.filterwarnings(action='ignore', category=torch.jit.TracerWarning)  # suppress TracerWarning
     if jit:  # TorchScript
         f[0], _ = export_torchscript(model, im, file, optimize)
@@ -620,7 +623,7 @@ def run(
 
     if end2end:
         nms_cfg = [topk_all, iou_thres, conf_thres, backend]
-        f[11], _ = export_onnx_for_backend(model, im, file, opset, nms_cfg, dynamic, simplify)
+        f[11], _ = export_end2end(model, im, file, opset, nms_cfg, dynamic, simplify)
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
     if any(f):
