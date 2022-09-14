@@ -16,9 +16,11 @@ Usage - formats:
                               yolov5s.pb                 # TensorFlow GraphDef
                               yolov5s.tflite             # TensorFlow Lite
                               yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
+                              yolov5s_paddle_model       # PaddlePaddle
 """
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -106,23 +108,25 @@ def run(
         task='val',  # train, val, test, speed or study
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         workers=8,  # max dataloader workers (per RANK in DDP mode)
+        single_cls=False,  # treat as single-class dataset
         augment=False,  # augmented inference
         verbose=False,  # verbose output
         save_txt=False,  # save results to *.txt
         save_hybrid=False,  # save label+prediction hybrid results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
+        save_json=False,  # save a COCO-JSON results file
         project=ROOT / 'runs/val',  # save to project/name
         name='exp',  # save to project/name
         exist_ok=False,  # existing project/name ok, do not increment
         half=True,  # use FP16 half-precision inference
+        dnn=False,  # use OpenCV DNN for ONNX inference
         model=None,
         dataloader=None,
         save_dir=Path(''),
         plots=True,
         callbacks=Callbacks(),
         compute_loss=None,
-        bg=False,
-        area=(0,32),
+        size_conf=None,
 ):
     # Initialize/load model and set device
     training = model is not None
@@ -138,7 +142,7 @@ def run(
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
         # Load model
-        model = DetectMultiBackend(weights, device=device, data=data, fp16=half)
+        model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
         stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
         imgsz = check_img_size(imgsz, s=stride)  # check image size
         half = model.fp16  # FP16 supported on limited backends with CUDA
@@ -157,13 +161,13 @@ def run(
     model.eval()
     cuda = device.type != 'cpu'
     is_coco = isinstance(data.get('val'), str) and data['val'].endswith(f'coco{os.sep}val2017.txt')  # COCO dataset
-    nc = int(data['nc'])  # number of classes
+    nc = 1 if single_cls else int(data['nc'])  # number of classes
     iouv = torch.linspace(0.5, 0.95, 10, device=device)  # iou vector for mAP@0.5:0.95
     niou = iouv.numel()
 
     # Dataloader
     if not training:
-        if pt:  # check --weights are trained on --data
+        if pt and not single_cls:  # check --weights are trained on --data
             ncm = model.model.nc
             assert ncm == nc, f'{weights} ({ncm} classes) trained on different --data than what you passed ({nc} ' \
                               f'classes). Pass correct combination of --weights and --data that are trained together.'
@@ -175,19 +179,15 @@ def run(
                                        imgsz,
                                        batch_size,
                                        stride,
-                                       False,
+                                       single_cls,
                                        pad=pad,
                                        rect=rect,
                                        workers=workers,
                                        prefix=colorstr(f'{task}: '),
-                                       size_range=(area[0]**2,area[1]**2))[0]
+                                       size_conf=size_conf)[0]
 
     seen = 0
-
-    if bg:
-        confusion_matrix_log_load = np.load(f'log/confusion_matrix_c{conf_thres*100}_i{iou_thres*100}.npy')
     confusion_matrix = ConfusionMatrix(nc=nc, conf=conf_thres, iou_thres=iou_thres)
-
     names = model.names if hasattr(model, 'names') else model.module.names  # get class names
     if isinstance(names, (list, tuple)):  # old format
         names = dict(enumerate(names))
@@ -220,11 +220,10 @@ def run(
         targets[:, 2:] *= torch.tensor((width, height, width, height), device=device)  # to pixels
         lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
         with dt[2]:
-            out = non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=False)
+            out = non_max_suppression(out, conf_thres, iou_thres, labels=lb, multi_label=True, agnostic=single_cls)
 
         # Metrics
         for si, pred in enumerate(out):
-            img_idx = batch_i * batch_size + si
             labels = targets[targets[:, 0] == si, 1:]
             nl, npr = labels.shape[0], pred.shape[0]  # number of labels, predictions
             path, shape = Path(paths[si]), shapes[si][0]
@@ -239,6 +238,8 @@ def run(
                 continue
 
             # Predictions
+            if single_cls:
+                pred[:, 5] = 0
             predn = pred.clone()
             scale_coords(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
 
@@ -255,6 +256,8 @@ def run(
             # Save/log
             if save_txt:
                 save_one_txt(predn, save_conf, shape, file=save_dir / 'labels' / f'{path.stem}.txt')
+            if save_json:
+                save_one_json(predn, jdict, path, class_map)  # append to COCO-JSON dictionary
             callbacks.run('on_val_image_end', pred, predn, path, names, im[si])
 
         # Plot images
@@ -262,17 +265,9 @@ def run(
             plot_images(im, targets, paths, save_dir / f'val_batch{batch_i}_labels.jpg', names)  # labels
             plot_images(im, output_to_target(out), paths, save_dir / f'val_batch{batch_i}_pred.jpg', names)  # pred
 
-        callbacks.run('on_val_batch_end')
-
-    if not bg:
-        np.save(f'log/confusion_matrix_c{conf_thres*100}_i{iou_thres*100}.npy',confusion_matrix.matrix)
+        callbacks.run('on_val_batch_end', batch_i, im, targets, paths, shapes, out)
 
     # Compute metrics
-    if bg:
-        confusion_matrix.matrix[:,nc] = confusion_matrix_log_load[:,nc]
-        confusion_matrix.matrix[nc,:] = confusion_matrix_log_load[nc,:]
-        confusion_matrix_select = confusion_matrix.matrix.copy()
-
     stats = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
         tp, fp, fn, p, r, f1, ap, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
@@ -300,7 +295,33 @@ def run(
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        callbacks.run('on_val_end')
+        callbacks.run('on_val_end', nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
+
+    # Save JSON
+    if save_json and len(jdict):
+        w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
+        anno_json = str(Path(data.get('path', '../coco')) / 'annotations/instances_val2017.json')  # annotations json
+        pred_json = str(save_dir / f"{w}_predictions.json")  # predictions json
+        LOGGER.info(f'\nEvaluating pycocotools mAP... saving {pred_json}...')
+        with open(pred_json, 'w') as f:
+            json.dump(jdict, f)
+
+        try:  # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb
+            check_requirements('pycocotools')
+            from pycocotools.coco import COCO
+            from pycocotools.cocoeval import COCOeval
+
+            anno = COCO(anno_json)  # init annotations api
+            pred = anno.loadRes(pred_json)  # init predictions api
+            eval = COCOeval(anno, pred, 'bbox')
+            if is_coco:
+                eval.params.imgIds = [int(Path(x).stem) for x in dataloader.dataset.im_files]  # image IDs to evaluate
+            eval.evaluate()
+            eval.accumulate()
+            eval.summarize()
+            map, map50 = eval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
+        except Exception as e:
+            LOGGER.info(f'pycocotools unable to run: {e}')
 
     # Return results
     model.float()  # for training
@@ -319,36 +340,34 @@ def parse_opt():
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--batch-size', type=int, default=32, help='batch size')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
-    parser.add_argument('--conf-thres', type=float, default=0.3, help='confidence threshold')
+    parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.6, help='NMS IoU threshold')
     parser.add_argument('--task', default='val', help='train, val, test, speed or study')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--workers', type=int, default=0, help='max dataloader workers (per RANK in DDP mode)')
+    parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
+    parser.add_argument('--single-cls', action='store_true', help='treat as single-class dataset')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-hybrid', action='store_true', help='save label+prediction hybrid results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
+    parser.add_argument('--save-json', action='store_true', help='save a COCO-JSON results file')
     parser.add_argument('--project', default=ROOT / 'runs/val', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
-    parser.add_argument('--bg', action='store_true', help='Get bg info')
-    parser.add_argument('--area',
-                        nargs='+',
-                        default=[0, 32],
-                        type=int,
-                        help='gt area from a to b')
+    parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     opt = parser.parse_args()
     opt.data = check_yaml(opt.data)  # check YAML
+    opt.save_json |= opt.data.endswith('coco.yaml')
     opt.save_txt |= opt.save_hybrid
-    opt.area = tuple(opt.area if len(opt.area)==2 else opt.area[:2])
+    opt.size_conf = {0: [0, 32], 1: [0, 32], 2: [0, 32], 3: [0, 32], 4: [0, 32], 5: [0, 32], 6: [0, 32], 7: [0, 32]}
     print_args(vars(opt))
     return opt
 
 
 def main(opt):
-    check_requirements(requirements=ROOT / 'requirements.txt', exclude=('tensorboard', 'thop'))
+    check_requirements(exclude=('tensorboard', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
         if opt.conf_thres > 0.001:  # https://github.com/ultralytics/yolov5/issues/1466
