@@ -248,6 +248,18 @@ def run(
                 tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
                 scale_coords(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
+                if size_conf is not None:
+                    size_thres = torch.tensor([size_conf[int(i)] for i in predn[:, 5]],
+                                              dtype=torch.float32,
+                                              device=device) ** 2
+                    areas = (predn[:, 2:4] - predn[:, 0:2]).prod(1)
+                    idx = (areas > size_thres[:, 0]) & (areas <= size_thres[:, 1])
+                    if idx.any():
+                        predn = predn[idx]
+                        pred = pred[idx]
+                    else:
+                        predn = torch.zeros((0, 6), dtype=torch.float32, device=device)
+                        pred = predn.clone()
                 correct = process_batch(predn, labelsn, iouv)
                 if plots:
                     confusion_matrix.process_batch(predn, labelsn)
@@ -344,7 +356,7 @@ def parse_opt():
     parser.add_argument('--iou-thres', type=float, default=0.6, help='NMS IoU threshold')
     parser.add_argument('--task', default='val', help='train, val, test, speed or study')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
+    parser.add_argument('--workers', type=int, default=0, help='max dataloader workers (per RANK in DDP mode)')
     parser.add_argument('--single-cls', action='store_true', help='treat as single-class dataset')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--verbose', action='store_true', help='report mAP by class')
@@ -361,7 +373,8 @@ def parse_opt():
     opt.data = check_yaml(opt.data)  # check YAML
     opt.save_json |= opt.data.endswith('coco.yaml')
     opt.save_txt |= opt.save_hybrid
-    opt.size_conf = {0: [0, 32], 1: [0, 32], 2: [0, 32], 3: [0, 32], 4: [0, 32], 5: [0, 32], 6: [0, 32], 7: [0, 32]}
+    # opt.size_conf = {0: [0, 32], 1: [0, 32], 2: [0, 32], 3: [0, 32], 4: [0, 32], 5: [0, 32], 6: [0, 32], 7: [0, 32]}
+    opt.size_conf = {i: [0, 32] for i in range(80)}
     print_args(vars(opt))
     return opt
 
