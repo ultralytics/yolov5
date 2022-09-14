@@ -5,6 +5,7 @@ Image augmentation functions
 
 import math
 import random
+from importlib import import_module
 
 import cv2
 import numpy as np
@@ -20,29 +21,84 @@ IMAGENET_STD = 0.229, 0.224, 0.225  # RGB standard deviation
 
 
 class Albumentations:
-    # YOLOv5 Albumentations class (optional, only used if package is installed)
-    def __init__(self):
-        self.transform = None
+    """ Load a list of Albumentation-compatible transforms from hyp files.
+        It is used only if package is installed.
+    """
+    def __init__(self, hyp):
         prefix = colorstr('albumentations: ')
+        transform = None
+
+        # get config from hyps file
+        config = hyp.get('albumentations')
+        if config is None:
+            LOGGER.info(f'{prefix}no albumentation transforms set in hyps')
+        elif not isinstance(config, list):
+            LOGGER.error(f'{prefix}invalid format in hyps (list of dict expected)')
+        elif len(config) == 0:
+            LOGGER.info(f'{prefix}no albumentation transforms set in hyps')
+        else:
+            # some transforms are to be loaded
+            # try to load the module iif required
+            try:
+                import albumentations as A
+                check_version(A.__version__, '1.0.3', hard=True)            
+            except ImportError:
+                LOGGER.error(f'{prefix} albumentations module not available (hyps.albumentations ignored)')
+            except Exception as what:
+                LOGGER.error(f'{prefix} albumentations module not available (hyps.albumentations ignored)')
+            else:
+                # try to load transforms
+                transforms = filter(
+                    lambda t: t is not None, 
+                    [
+                        self.load_one_transform(cid, cfg, A, prefix)
+                        for cid, cfg in enumerate(config)
+                    ]
+                )
+                # combine transforms
+                transform  = A.Compose(
+                    list(transforms), 
+                    bbox_params=A.BboxParams(
+                        format='yolo', 
+                        label_fields=['class_labels']
+                    )
+                )
+        self.transform = transform
+
+    @staticmethod
+    def load_one_transform(cid: int, config, A, prefix):
         try:
-            import albumentations as A
-            check_version(A.__version__, '1.0.3', hard=True)  # version requirement
+            assert isinstance(config, dict), 'dict required'
+            assert 'name' in config, 'missing key "name"' 
+            name = config['name']
+            assert 'p' in config, 'missing key "p"'
+            try:
+                p = float(config['p'])
+            except Exception:
+                raise Exception('p must be a float')
+            assert 0.0 < p <= 1.0, 'p must be on ]0;1]'
+            params = config.get('params', {})
+            module_name = config.get('module')
+            if module_name is None:
+                module = A
+            else:
+                # load module from name
+                try:
+                    module = import_module(module_name)
+                except Exception:
+                    raise Exception('module "%s" not found' % module_name)
+                # load Transform class from module
+                try:
+                    Transform = getattr(module, name)
+                except Exception:
+                    raise Exception('"%s" not found in module "%s"' % (name, module_name))
+                # build the transform with all params
+                return Transform(p=p, **params)
 
-            T = [
-                A.Blur(p=0.01),
-                A.MedianBlur(p=0.01),
-                A.ToGray(p=0.01),
-                A.CLAHE(p=0.01),
-                A.RandomBrightnessContrast(p=0.0),
-                A.RandomGamma(p=0.0),
-                A.ImageCompression(quality_lower=75, p=0.0)]  # transforms
-            self.transform = A.Compose(T, bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
+        except Exception as what:
+            LOGGER.error('bad albumentations transform config @%d : %s' % (cid, what))
+            return None
 
-            LOGGER.info(prefix + ', '.join(f'{x}'.replace('always_apply=False, ', '') for x in T if x.p))
-        except ImportError:  # package not installed, skip
-            pass
-        except Exception as e:
-            LOGGER.info(f'{prefix}{e}')
 
     def __call__(self, im, labels, p=1.0):
         if self.transform and random.random() < p:
