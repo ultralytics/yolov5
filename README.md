@@ -367,5 +367,5 @@ professional support requests please visit [https://ultralytics.com/contact](htt
     <img src="https://github.com/ultralytics/assets/raw/master/social/logo-social-instagram.png" width="3%" alt="" /></a>
 </div>
 
-[assets]: https://github.com/ultralytics/yolov5/releases
+[assets]: https://github.com/ultralyti cs/yolov5/releases
 [tta]: https://github.com/ultralytics/yolov5/issues/303
