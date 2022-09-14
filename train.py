@@ -513,12 +513,12 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         for f in last, best:
             if f.exists():
                 strip_optimizer(f)  # strip optimizers
-                if f is best:
+                if f is last:
                     LOGGER.info(f'\nValidating {f}...')
                     results, _, _ = val.run(data_dict,
                                             batch_size=batch_size // WORLD_SIZE * 2,
                                             imgsz=imgsz,
-                                            model=load_checkpoint(type_='ensemble', weights=best, device=device)[0],
+                                            model=load_checkpoint(type_='ensemble', weights=last, device=device)[0],
                                             iou_thres=0.65 if is_coco else 0.60,  # best pycocotools results at 0.65
                                             single_cls=single_cls,
                                             dataloader=val_loader,
