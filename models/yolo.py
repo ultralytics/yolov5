@@ -60,6 +60,8 @@ class Detect(nn.Module):
             x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
             if not self.training:  # inference
+                grid = [torch.empty(1)] * self.nl  # init grid
+                anchor_grid = [torch.empty(1)] * self.nl  # init anchor grid
                 grid[i], anchor_grid[i] = self._make_grid(nx, ny, i)
 
                 y = x[i].sigmoid()
