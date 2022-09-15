@@ -30,6 +30,7 @@ jobs:
 
       - name: Build and push arm64 image
         uses: docker/build-push-action@v3
+        continue-on-error: true
         with:
           context: .
           platforms: linux/arm64
