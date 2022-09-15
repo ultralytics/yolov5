@@ -114,18 +114,18 @@ class Annotator:
                             thickness=tf,
                             lineType=cv2.LINE_AA)
 
-    def masks(self, masks, colors, img_gpu=None, alpha=0.5):
+    def masks(self, masks, colors, im_gpu=None, alpha=0.5):
         """Plot masks at once.
         Args:
             masks (tensor): predicted masks on cuda, shape: [n, h, w]
             colors (List[List[Int]]): colors for predicted masks, [[r, g, b] * n]
-            img_gpu (tensor): img is in cuda, shape: [3, h, w], range: [0, 1]
-            retina_masks (bool): whether to plot masks in native resolution.
+            im_gpu (tensor): img is in cuda, shape: [3, h, w], range: [0, 1]
+            alpha (float): mask transparency: 0.0 fully transparent, 1.0 opaque
         """
         if self.pil:
             # convert to numpy first
             self.im = np.asarray(self.im).copy()
-        if img_gpu is None:
+        if im_gpu is None:
             # Add multiple masks of shape(h,w,n) with colors list([r,g,b], [r,g,b], ...)
             if len(masks) == 0:
                 return
@@ -142,8 +142,8 @@ class Annotator:
             self.im[:] = masks * alpha + self.im * (1 - s * alpha)
         else:
             if len(masks) == 0:
-                self.im[:] = img_gpu.permute(1, 2, 0).contiguous().cpu().numpy() * 255
-            colors = torch.tensor(colors, device=img_gpu.device, dtype=torch.float32) / 255.0
+                self.im[:] = im_gpu.permute(1, 2, 0).contiguous().cpu().numpy() * 255
+            colors = torch.tensor(colors, device=im_gpu.device, dtype=torch.float32) / 255.0
             colors = colors[:, None, None]  # shape(n,1,1,3)
             masks = masks.unsqueeze(3)  # shape(n,h,w,1)
             masks_color = masks * (colors * alpha)  # shape(n,h,w,3)
@@ -151,11 +151,11 @@ class Annotator:
             inv_alph_masks = (1 - masks * alpha).cumprod(0)  # shape(n,h,w,1)
             mcs = (masks_color * inv_alph_masks).sum(0) * 2  # mask color summand shape(n,h,w,3)
 
-            img_gpu = img_gpu.flip(dims=[0])  # flip channel
-            img_gpu = img_gpu.permute(1, 2, 0).contiguous()  # shape(h,w,3)
-            img_gpu = img_gpu * inv_alph_masks[-1] + mcs
-            im_mask = (img_gpu * 255).byte().cpu().numpy()
-            self.im[:] = scale_image(img_gpu.shape, im_mask, self.im.shape)
+            im_gpu = im_gpu.flip(dims=[0])  # flip channel
+            im_gpu = im_gpu.permute(1, 2, 0).contiguous()  # shape(h,w,3)
+            im_gpu = im_gpu * inv_alph_masks[-1] + mcs
+            im_mask = (im_gpu * 255).byte().cpu().numpy()
+            self.im[:] = scale_image(im_gpu.shape, im_mask, self.im.shape)
         if self.pil:
             # convert im back to PIL and update draw
             self.fromarray(self.im)
