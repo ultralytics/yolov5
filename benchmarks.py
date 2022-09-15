@@ -34,16 +34,19 @@ from pathlib import Path
 import pandas as pd
 
 FILE = Path(__file__).resolve()
-ROOT = FILE.parents[1]  # YOLOv5 root directory
+ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 # ROOT = ROOT.relative_to(Path.cwd())  # relative
 
 import export
-import val
+from models.experimental import attempt_load
+from models.yolo import SegmentationModel
+from segment.val import run as val_seg
 from utils import notebook_init
 from utils.general import LOGGER, check_yaml, file_size, print_args
 from utils.torch_utils import select_device
+from val import run as val_det
 
 
 def run(
@@ -59,6 +62,7 @@ def run(
 ):
     y, t = [], time.time()
     device = select_device(device)
+    model_type = type(attempt_load(weights, fuse=False))  # DetectionModel, SegmentationModel, etc.
     for i, (name, f, suffix, cpu, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, CPU, GPU)
         try:
             assert i not in (9, 10, 11), 'inference not supported'  # Edge TPU, TF.js and Paddle are unsupported
@@ -76,10 +80,14 @@ def run(
             assert suffix in str(w), 'export failed'
 
             # Validate
-            result = val.run(data, w, batch_size, imgsz, plots=False, device=device, task='benchmark', half=half)
-            metrics = result[0]  # metrics (mp, mr, map50, map, *losses(box, obj, cls))
-            speeds = result[2]  # times (preprocess, inference, postprocess)
-            y.append([name, round(file_size(w), 1), round(metrics[3], 4), round(speeds[1], 2)])  # MB, mAP, t_inference
+            if model_type == SegmentationModel:
+                result = val_seg(data, w, batch_size, imgsz, plots=False, device=device, task='benchmark', half=half)
+                metric = result[0][7]  # (box(p, r, map50, map), mask(p, r, map50, map), *loss(box, obj, cls))
+            else:  # DetectionModel:
+                result = val_det(data, w, batch_size, imgsz, plots=False, device=device, task='benchmark', half=half)
+                metric = result[0][3]  # (p, r, map50, map, *loss(box, obj, cls))
+            speed = result[2][1]  # times (preprocess, inference, postprocess)
+            y.append([name, round(file_size(w), 1), round(metric, 4), round(speed, 2)])  # MB, mAP, t_inference
         except Exception as e:
             if hard_fail:
                 assert type(e) is AssertionError, f'Benchmark --hard-fail for {name}: {e}'
