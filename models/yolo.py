@@ -46,20 +46,22 @@ class Detect(nn.Module):
         self.no = nc + 5  # number of outputs per anchor
         self.nl = len(anchors)  # number of detection layers
         self.na = len(anchors[0]) // 2  # number of anchors
+        self.grid = [torch.empty(1)] * self.nl  # init grid
+        self.anchor_grid = [torch.empty(1)] * self.nl  # init anchor grid
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
         self.m = nn.ModuleList(nn.Conv2d(x, self.no * self.na, 1) for x in ch)  # output conv
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
 
     def forward(self, x):
         z = []  # inference output
-        grid = [torch.empty(1)] * self.nl  # init grid
-        anchor_grid = [torch.empty(1)] * self.nl  # init anchor grid
         for i in range(self.nl):
             x[i] = self.m[i](x[i])  # conv
             bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
             x[i] = x[i].view(bs, self.na, self.no, ny, nx).permute(0, 1, 3, 4, 2).contiguous()
 
             if not self.training:  # inference
+                grid = [torch.empty(1)] * self.nl  # init grid
+                anchor_grid = [torch.empty(1)] * self.nl  # init anchor grid
                 grid[i], anchor_grid[i] = self._make_grid(nx, ny, i)
 
                 y = x[i].sigmoid()
