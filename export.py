@@ -87,7 +87,7 @@ def export_formats():
         ['TensorFlow Lite', 'tflite', '.tflite', True, False],
         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
         ['TensorFlow.js', 'tfjs', '_web_model', False, False],
-        ['PaddlePaddle', 'paddle', '_paddle_model', True, True],]
+        ['PaddlePaddle', 'paddle', '_paddle_model', True, True], ]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
@@ -251,7 +251,7 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
         model.model[-1].anchor_grid = grid
     else:  # TensorRT >= 8
         check_version(trt.__version__, '8.0.0', hard=True)  # require tensorrt>=8.0.0
-        export_onnx(model, im, file, 13, False, dynamic, simplify)  # opset 13
+        export_onnx(model, im, file, 12, False, dynamic, simplify)  # opset 12
     onnx = file.with_suffix('.onnx')
 
     LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
@@ -274,11 +274,10 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
 
     inputs = [network.get_input(i) for i in range(network.num_inputs)]
     outputs = [network.get_output(i) for i in range(network.num_outputs)]
-    LOGGER.info(f'{prefix} Network Description:')
     for inp in inputs:
-        LOGGER.info(f'{prefix}\tinput "{inp.name}" with shape {inp.shape} and dtype {inp.dtype}')
+        LOGGER.info(f'{prefix} input "{inp.name}" with shape{inp.shape} {inp.dtype}')
     for out in outputs:
-        LOGGER.info(f'{prefix}\toutput "{out.name}" with shape {out.shape} and dtype {out.dtype}')
+        LOGGER.info(f'{prefix} output "{out.name}" with shape{out.shape} {out.dtype}')
 
     if dynamic:
         if im.shape[0] <= 1:
@@ -288,7 +287,7 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
             profile.set_shape(inp.name, (1, *im.shape[1:]), (max(1, im.shape[0] // 2), *im.shape[1:]), im.shape)
         config.add_optimization_profile(profile)
 
-    LOGGER.info(f'{prefix} building FP{16 if builder.platform_has_fast_fp16 and half else 32} engine in {f}')
+    LOGGER.info(f'{prefix} building FP{16 if builder.platform_has_fast_fp16 and half else 32} engine as {f}')
     if builder.platform_has_fast_fp16 and half:
         config.set_flag(trt.BuilderFlag.FP16)
     with builder.build_engine(network, config) as engine, open(f, 'wb') as t:
@@ -441,9 +440,9 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}}}', r'{"outputs": {"Identity": {"name": "Identity"}, '
-            r'"Identity_1": {"name": "Identity_1"}, '
-            r'"Identity_2": {"name": "Identity_2"}, '
-            r'"Identity_3": {"name": "Identity_3"}}}', json)
+                                                           r'"Identity_1": {"name": "Identity_1"}, '
+                                                           r'"Identity_2": {"name": "Identity_2"}, '
+                                                           r'"Identity_3": {"name": "Identity_3"}}}', json)
         j.write(subst)
     return f, None
 
