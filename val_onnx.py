@@ -275,6 +275,7 @@ def run(
 
     # Note: Only coco validation data is supported for now
     names = yolo_pipeline.class_names
+    label_to_idx = {v: k for k, v in names.items()}
 
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
     s = ("%20s" + "%11s" * 6) % (
@@ -322,7 +323,20 @@ def run(
 
         # Metrics
         for si, pred in enumerate(out):
-            pred = torch.Tensor(pred.predictions)
+            int_labels = torch.tensor(
+                [
+                    int(label_to_idx[l]) if l in label_to_idx else int(l)
+                    for l in pred.labels
+                ]
+            )
+            pred = torch.cat(
+                (
+                    torch.tensor(pred.boxes),
+                    torch.tensor(pred.scores).unsqueeze(1),
+                    int_labels.unsqueeze(1),
+                ),
+                -1,
+            )
             labels = targets[targets[:, 0] == si, 1:]
             nl = len(labels)
             tcls = labels[:, 0].tolist() if nl else []  # target class
