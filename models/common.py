@@ -698,14 +698,15 @@ class Detections:
         self.t = tuple(x.t / self.n * 1E3 for x in times)  # timestamps (ms)
         self.s = tuple(shape)  # inference BCHW shape
 
-    def display(self, pprint=False, show=False, save=False, crop=False, render=False, labels=True, save_dir=Path('')):
-        crops = []
+    def _run(self, pprint=False, show=False, save=False, crop=False, render=False, labels=True, save_dir=Path('')):
+        s, crops = '', []
         for i, (im, pred) in enumerate(zip(self.ims, self.pred)):
-            s = f'image {i + 1}/{len(self.pred)}: {im.shape[0]}x{im.shape[1]} '  # string
+            s += f'\nimage {i + 1}/{len(self.pred)}: {im.shape[0]}x{im.shape[1]} '  # string
             if pred.shape[0]:
                 for c in pred[:, -1].unique():
                     n = (pred[:, -1] == c).sum()  # detections per class
                     s += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
+                s = s.rstrip(', ')
                 if show or save or render or crop:
                     annotator = Annotator(im, example=str(self.names))
                     for *box, conf, cls in reversed(pred):  # xyxy, confidence, class
@@ -725,8 +726,6 @@ class Detections:
                 s += '(no detections)'
 
             im = Image.fromarray(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im  # from np
-            if pprint:
-                LOGGER.info(s.rstrip(', '))
             if show:
                 im.show(self.files[i])  # show
             if save:
@@ -736,28 +735,27 @@ class Detections:
                     LOGGER.info(f"Saved {self.n} image{'s' * (self.n > 1)} to {colorstr('bold', save_dir)}")
             if render:
                 self.ims[i] = np.asarray(im)
+        if pprint:
+            s = s.lstrip('\n')
+            return f'{s}\nSpeed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {self.s}' % self.t
         if crop:
             if save:
                 LOGGER.info(f'Saved results to {save_dir}\n')
             return crops
 
-    def print(self):
-        self.display(pprint=True)  # print results
-        LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {self.s}' % self.t)
-
     def show(self, labels=True):
-        self.display(show=True, labels=labels)  # show results
+        self._run(show=True, labels=labels)  # show results
 
     def save(self, labels=True, save_dir='runs/detect/exp'):
         save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True)  # increment save_dir
-        self.display(save=True, labels=labels, save_dir=save_dir)  # save results
+        self._run(save=True, labels=labels, save_dir=save_dir)  # save results
 
     def crop(self, save=True, save_dir='runs/detect/exp'):
         save_dir = increment_path(save_dir, exist_ok=save_dir != 'runs/detect/exp', mkdir=True) if save else None
-        return self.display(crop=True, save=save, save_dir=save_dir)  # crop results
+        return self._run(crop=True, save=save, save_dir=save_dir)  # crop results
 
     def render(self, labels=True):
-        self.display(render=True, labels=labels)  # render results
+        self._run(render=True, labels=labels)  # render results
         return self.ims
 
     def pandas(self):
@@ -779,12 +777,17 @@ class Detections:
         #        setattr(d, k, getattr(d, k)[0])  # pop out of list
         return x
 
-    def __len__(self):
-        return self.n  # override len(results)
+    def print(self):
+        LOGGER.info(self.__str__())
 
-    def __str__(self):
-        self.print()  # override print(results)
-        return ''
+    def __len__(self):  # override len(results)
+        return self.n
+
+    def __str__(self):  # override print(results)
+        return self._run(pprint=True)  # print results
+
+    def __repr__(self):
+        return f'YOLOv5 {self.__class__} instance\n' + self.__str__()
 
 
 class Proto(nn.Module):
