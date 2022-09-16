@@ -309,6 +309,7 @@ def export_saved_model(model,
                        keras=False,
                        prefix=colorstr('TensorFlow SavedModel:')):
     # YOLOv5 TensorFlow SavedModel export
+    check_requirements('tensorflow' if torch.cuda.is_available() else 'tensorflow-cpu')
     import tensorflow as tf
     from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
