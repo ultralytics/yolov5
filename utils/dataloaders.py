@@ -612,7 +612,7 @@ class LoadImagesAndLabels(Dataset):
 
             # HSV color-space
             augment_hsv(img, hgain=hyp['hsv_h'], sgain=hyp['hsv_s'], vgain=hyp['hsv_v'])
-            
+
             # Flip up-down
             if random.random() < hyp['flipud']:
                 img = np.flipud(img)
@@ -629,14 +629,18 @@ class LoadImagesAndLabels(Dataset):
                 shape = img.shape
                 img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
                 if nl:
-                    labels[:, 1], labels[:, 2], labels[:, 3], labels[:, 4] = self.rotate_bbox(labels[:, 1:][0], shape, angle=90)
-                    
+                    labels[:, 1], labels[:, 2], labels[:, 3], labels[:, 4] = self.rotate_bbox(labels[:, 1:][0],
+                                                                                              shape,
+                                                                                              angle=90)
+
             #rotate -90 degree
             if random.random() < hyp['rotneg90']:
                 shape = img.shape
                 img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
                 if nl:
-                    labels[:, 1], labels[:, 2], labels[:, 3], labels[:, 4] = self.rotate_bbox(labels[:, 1:][0], shape, angle = -90)
+                    labels[:, 1], labels[:, 2], labels[:, 3], labels[:, 4] = self.rotate_bbox(labels[:, 1:][0],
+                                                                                              shape,
+                                                                                              angle=-90)
             # Cutouts
             # labels = cutout(img, labels, p=0.5)
             # nl = len(labels)  # update after cutout
@@ -1113,7 +1117,7 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         else:
             sample = self.torch_transforms(im)
         return sample, j
-        
+
     def rotate_bbox(self, _xywh, shape, angle):
         cx, cy = (int(shape[1] / 2), int(shape[0] / 2))
         rotated_bbox = []
@@ -1131,6 +1135,7 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
 
         result = [int(x) for t in rotated_bbox for x in t]
         return result[0] / newW, result[1] / newH, _xywh[3], _xywh[2]
+
 
 def create_classification_dataloader(path,
                                      imgsz=224,
@@ -1157,4 +1162,3 @@ def create_classification_dataloader(path,
                               pin_memory=PIN_MEMORY,
                               worker_init_fn=seed_worker,
                               generator=generator)  # or DataLoader(persistent_workers=True)
-                              
