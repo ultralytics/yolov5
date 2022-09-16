@@ -15,6 +15,7 @@ jobs:
   Benchmarks:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
         python-version: [ '3.9' ]  # requires python<=3.9
@@ -37,9 +38,12 @@ jobs:
           python --version
           pip --version
           pip list
-      - name: Run benchmarks
+      - name: Benchmark DetectionModel
         run: |
-          python utils/benchmarks.py --weights ${{ matrix.model }}.pt --img 320 --hard-fail 0.29
+          python benchmarks.py --data coco128.yaml --weights ${{ matrix.model }}.pt --img 320 --hard-fail 0.29
+      - name: Benchmark SegmentationModel
+        run: |
+          python benchmarks.py --data coco128-seg.yaml --weights ${{ matrix.model }}-seg.pt --img 320
 
   Tests:
     timeout-minutes: 60
@@ -126,6 +130,20 @@ jobs:
               model(im)  # warmup, build grids for trace
               torch.jit.trace(model, [im])
           EOF
+      - name: Test segmentation
+        shell: bash  # for Windows compatibility
+        run: |
+          m=${{ matrix.model }}-seg  # official weights
+          b=runs/train-seg/exp/weights/best  # best.pt checkpoint
+          python segment/train.py --imgsz 64 --batch 32 --weights $m.pt --cfg $m.yaml --epochs 1 --device cpu  # train
+          python segment/train.py --imgsz 64 --batch 32 --weights '' --cfg $m.yaml --epochs 1 --device cpu  # train
+          for d in cpu; do  # devices
+            for w in $m $b; do  # weights
+              python segment/val.py --imgsz 64 --batch 32 --weights $w.pt --device $d  # val
+              python segment/predict.py --imgsz 64 --weights $w.pt --device $d  # predict
+              python export.py --weights $w.pt --img 64 --include torchscript --device $d  # export
+            done
+          done
       - name: Test classification
         shell: bash  # for Windows compatibility
         run: |

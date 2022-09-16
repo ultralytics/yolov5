@@ -23,6 +23,7 @@ from utils import TryExcept, threaded
 from utils.general import (CONFIG_DIR, FONT, LOGGER, check_font, check_requirements, clip_coords, increment_path,
                            is_ascii, xywh2xyxy, xyxy2xywh)
 from utils.metrics import fitness
+from utils.segment.general import scale_image
 
 # Settings
 RANK = int(os.getenv('RANK', -1))
@@ -113,6 +114,52 @@ class Annotator:
                             thickness=tf,
                             lineType=cv2.LINE_AA)
 
+    def masks(self, masks, colors, im_gpu=None, alpha=0.5):
+        """Plot masks at once.
+        Args:
+            masks (tensor): predicted masks on cuda, shape: [n, h, w]
+            colors (List[List[Int]]): colors for predicted masks, [[r, g, b] * n]
+            im_gpu (tensor): img is in cuda, shape: [3, h, w], range: [0, 1]
+            alpha (float): mask transparency: 0.0 fully transparent, 1.0 opaque
+        """
+        if self.pil:
+            # convert to numpy first
+            self.im = np.asarray(self.im).copy()
+        if im_gpu is None:
+            # Add multiple masks of shape(h,w,n) with colors list([r,g,b], [r,g,b], ...)
+            if len(masks) == 0:
+                return
+            if isinstance(masks, torch.Tensor):
+                masks = torch.as_tensor(masks, dtype=torch.uint8)
+                masks = masks.permute(1, 2, 0).contiguous()
+                masks = masks.cpu().numpy()
+            # masks = np.ascontiguousarray(masks.transpose(1, 2, 0))
+            masks = scale_image(masks.shape[:2], masks, self.im.shape)
+            masks = np.asarray(masks, dtype=np.float32)
+            colors = np.asarray(colors, dtype=np.float32)  # shape(n,3)
+            s = masks.sum(2, keepdims=True).clip(0, 1)  # add all masks together
+            masks = (masks @ colors).clip(0, 255)  # (h,w,n) @ (n,3) = (h,w,3)
+            self.im[:] = masks * alpha + self.im * (1 - s * alpha)
+        else:
+            if len(masks) == 0:
+                self.im[:] = im_gpu.permute(1, 2, 0).contiguous().cpu().numpy() * 255
+            colors = torch.tensor(colors, device=im_gpu.device, dtype=torch.float32) / 255.0
+            colors = colors[:, None, None]  # shape(n,1,1,3)
+            masks = masks.unsqueeze(3)  # shape(n,h,w,1)
+            masks_color = masks * (colors * alpha)  # shape(n,h,w,3)
+
+            inv_alph_masks = (1 - masks * alpha).cumprod(0)  # shape(n,h,w,1)
+            mcs = (masks_color * inv_alph_masks).sum(0) * 2  # mask color summand shape(n,h,w,3)
+
+            im_gpu = im_gpu.flip(dims=[0])  # flip channel
+            im_gpu = im_gpu.permute(1, 2, 0).contiguous()  # shape(h,w,3)
+            im_gpu = im_gpu * inv_alph_masks[-1] + mcs
+            im_mask = (im_gpu * 255).byte().cpu().numpy()
+            self.im[:] = scale_image(im_gpu.shape, im_mask, self.im.shape)
+        if self.pil:
+            # convert im back to PIL and update draw
+            self.fromarray(self.im)
+
     def rectangle(self, xy, fill=None, outline=None, width=1):
         # Add rectangle to image (PIL-only)
         self.draw.rectangle(xy, fill, outline, width)
@@ -123,6 +170,11 @@ class Annotator:
             w, h = self.font.getsize(text)  # text width, height
             xy[1] += 1 - h
         self.draw.text(xy, text, fill=txt_color, font=self.font)
+
+    def fromarray(self, im):
+        # Update self.im from a numpy array
+        self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
+        self.draw = ImageDraw.Draw(self.im)
 
     def result(self):
         # Return annotated image as array
@@ -180,26 +232,31 @@ def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
     return filtfilt(b, a, data)  # forward-backward filter
 
 
-def output_to_target(output):
-    # Convert model output to target format [batch_id, class_id, x, y, w, h, conf]
+def output_to_target(output, max_det=300):
+    # Convert model output to target format [batch_id, class_id, x, y, w, h, conf] for plotting
     targets = []
     for i, o in enumerate(output):
-        targets.extend([i, cls, *list(*xyxy2xywh(np.array(box)[None])), conf] for *box, conf, cls in o.cpu().numpy())
-    return np.array(targets)
+        box, conf, cls = o[:max_det, :6].cpu().split((4, 1, 1), 1)
+        j = torch.full((conf.shape[0], 1), i)
+        targets.append(torch.cat((j, cls, xyxy2xywh(box), conf), 1))
+    return torch.cat(targets, 0).numpy()
 
 
 @threaded
-def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max_size=1920, max_subplots=16):
+def plot_images(images, targets, paths=None, fname='images.jpg', names=None):
     # Plot image grid with labels
     if isinstance(images, torch.Tensor):
         images = images.cpu().float().numpy()
     if isinstance(targets, torch.Tensor):
         targets = targets.cpu().numpy()
-    if np.max(images[0]) <= 1:
-        images *= 255  # de-normalise (optional)
+
+    max_size = 1920  # max image size
+    max_subplots = 16  # max image subplots, i.e. 4x4
     bs, _, h, w = images.shape  # batch size, _, height, width
     bs = min(bs, max_subplots)  # limit plot images
     ns = np.ceil(bs ** 0.5)  # number of subplots (square)
+    if np.max(images[0]) <= 1:
+        images *= 255  # de-normalise (optional)
 
     # Build Image
     mosaic = np.full((int(ns * h), int(ns * w), 3), 255, dtype=np.uint8)  # init
