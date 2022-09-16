@@ -38,3 +38,5 @@ mosaic: 0.85834
 mixup: 0.04266
 copy_paste: 0.0
 anchors: 3.412
+rot90: 0.5 # rotate the image and bounding boxes 90 degree
+rotneg90: 0.5 # rotate the image and bounding boxes -90 degree

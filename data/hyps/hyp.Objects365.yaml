@@ -32,3 +32,5 @@ fliplr: 0.5
 mosaic: 1.0
 mixup: 0.0
 copy_paste: 0.0
+rot90: 0.5 # rotate the image and bounding boxes 90 degree
+rotneg90: 0.5 # rotate the image and bounding boxes -90 degree
