@@ -208,8 +208,8 @@ class ConfusionMatrix:
                        fmt='.2f',
                        square=True,
                        vmin=0.0,
-                       xticklabels=names + ['background FN'] if labels else "auto",
-                       yticklabels=names + ['background FP'] if labels else "auto").set_facecolor((1, 1, 1))
+                       xticklabels=names + ['background'] if labels else "auto",
+                       yticklabels=names + ['background'] if labels else "auto").set_facecolor((1, 1, 1))
         ax.set_ylabel('True')
         ax.set_ylabel('Predicted')
         ax.set_title('Confusion Matrix')
