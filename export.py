@@ -87,7 +87,7 @@ def export_formats():
         ['TensorFlow Lite', 'tflite', '.tflite', True, False],
         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
         ['TensorFlow.js', 'tfjs', '_web_model', False, False],
-        ['PaddlePaddle', 'paddle', '_paddle_model', True, True], ]
+        ['PaddlePaddle', 'paddle', '_paddle_model', True, True],]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
@@ -440,9 +440,9 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}}}', r'{"outputs": {"Identity": {"name": "Identity"}, '
-                                                           r'"Identity_1": {"name": "Identity_1"}, '
-                                                           r'"Identity_2": {"name": "Identity_2"}, '
-                                                           r'"Identity_3": {"name": "Identity_3"}}}', json)
+            r'"Identity_1": {"name": "Identity_1"}, '
+            r'"Identity_2": {"name": "Identity_2"}, '
+            r'"Identity_3": {"name": "Identity_3"}}}', json)
         j.write(subst)
     return f, None
 
