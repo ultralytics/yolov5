@@ -34,7 +34,7 @@ def autobatch(model, imgsz=640, fraction=0.8, batch_size=16):
         LOGGER.info(f'{prefix}CUDA not detected, using default CPU batch-size {batch_size}')
         return batch_size
     if torch.backends.cudnn.benchmark:
-        LOGGER.info(f'{prefix}requires torch.backends.cudnn.benchmark=False, using default batch-size {batch_size}')
+        LOGGER.info(f'{prefix} ⚠️ Requires torch.backends.cudnn.benchmark=False, using default batch-size {batch_size}')
         return batch_size
 
     # Inspect CUDA memory
