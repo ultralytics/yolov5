@@ -517,7 +517,23 @@ class LoadImagesAndLabels(Dataset):
                     gb += self.ims[i].nbytes
                 pbar.desc = f'{prefix}Caching images ({gb / 1E9:.1f}GB {cache_images})'
             pbar.close()
+    def rotate_bbox(self, _xywh, shape, angle):
+        cx, cy = (int(shape[1] / 2), int(shape[0] / 2))
+        rotated_bbox = []
+        bbox_tuple = [((_xywh[0]) * shape[1], (_xywh[1]) * shape[0])]
+        for i, coord in enumerate(bbox_tuple):
+            M = cv2.getRotationMatrix2D((cx, cy), angle, 1.0)
+            cos, sin = abs(M[0, 0]), abs(M[0, 1])
+            newW = int((shape[0] * sin) + (shape[1] * cos))
+            newH = int((shape[0] * cos) + (shape[1] * sin))
+            M[0, 2] += (newW / 2) - cx
+            M[1, 2] += (newH / 2) - cy
+            v = [coord[0], coord[1], 1]
+            adjusted_coord = np.dot(M, v)
+            rotated_bbox.insert(i, (adjusted_coord[0], adjusted_coord[1]))
 
+        result = [int(x) for t in rotated_bbox for x in t]
+        return result[0] / newW, result[1] / newH, _xywh[3], _xywh[2]
     def cache_labels(self, path=Path('./labels.cache'), prefix=''):
         # Cache dataset labels, check images and read shapes
         x = {}  # dict
@@ -1118,23 +1134,7 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
             sample = self.torch_transforms(im)
         return sample, j
 
-    def rotate_bbox(self, _xywh, shape, angle):
-        cx, cy = (int(shape[1] / 2), int(shape[0] / 2))
-        rotated_bbox = []
-        bbox_tuple = [((_xywh[0]) * shape[1], (_xywh[1]) * shape[0])]
-        for i, coord in enumerate(bbox_tuple):
-            M = cv2.getRotationMatrix2D((cx, cy), angle, 1.0)
-            cos, sin = abs(M[0, 0]), abs(M[0, 1])
-            newW = int((shape[0] * sin) + (shape[1] * cos))
-            newH = int((shape[0] * cos) + (shape[1] * sin))
-            M[0, 2] += (newW / 2) - cx
-            M[1, 2] += (newH / 2) - cy
-            v = [coord[0], coord[1], 1]
-            adjusted_coord = np.dot(M, v)
-            rotated_bbox.insert(i, (adjusted_coord[0], adjusted_coord[1]))
-
-        result = [int(x) for t in rotated_bbox for x in t]
-        return result[0] / newW, result[1] / newH, _xywh[3], _xywh[2]
+    
 
 
 def create_classification_dataloader(path,
