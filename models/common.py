@@ -633,7 +633,7 @@ class AutoShape(nn.Module):
             autocast = self.amp and (p.device.type != 'cpu')  # Automatic Mixed Precision (AMP) inference
             if isinstance(ims, torch.Tensor):  # torch
                 with amp.autocast(autocast):
-                    return self.model(ims.to(p.device).type_as(p), augment, profile)  # inference
+                    return self.model(ims.to(p.device).type_as(p), augment=augment, profile=profile)  # inference
 
             # Pre-process
             n, ims = (len(ims), list(ims)) if isinstance(ims, (list, tuple)) else (1, [ims])  # number, list of images
@@ -662,7 +662,7 @@ class AutoShape(nn.Module):
         with amp.autocast(autocast):
             # Inference
             with dt[1]:
-                y = self.model(x, augment, profile)  # forward
+                y = self.model(x, augment=augment, profile=profile)  # forward
 
             # Post-process
             with dt[2]:
