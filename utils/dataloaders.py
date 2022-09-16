@@ -517,6 +517,7 @@ class LoadImagesAndLabels(Dataset):
                     gb += self.ims[i].nbytes
                 pbar.desc = f'{prefix}Caching images ({gb / 1E9:.1f}GB {cache_images})'
             pbar.close()
+
     def rotate_bbox(self, _xywh, shape, angle):
         cx, cy = (int(shape[1] / 2), int(shape[0] / 2))
         rotated_bbox = []
@@ -534,6 +535,7 @@ class LoadImagesAndLabels(Dataset):
 
         result = [int(x) for t in rotated_bbox for x in t]
         return result[0] / newW, result[1] / newH, _xywh[3], _xywh[2]
+
     def cache_labels(self, path=Path('./labels.cache'), prefix=''):
         # Cache dataset labels, check images and read shapes
         x = {}  # dict
@@ -1133,8 +1135,6 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         else:
             sample = self.torch_transforms(im)
         return sample, j
-
-    
 
 
 def create_classification_dataloader(path,
