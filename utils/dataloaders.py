@@ -612,7 +612,7 @@ class LoadImagesAndLabels(Dataset):
 
             # HSV color-space
             augment_hsv(img, hgain=hyp['hsv_h'], sgain=hyp['hsv_s'], vgain=hyp['hsv_v'])
-
+            
             # Flip up-down
             if random.random() < hyp['flipud']:
                 img = np.flipud(img)
@@ -624,7 +624,19 @@ class LoadImagesAndLabels(Dataset):
                 img = np.fliplr(img)
                 if nl:
                     labels[:, 1] = 1 - labels[:, 1]
-
+            # rotate 90 degree
+            if random.random() < hyp['rot90']:
+                shape = img.shape
+                img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                if nl:
+                    labels[:, 1], labels[:, 2], labels[:, 3], labels[:, 4] = self.rotate_bbox(labels[:, 1:][0], shape, angle=90)
+                    
+            #rotate -90 degree
+            if random.random() < hyp['rotneg90']:
+                shape = img.shape
+                img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+                if nl:
+                    labels[:, 1], labels[:, 2], labels[:, 3], labels[:, 4] = self.rotate_bbox(labels[:, 1:][0], shape, angle = -90)
             # Cutouts
             # labels = cutout(img, labels, p=0.5)
             # nl = len(labels)  # update after cutout
@@ -1101,7 +1113,24 @@ class ClassificationDataset(torchvision.datasets.ImageFolder):
         else:
             sample = self.torch_transforms(im)
         return sample, j
+        
+    def rotate_bbox(self, _xywh, shape, angle):
+        cx, cy = (int(shape[1] / 2), int(shape[0] / 2))
+        rotated_bbox = []
+        bbox_tuple = [((_xywh[0]) * shape[1], (_xywh[1]) * shape[0])]
+        for i, coord in enumerate(bbox_tuple):
+            M = cv2.getRotationMatrix2D((cx, cy), angle, 1.0)
+            cos, sin = abs(M[0, 0]), abs(M[0, 1])
+            newW = int((shape[0] * sin) + (shape[1] * cos))
+            newH = int((shape[0] * cos) + (shape[1] * sin))
+            M[0, 2] += (newW / 2) - cx
+            M[1, 2] += (newH / 2) - cy
+            v = [coord[0], coord[1], 1]
+            adjusted_coord = np.dot(M, v)
+            rotated_bbox.insert(i, (adjusted_coord[0], adjusted_coord[1]))
 
+        result = [int(x) for t in rotated_bbox for x in t]
+        return result[0] / newW, result[1] / newH, _xywh[3], _xywh[2]
 
 def create_classification_dataloader(path,
                                      imgsz=224,
@@ -1128,3 +1157,4 @@ def create_classification_dataloader(path,
                               pin_memory=PIN_MEMORY,
                               worker_init_fn=seed_worker,
                               generator=generator)  # or DataLoader(persistent_workers=True)
+                              
