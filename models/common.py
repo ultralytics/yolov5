@@ -736,8 +736,8 @@ class Detections:
             if render:
                 self.ims[i] = np.asarray(im)
         if pprint:
-            return s.lstrip('\n') + \
-                   f'\nSpeed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {self.s}' % self.t
+            s = s.lstrip('\n')
+            return f'{s}\nSpeed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {self.s}' % self.t
         if crop:
             if save:
                 LOGGER.info(f'Saved results to {save_dir}\n')
