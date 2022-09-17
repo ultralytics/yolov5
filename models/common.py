@@ -514,8 +514,7 @@ class DetectMultiBackend(nn.Module):
                 conf, cls = y['confidence'].max(1), y['confidence'].argmax(1).astype(np.float)
                 y = np.concatenate((box, conf.reshape(-1, 1), cls.reshape(-1, 1)), 1)
             else:
-                k = 'var_' + str(sorted(int(k.replace('var_', '')) for k in y)[-1])  # output key
-                y = y[k]  # output
+                y = list(reversed(y.values()))  # reversed for segmentation models (pred, proto)
         elif self.paddle:  # PaddlePaddle
             im = im.cpu().numpy().astype(np.float32)
             self.input_handle.copy_from_cpu(im)
