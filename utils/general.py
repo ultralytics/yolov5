@@ -568,10 +568,10 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
     def download_one(url, dir):
         # Download 1 file
         success = True
-        f = dir / Path(url).name  # filename
-        if Path(url).is_file():  # exists in current path
-            Path(url).rename(f)  # move to dir
-        elif not f.exists():
+        if Path(url).is_file():
+            f = Path(url)  # filename
+        else:  # does not exist
+            f = dir / Path(url).name
             LOGGER.info(f'Downloading {url} to {f}...')
             for i in range(retry + 1):
                 if curl:
