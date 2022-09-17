@@ -460,8 +460,8 @@ class DetectMultiBackend(nn.Module):
             if cuda:
                 config.enable_use_gpu(memory_pool_init_size_mb=2048, device_id=0)
             predictor = pdi.create_predictor(config)
-            input_names = predictor.get_input_names()
-            input_handle = predictor.get_input_handle(input_names[0])
+            input_handle = predictor.get_input_handle(predictor.get_input_names()[0])
+            output_names = predictor.get_output_names()
         else:
             raise NotImplementedError(f'ERROR: {w} is not a supported format')
 
@@ -517,12 +517,10 @@ class DetectMultiBackend(nn.Module):
                 k = 'var_' + str(sorted(int(k.replace('var_', '')) for k in y)[-1])  # output key
                 y = y[k]  # output
         elif self.paddle:  # PaddlePaddle
-            im = im.cpu().numpy().astype("float32")
+            im = im.cpu().numpy().astype(np.float32)
             self.input_handle.copy_from_cpu(im)
             self.predictor.run()
-            output_names = self.predictor.get_output_names()
-            output_handle = self.predictor.get_output_handle(output_names[0])
-            y = output_handle.copy_to_cpu()
+            y = [self.predictor.get_output_handle(x).copy_to_cpu() for x in self.output_names]
         else:  # TensorFlow (SavedModel, GraphDef, Lite, Edge TPU)
             im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
             if self.saved_model:  # SavedModel
