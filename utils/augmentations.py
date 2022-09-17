@@ -14,6 +14,7 @@ import torchvision.transforms.functional as TF
 
 from utils.general import LOGGER, check_version, colorstr, resample_segments, segment2box
 from utils.metrics import bbox_ioa
+from utils.general import xywhn2xyxy
 
 IMAGENET_MEAN = 0.485, 0.456, 0.406  # RGB mean
 IMAGENET_STD = 0.229, 0.224, 0.225  # RGB standard deviation
@@ -281,7 +282,7 @@ def cutout(im, labels, p=0.5):
             # return unobscured labels
             if len(labels) and s > 0.03:
                 box = np.array([xmin, ymin, xmax, ymax], dtype=np.float32)
-                ioa = bbox_ioa(box, labels[:, 1:5])  # intersection over area
+                ioa = bbox_ioa(box, xywhn2xyxy(labels[:, 1:5], w, h))  # intersection over area
                 labels = labels[ioa < 0.60]  # remove >60% obscured labels
 
     return labels
