@@ -66,7 +66,7 @@ if platform.system() != 'Windows':
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.experimental import attempt_load
-from models.yolo import ClassificationModel, Detect
+from models.yolo import ClassificationModel, Detect, DetectionModel, SegmentationModel
 from utils.dataloaders import LoadImages
 from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_version,
                            check_yaml, colorstr, file_size, get_default_args, print_args, url2file, yaml_save)
@@ -134,6 +134,15 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
     LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
     f = file.with_suffix('.onnx')
 
+    output_names = ['output0', 'output1'] if isinstance(model, SegmentationModel) else ['output0']
+    if dynamic:
+        dynamic = {'images': {0: 'batch', 2: 'height', 3: 'width'}}  # shape(1,3,640,640)
+        if isinstance(model, SegmentationModel):
+            dynamic['output0'] = {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
+            dynamic['output1'] = {0: 'batch', 2: 'mask_height', 3: 'mask_width'}  # shape(1,32,160,160)
+        elif isinstance(model, DetectionModel):
+            dynamic['output0'] = {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
+
     torch.onnx.export(
         model.cpu() if dynamic else model,  # --dynamic only compatible with cpu
         im.cpu() if dynamic else im,
@@ -142,16 +151,8 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
         opset_version=opset,
         do_constant_folding=True,
         input_names=['images'],
-        output_names=['output'],
-        dynamic_axes={
-            'images': {
-                0: 'batch',
-                2: 'height',
-                3: 'width'},  # shape(1,3,640,640)
-            'output': {
-                0: 'batch',
-                1: 'anchors'}  # shape(1,25200,85)
-        } if dynamic else None)
+        output_names=output_names,
+        dynamic_axes=dynamic or None)
 
     # Checks
     model_onnx = onnx.load(f)  # load onnx model
