@@ -427,10 +427,17 @@ class DetectMultiBackend(nn.Module):
                 ge = x.graph.as_graph_element
                 return x.prune(tf.nest.map_structure(ge, inputs), tf.nest.map_structure(ge, outputs))
 
+            def gd_outputs(gd):
+                name_list, input_list = [], []
+                for node in gd.node:  # tensorflow.core.framework.node_def_pb2.NodeDef
+                    name_list.append(node.name)
+                    input_list.extend(node.input)
+                return sorted(f'{x}:0' for x in list(set(name_list) - set(input_list)) if not x.startswith('NoOp'))
+
             gd = tf.Graph().as_graph_def()  # TF GraphDef
             with open(w, 'rb') as f:
                 gd.ParseFromString(f.read())
-            frozen_func = wrap_frozen_graph(gd, inputs="x:0", outputs="Identity:0")
+            frozen_func = wrap_frozen_graph(gd, inputs="x:0", outputs=gd_outputs(gd))
         elif tflite or edgetpu:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
             try:  # https://coral.ai/docs/edgetpu/tflite-python/#update-existing-tf-lite-code-for-the-edge-tpu
                 from tflite_runtime.interpreter import Interpreter, load_delegate
@@ -528,22 +535,26 @@ class DetectMultiBackend(nn.Module):
         else:  # TensorFlow (SavedModel, GraphDef, Lite, Edge TPU)
             im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
             if self.saved_model:  # SavedModel
-                y = (self.model(im, training=False) if self.keras else self.model(im)).numpy()
+                y = self.model(im, training=False) if self.keras else self.model(im)
             elif self.pb:  # GraphDef
-                y = self.frozen_func(x=self.tf.constant(im)).numpy()
+                y = self.frozen_func(x=self.tf.constant(im))
             else:  # Lite or Edge TPU
-                input, output = self.input_details[0], self.output_details[0]
+                input = self.input_details[0]
                 int8 = input['dtype'] == np.uint8  # is TFLite quantized uint8 model
                 if int8:
                     scale, zero_point = input['quantization']
                     im = (im / scale + zero_point).astype(np.uint8)  # de-scale
                 self.interpreter.set_tensor(input['index'], im)
                 self.interpreter.invoke()
-                y = self.interpreter.get_tensor(output['index'])
-                if int8:
-                    scale, zero_point = output['quantization']
-                    y = (y.astype(np.float32) - zero_point) * scale  # re-scale
-            y[..., :4] *= [w, h, w, h]  # xywh normalized to pixels
+                y = []
+                for output in self.output_details:
+                    x = self.interpreter.get_tensor(output['index'])
+                    if int8:
+                        scale, zero_point = output['quantization']
+                        x = (x.astype(np.float32) - zero_point) * scale  # re-scale
+                    y.append(x)
+            y = [x if isinstance(x, np.ndarray) else x.numpy() for x in y]
+            y[0][..., :4] *= [w, h, w, h]  # xywh normalized to pixels
 
         if isinstance(y, (list, tuple)):
             return self.from_numpy(y[0]) if len(y) == 1 else [self.from_numpy(x) for x in y]

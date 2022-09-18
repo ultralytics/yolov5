@@ -43,7 +43,7 @@ jobs:
           python benchmarks.py --data coco128.yaml --weights ${{ matrix.model }}.pt --img 320 --hard-fail 0.29
       - name: Benchmark SegmentationModel
         run: |
-          python benchmarks.py --data coco128-seg.yaml --weights ${{ matrix.model }}-seg.pt --img 320
+          python benchmarks.py --data coco128-seg.yaml --weights ${{ matrix.model }}-seg.pt --img 320 --hard-fail 0.22
 
   Tests:
     timeout-minutes: 60
