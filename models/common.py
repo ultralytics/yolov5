@@ -390,6 +390,7 @@ class DetectMultiBackend(nn.Module):
                 model = runtime.deserialize_cuda_engine(f.read())
             context = model.create_execution_context()
             bindings = OrderedDict()
+            output_names = []
             fp16 = False  # default updated below
             dynamic = False
             for i in range(model.num_bindings):
@@ -401,11 +402,12 @@ class DetectMultiBackend(nn.Module):
                         context.set_binding_shape(i, tuple(model.get_profile_shape(0, i)[2]))
                     if dtype == np.float16:
                         fp16 = True
+                else:  # output
+                    output_names.append(name)
                 shape = tuple(context.get_binding_shape(i))
                 im = torch.from_numpy(np.empty(shape, dtype=dtype)).to(device)
                 bindings[name] = Binding(name, dtype, shape, im, int(im.data_ptr()))
             binding_addrs = OrderedDict((n, d.ptr) for n, d in bindings.items())
-            output_names = [x for x in list(bindings.keys()) if x.startswith('output')]
             batch_size = bindings['images'].shape[0]  # if dynamic, this is instead max batch size
         elif coreml:  # CoreML
             LOGGER.info(f'Loading {w} for CoreML inference...')
@@ -506,7 +508,7 @@ class DetectMultiBackend(nn.Module):
             assert im.shape == s, f"input size {im.shape} {'>' if self.dynamic else 'not equal to'} max model size {s}"
             self.binding_addrs['images'] = int(im.data_ptr())
             self.context.execute_v2(list(self.binding_addrs.values()))
-            y = [self.bindings[x].data for x in self.output_names]
+            y = [self.bindings[x].data for x in sorted(self.output_names)]
         elif self.coreml:  # CoreML
             im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
             im = Image.fromarray((im[0] * 255).astype('uint8'))
