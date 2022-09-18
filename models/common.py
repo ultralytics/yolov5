@@ -532,17 +532,20 @@ class DetectMultiBackend(nn.Module):
             elif self.pb:  # GraphDef
                 y = self.frozen_func(x=self.tf.constant(im))
             else:  # Lite or Edge TPU
-                input, output = self.input_details[0], self.output_details[0]
+                input = self.input_details[0]
                 int8 = input['dtype'] == np.uint8  # is TFLite quantized uint8 model
                 if int8:
                     scale, zero_point = input['quantization']
                     im = (im / scale + zero_point).astype(np.uint8)  # de-scale
                 self.interpreter.set_tensor(input['index'], im)
                 self.interpreter.invoke()
-                y = self.interpreter.get_tensor(output['index'])
-                if int8:
-                    scale, zero_point = output['quantization']
-                    y = (y.astype(np.float32) - zero_point) * scale  # re-scale
+                y = []
+                for output in self.output_details:
+                    x = self.interpreter.get_tensor(output['index'])
+                    if int8:
+                        scale, zero_point = output['quantization']
+                        x = (x.astype(np.float32) - zero_point) * scale  # re-scale
+                    y.append(x)
             y = [x if isinstance(x, np.ndarray) else x.numpy() for x in y]
             y[0][..., :4] *= [w, h, w, h]  # xywh normalized to pixels
 
