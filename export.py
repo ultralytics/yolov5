@@ -72,6 +72,8 @@ from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check
                            check_yaml, colorstr, file_size, get_default_args, print_args, url2file, yaml_save)
 from utils.torch_utils import select_device, smart_inference_mode
 
+MACOS = platform.system() == 'Darwin'  # macOS environment
+
 
 def export_formats():
     # YOLOv5 export formats
@@ -224,7 +226,7 @@ def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
     ct_model = ct.convert(ts, inputs=[ct.ImageType('image', shape=im.shape, scale=1 / 255, bias=[0, 0, 0])])
     bits, mode = (8, 'kmeans_lut') if int8 else (16, 'linear') if half else (32, None)
     if bits < 32:
-        if platform.system() == 'Darwin':  # quantization only supported on macOS
+        if MACOS:  # quantization only supported on macOS
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=DeprecationWarning)  # suppress numpy==1.20 float warning
                 ct_model = ct.models.neural_network.quantization_utils.quantize_weights(ct_model, bits, mode)
@@ -310,8 +312,11 @@ def export_saved_model(model,
                        keras=False,
                        prefix=colorstr('TensorFlow SavedModel:')):
     # YOLOv5 TensorFlow SavedModel export
-    check_requirements('tensorflow' if torch.cuda.is_available() else 'tensorflow-cpu')
-    import tensorflow as tf
+    try:
+        import tensorflow as tf
+    except Exception:
+        check_requirements(f"tensorflow{'' if torch.cuda.is_available() else '-macos' if MACOS else '-cpu'}")
+        import tensorflow as tf
     from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
     from models.tf import TFModel
