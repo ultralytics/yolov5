@@ -138,12 +138,27 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
     if dynamic:
         if isinstance(model, SegmentationModel):
             output_names = ['output0', 'output1']
-            dynamic = {'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
-                       'output0': {0: 'batch', 1: 'anchors'},  # shape(1,25200,85)
-                       'output1': {0: 'batch', 2: 'mask_height', 3: 'mask_width'}}  # shape(1,32,160,160)
+            dynamic = {
+                'images': {
+                    0: 'batch',
+                    2: 'height',
+                    3: 'width'},  # shape(1,3,640,640)
+                'output0': {
+                    0: 'batch',
+                    1: 'anchors'},  # shape(1,25200,85)
+                'output1': {
+                    0: 'batch',
+                    2: 'mask_height',
+                    3: 'mask_width'}}  # shape(1,32,160,160)
         elif isinstance(model, DetectionModel):
-            dynamic = {'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
-                       'output0': {0: 'batch', 1: 'anchors'}}  # shape(1,25200,85)
+            dynamic = {
+                'images': {
+                    0: 'batch',
+                    2: 'height',
+                    3: 'width'},  # shape(1,3,640,640)
+                'output0': {
+                    0: 'batch',
+                    1: 'anchors'}}  # shape(1,25200,85)
         else:
             dynamic = {'images': {0: 'batch', 2: 'height', 3: 'width'}}  # shape(1,3,640,640)
 
@@ -446,9 +461,9 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}}}', r'{"outputs": {"Identity": {"name": "Identity"}, '
-                                                           r'"Identity_1": {"name": "Identity_1"}, '
-                                                           r'"Identity_2": {"name": "Identity_2"}, '
-                                                           r'"Identity_3": {"name": "Identity_3"}}}', json)
+            r'"Identity_1": {"name": "Identity_1"}, '
+            r'"Identity_2": {"name": "Identity_2"}, '
+            r'"Identity_3": {"name": "Identity_3"}}}', json)
         j.write(subst)
     return f, None
 
