@@ -307,7 +307,7 @@ class TFDetect(keras.layers.Layer):
                 # Normalize xywh to 0-1 to reduce calibration error
                 xy /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
                 wh /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
-                y = tf.concat([xy, wh, tf.sigmoid(y[..., 4:5+self.nc]), y[..., 5+self.nc:]], -1)
+                y = tf.concat([xy, wh, tf.sigmoid(y[..., 4:5 + self.nc]), y[..., 5 + self.nc:]], -1)
                 z.append(tf.reshape(y, [-1, self.na * ny * nx, self.no]))
 
         return tf.transpose(x, [0, 2, 1, 3]) if self.training else (tf.concat(z, 1), x)
