@@ -134,34 +134,18 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
     LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
     f = file.with_suffix('.onnx')
 
-    y = model(im)
-    n_out = len(y) if isinstance(y, (list, tuple)) else 1  # number of outputs
-
+    output_names = ['output0']
     if dynamic:
         if isinstance(model, SegmentationModel):
-            dynamic_axes = {
-                'images': {
-                    0: 'batch',
-                    2: 'height',
-                    3: 'width'},  # shape(1,3,640,640)
-                'output0': {
-                    0: 'batch',
-                    1: 'anchors'},  # shape(1,25200,85)
-                'output1': {
-                    0: 'batch',
-                    2: 'mask_height',
-                    3: 'mask_width'}}  # shape(1,32,160,160)
+            output_names = ['output0', 'output1']
+            dynamic = {'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
+                       'output0': {0: 'batch', 1: 'anchors'},  # shape(1,25200,85)
+                       'output1': {0: 'batch', 2: 'mask_height', 3: 'mask_width'}}  # shape(1,32,160,160)
         elif isinstance(model, DetectionModel):
-            dynamic_axes = {
-                'images': {
-                    0: 'batch',
-                    2: 'height',
-                    3: 'width'},  # shape(1,3,640,640)
-                'output0': {
-                    0: 'batch',
-                    1: 'anchors'}}  # shape(1,25200,85)
+            dynamic = {'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
+                       'output0': {0: 'batch', 1: 'anchors'}}  # shape(1,25200,85)
         else:
-            dynamic_axes = {'images': {0: 'batch', 2: 'height', 3: 'width'}}  # shape(1,3,640,640)
+            dynamic = {'images': {0: 'batch', 2: 'height', 3: 'width'}}  # shape(1,3,640,640)
 
     torch.onnx.export(
         model.cpu() if dynamic else model,  # --dynamic only compatible with cpu
@@ -171,8 +155,8 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
         opset_version=opset,
         do_constant_folding=True,
         input_names=['images'],
-        output_names=[f'output{i}' for i in range(n_out)],
-        dynamic_axes=dynamic_axes if dynamic else None)
+        output_names=output_names,
+        dynamic_axes=dynamic)
 
     # Checks
     model_onnx = onnx.load(f)  # load onnx model
@@ -462,9 +446,9 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}}}', r'{"outputs": {"Identity": {"name": "Identity"}, '
-            r'"Identity_1": {"name": "Identity_1"}, '
-            r'"Identity_2": {"name": "Identity_2"}, '
-            r'"Identity_3": {"name": "Identity_3"}}}', json)
+                                                           r'"Identity_1": {"name": "Identity_1"}, '
+                                                           r'"Identity_2": {"name": "Identity_2"}, '
+                                                           r'"Identity_3": {"name": "Identity_3"}}}', json)
         j.write(subst)
     return f, None
 
