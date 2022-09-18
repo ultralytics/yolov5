@@ -11,7 +11,7 @@ import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from utils.general import colorstr, cv2
+from utils.general import LOGGER, colorstr, cv2
 from utils.loggers.clearml.clearml_utils import ClearmlLogger
 from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_labels, plot_results
@@ -393,7 +393,7 @@ def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
             warnings.simplefilter('ignore')  # suppress jit trace warning
             tb.add_graph(torch.jit.trace(de_parallel(model), im, strict=False), [])
     except Exception as e:
-        print(f'WARNING: TensorBoard graph visualization failure {e}')
+        LOGGER.warning(f'WARNING ⚠️ TensorBoard graph visualization failure {e}')
 
 
 def web_project_name(project):

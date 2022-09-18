@@ -47,7 +47,7 @@ def smartCrossEntropyLoss(label_smoothing=0.0):
     if check_version(torch.__version__, '1.10.0'):
         return nn.CrossEntropyLoss(label_smoothing=label_smoothing)
     if label_smoothing > 0:
-        LOGGER.warning(f'WARNING: label smoothing {label_smoothing} requires torch>=1.10.0')
+        LOGGER.warning(f'WARNING ⚠️ label smoothing {label_smoothing} requires torch>=1.10.0')
     return nn.CrossEntropyLoss()
 
 
@@ -251,6 +251,7 @@ def fuse_conv_and_bn(conv, bn):
                           kernel_size=conv.kernel_size,
                           stride=conv.stride,
                           padding=conv.padding,
+                          dilation=conv.dilation,
                           groups=conv.groups,
                           bias=True).requires_grad_(False).to(conv.weight.device)
 

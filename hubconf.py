@@ -37,7 +37,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
 
     if not verbose:
         LOGGER.setLevel(logging.WARNING)
-    check_requirements(exclude=('tensorboard', 'thop', 'opencv-python'))
+    check_requirements(exclude=('ipython', 'opencv-python', 'tensorboard', 'thop'))
     name = Path(name)
     path = name.with_suffix('.pt') if name.suffix == '' and not name.is_dir() else name  # checkpoint path
     try:
@@ -47,7 +47,7 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                 model = DetectMultiBackend(path, device=device, fuse=autoshape)  # detection model
                 if autoshape:
                     if model.pt and isinstance(model.model, ClassificationModel):
-                        LOGGER.warning('WARNING: ⚠️ YOLOv5 v6.2 ClassificationModel is not yet AutoShape compatible. '
+                        LOGGER.warning('WARNING ⚠️ YOLOv5 v6.2 ClassificationModel is not yet AutoShape compatible. '
                                        'You must pass torch tensors in BCHW to this model, i.e. shape(1,3,224,224).')
                     else:
                         model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
