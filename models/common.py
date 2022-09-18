@@ -232,7 +232,7 @@ class Focus(nn.Module):
     # Focus wh information into c-space
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
         super().__init__()
-        self.conv = Conv(c1 * 4, c2, k, s, p, g, act)
+        self.conv = Conv(c1 * 4, c2, k, s, p, g, act=act)
         # self.contract = Contract(gain=2)
 
     def forward(self, x):  # x(b,c,w,h) -> y(b,4c,w/2,h/2)
@@ -245,8 +245,8 @@ class GhostConv(nn.Module):
     def __init__(self, c1, c2, k=1, s=1, g=1, act=True):  # ch_in, ch_out, kernel, stride, groups
         super().__init__()
         c_ = c2 // 2  # hidden channels
-        self.cv1 = Conv(c1, c_, k, s, None, g, act)
-        self.cv2 = Conv(c_, c_, 5, 1, None, c_, act)
+        self.cv1 = Conv(c1, c_, k, s, None, g, act=act)
+        self.cv2 = Conv(c_, c_, 5, 1, None, c_, act=act)
 
     def forward(self, x):
         y = self.cv1(x)
