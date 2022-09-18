@@ -528,9 +528,9 @@ class DetectMultiBackend(nn.Module):
         else:  # TensorFlow (SavedModel, GraphDef, Lite, Edge TPU)
             im = im.permute(0, 2, 3, 1).cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
             if self.saved_model:  # SavedModel
-                y = (self.model(im, training=False) if self.keras else self.model(im)).numpy()
+                y = self.model(im, training=False) if self.keras else self.model(im)
             elif self.pb:  # GraphDef
-                y = self.frozen_func(x=self.tf.constant(im)).numpy()
+                y = self.frozen_func(x=self.tf.constant(im))
             else:  # Lite or Edge TPU
                 input, output = self.input_details[0], self.output_details[0]
                 int8 = input['dtype'] == np.uint8  # is TFLite quantized uint8 model
@@ -543,7 +543,8 @@ class DetectMultiBackend(nn.Module):
                 if int8:
                     scale, zero_point = output['quantization']
                     y = (y.astype(np.float32) - zero_point) * scale  # re-scale
-            y[..., :4] *= [w, h, w, h]  # xywh normalized to pixels
+            y = [x if isinstance(x, np.ndarray) else x.numpy() for x in y]
+            y[0][..., :4] *= [w, h, w, h]  # xywh normalized to pixels
 
         if isinstance(y, (list, tuple)):
             return self.from_numpy(y[0]) if len(y) == 1 else [self.from_numpy(x) for x in y]
