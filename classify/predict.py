@@ -119,13 +119,15 @@ def run(
         for i, prob in enumerate(pred):  # per image
             seen += 1
             if webcam:  # batch_size >= 1
-                p, im0 = path[i], im0s[i].copy()
+                p, im0, frame = path[i], im0s[i].copy(), dataset.count
                 s += f'{i}: '
             else:
-                p, im0 = path, im0s.copy()
+                p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
+            txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+
             s += '%gx%g ' % im.shape[2:]  # print string
             annotator = Annotator(im0, example=str(names), pil=True)
 
@@ -134,9 +136,12 @@ def run(
             s += f"{', '.join(f'{names[j]} {prob[j]:.2f}' for j in top5i)}, "
 
             # Write results
+            text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
             if save_img or view_img:  # Add bbox to image
-                text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
                 annotator.text((32, 32), text, txt_color=(255, 255, 255))
+            if save_txt:  # Write to file
+                with open(f'{txt_path}.txt', 'a') as f:
+                    f.write(text + '\n')
 
             # Stream results
             im0 = annotator.result()
@@ -188,7 +193,7 @@ def parse_opt():
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[224], help='inference size h,w')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='show results')
-    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    parser.add_argument('--save-txt', action='store_false', help='save results to *.txt')
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--visualize', action='store_true', help='visualize features')
