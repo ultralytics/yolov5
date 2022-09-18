@@ -116,7 +116,7 @@ def create_dataloader(path,
                       prefix='',
                       shuffle=False):
     if rect and shuffle:
-        LOGGER.warning('WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False')
+        LOGGER.warning('WARNING ⚠️ --rect is incompatible with DataLoader shuffle, setting shuffle=False')
         shuffle = False
     with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
         dataset = LoadImagesAndLabels(
@@ -328,7 +328,7 @@ class LoadStreams:
         self.auto = auto and self.rect
         self.transforms = transforms  # optional
         if not self.rect:
-            LOGGER.warning('WARNING: Stream shapes differ. For optimal performance supply similarly-shaped streams.')
+            LOGGER.warning('WARNING ⚠️ Stream shapes differ. For optimal performance supply similarly-shaped streams.')
 
     def update(self, i, cap, stream):
         # Read stream `i` frames in daemon thread
@@ -341,7 +341,7 @@ class LoadStreams:
                 if success:
                     self.imgs[i] = im
                 else:
-                    LOGGER.warning('WARNING: Video stream unresponsive, please check your IP camera connection.')
+                    LOGGER.warning('WARNING ⚠️ Video stream unresponsive, please check your IP camera connection.')
                     self.imgs[i] = np.zeros_like(self.imgs[i])
                     cap.open(stream)  # re-open stream if signal was lost
             time.sleep(0.0)  # wait time
@@ -543,7 +543,7 @@ class LoadImagesAndLabels(Dataset):
         if msgs:
             LOGGER.info('\n'.join(msgs))
         if nf == 0:
-            LOGGER.warning(f'{prefix}WARNING: No labels found in {path}. {HELP_URL}')
+            LOGGER.warning(f'{prefix}WARNING ⚠️ No labels found in {path}. {HELP_URL}')
         x['hash'] = get_hash(self.label_files + self.im_files)
         x['results'] = nf, nm, ne, nc, len(self.im_files)
         x['msgs'] = msgs  # warnings
@@ -553,7 +553,7 @@ class LoadImagesAndLabels(Dataset):
             path.with_suffix('.cache.npy').rename(path)  # remove .npy suffix
             LOGGER.info(f'{prefix}New cache created: {path}')
         except Exception as e:
-            LOGGER.warning(f'{prefix}WARNING: Cache directory {path.parent} is not writeable: {e}')  # not writeable
+            LOGGER.warning(f'{prefix}WARNING ⚠️ Cache directory {path.parent} is not writeable: {e}')  # not writeable
         return x
 
     def __len__(self):
@@ -917,7 +917,7 @@ def verify_image_label(args):
                 f.seek(-2, 2)
                 if f.read() != b'\xff\xd9':  # corrupt JPEG
                     ImageOps.exif_transpose(Image.open(im_file)).save(im_file, 'JPEG', subsampling=0, quality=100)
-                    msg = f'{prefix}WARNING: {im_file}: corrupt JPEG restored and saved'
+                    msg = f'{prefix}WARNING ⚠️ {im_file}: corrupt JPEG restored and saved'
 
         # verify labels
         if os.path.isfile(lb_file):
@@ -939,7 +939,7 @@ def verify_image_label(args):
                     lb = lb[i]  # remove duplicates
                     if segments:
                         segments = [segments[x] for x in i]
-                    msg = f'{prefix}WARNING: {im_file}: {nl - len(i)} duplicate labels removed'
+                    msg = f'{prefix}WARNING ⚠️ {im_file}: {nl - len(i)} duplicate labels removed'
             else:
                 ne = 1  # label empty
                 lb = np.zeros((0, 5), dtype=np.float32)
@@ -949,7 +949,7 @@ def verify_image_label(args):
         return im_file, lb, shape, segments, nm, nf, ne, nc, msg
     except Exception as e:
         nc = 1
-        msg = f'{prefix}WARNING: {im_file}: ignoring corrupt image/label: {e}'
+        msg = f'{prefix}WARNING ⚠️ {im_file}: ignoring corrupt image/label: {e}'
         return [None, None, None, None, nm, nf, ne, nc, msg]
 
 
@@ -1012,7 +1012,7 @@ class HUBDatasetStats():
                 im = im.resize((int(im.width * r), int(im.height * r)))
             im.save(f_new, 'JPEG', quality=50, optimize=True)  # save
         except Exception as e:  # use OpenCV
-            print(f'WARNING: HUB ops PIL failure {f}: {e}')
+            LOGGER.info(f'WARNING ⚠️ HUB ops PIL failure {f}: {e}')
             im = cv2.imread(f)
             im_height, im_width = im.shape[:2]
             r = max_dim / max(im_height, im_width)  # ratio
