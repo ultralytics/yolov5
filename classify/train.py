@@ -114,7 +114,7 @@ def train(opt, device):
             m = hub.list('ultralytics/yolov5')  # + hub.list('pytorch/vision')  # models
             raise ModuleNotFoundError(f'--model {opt.model} not found. Available models are: \n' + '\n'.join(m))
         if isinstance(model, DetectionModel):
-            LOGGER.warning("WARNING: pass YOLOv5 classifier model with '-cls' suffix, i.e. '--model yolov5s-cls.pt'")
+            LOGGER.warning("WARNING ⚠️ pass YOLOv5 classifier model with '-cls' suffix, i.e. '--model yolov5s-cls.pt'")
             model = ClassificationModel(model=model, nc=nc, cutoff=opt.cutoff or 10)  # convert to classification model
         reshape_classifier_output(model, nc)  # update class count
     for m in model.modules():

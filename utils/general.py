@@ -34,7 +34,7 @@ import torch
 import torchvision
 import yaml
 
-from utils import TryExcept
+from utils import TryExcept, emojis
 from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
 
@@ -248,11 +248,6 @@ def get_latest_run(search_dir='.'):
     return max(last_list, key=os.path.getctime) if last_list else ''
 
 
-def emojis(str=''):
-    # Return platform-dependent emoji-safe version of string
-    return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
-
-
 def file_age(path=__file__):
     # Return days since last file update
     dt = (datetime.now() - datetime.fromtimestamp(Path(path).stat().st_mtime))  # delta
@@ -333,7 +328,7 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
     # Check version vs. required version
     current, minimum = (pkg.parse_version(x) for x in (current, minimum))
     result = (current == minimum) if pinned else (current >= minimum)  # bool
-    s = f'WARNING: ⚠️ {name}{minimum} is required by YOLOv5, but {name}{current} is currently installed'  # string
+    s = f'WARNING ⚠️ {name}{minimum} is required by YOLOv5, but {name}{current} is currently installed'  # string
     if hard:
         assert result, emojis(s)  # assert min requirements met
     if verbose and not result:
@@ -373,7 +368,7 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
                 f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
             LOGGER.info(s)
         except Exception as e:
-            LOGGER.warning(f'{prefix} {e}')
+            LOGGER.warning(f'{prefix} ❌ {e}')
 
 
 def check_img_size(imgsz, s=32, floor=0):
@@ -384,7 +379,7 @@ def check_img_size(imgsz, s=32, floor=0):
         imgsz = list(imgsz)  # convert to list if tuple
         new_size = [max(make_divisible(x, int(s)), floor) for x in imgsz]
     if new_size != imgsz:
-        LOGGER.warning(f'WARNING: --img-size {imgsz} must be multiple of max stride {s}, updating to {new_size}')
+        LOGGER.warning(f'WARNING ⚠️ --img-size {imgsz} must be multiple of max stride {s}, updating to {new_size}')
     return new_size
 
 
@@ -399,7 +394,7 @@ def check_imshow():
         cv2.waitKey(1)
         return True
     except Exception as e:
-        LOGGER.warning(f'WARNING: Environment does not support cv2.imshow() or PIL Image.show() image displays\n{e}')
+        LOGGER.warning(f'WARNING ⚠️ Environment does not support cv2.imshow() or PIL Image.show() image displays\n{e}')
         return False
 
 
@@ -589,9 +584,9 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
                 if success:
                     break
                 elif i < retry:
-                    LOGGER.warning(f'Download failure, retrying {i + 1}/{retry} {url}...')
+                    LOGGER.warning(f'⚠️ Download failure, retrying {i + 1}/{retry} {url}...')
                 else:
-                    LOGGER.warning(f'Failed to download {url}...')
+                    LOGGER.warning(f'❌ Failed to download {url}...')
 
         if unzip and success and f.suffix in ('.zip', '.tar', '.gz'):
             LOGGER.info(f'Unzipping {f}...')
@@ -908,7 +903,7 @@ def non_max_suppression(
 
         output[xi] = x[i]
         if (time.time() - t) > time_limit:
-            LOGGER.warning(f'WARNING: NMS time limit {time_limit:.3f}s exceeded')
+            LOGGER.warning(f'WARNING ⚠️ NMS time limit {time_limit:.3f}s exceeded')
             break  # time limit exceeded
 
     return output
