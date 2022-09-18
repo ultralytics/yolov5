@@ -152,7 +152,7 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
         do_constant_folding=True,
         input_names=['images'],
         output_names=output_names,
-        dynamic_axes=dynamic)
+        dynamic_axes=dynamic or None)
 
     # Checks
     model_onnx = onnx.load(f)  # load onnx model
