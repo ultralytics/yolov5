@@ -427,10 +427,17 @@ class DetectMultiBackend(nn.Module):
                 ge = x.graph.as_graph_element
                 return x.prune(tf.nest.map_structure(ge, inputs), tf.nest.map_structure(ge, outputs))
 
+            def gd_outputs(gd):
+                name_list, input_list = [], []
+                for node in gd.node:  # tensorflow.core.framework.node_def_pb2.NodeDef
+                    name_list.append(node.name)
+                    input_list.extend(node.input)
+                return sorted(f'{x}:0' for x in list(set(name_list) - set(input_list)) if not x.startswith('NoOp'))
+
             gd = tf.Graph().as_graph_def()  # TF GraphDef
             with open(w, 'rb') as f:
                 gd.ParseFromString(f.read())
-            frozen_func = wrap_frozen_graph(gd, inputs="x:0", outputs="Identity:0")
+            frozen_func = wrap_frozen_graph(gd, inputs="x:0", outputs=gd_outputs(gd))
         elif tflite or edgetpu:  # https://www.tensorflow.org/lite/guide/python#install_tensorflow_lite_for_python
             try:  # https://coral.ai/docs/edgetpu/tflite-python/#update-existing-tf-lite-code-for-the-edge-tpu
                 from tflite_runtime.interpreter import Interpreter, load_delegate
