@@ -392,16 +392,16 @@ class DetectMultiBackend(nn.Module):
             bindings = OrderedDict()
             fp16 = False  # default updated below
             dynamic = False
-            for index in range(model.num_bindings):
-                name = model.get_binding_name(index)
-                dtype = trt.nptype(model.get_binding_dtype(index))
-                if model.binding_is_input(index):
-                    if -1 in tuple(model.get_binding_shape(index)):  # dynamic
+            for i in range(model.num_bindings):
+                name = model.get_binding_name(i)
+                dtype = trt.nptype(model.get_binding_dtype(i))
+                if model.binding_is_input(i):
+                    if -1 in tuple(model.get_binding_shape(i)):  # dynamic
                         dynamic = True
-                        context.set_binding_shape(index, tuple(model.get_profile_shape(0, index)[2]))
+                        context.set_binding_shape(i, tuple(model.get_profile_shape(0, i)[2]))
                     if dtype == np.float16:
                         fp16 = True
-                shape = tuple(context.get_binding_shape(index))
+                shape = tuple(context.get_binding_shape(i))
                 im = torch.from_numpy(np.empty(shape, dtype=dtype)).to(device)
                 bindings[name] = Binding(name, dtype, shape, im, int(im.data_ptr()))
             binding_addrs = OrderedDict((n, d.ptr) for n, d in bindings.items())
