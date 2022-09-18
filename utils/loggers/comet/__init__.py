@@ -133,7 +133,7 @@ class CometLogger:
 
         self.comet_log_predictions = COMET_LOG_PREDICTIONS
         if self.opt.bbox_interval == -1:
-            self.comet_log_prediction_interval = self.opt.epochs // 10 if self.opt.epochs < 10 else 1
+            self.comet_log_prediction_interval = 1 if self.opt.epochs < 10 else self.opt.epochs // 10
         else:
             self.comet_log_prediction_interval = self.opt.bbox_interval
 
