@@ -306,7 +306,7 @@ def box_candidates(box1, box2, wh_thr=2, ar_thr=100, area_thr=0.1, eps=1e-16):  
 def classify_albumentations(augment=True,
                             size=224,
                             scale=(0.08, 1.0),
-                            ratio=(0.5, 1.0 / 0.5),  # 0.75, 1.33
+                            ratio=(0.9, 1.0 / 0.9),  # 0.75, 1.33
                             hflip=0.5,
                             vflip=0.0,
                             jitter=0.4,
