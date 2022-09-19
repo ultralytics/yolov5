@@ -596,10 +596,11 @@ def parse_opt():
     parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='TF.js NMS: IoU threshold')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
-    parser.add_argument('--include',
-                        nargs='+',
-                        default=['torchscript'],
-                        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
+    parser.add_argument(
+        '--include',
+        nargs='+',
+        default=['torchscript'],
+        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle')
     opt = parser.parse_args()
     print_args(vars(opt))
     return opt
