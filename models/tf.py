@@ -299,15 +299,15 @@ class TFDetect(keras.layers.Layer):
             x[i] = tf.reshape(x[i], [-1, ny * nx, self.na, self.no])
 
             if not self.training:  # inference
-                y = tf.sigmoid(x[i])
+                y = x[i]
                 grid = tf.transpose(self.grid[i], [0, 2, 1, 3]) - 0.5
                 anchor_grid = tf.transpose(self.anchor_grid[i], [0, 2, 1, 3]) * 4
-                xy = (y[..., 0:2] * 2 + grid) * self.stride[i]  # xy
-                wh = y[..., 2:4] ** 2 * anchor_grid
+                xy = (tf.sigmoid(y[..., 0:2]) * 2 + grid) * self.stride[i]  # xy
+                wh = tf.sigmoid(y[..., 2:4]) ** 2 * anchor_grid
                 # Normalize xywh to 0-1 to reduce calibration error
                 xy /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
                 wh /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
-                y = tf.concat([xy, wh, y[..., 4:]], -1)
+                y = tf.concat([xy, wh, tf.sigmoid(y[..., 4:5 + self.nc]), y[..., 5 + self.nc:]], -1)
                 z.append(tf.reshape(y, [-1, self.na * ny * nx, self.no]))
 
         return tf.transpose(x, [0, 2, 1, 3]) if self.training else (tf.concat(z, 1), x)
@@ -333,8 +333,9 @@ class TFSegment(TFDetect):
 
     def call(self, x):
         p = self.proto(x[0])
+        p = tf.transpose(p, [0, 3, 1, 2])  # from shape(1,160,160,32) to shape(1,32,160,160)
         x = self.detect(self, x)
-        return (x, p) if self.training else ((x[0], p),)
+        return (x, p) if self.training else (x[0], p)
 
 
 class TFProto(keras.layers.Layer):
@@ -485,8 +486,8 @@ class TFModel:
                                                             conf_thres,
                                                             clip_boxes=False)
             return nms, x[1]
-        return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
-        # x = x[0][0]  # [x(1,6300,85), ...] to x(6300,85)
+        return x  # output [1,6300,85] = [xywh, conf, class0, class1, ...]
+        # x = x[0]  # [x(1,6300,85), ...] to x(6300,85)
         # xywh = x[..., :4]  # x(6300,4) boxes
         # conf = x[..., 4:5]  # x(6300,1) confidences
         # cls = tf.reshape(tf.cast(tf.argmax(x[..., 5:], axis=1), tf.float32), (-1, 1))  # x(6300,1)  classes
