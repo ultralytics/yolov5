@@ -305,16 +305,17 @@ def box_candidates(box1, box2, wh_thr=2, ar_thr=100, area_thr=0.1, eps=1e-16):  
     return (w2 > wh_thr) & (h2 > wh_thr) & (w2 * h2 / (w1 * h1 + eps) > area_thr) & (ar < ar_thr)  # candidates
 
 
-def classify_albumentations(augment=True,
-                            size=224,
-                            scale=(0.08, 1.0),
-                            ratio=(0.75, 1.0 / 0.75),  # 0.75, 1.33
-                            hflip=0.5,
-                            vflip=0.0,
-                            jitter=0.4,
-                            mean=IMAGENET_MEAN,
-                            std=IMAGENET_STD,
-                            auto_aug=False):
+def classify_albumentations(
+        augment=True,
+        size=224,
+        scale=(0.08, 1.0),
+        ratio=(0.75, 1.0 / 0.75),  # 0.75, 1.33
+        hflip=0.5,
+        vflip=0.0,
+        jitter=0.4,
+        mean=IMAGENET_MEAN,
+        std=IMAGENET_STD,
+        auto_aug=False):
     # YOLOv5 classification Albumentations (optional, only used if package is installed)
     prefix = colorstr('albumentations: ')
     try:
