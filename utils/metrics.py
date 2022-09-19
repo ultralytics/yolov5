@@ -170,12 +170,12 @@ class ConfusionMatrix:
             if n and sum(j) == 1:
                 self.matrix[detection_classes[m1[j]], gc] += 1  # correct
             else:
-                self.matrix[self.nc, gc] += 1  # background FP
+                self.matrix[self.nc, gc] += 1  # true background
 
         if n:
             for i, dc in enumerate(detection_classes):
                 if not any(m1 == i):
-                    self.matrix[dc, self.nc] += 1  # background FN
+                    self.matrix[dc, self.nc] += 1  # predicted background
 
     def matrix(self):
         return self.matrix
@@ -186,7 +186,7 @@ class ConfusionMatrix:
         # fn = self.matrix.sum(0) - tp  # false negatives (missed detections)
         return tp[:-1], fp[:-1]  # remove background class
 
-    @TryExcept('WARNING: ConfusionMatrix plot failure: ')
+    @TryExcept('WARNING ⚠️ ConfusionMatrix plot failure: ')
     def plot(self, normalize=True, save_dir='', names=()):
         import seaborn as sn
 
@@ -197,6 +197,7 @@ class ConfusionMatrix:
         nc, nn = self.nc, len(names)  # number of classes, names
         sn.set(font_scale=1.0 if nc < 50 else 0.8)  # for label size
         labels = (0 < nn < 99) and (nn == nc)  # apply names to ticklabels
+        ticklabels = (names + ['background']) if labels else "auto"
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')  # suppress empty matrix RuntimeWarning: All-NaN slice encountered
             sn.heatmap(array,
@@ -208,8 +209,8 @@ class ConfusionMatrix:
                        fmt='.2f',
                        square=True,
                        vmin=0.0,
-                       xticklabels=names + ['background FP'] if labels else "auto",
-                       yticklabels=names + ['background FN'] if labels else "auto").set_facecolor((1, 1, 1))
+                       xticklabels=ticklabels,
+                       yticklabels=ticklabels).set_facecolor((1, 1, 1))
         ax.set_ylabel('True')
         ax.set_ylabel('Predicted')
         ax.set_title('Confusion Matrix')
