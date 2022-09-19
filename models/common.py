@@ -387,6 +387,7 @@ class DetectMultiBackend(nn.Module):
                 device = torch.device('cuda:0')
             Binding = namedtuple('Binding', ('name', 'dtype', 'shape', 'data', 'ptr'))
             logger = trt.Logger(trt.Logger.INFO)
+            trt.init_libnvinfer_plugins(logger, namespace='')
             with open(w, 'rb') as f, trt.Runtime(logger) as runtime:
                 model = runtime.deserialize_cuda_engine(f.read())
             context = model.create_execution_context()
