@@ -22,6 +22,7 @@ Usage - formats:
                                            yolov5s-cls.pb                 # TensorFlow GraphDef
                                            yolov5s-cls.tflite             # TensorFlow Lite
                                            yolov5s-cls_edgetpu.tflite     # TensorFlow Edge TPU
+                                           yolov5s-cls_paddle_model       # PaddlePaddle
 """
 
 import argparse
@@ -31,7 +32,6 @@ import sys
 from pathlib import Path
 
 import torch
-import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
 
 FILE = Path(__file__).resolve()
@@ -67,6 +67,7 @@ def run(
         exist_ok=False,  # existing project/name ok, do not increment
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
+        vid_stride=1,  # video frame-rate stride
 ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -89,11 +90,10 @@ def run(
     # Dataloader
     if webcam:
         view_img = check_imshow()
-        cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(source, img_size=imgsz, transforms=classify_transforms(imgsz[0]))
+        dataset = LoadStreams(source, img_size=imgsz, transforms=classify_transforms(imgsz[0]), vid_stride=vid_stride)
         bs = len(dataset)  # batch_size
     else:
-        dataset = LoadImages(source, img_size=imgsz, transforms=classify_transforms(imgsz[0]))
+        dataset = LoadImages(source, img_size=imgsz, transforms=classify_transforms(imgsz[0]), vid_stride=vid_stride)
         bs = 1  # batch_size
     vid_path, vid_writer = [None] * bs, [None] * bs
 
@@ -119,13 +119,15 @@ def run(
         for i, prob in enumerate(pred):  # per image
             seen += 1
             if webcam:  # batch_size >= 1
-                p, im0 = path[i], im0s[i].copy()
+                p, im0, frame = path[i], im0s[i].copy(), dataset.count
                 s += f'{i}: '
             else:
-                p, im0 = path, im0s.copy()
+                p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
 
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
+            txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
+
             s += '%gx%g ' % im.shape[2:]  # print string
             annotator = Annotator(im0, example=str(names), pil=True)
 
@@ -134,9 +136,12 @@ def run(
             s += f"{', '.join(f'{names[j]} {prob[j]:.2f}' for j in top5i)}, "
 
             # Write results
+            text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
             if save_img or view_img:  # Add bbox to image
-                text = '\n'.join(f'{prob[j]:.2f} {names[j]}' for j in top5i)
                 annotator.text((32, 32), text, txt_color=(255, 255, 255))
+            if save_txt:  # Write to file
+                with open(f'{txt_path}.txt', 'a') as f:
+                    f.write(text + '\n')
 
             # Stream results
             im0 = annotator.result()
@@ -188,7 +193,7 @@ def parse_opt():
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[224], help='inference size h,w')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='show results')
-    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    parser.add_argument('--save-txt', action='store_false', help='save results to *.txt')
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument('--visualize', action='store_true', help='visualize features')
@@ -198,6 +203,7 @@ def parse_opt():
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
+    parser.add_argument('--vid-stride', type=int, default=1, help='video frame-rate stride')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))

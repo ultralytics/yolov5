@@ -30,6 +30,7 @@ jobs:
 
       - name: Build and push arm64 image
         uses: docker/build-push-action@v3
+        continue-on-error: true
         with:
           context: .
           platforms: linux/arm64
@@ -39,6 +40,7 @@ jobs:
 
       - name: Build and push CPU image
         uses: docker/build-push-action@v3
+        continue-on-error: true
         with:
           context: .
           file: utils/docker/Dockerfile-cpu
@@ -47,6 +49,7 @@ jobs:
 
       - name: Build and push GPU image
         uses: docker/build-push-action@v3
+        continue-on-error: true
         with:
           context: .
           file: utils/docker/Dockerfile
