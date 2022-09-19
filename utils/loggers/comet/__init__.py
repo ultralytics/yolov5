@@ -22,6 +22,7 @@ except (ModuleNotFoundError, ImportError):
     comet_ml = None
     COMET_PROJECT_NAME = None
 
+import PIL
 import torch
 import torchvision.transforms as T
 import yaml
@@ -131,6 +132,8 @@ class CometLogger:
         else:
             self.iou_thres = IOU_THRES
 
+        self.log_parameters({"val_iou_threshold": self.iou_thres, "val_conf_threshold": self.conf_thres})
+
         self.comet_log_predictions = COMET_LOG_PREDICTIONS
         if self.opt.bbox_interval == -1:
             self.comet_log_prediction_interval = 1 if self.opt.epochs < 10 else self.opt.epochs // 10
@@ -139,6 +142,7 @@ class CometLogger:
 
         if self.comet_log_predictions:
             self.metadata_dict = {}
+            self.logged_image_names = []
 
         self.comet_log_per_class_metrics = COMET_LOG_PER_CLASS_METRICS
 
@@ -249,11 +253,12 @@ class CometLogger:
         filtered_detections = detections[mask]
         filtered_labels = labelsn[mask]
 
-        processed_image = (image * 255).to(torch.uint8)
-
         image_id = path.split("/")[-1].split(".")[0]
         image_name = f"{image_id}_curr_epoch_{self.experiment.curr_epoch}"
-        self.log_image(to_pil(processed_image), name=image_name)
+        if image_name not in self.logged_image_names:
+            native_scale_image = PIL.Image.open(path)
+            self.log_image(native_scale_image, name=image_name)
+            self.logged_image_names.append(image_name)
 
         metadata = []
         for cls, *xyxy in filtered_labels.tolist():
