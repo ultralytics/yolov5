@@ -23,14 +23,13 @@ class Albumentations:
     # YOLOv5 Albumentations class (optional, only used if package is installed)
     def __init__(self, size=640):
         self.transform = None
-        self.size = size
         prefix = colorstr('albumentations: ')
         try:
             import albumentations as A
             check_version(A.__version__, '1.0.3', hard=True)  # version requirement
 
             T = [
-                A.RandomResizedCrop(height=size, width=size, scale=(0.8, 1.0), ratio=(0.9, 1.11), p=1.0),
+                A.RandomResizedCrop(height=size, width=size, scale=(0.8, 1.0), ratio=(0.9, 1.11), p=0.0),
                 A.Blur(p=0.01),
                 A.MedianBlur(p=0.01),
                 A.ToGray(p=0.01),
