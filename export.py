@@ -184,6 +184,69 @@ def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX
 
 
 @try_export
+def export_end2end(model, im, file, opset, nms_cfg, dynamic, simplify, prefix=colorstr('ONNX:')):
+    # YOLOv5 end2end ONNX export
+    check_requirements('onnx')
+    import onnx
+
+    LOGGER.info(f'\n{prefix} starting export end2end with onnx {onnx.__version__}...')
+    f = file.with_suffix('.onnx')
+    dynamic_cfg = {}
+
+    from models.common import End2End
+    model = End2End(model, *nms_cfg, device=im.device)
+    if nms_cfg[-1] == 'ort':
+        output_names = ['outputs']
+    elif nms_cfg[-1] == 'trt':
+        output_names = ['num_dets', 'det_boxes', 'det_scores', 'det_classes']
+    else:
+        raise NotImplementedError
+
+    if dynamic:
+        LOGGER.warning(f'\n{prefix} dynamic axes for end2end model only support dynamic batch ...')
+        dynamic_cfg = {n: {0: 'batch'} for n in output_names}
+        dynamic_cfg['images'] = {0: 'batch'}
+
+    torch.onnx.export(
+        model.cpu() if dynamic else model,  # --dynamic only compatible with cpu
+        im.cpu() if dynamic else im,
+        f,
+        verbose=False,
+        opset_version=opset,
+        training=torch.onnx.TrainingMode.EVAL,
+        do_constant_folding=True,
+        input_names=['images'],
+        output_names=output_names,
+        dynamic_axes=dynamic_cfg)
+
+    # Checks
+    model_onnx = onnx.load(f)  # load onnx model
+    onnx.checker.check_model(model_onnx)  # check onnx model
+
+    # Metadata
+    d = {'stride': int(max(model.stride)), 'names': model.names}
+    for k, v in d.items():
+        meta = model_onnx.metadata_props.add()
+        meta.key, meta.value = k, str(v)
+    onnx.save(model_onnx, f)
+
+    # Simplify
+    if simplify:
+        try:
+            cuda = torch.cuda.is_available()
+            check_requirements(('onnxruntime-gpu' if cuda else 'onnxruntime', 'onnx-simplifier>=0.4.1'))
+            import onnxsim
+
+            LOGGER.info(f'{prefix} simplifying with onnx-simplifier {onnxsim.__version__}...')
+            model_onnx, check = onnxsim.simplify(model_onnx)
+            assert check, 'assert check failed'
+            onnx.save(model_onnx, f)
+        except Exception as e:
+            LOGGER.info(f'{prefix} simplifier failure: {e}')
+    return f, model_onnx
+
+
+@try_export
 def export_openvino(file, metadata, half, prefix=colorstr('OpenVINO:')):
     # YOLOv5 OpenVINO export
     check_requirements('openvino-dev')  # requires openvino-dev: https://pypi.org/project/openvino-dev/
@@ -473,6 +536,7 @@ def run(
         verbose=False,  # TensorRT: verbose log
         workspace=4,  # TensorRT: workspace size (GB)
         nms=False,  # TF: add NMS to model
+        backend='ort',  # Backend for export NMS
         agnostic_nms=False,  # TF: add agnostic NMS to model
         topk_per_class=100,  # TF.js NMS: topk per class to keep
         topk_all=100,  # TF.js NMS: topk for all classes to keep
@@ -485,6 +549,7 @@ def run(
     flags = [x in include for x in fmts]
     assert sum(flags) == len(include), f'ERROR: Invalid --include {include}, valid --include arguments are {fmts}'
     jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle = flags  # export booleans
+    end2end, onnx = onnx and nms, onnx and not nms
     file = Path(url2file(weights) if str(weights).startswith(('http:/', 'https:/')) else weights)  # PyTorch weights
 
     # Load PyTorch model
@@ -521,7 +586,7 @@ def run(
     LOGGER.info(f"\n{colorstr('PyTorch:')} starting from {file} with output shape {shape} ({file_size(file):.1f} MB)")
 
     # Exports
-    f = [''] * len(fmts)  # exported filenames
+    f = [''] * (len(fmts) + 1)  # exported filenames
     warnings.filterwarnings(action='ignore', category=torch.jit.TracerWarning)  # suppress TracerWarning
     if jit:  # TorchScript
         f[0], _ = export_torchscript(model, im, file, optimize)
@@ -560,6 +625,9 @@ def run(
     if paddle:  # PaddlePaddle
         f[10], _ = export_paddle(model, im, file, metadata)
 
+    if end2end:
+        nms_cfg = [topk_all, iou_thres, conf_thres, backend]
+        f[11], _ = export_end2end(model, im, file, opset, nms_cfg, dynamic, simplify)
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
     if any(f):
@@ -591,6 +659,7 @@ def parse_opt():
     parser.add_argument('--verbose', action='store_true', help='TensorRT: verbose log')
     parser.add_argument('--workspace', type=int, default=4, help='TensorRT: workspace size (GB)')
     parser.add_argument('--nms', action='store_true', help='TF: add NMS to model')
+    parser.add_argument('--backend', type=str, default='ort', help='Backend for export NMS')
     parser.add_argument('--agnostic-nms', action='store_true', help='TF: add agnostic NMS to model')
     parser.add_argument('--topk-per-class', type=int, default=100, help='TF.js NMS: topk per class to keep')
     parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
