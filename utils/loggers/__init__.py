@@ -172,13 +172,13 @@ class Loggers():
         # Callback runs on train batch end
         # ni: number integrated batches (since train start)
         if self.plots:
-            if ni < 3:
+            if ni < 10:
                 f = self.save_dir / f'train_batch{ni}.jpg'  # filename
                 plot_images(imgs, targets, paths, f)
                 if ni == 0 and self.tb and not self.opt.sync_bn:
                     log_tensorboard_graph(self.tb, model, imgsz=(self.opt.imgsz, self.opt.imgsz))
             if ni == 10 and (self.wandb or self.clearml):
-                files = sorted(self.save_dir.glob('train*.jpg'))
+                files = sorted(self.save_dir.glob('train*.jpg'))[:3]
                 if self.wandb:
                     self.wandb.log({'Mosaics': [wandb.Image(str(f), caption=f.name) for f in files if f.exists()]})
                 if self.clearml:
