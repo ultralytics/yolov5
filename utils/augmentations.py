@@ -306,6 +306,7 @@ def box_candidates(box1, box2, wh_thr=2, ar_thr=100, area_thr=0.1, eps=1e-16):  
 def classify_albumentations(augment=True,
                             size=224,
                             scale=(0.08, 1.0),
+                            ratio=(0.75, 1.0 / 0.75),  # 0.75, 1.33
                             hflip=0.5,
                             vflip=0.0,
                             jitter=0.4,
@@ -319,7 +320,7 @@ def classify_albumentations(augment=True,
         from albumentations.pytorch import ToTensorV2
         check_version(A.__version__, '1.0.3', hard=True)  # version requirement
         if augment:  # Resize and crop
-            T = [A.RandomResizedCrop(height=size, width=size, scale=scale)]
+            T = [A.RandomResizedCrop(height=size, width=size, scale=scale, ratio=ratio)]
             if auto_aug:
                 # TODO: implement AugMix, AutoAug & RandAug in albumentation
                 LOGGER.info(f'{prefix}auto augmentations are currently not supported')
@@ -338,7 +339,7 @@ def classify_albumentations(augment=True,
         return A.Compose(T)
 
     except ImportError:  # package not installed, skip
-        pass
+        LOGGER.warning(f'{prefix}⚠️ not found, install with `pip install albumentations` (recommended)')
     except Exception as e:
         LOGGER.info(f'{prefix}{e}')
 
