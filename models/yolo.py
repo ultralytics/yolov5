@@ -89,8 +89,7 @@ class Detect(nn.Module):
         yv, xv = torch.meshgrid(y, x, indexing='ij') if TORCH_1_10 else torch.meshgrid(y, x)  # torch<1.10 compat
         grid = torch.stack((xv, yv), 2).expand(shape) - 0.5  # add grid offset, i.e. y = 2.0 * x - 0.5
         anchor_grid = (self.anchors[i] * self.stride[i]).view((1, self.na, 1, 1, 2)).expand(shape)
-        return (grid, anchor_grid) if TORCH_1_8 else (nn.Parameter(grid),
-                                                      nn.Parameter(anchor_grid))  # torch==1.7 compat
+        return (grid, anchor_grid) if TORCH_1_8 else (nn.Parameter(grid), nn.Parameter(anchor_grid))  # torch==1.7
 
 
 class Segment(Detect):
