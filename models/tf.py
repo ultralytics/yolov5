@@ -310,7 +310,7 @@ class TFDetect(keras.layers.Layer):
                 y = tf.concat([xy, wh, tf.sigmoid(y[..., 4:5 + self.nc]), y[..., 5 + self.nc:]], -1)
                 z.append(tf.reshape(y, [-1, self.na * ny * nx, self.no]))
 
-        return tf.transpose(x, [0, 2, 1, 3]) if self.training else (tf.concat(z, 1), x)
+        return tf.transpose(x, [0, 2, 1, 3]) if self.training else (tf.concat(z, 1),)
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
@@ -394,9 +394,8 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
                 pass
 
         n = max(round(n * gd), 1) if n > 1 else n  # depth gain
-        if m in [
-                nn.Conv2d, Conv, DWConv, DWConvTranspose2d, Bottleneck, SPP, SPPF, MixConv2d, Focus, CrossConv,
-                BottleneckCSP, C3, C3x]:
+        if m in [nn.Conv2d, Conv, DWConv, DWConvTranspose2d, Bottleneck, SPP, SPPF, MixConv2d, Focus, CrossConv,
+                 BottleneckCSP, C3, C3x]:
             c1, c2 = ch[f], args[0]
             c2 = make_divisible(c2 * gw, 8) if c2 != no else c2
 
