@@ -40,6 +40,7 @@ jobs:
           pip list
       - name: Benchmark DetectionModel
         run: |
+          python export.py --include tflite --int8 --weights yolov5s.pt yolov5s-seg.pt
           python benchmarks.py --data coco128.yaml --weights ${{ matrix.model }}.pt --img 320 --hard-fail 0.29
       - name: Benchmark SegmentationModel
         run: |
