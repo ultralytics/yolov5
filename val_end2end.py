@@ -266,7 +266,7 @@ def run(
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
     if True:
         shape = (batch_size, 3, imgsz, imgsz)
-        LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {shape}' % t)
+        LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms post-process per image at shape {shape}' % t)
 
     # Plots
     if plots:
