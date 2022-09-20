@@ -148,9 +148,7 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
                     translate=hyp["translate"],
                     scale=hyp["scale"],
                     shear=hyp["shear"],
-                    perspective=hyp["perspective"],
-                    # return_seg=True,
-                )
+                    perspective=hyp["perspective"])
 
         nl = len(labels)  # number of labels
         if nl:
