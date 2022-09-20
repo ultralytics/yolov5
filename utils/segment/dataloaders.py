@@ -140,17 +140,14 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
                 labels[:, 1:] = xywhn2xyxy(labels[:, 1:], ratio[0] * w, ratio[1] * h, padw=pad[0], padh=pad[1])
 
             if self.augment:
-                img, labels, segments = random_perspective(
-                    img,
-                    labels,
-                    segments=segments,
-                    degrees=hyp["degrees"],
-                    translate=hyp["translate"],
-                    scale=hyp["scale"],
-                    shear=hyp["shear"],
-                    perspective=hyp["perspective"],
-                    return_seg=True,
-                )
+                img, labels, segments = random_perspective(img,
+                                                           labels,
+                                                           segments=segments,
+                                                           degrees=hyp["degrees"],
+                                                           translate=hyp["translate"],
+                                                           scale=hyp["scale"],
+                                                           shear=hyp["shear"],
+                                                           perspective=hyp["perspective"])
 
         nl = len(labels)  # number of labels
         if nl:
