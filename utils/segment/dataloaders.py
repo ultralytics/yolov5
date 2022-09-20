@@ -140,17 +140,14 @@ class LoadImagesAndLabelsAndMasks(LoadImagesAndLabels):  # for training/testing
                 labels[:, 1:] = xywhn2xyxy(labels[:, 1:], ratio[0] * w, ratio[1] * h, padw=pad[0], padh=pad[1])
 
             if self.augment:
-                img, labels, segments = random_perspective(
-                    img,
-                    labels,
-                    segments=segments,
-                    degrees=hyp["degrees"],
-                    translate=hyp["translate"],
-                    scale=hyp["scale"],
-                    shear=hyp["shear"],
-                    perspective=hyp["perspective"],
-                    return_seg=True,
-                )
+                img, labels, segments = random_perspective(img,
+                                                           labels,
+                                                           segments=segments,
+                                                           degrees=hyp["degrees"],
+                                                           translate=hyp["translate"],
+                                                           scale=hyp["scale"],
+                                                           shear=hyp["shear"],
+                                                           perspective=hyp["perspective"])
 
         nl = len(labels)  # number of labels
         if nl:
@@ -308,7 +305,8 @@ def polygons2masks(img_size, polygons, color, downsample_ratio=1):
 
 def polygons2masks_overlap(img_size, segments, downsample_ratio=1):
     """Return a (640, 640) overlap mask."""
-    masks = np.zeros((img_size[0] // downsample_ratio, img_size[1] // downsample_ratio), dtype=np.uint8)
+    masks = np.zeros((img_size[0] // downsample_ratio, img_size[1] // downsample_ratio),
+                     dtype=np.int32 if len(segments) > 255 else np.uint8)
     areas = []
     ms = []
     for si in range(len(segments)):
