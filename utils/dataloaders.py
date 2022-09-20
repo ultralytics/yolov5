@@ -652,7 +652,7 @@ class LoadImagesAndLabels(Dataset):
                                                                                               shape,
                                                                                               angle=90)
 
-            #rotate -90 degree
+            # rotate -90 degree
             if random.random() < hyp['rotneg90']:
                 shape = img.shape
                 img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
