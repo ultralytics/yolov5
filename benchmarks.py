@@ -65,7 +65,7 @@ def run(
     model_type = type(attempt_load(weights, fuse=False))  # DetectionModel, SegmentationModel, etc.
     for i, (name, f, suffix, cpu, gpu) in export.export_formats().iterrows():  # index, (name, file, suffix, CPU, GPU)
         try:
-            assert i not in (9, 10, 11), 'inference not supported'  # Edge TPU, TF.js and Paddle are unsupported
+            assert i not in (9, 10), 'inference not supported'  # Edge TPU and TF.js are unsupported
             assert i != 5 or platform.system() == 'Darwin', 'inference only supported on macOS>=10.13'  # CoreML
             if 'cpu' in device.type:
                 assert cpu, 'inference not supported on CPU'
@@ -91,7 +91,7 @@ def run(
         except Exception as e:
             if hard_fail:
                 assert type(e) is AssertionError, f'Benchmark --hard-fail for {name}: {e}'
-            LOGGER.warning(f'WARNING: Benchmark failure for {name}: {e}')
+            LOGGER.warning(f'WARNING ⚠️ Benchmark failure for {name}: {e}')
             y.append([name, None, None, None])  # mAP, t_inference
         if pt_only and i == 0:
             break  # break after PyTorch
