@@ -32,9 +32,8 @@ class TritonRemoteModel:
             self.metadata = self.client.get_model_metadata(self.model_name, as_json=True)
 
             def create_input_placeholders() -> typing.List[TritonGrpcInput]:
-                return [
-                    TritonGrpcInput(i['name'], [int(s) for s in i["shape"]], i['datatype'])
-                    for i in self.metadata['inputs']]
+                ishape = [int(s) for s in i["shape"]]
+                return [TritonGrpcInput(i['name'], ishape, i['datatype']) for i in self.metadata['inputs']]
 
             self._create_input_placeholders_fn = create_input_placeholders
 
