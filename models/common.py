@@ -345,11 +345,8 @@ class DetectMultiBackend(nn.Module):
         cuda = torch.cuda.is_available() and device.type != 'cpu'  # use CUDA
 
         if triton_url:  # Triton
-            from os import path
-
             from utils.triton import TritonRemoteModel
-            model_name = path.splitext(path.basename(w))[0]
-            model = TritonRemoteModel(url=triton_url, model_name=model_name)
+            model = TritonRemoteModel(url=triton_url, model_name=Path(w).stem)
             nhwc = model.runtime.startswith("tensorflow")
         elif pt:  # PyTorch
             model = attempt_load(weights if isinstance(weights, list) else w, device=device, inplace=True, fuse=fuse)
