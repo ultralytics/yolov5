@@ -109,3 +109,79 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
     model.stride = model[torch.argmax(torch.tensor([m.stride.max() for m in model])).int()].stride  # max stride
     assert all(model[0].nc == m.nc for m in model), f'Models have different class counts: {[m.nc for m in model]}'
     return model
+
+
+class Concat_bifpn(nn.Module):
+    # Concatenate a list of tensors along dimension
+    def __init__(self, c1, c2):
+        super().__init__()
+        from models.common import Conv
+        self.w1_weight = nn.Parameter(torch.ones(2, dtype=torch.float32), requires_grad=True)
+        self.w2_weight = nn.Parameter(torch.ones(3, dtype=torch.float32), requires_grad=True)
+        self.w3_weight = nn.Parameter(torch.ones(3, dtype=torch.float32), requires_grad=True)
+        self.epsilon = 1e-5
+        self.conv = Conv(c1, c2, 1, 1, 0)
+        self.act = nn.SiLU()
+
+    def forward(self, x):  # mutil-layer 1-3 layers #ADD or Concat
+        if len(x) == 2:
+            w = self.w1_weight
+            weight = w / (torch.sum(w, dim=0) + self.epsilon)
+            x = self.conv(self.act(weight[0] * x[0] + weight[1] * x[1]))
+        elif len(x) == 3:
+            w = self.w2_weight
+            weight = w / (torch.sum(w, dim=0) + self.epsilon)
+            x = self.conv(self.act(weight[0] * x[0] + weight[1] * x[1] + weight[2] * x[2]))
+        elif len(x) == 4:
+            w = self.w3_weight
+            weight = w / (torch.sum(w, dim=0) + self.epsilon)
+            x = self.conv(self.act(weight[0] * x[0] + weight[1] * x[1] + weight[2] * x[2] + weight[3] * x[3]))
+        return x
+
+
+class ChannelAttentionModule(nn.Module):
+
+    def __init__(self, c1, reduction=16):
+        super().__init__()
+        mid_channel = c1 // reduction
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.max_pool = nn.AdaptiveMaxPool2d(1)
+
+        self.shared_MLP = nn.Sequential(nn.Linear(in_features=c1, out_features=mid_channel),
+                                        nn.LeakyReLU(0.1, inplace=True),
+                                        nn.Linear(in_features=mid_channel, out_features=c1))
+        # self.act = nn.Sigmoid()
+        self.act = nn.SiLU()
+
+    def forward(self, x):
+        avgout = self.shared_MLP(self.avg_pool(x).view(x.size(0), -1)).unsqueeze(2).unsqueeze(3)
+        maxout = self.shared_MLP(self.max_pool(x).view(x.size(0), -1)).unsqueeze(2).unsqueeze(3)
+        return self.act(avgout + maxout)
+
+
+class SpatialAttentionModule(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        self.conv2d = nn.Conv2d(in_channels=2, out_channels=1, kernel_size=7, stride=1, padding=3)
+        self.act = nn.Sigmoid()
+
+    def forward(self, x):
+        avgout = torch.mean(x, dim=1, keepdim=True)
+        maxout, _ = torch.max(x, dim=1, keepdim=True)
+        out = torch.cat([avgout, maxout], dim=1)
+        out = self.act(self.conv2d(out))
+        return out
+
+
+class CBAM(nn.Module):
+
+    def __init__(self, c1, c2):
+        super().__init__()
+        self.channel_attention = ChannelAttentionModule(c1)
+        self.spatial_attention = SpatialAttentionModule()
+
+    def forward(self, x):
+        out = self.channel_attention(x) * x
+        out = self.spatial_attention(out) * out
+        return out
