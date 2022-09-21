@@ -309,14 +309,7 @@ class Concat(nn.Module):
 
 class DetectMultiBackend(nn.Module):
     # YOLOv5 MultiBackend class for python inference on various backends
-    def __init__(self,
-                 weights='yolov5s.pt',
-                 device=torch.device('cpu'),
-                 dnn=False,
-                 data=None,
-                 fp16=False,
-                 fuse=True,
-                 triton_url=None):
+    def __init__(self, weights='yolov5s.pt', device=torch.device('cpu'), dnn=False, data=None, fp16=False, fuse=True):
         # Usage:
         #   PyTorch:              weights = *.pt
         #   TorchScript:                    *.torchscript
@@ -334,21 +327,14 @@ class DetectMultiBackend(nn.Module):
 
         super().__init__()
         w = str(weights[0] if isinstance(weights, list) else weights)
-        pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle = self._model_type(w)  # type
-        if triton_url:
-            pt = False  # prevent image reshaping for Triton server
-        else:
-            w = attempt_download(w)  # download if not local and not using Triton for inference
+        pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle, triton = self._model_type(w)
+        w = w if triton else attempt_download(w)  # download if not local
         fp16 &= pt or jit or onnx or engine  # FP16
         nhwc = coreml or saved_model or pb or tflite or edgetpu
         stride = 32  # default stride
         cuda = torch.cuda.is_available() and device.type != 'cpu'  # use CUDA
 
-        if triton_url:  # Triton
-            from utils.triton import TritonRemoteModel
-            model = TritonRemoteModel(url=triton_url, model_name=Path(w).stem)
-            nhwc = model.runtime.startswith("tensorflow")
-        elif pt:  # PyTorch
+        if pt:  # PyTorch
             model = attempt_load(weights if isinstance(weights, list) else w, device=device, inplace=True, fuse=fuse)
             stride = max(int(model.stride.max()), 32)  # model stride
             names = model.module.names if hasattr(model, 'module') else model.names  # get class names
@@ -487,6 +473,10 @@ class DetectMultiBackend(nn.Module):
             predictor = pdi.create_predictor(config)
             input_handle = predictor.get_input_handle(predictor.get_input_names()[0])
             output_names = predictor.get_output_names()
+        elif triton:  # NVIDIA Triton Inference Server
+            from utils.triton import TritonRemoteModel
+            model = TritonRemoteModel(url=w, model_name=Path(w).stem)
+            nhwc = model.runtime.startswith("tensorflow")
         else:
             raise NotImplementedError(f'ERROR: {w} is not a supported format')
 
@@ -506,9 +496,7 @@ class DetectMultiBackend(nn.Module):
         if self.nhwc:
             im = im.permute(0, 2, 3, 1)
 
-        if self.triton_url:  # Triton
-            y = self.model(im)
-        elif self.pt:  # PyTorch
+        if self.pt:  # PyTorch
             y = self.model(im, augment=augment, visualize=visualize) if augment or visualize else self.model(im)
         elif self.jit:  # TorchScript
             y = self.model(im)
@@ -551,6 +539,8 @@ class DetectMultiBackend(nn.Module):
             self.input_handle.copy_from_cpu(im)
             self.predictor.run()
             y = [self.predictor.get_output_handle(x).copy_to_cpu() for x in self.output_names]
+        elif self.triton:  # NVIDIA Triton Inference Server
+            y = self.model(im)
         else:  # TensorFlow (SavedModel, GraphDef, Lite, Edge TPU)
             im = im.cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
             if self.saved_model:  # SavedModel
@@ -585,8 +575,8 @@ class DetectMultiBackend(nn.Module):
 
     def warmup(self, imgsz=(1, 3, 640, 640)):
         # Warmup model by running inference once
-        warmup_types = self.pt, self.jit, self.onnx, self.engine, self.saved_model, self.pb
-        if (any(warmup_types) and self.device.type != 'cpu') or self.triton_url:
+        warmup_types = self.pt, self.jit, self.onnx, self.engine, self.saved_model, self.pb, self.triton
+        if any(warmup_types) and (self.device.type != 'cpu' or self.triton):
             im = torch.empty(*imgsz, dtype=torch.half if self.fp16 else torch.float, device=self.device)  # input
             for _ in range(2 if self.jit else 1):  #
                 self.forward(im)  # warmup
@@ -595,13 +585,13 @@ class DetectMultiBackend(nn.Module):
     def _model_type(p='path/to/model.pt'):
         # Return model type from model path, i.e. path='path/to/model.onnx' -> type=onnx
         from export import export_formats
-        sf = list(export_formats().Suffix) + ['.xml']  # export suffixes
+        sf = list(export_formats().Suffix) + ['http']  # export suffixes
         check_suffix(p, sf)  # checks
         p = Path(p).name  # eliminate trailing separators
-        pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle, xml2 = (s in p for s in sf)
-        xml |= xml2  # *_openvino_model or *.xml
+        pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle, triton = \
+            (s in p for s in sf)
         tflite &= not edgetpu  # *.tflite
-        return pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle
+        return pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle, triton
 
     @staticmethod
     def _load_metadata(f=Path('path/to/meta.yaml')):
