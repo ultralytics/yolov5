@@ -395,8 +395,8 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
 
         n = max(round(n * gd), 1) if n > 1 else n  # depth gain
         if m in [
-                nn.Conv2d, Conv, DWConv, DWConvTranspose2d, Bottleneck, SPP, SPPF, MixConv2d, Focus, CrossConv,
-                BottleneckCSP, C3, C3x]:
+            nn.Conv2d, Conv, DWConv, DWConvTranspose2d, Bottleneck, SPP, SPPF, MixConv2d, Focus, CrossConv,
+            BottleneckCSP, C3, C3x]:
             c1, c2 = ch[f], args[0]
             c2 = make_divisible(c2 * gw, 8) if c2 != no else c2
 
@@ -485,7 +485,7 @@ class TFModel:
                                                             iou_thres,
                                                             conf_thres,
                                                             clip_boxes=False)
-            return nms, x[1]
+            return (nms,)
         return x  # output [1,6300,85] = [xywh, conf, class0, class1, ...]
         # x = x[0]  # [x(1,6300,85), ...] to x(6300,85)
         # xywh = x[..., :4]  # x(6300,4) boxes
