@@ -25,29 +25,25 @@ class TritonRemoteModel:
 
         parsed_url = urlparse(url)
         if parsed_url.scheme == "grpc":
-            from tritonclient.grpc import InferenceServerClient as TritonGrpcClient
-            from tritonclient.grpc import InferInput as TritonGrpcInput
+            from tritonclient.grpc import InferenceServerClient, InferInput
 
-            self.client = TritonGrpcClient(parsed_url.netloc)
+            self.client = InferenceServerClient(parsed_url.netloc)  # Triton GRPC client
             self.metadata = self.client.get_model_metadata(self.model_name, as_json=True)
 
-            def create_input_placeholders() -> typing.List[TritonGrpcInput]:
+            def create_input_placeholders() -> typing.List[InferInput]:
                 return [
                     InferInput(i['name'], [int(s) for s in i["shape"]], i['datatype']) for i in self.metadata['inputs']]
 
-            self._create_input_placeholders_fn = create_input_placeholders
-
         else:
             from tritonclient.http import InferenceServerClient as TritonHttpClient
-            from tritonclient.http import InferInput as TritonHttpInput
 
-            self.client = TritonHttpClient(parsed_url.netloc)
+            self.client = InferenceServerClient(parsed_url.netloc)  # Triton HTTP client
             self.metadata = self.client.get_model_metadata(self.model_name)
 
-            def create_input_placeholders() -> typing.List[TritonHttpInput]:
-                return [TritonHttpInput(i['name'], i["shape"], i['datatype']) for i in self.metadata['inputs']]
+            def create_input_placeholders() -> typing.List[InferInput]:
+                return [InferInput(i['name'], i["shape"], i['datatype']) for i in self.metadata['inputs']]
 
-            self._create_input_placeholders_fn = create_input_placeholders
+        self._create_input_placeholders_fn = create_input_placeholders
 
     @property
     def runtime(self):
@@ -65,9 +61,7 @@ class TritonRemoteModel:
         for output in self.metadata['outputs']:
             tensor = torch.as_tensor(response.as_numpy(output['name']))
             result.append(tensor)
-        if len(result) == 1:
-            return result[0]
-        return result
+        return result[0] if len(result) == 1 else result
 
     def _create_inputs(self, *args, **kwargs):
         args_len, kwargs_len = len(args), len(kwargs)
