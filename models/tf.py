@@ -485,7 +485,7 @@ class TFModel:
                                                             iou_thres,
                                                             conf_thres,
                                                             clip_boxes=False)
-            return nms, x[1]
+            return (nms,)
         return x  # output [1,6300,85] = [xywh, conf, class0, class1, ...]
         # x = x[0]  # [x(1,6300,85), ...] to x(6300,85)
         # xywh = x[..., :4]  # x(6300,4) boxes
