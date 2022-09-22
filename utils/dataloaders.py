@@ -185,28 +185,22 @@ class _RepeatSampler:
         while True:
             yield from iter(self.sampler)
 
-
-class LoadScreenshot:
+class LoadScreenshots:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source "screen 0 100 100 512 256"`
-    def __init__(self,
-                 screen=0,
-                 left=None,
-                 top=None,
-                 width=None,
-                 height=None,
-                 img_size=640,
-                 stride=32,
-                 auto=True,
-                 transforms=None):
+    def __init__(self, source, img_size=640, stride=32, auto=True, transforms=None):
+        # get all parames
+        source, *params = source.split()
+        self.screen, self.left, self.top, self.width, self.height = 0, None, None, None, None # default to full screen 0
+        if len(params) == 1:
+            self.screen = int(params[0])
+        elif len(params) == 4:
+            self.left, self.top, self.width, self.height = [int(x) for x in params]
+        elif len(params) == 5:
+            self.screen, self.left, self.top, self.width, self.height = [int(x) for x in params]
         self.img_size = img_size
         self.stride = stride
         self.transforms = transforms
         self.auto = auto
-        self.screen = screen
-        self.left = left
-        self.top = top
-        self.width = width
-        self.height = height
         self.mode = 'image'
         self.sct = mss.mss()
         # Get information of monitor
@@ -218,7 +212,7 @@ class LoadScreenshot:
         if self.left is None:
             self.left = self.monitor["left"]
         else:
-            self.left = self.monitor["left"] + self.left
+            self.left = self.monitor["left"] + self.left  
         if self.width is None:
             self.width = self.monitor["width"]
         if self.height is None:
