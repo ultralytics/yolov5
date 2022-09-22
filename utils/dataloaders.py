@@ -203,8 +203,12 @@ class LoadScreenshot:
         self.monitor = self.sct.monitors[self.screen]
         if self.top is None:
             self.top = self.monitor["top"]
+        else:
+            self.top = self.monitor["top"]+self.top
         if self.left is None:
             self.left = self.monitor["left"]
+        else:
+            self.left = self.monitor["left"]+self.left  
         if self.width is None:
             self.width = self.monitor["width"]
         if self.height is None:
