@@ -91,10 +91,9 @@ def run(
     if webcam:
         view_img = check_imshow()
         dataset = LoadStreams(source, img_size=imgsz, transforms=classify_transforms(imgsz[0]), vid_stride=vid_stride)
-        bs = len(dataset)  # batch_size
     else:
         dataset = LoadImages(source, img_size=imgsz, transforms=classify_transforms(imgsz[0]), vid_stride=vid_stride)
-        bs = 1  # batch_size
+    bs = len(dataset)  # batch_size
     vid_path, vid_writer = [None] * bs, [None] * bs
 
     # Run inference
