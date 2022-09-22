@@ -88,7 +88,7 @@ def run(
         source, *params = source.split()
         screen, left, top, width, height = 0, None, None, None, None # default to full screen 0
         if len(params) == 1:
-            screen = params[0]
+            screen = int(params[0])
         elif len(params) == 4:
             left, top, width, height = [int(x) for x in params]
         elif len(params) == 5:
@@ -113,7 +113,6 @@ def run(
         dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
         bs = len(dataset)  # batch_size
     elif scrshot:
-        # dataset = LoadScreenshot(0, img_size=imgsz, stride=stride, auto=pt)
         dataset = LoadScreenshot(screen=screen, img_size=imgsz, stride=stride, auto=pt, left=left, top=top, width=width, height=height)
         bs = 1  # batch_size
     else:
