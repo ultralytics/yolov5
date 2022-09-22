@@ -101,13 +101,11 @@ def run(
     if webcam:
         view_img = check_imshow()
         dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
-        bs = len(dataset)  # batch_size
     elif screenshot:
         dataset = LoadScreenshots(source, img_size=imgsz, stride=stride, auto=pt)
-        bs = 1  # batch_size
     else:
         dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
-        bs = 1  # batch_size
+    bs = len(dataset)  # batch_size
     vid_path, vid_writer = [None] * bs, [None] * bs
 
     # Run inference
@@ -222,7 +220,7 @@ def parse_opt():
         '--source',
         type=str,
         default=ROOT / 'data/images',
-        help='file/dir/URL/glob, 0 for webcam, "screen [screennumber] [left top width height]" for  screen')
+        help='file/dir/URL/glob/screenshot, 0 for webcam, "screen [screennumber] [left top width height]" for  screen')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
