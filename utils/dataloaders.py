@@ -190,6 +190,7 @@ class LoadScreenshots:
     def __init__(self, source, img_size=640, stride=32, auto=True, transforms=None):
         # source = [screen_number left top width height] (pixels)
         check_requirements('mss')
+        import mss
 
         source, *params = source.split()
         self.screen, left, top, width, height = 0, None, None, None, None  # default to full screen 0
@@ -219,8 +220,7 @@ class LoadScreenshots:
         return self
 
     def __next__(self):
-        # mss screen capture
-        # Get raw pixels from the screen, save it to a Numpy array
+        # mss screen capture: get raw pixels from the screen as np array
         im0 = np.array(self.sct.grab(self.monitor))[:, :, :3]  # [:, :, :3] BGRA to BGR
         s = f"screen {self.screen} (LTWH): {self.left},{self.top},{self.width},{self.height}: "
 
