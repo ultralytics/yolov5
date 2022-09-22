@@ -188,15 +188,17 @@ class _RepeatSampler:
 class LoadScreenshots:
     # YOLOv5 screenshot dataloader, i.e. `python detect.py --source "screen 0 100 100 512 256"`
     def __init__(self, source, img_size=640, stride=32, auto=True, transforms=None):
+        # source = [screen_number left top width height] (pixels)
         check_requirements('mss')
+
         source, *params = source.split()
-        self.screen, self.left, self.top, self.width, self.height = 0, None, None, None, None  # default to full screen 0
+        self.screen, left, top, width, height = 0, None, None, None, None  # default to full screen 0
         if len(params) == 1:
             self.screen = int(params[0])
         elif len(params) == 4:
-            self.left, self.top, self.width, self.height = (int(x) for x in params)
+            left, top, width, height = (int(x) for x in params)
         elif len(params) == 5:
-            self.screen, self.left, self.top, self.width, self.height = (int(x) for x in params)
+            self.screen, left, top, width, height = (int(x) for x in params)
         self.img_size = img_size
         self.stride = stride
         self.transforms = transforms
@@ -204,20 +206,13 @@ class LoadScreenshots:
         self.mode = 'stream'
         self.frame = 0
         self.sct = mss.mss()
-        # Get information of monitor
-        self.monitor = self.sct.monitors[self.screen]
-        if self.top is None:
-            self.top = self.monitor["top"]
-        else:
-            self.top = self.monitor["top"] + self.top
-        if self.left is None:
-            self.left = self.monitor["left"]
-        else:
-            self.left = self.monitor["left"] + self.left
-        if self.width is None:
-            self.width = self.monitor["width"]
-        if self.height is None:
-            self.height = self.monitor["height"]
+
+        # Parse monitor shape
+        monitor = self.sct.monitors[self.screen]
+        self.top = monitor["top"] if top is None else (monitor["top"] + top)
+        self.left = monitor["left"] if left is None else (monitor["left"] + left)
+        self.width = width or monitor["width"]
+        self.height = height or monitor["height"]
         self.monitor = {"left": self.left, "top": self.top, "width": self.width, "height": self.height}
 
     def __iter__(self):
