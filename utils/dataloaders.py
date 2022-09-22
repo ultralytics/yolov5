@@ -19,7 +19,6 @@ from threading import Thread
 from urllib.parse import urlparse
 from zipfile import ZipFile
 
-import mss
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -187,9 +186,9 @@ class _RepeatSampler:
 
 
 class LoadScreenshots:
-    # YOLOv5 image/video dataloader, i.e. `python detect.py --source "screen 0 100 100 512 256"`
+    # YOLOv5 screenshot dataloader, i.e. `python detect.py --source "screen 0 100 100 512 256"`
     def __init__(self, source, img_size=640, stride=32, auto=True, transforms=None):
-        # get all parames
+        check_requirements('mss')
         source, *params = source.split()
         self.screen, self.left, self.top, self.width, self.height = 0, None, None, None, None  # default to full screen 0
         if len(params) == 1:
