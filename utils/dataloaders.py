@@ -18,6 +18,7 @@ from pathlib import Path
 from threading import Thread
 from urllib.parse import urlparse
 from zipfile import ZipFile
+import mss
 
 import numpy as np
 import torch
@@ -184,6 +185,47 @@ class _RepeatSampler:
         while True:
             yield from iter(self.sampler)
 
+class LoadScreenshot:
+    # YOLOv5 image/video dataloader, i.e. `python detect.py --source "screen 0 100 100 512 256"`
+    def __init__(self, screen=0, left=None, top=None, width=None, height=None , img_size=640, stride=32, auto=True, transforms=None):
+        self.img_size = img_size
+        self.stride = stride
+        self.transforms = transforms
+        self.auto = auto
+        self.screen = screen
+        self.left = left
+        self.top = top
+        self.width = width
+        self.height = height
+        self.mode = 'image'
+        self.sct = mss.mss()
+        # Get information of monitor
+        self.monitor = self.sct.monitors[self.screen]
+        if self.top is None:
+            self.top = self.monitor["top"]
+        if self.left is None:
+            self.left = self.monitor["left"]
+        if self.width is None:
+            self.width = self.monitor["width"]
+        if self.height is None:
+            self.height = self.monitor["height"]
+        self.monitor = {"left": self.left, "top": self.top, "width": self.width, "height": self.height}
+
+    def __iter__(self):
+        return self
+    def __next__(self):
+        # mss screen capture
+        # Get raw pixels from the screen, save it to a Numpy array
+        im0 = np.array(self.sct.grab(self.monitor))[:, :, :3] # [:, :, :3] BGRA to BGR
+        s = f"screen {self.screen} (LTWH): {self.left},{self.top},{self.width},{self.height}: "
+
+        if self.transforms:
+            im = self.transforms(im0)  # transforms
+        else:
+            im = letterbox(im0, self.img_size, stride=self.stride, auto=self.auto)[0]  # padded resize
+            im = im.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+            im = np.ascontiguousarray(im)  # contiguous
+        return str(self.screen), im, im0, None, s  # screen, img, original img, im0s, s
 
 class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`
