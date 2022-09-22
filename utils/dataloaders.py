@@ -18,8 +18,8 @@ from pathlib import Path
 from threading import Thread
 from urllib.parse import urlparse
 from zipfile import ZipFile
-import mss
 
+import mss
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -185,9 +185,19 @@ class _RepeatSampler:
         while True:
             yield from iter(self.sampler)
 
+
 class LoadScreenshot:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source "screen 0 100 100 512 256"`
-    def __init__(self, screen=0, left=None, top=None, width=None, height=None , img_size=640, stride=32, auto=True, transforms=None):
+    def __init__(self,
+                 screen=0,
+                 left=None,
+                 top=None,
+                 width=None,
+                 height=None,
+                 img_size=640,
+                 stride=32,
+                 auto=True,
+                 transforms=None):
         self.img_size = img_size
         self.stride = stride
         self.transforms = transforms
@@ -204,11 +214,11 @@ class LoadScreenshot:
         if self.top is None:
             self.top = self.monitor["top"]
         else:
-            self.top = self.monitor["top"]+self.top
+            self.top = self.monitor["top"] + self.top
         if self.left is None:
             self.left = self.monitor["left"]
         else:
-            self.left = self.monitor["left"]+self.left  
+            self.left = self.monitor["left"] + self.left
         if self.width is None:
             self.width = self.monitor["width"]
         if self.height is None:
@@ -217,10 +227,11 @@ class LoadScreenshot:
 
     def __iter__(self):
         return self
+
     def __next__(self):
         # mss screen capture
         # Get raw pixels from the screen, save it to a Numpy array
-        im0 = np.array(self.sct.grab(self.monitor))[:, :, :3] # [:, :, :3] BGRA to BGR
+        im0 = np.array(self.sct.grab(self.monitor))[:, :, :3]  # [:, :, :3] BGRA to BGR
         s = f"screen {self.screen} (LTWH): {self.left},{self.top},{self.width},{self.height}: "
 
         if self.transforms:
@@ -230,6 +241,7 @@ class LoadScreenshot:
             im = im.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
             im = np.ascontiguousarray(im)  # contiguous
         return str(self.screen), im, im0, None, s  # screen, img, original img, im0s, s
+
 
 class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`

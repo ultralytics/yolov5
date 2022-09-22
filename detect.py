@@ -40,7 +40,7 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.common import DetectMultiBackend
-from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams, LoadScreenshot
+from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshot, LoadStreams
 from utils.general import (LOGGER, Profile, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
                            increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
@@ -86,13 +86,13 @@ def run(
     if scrshot:
         # get all parames
         source, *params = source.split()
-        screen, left, top, width, height = 0, None, None, None, None # default to full screen 0
+        screen, left, top, width, height = 0, None, None, None, None  # default to full screen 0
         if len(params) == 1:
             screen = int(params[0])
         elif len(params) == 4:
-            left, top, width, height = [int(x) for x in params]
+            left, top, width, height = (int(x) for x in params)
         elif len(params) == 5:
-            screen, left, top, width, height = [int(x) for x in params]
+            screen, left, top, width, height = (int(x) for x in params)
 
     if is_url and is_file:
         source = check_file(source)  # download
@@ -113,7 +113,14 @@ def run(
         dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
         bs = len(dataset)  # batch_size
     elif scrshot:
-        dataset = LoadScreenshot(screen=screen, img_size=imgsz, stride=stride, auto=pt, left=left, top=top, width=width, height=height)
+        dataset = LoadScreenshot(screen=screen,
+                                 img_size=imgsz,
+                                 stride=stride,
+                                 auto=pt,
+                                 left=left,
+                                 top=top,
+                                 width=width,
+                                 height=height)
         bs = 1  # batch_size
     else:
         dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
@@ -228,7 +235,11 @@ def run(
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path(s)')
-    parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob, 0 for webcam, "screen [screennumber] [left top width height]" for  screen')
+    parser.add_argument(
+        '--source',
+        type=str,
+        default=ROOT / 'data/images',
+        help='file/dir/URL/glob, 0 for webcam, "screen [screennumber] [left top width height]" for  screen')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
