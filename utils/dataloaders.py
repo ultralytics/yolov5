@@ -203,6 +203,7 @@ class LoadScreenshots:
         self.transforms = transforms
         self.auto = auto
         self.mode = 'image'
+        self.nf = 0  # number of files
         self.sct = mss.mss()
         # Get information of monitor
         self.monitor = self.sct.monitors[self.screen]
@@ -235,7 +236,8 @@ class LoadScreenshots:
             im = letterbox(im0, self.img_size, stride=self.stride, auto=self.auto)[0]  # padded resize
             im = im.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
             im = np.ascontiguousarray(im)  # contiguous
-        return str(self.screen), im, im0, None, s  # screen, img, original img, im0s, s
+        self.nf += 1
+        return str(self.nf) + '_', im, im0, None, s  # screen, img, original img, im0s, s
 
 
 class LoadImages:
