@@ -125,8 +125,11 @@ class ComputeLoss:
 
         targets, ignores, zd, jd, angles = targets.split([6, 1, 1, 1, 1], 1)
         # tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets
+
         tcls, tbox, indices, anchors = self.build_targets_with_ignores(p, targets, ignores=ignores)  # targets
 
+        cls, ignores = targets[:, 1], ignores.flatten()
+        cls = torch.where(ignores == 0, cls, -torch.ones_like(cls))
         # Losses
         for i, pi in enumerate(p):  # layer index, layer predictions
             b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
@@ -268,7 +271,7 @@ class ComputeLoss:
                 j = torch.max(r, 1 / r).max(2)[0] < self.hyp['anchor_t']  # compare
                 # j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
                 if ignores is not None:
-                    j = j & ignores.flatten().bool()
+                    j = j & ignores.bool()
                 t = t[j]  # filter
 
                 # Offsets
