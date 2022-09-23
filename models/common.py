@@ -477,7 +477,7 @@ class DetectMultiBackend(nn.Module):
             LOGGER.info(f'Using {w} as Triton Inference Server...')
             check_requirements('tritonclient')
             from utils.triton import TritonRemoteModel
-            model = TritonRemoteModel(url=w, model_name=Path(w).stem)
+            model = TritonRemoteModel(url=w)
             nhwc = model.runtime.startswith("tensorflow")
         else:
             raise NotImplementedError(f'ERROR: {w} is not a supported format')
@@ -496,7 +496,7 @@ class DetectMultiBackend(nn.Module):
         if self.fp16 and im.dtype != torch.float16:
             im = im.half()  # to FP16
         if self.nhwc:
-            im = im.permute(0, 2, 3, 1)
+            im = im.permute(0, 2, 3, 1) # torch BCHW to numpy BHWC shape(1,320,192,3)
 
         if self.pt:  # PyTorch
             y = self.model(im, augment=augment, visualize=visualize) if augment or visualize else self.model(im)
@@ -526,7 +526,7 @@ class DetectMultiBackend(nn.Module):
             self.context.execute_v2(list(self.binding_addrs.values()))
             y = [self.bindings[x].data for x in sorted(self.output_names)]
         elif self.coreml:  # CoreML
-            im = im.cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
+            im = im.cpu().numpy()
             im = Image.fromarray((im[0] * 255).astype('uint8'))
             # im = im.resize((192, 320), Image.ANTIALIAS)
             y = self.model.predict({'image': im})  # coordinates are xywh normalized
@@ -544,7 +544,7 @@ class DetectMultiBackend(nn.Module):
         elif self.triton:  # NVIDIA Triton Inference Server
             y = self.model(im)
         else:  # TensorFlow (SavedModel, GraphDef, Lite, Edge TPU)
-            im = im.cpu().numpy()  # torch BCHW to numpy BHWC shape(1,320,192,3)
+            im = im.cpu().numpy()
             if self.saved_model:  # SavedModel
                 y = self.model(im, training=False) if self.keras else self.model(im)
             elif self.pb:  # GraphDef
@@ -587,13 +587,14 @@ class DetectMultiBackend(nn.Module):
     def _model_type(p='path/to/model.pt'):
         # Return model type from model path, i.e. path='path/to/model.onnx' -> type=onnx
         from export import export_formats
-        sf = list(export_formats().Suffix) + ['http', 'grpc']  # export suffixes
+        sf = list(export_formats().Suffix) # export suffixes
         check_suffix(p, sf)  # checks
-        p = Path(p).name  # eliminate trailing separators
-        pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle, http, grpc = \
-            (s in p for s in sf)
+        pname = Path(p).name  # eliminate trailing separators
+        pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle = (s in pname for s in sf)
         tflite &= not edgetpu  # *.tflite
-        triton = http or grpc  # Triton Inference Server
+        from urllib.parse import urlparse
+        u = urlparse(p)
+        triton = all([any(s in u.scheme for s in ["http", "grpc"]), u.netloc])
         return pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle, triton
 
     @staticmethod
