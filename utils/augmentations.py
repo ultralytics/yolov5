@@ -47,8 +47,10 @@ class Albumentations:
 
     def __call__(self, im, labels, p=1.0):
         if self.transform and random.random() < p:
-            new = self.transform(image=im, bboxes=labels[:, 1:], class_labels=labels[:, 0])  # transformed
-            im, labels = new['image'], np.array([[c, *b] for c, b in zip(new['class_labels'], new['bboxes'])])
+            new = self.transform(image=im, bboxes=labels[:, 1:5], class_labels=labels[:, 0])  # transformed
+            remained = labels[:, 5:]
+            im, labels = new['image'], np.array([[c, *b, *r]
+                                                 for c, b, r in zip(new['class_labels'], new['bboxes'], remained)])
         return im, labels
 
 
