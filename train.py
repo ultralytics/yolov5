@@ -426,7 +426,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
 
         callbacks.run('on_train_end', last, best, epoch, results)
-    LOGGER.info(f'\nBest_epoch: {best_epoch}.')
+    LOGGER.info(f'\nBest epoch: {best_epoch}.')
     torch.cuda.empty_cache()
     return results
 
