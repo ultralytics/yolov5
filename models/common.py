@@ -496,7 +496,7 @@ class DetectMultiBackend(nn.Module):
         if self.fp16 and im.dtype != torch.float16:
             im = im.half()  # to FP16
         if self.nhwc:
-            im = im.permute(0, 2, 3, 1) # torch BCHW to numpy BHWC shape(1,320,192,3)
+            im = im.permute(0, 2, 3, 1)  # torch BCHW to numpy BHWC shape(1,320,192,3)
 
         if self.pt:  # PyTorch
             y = self.model(im, augment=augment, visualize=visualize) if augment or visualize else self.model(im)
@@ -587,7 +587,7 @@ class DetectMultiBackend(nn.Module):
     def _model_type(p='path/to/model.pt'):
         # Return model type from model path, i.e. path='path/to/model.onnx' -> type=onnx
         from export import export_formats
-        sf = list(export_formats().Suffix) # export suffixes
+        sf = list(export_formats().Suffix)  # export suffixes
         check_suffix(p, sf)  # checks
         pname = Path(p).name  # eliminate trailing separators
         pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle = (s in pname for s in sf)

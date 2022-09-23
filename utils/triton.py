@@ -30,7 +30,8 @@ class TritonRemoteModel:
             self.metadata = self.client.get_model_metadata(self.model_name, as_json=True)
 
             def create_input_placeholders() -> typing.List[InferInput]:
-                return [InferInput(i['name'], [int(s) for s in i["shape"]], i['datatype']) for i in self.metadata['inputs']]
+                return [
+                    InferInput(i['name'], [int(s) for s in i["shape"]], i['datatype']) for i in self.metadata['inputs']]
 
         else:
             from tritonclient.http import InferenceServerClient, InferInput
@@ -41,7 +42,8 @@ class TritonRemoteModel:
             self.metadata = self.client.get_model_metadata(self.model_name)
 
             def create_input_placeholders() -> typing.List[InferInput]:
-                return [InferInput(i['name'], [int(s) for s in i["shape"]], i['datatype']) for i in self.metadata['inputs']]
+                return [
+                    InferInput(i['name'], [int(s) for s in i["shape"]], i['datatype']) for i in self.metadata['inputs']]
 
         self._create_input_placeholders_fn = create_input_placeholders
 
