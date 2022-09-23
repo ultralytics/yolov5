@@ -587,12 +587,12 @@ class DetectMultiBackend(nn.Module):
     def _model_type(p='path/to/model.pt'):
         # Return model type from model path, i.e. path='path/to/model.onnx' -> type=onnx
         from export import export_formats
+        from urllib.parse import urlparse
         sf = list(export_formats().Suffix)  # export suffixes
         check_suffix(p, sf)  # checks
         pname = Path(p).name  # eliminate trailing separators
         pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle = (s in pname for s in sf)
         tflite &= not edgetpu  # *.tflite
-        from urllib.parse import urlparse
         u = urlparse(p)
         triton = all([any(s in u.scheme for s in ["http", "grpc"]), u.netloc])
         return pt, jit, onnx, xml, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle, triton
