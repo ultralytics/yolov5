@@ -16,13 +16,13 @@ import requests
 import torch
 
 
-def is_url(url, check_online=True):
-    # Check if online file exists
+def is_url(url, check_exists=True):
+    # Check if string is URL and check if URL exists
     try:
         url = str(url)
         result = urllib.parse.urlparse(url)
         assert all([result.scheme, result.netloc, result.path])  # check if is url
-        return (urllib.request.urlopen(url).getcode() == 200) if check_online else True  # check if exists online
+        return (urllib.request.urlopen(url).getcode() == 200) if check_exists else True  # check if exists online
     except (AssertionError, urllib.request.HTTPError):
         return False
 

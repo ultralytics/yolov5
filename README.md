@@ -107,6 +107,7 @@ the latest YOLOv5 [release](https://github.com/ultralytics/yolov5/releases) and 
 python detect.py --source 0  # webcam
                           img.jpg  # image
                           vid.mp4  # video
+                          screen  # screenshot
                           path/  # directory
                           'path/*.jpg'  # glob
                           'https://youtu.be/Zgi9g1ksQHc'  # YouTube
