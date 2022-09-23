@@ -5,7 +5,7 @@ Loss functions
 
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 from utils.metrics import bbox_iou
 from utils.torch_utils import de_parallel
 
@@ -124,8 +124,18 @@ class ComputeLoss:
         lobj = torch.zeros(1, device=self.device)  # object loss
 
         targets, ignores, zd, jd, angles = targets.split([6, 1, 1, 1, 1], 1)
+        ignores = torch.flatten(ignores)
+        #get ignore index
+        #真弟版本
+        targets_ignore = targets.clone()
+        res_list = [i for i, value in enumerate(ignores) if value == 1]
+        for i in res_list:
+            targets_ignore[:,1:2][i] = -1
+        #松哥版本
+
+
         # tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets
-        tcls, tbox, indices, anchors = self.build_targets_with_ignores(p, targets, ignores=ignores)  # targets
+        tcls, tbox, indices, anchors = self.build_targets_with_ignores(p, targets_ignore, ignores=ignores)  # targets
 
         # Losses
         for i, pi in enumerate(p):  # layer index, layer predictions
@@ -157,7 +167,9 @@ class ComputeLoss:
                 if self.nc > 1:  # cls loss (only if multiple classes)
                     t = torch.full_like(pcls, self.cn, device=self.device)  # targets
                     t[range(n), tcls[i]] = self.cp
-                    lcls += self.BCEcls(pcls, t)  # BCE
+                    # lcls += self.BCEcls(pcls, t)  # BCE
+
+                    lcls += F.cross_entropy(pcls, t, ignore_index=-1)
 
                 # Append targets to text file
                 # with open('targets.txt', 'a') as file:

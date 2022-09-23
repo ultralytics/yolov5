@@ -33,7 +33,7 @@ try:
             wandb = None
 except (ImportError, AssertionError):
     wandb = None
-
+wandb = None
 try:
     import clearml
 
