@@ -26,7 +26,7 @@ class TritonRemoteModel:
 
             self.client = InferenceServerClient(parsed_url.netloc)  # Triton GRPC client
             model_repository = self.client.get_model_repository_index()
-            self.model_name = model_repository[0]['name']
+            self.model_name = model_repository.models[0].name
             self.metadata = self.client.get_model_metadata(self.model_name, as_json=True)
 
             def create_input_placeholders() -> typing.List[InferInput]:
