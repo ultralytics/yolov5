@@ -586,8 +586,9 @@ class DetectMultiBackend(nn.Module):
     @staticmethod
     def _model_type(p='path/to/model.pt'):
         # Return model type from model path, i.e. path='path/to/model.onnx' -> type=onnx
-        from export import export_formats
         from urllib.parse import urlparse
+
+        from export import export_formats
         sf = list(export_formats().Suffix)  # export suffixes
         check_suffix(p, sf)  # checks
         pname = Path(p).name  # eliminate trailing separators
