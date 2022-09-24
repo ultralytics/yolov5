@@ -23,7 +23,7 @@ from torch.cuda import amp
 
 from utils.dataloaders import exif_transpose, letterbox
 from utils.general import (LOGGER, ROOT, Profile, check_requirements, check_suffix, check_version, colorstr,
-                           increment_path, make_divisible, non_max_suppression, scale_coords, xywh2xyxy, xyxy2xywh,
+                           increment_path, make_divisible, non_max_suppression, scale_boxes, xywh2xyxy, xyxy2xywh,
                            yaml_load)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, smart_inference_mode
@@ -703,7 +703,7 @@ class AutoShape(nn.Module):
                                         self.multi_label,
                                         max_det=self.max_det)  # NMS
                 for i in range(n):
-                    scale_coords(shape1, y[i][:, :4], shape0[i])
+                    scale_boxes(shape1, y[i][:, :4], shape0[i])
 
             return Detections(ims, y, files, dt, self.names, x.shape)
 
