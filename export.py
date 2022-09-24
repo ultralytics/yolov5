@@ -48,6 +48,7 @@ import argparse
 import json
 import os
 import platform
+import re
 import subprocess
 import sys
 import time
@@ -66,11 +67,13 @@ if platform.system() != 'Windows':
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.experimental import attempt_load
-from models.yolo import ClassificationModel, Detect
+from models.yolo import ClassificationModel, Detect, DetectionModel, SegmentationModel
 from utils.dataloaders import LoadImages
 from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_version,
                            check_yaml, colorstr, file_size, get_default_args, print_args, url2file, yaml_save)
 from utils.torch_utils import select_device, smart_inference_mode
+
+MACOS = platform.system() == 'Darwin'  # macOS environment
 
 
 def export_formats():
@@ -126,7 +129,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
 
 
 @try_export
-def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:')):
+def export_onnx(model, im, file, opset, dynamic, simplify, prefix=colorstr('ONNX:')):
     # YOLOv5 ONNX export
     check_requirements('onnx')
     import onnx
@@ -134,25 +137,25 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
     LOGGER.info(f'\n{prefix} starting export with onnx {onnx.__version__}...')
     f = file.with_suffix('.onnx')
 
+    output_names = ['output0', 'output1'] if isinstance(model, SegmentationModel) else ['output0']
+    if dynamic:
+        dynamic = {'images': {0: 'batch', 2: 'height', 3: 'width'}}  # shape(1,3,640,640)
+        if isinstance(model, SegmentationModel):
+            dynamic['output0'] = {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
+            dynamic['output1'] = {0: 'batch', 2: 'mask_height', 3: 'mask_width'}  # shape(1,32,160,160)
+        elif isinstance(model, DetectionModel):
+            dynamic['output0'] = {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
+
     torch.onnx.export(
         model.cpu() if dynamic else model,  # --dynamic only compatible with cpu
         im.cpu() if dynamic else im,
         f,
         verbose=False,
         opset_version=opset,
-        training=torch.onnx.TrainingMode.TRAINING if train else torch.onnx.TrainingMode.EVAL,
-        do_constant_folding=not train,
+        do_constant_folding=True,
         input_names=['images'],
-        output_names=['output'],
-        dynamic_axes={
-            'images': {
-                0: 'batch',
-                2: 'height',
-                3: 'width'},  # shape(1,3,640,640)
-            'output': {
-                0: 'batch',
-                1: 'anchors'}  # shape(1,25200,85)
-        } if dynamic else None)
+        output_names=output_names,
+        dynamic_axes=dynamic or None)
 
     # Checks
     model_onnx = onnx.load(f)  # load onnx model
@@ -224,7 +227,7 @@ def export_coreml(model, im, file, int8, half, prefix=colorstr('CoreML:')):
     ct_model = ct.convert(ts, inputs=[ct.ImageType('image', shape=im.shape, scale=1 / 255, bias=[0, 0, 0])])
     bits, mode = (8, 'kmeans_lut') if int8 else (16, 'linear') if half else (32, None)
     if bits < 32:
-        if platform.system() == 'Darwin':  # quantization only supported on macOS
+        if MACOS:  # quantization only supported on macOS
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=DeprecationWarning)  # suppress numpy==1.20 float warning
                 ct_model = ct.models.neural_network.quantization_utils.quantize_weights(ct_model, bits, mode)
@@ -252,7 +255,7 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
         model.model[-1].anchor_grid = grid
     else:  # TensorRT >= 8
         check_version(trt.__version__, '8.0.0', hard=True)  # require tensorrt>=8.0.0
-        export_onnx(model, im, file, 13, False, dynamic, simplify)  # opset 13
+        export_onnx(model, im, file, 12, False, dynamic, simplify)  # opset 12
     onnx = file.with_suffix('.onnx')
 
     LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
@@ -275,21 +278,20 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
 
     inputs = [network.get_input(i) for i in range(network.num_inputs)]
     outputs = [network.get_output(i) for i in range(network.num_outputs)]
-    LOGGER.info(f'{prefix} Network Description:')
     for inp in inputs:
-        LOGGER.info(f'{prefix}\tinput "{inp.name}" with shape {inp.shape} and dtype {inp.dtype}')
+        LOGGER.info(f'{prefix} input "{inp.name}" with shape{inp.shape} {inp.dtype}')
     for out in outputs:
-        LOGGER.info(f'{prefix}\toutput "{out.name}" with shape {out.shape} and dtype {out.dtype}')
+        LOGGER.info(f'{prefix} output "{out.name}" with shape{out.shape} {out.dtype}')
 
     if dynamic:
         if im.shape[0] <= 1:
-            LOGGER.warning(f"{prefix}WARNING: --dynamic model requires maximum --batch-size argument")
+            LOGGER.warning(f"{prefix}WARNING ⚠️ --dynamic model requires maximum --batch-size argument")
         profile = builder.create_optimization_profile()
         for inp in inputs:
             profile.set_shape(inp.name, (1, *im.shape[1:]), (max(1, im.shape[0] // 2), *im.shape[1:]), im.shape)
         config.add_optimization_profile(profile)
 
-    LOGGER.info(f'{prefix} building FP{16 if builder.platform_has_fast_fp16 and half else 32} engine in {f}')
+    LOGGER.info(f'{prefix} building FP{16 if builder.platform_has_fast_fp16 and half else 32} engine as {f}')
     if builder.platform_has_fast_fp16 and half:
         config.set_flag(trt.BuilderFlag.FP16)
     with builder.build_engine(network, config) as engine, open(f, 'wb') as t:
@@ -311,7 +313,11 @@ def export_saved_model(model,
                        keras=False,
                        prefix=colorstr('TensorFlow SavedModel:')):
     # YOLOv5 TensorFlow SavedModel export
-    import tensorflow as tf
+    try:
+        import tensorflow as tf
+    except Exception:
+        check_requirements(f"tensorflow{'' if torch.cuda.is_available() else '-macos' if MACOS else '-cpu'}")
+        import tensorflow as tf
     from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
     from models.tf import TFModel
@@ -336,7 +342,7 @@ def export_saved_model(model,
         m = m.get_concrete_function(spec)
         frozen_func = convert_variables_to_constants_v2(m)
         tfm = tf.Module()
-        tfm.__call__ = tf.function(lambda x: frozen_func(x)[:4] if tf_nms else frozen_func(x)[0], [spec])
+        tfm.__call__ = tf.function(lambda x: frozen_func(x)[:4] if tf_nms else frozen_func(x), [spec])
         tfm.__call__(im)
         tf.saved_model.save(tfm,
                             f,
@@ -422,8 +428,6 @@ def export_edgetpu(file, prefix=colorstr('Edge TPU:')):
 def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
     # YOLOv5 TensorFlow.js export
     check_requirements('tensorflowjs')
-    import re
-
     import tensorflowjs as tfjs
 
     LOGGER.info(f'\n{prefix} starting export with tensorflowjs {tfjs.__version__}...')
@@ -459,7 +463,6 @@ def run(
         include=('torchscript', 'onnx'),  # include formats
         half=False,  # FP16 half-precision export
         inplace=False,  # set YOLOv5 Detect() inplace=True
-        train=False,  # model.train() mode
         keras=False,  # use Keras
         optimize=False,  # TorchScript: optimize for mobile
         int8=False,  # CoreML/TF INT8 quantization
@@ -501,7 +504,7 @@ def run(
     im = torch.zeros(batch_size, 3, *imgsz).to(device)  # image size(1,3,320,192) BCHW iDetection
 
     # Update model
-    model.train() if train else model.eval()  # training mode = no Detect() layer grid construction
+    model.eval()
     for k, m in model.named_modules():
         if isinstance(m, Detect):
             m.inplace = inplace
@@ -524,14 +527,12 @@ def run(
     if engine:  # TensorRT required before ONNX
         f[1], _ = export_engine(model, im, file, half, dynamic, simplify, workspace, verbose)
     if onnx or xml:  # OpenVINO requires ONNX
-        f[2], _ = export_onnx(model, im, file, opset, train, dynamic, simplify)
+        f[2], _ = export_onnx(model, im, file, opset, dynamic, simplify)
     if xml:  # OpenVINO
         f[3], _ = export_openvino(file, metadata, half)
     if coreml:  # CoreML
         f[4], _ = export_coreml(model, im, file, int8, half)
     if any((saved_model, pb, tflite, edgetpu, tfjs)):  # TensorFlow formats
-        if int8 or edgetpu:  # TFLite --int8 bug https://github.com/ultralytics/yolov5/issues/5707
-            check_requirements('flatbuffers==1.12')  # required before `import tensorflow`
         assert not tflite or not tfjs, 'TFLite and TF.js models must be exported separately, please pass only one type.'
         assert not isinstance(model, ClassificationModel), 'ClassificationModel export to TF formats not yet supported.'
         f[5], s_model = export_saved_model(model.cpu(),
@@ -578,7 +579,6 @@ def parse_opt():
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
     parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
-    parser.add_argument('--train', action='store_true', help='model.train() mode')
     parser.add_argument('--keras', action='store_true', help='TF: use Keras')
     parser.add_argument('--optimize', action='store_true', help='TorchScript: optimize for mobile')
     parser.add_argument('--int8', action='store_true', help='CoreML/TF INT8 quantization')
@@ -593,10 +593,11 @@ def parse_opt():
     parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='TF.js NMS: IoU threshold')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
-    parser.add_argument('--include',
-                        nargs='+',
-                        default=['torchscript'],
-                        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
+    parser.add_argument(
+        '--include',
+        nargs='+',
+        default=['torchscript'],
+        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle')
     opt = parser.parse_args()
     print_args(vars(opt))
     return opt
