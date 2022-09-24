@@ -1170,7 +1170,7 @@ def create_classification_dataloader(path,
     nw = min([os.cpu_count() // max(nd, 1), batch_size if batch_size > 1 else 0, workers])
     sampler = None if rank == -1 else distributed.DistributedSampler(dataset, shuffle=shuffle)
     generator = torch.Generator()
-    generator.manual_seed(0)
+    generator.manual_seed(6148914691236517205 + RANK)
     return InfiniteDataLoader(dataset,
                               batch_size=batch_size,
                               shuffle=shuffle and sampler is None,
