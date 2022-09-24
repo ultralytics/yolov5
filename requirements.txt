@@ -34,6 +34,9 @@ seaborn>=0.11.0
 # tensorflowjs>=3.9.0  # TF.js export
 # openvino-dev  # OpenVINO export
 
+# Deploy --------------------------------------
+# tritonclient[all]~=2.24.0
+
 # Extras --------------------------------------
 ipython  # interactive notebook
 psutil  # system utilization
