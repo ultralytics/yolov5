@@ -87,9 +87,7 @@ def attempt_download(file, repo='ultralytics/yolov5', release='v6.2'):
             return file
 
         # GitHub assets
-        assets = [
-            'yolov5n.pt', 'yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov5n6.pt', 'yolov5s6.pt',
-            'yolov5m6.pt', 'yolov5l6.pt', 'yolov5x6.pt']
+        assets = [f'yolov5{size}{suffix}.pt' for size in 'nsmlx' for suffix in ('', '6', '-cls', '-seg')]  # default
         try:
             tag, assets = github_assets(repo, release)
         except Exception:
@@ -107,7 +105,6 @@ def attempt_download(file, repo='ultralytics/yolov5', release='v6.2'):
             safe_download(
                 file,
                 url=f'https://github.com/{repo}/releases/download/{tag}/{name}',
-                url2=f'https://storage.googleapis.com/{repo}/{tag}/{name}',  # backup url (optional)
                 min_bytes=1E5,
                 error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/{tag} or {url3}')
 
