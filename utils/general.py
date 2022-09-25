@@ -741,6 +741,35 @@ def xyn2xy(x, w=640, h=640, padw=0, padh=0):
     y[:, 1] = h * x[:, 1] + padh  # top left y
     return y
 
+def filter_max_bbox(det_results):
+    """Function to filter and retrieve the index of the largest bounding box in detection results.
+    
+    Regardless of class or model parameters; largest detection in image.
+
+    Args:
+        det_results (tensor): tensor detection result
+
+    Returns:
+        int: integer value for use in indexing
+    """
+
+    y = (
+        det_results.clone()
+        if isinstance(det_results, torch.Tensor)
+        else np.copy(det_results)
+    )
+
+    if len(y) > 0:
+        # calculate bounding box sizes
+        box_sizes = [x[2] * x[3] for x in y]
+        # get the tensor index with the largest bbox
+        index_max = box_sizes.index(max(box_sizes))
+    else:
+        ## if results are none, use original result provided.
+        index_max = None
+
+    return index_max
+
 
 def segment2box(segment, width=640, height=640):
     # Convert 1 segment label to 1 box label, applying inside-image constraint, i.e. (xy1, xy2, ...) to (xyxy)
