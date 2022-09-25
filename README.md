@@ -1,9 +1,6 @@
 <div align="center">
 
-
-  Hi everyone!
-
-  I'm [Glenn Jocher](https://www.linkedin.com/in/glenn-jocher/), author of [YOLOv5](https://github.com/ultralytics/yolov5) 🚀.
+  Hi, I'm [Glenn Jocher](https://www.linkedin.com/in/glenn-jocher/), author of [YOLOv5](https://github.com/ultralytics/yolov5) 🚀.
 
   I'd like to invite you to attend the world's first-ever YOLO conference: [#YOLOVISION22](https://ultralytics.com/yolo-vision)!
 
