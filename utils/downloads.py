@@ -87,9 +87,7 @@ def attempt_download(file, repo='ultralytics/yolov5', release='v6.2'):
             return file
 
         # GitHub assets
-        assets = [
-            'yolov5n.pt', 'yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov5n6.pt', 'yolov5s6.pt',
-            'yolov5m6.pt', 'yolov5l6.pt', 'yolov5x6.pt']
+        assets = [f'yolov5{x}{y}.pt' for x in 'nsmlx' for y in ('', '6', '-cls', '-seg')]  # default assets
         try:
             tag, assets = github_assets(repo, release)
         except Exception:
