@@ -10,7 +10,9 @@ PyYAML>=5.3.1
 requests>=2.23.0
 scipy>=1.4.1
 torch>=1.7.0
+--extra-index-url https://download.pytorch.org/whl/cu116
 torchvision>=0.8.1
+--extra-index-url https://download.pytorch.org/whl/cu116
 tqdm>=4.64.0
 # protobuf<=3.20.1  # https://github.com/ultralytics/yolov5/issues/8012
 
