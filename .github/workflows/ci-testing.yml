@@ -44,6 +44,10 @@ jobs:
       - name: Benchmark SegmentationModel
         run: |
           python benchmarks.py --data coco128-seg.yaml --weights ${{ matrix.model }}-seg.pt --img 320 --hard-fail 0.22
+      - name: Test predictions
+        run: |
+          python detect.py --data --weights ${{ matrix.model }}.onnx --img 320
+          python segment/predict.py --weights ${{ matrix.model }}-seg.onnx --img 320
 
   Tests:
     timeout-minutes: 60
