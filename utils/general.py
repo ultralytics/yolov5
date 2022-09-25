@@ -741,9 +741,10 @@ def xyn2xy(x, w=640, h=640, padw=0, padh=0):
     y[:, 1] = h * x[:, 1] + padh  # top left y
     return y
 
+
 def filter_max_bbox(det_results):
     """Function to filter and retrieve the index of the largest bounding box in detection results.
-    
+
     Regardless of class or model parameters; largest detection in image.
 
     Args:
@@ -753,11 +754,7 @@ def filter_max_bbox(det_results):
         int: integer value for use in indexing
     """
 
-    y = (
-        det_results.clone()
-        if isinstance(det_results, torch.Tensor)
-        else np.copy(det_results)
-    )
+    y = (det_results.clone() if isinstance(det_results, torch.Tensor) else np.copy(det_results))
 
     if len(y) > 0:
         # calculate bounding box sizes
