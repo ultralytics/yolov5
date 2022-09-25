@@ -49,7 +49,7 @@ jobs:
           python export.py --weights ${{ matrix.model }}-cls.pt --include onnx --img 224
           python detect.py --weights ${{ matrix.model }}.onnx --img 320
           python segment/predict.py --weights ${{ matrix.model }}-seg.onnx --img 320
-          python segment/predict.py --weights ${{ matrix.model }}-cls.onnx --img 224
+          python classify/predict.py --weights ${{ matrix.model }}-cls.onnx --img 224
 
   Tests:
     timeout-minutes: 60
