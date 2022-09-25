@@ -45,7 +45,7 @@ from utils.general import (LOGGER, Profile, check_file, check_img_size, check_im
                            increment_path, non_max_suppression, print_args, scale_boxes, scale_segments,
                            strip_optimizer, xyxy2xywh)
 from utils.plots import Annotator, colors, save_one_box
-from utils.segment.general import process_mask, masks2segments
+from utils.segment.general import masks2segments, process_mask
 from utils.torch_utils import select_device, smart_inference_mode
 
 
