@@ -4,7 +4,7 @@
 
   I'd like to invite you to attend the world's first-ever YOLO conference: [#YOLOVISION22](https://ultralytics.com/yolo-vision)!
 
-  This virtual event takes place on **September 27th, 2022** with talks from the world's leading vision AI experts from Google, SenseTime's MMLabs, Baidu's PaddlePaddle, Meituan's YOLOv6, Weight & Biases, Roboflow, Neural Magic, OctoML and of course Ultralytics YOLOv5 and many others.
+  This virtual event takes place on **September 27th, 2022** with talks from the world's leading vision AI experts from Google, OpenMMLab's MMDetection, Baidu's PaddlePaddle, Meituan's YOLOv6, Weight & Biases, Roboflow, Neural Magic, OctoML and of course Ultralytics YOLOv5 and many others.
 
   Save your spot at https://ultralytics.com/yolo-vision!
 
