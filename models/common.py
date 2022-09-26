@@ -149,12 +149,14 @@ class BottleneckCSP(nn.Module):
 
 class CrossConv(nn.Module):
     # Cross Convolution Downsample
-    def __init__(self, c1, c2, k=5, s=1, g=1, e=1.0, shortcut=False):
+    def __init__(self, c1, c2, k=3, s=1, g=1, e=1.0, shortcut=False):
         # ch_in, ch_out, kernel, stride, groups, expansion, shortcut
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c_, (1, k), (1, s))
-        self.cv2 = Conv(c_, c2, (k, 1), (s, 1), g=g)
+        # self.cv1 = Conv(c1, c_, (1, k), (1, s))
+        # self.cv2 = Conv(c_, c2, (k, 1), (s, 1), g=g)
+        self.cv1 = DWConv(c1, c_, (5, 5), (1, s))
+        self.cv2 = Conv(c_, c2, (3, 3), (s, 1), g=g)
         self.add = shortcut and c1 == c2
 
     def forward(self, x):
