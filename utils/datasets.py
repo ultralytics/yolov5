@@ -97,7 +97,7 @@ def exif_transpose(image):
 
 
 def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False, pad=0.0,
-                      rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix='', shuffle=False):
+                      rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix='', shuffle=False, drop_last=False):
     if rect and shuffle:
         LOGGER.warning('WARNING: --rect is incompatible with DataLoader shuffle, setting shuffle=False')
         shuffle = False
@@ -124,6 +124,7 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
                   num_workers=nw,
                   sampler=sampler,
                   pin_memory=True,
+                  drop_last=drop_last,
                   collate_fn=LoadImagesAndLabels.collate_fn4 if quad else LoadImagesAndLabels.collate_fn), dataset
 
 

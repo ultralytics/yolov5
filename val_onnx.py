@@ -266,7 +266,7 @@ def run(
         pad=pad,
         rect=rect,
         workers=1,
-        # workers=workers,
+        drop_last=True,
         prefix=colorstr(f"{task}: "),
     )[0]
 
