@@ -92,7 +92,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Loggers
     data_dict = None
     if RANK in [-1, 0]:
-        loggers = Loggers(save_dir, weights, opt, hyp, LOGGER)  # loggers instance
+        loggers = Loggers(Path(opt.log_directory or save_dir), weights, opt, hyp, LOGGER)  # loggers instance
         if loggers.wandb:
             data_dict = loggers.wandb.data_dict
             if resume:
@@ -595,6 +595,7 @@ def parse_opt(known=False, skip_parse=False):
     parser.add_argument("--max-eval-steps", type=int, default=-1, help="Set the maximum number of eval steps per epoch. if negative,"
                                                                         "the entire dataset will be used, default=-1")
     parser.add_argument("--one-shot", action="store_true", default=False, help="Apply recipe in one shot manner")
+    parser.add_argument("--log-directory", type=str, default=None, help="Directory to log to. Defaults to save directory")
 
     if skip_parse:
         opt = parser.parse_args([])
