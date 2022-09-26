@@ -560,9 +560,9 @@ def run(
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
     if any(f):
-        t = type(model)
-        dir = Path('segment' if t is SegmentationModel else 'classify' if t is ClassificationModel else '')
-        predict = 'detect.py' if t is DetectionModel else 'predict.py'
+        tp = type(model)
+        dir = Path('segment' if tp is SegmentationModel else 'classify' if tp is ClassificationModel else '')
+        predict = 'detect.py' if tp is DetectionModel else 'predict.py'
         h = '--half' if half else ''  # --half FP16 inference arg
         LOGGER.info(f'\nExport complete ({time.time() - t:.1f}s)'
                     f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
