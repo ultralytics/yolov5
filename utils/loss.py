@@ -134,8 +134,8 @@ class ComputeLoss:
         #松哥版本
 
 
-        # tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets
-        tcls, tbox, indices, anchors = self.build_targets_with_ignores(p, targets_ignore, ignores=ignores)  # targets
+        tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets
+        # tcls, tbox, indices, anchors = self.build_targets_with_ignores(p, targets_ignore, ignores=ignores)  # targets
 
         # Losses
         for i, pi in enumerate(p):  # layer index, layer predictions

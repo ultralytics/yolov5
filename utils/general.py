@@ -821,6 +821,31 @@ def non_max_suppression(
     nc = prediction.shape[2] - nm - 5  # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
 
+    def box_iou_min(box1, box2):
+        # https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
+        """
+        Return intersection-over-union (Jaccard index) of boxes.
+        Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
+        Arguments:
+            box1 (Tensor[N, 4])
+            box2 (Tensor[M, 4])
+        Returns:
+            iou (Tensor[N, M]): the NxM matrix containing the pairwise
+                IoU values for every element in boxes1 and boxes2
+        """
+
+        def box_area(box):
+            # box = 4xn
+            return (box[2] - box[0]) * (box[3] - box[1])
+
+        area1 = box_area(box1.t())
+        area2 = box_area(box2.t())
+
+        # inter(N,M) = (rb(N,M,2) - lt(N,M,2)).clamp(0).prod(2)
+        inter = (torch.min(box1[:, None, 2:], box2[:, 2:]) - torch.max(box1[:, None, :2], box2[:, :2])).clamp(0).prod(2)
+        # return inter / (area1[:, None] + area2 - inter)  # iou = inter / (area1 + area2 - inter)
+        return inter / torch.min(area1[:, None], area2[None, :])
+
     # Checks
     assert 0 <= conf_thres <= 1, f'Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0'
     assert 0 <= iou_thres <= 1, f'Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0'
@@ -901,10 +926,18 @@ def non_max_suppression(
             if redundant:
                 i = i[iou.sum(1) > 1]  # require redundancy
 
-        output[xi] = x[i]
+        # output[xi] = x[i]
+        tmpx = x[i]
+        # 同类别框相互包裹，去除低置信度，减少误检
+        boxes, scores = tmpx[:, :4], tmpx[:, 4]
+        i = torchvision.ops.nms(boxes, scores, 0.85)  # NMS
+
+        output[xi] = tmpx[i]
+
         if (time.time() - t) > time_limit:
             LOGGER.warning(f'WARNING ⚠️ NMS time limit {time_limit:.3f}s exceeded')
             break  # time limit exceeded
+
 
     return output
 
