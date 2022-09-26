@@ -6,6 +6,7 @@ Loss functions
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from utils.metrics import bbox_iou
 from utils.torch_utils import de_parallel
 
@@ -130,9 +131,8 @@ class ComputeLoss:
         targets_ignore = targets.clone()
         res_list = [i for i, value in enumerate(ignores) if value == 1]
         for i in res_list:
-            targets_ignore[:,1:2][i] = -1
+            targets_ignore[:, 1:2][i] = -1
         #松哥版本
-
 
         tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets
         # tcls, tbox, indices, anchors = self.build_targets_with_ignores(p, targets_ignore, ignores=ignores)  # targets
