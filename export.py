@@ -560,20 +560,17 @@ def run(
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
     if any(f):
-        tp = type(model)
-        dir = Path('segment' if tp is SegmentationModel else 'classify' if tp is ClassificationModel else '')
-        predict = 'detect.py' if tp is DetectionModel else 'predict.py'
+        cls, det, seg = (isinstance(model, x) for x in (ClassificationModel, DetectionModel, SegmentationModel))  # type
+        dir = Path('segment' if seg else 'classify' if cls else '')
         h = '--half' if half else ''  # --half FP16 inference arg
+        s = "# WARNING ⚠️ ClassificationModel not yet supported for PyTorch Hub AutoShape inference" if cls else \
+            "# WARNING ⚠️ SegmentationModel not yet supported for PyTorch Hub AutoShape inference" if seg else ''
         LOGGER.info(f'\nExport complete ({time.time() - t:.1f}s)'
                     f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
-                    f"\nDetect:          python {dir / predict} --weights {f[-1]} {h}"
+                    f"\nDetect:          python {dir / ('detect.py' if det else 'predict.py')} --weights {f[-1]} {h}"
                     f"\nValidate:        python {dir / 'val.py'} --weights {f[-1]} {h}"
-                    f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
+                    f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')  {s}"
                     f"\nVisualize:       https://netron.app")
-        if tp is ClassificationModel:
-            LOGGER.warning("WARNING ⚠️ ClassificationModel not yet supported for PyTorch Hub AutoShape inference")
-        if tp is SegmentationModel:
-            LOGGER.warning("WARNING ⚠️ SegmentationModel not yet supported for PyTorch Hub AutoShape inference")
     return f  # return list of exported files/dirs
 
 
