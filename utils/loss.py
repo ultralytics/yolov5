@@ -186,10 +186,10 @@ class ComputeLoss:
         off = torch.tensor(
             [
                 [0, 0],
-                # [1, 0],
-                # [0, 1],
-                # [-1, 0],
-                # [0, -1],  # j,k,l,m
+                [1, 0],
+                [0, 1],
+                [-1, 0],
+                [0, -1],  # j,k,l,m
                 # [1, 1], [1, -1], [-1, 1], [-1, -1],  # jk,jm,lk,lm
             ],
             device=self.device).float() * g  # offsets
