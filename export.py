@@ -560,13 +560,20 @@ def run(
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
     if any(f):
+        t = type(model)
+        dir = Path('segment' if t is SegmentationModel else 'classify' if t is ClassificationModel else '')
+        predict = 'detect.py' if t is DetectionModel else 'predict.py'
         h = '--half' if half else ''  # --half FP16 inference arg
         LOGGER.info(f'\nExport complete ({time.time() - t:.1f}s)'
                     f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
-                    f"\nDetect:          python detect.py --weights {f[-1]} {h}"
-                    f"\nValidate:        python val.py --weights {f[-1]} {h}"
+                    f"\nDetect:          python {dir / predict} --weights {f[-1]} {h}"
+                    f"\nValidate:        python {dir / 'val.py'} --weights {f[-1]} {h}"
                     f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
                     f"\nVisualize:       https://netron.app")
+        if t is ClassificationModel:
+            LOGGER.warning(f"WARNING ⚠️ ClassificationModel not yet supported for PyTorch Hub AutoShape inference")
+        if t is SegmentationModel:
+            LOGGER.warning(f"WARNING ⚠️ SegmentationModel not yet supported for PyTorch Hub AutoShape inference")
     return f  # return list of exported files/dirs
 
 
