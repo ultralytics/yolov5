@@ -571,9 +571,9 @@ def run(
                     f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
                     f"\nVisualize:       https://netron.app")
         if tp is ClassificationModel:
-            LOGGER.warning(f"WARNING ⚠️ ClassificationModel not yet supported for PyTorch Hub AutoShape inference")
+            LOGGER.warning("WARNING ⚠️ ClassificationModel not yet supported for PyTorch Hub AutoShape inference")
         if tp is SegmentationModel:
-            LOGGER.warning(f"WARNING ⚠️ SegmentationModel not yet supported for PyTorch Hub AutoShape inference")
+            LOGGER.warning("WARNING ⚠️ SegmentationModel not yet supported for PyTorch Hub AutoShape inference")
     return f  # return list of exported files/dirs
 
 
