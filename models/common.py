@@ -723,7 +723,8 @@ class Detections:
         self.xywh = [xyxy2xywh(x) for x in pred]  # xywh pixels
         self.xyxyn = [x / g for x, g in zip(self.xyxy, gn)]  # xyxy normalized
         self.xywhn = [x / g for x, g in zip(self.xywh, gn)]  # xywh normalized
-        self.mbbox = [y[torch.argmax(x[:,2:4].prod(1))] for x,y in zip(self.xywh, pred)]  # largest bounding box (xyxy, conf, cls) from pred
+        self.mbbox = [y[torch.argmax(x[:, 2:4].prod(1))]
+                      for x, y in zip(self.xywh, pred)]  # largest bounding box (xyxy, conf, cls) from pred
         self.n = len(self.pred)  # number of images (batch size)
         self.t = tuple(x.t / self.n * 1E3 for x in times)  # timestamps (ms)
         self.s = tuple(shape)  # inference BCHW shape
