@@ -83,7 +83,7 @@ class Albumentations:
             try:
                 Transform = getattr(module, name)
             except Exception:
-                raise Exception('"{}" not found in module "{}"'.format(name, module_name))
+                raise Exception(f'"{name}" not found in module "{module_name}"')
             # build the transform with all params
             transform = Transform(p=p, **params)
             LOGGER.info(f'{prefix} @T{cid} {module_name}.{name} p={p}')
