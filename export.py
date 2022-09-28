@@ -48,6 +48,7 @@ import argparse
 import json
 import os
 import platform
+import re
 import subprocess
 import sys
 import time
@@ -427,8 +428,6 @@ def export_edgetpu(file, prefix=colorstr('Edge TPU:')):
 def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
     # YOLOv5 TensorFlow.js export
     check_requirements('tensorflowjs')
-    import re
-
     import tensorflowjs as tfjs
 
     LOGGER.info(f'\n{prefix} starting export with tensorflowjs {tfjs.__version__}...')
@@ -534,8 +533,6 @@ def run(
     if coreml:  # CoreML
         f[4], _ = export_coreml(model, im, file, int8, half)
     if any((saved_model, pb, tflite, edgetpu, tfjs)):  # TensorFlow formats
-        if int8 or edgetpu:  # TFLite --int8 bug https://github.com/ultralytics/yolov5/issues/5707
-            check_requirements('flatbuffers==1.12')  # required before `import tensorflow`
         assert not tflite or not tfjs, 'TFLite and TF.js models must be exported separately, please pass only one type.'
         assert not isinstance(model, ClassificationModel), 'ClassificationModel export to TF formats not yet supported.'
         f[5], s_model = export_saved_model(model.cpu(),
@@ -563,12 +560,16 @@ def run(
     # Finish
     f = [str(x) for x in f if x]  # filter out '' and None
     if any(f):
+        cls, det, seg = (isinstance(model, x) for x in (ClassificationModel, DetectionModel, SegmentationModel))  # type
+        dir = Path('segment' if seg else 'classify' if cls else '')
         h = '--half' if half else ''  # --half FP16 inference arg
+        s = "# WARNING ⚠️ ClassificationModel not yet supported for PyTorch Hub AutoShape inference" if cls else \
+            "# WARNING ⚠️ SegmentationModel not yet supported for PyTorch Hub AutoShape inference" if seg else ''
         LOGGER.info(f'\nExport complete ({time.time() - t:.1f}s)'
                     f"\nResults saved to {colorstr('bold', file.parent.resolve())}"
-                    f"\nDetect:          python detect.py --weights {f[-1]} {h}"
-                    f"\nValidate:        python val.py --weights {f[-1]} {h}"
-                    f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')"
+                    f"\nDetect:          python {dir / ('detect.py' if det else 'predict.py')} --weights {f[-1]} {h}"
+                    f"\nValidate:        python {dir / 'val.py'} --weights {f[-1]} {h}"
+                    f"\nPyTorch Hub:     model = torch.hub.load('ultralytics/yolov5', 'custom', '{f[-1]}')  {s}"
                     f"\nVisualize:       https://netron.app")
     return f  # return list of exported files/dirs
 
@@ -596,10 +597,11 @@ def parse_opt():
     parser.add_argument('--topk-all', type=int, default=100, help='TF.js NMS: topk for all classes to keep')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='TF.js NMS: IoU threshold')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='TF.js NMS: confidence threshold')
-    parser.add_argument('--include',
-                        nargs='+',
-                        default=['torchscript'],
-                        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
+    parser.add_argument(
+        '--include',
+        nargs='+',
+        default=['torchscript'],
+        help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs, paddle')
     opt = parser.parse_args()
     print_args(vars(opt))
     return opt
