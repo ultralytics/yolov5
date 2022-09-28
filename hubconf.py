@@ -52,8 +52,8 @@ def _create(name, pretrained=True, channels=3, classes=80, autoshape=True, verbo
                     elif model.pt and isinstance(model.model, SegmentationModel):
                         LOGGER.warning('WARNING ⚠️ YOLOv5 SegmentationModel is not yet AutoShape compatible. '
                                        'You will not be able to run inference with this model.')
-                else:
-                    model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
+                    else:
+                        model = AutoShape(model)  # for file/URI/PIL/cv2/np inputs and NMS
             except Exception:
                 model = attempt_load(path, device=device, fuse=False)  # arbitrary model
         else:
