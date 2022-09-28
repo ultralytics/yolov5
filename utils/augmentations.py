@@ -45,7 +45,7 @@ class Albumentations:
                 check_version(A.__version__, '1.0.3', hard=True)
             except ImportError:
                 LOGGER.error(f'{prefix} albumentations module not available (hyps.albumentations ignored)')
-            except Exception as what:
+            except Exception:
                 LOGGER.error(f'{prefix} wrong albumentations version : 1.0.3 required (hyps.albumentations ignored)')
             else:
                 # try to load transforms
