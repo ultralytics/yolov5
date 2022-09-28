@@ -34,7 +34,7 @@ import torch
 import torchvision
 import yaml
 
-from utils import TryExcept
+from utils import TryExcept, emojis
 from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
 
@@ -43,8 +43,8 @@ ROOT = FILE.parents[1]  # YOLOv5 root directory
 RANK = int(os.getenv('RANK', -1))
 
 # Settings
-DATASETS_DIR = ROOT.parent / 'datasets'  # YOLOv5 datasets directory
 NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLOv5 multiprocessing threads
+DATASETS_DIR = Path(os.getenv('YOLOv5_DATASETS_DIR', ROOT.parent / 'datasets'))  # global datasets directory
 AUTOINSTALL = str(os.getenv('YOLOv5_AUTOINSTALL', True)).lower() == 'true'  # global auto-install mode
 VERBOSE = str(os.getenv('YOLOv5_VERBOSE', True)).lower() == 'true'  # global verbose mode
 FONT = 'Arial.ttf'  # https://ultralytics.com/assets/Arial.ttf
@@ -223,7 +223,7 @@ def init_seeds(seed=0, deterministic=False):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # for Multi-GPU, exception safe
-    torch.backends.cudnn.benchmark = True  # for faster training
+    # torch.backends.cudnn.benchmark = True  # AutoBatch problem https://github.com/ultralytics/yolov5/issues/9287
     if deterministic and check_version(torch.__version__, '1.12.0'):  # https://github.com/ultralytics/yolov5/pull/8213
         torch.use_deterministic_algorithms(True)
         torch.backends.cudnn.deterministic = True
@@ -246,11 +246,6 @@ def get_latest_run(search_dir='.'):
     # Return path to most recent 'last.pt' in /runs (i.e. to --resume from)
     last_list = glob.glob(f'{search_dir}/**/last*.pt', recursive=True)
     return max(last_list, key=os.path.getctime) if last_list else ''
-
-
-def emojis(str=''):
-    # Return platform-dependent emoji-safe version of string
-    return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
 
 
 def file_age(path=__file__):
@@ -333,7 +328,7 @@ def check_version(current='0.0.0', minimum='0.0.0', name='version ', pinned=Fals
     # Check version vs. required version
     current, minimum = (pkg.parse_version(x) for x in (current, minimum))
     result = (current == minimum) if pinned else (current >= minimum)  # bool
-    s = f'WARNING: ⚠️ {name}{minimum} is required by YOLOv5, but {name}{current} is currently installed'  # string
+    s = f'WARNING ⚠️ {name}{minimum} is required by YOLOv5, but {name}{current} is currently installed'  # string
     if hard:
         assert result, emojis(s)  # assert min requirements met
     if verbose and not result:
@@ -373,7 +368,7 @@ def check_requirements(requirements=ROOT / 'requirements.txt', exclude=(), insta
                 f"{prefix} ⚠️ {colorstr('bold', 'Restart runtime or rerun command for updates to take effect')}\n"
             LOGGER.info(s)
         except Exception as e:
-            LOGGER.warning(f'{prefix} {e}')
+            LOGGER.warning(f'{prefix} ❌ {e}')
 
 
 def check_img_size(imgsz, s=32, floor=0):
@@ -384,7 +379,7 @@ def check_img_size(imgsz, s=32, floor=0):
         imgsz = list(imgsz)  # convert to list if tuple
         new_size = [max(make_divisible(x, int(s)), floor) for x in imgsz]
     if new_size != imgsz:
-        LOGGER.warning(f'WARNING: --img-size {imgsz} must be multiple of max stride {s}, updating to {new_size}')
+        LOGGER.warning(f'WARNING ⚠️ --img-size {imgsz} must be multiple of max stride {s}, updating to {new_size}')
     return new_size
 
 
@@ -399,7 +394,7 @@ def check_imshow():
         cv2.waitKey(1)
         return True
     except Exception as e:
-        LOGGER.warning(f'WARNING: Environment does not support cv2.imshow() or PIL Image.show() image displays\n{e}')
+        LOGGER.warning(f'WARNING ⚠️ Environment does not support cv2.imshow() or PIL Image.show() image displays\n{e}')
         return False
 
 
@@ -469,8 +464,7 @@ def check_dataset(data, autodownload=True):
 
     # Read yaml (optional)
     if isinstance(data, (str, Path)):
-        with open(data, errors='ignore') as f:
-            data = yaml.safe_load(f)  # dictionary
+        data = yaml_load(data)  # dictionary
 
     # Checks
     for k in 'train', 'val', 'names':
@@ -485,7 +479,13 @@ def check_dataset(data, autodownload=True):
         path = (ROOT / path).resolve()
     for k in 'train', 'val', 'test':
         if data.get(k):  # prepend path
-            data[k] = str(path / data[k]) if isinstance(data[k], str) else [str(path / x) for x in data[k]]
+            if isinstance(data[k], str):
+                x = (path / data[k]).resolve()
+                if not x.exists() and data[k].startswith('../'):
+                    x = (path / data[k][3:]).resolve()
+                data[k] = str(x)
+            else:
+                data[k] = [str((path / x).resolve()) for x in data[k]]
 
     # Parse yaml
     train, val, test, s = (data.get(x) for x in ('train', 'val', 'test', 'download'))
@@ -496,13 +496,12 @@ def check_dataset(data, autodownload=True):
             if not s or not autodownload:
                 raise Exception('Dataset not found ❌')
             t = time.time()
-            root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
             if s.startswith('http') and s.endswith('.zip'):  # URL
                 f = Path(s).name  # filename
                 LOGGER.info(f'Downloading {s} to {f}...')
                 torch.hub.download_url_to_file(s, f)
-                Path(root).mkdir(parents=True, exist_ok=True)  # create root
-                ZipFile(f).extractall(path=root)  # unzip
+                Path(DATASETS_DIR).mkdir(parents=True, exist_ok=True)  # create root
+                ZipFile(f).extractall(path=DATASETS_DIR)  # unzip
                 Path(f).unlink()  # remove zip
                 r = None  # success
             elif s.startswith('bash '):  # bash script
@@ -511,7 +510,7 @@ def check_dataset(data, autodownload=True):
             else:  # python script
                 r = exec(s, {'yaml': data})  # return None
             dt = f'({round(time.time() - t, 1)}s)'
-            s = f"success ✅ {dt}, saved to {colorstr('bold', root)}" if r in (0, None) else f"failure {dt} ❌"
+            s = f"success ✅ {dt}, saved to {colorstr('bold', DATASETS_DIR)}" if r in (0, None) else f"failure {dt} ❌"
             LOGGER.info(f"Dataset download {s}")
     check_font('Arial.ttf' if is_ascii(data['names']) else 'Arial.Unicode.ttf', progress=True)  # download fonts
     return data  # dictionary
@@ -568,10 +567,10 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
     def download_one(url, dir):
         # Download 1 file
         success = True
-        f = dir / Path(url).name  # filename
-        if Path(url).is_file():  # exists in current path
-            Path(url).rename(f)  # move to dir
-        elif not f.exists():
+        if Path(url).is_file():
+            f = Path(url)  # filename
+        else:  # does not exist
+            f = dir / Path(url).name
             LOGGER.info(f'Downloading {url} to {f}...')
             for i in range(retry + 1):
                 if curl:
@@ -585,9 +584,9 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
                 if success:
                     break
                 elif i < retry:
-                    LOGGER.warning(f'Download failure, retrying {i + 1}/{retry} {url}...')
+                    LOGGER.warning(f'⚠️ Download failure, retrying {i + 1}/{retry} {url}...')
                 else:
-                    LOGGER.warning(f'Failed to download {url}...')
+                    LOGGER.warning(f'❌ Failed to download {url}...')
 
         if unzip and success and f.suffix in ('.zip', '.tar', '.gz'):
             LOGGER.info(f'Unzipping {f}...')
@@ -726,7 +725,7 @@ def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
 def xyxy2xywhn(x, w=640, h=640, clip=False, eps=0.0):
     # Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h] normalized where xy1=top-left, xy2=bottom-right
     if clip:
-        clip_coords(x, (h - eps, w - eps))  # warning: inplace clip
+        clip_boxes(x, (h - eps, w - eps))  # warning: inplace clip
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[:, 0] = ((x[:, 0] + x[:, 2]) / 2) / w  # x center
     y[:, 1] = ((x[:, 1] + x[:, 3]) / 2) / h  # y center
@@ -770,7 +769,23 @@ def resample_segments(segments, n=1000):
     return segments
 
 
-def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
+def scale_boxes(img1_shape, boxes, img0_shape, ratio_pad=None):
+    # Rescale boxes (xyxy) from img1_shape to img0_shape
+    if ratio_pad is None:  # calculate from img0_shape
+        gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
+        pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
+    else:
+        gain = ratio_pad[0][0]
+        pad = ratio_pad[1]
+
+    boxes[:, [0, 2]] -= pad[0]  # x padding
+    boxes[:, [1, 3]] -= pad[1]  # y padding
+    boxes[:, :4] /= gain
+    clip_boxes(boxes, img0_shape)
+    return boxes
+
+
+def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None):
     # Rescale coords (xyxy) from img1_shape to img0_shape
     if ratio_pad is None:  # calculate from img0_shape
         gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
@@ -779,15 +794,15 @@ def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
         gain = ratio_pad[0][0]
         pad = ratio_pad[1]
 
-    coords[:, [0, 2]] -= pad[0]  # x padding
-    coords[:, [1, 3]] -= pad[1]  # y padding
-    coords[:, :4] /= gain
-    clip_coords(coords, img0_shape)
-    return coords
+    segments[:, 0] -= pad[0]  # x padding
+    segments[:, 1] -= pad[1]  # y padding
+    segments /= gain
+    clip_segments(segments, img0_shape)
+    return segments
 
 
-def clip_coords(boxes, shape):
-    # Clip bounding xyxy bounding boxes to image shape (height, width)
+def clip_boxes(boxes, shape):
+    # Clip boxes (xyxy) to image shape (height, width)
     if isinstance(boxes, torch.Tensor):  # faster individually
         boxes[:, 0].clamp_(0, shape[1])  # x1
         boxes[:, 1].clamp_(0, shape[0])  # y1
@@ -798,15 +813,28 @@ def clip_coords(boxes, shape):
         boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, shape[0])  # y1, y2
 
 
-def non_max_suppression(prediction,
-                        conf_thres=0.25,
-                        iou_thres=0.45,
-                        classes=None,
-                        agnostic=False,
-                        multi_label=False,
-                        labels=(),
-                        max_det=300):
-    """Non-Maximum Suppression (NMS) on inference results to reject overlapping bounding boxes
+def clip_segments(boxes, shape):
+    # Clip segments (xy1,xy2,...) to image shape (height, width)
+    if isinstance(boxes, torch.Tensor):  # faster individually
+        boxes[:, 0].clamp_(0, shape[1])  # x
+        boxes[:, 1].clamp_(0, shape[0])  # y
+    else:  # np.array (faster grouped)
+        boxes[:, 0] = boxes[:, 0].clip(0, shape[1])  # x
+        boxes[:, 1] = boxes[:, 1].clip(0, shape[0])  # y
+
+
+def non_max_suppression(
+        prediction,
+        conf_thres=0.25,
+        iou_thres=0.45,
+        classes=None,
+        agnostic=False,
+        multi_label=False,
+        labels=(),
+        max_det=300,
+        nm=0,  # number of masks
+):
+    """Non-Maximum Suppression (NMS) on inference results to reject overlapping detections
 
     Returns:
          list of detections, on (n,6) tensor per image [xyxy, conf, cls]
@@ -815,8 +843,12 @@ def non_max_suppression(prediction,
     if isinstance(prediction, (list, tuple)):  # YOLOv5 model in validation model, output = (inference_out, loss_out)
         prediction = prediction[0]  # select only inference output
 
+    device = prediction.device
+    mps = 'mps' in device.type  # Apple MPS
+    if mps:  # MPS not fully supported yet, convert tensors to CPU before NMS
+        prediction = prediction.cpu()
     bs = prediction.shape[0]  # batch size
-    nc = prediction.shape[2] - 5  # number of classes
+    nc = prediction.shape[2] - nm - 5  # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
 
     # Checks
@@ -827,13 +859,14 @@ def non_max_suppression(prediction,
     # min_wh = 2  # (pixels) minimum box width and height
     max_wh = 7680  # (pixels) maximum box width and height
     max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
-    time_limit = 0.3 + 0.03 * bs  # seconds to quit after
+    time_limit = 0.5 + 0.05 * bs  # seconds to quit after
     redundant = True  # require redundant detections
     multi_label &= nc > 1  # multiple labels per box (adds 0.5ms/img)
     merge = False  # use merge-NMS
 
     t = time.time()
-    output = [torch.zeros((0, 6), device=prediction.device)] * bs
+    mi = 5 + nc  # mask start index
+    output = [torch.zeros((0, 6 + nm), device=prediction.device)] * bs
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
         # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
@@ -842,7 +875,7 @@ def non_max_suppression(prediction,
         # Cat apriori labels if autolabelling
         if labels and len(labels[xi]):
             lb = labels[xi]
-            v = torch.zeros((len(lb), nc + 5), device=x.device)
+            v = torch.zeros((len(lb), nc + nm + 5), device=x.device)
             v[:, :4] = lb[:, 1:5]  # box
             v[:, 4] = 1.0  # conf
             v[range(len(lb)), lb[:, 0].long() + 5] = 1.0  # cls
@@ -855,16 +888,17 @@ def non_max_suppression(prediction,
         # Compute conf
         x[:, 5:] *= x[:, 4:5]  # conf = obj_conf * cls_conf
 
-        # Box (center x, center y, width, height) to (x1, y1, x2, y2)
-        box = xywh2xyxy(x[:, :4])
+        # Box/Mask
+        box = xywh2xyxy(x[:, :4])  # center_x, center_y, width, height) to (x1, y1, x2, y2)
+        mask = x[:, mi:]  # zero columns if no masks
 
         # Detections matrix nx6 (xyxy, conf, cls)
         if multi_label:
-            i, j = (x[:, 5:] > conf_thres).nonzero(as_tuple=False).T
-            x = torch.cat((box[i], x[i, j + 5, None], j[:, None].float()), 1)
+            i, j = (x[:, 5:mi] > conf_thres).nonzero(as_tuple=False).T
+            x = torch.cat((box[i], x[i, 5 + j, None], j[:, None].float(), mask[i]), 1)
         else:  # best class only
-            conf, j = x[:, 5:].max(1, keepdim=True)
-            x = torch.cat((box, conf, j.float()), 1)[conf.view(-1) > conf_thres]
+            conf, j = x[:, 5:mi].max(1, keepdim=True)
+            x = torch.cat((box, conf, j.float(), mask), 1)[conf.view(-1) > conf_thres]
 
         # Filter by class
         if classes is not None:
@@ -880,6 +914,8 @@ def non_max_suppression(prediction,
             continue
         elif n > max_nms:  # excess boxes
             x = x[x[:, 4].argsort(descending=True)[:max_nms]]  # sort by confidence
+        else:
+            x = x[x[:, 4].argsort(descending=True)]  # sort by confidence
 
         # Batched NMS
         c = x[:, 5:6] * (0 if agnostic else max_wh)  # classes
@@ -896,8 +932,10 @@ def non_max_suppression(prediction,
                 i = i[iou.sum(1) > 1]  # require redundancy
 
         output[xi] = x[i]
+        if mps:
+            output[xi] = output[xi].to(device)
         if (time.time() - t) > time_limit:
-            LOGGER.warning(f'WARNING: NMS time limit {time_limit:.3f}s exceeded')
+            LOGGER.warning(f'WARNING ⚠️ NMS time limit {time_limit:.3f}s exceeded')
             break  # time limit exceeded
 
     return output
@@ -974,7 +1012,7 @@ def apply_classifier(x, model, img, im0):
             d[:, :4] = xywh2xyxy(b).long()
 
             # Rescale boxes from img_size to im0 size
-            scale_coords(img.shape[2:], d[:, :4], im0[i].shape)
+            scale_boxes(img.shape[2:], d[:, :4], im0[i].shape)
 
             # Classes
             pred_cls1 = d[:, 5].long()

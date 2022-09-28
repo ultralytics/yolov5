@@ -28,7 +28,7 @@ def smooth(y, f=0.05):
     return np.convolve(yp, np.ones(nf) / nf, mode='valid')  # y-smoothed
 
 
-def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names=(), eps=1e-16):
+def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names=(), eps=1e-16, prefix=""):
     """ Compute the average precision, given the recall and precision curves.
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
     # Arguments
@@ -83,10 +83,10 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names
     names = [v for k, v in names.items() if k in unique_classes]  # list: only classes that have data
     names = dict(enumerate(names))  # to dict
     if plot:
-        plot_pr_curve(px, py, ap, Path(save_dir) / 'PR_curve.png', names)
-        plot_mc_curve(px, f1, Path(save_dir) / 'F1_curve.png', names, ylabel='F1')
-        plot_mc_curve(px, p, Path(save_dir) / 'P_curve.png', names, ylabel='Precision')
-        plot_mc_curve(px, r, Path(save_dir) / 'R_curve.png', names, ylabel='Recall')
+        plot_pr_curve(px, py, ap, Path(save_dir) / f'{prefix}PR_curve.png', names)
+        plot_mc_curve(px, f1, Path(save_dir) / f'{prefix}F1_curve.png', names, ylabel='F1')
+        plot_mc_curve(px, p, Path(save_dir) / f'{prefix}P_curve.png', names, ylabel='Precision')
+        plot_mc_curve(px, r, Path(save_dir) / f'{prefix}R_curve.png', names, ylabel='Recall')
 
     i = smooth(f1.mean(0), 0.1).argmax()  # max F1 index
     p, r, f1 = p[:, i], r[:, i], f1[:, i]
@@ -170,12 +170,12 @@ class ConfusionMatrix:
             if n and sum(j) == 1:
                 self.matrix[detection_classes[m1[j]], gc] += 1  # correct
             else:
-                self.matrix[self.nc, gc] += 1  # background FP
+                self.matrix[self.nc, gc] += 1  # true background
 
         if n:
             for i, dc in enumerate(detection_classes):
                 if not any(m1 == i):
-                    self.matrix[dc, self.nc] += 1  # background FN
+                    self.matrix[dc, self.nc] += 1  # predicted background
 
     def matrix(self):
         return self.matrix
@@ -186,7 +186,7 @@ class ConfusionMatrix:
         # fn = self.matrix.sum(0) - tp  # false negatives (missed detections)
         return tp[:-1], fp[:-1]  # remove background class
 
-    @TryExcept('WARNING: ConfusionMatrix plot failure: ')
+    @TryExcept('WARNING ⚠️ ConfusionMatrix plot failure: ')
     def plot(self, normalize=True, save_dir='', names=()):
         import seaborn as sn
 
@@ -197,6 +197,7 @@ class ConfusionMatrix:
         nc, nn = self.nc, len(names)  # number of classes, names
         sn.set(font_scale=1.0 if nc < 50 else 0.8)  # for label size
         labels = (0 < nn < 99) and (nn == nc)  # apply names to ticklabels
+        ticklabels = (names + ['background']) if labels else "auto"
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')  # suppress empty matrix RuntimeWarning: All-NaN slice encountered
             sn.heatmap(array,
@@ -208,8 +209,8 @@ class ConfusionMatrix:
                        fmt='.2f',
                        square=True,
                        vmin=0.0,
-                       xticklabels=names + ['background FP'] if labels else "auto",
-                       yticklabels=names + ['background FN'] if labels else "auto").set_facecolor((1, 1, 1))
+                       xticklabels=ticklabels,
+                       yticklabels=ticklabels).set_facecolor((1, 1, 1))
         ax.set_ylabel('True')
         ax.set_ylabel('Predicted')
         ax.set_title('Confusion Matrix')
