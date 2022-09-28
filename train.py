@@ -210,6 +210,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                        gs,
                                        single_cls,
                                        hyp=hyp,
+                                       augment=True,
                                        cache=None if noval else opt.cache,
                                        rect=True,
                                        rank=-1,

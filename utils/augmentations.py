@@ -45,7 +45,7 @@ class Albumentations:
             except ImportError:
                 LOGGER.error(f'{prefix} albumentations module not available (hyps.albumentations ignored)')
             except Exception as what:
-                LOGGER.error(f'{prefix} albumentations module not available (hyps.albumentations ignored)')
+                LOGGER.error(f'{prefix} wrong albumentations version : 1.0.3 required (hyps.albumentations ignored)')
             else:
                 # try to load transforms
                 transforms = filter(
@@ -81,19 +81,22 @@ class Albumentations:
             module_name = config.get('module')
             if module_name is None:
                 module = A
+                module_name = 'albumentations'
             else:
                 # load module from name
                 try:
                     module = import_module(module_name)
                 except Exception:
                     raise Exception('module "%s" not found' % module_name)
-                # load Transform class from module
-                try:
-                    Transform = getattr(module, name)
-                except Exception:
-                    raise Exception('"%s" not found in module "%s"' % (name, module_name))
-                # build the transform with all params
-                return Transform(p=p, **params)
+            # load Transform class from module
+            try:
+                Transform = getattr(module, name)
+            except Exception:
+                raise Exception('"%s" not found in module "%s"' % (name, module_name))
+            # build the transform with all params
+            transform = Transform(p=p, **params)
+            LOGGER.info(f'{prefix} @T{cid} {module_name}.{name} p={p}')
+            return transform
 
         except Exception as what:
             LOGGER.error('bad albumentations transform config @%d : %s' % (cid, what))
