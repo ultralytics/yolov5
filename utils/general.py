@@ -822,6 +822,7 @@ def clip_segments(boxes, shape):
         boxes[:, 0] = boxes[:, 0].clip(0, shape[1])  # x
         boxes[:, 1] = boxes[:, 1].clip(0, shape[0])  # y
 
+
 def non_max_suppression(
         prediction,
         conf_thres=0.25,
