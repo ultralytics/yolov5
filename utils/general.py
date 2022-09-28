@@ -824,7 +824,7 @@ def clip_segments(boxes, shape):
 
         def filter_max_bbox(det_results):
     """Function to filter and retrieve the index of the largest bounding box in detection results.
-    
+
     Regardless of class or model parameters; largest detection in image.
 
     Args:
