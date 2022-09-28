@@ -20,9 +20,9 @@ source ~/LMI_AI_Solutions/lmi_ai.env
 ```
 
 ## Prepare the datasets
-The example dataset can be downloaded using GCP:
+The example dataset can be downloaded using GCP (the link will be provided later):
 ```
-engagements/nordson/chattanooga/catheter/feasibility/models/pytorch/defeat/objdet/yolov5/data/allImages_1024
+allImages_1024
 ```
 
 Prepare the datasets by the followings:
