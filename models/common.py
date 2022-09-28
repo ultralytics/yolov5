@@ -268,15 +268,15 @@ class SoftPool2d(nn.Module):
         self.padding = padding
 
     def forward(self, x):
-        x = self.soft_pool2d(x, kernel_size=self.kernel_size, stride=self.stride)
+        x = self.soft_pool2d(x, k=self.kernel_size, s=self.stride)
         return x
 
-    def soft_pool2d(self, x, kernel_size=2, stride=None):
-        kernel_size = _pair(kernel_size)
-        stride = kernel_size if stride is None else _pair(stride)
+    def soft_pool2d(self, x, k=2, s=None):
+        k = _pair(k)
+        s = k if s is None else _pair(s)
         e_x = torch.sum(torch.exp(x), dim=1, keepdim=True)
-        return F.avg_pool2d(x.mul(e_x), kernel_size, stride=stride).mul_(sum(kernel_size)).div_(
-            F.avg_pool2d(e_x, kernel_size, stride=stride).mul_(sum(kernel_size)))
+        return F.avg_pool2d(x.mul(e_x), k, stride=s, padding=self.padding).mul_(sum(k)).div_(
+            F.avg_pool2d(e_x, k, stride=s, padding=self.padding).mul_(sum(k)))
 
 
 class Focus(nn.Module):
