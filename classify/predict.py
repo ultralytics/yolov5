@@ -89,14 +89,15 @@ def run(
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
     # Dataloader
+    bs = 1  # batch_size
     if webcam:
         view_img = check_imshow()
         dataset = LoadStreams(source, img_size=imgsz, transforms=classify_transforms(imgsz[0]), vid_stride=vid_stride)
+        bs = len(dataset)
     elif screenshot:
         dataset = LoadScreenshots(source, img_size=imgsz, stride=stride, auto=pt)
     else:
         dataset = LoadImages(source, img_size=imgsz, transforms=classify_transforms(imgsz[0]), vid_stride=vid_stride)
-    bs = len(dataset)  # batch_size
     vid_path, vid_writer = [None] * bs, [None] * bs
 
     # Run inference
@@ -104,7 +105,7 @@ def run(
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
     for path, im, im0s, vid_cap, s in dataset:
         with dt[0]:
-            im = torch.Tensor(im).to(device)
+            im = torch.Tensor(im).to(model.device)
             im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
             if len(im.shape) == 3:
                 im = im[None]  # expand for batch dim
