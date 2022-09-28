@@ -811,7 +811,8 @@ def clip_boxes(boxes, shape):
     else:  # np.array (faster grouped)
         boxes[:, [0, 2]] = boxes[:, [0, 2]].clip(0, shape[1])  # x1, x2
         boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, shape[0])  # y1, y2
-        
+
+
 def clip_segments(boxes, shape):
     # Clip segments (xy1,xy2,...) to image shape (height, width)
     if isinstance(boxes, torch.Tensor):  # faster individually
@@ -820,6 +821,7 @@ def clip_segments(boxes, shape):
     else:  # np.array (faster grouped)
         boxes[:, 0] = boxes[:, 0].clip(0, shape[1])  # x
         boxes[:, 1] = boxes[:, 1].clip(0, shape[0])  # y
+
 
 def filter_max_bbox(det_results):
     """Function to filter and retrieve the index of the largest bounding box in detection results.
@@ -833,11 +835,7 @@ def filter_max_bbox(det_results):
         int: integer value for use in indexing
     """
 
-    y = (
-        det_results.clone()
-        if isinstance(det_results, torch.Tensor)
-        else np.copy(det_results)
-    )
+    y = (det_results.clone() if isinstance(det_results, torch.Tensor) else np.copy(det_results))
 
     if len(y) > 0:
         # calculate bounding box sizes
@@ -849,6 +847,7 @@ def filter_max_bbox(det_results):
         index_max = None
 
     return index_max
+
 
 def non_max_suppression(
         prediction,
