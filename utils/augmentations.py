@@ -24,6 +24,7 @@ class Albumentations:
     """ Load a list of Albumentation-compatible transforms from hyp files.
         It is used only if package is installed.
     """
+
     def __init__(self, hyp):
         prefix = colorstr('albumentations: ')
         transform = None
@@ -41,35 +42,25 @@ class Albumentations:
             # try to load the module iif required
             try:
                 import albumentations as A
-                check_version(A.__version__, '1.0.3', hard=True)            
+                check_version(A.__version__, '1.0.3', hard=True)
             except ImportError:
                 LOGGER.error(f'{prefix} albumentations module not available (hyps.albumentations ignored)')
             except Exception as what:
                 LOGGER.error(f'{prefix} wrong albumentations version : 1.0.3 required (hyps.albumentations ignored)')
             else:
                 # try to load transforms
-                transforms = filter(
-                    lambda t: t is not None, 
-                    [
-                        self.load_one_transform(cid, cfg, A, prefix)
-                        for cid, cfg in enumerate(config)
-                    ]
-                )
+                transforms = filter(lambda t: t is not None,
+                                    [self.load_one_transform(cid, cfg, A, prefix) for cid, cfg in enumerate(config)])
                 # combine transforms
-                transform  = A.Compose(
-                    list(transforms), 
-                    bbox_params=A.BboxParams(
-                        format='yolo', 
-                        label_fields=['class_labels']
-                    )
-                )
+                transform = A.Compose(list(transforms),
+                                      bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
         self.transform = transform
 
     @staticmethod
     def load_one_transform(cid: int, config, A, prefix):
         try:
             assert isinstance(config, dict), 'dict required'
-            assert 'name' in config, 'missing key "name"' 
+            assert 'name' in config, 'missing key "name"'
             name = config['name']
             assert 'p' in config, 'missing key "p"'
             try:
@@ -92,7 +83,7 @@ class Albumentations:
             try:
                 Transform = getattr(module, name)
             except Exception:
-                raise Exception('"%s" not found in module "%s"' % (name, module_name))
+                raise Exception('"{}" not found in module "{}"'.format(name, module_name))
             # build the transform with all params
             transform = Transform(p=p, **params)
             LOGGER.info(f'{prefix} @T{cid} {module_name}.{name} p={p}')
@@ -101,7 +92,6 @@ class Albumentations:
         except Exception as what:
             LOGGER.error('bad albumentations transform config @%d : %s' % (cid, what))
             return None
-
 
     def __call__(self, im, labels, p=1.0):
         if self.transform and random.random() < p:
