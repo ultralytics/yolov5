@@ -353,7 +353,7 @@ class CometLogger:
         metadata = logged_artifact.metadata
         data_dict = metadata.copy()
         data_dict["path"] = artifact_save_dir
-        
+
         metadata_names = metadata.get("names")
         if type(metadata_names) == dict:
             data_dict["names"] = {int(k): v for k, v in metadata.get("names").items()}
