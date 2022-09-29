@@ -244,8 +244,8 @@ class SPPF(nn.Module):
         c_ = c1 // 2  # hidden channels
         self.cv1 = Conv(c1, c_, 1, 1)
         self.cv2 = Conv(c_ * 4, c2, 1, 1)
-        self.m = nn.MaxPool2d(kernel_size=k, stride=1, padding=k // 2)
-        # self.m = SoftPool2d(kernel_size=k, stride=1, padding=k // 2)
+        # self.m = nn.MaxPool2d(kernel_size=k, stride=1, padding=k // 2)
+        self.m = SoftPool2d(kernel_size=k, stride=1, padding=k // 2)
 
     def forward(self, x):
         x = self.cv1(x)
@@ -275,8 +275,7 @@ class SoftPool2d(nn.Module):
         k = _pair(k)
         s = k if s is None else _pair(s)
         e_x = torch.sum(torch.exp(x), dim=1, keepdim=True)
-        return F.avg_pool2d(x.mul(e_x), k, stride=s, padding=self.padding).mul_(sum(k)).div_(
-            F.avg_pool2d(e_x, k, stride=s, padding=self.padding).mul_(sum(k)))
+        return F.avg_pool2d(x.mul(e_x), k, stride=s, padding=self.padding).div_(F.avg_pool2d(e_x, k, stride=s, padding=self.padding) + 1e-7)
 
 
 class Focus(nn.Module):
