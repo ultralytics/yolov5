@@ -27,6 +27,7 @@ from typing import Optional
 from zipfile import ZipFile
 
 import cv2
+import git
 import numpy as np
 import pandas as pd
 import pkg_resources as pkg
@@ -317,6 +318,19 @@ def check_git_status(repo='ultralytics/yolov5', branch='master'):
     else:
         s += f'up to date with {url} ✅'
     LOGGER.info(s)
+
+
+@WorkingDirectory(ROOT)
+def check_git_local(path='.'):
+    # YOLOv5 git check
+    try:
+        repo = git.Repo(path)
+        remote = repo.remotes.origin.url.replace('.git', '')  # i.e. 'https://github.com/ultralytics/yolov5'
+        branch = repo.active_branch.name  # i.e. 'main'
+        commit = repo.active_branch.commit.hexsha  # i.e. '3134699c73af83aac2a481435550b968d5792c0d'
+        return remote, branch, commit
+    except git.exc.InvalidGitRepositoryError:  # path is not a git dir
+        return '', '', ''  # branch, commit, remote
 
 
 def check_python(minimum='3.7.0'):
