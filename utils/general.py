@@ -328,9 +328,9 @@ def check_git(path='.'):
         remote = repo.remotes.origin.url.replace('.git', '')  # i.e. 'https://github.com/ultralytics/yolov5'
         branch = repo.active_branch.name  # i.e. 'main'
         commit = repo.active_branch.commit.hexsha  # i.e. '3134699c73af83aac2a481435550b968d5792c0d'
-        return remote, branch, commit
+        return {'remote': remote, 'branch': branch, 'commit': commit}
     except git.exc.InvalidGitRepositoryError:  # path is not a git dir
-        return '', '', ''  # branch, commit, remote
+        return {'remote': None, 'branch': None, 'commit': None}
 
 
 def check_python(minimum='3.7.0'):
