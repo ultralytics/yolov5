@@ -127,6 +127,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             hyp=hyp, 
             nc=nc, 
             recipe=opt.recipe, 
+            recipe_args = opt.recipe_args,
             resume=opt.resume, 
             rank=LOCAL_RANK,
             one_shot=opt.one_shot,
@@ -141,6 +142,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             model,
             None,
             opt.recipe,
+            recipe_args=opt.recipe_args,
             train_mode=True,
             steps_per_epoch=opt.max_train_steps,
             one_shot=opt.one_shot,
@@ -588,6 +590,9 @@ def parse_opt(known=False, skip_parse=False):
     parser.add_argument('--artifact_alias', type=str, default='latest', help='W&B: Version of dataset artifact to use')
     parser.add_argument('--recipe', type=str, default=None, help='Path to a sparsification recipe, '
                                                                  'see https://github.com/neuralmagic/sparseml for more information')
+    parser.add_argument("--recipe-args", type=str, default=None, help = 'A json string, csv key=value string, or dictionary '
+                                                                        'containing arguments to override the root arguments '
+                                                                        'within the recipe such as learning rate or num epochs')                                                             
     parser.add_argument('--disable-ema', action='store_true', help='Disable EMA model updates (enabled by default)')
     
     parser.add_argument("--max-train-steps", type=int, default=-1, help="Set the maximum number of training steps per epoch. if negative,"
