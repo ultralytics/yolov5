@@ -481,6 +481,12 @@ def parse_opt():
     parser.add_argument(
         "--data", type=str, default=ROOT / "data/coco128.yaml", help="dataset.yaml path"
     )
+    parser.add_argument(
+        '--data-path', 
+        type=str, 
+        default= '', 
+        help='path to dataset to overwrite the path in dataset.yaml'
+    )
     default_yolo_stub = (
         "zoo:cv/detection/yolov5-l/pytorch/ultralytics/coco/pruned-aggressive_98"
     )
