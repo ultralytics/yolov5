@@ -2,13 +2,13 @@
 
 # YOLOv5 with Comet
 
-This guide will cover how to use YOLOv5 with [Comet](https://www.comet.com/site/?ref=yolov5&utm_source=yolov5&utm_medium=affilliate&utm_campaign=yolov5_comet_integration)
+This guide will cover how to use YOLOv5 with [Comet](https://bit.ly/yolov5-readme-comet)
 
 # About Comet
 
 Comet builds tools that help data scientists, engineers, and team leaders accelerate and optimize machine learning and deep learning models.
 
-Track and visualize model metrics in real time, save your hyperparameters, datasets, and model checkpoints, and visualize your model predictions with [Comet Custom Panels](https://www.comet.com/examples/comet-example-yolov5?shareable=YcwMiJaZSXfcEXpGOHDD12vA1&ref=yolov5&utm_source=yolov5&utm_medium=affilliate&utm_campaign=yolov5_comet_integration)!
+Track and visualize model metrics in real time, save your hyperparameters, datasets, and model checkpoints, and visualize your model predictions with [Comet Custom Panels](https://bit.ly/yolov5-colab-comet-panels)!
 Comet makes sure you never lose track of your work and makes it easy to share results and collaborate across teams of all sizes!
 
 # Getting Started

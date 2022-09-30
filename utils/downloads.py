@@ -16,13 +16,13 @@ import requests
 import torch
 
 
-def is_url(url, check_online=True):
-    # Check if online file exists
+def is_url(url, check=True):
+    # Check if string is URL and check if URL exists
     try:
         url = str(url)
         result = urllib.parse.urlparse(url)
-        assert all([result.scheme, result.netloc, result.path])  # check if is url
-        return (urllib.request.urlopen(url).getcode() == 200) if check_online else True  # check if exists online
+        assert all([result.scheme, result.netloc])  # check if is url
+        return (urllib.request.urlopen(url).getcode() == 200) if check else True  # check if exists online
     except (AssertionError, urllib.request.HTTPError):
         return False
 
@@ -87,9 +87,7 @@ def attempt_download(file, repo='ultralytics/yolov5', release='v6.2'):
             return file
 
         # GitHub assets
-        assets = [
-            'yolov5n.pt', 'yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt', 'yolov5n6.pt', 'yolov5s6.pt',
-            'yolov5m6.pt', 'yolov5l6.pt', 'yolov5x6.pt']
+        assets = [f'yolov5{size}{suffix}.pt' for size in 'nsmlx' for suffix in ('', '6', '-cls', '-seg')]  # default
         try:
             tag, assets = github_assets(repo, release)
         except Exception:
@@ -107,7 +105,6 @@ def attempt_download(file, repo='ultralytics/yolov5', release='v6.2'):
             safe_download(
                 file,
                 url=f'https://github.com/{repo}/releases/download/{tag}/{name}',
-                url2=f'https://storage.googleapis.com/{repo}/{tag}/{name}',  # backup url (optional)
                 min_bytes=1E5,
                 error_msg=f'{file} missing, try downloading from https://github.com/{repo}/releases/{tag} or {url3}')
 
