@@ -63,13 +63,13 @@ class Detect4d(nn.Module):
                     self.grid[i], self.anchor_grid[i] = self._make_grid(nx, ny, i)
 
                 if isinstance(self, Segment):  # (boxes + masks)
-                    xy, wh, conf, mask = x[i].split((2, 2, self.nc + 1, self.no - self.nc - 5), 4)
-                    xy = (xy.sigmoid() * 2 + self.grid[i]) * self.stride[i]  # xy
-                    wh = (wh.sigmoid() * 2) ** 2 * self.anchor_grid[i]  # wh
-                    y = torch.cat((xy, wh, conf.sigmoid(), mask), 4)
+                    xy, wh, conf, mask = x[i].split((2, 2, self.nc + 1, self.no - self.nc - 5), 1)
+                    xy = xy.sigmoid() * (2 * self.stride[i]) + self.grid[i]  # xy
+                    wh = (0.25 + wh.sigmoid() * 3.75) * self.anchor_grid[i]
+                    y = torch.cat((xy, wh, conf.sigmoid(), mask), 1)
                 else:  # Detect (boxes only)
                     xy, wh, conf = x[i].sigmoid().split((2, 2, self.nc + 1), 1)
-                    xy = (xy * 2 + self.grid[i]) * self.stride[i]  # xy
+                    xy = xy * (2 * self.stride[i]) + self.grid[i]  # xy
                     wh = (0.25 + wh * 3.75) * self.anchor_grid[i]
                     y = torch.cat((xy, wh, conf), 1)
                 z.append(y.view(bs, self.no, ny * nx).permute((0, 2, 1)).contiguous())
@@ -81,8 +81,8 @@ class Detect4d(nn.Module):
         t = self.anchors[i].dtype
         shape = 1, 2, ny, nx  # grid shape
         y, x = torch.arange(ny, device=d, dtype=t), torch.arange(nx, device=d, dtype=t)
-        yv, xv = torch.meshgrid(y, x, indexing='ij') if torch_1_10 else torch.meshgrid(y, x)  # torch>=0.7 compatibility
-        grid = torch.stack((xv, yv), 0).expand(shape) - 0.5  # add grid offset, i.e. y = 2.0 * x - 0.5
+        yv, xv = torch.meshgrid(y, x, indexing='ij') if torch_1_10 else torch.meshgrid(y, x)
+        grid = (torch.stack((xv, yv), 0) * self.stride[i]).expand(shape) - 0.5  # add offset, i.e. y = 2.0 * x - 0.5
         anchor_grid = (self.anchors[i] * self.stride[i]).view((1, 2, 1, 1)).expand(shape)
         return grid, anchor_grid
 
