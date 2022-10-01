@@ -332,7 +332,7 @@ class ComputeLoss:
         nt = targets.shape[0]  # number of anchors, targets
         tcls, tbox, indices, anch = [], [], [], []
         gain = torch.ones(7, device=self.device)  # normalized to gridspace gain
-        ai = torch.zeros(nt, 1)  # anchor indices
+        ai = torch.zeros((nt, 1), device=self.device)  # anchor indices
         targets = torch.cat((targets, ai), 1)  # append anchor indices
 
         g = 0.5  # bias
