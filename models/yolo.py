@@ -67,11 +67,6 @@ class Detect4d(nn.Module):
                     xy = (xy.sigmoid() * 2 + self.grid[i]) * self.stride[i]  # xy
                     wh = (wh.sigmoid() * 2) ** 2 * self.anchor_grid[i]  # wh
                     y = torch.cat((xy, wh, conf.sigmoid(), mask), 4)
-                # else:  # Detect (boxes only)
-                #     xy, wh, conf = x[i].sigmoid().split((2, 2, self.nc + 1), 4)
-                #     xy = (xy * 2 + self.grid[i]) * self.stride[i]  # xy
-                #     wh = (wh * 2) ** 2 * self.anchor_grid[i]  # wh
-                #     y = torch.cat((xy, wh, conf), 4)
                 else:  # Detect (boxes only)
                     xy, wh, conf = x[i].sigmoid().split((2, 2, self.nc + 1), 1)
                     xy = (xy * 2 + self.grid[i]) * self.stride[i]  # xy
