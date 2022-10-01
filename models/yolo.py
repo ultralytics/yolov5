@@ -170,7 +170,7 @@ class DetectSplit(nn.Module):
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.cv1 = nn.ModuleList(Conv(x, x, 1) for x in ch)
-        self.cv2 = nn.ModuleList(Conv(x, x * 2, 1, g=2) for x in ch)  # (xywh conf), (cls)
+        self.cv2 = nn.ModuleList(Conv(x * 2, x * 2, 1, g=2) for x in ch)  # (xywh conf), (cls)
         self.cv3a = nn.ModuleList(nn.Conv2d(x, 5, 3, padding=1) for x in ch)
         self.cv3b = nn.ModuleList(nn.Conv2d(x, self.no - 5, 1) for x in ch)
 
@@ -178,7 +178,8 @@ class DetectSplit(nn.Module):
         z = []  # inference output
         for i in range(self.nl):
             bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
-            xa, xb = self.cv2[i](self.cv1[i](x[i])).chunk(2, dim=1)
+            xi = self.cv1[i](x[i])
+            xa, xb = self.cv2[i](torch.cat(xi, xi)).chunk(2, dim=1)
             x[i] = torch.cat((self.cv3a[i](xa), self.cv3b[i](xb)), 1)
             if not self.training:  # inference
                 if self.dynamic or self.grid[i].shape[2:4] != x[i].shape[2:4]:
