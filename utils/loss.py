@@ -136,7 +136,14 @@ class ComputeLoss:
 
                 # Regression
                 pxy = pxy.sigmoid() * 2 - 0.5
-                pwh = (pwh.sigmoid() * 2) ** 2 * anchors[i]
+
+                # pwh = (pwh.sigmoid() * 2) ** 2 * anchors[i]
+                pwh = (0.0 + (pwh - 1.09861).sigmoid() * 4) * anchors[i]
+                # pwh = (0.33333 + (pwh - 1.09861).sigmoid() * 2.66667) * anchors[i]
+                # pwh = (0.25 + (pwh - 1.38629).sigmoid() * 3.75) * anchors[i]
+                # pwh = (0.20 + (pwh - 1.60944).sigmoid() * 4.8) * anchors[i]
+                # pwh = (0.16667 + (pwh - 1.79175).sigmoid() * 5.83333) * anchors[i]
+
                 pbox = torch.cat((pxy, pwh), 1)  # predicted box
                 iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(prediction, target)
                 lbox += (1.0 - iou).mean()  # iou loss
@@ -203,7 +210,8 @@ class ComputeLoss:
             if nt:
                 # Matches
                 r = t[..., 4:6] / anchors[:, None]  # wh ratio
-                j = torch.max(r, 1 / r).max(2)[0] < self.hyp['anchor_t']  # compare
+                # j = torch.max(r, 1 / r).max(2)[0] < self.hyp['anchor_t']  # compare
+                j = torch.max(r, 1 / r).max(2)[0] < 4.0  # compare
                 # j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
                 t = t[j]  # filter
 
