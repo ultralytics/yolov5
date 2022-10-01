@@ -72,9 +72,11 @@ class Detect4d(nn.Module):
                     xy = xy * (2 * self.stride[i]) + self.grid[i]  # xy
                     wh = (0.25 + wh * 3.75) * self.anchor_grid[i]
                     y = torch.cat((xy, wh, conf), 1)
-                z.append(y.view(bs, self.no, ny * nx).permute((0, 2, 1)).contiguous())
+                z.append(y.view(bs, self.no, ny * nx))
 
-        return x if self.training else (torch.cat(z, 1),) if self.export else (torch.cat(z, 1), x)
+        return x if self.training \
+            else (torch.cat(z, 2).permute((0, 2, 1)),) if self.export \
+            else (torch.cat(z, 2).permute((0, 2, 1)), x)
 
     def _make_grid(self, nx=20, ny=20, i=0, torch_1_10=check_version(torch.__version__, '1.10.0')):
         d = self.anchors[i].device
