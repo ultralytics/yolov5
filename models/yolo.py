@@ -464,12 +464,13 @@ class DetectionModel(BaseModel):
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
         m = self.model[-1]  # Detect() module
         for a, b, s in zip(m.cv3a, m.cv3b, m.stride):  # from
-            ai = a.bias.view(m.na, -1)  # conv.bias(255) to (3,85)
-            ai.data[:, 4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
-            a.bias = torch.nn.Parameter(ai.view(-1), requires_grad=True)
-            bi = b.bias.view(m.na, -1)  # conv.bias(255) to (3,85)
-            bi.data[:, :m.nc] += math.log(0.6 / (m.nc - 0.99999)) if cf is None else torch.log(cf / cf.sum())  # cls
-            b.bias = torch.nn.Parameter(bi.view(-1), requires_grad=True)
+            ai = a.bias # conv.bias(255) to (3,85)
+            ai.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
+            ai.data[4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
+            a.bias = torch.nn.Parameter(ai, requires_grad=True)
+            bi = b.bias  # conv.bias(255) to (3,85)
+            bi.data[:m.nc] += math.log(0.6 / (m.nc - 0.99999)) if cf is None else torch.log(cf / cf.sum())  # cls
+            b.bias = torch.nn.Parameter(bi, requires_grad=True)
 
 
 Model = DetectionModel  # retain YOLOv5 'Model' class for backwards compatibility
