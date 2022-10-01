@@ -81,7 +81,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         with open(hyp, errors='ignore') as f:
             hyp = yaml.safe_load(f)  # load hyps dict
     LOGGER.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
-    hyp['anchor_t'] = 6.0
+    hyp['anchor_t'] = 4.0
     opt.hyp = hyp.copy()  # for saving hyps to checkpoints
 
     # Save run settings
