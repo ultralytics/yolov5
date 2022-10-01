@@ -170,8 +170,8 @@ class DetectSplit(nn.Module):
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.cv1 = nn.ModuleList(Conv(x, x, 1) for x in ch)
-        self.cv2 = nn.ModuleList(Conv(x, x * 2, 3, g=2) for x in ch)  # (xywh conf), (cls)
-        self.cv3a = nn.ModuleList(nn.Conv2d(x, 5, 1) for x in ch)
+        self.cv2 = nn.ModuleList(Conv(x, x * 2, 1, g=2) for x in ch)  # (xywh conf), (cls)
+        self.cv3a = nn.ModuleList(nn.Conv2d(x, 5, 3, padding=1) for x in ch)
         self.cv3b = nn.ModuleList(nn.Conv2d(x, self.no - 5, 1) for x in ch)
 
     def forward(self, x):
@@ -464,7 +464,7 @@ class DetectionModel(BaseModel):
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
         m = self.model[-1]  # Detect() module
         for a, b, s in zip(m.cv3a, m.cv3b, m.stride):  # from
-            ai = a.bias # conv.bias(255) to (3,85)
+            ai = a.bias  # conv.bias(255) to (3,85)
             ai.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
             ai.data[4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
             a.bias = torch.nn.Parameter(ai, requires_grad=True)
