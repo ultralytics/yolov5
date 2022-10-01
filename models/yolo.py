@@ -178,7 +178,7 @@ class DetectSplit(nn.Module):
         z = []  # inference output
         for i in range(self.nl):
             bs, _, ny, nx = x[i].shape  # x(bs,255,20,20) to x(bs,3,20,20,85)
-            xa, xb = self.cv2(self.cv1[i](x[i])).chunk(2, dim=1)
+            xa, xb = self.cv2[i](self.cv1[i](x[i])).chunk(2, dim=1)
             x[i] = torch.cat((self.cv3a[i](xa), self.cv3b[i](xb)), 1)
             if not self.training:  # inference
                 if self.dynamic or self.grid[i].shape[2:4] != x[i].shape[2:4]:
