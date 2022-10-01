@@ -80,8 +80,8 @@ class Detect(nn.Module):
                     # wh = (wh.sigmoid() * 2) ** 2 * self.anchor_grid[i]  # wh
                     # wh = 0.0 + (wh - 1.09861).sigmoid() * 4
                     # wh = 0.33333 + (wh - 1.09861).sigmoid() * 2.66667
-                    wh = 0.25 + (wh - 1.38629).sigmoid() * 3.75
-                    # wh = 0.20 + (wh - 1.60944).sigmoid() * 4.8
+                    # wh = 0.25 + (wh - 1.38629).sigmoid() * 3.75
+                    wh = 0.20 + (wh - 1.60944).sigmoid() * 4.8
                     # wh = 0.16667 + (wh - 1.79175).sigmoid() * 5.83333
                     y = torch.cat((xy, wh * self.anchor_grid[i], conf.sigmoid()), 4)
 

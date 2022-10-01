@@ -140,8 +140,8 @@ class ComputeLoss:
                 # pwh = (pwh.sigmoid() * 2) ** 2 * anchors[i]
                 # pwh = (0.0 + (pwh - 1.09861).sigmoid() * 4) * anchors[i]
                 # pwh = (0.33333 + (pwh - 1.09861).sigmoid() * 2.66667) * anchors[i]
-                pwh = (0.25 + (pwh - 1.38629).sigmoid() * 3.75) * anchors[i]
-                # pwh = (0.20 + (pwh - 1.60944).sigmoid() * 4.8) * anchors[i]
+                # pwh = (0.25 + (pwh - 1.38629).sigmoid() * 3.75) * anchors[i]
+                pwh = (0.20 + (pwh - 1.60944).sigmoid() * 4.8) * anchors[i]
                 # pwh = (0.16667 + (pwh - 1.79175).sigmoid() * 5.83333) * anchors[i]
 
                 pbox = torch.cat((pxy, pwh), 1)  # predicted box
