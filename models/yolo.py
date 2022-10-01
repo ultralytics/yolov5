@@ -84,7 +84,7 @@ class Detect4d(nn.Module):
         shape = 1, 2, ny, nx  # grid shape
         y, x = torch.arange(ny, device=d, dtype=t), torch.arange(nx, device=d, dtype=t)
         yv, xv = torch.meshgrid(y, x, indexing='ij') if torch_1_10 else torch.meshgrid(y, x)
-        grid = (torch.stack((xv, yv), 0) * self.stride[i]).expand(shape) - 0.5  # add offset, i.e. y = 2.0 * x - 0.5
+        grid = (torch.stack((xv, yv), 0).expand(shape) - 0.5) * self.stride[i]  # add offset, i.e. y = 2.0 * x - 0.5
         anchor_grid = (self.anchors[i] * self.stride[i]).view((1, 2, 1, 1)).expand(shape)
         return grid, anchor_grid
 
