@@ -64,12 +64,12 @@ class Detect4d(nn.Module):
 
                 if isinstance(self, Segment):  # (boxes + masks)
                     xy, wh, conf, mask = x[i].split((2, 2, self.nc + 1, self.no - self.nc - 5), 1)
-                    xy = xy.sigmoid() * (2 * self.stride[i]) + self.grid[i]  # xy
+                    xy = xy.sigmoid() * (1.6 * self.stride[i]) + self.grid[i]  # xy
                     wh = (0.25 + wh.sigmoid() * 3.75) * self.anchor_grid[i]
                     y = torch.cat((xy, wh, conf.sigmoid(), mask), 1)
                 else:  # Detect (boxes only)
                     xy, wh, conf = x[i].sigmoid().split((2, 2, self.nc + 1), 1)
-                    xy = xy * (2 * self.stride[i]) + self.grid[i]  # xy
+                    xy = xy * (1.6 * self.stride[i]) + self.grid[i]  # xy
                     wh = (0.25 + wh * 3.75) * self.anchor_grid[i]
                     y = torch.cat((xy, wh, conf), 1)
                 z.append(y.view(bs, self.no, ny * nx))
@@ -84,7 +84,7 @@ class Detect4d(nn.Module):
         shape = 1, 2, ny, nx  # grid shape
         y, x = torch.arange(ny, device=d, dtype=t), torch.arange(nx, device=d, dtype=t)
         yv, xv = torch.meshgrid(y, x, indexing='ij') if torch_1_10 else torch.meshgrid(y, x)
-        grid = (torch.stack((xv, yv), 0).expand(shape) - 0.5) * self.stride[i]  # add offset, i.e. y = 2.0 * x - 0.5
+        grid = (torch.stack((xv, yv), 0).expand(shape) - 0.3) * self.stride[i]  # add offset, i.e. y = 2.0 * x - 0.5
         anchor_grid = (self.anchors[i] * self.stride[i]).view((1, 2, 1, 1)).expand(shape)
         return grid, anchor_grid
 
@@ -186,12 +186,12 @@ class DetectSplit(nn.Module):
 
                 if isinstance(self, Segment):  # (boxes + masks)
                     xy, wh, conf, mask = x[i].split((2, 2, self.nc + 1, self.no - self.nc - 5), 1)
-                    xy = xy.sigmoid() * (2 * self.stride[i]) + self.grid[i]  # xy
+                    xy = xy.sigmoid() * (1.6 * self.stride[i]) + self.grid[i]  # xy
                     wh = (0.25 + wh.sigmoid() * 3.75) * self.anchor_grid[i]
                     y = torch.cat((xy, wh, conf.sigmoid(), mask), 1)
                 else:  # Detect (boxes only)
                     xy, wh, conf = x[i].sigmoid().split((2, 2, self.nc + 1), 1)
-                    xy = xy * (2 * self.stride[i]) + self.grid[i]  # xy
+                    xy = xy * (1.6 * self.stride[i]) + self.grid[i]  # xy
                     wh = (0.25 + wh * 3.75) * self.anchor_grid[i]
                     y = torch.cat((xy, wh, conf), 1)
                 z.append(y.view(bs, self.no, ny * nx))
@@ -206,7 +206,7 @@ class DetectSplit(nn.Module):
         shape = 1, 2, ny, nx  # grid shape
         y, x = torch.arange(ny, device=d, dtype=t), torch.arange(nx, device=d, dtype=t)
         yv, xv = torch.meshgrid(y, x, indexing='ij') if torch_1_10 else torch.meshgrid(y, x)
-        grid = (torch.stack((xv, yv), 0).expand(shape) - 0.5) * self.stride[i]  # add offset, i.e. y = 2.0 * x - 0.5
+        grid = (torch.stack((xv, yv), 0).expand(shape) - 0.3) * self.stride[i]  # add offset, i.e. y = 2.0 * x - 0.5
         anchor_grid = (self.anchors[i] * self.stride[i]).view((1, 2, 1, 1)).expand(shape)
         return grid, anchor_grid
 

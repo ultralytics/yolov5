@@ -288,7 +288,7 @@ class ComputeLoss:
                 pxy, pwh, _, pcls = pi[b, :, gj, gi].split((2, 2, 1, self.nc), 1)  # target-subset of predictions
 
                 # Regression
-                pxy = pxy.sigmoid() * 2 - 0.5
+                pxy = pxy.sigmoid() * 1.6 - 0.3
                 pwh = (0.25 + pwh.sigmoid() * 3.75) * self.anchors[i]
                 pbox = torch.cat((pxy, pwh), 1)  # predicted box
                 iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(prediction, target)
@@ -333,7 +333,7 @@ class ComputeLoss:
         tcls, tbox, indices = [], [], []
         gain = torch.ones(6, device=self.device)  # normalized to gridspace gain
 
-        g = 0.5  # bias
+        g = 0.3  # bias
         off = torch.tensor(
             [
                 [0, 0],
