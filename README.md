@@ -163,6 +163,7 @@ python train.py --data coco.yaml --cfg yolov5n.yaml --weights '' --batch-size 12
 - [Multi-GPU Training](https://github.com/ultralytics/yolov5/issues/475)
 - [PyTorch Hub](https://github.com/ultralytics/yolov5/issues/36) 🌟 NEW
 - [TFLite, ONNX, CoreML, TensorRT Export](https://github.com/ultralytics/yolov5/issues/251) 🚀
+- [NVIDIA Jetson Nano Deployment](https://github.com/ultralytics/yolov5/issues/9627) 🌟 NEW
 - [Test-Time Augmentation (TTA)](https://github.com/ultralytics/yolov5/issues/303)
 - [Model Ensembling](https://github.com/ultralytics/yolov5/issues/318)
 - [Model Pruning/Sparsity](https://github.com/ultralytics/yolov5/issues/304)

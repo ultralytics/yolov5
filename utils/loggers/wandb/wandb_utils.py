@@ -132,6 +132,11 @@ class WandbLogger():
         job_type (str) -- To set the job_type for this run
 
        """
+        # Temporary-fix
+        if opt.upload_dataset:
+            opt.upload_dataset = False
+            LOGGER.info("Uploading Dataset functionality is not being supported temporarily due to a bug.")
+
         # Pre-training routine --
         self.job_type = job_type
         self.wandb, self.wandb_run = wandb, None if not wandb else wandb.run
