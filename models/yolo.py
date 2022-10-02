@@ -113,16 +113,12 @@ class DetectSplit(nn.Module):
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.shape = (0, 0)  # initial grid shape
-        self.cv1 = nn.ModuleList(Conv(x, x, 1) for x in ch)
-        self.cv2 = nn.ModuleList(Conv(x * 2, x * 2, 1, g=2) for x in ch)  # (xywh conf), (cls)
-        self.cv3a = nn.ModuleList(nn.Conv2d(x, 5, 3, padding=1) for x in ch)
-        self.cv3b = nn.ModuleList(nn.Conv2d(x, self.no - 5, 1) for x in ch)
+        self.cv1 = nn.ModuleList(nn.Sequential(Conv(x, x), Conv(x, x, 3), nn.Conv2d(x, 5, 1, padding=0)) for x in ch)
+        self.cv2 = nn.ModuleList(nn.Sequential(Conv(x, x), Conv(x, x, 3), nn.Conv2d(x, self.no - 5, 1)) for x in ch)
 
     def forward(self, x):
         for i in range(self.nl):
-            xi = self.cv1[i](x[i])
-            xa, xb = self.cv2[i](torch.cat((xi, xi), 1)).chunk(2, 1)
-            x[i] = torch.cat((self.cv3a[i](xa), self.cv3b[i](xb)), 1)
+            x[i] = torch.cat((self.cv1[i](x[i]), self.cv2[i](x[i])), 1)
         if self.training:
             return x
 
@@ -341,14 +337,14 @@ class DetectionModel(BaseModel):
         # https://arxiv.org/abs/1708.02002 section 3.3
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
         m = self.model[-1]  # Detect() module
-        for a, b, s in zip(m.cv3a, m.cv3b, m.stride):  # from
-            ai = a.bias  # conv.bias(255) to (3,85)
+        for a, b, s in zip(m.cv1, m.cv2, m.stride):  # from
+            ai = a[-1].bias  # conv.bias(255) to (3,85)
             ai.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
             ai.data[4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
-            a.bias = torch.nn.Parameter(ai, requires_grad=True)
-            bi = b.bias  # conv.bias(255) to (3,85)
+            a[-1].bias = torch.nn.Parameter(ai, requires_grad=True)
+            bi = b[-1].bias  # conv.bias(255) to (3,85)
             bi.data[:m.nc] += math.log(0.6 / (m.nc - 0.99999)) if cf is None else torch.log(cf / cf.sum())  # cls
-            b.bias = torch.nn.Parameter(bi, requires_grad=True)
+            b[-1].bias = torch.nn.Parameter(bi, requires_grad=True)
 
 
 Model = DetectionModel  # retain YOLOv5 'Model' class for backwards compatibility
