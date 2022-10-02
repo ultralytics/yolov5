@@ -330,7 +330,7 @@ class DetectionModel(BaseModel):
             b = mi.bias  # conv.bias(255) to (3,85)
             b.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
             b.data[4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
-            b.data[5:5 + m.nc] += math.log(0.6 / (m.nc - 0.99999)) if cf is None else torch.log(cf / cf.sum())  # cls
+            b.data[5:5 + m.nc] += math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # cls
             mi.bias = torch.nn.Parameter(b, requires_grad=True)
 
     def _initialize_biases_split(self, cf=None):  # initialize biases into Detect(), cf is class frequency
@@ -343,7 +343,7 @@ class DetectionModel(BaseModel):
             ai.data[4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
             a[-1].bias = torch.nn.Parameter(ai, requires_grad=True)
             bi = b[-1].bias  # conv.bias(255) to (3,85)
-            bi.data[:m.nc] += math.log(0.6 / (m.nc - 0.99999)) if cf is None else torch.log(cf / cf.sum())  # cls
+            bi.data[:m.nc] += math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # cls
             b[-1].bias = torch.nn.Parameter(bi, requires_grad=True)
 
 
