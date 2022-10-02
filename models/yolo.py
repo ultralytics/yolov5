@@ -79,19 +79,16 @@ class Detect(nn.Module):
         return (y,) if self.export else (y, x)
 
     def _make_grids(self, nx=20, ny=20, torch_1_10=check_version(torch.__version__, '1.10.0')):
-        d, t = self.anchors[0].device, self.anchors[0].dtype
-        grids = []
+        grids, d, t = [], self.anchors[0].device, self.anchors[0].dtype  # grids, device, type
         for i, stride in enumerate(self.stride):
             nyi, nxi = (int(x * self.stride[0] / stride) for x in (ny, nx))
             shape = 1, 2, nyi, nxi  # grid shape
             y, x = torch.arange(nyi, device=d, dtype=t), torch.arange(nxi, device=d, dtype=t)
             yv, xv = torch.meshgrid(y, x, indexing='ij') if torch_1_10 else torch.meshgrid(y, x)
-
             grid_xy = torch.stack((xv, yv), 0).expand(shape) - 0.3  # i.e. y = 1.6 * x - 0.3
             grid_wh = self.anchors[i].view((1, 2, 1, 1)).expand(shape)
             grid_stride = torch.ones(shape, device=d, dtype=t)
             grids.append(torch.cat((grid_xy, grid_wh, grid_stride), 1).view(1, 6, nyi * nxi) * stride)
-
         self.grid, self.anchor_grid, self.stride_grid = torch.cat(grids, 2).chunk(3, 1)
         self.shape = (ny, nx)
 
@@ -143,19 +140,16 @@ class DetectSplit(nn.Module):
         return (y,) if self.export else (y, x)
 
     def _make_grids(self, nx=20, ny=20, torch_1_10=check_version(torch.__version__, '1.10.0')):
-        d, t = self.anchors[0].device, self.anchors[0].dtype
-        grids = []
+        grids, d, t = [], self.anchors[0].device, self.anchors[0].dtype  # grids, device, type
         for i, stride in enumerate(self.stride):
             nyi, nxi = (int(x * self.stride[0] / stride) for x in (ny, nx))
             shape = 1, 2, nyi, nxi  # grid shape
             y, x = torch.arange(nyi, device=d, dtype=t), torch.arange(nxi, device=d, dtype=t)
             yv, xv = torch.meshgrid(y, x, indexing='ij') if torch_1_10 else torch.meshgrid(y, x)
-
             grid_xy = torch.stack((xv, yv), 0).expand(shape) - 0.3  # i.e. y = 1.6 * x - 0.3
             grid_wh = self.anchors[i].view((1, 2, 1, 1)).expand(shape)
             grid_stride = torch.ones(shape, device=d, dtype=t)
             grids.append(torch.cat((grid_xy, grid_wh, grid_stride), 1).view(1, 6, nyi * nxi) * stride)
-
         self.grid, self.anchor_grid, self.stride_grid = torch.cat(grids, 2).chunk(3, 1)
         self.shape = (ny, nx)
 
