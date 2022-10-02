@@ -113,12 +113,14 @@ class DetectSplit(nn.Module):
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.shape = (0, 0)  # initial grid shape
-        self.cv1 = nn.ModuleList(nn.Sequential(Conv(x, x), Conv(x, x, 3), nn.Conv2d(x, 5, 1, padding=0)) for x in ch)
-        self.cv2 = nn.ModuleList(nn.Sequential(Conv(x, x), Conv(x, x, 3), nn.Conv2d(x, self.no - 5, 1)) for x in ch)
+        self.cv1 = nn.ModuleList(Conv(x, x) for x in ch)
+        self.cv2 = nn.ModuleList(nn.Sequential(Conv(x, x, 3), nn.Conv2d(x, 5, 1, padding=0)) for x in ch)
+        self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, x, 3), nn.Conv2d(x, self.no - 5, 1, padding=0)) for x in ch)
 
     def forward(self, x):
         for i in range(self.nl):
-            x[i] = torch.cat((self.cv1[i](x[i]), self.cv2[i](x[i])), 1)
+            y = self.cv1[i](x[i])
+            x[i] = torch.cat((self.cv2[i](y), self.cv3[i](y)), 1)
         if self.training:
             return x
 
@@ -337,7 +339,7 @@ class DetectionModel(BaseModel):
         # https://arxiv.org/abs/1708.02002 section 3.3
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
         m = self.model[-1]  # Detect() module
-        for a, b, s in zip(m.cv1, m.cv2, m.stride):  # from
+        for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
             ai = a[-1].bias  # conv.bias(255) to (3,85)
             ai.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
             ai.data[4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
