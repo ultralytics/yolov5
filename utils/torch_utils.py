@@ -429,14 +429,15 @@ class ModelEMA:
         # Update EMA attributes
         copy_attr(self.ema, model, include, exclude)
 
-# Unfreezing the layers at 
-def gradual_unfreeze(name_param, layer_ids): 
 
-    #  Get all layers parameter with respective id. 
-    unfreeze_layers = [f"model.{x}"  for x in layer_ids]
+# Unfreezing the layers at
+def gradual_unfreeze(name_param, layer_ids):
+
+    #  Get all layers parameter with respective id.
+    unfreeze_layers = [f"model.{x}" for x in layer_ids]
     for k, v in name_param:
         if any(x in k for x in unfreeze_layers):
             LOGGER.info(f'Unfreezing {k}')
             v.requires_grad = True
 
-    return  f'Unfreezing Completed for {layer_ids}'
+    return f'Unfreezing Completed for {layer_ids}'

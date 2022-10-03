@@ -57,8 +57,8 @@ from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.loss import ComputeLoss
 from utils.metrics import fitness
 from utils.plots import plot_evolve
-from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, smart_DDP, smart_optimizer,
-                               smart_resume, torch_distributed_zero_first, gradual_unfreeze)
+from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, gradual_unfreeze, select_device, smart_DDP,
+                               smart_optimizer, smart_resume, torch_distributed_zero_first)
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -257,19 +257,22 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 f"Logging results to {colorstr('bold', save_dir)}\n"
                 f'Starting training for {epochs} epochs...')
 
-    
     # checking unfreezing inputs.
     if gradual_unfreezing:
-        assert len(unfreezing_epochs) == len(unfreezing_layers), f"Length of unfreezeing layers {unfreezing_layers} not matched with {unfreezing_layers}"
-   
+        assert len(unfreezing_epochs) == len(
+            unfreezing_layers), f"Length of unfreezeing layers {unfreezing_layers} not matched with {unfreezing_layers}"
+
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         callbacks.run('on_train_epoch_start')
 
         if gradual_unfreezing:
             if (epoch) in unfreezing_epochs:
                 gradual_unfreeze(model.named_parameters(), unfreezing_layers[unfreezing_epochs.index(epoch)])
-                LOGGER.info(colorstr('Unfreezing :  ') + f"Done at {(epoch + 1)} epoch & {unfreezing_layers[unfreezing_epochs.index(epoch)]} layer has unfroze.")
-    
+                LOGGER.info(
+                    colorstr('Unfreezing :  ') +
+                    f"Done at {(epoch + 1)} epoch & {unfreezing_layers[unfreezing_epochs.index(epoch)]} layer has unfroze."
+                )
+
         model.train()
 
         # Update image weights (optional, single-GPU only)
@@ -440,6 +443,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     torch.cuda.empty_cache()
     return results
 
+
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='initial weights path')
@@ -477,8 +481,17 @@ def parse_opt(known=False):
     parser.add_argument('--seed', type=int, default=0, help='Global training seed')
     parser.add_argument('--local_rank', type=int, default=-1, help='Automatic DDP Multi-GPU argument, do not modify')
     parser.add_argument('--grad_unfreeze', action='store_true', help='Gradual Unfreezing ')
-    parser.add_argument('--unfreezing_layers',type=int, default=[], nargs='+', action='append', help='Index of layer for unfreezing')
-    parser.add_argument('--unfreeze_epochs', type=int, default=[], nargs='+', help='Unfreeze the layer at specified epoch')
+    parser.add_argument('--unfreezing_layers',
+                        type=int,
+                        default=[],
+                        nargs='+',
+                        action='append',
+                        help='Index of layer for unfreezing')
+    parser.add_argument('--unfreeze_epochs',
+                        type=int,
+                        default=[],
+                        nargs='+',
+                        help='Unfreeze the layer at specified epoch')
     # Logger arguments
     parser.add_argument('--entity', default=None, help='Entity')
     parser.add_argument('--upload_dataset', nargs='?', const=True, default=False, help='Upload data, "val" option')
