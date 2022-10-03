@@ -111,12 +111,13 @@ class DetectSplit(nn.Module):
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.shape = (0, 0)  # initial grid shape
         # self.cv1 = nn.ModuleList(Conv(x, x) for x in ch)
-        self.cv2 = nn.ModuleList(nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, 5, 1, padding=0)) for x in ch)
-        self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, self.no - 5, 1, padding=0)) for x in ch)
+        self.cv1 = nn.ModuleList(nn.Sequential(Conv(x, x, 1), Conv(x, x, 1)) for x in ch)
+        self.cv2 = nn.ModuleList(nn.Sequential(nn.Conv2d(x, 5, 1, padding=0), ) for x in ch)
+        self.cv3 = nn.ModuleList(nn.Sequential(nn.Conv2d(x, self.no - 5, 1, padding=0), ) for x in ch)
 
     def forward(self, x):
         for i in range(self.nl):
-            y = x[i]  # self.cv1[i](x[i])
+            y = self.cv1[i](x[i])
             x[i] = torch.cat((self.cv2[i](y), self.cv3[i](y)), 1)
         if self.training:
             return x
