@@ -61,7 +61,7 @@ class Detect(nn.Module):
             return x
 
         bs, _, ny, nx = x[0].shape  # x(bs,85,20,20)
-        y = torch.cat([x.view(bs, self.no, -1) for x in x], 2)  # cat all outputs
+        y = torch.cat([x.view(bs, self.no, x.shape[2] * x.shape[3]) for x in x], 2)  # cat all outputs
         if self.dynamic or self.shape != (ny, nx):  # build grids
             self._make_grids(nx, ny)
 
@@ -122,7 +122,7 @@ class DetectSplit(nn.Module):
             return x
 
         bs, _, ny, nx = x[0].shape  # x(bs,85,20,20)
-        y = torch.cat([x.view(bs, self.no, -1) for x in x], 2)  # cat all outputs
+        y = torch.cat([x.view(bs, self.no, x.shape[2] * x.shape[3]) for x in x], 2)  # cat all outputs
         if self.dynamic or self.shape != (ny, nx):  # build grids
             self._make_grids(nx, ny)
 
