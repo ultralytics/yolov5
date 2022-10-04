@@ -175,6 +175,20 @@ class C3(nn.Module):
         return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), 1))
 
 
+class C2(nn.Module):
+    # CSP Bottleneck with 3 convolutions
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
+        super().__init__()
+        c_ = int(c2 * e)  # hidden channels
+        self.cv1 = Conv(c1, 2 * c_, 1, 1)
+        self.cv2 = Conv(2 * c_, c2, 1)  # optional act=FReLU(c2)
+        self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)))
+
+    def forward(self, x):
+        a, b = self.cv1(x).chunk(2, 1)
+        return self.cv2(torch.cat((self.m(a), b), 1))
+
+
 class C3b(nn.Module):
     # CSP Bottleneck with 3 convolutions
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
@@ -275,7 +289,8 @@ class SoftPool2d(nn.Module):
         k = _pair(k)
         s = k if s is None else _pair(s)
         e_x = torch.sum(torch.exp(x), dim=1, keepdim=True)
-        return F.avg_pool2d(x.mul(e_x), k, stride=s, padding=self.padding).div_(F.avg_pool2d(e_x, k, stride=s, padding=self.padding) + 1e-7)
+        return F.avg_pool2d(x.mul(e_x), k, stride=s, padding=self.padding).div_(
+            F.avg_pool2d(e_x, k, stride=s, padding=self.padding) + 1e-7)
 
 
 class Focus(nn.Module):
