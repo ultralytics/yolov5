@@ -179,11 +179,10 @@ class C2(nn.Module):
     # CSP Bottleneck with 3 convolutions
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
         super().__init__()
-        c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, 2 * c_, 1, 1)
-        self.cv2 = Conv(2 * c_, c2, 1)  # optional act=FReLU(c2)
-        self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)))
-        self.c_ = c_
+        self.c_ = int(c2 * e)  # hidden channels
+        self.cv1 = Conv(c1, 2 * self.c_, 1, 1)
+        self.cv2 = Conv(2 * self.c_, c2, 1)  # optional act=FReLU(c2)
+        self.m = nn.Sequential(*(Bottleneck_b(self.c_, self.c_, shortcut, g, e=1.0) for _ in range(n)))
 
     def forward(self, x):
         a, b = self.cv1(x).split((self.c_, self.c_), 1)
@@ -194,11 +193,10 @@ class C2a(nn.Module):
     # CSP Bottleneck with 3 convolutions
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
         super().__init__()
-        c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, 2 * c_, 1, 1)
-        self.cv2 = Conv(c_, c2, 1)  # optional act=FReLU(c2)
-        self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)))
-        self.c_ = c_
+        self.c_ = int(c2 * e)  # hidden channels
+        self.cv1 = Conv(c1, 2 * self.c_, 1, 1)
+        self.cv2 = Conv(self.c_, c2, 1)  # optional act=FReLU(c2)
+        self.m = nn.Sequential(*(Bottleneck_b(self.c_, self.c_, shortcut, g, e=1.0) for _ in range(n)))
 
     def forward(self, x):
         a, b = self.cv1(x).split((self.c_, self.c_), 1)
