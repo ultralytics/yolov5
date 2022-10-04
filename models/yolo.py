@@ -113,7 +113,7 @@ class DetectSplit(nn.Module):
         # self.cv2 = nn.ModuleList(nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, 5, 1, padding=0)) for x in ch)
         # self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, self.no - 5, 1, padding=0)) for x in ch)
         self.cv2 = nn.ModuleList(nn.Conv2d(x, 5, 1, padding=0) for x in ch)
-        self.cv3 = nn.ModuleList(nn.Conv2d(x, self.no - 5, 1, padding=0) for x in ch)
+        self.cv3 = nn.ModuleList(nn.Conv2d(x, self.no - 5, 3, padding=1) for x in ch)
 
     def forward(self, x):
         for i in range(self.nl):
