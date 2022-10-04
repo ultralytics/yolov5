@@ -251,11 +251,11 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
     if trt.__version__[0] == '7':  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
         grid = model.model[-1].anchor_grid
         model.model[-1].anchor_grid = [a[..., :1, :1, :] for a in grid]
-        export_onnx(model, im, file, 12, False, dynamic, simplify)  # opset 12
+        export_onnx(model, im, file, 12, dynamic, simplify)  # opset 12
         model.model[-1].anchor_grid = grid
     else:  # TensorRT >= 8
         check_version(trt.__version__, '8.0.0', hard=True)  # require tensorrt>=8.0.0
-        export_onnx(model, im, file, 12, False, dynamic, simplify)  # opset 12
+        export_onnx(model, im, file, 12, dynamic, simplify)  # opset 12
     onnx = file.with_suffix('.onnx')
 
     LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
@@ -285,7 +285,7 @@ def export_engine(model, im, file, half, dynamic, simplify, workspace=4, verbose
 
     if dynamic:
         if im.shape[0] <= 1:
-            LOGGER.warning(f"{prefix}WARNING ⚠️ --dynamic model requires maximum --batch-size argument")
+            LOGGER.warning(f"{prefix} WARNING ⚠️ --dynamic model requires maximum --batch-size argument")
         profile = builder.create_optimization_profile()
         for inp in inputs:
             profile.set_shape(inp.name, (1, *im.shape[1:]), (max(1, im.shape[0] // 2), *im.shape[1:]), im.shape)
