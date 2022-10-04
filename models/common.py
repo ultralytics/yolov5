@@ -189,6 +189,17 @@ class C2(nn.Module):
         return self.cv2(torch.cat((self.m(a), b), 1))
 
 
+class C1(nn.Module):
+    # CSP Bottleneck with 3 convolutions
+    def __init__(self, c1, c2, n=1):  # ch_in, ch_out, number, shortcut, groups, expansion
+        super().__init__()
+        self.cv1 = Conv(c1, c2, 1, 1)
+        self.m = nn.Sequential(*(Conv(c2, c2, 3) for _ in range(n)))
+
+    def forward(self, x):
+        return self.m(self.cv1(x))
+
+
 class C2a(nn.Module):
     # CSP Bottleneck with 3 convolutions
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
