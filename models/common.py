@@ -183,9 +183,10 @@ class C2(nn.Module):
         self.cv1 = Conv(c1, 2 * c_, 1, 1)
         self.cv2 = Conv(2 * c_, c2, 1)  # optional act=FReLU(c2)
         self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)))
+        self.c_ = c_
 
     def forward(self, x):
-        a, b = self.cv1(x).chunk(2, 1)
+        a, b = self.cv1(x).split((self.c_, self.c_), 1)
         return self.cv2(torch.cat((self.m(a), b), 1))
 
 
