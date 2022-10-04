@@ -155,7 +155,7 @@ class C2(nn.Module):
         self.c_ = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, 2 * self.c_, 1, 1)
         self.cv2 = Conv(2 * self.c_, c2, 1)  # optional act=FReLU(c2)
-        self.m = nn.Sequential(*(Bottleneck(self.c_, self.c_, shortcut, g, k=(1, 1), e=1.0) for _ in range(n)))
+        self.m = nn.Sequential(*(Bottleneck(self.c_, self.c_, shortcut, g, k=(3, 3), e=1.0) for _ in range(n)))
 
     def forward(self, x):
         a, b = self.cv1(x).split((self.c_, self.c_), 1)
