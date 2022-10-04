@@ -197,7 +197,8 @@ class C1(nn.Module):
         self.m = nn.Sequential(*(Conv(c2, c2, 3) for _ in range(n)))
 
     def forward(self, x):
-        return self.m(self.cv1(x))
+        y = self.cv1(x)
+        return self.m(y) + y
 
 
 class C2a(nn.Module):
