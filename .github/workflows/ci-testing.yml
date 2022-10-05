@@ -1,93 +1,167 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# YOLOv5 Continuous Integration (CI) GitHub Actions tests
 
-name: CI CPU testing
+name: YOLOv5 CI
 
-on: # https://help.github.com/en/actions/reference/events-that-trigger-workflows
+on:
   push:
     branches: [ master ]
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ master ]
   schedule:
-    - cron: '0 0 * * *'  # Runs at 00:00 UTC every day
+    - cron: '0 0 * * *'  # runs at 00:00 UTC every day
 
 jobs:
-  cpu-tests:
-
+  Benchmarks:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
-        python-version: [ 3.9 ]
-        model: [ 'yolov5n' ]  # models to test
-
-    # Timeout: https://stackoverflow.com/a/59076067/4521646
-    timeout-minutes: 60
+        os: [ ubuntu-latest ]
+        python-version: [ '3.9' ]  # requires python<=3.9
+        model: [ yolov5n ]
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-
-      # Note: This uses an internal pip API and may not always work
-      # https://github.com/actions/cache/blob/master/examples.md#multiple-oss-in-a-workflow
-      - name: Get pip cache
-        id: pip-cache
+      #- name: Cache pip
+      #  uses: actions/cache@v3
+      #  with:
+      #    path: ~/.cache/pip
+      #    key: ${{ runner.os }}-Benchmarks-${{ hashFiles('requirements.txt') }}
+      #    restore-keys: ${{ runner.os }}-Benchmarks-
+      - name: Install requirements
         run: |
-          python -c "from pip._internal.locations import USER_CACHE_DIR; print('::set-output name=dir::' + USER_CACHE_DIR)"
+          python -m pip install --upgrade pip wheel
+          pip install -r requirements.txt coremltools openvino-dev tensorflow-cpu --extra-index-url https://download.pytorch.org/whl/cpu
+          python --version
+          pip --version
+          pip list
+      - name: Benchmark DetectionModel
+        run: |
+          python benchmarks.py --data coco128.yaml --weights ${{ matrix.model }}.pt --img 320 --hard-fail 0.29
+      - name: Benchmark SegmentationModel
+        run: |
+          python benchmarks.py --data coco128-seg.yaml --weights ${{ matrix.model }}-seg.pt --img 320 --hard-fail 0.22
+      - name: Test predictions
+        run: |
+          python export.py --weights ${{ matrix.model }}-cls.pt --include onnx --img 224
+          python detect.py --weights ${{ matrix.model }}.onnx --img 320
+          python segment/predict.py --weights ${{ matrix.model }}-seg.onnx --img 320
+          python classify/predict.py --weights ${{ matrix.model }}-cls.onnx --img 224
 
+  Tests:
+    timeout-minutes: 60
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]  # macos-latest bug https://github.com/ultralytics/yolov5/pull/9049
+        python-version: [ '3.10' ]
+        model: [ yolov5n ]
+        include:
+          - os: ubuntu-latest
+            python-version: '3.7'  # '3.6.8' min
+            model: yolov5n
+          - os: ubuntu-latest
+            python-version: '3.8'
+            model: yolov5n
+          - os: ubuntu-latest
+            python-version: '3.9'
+            model: yolov5n
+          - os: ubuntu-latest
+            python-version: '3.8'  # torch 1.7.0 requires python >=3.6, <=3.8
+            model: yolov5n
+            torch: '1.7.0'  # min torch version CI https://pypi.org/project/torchvision/
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Get cache dir
+        # https://github.com/actions/cache/blob/master/examples.md#multiple-oss-in-a-workflow
+        id: pip-cache
+        run: echo "::set-output name=dir::$(pip cache dir)"
       - name: Cache pip
         uses: actions/cache@v3
         with:
           path: ${{ steps.pip-cache.outputs.dir }}
           key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.python-version }}-pip-
-
-      # Known Keras 2.7.0 issue: https://github.com/ultralytics/yolov5/pull/5486
-      - name: Install dependencies
+          restore-keys: ${{ runner.os }}-${{ matrix.python-version }}-pip-
+      - name: Install requirements
         run: |
-          python -m pip install --upgrade pip
-          pip install -qr requirements.txt -f https://download.pytorch.org/whl/cpu/torch_stable.html \
-            onnx tensorflow-cpu  # wandb
+          python -m pip install --upgrade pip wheel
+          if [ "${{ matrix.torch }}" == "1.7.0" ]; then
+              pip install -r requirements.txt torch==1.7.0 torchvision==0.8.1 --extra-index-url https://download.pytorch.org/whl/cpu
+          else
+              pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+          fi
+        shell: bash  # for Windows compatibility
+      - name: Check environment
+        run: |
+          python -c "import utils; utils.notebook_init()"
+          echo "RUNNER_OS is ${{ runner.os }}"
+          echo "GITHUB_EVENT_NAME is ${{ github.event_name }}"
+          echo "GITHUB_WORKFLOW is ${{ github.workflow }}"
+          echo "GITHUB_ACTOR is ${{ github.actor }}"
+          echo "GITHUB_REPOSITORY is ${{ github.repository }}"
+          echo "GITHUB_REPOSITORY_OWNER is ${{ github.repository_owner }}"
           python --version
           pip --version
           pip list
-        shell: bash
-
-      # - name: W&B login
-      #   run: wandb login 345011b3fb26dc8337fd9b20e53857c1d403f2aa
-
-      # - name: Download data
-      #   run: |
-      #     curl -L -o tmp.zip https://github.com/ultralytics/yolov5/releases/download/v1.0/coco128.zip
-      #     unzip -q tmp.zip -d ../datasets
-
-      - name: Tests workflow
+      - name: Test detection
+        shell: bash  # for Windows compatibility
         run: |
           # export PYTHONPATH="$PWD"  # to run '$ python *.py' files in subdirectories
-          d=cpu  # device
-          weights=runs/train/exp/weights/best.pt
-
-          # Train
-          python train.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --cfg ${{ matrix.model }}.yaml --epochs 1 --device $d
-          # Val
-          python val.py --img 64 --batch 32 --weights ${{ matrix.model }}.pt --device $d
-          python val.py --img 64 --batch 32 --weights $weights --device $d
-          # Detect
-          python detect.py --weights ${{ matrix.model }}.pt --device $d
-          python detect.py --weights $weights --device $d
-          python hubconf.py  # hub
-          # Export
-          python models/yolo.py --cfg ${{ matrix.model }}.yaml  # build PyTorch model
-          python models/tf.py --weights ${{ matrix.model }}.pt  # build TensorFlow model
-          python export.py --weights ${{ matrix.model }}.pt --img 64 --include torchscript onnx  # export
-          # Python
+          m=${{ matrix.model }}  # official weights
+          b=runs/train/exp/weights/best  # best.pt checkpoint
+          python train.py --imgsz 64 --batch 32 --weights $m.pt --cfg $m.yaml --epochs 1 --device cpu  # train
+          for d in cpu; do  # devices
+            for w in $m $b; do  # weights
+              python val.py --imgsz 64 --batch 32 --weights $w.pt --device $d  # val
+              python detect.py --imgsz 64 --weights $w.pt --device $d  # detect
+            done
+          done
+          python hubconf.py --model $m  # hub
+          # python models/tf.py --weights $m.pt  # build TF model
+          python models/yolo.py --cfg $m.yaml  # build PyTorch model
+          python export.py --weights $m.pt --img 64 --include torchscript  # export
           python - <<EOF
           import torch
-          # model = torch.hub.load('ultralytics/yolov5', 'custom', path=$weights)
+          im = torch.zeros([1, 3, 64, 64])
+          for path in '$m', '$b':
+              model = torch.hub.load('.', 'custom', path=path, source='local')
+              print(model('data/images/bus.jpg'))
+              model(im)  # warmup, build grids for trace
+              torch.jit.trace(model, [im])
           EOF
-
-        shell: bash
+      - name: Test segmentation
+        shell: bash  # for Windows compatibility
+        run: |
+          m=${{ matrix.model }}-seg  # official weights
+          b=runs/train-seg/exp/weights/best  # best.pt checkpoint
+          python segment/train.py --imgsz 64 --batch 32 --weights $m.pt --cfg $m.yaml --epochs 1 --device cpu  # train
+          python segment/train.py --imgsz 64 --batch 32 --weights '' --cfg $m.yaml --epochs 1 --device cpu  # train
+          for d in cpu; do  # devices
+            for w in $m $b; do  # weights
+              python segment/val.py --imgsz 64 --batch 32 --weights $w.pt --device $d  # val
+              python segment/predict.py --imgsz 64 --weights $w.pt --device $d  # predict
+              python export.py --weights $w.pt --img 64 --include torchscript --device $d  # export
+            done
+          done
+      - name: Test classification
+        shell: bash  # for Windows compatibility
+        run: |
+          m=${{ matrix.model }}-cls.pt  # official weights
+          b=runs/train-cls/exp/weights/best.pt  # best.pt checkpoint
+          python classify/train.py --imgsz 32 --model $m --data mnist2560 --epochs 1  # train
+          python classify/val.py --imgsz 32 --weights $b --data ../datasets/mnist2560  # val
+          python classify/predict.py --imgsz 32 --weights $b --source ../datasets/mnist2560/test/7/60.png  # predict
+          python classify/predict.py --imgsz 32 --weights $m --source data/images/bus.jpg  # predict
+          python export.py --weights $b --img 64 --imgsz 224 --include torchscript  # export
+          python - <<EOF
+          import torch
+          for path in '$m', '$b':
+              model = torch.hub.load('.', 'custom', path=path, source='local')
+          EOF

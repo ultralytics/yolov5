@@ -43,6 +43,9 @@ def check_wandb_config_file(data_config_file):
 def check_wandb_dataset(data_file):
     is_trainset_wandb_artifact = False
     is_valset_wandb_artifact = False
+    if isinstance(data_file, dict):
+        # In that case another dataset manager has already processed it and we don't have to
+        return data_file
     if check_file(data_file) and data_file.endswith('.yaml'):
         with open(data_file, errors='ignore') as f:
             data_dict = yaml.safe_load(f)
@@ -121,7 +124,7 @@ class WandbLogger():
         """
         - Initialize WandbLogger instance
         - Upload dataset if opt.upload_dataset is True
-        - Setup trainig processes if job_type is 'Training'
+        - Setup training processes if job_type is 'Training'
 
         arguments:
         opt (namespace) -- Commandline arguments for this run
@@ -129,6 +132,11 @@ class WandbLogger():
         job_type (str) -- To set the job_type for this run
 
        """
+        # Temporary-fix
+        if opt.upload_dataset:
+            opt.upload_dataset = False
+            LOGGER.info("Uploading Dataset functionality is not being supported temporarily due to a bug.")
+
         # Pre-training routine --
         self.job_type = job_type
         self.wandb, self.wandb_run = wandb, None if not wandb else wandb.run
@@ -170,7 +178,11 @@ class WandbLogger():
                     if not opt.resume:
                         self.wandb_artifact_data_dict = self.check_and_upload_dataset(opt)
 
-                if opt.resume:
+                if isinstance(opt.data, dict):
+                    # This means another dataset manager has already processed the dataset info (e.g. ClearML)
+                    # and they will have stored the already processed dict in opt.data
+                    self.data_dict = opt.data
+                elif opt.resume:
                     # resume from artifact
                     if isinstance(opt.resume, str) and opt.resume.startswith(WANDB_ARTIFACT_PREFIX):
                         self.data_dict = dict(self.wandb_run.config.data_dict)
