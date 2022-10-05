@@ -261,7 +261,7 @@ class DetectionModel(BaseModel):
         y[-1] = y[-1][:, i:]  # small
         return y
 
-    # def _initialize_biases_split(self, cf=None):  # initialize biases into Detect(), cf is class frequency
+    # def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
     #     # https://arxiv.org/abs/1708.02002 section 3.3 for 4-1-80 splits
     #     # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
     #     m = self.model[-1]  # Detect() module
@@ -278,7 +278,7 @@ class DetectionModel(BaseModel):
     #         bi.data[:m.nc] += math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # cls
     #         b[-1].bias = torch.nn.Parameter(bi, requires_grad=True)
 
-    # def _initialize_biases_split(self, cf=None):  # initialize biases into Detect(), cf is class frequency
+    # def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
     #     # https://arxiv.org/abs/1708.02002 section 3.3 for 5-80 splits
     #     # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
     #     m = self.model[-1]  # Detect() module
@@ -291,7 +291,7 @@ class DetectionModel(BaseModel):
     #         bi.data[:m.nc] += math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # cls
     #         b[0].bias = torch.nn.Parameter(bi, requires_grad=True)
 
-    def _initialize_biases_split(self, cf=None):  # initialize biases into Detect(), cf is class frequency
+    def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
         # https://arxiv.org/abs/1708.02002 section 3.3 for 4-81 splits
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
         m = self.model[-1]  # Detect() module
