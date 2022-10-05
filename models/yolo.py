@@ -52,64 +52,6 @@ class Detect(nn.Module):
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.shape = (0, 0)  # initial grid shape
-        self.m = nn.ModuleList(nn.Conv2d(x, self.no, 1, padding=0) for x in ch)
-
-    def forward(self, x):
-        for i in range(self.nl):
-            x[i] = self.m[i](x[i])
-        if self.training:
-            return x
-
-        bs, _, ny, nx = x[0].shape  # x(bs,85,20,20)
-        y = torch.cat([x.view(bs, self.no, x.shape[2] * x.shape[3]) for x in x], 2)  # cat all outputs
-        if self.dynamic or self.shape != (ny, nx):  # build grids
-            self._make_grids(nx, ny)
-
-        if isinstance(self, Segment):  # (boxes + masks)
-            xy, wh, conf, mask = y.split((2, 2, self.nc + 1, self.no - self.nc - 5), 1)
-            xy = xy.sigmoid() * (1.6 * self.stride_grid) + self.grid  # xy
-            wh = (0.25 + wh.sigmoid() * 3.75) * self.anchor_grid
-            y = torch.cat((xy, wh, conf.sigmoid(), mask), 1)
-        else:  # Detect (boxes only)
-            xy, wh, conf = y.sigmoid().split((2, 2, self.nc + 1), 1)
-            xy = xy * (1.6 * self.stride_grid) + self.grid  # xy
-            wh = (0.25 + wh * 3.75) * self.anchor_grid
-            y = torch.cat((xy, wh, conf), 1)
-
-        return (y,) if self.export else (y, x)
-
-    def _make_grids(self, nx=20, ny=20, torch_1_10=check_version(torch.__version__, '1.10.0')):
-        grids, d, t = [], self.anchors[0].device, self.anchors[0].dtype  # grids, device, type
-        for i, stride in enumerate(self.stride):
-            nyi, nxi = (int(x * self.stride[0] / stride) for x in (ny, nx))
-            shape = 1, 2, nyi, nxi  # grid shape
-            y, x = torch.arange(nyi, device=d, dtype=t), torch.arange(nxi, device=d, dtype=t)
-            yv, xv = torch.meshgrid(y, x, indexing='ij') if torch_1_10 else torch.meshgrid(y, x)
-            grid_xy = torch.stack((xv, yv), 0).expand(shape) - 0.3  # i.e. y = 1.6 * x - 0.3
-            grid_wh = self.anchors[i].view((1, 2, 1, 1)).expand(shape)
-            grid_stride = torch.ones(shape, device=d, dtype=t)
-            grids.append(torch.cat((grid_xy, grid_wh, grid_stride), 1).view(1, 6, nyi * nxi) * stride)
-        self.grid, self.anchor_grid, self.stride_grid = torch.cat(grids, 2).chunk(3, 1)
-        self.shape = (ny, nx)
-
-
-class DetectSplit(nn.Module):
-    # YOLOv5 Detect head for detection models
-    stride = None  # strides computed during build
-    dynamic = False  # force grid reconstruction
-    export = False  # export mode
-
-    def __init__(self, nc=80, anchors=(), ch=(), inplace=True):  # detection layer
-        super().__init__()
-        self.nc = nc  # number of classes
-        self.no = nc + 5  # number of outputs per anchor
-        self.nl = len(anchors)  # number of detection layers
-        self.grid = torch.empty(0)  # init
-        self.anchor_grid = torch.empty(0)  # init
-        self.stride_grid = torch.empty(0)  # init
-        self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
-        self.inplace = inplace  # use inplace ops (e.g. slice assignment)
-        self.shape = (0, 0)  # initial grid shape
         self.cv2 = nn.ModuleList(nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, 4, 1, padding=0)) for x in ch)
         self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, self.no - 4, 1, padding=0)) for x in ch)
         # self.cv2 = nn.ModuleList(nn.Conv2d(x, 5, 1, padding=0) for x in ch)
@@ -220,7 +162,7 @@ class BaseModel(nn.Module):
         # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
         self = super()._apply(fn)
         m = self.model[-1]  # Detect()
-        if isinstance(m, (Detect, Segment, DetectSplit)):
+        if isinstance(m, (Detect, Segment)):
             m.stride = fn(m.stride)
             m.grid = list(map(fn, m.grid))
             if isinstance(m.anchor_grid, list):
@@ -254,7 +196,7 @@ class DetectionModel(BaseModel):
 
         # Build strides, anchors
         m = self.model[-1]  # Detect()
-        if isinstance(m, (Detect, Segment, DetectSplit)):
+        if isinstance(m, (Detect, Segment)):
             s = 256  # 2x min stride
             m.inplace = self.inplace
             forward = lambda x: self.forward(x)[0] if isinstance(m, Segment) else self.forward(x)
@@ -264,8 +206,6 @@ class DetectionModel(BaseModel):
             self.stride = m.stride
             if isinstance(m, (Detect, Segment)):
                 self._initialize_biases()  # only run once
-            elif isinstance(m, DetectSplit):
-                self._initialize_biases_split()
 
         # Init weights, biases
         initialize_weights(self)
@@ -318,17 +258,6 @@ class DetectionModel(BaseModel):
         i = (y[-1].shape[1] // g) * sum(4 ** (nl - 1 - x) for x in range(e))  # indices
         y[-1] = y[-1][:, i:]  # small
         return y
-
-    def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
-        # https://arxiv.org/abs/1708.02002 section 3.3
-        # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
-        m = self.model[-1]  # Detect() module
-        for mi, s in zip(m.m, m.stride):  # from
-            b = mi.bias  # conv.bias(255) to (3,85)
-            b.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
-            b.data[4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
-            b.data[5:5 + m.nc] += math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # cls
-            mi.bias = torch.nn.Parameter(b, requires_grad=True)
 
     # def _initialize_biases_split(self, cf=None):  # initialize biases into Detect(), cf is class frequency
     #     # https://arxiv.org/abs/1708.02002 section 3.3 for 4-1-80 splits
@@ -444,7 +373,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         elif m is Concat:
             c2 = sum(ch[x] for x in f)
         # TODO: channel, gw, gd
-        elif m in {Detect, Segment, DetectSplit}:
+        elif m in {Detect, Segment}:
             args.append([ch[x] for x in f])
             if isinstance(args[1], int):  # number of anchors
                 args[1] = [list(range(args[1] * 2))] * len(f)
