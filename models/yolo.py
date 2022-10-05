@@ -55,7 +55,7 @@ class Detect(nn.Module):
         self.cv2 = nn.ModuleList(
             nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, 4, 1, padding=0), nn.BatchNorm2d(4)) for x in ch)
         self.cv3 = nn.ModuleList(
-            nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, self.no - 4, 3, padding=1), nn.BatchNorm2d(self.no - 4)) for x in ch)
+            nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, self.no - 4, 1, padding=0), nn.BatchNorm2d(self.no - 4)) for x in ch)
 
     def forward(self, x):
         for i in range(self.nl):
