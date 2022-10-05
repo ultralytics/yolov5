@@ -365,14 +365,14 @@ class DetectionModel(BaseModel):
         # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
         m = self.model[-1]  # Detect() module
         for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
-            ai = a[-1].bias  # conv.bias(255) to (3,85)
+            ai = a[1].bias  # conv.bias(255) to (3,85)
             ai.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
-            a[-1].bias = torch.nn.Parameter(ai, requires_grad=True)
+            a[1].bias = torch.nn.Parameter(ai, requires_grad=True)
 
-            bi = b[-1].bias  # conv.bias(255) to (3,85)
+            bi = b[1].bias  # conv.bias(255) to (3,85)
             bi.data[0] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
             bi.data[1:m.nc + 1] += math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # cls
-            b[-1].bias = torch.nn.Parameter(bi, requires_grad=True)
+            b[1].bias = torch.nn.Parameter(bi, requires_grad=True)
 
 
 Model = DetectionModel  # retain YOLOv5 'Model' class for backwards compatibility
