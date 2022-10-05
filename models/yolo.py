@@ -79,7 +79,7 @@ class Detect(nn.Module):
         else:  # Detect (boxes only)
             xy, wh, conf = y.sigmoid().split((2, 2, self.nc + 1), 1)
             xy = xy * (1.6 * self.stride_grid) + self.grid  # xy
-            wh = (0.20 + wh * 4.80) * self.anchor_grid
+            wh = (0.25 + wh * 3.75) * self.anchor_grid
             y = torch.cat((xy, wh, conf), 1)
 
         return (y,) if self.export else (y, x)
@@ -297,7 +297,7 @@ class DetectionModel(BaseModel):
         m = self.model[-1]  # Detect() module
         for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
             ai = a[1].bias  # conv.bias(255) to (3,85)
-            ai.data[2:4] = 1.60944 # -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
+            ai.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
             a[1].bias = torch.nn.Parameter(ai, requires_grad=True)
 
             bi = b[1].bias  # conv.bias(255) to (3,85)
