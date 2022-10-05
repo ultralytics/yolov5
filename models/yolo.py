@@ -52,14 +52,11 @@ class Detect(nn.Module):
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.shape = (0, 0)  # initial grid shape
-        # self.cv2 = nn.ModuleList(
-        #     nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, 4, 1, padding=0), nn.BatchNorm2d(4)) for x in ch)
-        # self.cv3 = nn.ModuleList(
-        #     nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, self.no - 4, 1, padding=0), nn.BatchNorm2d(self.no - 4)) for x in ch)
         self.cv2 = nn.ModuleList(
-            nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, 4, 1, padding=0)) for x in ch)
+            nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, 4, 1, padding=0), nn.BatchNorm2d(4)) for x in ch)
         self.cv3 = nn.ModuleList(
-            nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, self.no - 4, 1, padding=0)) for x in ch)
+            nn.Sequential(Conv(x, x, 1), nn.Conv2d(x, self.no - 4, 1, padding=0), nn.BatchNorm2d(self.no - 4)) for x in ch)
+
 
     def forward(self, x):
         for i in range(self.nl):
