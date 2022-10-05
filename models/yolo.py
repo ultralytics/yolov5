@@ -79,7 +79,7 @@ class Detect(nn.Module):
         else:  # Detect (boxes only)
             xy, wh, conf = y.sigmoid().split((2, 2, self.nc + 1), 1)
             xy = xy * (1.6 * self.stride_grid) + self.grid  # xy
-            wh = (0.25 + wh * 3.75) * self.anchor_grid
+            wh = (0.20 + wh * 4.80) * self.anchor_grid
             y = torch.cat((xy, wh, conf), 1)
 
         return (y,) if self.export else (y, x)
