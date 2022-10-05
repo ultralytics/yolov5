@@ -297,7 +297,7 @@ class DetectionModel(BaseModel):
         m = self.model[-1]  # Detect() module
         for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
             ai = a[1].bias  # conv.bias(255) to (3,85)
-            ai.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
+            ai.data[2:4] = 1.60944 # -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
             a[1].bias = torch.nn.Parameter(ai, requires_grad=True)
 
             bi = b[1].bias  # conv.bias(255) to (3,85)
