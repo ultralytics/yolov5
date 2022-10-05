@@ -1,15 +1,15 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+# Builds ultralytics/yolov5:latest images on DockerHub https://hub.docker.com/r/ultralytics/yolov5
 
 name: Publish Docker Images
 
 on:
   push:
     branches: [ master ]
-  # pull_request:
-  #   branches: [master]
 
 jobs:
   docker:
+    if: github.repository == 'ultralytics/yolov5'
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     steps:
@@ -30,6 +30,7 @@ jobs:
 
       - name: Build and push arm64 image
         uses: docker/build-push-action@v3
+        continue-on-error: true
         with:
           context: .
           platforms: linux/arm64
@@ -39,6 +40,7 @@ jobs:
 
       - name: Build and push CPU image
         uses: docker/build-push-action@v3
+        continue-on-error: true
         with:
           context: .
           file: utils/docker/Dockerfile-cpu
@@ -47,6 +49,7 @@ jobs:
 
       - name: Build and push GPU image
         uses: docker/build-push-action@v3
+        continue-on-error: true
         with:
           context: .
           file: utils/docker/Dockerfile
