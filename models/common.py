@@ -160,6 +160,7 @@ class C2(nn.Module):
 
     def forward(self, x):
         a, b = self.cv1(x).split((self.c, self.c), 1)
+        # return self.cv2(self.gap(torch.cat((self.m(a), b), 1)))
         return self.cv2(torch.cat((self.m(a), b), 1))
 
 
