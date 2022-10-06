@@ -204,8 +204,7 @@ class DetectionModel(BaseModel):
             check_anchor_order(m)
             m.anchors /= m.stride.view(-1, 1, 1)
             self.stride = m.stride
-            if isinstance(m, (Detect, Segment)):
-                self._initialize_biases()  # only run once
+            self._initialize_biases()  # only run once
 
         # Init weights, biases
         initialize_weights(self)
