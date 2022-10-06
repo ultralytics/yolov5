@@ -34,6 +34,23 @@ except ImportError:
 warnings.filterwarnings('ignore', message='User provided device_type of \'cuda\', but CUDA is not available. Disabling')
 
 
+def smart_inference_mode(torch_1_9=check_version(torch.__version__, '1.9.0')):
+    # Applies torch.inference_mode() decorator if torch>=1.9.0 else torch.no_grad() decorator
+    def decorate(fn):
+        return (torch.inference_mode if torch_1_9 else torch.no_grad)()(fn)
+
+    return decorate
+
+
+def smartCrossEntropyLoss(label_smoothing=0.0):
+    # Returns nn.CrossEntropyLoss with label smoothing enabled for torch>=1.10.0
+    if check_version(torch.__version__, '1.10.0'):
+        return nn.CrossEntropyLoss(label_smoothing=label_smoothing)
+    if label_smoothing > 0:
+        LOGGER.warning(f'WARNING ⚠️ label smoothing {label_smoothing} requires torch>=1.10.0')
+    return nn.CrossEntropyLoss()
+
+
 def smart_DDP(model):
     # Model DDP creation with checks
     assert not check_version(torch.__version__, '1.12.0', pinned=True), \
@@ -43,6 +60,28 @@ def smart_DDP(model):
         return DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK, static_graph=True)
     else:
         return DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
+
+
+def reshape_classifier_output(model, n=1000):
+    # Update a TorchVision classification model to class count 'n' if required
+    from models.common import Classify
+    name, m = list((model.model if hasattr(model, 'model') else model).named_children())[-1]  # last module
+    if isinstance(m, Classify):  # YOLOv5 Classify() head
+        if m.linear.out_features != n:
+            m.linear = nn.Linear(m.linear.in_features, n)
+    elif isinstance(m, nn.Linear):  # ResNet, EfficientNet
+        if m.out_features != n:
+            setattr(model, name, nn.Linear(m.in_features, n))
+    elif isinstance(m, nn.Sequential):
+        types = [type(x) for x in m]
+        if nn.Linear in types:
+            i = types.index(nn.Linear)  # nn.Linear index
+            if m[i].out_features != n:
+                m[i] = nn.Linear(m[i].in_features, n)
+        elif nn.Conv2d in types:
+            i = types.index(nn.Conv2d)  # nn.Conv2d index
+            if m[i].out_channels != n:
+                m[i] = nn.Conv2d(m[i].in_channels, n, m[i].kernel_size, m[i].stride, bias=m[i].bias)
 
 
 @contextmanager
@@ -78,7 +117,7 @@ def select_device(device='', batch_size=0, newline=True):
         assert torch.cuda.is_available() and torch.cuda.device_count() >= len(device.replace(',', '')), \
             f"Invalid CUDA '--device {device}' requested, use '--device cpu' or pass valid CUDA device(s)"
 
-    if not (cpu or mps) and torch.cuda.is_available():  # prefer GPU if available
+    if not cpu and not mps and torch.cuda.is_available():  # prefer GPU if available
         devices = device.split(',') if device else '0'  # range(torch.cuda.device_count())  # i.e. 0,1,6,7
         n = len(devices)  # device count
         if n > 1 and batch_size > 0:  # check batch_size is divisible by device_count
@@ -109,14 +148,13 @@ def time_sync():
 
 
 def profile(input, ops, n=10, device=None):
-    # YOLOv5 speed/memory/FLOPs profiler
-    #
-    # Usage:
-    #     input = torch.randn(16, 3, 640, 640)
-    #     m1 = lambda x: x * torch.sigmoid(x)
-    #     m2 = nn.SiLU()
-    #     profile(input, [m1, m2], n=100)  # profile over 100 iterations
-
+    """ YOLOv5 speed/memory/FLOPs profiler
+    Usage:
+        input = torch.randn(16, 3, 640, 640)
+        m1 = lambda x: x * torch.sigmoid(x)
+        m2 = nn.SiLU()
+        profile(input, [m1, m2], n=100)  # profile over 100 iterations
+    """
     results = []
     if not isinstance(device, torch.device):
         device = select_device(device)
@@ -199,12 +237,11 @@ def sparsity(model):
 def prune(model, amount=0.3):
     # Prune model to requested global sparsity
     import torch.nn.utils.prune as prune
-    print('Pruning model... ', end='')
     for name, m in model.named_modules():
         if isinstance(m, nn.Conv2d):
             prune.l1_unstructured(m, name='weight', amount=amount)  # prune
             prune.remove(m, 'weight')  # make permanent
-    print(' %.3g global sparsity' % sparsity(model))
+    LOGGER.info(f'Model pruned to {sparsity(model):.3g} global sparsity')
 
 
 def fuse_conv_and_bn(conv, bn):
@@ -214,6 +251,7 @@ def fuse_conv_and_bn(conv, bn):
                           kernel_size=conv.kernel_size,
                           stride=conv.stride,
                           padding=conv.padding,
+                          dilation=conv.dilation,
                           groups=conv.groups,
                           bias=True).requires_grad_(False).to(conv.weight.device)
 
@@ -230,7 +268,7 @@ def fuse_conv_and_bn(conv, bn):
     return fusedconv
 
 
-def model_info(model, verbose=False, img_size=640):
+def model_info(model, verbose=False, imgsz=640):
     # Model information. img_size may be int or list, i.e. img_size=640 or img_size=[640, 320]
     n_p = sum(x.numel() for x in model.parameters())  # number parameters
     n_g = sum(x.numel() for x in model.parameters() if x.requires_grad)  # number gradients
@@ -242,12 +280,12 @@ def model_info(model, verbose=False, img_size=640):
                   (i, name, p.requires_grad, p.numel(), list(p.shape), p.mean(), p.std()))
 
     try:  # FLOPs
-        from thop import profile
-        stride = max(int(model.stride.max()), 32) if hasattr(model, 'stride') else 32
-        img = torch.zeros((1, model.yaml.get('ch', 3), stride, stride), device=next(model.parameters()).device)  # input
-        flops = profile(deepcopy(model), inputs=(img,), verbose=False)[0] / 1E9 * 2  # stride GFLOPs
-        img_size = img_size if isinstance(img_size, list) else [img_size, img_size]  # expand if int/float
-        fs = ', %.1f GFLOPs' % (flops * img_size[0] / stride * img_size[1] / stride)  # 640x640 GFLOPs
+        p = next(model.parameters())
+        stride = max(int(model.stride.max()), 32) if hasattr(model, 'stride') else 32  # max stride
+        im = torch.empty((1, p.shape[1], stride, stride), device=p.device)  # input image in BCHW format
+        flops = thop.profile(deepcopy(model), inputs=(im,), verbose=False)[0] / 1E9 * 2  # stride GFLOPs
+        imgsz = imgsz if isinstance(imgsz, list) else [imgsz, imgsz]  # expand if int/float
+        fs = f', {flops * imgsz[0] / stride * imgsz[1] / stride:.1f} GFLOPs'  # 640x640 GFLOPs
     except Exception:
         fs = ''
 
@@ -306,6 +344,18 @@ def smart_optimizer(model, name='Adam', lr=0.001, momentum=0.9, decay=1e-5):
     return optimizer
 
 
+def smart_hub_load(repo='ultralytics/yolov5', model='yolov5s', **kwargs):
+    # YOLOv5 torch.hub.load() wrapper with smart error/issue handling
+    if check_version(torch.__version__, '1.9.1'):
+        kwargs['skip_validation'] = True  # validation causes GitHub API rate limit errors
+    if check_version(torch.__version__, '1.12.0'):
+        kwargs['trust_repo'] = True  # argument required starting in torch 0.12
+    try:
+        return torch.hub.load(repo, model, **kwargs)
+    except Exception:
+        return torch.hub.load(repo, model, force_reload=True, **kwargs)
+
+
 def smart_resume(ckpt, optimizer, ema=None, weights='yolov5s.pt', epochs=300, resume=True):
     # Resume training from a partially trained checkpoint
     best_fitness = 0.0
@@ -358,8 +408,6 @@ class ModelEMA:
     def __init__(self, model, decay=0.9999, tau=2000, updates=0):
         # Create EMA
         self.ema = deepcopy(de_parallel(model)).eval()  # FP32 EMA
-        # if next(model.parameters()).device.type != 'cpu':
-        #     self.ema.half()  # FP16 EMA
         self.updates = updates  # number of EMA updates
         self.decay = lambda x: decay * (1 - math.exp(-x / tau))  # decay exponential ramp (to help early epochs)
         for p in self.ema.parameters():
@@ -367,15 +415,15 @@ class ModelEMA:
 
     def update(self, model):
         # Update EMA parameters
-        with torch.no_grad():
-            self.updates += 1
-            d = self.decay(self.updates)
+        self.updates += 1
+        d = self.decay(self.updates)
 
-            msd = de_parallel(model).state_dict()  # model state_dict
-            for k, v in self.ema.state_dict().items():
-                if v.dtype.is_floating_point:
-                    v *= d
-                    v += (1 - d) * msd[k].detach()
+        msd = de_parallel(model).state_dict()  # model state_dict
+        for k, v in self.ema.state_dict().items():
+            if v.dtype.is_floating_point:  # true for FP16 and FP32
+                v *= d
+                v += (1 - d) * msd[k].detach()
+        # assert v.dtype == msd[k].dtype == torch.float32, f'{k}: EMA {v.dtype} and model {msd[k].dtype} must be FP32'
 
     def update_attr(self, model, include=(), exclude=('process_group', 'reducer')):
         # Update EMA attributes

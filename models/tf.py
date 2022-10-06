@@ -7,7 +7,7 @@ Usage:
     $ python models/tf.py --weights yolov5s.pt
 
 Export:
-    $ python path/to/export.py --weights yolov5s.pt --include saved_model pb tflite tfjs
+    $ python export.py --weights yolov5s.pt --include saved_model pb tflite tfjs
 """
 
 import argparse
@@ -30,7 +30,7 @@ from tensorflow import keras
 from models.common import (C3, SPP, SPPF, Bottleneck, BottleneckCSP, C3x, Concat, Conv, CrossConv, DWConv,
                            DWConvTranspose2d, Focus, autopad)
 from models.experimental import MixConv2d, attempt_load
-from models.yolo import Detect
+from models.yolo import Detect, Segment
 from utils.activations import SiLU
 from utils.general import LOGGER, make_divisible, print_args
 
@@ -299,18 +299,18 @@ class TFDetect(keras.layers.Layer):
             x[i] = tf.reshape(x[i], [-1, ny * nx, self.na, self.no])
 
             if not self.training:  # inference
-                y = tf.sigmoid(x[i])
+                y = x[i]
                 grid = tf.transpose(self.grid[i], [0, 2, 1, 3]) - 0.5
                 anchor_grid = tf.transpose(self.anchor_grid[i], [0, 2, 1, 3]) * 4
-                xy = (y[..., 0:2] * 2 + grid) * self.stride[i]  # xy
-                wh = y[..., 2:4] ** 2 * anchor_grid
+                xy = (tf.sigmoid(y[..., 0:2]) * 2 + grid) * self.stride[i]  # xy
+                wh = tf.sigmoid(y[..., 2:4]) ** 2 * anchor_grid
                 # Normalize xywh to 0-1 to reduce calibration error
                 xy /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
                 wh /= tf.constant([[self.imgsz[1], self.imgsz[0]]], dtype=tf.float32)
-                y = tf.concat([xy, wh, y[..., 4:]], -1)
+                y = tf.concat([xy, wh, tf.sigmoid(y[..., 4:5 + self.nc]), y[..., 5 + self.nc:]], -1)
                 z.append(tf.reshape(y, [-1, self.na * ny * nx, self.no]))
 
-        return tf.transpose(x, [0, 2, 1, 3]) if self.training else (tf.concat(z, 1), x)
+        return tf.transpose(x, [0, 2, 1, 3]) if self.training else (tf.concat(z, 1),)
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
@@ -318,6 +318,37 @@ class TFDetect(keras.layers.Layer):
         # return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
         xv, yv = tf.meshgrid(tf.range(nx), tf.range(ny))
         return tf.cast(tf.reshape(tf.stack([xv, yv], 2), [1, 1, ny * nx, 2]), dtype=tf.float32)
+
+
+class TFSegment(TFDetect):
+    # YOLOv5 Segment head for segmentation models
+    def __init__(self, nc=80, anchors=(), nm=32, npr=256, ch=(), imgsz=(640, 640), w=None):
+        super().__init__(nc, anchors, ch, imgsz, w)
+        self.nm = nm  # number of masks
+        self.npr = npr  # number of protos
+        self.no = 5 + nc + self.nm  # number of outputs per anchor
+        self.m = [TFConv2d(x, self.no * self.na, 1, w=w.m[i]) for i, x in enumerate(ch)]  # output conv
+        self.proto = TFProto(ch[0], self.npr, self.nm, w=w.proto)  # protos
+        self.detect = TFDetect.call
+
+    def call(self, x):
+        p = self.proto(x[0])
+        p = tf.transpose(p, [0, 3, 1, 2])  # from shape(1,160,160,32) to shape(1,32,160,160)
+        x = self.detect(self, x)
+        return (x, p) if self.training else (x[0], p)
+
+
+class TFProto(keras.layers.Layer):
+
+    def __init__(self, c1, c_=256, c2=32, w=None):
+        super().__init__()
+        self.cv1 = TFConv(c1, c_, k=3, w=w.cv1)
+        self.upsample = TFUpsample(None, scale_factor=2, mode='nearest')
+        self.cv2 = TFConv(c_, c_, k=3, w=w.cv2)
+        self.cv3 = TFConv(c_, c2, w=w.cv3)
+
+    def call(self, inputs):
+        return self.cv3(self.cv2(self.upsample(self.cv1(inputs))))
 
 
 class TFUpsample(keras.layers.Layer):
@@ -377,10 +408,12 @@ def parse_model(d, ch, model, imgsz):  # model_dict, input_channels(3)
             args = [ch[f]]
         elif m is Concat:
             c2 = sum(ch[-1 if x == -1 else x + 1] for x in f)
-        elif m is Detect:
+        elif m in [Detect, Segment]:
             args.append([ch[x + 1] for x in f])
             if isinstance(args[1], int):  # number of anchors
                 args[1] = [list(range(args[1] * 2))] * len(f)
+            if m is Segment:
+                args[3] = make_divisible(args[3] * gw, 8)
             args.append(imgsz)
         else:
             c2 = ch[f]
@@ -452,9 +485,9 @@ class TFModel:
                                                             iou_thres,
                                                             conf_thres,
                                                             clip_boxes=False)
-            return nms, x[1]
-        return x[0]  # output only first tensor [1,6300,85] = [xywh, conf, class0, class1, ...]
-        # x = x[0][0]  # [x(1,6300,85), ...] to x(6300,85)
+            return (nms,)
+        return x  # output [1,6300,85] = [xywh, conf, class0, class1, ...]
+        # x = x[0]  # [x(1,6300,85), ...] to x(6300,85)
         # xywh = x[..., :4]  # x(6300,4) boxes
         # conf = x[..., 4:5]  # x(6300,1) confidences
         # cls = tf.reshape(tf.cast(tf.argmax(x[..., 5:], axis=1), tf.float32), (-1, 1))  # x(6300,1)  classes

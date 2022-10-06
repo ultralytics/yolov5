@@ -3,6 +3,39 @@
 utils/initialization
 """
 
+import contextlib
+import platform
+import threading
+
+
+def emojis(str=''):
+    # Return platform-dependent emoji-safe version of string
+    return str.encode().decode('ascii', 'ignore') if platform.system() == 'Windows' else str
+
+
+class TryExcept(contextlib.ContextDecorator):
+    # YOLOv5 TryExcept class. Usage: @TryExcept() decorator or 'with TryExcept():' context manager
+    def __init__(self, msg=''):
+        self.msg = msg
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, value, traceback):
+        if value:
+            print(emojis(f'{self.msg}{value}'))
+        return True
+
+
+def threaded(func):
+    # Multi-threads a target function and returns thread. Usage: @threaded decorator
+    def wrapper(*args, **kwargs):
+        thread = threading.Thread(target=func, args=args, kwargs=kwargs, daemon=True)
+        thread.start()
+        return thread
+
+    return wrapper
+
 
 def notebook_init(verbose=True):
     # Check system software and hardware
@@ -11,10 +44,12 @@ def notebook_init(verbose=True):
     import os
     import shutil
 
-    from utils.general import check_requirements, emojis, is_colab
+    from utils.general import check_font, check_requirements, is_colab
     from utils.torch_utils import select_device  # imports
 
     check_requirements(('psutil', 'IPython'))
+    check_font()
+
     import psutil
     from IPython import display  # to display images and clear console output
 
