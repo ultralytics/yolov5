@@ -152,14 +152,26 @@ class C2(nn.Module):
     # CSP Bottleneck with 3 convolutions
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
         super().__init__()
-        self.c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, 2 * self.c_, 1, 1)
-        self.cv2 = Conv(2 * self.c_, c2, 1)  # optional act=FReLU(c2)
-        self.m = nn.Sequential(*(Bottleneck(self.c_, self.c_, shortcut, g, k=(3, 3), e=1.0) for _ in range(n)))
+        self.c = int(c2 * e)  # hidden channels
+        self.cv1 = Conv(c1, 2 * self.c, 1, 1)
+        self.cv2 = Conv(2 * self.c, c2, 1)  # optional act=FReLU(c2)
+        # self.gap = GlobalAdaptivePool(self.c)
+        self.m = nn.Sequential(*(Bottleneck(self.c, self.c, shortcut, g, k=(3, 3), e=1.0) for _ in range(n)))
 
     def forward(self, x):
-        a, b = self.cv1(x).split((self.c_, self.c_), 1)
+        a, b = self.cv1(x).split((self.c, self.c), 1)
         return self.cv2(torch.cat((self.m(a), b), 1))
+
+
+class GlobalAdaptivePool(nn.Module):
+    # RTMDet pooling layer https://github.com/open-mmlab/mmdetection/tree/v3.0.0rc1/configs/rtmdet
+    def __init__(self, c, act=nn.Hardsigmoid()):  # ch_in, ch_out, number, shortcut, groups, expansion
+        super().__init__()
+        self.gap = nn.AdaptiveAvgPool2d(c)
+        self.cv1 = Conv(c, c, 1, act=act)
+
+    def forward(self, x):
+        return x * self.cv1(self.gap(x))
 
 
 class C1(nn.Module):
