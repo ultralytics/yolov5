@@ -52,8 +52,8 @@ class Detect(nn.Module):
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.shape = (0, 0)  # initial grid shape
-        self.cv2 = nn.ModuleList(nn.Sequential(Conv(x, 32, 3), Conv(32, 4, 1, act=False)) for x in ch)
-        self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, x // 2, 3), Conv(x // 2, self.no - 4, 1, act=False)) for x in ch)
+        self.cv2 = nn.ModuleList(nn.Sequential(Conv(x, x, 3), Conv(x, 4, 1, act=False)) for x in ch)
+        self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, x, 3), Conv(x, self.no - 4, 1, act=False)) for x in ch)
 
     def forward(self, x):
         for i in range(self.nl):
@@ -293,9 +293,10 @@ class DetectionModel(BaseModel):
         ncf = math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # nominal class frequency
         for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
             # a[-1].bn.bias.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
-            a[-1].bn.bias.data[2:4] = -1.60944  # wh = 0.2 + (x - 1.60944).sigmoid() * 4.8
-            b[-1].bn.bias.data[0] = math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
-            b[-1].bn.bias.data[1:m.nc + 1] = ncf  # cls
+            pass
+            # a[-1].bn.bias.data[2:4] = -1.60944  # wh = 0.2 + (x - 1.60944).sigmoid() * 4.8
+            # b[-1].bn.bias.data[0] = math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
+            # b[-1].bn.bias.data[1:m.nc + 1] = ncf  # cls
 
 
 Model = DetectionModel  # retain YOLOv5 'Model' class for backwards compatibility
