@@ -157,12 +157,12 @@ class C2(nn.Module):
         self.c = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, 2 * self.c, 1, 1)
         self.cv2 = Conv(2 * self.c, c2, 1)  # optional act=FReLU(c2)
-        # self.gap = GlobalAdaptivePool(2 * self.c)
+        self.gap = GlobalAdaptivePool(2 * self.c)
         self.m = nn.Sequential(*(Bottleneck(self.c, self.c, shortcut, g, k=(3, 3), e=1.0) for _ in range(n)))
 
     def forward(self, x):
         a, b = self.cv1(x).split((self.c, self.c), 1)
-        return self.cv2(torch.cat((self.m(a), b), 1))
+        return self.cv2(self.gap(torch.cat((self.m(a), b), 1)))
 
 
 class GlobalAdaptivePool(nn.Module):
@@ -170,9 +170,10 @@ class GlobalAdaptivePool(nn.Module):
     def __init__(self, c, act=nn.Hardsigmoid()):  # ch_in, ch_out, number, shortcut, groups, expansion
         super().__init__()
         self.cv1 = Conv(c, c, 1, act=act)
+        self.global_avgpool = nn.AdaptiveAvgPool2d(1)
 
     def forward(self, x):
-        return x * self.cv1(F.adaptive_avg_pool2d(x, x.shape[2:]))
+        return x * self.cv1(self.global_avgpool(x))
 
 
 class C1(nn.Module):
