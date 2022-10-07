@@ -70,12 +70,12 @@ class Detect(nn.Module):
         if isinstance(self, Segment):  # (boxes + masks)
             xy, wh, conf, mask = y.split((2, 2, self.nc + 1, self.no - self.nc - 5), 1)
             xy = xy.sigmoid() * (1.6 * self.stride_grid) + self.grid  # xy
-            wh = (0.25 + wh.sigmoid() * 3.75) * self.anchor_grid
+            wh = (0.2 + wh.sigmoid() * 4.8) * self.anchor_grid
             y = torch.cat((xy, wh, conf.sigmoid(), mask), 1)
         else:  # Detect (boxes only)
             xy, wh, conf = y.sigmoid().split((2, 2, self.nc + 1), 1)
             xy = xy * (1.6 * self.stride_grid) + self.grid  # xy
-            wh = (0.25 + wh * 3.75) * self.anchor_grid
+            wh = (0.2 + wh * 4.8) * self.anchor_grid
             y = torch.cat((xy, wh, conf), 1)
 
         return (y,) if self.export else (y, x)
@@ -292,7 +292,8 @@ class DetectionModel(BaseModel):
         m = self.model[-1]  # Detect() module
         ncf = math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # nominal class frequency
         for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
-            a[-1].bn.bias.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
+            # a[-1].bn.bias.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
+            a[-1].bn.bias.data[2:4] = -1.60944  # wh = 0.2 + (x - 1.60944).sigmoid() * 4.8
             b[-1].bn.bias.data[0] = math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
             b[-1].bn.bias.data[1:m.nc + 1] = ncf  # cls
 
