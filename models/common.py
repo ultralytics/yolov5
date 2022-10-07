@@ -108,13 +108,13 @@ class Bottleneck(nn.Module):
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, c_, k[0], 1)
-        # self.cv2 = Conv(c_, c2, k[1], 1, g=g)
+        self.cv2 = Conv(c_, c2, k[1], 1, g=g)
         # self.cv2 = Conv(c_, c_, k[1], 1, g=2)
         # self.cv3 = Conv(c_, c2, k[1], 1, g=2)
         self.add = shortcut and c1 == c2
 
     def forward(self, x):
-        return x + self.cv1(self.cv1(x)) if self.add else self.cv1(self.cv1(x))
+        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
 
 class BottleneckCSP(nn.Module):
@@ -162,7 +162,7 @@ class C2(nn.Module):
 
     def forward(self, x):
         a, b = self.cv1(x).split((self.c, self.c), 1)
-        return self.cv2(torch.cat((self.m(a), b), 1))
+        return self.cv2(self.gap(torch.cat((self.m(a), b), 1)))
 
 
 class GlobalAdaptivePool(nn.Module):
@@ -170,12 +170,14 @@ class GlobalAdaptivePool(nn.Module):
     def __init__(self, channels: int) -> None:
         super().__init__()
         self.global_avgpool = nn.AdaptiveAvgPool2d(1)
-        self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
-        self.act = nn.Hardsigmoid(inplace=True)
+        self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=False)
+        self.bn = nn.BatchNorm2d(channels)
+        self.act = nn.Sigmoid()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.global_avgpool(x)
         out = self.fc(out)
+        out = self.bn(out)
         out = self.act(out)
         return x * out
 
