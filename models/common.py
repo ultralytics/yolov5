@@ -170,14 +170,12 @@ class GlobalAdaptivePool(nn.Module):
     def __init__(self, channels: int) -> None:
         super().__init__()
         self.global_avgpool = nn.AdaptiveAvgPool2d(1)
-        self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=False)
-        self.bn = nn.BatchNorm2d(channels)
+        self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
         self.act = nn.Sigmoid()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.global_avgpool(x)
         out = self.fc(out)
-        out = self.bn(out)
         out = self.act(out)
         return x * out
 
