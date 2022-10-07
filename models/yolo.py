@@ -293,11 +293,12 @@ class DetectionModel(BaseModel):
         ncf = math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # nominal class frequency
         for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
             # a[-1].bn.bias.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
-            pass
             # a[-1].bn.bias.data[2:4] = -1.60944  # wh = 0.2 + (x - 1.60944).sigmoid() * 4.8
             # b[-1].bn.bias.data[0] = math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
             # b[-1].bn.bias.data[1:m.nc + 1] = ncf  # cls
-
+            a[-1].bn.bias.data[2:4] = 0.0  # wh = 0.2 + (x - 1.60944).sigmoid() * 4.8
+            b[-1].bn.bias.data[0] = 0.0  # obj (8 objects per 640 image)
+            b[-1].bn.bias.data[1:m.nc + 1] = 0.0  # cls
 
 Model = DetectionModel  # retain YOLOv5 'Model' class for backwards compatibility
 
