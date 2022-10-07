@@ -114,7 +114,7 @@ class Bottleneck(nn.Module):
         self.add = shortcut and c1 == c2
 
     def forward(self, x):
-        return x + self.cv3(self.cv2(x)) if self.add else self.cv2(self.cv1(x))
+        return x + self.cv3(self.cv2(x)) if self.add else self.cv3(self.cv2(x))
 
 
 class BottleneckCSP(nn.Module):
