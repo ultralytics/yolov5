@@ -171,7 +171,7 @@ class GlobalAdaptivePool(nn.Module):
         super().__init__()
         self.global_avgpool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
-        self.act = nn.Sigmoid()
+        self.act = nn.SiLU()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.global_avgpool(x)
