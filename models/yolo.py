@@ -52,8 +52,11 @@ class Detect(nn.Module):
         self.register_buffer('anchors', torch.tensor(anchors).float().view(self.nl, -1, 2))  # shape(nl,na,2)
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.shape = (0, 0)  # initial grid shape
-        self.cv2 = nn.ModuleList(nn.Sequential(Conv(x, 32, 3), Conv(32, 32, 3), Conv(32, 4, 1, act=False)) for x in ch)
-        self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, x // 2, 3), Conv(x // 2, x // 2, 3), Conv(x // 2, self.no - 4, 1, act=False)) for x in ch)
+        c2, c3 = 32, max(ch[0], self.no - 4)  # channels
+        self.cv2 = nn.ModuleList(nn.Sequential(
+            Conv(x, c2, 3), Conv(c2, c2, 3), Conv(c2, 4, 1, act=False)) for x in ch)
+        self.cv3 = nn.ModuleList(nn.Sequential(
+            Conv(x, c3, 3), Conv(c3, c3, 3), Conv(c3, self.no - 4, 1, act=False)) for x in ch)
 
     def forward(self, x):
         for i in range(self.nl):
@@ -255,36 +258,6 @@ class DetectionModel(BaseModel):
         i = (y[-1].shape[1] // g) * sum(4 ** (nl - 1 - x) for x in range(e))  # indices
         y[-1] = y[-1][:, i:]  # small
         return y
-
-    # def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
-    #     # https://arxiv.org/abs/1708.02002 section 3.3 for 4-1-80 splits
-    #     # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
-    #     m = self.model[-1]  # Detect() module
-    #     for a, c, b, s in zip(m.cv1, m.cv2, m.cv3, m.stride):  # from
-    #         ai = a[-1].bias  # conv.bias(255) to (3,85)
-    #         ai.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
-    #         a[-1].bias = torch.nn.Parameter(ai, requires_grad=True)
-    #
-    #         ci = c[-1].bias  # conv.bias(255) to (3,85)
-    #         ci.data[0] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
-    #         ci[-1].bias = torch.nn.Parameter(ci, requires_grad=True)
-    #
-    #         bi = b[-1].bias  # conv.bias(255) to (3,85)
-    #         bi.data[:m.nc] += math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # cls
-    #         b[-1].bias = torch.nn.Parameter(bi, requires_grad=True)
-
-    # def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
-    #     # https://arxiv.org/abs/1708.02002 section 3.3 for 5-80 splits
-    #     # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
-    #     m = self.model[-1]  # Detect() module
-    #     for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
-    #         ai = a[0].bias  # conv.bias(255) to (3,85)
-    #         ai.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
-    #         ai.data[4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
-    #         a[0].bias = torch.nn.Parameter(ai, requires_grad=True)
-    #         bi = b[0].bias  # conv.bias(255) to (3,85)
-    #         bi.data[:m.nc] += math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # cls
-    #         b[0].bias = torch.nn.Parameter(bi, requires_grad=True)
 
     def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
         # https://arxiv.org/abs/1708.02002 section 3.3 for 4-81 splits
