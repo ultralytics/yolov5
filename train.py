@@ -171,7 +171,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     # from utils.plots import plot_lr_scheduler; plot_lr_scheduler(optimizer, scheduler, epochs)
 
     # EMA
-    ema = ModelEMA(model) if RANK in {-1, 0} else None
+    ema = ModelEMA(model, decay=0.0) if RANK in {-1, 0} else None
 
     # Resume
     best_fitness, start_epoch = 0.0, 0
@@ -267,6 +267,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 f'Starting training for {epochs} epochs...')
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         callbacks.run('on_train_epoch_start')
+        if epoch == 31:
+            ema = ModelEMA(model) if RANK in {-1, 0} else None
         model.train()
 
         # Update image weights (optional, single-GPU only)
