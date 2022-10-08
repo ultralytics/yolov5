@@ -165,19 +165,16 @@ class C2(nn.Module):
         return self.cv2(torch.cat((self.m(a), b), 1))
 
 
-class GlobalAdaptivePool(nn.Module):
+class Attention(nn.Module):
     # RTMDet pooling layer https://github.com/open-mmlab/mmdetection/tree/v3.0.0rc1/configs/rtmdet
     def __init__(self, channels: int) -> None:
         super().__init__()
-        self.global_avgpool = nn.AdaptiveAvgPool2d(1)
+        self.pool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
         self.act = nn.Sigmoid()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = self.global_avgpool(x)
-        out = self.fc(out)
-        out = self.act(out)
-        return x * out
+        return x * self.act(self.fc(self.pool(x)))
 
 
 class C1(nn.Module):
