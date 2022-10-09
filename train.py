@@ -155,19 +155,18 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     hyp['weight_decay'] *= batch_size * accumulate / nbs  # scale weight_decay
     optimizer = smart_optimizer(model, opt.optimizer, hyp['lr0'], hyp['momentum'], hyp['weight_decay'])
 
-    # # Scheduler
-    # if opt.cos_lr:
-    #     lf = one_cycle(1, hyp['lrf'], epochs)  # cosine 1->hyp['lrf']
-    # else:
-    #     lf = lambda x: (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']  # linear
-    def lf(x):
-        return (1 - (x % 30) / 30) * (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']
-        # split = epochs * 0.10
-        # if x <= split:
-        #     return (1 - x / split) * (1.0 - hyp['lrf']) + hyp['lrf']
-        # else:
-        #     return (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']
-
+    # Scheduler
+    if opt.cos_lr:
+        lf = one_cycle(1, hyp['lrf'], epochs)  # cosine 1->hyp['lrf']
+    else:
+        lf = lambda x: (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']  # linear
+    # def lf(x):
+    #     return (1 - (x % 30) / 30) * (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']
+    #     # split = epochs * 0.10
+    #     # if x <= split:
+    #     #     return (1 - x / split) * (1.0 - hyp['lrf']) + hyp['lrf']
+    #     # else:
+    #     #     return (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # from utils.plots import plot_lr_scheduler; plot_lr_scheduler(optimizer, scheduler, epochs)
 
@@ -268,8 +267,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 f'Starting training for {epochs} epochs...')
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         callbacks.run('on_train_epoch_start')
-        # if epoch == 31:
-        #     ema = ModelEMA(model) if RANK in {-1, 0} else None
         model.train()
 
         # Update image weights (optional, single-GPU only)
