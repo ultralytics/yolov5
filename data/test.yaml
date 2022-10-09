@@ -1,0 +1,10 @@
+names:
+- PERSON_V2
+- PIT_V2
+nc: 2
+test:
+- /home/anurag/data/images
+train:
+- /home/anurag/data/images
+val:
+- /home/anurag/data/images 
