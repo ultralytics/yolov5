@@ -267,8 +267,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 f'Starting training for {epochs} epochs...')
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         callbacks.run('on_train_epoch_start')
-        if epoch == 31:
-            ema = ModelEMA(model) if RANK in {-1, 0} else None
+        # if epoch == 31:
+        #     ema = ModelEMA(model) if RANK in {-1, 0} else None
         model.train()
 
         # Update image weights (optional, single-GPU only)
