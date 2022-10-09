@@ -155,23 +155,23 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     hyp['weight_decay'] *= batch_size * accumulate / nbs  # scale weight_decay
     optimizer = smart_optimizer(model, opt.optimizer, hyp['lr0'], hyp['momentum'], hyp['weight_decay'])
 
-    def smart_scheduler(x):
+    # # Scheduler
+    # if opt.cos_lr:
+    #     lf = one_cycle(1, hyp['lrf'], epochs)  # cosine 1->hyp['lrf']
+    # else:
+    #     lf = lambda x: (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']  # linear
+    def lf(x):
         split = epochs * 0.10
         if x <= split:
             return (1 - x / split) * (1.0 - hyp['lrf']) + hyp['lrf']
         else:
-            return (1 - (x - split) / (epochs - split)) * (1.0 - hyp['lrf']) + hyp['lrf']
+            return (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']
 
-    # Scheduler
-    if opt.cos_lr:
-        lf = one_cycle(1, hyp['lrf'], epochs)  # cosine 1->hyp['lrf']
-    else:
-        lf = lambda x: (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']  # linear
-    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=smart_scheduler)
+    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # from utils.plots import plot_lr_scheduler; plot_lr_scheduler(optimizer, scheduler, epochs)
 
     # EMA
-    ema = ModelEMA(model, decay=0.0) if RANK in {-1, 0} else None
+    ema = ModelEMA(model) if RANK in {-1, 0} else None
 
     # Resume
     best_fitness, start_epoch = 0.0, 0
