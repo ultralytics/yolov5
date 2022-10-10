@@ -280,7 +280,7 @@ class ClassificationModel(BaseModel):
             with open(cfg, encoding='ascii', errors='ignore') as f:
                 self.yaml = yaml.safe_load(f)  # model dict
             ch = self.yaml['ch'] = self.yaml.get('ch', ch)  # input channels
-            self.model= parse_model_class(deepcopy(self.yaml), ch=[ch], nc = nc)  # create ClassificationModel
+            self.model = parse_model_class(deepcopy(self.yaml), ch=[ch], nc=nc)  # create ClassificationModel
         else:
             self._from_detection_model(model, nc, cutoff) if model is not None else self._from_yaml(cfg)
 
@@ -373,6 +373,8 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             ch = []
         ch.append(c2)
     return nn.Sequential(*layers), sorted(save)
+
+
 def parse_model_class(d, ch, nc):  # model_dict, input_channels(3)
 
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
@@ -417,6 +419,7 @@ def parse_model_class(d, ch, nc):  # model_dict, input_channels(3)
             ch = []
         ch.append(c2)
     return nn.Sequential(*layers)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
