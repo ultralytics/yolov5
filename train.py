@@ -164,8 +164,11 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     def lf(x):  # saw
         return (1 - (x % 30) / 30) * (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']
 
-    def lf(x):  # triangle
+    def lf(x):  # triangle start at min
         return 2 * abs(x / 30 - math.floor(x / 30 + 1 / 2)) * (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']
+
+    def lf(x):  # triangle start at max
+        return 2 * abs(x / 32 + .5 - math.floor(x / 32 + 1)) * (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']
 
         # split = epochs * 0.10
         # if x <= split:
@@ -174,7 +177,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
         #     return (1 - x / epochs) * (1.0 - hyp['lrf']) + hyp['lrf']
 
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
-    from utils.plots import plot_lr_scheduler; plot_lr_scheduler(optimizer, scheduler, epochs)
+    # from utils.plots import plot_lr_scheduler; plot_lr_scheduler(optimizer, scheduler, epochs)
 
     # EMA
     ema = ModelEMA(model) if RANK in {-1, 0} else None
