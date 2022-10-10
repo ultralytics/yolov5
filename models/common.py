@@ -157,19 +157,19 @@ class C2(nn.Module):
         self.c = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, 2 * self.c, 1, 1)
         self.cv2 = Conv(2 * self.c, c2, 1)  # optional act=FReLU(c2)
-        # self.attention = Attention(2 * self.c)
+        self.attention = ChannelAttention(2 * self.c)
         self.m = nn.Sequential(*(Bottleneck(self.c, self.c, shortcut, g, k=(3, 3), e=1.0) for _ in range(n)))
 
     def forward(self, x):
         a, b = self.cv1(x).split((self.c, self.c), 1)
-        return self.cv2(torch.cat((self.m(a), b), 1))
+        return self.cv2(self.attention(torch.cat((self.m(a), b), 1)))
 
 
-class Attention(nn.Module):
-    # RTMDet pooling layer https://github.com/open-mmlab/mmdetection/tree/v3.0.0rc1/configs/rtmdet
+class ChannelAttention(nn.Module):
+    # Channel-attention module https://github.com/open-mmlab/mmdetection/tree/v3.0.0rc1/configs/rtmdet
     def __init__(self, channels: int) -> None:
         super().__init__()
-        self.pool = nn.AdaptiveAvgPool2d(1)
+        self.pool = nn.AdaptiveMaxPool2d(1)
         self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
         self.act = nn.Sigmoid()
 
