@@ -271,7 +271,7 @@ def train(opt, device):
 
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default='yolov5l-cls.pt', help='initial weights path')
+    parser.add_argument('--model', type=str, default='yolov5s-cls.pt', help='initial weights path')
     parser.add_argument('--data', type=str, default='imagenette160', help='cifar10, cifar100, mnist, imagenet, ...')
     parser.add_argument('--cfg', type=str, default=None, help='build model by yaml')
     parser.add_argument('--epochs', type=int, default=10, help='total training epochs')
