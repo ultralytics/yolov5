@@ -157,7 +157,7 @@ class C2(nn.Module):
         self.c = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, 2 * self.c, 1, 1)
         self.cv2 = Conv(2 * self.c, c2, 1)  # optional act=FReLU(c2)
-        self.attention = Attention(2 * self.c)
+        # self.attention = Attention(2 * self.c)
         self.m = nn.Sequential(*(Bottleneck(self.c, self.c, shortcut, g, k=(3, 3), e=1.0) for _ in range(n)))
 
     def forward(self, x):
@@ -171,11 +171,10 @@ class Attention(nn.Module):
         super().__init__()
         self.pool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
-        self.norm = nn.LayerNorm([channels, 1, 1])
         self.act = nn.Sigmoid()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return x * self.act(self.norm(self.fc(self.pool(x))))
+        return x * self.act(self.fc(self.pool(x)))
 
 
 class C1(nn.Module):
