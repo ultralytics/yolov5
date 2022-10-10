@@ -1,19 +1,4 @@
 <div align="center">
-
-  Hi, I'm [Glenn Jocher](https://www.linkedin.com/in/glenn-jocher/), author of [YOLOv5](https://github.com/ultralytics/yolov5) 🚀.
-
-  I'd like to invite you to attend the world's first-ever YOLO conference: [#YOLOVISION22](https://ultralytics.com/yolo-vision)!
-
-  This virtual event takes place on **September 27th, 2022** with talks from the world's leading vision AI experts from Google, OpenMMLab's MMDetection, Baidu's PaddlePaddle, Meituan's YOLOv6, Weight & Biases, Roboflow, Neural Magic, OctoML and of course Ultralytics YOLOv5 and many others.
-
-  Save your spot at https://ultralytics.com/yolo-vision!
-
-  <a align="center" href="https://ultralytics.com/yolo-vision" target="_blank">
-        <img width="850" src="https://user-images.githubusercontent.com/26833433/192165285-a13a370c-60dc-4bf2-9d63-0573fb8e4d44.jpg"></a>
-
-## <div align="center"></div>
-  <br>
-
   <p>
     <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
       <img width="850" src="https://github.com/ultralytics/assets/raw/master/yolov5/v62/splash_readme.png"></a>
