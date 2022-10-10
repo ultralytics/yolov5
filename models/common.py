@@ -107,14 +107,16 @@ class Bottleneck(nn.Module):
     def __init__(self, c1, c2, shortcut=True, g=1, k=(1, 3), e=0.5):  # ch_in, ch_out, shortcut, kernels, groups, expand
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c_, k[0], 1)
-        self.cv2 = Conv(c_, c2, k[1], 1, g=g)
-        # self.cv2 = Conv(c_, c_, k[1], 1, g=2)
-        # self.cv3 = Conv(c_, c2, k[1], 1, g=2)
+        # self.cv1 = Conv(c1, c_, k[0], 1)
+        # self.cv2 = Conv(c_, c2, k[1], 1, g=g)
+
+        self.cv1 = Conv(c1, c_, 3, 1)
+        self.cv2 = DWConv(c_, c_, 5, 1)
+        self.cv3 = Conv(c_, c2, 1, 1)
         self.add = shortcut and c1 == c2
 
     def forward(self, x):
-        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
+        return x + self.cv3(self.cv2(self.cv1(x))) if self.add else self.cv3(self.cv2(self.cv1(x)))
 
 
 class BottleneckCSP(nn.Module):
@@ -157,19 +159,19 @@ class C2(nn.Module):
         self.c = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, 2 * self.c, 1, 1)
         self.cv2 = Conv(2 * self.c, c2, 1)  # optional act=FReLU(c2)
-        self.attention = ChannelAttention(2 * self.c)
+        # self.attention = ChannelAttention(2 * self.c)
         self.m = nn.Sequential(*(Bottleneck(self.c, self.c, shortcut, g, k=(3, 3), e=1.0) for _ in range(n)))
 
     def forward(self, x):
         a, b = self.cv1(x).split((self.c, self.c), 1)
-        return self.cv2(self.attention(torch.cat((self.m(a), b), 1)))
+        return self.cv2(torch.cat((self.m(a), b), 1))
 
 
 class ChannelAttention(nn.Module):
     # Channel-attention module https://github.com/open-mmlab/mmdetection/tree/v3.0.0rc1/configs/rtmdet
     def __init__(self, channels: int) -> None:
         super().__init__()
-        self.pool = nn.AdaptiveMaxPool2d(1)
+        self.pool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
         self.act = nn.Sigmoid()
 
@@ -187,20 +189,6 @@ class C1(nn.Module):
     def forward(self, x):
         y = self.cv1(x)
         return self.m(y) + y
-
-
-class C2a(nn.Module):
-    # CSP Bottleneck with 3 convolutions
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
-        super().__init__()
-        self.c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, 2 * self.c_, 1, 1)
-        self.cv2 = Conv(self.c_, c2, 1)  # optional act=FReLU(c2)
-        self.m = nn.Sequential(*(Bottleneck(self.c_, self.c_, shortcut, g, k=(3, 3), e=1.0) for _ in range(n)))
-
-    def forward(self, x):
-        a, b = self.cv1(x).split((self.c_, self.c_), 1)
-        return self.cv2(self.m(a) + b)
 
 
 class C3x(C3):
