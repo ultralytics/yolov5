@@ -403,11 +403,16 @@ def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
     if file and suffix:
         if isinstance(suffix, str):
             suffix = [suffix]
-        for f in file if isinstance(file, (list, tuple)) else [file]:            
+        for f in file if isinstance(file, (list, tuple)) else [file]:
             # Allow a zero-length suffix for backwards compatibility.  In this case
             # no check is made against the required suffix list.
             s = Path(f).suffix.lower()
+<<<<<<< HEAD
             assert len(s) == 0 or any([f.strip('/').lower().endswith(x) for x in suffix]), f"{msg}{f} acceptable suffix is {suffix}"
+=======
+            assert len(s) == 0 or any([f.strip('/').lower().endswith(s)
+                                       for s in suffix]), f"{msg}{f} acceptable suffix is {suffix}"
+>>>>>>> 4914dc9ac92dfa6af364521fd1960f38b25f5141
 
 
 def check_yaml(file, suffix=('.yaml', '.yml')):
