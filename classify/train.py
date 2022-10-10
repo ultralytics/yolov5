@@ -30,6 +30,12 @@ import torchvision
 from torch.cuda import amp
 from tqdm import tqdm
 
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[1]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
+
 from classify import val as validate
 from models.experimental import attempt_load
 from models.yolo import ClassificationModel, DetectionModel
@@ -41,22 +47,16 @@ from utils.plots import imshow_cls
 from utils.torch_utils import (ModelEMA, model_info, reshape_classifier_output, select_device, smart_DDP,
                                smart_optimizer, smartCrossEntropyLoss, torch_distributed_zero_first)
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[1]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-
-# https://pytorch.org/docs/stable/elastic/run.html
-LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))
+LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 
 
 def train(opt, device):
     init_seeds(opt.seed + 1 + RANK, deterministic=True)
-    save_dir, data, bs, epochs, nw, imgsz, pretrained = opt.save_dir, Path(opt.data), opt.batch_size, opt.epochs, min(
-        os.cpu_count() - 1, opt.workers), opt.imgsz, str(opt.pretrained).lower() == 'true'
+    save_dir, data, bs, epochs, nw, imgsz, pretrained = \
+        opt.save_dir, Path(opt.data), opt.batch_size, opt.epochs, min(os.cpu_count() - 1, opt.workers), \
+        opt.imgsz, str(opt.pretrained).lower() == 'true'
     cuda = device.type != 'cpu'
 
     # Directories
@@ -94,9 +94,7 @@ def train(opt, device):
                                                    rank=LOCAL_RANK,
                                                    workers=nw)
 
-    # data/test or data/val
-    test_dir = data_dir / \
-        'test' if (data_dir / 'test').exists() else data_dir / 'val'
+    test_dir = data_dir / 'test' if (data_dir / 'test').exists() else data_dir / 'val'  # data/test or data/val
     if RANK in {-1, 0}:
         testloader = create_classification_dataloader(path=test_dir,
                                                       imgsz=imgsz,
@@ -116,14 +114,12 @@ def train(opt, device):
             elif opt.model in torchvision.models.__dict__:  # TorchVision models i.e. resnet50, efficientnet_b0
                 model = torchvision.models.__dict__[opt.model](weights='IMAGENET1K_V1' if pretrained else None)
             else:
-                # + hub.list('pytorch/vision')  # models
-                m = hub.list('ultralytics/yolov5')
+                m = hub.list('ultralytics/yolov5')  # + hub.list('pytorch/vision')  # models
                 raise ModuleNotFoundError(f'--model {opt.model} not found. Available models are: \n' + '\n'.join(m))
             if isinstance(model, DetectionModel):
-                LOGGER.warning(
-                    "WARNING ⚠️ pass YOLOv5 classifier model with '-cls' suffix, i.e. '--model yolov5s-cls.pt'")
-                # convert to classification model
-                model = ClassificationModel(model=model, nc=nc, cutoff=opt.cutoff or 10)
+                LOGGER.warning("WARNING ⚠️ pass YOLOv5 classifier model with '-cls' suffix, i.e. '--model yolov5s-cls.pt'")
+                model = ClassificationModel(
+                    model=model, nc=nc, cutoff=opt.cutoff or 10)
             reshape_classifier_output(model, nc)  # update class count
     for m in model.modules():
         if not pretrained and hasattr(m, 'reset_parameters'):
@@ -151,12 +147,8 @@ def train(opt, device):
 
     # Scheduler
     lrf = 0.01  # final lr (fraction of lr0)
-
-    # lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) +
-    # lrf  # cosine
-    def lf(x):
-        return (1 - x / epochs) * (1 - lrf) + lrf  # linear
-
+    # lf = lambda x: ((1 + math.cos(x * math.pi / epochs)) / 2) * (1 - lrf) + lrf  # cosine
+    lf = lambda x: (1 - x / epochs) * (1 - lrf) + lrf  # linear
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # scheduler = lr_scheduler.OneCycleLR(optimizer, max_lr=lr0, total_steps=epochs, pct_start=0.1,
     #                                    final_div_factor=1 / 25 / lrf)
@@ -208,8 +200,7 @@ def train(opt, device):
 
             if RANK in {-1, 0}:
                 # Print
-                tloss = (tloss * i + loss.item()) / \
-                    (i + 1)  # update mean losses
+                tloss = (tloss * i + loss.item()) / (i + 1)  # update mean losses
                 mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
                 pbar.desc = f"{f'{epoch + 1}/{epochs}':>10}{mem:>10}{tloss:>12.3g}" + ' ' * 36
 
@@ -245,8 +236,7 @@ def train(opt, device):
                 ckpt = {
                     'epoch': epoch,
                     'best_fitness': best_fitness,
-                    # deepcopy(de_parallel(model)).half(),
-                    'model': deepcopy(ema.ema).half(),
+                    'model': deepcopy(ema.ema).half(),  # deepcopy(de_parallel(model)).half(),
                     'ema': None,  # deepcopy(ema.ema).half(),
                     'updates': ema.updates,
                     'optimizer': None,  # optimizer.state_dict(),
@@ -270,8 +260,7 @@ def train(opt, device):
                     f"\nVisualize:       https://netron.app\n")
 
         # Plot examples
-        # first 25 images and labels
-        images, labels = (x[:25] for x in next(iter(testloader)))
+        images, labels = (x[:25] for x in next(iter(testloader)))  # first 25 images and labels
         pred = torch.max(ema.ema(images.to(device)), 1)[1]
         file = imshow_cls(images, labels, pred, model.names, verbose=False, f=save_dir / 'test_images.jpg')
 
@@ -319,8 +308,7 @@ def main(opt):
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
     if LOCAL_RANK != -1:
-        assert opt.batch_size != - \
-            1, 'AutoBatch is coming soon for classification, please pass a valid --batch-size'
+        assert opt.batch_size != -1, 'AutoBatch is coming soon for classification, please pass a valid --batch-size'
         assert opt.batch_size % WORLD_SIZE == 0, f'--batch-size {opt.batch_size} must be multiple of WORLD_SIZE'
         assert torch.cuda.device_count() > LOCAL_RANK, 'insufficient CUDA devices for DDP command'
         torch.cuda.set_device(LOCAL_RANK)
@@ -335,8 +323,7 @@ def main(opt):
 
 
 def run(**kwargs):
-    # Usage: from yolov5 import classify; classify.train.run(data=mnist,
-    # imgsz=320, model='yolov5m')
+    # Usage: from yolov5 import classify; classify.train.run(data=mnist, imgsz=320, model='yolov5m')
     opt = parse_opt(True)
     for k, v in kwargs.items():
         setattr(opt, k, v)
