@@ -19,7 +19,7 @@ def crop_mask(masks, boxes):
     r = torch.arange(w, device=masks.device, dtype=x1.dtype)[None, None, :]  # rows shape(1,1,w)
     c = torch.arange(h, device=masks.device, dtype=x1.dtype)[None, :, None]  # cols shape(1,h,1)
 
-    return masks * ((r >= x1) * (r < x2) * (c >= y1) * (c < y2))
+    return masks * ((r >= x1) * (r <= x2) * (c >= y1) * (c <= y2))
 
 
 def process_mask_upsample(protos, masks_in, bboxes, shape):
