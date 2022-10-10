@@ -119,8 +119,8 @@ def train(opt, device):
             if isinstance(model, DetectionModel):
                 LOGGER.warning(
                     "WARNING ⚠️ pass YOLOv5 classifier model with '-cls' suffix, i.e. '--model yolov5s-cls.pt'")
-                model = ClassificationModel(model=model, nc=nc, cutoff=opt.cutoff
-                                            or 10)  # convert to classification model
+                model = ClassificationModel(
+                     model=model, nc=nc, cutoff=opt.cutoff or 10)  # convert to classification model
             reshape_classifier_output(model, nc)  # update class count
     for m in model.modules():
         if not pretrained and hasattr(m, 'reset_parameters'):
