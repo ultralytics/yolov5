@@ -407,7 +407,7 @@ def check_suffix(file='yolov5s.pt', suffix=('.pt',), msg=''):
             # Allow a zero-length suffix for backwards compatibility.  In this case
             # no check is made against the required suffix list.
             s = Path(f).suffix.lower()
-            assert len(s) == 0 or any([f.strip('/').lower().endswith(s) for s in suffix]), f"{msg}{f} acceptable suffix is {suffix}"
+            assert len(s) == 0 or any([f.strip('/').lower().endswith(x) for x in suffix]), f"{msg}{f} acceptable suffix is {suffix}"
 
 
 def check_yaml(file, suffix=('.yaml', '.yml')):
