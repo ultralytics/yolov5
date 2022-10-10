@@ -312,7 +312,7 @@ class ClassificationModel(BaseModel):
         return x
 
     def forward(self, x, augment=False, profile=False, visualize=False):
-        return self._forward_once_class(x, profile, visualize)  # single-scale inference, train
+        return self._forward_once_class(x, visualize)  # single-scale inference, train
 
 
 def parse_model(d, ch):  # model_dict, input_channels(3)
