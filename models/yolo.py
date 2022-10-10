@@ -280,7 +280,7 @@ class ClassificationModel(BaseModel):
             with open(cfg, encoding='ascii', errors='ignore') as f:
                 self.yaml = yaml.safe_load(f)  # model dict
             ch = self.yaml['ch'] = self.yaml.get('ch', ch)  # input channels
-            self.model = parse_model_class(deepcopy(self.yaml), ch=[ch], nc=nc)  # create ClassificationModel
+            self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch])  # create ClassificationModel
         else:
             self._from_detection_model(model, nc, cutoff) if model is not None else self._from_yaml(cfg)
 
@@ -303,7 +303,7 @@ class ClassificationModel(BaseModel):
         # Create a YOLOv5 classification model from a *.yaml file
         self.model = None
 
-    def _forward_once_class(self, x, profile=False, visualize=False):
+    def _forward_once_class(self, x, visualize=False):
         for m in self.model:
             x = m(x)  # run
             # y.append(x if m.i in self.save else None)  # save output
@@ -359,6 +359,9 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             c2 = ch[f] * args[0] ** 2
         elif m is Expand:
             c2 = ch[f] // args[0] ** 2
+        elif m is Classify:
+            args = [ch[f], nc]
+            c2 = nc
         else:
             c2 = ch[f]
 
@@ -373,52 +376,6 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             ch = []
         ch.append(c2)
     return nn.Sequential(*layers), sorted(save)
-
-
-def parse_model_class(d, ch, nc):  # model_dict, input_channels(3)
-
-    LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
-    gd, gw = d['depth_multiple'], d['width_multiple']
-    layers, c2 = [], ch[-1]  # layers, savelist, ch out
-    for i, (f, n, m, args) in enumerate(d['backbone']):  # from, number, module, args
-        m = eval(m) if isinstance(m, str) else m  # eval strings
-        for j, a in enumerate(args):
-            with contextlib.suppress(NameError):
-                args[j] = eval(a) if isinstance(a, str) else a  # eval strings
-
-        n = n_ = max(round(n * gd), 1) if n > 1 else n  # depth gain
-        if m in (Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv,
-                 BottleneckCSP, C3, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x):
-            c1, c2 = ch[f], args[0]
-            c2 = make_divisible(c2 * gw, 8)
-            args = [c1, c2, *args[1:]]
-            if m in [BottleneckCSP, C3, C3TR, C3Ghost, C3x]:
-                args.insert(2, n)  # number of repeats
-                n = 1
-        elif m is nn.BatchNorm2d:
-            args = [ch[f]]
-        elif m is Concat:
-            c2 = sum(ch[x] for x in f)
-        elif m is Contract:
-            c2 = ch[f] * args[0] ** 2
-        elif m is Expand:
-            c2 = ch[f] // args[0] ** 2
-        elif m is Classify:
-            args = [ch[f], nc]
-            c2 = nc
-        else:
-            c2 = ch[f]
-
-        m_ = nn.Sequential(*(m(*args) for _ in range(n))) if n > 1 else m(*args)  # module
-        t = str(m)[8:-2].replace('__main__.', '')  # module type
-        np = sum(x.numel() for x in m_.parameters())  # number params
-        m_.i, m_.f, m_.type, m_.np = i, f, t, np  # attach index, 'from' index, type, number params
-        LOGGER.info(f'{i:>3}{str(f):>18}{n_:>3}{np:10.0f}  {t:<40}{str(args):<30}')  # print
-        layers.append(m_)
-        if i == 0:
-            ch = []
-        ch.append(c2)
-    return nn.Sequential(*layers)
 
 
 if __name__ == '__main__':
