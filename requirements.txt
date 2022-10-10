@@ -16,8 +16,8 @@ tqdm>=4.64.0
 
 # Logging -------------------------------------
 tensorboard>=2.4.1
-# wandb
 # clearml
+# comet
 
 # Plotting ------------------------------------
 pandas>=1.1.4
