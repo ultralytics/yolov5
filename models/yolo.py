@@ -164,10 +164,9 @@ class BaseModel(nn.Module):
         self = super()._apply(fn)
         m = self.model[-1]  # Detect()
         if isinstance(m, (Detect, Segment)):
-            m.stride = fn(m.stride)
-            m.grid = fn(m.grid)
-            m.anchor_grid = fn(m.anchor_grid)
-            m.stride_grid = fn(m.stride_grid)
+            for k in 'stride', 'anchor_grid', 'stride_grid', 'grid':
+                x = getattr(m, k)
+                setattr(m, k, list(map(fn, x))) if isinstance(x, (list, tuple)) else setattr(m, k, fn(x))
         return self
 
 
