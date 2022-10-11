@@ -264,8 +264,6 @@ class ComputeLoss:
         self.device = device
 
     def __call__(self, p, targets):  # predictions, targets
-        lcls = torch.zeros(1, device=self.device)  # class loss
-        lbox = torch.zeros(1, device=self.device)  # box loss
         lobj = torch.zeros(1, device=self.device)  # object loss
         tcls, tbox, indices = self.build_targets(p, targets)  # targets
         criteria = nn.BCEWithLogitsLoss(reduction='none')
@@ -348,9 +346,9 @@ class ComputeLoss:
 
             # Define
             bc, gxy, gwh = t.chunk(3, 2)  # (image, class), grid xy, grid wh
-            b, c = bc.long().T  # image, class
+            b, c = bc.long().transpose(0, 2)  # image, class
             gij = (gxy - offsets).long()
-            gi, gj = gij.T  # grid indices
+            gi, gj = gij.transpose(0, 2)  # grid indices
 
             # Append
             indices.append((b, gj.clamp_(0, shape[2] - 1), gi.clamp_(0, shape[3] - 1)))  # image, grid_y, grid_x indices
