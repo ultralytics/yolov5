@@ -262,11 +262,11 @@ class ComputeLoss:
         self.nl = m.nl  # number of layers
         self.anchors = m.anchors
         self.device = device
+        self.BCE_base = nn.BCEWithLogitsLoss(reduction='none')
 
     def __call__(self, p, targets):  # predictions, targets
         lobj = torch.zeros(1, device=self.device)  # object loss
         tcls, tbox, indices = self.build_targets(p, targets)  # targets
-        criteria = nn.BCEWithLogitsLoss(reduction='none')
 
         # Losses
         assignment = []
@@ -287,9 +287,9 @@ class ComputeLoss:
 
                 tobj[b, gj, gi] = iou.detach().clamp(0).type(tobj.dtype)
                 assignment.append([(1.0 - iou) * self.hyp['box'],
-                                   criteria(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls']])
+                                   self.BCE_base(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls']])
 
-            lobj += criteria(pi[:, 4], tobj).mean() * self.balance[i]
+            lobj += self.BCEobj(pi[:, 4], tobj).mean() * self.balance[i]
 
         losses = [torch.cat(x, 1) for x in zip(*assignment)]
         ii = torch.arange(n).view(-1, 1).repeat(1, 3)
