@@ -289,7 +289,7 @@ class ComputeLoss:
                 iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(prediction, target)
 
 
-                print(iou.dtype, obji.dtype, b.dtype, gj.dtype, gi.dtype)
+                print(tobj.dtype, iou.dtype, obji.dtype, b.dtype, gj.dtype, gi.dtype)
                 obji[b, gj, gi] = iou.detach().clamp(0).type(tobj.dtype)
                 assignment.append([(1.0 - iou) * self.hyp['box'],
                                    criteria(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls']])
