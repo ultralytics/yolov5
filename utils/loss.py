@@ -272,8 +272,6 @@ class ComputeLoss:
         assignment = []
         for i, pi in enumerate(p):  # layer index, layer predictions
             b, gj, gi = indices[i]  # image, anchor, gridy, gridx
-            # tobj = torch.zeros((pi.shape[0], pi.shape[2], pi.shape[3]), dtype=pi.dtype, device=self.device)  # obj
-
             n = b.shape[0]  # number of targets
             if n:
                 pxy, pwh, _, pcls = pi[b, :, gj, gi].split((2, 2, 1, self.nc), 2)  # target-subset of predictions
@@ -284,22 +282,17 @@ class ComputeLoss:
                 pbox = torch.cat((pxy, pwh), 2)  # predicted box
                 iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(prediction, target)
 
-                # tobj[b, gj, gi] = iou.detach().clamp(0).type(tobj.dtype)
-                assignment.append([(1.0 - iou) * self.hyp['box'],
+                assignment.append([(1.0 - iou) * self.hyp['box'],  # box loss
                                    iou.detach().clamp(0).type(pi.dtype),  # obj targets
                                    self.BCE_base(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls']])
 
-            # lobj += self.BCEobj(pi[:, 4], tobj).mean() * self.balance[i]
-
         losses = [torch.cat(x, 1) for x in zip(*assignment)]
 
+        # top 3 losses per label
         k = torch.argsort(losses[0] + losses[2], dim=1)[:, :3]
         ij = torch.zeros_like(losses[0]).bool()  # object loss
         for col in k.T:
             ij[range(n), col] = True
-
-        lbox = losses[0][ij].mean() * 3
-        lcls = losses[2][ij].mean() * 3
 
         # Obj loss
         chunks = ij.chunk(3, 1)
@@ -310,6 +303,9 @@ class ComputeLoss:
                 tobj[b[h], gj[h], gi[h]] = assignment[i][1][h]
             lobj += self.BCEobj(pi[:, 4], tobj) * self.balance[i]
 
+        # Combine
+        lbox = losses[0][ij].mean() * 3
+        lcls = losses[2][ij].mean() * 3
         lobj *= self.hyp['obj']
         bs = tobj.shape[0]  # batch size
         return (lbox + lobj[0] + lcls) * bs, torch.stack([lbox, lobj[0], lcls]).detach()
