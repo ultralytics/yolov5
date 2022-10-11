@@ -280,7 +280,7 @@ class ClassificationModel(BaseModel):
             with open(cfg, encoding='ascii', errors='ignore') as f:
                 self.yaml = yaml.safe_load(f)  # model dict
             ch = self.yaml['ch'] = self.yaml.get('ch', ch)  # input channels
-            self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch])  # create ClassificationModel
+            self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch], task = "classification")  # create ClassificationModel
         else:
             self._from_detection_model(model, nc, cutoff) if model is not None else self._from_yaml(cfg)
 
@@ -315,18 +315,23 @@ class ClassificationModel(BaseModel):
         return self._forward_once_class(x, visualize)  # single-scale inference, train
 
 
-def parse_model(d, ch):  # model_dict, input_channels(3)
+def parse_model(d, ch, task = "detection"):  # model_dict, input_channels(3)
     # Parse a YOLOv5 model.yaml dictionary
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
-    anchors, nc, gd, gw, act = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get('activation')
-    if act:
-        Conv.default_act = eval(act)  # redefine default activation, i.e. Conv.default_act = nn.SiLU()
-        LOGGER.info(f"{colorstr('activation:')} {act}")  # print
-    na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
-    no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
-
+    if task == "detection":
+        anchors, nc, gd, gw, act = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple'], d.get('activation')
+        task_model = d['backbone'] + d['head']
+        if act:
+            Conv.default_act = eval(act)  # redefine default activation, i.e. Conv.default_act = nn.SiLU()
+            LOGGER.info(f"{colorstr('activation:')} {act}")  # print
+        na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
+        no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
+    else:
+        nc, gd, gw = d['nc'], d['depth_multiple'], d['width_multiple']
+        task_model = d['backbone']
+        no = nc
     layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
-    for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):  # from, number, module, args
+    for i, (f, n, m, args) in enumerate(task_model):  # from, number, module, args
         m = eval(m) if isinstance(m, str) else m  # eval strings
         for j, a in enumerate(args):
             with contextlib.suppress(NameError):
