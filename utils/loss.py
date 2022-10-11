@@ -277,7 +277,6 @@ class ComputeLoss:
             tobj = torch.zeros((pi.shape[0], pi.shape[2], pi.shape[3]), dtype=pi.dtype, device=self.device)  # obj
 
             n = b.shape[0]  # number of targets
-            obji = criteria(pi[:, 4], tobj)
             if n:
                 # pxy, pwh, _, pcls = pi[b, a, gj, gi].tensor_split((2, 4, 5), dim=1)  # faster, requires torch 1.8.0
                 pxy, pwh, _, pcls = pi[b, :, gj, gi].split((2, 2, 1, self.nc), 2)  # target-subset of predictions
@@ -288,22 +287,20 @@ class ComputeLoss:
                 pbox = torch.cat((pxy, pwh), 2)  # predicted box
                 iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(prediction, target)
 
-
-                print(tobj.dtype, pi.dtype, iou.dtype, obji.dtype, b.dtype, gj.dtype, gi.dtype)
-                obji[b, gj, gi] = iou.detach().clamp(0).type(tobj.dtype)
+                tobj[b, gj, gi] = iou.detach().clamp(0).type(tobj.dtype)
                 assignment.append([(1.0 - iou) * self.hyp['box'],
                                    criteria(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls']])
 
-                lobj += obji.mean() * (self.hyp['obj'] * self.balance[i])  # obj loss
+            lobj += criteria(pi[:, 4], tobj).mean() * self.balance[i]
 
-                losses = [torch.cat(x, 1) for x in zip(*assignment)]
-                total_loss = losses[0] + losses[1]
-                ii = torch.arange(n).view(-1, 1).repeat(1, 3)
-                jj = torch.argsort(total_loss, dim=1)[:, :3]
+        losses = [torch.cat(x, 1) for x in zip(*assignment)]
+        ii = torch.arange(n).view(-1, 1).repeat(1, 3)
+        jj = torch.argsort(losses[0] + losses[1], dim=1)[:, :3]
 
-                lbox = losses[0][ii, jj].mean()
-                lcls = losses[1][ii, jj].mean()
-                bs = tobj.shape[0]  # batch size
+        lbox = losses[0][ii, jj].mean()
+        lobj *= self.hyp['obj']
+        lcls = losses[1][ii, jj].mean()
+        bs = tobj.shape[0]  # batch size
         return (lbox + lobj[0] + lcls) * bs, torch.stack([lbox, lobj[0], lcls]).detach()
 
     def build_targets(self, p, targets):
