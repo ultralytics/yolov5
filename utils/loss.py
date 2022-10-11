@@ -292,17 +292,17 @@ class ComputeLoss:
                 iou_obj_target = iou.detach().clamp(0).type(tobj.dtype)
                 obji[b, gj, gi] = iou_obj_target
                 assignment.append([(1.0 - iou) * self.hyp['box'],
-                                   criteria(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls'])
+                                   criteria(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls']])
 
                 lobj += obji.mean() * (self.hyp['obj'] * self.balance[i])  # obj loss
 
                 losses = [torch.cat(x, 1) for x in zip(*assignment)]
                 total_loss = losses[0] + losses[1]
-                i = torch.arange(n).view(-1, 1).repeat(1, 3)
-                j = torch.argsort(total_loss, dim=1)[:, :3]
+                ii = torch.arange(n).view(-1, 1).repeat(1, 3)
+                jj = torch.argsort(total_loss, dim=1)[:, :3]
 
-                lbox = losses[0][i, j].mean()
-                lcls = losses[1][i, j].mean()
+                lbox = losses[0][ii, jj].mean()
+                lcls = losses[1][ii, jj].mean()
                 bs = tobj.shape[0]  # batch size
         return (lbox + lobj[0] + lcls) * bs, torch.stack([lbox, lobj[0], lcls]).detach()
 
