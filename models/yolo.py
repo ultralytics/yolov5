@@ -165,9 +165,9 @@ class BaseModel(nn.Module):
         m = self.model[-1]  # Detect()
         if isinstance(m, (Detect, Segment)):
             m.stride = fn(m.stride)
-            m.grid = list(map(fn, m.grid))
-            if isinstance(m.anchor_grid, list):
-                m.anchor_grid = list(map(fn, m.anchor_grid))
+            m.grid = fn(m.grid)
+            m.anchor_grid = fn(m.anchor_grid)
+            m.stride_grid = fn(m.stride_grid)
         return self
 
 

@@ -668,12 +668,14 @@ class AutoShape(nn.Module):
     def _apply(self, fn):
         # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
         self = super()._apply(fn)
+        from models.yolo import Detect, Segment
         if self.pt:
             m = self.model.model.model[-1] if self.dmb else self.model.model[-1]  # Detect()
-            m.stride = fn(m.stride)
-            m.grid = list(map(fn, m.grid))
-            if isinstance(m.anchor_grid, list):
-                m.anchor_grid = list(map(fn, m.anchor_grid))
+            if isinstance(m, (Detect, Segment)):
+                m.stride = fn(m.stride)
+                m.grid = fn(m.grid)
+                m.anchor_grid = fn(m.anchor_grid)
+                m.stride_grid = fn(m.stride_grid)
         return self
 
     @smart_inference_mode()
