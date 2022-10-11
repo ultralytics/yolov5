@@ -297,9 +297,9 @@ class ComputeLoss:
         ii = torch.arange(n).view(-1, 1).repeat(1, 3)
         jj = torch.argsort(losses[0] + losses[1], dim=1)[:, :3]
 
-        lbox = losses[0][ii, jj].mean()
+        lbox = losses[0][ii, jj].mean() * 3
         lobj *= self.hyp['obj']
-        lcls = losses[1][ii, jj].mean()
+        lcls = losses[1][ii, jj].mean() * 3
         bs = tobj.shape[0]  # batch size
         return (lbox + lobj[0] + lcls) * bs, torch.stack([lbox, lobj[0], lcls]).detach()
 
