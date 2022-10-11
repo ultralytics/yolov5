@@ -280,7 +280,8 @@ class ClassificationModel(BaseModel):
             with open(cfg, encoding='ascii', errors='ignore') as f:
                 self.yaml = yaml.safe_load(f)  # model dict
             ch = self.yaml['ch'] = self.yaml.get('ch', ch)  # input channels
-            self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch], task = "classification")  # create ClassificationModel
+            self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch],
+                                                task="classification")  # create ClassificationModel
         else:
             self._from_detection_model(model, nc, cutoff) if model is not None else self._from_yaml(cfg)
 
@@ -315,7 +316,7 @@ class ClassificationModel(BaseModel):
         return self._forward_once_class(x, visualize)  # single-scale inference, train
 
 
-def parse_model(d, ch, task = "detection"):  # model_dict, input_channels(3)
+def parse_model(d, ch, task="detection"):  # model_dict, input_channels(3)
     # Parse a YOLOv5 model.yaml dictionary
     LOGGER.info(f"\n{'':>3}{'from':>18}{'n':>3}{'params':>10}  {'module':<40}{'arguments':<30}")
     if task == "detection":
