@@ -274,22 +274,24 @@ class ComputeLoss:
             b, gj, gi = indices[i]  # image, anchor, gridy, gridx
             n = b.shape[0]  # number of targets
             if n:
-                pxy, pwh, _, pcls = pi[b, :, gj, gi].split((2, 2, 1, self.nc), 2)  # target-subset of predictions
+                pxy, pwh, pobj, pcls = pi[b, :, gj, gi].split((2, 2, 1, self.nc), 2)  # target-subset of predictions
 
                 # Regression
                 pxy = pxy.sigmoid() * 1.6 - 0.3
                 pwh = (0.2 + pwh.sigmoid() * 4.8) * self.anchors[i]
                 pbox = torch.cat((pxy, pwh), 2)  # predicted box
                 iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(prediction, target)
+                obj_target = iou.detach().clamp(0).type(pi.dtype)
 
                 assignment.append([(1.0 - iou) * self.hyp['box'],  # box loss
-                                   iou.detach().clamp(0).type(pi.dtype),  # obj targets
-                                   self.BCE_base(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls']])
+                                   self.BCE_base(pobj.squeeze(), obj_target) * (self.hyp['obj'] * self.balance[i]),
+                                   self.BCE_base(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls'],
+                                   obj_target])  # obj targets
 
         losses = [torch.cat(x, 1) for x in zip(*assignment)]
 
         # top 3 losses per label
-        k = torch.argsort(losses[0] + losses[2], dim=1)[:, :3]
+        k = torch.argsort(losses[0] + losses[1] + losses[2], dim=1)[:, :3]
         ij = torch.zeros_like(losses[0]).bool()  # object loss
         for col in k.T:
             ij[range(n), col] = True
@@ -300,7 +302,7 @@ class ComputeLoss:
             b, gj, gi = indices[i]  # image, anchor, gridy, gridx
             tobj = torch.zeros((pi.shape[0], pi.shape[2], pi.shape[3]), dtype=pi.dtype, device=self.device)  # obj
             if n:  # if any labels
-                tobj[b[h], gj[h], gi[h]] = assignment[i][1][h]
+                tobj[b[h], gj[h], gi[h]] = assignment[i][3][h]
             lobj += self.BCEobj(pi[:, 4], tobj) * self.balance[i]
 
         # Combine
@@ -348,7 +350,7 @@ class ComputeLoss:
                 # l, m = ((gxi % 1 < g) & (gxi > 1)).T
                 # j = torch.stack((torch.ones_like(j), j, k, l, m))
                 t = t.repeat((5, 1, 1))
-                offsets = (torch.zeros_like(gxy)[None] + off[:, None])
+                offsets = torch.zeros_like(gxy)[None] + off[:, None]
             else:
                 t = targets[0]
                 offsets = 0
