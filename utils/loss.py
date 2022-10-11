@@ -199,14 +199,14 @@ class ComputeLoss:
             device=self.device).float() * g  # offsets
 
         for i in range(self.nl):
-            anchors, shape = self.anchors[i], p[i].shape
+            shape = p[i].shape
             gain[2:6] = torch.tensor(shape)[[3, 2, 3, 2]]  # xyxy gain
 
             # Match targets to anchors
             t = targets * gain  # shape(3,n,7)
             if nt:
                 # Matches
-                r = t[..., 4:6] / anchors  # wh ratio
+                r = t[..., 4:6] / self.anchors[i]  # wh ratio
                 j = torch.max(r, 1 / r).max(1)[0] < self.hyp['anchor_t']  # compare
                 # j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
                 t = t[j]  # filter
@@ -224,13 +224,13 @@ class ComputeLoss:
                 offsets = 0
 
             # Define
-            bc, gxy, gwh = t.chunk(3, 1)  # (image, class), grid xy, grid wh, anchors
-            b, c = bc.long().T  # anchors, image, class
+            bc, gxy, gwh = t.chunk(3, 1)  # (image, class), grid xy, grid wh
+            b, c = bc.long().T  # image, class
             gij = (gxy - offsets).long()
             gi, gj = gij.T  # grid indices
 
             # Append
-            indices.append((b, gj.clamp_(0, shape[2] - 1), gi.clamp_(0, shape[3] - 1)))  # image, anchor, grid
+            indices.append((b, gj.clamp_(0, shape[2] - 1), gi.clamp_(0, shape[3] - 1)))  # image, grid_y, grid_x indices
             tbox.append(torch.cat((gxy - gij, gwh), 1))  # box
             tcls.append(c)  # class
 
