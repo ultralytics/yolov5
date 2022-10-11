@@ -274,8 +274,7 @@ class ComputeLoss:
         assignment = []
         for i, pi in enumerate(p):  # layer index, layer predictions
             b, gj, gi = indices[i]  # image, anchor, gridy, gridx
-            tobj = torch.zeros((pi.shape[0], pi.shape[2], pi.shape[3]), dtype=pi.dtype,
-                               device=self.device)  # target obj
+            tobj = torch.zeros((pi.shape[0], pi.shape[2], pi.shape[3]), dtype=pi.dtype, device=self.device)  # obj
 
             n = b.shape[0]  # number of targets
             obji = criteria(pi[:, 4], tobj)
@@ -289,8 +288,7 @@ class ComputeLoss:
                 pbox = torch.cat((pxy, pwh), 2)  # predicted box
                 iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(prediction, target)
 
-                iou_obj_target = iou.detach().clamp(0).type(tobj.dtype)
-                obji[b, gj, gi] = iou_obj_target
+                obji[b, gj, gi] = iou.detach().clamp(0).type(tobj.dtype)
                 assignment.append([(1.0 - iou) * self.hyp['box'],
                                    criteria(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls']])
 
