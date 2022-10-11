@@ -265,7 +265,6 @@ class ComputeLoss:
         self.BCE_base = nn.BCEWithLogitsLoss(reduction='none')
 
     def __call__(self, p, targets):  # predictions, targets
-        lobj = torch.zeros(1, device=self.device)  # object loss
         tcls, tbox, indices = self.build_targets(p, targets)  # targets
 
         # Losses
@@ -284,33 +283,32 @@ class ComputeLoss:
                 obj_target = iou.detach().clamp(0).type(pi.dtype)
 
                 assignment.append([(1.0 - iou) * self.hyp['box'],  # box loss
-                                   self.BCE_base(pobj.squeeze(), obj_target) * self.hyp['obj'],
+                                   self.BCE_base(pobj.squeeze(), torch.ones_like(obj_target)) * self.hyp['obj'],
                                    self.BCE_base(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls'],
                                    obj_target])  # obj targets
 
         losses = [torch.cat(x, 1) for x in zip(*assignment)]
 
         # top 3 losses per label
-        k = torch.argsort(losses[0] + losses[1] + losses[2], dim=1)[:, :3]
+        k = torch.argsort(losses[0] + losses[1] / 100 + losses[2], dim=1)[:, :3]
         ij = torch.zeros_like(losses[0]).bool()  # object loss
         for col in k.T:
             ij[range(n), col] = True
 
         # Obj loss
-        chunks = ij.chunk(3, 1)
-        for i, (h, pi) in enumerate(zip(chunks, p)):  # layer index, layer predictions
+        lobj = torch.zeros(1, device=self.device)[0]  # object loss
+        for i, (h, pi) in enumerate(zip(ij.chunk(3, 1), p)):  # layer index, layer predictions
             b, gj, gi = indices[i]  # image, anchor, gridy, gridx
             tobj = torch.zeros((pi.shape[0], pi.shape[2], pi.shape[3]), dtype=pi.dtype, device=self.device)  # obj
             if n:  # if any labels
                 tobj[b[h], gj[h], gi[h]] = assignment[i][3][h]
-            lobj += self.BCEobj(pi[:, 4], tobj) * self.balance[i]
+            lobj += self.BCEobj(pi[:, 4], tobj) * (self.balance[i] * self.hyp['obj'])
 
         # Combine
         lbox = losses[0][ij].mean() * 3
         lcls = losses[2][ij].mean() * 3
-        lobj *= self.hyp['obj']
         bs = tobj.shape[0]  # batch size
-        return (lbox + lobj[0] + lcls) * bs, torch.stack([lbox, lobj[0], lcls]).detach()
+        return (lbox + lobj + lcls) * bs, torch.stack([lbox, lobj, lcls]).detach()
 
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
