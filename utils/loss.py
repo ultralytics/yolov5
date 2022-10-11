@@ -284,7 +284,7 @@ class ComputeLoss:
                 obj_target = iou.detach().clamp(0).type(pi.dtype)
 
                 assignment.append([(1.0 - iou) * self.hyp['box'],  # box loss
-                                   self.BCE_base(pobj.squeeze(), obj_target) * (self.hyp['obj'] * self.balance[i]),
+                                   self.BCE_base(pobj.squeeze(), obj_target) * self.hyp['obj'],
                                    self.BCE_base(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls'],
                                    obj_target])  # obj targets
 
