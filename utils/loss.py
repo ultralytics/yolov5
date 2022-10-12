@@ -292,7 +292,7 @@ class ComputeLoss:
         n_assign = 3  # top n matches
         cat_loss = [torch.cat(x, 1) for x in zip(*all_loss)]
         ij = torch.zeros_like(cat_loss[0]).bool()  # top 3 mask
-        sum_loss = cat_loss[0]
+        sum_loss = cat_loss[0] + cat_loss[2]
         for col in torch.argsort(sum_loss, dim=1).T[:n_assign]:
             # ij[range(n_labels), col] = True
             ij[range(n_labels), col] = cat_loss[4][range(n_labels), col]
