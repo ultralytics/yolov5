@@ -131,7 +131,7 @@ def masks2segments(masks, strategy='largest'):
                 c = np.concatenate([x.reshape(-1, 2) for x in c])
             elif strategy == 'largest':  # select largest segment
                 c = np.array(c[np.array([len(x) for x in c]).argmax()]).reshape(-1, 2)
-            segments.append(c.astype('float32'))
         else:
-            segments.append(0)
+            c = np.zeros((0, 2))  # no segments found
+        segments.append(c.astype('float32'))
     return segments
