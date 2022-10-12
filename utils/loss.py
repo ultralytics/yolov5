@@ -312,7 +312,7 @@ class ComputeLoss:
         tcls, tbox, indices = [], [], []
         gain = torch.ones(6, device=self.device)  # normalized to gridspace gain
 
-        g = 1.0  # bias
+        g = 0.5  # bias
         off = torch.tensor(
             [
                 [0, 0],
