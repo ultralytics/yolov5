@@ -289,7 +289,7 @@ class ComputeLoss:
                                  tbox[i][..., 2] > 0.0])  # valid
 
         # Lowest 3 losses per label
-        n_assign = 4  # top n matches
+        n_assign = 5  # top n matches
         cat_loss = [torch.cat(x, 1) for x in zip(*all_loss)]
         ij = torch.zeros_like(cat_loss[0]).bool()  # top 3 mask
         sum_loss = cat_loss[0] + cat_loss[2]
