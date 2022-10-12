@@ -282,10 +282,11 @@ class ComputeLoss:
                 iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(predicted_box, target_box)
                 obj_target = iou.detach().clamp(0).type(pi.dtype)  # objectness targets
 
-                all_loss.append([(1.0 - iou) * self.hyp['box'],  # box
-                                 self.BCE_base(pobj.squeeze(), torch.ones_like(obj_target)) * self.hyp['obj'],  # obj
+                all_loss.append([(1.0 - iou) * self.hyp['box'],
+                                 self.BCE_base(pobj.squeeze(), torch.ones_like(obj_target)) * self.hyp['obj'],
                                  self.BCE_base(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls'],
-                                 obj_target])
+                                 obj_target,
+                                 tbox[i][:, 0] > 1e5])  # invalid
 
         # Lowest 3 losses per label
         n_assign = 3  # top n matches
@@ -346,16 +347,16 @@ class ComputeLoss:
                 j = torch.stack((torch.ones_like(j), j, k, l, m)) & a
                 t = t.repeat((5, 1, 1))
                 offsets = torch.zeros_like(gxy)[None] + off[:, None]
-                t[~j][2:4] = 1e6  # move unsuitable targets far away
+                t[..., 2:4][~j] = 1e6  # move unsuitable targets far away
             else:
                 t = targets[0]
                 offsets = 0
 
             # Define
             bc, gxy, gwh = t.chunk(3, 2)  # (image, class), grid xy, grid wh
-            b, c = bc.long().transpose(0, 2)  # image, class
+            b, c = bc.long().transpose(0, 2).contiguous()  # image, class
             gij = (gxy - offsets).long()
-            gi, gj = gij.transpose(0, 2)  # grid indices
+            gi, gj = gij.transpose(0, 2).contiguous()  # grid indices
 
             # Append
             indices.append((b, gj.clamp_(0, shape[2] - 1), gi.clamp_(0, shape[3] - 1)))  # image, grid_y, grid_x indices
