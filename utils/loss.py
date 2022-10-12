@@ -360,4 +360,8 @@ class ComputeLoss:
             tbox.append(torch.cat((gxy - gij, gwh), 2).permute(1, 0, 2).contiguous())  # box
             tcls.append(c)  # class
 
+            # n1 = tbox[i].view(-1,4).shape[0]
+            # n2 = tbox[i].view(-1,4).unique(dim=0).shape[0]
+            # print(f'targets-unique {n1}-{n2} diff={n1-n2}')
+
         return tcls, tbox, indices
