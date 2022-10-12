@@ -300,7 +300,7 @@ class ComputeLoss:
         loss[2] = cat_loss[2][ij].mean() * self.nl  # cls loss
 
         # Obj loss
-        for i, (h, pi) in enumerate(zip(ij.chunk(n_assign, 1), p)):  # layer index, layer predictions
+        for i, (h, pi) in enumerate(zip(ij.chunk(self.nl, 1), p)):  # layer index, layer predictions
             b, gj, gi = indices[i]  # image, anchor, gridy, gridx
             tobj = torch.zeros((pi.shape[0], pi.shape[2], pi.shape[3]), dtype=pi.dtype, device=self.device)  # obj
             if n_labels:  # if any labels
