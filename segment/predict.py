@@ -156,9 +156,7 @@ def run(
                 # Segments
                 if save_txt:
                     segments = reversed(masks2segments(masks))
-                    segments = [
-                        scale_segments(im.shape[2:], x, im0.shape).round() if not isinstance(x, int) else 0
-                        for x in segments]
+                    segments = [scale_segments(im.shape[2:], x, im0.shape).round() for x in segments]
 
                 # Print results
                 for c in det[:, 5].unique():
@@ -173,15 +171,10 @@ def run(
                 # Write results
                 for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])):
                     if save_txt:  # Write to file
-                        if not isinstance(segments[j], int):
-                            segj = segments[j].reshape(-1)  # (n,2) to (n*2)
-                            line = (cls, *segj, conf) if save_conf else (cls, *segj)  # label format
-                            with open(f'{txt_path}.txt', 'a') as f:
-                                f.write(('%g ' * len(line)).rstrip() % line + '\n')
-                        else:
-                            line = (cls, segments[j], conf) if save_conf else (cls, segments[j])  # label format
-                            with open(f'{txt_path}.txt', 'a') as f:
-                                f.write(('%g ' * len(line)).rstrip() % line + '\n')
+                        segj = segments[j].reshape(-1)  # (n,2) to (n*2)
+                        line = (cls, *segj, conf) if save_conf else (cls, *segj)  # label format
+                        with open(f'{txt_path}.txt', 'a') as f:
+                            f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
