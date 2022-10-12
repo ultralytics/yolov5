@@ -291,7 +291,8 @@ class ComputeLoss:
         n_assign = 3  # top n matches
         cat_loss = [torch.cat(x, 1) for x in zip(*all_loss)]
         ij = torch.zeros_like(cat_loss[0]).bool()  # top 3 mask
-        for col in torch.argsort(cat_loss[0] + cat_loss[2], dim=1).T[:n_assign]:
+        sum_loss = cat_loss[0] + cat_loss[2]
+        for col in torch.argsort(sum_loss, dim=1).T[:n_assign]:
             ij[range(n_labels), col] = True
         loss[0] = cat_loss[0][ij].mean() * self.nl  # box loss
         loss[2] = cat_loss[2][ij].mean() * self.nl  # cls loss
@@ -332,8 +333,8 @@ class ComputeLoss:
             t = targets * gain  # shape(3,n,7)
             if nt:
                 # # Matches
-                # r = t[..., 4:6] / self.anchors[i]  # wh ratio
-                # j = torch.max(r, 1 / r).max(1)[0] < self.hyp['anchor_t']  # compare
+                r = t[..., 4:6] / self.anchors[i]  # wh ratio
+                j = torch.max(r, 1 / r).max(1)[0] < self.hyp['anchor_t']  # compare
                 # # j = wh_iou(anchors, t[:, 4:6]) > model.hyp['iou_t']  # iou(3,n)=wh_iou(anchors(3,2), gwh(n,2))
                 # t = t[j]  # filter
 
@@ -343,6 +344,7 @@ class ComputeLoss:
                 # j, k = ((gxy % 1 < g) & (gxy > 1)).T
                 # l, m = ((gxi % 1 < g) & (gxi > 1)).T
                 # j = torch.stack((torch.ones_like(j), j, k, l, m))
+                t[~j, 2:4] = 1e6  # move unsuitable targets far away
                 t = t.repeat((5, 1, 1))
                 offsets = torch.zeros_like(gxy)[None] + off[:, None]
             else:
