@@ -278,16 +278,14 @@ class ComputeLoss:
                 pxy, pwh, pobj, pcls = pi[b, :, gj, gi].split((2, 2, 1, self.nc), 2)  # target-subset of predictions
 
                 # Regression
-                pxy = pxy.sigmoid() * 1.6 - 0.3
-                pwh = (0.2 + pwh.sigmoid() * 4.8) * self.anchors[i]
-                pbox = torch.cat((pxy, pwh), 2)  # predicted box
-                iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(prediction, target)
-                obj_target = iou.detach().clamp(0).type(pi.dtype)
+                pbox = torch.cat((pxy.sigmoid() * 1.6 - 0.3, (0.2 + pwh.sigmoid() * 4.8) * self.anchors[i]), 2)
+                iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(predicted_box, target_box)
+                obj_target = iou.detach().clamp(0).type(pi.dtype)  # objectness targets
 
-                all_loss.append([(1.0 - iou) * self.hyp['box'],  # box loss
-                                 self.BCE_base(pobj.squeeze(), torch.ones_like(obj_target)) * self.hyp['obj'],
+                all_loss.append([(1.0 - iou) * self.hyp['box'],  # box
+                                 self.BCE_base(pobj.squeeze(), torch.ones_like(obj_target)) * self.hyp['obj'],  # cls
                                  self.BCE_base(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls'],
-                                 obj_target])  # obj targets
+                                 obj_target])
 
         # Lowest 3 losses per label
         n_assign = 3  # top n matches
