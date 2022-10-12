@@ -156,7 +156,9 @@ def run(
                 # Segments
                 if save_txt:
                     segments = reversed(masks2segments(masks))
-                    segments = [scale_segments(im.shape[2:], x, im0.shape).round() if not isinstance(x, int) else 0 for x in segments]
+                    segments = [
+                        scale_segments(im.shape[2:], x, im0.shape).round() if not isinstance(x, int) else 0
+                        for x in segments]
 
                 # Print results
                 for c in det[:, 5].unique():
