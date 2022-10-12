@@ -283,7 +283,7 @@ class ComputeLoss:
                 obj_target = iou.detach().clamp(0).type(pi.dtype)  # objectness targets
 
                 all_loss.append([(1.0 - iou) * self.hyp['box'],
-                                 self.BCE_base(pobj.squeeze(), torch.ones_like(obj_target)) * self.hyp['obj'],
+                                 self.BCE_base(pobj.squeeze(), obj_target) * self.hyp['obj'],
                                  self.BCE_base(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls'],
                                  obj_target,
                                  tbox[i][..., 2] > 0.0])  # valid
