@@ -286,7 +286,7 @@ class ComputeLoss:
                                  self.BCE_base(pobj.squeeze(), torch.ones_like(obj_target)) * self.hyp['obj'],
                                  self.BCE_base(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls'],
                                  obj_target,
-                                 tbox[i][:, 0] > 1e5])  # invalid
+                                 tbox[i][..., 2] > 0.0])  # valid
 
         # Lowest 3 losses per label
         n_assign = 3  # top n matches
@@ -294,7 +294,8 @@ class ComputeLoss:
         ij = torch.zeros_like(cat_loss[0]).bool()  # top 3 mask
         sum_loss = cat_loss[0]
         for col in torch.argsort(sum_loss, dim=1).T[:n_assign]:
-            ij[range(n_labels), col] = True
+            # ij[range(n_labels), col] = True
+            ij[range(n_labels), col] = cat_loss[4][range(n_labels), col]
         loss[0] = cat_loss[0][ij].mean() * self.nl  # box loss
         loss[2] = cat_loss[2][ij].mean() * self.nl  # cls loss
 
@@ -347,7 +348,7 @@ class ComputeLoss:
                 j = torch.stack((torch.ones_like(j), j, k, l, m)) & a
                 t = t.repeat((5, 1, 1))
                 offsets = torch.zeros_like(gxy)[None] + off[:, None]
-                t[..., 2:4][~j] = 1e6  # move unsuitable targets far away
+                t[..., 4:6][~j] = 0.0  # move unsuitable targets far away
             else:
                 t = targets[0]
                 offsets = 0
