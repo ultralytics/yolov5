@@ -283,16 +283,16 @@ class ComputeLoss:
                 obj_target = iou.detach().clamp(0).type(pi.dtype)  # objectness targets
 
                 all_loss.append([(1.0 - iou) * self.hyp['box'],
-                                 self.BCE_base(pobj.squeeze(), obj_target) * self.hyp['obj'],
+                                 self.BCE_base(pobj.squeeze(), torch.ones_like(obj_target)) * self.hyp['obj'],
                                  self.BCE_base(pcls, F.one_hot(tcls[i], self.nc).float()).mean(2) * self.hyp['cls'],
                                  obj_target,
                                  tbox[i][..., 2] > 0.0])  # valid
 
         # Lowest 3 losses per label
-        n_assign = 3  # top n matches
+        n_assign = 4  # top n matches
         cat_loss = [torch.cat(x, 1) for x in zip(*all_loss)]
         ij = torch.zeros_like(cat_loss[0]).bool()  # top 3 mask
-        sum_loss = cat_loss[0] + cat_loss[1] + cat_loss[2]
+        sum_loss = cat_loss[0] + cat_loss[2]
         for col in torch.argsort(sum_loss, dim=1).T[:n_assign]:
             # ij[range(n_labels), col] = True
             ij[range(n_labels), col] = cat_loss[4][range(n_labels), col]
