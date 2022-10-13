@@ -156,7 +156,7 @@ class C2(nn.Module):
         self.cv1 = Conv(c1, 2 * self.c, 1, 1)
         self.cv2 = Conv(2 * self.c, c2, 1)  # optional act=FReLU(c2)
         # self.attention = ChannelAttention(2 * self.c)
-        self.m = nn.Sequential(*(Bottleneck(self.c, self.c, shortcut, g, k=(3, 3), e=1.0) for _ in range(n)))
+        self.m = nn.Sequential(*(Bottleneck(self.c, self.c, shortcut, g, k=((1, 3), (3, 1)), e=1.0) for _ in range(n)))
 
     def forward(self, x):
         a, b = self.cv1(x).split((self.c, self.c), 1)
