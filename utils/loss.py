@@ -89,7 +89,7 @@ class QFocalLoss(nn.Module):
             return loss
 
 
-class ComputeLoss_OLD:
+class ComputeLoss:
     sort_obj_iou = False
 
     # Compute losses
@@ -119,19 +119,17 @@ class ComputeLoss_OLD:
         self.device = device
 
     def __call__(self, p, targets):  # predictions, targets
-        lcls = torch.zeros(1, device=self.device)  # class loss
-        lbox = torch.zeros(1, device=self.device)  # box loss
-        lobj = torch.zeros(1, device=self.device)  # object loss
+        bs = p[0].shape[0]  # batch size
+        loss = torch.zeros(3, device=self.device)  # [box, obj, cls] losses
         tcls, tbox, indices = self.build_targets(p, targets)  # targets
 
         # Losses
         for i, pi in enumerate(p):  # layer index, layer predictions
             b, gj, gi = indices[i]  # image, anchor, gridy, gridx
-            tobj = torch.zeros((pi.shape[0], pi.shape[2], pi.shape[3]), dtype=pi.dtype,
-                               device=self.device)  # target obj
+            tobj = torch.zeros((pi.shape[0], pi.shape[2], pi.shape[3]), dtype=pi.dtype, device=self.device)  # tgt obj
 
-            n = b.shape[0]  # number of targets
-            if n:
+            n_labels = b.shape[0]  # number of labels
+            if n_labels:
                 # pxy, pwh, _, pcls = pi[b, a, gj, gi].tensor_split((2, 4, 5), dim=1)  # faster, requires torch 1.8.0
                 pxy, pwh, _, pcls = pi[b, :, gj, gi].split((2, 2, 1, self.nc), 1)  # target-subset of predictions
 
@@ -146,7 +144,7 @@ class ComputeLoss_OLD:
                 pwh = (0.2 + pwh.sigmoid() * 4.8) * self.anchors[i]
                 pbox = torch.cat((pxy, pwh), 1)  # predicted box
                 iou = bbox_iou(pbox, tbox[i], CIoU=True).squeeze()  # iou(prediction, target)
-                lbox += (1.0 - iou).mean()  # iou loss
+                loss[0] += (1.0 - iou).mean()  # box loss
 
                 # Objectness
                 iou = iou.detach().clamp(0).type(tobj.dtype)
@@ -160,22 +158,20 @@ class ComputeLoss_OLD:
                 # Classification
                 if self.nc > 1:  # cls loss (only if multiple classes)
                     t = torch.full_like(pcls, self.cn, device=self.device)  # targets
-                    t[range(n), tcls[i]] = self.cp
-                    lcls += self.BCEcls(pcls, t)  # BCE
+                    t[range(n_labels), tcls[i]] = self.cp
+                    loss[2] += self.BCEcls(pcls, t)  # cls loss
 
             obji = self.BCEobj(pi[:, 4], tobj)
-            lobj += obji * self.balance[i]  # obj loss
+            loss[1] += obji * self.balance[i]  # obj loss
             if self.autobalance:
                 self.balance[i] = self.balance[i] * 0.9999 + 0.0001 / obji.detach().item()
 
         if self.autobalance:
             self.balance = [x / self.balance[self.ssi] for x in self.balance]
-        lbox *= self.hyp['box']
-        lobj *= self.hyp['obj']
-        lcls *= self.hyp['cls']
-        bs = tobj.shape[0]  # batch size
-
-        return (lbox + lobj + lcls) * bs, torch.cat((lbox, lobj, lcls)).detach()
+        loss[0] *= self.hyp['box']
+        loss[1] *= self.hyp['obj']
+        loss[2] *= self.hyp['cls']
+        return loss.sum() * bs, loss.detach()  # [box, obj, cls] losses
 
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
@@ -234,7 +230,7 @@ class ComputeLoss_OLD:
         return tcls, tbox, indices
 
 
-class ComputeLoss:
+class ComputeLoss_NEW:
     sort_obj_iou = False
 
     # Compute losses
