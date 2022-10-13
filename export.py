@@ -690,6 +690,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
             num_export_samples=num_export_samples,
             save_dir= os.path.dirname(file),
             image_size=imgsz,
+            save_inputs_as_uint8=f[2] and _graph_has_uint8_inputs(f[2])
         )
 
     # TensorFlow Exports
@@ -770,6 +771,13 @@ def parse_opt(known = False, skip_parse = False):
     
     print_args(FILE.stem, opt)
     return opt
+
+
+def _graph_has_uint8_inputs(onnx_path):
+    import onnx
+    onnx_model = onnx.load(onnx_path)
+    # check if first model input has elem type 2 (uint8)
+    return onnx_model.graph.input[0].type.tensor_type.elem_type == 2
 
 
 def main(opt):

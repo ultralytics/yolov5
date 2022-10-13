@@ -266,6 +266,7 @@ class SparseMLWrapper(object):
         num_export_samples=100,
         save_dir: Optional[str] = None,
         image_size: int=640,
+        save_inputs_as_uint8: bool = False,
    ):
         save_dir = save_dir or ""
         if not dataloader:
@@ -308,6 +309,8 @@ class SparseMLWrapper(object):
                 file_idx = f"{exported_samples}".zfill(4)
 
                 sample_input_filename = os.path.join(f"{sample_in_dir}", f"inp-{file_idx}.npz")
+                if save_inputs_as_uint8:
+                    sample_in = (255 * sample_in).to(dtype=torch.uint8)
                 numpy.savez(sample_input_filename, sample_in)
 
                 sample_output_filename = os.path.join(f"{sample_out_dir}", f"out-{file_idx}.npz")
