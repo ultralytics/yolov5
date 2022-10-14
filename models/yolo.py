@@ -53,12 +53,12 @@ class Detect(nn.Module):
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.shape = (0, 0)  # initial grid shape
         c2, c3 = 32, max(ch[0], self.no - 4)  # channels
-        self.cv2 = nn.ModuleList(nn.Sequential(Conv(x, c2, 3), Conv(c2, 4, 1, act=False)) for x in ch)
-        self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, c3, 3), Conv(c3, self.no - 4, 1, act=False)) for x in ch)
-        # self.cv2 = nn.ModuleList(nn.Sequential(
-        #     Conv(x, c2, 3), Conv(c2, c2, 3), Conv(c2, 4, 1, act=False)) for x in ch)
-        # self.cv3 = nn.ModuleList(nn.Sequential(
-        #     Conv(x, c3, 3), Conv(c3, c3, 3), Conv(c3, self.no - 4, 1, act=False)) for x in ch)
+        # self.cv2 = nn.ModuleList(nn.Sequential(Conv(x, c2, 3), Conv(c2, 4, 1, act=False)) for x in ch)
+        # self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, c3, 3), Conv(c3, self.no - 4, 1, act=False)) for x in ch)
+        self.cv2 = nn.ModuleList(nn.Sequential(
+            Conv(x, c2, 3), Conv(c2, c2, 3), Conv(c2, 4, 1, act=False)) for x in ch)
+        self.cv3 = nn.ModuleList(nn.Sequential(
+            Conv(x, c3, 3), Conv(c3, c3, 3), Conv(c3, self.no - 4, 1, act=False)) for x in ch)
 
     def forward(self, x):
         for i in range(self.nl):
