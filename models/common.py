@@ -156,7 +156,8 @@ class C2(nn.Module):
         self.cv1 = Conv(c1, 2 * self.c, 1, 1)
         self.cv2 = Conv(2 * self.c, c2, 1)  # optional act=FReLU(c2)
         # self.attention = ChannelAttention3(2 * self.c)
-        self.attention = SpatialAttention()
+        # self.attention = SpatialAttention()
+        self.attention = CBAM(2 * self.c)
         self.m = nn.Sequential(*(Bottleneck(self.c, self.c, shortcut, g, k=((3, 3), (3, 3)), e=1.0) for _ in range(n)))
 
     def forward(self, x):
@@ -219,17 +220,13 @@ class SpatialAttention(nn.Module):
 
 class CBAM(nn.Module):
     # CSP Bottleneck with 3 convolutions
-    def __init__(self, c1, c2, ratio=16, kernel_size=7):  # ch_in, ch_out, number, shortcut, groups, expansion
+    def __init__(self, c1, ratio=16, kernel_size=7):  # ch_in, ch_out, number, shortcut, groups, expansion
         super().__init__()
         self.channel_attention = ChannelAttention(c1, ratio)
         self.spatial_attention = SpatialAttention(kernel_size)
 
     def forward(self, x):
-        out = self.channel_attention(x) * x
-        # c*h*w
-        # c*h*w * 1*h*w
-        out = self.spatial_attention(out) * out
-        return out
+        return self.spatial_attention(self.channel_attention(x))
 
 
 class C1(nn.Module):
