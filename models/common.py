@@ -222,7 +222,7 @@ class CBAM(nn.Module):
     # CSP Bottleneck with 3 convolutions
     def __init__(self, c1, ratio=16, kernel_size=7):  # ch_in, ch_out, number, shortcut, groups, expansion
         super().__init__()
-        self.channel_attention = ChannelAttention(c1, ratio)
+        self.channel_attention = ChannelAttention(c1)
         self.spatial_attention = SpatialAttention(kernel_size)
 
     def forward(self, x):
