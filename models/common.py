@@ -160,7 +160,7 @@ class C2(nn.Module):
 
     def forward(self, x):
         a, b = self.cv1(x).split((self.c, self.c), 1)
-        return self.cv2(torch.cat((self.m(a), b), 1))
+        return self.cv2(self.attention(torch.cat((self.m(a), b), 1)))
 
 
 class ChannelAttention(nn.Module):
@@ -179,7 +179,7 @@ class ChannelAttention2(nn.Module):
     # Channel-attention module https://github.com/open-mmlab/mmdetection/tree/v3.0.0rc1/configs/rtmdet
     def __init__(self, channels: int) -> None:
         super().__init__()
-        self.pool1 = nn.AdaptiveMaxPool1d(1)
+        self.pool1 = nn.AdaptiveMaxPool2d(1)
         self.pool2 = nn.AdaptiveAvgPool2d(1)
         self.cv1 = nn.Conv2d(channels, channels, 1, 1, 0, bias=True)
         self.act = nn.Sigmoid()
@@ -192,7 +192,7 @@ class ChannelAttention3(nn.Module):
     # Channel-attention module https://github.com/open-mmlab/mmdetection/tree/v3.0.0rc1/configs/rtmdet
     def __init__(self, channels: int) -> None:
         super().__init__()
-        self.pool1 = nn.AdaptiveMaxPool1d(1)
+        self.pool1 = nn.AdaptiveMaxPool2d(1)
         self.pool2 = nn.AdaptiveAvgPool2d(1)
         self.cv1 = nn.Conv2d(channels, channels // 16, 1, 1, 0, bias=True)
         self.cv2 = nn.Conv2d(channels // 16, channels, 1, 1, 0, bias=True)
