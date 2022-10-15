@@ -188,6 +188,21 @@ class ChannelAttention2(nn.Module):
         return x * self.act(self.cv1(self.pool1(x) + self.pool2(x)))
 
 
+class ChannelAttention3(nn.Module):
+    # Channel-attention module https://github.com/open-mmlab/mmdetection/tree/v3.0.0rc1/configs/rtmdet
+    def __init__(self, channels: int) -> None:
+        super().__init__()
+        self.pool1 = nn.AdaptiveMaxPool1d(1)
+        self.pool2 = nn.AdaptiveAvgPool2d(1)
+        self.cv1 = nn.Conv2d(channels, channels // 16, 1, 1, 0, bias=True)
+        self.cv2 = nn.Conv2d(channels // 16, channels, 1, 1, 0, bias=True)
+        self.silu = nn.SiLU()
+        self.act = nn.Sigmoid()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x * self.act(self.cv2(self.silu(self.cv1(self.pool1(x)))) + self.cv2(self.silu(self.cv1(self.pool2(x)))))
+
+
 class C1(nn.Module):
     # CSP Bottleneck with 3 convolutions
     def __init__(self, c1, c2, n=1):  # ch_in, ch_out, number, shortcut, groups, expansion
