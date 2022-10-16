@@ -167,14 +167,19 @@ class C2(nn.Module):
     # CSP Bottleneck with 2 convolutions
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
         super().__init__()
+        n *= 2
         self.c = int(c2 * e)  # hidden channels
         self.cv1 = Conv(c1, 2 * self.c, 1, 1)
         self.cv2 = Conv(2 * self.c, c2, 1)  # optional act=FReLU(c2)
-        self.m = nn.Sequential(*(Bottleneck(self.c, self.c, shortcut, g, k=((3, 3), (3, 3)), e=1.0) for _ in range(n)))
+        self.cvm = nn.ModuleList(Conv(self.c, self.c, 3) for _ in range(n))
+        # self.w = nn.Parameter(torch.zeros(n))
 
     def forward(self, x):
         a, b = self.cv1(x).split((self.c, self.c), 1)
-        return self.cv2(torch.cat((self.m(a), b), 1))
+        c = a.clone()
+        for m, w in zip(self.cvm, self.w):
+            c = m(c) + a  # * w.sigmoid()
+        return self.cv2(torch.cat((c, b), 1))
 
 
 class ChannelAttention(nn.Module):
