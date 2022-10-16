@@ -110,9 +110,12 @@ class Bottleneck(nn.Module):
         self.cv1 = Conv(c1, c_, k[0], 1)
         self.cv2 = Conv(c_, c2, k[1], 1, g=g)
         self.add = shortcut and c1 == c2
+        if self.add:
+            self.w = nn.Parameter(torch.zeros(2))
 
     def forward(self, x):
-        return x + self.cv2(x + self.cv1(x)) if self.add else self.cv2(self.cv1(x))
+        return x * self.w[0].sigmoid() + self.cv2(x * self.w[1].sigmoid() + self.cv1(x)) \
+            if self.add else self.cv2(self.cv1(x))
 
 
 class BottleneckCSP(nn.Module):
@@ -163,7 +166,7 @@ class C2Base(nn.Module):
         return self.cv2(torch.cat((self.m(a), b), 1))
 
 
-class C2(nn.Module):
+class C2_sum_all(nn.Module):
     # CSP Bottleneck with 2 convolutions
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
         super().__init__()
@@ -181,6 +184,20 @@ class C2(nn.Module):
         for i in range(self.n):
             c = self.cvm[i](c) + a * self.w[i].sigmoid()
         return self.cv2(torch.cat((c, b), 1))
+
+
+class C2(nn.Module):
+    # CSP Bottleneck with 2 convolutions
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
+        super().__init__()
+        self.c = int(c2 * e)  # hidden channels
+        self.cv1 = Conv(c1, 2 * self.c, 1, 1)
+        self.cv2 = Conv(2 * self.c, c2, 1)  # optional act=FReLU(c2)
+        self.m = nn.Sequential(*(Bottleneck(self.c, self.c, shortcut, g, k=((3, 3), (3, 3)), e=1.0) for _ in range(n)))
+
+    def forward(self, x):
+        a, b = self.cv1(x).split((self.c, self.c), 1)
+        return self.cv2(torch.cat((self.m(a), b), 1))
 
 
 class ChannelAttention(nn.Module):
