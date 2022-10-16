@@ -173,12 +173,13 @@ class C2(nn.Module):
         self.cv2 = Conv(2 * self.c, c2, 1)  # optional act=FReLU(c2)
         self.cvm = nn.ModuleList(Conv(self.c, self.c, 3) for _ in range(n))
         self.w = nn.Parameter(torch.zeros(n))
+        self.n = n
 
     def forward(self, x):
         a, b = self.cv1(x).split((self.c, self.c), 1)
         c = a.clone()
-        for m, w in zip(self.cvm, self.w):
-            c = m(c) + a * w.sigmoid()
+        for i in range(self.n):
+            c = self.m[i](c) + a * self.w[i].sigmoid()
         return self.cv2(torch.cat((c, b), 1))
 
 
