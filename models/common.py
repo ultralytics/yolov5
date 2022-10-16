@@ -178,8 +178,9 @@ class C2(nn.Module):
     def forward(self, x):
         a, b = self.cv1(x).split((self.c, self.c), 1)
         c = a.clone()
+        w = self.w.sigmoid()
         for i in range(self.n):
-            c = self.cvm[i](c) + a * self.w[i].sigmoid()
+            c = self.cvm[i](c) + a * w[i]
         return self.cv2(torch.cat((c, b), 1))
 
 
