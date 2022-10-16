@@ -179,7 +179,7 @@ class C2(nn.Module):
         a, b = self.cv1(x).split((self.c, self.c), 1)
         c = a.clone()
         for i in range(self.n):
-            c = self.m[i](c) + a * self.w[i].sigmoid()
+            c = self.cvm[i](c) + a * self.w[i].sigmoid()
         return self.cv2(torch.cat((c, b), 1))
 
 
