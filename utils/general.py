@@ -27,6 +27,7 @@ from typing import Optional
 from zipfile import ZipFile
 
 import cv2
+import IPython
 import numpy as np
 import pandas as pd
 import pkg_resources as pkg
@@ -71,6 +72,12 @@ def is_chinese(s='人工智能'):
 def is_colab():
     # Is environment a Google Colab instance?
     return 'COLAB_GPU' in os.environ
+
+
+def is_notebook():
+    # Is environment a Jupyter notebook? Verified on Colab, Jupyterlab, Kaggle, Paperspace
+    ipython_type = str(type(IPython.get_ipython()))
+    return 'colab' in ipython_type or 'zmqshell' in ipython_type
 
 
 def is_kaggle():
@@ -383,18 +390,20 @@ def check_img_size(imgsz, s=32, floor=0):
     return new_size
 
 
-def check_imshow():
+def check_imshow(warn=False):
     # Check if environment supports image displays
     try:
-        assert not is_docker(), 'cv2.imshow() is disabled in Docker environments'
-        assert not is_colab(), 'cv2.imshow() is disabled in Google Colab environments'
+        assert not is_notebook()
+        assert not is_docker()
+        assert 'NoneType' not in str(type(IPython.get_ipython()))  # SSH terminals, GitHub CI
         cv2.imshow('test', np.zeros((1, 1, 3)))
         cv2.waitKey(1)
         cv2.destroyAllWindows()
         cv2.waitKey(1)
         return True
     except Exception as e:
-        LOGGER.warning(f'WARNING ⚠️ Environment does not support cv2.imshow() or PIL Image.show() image displays\n{e}')
+        if warn:
+            LOGGER.warning(f'WARNING ⚠️ Environment does not support cv2.imshow() or PIL Image.show()\n{e}')
         return False
 
 
