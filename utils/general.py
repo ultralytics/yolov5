@@ -393,8 +393,9 @@ def check_img_size(imgsz, s=32, floor=0):
 def check_imshow(warn=False):
     # Check if environment supports image displays
     try:
-        assert not is_notebook(), 'cv2.imshow() is disabled in Jupyter notebooks'
-        assert not is_docker(), 'cv2.imshow() is disabled in Docker containers'
+        assert not is_notebook()
+        assert not is_docker()
+        assert 'NoneType' not in str(type(IPython.get_ipython()))  # SSH terminals, GitHub CI
         cv2.imshow('test', np.zeros((1, 1, 3)))
         cv2.waitKey(1)
         cv2.destroyAllWindows()

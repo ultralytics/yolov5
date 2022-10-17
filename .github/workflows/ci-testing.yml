@@ -110,8 +110,6 @@ jobs:
           python --version
           pip --version
           pip list
-
-          python -c "import IPython; print(str(type(IPython.get_ipython())))"
       - name: Test detection
         shell: bash  # for Windows compatibility
         run: |
