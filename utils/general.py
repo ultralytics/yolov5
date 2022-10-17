@@ -77,6 +77,7 @@ def is_colab():
 def is_notebook():
     # Is environment a Jupyter notebook? Verified on Colab, Jupyterlab, Kaggle, Paperspace
     ipython_type = str(type(IPython.get_ipython()))
+    print(f'IPYTHON_TYPE: {ipython_type}')
     return 'colab' in ipython_type or 'zmqshell' in ipython_type
 
 
