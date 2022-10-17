@@ -760,7 +760,7 @@ class Detections:
 
             im = Image.fromarray(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im  # from np
             if show:
-                im.show(self.files[i]) if IMSHOW_SUPPORT else IPython.display(im)
+                im.show(self.files[i]) if IMSHOW_SUPPORT else IPython.display.display(im)
             if save:
                 f = self.files[i]
                 im.save(save_dir / f)  # save
