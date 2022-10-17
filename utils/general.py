@@ -60,6 +60,7 @@ os.environ['OMP_NUM_THREADS'] = '1' if platform.system() == 'darwin' else str(NU
 ipython_type = str(type(IPython.get_ipython()))
 print(f'IPYTHON_TYPE: {ipython_type}')
 
+
 def is_ascii(s=''):
     # Is string composed of all ASCII (no UTF) characters? (note str().isascii() introduced in python 3.7)
     s = str(s)  # convert list, tuple, None, etc. to str
