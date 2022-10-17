@@ -87,7 +87,7 @@ class Albumentations:
                 '$t' -> the value is expected to be a transform
                 '$tl' -> the value is expected to be a list of tranforms
         """
-        assert isinstance(config, dict), f'dict required'
+        assert isinstance(config, dict), 'dict required'
 
         assert 'name' in config, 'missing key "name"'
         name = config['name']
