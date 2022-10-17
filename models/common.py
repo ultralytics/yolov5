@@ -18,10 +18,10 @@ import pandas as pd
 import requests
 import torch
 import torch.nn as nn
-from IPython.display import display
 from PIL import Image
 from torch.cuda import amp
 
+from utils import TryExcept
 from utils.dataloaders import exif_transpose, letterbox
 from utils.general import (LOGGER, ROOT, Profile, check_imshow, check_requirements, check_suffix, check_version,
                            colorstr, increment_path, make_divisible, non_max_suppression, scale_boxes, xywh2xyxy,
@@ -759,7 +759,11 @@ class Detections:
 
             im = Image.fromarray(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im  # from np
             if show:
-                im.show(self.files[i]) if IMSHOW_SUPPORT else display(im)
+                if IMSHOW_SUPPORT:
+                    im.show(self.files[i])
+                else:
+                    from IPython.display import display
+                    display(im)
             if save:
                 f = self.files[i]
                 im.save(save_dir / f)  # save
@@ -775,6 +779,7 @@ class Detections:
                 LOGGER.info(f'Saved results to {save_dir}\n')
             return crops
 
+    @TryExcept('Showing images is not supported in this environment')
     def show(self, labels=True):
         self._run(show=True, labels=labels)  # show results
 
