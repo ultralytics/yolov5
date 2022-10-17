@@ -3,9 +3,9 @@
 Image augmentation functions
 """
 
-from difflib import IS_LINE_JUNK
 import math
 import random
+from difflib import IS_LINE_JUNK
 from importlib import import_module
 
 import cv2
@@ -52,11 +52,10 @@ class Albumentations:
                 # try to load transforms
                 # first level is expected to be a list of transforms
                 try:
-                    transforms = self.recursively_parse(
-                        '', {self.TRANSFORM_LIST_KEY: config}, A, prefix)
+                    transforms = self.recursively_parse('', {self.TRANSFORM_LIST_KEY: config}, A, prefix)
                     # combine transforms
                     transform = A.Compose(transforms,
-                        bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
+                                          bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
                 except Exception as what:
                     raise Exception(f'bad transform config {what:s}')
         self.transform = transform
@@ -84,7 +83,7 @@ class Albumentations:
 
             params are checked recursively.
             if any [sub-]value is a key-value pair (dict)
-            where the key is 
+            where the key is
                 '$t' -> the value is expected to be a transform
                 '$tl' -> the value is expected to be a list of tranforms
         """
@@ -117,40 +116,30 @@ class Albumentations:
         LOGGER.info(f'{prefix} {root} {module_name}.{name} p={p}')
         # load params
         params = config.get('params', {})
-        params = cls.recursively_parse(
-            f'{root}/params', params, A, prefix)
+        params = cls.recursively_parse(f'{root}/params', params, A, prefix)
         # build the transform with all params
         transform = Transform(p=p, **params)
         return transform
 
-
     @classmethod
     def recursively_parse(cls, root: str, param, A, prefix):
         if cls.is_transform(param):
-            parsed = cls.transform_factory(
-                root, param[cls.TRANSFORM_KEY], A, prefix)
+            parsed = cls.transform_factory(root, param[cls.TRANSFORM_KEY], A, prefix)
 
         elif cls.is_transform_list(param):
             parsed = [
-                cls.transform_factory(
-                    f'{root}/@{cid}', sub_config, A, prefix)
-                for cid, sub_config 
-                in enumerate(param[cls.TRANSFORM_LIST_KEY])
-            ]
+                cls.transform_factory(f'{root}/@{cid}', sub_config, A, prefix)
+                for cid, sub_config in enumerate(param[cls.TRANSFORM_LIST_KEY])]
 
         elif isinstance(param, list):
             parsed = [
-                cls.recursively_parse_params(
-                    f'{root}/@{cid}', sub_param, A, prefix)
-                for cid, sub_param in enumerate(param)
-            ]
+                cls.recursively_parse_params(f'{root}/@{cid}', sub_param, A, prefix)
+                for cid, sub_param in enumerate(param)]
 
         elif isinstance(param, dict):
             parsed = {
-                key: cls.recursively_parse_params(
-                    f'{root}/@{key}', sub_param, A, prefix)
-                for key, sub_param in param.items()
-            }
+                key: cls.recursively_parse_params(f'{root}/@{key}', sub_param, A, prefix)
+                for key, sub_param in param.items()}
         else:
             parsed = param
 

@@ -46,14 +46,14 @@ perspective: 0.0  # image perspective (+/- fraction), range 0-0.001
 # Transforms are applied in declaration's order
 # One can declare any albumentations-compatible transforms
 # add a "module" key to specify a module other than "albumentations"
-# params can be transfoms. 
+# params can be transfoms.
 # To do so, provide an intermediate key-value pair
 #   where key is either $transform or $transform_list
 albumentations:
   - name: "ToGray"
     p: 0.33
   - name: OneOf
-    params: 
+    params:
       transforms:
         $transform_list:
           - name: "Blur"
