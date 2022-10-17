@@ -13,12 +13,12 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import cv2
+import IPython
 import numpy as np
 import pandas as pd
 import requests
 import torch
 import torch.nn as nn
-import IPython
 from PIL import Image
 from torch.cuda import amp
 
