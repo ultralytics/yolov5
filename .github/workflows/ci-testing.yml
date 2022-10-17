@@ -133,6 +133,7 @@ jobs:
           for path in '$m', '$b':
               model = torch.hub.load('.', 'custom', path=path, source='local')
               print(model('data/images/bus.jpg'))
+              model('data/images/bus.jpg').show()
               model(im)  # warmup, build grids for trace
               torch.jit.trace(model, [im])
           EOF

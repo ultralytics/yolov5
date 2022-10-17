@@ -18,6 +18,7 @@ import pandas as pd
 import requests
 import torch
 import torch.nn as nn
+import IPython
 from PIL import Image
 from torch.cuda import amp
 
@@ -759,11 +760,7 @@ class Detections:
 
             im = Image.fromarray(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im  # from np
             if show:
-                if IMSHOW_SUPPORT:
-                    im.show(self.files[i])
-                else:
-                    from IPython.display import display
-                    display(im)
+                im.show(self.files[i]) if IMSHOW_SUPPORT else IPython.display(im)
             if save:
                 f = self.files[i]
                 im.save(save_dir / f)  # save
