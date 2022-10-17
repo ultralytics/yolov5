@@ -13,12 +13,12 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import cv2
-import IPython
 import numpy as np
 import pandas as pd
 import requests
 import torch
 import torch.nn as nn
+from IPython.display import display
 from PIL import Image
 from torch.cuda import amp
 
@@ -30,7 +30,7 @@ from utils.general import (LOGGER, ROOT, Profile, check_imshow, check_requiremen
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, smart_inference_mode
 
-IMSHOW_SUPPORT = check_imshow()
+CHECK_IMSHOW = check_imshow()
 
 
 def autopad(k, p=None, d=1):  # kernel, padding, dilation
@@ -760,7 +760,7 @@ class Detections:
 
             im = Image.fromarray(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im  # from np
             if show:
-                im.show(self.files[i]) if IMSHOW_SUPPORT else IPython.display.display(im)
+                im.show(self.files[i]) if CHECK_IMSHOW else display(im)
             if save:
                 f = self.files[i]
                 im.save(save_dir / f)  # save
