@@ -33,6 +33,7 @@ import pkg_resources as pkg
 import torch
 import torchvision
 import yaml
+import IPython
 
 from utils import TryExcept, emojis
 from utils.downloads import gsutil_getsize
@@ -71,6 +72,12 @@ def is_chinese(s='人工智能'):
 def is_colab():
     # Is environment a Google Colab instance?
     return 'COLAB_GPU' in os.environ
+
+
+def is_notebook():
+    # Is environment a Jupyter notebook? Verified on Colab, Jupyterlab, Kaggle, Paperspace
+    ipython_type = str(type(IPython.get_ipython()))
+    return 'colab' in ipython_type or 'zmqshell' in ipython_type
 
 
 def is_kaggle():
@@ -386,8 +393,8 @@ def check_img_size(imgsz, s=32, floor=0):
 def check_imshow(warn=False):
     # Check if environment supports image displays
     try:
-        assert not is_colab(), 'cv2.imshow() is disabled in Google Colab environments'
-        assert not is_docker(), 'cv2.imshow() is disabled in Docker environments'
+        assert not is_notebook(), 'cv2.imshow() is disabled in Jupyter notebooks'
+        assert not is_docker(), 'cv2.imshow() is disabled in Docker containers'
         cv2.imshow('test', np.zeros((1, 1, 3)))
         cv2.waitKey(1)
         cv2.destroyAllWindows()
