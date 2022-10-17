@@ -91,17 +91,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     data_dict = None
     if RANK in {-1, 0}:
         logger = GenericLogger(opt=opt, console_logger=LOGGER)
-        # loggers = Loggers(save_dir, weights, opt, hyp, LOGGER)  # loggers instance
-        # if loggers.clearml:
-        #     data_dict = loggers.clearml.data_dict  # None if no ClearML dataset or filled in by ClearML
-        # if loggers.wandb:
-        #     data_dict = loggers.wandb.data_dict
-        #     if resume:
-        #         weights, epochs, hyp, batch_size = opt.weights, opt.epochs, opt.hyp, opt.batch_size
-        #
-        # # Register actions
-        # for k in methods(loggers):
-        #     callbacks.register_action(k, callback=getattr(loggers, k))
 
     # Config
     plots = not evolve and not opt.noplots  # create plots
@@ -400,7 +389,6 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     'ema': deepcopy(ema.ema).half(),
                     'updates': ema.updates,
                     'optimizer': optimizer.state_dict(),
-                    # 'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None,
                     'opt': vars(opt),
                     'date': datetime.now().isoformat()}
 
