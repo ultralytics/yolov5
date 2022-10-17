@@ -79,12 +79,12 @@ class Albumentations:
 
             - name (str)
             - [module (str) = 'albumentations']
-            - [params (dict) = {}]
+            - [params (dict) = dict()]
             - [p (float) = 1.0]
 
             params are checked recursively.
             if any [sub-]value is a key-value pair (dict)
-            where the key is 
+            where the key is
                 '$t' -> the value is expected to be a transform
                 '$tl' -> the value is expected to be a list of tranforms
         """
@@ -101,7 +101,7 @@ class Albumentations:
             try:
                 module = import_module(module_name)
             except Exception:
-                raise Exception('module "%s" not found' % module_name)
+                raise Exception(f'module {module_name} not found')
         # load Transform class from module
         try:
             Transform = getattr(module, name)
