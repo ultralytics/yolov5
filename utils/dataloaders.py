@@ -666,13 +666,13 @@ class LoadImagesAndLabels(Dataset):
                 augment_hsv(img, hgain=hyp['hsv_h'], sgain=hyp['hsv_s'], vgain=hyp['hsv_v'])
 
             # Flip up-down
-            if ('flipud' in hyp) and (random.random() < hyp['flipud']):
+            if random.random() < hyp.get('flipud', 0.0):
                 img = np.flipud(img)
                 if nl:
                     labels[:, 2] = 1 - labels[:, 2]
 
             # Flip left-right
-            if ('fliplr' in hyp) and (random.random() < hyp['fliplr']):
+            if random.random() < hyp.get('fliplr', 0.0):
                 img = np.fliplr(img)
                 if nl:
                     labels[:, 1] = 1 - labels[:, 1]
