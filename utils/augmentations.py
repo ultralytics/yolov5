@@ -3,6 +3,7 @@
 Image augmentation functions
 """
 
+from difflib import IS_LINE_JUNK
 import math
 import random
 from importlib import import_module
@@ -49,49 +50,111 @@ class Albumentations:
                 LOGGER.error(f'{prefix} wrong albumentations version : 1.0.3 required (hyps.albumentations ignored)')
             else:
                 # try to load transforms
-                transforms = filter(lambda t: t is not None,
-                                    [self.load_one_transform(cid, cfg, A, prefix) for cid, cfg in enumerate(config)])
-                # combine transforms
-                transform = A.Compose(list(transforms),
-                                      bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
+                # first level is expected to be a list of transforms
+                try:
+                    transforms = self.recursively_parse(
+                        '', {self.TRANSFORM_LIST_KEY: config}, A, prefix)
+                    # combine transforms
+                    transform = A.Compose(transforms,
+                        bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
+                except Exception as what:
+                    raise Exception(f'bad transform config {what:s}')
         self.transform = transform
 
-    @staticmethod
-    def load_one_transform(cid: int, config, A, prefix):
-        try:
-            assert isinstance(config, dict), 'dict required'
-            assert 'name' in config, 'missing key "name"'
-            name = config['name']
-            assert 'p' in config, 'missing key "p"'
-            try:
-                p = float(config['p'])
-            except Exception:
-                raise Exception('p must be a float')
-            assert 0.0 < p <= 1.0, 'p must be on ]0;1]'
-            params = config.get('params', {})
-            module_name = config.get('module')
-            if module_name is None:
-                module = A
-                module_name = 'albumentations'
-            else:
-                # load module from name
-                try:
-                    module = import_module(module_name)
-                except Exception:
-                    raise Exception('module "%s" not found' % module_name)
-            # load Transform class from module
-            try:
-                Transform = getattr(module, name)
-            except Exception:
-                raise Exception(f'"{name}" not found in module "{module_name}"')
-            # build the transform with all params
-            transform = Transform(p=p, **params)
-            LOGGER.info(f'{prefix} @T{cid} {module_name}.{name} p={p}')
-            return transform
+    TRANSFORM_KEY = '$transform'
+    TRANSFORM_LIST_KEY = '$transform_list'
 
-        except Exception as what:
-            LOGGER.error('bad albumentations transform config @%d : %s' % (cid, what))
-            return None
+    @classmethod
+    def is_transform(cls, what) -> bool:
+        return isinstance(what, dict) and (cls.TRANSFORM_KEY in what)
+
+    @classmethod
+    def is_transform_list(cls, what) -> bool:
+        return isinstance(what, dict) and (cls.TRANSFORM_LIST_KEY in what)
+
+    @classmethod
+    def transform_factory(cls, root: str, config, A, prefix):
+        """ load/build one transform from its config description
+            a transform is described as a dict of
+
+            - name (str)
+            - [module (str) = 'albumentations']
+            - [params (dict) = {}]
+            - [p (float) = 1.0]
+
+            params are checked recursively.
+            if any [sub-]value is a key-value pair (dict)
+            where the key is 
+                '$t' -> the value is expected to be a transform
+                '$tl' -> the value is expected to be a list of tranforms
+        """
+        assert isinstance(config, dict), f'dict required'
+
+        assert 'name' in config, 'missing key "name"'
+        name = config['name']
+        # load module from module name
+        module_name = config.get('module', 'albumentations')
+        if module_name == 'albumentations':
+            module = A
+        else:
+            # load module from name
+            try:
+                module = import_module(module_name)
+            except Exception:
+                raise Exception('module "%s" not found' % module_name)
+        # load Transform class from module
+        try:
+            Transform = getattr(module, name)
+        except Exception:
+            raise Exception(f'"{name}" not found in module "{module_name}"')
+        # load probability ratio
+        try:
+            p = float(config.get('p', 1.0))
+        except Exception:
+            raise Exception('p must be a float')
+        assert 0.0 < p <= 1.0, 'p must be on ]0;1]'
+        # log loaded module
+        LOGGER.info(f'{prefix} {root} {module_name}.{name} p={p}')
+        # load params
+        params = config.get('params', {})
+        params = cls.recursively_parse(
+            f'{root}/params', params, A, prefix)
+        # build the transform with all params
+        transform = Transform(p=p, **params)
+        return transform
+
+
+    @classmethod
+    def recursively_parse(cls, root: str, param, A, prefix):
+        if cls.is_transform(param):
+            parsed = cls.transform_factory(
+                root, param[cls.TRANSFORM_KEY], A, prefix)
+
+        elif cls.is_transform_list(param):
+            parsed = [
+                cls.transform_factory(
+                    f'{root}/@{cid}', sub_config, A, prefix)
+                for cid, sub_config 
+                in enumerate(param[cls.TRANSFORM_LIST_KEY])
+            ]
+
+        elif isinstance(param, list):
+            parsed = [
+                cls.recursively_parse_params(
+                    f'{root}/@{cid}', sub_param, A, prefix)
+                for cid, sub_param in enumerate(param)
+            ]
+
+        elif isinstance(param, dict):
+            parsed = {
+                key: cls.recursively_parse_params(
+                    f'{root}/@{key}', sub_param, A, prefix)
+                for key, sub_param in param.items()
+            }
+        else:
+            parsed = param
+
+        return parsed
 
     def __call__(self, im, labels, p=1.0):
         if self.transform and random.random() < p:

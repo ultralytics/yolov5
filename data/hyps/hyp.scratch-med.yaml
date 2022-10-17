@@ -41,21 +41,23 @@ scale: 0.5  # image scale (+/- gain)
 shear: 0.0  # image shear (+/- deg)
 perspective: 0.0  # image perspective (+/- fraction), range 0-0.001
 
-# Albumentations transform list
+# Albumentations transform list (root is a Compose transform)
 # Applied only if albumentations module installed
 # Transforms are applied in declaration's order
 # One can declare any albumentations-compatible transforms
 # add a "module" key to specify a module other than "albumentations"
+# params can be transfoms. 
+# To do so, provide an intermediate key-value pair
+#   where key is either $transform or $transform_list
 albumentations:
   - name: "ToGray"
     p: 0.33
-  - name: "Blur"
-    p: 0.01
-  - name: "MedianBlur"
-    p: 0.01
-  - name: "CLAHE"
-    p: 0.01
-  - name: "ImageCompression"
-    p: 0.1
-    params:
-      quality_lower: 75
+  - name: OneOf
+    params: 
+      transforms:
+        $transform_list:
+          - name: "Blur"
+          - name: "MedianBlur"
+          - name: "ImageCompression"
+            params:
+              quality_lower: 75
