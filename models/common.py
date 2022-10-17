@@ -124,11 +124,10 @@ class Bottleneck(nn.Module):
         self.cv2 = Conv(c_, c2, k[1], 1, g=g)
         self.add = shortcut and c1 == c2
         if self.add:
-            self.w = nn.Parameter(torch.zeros(2))
+            self.w = nn.Parameter(torch.zeros(1))
 
     def forward(self, x):
-        return x * self.w[0].sigmoid() + self.cv2(x * self.w[1].sigmoid() + self.cv1(x)) \
-            if self.add else self.cv2(self.cv1(x))
+        return x * self.w.sigmoid() + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
 
 class BottleneckCSP(nn.Module):
