@@ -27,13 +27,13 @@ from typing import Optional
 from zipfile import ZipFile
 
 import cv2
+import IPython
 import numpy as np
 import pandas as pd
 import pkg_resources as pkg
 import torch
 import torchvision
 import yaml
-import IPython
 
 from utils import TryExcept, emojis
 from utils.downloads import gsutil_getsize
