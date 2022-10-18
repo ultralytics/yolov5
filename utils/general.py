@@ -395,7 +395,6 @@ def check_imshow(warn=False):
     try:
         assert not is_notebook()
         assert not is_docker()
-        assert 'NoneType' not in str(type(IPython.get_ipython()))  # SSH terminals, GitHub CI
         cv2.imshow('test', np.zeros((1, 1, 3)))
         cv2.waitKey(1)
         cv2.destroyAllWindows()
