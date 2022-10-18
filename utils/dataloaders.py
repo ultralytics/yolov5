@@ -1005,13 +1005,18 @@ def verify_image_label(args):
 
 
 class HUBDatasetStats():
-    """ Return dataset statistics dictionary with images and instances counts per split per class
-    To run in parent directory: export PYTHONPATH="$PWD/yolov5"
-    Usage1: from utils.dataloaders import *; HUBDatasetStats('coco128.yaml', autodownload=True)
-    Usage2: from utils.dataloaders import *; HUBDatasetStats('path/to/coco128_with_yaml.zip')
+    """ Class for generating HUB dataset JSON and `-hub` dataset directory
+
     Arguments
         path:           Path to data.yaml or data.zip (with data.yaml inside data.zip)
         autodownload:   Attempt to download dataset if not found locally
+
+    Usage
+        from utils.dataloaders import HUBDatasetStats
+        stats = HUBDatasetStats('coco128.yaml', autodownload=True)  # usage 1
+        stats = HUBDatasetStats('path/to/coco128.zip')  # usage 2
+        stats.get_json(save=False)
+        stats.process_images()
     """
 
     def __init__(self, path='coco128.yaml', autodownload=False):
