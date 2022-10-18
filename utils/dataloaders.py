@@ -1047,7 +1047,7 @@ class HUBDatasetStats():
         assert len(files) == 1, f'Multiple *.yaml files found: {files}, only 1 *.yaml file allowed in {dir}'
         return files[0]
 
-    def _unzip(self, path, exclude=('.DS_Store', '__MACOSX')):
+    def _unzip(self, path):
         # Unzip data.zip
         if not str(path).endswith('.zip'):  # path is data.yaml
             return False, None, path
