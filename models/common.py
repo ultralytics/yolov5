@@ -24,8 +24,8 @@ from torch.cuda import amp
 
 from utils import TryExcept
 from utils.dataloaders import exif_transpose, letterbox
-from utils.general import (LOGGER, ROOT, Profile, is_notebook, check_requirements, check_suffix, check_version,
-                           colorstr, increment_path, make_divisible, non_max_suppression, scale_boxes, xywh2xyxy,
+from utils.general import (LOGGER, ROOT, Profile, check_requirements, check_suffix, check_version, colorstr,
+                           increment_path, is_notebook, make_divisible, non_max_suppression, scale_boxes, xywh2xyxy,
                            xyxy2xywh, yaml_load)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, smart_inference_mode
