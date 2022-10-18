@@ -611,7 +611,7 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
         if unzip and success and f.suffix in ('.zip', '.tar', '.gz'):
             LOGGER.info(f'Unzipping {f}...')
             if f.suffix == '.zip':
-                unzip_file(f, dir) # unzip
+                unzip_file(f, dir)  # unzip
             elif f.suffix == '.tar':
                 os.system(f'tar xf {f} --directory {f.parent}')  # unzip
             elif f.suffix == '.gz':
