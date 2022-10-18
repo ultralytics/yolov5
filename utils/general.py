@@ -511,7 +511,7 @@ def check_dataset(data, autodownload=True):
                 LOGGER.info(f'Downloading {s} to {f}...')
                 torch.hub.download_url_to_file(s, f)
                 Path(DATASETS_DIR).mkdir(parents=True, exist_ok=True)  # create root
-                ZipFile(f).extractall(path=DATASETS_DIR)  # unzip
+                unzip_file(f, path=DATASETS_DIR)  # unzip
                 Path(f).unlink()  # remove zip
                 r = None  # success
             elif s.startswith('bash '):  # bash script
@@ -566,6 +566,16 @@ def yaml_save(file='data.yaml', data={}):
         yaml.safe_dump({k: str(v) if isinstance(v, Path) else v for k, v in data.items()}, f, sort_keys=False)
 
 
+def unzip_file(file, path=None, exclude=('.DS_Store', '__MACOSX')):
+    # Unzip a *.zip file to path/, excluding files containing strings in exclude list
+    if path is None:
+        path = Path(file).parent  # default path
+    with ZipFile(file) as zipObj:
+        for f in zipObj.namelist():  # list all archived filenames in the zip
+            if all(x not in f for x in exclude):
+                zipObj.extract(f, path=path)
+
+
 def url2file(url):
     # Convert URL to filename, i.e. https://url.com/file.txt?auth -> file.txt
     url = str(Path(url)).replace(':/', '://')  # Pathlib turns :// -> :/
@@ -601,7 +611,7 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
         if unzip and success and f.suffix in ('.zip', '.tar', '.gz'):
             LOGGER.info(f'Unzipping {f}...')
             if f.suffix == '.zip':
-                ZipFile(f).extractall(path=dir)  # unzip
+                unzip_file(f, dir)  # unzip
             elif f.suffix == '.tar':
                 os.system(f'tar xf {f} --directory {f.parent}')  # unzip
             elif f.suffix == '.gz':

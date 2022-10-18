@@ -17,7 +17,6 @@ from multiprocessing.pool import Pool, ThreadPool
 from pathlib import Path
 from threading import Thread
 from urllib.parse import urlparse
-from zipfile import ZipFile
 
 import numpy as np
 import torch
@@ -31,7 +30,8 @@ from tqdm import tqdm
 from utils.augmentations import (Albumentations, augment_hsv, classify_albumentations, classify_transforms, copy_paste,
                                  cutout, letterbox, mixup, random_perspective)
 from utils.general import (DATASETS_DIR, LOGGER, NUM_THREADS, check_dataset, check_requirements, check_yaml, clean_str,
-                           cv2, is_colab, is_kaggle, segments2boxes, xyn2xy, xywh2xyxy, xywhn2xyxy, xyxy2xywhn)
+                           cv2, is_colab, is_kaggle, segments2boxes, unzip_file, xyn2xy, xywh2xyxy, xywhn2xyxy,
+                           xyxy2xywhn)
 from utils.torch_utils import torch_distributed_zero_first
 
 # Parameters
@@ -1053,7 +1053,7 @@ class HUBDatasetStats():
         if not str(path).endswith('.zip'):  # path is data.yaml
             return False, None, path
         assert Path(path).is_file(), f'Error unzipping {path}, file not found'
-        ZipFile(path).extractall(path=path.parent)  # unzip
+        unzip_file(path, path=path.parent)
         dir = path.with_suffix('')  # dataset directory == zip name
         assert dir.is_dir(), f'Error unzipping {path}, {dir} not found. path/to/abc.zip MUST unzip to path/to/abc/'
         return True, str(dir), self._find_yaml(dir)  # zipped, data_dir, yaml_path
