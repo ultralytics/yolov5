@@ -143,7 +143,8 @@ def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', file='tmp.zip'):
     # Unzip if archive
     if file.suffix == '.zip':
         print('unzipping... ', end='')
-        ZipFile(file).extractall(path=file.parent)  # unzip
+        with ZipFile(file) as zipObj:
+            zipObj.extractall(path=file.parent)  # unzip
         file.unlink()  # remove zip
 
     print(f'Done ({time.time() - t:.1f}s)')
@@ -156,7 +157,6 @@ def get_token(cookie="./cookie"):
             if "download" in line:
                 return line.split()[-1]
     return ""
-
 
 # Google utils: https://cloud.google.com/storage/docs/reference/libraries ----------------------------------------------
 #

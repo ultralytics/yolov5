@@ -1048,12 +1048,15 @@ class HUBDatasetStats():
         assert len(files) == 1, f'Multiple *.yaml files found: {files}, only 1 *.yaml file allowed in {dir}'
         return files[0]
 
-    def _unzip(self, path):
+    def _unzip(self, path, exclude=('.DS_Store', '__MACOSX')):
         # Unzip data.zip
         if not str(path).endswith('.zip'):  # path is data.yaml
             return False, None, path
         assert Path(path).is_file(), f'Error unzipping {path}, file not found'
-        ZipFile(path).extractall(path=path.parent)  # unzip
+        with ZipFile(path) as zipObj:
+            for f in zipObj.namelist():  # list all archived filenames in the zip
+                if all(x not in f for x in exclude):
+                    zipObj.extract(f, path=path.parent)
         dir = path.with_suffix('')  # dataset directory == zip name
         assert dir.is_dir(), f'Error unzipping {path}, {dir} not found. path/to/abc.zip MUST unzip to path/to/abc/'
         return True, str(dir), self._find_yaml(dir)  # zipped, data_dir, yaml_path

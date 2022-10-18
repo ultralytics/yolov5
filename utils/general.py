@@ -511,7 +511,8 @@ def check_dataset(data, autodownload=True):
                 LOGGER.info(f'Downloading {s} to {f}...')
                 torch.hub.download_url_to_file(s, f)
                 Path(DATASETS_DIR).mkdir(parents=True, exist_ok=True)  # create root
-                ZipFile(f).extractall(path=DATASETS_DIR)  # unzip
+                with ZipFile(f) as zipObj:
+                    zipObj.extractall(path=DATASETS_DIR)  # unzip
                 Path(f).unlink()  # remove zip
                 r = None  # success
             elif s.startswith('bash '):  # bash script
@@ -601,7 +602,8 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
         if unzip and success and f.suffix in ('.zip', '.tar', '.gz'):
             LOGGER.info(f'Unzipping {f}...')
             if f.suffix == '.zip':
-                ZipFile(f).extractall(path=dir)  # unzip
+                with ZipFile(f) as zipObj:
+                    zipObj.extractall(path=dir)  # unzip
             elif f.suffix == '.tar':
                 os.system(f'tar xf {f} --directory {f.parent}')  # unzip
             elif f.suffix == '.gz':
