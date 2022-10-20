@@ -6,8 +6,8 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from utils.plots import Annotator, colors
 from utils.general import Timeout
+from utils.plots import Annotator, colors
 
 try:
     import clearml
