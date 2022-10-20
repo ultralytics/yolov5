@@ -310,7 +310,10 @@ def run(
 
         # Inference
         out = yolo_pipeline(
-            images=[im.numpy()], iou_thres=iou_thres, conf_thres=conf_thres
+            images=[im.numpy()], 
+            iou_thres=iou_thres, 
+            conf_thres=conf_thres, 
+            multi_label=True
         )
 
         # inference, loss outputs
