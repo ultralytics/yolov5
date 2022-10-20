@@ -7,6 +7,7 @@ import numpy as np
 import yaml
 
 from utils.plots import Annotator, colors
+from utils.general import Timeout
 
 try:
     import clearml
@@ -63,6 +64,7 @@ class ClearmlLogger:
     models and predictions can also be logged.
     """
 
+    @Timeout(10)
     def __init__(self, opt, hyp):
         """
         - Initialize ClearML Task, this object will capture the experiment
@@ -88,11 +90,14 @@ class ClearmlLogger:
         task_name = 'training'
         existing_tasks = Task.get_tasks(project_name='YOLOv5')
         if task_name in [task.name for task in existing_tasks]:
-            reply = str(input('Overwrite existing CLearML experiment? (y/n): ')).lower().strip()
-            if reply[0] == 'y':
-                pass
-            else:
-                exit()
+            try:
+                reply = str(input('20sec timeout set. Overwrite existing CLearML experiment? (y/n): ')).lower().strip()
+                if reply[0] == 'y':
+                    pass
+                if reply[0] == 'n':
+                    exit()
+            except TimeoutError:
+                print(f'Timeout. Using \'y\'')
 
         if self.clearml:
             self.task = Task.init(
