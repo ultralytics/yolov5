@@ -15,7 +15,7 @@ Usage - formats:
     $ python classify/predict.py --weights yolov5s-cls.pt                 # PyTorch
                                            yolov5s-cls.torchscript        # TorchScript
                                            yolov5s-cls.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-                                           yolov5s-cls.xml                # OpenVINO
+                                           yolov5s-cls_openvino_model     # OpenVINO
                                            yolov5s-cls.engine             # TensorRT
                                            yolov5s-cls.mlmodel            # CoreML (macOS-only)
                                            yolov5s-cls_saved_model        # TensorFlow SavedModel
