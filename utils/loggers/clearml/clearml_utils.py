@@ -83,10 +83,20 @@ class ClearmlLogger:
         self.clearml = clearml
         self.task = None
         self.data_dict = None
+        
+        task_name='training'
+        existing_tasks = Task.get_tasks(project_name='YOLOv5')
+        if task_name in [task.name for task in existing_tasks]:
+            reply = str(input('Overwrite existing CLearML experiment? (y/n): ')).lower().strip()
+            if reply[0] == 'y':
+                pass
+            if reply[0] == 'n':
+                exit()
+        
         if self.clearml:
             self.task = Task.init(
                 project_name='YOLOv5',
-                task_name='training',
+                task_name=task_name,
                 tags=['YOLOv5'],
                 output_uri=True,
                 auto_connect_frameworks={'pytorch': False}
