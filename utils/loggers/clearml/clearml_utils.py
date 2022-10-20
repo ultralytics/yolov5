@@ -92,8 +92,6 @@ class ClearmlLogger:
         if task_name in [task.name for task in existing_tasks]:
             try:
                 reply = str(input('20sec timeout set. Overwrite existing CLearML experiment? (y/n): ')).lower().strip()
-                if reply[0] == 'y':
-                    pass
                 if reply[0] == 'n':
                     exit()
             except TimeoutError:
