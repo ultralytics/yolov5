@@ -83,9 +83,9 @@ class ClearmlLogger:
         self.clearml = clearml
         self.task = None
         self.data_dict = None
-        
+
         # avoid unwanted experiment overwriting
-        task_name='training'
+        task_name = 'training'
         existing_tasks = Task.get_tasks(project_name='YOLOv5')
         if task_name in [task.name for task in existing_tasks]:
             reply = str(input('Overwrite existing CLearML experiment? (y/n): ')).lower().strip()
