@@ -97,7 +97,7 @@ class ClearmlLogger:
                 if reply[0] == 'n':
                     exit()
             except TimeoutError:
-                print(f'Timeout. Using \'y\'')
+                print('Timeout. Using \'y\'')
 
         if self.clearml:
             self.task = Task.init(
