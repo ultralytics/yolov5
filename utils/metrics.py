@@ -373,7 +373,7 @@ def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confi
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
 
-    
+
 def save_curves(px, py, save_dir=Path('curves.csv'), names=(), pr=False):
     curve_array = np.concatenate([np.expand_dims(px, axis=0), py], axis=0)
     headers = ",".join(["precision"] + [f"recall_{e}" for e in names.values()]) if pr else \
