@@ -262,8 +262,7 @@ class Loggers():
                 self.wandb.log_model(last.parent, self.opt, epoch, fi, best_model=best_fitness == fi)
             if self.clearml:
                 self.clearml.task.update_output_model(model_path=str(last),
-                                                      model_name='Latest Model',
-                                                      auto_delete_file=False)
+                                                      model_name='Latest Model')
 
         if self.comet_logger:
             self.comet_logger.on_model_save(last, epoch, final_epoch, best_fitness, fi)
@@ -293,8 +292,7 @@ class Loggers():
 
         if self.clearml and not self.opt.evolve:
             self.clearml.task.update_output_model(model_path=str(best if best.exists() else last),
-                                                  name='Best Model',
-                                                  auto_delete_file=False)
+                                                  name='Best Model')
 
         if self.comet_logger:
             final_results = dict(zip(self.keys[3:10], results))
