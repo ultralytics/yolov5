@@ -28,7 +28,7 @@ def smooth(y, f=0.05):
     return np.convolve(yp, np.ones(nf) / nf, mode='valid')  # y-smoothed
 
 
-def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names=(), eps=1e-16, prefix=""):
+def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, csv=False, save_dir='.', names=(), eps=1e-16, prefix=""):
     """ Compute the average precision, given the recall and precision curves.
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
     # Arguments
@@ -37,6 +37,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names
         pred_cls:  Predicted object classes (nparray).
         target_cls:  True object classes (nparray).
         plot:  Plot precision-recall curve at mAP@0.5
+        csv:  Save metrics as a csv file
         save_dir:  Plot save directory
     # Returns
         The average precision as computed in py-faster-rcnn.
@@ -87,6 +88,11 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir='.', names
         plot_mc_curve(px, f1, Path(save_dir) / f'{prefix}F1_curve.png', names, ylabel='F1')
         plot_mc_curve(px, p, Path(save_dir) / f'{prefix}P_curve.png', names, ylabel='Precision')
         plot_mc_curve(px, r, Path(save_dir) / f'{prefix}R_curve.png', names, ylabel='Recall')
+    if csv:
+        save_curves(px, py, save_dir=Path(save_dir) / f'{prefix}PR_curves.csv', names=names, pr=True)
+        save_curves(px, f1, save_dir=Path(save_dir) / f'{prefix}F1_curves.csv', names=names)
+        save_curves(px, p, save_dir=Path(save_dir) / f'{prefix}P_curves.csv', names=names)
+        save_curves(px, r, save_dir=Path(save_dir) / f'{prefix}R_curves.csv', names=names)
 
     i = smooth(f1.mean(0), 0.1).argmax()  # max F1 index
     p, r, f1 = p[:, i], r[:, i], f1[:, i]
@@ -366,3 +372,10 @@ def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confi
     ax.set_title(f'{ylabel}-Confidence Curve')
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
+
+    
+def save_curves(px, py, save_dir=Path('curves.csv'), names=(), pr=False):
+    curve_array = np.concatenate([np.expand_dims(px, axis=0), py], axis=0)
+    headers = ",".join(["precision"] + [f"recall_{e}" for e in names.values()]) if pr else \
+        ",".join(["threshold"] + list(names.values()))
+    np.savetxt(save_dir, curve_array.T, delimiter=",", header=headers)
