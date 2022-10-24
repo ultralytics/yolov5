@@ -417,9 +417,7 @@ def export_tflite(keras_model, im, file, metadata, int8, data, nms, agnostic_nms
         model_meta.subgraphMetadata = [subgraph]
 
         b = flatbuffers.Builder(0)
-        b.Finish(
-            model_meta.Pack(b),
-            _metadata.MetadataPopulator.METADATA_FILE_IDENTIFIER)
+        b.Finish(model_meta.Pack(b), _metadata.MetadataPopulator.METADATA_FILE_IDENTIFIER)
         metadata_buf = b.Output()
 
         populator = _metadata.MetadataPopulator.with_model_file(f)
@@ -583,7 +581,14 @@ def run(
         if pb or tfjs:  # pb prerequisite to tfjs
             f[6], _ = export_pb(s_model, file)
         if tflite or edgetpu:
-            f[7], _ = export_tflite(s_model, im, file, metadata, int8 or edgetpu, data=data, nms=nms, agnostic_nms=agnostic_nms)
+            f[7], _ = export_tflite(s_model,
+                                    im,
+                                    file,
+                                    metadata,
+                                    int8 or edgetpu,
+                                    data=data,
+                                    nms=nms,
+                                    agnostic_nms=agnostic_nms)
         if edgetpu:
             f[8], _ = export_edgetpu(file)
         if tfjs:

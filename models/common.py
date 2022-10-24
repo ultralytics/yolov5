@@ -3,12 +3,12 @@
 Common modules
 """
 
+import ast
 import json
 import math
 import platform
 import warnings
 import zipfile
-import ast
 from collections import OrderedDict, namedtuple
 from copy import copy
 from pathlib import Path
