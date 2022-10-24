@@ -11,7 +11,7 @@ import pkg_resources as pkg
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from utils.general import colorstr, cv2
+from utils.general import LOGGER, colorstr, cv2
 from utils.loggers.clearml.clearml_utils import ClearmlLogger
 from utils.loggers.wandb.wandb_utils import WandbLogger
 from utils.plots import plot_images, plot_labels, plot_results
@@ -84,10 +84,10 @@ class Loggers():
         self.csv = True  # always log to csv
 
         # Messages
-        if not wandb:
-            prefix = colorstr('Weights & Biases: ')
-            s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs in Weights & Biases"
-            self.logger.info(s)
+        # if not wandb:
+        #     prefix = colorstr('Weights & Biases: ')
+        #     s = f"{prefix}run 'pip install wandb' to automatically track and visualize YOLOv5 🚀 runs in Weights & Biases"
+        #     self.logger.info(s)
         if not clearml:
             prefix = colorstr('ClearML: ')
             s = f"{prefix}run 'pip install clearml' to automatically track, visualize and remotely train YOLOv5 🚀 in ClearML"
@@ -110,9 +110,9 @@ class Loggers():
             self.opt.hyp = self.hyp  # add hyperparameters
             self.wandb = WandbLogger(self.opt, run_id)
             # temp warn. because nested artifacts not supported after 0.12.10
-            if pkg.parse_version(wandb.__version__) >= pkg.parse_version('0.12.11'):
-                s = "YOLOv5 temporarily requires wandb version 0.12.10 or below. Some features may not work as expected."
-                self.logger.warning(s)
+            # if pkg.parse_version(wandb.__version__) >= pkg.parse_version('0.12.11'):
+            #    s = "YOLOv5 temporarily requires wandb version 0.12.10 or below. Some features may not work as expected."
+            #    self.logger.warning(s)
         else:
             self.wandb = None
 
@@ -393,7 +393,7 @@ def log_tensorboard_graph(tb, model, imgsz=(640, 640)):
             warnings.simplefilter('ignore')  # suppress jit trace warning
             tb.add_graph(torch.jit.trace(de_parallel(model), im, strict=False), [])
     except Exception as e:
-        print(f'WARNING: TensorBoard graph visualization failure {e}')
+        LOGGER.warning(f'WARNING ⚠️ TensorBoard graph visualization failure {e}')
 
 
 def web_project_name(project):

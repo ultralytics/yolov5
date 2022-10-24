@@ -22,12 +22,13 @@ except (ModuleNotFoundError, ImportError):
     comet_ml = None
     COMET_PROJECT_NAME = None
 
+import PIL
 import torch
 import torchvision.transforms as T
 import yaml
 
 from utils.dataloaders import img2label_paths
-from utils.general import check_dataset, scale_coords, xywh2xyxy
+from utils.general import check_dataset, scale_boxes, xywh2xyxy
 from utils.metrics import box_iou
 
 COMET_PREFIX = "comet://"
@@ -131,6 +132,8 @@ class CometLogger:
         else:
             self.iou_thres = IOU_THRES
 
+        self.log_parameters({"val_iou_threshold": self.iou_thres, "val_conf_threshold": self.conf_thres})
+
         self.comet_log_predictions = COMET_LOG_PREDICTIONS
         if self.opt.bbox_interval == -1:
             self.comet_log_prediction_interval = 1 if self.opt.epochs < 10 else self.opt.epochs // 10
@@ -139,6 +142,7 @@ class CometLogger:
 
         if self.comet_log_predictions:
             self.metadata_dict = {}
+            self.logged_image_names = []
 
         self.comet_log_per_class_metrics = COMET_LOG_PER_CLASS_METRICS
 
@@ -249,11 +253,12 @@ class CometLogger:
         filtered_detections = detections[mask]
         filtered_labels = labelsn[mask]
 
-        processed_image = (image * 255).to(torch.uint8)
-
         image_id = path.split("/")[-1].split(".")[0]
         image_name = f"{image_id}_curr_epoch_{self.experiment.curr_epoch}"
-        self.log_image(to_pil(processed_image), name=image_name)
+        if image_name not in self.logged_image_names:
+            native_scale_image = PIL.Image.open(path)
+            self.log_image(native_scale_image, name=image_name)
+            self.logged_image_names.append(image_name)
 
         metadata = []
         for cls, *xyxy in filtered_labels.tolist():
@@ -288,14 +293,14 @@ class CometLogger:
             pred[:, 5] = 0
 
         predn = pred.clone()
-        scale_coords(image.shape[1:], predn[:, :4], shape[0], shape[1])
+        scale_boxes(image.shape[1:], predn[:, :4], shape[0], shape[1])
 
         labelsn = None
         if nl:
             tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
-            scale_coords(image.shape[1:], tbox, shape[0], shape[1])  # native-space labels
+            scale_boxes(image.shape[1:], tbox, shape[0], shape[1])  # native-space labels
             labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
-            scale_coords(image.shape[1:], predn[:, :4], shape[0], shape[1])  # native-space pred
+            scale_boxes(image.shape[1:], predn[:, :4], shape[0], shape[1])  # native-space pred
 
         return predn, labelsn
 
@@ -348,7 +353,14 @@ class CometLogger:
         metadata = logged_artifact.metadata
         data_dict = metadata.copy()
         data_dict["path"] = artifact_save_dir
-        data_dict["names"] = {int(k): v for k, v in metadata.get("names").items()}
+
+        metadata_names = metadata.get("names")
+        if type(metadata_names) == dict:
+            data_dict["names"] = {int(k): v for k, v in metadata.get("names").items()}
+        elif type(metadata_names) == list:
+            data_dict["names"] = {int(k): v for k, v in zip(range(len(metadata_names)), metadata_names)}
+        else:
+            raise "Invalid 'names' field in dataset yaml file. Please use a list or dictionary"
 
         data_dict = self.update_data_paths(data_dict)
         return data_dict

@@ -63,7 +63,7 @@ download: |
 
 
   # Download
-  dir = Path('../datasets/Argoverse')  # dataset root dir
+  dir = Path(yaml['path'])  # dataset root dir
   urls = ['https://argoverse-hd.s3.us-east-2.amazonaws.com/Argoverse-HD-Full.zip']
   download(urls, dir=dir, delete=False)
 
