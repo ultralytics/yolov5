@@ -457,7 +457,7 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
 def add_tflite_metadata(file, metadata, num_outputs):
     # Add metadata to *.tflite models per https://www.tensorflow.org/lite/models/convert/metadata
     with contextlib.suppress(ImportError):
-        check_requirements('tflite_support')
+        # check_requirements('tflite_support')
         from tflite_support import flatbuffers
         from tflite_support import metadata as _metadata
         from tflite_support import metadata_schema_py_generated as _metadata_fb
