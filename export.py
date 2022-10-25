@@ -367,9 +367,45 @@ def export_pb(keras_model, file, prefix=colorstr('TensorFlow GraphDef:')):
     tf.io.write_graph(graph_or_graph_def=frozen_func.graph, logdir=str(f.parent), name=f.name, as_text=False)
     return f, None
 
+def add_tflite_metadata(file, metadata, num_outputs):
+    # populate tflite model with label file
+    try:
+        from tflite_support import flatbuffers
+        from tflite_support import metadata as _metadata
+        from tflite_support import metadata_schema_py_generated as _metadata_fb
+
+        tmp_meta_file = 'meta.txt'
+        if os.path.isfile(tmp_meta_file):
+            raise FileExistsError(f'{tmp_meta_file} already exists, rename or remove file')
+
+        with open(tmp_meta_file, 'w') as meta_f:
+            meta_f.write(str(metadata))
+
+        model_meta = _metadata_fb.ModelMetadataT()
+        label_file = _metadata_fb.AssociatedFileT()
+        label_file.name = os.path.basename(tmp_meta_file)
+        model_meta.associatedFiles = [label_file]
+
+        subgraph = _metadata_fb.SubGraphMetadataT()
+        subgraph.inputTensorMetadata = [_metadata_fb.TensorMetadataT()]
+        subgraph.outputTensorMetadata = [_metadata_fb.TensorMetadataT()] * num_outputs
+        model_meta.subgraphMetadata = [subgraph]
+
+        b = flatbuffers.Builder(0)
+        b.Finish(model_meta.Pack(b), _metadata.MetadataPopulator.METADATA_FILE_IDENTIFIER)
+        metadata_buf = b.Output()
+
+        populator = _metadata.MetadataPopulator.with_model_file(file)
+        populator.load_metadata_buffer(metadata_buf)
+        populator.load_associated_files([tmp_meta_file])
+        populator.populate()
+        os.remove(tmp_meta_file)
+    except ImportError:
+        pass
+
 
 @try_export
-def export_tflite(keras_model, im, file, metadata, int8, data, nms, agnostic_nms, prefix=colorstr('TensorFlow Lite:')):
+def export_tflite(keras_model, im, file, int8, data, nms, agnostic_nms, prefix=colorstr('TensorFlow Lite:')):
     # YOLOv5 TensorFlow Lite export
     import tensorflow as tf
 
@@ -396,38 +432,6 @@ def export_tflite(keras_model, im, file, metadata, int8, data, nms, agnostic_nms
 
     tflite_model = converter.convert()
     open(f, "wb").write(tflite_model)
-
-    try:
-        # Metadata
-        from tflite_support import flatbuffers
-        from tflite_support import metadata as _metadata
-        from tflite_support import metadata_schema_py_generated as _metadata_fb
-
-        with open('meta.txt', 'w') as meta_f:
-            meta_f.write(str(metadata))
-
-        model_meta = _metadata_fb.ModelMetadataT()
-        label_file = _metadata_fb.AssociatedFileT()
-        label_file.name = os.path.basename('meta.txt')
-        model_meta.associatedFiles = [label_file]
-
-        subgraph = _metadata_fb.SubGraphMetadataT()
-        subgraph.inputTensorMetadata = [_metadata_fb.TensorMetadataT()]
-        subgraph.outputTensorMetadata = [_metadata_fb.TensorMetadataT()] * len(keras_model.outputs)
-        model_meta.subgraphMetadata = [subgraph]
-
-        b = flatbuffers.Builder(0)
-        b.Finish(model_meta.Pack(b), _metadata.MetadataPopulator.METADATA_FILE_IDENTIFIER)
-        metadata_buf = b.Output()
-
-        populator = _metadata.MetadataPopulator.with_model_file(f)
-        populator.load_metadata_buffer(metadata_buf)
-        populator.load_associated_files(['meta.txt'])
-        populator.populate()
-        os.remove('meta.txt')
-    except ImportError:
-        pass
-
     return f, None
 
 
@@ -584,13 +588,15 @@ def run(
             f[7], _ = export_tflite(s_model,
                                     im,
                                     file,
-                                    metadata,
                                     int8 or edgetpu,
                                     data=data,
                                     nms=nms,
                                     agnostic_nms=agnostic_nms)
+            num_outputs = len(s_model.outputs)
+            add_tflite_metadata(f[7], metadata, num_outputs)
         if edgetpu:
             f[8], _ = export_edgetpu(file)
+            add_tflite_metadata(f[8], metadata, num_outputs)
         if tfjs:
             f[9], _ = export_tfjs(file)
     if paddle:  # PaddlePaddle
