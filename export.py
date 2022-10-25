@@ -369,16 +369,13 @@ def export_pb(keras_model, file, prefix=colorstr('TensorFlow GraphDef:')):
 
 
 def add_tflite_metadata(file, metadata, num_outputs):
-    # populate tflite model with label file
+    # Populate TFLite model with label file
     try:
         from tflite_support import flatbuffers
         from tflite_support import metadata as _metadata
         from tflite_support import metadata_schema_py_generated as _metadata_fb
 
-        tmp_meta_file = 'meta.txt'
-        if os.path.isfile(tmp_meta_file):
-            raise FileExistsError(f'{tmp_meta_file} already exists, rename or remove file')
-
+        tmp_meta_file = '/tmp/meta.txt'
         with open(tmp_meta_file, 'w') as meta_f:
             meta_f.write(str(metadata))
 
