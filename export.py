@@ -372,6 +372,7 @@ def export_pb(keras_model, file, prefix=colorstr('TensorFlow GraphDef:')):
 def add_tflite_metadata(file, metadata, num_outputs):
     # Populate TFLite model with label file
     with contextlib.suppress(ImportError):
+        # check_requirements('tflite_support')
         from tflite_support import flatbuffers
         from tflite_support import metadata as _metadata
         from tflite_support import metadata_schema_py_generated as _metadata_fb
