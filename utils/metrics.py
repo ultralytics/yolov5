@@ -344,7 +344,7 @@ def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=(), csv=False
     ax.set_title('Precision-Recall Curve')
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
-    
+
     if csv:
         save_curves(px, py, save_dir=save_dir.with_suffix('.csv'), names=names, pr=True)
 
@@ -370,7 +370,7 @@ def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confi
     ax.set_title(f'{ylabel}-Confidence Curve')
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
-    
+
     if csv:
         save_curves(px, py, save_dir=save_dir.with_suffix('.csv'), names=names)
 
