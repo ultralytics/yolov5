@@ -346,7 +346,7 @@ def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=(), csv=False
     plt.close(fig)
 
     if csv:
-        save_curves(px, py, save_dir=save_dir.with_suffix('.csv'), names=names, pr=True)
+        save_curves(px, py, save_dir=save_dir.with_suffix('.csv'), names=names, xlabel='Recall', ylabel='Precision')
 
 
 @threaded
@@ -372,11 +372,10 @@ def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confi
     plt.close(fig)
 
     if csv:
-        save_curves(px, py, save_dir=save_dir.with_suffix('.csv'), names=names)
+        save_curves(px, py, save_dir=save_dir.with_suffix('.csv'), names=names, xlabel=xlabel, ylabel=ylabel)
 
 
-def save_curves(px, py, save_dir=Path('curves.csv'), names=(), pr=False):
+def save_curves(px, py, save_dir=Path('curves.csv'), names=(), xlabel='Confidence', ylabel='Metric'):
     curve_array = np.concatenate([np.expand_dims(px, axis=0), py], axis=0)
-    headers = ",".join(["precision"] + [f"recall_{e}" for e in names.values()]) if pr else \
-        ",".join(["threshold"] + list(names.values()))
+    headers = ",".join([f"{xlabel}"] + [f"{ylabel}_{e}" for e in names.values()])
     np.savetxt(save_dir, curve_array.T, delimiter=",", header=headers)
