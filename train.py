@@ -416,6 +416,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         save_json=is_coco,
                         verbose=True,
                         plots=plots,
+                        csv=opt.csv,
                         callbacks=callbacks,
                         compute_loss=compute_loss)  # val best model with plots
                     if is_coco:
@@ -463,6 +464,7 @@ def parse_opt(known=False):
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--seed', type=int, default=0, help='Global training seed')
     parser.add_argument('--local_rank', type=int, default=-1, help='Automatic DDP Multi-GPU argument, do not modify')
+    parser.add_argument('--csv', action='store_true', help='save metrics as a csv file')
 
     # Logger arguments
     parser.add_argument('--entity', default=None, help='Entity')
