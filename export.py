@@ -367,6 +367,7 @@ def export_pb(keras_model, file, prefix=colorstr('TensorFlow GraphDef:')):
     tf.io.write_graph(graph_or_graph_def=frozen_func.graph, logdir=str(f.parent), name=f.name, as_text=False)
     return f, None
 
+
 def add_tflite_metadata(file, metadata, num_outputs):
     # populate tflite model with label file
     try:
@@ -585,13 +586,7 @@ def run(
         if pb or tfjs:  # pb prerequisite to tfjs
             f[6], _ = export_pb(s_model, file)
         if tflite or edgetpu:
-            f[7], _ = export_tflite(s_model,
-                                    im,
-                                    file,
-                                    int8 or edgetpu,
-                                    data=data,
-                                    nms=nms,
-                                    agnostic_nms=agnostic_nms)
+            f[7], _ = export_tflite(s_model, im, file, int8 or edgetpu, data=data, nms=nms, agnostic_nms=agnostic_nms)
             num_outputs = len(s_model.outputs)
             add_tflite_metadata(f[7], metadata, num_outputs)
         if edgetpu:
