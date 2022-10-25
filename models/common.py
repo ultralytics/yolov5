@@ -465,13 +465,11 @@ class DetectMultiBackend(nn.Module):
             input_details = interpreter.get_input_details()  # inputs
             output_details = interpreter.get_output_details()  # outputs
             # load metadata
-            try:
+            with contextlib.suppress(zipfile.BadZipFile):
                 with zipfile.ZipFile(w, "r") as model:
                     meta_file = model.namelist()[0]
                     meta = ast.literal_eval(model.read(meta_file).decode("utf-8"))
                     stride, names = int(meta['stride']), meta['names']
-            except zipfile.BadZipFile:
-                pass
         elif tfjs:  # TF.js
             raise NotImplementedError('ERROR: YOLOv5 TF.js inference is not supported')
         elif paddle:  # PaddlePaddle
