@@ -108,4 +108,31 @@ python -m yolov5.detect --source ./data/resized_640_yolo/images --weights ./trai
 The output results are saved in `./validation/example`.
 
 # Generate TensorRT Engine
-refer to here: https://github.com/lmitechnologies/tensorrtx/blob/master/yolov5/README.md
+Go to yolov5/trt/x86 and modify the `volumes` in the docker-compose.yaml
+```yaml
+version: "3.9"
+services:
+  generate_trt:
+    build:
+      context: .
+      dockerfile: ./x86.dockerfile
+    volumes:
+      - ./data/allImages_1024_catheter_yolo/images:/app/images
+      - ./trained-inference-models/:/app/trained-inference-models/
+      - ./outputs/:/app/outputs/
+      - ./build_engine.sh:/app/build_engine.sh
+      - ./infer_trt.py:/app/infer_trt.py
+    deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                count: 1
+                capabilities: [gpu]
+    command: bash /app/build_engine.sh
+``` 
+Once the volumes are setup correctly, generate the engine
+```bash
+docker-compose up
+``` 
+Refer to here (Depreciated): https://github.com/lmitechnologies/tensorrtx/blob/master/yolov5/README.md
