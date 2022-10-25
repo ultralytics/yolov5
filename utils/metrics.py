@@ -84,15 +84,10 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, csv=False, save_dir
     names = [v for k, v in names.items() if k in unique_classes]  # list: only classes that have data
     names = dict(enumerate(names))  # to dict
     if plot:
-        plot_pr_curve(px, py, ap, Path(save_dir) / f'{prefix}PR_curve.png', names)
-        plot_mc_curve(px, f1, Path(save_dir) / f'{prefix}F1_curve.png', names, ylabel='F1')
-        plot_mc_curve(px, p, Path(save_dir) / f'{prefix}P_curve.png', names, ylabel='Precision')
-        plot_mc_curve(px, r, Path(save_dir) / f'{prefix}R_curve.png', names, ylabel='Recall')
-    if csv:
-        save_curves(px, py, save_dir=Path(save_dir) / f'{prefix}PR_curves.csv', names=names, pr=True)
-        save_curves(px, f1, save_dir=Path(save_dir) / f'{prefix}F1_curves.csv', names=names)
-        save_curves(px, p, save_dir=Path(save_dir) / f'{prefix}P_curves.csv', names=names)
-        save_curves(px, r, save_dir=Path(save_dir) / f'{prefix}R_curves.csv', names=names)
+        plot_pr_curve(px, py, ap, Path(save_dir) / f'{prefix}PR_curve.png', names, csv=csv)
+        plot_mc_curve(px, f1, Path(save_dir) / f'{prefix}F1_curve.png', names, ylabel='F1', csv=csv)
+        plot_mc_curve(px, p, Path(save_dir) / f'{prefix}P_curve.png', names, ylabel='Precision', csv=csv)
+        plot_mc_curve(px, r, Path(save_dir) / f'{prefix}R_curve.png', names, ylabel='Recall', csv=csv)
 
     i = smooth(f1.mean(0), 0.1).argmax()  # max F1 index
     p, r, f1 = p[:, i], r[:, i], f1[:, i]
@@ -329,7 +324,7 @@ def wh_iou(wh1, wh2, eps=1e-7):
 
 
 @threaded
-def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=()):
+def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=(), csv=False):
     # Precision-recall curve
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
     py = np.stack(py, axis=1)
@@ -349,10 +344,13 @@ def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=()):
     ax.set_title('Precision-Recall Curve')
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
+    
+    if csv:
+        save_curves(px, py, save_dir=save_dir.with_suffix('.csv'), names=names, pr=True)
 
 
 @threaded
-def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confidence', ylabel='Metric'):
+def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confidence', ylabel='Metric', csv=False):
     # Metric-confidence curve
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
 
@@ -372,6 +370,9 @@ def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confi
     ax.set_title(f'{ylabel}-Confidence Curve')
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
+    
+    if csv:
+        save_curves(px, py, save_dir=save_dir.with_suffix('.csv'), names=names)
 
 
 def save_curves(px, py, save_dir=Path('curves.csv'), names=(), pr=False):
