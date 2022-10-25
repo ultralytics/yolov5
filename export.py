@@ -45,6 +45,7 @@ TensorFlow.js:
 """
 
 import argparse
+import contextlib
 import json
 import os
 import platform
@@ -90,7 +91,7 @@ def export_formats():
         ['TensorFlow Lite', 'tflite', '.tflite', True, False],
         ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False, False],
         ['TensorFlow.js', 'tfjs', '_web_model', False, False],
-        ['PaddlePaddle', 'paddle', '_paddle_model', True, True],]
+        ['PaddlePaddle', 'paddle', '_paddle_model', True, True], ]
     return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'CPU', 'GPU'])
 
 
@@ -370,18 +371,18 @@ def export_pb(keras_model, file, prefix=colorstr('TensorFlow GraphDef:')):
 
 def add_tflite_metadata(file, metadata, num_outputs):
     # Populate TFLite model with label file
-    try:
+    with contextlib.suppress(ImportError):
         from tflite_support import flatbuffers
         from tflite_support import metadata as _metadata
         from tflite_support import metadata_schema_py_generated as _metadata_fb
 
-        tmp_meta_file = '/tmp/meta.txt'
-        with open(tmp_meta_file, 'w') as meta_f:
+        tmp_file = Path('/tmp/meta.txt')
+        with open(tmp_file, 'w') as meta_f:
             meta_f.write(str(metadata))
 
         model_meta = _metadata_fb.ModelMetadataT()
         label_file = _metadata_fb.AssociatedFileT()
-        label_file.name = os.path.basename(tmp_meta_file)
+        label_file.name = tmp_file.name
         model_meta.associatedFiles = [label_file]
 
         subgraph = _metadata_fb.SubGraphMetadataT()
@@ -395,11 +396,9 @@ def add_tflite_metadata(file, metadata, num_outputs):
 
         populator = _metadata.MetadataPopulator.with_model_file(file)
         populator.load_metadata_buffer(metadata_buf)
-        populator.load_associated_files([tmp_meta_file])
+        populator.load_associated_files([str(tmp_file)])
         populator.populate()
-        os.remove(tmp_meta_file)
-    except ImportError:
-        pass
+        tmp_file.unlink()
 
 
 @try_export
@@ -480,9 +479,9 @@ def export_tfjs(file, prefix=colorstr('TensorFlow.js:')):
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}, '
             r'"Identity.?.?": {"name": "Identity.?.?"}}}', r'{"outputs": {"Identity": {"name": "Identity"}, '
-            r'"Identity_1": {"name": "Identity_1"}, '
-            r'"Identity_2": {"name": "Identity_2"}, '
-            r'"Identity_3": {"name": "Identity_3"}}}', json)
+                                                           r'"Identity_1": {"name": "Identity_1"}, '
+                                                           r'"Identity_2": {"name": "Identity_2"}, '
+                                                           r'"Identity_3": {"name": "Identity_3"}}}', json)
         j.write(subst)
     return f, None
 
@@ -586,9 +585,9 @@ def run(
             f[7], _ = export_tflite(s_model, im, file, int8 or edgetpu, data=data, nms=nms, agnostic_nms=agnostic_nms)
             num_outputs = len(s_model.outputs)
             add_tflite_metadata(f[7], metadata, num_outputs)
-        if edgetpu:
-            f[8], _ = export_edgetpu(file)
-            add_tflite_metadata(f[8], metadata, num_outputs)
+            if edgetpu:
+                f[8], _ = export_edgetpu(file)
+                add_tflite_metadata(f[8], metadata, num_outputs)
         if tfjs:
             f[9], _ = export_tfjs(file)
     if paddle:  # PaddlePaddle
