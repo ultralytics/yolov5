@@ -15,7 +15,7 @@ Usage - formats:
     $ python detect.py --weights yolov5s.pt                 # PyTorch
                                  yolov5s.torchscript        # TorchScript
                                  yolov5s.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-                                 yolov5s_openvino_model     # OpenVINO
+                                 yolov5s.xml                # OpenVINO
                                  yolov5s.engine             # TensorRT
                                  yolov5s.mlmodel            # CoreML (macOS-only)
                                  yolov5s_saved_model        # TensorFlow SavedModel
@@ -30,7 +30,8 @@ import os
 import platform
 import sys
 from pathlib import Path
-
+sys.path.insert(0, os.path.join(os.getcwd()))
+from tennis import Tennis
 import torch
 
 FILE = Path(__file__).resolve()
@@ -76,6 +77,7 @@ def run(
         half=False,  # use FP16 half-precision inference
         dnn=False,  # use OpenCV DNN for ONNX inference
         vid_stride=1,  # video frame-rate stride
+        sport_flag=0
 ):
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
@@ -99,7 +101,7 @@ def run(
     # Dataloader
     bs = 1  # batch_size
     if webcam:
-        view_img = check_imshow(warn=True)
+        view_img = check_imshow()
         dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
         bs = len(dataset)
     elif screenshot:
@@ -111,7 +113,7 @@ def run(
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
-    for path, im, im0s, vid_cap, s in dataset:
+    for path, im, im0s, vid_cap, s in dataset: #im0s is "frame" from the court detector
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
             im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -139,7 +141,8 @@ def run(
                 s += f'{i}: '
             else:
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
-
+            if sport_flag==1:
+                im0 = Tennis.detectCourt(frame_in=im0)
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
@@ -215,8 +218,14 @@ def run(
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path or triton URL')
-    parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob/screen/0(webcam)')
+    #for testing
+    parser.add_argument('--weights', nargs='+', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/tennis/tennisModel.pt', help='model path or triton URL')
+    #for testing
+    parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/shortQatar.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    parser.add_argument('--sport-flag', type=int, default=1, help='Flag for extra processing')
+    
+    # parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path or triton URL')
+    # parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob/screen/0(webcam)')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
@@ -255,4 +264,5 @@ def main(opt):
 
 if __name__ == "__main__":
     opt = parse_opt()
+    #'--weights=/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/tennis/tennisModel.pt --source=/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/shortQatar.mp4'
     main(opt)
