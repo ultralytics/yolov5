@@ -54,7 +54,7 @@ That's it! You're done 😎
 To enable ClearML experiment tracking, simply install the ClearML pip package.
 
 ```bash
-pip install clearml
+pip install clearml>=1.2.0
 ```
 
 This will enable integration with the YOLOv5 training script. Every training run from now on, will be captured and stored by the ClearML experiment manager. If you want to change the `project_name` or `task_name`, head over to our custom logger, where you can change it: `utils/loggers/clearml/clearml_utils.py`
