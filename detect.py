@@ -88,6 +88,8 @@ def run(
     if is_url and is_file:
         source = check_file(source)  # download
 
+    tennis = Tennis("Tennis")
+
     # Directories
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
@@ -142,7 +144,8 @@ def run(
             else:
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
             if sport_flag==1:
-                im0 = Tennis.detectCourt(frame_in=im0)
+                
+                im0 = tennis.detectCourt(frame_in=im0)
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
@@ -161,6 +164,10 @@ def run(
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
+                    xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                    line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
+                    if xywh is not None:
+                        im0 = tennis.lineCall(xy_In=xywh, frame_in=im0)
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
@@ -221,7 +228,7 @@ def parse_opt():
     #for testing
     parser.add_argument('--weights', nargs='+', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/tennis/tennisModel.pt', help='model path or triton URL')
     #for testing
-    parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/shortQatar.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/outofboundsbouncerublev.mp4', help='file/dir/URL/glob/screen/0(webcam)')
     parser.add_argument('--sport-flag', type=int, default=1, help='Flag for extra processing')
     
     # parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path or triton URL')
@@ -234,6 +241,7 @@ def parse_opt():
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='show results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    # parser.add_argument('--save-txt', default=True, action='store_true', help='save results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
@@ -264,5 +272,5 @@ def main(opt):
 
 if __name__ == "__main__":
     opt = parse_opt()
-    #'--weights=/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/tennis/tennisModel.pt --source=/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/shortQatar.mp4'
+    # '--weights=/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/tennis/tennisModel.pt --source=/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/shortQatar.mp4'
     main(opt)
