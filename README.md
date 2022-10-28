@@ -18,8 +18,9 @@
 
   <br>
   <p>
-    YOLOv5 🚀 is a family of object detection architectures and models pretrained on the COCO dataset, and represents <a href="https://ultralytics.com">Ultralytics</a>
-    open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development.
+    YOLOv5 🚀 is the world's most loved vision AI pretrained on the COCO dataset, and represents <a href="https://ultralytics.com">Ultralytics</a>
+    open-source research into future vision AI methods, incorporating lessons learned and best practices evolved over thousands of hours of research and development. To request a commercial license please complete the form at <a href="https://ultralytics.com/license">Ultralytics Licensing</a>.
+
   </p>
 
   <div align="center">
