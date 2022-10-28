@@ -1,12 +1,7 @@
 <div align="center">
   <p>
-    <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
-      <img width="850" src="https://github.com/ultralytics/assets/raw/master/yolov5/v62/splash_readme.png"></a>
-    <br><br>
-    <a href="https://play.google.com/store/apps/details?id=com.ultralytics.ultralytics_app" style="text-decoration:none;">
-      <img src="https://raw.githubusercontent.com/ultralytics/assets/master/app/google-play.svg" width="15%" alt="" /></a>&nbsp;
-    <a href="https://apps.apple.com/xk/app/ultralytics/id1583935240" style="text-decoration:none;">
-      <img src="https://raw.githubusercontent.com/ultralytics/assets/master/app/app-store.svg" width="15%" alt="" /></a>
+    <a align="center" href="https://ultralytics.com/app_install" target="_blank">
+      <img width="850" src="https://user-images.githubusercontent.com/26833433/198617157-9d69df2f-fa83-4035-9787-8d86d84e0fdf.png"></a>
   </p>
 
   English | [简体中文](.github/README_cn.md)
