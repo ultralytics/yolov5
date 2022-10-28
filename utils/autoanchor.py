@@ -26,7 +26,7 @@ def check_anchor_order(m):
         m.anchors[:] = m.anchors.flip(0)
 
 
-@TryExcept(f'{PREFIX}ERROR: ')
+@TryExcept(f'{PREFIX}ERROR')
 def check_anchors(dataset, model, thr=4.0, imgsz=640):
     # Check anchor fit to data, recompute if necessary
     m = model.module.model[-1] if hasattr(model, 'module') else model.model[-1]  # Detect()

@@ -15,7 +15,7 @@ Usage - formats:
     $ python segment/predict.py --weights yolov5s-seg.pt                 # PyTorch
                                           yolov5s-seg.torchscript        # TorchScript
                                           yolov5s-seg.onnx               # ONNX Runtime or OpenCV DNN with --dnn
-                                          yolov5s-seg.xml                # OpenVINO
+                                          yolov5s-seg_openvino_model     # OpenVINO
                                           yolov5s-seg.engine             # TensorRT
                                           yolov5s-seg.mlmodel            # CoreML (macOS-only)
                                           yolov5s-seg_saved_model        # TensorFlow SavedModel
@@ -102,7 +102,7 @@ def run(
     # Dataloader
     bs = 1  # batch_size
     if webcam:
-        view_img = check_imshow()
+        view_img = check_imshow(warn=True)
         dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
         bs = len(dataset)
     elif screenshot:
