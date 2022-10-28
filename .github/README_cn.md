@@ -1,7 +1,7 @@
 <div align="center">
   <p>
     <a align="center" href="https://ultralytics.com/yolov5" target="_blank">
-      <img width="850" src="https://user-images.githubusercontent.com/26833433/198619827-6a16f886-4853-4bd7-a9fa-771e4d6984fb.png"></a>
+      <img width="850" src="https://github.com/ultralytics/assets/blob/master/yolov5/v62/splash_readme.png"></a>
   </p>
 
   [English](../README.md) | 简体中文
