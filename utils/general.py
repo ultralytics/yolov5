@@ -462,12 +462,13 @@ def check_font(font=FONT, progress=False):
 
 def check_dataset(data, autodownload=True):
     # Download, check and/or unzip dataset if not found locally
-    from zipfile import is_zipfile
     from tarfile import is_tarfile
+    from zipfile import is_zipfile
 
     # Download (optional)
     extract_dir = ''
-    if isinstance(data, (str, Path)) and (is_zipfile(str(data)) or is_tarfile(str(data))):  # i.e. gs://bucket/dir/coco128.zip
+    if isinstance(data,
+                  (str, Path)) and (is_zipfile(str(data)) or is_tarfile(str(data))):  # i.e. gs://bucket/dir/coco128.zip
         download(data, dir=f'{DATASETS_DIR}/{Path(data).stem}', unzip=True, delete=False, curl=False, threads=1)
         data = next((DATASETS_DIR / Path(data).stem).rglob('*.yaml'))
         extract_dir, autodownload = data.parent, False
@@ -609,8 +610,8 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
                 else:
                     LOGGER.warning(f'❌ Failed to download {url}...')
 
-        from zipfile import is_zipfile
         from tarfile import is_tarfile
+        from zipfile import is_zipfile
 
         if unzip and success and (f.suffix in ('.gz') or is_zipfile(f) or is_tarfile(f)):
             LOGGER.info(f'Unzipping {f}...')
