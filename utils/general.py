@@ -23,8 +23,9 @@ from itertools import repeat
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from subprocess import check_output
+from tarfile import is_tarfile
 from typing import Optional
-from zipfile import ZipFile
+from zipfile import ZipFile, is_zipfile
 
 import cv2
 import IPython
@@ -462,12 +463,10 @@ def check_font(font=FONT, progress=False):
 
 def check_dataset(data, autodownload=True):
     # Download, check and/or unzip dataset if not found locally
-    from tarfile import is_tarfile
-    from zipfile import is_zipfile
 
     # Download (optional)
     extract_dir = ''
-        if isinstance(data, (str, Path)) and (is_zipfile(data) or is_tarfile(data)):
+    if isinstance(data, (str, Path)) and (is_zipfile(data) or is_tarfile(data)):
         download(data, dir=f'{DATASETS_DIR}/{Path(data).stem}', unzip=True, delete=False, curl=False, threads=1)
         data = next((DATASETS_DIR / Path(data).stem).rglob('*.yaml'))
         extract_dir, autodownload = data.parent, False
@@ -609,10 +608,7 @@ def download(url, dir='.', unzip=True, delete=True, curl=False, threads=1, retry
                 else:
                     LOGGER.warning(f'❌ Failed to download {url}...')
 
-        from tarfile import is_tarfile
-        from zipfile import is_zipfile
-
-        if unzip and success and (f.suffix in ('.gz') or is_zipfile(f) or is_tarfile(f)):
+        if unzip and success and (f.suffix == '.gz' or is_zipfile(f) or is_tarfile(f)):
             LOGGER.info(f'Unzipping {f}...')
             if is_zipfile(f):
                 unzip_file(f, dir)  # unzip
