@@ -8,7 +8,6 @@ import math
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-import cv2
 
 from utils.metrics import bbox_iou
 from utils.torch_utils import de_parallel
@@ -16,9 +15,8 @@ from utils.tal.assigner import TaskAlignedAssigner
 from utils.tal.anchor_generator import dist2bbox, generate_anchors, bbox2dist
 
 
-# from utils.general import xywh2xyxy
-
 def xywh2xyxy(x):
+    # from utils.general import xywh2xyxy
     # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
     y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
     y[..., 0] = x[..., 0] - x[..., 2] / 2  # top left x
@@ -398,22 +396,3 @@ class ComputeLoss:
 
         return (lbox + lobj + lcls + ldfl) * bs, torch.as_tensor([lbox, ldfl, lcls], device=lbox.device).detach()
 
-    def vis_assignments(self, fg_mask, imgs):
-        imgs = img.permute(0, 2, 3, 1).contiguous().numpy()  # b, h, w, 3
-        first, second, third = fg_mask.split((80 * 80, 40 * 40, 20 * 20), -1)
-        first = F.interpolate(first.view(1, first.shape[0], 80, 80).to(torch.uint8), (640, 640), mode="nearest")[
-            0].cpu().numpy()
-        second = F.interpolate(second.view(1, second.shape[0], 40, 40).to(torch.uint8), (640, 640), mode="nearest")[
-            0].cpu().numpy()
-        third = F.interpolate(third.view(1, third.shape[0], 20, 20).to(torch.uint8), (640, 640), mode="nearest")[
-            0].cpu().numpy()
-        # print("iou:", iou.detach().clamp(0).type(tobj.dtype))
-        # print("pred:", pred_obj.sigmoid())
-        # print("pred-pos:", pred_obj.sigmoid()[fg_mask])
-        for i in range(len(imgs)):
-            img = imgs[i]
-            fg = first[i] + second[i] + third[i]
-            img[fg.astype(bool)] = img[fg.astype(bool)] * 0.35 + (np.array((0, 0, 255)) * 0.65)
-            cv2.imshow("p", img)
-            if cv2.waitKey(0) == ord("q"):
-                exit()
