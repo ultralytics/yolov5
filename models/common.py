@@ -72,6 +72,17 @@ class DWConvTranspose2d(nn.ConvTranspose2d):
         super().__init__(c1, c2, k, s, p1, p2, groups=math.gcd(c1, c2))
 
 
+class DFL(nn.Module):
+    # DFL module
+    def __init__(self, c1):
+        super().__init__()
+        self.cv1 = Conv(c1, 1, act=False)
+
+    def forward(self, x):
+        b, c, h, w = x.shape
+        return self.cv1(x.view(b, c // 4, 4, -1).softmax(1)).view(b, 4, h, w)
+
+
 class TransformerLayer(nn.Module):
     # Transformer layer https://arxiv.org/abs/2010.11929 (LayerNorm layers removed for better performance)
     def __init__(self, c, num_heads):

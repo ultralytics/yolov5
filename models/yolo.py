@@ -54,7 +54,8 @@ class Detect(nn.Module):
         self.shape = (0, 0)  # initial grid shape
         c2, c3 = 32, max(ch[0], self.no - 4)  # channels
         self.cv2 = nn.ModuleList(nn.Sequential(
-            Conv(x, c2, 3), Conv(c2, c2, 3), Conv(c2, 4, 1, act=False)) for x in ch)
+            # Conv(x, c2, 3), Conv(c2, c2, 3), Conv(c2, c2, 1), DFL(c2 // 4)) for x in ch)
+            Conv(x, c2, 3), Conv(c2, c2, 3), Conv(c2, c2, 1), DFL(c2 // 4)) for x in ch)
         self.cv3 = nn.ModuleList(nn.Sequential(
             Conv(x, c3, 3), Conv(c3, c3, 3), Conv(c3, self.no - 4, 1, act=False)) for x in ch)
 
@@ -265,7 +266,7 @@ class DetectionModel(BaseModel):
         ncf = math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # nominal class frequency
         for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
             # a[-1].bn.bias.data[2:4] = -1.38629  # wh = 0.25 + (x - 1.38629).sigmoid() * 3.75
-            a[-1].bn.bias.data[2:4] = -1.60944  # wh = 0.2 + (x - 1.60944).sigmoid() * 4.8
+            #a[-1].bn.bias.data[2:4] = -1.60944  # wh = 0.2 + (x - 1.60944).sigmoid() * 4.8
             b[-1].bn.bias.data[0] = math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
             b[-1].bn.bias.data[1:m.nc + 1] = ncf  # cls
 
