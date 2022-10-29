@@ -28,7 +28,7 @@ import torchvision.transforms as T
 import yaml
 
 from utils.dataloaders import img2label_paths
-from utils.general import check_dataset, scale_coords, xywh2xyxy
+from utils.general import check_dataset, scale_boxes, xywh2xyxy
 from utils.metrics import box_iou
 
 COMET_PREFIX = "comet://"
@@ -293,14 +293,14 @@ class CometLogger:
             pred[:, 5] = 0
 
         predn = pred.clone()
-        scale_coords(image.shape[1:], predn[:, :4], shape[0], shape[1])
+        scale_boxes(image.shape[1:], predn[:, :4], shape[0], shape[1])
 
         labelsn = None
         if nl:
             tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
-            scale_coords(image.shape[1:], tbox, shape[0], shape[1])  # native-space labels
+            scale_boxes(image.shape[1:], tbox, shape[0], shape[1])  # native-space labels
             labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
-            scale_coords(image.shape[1:], predn[:, :4], shape[0], shape[1])  # native-space pred
+            scale_boxes(image.shape[1:], predn[:, :4], shape[0], shape[1])  # native-space pred
 
         return predn, labelsn
 
@@ -353,7 +353,14 @@ class CometLogger:
         metadata = logged_artifact.metadata
         data_dict = metadata.copy()
         data_dict["path"] = artifact_save_dir
-        data_dict["names"] = {int(k): v for k, v in metadata.get("names").items()}
+
+        metadata_names = metadata.get("names")
+        if type(metadata_names) == dict:
+            data_dict["names"] = {int(k): v for k, v in metadata.get("names").items()}
+        elif type(metadata_names) == list:
+            data_dict["names"] = {int(k): v for k, v in zip(range(len(metadata_names)), metadata_names)}
+        else:
+            raise "Invalid 'names' field in dataset yaml file. Please use a list or dictionary"
 
         data_dict = self.update_data_paths(data_dict)
         return data_dict
