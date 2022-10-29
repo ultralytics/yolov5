@@ -77,7 +77,9 @@ class DFL(nn.Module):
     def __init__(self, c1):
         super().__init__()
         self.conv = nn.Conv2d(c1, 1, 1, bias=False)
-        self.conv.weight.data[:] = nn.Parameter(torch.arange(1, c1 + 1), requires_grad=False).view(1, c1, 1, 1)
+        self.conv.weight.data[:] = nn.Parameter(
+            torch.arange(1, c1 + 1, dtype=torch.float, requires_grad=False).view(1, c1, 1, 1),
+            requires_grad=False)
         self.bn = nn.BatchNorm2d(4)
 
     def forward(self, x):
