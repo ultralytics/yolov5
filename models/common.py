@@ -76,11 +76,12 @@ class DFL(nn.Module):
     # DFL module
     def __init__(self, c1):
         super().__init__()
-        self.cv1 = Conv(c1, 1, act=False)
+        self.conv = nn.Conv2d(c1, 1, 1)
+        self.bn = nn.BatchNorm2d(4)
 
     def forward(self, x):
         b, c, h, w = x.shape
-        return self.cv1(x.view(b, c // 4, 4, -1).softmax(1)).view(b, 4, h, w)
+        return self.bn(self.conv(x.view(b, c // 4, 4, h * w).softmax(1)).view(b, 4, h, w))
 
 
 class TransformerLayer(nn.Module):
