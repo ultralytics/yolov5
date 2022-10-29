@@ -55,7 +55,7 @@ class Detect(nn.Module):
         self.cv2 = nn.ModuleList(nn.Sequential(
             # Conv(x, c2, 3), Conv(c2, c2, 3), Conv(c2, 4, 1, act=False)) for x in ch)
             # Conv(x, c2, 3), Conv(c2, c2, 3), Conv(c2, 64, 1), DFL(64 // 4)) for x in ch)
-            Conv(x, c2, 3), Conv(c2, c2, 3), Conv(c2, 64, 1), DFL(64 // 4)) for x in ch)
+            Conv(x, c2, 3), Conv(c2, c2, 3), DFL(64 // 4)) for x in ch)
         self.cv3 = nn.ModuleList(nn.Sequential(
             Conv(x, c3, 3), Conv(c3, c3, 3), Conv(c3, self.no - 4, 1, act=False)) for x in ch)
 
