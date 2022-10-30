@@ -1,4 +1,5 @@
 import torch
+
 from utils.general import check_version
 
 TORCH_1_10 = check_version(torch.__version__, '1.10.0')
