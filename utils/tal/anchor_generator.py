@@ -1,4 +1,7 @@
 import torch
+from utils.general import check_version
+
+TORCH_1_10 = check_version(torch.__version__, '1.10.0')
 
 
 def generate_anchors(feats, fpn_strides, grid_cell_size=5.0, grid_cell_offset=0.5, device='cpu', is_eval=False):
@@ -10,15 +13,12 @@ def generate_anchors(feats, fpn_strides, grid_cell_size=5.0, grid_cell_offset=0.
     if is_eval:
         for i, stride in enumerate(fpn_strides):
             _, _, h, w = feats[i].shape
-            shift_x = torch.arange(end=w, device=device) + grid_cell_offset
-            shift_y = torch.arange(end=h, device=device) + grid_cell_offset
-            shift_y, shift_x = torch.meshgrid(shift_y, shift_x)
-            anchor_point = torch.stack(
-                [shift_x, shift_y], axis=-1).to(torch.float)
+            sx = torch.arange(end=w, device=device) + grid_cell_offset  # shift x
+            sy = torch.arange(end=h, device=device) + grid_cell_offset  # shift y
+            sy, sx = torch.meshgrid(sy, sx, indexing='ij') if TORCH_1_10 else torch.meshgrid(sy, sx)
+            anchor_point = torch.stack([sx, sy], -1).to(torch.float)
             anchor_points.append(anchor_point.reshape([-1, 2]))
-            stride_tensor.append(
-                torch.full(
-                    (h * w, 1), stride, dtype=torch.float, device=device))
+            stride_tensor.append(torch.full((h * w, 1), stride, dtype=torch.float, device=device))
         anchor_points = torch.cat(anchor_points)
         stride_tensor = torch.cat(stride_tensor)
         return anchor_points, stride_tensor
@@ -27,14 +27,12 @@ def generate_anchors(feats, fpn_strides, grid_cell_size=5.0, grid_cell_offset=0.
         for i, stride in enumerate(fpn_strides):
             _, _, h, w = feats[i].shape
             cell_half_size = grid_cell_size * stride * 0.5
-            shift_x = (torch.arange(end=w, device=device) + grid_cell_offset) * stride
-            shift_y = (torch.arange(end=h, device=device) + grid_cell_offset) * stride
-            shift_y, shift_x = torch.meshgrid(shift_y, shift_x)
-            anchor = torch.stack([shift_x - cell_half_size, shift_y - cell_half_size,
-                                  shift_x + cell_half_size, shift_y + cell_half_size],
-                                 axis=-1).clone().to(feats[0].dtype)
-            anchor_point = torch.stack([shift_x, shift_y], axis=-1).clone().to(feats[0].dtype)
-
+            sx = (torch.arange(end=w, device=device) + grid_cell_offset) * stride
+            sy = (torch.arange(end=h, device=device) + grid_cell_offset) * stride
+            sy, sx = torch.meshgrid(sy, sx, indexing='ij') if TORCH_1_10 else torch.meshgrid(sy, sx)
+            anchor = torch.stack([sx - cell_half_size, sy - cell_half_size,
+                                  sx + cell_half_size, sy + cell_half_size], -1).clone().to(feats[0].dtype)
+            anchor_point = torch.stack([sx, sy], -1).clone().to(feats[0].dtype)
             anchors.append(anchor.reshape([-1, 4]))
             anchor_points.append(anchor_point.reshape([-1, 2]))
             num_anchors_list.append(len(anchors[-1]))
