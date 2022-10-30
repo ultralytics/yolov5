@@ -88,7 +88,6 @@ class V6Detect(nn.Module):
     def forward(self, x):
         b = x[0].shape[0]
         for i in range(self.nl):
-            # y = self.cv1[i](x[i])
             x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i])), 1)
 
         y = torch.cat([xi.view(b, self.no, -1) for xi in x], dim=-1)
@@ -107,10 +106,8 @@ class V6Detect(nn.Module):
 
         final_bboxes = dist2bbox(dfl_bbox, anchor_points, box_format="xywh")  # (b, grids, 4)
         final_bboxes *= stride_tensor
-        return (torch.cat([final_bboxes,
-                           conf.sigmoid(),
-                           # torch.ones((b, final_bboxes.shape[1], 1), device=final_bboxes.device, dtype=final_bboxes.dtype),
-                           cls.sigmoid()], axis=-1).permute(0, 2, 1).contiguous(), (x, conf, cls, bbox))
+        return (torch.cat([final_bboxes, conf.sigmoid(), cls.sigmoid()], -1).permute(0, 2, 1).contiguous(),
+                (x, conf, cls, bbox))
 
 
 class Detect(nn.Module):
