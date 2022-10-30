@@ -47,7 +47,9 @@ from utils.general import (LOGGER, Profile, check_file, check_img_size, check_im
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, smart_inference_mode
 
+from kalmanfilter import KalmanFilter
 
+kf = KalmanFilter()
 @smart_inference_mode()
 def run(
         weights=ROOT / 'yolov5s.pt',  # model path or triton URL
@@ -156,6 +158,7 @@ def run(
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
+                h,w , c= im0.shape
 
                 # Print results
                 for c in det[:, 5].unique():
@@ -178,6 +181,8 @@ def run(
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
+                        predict = kf.predict(int(w*xywh[0]), int(h*xywh[1]))
+                        cv2.circle(im0,(predict[0], predict[1]), 5, (255,0,0), 4)
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
