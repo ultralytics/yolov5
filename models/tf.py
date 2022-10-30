@@ -333,7 +333,7 @@ class TFSegment(TFDetect):
 
     def call(self, x):
         p = self.proto(x[0])
-        # p = TFUpsample(None, scale_factor=4, mode='nearest')(self.proto(x[0]))
+        # p = TFUpsample(None, scale_factor=4, mode='nearest')(self.proto(x[0]))  # (optional) full-size protos
         p = tf.transpose(p, [0, 3, 1, 2])  # from shape(1,160,160,32) to shape(1,32,160,160)
         x = self.detect(self, x)
         return (x, p) if self.training else (x[0], p)
