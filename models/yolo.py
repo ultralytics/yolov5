@@ -60,7 +60,7 @@ class V6Detect(nn.Module):
             nn.Sequential(Conv(x, c2, 3), Conv(c2, 4 * (self.reg_max + 1), 3, act=False)) for x in ch)
         self.cv3 = nn.ModuleList(
             nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), Conv(c3, self.nc + 1, 1, act=False)) for x in ch)
-        self.proj_conv = nn.Conv2d(self.reg_max + 1, 1, 1, bias=False)
+        self.proj_conv = nn.Conv2d(self.reg_max + 1, 1, 1, bias=True)
         self.initialize_biases()
 
     def initialize_biases(self):
