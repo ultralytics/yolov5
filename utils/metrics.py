@@ -142,7 +142,7 @@ class ConfusionMatrix:
             None, updates confusion matrix accordingly
         """
         if detections is None:
-            gt_classes = labels.int()
+            gt_classes = [label[0].int() for label in labels]
             for gc in gt_classes:
                 self.matrix[self.nc, gc] += 1  # background FN
             return
