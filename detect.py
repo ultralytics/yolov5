@@ -142,7 +142,7 @@ def run(
                 s += f'{i}: '
             else:
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
-            if sport_flag==1:
+            if sport_flag==1 and not webcam: #we dont want to track the court on a webcam yet  
                 im0=trackTennisCourt(im0, seen)
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
@@ -232,7 +232,8 @@ def parse_opt():
     #for testing
     parser.add_argument('--weights', nargs='+', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/tennis/tennisModel.pt', help='model path or triton URL')
     #for testing
-    parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/outofboundsbouncerublev.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    parser.add_argument('--source', type=str, default=0, help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/outofboundsbouncerublev.mp4', help='file/dir/URL/glob/screen/0(webcam)')
     # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/longballrublev.mp4', help='file/dir/URL/glob/screen/0(webcam)')
     parser.add_argument('--sport-flag', type=int, default=1, help='Flag for extra processing')
     
