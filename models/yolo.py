@@ -54,12 +54,12 @@ class V6Detect(nn.Module):
 
         self.reg_max = 16 if use_dfl else 0
         self.no = nc + (self.reg_max + 1) * 4 + 1  # number of outputs per anchor
-        c2, c3 = 32, max(ch[0], self.no - 4)  # channels
+        c2, c3 = 64, max(ch[0], self.no - 4)  # channels
         self.use_dfl = use_dfl
-        self.cv2 = nn.ModuleList(nn.Sequential(Conv(x, c2, 3), Conv(c2, c2, 3),
-                                               nn.Conv2d(c2, 4 * (self.reg_max + 1), 1)) for x in ch)
-        self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3),
-                                               nn.Conv2d(c3, self.nc + 1, 1)) for x in ch)
+        self.cv2 = nn.ModuleList(
+            nn.Sequential(Conv(x, c2, 3), Conv(c2, 4 * (self.reg_max + 1), 3, act=False)) for x in ch)
+        self.cv3 = nn.ModuleList(
+            nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), Conv(c3, self.nc + 1, 1, act=False)) for x in ch)
         self.proj_conv = nn.Conv2d(self.reg_max + 1, 1, 1, bias=False)
         self.initialize_biases()
 
