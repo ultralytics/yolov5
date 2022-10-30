@@ -47,6 +47,7 @@ from utils.general import (LOGGER, Profile, check_file, check_img_size, check_im
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, smart_inference_mode
 
+tennis = Tennis("Tennis")
 
 @smart_inference_mode()
 def run(
@@ -88,7 +89,7 @@ def run(
     if is_url and is_file:
         source = check_file(source)  # download
 
-    tennis = Tennis("Tennis")
+
 
     # Directories
     save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
@@ -144,8 +145,7 @@ def run(
             else:
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
             if sport_flag==1:
-                
-                im0 = tennis.detectCourt(frame_in=im0)
+                im0=trackTennisCourt(im0, seen)
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
@@ -166,7 +166,7 @@ def run(
                 for *xyxy, conf, cls in reversed(det):
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                     line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
-                    if xywh is not None:
+                    if xywh is not None and sport_flag==1: #make a line call if you can
                         im0 = tennis.lineCall(xy_In=xywh, frame_in=im0)
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
@@ -222,6 +222,12 @@ def run(
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
+def trackTennisCourt(frame_in, seen):
+    if seen>=2:
+        return tennis.trackCourt(frame_in)
+    else:
+        print("Detecting court...")
+        return tennis.detectCourt(frame_in)
 
 def parse_opt():
     parser = argparse.ArgumentParser()
@@ -229,6 +235,7 @@ def parse_opt():
     parser.add_argument('--weights', nargs='+', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/models/tennis/tennisModel.pt', help='model path or triton URL')
     #for testing
     parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/outofboundsbouncerublev.mp4', help='file/dir/URL/glob/screen/0(webcam)')
+    # parser.add_argument('--source', type=str, default='/Users/tyler/Documents/GitHub/capstone-project-eagle-eye/longballrublev.mp4', help='file/dir/URL/glob/screen/0(webcam)')
     parser.add_argument('--sport-flag', type=int, default=1, help='Flag for extra processing')
     
     # parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path or triton URL')
