@@ -139,26 +139,25 @@ class IOUloss:
         """
         if box1.shape[0] != box2.shape[0]:
             box2 = box2.T
-            if self.box_format == "xyxy":
-                b1_x1, b1_y1, b1_x2, b1_y2 = box1[0], box1[1], box1[2], box1[3]
-                b2_x1, b2_y1, b2_x2, b2_y2 = box2[0], box2[1], box2[2], box2[3]
-            elif self.box_format == "xywh":
+            if self.box_format == "xywh":
                 b1_x1, b1_x2 = box1[0] - box1[2] / 2, box1[0] + box1[2] / 2
                 b1_y1, b1_y2 = box1[1] - box1[3] / 2, box1[1] + box1[3] / 2
                 b2_x1, b2_x2 = box2[0] - box2[2] / 2, box2[0] + box2[2] / 2
                 b2_y1, b2_y2 = box2[1] - box2[3] / 2, box2[1] + box2[3] / 2
-        else:
-            if self.box_format == "xyxy":
-                b1_x1, b1_y1, b1_x2, b1_y2 = torch.split(box1, 1, dim=-1)
-                b2_x1, b2_y1, b2_x2, b2_y2 = torch.split(box2, 1, dim=-1)
+            elif self.box_format == "xyxy":
+                b1_x1, b1_y1, b1_x2, b1_y2 = box1[0], box1[1], box1[2], box1[3]
+                b2_x1, b2_y1, b2_x2, b2_y2 = box2[0], box2[1], box2[2], box2[3]
+        elif self.box_format == "xyxy":
+            b1_x1, b1_y1, b1_x2, b1_y2 = torch.split(box1, 1, dim=-1)
+            b2_x1, b2_y1, b2_x2, b2_y2 = torch.split(box2, 1, dim=-1)
 
-            elif self.box_format == "xywh":
-                b1_x1, b1_y1, b1_w, b1_h = torch.split(box1, 1, dim=-1)
-                b2_x1, b2_y1, b2_w, b2_h = torch.split(box2, 1, dim=-1)
-                b1_x1, b1_x2 = b1_x1 - b1_w / 2, b1_x1 + b1_w / 2
-                b1_y1, b1_y2 = b1_y1 - b1_h / 2, b1_y1 + b1_h / 2
-                b2_x1, b2_x2 = b2_x1 - b2_w / 2, b2_x1 + b2_w / 2
-                b2_y1, b2_y2 = b2_y1 - b2_h / 2, b2_y1 + b2_h / 2
+        elif self.box_format == "xywh":
+            b1_x1, b1_y1, b1_w, b1_h = torch.split(box1, 1, dim=-1)
+            b2_x1, b2_y1, b2_w, b2_h = torch.split(box2, 1, dim=-1)
+            b1_x1, b1_x2 = b1_x1 - b1_w / 2, b1_x1 + b1_w / 2
+            b1_y1, b1_y2 = b1_y1 - b1_h / 2, b1_y1 + b1_h / 2
+            b2_x1, b2_x2 = b2_x1 - b2_w / 2, b2_x1 + b2_w / 2
+            b2_y1, b2_y2 = b2_y1 - b2_h / 2, b2_y1 + b2_h / 2
 
         # Intersection area
         inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * (
@@ -299,7 +298,7 @@ class ComputeLoss:
 
     def preprocess(self, targets, batch_size, scale_tensor):
         targets_list = np.zeros((batch_size, 1, 5)).tolist()
-        for i, item in enumerate(targets.cpu().numpy().tolist()):
+        for item in targets.cpu().numpy().tolist():
             targets_list[int(item[0])].append(item[1:])
         max_len = max((len(l) for l in targets_list))
         targets = torch.from_numpy(
