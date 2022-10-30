@@ -112,12 +112,10 @@ class TaskAlignedAssigner(nn.Module):
 
         if self.n_max_boxes == 0:
             device = gt_bboxes.device
-            return (
-                torch.full_like(pd_scores[..., 0], self.bg_idx).to(device),
-                torch.zeros_like(pd_bboxes).to(device),
-                torch.zeros_like(pd_scores).to(device),
-                torch.zeros_like(pd_scores[..., 0]).to(device),
-            )
+            return (torch.full_like(pd_scores[..., 0], self.bg_idx).to(device),
+                    torch.zeros_like(pd_bboxes).to(device),
+                    torch.zeros_like(pd_scores).to(device),
+                    torch.zeros_like(pd_scores[..., 0]).to(device))
 
         mask_pos, align_metric, overlaps = self.get_pos_mask(pd_scores, pd_bboxes, gt_labels, gt_bboxes, anc_points,
                                                              mask_gt)
@@ -200,11 +198,7 @@ class TaskAlignedAssigner(nn.Module):
         # assigned target labels, (b, 1)
         batch_ind = torch.arange(end=self.bs, dtype=torch.int64, device=gt_labels.device)[..., None]
         target_gt_idx = target_gt_idx + batch_ind * self.n_max_boxes  # (b, h*w)
-        # print(target_gt_idx.max(1)[0], target_gt_idx.min(1)[0])
         target_labels = gt_labels.long().flatten()[target_gt_idx]  # (b, h*w)
-        # print(target_labels.max(1)[0])
-        # print(gt_labels.flatten())
-        # exit()
 
         # assigned target boxes, (b, max_num_obj, 4) -> (b, h*w)
         target_bboxes = gt_bboxes.reshape([-1, 4])[target_gt_idx]

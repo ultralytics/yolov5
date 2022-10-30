@@ -54,33 +54,33 @@ class V6Detect(nn.Module):
 
         self.reg_max = 16 if use_dfl else 0
         self.no = nc + (self.reg_max + 1) * 4 + 1  # number of outputs per anchor
-        c2, c3 = 64, max(ch[0], self.no - 4)  # channels
+        c2, c3 = 32, max(ch[0], self.no - 4)  # channels
         self.use_dfl = use_dfl
         self.cv2 = nn.ModuleList(
-            nn.Sequential(Conv(x, c2, 3), Conv(c2, 4 * (self.reg_max + 1), 3, act=False)) for x in ch)
+            nn.Sequential(Conv(x, c2, 3), Conv(c2, c2, 3), nn.Conv2d(c2, 4 * (self.reg_max + 1), 1)) for x in ch)
         self.cv3 = nn.ModuleList(
-            nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), Conv(c3, self.nc + 1, 1, act=False)) for x in ch)
+            nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), nn.Conv2d(c3, self.nc + 1, 1)) for x in ch)
         self.proj_conv = nn.Conv2d(self.reg_max + 1, 1, 1, bias=False)
         self.initialize_biases()
 
     def initialize_biases(self):
         for seq in self.cv3:
-            conv = seq[-1].bn
+            conv = seq[-1]
             b = conv.bias.view(-1, )
             b.data.fill_(-math.log((1 - 1e-2) / 1e-2))
             conv.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
-            # w = conv.weight
-            # w.data.fill_(0.)
-            # conv.weight = torch.nn.Parameter(w, requires_grad=True)
+            w = conv.weight
+            w.data.fill_(0.)
+            conv.weight = torch.nn.Parameter(w, requires_grad=True)
 
         for seq in self.cv2:
-            conv = seq[-1].bn
+            conv = seq[-1]
             b = conv.bias.view(-1, )
             b.data.fill_(1.0)
             conv.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
-            # w = conv.weight
-            # w.data.fill_(0.)
-            # conv.weight = torch.nn.Parameter(w, requires_grad=True)
+            w = conv.weight
+            w.data.fill_(0.)
+            conv.weight = torch.nn.Parameter(w, requires_grad=True)
         self.proj = nn.Parameter(torch.linspace(0, self.reg_max, self.reg_max + 1), requires_grad=False)
         self.proj_conv.weight = nn.Parameter(self.proj.view([1, self.reg_max + 1, 1, 1]).clone().detach(),
                                              requires_grad=False)
@@ -96,21 +96,21 @@ class V6Detect(nn.Module):
         bbox, conf, cls = y.split(((self.reg_max + 1) * 4, 1, self.nc), -1)
         if self.training:
             return x, conf, cls, bbox
-        else:
-            anchor_points, stride_tensor = generate_anchors(x, torch.tensor([8, 16, 32]), 5.0, 0.5, device=x[0].device,
-                                                            is_eval=True)
 
-            if self.use_dfl:
-                dfl_bbox = bbox.reshape([b, -1, 4, self.reg_max + 1]).permute(0, 3, 2, 1)  # b, reg_max+1, 4, grids
-                dfl_bbox = self.proj_conv(F.softmax(dfl_bbox, dim=1)).view(b, 4, -1)  # b, 4, grids
-                dfl_bbox = dfl_bbox.permute(0, 2, 1).contiguous()  # b, grids, 4
+        anchor_points, stride_tensor = \
+            generate_anchors(x, torch.tensor([8, 16, 32]), 5.0, 0.5, device=x[0].device, is_eval=True)
 
-            final_bboxes = dist2bbox(dfl_bbox, anchor_points, box_format="xywh")  # (b, grids, 4)
-            final_bboxes *= stride_tensor
-            return (torch.cat([final_bboxes,
-                               conf.sigmoid(),
-                               # torch.ones((b, final_bboxes.shape[1], 1), device=final_bboxes.device, dtype=final_bboxes.dtype),
-                               cls.sigmoid()], axis=-1).permute(0, 2, 1).contiguous(), (x, conf, cls, bbox))
+        if self.use_dfl:
+            dfl_bbox = bbox.reshape([b, -1, 4, self.reg_max + 1]).permute(0, 3, 2, 1)  # b, reg_max+1, 4, grids
+            dfl_bbox = self.proj_conv(F.softmax(dfl_bbox, dim=1)).view(b, 4, -1)  # b, 4, grids
+            dfl_bbox = dfl_bbox.permute(0, 2, 1).contiguous()  # b, grids, 4
+
+        final_bboxes = dist2bbox(dfl_bbox, anchor_points, box_format="xywh")  # (b, grids, 4)
+        final_bboxes *= stride_tensor
+        return (torch.cat([final_bboxes,
+                           conf.sigmoid(),
+                           # torch.ones((b, final_bboxes.shape[1], 1), device=final_bboxes.device, dtype=final_bboxes.dtype),
+                           cls.sigmoid()], axis=-1).permute(0, 2, 1).contiguous(), (x, conf, cls, bbox))
 
 
 class Detect(nn.Module):
