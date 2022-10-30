@@ -57,16 +57,15 @@ class V6Detect(nn.Module):
         c2, c3 = 64, max(ch[0], self.no - 4)  # channels
         self.use_dfl = use_dfl
         self.cv2 = nn.ModuleList(
-            nn.Sequential(Conv(x, c2, 3), nn.Conv2d(c2, 4 * (self.reg_max + 1), 3)) for x in ch)
-        # nn.Sequential(Conv(x, c2, 3), Conv(c2, c2, 3), nn.Conv2d(c2, 4 * (self.reg_max + 1), 3)) for x in ch)
+            nn.Sequential(Conv(x, c2, 3), Conv(c2, 4 * (self.reg_max + 1), 3, act=False)) for x in ch)
         self.cv3 = nn.ModuleList(
-            nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), nn.Conv2d(c3, self.nc + 1, 1)) for x in ch)
-        self.proj_conv = nn.Conv2d(self.reg_max + 1, 1, 1, bias=True)
+            nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), Conv(c3, self.nc + 1, 1, act=False)) for x in ch)
+        self.proj_conv = nn.Conv2d(self.reg_max + 1, 1, 1, bias=False)
         self.initialize_biases()
 
     def initialize_biases(self):
         for seq in self.cv3:
-            conv = seq[-1]
+            conv = seq[-1].bn
             b = conv.bias.view(-1, )
             b.data.fill_(-math.log((1 - 1e-2) / 1e-2))
             conv.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
@@ -75,7 +74,7 @@ class V6Detect(nn.Module):
             conv.weight = torch.nn.Parameter(w, requires_grad=True)
 
         for seq in self.cv2:
-            conv = seq[-1]
+            conv = seq[-1].bn
             b = conv.bias.view(-1, )
             b.data.fill_(1.0)
             conv.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
