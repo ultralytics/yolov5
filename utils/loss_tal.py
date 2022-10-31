@@ -156,7 +156,8 @@ class ComputeLoss:
         out = torch.zeros(batch_size, counts.max(), 5, device=self.device)
         out[:, 0] = -1.0  # TODO: do we need this?
         for i, u in enumerate(tu):
-            out[i, :counts[i]] = targets[targets[:, 0] == i, 1:]
+            if counts[i]:
+                out[i, :counts[i]] = targets[targets[:, 0] == i, 1:]
         out[..., 1:5] = xywh2xyxy(out[:, :, 1:5].mul_(scale_tensor))
         return out
 
