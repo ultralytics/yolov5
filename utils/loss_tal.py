@@ -44,23 +44,6 @@ class VarifocalLoss(nn.Module):
         return loss
 
 
-class BCEBlurWithLogitsLoss(nn.Module):
-    # BCEwithLogitLoss() with reduced missing label effects.
-    def __init__(self, alpha=0.05):
-        super().__init__()
-        self.loss_fcn = nn.BCEWithLogitsLoss(reduction="none")  # must be nn.BCEWithLogitsLoss()
-        self.alpha = alpha
-
-    def forward(self, pred, true):
-        loss = self.loss_fcn(pred, true)
-        pred = torch.sigmoid(pred)  # prob from logits
-        dx = pred - true  # reduce only missing label effects
-        # dx = (pred - true).abs()  # reduce missing label and false label effects
-        alpha_factor = 1 - torch.exp((dx - 1) / (self.alpha + 1e-4))
-        loss *= alpha_factor
-        return loss.mean()
-
-
 class FocalLoss(nn.Module):
     # Wraps focal loss around existing loss_fcn(), i.e. criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
     def __init__(self, loss_fcn, gamma=1.5, alpha=0.25):
@@ -81,32 +64,6 @@ class FocalLoss(nn.Module):
         p_t = true * pred_prob + (1 - true) * (1 - pred_prob)
         alpha_factor = true * self.alpha + (1 - true) * (1 - self.alpha)
         modulating_factor = (1.0 - p_t) ** self.gamma
-        loss *= alpha_factor * modulating_factor
-
-        if self.reduction == "mean":
-            return loss.mean()
-        elif self.reduction == "sum":
-            return loss.sum()
-        else:  # 'none'
-            return loss
-
-
-class QFocalLoss(nn.Module):
-    # Wraps Quality focal loss around existing loss_fcn(), i.e. criteria = FocalLoss(nn.BCEWithLogitsLoss(), gamma=1.5)
-    def __init__(self, loss_fcn, gamma=1.5, alpha=0.25):
-        super().__init__()
-        self.loss_fcn = loss_fcn  # must be nn.BCEWithLogitsLoss()
-        self.gamma = gamma
-        self.alpha = alpha
-        self.reduction = loss_fcn.reduction
-        self.loss_fcn.reduction = "none"  # required to apply FL to each element
-
-    def forward(self, pred, true):
-        loss = self.loss_fcn(pred, true)
-
-        pred_prob = torch.sigmoid(pred)  # prob from logits
-        alpha_factor = true * self.alpha + (1 - true) * (1 - self.alpha)
-        modulating_factor = torch.abs(true - pred_prob) ** self.gamma
         loss *= alpha_factor * modulating_factor
 
         if self.reduction == "mean":
@@ -215,8 +172,8 @@ class IOUloss:
 
 class BboxLoss(nn.Module):
     def __init__(self, reg_max, use_dfl=False, iou_type="giou"):
-        super(BboxLoss, self).__init__()
-        self.iou_loss = IOUloss(box_format="xyxy", iou_type=iou_type, eps=1e-7)
+        super().__init__()
+        # self.iou_loss = IOUloss(box_format="xyxy", iou_type=iou_type, eps=1e-7)
         self.reg_max = reg_max
         self.use_dfl = use_dfl
 
@@ -226,7 +183,11 @@ class BboxLoss(nn.Module):
         pred_bboxes_pos = torch.masked_select(pred_bboxes, bbox_mask).reshape([-1, 4])
         target_bboxes_pos = torch.masked_select(target_bboxes, bbox_mask).reshape([-1, 4])
         bbox_weight = torch.masked_select(target_scores.sum(-1), fg_mask).unsqueeze(-1)
-        loss_iou, iou = self.iou_loss(pred_bboxes_pos, target_bboxes_pos)
+        # loss_iou, iou = self.iou_loss(pred_bboxes_pos, target_bboxes_pos)
+
+        iou = bbox_iou(pred_bboxes_pos, target_bboxes_pos, xywh=False, CIoU=True)
+        loss_iou = 1.0 - iou
+
         loss_iou *= bbox_weight
         loss_iou = loss_iou.sum() / target_scores_sum
         # loss_iou = loss_iou.mean()
@@ -286,8 +247,7 @@ class ComputeLoss:
         self.device = device
 
         self.assigner = TaskAlignedAssigner(topk=13, num_classes=self.nc, alpha=1.0, beta=6.0)
-        self.bbox_loss = BboxLoss(16, use_dfl=use_dfl, iou_type="ciou").cuda()
-        self.varifocal_loss = VarifocalLoss().cuda()
+        self.bbox_loss = BboxLoss(16, use_dfl=use_dfl, iou_type="ciou").to(device)
         self.reg_max = 16 if use_dfl else 0
         self.use_dfl = use_dfl
         self.proj = nn.Parameter(torch.linspace(0, self.reg_max, self.reg_max + 1), requires_grad=False)
