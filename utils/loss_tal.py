@@ -166,8 +166,8 @@ class ComputeLoss:
     def bbox_decode(self, anchor_points, pred_dist):
         if self.use_dfl:
             b, a, _ = pred_dist.shape
-            # pred_dist = pred_dist.view(b, a, 4, self.reg_max + 1).softmax(3).matmul(self.proj.type(pred_dist.dtype))
-            pred_dist = (pred_dist.view(b, a, 4, self.reg_max + 1).softmax(3).mul(self.proj.type(pred_dist.dtype).view(1,1,1,17))).sum(3)
+            pred_dist = pred_dist.view(b, a, 4, self.reg_max + 1).softmax(3).matmul(self.proj.type(pred_dist.dtype))
+            # pred_dist = (pred_dist.view(b, a, 4, self.reg_max + 1).softmax(3).mul(self.proj.type(pred_dist.dtype).view(1,1,1,17))).sum(3)
         return dist2bbox(pred_dist, anchor_points, box_format="xyxy")
 
     def __call__(self, p, targets, img=None, epoch=0):
