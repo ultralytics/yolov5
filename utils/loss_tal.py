@@ -155,7 +155,6 @@ class ComputeLoss:
         i = targets[:, 0]  # image index
         _, counts = i.unique(return_counts=True)
         out = torch.zeros(batch_size, counts.max(), 5, device=self.device)
-        # out[..., 0] = -1.0  # TODO: do we need this?
         for j in range(batch_size):
             matches = i == j
             n = matches.sum()
@@ -167,10 +166,8 @@ class ComputeLoss:
     def bbox_decode(self, anchor_points, pred_dist):
         if self.use_dfl:
             b, a, _ = pred_dist.shape
-            # pred_dist = F.softmax(pred_dist.view(b, a, 4, self.reg_max + 1), dim=-1).matmul(self.proj.to(pred_dist.device).to(pred_dist.dtype))
-            # pred_dist = (F.softmax(pred_dist.view(b, a, 4, self.reg_max + 1), dim=3) * self.proj).sum(3)
-            # pred_dist = (F.softmax(pred_dist.view(b, a, self.reg_max + 1, 4), dim=2) * self.proj).sum(2)
-            pred_dist = pred_dist.view(b, a, 4, self.reg_max + 1).softmax(3).matmul(self.proj.type(pred_dist.dtype))
+            # pred_dist = pred_dist.view(b, a, 4, self.reg_max + 1).softmax(3).matmul(self.proj.type(pred_dist.dtype))
+            pred_dist = (pred_dist.view(b, a, 4, self.reg_max + 1).softmax(3) * self.proj.type(pred_dist.dtype).view(1,1,1,17)).sum(3)
         return dist2bbox(pred_dist, anchor_points, box_format="xyxy")
 
     def __call__(self, p, targets, img=None, epoch=0):
