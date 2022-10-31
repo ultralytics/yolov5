@@ -45,6 +45,8 @@ class V6Detect(nn.Module):
         super().__init__()
         self.nc = nc  # number of classes
         self.nl = len(anchors)  # number of detection layers
+        self.reg_max = 17
+        self.no = nc + self.reg_max * 4 + 1  # number of outputs per anchor
         self.grid = torch.empty(0)  # init
         self.anchor_grid = torch.empty(0)  # init
         self.stride_grid = torch.empty(0)  # init
@@ -52,8 +54,6 @@ class V6Detect(nn.Module):
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.shape = (0, 0)  # initial grid shape
 
-        self.reg_max = 17
-        self.no = nc + self.reg_max * 4 + 1  # number of outputs per anchor
         c2, c3 = 32, max(ch[0], self.no - 4)  # channels
         self.cv2 = nn.ModuleList(
             nn.Sequential(Conv(x, c2, 3), Conv(c2, c2, 3), nn.Conv2d(c2, 4 * self.reg_max, 1)) for x in ch)

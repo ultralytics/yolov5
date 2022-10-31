@@ -153,7 +153,7 @@ class ComputeLoss:
 
     def preprocess(self, targets, batch_size, scale_tensor):
         tu, inv, counts = targets[:, 0].unique(return_inverse=True, return_counts=True)
-        out = torch.zeros(batch_size, counts.max(), 5)
+        out = torch.zeros(batch_size, counts.max(), 5, device=self.device)
         out[:, 0] = -1.0  # TODO: do we need this?
         for i, u in enumerate(tu):
             out[i, :counts[i]] = targets[targets[:, 0] == i, 1:]
