@@ -85,8 +85,8 @@ class V6Detect(nn.Module):
 
         anchors, strides = generate_anchors(x, torch.tensor([8, 16, 32]), 5.0, 0.5, device=x[0].device, is_eval=True)
         dfl_box = self.proj_conv(F.softmax(box.view(b, 17, 4, -1), dim=1)).view(b, 4, -1)  # b, 4, grids
-        final_box = dist2bbox(dfl_box, anchors.T, box_format="xywh", dim=1)  # (b, grids, 4)
-        final_box *= strides.view(b, 1, -1)
+        final_box = dist2bbox(dfl_box, anchors.T.unsqueeze(0), box_format="xywh", dim=1)  # (b, grids, 4)
+        final_box *= strides.view(1, 1, -1)
         return torch.cat([final_box, conf.sigmoid(), cls.sigmoid()], 1), (x, conf, cls, box)
 
 
