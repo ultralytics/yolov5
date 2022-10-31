@@ -152,12 +152,15 @@ class ComputeLoss:
         self.proj = nn.Parameter(torch.linspace(0, self.reg_max, self.reg_max + 1), requires_grad=False)
 
     def preprocess(self, targets, batch_size, scale_tensor):
-        tu, inv, counts = targets[:, 0].unique(return_inverse=True, return_counts=True)
+        i = targets[:, 0]  # image index
+        _, counts = i.unique(return_counts=True)
         out = torch.zeros(batch_size, counts.max(), 5, device=self.device)
-        out[:, 0] = -1.0  # TODO: do we need this?
-        for i, u in enumerate(tu):
-            if counts[i]:
-                out[i, :counts[i]] = targets[targets[:, 0] == i, 1:]
+        out[..., 0] = -1.0  # TODO: do we need this?
+        for j in range(batch_size):
+            matches = i == j
+            n = matches.sum()
+            if n:
+                out[j, :n] = targets[matches, 1:]
         out[..., 1:5] = xywh2xyxy(out[:, :, 1:5].mul_(scale_tensor))
         return out
 
@@ -195,7 +198,7 @@ class ComputeLoss:
         pred_distri = pred_distri.permute(0, 2, 1).contiguous()
 
         anchors, anchor_points, n_anchors_list, stride_tensor = generate_anchors(feats, torch.tensor([8, 16, 32]), 5.0,
-                                                                                 0.5, device=feats[0].device)
+                                                                                 0.5, device=self.device)
 
         gt_bboxes_scale = torch.full((1, 4), 640).type_as(pred_scores)
         batch_size, grid_size = pred_scores.shape[:2]
