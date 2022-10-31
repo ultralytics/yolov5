@@ -149,7 +149,7 @@ class ComputeLoss:
         self.bbox_loss = BboxLoss(16, use_dfl=use_dfl).to(device)
         self.reg_max = 16 if use_dfl else 0
         self.use_dfl = use_dfl
-        self.proj = nn.Parameter(torch.linspace(0, self.reg_max, self.reg_max + 1), requires_grad=False)
+        self.proj = torch.linspace(0, self.reg_max, self.reg_max + 1).float().to(device)
 
     def preprocess(self, targets, batch_size, scale_tensor):
         i = targets[:, 0]  # image index
@@ -164,24 +164,11 @@ class ComputeLoss:
         out[..., 1:5] = xywh2xyxy(out[:, :, 1:5].mul_(scale_tensor))
         return out
 
-    # def preprocessOLD(self, targets, batch_size, scale_tensor):
-    #     targets_list = np.zeros((batch_size, 1, 5)).tolist()
-    #     for item in targets.cpu().numpy().tolist():
-    #         targets_list[int(item[0])].append(item[1:])
-    #     max_len = max((len(l) for l in targets_list))
-    #     targets = torch.from_numpy(
-    #         np.array(list(map(lambda l: l + [[-1, 0, 0, 0, 0]] * (max_len - len(l)), targets_list)))[:, 1:, :]).to(
-    #         targets.device
-    #     )
-    #     batch_target = targets[:, :, 1:5].mul_(scale_tensor)
-    #     targets[..., 1:] = xywh2xyxy(batch_target)
-    #     return targets
-
     def bbox_decode(self, anchor_points, pred_dist):
         if self.use_dfl:
             batch_size, n_anchors, _ = pred_dist.shape
-            pred_dist = F.softmax(pred_dist.view(batch_size, n_anchors, 4, self.reg_max + 1), dim=-1) \
-                .matmul(self.proj.to(pred_dist.device).to(pred_dist.dtype))
+            # pred_dist = F.softmax(pred_dist.view(batch_size, n_anchors, 4, self.reg_max + 1), dim=-1).matmul(self.proj.to(pred_dist.device).to(pred_dist.dtype))
+            pred_dist = (F.softmax(pred_dist.view(batch_size, n_anchors, 4, self.reg_max + 1), dim=3) * self.proj).sum(3)
         return dist2bbox(pred_dist, anchor_points, box_format="xyxy")
 
     def __call__(self, p, targets, img=None, epoch=0):
