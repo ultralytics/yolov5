@@ -52,10 +52,9 @@ class V6Detect(nn.Module):
         self.inplace = inplace  # use inplace ops (e.g. slice assignment)
         self.shape = (0, 0)  # initial grid shape
 
-        self.reg_max = 17 if use_dfl else 0
+        self.reg_max = 17
         self.no = nc + self.reg_max * 4 + 1  # number of outputs per anchor
         c2, c3 = 32, max(ch[0], self.no - 4)  # channels
-        self.use_dfl = use_dfl
         self.cv2 = nn.ModuleList(
             nn.Sequential(Conv(x, c2, 3), Conv(c2, c2, 3), nn.Conv2d(c2, 4 * self.reg_max, 1)) for x in ch)
         self.cv3 = nn.ModuleList(
@@ -80,20 +79,19 @@ class V6Detect(nn.Module):
         for i in range(self.nl):
             x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i])), 1)
 
-        y = torch.cat([xi.view(b, self.no, -1) for xi in x], dim=-1)
+        y = torch.cat([xi.view(b, self.no, -1) for xi in x], dim=2)
         if self.training:
             y = y.permute(0, 2, 1).contiguous()  # (b, grids, 85)
-            bbox, conf, cls = y.split((self.reg_max * 4, 1, self.nc), -1)
-            return x, conf, cls, bbox
+            box, conf, cls = y.split((self.reg_max * 4, 1, self.nc), 2)
+            return x, conf, cls, box
 
-        bbox, conf, cls = y.split((self.reg_max * 4, 1, self.nc), 1)
-        anchor_points, stride_tensor = \
-            generate_anchors(x, torch.tensor([8, 16, 32]), 5.0, 0.5, device=x[0].device, is_eval=True)
+        box, conf, cls = y.split((self.reg_max * 4, 1, self.nc), 1)
+        anchors, strides = generate_anchors(x, torch.tensor([8, 16, 32]), 5.0, 0.5, device=x[0].device, is_eval=True)
 
-        dfl_bbox = self.proj_conv(F.softmax(bbox.view(b, 17, 4, -1), dim=1)).view(b, 4, -1)  # b, 4, grids
-        final_bboxes = dist2bbox(dfl_bbox, anchor_points.T, box_format="xywh", dim=1)  # (b, grids, 4)
-        final_bboxes *= stride_tensor.view(-1)
-        return torch.cat([final_bboxes, conf.sigmoid(), cls.sigmoid()], -1), (x, conf, cls, bbox)
+        dfl_box = self.proj_conv(F.softmax(box.view(b, 17, 4, -1), dim=1)).view(b, 4, -1)  # b, 4, grids
+        final_box = dist2bbox(dfl_box, anchors.T, box_format="xywh", dim=1)  # (b, grids, 4)
+        final_box *= strides.view(-1)
+        return torch.cat([final_box, conf.sigmoid(), cls.sigmoid()], 1), (x, conf, cls, box)
 
 
 class Detect(nn.Module):
