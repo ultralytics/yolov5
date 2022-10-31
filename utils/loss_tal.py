@@ -149,7 +149,8 @@ class ComputeLoss:
         self.bbox_loss = BboxLoss(16, use_dfl=use_dfl).to(device)
         self.reg_max = 16 if use_dfl else 0
         self.use_dfl = use_dfl
-        self.proj = torch.linspace(0, self.reg_max, self.reg_max + 1).float().to(device)
+        self.proj = torch.linspace(0, self.reg_max, self.reg_max + 1).float().to(device).view(1, 1, 17, 1)
+        # self.proj = torch.linspace(0, self.reg_max, self.reg_max + 1).float().to(device)
 
     def preprocess(self, targets, batch_size, scale_tensor):
         i = targets[:, 0]  # image index
@@ -166,9 +167,10 @@ class ComputeLoss:
 
     def bbox_decode(self, anchor_points, pred_dist):
         if self.use_dfl:
-            batch_size, n_anchors, _ = pred_dist.shape
-            # pred_dist = F.softmax(pred_dist.view(batch_size, n_anchors, 4, self.reg_max + 1), dim=-1).matmul(self.proj.to(pred_dist.device).to(pred_dist.dtype))
-            pred_dist = (F.softmax(pred_dist.view(batch_size, n_anchors, 4, self.reg_max + 1), dim=3) * self.proj).sum(3)
+            b, a, _ = pred_dist.shape
+            # pred_dist = F.softmax(pred_dist.view(b, a, 4, self.reg_max + 1), dim=-1).matmul(self.proj.to(pred_dist.device).to(pred_dist.dtype))
+            # pred_dist = (F.softmax(pred_dist.view(b, a, 4, self.reg_max + 1), dim=3) * self.proj).sum(3)
+            pred_dist = (F.softmax(pred_dist.view(b, a, self.reg_max + 1, 4), dim=2) * self.proj).sum(2)
         return dist2bbox(pred_dist, anchor_points, box_format="xyxy")
 
     def __call__(self, p, targets, img=None, epoch=0):
