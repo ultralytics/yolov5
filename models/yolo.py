@@ -91,7 +91,11 @@ class V6Detect(nn.Module):
         dfl_box = self.proj_conv(F.softmax(box.view(b, 17, 4, -1), dim=1)).view(b, 4, -1)  # b, 4, grids
         final_box = dist2bbox(dfl_box, anchors.T, box_format="xywh", dim=1)  # (b, grids, 4)
         final_box *= strides.view(-1)
-        return torch.cat([final_box, conf.sigmoid(), cls.sigmoid()], 1), (x, conf, cls, box)
+        return torch.cat([final_box, conf.sigmoid(), cls.sigmoid()], 1), \
+               (x,
+                conf.permute(0, 2, 1).contiguous(),
+                cls.permute(0, 2, 1).contiguous(),
+                box.permute(0, 2, 1).contiguous())
 
 
 class Detect(nn.Module):
@@ -446,6 +450,8 @@ if __name__ == '__main__':
     # Create model
     im = torch.rand(opt.batch_size, 3, 640, 640).to(device)
     model = Model(opt.cfg).to(device)
+    model.eval()
+    model(im)
 
     # Options
     if opt.line_profile:  # profile layer by layer
