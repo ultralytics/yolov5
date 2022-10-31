@@ -170,7 +170,7 @@ class ComputeLoss:
             # pred_dist = F.softmax(pred_dist.view(b, a, 4, self.reg_max + 1), dim=-1).matmul(self.proj.to(pred_dist.device).to(pred_dist.dtype))
             # pred_dist = (F.softmax(pred_dist.view(b, a, 4, self.reg_max + 1), dim=3) * self.proj).sum(3)
             # pred_dist = (F.softmax(pred_dist.view(b, a, self.reg_max + 1, 4), dim=2) * self.proj).sum(2)
-            pred_dist = pred_dist.view(b, a, 4, self.reg_max + 1).softmax(3).matmul(self.proj.type())
+            pred_dist = pred_dist.view(b, a, 4, self.reg_max + 1).softmax(3).matmul(self.proj)
         return dist2bbox(pred_dist, anchor_points, box_format="xyxy")
 
     def __call__(self, p, targets, img=None, epoch=0):
