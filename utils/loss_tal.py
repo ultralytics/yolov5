@@ -155,7 +155,7 @@ class ComputeLoss:
         i = targets[:, 0]  # image index
         _, counts = i.unique(return_counts=True)
         out = torch.zeros(batch_size, counts.max(), 5, device=self.device)
-        out[..., 0] = -1.0  # TODO: do we need this?
+        # out[..., 0] = -1.0  # TODO: do we need this?
         for j in range(batch_size):
             matches = i == j
             n = matches.sum()

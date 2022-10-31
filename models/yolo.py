@@ -88,7 +88,7 @@ class V6Detect(nn.Module):
         # dfl_bbox = dfl_bbox.permute(0, 2, 1).contiguous()  # b, grids, 4
 
         anchors, strides = generate_anchors(x, torch.tensor([8, 16, 32]), 5.0, 0.5, device=x[0].device, is_eval=True)
-        dfl_box = self.proj_conv(F.softmax(box.view(b, 4, 17, -1).transpose(2, 1), dim=1)).view(b, 4, -1)
+        dfl_box = self.proj_conv(box.view(b, 4, 17, -1).transpose(2, 1).softmax(1)).view(b, 4, -1)
         final_box = dist2bbox(dfl_box, anchors.T.unsqueeze(0), box_format="xywh", dim=1)  # (b, grids, 4)
         final_box *= strides.view(1, 1, -1)
         return torch.cat([final_box, conf.sigmoid(), cls.sigmoid()], 1), (x, conf, cls, box)
