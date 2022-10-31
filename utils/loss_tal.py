@@ -319,6 +319,12 @@ class ComputeLoss:
         ldfl = torch.zeros(1, device=self.device)  # object loss
 
         feats, pred_obj, pred_scores, pred_distri = p
+
+        # TODO adjust TAL/DFL loss for channel dim=1
+        pred_obj = pred_obj.permute(0, 2, 1).contiguous()
+        pred_scores = pred_scores.permute(0, 2, 1).contiguous()
+        pred_distri = pred_distri.permute(0, 2, 1).contiguous()
+
         anchors, anchor_points, n_anchors_list, stride_tensor = generate_anchors(feats, torch.tensor([8, 16, 32]), 5.0,
                                                                                  0.5, device=feats[0].device)
 
