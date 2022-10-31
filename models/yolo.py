@@ -75,30 +75,25 @@ class V6Detect(nn.Module):
             m.bias.data[:] = -math.log((1 - 1e-2) / 1e-2)
             m.weight.data[:] = 0.0
 
-
     def forward(self, x):
         b = x[0].shape[0]
         for i in range(self.nl):
             x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i])), 1)
 
         y = torch.cat([xi.view(b, self.no, -1) for xi in x], dim=-1)
-        y = y.permute(0, 2, 1).contiguous()  # (b, grids, 85)
-        bbox, conf, cls = y.split((self.reg_max * 4, 1, self.nc), -1)
         if self.training:
+            y = y.permute(0, 2, 1).contiguous()  # (b, grids, 85)
+            bbox, conf, cls = y.split((self.reg_max * 4, 1, self.nc), -1)
             return x, conf, cls, bbox
 
+        bbox, conf, cls = y.split((self.reg_max * 4, 1, self.nc), 1)
         anchor_points, stride_tensor = \
             generate_anchors(x, torch.tensor([8, 16, 32]), 5.0, 0.5, device=x[0].device, is_eval=True)
 
-        if self.use_dfl:
-            dfl_bbox = bbox.reshape([b, -1, 4, self.reg_max]).permute(0, 3, 2, 1)  # b, reg_max+1, 4, grids
-            dfl_bbox = self.proj_conv(F.softmax(dfl_bbox, dim=1)).view(b, 4, -1)  # b, 4, grids
-            dfl_bbox = dfl_bbox.permute(0, 2, 1).contiguous()  # b, grids, 4
-
-        final_bboxes = dist2bbox(dfl_bbox, anchor_points, box_format="xywh")  # (b, grids, 4)
-        final_bboxes *= stride_tensor
-        return (torch.cat([final_bboxes, conf.sigmoid(), cls.sigmoid()], -1).permute(0, 2, 1).contiguous(),
-                (x, conf, cls, bbox))
+        dfl_bbox = self.proj_conv(F.softmax(bbox.view(b, 17, 4, -1), dim=1)).view(b, 4, -1)  # b, 4, grids
+        final_bboxes = dist2bbox(dfl_bbox, anchor_points.T, box_format="xywh", dim=1)  # (b, grids, 4)
+        final_bboxes *= stride_tensor.view(-1)
+        return torch.cat([final_bboxes, conf.sigmoid(), cls.sigmoid()], -1), (x, conf, cls, bbox)
 
 
 class Detect(nn.Module):

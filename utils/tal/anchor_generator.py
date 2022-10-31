@@ -44,18 +44,17 @@ def generate_anchors(feats, fpn_strides, grid_cell_size=5.0, grid_cell_offset=0.
         return anchors, anchor_points, num_anchors_list, stride_tensor
 
 
-def dist2bbox(distance, anchor_points, box_format='xyxy'):
+def dist2bbox(distance, anchor_points, box_format='xyxy', dim=-1):
     """Transform distance(ltrb) to box(xywh or xyxy)."""
-    lt, rb = torch.split(distance, 2, -1)
+    lt, rb = torch.split(distance, 2, dim)
     x1y1 = anchor_points - lt
     x2y2 = anchor_points + rb
     if box_format == 'xyxy':
-        bbox = torch.cat([x1y1, x2y2], -1)
+        return torch.cat([x1y1, x2y2], dim)  # bbox
     elif box_format == 'xywh':
         c_xy = (x1y1 + x2y2) / 2
         wh = x2y2 - x1y1
-        bbox = torch.cat([c_xy, wh], -1)
-    return bbox
+        return torch.cat([c_xy, wh], dim)  # bbox
 
 
 def bbox2dist(anchor_points, bbox, reg_max):
