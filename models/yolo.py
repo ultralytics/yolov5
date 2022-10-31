@@ -83,8 +83,12 @@ class V6Detect(nn.Module):
         if self.training:
             return x, conf, cls, box
 
+        # dfl_bbox = bbox.reshape([b, -1, 4, self.reg_max]).permute(0, 3, 2, 1)  # b, reg_max+1, 4, grids
+        # dfl_bbox = self.proj_conv(F.softmax(dfl_bbox, dim=1)).view(b, 4, -1)  # b, 4, grids
+        # dfl_bbox = dfl_bbox.permute(0, 2, 1).contiguous()  # b, grids, 4
+
         anchors, strides = generate_anchors(x, torch.tensor([8, 16, 32]), 5.0, 0.5, device=x[0].device, is_eval=True)
-        dfl_box = self.proj_conv(F.softmax(box.view(b, 17, 4, -1), dim=1)).view(b, 4, -1)  # b, 4, grids
+        dfl_box = self.proj_conv(F.softmax(box.view(b, 4, 17, -1).transpose(0, 2, 1, 3), dim=1)).view(b, 4, -1)
         final_box = dist2bbox(dfl_box, anchors.T.unsqueeze(0), box_format="xywh", dim=1)  # (b, grids, 4)
         final_box *= strides.view(1, 1, -1)
         return torch.cat([final_box, conf.sigmoid(), cls.sigmoid()], 1), (x, conf, cls, box)
