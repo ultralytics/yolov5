@@ -444,6 +444,7 @@ class LoadImagesAndLabels(Dataset):
                  single_cls=False,
                  stride=32,
                  pad=0.0,
+                 min_items=0,
                  prefix=''):
         self.img_size = img_size
         self.augment = augment
@@ -475,7 +476,7 @@ class LoadImagesAndLabels(Dataset):
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in IMG_FORMATS])  # pathlib
             assert self.im_files, f'{prefix}No images found'
         except Exception as e:
-            raise Exception(f'{prefix}Error loading data from {path}: {e}\n{HELP_URL}')
+            raise Exception(f'{prefix}Error loading data from {path}: {e}\n{HELP_URL}') from e
 
         # Check cache
         self.label_files = img2label_paths(self.im_files)  # labels
@@ -505,7 +506,19 @@ class LoadImagesAndLabels(Dataset):
         self.shapes = np.array(shapes)
         self.im_files = list(cache.keys())  # update
         self.label_files = img2label_paths(cache.keys())  # update
-        n = len(shapes)  # number of images
+
+        # Filter images
+        if min_items:
+            include = np.array([len(x) > min_items for x in self.labels]).nonzero()[0].astype(int)
+            LOGGER.info(f'{prefix}{nf - len(include)}/{nf} images filtered from dataset')
+            self.im_files = [self.im_files[i] for i in include]
+            self.label_files = [self.label_files[i] for i in include]
+            self.labels = [self.labels[i] for i in include]
+            self.segments = [self.segments[i] for i in include]
+            self.shapes = self.shapes[include]  # wh
+
+        # Create indices
+        n = len(self.shapes)  # number of images
         bi = np.floor(np.arange(n) / batch_size).astype(int)  # batch index
         nb = bi[-1] + 1  # number of batches
         self.batch = bi  # batch index of image
