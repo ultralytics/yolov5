@@ -509,8 +509,8 @@ class LoadImagesAndLabels(Dataset):
 
         # Filter images
         if min_items:
-            include = np.array([len(x) > min_items for x in self.labels]).nonzero()[0].astype(int)
-            LOGGER.info(f'{prefix}{nf - len(include)}/{nf} images filtered from dataset')
+            include = np.array([len(x) >= min_items for x in self.labels]).nonzero()[0].astype(int)
+            LOGGER.info(f'{prefix}{n - len(include)}/{n} images filtered from dataset')
             self.im_files = [self.im_files[i] for i in include]
             self.label_files = [self.label_files[i] for i in include]
             self.labels = [self.labels[i] for i in include]
