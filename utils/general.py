@@ -72,7 +72,7 @@ def is_chinese(s='人工智能'):
 
 def is_colab():
     # Is environment a Google Colab instance?
-    return 'COLAB_GPU' in os.environ
+    return 'google.colab' in sys.modules
 
 
 def is_notebook():
