@@ -868,8 +868,6 @@ def non_max_suppression(
     if isinstance(prediction, (list, tuple)):  # YOLOv5 model in validation model, output = (inference_out, loss_out)
         prediction = prediction[0]  # select only inference output
 
-    prediction = prediction.permute((0, 2, 1)).contiguous()  # TODO: Remove and update function for channels dim 1
-
     device = prediction.device
     mps = 'mps' in device.type  # Apple MPS
     if mps:  # MPS not fully supported yet, convert tensors to CPU before NMS
