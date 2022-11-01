@@ -54,6 +54,7 @@ import shutil
 import warnings
 from pathlib import Path
 import math
+from typing import Optional
 
 import pandas as pd
 import torch
@@ -61,6 +62,7 @@ import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
 from sparseml.pytorch.utils import ModuleExporter
+from sparseml.pytorch.optim import ScheduledModifierManager
 from sparseml.pytorch.sparsification.quantization import skip_onnx_input_quantize
 
 from models.common import Conv, DetectMultiBackend
@@ -117,7 +119,7 @@ def export_torchscript(model, im, file, optimize, prefix=colorstr('TorchScript:'
         LOGGER.info(f'{prefix} export failure: {e}')
 
 
-def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:'), convert_qat=True):
+def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorstr('ONNX:'), convert_qat=True, one_shot: Optional[str]=None):
     # YOLOv5 ONNX export
     try:
         check_requirements(('onnx',))
@@ -146,6 +148,11 @@ def export_onnx(model, im, file, opset, train, dynamic, simplify, prefix=colorst
         input_names = ['input']
         output_names = [f'out_{i}' for i in range(num_outputs)]
         dynamic_axes = {k: {0: 'batch'} for k in (input_names + output_names)} if dynamic else None
+
+        if one_shot:
+            one_shot_manager = ScheduledModifierManager.from_yaml(file_path=one_shot)
+            one_shot_manager.apply(module=model)
+
         exporter = ModuleExporter(model, save_dir)
         exporter.export_onnx(im, name=save_name, convert_qat=convert_qat,
                                 input_names=input_names, output_names=output_names, dynamic_axes=dynamic_axes)
@@ -218,7 +225,7 @@ def export_coreml(model, im, file, prefix=colorstr('CoreML:')):
         return None, None
 
 
-def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:')):
+def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=False, prefix=colorstr('TensorRT:'), one_shot: Optional[str]=None):
     # YOLOv5 TensorRT export https://developer.nvidia.com/tensorrt
     try:
         check_requirements(('tensorrt',))
@@ -227,11 +234,11 @@ def export_engine(model, im, file, train, half, simplify, workspace=4, verbose=F
         if trt.__version__[0] == '7':  # TensorRT 7 handling https://github.com/ultralytics/yolov5/issues/6012
             grid = model.model[-1].anchor_grid
             model.model[-1].anchor_grid = [a[..., :1, :1, :] for a in grid]
-            export_onnx(model, im, file, 12, train, False, simplify)  # opset 12
+            export_onnx(model, im, file, 12, train, False, simplify, one_shot=one_shot)  # opset 12
             model.model[-1].anchor_grid = grid
         else:  # TensorRT >= 8
             check_version(trt.__version__, '8.0.0', hard=True)  # require tensorrt>=8.0.0
-            export_onnx(model, im, file, 13, train, False, simplify)  # opset 13
+            export_onnx(model, im, file, 13, train, False, simplify, one_shot=one_shot)  # opset 13
         onnx = file.with_suffix('.onnx')
 
         LOGGER.info(f'\n{prefix} starting export with TensorRT {trt.__version__}...')
@@ -615,6 +622,7 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
         conf_thres=0.25,  # TF.js NMS: confidence threshold
         remove_grid=False,
         num_export_samples = 0, # number of data samples to generate
+        one_shot: Optional[str] = None,
         no_convert_qat=False,
         ):
     t = time.time()
@@ -668,9 +676,9 @@ def run(data=ROOT / 'data/coco128.yaml',  # 'dataset.yaml path'
     if jit:
         f[0] = export_torchscript(model, im, file, optimize)
     if engine:  # TensorRT required before ONNX
-        f[1] = export_engine(model, im, file, train, half, simplify, workspace, verbose)
+        f[1] = export_engine(model, im, file, train, half, simplify, workspace, verbose, one_shot=one_shot)
     if onnx or xml:  # OpenVINO requires ONNX
-        f[2] = export_onnx(model, im, file, opset, train, dynamic, simplify, convert_qat = (not no_convert_qat))
+        f[2] = export_onnx(model, im, file, opset, train, dynamic, simplify, convert_qat=(not no_convert_qat), one_shot=one_shot)
     if xml:  # OpenVINO
         f[3] = export_openvino(model, im, file)
     if coreml:
@@ -755,6 +763,12 @@ def parse_opt(known = False, skip_parse = False):
     parser.add_argument('--include', nargs='+',
                         default=['torchscript', 'onnx'],
                         help='torchscript, onnx, openvino, engine, coreml, saved_model, pb, tflite, edgetpu, tfjs')
+    parser.add_argument("--one-shot",
+                        type=str,
+                        default=None,
+                        help="local path or SparseZoo stub to a recipe to be applied"
+                             " in one-shot manner before exporting"
+                        )
     parser.add_argument("--no_convert_qat",
                         action="store_true",
                         help = (
