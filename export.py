@@ -48,6 +48,7 @@ TensorFlow.js:
 
 import argparse
 import contextlib
+import glob
 import json
 import os
 import platform
@@ -56,7 +57,6 @@ import subprocess
 import sys
 import time
 import warnings
-import glob
 from pathlib import Path
 
 import pandas as pd
@@ -606,7 +606,7 @@ def run(
             f[9], _ = export_tfjs(file)
     if paddle:  # PaddlePaddle
         f[10], _ = export_paddle(model, im, file, metadata)
-    
+
     if depthai:
         f[2], _ = export_onnx(model, im, file, opset, dynamic, simplify)
         f[11], _ = export_depthai(file)
